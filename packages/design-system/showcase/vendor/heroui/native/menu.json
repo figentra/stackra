@@ -1,0 +1,662 @@
+{
+  "slug": "menu",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(collections)/menu.mdx",
+  "parts": [
+    {
+      "name": "Menu",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The content of the menu"
+        },
+        {
+          "name": "presentation",
+          "type": "'popover' | 'bottom-sheet'",
+          "default": "'popover'",
+          "description": "Presentation mode for the menu content"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Controlled open state of the menu"
+        },
+        {
+          "name": "isDefaultOpen",
+          "type": "boolean",
+          "description": "Open state when initially rendered (uncontrolled)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the menu is disabled"
+        },
+        {
+          "name": "animation",
+          "type": "MenuRootAnimation",
+          "description": "Animation configuration for menu root"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "description": "Callback fired when the menu open state changes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Menu.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The trigger element content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the trigger"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the trigger is disabled"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "description": "Render as child element using Slot pattern"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Menu.Portal",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The portal content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the portal container"
+        },
+        {
+          "name": "disableFullWindowOverlay",
+          "type": "boolean",
+          "default": "false",
+          "description": "Use a regular View instead of FullWindowOverlay on iOS"
+        },
+        {
+          "name": "unstable_accessibilityContainerViewIsModal",
+          "type": "boolean",
+          "default": "false",
+          "description": "Controls whether VoiceOver treats the overlay window as a modal container. When `true`, VoiceOver is restricted to elements inside the overlay. iOS only. Unstable: may change with react-native-screens updates"
+        },
+        {
+          "name": "hostName",
+          "type": "string",
+          "description": "Optional name of the host element for the portal"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Force mount the portal regardless of open state"
+        }
+      ]
+    },
+    {
+      "name": "Menu.Overlay",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the overlay"
+        },
+        {
+          "name": "closeOnPress",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether to close the menu when the overlay is pressed"
+        },
+        {
+          "name": "animation",
+          "type": "MenuOverlayAnimation",
+          "description": "Animation configuration for overlay"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Force mount the overlay regardless of open state"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.entering.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeIn.duration(200)",
+          "description": "Custom entering animation for overlay"
+        },
+        {
+          "name": "opacity.exiting.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeOut.duration(150)",
+          "description": "Custom exiting animation for overlay"
+        }
+      ]
+    },
+    {
+      "name": "Menu.Content (Popover)",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The menu content"
+        },
+        {
+          "name": "presentation",
+          "type": "'popover'",
+          "description": "Presentation mode (must match Menu root)"
+        },
+        {
+          "name": "placement",
+          "type": "'top' | 'bottom' | 'left' | 'right'",
+          "default": "'bottom'",
+          "description": "Where the menu appears relative to the trigger"
+        },
+        {
+          "name": "align",
+          "type": "'start' | 'center' | 'end'",
+          "default": "'center'",
+          "description": "Alignment of the menu relative to the trigger"
+        },
+        {
+          "name": "avoidCollisions",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether to reposition to avoid screen edges"
+        },
+        {
+          "name": "offset",
+          "type": "number",
+          "default": "9",
+          "description": "Distance from the trigger element in pixels"
+        },
+        {
+          "name": "alignOffset",
+          "type": "number",
+          "default": "0",
+          "description": "Offset along the alignment axis in pixels"
+        },
+        {
+          "name": "width",
+          "type": "'content-fit' | 'trigger' | 'full' | number",
+          "default": "'content-fit'",
+          "description": "Content width sizing strategy"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the content container"
+        },
+        {
+          "name": "animation",
+          "type": "MenuContentAnimation",
+          "description": "Animation configuration for content"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "Scale + fade entering animation",
+          "description": "Custom entering animation for content"
+        },
+        {
+          "name": "exiting.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "Scale + fade exiting animation",
+          "description": "Custom exiting animation for content"
+        }
+      ]
+    },
+    {
+      "name": "Menu.Content (Bottom Sheet)",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The bottom sheet content"
+        },
+        {
+          "name": "presentation",
+          "type": "'bottom-sheet'",
+          "description": "Presentation mode (must match Menu root)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the bottom sheet"
+        },
+        {
+          "name": "backgroundClassName",
+          "type": "string",
+          "description": "Additional CSS class for the background"
+        },
+        {
+          "name": "handleIndicatorClassName",
+          "type": "string",
+          "description": "Additional CSS class for the handle indicator"
+        },
+        {
+          "name": "contentContainerClassName",
+          "type": "string",
+          "description": "Additional CSS class for the content container"
+        },
+        {
+          "name": "contentContainerProps",
+          "type": "Omit<BottomSheetViewProps, 'children'>",
+          "description": "Props for the content container"
+        },
+        {
+          "name": "animation",
+          "type": "AnimationDisabled",
+          "description": "Set to `false` or `\"disabled\"` to disable animations"
+        },
+        {
+          "name": "...BottomSheetProps",
+          "type": "Partial<BottomSheetProps>",
+          "description": "All `@gorhom/bottom-sheet` props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Menu.Close",
+      "props": [
+        {
+          "name": "iconProps",
+          "type": "CloseButtonIconProps",
+          "description": "Props for customizing the close icon"
+        },
+        {
+          "name": "...ButtonProps",
+          "type": "ButtonRootProps",
+          "description": "All Button root props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Menu.Group",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The group content (Menu.Item elements)"
+        },
+        {
+          "name": "selectionMode",
+          "type": "'none' | 'single' | 'multiple'",
+          "default": "'none'",
+          "description": "The type of selection allowed in the group"
+        },
+        {
+          "name": "selectedKeys",
+          "type": "Iterable<MenuKey>",
+          "description": "Currently selected keys (controlled)"
+        },
+        {
+          "name": "defaultSelectedKeys",
+          "type": "Iterable<MenuKey>",
+          "description": "Initially selected keys (uncontrolled)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the entire group is disabled"
+        },
+        {
+          "name": "disabledKeys",
+          "type": "Iterable<MenuKey>",
+          "description": "Keys of items that should be disabled"
+        },
+        {
+          "name": "shouldCloseOnSelect",
+          "type": "boolean",
+          "description": "Whether selecting an item should close the menu"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the group container"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(keys: Set<MenuKey>) => void",
+          "description": "Callback fired when the selection changes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Menu.Label",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The label text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the label"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Menu.Item",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: MenuItemRenderProps) => ReactNode)",
+          "description": "Child elements or a render function"
+        },
+        {
+          "name": "id",
+          "type": "MenuKey",
+          "description": "Unique identifier, required when inside a Menu.Group"
+        },
+        {
+          "name": "variant",
+          "type": "'default' | 'danger'",
+          "default": "'default'",
+          "description": "Visual variant of the menu item"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the item is disabled"
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Controlled selected state for standalone items"
+        },
+        {
+          "name": "shouldCloseOnSelect",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether pressing this item should close the menu"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the item"
+        },
+        {
+          "name": "animation",
+          "type": "MenuItemAnimation",
+          "description": "Animation configuration for press feedback"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "onSelectedChange",
+          "type": "(selected: boolean) => void",
+          "description": "Callback when standalone item's selected state changes"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether this item is currently selected"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the item is disabled"
+        },
+        {
+          "name": "isPressed",
+          "type": "SharedValue<boolean>",
+          "description": "Whether the item is currently pressed"
+        },
+        {
+          "name": "variant",
+          "type": "'default' | 'danger'",
+          "description": "Visual variant of the item"
+        }
+      ],
+      "animation": [
+        {
+          "name": "scale.value",
+          "type": "number",
+          "default": "0.98",
+          "description": "Scale value when pressed"
+        },
+        {
+          "name": "scale.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 150 }",
+          "description": "Spring animation configuration for scale"
+        },
+        {
+          "name": "backgroundColor.value",
+          "type": "string",
+          "default": "useThemeColor('default')",
+          "description": "Background color shown while pressed"
+        },
+        {
+          "name": "backgroundColor.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 150 }",
+          "description": "Animation timing for background color"
+        }
+      ]
+    },
+    {
+      "name": "Menu.ItemTitle",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The title text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the item title"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Menu.ItemDescription",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The description text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the item description"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Menu.ItemIndicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom indicator content, defaults to checkmark or dot"
+        },
+        {
+          "name": "variant",
+          "type": "'checkmark' | 'dot'",
+          "default": "'checkmark'",
+          "description": "Visual variant of the indicator"
+        },
+        {
+          "name": "iconProps",
+          "type": "MenuItemIndicatorIconProps",
+          "description": "Icon configuration (checkmark variant)"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "default": "true",
+          "description": "Force mount the indicator regardless of selected state"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the item indicator"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "SubMenu",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The sub-menu content (trigger, content, and other items)"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Controlled open state of the sub-menu"
+        },
+        {
+          "name": "isDefaultOpen",
+          "type": "boolean",
+          "description": "Open state when initially rendered (uncontrolled)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the sub-menu is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS class for the root container"
+        },
+        {
+          "name": "animation",
+          "type": "SubMenuRootAnimation",
+          "description": "Animation configuration for the sub-menu"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "description": "Callback fired when the sub-menu open state changes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useMenu",
+      "signature": "useMenu()",
+      "returns": []
+    },
+    {
+      "name": "useMenuItem",
+      "signature": "useMenuItem()",
+      "returns": []
+    },
+    {
+      "name": "useMenuAnimation",
+      "signature": "useMenuAnimation()",
+      "returns": []
+    },
+    {
+      "name": "useSubMenu",
+      "signature": "useSubMenu()",
+      "returns": []
+    }
+  ],
+  "slots": []
+}

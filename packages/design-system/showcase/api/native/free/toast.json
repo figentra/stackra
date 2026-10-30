@@ -1,0 +1,181 @@
+{
+  "generatedFrom": {
+    "hash": "0edfc843a367f791",
+    "heroDoc": "vendor/heroui/native/toast.json",
+    "propsFiles": [
+      "ui/src/native/toast/toast-item.props.ts",
+      "ui/src/native/toast/toast-provider.props.ts"
+    ]
+  },
+  "hooks": [
+    {
+      "name": "useToast",
+      "returns": [],
+      "signature": "useToast()"
+    }
+  ],
+  "importLine": "import { toast } from \"@stackra/ui/native\";",
+  "key": "free/toast",
+  "parts": [
+    {
+      "name": "toast",
+      "props": [
+        {
+          "description": "What HeroUI Native hands a toast component: its id, position in the stack, and `hide`.",
+          "name": "toast",
+          "required": true,
+          "source": "stackra",
+          "type": "ToastComponentProps"
+        },
+        {
+          "description": "The tone of the message.",
+          "name": "tone",
+          "required": true,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "The message the toast shows, as its first line.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A second line under the message.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The caller's icon, or `false` for none; left out, the tone's icon is drawn.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "The person the toast is about, drawn in place of the icon.",
+          "name": "avatar",
+          "required": false,
+          "source": "stackra",
+          "type": "ToastAvatar"
+        },
+        {
+          "default": "alert",
+          "description": "The look the provider gives every toast. Defaults to `alert`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"alert\" | \"bar\" | \"flip-bar\" | \"bubble\""
+        },
+        {
+          "description": "The one action beside the message.",
+          "name": "action",
+          "required": false,
+          "source": "stackra",
+          "type": "ToastAction"
+        },
+        {
+          "description": "The accessible name of the dismiss button.",
+          "name": "dismissLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "toast.Item",
+      "props": []
+    },
+    {
+      "name": "toast.Provider",
+      "props": []
+    },
+    {
+      "name": "ToastProvider",
+      "props": [
+        {
+          "description": "The accessible name of every toast's dismiss button in the app's language, for example \"Dismiss notification\".",
+          "name": "dismissLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "bottom",
+          "description": "The screen edge toasts appear against. Defaults to `bottom`.",
+          "name": "position",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\""
+        },
+        {
+          "default": "center",
+          "description": "Where along that edge: the inline `start`, the `center`, the inline `end` or `full` width. Defaults to `center`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\" | \"full\""
+        },
+        {
+          "default": "alert",
+          "description": "The look of every toast: `alert`, `bar`, `flip-bar` or `bubble`. Defaults to `alert`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"alert\" | \"bar\" | \"flip-bar\" | \"bubble\""
+        },
+        {
+          "description": "Children to render",
+          "name": "children",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Custom wrapper function to wrap the toast content\nReceives children and should return a component that wraps them\nThe wrapper should apply flex: 1 (via className or style) to ensure proper layout\nCan be any component wrapper - KeyboardAvoidingView, View, or any custom component",
+          "name": "contentWrapper",
+          "required": false,
+          "source": "heroui",
+          "type": "(children: ReactNode) => ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "default": "false",
+          "description": "When true, uses a regular View instead of FullWindowOverlay on iOS for toasts.\nEnables React Native element inspector but toasts won't appear above native modals.",
+          "name": "disableFullWindowOverlay",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "Platform-specific:\n- iOS: { top: 0, bottom: 6, left: 12, right: 12 }\n- Android: { top: 12, bottom: 12, left: 12, right: 12 }",
+          "description": "Insets for spacing from screen edges (added to safe area insets)",
+          "name": "insets",
+          "required": false,
+          "source": "heroui",
+          "type": "ToastInsets"
+        },
+        {
+          "default": "3",
+          "description": "Maximum number of visible toasts before opacity starts fading\nControls when toast items begin to fade out as they move beyond the visible stack",
+          "name": "maxVisibleToasts",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "false",
+          "description": "Controls whether VoiceOver treats the toast overlay window as a modal container.\nWhen `false`, VoiceOver can still access elements behind the overlay.\nWhen `true`, VoiceOver is restricted to elements inside the overlay.",
+          "name": "unstable_accessibilityContainerViewIsModal",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

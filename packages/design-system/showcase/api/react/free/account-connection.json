@@ -1,0 +1,173 @@
+{
+  "generatedFrom": {
+    "hash": "878432f318e38fea",
+    "propsFiles": ["ui/src/react/account-connection/account-connection.props.ts"]
+  },
+  "importLine": "import { AccountConnection } from \"@stackra/ui/react\";",
+  "key": "free/account-connection",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the connect button is pressed.",
+          "name": "onConnect",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called when the disconnect button is pressed.",
+          "name": "onDisconnect",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "AccountConnection",
+      "props": [
+        {
+          "description": "The service's name, for example \"Stripe\" or \"Talabat\".",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What connecting does, under the name.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The service's logo, usually a square `Avatar`. Decorative: the name beside it is read.",
+          "name": "logo",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when an account is connected.",
+          "name": "isConnected",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The connected account, for example its email or store id; shown only while connected.",
+          "name": "accountName",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The status while connected, for example \"Connected\".",
+          "name": "connectedLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The status while not connected, for example \"Not connected\".",
+          "name": "disconnectedLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The connect button's label.",
+          "name": "connectLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The disconnect button's label.",
+          "name": "disconnectLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True while connecting or disconnecting: the button shows a spinner and refuses presses.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "A footnote under the row, usually the terms the user accepts by connecting.",
+          "name": "details",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The surface level of the card; `transparent` drops the background and shadow. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"secondary\" | \"tertiary\" | \"transparent\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

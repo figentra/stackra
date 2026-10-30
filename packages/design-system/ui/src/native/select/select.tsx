@@ -108,7 +108,7 @@ export function Select({
                 detached: true,
                 bottomInset: insets.bottom + 12,
                 className: "mx-4",
-                backgroundClassName: "rounded-4xl",
+                backgroundClassName: "rounded-[var(--radius-container)]",
               }
             : {})}
         >

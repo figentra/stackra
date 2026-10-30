@@ -1,0 +1,151 @@
+{
+  "generatedFrom": {
+    "hash": "6a3e284a417abb84",
+    "propsFiles": ["ui/src/react/bulk-action-bar/bulk-action-bar.props.ts"]
+  },
+  "importLine": "import { BulkActionBar } from \"@stackra/ui/react\";",
+  "key": "free/bulk-action-bar",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the user presses the clear button; the app empties the selection.",
+          "name": "onClearSelection",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with true when the user chooses all matching records and with false when they go back to the rows shown.",
+          "name": "onAllMatchingSelectedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isAllMatchingSelected: boolean) => void"
+        }
+      ],
+      "name": "BulkActionBar",
+      "props": [
+        {
+          "description": "How many records are selected on screen; with `isAllMatchingSelected` the bar reads `totalCount` instead.",
+          "name": "selectedCount",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The actions on the selection, in order; the handler of each closes over the selected keys.",
+          "name": "actions",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ResourceAction[]"
+        },
+        {
+          "description": "True when every record on screen is selected. \"Select all N\" is offered only then, and only with `totalCount`\nabove the selected count. Left out it is false, so a bar used on its own never offers the choice.",
+          "name": "isPageSelected",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The spoken name of the bar, for example \"Order actions\". Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Writes the count as a sentence, for example \"3 selected\"; it is announced politely. Defaults to English.",
+          "name": "countLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(count: number) => string"
+        },
+        {
+          "description": "The text of the clear button. Defaults to the `ui` catalogue's word in the active locale.",
+          "name": "clearLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Writes the \"select all matching\" button, for example \"Select all 245\". Defaults to English.",
+          "name": "selectAllLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(totalCount: number) => string"
+        },
+        {
+          "description": "Writes the button that goes back to the rows shown, for example \"Select only the 20 shown\". Defaults to English.",
+          "name": "selectShownLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(selectedCount: number) => string"
+        },
+        {
+          "description": "The accessible name of the native overflow button; web draws every action and has no overflow.",
+          "name": "moreActionsLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How many records match the query across all pages, when the server says. Left out, \"select all\" is not offered.",
+          "name": "totalCount",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True when the user chose every matching record; the bar then reads `totalCount` as the selected count.",
+          "name": "isAllMatchingSelected",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

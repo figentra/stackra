@@ -1,0 +1,108 @@
+{
+  "generatedFrom": {
+    "hash": "b7bc8696afc83339",
+    "propsFiles": ["ui/src/react/app-header/app-header.props.ts"]
+  },
+  "importLine": "import { AppHeader } from \"@stackra/ui/react\";",
+  "key": "free/app-header",
+  "parts": [
+    {
+      "name": "AppHeader",
+      "props": [
+        {
+          "description": "The app's name or logo, drawn after `startContent`; a string is drawn as semibold text.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The search slot, usually a `SearchField` or a button that opens the command palette; it takes the room left over.",
+          "name": "search",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The user's menu, usually a `Menu` on an avatar; it is the last part of the bar.",
+          "name": "userMenu",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The spoken name of the region, for example \"Main navigation\"; required when the page holds two of its kind.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A node at the logical start of the bar, before its main content.",
+          "name": "startContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "A node at the logical end of the bar, after its main content.",
+          "name": "endContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,51 @@
+{
+  "generatedFrom": {
+    "hash": "1881fe0fa87d569a",
+    "propsFiles": ["ui/src/native/bullet-chart/bullet-chart.props.ts"]
+  },
+  "importLine": "import { BulletChart } from \"@stackra/ui/native\";",
+  "key": "free/bullet-chart",
+  "parts": [
+    {
+      "name": "BulletChart",
+      "props": [
+        {
+          "description": "The measures, one row each, top to bottom.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly BulletItem[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Quarter targets\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How values are written.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The value bars' colour; the first step of the accent ramp by default.",
+          "name": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"danger\" | \"accent\" | \"success\" | \"warning\" | \"chart-ramp-1\" | \"chart-ramp-2\" | \"chart-ramp-3\" | \"chart-ramp-4\" | \"chart-ramp-5\" | \"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

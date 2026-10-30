@@ -53,6 +53,9 @@ export const STACKRA_CONTRAST_PAIRS: readonly ContrastPair[] = Object.freeze([
   text("accent-foreground", "accent-pressed"),
   text("accent-soft-foreground", "accent-soft"),
   text("link", "accent-soft"),
+  // The accent as text (a link's or a caption's accent tone) is its soft label, which a light accent keeps legible.
+  text("accent-soft-foreground", "background"),
+  text("accent-soft-foreground", "surface"),
   text("muted", "accent-soft"),
   text("success-foreground", "success"),
   text("warning-foreground", "warning"),

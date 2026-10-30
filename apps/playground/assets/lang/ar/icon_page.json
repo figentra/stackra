@@ -1,0 +1,14 @@
+{
+  "inherits": "يرث لون النص",
+  "favourites": "المفضلة",
+  "rated": "مُقيَّم",
+  "mirrored": "معكوس من اليمين إلى اليسار",
+  "never_mirrored": "لا يُعكس أبدًا",
+  "alias": "orders، اسم بديل لـ shopping-cart",
+  "raw_element": "عنصر خام، كما يأخذه موضع الأيقونة في زر",
+  "thin_stroke": "strokeWidth 1.5",
+  "with_class": "className",
+  "next_size": "المقاس التالي",
+  "next_tone": "النبرة التالية",
+  "state": "{presses, plural, zero {المقاس {size}، النبرة {tone}، لم يُضغط بعد.} one {المقاس {size}، النبرة {tone}، ضُغط مرة واحدة.} two {المقاس {size}، النبرة {tone}، ضُغط مرتين.} few {المقاس {size}، النبرة {tone}، ضُغط # مرات.} many {المقاس {size}، النبرة {tone}، ضُغط # مرة.} other {المقاس {size}، النبرة {tone}، ضُغط # مرة.}}"
+}

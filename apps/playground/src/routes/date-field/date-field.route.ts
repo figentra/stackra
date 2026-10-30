@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the date-field route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the date-field route of @figentra/playground: its path. The page it renders is
  *          `date-field.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The DateField page, at `/date-field`. */
-export class DateFieldRoute extends Route({ path: "/date-field" }) {
-  /** The page title. */
-  static readonly title = "Date field";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Date and time";
-}
+export class DateFieldRoute extends Route({ path: "/date-field" }) {}

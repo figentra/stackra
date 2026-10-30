@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the theme settings turn a theme into Uniwind's runtime variables (colours as given, lengths as px
  *          numbers, no shadows and no `var()`), push a changed theme into both of Uniwind's themes, keep a slider's
- *          draft out of the history until it is let go, undo and redo, keep the last good theme on invalid knobs,
- *          and measure the contrast of the main pairs.
+ *          draft out of the history until it is let go and land drafts once a draft interval, undo and redo, keep the last
+ *          good theme on invalid knobs, and measure the contrast of the main pairs.
  * Boundary: the store alone; Uniwind is a spy, so no native module loads.
  * Runtime: node
  * Governing contract: ADR 0320 (the Theme Studio); ADR 0022 (test placement).
@@ -11,6 +11,7 @@
 import { STACKRA_THEME } from "@stackra/tokens";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { SHOWCASE_THEME } from "#src/constants/showcase-theme.constant";
 import { THEME_PRESETS } from "../theme-presets.constant";
 import { uniwindVariables } from "../uniwind-variables.function";
 import { contrastReport } from "../contrast-report.function";
@@ -30,11 +31,25 @@ describe("uniwindVariables", () => {
     expect(dark["--radius"]).toBe(4);
     expect(light).not.toHaveProperty("--field-radius");
     expect(light).not.toHaveProperty("--surface-shadow");
+    // The accent's palette steps travel too, so soft and secondary controls follow a new accent.
+    expect(light["--accent-soft"]).toBe(STACKRA_THEME.palette["accent-soft"]?.light);
+    expect(dark["--accent-soft-foreground"]).toBe(
+      STACKRA_THEME.palette["accent-soft-foreground"]?.dark,
+    );
+    expect(Object.values(light).some((value) => String(value).includes("var("))).toBe(false);
   });
 });
 
 describe("createThemeSettingsStore", () => {
   beforeEach(() => updateCSSVariables.mockClear());
+
+  it("paints the showcase theme over the built stylesheet when it is made", () => {
+    createThemeSettingsStore();
+    expect(updateCSSVariables).toHaveBeenCalledWith(
+      "light",
+      expect.objectContaining({ "--accent": SHOWCASE_THEME.colors.accent.light }),
+    );
+  });
 
   it("pushes a changed theme into Uniwind's light and dark themes", () => {
     const store = createThemeSettingsStore();
@@ -43,7 +58,10 @@ describe("createThemeSettingsStore", () => {
     expect(theme.colors.accent).not.toEqual(STACKRA_THEME.colors.accent);
     expect(updateCSSVariables).toHaveBeenCalledWith(
       "light",
-      expect.objectContaining({ "--accent": theme.colors.accent.light }),
+      expect.objectContaining({
+        "--accent": theme.colors.accent.light,
+        "--accent-soft": theme.palette["accent-soft"]?.light,
+      }),
     );
     expect(updateCSSVariables).toHaveBeenCalledWith(
       "dark",
@@ -52,13 +70,30 @@ describe("createThemeSettingsStore", () => {
   });
 
   it("previews a draft without history and commits it as one step", () => {
-    const store = createThemeSettingsStore();
+    const store = createThemeSettingsStore((run) => run());
     store.dispatch({ type: "draft", step: { base: STACKRA_THEME, knobs: { radius: 6 } } });
     store.dispatch({ type: "draft", step: { base: STACKRA_THEME, knobs: { radius: 9 } } });
     expect(store.getSnapshot().past).toHaveLength(0);
     expect(store.getSnapshot().theme.radius.base).toBe("9px");
     store.dispatch({ type: "change", step: { base: STACKRA_THEME, knobs: { radius: 9 } } });
-    expect(store.getSnapshot().past).toEqual([{ base: STACKRA_THEME, knobs: {} }]);
+    expect(store.getSnapshot().past).toEqual([{ base: SHOWCASE_THEME, knobs: {} }]);
+    expect(store.getSnapshot().draft).toBeUndefined();
+  });
+
+  it("lands a moving slider's drafts once a draft interval, the last one winning", () => {
+    const frames: (() => void)[] = [];
+    const store = createThemeSettingsStore((run) => frames.push(run));
+    updateCSSVariables.mockClear();
+    store.dispatch({ type: "draft", step: { base: STACKRA_THEME, knobs: { radius: 6 } } });
+    store.dispatch({ type: "draft", step: { base: STACKRA_THEME, knobs: { radius: 9 } } });
+    expect(frames).toHaveLength(1);
+    expect(store.getSnapshot().draft).toBeUndefined();
+    frames[0]?.();
+    expect(store.getSnapshot().theme.radius.base).toBe("9px");
+    expect(updateCSSVariables).toHaveBeenCalledTimes(2); // light and dark, once
+    store.dispatch({ type: "draft", step: { base: STACKRA_THEME, knobs: { radius: 3 } } });
+    store.dispatch({ type: "change", step: { base: STACKRA_THEME, knobs: { radius: 9 } } });
+    frames[1]?.();
     expect(store.getSnapshot().draft).toBeUndefined();
   });
 
@@ -67,7 +102,7 @@ describe("createThemeSettingsStore", () => {
     store.dispatch({ type: "change", step: { base: STACKRA_THEME, knobs: { radius: 8 } } });
     store.dispatch({ type: "undo" });
     expect(store.getSnapshot().present.knobs).toEqual({});
-    expect(store.getSnapshot().theme.radius.base).toBe(STACKRA_THEME.radius.base);
+    expect(store.getSnapshot().theme.radius.base).toBe(SHOWCASE_THEME.radius.base);
     store.dispatch({ type: "redo" });
     expect(store.getSnapshot().present.knobs).toEqual({ radius: 8 });
     store.dispatch({ type: "reset" });
@@ -102,5 +137,9 @@ describe("contrastReport", () => {
     const text = report.find(({ name }) => name === "Text on background");
     expect(text?.isPassing).toBe(true);
     expect(text?.needs).toBe(4.5);
+  });
+
+  it("measures dark mode, whose translucent colours are composited, without throwing", () => {
+    expect(contrastReport(STACKRA_THEME, "dark")).toHaveLength(9);
   });
 });

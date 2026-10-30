@@ -1,0 +1,86 @@
+{
+  "generatedFrom": {
+    "hash": "0bd2c6b3a8e21778",
+    "propsFiles": ["ui/src/react/two-column-layout/two-column-layout.props.ts"]
+  },
+  "importLine": "import { TwoColumnLayout } from \"@stackra/ui/react\";",
+  "key": "free/two-column-layout",
+  "parts": [
+    {
+      "name": "TwoColumnLayout",
+      "props": [
+        {
+          "description": "The main column's blocks, from top to bottom.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The side column's blocks, from top to bottom. Required: a layout with no side column is a SingleColumnLayout.",
+          "name": "aside",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The breakpoint under which the frame collapses; AppShell defaults to `md` and TwoColumnLayout to `lg`.",
+          "name": "collapseBelow",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\" | \"xl\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the toast route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the toast route of @figentra/playground: its path. The page it renders is
  *          `toast.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The Toast page, at `/toast`. */
-export class ToastRoute extends Route({ path: "/toast" }) {
-  /** The page title. */
-  static readonly title = "Toast";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Feedback and status";
-}
+export class ToastRoute extends Route({ path: "/toast" }) {}

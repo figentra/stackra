@@ -1,0 +1,441 @@
+/**
+ * Stackra file contract:
+ * Purpose: the Medusa-inspired preset's CSS layer: what `medusa.json` cannot say as tokens. Medusa draws edges with
+ *          shadow-borders (`shadow-borders-base`, `shadow-buttons-*`) instead of borders, paints its primary button
+ *          in the dark inverted neutral with a lit edge, its secondary button white (light) or a 4% white wash (dark),
+ *          its switch and checkbox in the interactive blue, its tabs as pills and its controls 13px (`txt-compact-
+ *          small[-plus]`) on 32px.
+ * Boundary: CSS only, appended to the theme's stylesheet (`brandThemeCss`) while this preset is picked, so it applies
+ *           only then. Every value is Medusa's ui-preset `theme/tokens/{colors,effects}.ts` token named in the
+ *           `--medusa-*` property, as written there; the rules follow ui `src/components/<name>/<name>.tsx`.
+ * Runtime: browser
+ * Governing contract: ADR 0340 (decision 2: a theme layer above Stackra).
+ */
+:root,
+[data-theme="light"] {
+  --medusa-button-neutral: rgba(255, 255, 255, 1);
+  --medusa-button-neutral-hover: rgba(244, 244, 245, 1);
+  --medusa-button-neutral-pressed: rgba(228, 228, 231, 1);
+  --medusa-button-transparent-hover: rgba(244, 244, 245, 1);
+  --medusa-button-transparent-pressed: rgba(228, 228, 231, 1);
+  --medusa-button-danger-hover: rgba(190, 18, 60, 1);
+  --medusa-button-danger-pressed: rgba(159, 18, 57, 1);
+  --medusa-bg-interactive: rgba(59, 130, 246, 1);
+  --medusa-bg-field-hover: rgba(244, 244, 245, 1);
+  --medusa-bg-switch-off: rgba(228, 228, 231, 1);
+  --medusa-bg-switch-off-hover: rgba(212, 212, 216, 1);
+  --medusa-bg-base: rgba(255, 255, 255, 1);
+  --medusa-bg-base-hover: rgba(244, 244, 245, 1);
+  --medusa-bg-subtle: rgba(250, 250, 250, 1);
+  --medusa-fg-subtle: rgba(82, 82, 91, 1);
+  --medusa-fg-on-color: rgba(255, 255, 255, 1);
+  --medusa-tag-neutral-border: rgba(228, 228, 231, 1);
+  --medusa-tag-green-border: rgba(167, 243, 208, 1);
+  --medusa-tag-orange-border: rgba(254, 215, 170, 1);
+  --medusa-tag-red-border: rgba(254, 205, 211, 1);
+  --medusa-tag-neutral-text: rgba(82, 82, 91, 1);
+  --medusa-buttons-neutral:
+    0px 1px 2px 0px rgba(0, 0, 0, 0.12), 0px 0px 0px 1px rgba(0, 0, 0, 0.08);
+  --medusa-buttons-neutral-focus:
+    0px 1px 2px 0px rgba(0, 0, 0, 0.12), 0px 0px 0px 1px rgba(0, 0, 0, 0.08),
+    0px 0px 0px 2px rgba(255, 255, 255, 1), 0px 0px 0px 4px rgba(59, 130, 246, 0.6);
+  --medusa-buttons-inverted:
+    0px 0.75px 0px 0px rgba(255, 255, 255, 0.2) inset, 0px 1px 2px 0px rgba(0, 0, 0, 0.4),
+    0px 0px 0px 1px rgba(24, 24, 27, 1);
+  --medusa-buttons-inverted-focus:
+    0px 0.75px 0px 0px rgba(255, 255, 255, 0.2) inset, 0px 1px 2px 0px rgba(0, 0, 0, 0.4),
+    0px 0px 0px 1px rgba(24, 24, 27, 1), 0px 0px 0px 2px rgba(255, 255, 255, 1),
+    0px 0px 0px 4px rgba(59, 130, 246, 0.6);
+  --medusa-buttons-danger:
+    0px 0.75px 0px 0px rgba(255, 255, 255, 0.2) inset, 0px 1px 2px 0px rgba(190, 18, 60, 0.4),
+    0px 0px 0px 1px rgba(190, 18, 60, 1);
+  --medusa-buttons-danger-focus:
+    0px 0.75px 0px 0px rgba(255, 255, 255, 0.2) inset, 0px 1px 2px 0px rgba(190, 18, 60, 0.4),
+    0px 0px 0px 1px rgba(190, 18, 60, 1), 0px 0px 0px 2px rgba(255, 255, 255, 1),
+    0px 0px 0px 4px rgba(59, 130, 246, 0.6);
+  --medusa-borders-base: 0px 1px 2px 0px rgba(0, 0, 0, 0.12), 0px 0px 0px 1px rgba(0, 0, 0, 0.08);
+  --medusa-field-edge:
+    0px 1px 2px 0px rgba(0, 0, 0, 0.12), inset 0px 0px 0px 1px var(--field-border);
+  --medusa-borders-interactive-with-active:
+    0px 0px 0px 4px rgba(37, 99, 235, 0.2), 0px 0px 0px 1px rgba(37, 99, 235, 1);
+  --medusa-borders-error:
+    0px 0px 0px 1px rgba(225, 29, 72, 1), 0px 0px 0px 3px rgba(225, 29, 72, 0.15);
+  --medusa-borders-focus:
+    0px 0px 0px 1px rgba(255, 255, 255, 1), 0px 0px 0px 3px rgba(59, 130, 246, 0.6);
+  --medusa-borders-interactive-with-shadow:
+    0px 1px 2px 0px rgba(30, 58, 138, 0.5), 0px 0px 0px 1px rgba(37, 99, 235, 1);
+  --medusa-details-switch-background:
+    0px 1px 1px 0px rgba(0, 0, 0, 0.04) inset, 0px 2px 4px 0px rgba(0, 0, 0, 0.04) inset,
+    0px 0px 0px 0.75px rgba(0, 0, 0, 0.06) inset, 0px 0px 8px 0px rgba(0, 0, 0, 0.02) inset,
+    0px 2px 4px 0px rgba(0, 0, 0, 0.04);
+  --medusa-details-switch-handle:
+    0px 0px 2px 1px rgba(255, 255, 255, 1) inset, 0px 1px 0px 0px rgba(255, 255, 255, 1) inset,
+    0px 0px 0px 0.5px rgba(0, 0, 0, 0.02), 0px 5px 4px 0px rgba(0, 0, 0, 0.02),
+    0px 3px 3px 0px rgba(0, 0, 0, 0.04), 0px 1px 2px 0px rgba(0, 0, 0, 0.12),
+    0px 0px 1px 0px rgba(0, 0, 0, 0.08);
+  --medusa-elevation-card-rest:
+    0px 0px 0px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px -1px rgba(0, 0, 0, 0.08),
+    0px 2px 4px 0px rgba(0, 0, 0, 0.04);
+  --medusa-elevation-flyout:
+    0px 0px 0px 1px rgba(0, 0, 0, 0.08), 0px 4px 8px 0px rgba(0, 0, 0, 0.08),
+    0px 8px 16px 0px rgba(0, 0, 0, 0.08);
+  --medusa-elevation-modal:
+    0px 0px 0px 1px rgba(255, 255, 255, 1) inset, 0px 0px 0px 1.5px rgba(228, 228, 231, 0.6) inset,
+    0px 0px 0px 1px rgba(0, 0, 0, 0.08), 0px 8px 16px 0px rgba(0, 0, 0, 0.08),
+    0px 16px 32px 0px rgba(0, 0, 0, 0.08);
+  --medusa-elevation-tooltip:
+    0px 0px 0px 1px rgba(0, 0, 0, 0.08), 0px 2px 4px 0px rgba(0, 0, 0, 0.08),
+    0px 4px 8px 0px rgba(0, 0, 0, 0.08);
+}
+
+.dark,
+[data-theme="dark"] {
+  --medusa-button-neutral: rgba(255, 255, 255, 0.04);
+  --medusa-button-neutral-hover: rgba(255, 255, 255, 0.08);
+  --medusa-button-neutral-pressed: rgba(255, 255, 255, 0.12);
+  --medusa-button-transparent-hover: rgba(255, 255, 255, 0.08);
+  --medusa-button-transparent-pressed: rgba(255, 255, 255, 0.12);
+  --medusa-button-danger-hover: rgba(159, 18, 57, 1);
+  --medusa-button-danger-pressed: rgba(136, 19, 55, 1);
+  --medusa-bg-interactive: rgba(96, 165, 250, 1);
+  --medusa-bg-field-hover: rgba(255, 255, 255, 0.08);
+  --medusa-bg-switch-off: rgba(63, 63, 70, 1);
+  --medusa-bg-switch-off-hover: rgba(82, 82, 91, 1);
+  --medusa-bg-base: rgba(33, 33, 36, 1);
+  --medusa-bg-base-hover: rgba(39, 39, 42, 1);
+  --medusa-bg-subtle: rgba(24, 24, 27, 1);
+  --medusa-fg-subtle: rgba(161, 161, 170, 1);
+  --medusa-fg-on-color: rgba(255, 255, 255, 1);
+  --medusa-tag-neutral-border: rgba(255, 255, 255, 0.06);
+  --medusa-tag-green-border: rgba(6, 78, 59, 1);
+  --medusa-tag-orange-border: rgba(124, 45, 18, 1);
+  --medusa-tag-red-border: rgba(136, 19, 55, 1);
+  --medusa-tag-neutral-text: rgba(212, 212, 216, 1);
+  --medusa-buttons-neutral:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.06), 0px 0px 0px 1px rgba(255, 255, 255, 0.06),
+    0px 0px 0px 1px rgba(39, 39, 42, 1), 0px 0px 1px 1.5px rgba(0, 0, 0, 0.24),
+    0px 2px 2px 0px rgba(0, 0, 0, 0.24);
+  --medusa-buttons-neutral-focus:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.06), 0px 0px 0px 1px rgba(255, 255, 255, 0.06),
+    0px 0px 0px 1px rgba(39, 39, 42, 1), 0px 0px 0px 2px rgba(24, 24, 27, 1),
+    0px 0px 0px 4px rgba(96, 165, 250, 0.8);
+  --medusa-buttons-inverted:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.12), 0px 0px 0px 1px rgba(255, 255, 255, 0.1),
+    0px 0px 0px 1px rgba(82, 82, 91, 1), 0px 0px 1px 1.5px rgba(0, 0, 0, 0.24),
+    0px 2px 2px 0px rgba(0, 0, 0, 0.24);
+  --medusa-buttons-inverted-focus:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.12), 0px 0px 0px 1px rgba(255, 255, 255, 0.12),
+    0px 0px 0px 1px rgba(82, 82, 91, 1), 0px 0px 0px 2px rgba(24, 24, 27, 1),
+    0px 0px 0px 4px rgba(96, 165, 250, 0.8);
+  --medusa-buttons-danger:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.16), 0px 0px 0px 1px rgba(255, 255, 255, 0.12),
+    0px 0px 0px 1px rgba(159, 18, 57, 1), 0px 0px 1px 1.5px rgba(0, 0, 0, 0.24),
+    0px 2px 2px 0px rgba(0, 0, 0, 0.24);
+  --medusa-buttons-danger-focus:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.16), 0px 0px 0px 1px rgba(255, 255, 255, 0.12),
+    0px 0px 0px 1px rgba(159, 18, 57, 1), 0px 0px 0px 2px rgba(24, 24, 27, 1),
+    0px 0px 0px 4px rgba(96, 165, 250, 0.8);
+  --medusa-borders-base:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.06), 0px 0px 0px 1px rgba(255, 255, 255, 0.06),
+    0px 0px 0px 1px rgba(39, 39, 42, 1), 0px 0px 1px 1.5px rgba(0, 0, 0, 0.24),
+    0px 2px 2px 0px rgba(0, 0, 0, 0.24);
+  --medusa-borders-interactive-with-active:
+    0px 0px 0px 1px rgba(96, 165, 250, 1), 0px 0px 0px 4px rgba(59, 130, 246, 0.25);
+  --medusa-field-edge:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.06), inset 0px 0px 0px 1px var(--field-border),
+    0px 2px 2px 0px rgba(0, 0, 0, 0.24);
+  --medusa-borders-error:
+    0px 0px 0px 1px rgba(244, 63, 94, 1), 0px 0px 0px 3px rgba(225, 29, 72, 0.25);
+  --medusa-borders-focus:
+    0px 0px 0px 1px rgba(24, 24, 27, 1), 0px 0px 0px 3px rgba(96, 165, 250, 0.8);
+  --medusa-borders-interactive-with-shadow:
+    0px -1px 2px 0px rgba(219, 234, 254, 0.5), 0px 0px 0px 1px rgba(96, 165, 250, 1);
+  --medusa-details-switch-background:
+    0px 1px 1px 0px rgba(0, 0, 0, 0.1) inset, 0px 2px 4px 0px rgba(0, 0, 0, 0.1) inset,
+    0px 0px 0px 0.75px rgba(255, 255, 255, 0.12) inset, 0px 0px 8px 0px rgba(0, 0, 0, 0.1) inset;
+  --medusa-details-switch-handle:
+    0px 0px 2px 1px rgba(255, 255, 255, 1) inset, 0px 1px 0px 0px rgba(255, 255, 255, 1) inset,
+    0px 0px 0px 0.5px rgba(0, 0, 0, 0.16), 0px 5px 4px 0px rgba(0, 0, 0, 0.1),
+    0px 3px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.1),
+    0px 0px 1px 0px rgba(0, 0, 0, 0.1);
+  --medusa-elevation-card-rest:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.06), 0px 0px 0px 1px rgba(255, 255, 255, 0.06),
+    0px 0px 0px 1px rgba(39, 39, 42, 1), 0px 1px 2px 0px rgba(0, 0, 0, 0.32),
+    0px 2px 4px 0px rgba(0, 0, 0, 0.32);
+  --medusa-elevation-flyout:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.04), 0px 0px 0px 1px rgba(255, 255, 255, 0.1),
+    0px 4px 8px 0px rgba(0, 0, 0, 0.32), 0px 8px 16px 0px rgba(0, 0, 0, 0.32);
+  --medusa-elevation-modal:
+    0px 0px 0px 1px rgba(24, 24, 27, 1) inset, 0px 0px 0px 1.5px rgba(255, 255, 255, 0.06) inset,
+    0px -1px 0px 0px rgba(255, 255, 255, 0.04), 0px 0px 0px 1px rgba(255, 255, 255, 0.1),
+    0px 4px 8px 0px rgba(0, 0, 0, 0.32), 0px 8px 16px 0px rgba(0, 0, 0, 0.32);
+  --medusa-elevation-tooltip:
+    0px -1px 0px 0px rgba(255, 255, 255, 0.04), 0px 2px 4px 0px rgba(0, 0, 0, 0.32),
+    0px 0px 0px 1px rgba(255, 255, 255, 0.1), 0px 4px 8px 0px rgba(0, 0, 0, 0.32);
+}
+
+/* Fields carry no border: a shadow is their edge (input, select, textarea): `shadow-borders-base`'s drop with its ring
+   in the theme's `field-border`, which holds 3:1 where Medusa's black-8% ring does not (WCAG 1.4.11). */
+:root {
+  --field-border-width: 0px;
+}
+
+/* button.tsx: `rounded-md`, base `txt-compact-small-plus px-3 py-1.5` (32px), small `px-2 py-1` (28px), large
+   `txt-compact-medium-plus px-4 py-2.5` (40px). */
+.button {
+  height: 32px;
+  padding-inline: 12px;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  border: 0;
+}
+.button--sm {
+  height: 28px;
+  padding-inline: 8px;
+}
+.button--lg {
+  height: 40px;
+  padding-inline: 16px;
+  font-size: 14px;
+}
+.button--icon-only {
+  width: 32px;
+  padding-inline: 0;
+}
+.button--icon-only.button--sm {
+  width: 28px;
+}
+.button--icon-only.button--lg {
+  width: 40px;
+}
+.button--primary {
+  box-shadow: var(--medusa-buttons-inverted);
+}
+.button--primary[data-focus-visible="true"] {
+  box-shadow: var(--medusa-buttons-inverted-focus);
+}
+.button--secondary,
+.button--tertiary,
+.button--outline {
+  --button-bg: var(--medusa-button-neutral);
+  --button-bg-hover: var(--medusa-button-neutral-hover);
+  --button-bg-pressed: var(--medusa-button-neutral-pressed);
+  --button-fg: var(--foreground);
+  box-shadow: var(--medusa-buttons-neutral);
+}
+.button--ghost {
+  --button-bg-hover: var(--medusa-button-transparent-hover);
+  --button-bg-pressed: var(--medusa-button-transparent-pressed);
+  --button-fg: var(--foreground);
+}
+.button--ghost:hover,
+.button--ghost[data-hovered="true"],
+.button--ghost[data-pressed="true"] {
+  border: 0;
+}
+:is(
+  .button--secondary,
+  .button--tertiary,
+  .button--outline,
+  .button--ghost
+)[data-focus-visible="true"] {
+  box-shadow: var(--medusa-buttons-neutral-focus);
+}
+.button--danger {
+  --button-bg-hover: var(--medusa-button-danger-hover);
+  --button-bg-pressed: var(--medusa-button-danger-pressed);
+  box-shadow: var(--medusa-buttons-danger);
+}
+.button--danger[data-focus-visible="true"] {
+  box-shadow: var(--medusa-buttons-danger-focus);
+}
+
+/* input.tsx and select.tsx: `bg-ui-bg-field shadow-borders-base txt-compact-small h-8 px-2`, focus
+   `shadow-borders-interactive-with-active`, invalid `shadow-borders-error`; select's trigger takes `shadow-buttons-neutral`. */
+:is(
+  .input,
+  .textarea,
+  .input-group,
+  .number-field__group,
+  .search-field__group,
+  .date-input-group
+) {
+  font-size: 13px;
+  box-shadow: var(--medusa-field-edge);
+}
+:is(.input, .input-group, .number-field__group, .search-field__group, .date-input-group) {
+  min-height: 32px;
+}
+.input {
+  height: 32px;
+  padding-inline: 8px;
+}
+:is(.input-group, .number-field__group, .search-field__group, .date-input-group) .input,
+:is(.input-group, .number-field__group, .search-field__group, .date-input-group) input {
+  box-shadow: none;
+}
+.select__trigger {
+  min-height: 32px;
+  padding-block: 6px;
+  font-size: 13px;
+  box-shadow: var(--medusa-field-edge);
+}
+:is(.input, .textarea, .select__trigger):is(
+  :focus,
+  [data-focused="true"],
+  [data-focus-visible="true"]
+),
+:is(.input-group, .number-field__group, .search-field__group, .date-input-group):is(
+  :focus-within,
+  [data-focus-within="true"]
+),
+.select__trigger[data-open="true"] {
+  box-shadow: var(--medusa-borders-interactive-with-active);
+}
+:is(
+  .input,
+  .textarea,
+  .input-group,
+  .select__trigger,
+  .number-field__group,
+  .search-field__group,
+  .date-input-group
+)[data-invalid="true"],
+[data-invalid="true"]
+  :is(
+    .input,
+    .textarea,
+    .input-group,
+    .select__trigger,
+    .number-field__group,
+    .search-field__group
+  ) {
+  box-shadow: var(--medusa-borders-error);
+}
+
+.select__value {
+  font-size: 13px;
+}
+
+/* switch.tsx: off `bg-ui-bg-switch-off` with `shadow-details-switch-background`, on `bg-ui-bg-interactive`, the handle
+   `bg-ui-fg-on-color shadow-details-switch-handle`. checkbox.tsx: `rounded-[3px] shadow-borders-base`, checked
+   `bg-ui-bg-interactive shadow-borders-interactive-with-shadow`. */
+.switch__control {
+  background-color: var(--medusa-bg-switch-off);
+  box-shadow: var(--medusa-details-switch-background);
+}
+.switch:is([data-selected="true"], [aria-checked="true"]) .switch__control {
+  background-color: var(--medusa-bg-interactive);
+}
+.switch__thumb {
+  background-color: var(--medusa-fg-on-color);
+  box-shadow: var(--medusa-details-switch-handle);
+}
+.checkbox__control {
+  border-width: 0;
+  border-radius: 3px;
+  box-shadow: var(--medusa-field-edge);
+}
+.checkbox:is([data-selected="true"], [aria-checked="true"], [data-indeterminate="true"])
+  .checkbox__control {
+  background-color: var(--medusa-bg-interactive);
+  box-shadow: var(--medusa-borders-interactive-with-shadow);
+}
+
+/* tabs.tsx: pills (`rounded-full`) with no track, `txt-compact-small-plus text-ui-fg-subtle`; the active one
+   `bg-ui-bg-base shadow-elevation-card-rest text-ui-fg-base`. */
+.tabs:not(.tabs--secondary) :is(.tabs__list-container, .tabs__list) {
+  background-color: transparent;
+}
+.tabs__tab {
+  height: 28px;
+  padding-inline: 10px;
+  font-size: 13px;
+  border-radius: var(--radius-full);
+}
+.tabs__indicator {
+  border-radius: var(--radius-full);
+  box-shadow: var(--medusa-elevation-card-rest);
+}
+
+/* container.tsx `rounded-lg shadow-elevation-card-rest`; select's and dropdown's content `rounded-lg
+   shadow-elevation-flyout`; tooltip `shadow-elevation-tooltip`; modals `shadow-elevation-modal`. */
+.card {
+  border-radius: var(--radius-lg);
+}
+:is(.popover, .select__popover, .dropdown__popover, .menu) {
+  border-radius: var(--radius-lg);
+}
+.tooltip {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--medusa-elevation-tooltip);
+}
+.modal__dialog {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--medusa-elevation-modal);
+}
+
+/* badge.tsx: `rounded-md border txt-compact-xsmall-plus`, border `ui-tag-<colour>-border`. */
+.chip {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--medusa-tag-neutral-border);
+  font-size: 12px;
+  line-height: 20px;
+}
+.chip--success {
+  border-color: var(--medusa-tag-green-border);
+}
+.chip--warning {
+  border-color: var(--medusa-tag-orange-border);
+}
+.chip--danger {
+  border-color: var(--medusa-tag-red-border);
+}
+
+/* table.tsx: `txt-compact-small text-ui-fg-subtle`; the header row `bg-ui-bg-subtle txt-compact-small-plus border-y`,
+   the body rows `bg-ui-bg-base hover:bg-ui-bg-base-hover border-b`. */
+.table__cell {
+  font-size: 13px;
+  color: var(--medusa-fg-subtle);
+}
+.table__column {
+  background-color: var(--background);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--medusa-fg-subtle);
+}
+
+/* The showcase's own chrome, in the admin's manner: a flat bg-subtle canvas (no glows or dot grid), a plain bg-base top
+   bar on a hairline, neutral navigation (Medusa keeps fg-interactive for links in running text), the current sidebar
+   row a raised bg-base pill (`shadow-elevation-card-rest`), headlines in Inter medium. */
+html .ambient > * {
+  display: none;
+}
+header.material-thick {
+  background-color: var(--surface);
+  box-shadow: none;
+}
+:is(header, nav) .link {
+  color: var(--muted);
+}
+:is(header, nav) .link:hover,
+:is(header, nav) .link[aria-current] {
+  color: var(--foreground);
+}
+nav ul ul .link[aria-current="page"] {
+  width: auto;
+  margin-inline: 4px;
+  border-inline-start-width: 0;
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  box-shadow: var(--medusa-elevation-card-rest);
+  font-weight: 500;
+}
+nav .link[aria-current="location"] {
+  border-color: var(--foreground);
+}
+.hero-headline {
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}

@@ -13,6 +13,8 @@
 // @covers sta-350:FR-046 sta-350:P-032 sta-350:SC-002 sta-350:SC-006
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 import { contrastRatio } from "@stackra/tokens";
 
 const SCHEMES = ["light", "dark"] as const;
@@ -28,7 +30,9 @@ const open = async (
 ) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion });
   await page.goto(`/spinner?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Spinner" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Spinner", locale) }),
+  ).toBeVisible();
 };
 
 /** A computed colour as `#rrggbb`, drawn on a canvas so any CSS colour form (oklch, `color-mix`) reads. */
@@ -63,24 +67,21 @@ for (const scheme of SCHEMES)
 
 test("labelled spinners are named statuses and the one beside text is hidden", async ({ page }) => {
   await open(page, "light", "en");
-  const labelled = page
-    .getByRole("region", { name: "Sizes" })
+  const labelled = example(page, "usage")
     .getByRole("status")
-    .or(page.getByRole("region", { name: "Tones" }).getByRole("status"));
+    .or(example(page, "tones").getByRole("status"));
   await expect(labelled).toHaveCount(Object.keys(SIZES).length + 6);
   for (const name of await labelled.evaluateAll((nodes) =>
     nodes.map((node) => node.getAttribute("aria-label")),
   ))
     expect(name).not.toBe("Loading");
-  await expect(page.getByRole("region", { name: "Beside text" }).getByRole("status")).toHaveCount(
-    0,
-  );
+  await expect(example(page, "beside").getByRole("status")).toHaveCount(0);
 });
 
 test("the three sizes are 16, 24 and 32 px square", async ({ page }) => {
   await open(page, "light", "en");
   for (const [size, pixels] of Object.entries(SIZES)) {
-    const box = await page.locator(`[data-size="${size}"]`).boundingBox();
+    const box = await example(page, "usage").locator(`[data-size="${size}"]`).boundingBox();
     if (!box) throw new Error(`no box for ${size}`);
     expect(box.width, size).toBeCloseTo(pixels, 0);
     expect(box.height, size).toBeCloseTo(pixels, 0);
@@ -92,7 +93,9 @@ for (const scheme of SCHEMES)
     await open(page, scheme, "en");
     const background = await painted(page.locator("body"), "backgroundColor");
     const failures: string[] = [];
-    const tones = page.locator("[data-tone]");
+    const tones = page.locator("#usage, #examples").locator("[data-tone]");
+    // The demos load lazily: wait for the first before counting.
+    await expect(tones.first()).toBeVisible();
     for (let index = 0; index < (await tones.count()); index += 1) {
       const tone = tones.nth(index);
       const ratio = contrastRatio(await painted(tone, "color"), background);
@@ -116,7 +119,7 @@ test("the start-and-stop example shows its status and then announces the result"
   page,
 }) => {
   await open(page, "light", "en");
-  const region = page.getByRole("region", { name: "Start and stop" });
+  const region = example(page, "action");
   await region.getByRole("button", { name: "Load orders" }).click();
   await expect(region.getByRole("status", { name: "Loading orders" })).toBeVisible();
   await expect(region.locator("output")).toHaveText("Orders loaded");
@@ -126,7 +129,9 @@ test("the start-and-stop example shows its status and then announces the result"
 test("a spinner never mirrors in right-to-left", async ({ page }) => {
   const transform = async (locale: string) => {
     await open(page, "light", locale);
-    return page.locator('[data-size="md"]').evaluate((node) => getComputedStyle(node).transform);
+    return example(page, "usage")
+      .locator('[data-size="md"]')
+      .evaluate((node) => getComputedStyle(node).transform);
   };
   expect(await transform("ar")).toBe(await transform("en"));
 });

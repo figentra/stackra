@@ -1,0 +1,22 @@
+{
+  "first": "First page",
+  "middle": "Middle page",
+  "last": "Last page",
+  "only": "Only page",
+  "loading": "Loading the next page",
+  "more": "More to load",
+  "loading_more": "Loading more",
+  "end": "End of the list",
+  "size": "Size {size}",
+  "default_count": "Default sentence",
+  "custom_count": "Custom sentence",
+  "custom_sentence": "{count} orders on this page",
+  "pager_label": "Orders, paged",
+  "growing_label": "Orders, growing",
+  "orders_page": "Orders on this page",
+  "orders_growing": "Orders loaded so far",
+  "cursor": "Cursor: {cursor}",
+  "order": "Order {number}",
+  "pager_example": "Walk forward and back",
+  "growing_example": "A list that grows"
+}

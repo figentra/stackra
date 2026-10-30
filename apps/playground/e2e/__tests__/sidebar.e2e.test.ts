@@ -15,6 +15,8 @@
 // @covers sta-350:FR-158 sta-350:FR-162 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -23,7 +25,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/sidebar?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Sidebar" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Sidebar", locale) }),
+  ).toBeVisible();
 };
 
 /** The tooltips on show: one fading out after focus moved on has been closed already. */
@@ -58,11 +62,15 @@ for (const scheme of SCHEMES)
 
 test("each sidebar holds one navigation landmark with its own name", async ({ page }) => {
   await open(page, "light", "en");
+  // The demos load lazily: wait for the live example's sidebar before reading the names.
+  await expect(page.locator("section#example-live nav").first()).toBeVisible();
+  // Each sidebar's landmark in the live examples; the shell's own and the hidden preview copies are left out.
   const names = await page
-    .locator("main nav")
+    .locator("section:is(#usage, #examples) nav")
     .evaluateAll((navs) => navs.map((nav) => nav.getAttribute("aria-label")));
-  expect(names).toHaveLength(6);
-  expect(new Set(names).size).toBe(6);
+  expect(names.length).toBeGreaterThanOrEqual(6);
+  for (const name of names) expect(name, "an unnamed landmark").toBeTruthy();
+  expect(new Set(names).size).toBe(names.length);
 });
 
 test("the sidebar is 16 rem wide expanded and 4 rem wide as the rail", async ({ page }) => {
@@ -128,7 +136,8 @@ for (const locale of LOCALES)
     page,
   }) => {
     await open(page, "light", locale);
-    const root = sidebarOf(page, "Expanded sidebar");
+    // By place: the landmark's name speaks the page's locale; the usage's sidebar is the expanded one.
+    const root = example(page, "usage").getByRole("navigation").locator("xpath=..");
     const border = await root.evaluate((element) => {
       const style = getComputedStyle(element);
       return { start: style.borderInlineStartWidth, end: style.borderInlineEndWidth };
@@ -136,7 +145,7 @@ for (const locale of LOCALES)
     expect(parseFloat(border.end)).toBeGreaterThan(0);
     expect(parseFloat(border.start)).toBe(0);
     const matrix = await root
-      .getByRole("button", { name: "Collapse sidebar" })
+      .getByRole("button")
       .locator("svg")
       .evaluate((svg) => getComputedStyle(svg).transform);
     // Mirrored in right-to-left (a negative x scale), untouched in left-to-right.
@@ -155,7 +164,10 @@ test("the Arabic sidebar reads right to left with the icon at the right", async 
 
 test("every link and the toggle are at least 24 by 24 pixels", async ({ page }) => {
   await open(page, "light", "en");
-  const targets = page.locator("main nav a, main nav [role='link'], main nav ~ button");
+  // Drawn ones only: the "On this page" menu or rail the width does not draw is display: none.
+  const targets = page
+    .locator("main nav a, main nav [role='link'], main nav ~ button")
+    .filter({ visible: true });
   const count = await targets.count();
   expect(count).toBeGreaterThan(20);
   for (let index = 0; index < count; index += 1) {

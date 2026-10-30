@@ -1,0 +1,8 @@
+{
+  "level": "Level {level}",
+  "level_line": "Text on this surface.",
+  "default_text": "Default text",
+  "muted_text": "Muted text",
+  "pick": "Use {level}",
+  "current": "This surface is {level}."
+}

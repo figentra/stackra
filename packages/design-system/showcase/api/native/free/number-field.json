@@ -1,0 +1,324 @@
+{
+  "generatedFrom": {
+    "hash": "8cd8a04850e99d26",
+    "propsFiles": ["ui/src/native/number-field/number-field.props.ts"]
+  },
+  "importLine": "import { NumberField } from \"@stackra/ui/native\";",
+  "key": "free/number-field",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "replaces": "onChangeText",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: number | null) => void"
+        }
+      ],
+      "name": "NumberField",
+      "props": [
+        {
+          "description": "Hint text drawn inside the empty input. It never replaces the label: it is gone once the user types.",
+          "name": "placeholder",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "primary",
+          "description": "The look of the field: `primary` on the page, `secondary` on a tinted surface. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "True to fill the parent's width, false to size to the content. Defaults to true.",
+          "name": "isFullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The smallest value; the field clamps a typed or stepped value to it, and the decrement button stops there.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The largest value; the field clamps a typed or stepped value to it, and the increment button stops there.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "How far one press of a stepper button, or an arrow key, moves the value. Defaults to 1.",
+          "name": "step",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "How the number is written and read: percent, currency, unit, fraction digits and grouping, as `Intl` takes them.",
+          "name": "formatOptions",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "False to hide the increment and decrement buttons and keep the arrow keys. Defaults to true.",
+          "name": "hasSteppers",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The spoken name of the increment button, for example \"Add one seat\". Defaults to the `ui` catalogue's word in the active locale.",
+          "name": "incrementLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken name of the decrement button, for example \"Remove one seat\". Defaults to the `ui` catalogue's word in the active locale.",
+          "name": "decrementLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "replaces": "readOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "number | null"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number | null"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Background layer rendered behind the text input.\n- `undefined` (default): renders `Input.Background` when the active\n  library theme registers default background content (e.g. `glass`);\n  the fallback color follows the variant (primary → field token,\n  secondary → default token); otherwise no layer and no wrapper\n- custom node: replaces the default layer entirely and wraps the text\n  input (wrap content in `Input.Background` to keep absolute-fill and\n  clipping)\n- `null`: removes the background layer (bare text input root)",
+          "name": "background",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes for the text input element",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS classes for the outer container that wraps the\nbackground layer and the text input (e.g. `flex-1` in row layouts).\nWhen no background layer is present the text input is the root element,\nso these classes are merged onto it instead — root-level layout stays\nconsistent across themes either way.",
+          "name": "containerClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "\"field-placeholder\"",
+          "description": "Custom className for the placeholder text color",
+          "name": "placeholderColorClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "heroui",
+          "type": "Ref<TextInput>"
+        },
+        {
+          "default": "\"accent-accent\"",
+          "description": "Custom className for the selection color",
+          "name": "selectionColorClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Styles",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<TextStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...TextInputAndroidProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TextInputAndroidProps"
+        },
+        {
+          "description": "",
+          "name": "...TextInputIOSProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TextInputIOSProps"
+        },
+        {
+          "description": "",
+          "name": "...TextInputProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TextInputProps"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

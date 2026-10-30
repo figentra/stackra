@@ -1,0 +1,23 @@
+{
+  "label_default": "Default label",
+  "label_required": "Required label",
+  "label_invalid": "Invalid label",
+  "label_disabled": "Disabled label",
+  "display_name": "Display name",
+  "display_name_hint": "Shown on invoices. You can change it later.",
+  "invalid_field": "Invalid field",
+  "invalid_message": "Enter a value before you continue.",
+  "valid_field": "Valid field",
+  "valid_note": "The error is mounted with isInvalid false: nothing is drawn.",
+  "form_name": "Contact",
+  "email": "Email",
+  "email_hint": "We reply to this address.",
+  "email_error": "Enter an email address, such as name@example.com.",
+  "notes": "Notes",
+  "notes_hint": "Optional. Enter adds a line.",
+  "submit": "Send",
+  "mod_enter": "Submit with Cmd or Ctrl plus Enter",
+  "not_sent": "Nothing sent yet.",
+  "refused": "Not sent: the email is not valid.",
+  "sent": "{count, plural, one {Sent # time, to {email}.} other {Sent # times, to {email}.}}"
+}

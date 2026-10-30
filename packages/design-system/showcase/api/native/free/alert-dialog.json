@@ -1,0 +1,238 @@
+{
+  "generatedFrom": {
+    "hash": "fb10f97c33f43f50",
+    "heroDoc": "vendor/heroui/native/dialog.json",
+    "propsFiles": ["ui/src/native/alert-dialog/alert-dialog.props.ts"]
+  },
+  "importLine": "import { AlertDialog } from \"@stackra/ui/native\";",
+  "key": "free/alert-dialog",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the user confirms, just before the dialog closes.",
+          "name": "onConfirm",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called when the user refuses: the cancel button, Escape or the Android back button, or a press outside.",
+          "name": "onCancel",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "extends": "Dialog",
+      "name": "AlertDialog",
+      "props": [
+        {
+          "description": "The question, required: it names the dialog for assistive technology, so word it as a decision.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What the decision does, read out with the dialog; text, because it is what the dialog is described by.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Anything more the decision needs, shown under the description: a field to type a name into, say.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The label of the button that agrees, in the app's language, for example \"Delete project\".",
+          "name": "confirmLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The label of the button that refuses, in the app's language, for example \"Keep project\". On web it takes focus first; on native it comes first in reading order.",
+          "name": "cancelLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse the confirming press until the decision is ready, as when the user must still type a name.",
+          "name": "isConfirmDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True, the default, to close the overlay on a press outside it (the backdrop on a modal, a drawer and a dialog).\nSet false for a step the user must finish, and give the content its own close control.",
+          "name": "isDismissable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to keep the Escape key from closing the overlay. It is for a flow with unsaved work or a nested overlay\nopen, so set it only with `isDismissable` false or a close control in reach. Native has no Escape key, so it\nstays unread there unless a component's own page says it maps to the Android back button.",
+          "name": "isKeyboardDismissDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "default",
+          "description": "The kind of message. Defaults to `default`; `danger` and `warning` are announced at once.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "An icon in place of the tone's own, or `false` for none. Left out, the tone's icon is drawn.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "Animation configuration",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "PopupDialogContentAnimation"
+        },
+        {
+          "description": "Additional CSS class for the content container",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Whether to force mount the component in the DOM\nUseful for animation purposes when component needs to be present but hidden",
+          "name": "forceMount",
+          "required": false,
+          "source": "heroui",
+          "type": "true"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "All standard React Native View props are supported",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

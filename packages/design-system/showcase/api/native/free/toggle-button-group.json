@@ -1,0 +1,181 @@
+{
+  "generatedFrom": {
+    "hash": "5dac988b91d26e6b",
+    "propsFiles": ["ui/src/native/toggle-button-group/toggle-button-group.props.ts"]
+  },
+  "importLine": "import { ToggleButtonGroup } from \"@stackra/ui/native\";",
+  "key": "free/toggle-button-group",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the ids now pressed.",
+          "name": "onSelectionChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: Set<string>) => void"
+        }
+      ],
+      "name": "ToggleButtonGroup",
+      "props": [
+        {
+          "description": "The ToggleButtons, each with an `id`.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "single",
+          "description": "One pressed at a time, or several. Defaults to `single`.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"multiple\" | \"single\""
+        },
+        {
+          "description": "The ids pressed, for a controlled group; pair it with `onSelectionChange`.",
+          "name": "selectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "Iterable<string>"
+        },
+        {
+          "description": "The ids pressed at the start, for an uncontrolled group.",
+          "name": "defaultSelectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "Iterable<string>"
+        },
+        {
+          "description": "True to keep at least one pressed.",
+          "name": "disallowEmptySelection",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "horizontal",
+          "description": "The axis the buttons run along. Defaults to `horizontal`.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "The size of every button.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "True to space the buttons apart rather than join them.",
+          "name": "isDetached",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse every button.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

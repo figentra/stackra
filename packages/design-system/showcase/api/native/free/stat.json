@@ -1,0 +1,88 @@
+{
+  "generatedFrom": {
+    "hash": "2b8070526a5038ac",
+    "propsFiles": ["ui/src/native/stat/stat.props.ts"]
+  },
+  "importLine": "import { Stat } from \"@stackra/ui/native\";",
+  "key": "free/stat",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "The drill-down: the whole tile becomes a button that opens the detail.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "Stat",
+      "props": [
+        {
+          "description": "What the figure counts, shown above it.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The figure: a number, formatted in the locale, or text already formatted.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "string | number"
+        },
+        {
+          "description": "A short tag beside the figure; nothing is drawn when it is empty.",
+          "name": "badge",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The change against the previous period as a fraction (0.12 is up 12%), drawn as a `TrendChip`.",
+          "name": "trend",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The direction that is better for the trend's colour; `up` by default.",
+          "name": "better",
+          "required": false,
+          "source": "stackra",
+          "type": "\"down\" | \"up\""
+        },
+        {
+          "description": "What the trend compares with: \"vs last month\".",
+          "name": "comparison",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The recent values, oldest first, drawn as an area sparkline under the figure.",
+          "name": "sparkline",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly number[]"
+        },
+        {
+          "description": "The goal for a numeric `value`: a bar shows how far along it is.",
+          "name": "target",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The drill-down button's description (\"Open Revenue\" by default); its name is what the tile shows.",
+          "name": "pressLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

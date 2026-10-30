@@ -1,0 +1,140 @@
+{
+  "slug": "popover",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(overlays)/popover.mdx",
+  "parts": [
+    {
+      "name": "Popover",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Trigger and content elements"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Controls popover visibility (controlled)"
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "description": "Initial open state (uncontrolled)"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Called when open state changes"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to display in the popover"
+        },
+        {
+          "name": "placement",
+          "type": "`\"top\" | \"bottom\" | \"left\" | \"right\"` (and variants)",
+          "default": "\"bottom\"",
+          "description": "Placement of the popover"
+        },
+        {
+          "name": "offset",
+          "type": "number",
+          "default": "8",
+          "description": "Distance from the trigger element"
+        },
+        {
+          "name": "shouldFlip",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether popover can change orientation to fit"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, PopoverRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Popover.Dialog",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Dialog content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Element that triggers the popover"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Arrow",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom arrow element"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, OverlayArrowRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".popover",
+      "description": "Base popover container styles"
+    },
+    {
+      "name": ".popover__dialog",
+      "description": "Dialog content wrapper"
+    },
+    {
+      "name": ".popover__heading",
+      "description": "Heading text styles"
+    },
+    {
+      "name": ".popover__trigger",
+      "description": "Trigger element styles"
+    }
+  ]
+}

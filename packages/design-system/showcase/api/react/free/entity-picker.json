@@ -1,0 +1,383 @@
+{
+  "generatedFrom": {
+    "hash": "6a8b53c967c264dd",
+    "propsFiles": ["ui/src/react/entity-picker/entity-picker.props.ts"]
+  },
+  "importLine": "import { EntityPicker } from \"@stackra/ui/react\";",
+  "key": "free/entity-picker",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the typed text when the user picks the create-new row. It may return the new record, which is then\npicked, or nothing, when the app handles the result itself. A rejection picks nothing, and the app reports it\n(ADR 0139). The row shows only when `createLabel` is also given.",
+          "name": "onCreate",
+          "required": false,
+          "source": "stackra",
+          "type": "(text: string) => void | EntityOption | Promise<void | EntityOption>"
+        },
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: EntityOption | null) => void"
+        },
+        {
+          "description": "Handler that is called when the element loses focus.",
+          "name": "onBlur",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<HTMLInputElement, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the element receives focus.",
+          "name": "onFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<HTMLInputElement, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the element's focus status changes.",
+          "name": "onFocusChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isFocused: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a key is pressed.",
+          "name": "onKeyDown",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: KeyboardEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a key is released.",
+          "name": "onKeyUp",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: KeyboardEvent) => void"
+        },
+        {
+          "description": "Method that is called when the open state of the menu changes. Returns the new open state and\nthe action that caused the opening of the menu.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isOpen: boolean, menuTrigger?: MenuTriggerAction | undefined) => void"
+        },
+        {
+          "deprecated": "deprecated",
+          "description": "Handler that is called when the selection changes.",
+          "name": "onSelectionChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(key: Key | null) => void"
+        }
+      ],
+      "name": "EntityPicker",
+      "props": [
+        {
+          "description": "One record at a time. This is the default.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"single\""
+        },
+        {
+          "description": "Not used: a single choice has no tag to remove.",
+          "name": "removeLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "undefined"
+        },
+        {
+          "description": "Answers a search: the page of records that match `search` (an empty string asks for the first records), or the\npage after `cursor`. A picker asks again when the user pauses typing and ignores an answer that a later request\nhas replaced. A rejection shows `loadErrorMessage` in the list; typing again asks again.",
+          "name": "loadOptions",
+          "required": true,
+          "source": "stackra",
+          "type": "(search: string, cursor?: string | undefined) => Promise<EntityOptionPage>"
+        },
+        {
+          "description": "Text shown while the field is empty; it hints at what to pick and never replaces the label.",
+          "name": "placeholder",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to fill the width of the parent instead of a fixed field width.",
+          "name": "isFullWidth",
+          "replaces": "fullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "How long, in milliseconds, the user must stop typing before a search starts. Defaults to 250.",
+          "name": "debounceMs",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The spoken name of the spinner while records load, for example \"Loading people\"; without it the spinner is silent.",
+          "name": "loadingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What the list says when no record matches, for example \"No people found\"; without it the list stays closed.",
+          "name": "emptyMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What the list says when `loadOptions` rejects, for example \"People could not be loaded. Type to try again.\"",
+          "name": "loadErrorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The text of the create-new row from the typed text, for example `(text) => \\`Add \"${text}\"\\``.",
+          "name": "createLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(text: string) => string"
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "EntityOption | null"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "EntityOption | null"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "\"primary\"",
+          "description": "The variant of the combo box.",
+          "name": "variant",
+          "required": false,
+          "source": "heroui",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Defines a string value that labels the current element.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Whether the element should receive focus on render.",
+          "name": "autoFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "default": "'react-aria-ComboBox'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "ClassNameOrFunction<ComboBoxRenderProps>"
+        },
+        {
+          "deprecated": "deprecated",
+          "description": "The initial selected key in the collection (uncontrolled).",
+          "name": "defaultSelectedKey",
+          "required": false,
+          "source": "react-aria",
+          "type": "Key | null"
+        },
+        {
+          "description": "The item keys that are disabled. These items cannot be selected, focused, or otherwise\ninteracted with.",
+          "name": "disabledKeys",
+          "required": false,
+          "source": "react-aria",
+          "type": "Iterable<Key>"
+        },
+        {
+          "description": "The `<form>` element to associate the input with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input#form).",
+          "name": "form",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "default": "'input'",
+          "description": "The interaction required to display the ComboBox menu.",
+          "name": "menuTrigger",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"input\" | \"focus\" | \"manual\""
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMRenderFunction<\"div\", ComboBoxRenderProps>"
+        },
+        {
+          "deprecated": "deprecated",
+          "description": "The currently selected key in the collection (controlled).",
+          "name": "selectedKey",
+          "required": false,
+          "source": "react-aria",
+          "type": "Key | null"
+        },
+        {
+          "description": "Whether keyboard navigation is circular.",
+          "name": "shouldFocusWrap",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<ComboBoxRenderProps>"
+        },
+        {
+          "description": "A function that returns an error message if a given value is invalid.\nValidation errors are displayed to the user when the form is submitted\nif `validationBehavior=\"native\"`. For realtime validation, use the `isInvalid`\nprop instead.",
+          "name": "validate",
+          "required": false,
+          "source": "react-aria",
+          "type": "(value: ComboBoxValidationValue<\"single\">) => true | ValidationError | null"
+        },
+        {
+          "default": "'native'",
+          "description": "Whether to use native HTML form validation to prevent form submission\nwhen the value is missing or invalid, or mark the field as required\nor invalid via ARIA.",
+          "name": "validationBehavior",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"native\" | \"aria\""
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

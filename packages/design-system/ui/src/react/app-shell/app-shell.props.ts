@@ -19,6 +19,11 @@ export type AppShellProps = AppShellContractProps &
     readonly isEmbedded?: boolean | undefined;
     /** The text of the skip link. Defaults to the `ui` catalogue's phrase in the active locale. */
     readonly skipLabel?: string | undefined;
+    /**
+     * The frame: `flush` (the default) draws the page straight on the background; `inset` draws the header and page as
+     * a rounded card on the app's background, clear of the edges, the look a split `SidePanel` beside it matches.
+     */
+    readonly frame?: "flush" | "inset" | undefined;
     /** The id of the main region, the skip link's target. Defaults to `main-content`. */
     readonly mainId?: string | undefined;
   };

@@ -1,0 +1,187 @@
+{
+  "generatedFrom": {
+    "hash": "b26cb57d56424419",
+    "propsFiles": ["ui/src/native/date-range-picker/date-range-picker.props.ts"]
+  },
+  "importLine": "import { DateRangePicker } from \"@stackra/ui/native\";",
+  "key": "free/date-range-picker",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: DateRangeValue | null) => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "DateRangePicker",
+      "props": [
+        {
+          "default": "primary",
+          "description": "The look of the field. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "True to fill the parent's width. Defaults to true.",
+          "name": "isFullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The presets offered, in order; an empty list hides them. Defaults to every preset.",
+          "name": "presets",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"today\" | \"yesterday\" | \"last_7_days\" | \"last_30_days\" | \"this_month\" | \"last_month\" | \"this_year\")[]"
+        },
+        {
+          "description": "The earliest day that can be picked.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The latest day that can be picked.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The calendar the days are shown in; defaults to `gregory`. The value stays Gregorian.",
+          "name": "calendar",
+          "required": false,
+          "source": "stackra",
+          "type": "\"gregory\" | \"islamic-umalqura\""
+        },
+        {
+          "description": "The spoken name of the button that opens the calendar; defaults to the `ui` catalogue's phrase.",
+          "name": "calendarButtonLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "DateRangeValue | null"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "DateRangeValue | null"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The field's accessible name when the label is not a string.",
+          "name": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The day the presets count from; defaults to today.",
+          "name": "today",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

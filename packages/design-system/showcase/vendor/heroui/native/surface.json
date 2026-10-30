@@ -1,0 +1,47 @@
+{
+  "slug": "surface",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(layout)/surface.mdx",
+  "parts": [
+    {
+      "name": "Surface",
+      "props": [
+        {
+          "name": "variant",
+          "type": "'default' | 'secondary' | 'tertiary' | 'transparent'",
+          "default": "'default'",
+          "description": "Visual variant controlling background color and border"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to be rendered inside the surface"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

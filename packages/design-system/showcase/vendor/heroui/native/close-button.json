@@ -1,0 +1,24 @@
+{
+  "slug": "close-button",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(buttons)/close-button.mdx",
+  "parts": [
+    {
+      "name": "CloseButton",
+      "props": [
+        {
+          "name": "iconProps",
+          "type": "CloseButtonIconProps",
+          "description": "Props for customizing the close icon"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom content to replace the default close icon"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

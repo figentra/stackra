@@ -1,0 +1,155 @@
+{
+  "generatedFrom": {
+    "hash": "69874f1697668e11",
+    "heroDoc": "vendor/heroui/native/separator.json",
+    "propsFiles": ["ui/src/native/separator/separator.props.ts"]
+  },
+  "importLine": "import { Separator } from \"@stackra/ui/native\";",
+  "key": "free/separator",
+  "parts": [
+    {
+      "extends": "Separator",
+      "name": "Separator",
+      "props": [
+        {
+          "default": "horizontal",
+          "description": "The axis of the rule; a vertical one stretches to its row's height. Defaults to `horizontal`.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "default": "default",
+          "description": "The colour level, matching the surface the rule sits on. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"secondary\" | \"tertiary\""
+        },
+        {
+          "description": "",
+          "name": "children",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "default": "undefined",
+          "description": "Additional CSS classes to apply",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "heroui",
+          "type": "Ref<View>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "undefined",
+          "description": "Custom thickness in pixels. Controls height for horizontal or width for vertical orientation",
+          "name": "thickness",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "All standard React Native View props are supported",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

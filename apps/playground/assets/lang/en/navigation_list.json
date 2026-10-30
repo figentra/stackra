@@ -1,0 +1,31 @@
+{
+  "basics_label": "Basic navigation",
+  "home": "Home",
+  "orders": "Orders",
+  "customers": "Customers",
+  "inbox": "Inbox",
+  "current_label": "Navigation with the current page",
+  "holding_label": "Navigation holding the current page",
+  "groups_label": "Grouped navigation",
+  "settings": "Settings",
+  "profile": "Profile",
+  "billing": "Billing",
+  "returns": "Returns",
+  "shipments": "Shipments",
+  "badges_label": "Navigation with badges",
+  "states_label": "Navigation with a disabled entry",
+  "archive": "Archive",
+  "run_report": "Run report",
+  "press_count": "{count, plural, one {Pressed # time.} other {Pressed # times.}}",
+  "shortcuts_label": "Navigation with shortcuts",
+  "compact_label": "Compact navigation",
+  "arabic_label": "قائمة التنقل",
+  "arabic_home": "الرئيسية",
+  "arabic_orders": "الطلبات",
+  "arabic_customers": "العملاء",
+  "live_label": "Live navigation",
+  "current_page": "Current page: {name}",
+  "sample": {
+    "new": "New"
+  }
+}

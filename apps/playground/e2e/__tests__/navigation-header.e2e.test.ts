@@ -16,6 +16,8 @@
 // @covers sta-350:FR-177 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -24,7 +26,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/navigation-header?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Navigation header" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Navigation header", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -46,12 +50,15 @@ const boxOf = async (locator: Locator) => {
   return box;
 };
 
-/** The headers of the parts section, by their sample, found by CSS. Order: title only, back button, back link, slots, long, large. */
-const headers = (page: Page) => page.locator("#navigation-header-parts ~ ul > li header");
+/** The headers of the Usage samples, in order: title only, back button, back link, slots, long, large. */
+const headers = (page: Page) =>
+  example(page, "usage").getByRole("list").first().locator(":scope > li header");
 
 /** The live header and its reports. */
-const liveHeader = (page: Page) => page.locator('[data-sample="live"] header');
-const liveStatus = (page: Page) => page.locator('[data-sample="live-status"] [role="status"]');
+// Inside the live example's own section: the hero draws the same demo again, inert, above it.
+const liveHeader = (page: Page) => example(page, "live").locator('[data-sample="live"] header');
+const liveStatus = (page: Page) =>
+  example(page, "live").locator('[data-sample="live-status"] [role="status"]');
 
 for (const scheme of SCHEMES)
   for (const locale of LOCALES)
@@ -70,7 +77,7 @@ test("the page holds one h1, no banner landmark and a level 3 title in every par
   // The playground's own site header is the one banner; none comes from the page's bars.
   await expect(page.locator("#main").getByRole("banner")).toHaveCount(0);
   const bars = headers(page);
-  expect(await bars.count()).toBe(6);
+  await expect(bars).toHaveCount(6);
   for (const bar of await bars.all())
     await expect(bar.getByRole("heading", { level: 3 })).toHaveCount(1);
 });
@@ -85,7 +92,8 @@ for (const locale of LOCALES)
       '[data-slot="navigation-header-actions"]',
     ];
     const xs: number[] = [];
-    xs.push((await boxOf(bar.getByRole("button", { name: "Back" }))).x);
+    // The back button leads the bar; by position, as the Arabic page translates its name.
+    xs.push((await boxOf(bar.getByRole("button").first())).x);
     for (const selector of selectors) xs.push((await boxOf(bar.locator(selector).first())).x);
     // Left to right the x of each part grows; right to left it shrinks.
     const sorted = [...xs].sort((a, b) => (locale === "en" ? a - b : b - a));
@@ -95,7 +103,7 @@ for (const locale of LOCALES)
 for (const locale of LOCALES)
   test(`the back chevron points the reading way back in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const chevron = headers(page).nth(1).getByRole("button", { name: "Back" }).locator("svg");
+    const chevron = headers(page).nth(1).getByRole("button").first().locator("svg");
     const matrix = await chevron.evaluate((element) => getComputedStyle(element).transform);
     // Mirrored in right-to-left: the horizontal scale is negative; otherwise there is no transform.
     if (locale === "en") expect(["none", "matrix(1, 0, 0, 1, 0, 0)"]).toContain(matrix);
@@ -148,7 +156,7 @@ for (const width of [1280, 320])
 test("every control in a header reaches 24 px", async ({ page }) => {
   await open(page, "light", "en");
   const controls = headers(page).locator("button, a");
-  expect(await controls.count()).toBeGreaterThan(0);
+  await expect(controls.first()).toBeVisible();
   for (const control of await controls.all()) {
     const box = await boxOf(control);
     expect(box.width).toBeGreaterThanOrEqual(24);

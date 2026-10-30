@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the navigation-list route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the navigation-list route of @figentra/playground: its path. The page it renders is
  *          `navigation-list.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The Navigation list page, at `/navigation-list`. */
-export class NavigationListRoute extends Route({ path: "/navigation-list" }) {
-  /** The page title. */
-  static readonly title = "Navigation list";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Navigation";
-}
+export class NavigationListRoute extends Route({ path: "/navigation-list" }) {}

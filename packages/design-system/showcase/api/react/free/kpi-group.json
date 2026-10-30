@@ -1,0 +1,37 @@
+{
+  "generatedFrom": {
+    "hash": "5258d97fd824262f",
+    "propsFiles": ["ui/src/react/kpi-group/kpi-group.props.ts"]
+  },
+  "importLine": "import { KpiGroup } from \"@stackra/ui/react\";",
+  "key": "free/kpi-group",
+  "parts": [
+    {
+      "name": "KpiGroup",
+      "props": [
+        {
+          "description": "The KPIs, usually `Stat`s (a group draws one shared surface, so its members need none of their own).",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The band's accessible name, such as \"This month at a glance\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

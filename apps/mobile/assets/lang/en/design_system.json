@@ -1,0 +1,52 @@
+{
+  "eyebrow": "Playground",
+  "product": "Design System",
+  "title": "Stackra Design System",
+  "intro": "Every component, live, in light and dark and in English and Arabic. Built on HeroUI and drawn in the Stackra tokens.",
+  "browse": "Browse components",
+  "search": "Search",
+  "search_placeholder": "Search components and categories…",
+  "results": "{count, plural, one {# match} other {# matches}}",
+  "empty": "Nothing matches “{query}”.",
+  "stats": {
+    "pages": "{count, plural, one {# page} other {# pages}}",
+    "categories": "{count, plural, one {# category} other {# categories}}",
+    "schemes": "Light and dark",
+    "directions": "LTR and RTL"
+  },
+  "sections": {
+    "showcase": "In use",
+    "showcase_note": "Three small scenes built only from the system’s components. Try them.",
+    "components": "Components",
+    "components_note": "Every page, grouped by category."
+  },
+  "showcase": {
+    "invite": {
+      "title": "Invite your team",
+      "description": "They get an email with a link that works for seven days.",
+      "email": "Work email",
+      "placeholder": "name@company.com",
+      "admin": "Make them an admin",
+      "send": "Send invite",
+      "sent": "Invite sent to {email}.",
+      "sent_anyone": "Invite sent to your teammate."
+    },
+    "deploys": {
+      "title": "Deployments",
+      "description": "The last three releases of the console.",
+      "released": "{version} · {at, date, medium}",
+      "live": "Live",
+      "building": "Building",
+      "failed": "Failed"
+    },
+    "filters": {
+      "title": "Filter orders",
+      "description": "Narrow the list; the count and total follow.",
+      "search": "Search orders",
+      "paid": "Paid only",
+      "shipped": "Shipped",
+      "reset": "Reset",
+      "count": "{count, plural, one {# order} other {# orders}} · {total, number, ::currency/USD}"
+    }
+  }
+}

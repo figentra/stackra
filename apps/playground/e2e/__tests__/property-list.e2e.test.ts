@@ -15,6 +15,8 @@
 // @covers sta-350:FR-134 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -23,12 +25,15 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/property-list?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Property list" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Property list", locale) }),
+  ).toBeVisible();
 };
 
 /** Turns the columns switch on from the keyboard: HeroUI's hidden input is overlapped by its drawn control, so a pointer click on the input is refused. */
 const showTwoColumns = async (page: Page) => {
-  await page.getByRole("switch", { name: "Show two columns" }).focus();
+  // The live example's one switch, unnamed here: its name is in the page's language.
+  await example(page, "live").getByRole("switch").focus();
   await page.keyboard.press("Space");
 };
 
@@ -61,7 +66,7 @@ for (const scheme of SCHEMES)
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await open(page, scheme, "en");
     await showTwoColumns(page);
-    const live = page.getByRole("region", { name: "Try it" });
+    const live = example(page, "live");
     await live.getByRole("button", { name: "Copy email" }).focus();
     await page.keyboard.press("Enter");
     await expect(live.getByTestId("last-copied")).toContainText("ada@example.com");
@@ -70,7 +75,7 @@ for (const scheme of SCHEMES)
 
 test("each sample is a description list of terms and definitions, in order", async ({ page }) => {
   await open(page, "light", "en");
-  const columns = page.getByRole("region", { name: "Columns" });
+  const columns = example(page, "usage");
   await expect(columns.locator("dl")).toHaveCount(2);
   const list = columns.locator("dl").first();
   await expect(list.locator("dt")).toHaveText(["Customer", "Email", "Order id", "Items"]);
@@ -84,7 +89,7 @@ test("each sample is a description list of terms and definitions, in order", asy
 
 test("an empty value shows a dash or the given words, and zero is a value", async ({ page }) => {
   await open(page, "light", "en");
-  const values = page.getByRole("region", { name: "Values" });
+  const values = example(page, "values");
   const row = (label: string) =>
     values.locator('[data-slot="property-list-row"]', { hasText: label });
   await expect(row("Note").first().locator("dd")).toHaveText("–");
@@ -97,9 +102,10 @@ test("a copy button is named by its row, in tab order, and at least 24 px square
   page,
 }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
-  await expect(live.getByRole("button")).toHaveText(["", "", ""]);
-  await page.getByRole("switch", { name: "Show two columns" }).focus();
+  const live = example(page, "live");
+  // Icon-only: named by their row, with no visible text ("Show code" is the pane's own button).
+  await expect(live.getByRole("button", { name: /^Copy / })).toHaveText(["", "", ""]);
+  await live.getByRole("switch", { name: "Show two columns" }).focus();
   await page.keyboard.press("Tab");
   await expect(live.getByRole("button", { name: "Copy email" })).toBeFocused();
   await page.keyboard.press("Tab");
@@ -119,7 +125,7 @@ test("Enter on a copy button copies the value, shows a check for two seconds and
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   const button = live.getByRole("button", { name: "Copy order id" });
   await expect(button.locator("svg.lucide-copy")).toHaveCount(1);
   await button.focus();
@@ -138,7 +144,7 @@ test("Enter on a copy button copies the value, shows a check for two seconds and
 test("a row with a copy value copies it, not the shown value", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   await expect(live.locator('[data-slot="property-list-row"]', { hasText: "Total" })).toContainText(
     "EUR 128.00",
   );
@@ -149,9 +155,7 @@ test("a row with a copy value copies it, not the shown value", async ({ page, co
 
 test("the switch moves the list between one and two columns", async ({ page }) => {
   await open(page, "light", "en");
-  const rows = page
-    .getByRole("region", { name: "Try it" })
-    .locator('[data-slot="property-list-row"]');
+  const rows = example(page, "live").locator('[data-slot="property-list-row"]');
   const firstX = async () => (await rows.nth(0).boundingBox())?.x ?? NaN;
   const secondX = async () => (await rows.nth(1).boundingBox())?.x ?? NaN;
   expect(await secondX()).toBeCloseTo(await firstX(), 0);
@@ -164,9 +168,7 @@ test("two columns run in the reading direction, starting at the reading-start si
 }) => {
   await open(page, "light", "ar");
   await showTwoColumns(page);
-  const rows = page
-    .getByRole("region", { name: "Try it" })
-    .locator('[data-slot="property-list-row"]');
+  const rows = example(page, "live").locator('[data-slot="property-list-row"]');
   const first = await rows.nth(0).boundingBox();
   const second = await rows.nth(1).boundingBox();
   if (!first || !second) throw new Error("a box is missing");
@@ -176,7 +178,7 @@ test("two columns run in the reading direction, starting at the reading-start si
 for (const locale of LOCALES)
   test(`the labels sit at the reading-start side of the list in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const list = page.getByRole("region", { name: "Columns" }).locator("dl").first();
+    const list = example(page, "usage").locator("dl").first();
     const term = list.locator("dt").first();
     const listBox = await list.boundingBox();
     const termBox = await term.locator("span").boundingBox();

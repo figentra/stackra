@@ -1,0 +1,93 @@
+{
+  "generatedFrom": {
+    "hash": "971d926ca35e7300",
+    "propsFiles": ["ui/src/react/form-section/form-section.props.ts"]
+  },
+  "importLine": "import { FormSection } from \"@stackra/ui/react\";",
+  "key": "free/form-section",
+  "parts": [
+    {
+      "name": "FormSection",
+      "props": [
+        {
+          "description": "The section's title, required: it names the group of fields for assistive technology.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the title, read out with the group.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The fields of the section.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"fieldset\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...FieldsetHTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "FieldsetHTMLAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

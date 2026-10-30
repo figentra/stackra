@@ -1,0 +1,94 @@
+{
+  "generatedFrom": {
+    "hash": "a85aee93c99d795d",
+    "propsFiles": ["ui/src/react/status-badge/status-badge.props.ts"]
+  },
+  "importLine": "import { StatusBadge } from \"@stackra/ui/react\";",
+  "key": "free/status-badge",
+  "parts": [
+    {
+      "name": "StatusBadge",
+      "props": [
+        {
+          "description": "The state's name in the app's language, for example \"Active\"; required because the dot alone means nothing.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The colour role of the dot: `success`, `warning`, `danger`, `accent`, or `default` for a neutral state.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "default": "md",
+          "description": "The padding and text size of the badge. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"span\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLSpanElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

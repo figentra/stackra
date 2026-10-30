@@ -1,0 +1,15 @@
+{
+  "variant": "{variant} accordion",
+  "open": "Open: {keys, select, none {none} other {{keys}}}",
+  "expand_all": "Expand all",
+  "collapse_all": "Collapse all",
+  "docs_link": "Read the returns policy",
+  "sample": {
+    "how_long_does_shipping_take": "How long does shipping take?",
+    "orders_ship_within_two_working": "Orders ship within two working days.",
+    "can_i_return_an_order": "Can I return an order?",
+    "yes_within_thirty_days_and": "Yes, within thirty days and free of charge.",
+    "is_there_a_warranty": "Is there a warranty?",
+    "every_product_has_a_two": "Every product has a two year warranty."
+  }
+}

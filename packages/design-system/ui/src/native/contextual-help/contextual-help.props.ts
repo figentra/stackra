@@ -1,0 +1,16 @@
+/**
+ * Stackra file contract:
+ * Purpose: `ContextualHelpProps`, the props of the native `ContextualHelp` in `contextual-help.tsx`.
+ * Boundary: types only; the component and the `./native` entry import it from here.
+ * Runtime: react-native
+ * Governing contract: ADR 0305 (rules 10 and 12: one declaration per file); ADR 0302 (decision 3); ADR 0312.
+ */
+import type { ContextualHelpContractProps } from "#contracts/types/contextual-help-contract-props.type";
+import type { PopoverProps } from "#native/popover/popover.props";
+
+/**
+ * Props of the native ContextualHelp: the shared contract plus the Popover's own props, passed through. The trigger is
+ * the component's, so `trigger` is refused.
+ */
+export type ContextualHelpProps = ContextualHelpContractProps &
+  Omit<PopoverProps, keyof ContextualHelpContractProps | "trigger">;

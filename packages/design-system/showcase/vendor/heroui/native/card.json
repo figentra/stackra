@@ -1,0 +1,141 @@
+{
+  "slug": "card",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(layout)/card.mdx",
+  "parts": [
+    {
+      "name": "Card",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to be rendered inside the card"
+        },
+        {
+          "name": "variant",
+          "type": "'default' | 'secondary' | 'tertiary' | 'transparent'",
+          "default": "'default'",
+          "description": "Visual variant of the card surface"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Card.Header",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the header"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Card.Body",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the body"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Card.Footer",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the footer"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Card.Title",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered as the title text"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Card.Description",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered as the description text"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

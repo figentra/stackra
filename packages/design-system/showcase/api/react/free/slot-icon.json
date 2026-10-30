@@ -1,0 +1,23 @@
+{
+  "generatedFrom": {
+    "hash": "000672a12df1c6e6",
+    "propsFiles": ["ui/src/react/slot-icon/slot-icon.props.ts"]
+  },
+  "importLine": "import { SlotIcon } from \"@stackra/ui/react\";",
+  "key": "free/slot-icon",
+  "parts": [
+    {
+      "name": "SlotIcon",
+      "props": [
+        {
+          "description": "The slot's value: an icon name or an element; nothing draws nothing.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

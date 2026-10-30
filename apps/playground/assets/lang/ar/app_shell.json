@@ -1,0 +1,22 @@
+{
+  "frame_label": "تنقل الإطار",
+  "breakpoint_label": "تنقل نقطة التحول",
+  "arabic_label": "تنقل الإطار العربي",
+  "live_label": "تنقل تفاعلي",
+  "state": "الدرج: {is_open, select, true {مفتوح} other {مغلق}}",
+  "open_navigation": "فتح التنقل",
+  "brand": "Acme",
+  "heading": "الطلبات",
+  "body": "الصفحة داخل المنطقة الرئيسية للإطار.",
+  "heading_bare": "لوحة المعلومات",
+  "home": "الرئيسية",
+  "orders": "الطلبات",
+  "customers": "العملاء",
+  "inbox": "البريد الوارد",
+  "arabic_brand": "أكمي",
+  "arabic_heading": "الطلبات",
+  "arabic_body": "الصفحة داخل منطقة الإطار الرئيسية.",
+  "arabic_home": "الرئيسية",
+  "arabic_orders": "الطلبات",
+  "arabic_customers": "العملاء"
+}

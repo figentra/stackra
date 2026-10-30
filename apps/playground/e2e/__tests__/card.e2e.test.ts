@@ -12,6 +12,8 @@
 // @covers sta-350:FR-032 sta-350:P-019 sta-350:P-020 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -20,7 +22,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/card?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Card" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Card", locale) }),
+  ).toBeVisible();
 };
 
 /** The background an element paints, as `#rrggbb`: drawn on a canvas, so any CSS colour form (oklch too) reads. */
@@ -81,9 +85,8 @@ for (const scheme of SCHEMES)
     page,
   }) => {
     await open(page, scheme, "en");
-    const cards = page
-      .getByRole("region", { name: "Levels", exact: true })
-      .locator('[data-slot="card"]');
+    // The cards inside the preview pane, which is a card itself.
+    const cards = example(page, "usage").locator('[data-slot="card"] [data-slot="card"]');
     await expect(cards).toHaveCount(4);
     const levels = ["surface", "surface-secondary", "surface-tertiary"];
     for (const [index, variable] of levels.entries()) {
@@ -135,8 +138,9 @@ test("the dismissible card hides from the keyboard and Show again brings it back
 test("the close button sits at the end corner of its card in both directions", async ({ page }) => {
   for (const locale of LOCALES) {
     await open(page, "light", locale);
-    const card = page.getByRole("region", { name: "Dismissible" }).locator('[data-slot="card"]');
-    const close = card.getByRole("button", { name: "Dismiss card" });
+    const card = example(page, "dismissible").locator('[data-slot="card"] [data-slot="card"]');
+    // By slot: the button's name speaks the page's locale.
+    const close = card.locator('[data-slot="close-button"]');
     const cardBox = await card.boundingBox();
     const closeBox = await close.boundingBox();
     if (!cardBox || !closeBox) throw new Error("a box is missing");

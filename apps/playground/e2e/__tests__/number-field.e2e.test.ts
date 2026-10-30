@@ -16,6 +16,8 @@
 // @covers sta-350:FR-204 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -24,12 +26,33 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/number-field?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Number field" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Number field", locale) }),
+  ).toBeVisible();
 };
 
 /** The whole field (label, group and messages) whose label contains this text. */
 const fieldOf = (page: Page, label: string) =>
-  page.locator('[data-slot="number-field"]', { hasText: label });
+  // The examples only: the Stackra section draws the usage demo again, hidden.
+  page.locator("#usage, #examples").locator('[data-slot="number-field"]', { hasText: label });
+
+/** The demo's words in the page's language (`assets/lang/<locale>/number_field.json`, the field's own buttons). */
+const WORDS = {
+  en: {
+    quantity: "Quantity",
+    discount: "Discount",
+    price: "Price",
+    decrease: "Decrease",
+    increase: "Increase",
+  },
+  ar: {
+    quantity: "الكمية",
+    discount: "الخصم",
+    price: "السعر",
+    decrease: "إنقاص",
+    increase: "زيادة",
+  },
+} as const;
 
 /** The input of the field whose label contains this text. */
 const inputOf = (page: Page, label: string) => fieldOf(page, label).getByRole("textbox");
@@ -143,8 +166,8 @@ test("a percentage and a currency are written by their format and stepped by the
 
 test("the language of the page changes how a number is written", async ({ page }) => {
   await open(page, "light", "ar");
-  await expect(inputOf(page, "Discount")).not.toHaveValue("15%");
-  await expect(inputOf(page, "Price")).not.toHaveValue("$1,299.50");
+  await expect(inputOf(page, WORDS.ar.discount)).not.toHaveValue("15%");
+  await expect(inputOf(page, WORDS.ar.price)).not.toHaveValue("$1,299.50");
 });
 
 test("a field without buttons has none and is still stepped by the arrow keys", async ({
@@ -196,7 +219,7 @@ test("the live field shows the number it holds, steps it, moves typed text to it
   page,
 }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   const input = live.getByRole("textbox", { name: "Seats to book" });
   const echo = live.getByTestId("number-field-value");
   await expect(echo).toHaveText("4 seats chosen.");
@@ -231,7 +254,7 @@ test("the focused field shows a ring", async ({ page }) => {
 for (const locale of LOCALES) {
   test(`the label sits at the reading-start side of the field in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const field = fieldOf(page, "Quantity");
+    const field = fieldOf(page, WORDS[locale].quantity);
     const label = await boxOf(field.locator('[data-slot="label"]'));
     const group = await boxOf(field.locator('[data-slot="number-field-group"]'));
     if (locale === "en") expect(label.x).toBeCloseTo(group.x, 0);
@@ -242,10 +265,10 @@ for (const locale of LOCALES) {
     page,
   }) => {
     await open(page, "light", locale);
-    const field = fieldOf(page, "Quantity");
-    const decrease = await boxOf(field.getByRole("button", { name: "Decrease" }));
+    const field = fieldOf(page, WORDS[locale].quantity);
+    const decrease = await boxOf(field.getByRole("button", { name: WORDS[locale].decrease }));
     const input = await boxOf(field.getByRole("textbox"));
-    const increase = await boxOf(field.getByRole("button", { name: "Increase" }));
+    const increase = await boxOf(field.getByRole("button", { name: WORDS[locale].increase }));
     if (locale === "en") {
       expect(decrease.x + decrease.width).toBeLessThanOrEqual(input.x + 1);
       expect(increase.x).toBeGreaterThanOrEqual(input.x + input.width - 1);

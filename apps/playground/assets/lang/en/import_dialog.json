@@ -1,0 +1,22 @@
+{
+  "open": "Import customers",
+  "description": "Add new customers and update existing ones from a spreadsheet.",
+  "name": "Full name",
+  "email": "Email",
+  "phone": "Phone",
+  "city": "City",
+  "errors": {
+    "open": "Import the event sign-ups",
+    "bad_email": "Not an email address",
+    "no_name": "The name is empty",
+    "bad_phone": "Not a phone number"
+  },
+  "large": {
+    "open": "Import the product catalogue",
+    "description": "Large files import in the background; keep this open to watch progress.",
+    "sku": "SKU",
+    "product": "Product name",
+    "price": "Price",
+    "stock": "Stock on hand"
+  }
+}

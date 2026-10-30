@@ -1,0 +1,90 @@
+{
+  "generatedFrom": {
+    "hash": "1526ce28afd0db52",
+    "propsFiles": ["ui/src/native/bidi/bidi.props.ts"]
+  },
+  "importLine": "import { Bidi } from \"@stackra/ui/native\";",
+  "key": "free/bidi",
+  "parts": [
+    {
+      "name": "Bidi",
+      "props": [
+        {
+          "description": "The text to isolate, or the block's content: a SKU, a phone number, an e-mail, a Latin name in Arabic text.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The direction of the content; `auto` (the default) takes it from the first strong letter.",
+          "name": "dir",
+          "required": false,
+          "source": "stackra",
+          "type": "\"auto\" | \"ltr\" | \"rtl\""
+        },
+        {
+          "description": "True for a block that sets the direction of everything inside it (arrow keys and placement too); false (the\ndefault) for an inline run that only stops its own direction leaking into the sentence around it.",
+          "name": "isBlock",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "((false | \"\" | TextStyle | RecursiveArray<Falsy | TextStyle>) & (false | \"\" | ViewStyle | RecursiveArray<Falsy | ViewStyle>)) | null"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...TextProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TextProps"
+        }
+      ]
+    },
+    {
+      "name": "useDirection",
+      "props": []
+    }
+  ],
+  "platform": "native"
+}

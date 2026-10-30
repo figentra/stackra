@@ -1,0 +1,121 @@
+{
+  "generatedFrom": {
+    "hash": "f13d1f3c9e15e4a6",
+    "propsFiles": ["ui/src/native/form/form.props.ts"]
+  },
+  "importLine": "import { Form } from \"@stackra/ui/native\";",
+  "key": "free/form",
+  "parts": [
+    {
+      "name": "Form",
+      "props": [
+        {
+          "description": "The fields and the submit button.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The schema form from `useSchemaForm`, provided to the `Field.*` parts inside.",
+          "name": "form",
+          "required": false,
+          "source": "stackra",
+          "type": "SchemaFormHandle<T>"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

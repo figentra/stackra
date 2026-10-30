@@ -1,0 +1,184 @@
+{
+  "generatedFrom": {
+    "hash": "0ef672efe01d51ef",
+    "propsFiles": ["ui/src/native/field-error/field-error.props.ts"]
+  },
+  "importLine": "import { FieldError } from \"@stackra/ui/native\";",
+  "key": "free/field-error",
+  "parts": [
+    {
+      "name": "FieldError",
+      "props": [
+        {
+          "description": "The message; with none, the web error shows the field's own validation messages.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True to show the error, false to hide it. Left out, the error follows the field it sits in; a form adapter that\nkeeps its own validation state sets it.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Animation configuration for field error\n- `false` or `\"disabled\"`: Disable all animations\n- `true` or `undefined`: Use default animations\n- `object`: Custom animation configuration",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "FieldErrorRootAnimation"
+        },
+        {
+          "description": "Additional CSS class for styling",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS classes for different parts of the component",
+          "name": "classNames",
+          "required": false,
+          "source": "heroui",
+          "type": "ElementSlots<\"base\" | \"text\" | \"container\">"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "heroui",
+          "type": "Ref<View>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>"
+        },
+        {
+          "description": "Styles for different parts of the field error",
+          "name": "styles",
+          "required": false,
+          "source": "heroui",
+          "type": "{ container?: ViewStyle; text?: TextStyle; }"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "Additional props to pass to the Text component when children is a string",
+          "name": "textProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TextProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native",
+  "slots": [
+    {
+      "description": "",
+      "name": "base"
+    },
+    {
+      "description": "",
+      "name": "text"
+    },
+    {
+      "description": "",
+      "name": "container"
+    }
+  ]
+}

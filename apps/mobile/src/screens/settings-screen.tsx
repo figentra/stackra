@@ -4,7 +4,9 @@
  *          - Appearance: the colour scheme (System, Light, Dark), the app language (@stackra/i18n's
  *            `<LanguageSwitcher />`: one row that opens the phone's language screen for this app, or the languages to
  *            pick in the app below Android 13), and the language with its direction.
- *          - Theme: a preset; the accent (on or off, a hue strip, its strength and a live swatch); the neutral hue and
+ *          - Feedback: the haptics switch (`useHaptic()`), shared with the header menu and remembered.
+ *          - Theme: the brand (each approved brand layer over Stackra, Figentra first); the transition a scheme change
+ *            draws (Uniwind Pro, a circle from the tap by default, Fade under Reduce Motion); a preset; the accent (on or off, a hue strip, its strength and a live swatch); the
  *            tint; the corner radius; the Latin and Arabic faces. Every change restyles the whole app at once.
  *          - Contrast: the main pairs of the theme on screen against WCAG 2.2 AA, stacked at a large text size.
  *          - Actions: undo, redo and reset; share the theme as JSON through the system share sheet; import a pasted
@@ -12,8 +14,10 @@
  *          - The app version, at the bottom.
  * Boundary: presentation; the theme state and its push into Uniwind are `../stores/theme-settings.store`; the colour
  *           scheme and the language are the design-system provider's (`useDesignSystem()`), shared with the review
- *           area's display settings, so native headers, the tab bar and the direction follow them too. The text size
- *           is the phone's (`useAccessibility()`), never set here.
+ *           area's display settings, so native headers, the tab bar and the direction follow them too. Every word is a
+ *           `settings::*` key (brand and preset names and the language endonyms stay as they are) except the app
+ *           language row's; the brand pick is remembered (`displayPrefs`), the rest by `restoreDisplayPrefs` and the
+ *           app root. The text size is the phone's (`useAccessibility()`), never set here.
  * Runtime: react-native
  * Governing contract: ADR 0320 (the Theme Studio); ADR 0080 (2026-10-29 note: the language follows the phone); ADR 0007 (documentation); WCAG 2.2 SC 1.3.1, 1.4.3, 4.1.2, 4.1.3.
  */
@@ -29,73 +33,54 @@ import { NativeSwitcher } from "@stackra/i18n";
 import type { Locale } from "@stackra/i18n";
 import { LanguageSwitcher } from "@stackra/i18n/native";
 import { useAccessibility } from "@stackra/theming/react";
-import { useDesignSystem } from "@stackra/ui/native";
+import { MotionLevel } from "@stackra/ui/contracts";
+import { useCatalogueText, useDesignSystem, useHaptic } from "@stackra/ui/native";
 import Constants from "expo-constants";
 import { Button, Card, Label, Separator, Slider, Switch, TextArea, TextField } from "heroui-native";
-import { useState, type ReactNode } from "react";
-import { Share, Text, View } from "react-native";
+import { memo, useMemo, useState, type ReactNode } from "react";
+import { Share, Text, View, type GestureResponderEvent } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { Screen } from "../components/ui/screen";
+import { BRAND_THEMES } from "../constants/brand-themes.constant";
+import { MESSAGES } from "../constants/messages.constant";
+import { SETTINGS_KEYS } from "../constants/settings-keys.constant";
+import { SHELL_KEYS } from "../constants/shell-keys.constant";
+import { displayPrefs } from "../stores/display-prefs.store";
 import { themeSettings } from "../stores/theme-settings.store";
 import { THEME_PRESETS } from "../stores/theme-presets.constant";
 import { THEME_FACES } from "../stores/theme-faces.constant";
 import { contrastReport } from "../stores/contrast-report.function";
 import { useThemeSettings } from "../stores/use-theme-settings";
+import { themeTransition } from "../stores/theme-transition.store";
+import { THEME_TRANSITIONS } from "../stores/theme-transitions.constant";
+import { useThemeTransition } from "../stores/use-theme-transition";
+import { numeralsChoice } from "../stores/numerals-choice.store";
+import { useNumeralsChoice } from "../stores/use-numerals-choice";
 
-// shortcut: English strings in one place until @stackra/i18n ships; then `mobile::settings.*` keys.
+/** The screen's keys. */
+const K = SETTINGS_KEYS.settings;
+
+// shortcut: the app language row's English until its `settings::app_language*` keys exist in both catalogues.
 const STRINGS = {
-  appearance: "Appearance",
-  scheme: "Colour scheme",
-  schemes: { system: "System", light: "Light", dark: "Dark" },
   appLanguage: "App language",
   appLanguageNote: "Opens this app's page in the phone's Settings, where its language is chosen.",
   openSettings: "Open Settings",
   appLanguages: "App languages",
-  language: "Language and direction",
-  languages: { en: "English (LTR)", ar: "العربية (RTL)" },
-  theme: "Theme",
-  preset: "Preset",
-  accent: "Accent colour",
-  accentSwatch: (hex: string) => `Accent colour ${hex}`,
-  accentHue: "Accent hue",
-  accentChroma: "Accent strength",
-  neutralHue: "Neutral hue",
-  neutralChroma: "Neutral tint",
-  radius: "Corner radius",
-  latin: "Latin face",
-  arabic: "Arabic face",
-  facesNote: "Faces change the exported theme; the app draws in the system face.",
-  invalid: "These settings make a theme that cannot be used; the last good one stays on screen:",
-  contrast: "Contrast",
-  contrastNote: "Text needs 4.5:1, edges and focus 3:1 (WCAG 2.2 AA).",
-  passes: "Passes AA",
-  fails: "Below AA",
-  actions: "Theme actions",
-  undo: "Undo",
-  redo: "Redo",
-  reset: "Reset",
-  share: "Share theme JSON",
-  shareFailed: "The share sheet did not open.",
-  paste: "Paste a theme JSON",
-  pasteNote:
-    "A full export, a changes-only export or a bare theme. It is checked before it is used.",
-  import: "Import",
-  imported: (name: string) => `Imported the "${name}" theme.`,
-  importInvalid: "That theme cannot be used:",
-  version: "Version",
 } as const;
 
-const SCHEMES = [
-  { id: "system", label: STRINGS.schemes.system },
-  { id: "light", label: STRINGS.schemes.light },
-  { id: "dark", label: STRINGS.schemes.dark },
+/** The scheme choices, worded in render. */
+const SCHEMES = ["system", "light", "dark"] as const;
+
+/** The languages, each named in its own language and never translated. */
+const LANGUAGES = [
+  { id: "en", label: "English (LTR)" },
+  { id: "ar", label: "\u2067العربية\u2069 (RTL)" },
 ] as const;
 
-const LANGUAGES = [
-  { id: "en", label: STRINGS.languages.en },
-  { id: "ar", label: STRINGS.languages.ar },
-] as const;
+/** The catalogue key of a contrast pair: its English name in snake_case. */
+const pairKey = (name: string) =>
+  K.contrast_pairs[name.toLowerCase().replaceAll(" ", "_") as keyof typeof K.contrast_pairs];
 
 /** The font scale from which the contrast rows stack their columns, so large text does not run off the card. */
 const STACKED_FONT_SCALE = 1.5;
@@ -132,7 +117,7 @@ function Choice({
   label: string;
   options: readonly { id: string; label: string }[];
   value: string | undefined;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, event: GestureResponderEvent) => void;
 }) {
   return (
     <View className="gap-2">
@@ -149,7 +134,7 @@ function Choice({
             variant={option.id === value ? "primary" : "secondary"}
             accessibilityRole="radio"
             accessibilityState={{ checked: option.id === value }}
-            onPress={() => onSelect(option.id)}
+            onPress={(event) => onSelect(option.id, event)}
           >
             {option.label}
           </Button>
@@ -185,20 +170,29 @@ function KnobSlider({
   onCommit: (value: number) => void;
 }) {
   const single = (next: number | number[]) => (typeof next === "number" ? next : (next[0] ?? min));
+  // The thumb and readout follow the finger at once; the theme behind them catches up at the store's draft pace.
+  const [live, setLive] = useState<number>();
+  const shown = live ?? value;
   return (
     <Slider
-      value={value}
+      value={shown}
       minValue={min}
       maxValue={max}
       step={step}
       isDisabled={isDisabled}
-      onChange={(next) => onDraft(single(next))}
-      onChangeEnd={(next) => onCommit(single(next))}
+      onChange={(next) => {
+        setLive(single(next));
+        onDraft(single(next));
+      }}
+      onChangeEnd={(next) => {
+        setLive(undefined);
+        onCommit(single(next));
+      }}
       className="gap-1"
     >
       <View className="flex-row items-baseline justify-between gap-2">
         <Label>{label}</Label>
-        <Text className="font-mono text-xs text-muted">{`${value}${unit}`}</Text>
+        <Text className="font-mono text-xs text-muted">{`${shown}${unit}`}</Text>
       </View>
       <Slider.Track background={track}>
         {track ? null : <Slider.Fill />}
@@ -209,7 +203,8 @@ function KnobSlider({
 }
 
 /** The hue strip behind the accent hue slider, at the accent's strength; it runs end to start in RTL as the slider. */
-function HueStrip({ chroma, isRtl }: { chroma: number; isRtl: boolean }) {
+// Memoised: a hue draft re-renders the screen, and the strip's 13 stops change only with the strength or direction.
+const HueStrip = memo(function HueStrip({ chroma, isRtl }: { chroma: number; isRtl: boolean }) {
   return (
     <Slider.TrackBackground>
       <Svg width="100%" height="100%" preserveAspectRatio="none">
@@ -234,7 +229,7 @@ function HueStrip({ chroma, isRtl }: { chroma: number; isRtl: boolean }) {
       </Svg>
     </Slider.TrackBackground>
   );
-}
+});
 
 /** A list of problems under its heading, announced as an alert. */
 function Problems({ title, problems }: { title: string; problems: readonly string[] }) {
@@ -259,20 +254,31 @@ export function SettingsScreen() {
     locale,
     setLocale,
     direction,
+    setBrand,
+    motion,
+    setMotion,
   } = useDesignSystem();
+  const t = useCatalogueText(MESSAGES.en);
+  const haptics = useHaptic();
   const isStacked = useAccessibility().fontScale >= STACKED_FONT_SCALE;
   const [pasted, setPasted] = useState("");
   const [importProblems, setImportProblems] = useState<readonly string[]>([]);
   const [status, setStatus] = useState("");
+  const transition = useThemeTransition();
+  const numerals = useNumeralsChoice();
 
   const { base, knobs } = settings.draft ?? settings.present;
   const accent = knobs.accent ?? null;
   const hex = scheme === "dark" ? "hexDark" : "hexLight";
   const accentHex = settings.theme.colors.accent[hex];
-  const preset =
-    base === STACKRA_THEME
-      ? THEME_PRESETS.find((candidate) => JSON.stringify(candidate.knobs) === JSON.stringify(knobs))
-      : undefined;
+  const brand = BRAND_THEMES.find((candidate) => candidate.theme === base);
+  const preset = THEME_PRESETS.find(
+    (candidate) => JSON.stringify(candidate.knobs) === JSON.stringify(knobs),
+  );
+  const contrast = useMemo(
+    () => contrastReport(settings.theme, scheme === "dark" ? "dark" : "light"),
+    [settings.theme, scheme],
+  );
 
   const step = (change: ThemeKnobs) => ({ base, knobs: { ...knobs, ...change } });
   const commit = (change: ThemeKnobs) =>
@@ -287,7 +293,7 @@ export function SettingsScreen() {
         message: JSON.stringify(exportThemeJson(settings.theme), null, 2),
       });
     } catch {
-      setStatus(STRINGS.shareFailed);
+      setStatus(t(K.share_failed));
     }
   };
 
@@ -295,7 +301,7 @@ export function SettingsScreen() {
     try {
       const imported = parseThemeJson(pasted, STACKRA_THEME);
       setImportProblems([]);
-      setStatus(STRINGS.imported(imported.name));
+      setStatus(t(K.imported, { name: imported.name }));
       themeSettings.dispatch({ type: "change", step: { base: imported, knobs: {} } });
     } catch (error) {
       setImportProblems(error instanceof InvalidThemeError ? error.problems : [String(error)]);
@@ -304,12 +310,32 @@ export function SettingsScreen() {
 
   return (
     <Screen>
-      <Section title={STRINGS.appearance}>
+      <Section title={t(K.appearance)}>
         <Choice
-          label={STRINGS.scheme}
-          options={SCHEMES}
+          label={t(K.scheme)}
+          options={SCHEMES.map((id) => ({ id, label: t(K.schemes[id]) }))}
           value={colorScheme}
-          onSelect={(id) => setColorScheme(id as (typeof SCHEMES)[number]["id"])}
+          onSelect={(id, event) => {
+            // The transition grows from the tapped button.
+            themeTransition.setOrigin({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY });
+            setColorScheme(id as (typeof SCHEMES)[number]);
+          }}
+        />
+        <Choice label={t(K.language)} options={LANGUAGES} value={locale} onSelect={setLocale} />
+        <Choice
+          label={t(SHELL_KEYS.shell.digits)}
+          options={numeralsChoice.offered.map((id) => ({
+            id,
+            label: t(SHELL_KEYS.shell.numerals[id]),
+          }))}
+          value={numerals}
+          onSelect={numeralsChoice.set}
+        />
+        <Choice
+          label={t(K.motion)}
+          options={MotionLevel.map((id) => ({ id, label: t(K.motions[id]) }))}
+          value={motion}
+          onSelect={(id) => setMotion(id as MotionLevel)}
         />
         <LanguageSwitcher>
           {(switcher) =>
@@ -341,12 +367,47 @@ export function SettingsScreen() {
             )
           }
         </LanguageSwitcher>
-        <Choice label={STRINGS.language} options={LANGUAGES} value={locale} onSelect={setLocale} />
       </Section>
 
-      <Section title={STRINGS.theme}>
+      <Section title={t(K.feedback)}>
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="flex-1 gap-1">
+            <Label>{t(K.haptics)}</Label>
+            <Text className="text-sm text-muted">{t(K.haptics_note)}</Text>
+          </View>
+          <Switch
+            accessibilityLabel={t(K.haptics)}
+            isSelected={haptics.isEnabled}
+            onSelectedChange={haptics.setEnabled}
+          />
+        </View>
+      </Section>
+
+      <Section title={t(K.theme)}>
         <Choice
-          label={STRINGS.preset}
+          label={t(K.brand)}
+          options={BRAND_THEMES}
+          value={brand?.id}
+          onSelect={(id) => {
+            const picked = BRAND_THEMES.find((candidate) => candidate.id === id);
+            if (!picked) return;
+            themeSettings.dispatch({ type: "change", step: { base: picked.theme, knobs: {} } });
+            setBrand(picked.id);
+            displayPrefs.set("brand", picked.id);
+          }}
+        />
+        <Choice
+          label={t(K.transition)}
+          options={THEME_TRANSITIONS.map(({ id, key }) => ({
+            id: String(id),
+            label: t(K.transitions[key as keyof typeof K.transitions]),
+          }))}
+          value={String(transition)}
+          onSelect={(id) => themeTransition.setPreset(Number(id))}
+        />
+        <Separator />
+        <Choice
+          label={t(K.preset)}
           options={THEME_PRESETS}
           value={preset?.id}
           onSelect={(id) => {
@@ -357,23 +418,23 @@ export function SettingsScreen() {
         />
         <Separator />
         <View className="flex-row items-center justify-between gap-3">
-          <Label>{STRINGS.accent}</Label>
+          <Label>{t(K.accent)}</Label>
           <View className="flex-row items-center gap-3">
             <View
               accessible
-              accessibilityLabel={STRINGS.accentSwatch(accentHex)}
-              className="size-8 rounded-full border border-border"
+              accessibilityLabel={t(K.accent_swatch, { hex: accentHex })}
+              className="size-8 rounded-[var(--radius-pill)] border border-border"
               style={{ backgroundColor: accentHex }}
             />
             <Switch
-              accessibilityLabel={STRINGS.accent}
+              accessibilityLabel={t(K.accent)}
               isSelected={accent !== null}
               onSelectedChange={(isOn) => commit({ accent: isOn ? DEFAULT_ACCENT : null })}
             />
           </View>
         </View>
         <KnobSlider
-          label={STRINGS.accentHue}
+          label={t(K.accent_hue)}
           value={accent?.hue ?? DEFAULT_ACCENT.hue}
           min={0}
           max={360}
@@ -394,7 +455,7 @@ export function SettingsScreen() {
           }
         />
         <KnobSlider
-          label={STRINGS.accentChroma}
+          label={t(K.accent_chroma)}
           value={accent?.chroma ?? DEFAULT_ACCENT.chroma}
           min={0.02}
           max={0.3}
@@ -409,7 +470,7 @@ export function SettingsScreen() {
         />
         <Separator />
         <KnobSlider
-          label={STRINGS.neutralHue}
+          label={t(K.neutral_hue)}
           value={knobs.neutralHue ?? 248}
           min={0}
           max={360}
@@ -419,7 +480,7 @@ export function SettingsScreen() {
           onCommit={(neutralHue) => commit({ neutralHue })}
         />
         <KnobSlider
-          label={STRINGS.neutralChroma}
+          label={t(K.neutral_chroma)}
           value={knobs.neutralChroma ?? 0.005}
           min={0}
           max={0.03}
@@ -428,7 +489,7 @@ export function SettingsScreen() {
           onCommit={(neutralChroma) => commit({ neutralChroma })}
         />
         <KnobSlider
-          label={STRINGS.radius}
+          label={t(K.radius)}
           value={knobs.radius ?? 4}
           min={0}
           max={20}
@@ -439,16 +500,22 @@ export function SettingsScreen() {
         />
         <Separator />
         <Choice
-          label={STRINGS.latin}
-          options={THEME_FACES.latin}
+          label={t(K.latin)}
+          options={THEME_FACES.latin.map(({ id }) => ({
+            id,
+            label: t(K.faces[id as keyof typeof K.faces]),
+          }))}
           value={faceId("latin", knobs.fontSans)}
           onSelect={(id) =>
             commit({ fontSans: THEME_FACES.latin.find((candidate) => candidate.id === id)?.stack })
           }
         />
         <Choice
-          label={STRINGS.arabic}
-          options={THEME_FACES.arabic}
+          label={t(K.arabic)}
+          options={THEME_FACES.arabic.map(({ id }) => ({
+            id,
+            label: t(K.faces[id as keyof typeof K.faces]),
+          }))}
           value={faceId("arabic", knobs.fontArabic)}
           onSelect={(id) =>
             commit({
@@ -456,33 +523,35 @@ export function SettingsScreen() {
             })
           }
         />
-        <Text className="text-sm text-muted">{STRINGS.facesNote}</Text>
-        <Problems title={STRINGS.invalid} problems={settings.problems} />
+        <Text className="text-sm text-muted">{t(K.faces_note)}</Text>
+        <Problems title={t(K.invalid)} problems={settings.problems} />
       </Section>
 
-      <Section title={STRINGS.contrast}>
-        <Text className="text-sm text-muted">{STRINGS.contrastNote}</Text>
-        {contrastReport(settings.theme, scheme === "dark" ? "dark" : "light").map(
-          ({ name, ratio, needs, isPassing }) => (
-            <View
-              key={name}
-              accessible
-              accessibilityLabel={`${name}: ${ratio.toFixed(2)} to 1, ${isPassing ? STRINGS.passes : STRINGS.fails}`}
-              className={isStacked ? "gap-1" : "flex-row items-center justify-between gap-3"}
-            >
-              <Text className={`text-sm text-foreground ${isStacked ? "" : "flex-1"}`}>{name}</Text>
-              <Text className="font-mono text-xs text-muted">
-                {`${ratio.toFixed(2)} / ${needs}`}
-              </Text>
-              <Text className={`text-xs font-medium ${isPassing ? "text-success" : "text-danger"}`}>
-                {isPassing ? STRINGS.passes : STRINGS.fails}
-              </Text>
-            </View>
-          ),
-        )}
+      <Section title={t(K.contrast)}>
+        <Text className="text-sm text-muted">{t(K.contrast_note)}</Text>
+        {contrast.map(({ name, ratio, needs, isPassing }) => (
+          <View
+            key={name}
+            accessible
+            accessibilityLabel={t(K.contrast_label, {
+              name: t(pairKey(name)),
+              ratio: ratio.toFixed(2),
+              verdict: t(isPassing ? K.passes : K.fails),
+            })}
+            className={isStacked ? "gap-1" : "flex-row items-center justify-between gap-3"}
+          >
+            <Text className={`text-sm text-foreground ${isStacked ? "" : "flex-1"}`}>
+              {t(pairKey(name))}
+            </Text>
+            <Text className="font-mono text-xs text-muted">{`${ratio.toFixed(2)} / ${needs}`}</Text>
+            <Text className={`text-xs font-medium ${isPassing ? "text-success" : "text-danger"}`}>
+              {t(isPassing ? K.passes : K.fails)}
+            </Text>
+          </View>
+        ))}
       </Section>
 
-      <Section title={STRINGS.actions}>
+      <Section title={t(K.actions)}>
         <View className="flex-row flex-wrap gap-2">
           <Button
             size="sm"
@@ -490,7 +559,7 @@ export function SettingsScreen() {
             isDisabled={settings.past.length === 0}
             onPress={() => themeSettings.dispatch({ type: "undo" })}
           >
-            {STRINGS.undo}
+            {t(K.undo)}
           </Button>
           <Button
             size="sm"
@@ -498,22 +567,22 @@ export function SettingsScreen() {
             isDisabled={settings.future.length === 0}
             onPress={() => themeSettings.dispatch({ type: "redo" })}
           >
-            {STRINGS.redo}
+            {t(K.redo)}
           </Button>
           <Button
             size="sm"
             variant="secondary"
             onPress={() => themeSettings.dispatch({ type: "reset" })}
           >
-            {STRINGS.reset}
+            {t(K.reset)}
           </Button>
           <Button size="sm" variant="secondary" onPress={() => void share()}>
-            {STRINGS.share}
+            {t(K.share)}
           </Button>
         </View>
         <Separator />
         <TextField isInvalid={importProblems.length > 0}>
-          <Label>{STRINGS.paste}</Label>
+          <Label>{t(K.paste)}</Label>
           <TextArea
             value={pasted}
             onChangeText={setPasted}
@@ -522,15 +591,15 @@ export function SettingsScreen() {
             numberOfLines={4}
           />
         </TextField>
-        <Text className="text-sm text-muted">{STRINGS.pasteNote}</Text>
-        <Problems title={STRINGS.importInvalid} problems={importProblems} />
+        <Text className="text-sm text-muted">{t(K.paste_note)}</Text>
+        <Problems title={t(K.import_invalid)} problems={importProblems} />
         <Button
           size="sm"
           isDisabled={pasted.trim() === ""}
           onPress={importPasted}
           className="self-start"
         >
-          {STRINGS.import}
+          {t(K.import)}
         </Button>
         {status ? (
           <Text accessibilityLiveRegion="polite" className="text-sm text-muted">
@@ -541,7 +610,7 @@ export function SettingsScreen() {
 
       <Card>
         <Card.Body>
-          <Card.Title>{STRINGS.version}</Card.Title>
+          <Card.Title>{t(K.version)}</Card.Title>
           <Card.Description>{Constants.expoConfig?.version ?? "dev"}</Card.Description>
         </Card.Body>
       </Card>

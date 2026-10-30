@@ -1,0 +1,13 @@
+{
+  "size_label": "Upload, {size}",
+  "tone_label": "Upload, {tone}",
+  "value_label": "Upload at {value} per cent",
+  "indeterminate_label": "Preparing upload",
+  "storage": "Storage used",
+  "files": "Uploading invoices",
+  "files_text": "3 of 12 files",
+  "action_label": "Upload progress",
+  "advance": "Advance by 10%",
+  "reset": "Reset",
+  "complete": "Upload complete"
+}

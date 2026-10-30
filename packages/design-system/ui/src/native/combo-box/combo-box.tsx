@@ -172,7 +172,7 @@ export function ComboBox({
           detached
           bottomInset={insets.bottom + 12}
           className="mx-4"
-          backgroundClassName="rounded-4xl"
+          backgroundClassName="rounded-[var(--radius-container)]"
         >
           {label ? <HeroSelect.ListLabel>{label}</HeroSelect.ListLabel> : null}
           <SearchField value={text} onChange={setText}>

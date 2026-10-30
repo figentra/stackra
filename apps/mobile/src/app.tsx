@@ -1,13 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: the root component: it boots the app's container behind the splash, then mounts it, the i18n provider (the
- *          phone's language for this app and its region formats), gesture handling, safe-area insets, the Stackra
- *          design system provider (HeroUI Native, colour scheme, direction and the text-size cap) and the navigation
+ *          phone's language for this app and its region formats, the showcase's catalogues and the digits picked in
+ *          Display), gesture handling, safe-area insets, the Stackra design system provider (HeroUI Native, colour
+ *          scheme, direction and the text-size cap), the one toast stack (`ShowcaseToasts`) and the navigation
  *          container, with the theme bridged from the Stackra brand colours, around the app lock (off by default).
- *          At launch and on each return to the foreground it re-reads the phone: notification channels, App Tracking
- *          Transparency into consent, the region and, while the phone owns the language, the language. A share from
- *          another app opens the share inbox, whose strings are the packages' catalogues (`boot/app-messages`). The review
- *          area's icon registry is its own (`components/ui/review-icons.tsx`), so a release build drops it.
+ *          At launch it restores the remembered display settings (scheme, brand, transition, haptics;
+ *          `restoreDisplayPrefs`, `displayPrefs`) and loads the Figentra faces (`loadShowcaseFonts`). At launch and on
+ *          each return to the foreground it re-reads the phone: notification channels, App Tracking Transparency into
+ *          consent, the region and, while the phone owns the language, the language. A share from another app opens
+ *          the share inbox, whose strings are the packages' catalogues (`boot/app-messages`). The review area's icon
+ *          registry is its own (`components/ui/review-icons.tsx`), so a release build drops it.
  * Boundary: composes the providers and the navigator; owns no screen. The language choice is saved to the account's
  *           settings (`account.locale`) through `setLocale`; the container is `boot/create-app-container.function`.
  * Runtime: react-native
@@ -31,11 +34,11 @@ import { I18nProvider } from "@stackra/i18n/react";
 import { AppLockGate } from "@stackra/platform/native";
 import { SettingValueStore } from "@stackra/settings/contracts";
 import { ThemingConfig } from "@stackra/theming";
-import { DesignSystemProvider, useDesignSystem } from "@stackra/ui/native";
+import { ColorScheme } from "@stackra/ui/contracts";
+import { DesignSystemProvider, ThemeStatusBar, useDesignSystem } from "@stackra/ui/native";
 import * as SplashScreen from "expo-splash-screen";
-import { StatusBar } from "expo-status-bar";
 import { useThemeColor } from "heroui-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import { AppState, Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -44,12 +47,25 @@ import { createAppContainer } from "./boot/create-app-container.function";
 import { followSystem } from "./boot/follow-system.function";
 import { appMessages } from "./boot/app-messages.function";
 import { IncomingShareRedirect } from "./boot/incoming-share-redirect";
+import { ShowcaseToasts } from "./components/ui/showcase-toasts";
 import { linking } from "./navigation/linking";
 import { RootNavigator } from "./navigation/root-navigator";
+import { loadShowcaseFonts } from "./constants/load-showcase-fonts.function";
+import { displayPrefs } from "./stores/display-prefs.store";
+import { restoreDisplayPrefs } from "./stores/restore-display-prefs.function";
+import { themeTransition } from "./stores/theme-transition.store";
+import { useNumeralsChoice } from "./stores/use-numerals-choice";
 
 void SplashScreen.preventAutoHideAsync();
+// The remembered brand, transition and haptics go back into their stores before the first render.
+restoreDisplayPrefs();
+void loadShowcaseFonts();
 
-function Navigation() {
+/** The remembered scheme, read once at launch. */
+const REMEMBERED_SCHEME = ColorScheme.find((scheme) => scheme === displayPrefs.get("scheme"));
+const rememberScheme = (scheme: string) => displayPrefs.set("scheme", scheme);
+
+function Navigation(): ReactElement {
   // The scheme on screen, `system` already resolved, and the direction of the locale: the switchers on the
   // design-system screen change both at runtime.
   const { resolvedColorScheme, direction } = useDesignSystem();
@@ -63,41 +79,44 @@ function Navigation() {
   const base = dark ? DarkTheme : DefaultTheme;
   const [isReady, setIsReady] = useState(false);
   return (
-    <NavigationContainer
-      // React Navigation mirrors its headers, back buttons and gestures from this, not from I18nManager alone.
-      direction={direction}
-      linking={linking}
-      onReady={() => {
-        setIsReady(true);
-        void SplashScreen.hideAsync();
-      }}
-      theme={{
-        ...base,
-        colors: {
-          ...base.colors,
-          background,
-          card: background,
-          text: foreground,
-          primary: accent,
-          border,
-        },
-      }}
-    >
-      {/* Follows the in-app scheme, not only the device's, so the switcher keeps the status bar readable. */}
-      <StatusBar style={dark ? "light" : "dark"} />
-      {/* shortcut: no session or catalogues yet, so no role and the English of `platform::app_lock.*`. */}
-      <AppLockGate
-        roleName={null}
-        reason="Unlock to continue"
-        unlockLabel="Unlock"
-        coverColor={background}
-        textColor={foreground}
+    <ShowcaseToasts>
+      <NavigationContainer
+        // React Navigation mirrors its headers, back buttons and gestures from this, not from I18nManager alone.
+        direction={direction}
+        linking={linking}
+        onReady={() => {
+          setIsReady(true);
+          void SplashScreen.hideAsync();
+        }}
+        theme={{
+          ...base,
+          colors: {
+            ...base.colors,
+            background,
+            card: background,
+            text: foreground,
+            primary: accent,
+            border,
+          },
+        }}
       >
-        <RootNavigator />
-      </AppLockGate>
-      {/* Mounted once the navigator is ready, so a share that is already waiting opens the inbox. */}
-      {isReady ? <IncomingShareRedirect /> : null}
-    </NavigationContainer>
+        {/* Follows the theme's background lightness for the brand and scheme on screen, so a light-yellow or a
+            dark-pink brand reads right too; a screen whose top is a hero mounts its own over it. */}
+        <ThemeStatusBar />
+        {/* shortcut: no session or catalogues yet, so no role and the English of `platform::app_lock.*`. */}
+        <AppLockGate
+          roleName={null}
+          reason="Unlock to continue"
+          unlockLabel="Unlock"
+          coverColor={background}
+          textColor={foreground}
+        >
+          <RootNavigator />
+        </AppLockGate>
+        {/* Mounted once the navigator is ready, so a share that is already waiting opens the inbox. */}
+        {isReady ? <IncomingShareRedirect /> : null}
+      </NavigationContainer>
+    </ShowcaseToasts>
   );
 }
 
@@ -122,11 +141,13 @@ const phoneLocale = (config: I18nConfig): Locale =>
   });
 
 /** The booted app: the phone's language and region, re-read on each return to the foreground. */
-function Localized({ container }: { container: Container }) {
+function Localized({ container }: { container: Container }): ReactElement {
   const config = container.get(I18nConfig);
   const { maxFontScale } = container.get(ThemingConfig);
   const [locale, setActiveLocale] = useState(() => phoneLocale(config));
   const [device, setDevice] = useState(() => deviceRegion());
+  // The digits picked in Display, the customer's setting the provider takes (`scopeChoosesNumerals`).
+  const numerals = useNumeralsChoice();
 
   useEffect(() => {
     void followSystem(container);
@@ -161,12 +182,18 @@ function Localized({ container }: { container: Container }) {
       messages={appMessages(locale)}
       setLocale={setLocale}
       region={region}
+      numerals={numerals}
     >
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
+          {/* A scheme change draws the transition picked in Settings, from the tapped point. */}
           <DesignSystemProvider
+            schemeTransition={themeTransition.take}
+            defaultColorScheme={REMEMBERED_SCHEME}
+            onColorSchemeChange={rememberScheme}
             locale={locale}
             onLocaleChange={(next) => void setLocale(next as Locale)}
+            defaultBrand={displayPrefs.get("brand") ?? "stackra"}
             maxFontScale={maxFontScale}
           >
             <Navigation />
@@ -178,7 +205,7 @@ function Localized({ container }: { container: Container }) {
 }
 
 /** The app's root: boots the container behind the splash, then mounts it and the localized app. */
-export function App() {
+export function App(): ReactElement | null {
   const [container, setContainer] = useState<Container | Error>();
 
   useEffect(() => {

@@ -6,7 +6,7 @@
     "version": "0.0.1",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
-    "icon": "./assets/app-icon-ios-1024.png",
+    "icon": "./assets/brand/icon-1024.png",
     "runtimeVersion": {
       "policy": "fingerprint"
     },
@@ -19,6 +19,7 @@
       "config": {
         "usesNonExemptEncryption": false
       },
+      "icon": "./assets/brand/stackra.icon",
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyCollectedDataTypes": [],
@@ -46,8 +47,9 @@
       "package": "com.figentra.stackra",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/app-icon-android-foreground-1024.png",
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/brand/android-foreground.png",
+        "backgroundImage": "./assets/brand/android-background.png",
+        "monochromeImage": "./assets/brand/android-monochrome.png"
       },
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
@@ -67,11 +69,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/st-tile-light-256.png",
+          "image": "./assets/brand/splash-light.png",
           "imageWidth": 96,
           "backgroundColor": "#F5F6F3",
           "dark": {
-            "image": "./assets/st-tile-dark-256.png",
+            "image": "./assets/brand/splash-dark.png",
             "backgroundColor": "#0B0D0F"
           }
         }

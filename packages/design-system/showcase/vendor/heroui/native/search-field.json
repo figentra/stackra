@@ -1,0 +1,138 @@
+{
+  "slug": "search-field",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/search-field.mdx",
+  "parts": [
+    {
+      "name": "SearchField",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the search field"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Controlled search text value"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: string) => void",
+          "description": "Callback fired when the search text changes"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the search field is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the search field is in an invalid state"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the search field is required"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "animation",
+          "type": "AnimationRootDisableAll",
+          "description": "Animation configuration for the search field"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "SearchField.Group",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the group"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "SearchField.SearchIcon",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom content to replace the default search icon"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "iconProps",
+          "type": "SearchFieldSearchIconIconProps",
+          "description": "Props for customizing the default search icon (ignored when children are provided)"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "SearchField.ClearButton",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom content to replace the default close icon"
+        },
+        {
+          "name": "iconProps",
+          "type": "SearchFieldClearButtonIconProps",
+          "description": "Props for customizing the clear button icon"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...ButtonProps",
+          "type": "ButtonRootProps",
+          "description": "All Button root props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useSearchField",
+      "signature": "useSearchField()",
+      "returns": []
+    }
+  ],
+  "slots": []
+}

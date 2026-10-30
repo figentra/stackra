@@ -1,0 +1,110 @@
+{
+  "generatedFrom": {
+    "hash": "43fbf656f9378b12",
+    "heroDoc": "vendor/heroui/react/pagination.json",
+    "propsFiles": ["ui/src/react/pagination/pagination.props.ts"]
+  },
+  "importLine": "import { Pagination } from \"@stackra/ui/react\";",
+  "key": "free/pagination",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the page someone moves to.",
+          "name": "onPageChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(page: number) => void"
+        },
+        {
+          "description": "Called with the new size; the page goes back to 1.",
+          "name": "onPageSizeChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(pageSize: number) => void"
+        }
+      ],
+      "name": "Pagination",
+      "props": [
+        {
+          "description": "How many records there are in all.",
+          "name": "total",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The current page, for a controlled pagination; pair it with `onPageChange`.",
+          "name": "page",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The starting page, for an uncontrolled pagination; defaults to 1.",
+          "name": "defaultPage",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Records per page, for a controlled size; pair it with `onPageSizeChange`.",
+          "name": "pageSize",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The starting records per page; defaults to the first of `pageSizes`, or 10.",
+          "name": "defaultPageSize",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The sizes to choose from; left out, there is no size choice.",
+          "name": "pageSizes",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly number[]"
+        },
+        {
+          "description": "True to add a \"Go to page\" input.",
+          "name": "hasJump",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to hide the \"1–10 of 240\" summary. Defaults to true.",
+          "name": "hasSummary",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Pages shown either side of the current one; defaults to 1.",
+          "name": "siblings",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The landmark's name, for example \"Invoices pages\"; defaults to the catalogue's \"Pagination\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

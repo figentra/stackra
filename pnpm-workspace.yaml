@@ -133,6 +133,10 @@ catalogs:
     # React Aria's I18nProvider for @stackra/ui/react (ADR 0302, owner-approved 2026-10-23); pinned to the version
     # @heroui/react 3.2.6 resolves its react-aria-components peer to, so both share one React Aria instance.
     react-aria-components: 1.22.1
+    # React Aria itself for @stackra/ui/react's UNSAFE_PortalProvider, which react-aria-components does not re-export
+    # (HeroUI popovers scoped inside brand preview frames; owner-approved 2026-10-29); pinned to the version
+    # react-aria-components 1.22.1 and @heroui/react 3.2.6 resolve to, so all three share one React Aria instance.
+    react-aria: 3.53.1
     # Date values for @stackra/ui DateField and DatePicker (owner-approved 2026-10-24); pinned to the version
     # react-aria-components 1.22.1 and @heroui/react 3.2.6 already resolve, so one copy serves all three.
     "@internationalized/date": 3.12.4
@@ -148,6 +152,8 @@ catalogs:
     # Animation for @stackra/ui and the playground. The HeroUI Pro set (@heroui-pro/react and its optional peers)
     # left core with @stackra-pro/ui (ADR 0461 decision 3, stackra-189); figentra/stackra-pro pins it.
     motion: 12.43.0
+    # Free charts of @stackra/ui/react (a dev dependency there, a peer for apps) and the playground. MIT.
+    recharts: 3.10.1
     # Icons for @stackra/ui/react's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
     lucide-react: 1.54.0
     # Form state for @stackra/ui FormField (ADR 0055, accepted by ADR 0303); newest release at least 14 days old.
@@ -221,6 +227,12 @@ catalogs:
     "@react-native-community/netinfo": 12.0.1
     expo-camera: 57.0.6
     expo-haptics: 57.0.3
+    # @stackra/ui's native copy button, file and image pickers, and the showcase's font loading (owner approval
+    # 2026-10-30, STA-1371): Expo SDK 57's bundled versions.
+    expo-clipboard: 57.0.2
+    expo-document-picker: 57.0.3
+    expo-image-picker: 57.0.20
+    expo-font: 57.0.4
     babel-preset-expo: 57.0.16
     react: 19.2.3
     react-dom: 19.2.3
@@ -239,6 +251,10 @@ catalogs:
     # and its optional peers left core with @stackra-pro/ui (ADR 0461 decision 3, stackra-189).
     "@internationalized/date": 3.12.4
     "@internationalized/number": 3.6.9
+    # Free native charts of @stackra/ui/native (a dev dependency there) and the mobile showcase (STA-1371, c6). Skia
+    # at Expo SDK 57's bundled version. MIT.
+    "@shopify/react-native-skia": 2.6.2
+    victory-native: 41.26.0
     # Required native peer of Uniwind Pro 1.9.0 (>= 0.37.1), for the apps that run it (catalog:uniwind-pro).
     react-native-nitro-modules: 0.37.1
     # Icons for @stackra/ui/native's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
@@ -252,7 +268,7 @@ catalogs:
     tailwind-variants: 3.3.1
     # The Expo CLI loads `typescript` as a JS API, which TypeScript 7 (native) does not ship yet.
     typescript: 6.0.3
-    "@types/react": 19.2.18
+    "@types/react": 19.3.0
   # Uniwind Pro (ADR 0310 decision 11): our own apps install it under the `uniwind` name, so every `uniwind` import in
   # the app, the workspace packages' included, runs on the Pro engine; free packages keep their free `uniwind` peer.
   # A shell like HeroUI Pro: its postinstall downloads the licensed build (a `uniwind-pro` login locally,
@@ -392,6 +408,9 @@ allowBuilds:
   # C2PA (stackra-26): its postinstall fetches or builds the native binding. Off until a run that needs the binding
   # proves it and the owner approves the download; the batch's tests run on recorded fixtures.
   "@contentauth/c2pa-node": false
+  # Skia (STA-416, native charts): the postinstall copies the prebuilt Apple and Android libraries from its own
+  # platform packages into libs/, with no download; the native build needs them.
+  "@shopify/react-native-skia": true
 
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.11.7"

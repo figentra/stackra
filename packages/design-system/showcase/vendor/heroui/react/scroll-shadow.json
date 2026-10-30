@@ -1,0 +1,88 @@
+{
+  "slug": "scroll-shadow",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(utilities)/scroll-shadow.mdx",
+  "parts": [
+    {
+      "name": "ScrollShadow",
+      "props": [
+        {
+          "name": "orientation",
+          "type": "`\"vertical\"` | `\"horizontal\"`",
+          "default": "\"vertical\"",
+          "description": "The scroll direction"
+        },
+        {
+          "name": "variant",
+          "type": "\"fade\"",
+          "default": "\"fade\"",
+          "description": "The visual shadow effect style"
+        },
+        {
+          "name": "size",
+          "type": "number",
+          "default": "40",
+          "description": "The shadow gradient size in pixels"
+        },
+        {
+          "name": "offset",
+          "type": "number",
+          "default": "0",
+          "description": "The scroll offset before showing shadows (in pixels)"
+        },
+        {
+          "name": "hideScrollBar",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to hide the native scrollbar"
+        },
+        {
+          "name": "isEnabled",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether scroll shadow detection is enabled"
+        },
+        {
+          "name": "visibility",
+          "type": "`\"auto\"` | `\"both\"` | `\"top\"` | `\"bottom\"` | `\"left\"` | `\"right\"` | `\"none\"`",
+          "default": "\"auto\"",
+          "description": "Controlled shadow visibility state"
+        },
+        {
+          "name": "onVisibilityChange",
+          "type": "(visibility: ScrollShadowVisibility) => void",
+          "description": "Callback invoked when shadow visibility changes"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply to the root element"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The scrollable content"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".scroll-shadow",
+      "description": "Root container element"
+    },
+    {
+      "name": ".scroll-shadow--vertical",
+      "description": "Vertical scrolling (default)"
+    },
+    {
+      "name": ".scroll-shadow--horizontal",
+      "description": "Horizontal scrolling"
+    },
+    {
+      "name": ".scroll-shadow--hide-scrollbar",
+      "description": "Hides native scrollbar"
+    }
+  ]
+}

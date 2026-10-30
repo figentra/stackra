@@ -12,23 +12,31 @@
  */
 import type { ToastManager, ToastShowOptions } from "heroui-native";
 
+import type { ToastVariant } from "#contracts/enums/toast-variant.enum";
+
 /** A toast the bridge can hold until a provider connects: it always has an id, so it can be closed meanwhile. */
 type PendingToast = ToastShowOptions & { readonly id: string };
 
 /** What the connected provider gave: its manager and the dismiss button's accessible name. */
-const state: { manager: ToastManager | undefined; dismissLabel: string; pending: PendingToast[] } =
-  {
-    manager: undefined,
-    dismissLabel: "",
-    pending: [],
-  };
+const state: {
+  manager: ToastManager | undefined;
+  dismissLabel: string;
+  variant: ToastVariant;
+  pending: PendingToast[];
+} = {
+  manager: undefined,
+  dismissLabel: "",
+  variant: "alert",
+  pending: [],
+};
 
 /** The bridge between `toast()` and the provider. */
 export const toastBridge = {
   /** Called by the provider with its current manager: stores it and shows the toasts that were waiting. */
-  connect(manager: ToastManager, dismissLabel: string): void {
+  connect(manager: ToastManager, dismissLabel: string, variant: ToastVariant = "alert"): void {
     state.manager = manager;
     state.dismissLabel = dismissLabel;
+    state.variant = variant;
     const waiting = state.pending;
     state.pending = [];
     for (const options of waiting) manager.show(options);
@@ -50,5 +58,9 @@ export const toastBridge = {
   /** The dismiss button's accessible name the connected provider was given. */
   dismissLabel(): string {
     return state.dismissLabel;
+  },
+  /** The look the connected provider gives every toast. */
+  variant(): ToastVariant {
+    return state.variant;
   },
 };

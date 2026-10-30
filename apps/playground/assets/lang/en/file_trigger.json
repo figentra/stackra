@@ -1,0 +1,5 @@
+{
+  "receipt": "Attach receipts",
+  "picked": "{count, plural, =0 {No files chosen} one {# file chosen} other {# files chosen}}",
+  "list": "Supplier documents"
+}

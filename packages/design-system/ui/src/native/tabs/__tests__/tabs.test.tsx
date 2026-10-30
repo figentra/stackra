@@ -18,6 +18,8 @@ import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import type { TabsContractProps } from "#contracts/types/tabs-contract-props.type";
+import type { DesignSystemState } from "#contracts/types/design-system-state.type";
+import { DesignSystemContext } from "#native/design-system-provider/design-system-context";
 import { Tabs } from "#native/tabs/tabs";
 import type { TabsProps } from "#native/tabs/tabs.props";
 
@@ -216,5 +218,16 @@ describe("Tabs (native)", () => {
     void (<Tabs items={ITEMS}>x</Tabs>);
     // @ts-expect-error a tab list always holds exactly one tab
     void (<Tabs items={ITEMS} selectionMode="multiple" />);
+  });
+
+  it("springs the indicator at the full motion level and leaves HeroUI's timing below it", () => {
+    render(<Tabs items={ITEMS} />);
+    expect(propsOf("indicator")["animation"]).toMatchObject({ translateX: { type: "spring" } });
+    render(
+      <DesignSystemContext value={{ resolvedMotion: "reduced" } as DesignSystemState}>
+        <Tabs items={ITEMS} />
+      </DesignSystemContext>,
+    );
+    expect(propsOf("indicator")).not.toHaveProperty("animation");
   });
 });

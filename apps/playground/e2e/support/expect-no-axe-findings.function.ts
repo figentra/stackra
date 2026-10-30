@@ -12,8 +12,27 @@ import { expect, type Page } from "@playwright/test";
 
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
-/** Scans the page as it is now, and fails on any axe violation or any check axe leaves for review. */
+/** Scans the page once its lazy demos have mounted and its animations have settled, and fails on any axe violation or any check axe leaves for review. */
 export async function expectNoAxeFindings(page: Page): Promise<void> {
+  // Every lazy demo mounted first: one arriving mid-scan leaves heading-order unable to place its headings.
+  await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
+  // Every finite, time-based animation and transition finished, as in `playground.e2e.test.ts`: a tab's colour caught
+  // mid-transition as a demo mounts read 4.22:1. Scroll-driven and endless ones (a shimmer) are left running.
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document.getAnimations().some((animation) => {
+          const end = animation.effect?.getComputedTiming().endTime;
+          return (
+            animation.playState === "running" &&
+            animation.timeline instanceof DocumentTimeline &&
+            typeof end === "number" &&
+            Number.isFinite(end)
+          );
+        }),
+      ),
+    )
+    .toBe(false);
   const { violations, incomplete } = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
   const report = (results: typeof violations) =>
     results.map(

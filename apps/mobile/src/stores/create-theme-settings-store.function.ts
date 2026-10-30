@@ -9,14 +9,15 @@
  * Runtime: react-native
  * Governing contract: ADR 0320 (the Theme Studio); ADR 0302 (Stackra Design System); ADR 0305 (rule 10).
  */
-import { deriveTheme, InvalidThemeError, STACKRA_THEME } from "@stackra/tokens";
+import { deriveTheme, InvalidThemeError } from "@stackra/tokens";
 import { Uniwind } from "uniwind";
+import { SHOWCASE_THEME } from "../constants/showcase-theme.constant";
 import type { ThemeStep } from "./theme-step.type";
 import type { ThemeSettings } from "./theme-settings.type";
 import type { ThemeSettingsChange } from "./theme-settings-change.type";
 import { uniwindVariables } from "./uniwind-variables.function";
 
-const STACKRA_STEP: ThemeStep = { base: STACKRA_THEME, knobs: {} };
+const SHOWCASE_STEP: ThemeStep = { base: SHOWCASE_THEME, knobs: {} };
 
 /** The settings with `next`'s steps and the theme derived from the step on screen. */
 function settle(
@@ -40,7 +41,7 @@ function reduceThemeSettings(state: ThemeSettings, change: ThemeSettingsChange):
     case "reset": {
       return settle(state, {
         past: [...past, present],
-        present: change.type === "reset" ? STACKRA_STEP : change.step,
+        present: change.type === "reset" ? SHOWCASE_STEP : change.step,
         draft: undefined,
         future: [],
       });
@@ -71,20 +72,49 @@ function reduceThemeSettings(state: ThemeSettings, change: ThemeSettingsChange):
   }
 }
 
-/** The stackra theme with no history: what the app's stylesheet already shows. */
+/** The showcase theme (Figentra over Stackra) with no history; the store paints it when it is made. */
 const INITIAL_THEME_SETTINGS: ThemeSettings = {
   past: [],
-  present: STACKRA_STEP,
+  present: SHOWCASE_STEP,
   draft: undefined,
   future: [],
-  theme: STACKRA_THEME,
+  theme: SHOWCASE_THEME,
   problems: [],
 };
 
-/** A settings store that pushes every new theme into Uniwind's light and dark themes. */
-export function createThemeSettingsStore() {
+/** Pushes `theme` into Uniwind's light and dark themes. */
+function paint(theme: ThemeSettings["theme"]) {
+  const variables = uniwindVariables(theme);
+  Uniwind.updateCSSVariables("light", variables.light);
+  Uniwind.updateCSSVariables("dark", variables.dark);
+}
+
+/** How often a moving slider's draft repaints the app, in milliseconds. */
+const DRAFT_INTERVAL = 120;
+
+/**
+ * Runs `run` after the draft interval. A repaint restyles every mounted view, so once a frame starved the slider's
+ * gesture on device; a few repaints a second still read as live.
+ */
+const nextDraft = (run: () => void) => void setTimeout(run, DRAFT_INTERVAL);
+
+/**
+ * A settings store that pushes every new theme into Uniwind's light and dark themes, starting with its own: the built
+ * stylesheet is the brand-neutral Stackra base, so the showcase layer is painted over it once. A moving slider's
+ * drafts land at most once a draft interval, the last one winning, so the thumb is not held back by a derive and push per step.
+ */
+export function createThemeSettingsStore(schedule: (run: () => void) => void = nextDraft) {
   let state = INITIAL_THEME_SETTINGS;
+  paint(state.theme);
   const listeners = new Set<() => void>();
+  let pendingDraft: ThemeSettingsChange | undefined;
+  const apply = (change: ThemeSettingsChange) => {
+    const next = reduceThemeSettings(state, change);
+    if (next === state) return;
+    if (next.theme !== state.theme) paint(next.theme);
+    state = next;
+    for (const listener of listeners) listener();
+  };
   return {
     getSnapshot: () => state,
     subscribe(listener: () => void) {
@@ -92,15 +122,19 @@ export function createThemeSettingsStore() {
       return () => void listeners.delete(listener);
     },
     dispatch(change: ThemeSettingsChange) {
-      const next = reduceThemeSettings(state, change);
-      if (next === state) return;
-      if (next.theme !== state.theme) {
-        const variables = uniwindVariables(next.theme);
-        Uniwind.updateCSSVariables("light", variables.light);
-        Uniwind.updateCSSVariables("dark", variables.dark);
+      if (change.type !== "draft") {
+        pendingDraft = undefined; // A commit, undo or reset drops a draft still waiting for its turn.
+        apply(change);
+        return;
       }
-      state = next;
-      for (const listener of listeners) listener();
+      const isScheduled = pendingDraft !== undefined;
+      pendingDraft = change;
+      if (isScheduled) return;
+      schedule(() => {
+        const draft = pendingDraft;
+        pendingDraft = undefined;
+        if (draft) apply(draft);
+      });
     },
   };
 }

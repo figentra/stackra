@@ -24,10 +24,14 @@ describe("@stackra/i18n", () => {
       "NativeSwitcher",
       "NumberingSystem",
       "countryName",
+      "dateTimeFormatIn",
       "formatAddress",
+      "formatDateTime",
       "formatLength",
       "formatMessage",
+      "formatNumber",
       "formatQuantity",
+      "intlLocale",
       "keys",
       "loadMessages",
       "localeFormat",
@@ -35,9 +39,12 @@ describe("@stackra/i18n", () => {
       "mergeCatalogues",
       "nativeSwitcherMode",
       "normalizeArabic",
+      "numberFormatIn",
+      "numeralsOf",
       "regionFormat",
       "startingLocale",
       "withDigits",
+      "withNumerals",
     ]);
   });
 

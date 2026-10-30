@@ -1,0 +1,80 @@
+{
+  "product": "Playground",
+  "title": "Stackra Design System",
+  "skip": "Skip to content",
+  "search": "Search components",
+  "studio": "Theme Studio",
+  "settings": "Display settings",
+  "show_settings": "Scheme and language",
+  "color_scheme": "Colour scheme",
+  "language": "Language and direction",
+  "material": "Material",
+  "motion": "Motion",
+  "digits": "Digits",
+  "brand": "Brand",
+  "transition": "Transition",
+  "mode": "Mode",
+  "lang": "Language",
+  "nav": "Site",
+  "components": "Components",
+  "docs": "Docs",
+  "display": "Display",
+  "menu": "Menu",
+  "back_to_top": "Back to top",
+  "scheme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "materials": {
+    "solid": "Solid",
+    "frosted": "Frosted",
+    "glass": "Glass",
+    "liquid": "Liquid"
+  },
+  "motions": {
+    "full": "Full",
+    "reduced": "Reduced",
+    "none": "None"
+  },
+  "transitions": {
+    "circle_origin": "Circle from the control",
+    "slide_origin": "Band from the control",
+    "circle_center": "Circle from the centre",
+    "circle_top_right": "Circle from the top right",
+    "circle_top_left": "Circle from the top left",
+    "circle_bottom_right": "Circle from the bottom right",
+    "circle_bottom_left": "Circle from the bottom left",
+    "slide_rtl": "Slide right to left",
+    "slide_ltr": "Slide left to right",
+    "fade": "Fade",
+    "blur": "Blur",
+    "none": "None"
+  },
+  "actions": {
+    "scheme": "{name} scheme",
+    "material": "{name} material",
+    "home": "Go to the index",
+    "components": "Browse every component",
+    "components_detail": "The gallery, by category",
+    "studio_detail": "Derive, preview and export a theme"
+  },
+  "numerals": {
+    "latn": "Latin (012)",
+    "arab": "Arabic-Indic (٠١٢)"
+  },
+  "reset": "Reset to defaults",
+  "sections": {
+    "appearance": "Appearance",
+    "language": "Language and numbers",
+    "motion": "Motion",
+    "showcase": "Showcase"
+  },
+  "footer": {
+    "copyright": "© 2026 Figentra · Stackra",
+    "nav": "Footer",
+    "github": "GitHub",
+    "changelog": "Changelog",
+    "version": "Version {version}"
+  }
+}

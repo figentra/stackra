@@ -1,0 +1,277 @@
+{
+  "generatedFrom": {
+    "hash": "86c09020eccadc27",
+    "heroDoc": "vendor/heroui/react/button-group.json",
+    "propsFiles": ["ui/src/react/split-button/split-button.props.ts"]
+  },
+  "importLine": "import { SplitButton } from \"@stackra/ui/react\";",
+  "key": "free/split-button",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the primary action is pressed.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with the key of every menu action chosen, after the action's own `onPress`.",
+          "name": "onAction",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when the hover state changes.",
+          "name": "onHoverChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isHovering: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a hover interaction ends.",
+          "name": "onHoverEnd",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: HoverEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a hover interaction starts.",
+          "name": "onHoverStart",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: HoverEvent) => void"
+        }
+      ],
+      "extends": "ButtonGroup",
+      "name": "SplitButton",
+      "props": [
+        {
+          "description": "The primary action's visible label, which is also its accessible name.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "An icon drawn before the primary label, on the inline-start side.",
+          "name": "startIcon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "The accessible name of the caret button, for example \"More save options\".",
+          "name": "menuLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The related actions the caret opens, in groups.",
+          "name": "sections",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly MenuSection[]"
+        },
+        {
+          "default": "primary",
+          "description": "The emphasis of both halves. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+        },
+        {
+          "default": "md",
+          "description": "The size of both halves. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "True to refuse both halves.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True while the primary action runs: the primary half shows a spinner and the caret is refused.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"start\" | \"end\""
+        },
+        {
+          "default": "center",
+          "description": "Where along that side it lines up with the trigger. Defaults to `center`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\""
+        },
+        {
+          "default": "'react-aria-Group'",
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "ClassNameOrFunction<GroupRenderProps>"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Defines a string value that labels the current element.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Whether the group is invalid.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the group is read only.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMRenderFunction<\"div\", GroupRenderProps>"
+        },
+        {
+          "default": "'group'",
+          "description": "An accessibility role for the group. By default, this is set to `'group'`.\nUse `'region'` when the contents of the group is important enough to be\nincluded in the page table of contents. Use `'presentation'` if the group\nis visual only and does not represent a semantic grouping of controls.",
+          "name": "role",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"group\" | \"presentation\" | \"region\""
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<GroupRenderProps>"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base button group container",
+      "name": ".button-group"
+    },
+    {
+      "description": "Full width modifier",
+      "name": ".button-group--full-width"
+    },
+    {
+      "description": "Separator element between buttons",
+      "name": ".button-group__separator"
+    }
+  ]
+}

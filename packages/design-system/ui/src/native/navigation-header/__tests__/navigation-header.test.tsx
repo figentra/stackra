@@ -21,6 +21,7 @@ import type { ReactNode } from "react";
 import { NavigationHeader } from "#native/navigation-header/navigation-header";
 import type { NavigationHeaderProps } from "#native/navigation-header/navigation-header.props";
 import { RouterProvider } from "#native/router-provider/router-provider";
+import { isDirectionalIcon } from "#core/functions/is-directional-icon.function";
 
 vi.mock("react-native", () => ({
   View: ({
@@ -72,7 +73,11 @@ vi.mock("#native/heading/heading", () => ({
 }));
 vi.mock("#native/icon/icon", () => ({
   Icon: ({ name, isMirroredInRtl }: { name: string; isMirroredInRtl?: boolean }) => (
-    <i data-testid="icon" data-name={name} data-mirrored={String(isMirroredInRtl)} />
+    <i
+      data-testid="icon"
+      data-name={name}
+      data-mirrored={String(isMirroredInRtl ?? isDirectionalIcon(name))}
+    />
   ),
 }));
 vi.mock("#native/icon-button/icon-button", () => ({

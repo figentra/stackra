@@ -19,6 +19,8 @@
 // @covers sta-350:FR-160 sta-350:FR-162 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -35,7 +37,9 @@ const open = async (
   await page.setViewportSize(viewport);
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/app-shell?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "App shell" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("App shell", locale) }),
+  ).toBeVisible();
 };
 
 /** Waits until the open drawer has finished entering, so axe and the boxes see its final state. */
@@ -59,11 +63,9 @@ const boxOf = async (locator: Locator) => {
 const isFocusInside = (dialog: Locator) =>
   dialog.evaluate((element) => element.contains(document.activeElement));
 
-/** The frame section's header button, which opens the drawer on a narrow window. */
-const frameOpener = (page: Page) =>
-  page
-    .getByRole("region", { name: "Frame" })
-    .getByRole("button", { name: "Open navigation", exact: true });
+/** The Usage shell's header button, which opens the drawer on a narrow window: its header's only button, since its
+ *  name is in the page's locale. */
+const frameOpener = (page: Page) => example(page, "usage").locator("header").getByRole("button");
 
 const expectNoFindings = async (builder: AxeBuilder) => {
   const { violations, incomplete } = await builder.withTags(AXE_TAGS).analyze();
@@ -109,7 +111,7 @@ test("the sidebar is a column from 768 px up and the header's button hides with 
   page,
 }) => {
   await open(page, "light", "en", WIDE);
-  const frame = page.getByRole("region", { name: "Frame" });
+  const frame = example(page, "usage");
   await expect(frame.getByRole("navigation", { name: "Frame navigation" })).toBeVisible();
   await expect(frameOpener(page)).toBeHidden();
   await page.setViewportSize({ width: 768, height: 800 });
@@ -123,7 +125,7 @@ test("collapseBelow xl shows the column from 1280 px and uses the drawer below",
   page,
 }) => {
   await open(page, "light", "en", WIDE);
-  const breakpoint = page.getByRole("region", { name: "Collapse breakpoint" });
+  const breakpoint = example(page, "breakpoint");
   const column = breakpoint.getByRole("navigation", { name: "Breakpoint navigation" });
   await expect(column).toBeVisible();
   await page.setViewportSize({ width: 1100, height: 800 });
@@ -133,7 +135,7 @@ test("collapseBelow xl shows the column from 1280 px and uses the drawer below",
 
 test("the folding toggle of the column narrows it to the rail", async ({ page }) => {
   await open(page, "light", "en");
-  const frame = page.getByRole("region", { name: "Frame" });
+  const frame = example(page, "usage");
   const nav = frame.getByRole("navigation", { name: "Frame navigation" });
   const root = nav.locator("xpath=..");
   expect((await boxOf(root)).width).toBeCloseTo(256, 0);
@@ -143,7 +145,7 @@ test("the folding toggle of the column narrows it to the rail", async ({ page })
 
 test("the shell's page is inside its region, under the section's heading", async ({ page }) => {
   await open(page, "light", "en");
-  const frame = page.getByRole("region", { name: "Frame" });
+  const frame = example(page, "usage");
   await expect(
     frame.locator("#app-shell-frame-main").getByRole("heading", { level: 3 }),
   ).toHaveText("Orders");
@@ -224,16 +226,18 @@ for (const locale of LOCALES)
     await frameOpener(page).click();
     const dialog = await settled(page);
     const box = await boxOf(dialog);
-    if (locale === "en") expect(box.x).toBeCloseTo(0, 0);
-    else expect(box.x + box.width).toBeCloseTo(NARROW.width, 0);
-    expect(box.height).toBeCloseTo(NARROW.height, 0);
+    // The drawer floats 8px clear of every edge (the floating Drawer, owner request 2026-10-29).
+    const inset = 8;
+    if (locale === "en") expect(box.x).toBeCloseTo(inset, 0);
+    else expect(box.x + box.width).toBeCloseTo(NARROW.width - inset, 0);
+    expect(box.height).toBeCloseTo(NARROW.height - 2 * inset, 0);
   });
 
 test("the live shell opens its drawer on a wide window too and reports the state", async ({
   page,
 }) => {
   await open(page, "light", "en", WIDE);
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   await expect(page.getByTestId("drawer-state")).toHaveText("Drawer: closed");
   const opener = live.getByRole("button", { name: "Open navigation", exact: true });
   await expect(opener).toBeVisible();
@@ -248,16 +252,18 @@ test("the live shell opens its drawer on a wide window too and reports the state
 
 test("a shell with no sidebar has no navigation and no button", async ({ page }) => {
   await open(page, "light", "en", NARROW);
-  const bare = page.getByRole("region", { name: "Without a sidebar" });
+  const bare = example(page, "bare");
   await expect(bare.getByRole("navigation")).toHaveCount(0);
-  await expect(bare.getByRole("button")).toHaveCount(0);
+  // The shell's header, where the drawer's button would be; the example's own code button sits outside the shell.
+  await expect(bare.locator("header")).toBeVisible();
+  await expect(bare.locator("header").getByRole("button")).toHaveCount(0);
   await expect(bare.getByRole("heading", { level: 3, name: "Dashboard" })).toBeVisible();
 });
 
 test("the Arabic shell puts its column at the right", async ({ page }) => {
   await open(page, "light", "en", WIDE);
-  const region = page.getByRole("region", { name: "Arabic" });
-  const nav = region.getByRole("navigation", { name: "تنقل الإطار" });
+  const region = example(page, "arabic");
+  const nav = region.getByRole("navigation", { name: "تنقل الإطار العربي" });
   const content = region.locator("#app-shell-arabic-main");
   expect((await boxOf(nav)).x).toBeGreaterThan((await boxOf(content)).x);
 });

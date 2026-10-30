@@ -1,0 +1,9 @@
+{
+  "basics": {
+    "label": "Stay",
+    "chosen": "From {start} to {end}"
+  },
+  "hijri": {
+    "label": "Leave in the Hijri calendar"
+  }
+}

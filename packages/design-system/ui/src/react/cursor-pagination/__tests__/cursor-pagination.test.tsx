@@ -15,10 +15,15 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { CursorPagination } from "#react/cursor-pagination/cursor-pagination";
 import type { CursorPaginationProps } from "#react/cursor-pagination/cursor-pagination.props";
+import { isDirectionalIcon } from "#core/functions/is-directional-icon.function";
 
 vi.mock("#react/icon/icon", () => ({
   Icon: ({ name, isMirroredInRtl }: { name: string; isMirroredInRtl?: boolean }) => (
-    <i data-testid="icon" data-name={name} data-mirrored={String(isMirroredInRtl === true)} />
+    <i
+      data-testid="icon"
+      data-name={name}
+      data-mirrored={String(isMirroredInRtl ?? isDirectionalIcon(name))}
+    />
   ),
 }));
 

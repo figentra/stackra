@@ -72,7 +72,10 @@ the testing session first runs the command, both files are placeholders and the 
 ## Brand files
 
 The brand kit in `src/assets/brand/` is all rights reserved under its `NOTICE` (ADR 0024); the `brand` page shows every
-file. Its two notes, moved here from `src/` (gen refuses a README there):
+file. The logos, marks, app icons, favicons and splash, and `src/assets/logo/` and `favicon.svg`, are copies of the
+figentra/brand Stackra kit at 17f24d2 (the sha the playground's and mobile app's `brand.json` pin); the docs have no
+pull step yet, so refresh them by hand when the pin moves, until `figentra-brand pull` ships (brand rules §32). Its two
+notes, moved here from `src/` (gen refuses a README there):
 
 ### "by figentra\_" marks (`brand/marks/`)
 
@@ -103,7 +106,7 @@ face: Geist → Segoe UI → Helvetica → Arial; IBM Plex Sans Arabic → Tahom
 | Password reset             | `reset-{en,ar}.html`: the docs account is an assumption to confirm                                 |
 | Signature                  | `../stationery/email-signature-{en,ar}.html` (in the source kit)                                   |
 
-- The button is ink with paper text (18:1). The web accent is steel blue since ADR 0319; mail keeps the neutral
+- The button is ink with paper text (18:1). The web accent is the neutral steel of the Stackra brand (stackra-213); mail keeps the neutral
   button, which every client renders the same.
 - Links are underlined; colour alone never marks them.
 - Host `logos/stackra-endorsed-*-light` at a public URL and replace the relative `src` before sending.

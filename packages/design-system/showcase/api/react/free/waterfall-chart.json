@@ -1,0 +1,72 @@
+{
+  "generatedFrom": {
+    "hash": "fa212928802c48d1",
+    "propsFiles": ["ui/src/react/waterfall-chart/waterfall-chart.props.ts"]
+  },
+  "importLine": "import { WaterfallChart } from \"@stackra/ui/react\";",
+  "key": "free/waterfall-chart",
+  "parts": [
+    {
+      "name": "WaterfallChart",
+      "props": [
+        {
+          "description": "The opening total, such as last quarter's profit.",
+          "name": "start",
+          "required": true,
+          "source": "stackra",
+          "type": "{ readonly label: string; readonly value: number; }"
+        },
+        {
+          "description": "The changes, in order.",
+          "name": "steps",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly WaterfallStep[]"
+        },
+        {
+          "description": "The closing total's name; its value is the start plus every step.",
+          "name": "endLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The chart's accessible name, such as \"Profit, Q3 to Q4\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How values are written; plain numbers in the locale by default.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Shows the values of the pointed or pressed bar; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Classes for the figure, such as a width or margin.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,23 @@
+{
+  "basics": {
+    "label": "Cup size",
+    "size": "Size",
+    "milk": "Milk",
+    "small": "Small",
+    "medium": "Medium",
+    "large": "Large",
+    "full": "Full cream",
+    "oat": "Oat",
+    "none": "No milk",
+    "chosen": "{size}, {milk}"
+  },
+  "date": {
+    "label": "Date of birth",
+    "chosen": "Chosen: {day}"
+  },
+  "time": {
+    "label": "Pickup time",
+    "twelve": "12-hour clock",
+    "twenty_four": "24-hour clock"
+  }
+}

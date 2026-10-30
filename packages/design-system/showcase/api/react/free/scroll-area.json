@@ -1,0 +1,59 @@
+{
+  "generatedFrom": {
+    "hash": "f9b7553ba62448ae",
+    "heroDoc": "vendor/heroui/react/scroll-shadow.json",
+    "propsFiles": ["ui/src/react/scroll-area/scroll-area.props.ts"]
+  },
+  "importLine": "import { ScrollArea } from \"@stackra/ui/react\";",
+  "key": "free/scroll-area",
+  "parts": [
+    {
+      "name": "ScrollArea",
+      "props": [
+        {
+          "description": "The content that scrolls.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The region's name; a keyboard user tabs to it and scrolls with the arrow keys.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The direction it scrolls; defaults to `vertical`.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "The most it grows, in pixels, before it scrolls (height when vertical, width when horizontal).",
+          "name": "maxSize",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The fade's depth in pixels; defaults to 40.",
+          "name": "fadeSize",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

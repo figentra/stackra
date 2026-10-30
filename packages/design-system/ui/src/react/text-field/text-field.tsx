@@ -15,6 +15,7 @@ import type { ReactElement } from "react";
 import { Description, FieldError, Input, Label, TextField as HeroTextField } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { contentWidthClassName } from "#react/text-field/content-width-class-name.function";
 import type { TextFieldProps } from "#react/text-field/text-field.props";
 
 /**
@@ -31,7 +32,12 @@ export function TextField({
   ...rest
 }: TextFieldProps): ReactElement {
   return (
-    <HeroTextField {...omitUndefined(rest)} variant={variant} fullWidth={isFullWidth}>
+    <HeroTextField
+      {...omitUndefined(rest)}
+      {...(isFullWidth ? {} : { className: contentWidthClassName(rest.className) })}
+      variant={variant}
+      fullWidth={isFullWidth}
+    >
       {label == null ? null : <Label>{label}</Label>}
       <Input {...omitUndefined({ placeholder })} />
       {description == null ? null : <Description>{description}</Description>}

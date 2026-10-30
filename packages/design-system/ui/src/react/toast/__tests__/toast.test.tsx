@@ -2,6 +2,7 @@
  * Stackra file contract:
  * Purpose: proves the web `toast()` and `ToastProvider`: a toast appears in the region with its message, tone,
  *          description and icon; warning and danger are announced as alerts and the rest as polite statuses; the
+ *          card is icon, text, action and dismiss in four columns with the dismiss inside at the end; the
  *          action runs once and closes the toast; the dismiss button is named by `dismissLabel` and is 24 px and
  *          visible; a timeout of 0 keeps the toast and the default removes it; `position` sets the edge; a toast
  *          shown before the provider mounts appears when it does; and the types refuse HeroUI's names.
@@ -170,6 +171,35 @@ describe("toast (web)", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it("lays the toast out as icon, text, action and dismiss, with the dismiss inside the card at the end", () => {
+    render(<ToastProvider dismissLabel="Dismiss notification" />);
+    act(() => {
+      toast.success("Saved", {
+        description: "Your profile is up to date.",
+        action: { label: "Undo", onPress: () => undefined },
+      });
+    });
+    const card = toastElement();
+    const parts = [...(card?.children ?? [])].map((part) => part.getAttribute("data-slot"));
+    expect(parts).toEqual([
+      "toast-indicator",
+      "toast-content",
+      "toast-action-button",
+      "toast-close",
+    ]);
+    expect(card?.className).toContain("grid-cols-[auto_minmax(0,1fr)_auto_auto]");
+    expect(card?.className).toContain("bg-overlay");
+    const dismiss = screen.getByRole("button", { name: "Dismiss notification" });
+    // Inside the card, in the flow of its last column on the title row: never at HeroUI's outside corner.
+    expect(card?.contains(dismiss)).toBe(true);
+    expect(dismiss.className).toContain("static");
+    expect(dismiss.className).toContain("col-end-[-1]");
+    expect(dismiss.className).toContain("row-start-1");
+    // The tone colours the icon; the title stays the foreground.
+    expect(indicator()?.className).toContain("text-success");
+    expect(screen.getByText("Saved").className).toContain("text-overlay-foreground");
+  });
+
   it("removes a toast after the default timeout and keeps one with a timeout of 0", () => {
     render(<ToastProvider dismissLabel="Dismiss notification" />);
     act(() => {
@@ -251,5 +281,55 @@ describe("toast (web)", () => {
     toast("Saved", { status: "danger" });
     // @ts-expect-error the shortcut sets the tone
     toast.success("Saved", { tone: "danger" });
+  });
+
+  it("puts the stack at the inline end in the provider's look", () => {
+    render(<ToastProvider dismissLabel="Dismiss notification" align="end" variant="bar" />);
+    act(() => {
+      toast.success("Order saved");
+    });
+    expect(region()?.className).toContain("bottom-end");
+    expect(toastElement()?.getAttribute("data-look")).toBe("bar");
+    expect(toastElement()?.className).toContain("border-s-success");
+  });
+
+  it("draws a person's avatar in place of the tone icon", () => {
+    render(<ToastProvider dismissLabel="Dismiss notification" variant="bubble" />);
+    act(() => {
+      toast("Rana replied", { avatar: { name: "Rana Haddad" } });
+    });
+    expect(indicator()?.textContent).toContain("RH");
+    expect(toastElement()?.className).toContain("rounded-[var(--radius-pill)]");
+  });
+  it("follows a sideways swipe, springs back when short and dismisses when long", () => {
+    const onClose = vi.fn();
+    render(<ToastProvider dismissLabel="Dismiss notification" variant="flip-bar" />);
+    act(() => {
+      toast("Swiped", { timeout: 0, onClose });
+    });
+    const card = toastElement() as HTMLElement;
+    const pointer = (type: string, clientX: number, target: Element = card) =>
+      act(() => {
+        target.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX }));
+      });
+    // A move without a press, and a press on a button, start nothing.
+    pointer("pointermove", 50);
+    expect(card.style.translate).toBe("");
+    pointer("pointerdown", 0, screen.getByRole("button", { name: "Dismiss notification" }));
+    pointer("pointermove", 50);
+    pointer("pointerup", 50);
+    expect(card.style.translate).toBe("");
+    pointer("pointerdown", 0);
+    pointer("pointermove", 40);
+    expect(card.style.translate).toBe("40px 0");
+    expect(card.style.opacity).toBe("0.75");
+    pointer("pointercancel", 40);
+    expect(card.style.translate).toBe("");
+    pointer("pointerdown", 100);
+    pointer("pointermove", 0);
+    pointer("pointerup", 0);
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.queryByText("Swiped")).toBeNull();
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

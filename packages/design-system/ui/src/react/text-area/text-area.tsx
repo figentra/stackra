@@ -22,6 +22,7 @@ import {
 } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { contentWidthClassName } from "#react/text-field/content-width-class-name.function";
 import type { TextAreaProps } from "#react/text-area/text-area.props";
 
 /**
@@ -39,7 +40,12 @@ export function TextArea({
   ...rest
 }: TextAreaProps): ReactElement {
   return (
-    <HeroTextField {...omitUndefined(rest)} variant={variant} fullWidth={isFullWidth}>
+    <HeroTextField
+      {...omitUndefined(rest)}
+      {...(isFullWidth ? {} : { className: contentWidthClassName(rest.className) })}
+      variant={variant}
+      fullWidth={isFullWidth}
+    >
       {label == null ? null : <Label>{label}</Label>}
       <HeroTextArea {...omitUndefined({ placeholder, rows })} />
       {description == null ? null : <Description>{description}</Description>}

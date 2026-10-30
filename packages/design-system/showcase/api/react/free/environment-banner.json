@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "050d171ef3232f94",
+    "propsFiles": ["ui/src/react/environment-banner/environment-banner.props.ts"]
+  },
+  "importLine": "import { EnvironmentBanner } from \"@stackra/ui/react\";",
+  "key": "free/environment-banner",
+  "parts": [
+    {
+      "name": "EnvironmentBanner",
+      "props": [
+        {
+          "description": "The environment's name as the viewer reads it (`Sandbox`, `Staging`); required, it is what is announced.",
+          "name": "environment",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True in production, where the banner draws nothing.",
+          "name": "isProduction",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "What the environment means for the viewer (test payments, captured messages).",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "A next step, such as the publish-to-live button.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

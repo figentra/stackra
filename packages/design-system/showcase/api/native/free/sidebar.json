@@ -1,0 +1,252 @@
+{
+  "generatedFrom": {
+    "hash": "85a90780a1235042",
+    "propsFiles": ["ui/src/native/sidebar/sidebar.props.ts"]
+  },
+  "importLine": "import { Sidebar } from \"@stackra/ui/native\";",
+  "key": "free/sidebar",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the sidebar collapses or expands, from its toggle, its shortcut or the app.",
+          "name": "onCollapsedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isCollapsed: boolean) => void"
+        },
+        {
+          "description": "Called with the new state each time the phone drawer opens or closes.",
+          "name": "onMobileOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "Sidebar",
+      "props": [
+        {
+          "description": "The places, in order: a top-level entry with `children` and no `href` is a labelled group, an entry with `href` and\n`children` opens a nested list. Left out, the sidebar draws the parts given as children.",
+          "name": "items",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly NavigationItem[]"
+        },
+        {
+          "description": "The look: `sidebar` (flush, the default), `floating` (an inset card) or `inset` (the content is the card).",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sidebar\" | \"inset\" | \"floating\""
+        },
+        {
+          "description": "How it collapses: `icon` (a rail of icons, the default), `offcanvas` (slides away) or `none`.",
+          "name": "collapsible",
+          "required": false,
+          "source": "stackra",
+          "type": "\"icon\" | \"none\" | \"offcanvas\""
+        },
+        {
+          "description": "The collapsed state, for a controlled sidebar; pair it with `onCollapsedChange`.",
+          "name": "isCollapsed",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting collapsed state, for an uncontrolled sidebar.",
+          "name": "defaultCollapsed",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the phone drawer is open, for a controlled drawer; pair it with `onMobileOpenChange`.",
+          "name": "isMobileOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to draw a filter box above the `items`, which hides the places whose label does not match.",
+          "name": "isSearchable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True while the `items` load: placeholder rows stand in their place.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The spoken name of the region, for example \"Main navigation\"; required when the page holds two of its kind.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A node at the logical start of the bar, before its main content.",
+          "name": "startContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "A node at the logical end of the bar, after its main content.",
+          "name": "endContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    },
+    {
+      "name": "Sidebar.Provider",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Header",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Content",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Group",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Menu",
+      "props": []
+    },
+    {
+      "name": "Sidebar.MenuItem",
+      "props": []
+    },
+    {
+      "name": "Sidebar.MenuSkeleton",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Separator",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Footer",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Search",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Rail",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Trigger",
+      "props": []
+    },
+    {
+      "name": "Sidebar.Inset",
+      "props": []
+    }
+  ],
+  "platform": "native"
+}

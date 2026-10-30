@@ -1,0 +1,9 @@
+{
+  "basics": {
+    "label": "Model year",
+    "chosen": "Chosen year: {year}"
+  },
+  "hijri": {
+    "label": "Fiscal year"
+  }
+}

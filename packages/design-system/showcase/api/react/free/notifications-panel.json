@@ -1,0 +1,155 @@
+{
+  "generatedFrom": {
+    "hash": "481cb082022b6a6a",
+    "propsFiles": [
+      "ui/src/react/notifications-panel/notification-row.props.ts",
+      "ui/src/react/notifications-panel/notifications-panel.props.ts"
+    ]
+  },
+  "importLine": "import { NotificationsPanel } from \"@stackra/ui/react\";",
+  "key": "free/notifications-panel",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with an item's id when it is pressed; without it the rows are not pressable.",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with an item's id when it is dismissed (its close button, or a swipe on native); without it there is none.",
+          "name": "onDismiss",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called by the mark-all-read button, which shows only with it and while something is unread.",
+          "name": "onMarkAllRead",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "NotificationsPanel",
+      "props": [
+        {
+          "description": "The notifications, newest first; the unread count on the bell is counted from them.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly NotificationItem[]"
+        },
+        {
+          "description": "The bell's accessible name; defaults to \"Notifications\" with the unread count.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The panel's heading; defaults to \"Notifications\".",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What an empty panel shows; defaults to \"You're all caught up\".",
+          "name": "emptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Content under the list, such as a \"View all\" link.",
+          "name": "footer",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "false",
+          "description": "Shows the inbox in place, as a card under its heading, for a notifications page or a dashboard tile: no bell, no\npopover or drawer, and the open state is ignored. Defaults to `false`.",
+          "name": "isInline",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with the item id when the row is pressed.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with the item id when it is dismissed.",
+          "name": "onDismiss",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "NotificationRow",
+      "props": [
+        {
+          "description": "The notification the row draws.",
+          "name": "item",
+          "required": true,
+          "source": "stackra",
+          "type": "NotificationItem"
+        },
+        {
+          "description": "The accessible name of the dismiss button.",
+          "name": "dismissLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken word for an unread item.",
+          "name": "unreadLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

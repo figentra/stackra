@@ -1,0 +1,61 @@
+{
+  "slug": "separator",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(layout)/separator.mdx",
+  "parts": [
+    {
+      "name": "Separator",
+      "props": [
+        {
+          "name": "orientation",
+          "type": "'horizontal' | 'vertical'",
+          "default": "'horizontal'",
+          "description": "The orientation of the separator"
+        },
+        {
+          "name": "variant",
+          "type": "'default' | 'secondary' | 'tertiary'",
+          "default": "'default'",
+          "description": "The visual variant of the separator"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, undefined>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".separator",
+      "description": "Base separator styles with default horizontal orientation"
+    },
+    {
+      "name": ".separator--horizontal",
+      "description": "Horizontal orientation (full width, 1px height)"
+    },
+    {
+      "name": ".separator--vertical",
+      "description": "Vertical orientation (full height, 1px width)"
+    },
+    {
+      "name": ".separator--default",
+      "description": "Default variant with standard contrast"
+    },
+    {
+      "name": ".separator--secondary",
+      "description": "Secondary variant with medium contrast"
+    },
+    {
+      "name": ".separator--tertiary",
+      "description": "Tertiary variant with subtle contrast"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "basics": {
+    "label": "Verification code",
+    "hint": "We sent six digits to your phone.",
+    "done": "Code complete: {code}",
+    "waiting": "Waiting for the code."
+  }
+}

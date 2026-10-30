@@ -1,0 +1,131 @@
+{
+  "slug": "alert",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(feedback)/alert.mdx",
+  "parts": [
+    {
+      "name": "Alert",
+      "props": [
+        {
+          "name": "status",
+          "type": "\"default\" | \"accent\" | \"success\" | \"warning\" | \"danger\"",
+          "default": "\"default\"",
+          "description": "The visual status of the alert"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The alert content"
+        }
+      ]
+    },
+    {
+      "name": "Alert.Indicator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom indicator icon (defaults to status icon)"
+        }
+      ]
+    },
+    {
+      "name": "Alert.Content",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content (typically Title and Description)"
+        }
+      ]
+    },
+    {
+      "name": "Alert.Title",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The alert title text"
+        }
+      ]
+    },
+    {
+      "name": "Alert.Description",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The alert description text"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".alert",
+      "description": "Base alert container"
+    },
+    {
+      "name": ".alert__indicator",
+      "description": "Icon/indicator container"
+    },
+    {
+      "name": ".alert__content",
+      "description": "Content wrapper for title and description"
+    },
+    {
+      "name": ".alert__title",
+      "description": "Alert title text"
+    },
+    {
+      "name": ".alert__description",
+      "description": "Alert description text"
+    },
+    {
+      "name": ".alert--default",
+      "description": "Default gray status"
+    },
+    {
+      "name": ".alert--accent",
+      "description": "Accent blue status"
+    },
+    {
+      "name": ".alert--success",
+      "description": "Success green status"
+    },
+    {
+      "name": ".alert--warning",
+      "description": "Warning yellow/orange status"
+    },
+    {
+      "name": ".alert--danger",
+      "description": "Danger red status"
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "generatedFrom": {
+    "hash": "5b4e5f075b0ae0f7",
+    "propsFiles": [
+      "ui/src/react/filter-bar/filter-bar.props.ts",
+      "ui/src/react/filter-bar/filter-editor.props.ts"
+    ]
+  },
+  "importLine": "import { FilterBar } from \"@stackra/ui/react\";",
+  "key": "free/filter-bar",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the whole next query each time the user changes any part of it.",
+          "name": "onQueryChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(query: ResourceQuery) => void"
+        }
+      ],
+      "name": "FilterBar",
+      "props": [
+        {
+          "description": "The filters the user may add, in the order the add-filter menu lists them; `id`s are unique in the list.",
+          "name": "filters",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly FilterDefinition[]"
+        },
+        {
+          "description": "The accessible name of the search box, for example \"Search orders\"; the box draws no visible label.",
+          "name": "searchLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Hint text drawn inside the empty search box. It never replaces `searchLabel`.",
+          "name": "searchPlaceholder",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The query in force: the search text, the applied filters and the sort.",
+          "name": "query",
+          "required": true,
+          "source": "stackra",
+          "type": "ResourceQuery"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with the whole next value, or `undefined` to drop the filter.",
+          "name": "onChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(value: FilterValue | undefined) => void"
+        }
+      ],
+      "name": "FilterEditor",
+      "props": [
+        {
+          "description": "The filter being edited; its kind picks the editor.",
+          "name": "definition",
+          "required": true,
+          "source": "stackra",
+          "type": "FilterDefinition"
+        },
+        {
+          "description": "What the query holds for the filter, or `undefined` when it holds nothing.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "FilterValue | undefined"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

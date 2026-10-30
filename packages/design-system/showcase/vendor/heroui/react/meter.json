@@ -1,0 +1,121 @@
+{
+  "slug": "meter",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(feedback)/meter.mdx",
+  "parts": [
+    {
+      "name": "Meter",
+      "props": [
+        {
+          "name": "value",
+          "type": "number",
+          "default": "0",
+          "description": "The current value"
+        },
+        {
+          "name": "minValue",
+          "type": "number",
+          "default": "0",
+          "description": "The minimum value"
+        },
+        {
+          "name": "maxValue",
+          "type": "number",
+          "default": "100",
+          "description": "The maximum value"
+        },
+        {
+          "name": "size",
+          "type": "\"sm\" | \"md\" | \"lg\"",
+          "default": "\"md\"",
+          "description": "Size of the meter track"
+        },
+        {
+          "name": "color",
+          "type": "\"default\" | \"accent\" | \"success\" | \"warning\" | \"danger\"",
+          "default": "\"accent\"",
+          "description": "Color of the fill bar"
+        },
+        {
+          "name": "formatOptions",
+          "type": "Intl.NumberFormatOptions",
+          "default": "{style: 'percent'}",
+          "description": "Number format for the value display"
+        },
+        {
+          "name": "valueLabel",
+          "type": "ReactNode",
+          "description": "Custom value label content"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | (values: MeterRenderProps) => ReactNode",
+          "description": "Content or render prop"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "percentage",
+          "type": "number",
+          "description": "The percentage of the meter (0-100)"
+        },
+        {
+          "name": "valueText",
+          "type": "string",
+          "description": "The formatted value text"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".meter",
+      "description": "Base container (grid layout)"
+    },
+    {
+      "name": ".meter__output",
+      "description": "Value text display"
+    },
+    {
+      "name": ".meter__track",
+      "description": "Track background"
+    },
+    {
+      "name": ".meter__fill",
+      "description": "Filled portion of the track"
+    },
+    {
+      "name": ".meter--sm",
+      "description": "Small size variant (thinner track)"
+    },
+    {
+      "name": ".meter--md",
+      "description": "Medium size variant (default)"
+    },
+    {
+      "name": ".meter--lg",
+      "description": "Large size variant (thicker track)"
+    },
+    {
+      "name": ".meter--default",
+      "description": "Default color variant"
+    },
+    {
+      "name": ".meter--accent",
+      "description": "Accent color variant"
+    },
+    {
+      "name": ".meter--success",
+      "description": "Success color variant"
+    },
+    {
+      "name": ".meter--warning",
+      "description": "Warning color variant"
+    },
+    {
+      "name": ".meter--danger",
+      "description": "Danger color variant"
+    }
+  ]
+}

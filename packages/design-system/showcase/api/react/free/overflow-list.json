@@ -1,0 +1,110 @@
+{
+  "generatedFrom": {
+    "hash": "261d1a9dfc96853b",
+    "propsFiles": ["ui/src/react/overflow-list/overflow-list.props.ts"]
+  },
+  "importLine": "import { OverflowList } from \"@stackra/ui/react\";",
+  "key": "free/overflow-list",
+  "parts": [
+    {
+      "name": "OverflowList",
+      "props": [
+        {
+          "description": "The items, in order; each is drawn as a chip with its `label`, which truncates past the chip's width.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TagItem[]"
+        },
+        {
+          "description": "How many chips show while the list is folded; the rest become one \"+N more\" button. Defaults to 3.",
+          "name": "maxVisible",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The accessible name of the list, for example \"Product tags\".",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to start expanded. Defaults to false.",
+          "name": "defaultExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "sm",
+          "description": "The chips' size. Defaults to `sm`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "default",
+          "description": "The chips' colour role. Defaults to `default`.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

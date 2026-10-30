@@ -1,0 +1,12 @@
+{
+  "hours_title": "Busiest hours",
+  "hours_description": "Orders by weekday and hour, last four weeks",
+  "label": "Orders by weekday and hour",
+  "sun": "Sun",
+  "mon": "Mon",
+  "tue": "Tue",
+  "wed": "Wed",
+  "thu": "Thu",
+  "fri": "Fri",
+  "sat": "Sat"
+}

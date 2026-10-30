@@ -1,0 +1,140 @@
+{
+  "slug": "checkbox",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/checkbox.mdx",
+  "parts": [
+    {
+      "name": "Checkbox",
+      "props": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox is checked"
+        },
+        {
+          "name": "defaultSelected",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox is checked by default (uncontrolled)"
+        },
+        {
+          "name": "isIndeterminate",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox is in an indeterminate state"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox is invalid"
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox is read only"
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "default": "\"primary\"",
+          "description": "Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The name of the input element, used when submitting an HTML form"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "The value of the input element, used when submitting an HTML form"
+        },
+        {
+          "name": "onChange",
+          "type": "(isSelected: boolean) => void",
+          "description": "Handler called when the checkbox value changes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (values: CheckboxRenderProps) => React.ReactNode",
+          "description": "Checkbox content or render prop"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, CheckboxRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the checkbox is currently checked"
+        },
+        {
+          "name": "isIndeterminate",
+          "type": "boolean",
+          "description": "Whether the checkbox is in an indeterminate state"
+        },
+        {
+          "name": "isHovered",
+          "type": "boolean",
+          "description": "Whether the checkbox is hovered"
+        },
+        {
+          "name": "isPressed",
+          "type": "boolean",
+          "description": "Whether the checkbox is currently pressed"
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the checkbox is focused"
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether the checkbox is keyboard focused"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the checkbox is disabled"
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the checkbox is read only"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".checkbox",
+      "description": "Base checkbox container"
+    },
+    {
+      "name": ".checkbox__control",
+      "description": "Checkbox control box"
+    },
+    {
+      "name": ".checkbox__indicator",
+      "description": "Checkbox checkmark indicator"
+    },
+    {
+      "name": ".checkbox__content",
+      "description": "Optional content container"
+    }
+  ]
+}

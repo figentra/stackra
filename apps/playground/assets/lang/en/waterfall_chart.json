@@ -1,0 +1,12 @@
+{
+  "bridge_title": "From Q3 to Q4 profit",
+  "bridge_description": "What raised the profit and what held it back",
+  "label": "Profit bridge, Q3 to Q4",
+  "start": "Q3 profit",
+  "end": "Q4 profit",
+  "new_customers": "New customers",
+  "upsell": "Upgrades",
+  "churn": "Cancellations",
+  "refunds": "Refunds",
+  "costs": "Higher costs"
+}

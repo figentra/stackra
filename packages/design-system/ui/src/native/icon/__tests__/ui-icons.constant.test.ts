@@ -17,6 +17,9 @@ vi.mock("@stackra/icons/native/lucide-icons", () => {
   return {
     ArrowDown: mark,
     ArrowUp: mark,
+    ArrowUpDown: mark,
+    Camera: mark,
+    ChartColumn: mark,
     Check: mark,
     ChevronDown: mark,
     ChevronLeft: mark,
@@ -24,17 +27,40 @@ vi.mock("@stackra/icons/native/lucide-icons", () => {
     CircleAlert: mark,
     CircleCheck: mark,
     Copy: mark,
+    Download: mark,
     Ellipsis: mark,
+    Eye: mark,
+    EyeOff: mark,
     ExternalLink: mark,
+    File: mark,
+    GripVertical: mark,
+    Image: mark,
+    ImageOff: mark,
+    Images: mark,
     Info: mark,
+    Link2: mark,
+    Maximize2: mark,
+    Minus: mark,
+    Pencil: mark,
+    Plus: mark,
+    RefreshCw: mark,
+    RotateCcw: mark,
+    SlidersHorizontal: mark,
     Sparkles: mark,
+    Table2: mark,
+    Trash: mark,
     TriangleAlert: mark,
+    Upload: mark,
     UserRound: mark,
+    X: mark,
   };
 });
 
 describe("UI_ICONS (native)", () => {
   it.each([
+    "minus",
+    "plus",
+    "trash",
     "copy",
     "check",
     "chevron-down",
@@ -42,6 +68,10 @@ describe("UI_ICONS (native)", () => {
     "chevron-right",
     "arrow-up",
     "arrow-down",
+    "refresh-cw",
+    "table-2",
+    "chart-column",
+    "maximize-2",
   ])("registers %s", (name) => {
     expect(Object.keys(UI_ICONS)).toContain(name);
   });

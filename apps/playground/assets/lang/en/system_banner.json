@@ -1,0 +1,13 @@
+{
+  "outage_title": "Card payments are delayed",
+  "outage_detail": "Our payment provider is slow. Cash and saved cards still work.",
+  "trial_title": "Your trial ends in 3 days",
+  "trial_detail": "Choose a plan to keep your stores and staff accounts.",
+  "compliance_title": "E-invoicing phase 2 starts on 1 January",
+  "compliance_detail": "Link your VAT number before then so invoices keep clearing.",
+  "choose_plan": "Choose a plan",
+  "status_page": "View status",
+  "link_vat": "Link VAT number",
+  "show_again": "Show the banner again",
+  "dismissed": "Banner dismissed. It stays hidden until the next notice."
+}

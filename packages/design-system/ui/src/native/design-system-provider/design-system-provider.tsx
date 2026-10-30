@@ -6,9 +6,14 @@
  *          subtree out in the locale's direction (a `flex: 1` View with Yoga `direction`, plus Uniwind's
  *          `LayoutDirection` for the `rtl:` and `ltr:` variants), and tells `HeroUINativeProvider` the direction
  *          through `config.isRTL`. Text and text inputs scale with the device's text size (Dynamic Type, Android font
- *          scale), capped by `maxFontScale` when an app sets one; reduce motion is HeroUI Native's and Reanimated's own
- *          (`useReducedMotion`, `ReduceMotion.System`), so it is always followed. It also gives Lucide icons the `md`
- *          size and the theme's foreground colour, which native hosts override.
+ *          scale), capped by `maxFontScale` when an app sets one. It also gives Lucide icons the `md` size and the
+ *          theme's foreground colour, which native hosts override. A scheme change after mount draws the Uniwind Pro
+ *          transition `schemeTransition` returns (a native-only prop; none when it is left out). It holds the picked
+ *          brand family and transition preset (the app's ids, shared with web through `useDesignSystem()`) and turns
+ *          `haptics` on or off for every control when given (native-only; the switch is on by default). It holds the
+ *          app-wide motion level (`motion`), lowered to `reduced` by the system's reduce-motion setting: below `full`
+ *          Reanimated's `ReducedMotionConfig` turns every layout animation's movement off, and at `none` HeroUI
+ *          Native's own animations are disabled too.
  * Boundary: applies the scheme and direction to this subtree. Yoga content (screens and modals rendered below it
  *          included) inherits the direction; UIKit chrome does not: the app passes `useDesignSystem().direction` to
  *          NavigationContainer's `direction` and the native tabs' `layoutDirection`. The provider never calls
@@ -19,15 +24,20 @@
  */
 import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
-import { useLayoutEffect, useMemo, useState, type ReactElement } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Appearance, View } from "react-native";
+import { ReducedMotionConfig, ReduceMotion, useReducedMotion } from "react-native-reanimated";
 import { LayoutDirection, Uniwind, useUniwind } from "uniwind";
 
 import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
+import type { MotionLevel } from "#contracts/enums/motion-level.enum";
 import type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
 import type { DesignSystemState } from "#contracts/types/design-system-state.type";
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
 import { directionOf } from "#core/functions/direction-of.function";
+import { resolveMotion } from "#core/functions/resolve-motion.function";
+
+import { haptics as hapticsSwitch } from "#native/haptics/haptics";
 
 import { DesignSystemContext } from "./design-system-context";
 
@@ -43,14 +53,37 @@ export function DesignSystemProvider({
   locale,
   defaultLocale = "en",
   onLocaleChange,
+  brand,
+  defaultBrand,
+  onBrandChange,
+  transition,
+  defaultTransition = "none",
+  onTransitionChange,
+  motion,
+  defaultMotion = "full",
+  onMotionChange,
   direction,
   theme = "stackra",
   maxFontScale = null,
-}: DesignSystemProviderProps): ReactElement {
+  schemeTransition,
+  haptics,
+}: DesignSystemProviderProps & {
+  /** The transition a scheme change after mount draws, read at the change (Uniwind Pro); none when left out. */
+  readonly schemeTransition?: (() => object | undefined) | undefined;
+  /** Whether controls play touch feedback (`useHaptic()`); left out, the switch keeps its state (on by default). */
+  readonly haptics?: boolean | undefined;
+}): ReactElement {
   const [ownColorScheme, setOwnColorScheme] = useState<ColorScheme>(defaultColorScheme);
   const [ownLocale, setOwnLocale] = useState(defaultLocale);
+  const [ownBrand, setOwnBrand] = useState(defaultBrand);
+  const [ownTransition, setOwnTransition] = useState(defaultTransition);
+  const [ownMotion, setOwnMotion] = useState<MotionLevel>(defaultMotion);
+  const currentMotion = motion ?? ownMotion;
+  const resolvedMotion = resolveMotion(currentMotion, useReducedMotion());
   const currentColorScheme = colorScheme ?? ownColorScheme;
   const currentLocale = locale ?? ownLocale;
+  const currentBrand = brand ?? ownBrand;
+  const currentTransition = transition ?? ownTransition;
   const currentDirection = direction ?? directionOf(currentLocale);
   const isRtl = currentDirection === "rtl";
 
@@ -58,13 +91,32 @@ export function DesignSystemProvider({
   // re-render Uniwind's listeners ask for lands in the same frame, so the first paint is already in the scheme.
   // Not during render: setTheme notifies every useUniwind subscriber, which would update other components mid-render.
   // Appearance sets UIKit's interface style, which native chrome follows; Uniwind only styles our views.
+  const isMounted = useRef(false);
+  // The latest `schemeTransition`, read at a scheme change only, so a new function each render reruns nothing.
+  const latestTransition = useRef(schemeTransition);
   useLayoutEffect(() => {
-    Uniwind.setTheme(currentColorScheme);
+    latestTransition.current = schemeTransition;
+  });
+  useLayoutEffect(() => {
+    // The first paint takes the scheme as is; a later change animates from the old scheme's snapshot.
+    const drawn = isMounted.current ? latestTransition.current?.() : undefined;
+    isMounted.current = true;
+    // Uniwind Pro's setTheme takes the transition second; this package types against the free peer, which does not.
+    if (drawn)
+      (Uniwind.setTheme as (theme: ColorScheme, transition: object) => void)(
+        currentColorScheme,
+        drawn,
+      );
+    else Uniwind.setTheme(currentColorScheme);
     Appearance.setColorScheme(currentColorScheme === "system" ? "unspecified" : currentColorScheme);
   }, [currentColorScheme]);
   // On unmount only, so a scheme change does not flash through the device scheme. `unspecified` is the value before
   // mount: `Appearance.getColorScheme()` reports the resolved scheme, so reading it back would pin the device's.
   useLayoutEffect(() => () => Appearance.setColorScheme("unspecified"), []);
+  // The app-wide switch follows the prop; a toggle that calls `useHaptic().setEnabled` passes its value back here.
+  useLayoutEffect(() => {
+    if (haptics !== undefined) hapticsSwitch.setEnabled(haptics);
+  }, [haptics]);
 
   // Uniwind reports the theme on screen, `system` already resolved; it re-renders this hook on every change.
   const resolvedColorScheme = useUniwind().theme === "dark" ? "dark" : "light";
@@ -76,6 +128,10 @@ export function DesignSystemProvider({
       locale: currentLocale,
       direction: currentDirection,
       theme,
+      brand: currentBrand,
+      transition: currentTransition,
+      motion: currentMotion,
+      resolvedMotion,
       setColorScheme: (next) => {
         setOwnColorScheme(next);
         onColorSchemeChange?.(next);
@@ -84,6 +140,18 @@ export function DesignSystemProvider({
         setOwnLocale(next);
         onLocaleChange?.(next);
       },
+      setBrand: (next) => {
+        setOwnBrand(next);
+        onBrandChange?.(next);
+      },
+      setTransition: (next) => {
+        setOwnTransition(next);
+        onTransitionChange?.(next);
+      },
+      setMotion: (next) => {
+        setOwnMotion(next);
+        onMotionChange?.(next);
+      },
     }),
     [
       currentColorScheme,
@@ -91,15 +159,27 @@ export function DesignSystemProvider({
       currentLocale,
       currentDirection,
       theme,
+      currentBrand,
+      currentTransition,
+      currentMotion,
+      resolvedMotion,
       onColorSchemeChange,
       onLocaleChange,
+      onBrandChange,
+      onTransitionChange,
+      onMotionChange,
     ],
   );
   // Text follows the device's text size (Dynamic Type, Android font scale); 0 means no cap.
   const config = useMemo(() => {
     const scaling = { allowFontScaling: true, maxFontSizeMultiplier: maxFontScale ?? 0 };
-    return { isRTL: isRtl, textProps: scaling, textInputProps: scaling };
-  }, [isRtl, maxFontScale]);
+    return {
+      isRTL: isRtl,
+      textProps: scaling,
+      textInputProps: scaling,
+      ...(resolvedMotion === "none" ? { animation: "disable-all" as const } : {}),
+    };
+  }, [isRtl, maxFontScale, resolvedMotion]);
   // LayoutDirection's own View is `display: contents`, which Yoga skips, so its `direction` never reaches the layout.
   const layout = useMemo(() => ({ flex: 1, direction: currentDirection }), [currentDirection]);
   // Native has no `currentColor` cascade: without this default a bare icon would draw black in dark mode.
@@ -110,6 +190,9 @@ export function DesignSystemProvider({
       <View style={layout}>
         <LayoutDirection rtl={isRtl}>
           <HeroUINativeProvider config={config}>
+            <ReducedMotionConfig
+              mode={resolvedMotion === "full" ? ReduceMotion.System : ReduceMotion.Always}
+            />
             <LucideProvider size={ICON_SIZES.md} color={foreground}>
               {children}
             </LucideProvider>

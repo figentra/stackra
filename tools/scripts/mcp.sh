@@ -114,7 +114,7 @@ fi
 # -----------------------------------------------------------------------------
 #
 # Not every server launched through this script needs a token: next-devtools and
-# playwright take none, while heroui-pro and stripe do. Hard-failing for all of
+# playwright take none, while context7 and stripe do. Hard-failing for all of
 # them would break the ones that never needed a secret; exec-ing all of them with
 # an empty environment — which is what this script used to do — breaks the ones
 # that did, silently, at a distance from the cause.

@@ -25,6 +25,9 @@ describe("PlaygroundIcons", () => {
     "moon",
     "monitor",
     "layout-grid",
+    "paperclip",
+    "thumbs-up",
+    "image",
   ])("draws %s by name", (name) => {
     const { container } = render(
       <PlaygroundIcons>

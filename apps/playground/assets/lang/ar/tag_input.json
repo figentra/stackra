@@ -1,0 +1,16 @@
+{
+  "basics": {
+    "label": "وسوم العميل",
+    "hint": "اضغط Enter أو فاصلة، أو الصق قائمة.",
+    "placeholder": "أضف وسمًا"
+  },
+  "emails": {
+    "label": "ادعُ بالبريد الإلكتروني",
+    "placeholder": "name@company.com",
+    "invalid": "«{tag}» ليس عنوان بريد إلكتروني."
+  },
+  "arabic": {
+    "label": "مدن التوصيل",
+    "hint": "اضغط Enter أو فاصلة، أو الصق قائمة."
+  }
+}

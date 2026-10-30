@@ -11,6 +11,7 @@
  * Governing contract: ADR 0302; ADR 0165 (HeroUI Native and Uniwind on native); ADR 0022 (test placement).
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
+import { SyntaxRole } from "#contracts/enums/syntax-role.enum";
 import type { Theme } from "#contracts/types/theme.type";
 import type { TypographyToken } from "#contracts/types/typography-token.type";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
@@ -48,7 +49,9 @@ describe("renderNativeCss", () => {
         expect(block).toContain(`--${shadow}-shadow: ${STACKRA_THEME.shadows[shadow][mode]};`);
     }
     expect(names(variantOf("dark"))).toEqual(names(variantOf("light")));
-    expect(names(variantOf("light"))).toHaveLength(ColorRole.length + 3 + PALETTE.length);
+    expect(names(variantOf("light"))).toHaveLength(
+      ColorRole.length + 3 + PALETTE.length + SyntaxRole.length,
+    );
   });
 
   // @covers sta-455:FR-001
@@ -83,9 +86,9 @@ describe("renderNativeCss", () => {
     expect(failures).toEqual([]);
   });
 
-  it("sets the radii and the display faces in @theme and leaves web-only tokens out", () => {
+  it("sets the radii, the field border and the display faces in @theme and leaves web-only tokens out", () => {
     expect(css).toContain(
-      '@theme {\n  --radius: 0.25rem;\n  --field-radius: var(--radius);\n  --font-display: "Geist";\n  --font-display-arabic: "IBM Plex Sans Arabic";\n}',
+      '@theme {\n  --radius: 0.25rem;\n  --field-radius: var(--radius);\n  --field-border-width: 1px;\n  --font-display: "Geist";\n  --font-display-arabic: "IBM Plex Sans Arabic";\n}',
     );
     expect(css).not.toMatch(/--font-(sans|mono|arabic)\b|--space-|--duration-|--material-/);
   });

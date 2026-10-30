@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "0b49623ba0f7c0e2",
+    "propsFiles": ["ui/src/react/toc-rail/toc-rail.props.ts"]
+  },
+  "importLine": "import { TocRail } from \"@stackra/ui/react\";",
+  "key": "free/toc-rail",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the id chosen; on web the page also scrolls to it.",
+          "name": "onSelect",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "TocRail",
+      "props": [
+        {
+          "description": "The entries of the table of contents, in page order.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TocItem[]"
+        },
+        {
+          "description": "The id of the section in view, for a controlled rail.",
+          "name": "activeId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "`rail` (the default) is a list; `floating` is a button at the bottom end that opens it.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"floating\" | \"rail\""
+        },
+        {
+          "description": "The navigation's name; \"On this page\" by default.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

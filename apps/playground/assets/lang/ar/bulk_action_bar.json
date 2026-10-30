@@ -1,0 +1,33 @@
+{
+  "one": "عنصر محدد",
+  "several": "ثلاثة محددة",
+  "nothing": "لا شيء محدد",
+  "one_action": "إجراء واحد",
+  "three_actions": "ثلاثة إجراءات",
+  "disabled_action": "إجراء معطل",
+  "matching": "تحديد كل المطابق",
+  "offered": "الخيار معروض",
+  "chosen": "اختير كل المطابق",
+  "bar_label": "الإجراءات، {name}",
+  "live_label": "الطلبات، تفاعلي",
+  "live_list": "الطلبات المراد معالجتها",
+  "selected": "المحدد: {keys, select, none {لا شيء} other {{keys}}}",
+  "last_action": "آخر إجراء: {text}",
+  "none": "لا شيء",
+  "archive": "أرشفة",
+  "export": "تصدير",
+  "delete": "حذف",
+  "refund": "استرداد",
+  "refund_reason": "الطلبات المدفوعة تبقى",
+  "working": "الأرشفة جارية",
+  "done": "تم: {name}",
+  "failed": "فشل: {name}",
+  "failure": "لم تستجب خدمة الطلبات.",
+  "sample": {
+    "order_1001": "الطلب ‎#1001",
+    "order_1002": "الطلب ‎#1002",
+    "order_1003": "الطلب ‎#1003",
+    "order_1004": "الطلب ‎#1004",
+    "order_1005": "الطلب ‎#1005"
+  }
+}

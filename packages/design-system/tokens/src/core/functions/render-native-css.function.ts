@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: renders a theme to the Uniwind theme HeroUI Native reads: the radii in `@theme`, and the colour roles,
+ * Purpose: renders a theme to the Uniwind theme HeroUI Native reads: the radii and the field edge in `@theme`, and the colour roles,
  *          shadows and palette in `@layer theme { :root { @variant light { … } @variant dark { … } } }`, the shape
  *          HeroUI Native's theming docs and Uniwind's custom-theme docs prescribe. Both variants define the same
- *          variables. The palette (ADR 0340 decision 7) is written as `--<name>` in both variants, as on the web, and
+ *          variables. The palette (ADR 0340 decision 7) and the syntax colours (`--syntax-<role>`) are written as `--<name>` in both variants, as on the web, and
  *          registered as a Uniwind colour, `--color-<name>: var(--<name>)`, in `@theme inline static`, the way HeroUI
  *          Native registers its roles: its own `color-mix` steps of the same name (`accent-soft`,
  *          `accent-soft-foreground`, `accent-hover`) take the theme's value, the rest become classes such as
@@ -22,10 +22,13 @@
  *          (decision 7).
  */
 import { ColorRole } from "#contracts/enums/color-role.enum";
+import { SyntaxRole } from "#contracts/enums/syntax-role.enum";
 import type { Theme } from "#contracts/types/theme.type";
 import type { TypographyToken } from "#contracts/types/typography-token.type";
+import { FIELD_BORDER_WIDTH } from "#core/constants/field-border-width.constant";
 import { HEROUI_TYPOGRAPHY_TOKENS } from "#core/constants/heroui-typography-tokens.constant";
 import { fontStackOf } from "#core/functions/font-stack-of.function";
+import { syntaxColours } from "#core/functions/syntax-colours.function";
 
 const SHADOWS = ["surface", "overlay", "field"] as const;
 
@@ -57,13 +60,16 @@ const firstFamily = (stack: string) => stack.split(",")[0]?.trim() ?? stack;
 
 /** The native stylesheet of `theme`, to load after `@import "heroui-native/styles"` in the Uniwind entry CSS. */
 export function renderNativeCss(theme: Theme): string {
-  const palette = Object.keys(theme.palette);
+  const palette = [...Object.keys(theme.palette), ...SyntaxRole.map((role) => `syntax-${role}`)];
   const variant = (mode: "light" | "dark") =>
     [
       `    @variant ${mode} {`,
       ...ColorRole.map((role) => `      --${role}: ${theme.colors[role][mode]};`),
       ...SHADOWS.map((shadow) => `      --${shadow}-shadow: ${theme.shadows[shadow][mode]};`),
       ...Object.entries(theme.palette).map(([name, token]) => `      --${name}: ${token[mode]};`),
+      ...Object.entries(syntaxColours(theme, mode)).map(
+        ([role, hex]) => `      --syntax-${role}: ${hex};`,
+      ),
       "    }",
     ].join("\n");
 
@@ -72,6 +78,7 @@ export function renderNativeCss(theme: Theme): string {
     `@theme {\n${[
       `  --radius: ${theme.radius.base};`,
       `  --field-radius: ${theme.radius.field};`,
+      `  --field-border-width: ${FIELD_BORDER_WIDTH};`,
       `  --font-display: ${firstFamily(fontStackOf(theme, "display"))};`,
       `  --font-display-arabic: ${firstFamily(fontStackOf(theme, "displayArabic"))};`,
     ].join("\n")}\n}`,

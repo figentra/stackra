@@ -1,0 +1,28 @@
+{
+  "basics_label": "Actions for order 1001",
+  "basics_caption": "Opens at the button’s end",
+  "size": "Size {size}",
+  "variant_label": "Actions, {variant}",
+  "icon_label": "More options",
+  "icon_caption": "A vertical ellipsis",
+  "placement_default_label": "Actions, default placement",
+  "placement_default_caption": "Default: bottom, end",
+  "placement_top_label": "Actions, above",
+  "placement_top_caption": "placement=\"top\" align=\"start\"",
+  "disabled_label": "Actions, unavailable",
+  "disabled_caption": "Disabled",
+  "row_title": "Order 1001",
+  "open_order": "Open order",
+  "row_opened": "{count, plural, one {Row opened # time.} other {Row opened # times.}}",
+  "last_action": "Last action: {key, select, none {none} other {{key}}}",
+  "sample": {
+    "edit": "Edit",
+    "rename": "Rename",
+    "duplicate": "Duplicate",
+    "make_a_copy_of_the": "Make a copy of the order",
+    "danger_zone": "Danger zone",
+    "archive": "Archive",
+    "delete": "Delete",
+    "paid_orders_cannot_be_archived": "Paid orders cannot be archived"
+  }
+}

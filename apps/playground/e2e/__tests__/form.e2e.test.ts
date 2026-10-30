@@ -14,6 +14,8 @@
 // @covers sta-350:FR-090 sta-350:FR-091 sta-350:FR-092 sta-350:FR-093 sta-350:FR-094 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +24,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/form?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Form" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Form", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -47,10 +51,16 @@ for (const locale of LOCALES)
     page,
   }) => {
     await open(page, "light", locale);
-    const field = page.getByRole("textbox", { name: "Display name" });
-    await expect(field).toHaveAccessibleDescription("Shown on invoices. You can change it later.");
-    const invalid = page.getByRole("textbox", { name: "Invalid field" });
-    await expect(invalid).toHaveAccessibleDescription("Enter a value before you continue.");
+    // The demos speak the page's locale: the English words are checked in English, a name and description in Arabic.
+    const words = (english: string) => (locale === "en" ? english : /\S/);
+    const field = example(page, "description").getByRole("textbox");
+    await expect(field).toHaveAccessibleName(words("Display name"));
+    await expect(field).toHaveAccessibleDescription(
+      words("Shown on invoices. You can change it later."),
+    );
+    const invalid = example(page, "field-error").getByRole("textbox").first();
+    await expect(invalid).toHaveAccessibleName(words("Invalid field"));
+    await expect(invalid).toHaveAccessibleDescription(words("Enter a value before you continue."));
     await expect(invalid).toHaveAttribute("aria-invalid", "true");
   });
 
@@ -58,7 +68,7 @@ test("a required label draws its asterisk and an invalid one the error colour", 
   page,
 }) => {
   await open(page, "light", "en");
-  const labels = page.getByRole("region", { name: "Label" });
+  const labels = page.getByRole("region", { name: "Usage" });
   const asterisk = (text: string) =>
     labels
       .getByText(text, { exact: true })
@@ -74,11 +84,16 @@ test("a disabled control leaves the tab order and its label stays on the page", 
   page,
 }) => {
   await open(page, "light", "en");
-  const labels = page.getByRole("region", { name: "Label" });
+  const labels = page.getByRole("region", { name: "Usage" });
   await expect(labels.getByRole("textbox", { name: "Disabled label" })).toBeDisabled();
-  await labels.getByRole("textbox", { name: "Invalid label" }).focus();
+  const invalid = labels.getByRole("textbox", { name: "Invalid label" });
+  await invalid.focus();
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("textbox", { name: "Display name" })).toBeFocused();
+  // The disabled field is skipped: it is the demo's last field, so focus leaves the demo's fields altogether.
+  await expect(invalid).not.toBeFocused();
+  await expect(labels.getByRole("textbox", { name: "Disabled label" })).not.toBeFocused();
+  expect(await page.evaluate(() => document.activeElement?.tagName)).not.toBe("INPUT");
+  await expect(labels.getByText("Disabled label", { exact: true })).toBeVisible();
 });
 
 test("a bad email is refused: focus moves to the field and the error is read out with it", async ({

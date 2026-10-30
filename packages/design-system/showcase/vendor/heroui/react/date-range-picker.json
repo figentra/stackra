@@ -1,0 +1,107 @@
+{
+  "slug": "date-range-picker",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(date-and-time)/date-range-picker.mdx",
+  "parts": [
+    {
+      "name": "DateRangePicker",
+      "props": [
+        {
+          "name": "value",
+          "type": "{ start: DateValue; end: DateValue } | null",
+          "description": "Controlled selected date range value."
+        },
+        {
+          "name": "defaultValue",
+          "type": "{ start: DateValue; end: DateValue } | null",
+          "description": "Default selected range in uncontrolled mode."
+        },
+        {
+          "name": "onChange",
+          "type": "(value: { start: DateValue; end: DateValue } | null) => void",
+          "description": "Called when selected range changes."
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Controlled popover open state."
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "description": "Initial popover open state."
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Called when popover open state changes."
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Disables range selection and trigger interactions."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Marks the field as invalid for validation state."
+        },
+        {
+          "name": "minValue",
+          "type": "DateValue",
+          "description": "Minimum selectable date."
+        },
+        {
+          "name": "maxValue",
+          "type": "DateValue",
+          "description": "Maximum selectable date."
+        },
+        {
+          "name": "startName",
+          "type": "string",
+          "description": "Name used for the start date in HTML form submission."
+        },
+        {
+          "name": "endName",
+          "type": "string",
+          "description": "Name used for the end date in HTML form submission."
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | (values: DateRangePickerRenderProps) => ReactNode",
+          "description": "Composed content or render function."
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, DateRangePickerRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".date-range-picker",
+      "description": "Root wrapper."
+    },
+    {
+      "name": ".date-range-picker__trigger",
+      "description": "Trigger part that opens the popover."
+    },
+    {
+      "name": ".date-range-picker__trigger-indicator",
+      "description": "Default/custom indicator slot."
+    },
+    {
+      "name": ".date-range-picker__range-separator",
+      "description": "Separator between start and end date inputs."
+    },
+    {
+      "name": ".date-range-picker__popover",
+      "description": "Popover content wrapper."
+    }
+  ]
+}

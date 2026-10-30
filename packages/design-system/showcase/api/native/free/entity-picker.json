@@ -1,0 +1,186 @@
+{
+  "generatedFrom": {
+    "hash": "580f567a1f95a53b",
+    "propsFiles": ["ui/src/native/entity-picker/entity-picker.props.ts"]
+  },
+  "importLine": "import { EntityPicker } from \"@stackra/ui/native\";",
+  "key": "free/entity-picker",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the typed text when the user picks the create-new row. It may return the new record, which is then\npicked, or nothing, when the app handles the result itself. A rejection picks nothing, and the app reports it\n(ADR 0139). The row shows only when `createLabel` is also given.",
+          "name": "onCreate",
+          "required": false,
+          "source": "stackra",
+          "type": "(text: string) => void | EntityOption | Promise<void | EntityOption>"
+        },
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: EntityOption | null) => void"
+        }
+      ],
+      "name": "EntityPicker",
+      "props": [
+        {
+          "description": "One record at a time. This is the default.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"single\""
+        },
+        {
+          "description": "Not used: a single choice has no tag to remove.",
+          "name": "removeLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "undefined"
+        },
+        {
+          "description": "Answers a search: the page of records that match `search` (an empty string asks for the first records), or the\npage after `cursor`. A picker asks again when the user pauses typing and ignores an answer that a later request\nhas replaced. A rejection shows `loadErrorMessage` in the list; typing again asks again.",
+          "name": "loadOptions",
+          "required": true,
+          "source": "stackra",
+          "type": "(search: string, cursor?: string | undefined) => Promise<EntityOptionPage>"
+        },
+        {
+          "description": "Text shown while the field is empty; it hints at what to pick and never replaces the label.",
+          "name": "placeholder",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to fill the width of the parent instead of a fixed field width.",
+          "name": "isFullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "How long, in milliseconds, the user must stop typing before a search starts. Defaults to 250.",
+          "name": "debounceMs",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The spoken name of the spinner while records load, for example \"Loading people\"; without it the spinner is silent.",
+          "name": "loadingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What the list says when no record matches, for example \"No people found\"; without it the list stays closed.",
+          "name": "emptyMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What the list says when `loadOptions` rejects, for example \"People could not be loaded. Type to try again.\"",
+          "name": "loadErrorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The text of the create-new row from the typed text, for example `(text) => \\`Add \"${text}\"\\``.",
+          "name": "createLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(text: string) => string"
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "EntityOption | null"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "EntityOption | null"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The field's accessible name when the label is not a string.",
+          "name": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root, as on web.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

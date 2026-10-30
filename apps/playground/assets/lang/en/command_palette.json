@@ -1,0 +1,12 @@
+{
+  "open": "Search commands",
+  "go": "Go to",
+  "create": "Create",
+  "orders": "Orders",
+  "customers": "Customers",
+  "reports": "Reports",
+  "product": "New product",
+  "discount": "New discount",
+  "sales_words": "sales, invoices",
+  "ran": "Ran: {command}"
+}

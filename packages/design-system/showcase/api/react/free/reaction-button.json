@@ -1,0 +1,74 @@
+{
+  "generatedFrom": {
+    "hash": "7d1a5360c1e06a9e",
+    "propsFiles": ["ui/src/react/reaction-button/reaction-button.props.ts"]
+  },
+  "importLine": "import { ReactionButton } from \"@stackra/ui/react\";",
+  "key": "free/reaction-button",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state when pressed.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isSelected: boolean) => void"
+        }
+      ],
+      "name": "ReactionButton",
+      "props": [
+        {
+          "description": "The emoji drawn on the button.",
+          "name": "emoji",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How many reacted, the user included when selected (at first, when uncontrolled).",
+          "name": "count",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True when the user has reacted; set it to control the state (the count is then shown as given).",
+          "name": "isSelected",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The first state when uncontrolled; toggling adds or removes the user's 1 from `count`.",
+          "name": "defaultSelected",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The emoji's name, read with the count (for example \"thumbs up\").",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse presses.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

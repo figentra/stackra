@@ -1,0 +1,153 @@
+{
+  "slug": "color-swatch-picker",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(colors)/color-swatch-picker.mdx",
+  "parts": [
+    {
+      "name": "ColorSwatchPicker",
+      "props": [
+        {
+          "name": "value",
+          "type": "string | Color",
+          "description": "The current selected color (controlled)"
+        },
+        {
+          "name": "defaultValue",
+          "type": "string | Color",
+          "description": "The default selected color (uncontrolled)"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: Color) => void",
+          "description": "Handler called when selection changes"
+        },
+        {
+          "name": "size",
+          "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",
+          "default": "\"md\"",
+          "description": "Size of the swatches"
+        },
+        {
+          "name": "variant",
+          "type": "\"circle\" | \"square\"",
+          "default": "\"circle\"",
+          "description": "Shape of the swatches"
+        },
+        {
+          "name": "layout",
+          "type": "\"grid\" | \"stack\"",
+          "default": "\"grid\"",
+          "description": "Layout direction"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "ColorSwatchPicker.Item elements"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, ColorSwatchPickerRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "ColorSwatchPicker.Item",
+      "props": [
+        {
+          "name": "color",
+          "type": "string | Color",
+          "default": "**Required**",
+          "description": "The color of the swatch"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the item is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "ColorSwatchPicker.Swatch element"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, ColorSwatchPickerItemRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "ColorSwatchPicker.Swatch",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".color-swatch-picker",
+      "description": "Base container (flex layout)"
+    },
+    {
+      "name": ".color-swatch-picker__item",
+      "description": "Individual swatch item wrapper"
+    },
+    {
+      "name": ".color-swatch-picker__swatch",
+      "description": "The color swatch visual element"
+    },
+    {
+      "name": ".color-swatch-picker--xs",
+      "description": "Extra small (16px)"
+    },
+    {
+      "name": ".color-swatch-picker--sm",
+      "description": "Small (24px)"
+    },
+    {
+      "name": ".color-swatch-picker--md",
+      "description": "Medium (32px, default)"
+    },
+    {
+      "name": ".color-swatch-picker--lg",
+      "description": "Large (36px)"
+    },
+    {
+      "name": ".color-swatch-picker--xl",
+      "description": "Extra large (40px)"
+    },
+    {
+      "name": ".color-swatch-picker--circle",
+      "description": "Circle shape (default)"
+    },
+    {
+      "name": ".color-swatch-picker--square",
+      "description": "Square shape with rounded corners"
+    },
+    {
+      "name": ".color-swatch-picker--grid",
+      "description": "Horizontal wrapping layout (default)"
+    },
+    {
+      "name": ".color-swatch-picker--stack",
+      "description": "Vertical stacked layout"
+    }
+  ]
+}

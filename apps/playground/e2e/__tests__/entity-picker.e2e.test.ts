@@ -14,6 +14,7 @@
 // @covers sta-350:FR-201 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +23,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/entity-picker?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Entity picker" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Entity picker", locale) }),
+  ).toBeVisible();
 };
 
 /**
@@ -59,7 +62,7 @@ for (const scheme of SCHEMES)
 test("axe finds nothing with a list of people open", async ({ page }) => {
   await open(page, "light", "en");
   await focusInView(
-    page.getByRole("region", { name: "Basics" }).getByRole("combobox", { name: "Owner" }),
+    page.getByRole("region", { name: "Usage" }).getByRole("combobox", { name: "Owner" }),
   );
   await expect(page.getByRole("option", { name: /Ada Lovelace/ })).toBeVisible();
   // Scoped to the list's popover. The page stays visible: hiding it would blur the input, which closes the list.
@@ -85,7 +88,7 @@ test("each field is named, and the description and the error are tied to its inp
   page,
 }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  const basics = page.getByRole("region", { name: "Usage" });
   await expect(basics.getByRole("combobox", { name: "Team" })).toBeVisible();
   await expect(basics.getByRole("combobox", { name: /Reviewer/ })).toHaveAccessibleDescription(
     "The person who signs the change off.",
@@ -99,7 +102,7 @@ test("each field is named, and the description and the error are tied to its inp
 test("a record is found by typing and picked from the keyboard alone", async ({ page }) => {
   await open(page, "light", "en");
   const input = page
-    .getByRole("region", { name: "Basics" })
+    .getByRole("region", { name: "Usage" })
     .getByRole("combobox", { name: "Owner" });
   await focusInView(input);
   await page.keyboard.type("hop");
@@ -136,8 +139,10 @@ test("the slow server's spinner is named, and the failing server's message is an
   await expect(page.getByRole("status", { name: "Loading people" })).toBeVisible();
   await expect(page.getByRole("option", { name: /Ada Lovelace/ })).toBeVisible({ timeout: 10_000 });
   await page.keyboard.press("Escape");
+  await expect(page.locator(".combo-box__popover")).toHaveCount(0);
 
-  await focusInView(server.getByRole("combobox", { name: /offline/ }));
+  // From its button: focus moved straight from a list that just closed does not open the next one in React Aria.
+  await server.getByRole("button", { name: /offline server/ }).click();
   const failed = page.getByRole("status").filter({ hasText: "People could not be loaded." });
   await expect(failed).toBeVisible();
   await expect(page.getByRole("listbox").getByText("People could not be loaded.")).toHaveCount(0);

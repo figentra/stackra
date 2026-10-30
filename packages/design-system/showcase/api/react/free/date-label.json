@@ -1,0 +1,150 @@
+{
+  "generatedFrom": {
+    "hash": "3ab89f2e9a20a4c8",
+    "propsFiles": ["ui/src/react/date-label/date-label.props.ts"]
+  },
+  "importLine": "import { DateLabel } from \"@stackra/ui/react\";",
+  "key": "free/date-label",
+  "parts": [
+    {
+      "name": "DateLabel",
+      "props": [
+        {
+          "description": "The date: a `Date`, or an ISO 8601 string as an API sends it. An invalid date draws nothing.",
+          "name": "date",
+          "required": true,
+          "source": "stackra",
+          "type": "string | Date"
+        },
+        {
+          "description": "What the date means; `date` (the default) shows no state, `due` can be due soon or overdue, `expiry` can be\nexpiring soon or expired.",
+          "name": "kind",
+          "required": false,
+          "source": "stackra",
+          "type": "\"date\" | \"due\" | \"expiry\""
+        },
+        {
+          "description": "How many days ahead a due date or expiry counts as soon; defaults to 3. A market pack can change it.",
+          "name": "soonDays",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True (the default) to write a date within a week as \"tomorrow\" or \"3 days ago\"; the full date is always read\nout and shown on hover.",
+          "name": "isRelative",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The calendar the full date is written in; defaults to `gregory`.",
+          "name": "calendar",
+          "required": false,
+          "source": "stackra",
+          "type": "\"gregory\" | \"islamic-umalqura\""
+        },
+        {
+          "description": "\"Now\", for a fixed point in a test or a demo; defaults to the moment the label mounted.",
+          "name": "now",
+          "required": false,
+          "source": "stackra",
+          "type": "Date"
+        },
+        {
+          "description": "The chip's size; defaults to `sm`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "False to skip the single attention pulse an overdue or expired label plays when it appears.",
+          "name": "isAnimated",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "secondary",
+          "description": "The emphasis of the chip: filled, neutral, transparent or tinted. Defaults to `secondary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"tertiary\" | \"primary\" | \"soft\""
+        },
+        {
+          "description": "An element drawn before the text, on the inline-start side: an icon name or any icon element, sized to the text.",
+          "name": "startIcon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "An element drawn after the text, on the inline-end side: an icon name or any icon element, sized to the text.",
+          "name": "endIcon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"span\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLSpanElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

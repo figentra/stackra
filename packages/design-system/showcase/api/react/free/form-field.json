@@ -1,0 +1,30 @@
+{
+  "generatedFrom": {
+    "hash": "1d06e30253c8ab23",
+    "propsFiles": ["ui/src/react/form-field/form-field.props.ts"]
+  },
+  "importLine": "import { FormField } from \"@stackra/ui/react\";",
+  "key": "free/form-field",
+  "parts": [
+    {
+      "name": "FormField",
+      "props": [
+        {
+          "description": "Draws the field from the binding: spread it first, then add the label and the presentation props.",
+          "name": "render",
+          "required": true,
+          "source": "stackra",
+          "type": "(binding: FormFieldBinding<PathValueImpl<TFieldValues, TName>>) => ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "Attributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

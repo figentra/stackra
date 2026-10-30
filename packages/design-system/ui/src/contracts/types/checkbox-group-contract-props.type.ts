@@ -16,6 +16,11 @@ import type { FieldContractProps } from "#contracts/types/field-contract-props.t
 export interface CheckboxGroupContractProps extends FieldContractProps<readonly string[]> {
   /** The checkboxes, in the order they are drawn; each is reported by its `value` in the group's list. */
   readonly options: readonly ChoiceOption[];
+  /**
+   * Lays the options out in this many equal columns, under the label (the label, description and error never take a
+   * cell). Left out, the options stack.
+   */
+  readonly columns?: number | undefined;
   /** The look of every checkbox in the group; left out, each runtime picks the one that suits where it sits. */
   readonly variant?: ControlVariant | undefined;
 }

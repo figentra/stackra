@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "ee888eb041cd29f8",
+    "propsFiles": ["ui/src/react/loading-overlay/loading-overlay.props.ts"]
+  },
+  "importLine": "import { LoadingOverlay } from \"@stackra/ui/react\";",
+  "key": "free/loading-overlay",
+  "parts": [
+    {
+      "name": "LoadingOverlay",
+      "props": [
+        {
+          "description": "The region's content.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True while the content is loading or saving: it is covered, blocked and hidden from screen readers.",
+          "name": "isLoading",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "What is happening, for example \"Saving the price list…\"; defaults to the catalogue's \"Loading…\".",
+          "name": "message",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

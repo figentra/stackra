@@ -1,0 +1,264 @@
+{
+  "generatedFrom": {
+    "hash": "5bd81dfee4a381d7",
+    "heroDoc": "vendor/heroui/native/accordion.json",
+    "propsFiles": ["ui/src/native/accordion/accordion.props.ts"]
+  },
+  "importLine": "import { Accordion } from \"@stackra/ui/native\";",
+  "key": "free/accordion",
+  "parts": [
+    {
+      "animation": [
+        {
+          "description": "Disable animations while customizing properties",
+          "name": "state",
+          "required": false,
+          "source": "heroui",
+          "type": "'disabled' | 'disable-all' | boolean"
+        },
+        {
+          "default": "`LinearTransition`<br/>`.springify()`<br/>`.damping(140)`<br/>`.stiffness(1600)`<br/>`.mass(4)`",
+          "description": "Custom layout animation for accordion transitions",
+          "name": "layout.value",
+          "required": false,
+          "source": "heroui",
+          "type": "LayoutTransition"
+        }
+      ],
+      "events": [
+        {
+          "description": "Called with the ids now expanded each time a section opens or closes, in the order the items are in.",
+          "name": "onExpandedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        }
+      ],
+      "extends": "Accordion",
+      "name": "Accordion",
+      "props": [
+        {
+          "description": "The ids of the expanded sections, for a controlled accordion; pair it with `onExpandedChange`.",
+          "name": "expandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids expanded at the start, for an uncontrolled accordion.",
+          "name": "defaultExpandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "True to let several sections stay open at once; otherwise opening one closes the others. Defaults to false.",
+          "name": "canExpandMultiple",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "default",
+          "description": "The surface of the accordion: `default` on the page, `surface` as a panel of its own. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"surface\""
+        },
+        {
+          "description": "True to show every section but refuse expanding or collapsing any of them.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly AccordionItem[]"
+        },
+        {
+          "description": "Animation configuration for accordion",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "AccordionRootAnimation"
+        },
+        {
+          "description": "",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean | SharedValue<boolean | undefined>"
+        },
+        {
+          "description": "",
+          "name": "background",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes for the container",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS classes for the slots",
+          "name": "classNames",
+          "required": false,
+          "source": "heroui",
+          "type": "ElementSlots<\"base\" | \"container\" | \"separator\">"
+        },
+        {
+          "default": "false",
+          "description": "Whether to hide the separator between accordion items",
+          "name": "hideSeparator",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "default": "true",
+          "description": "Whether expanded items can be collapsed",
+          "name": "isCollapsible",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean | SharedValue<boolean | undefined>"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "heroui",
+          "type": "Ref<View>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>"
+        },
+        {
+          "description": "Styles for different parts of the accordion root",
+          "name": "styles",
+          "required": false,
+          "source": "heroui",
+          "type": "Partial<Record<\"base\" | \"container\" | \"separator\", ViewStyle>>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native",
+  "slots": [
+    {
+      "description": "",
+      "name": "base"
+    },
+    {
+      "description": "",
+      "name": "container"
+    },
+    {
+      "description": "",
+      "name": "separator"
+    }
+  ]
+}

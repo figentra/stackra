@@ -1,0 +1,15 @@
+{
+  "bubbles_title": "Price against units sold",
+  "bubbles_description": "Each bubble is a product, sized by its revenue",
+  "points_title": "Delivery time against rating",
+  "points_description": "Orders this week, with the rating we aim for",
+  "price": "Price",
+  "units": "Units sold",
+  "revenue": "Revenue",
+  "drinks": "Drinks",
+  "food": "Food",
+  "minutes": "Delivery time (minutes)",
+  "rating": "Rating",
+  "orders": "Orders",
+  "target": "Target rating"
+}

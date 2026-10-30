@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the cursor pagination route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the cursor pagination route of @figentra/playground: its path. The page it renders is
  *          `cursor-pagination.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The CursorPagination page, at `/cursor-pagination`. */
-export class CursorPaginationRoute extends Route({ path: "/cursor-pagination" }) {
-  /** The page title. */
-  static readonly title = "Cursor pagination";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Navigation";
-}
+export class CursorPaginationRoute extends Route({ path: "/cursor-pagination" }) {}

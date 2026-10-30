@@ -1,0 +1,21 @@
+{
+  "screen_name": "Full-screen sample",
+  "exited": "You left full screen.",
+  "enter_again": "Enter full screen",
+  "hint": "Wait three seconds: the bar hides. Move the pointer or press a key to bring it back.",
+  "hint_locked": "Locked: press and hold the top edge to bring the bar back.",
+  "register": {
+    "title": "Register 2 · Riyadh Park",
+    "lock": "Lock",
+    "basket": "Basket: 3 items, SAR 47.50"
+  },
+  "kds": {
+    "title": "Kitchen display · Grill",
+    "tickets": "{count, plural, one {# open ticket} other {# open tickets}}"
+  },
+  "editor": {
+    "title": "فاتورة رقم ١٠٤٢",
+    "save": "Save",
+    "body": "Edit the invoice lines here; the bar stays while you work."
+  }
+}

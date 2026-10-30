@@ -1,0 +1,156 @@
+{
+  "generatedFrom": {
+    "hash": "8562ac66b6ecd56c",
+    "propsFiles": ["ui/src/react/reveal/reveal.props.ts"]
+  },
+  "importLine": "import { Reveal } from \"@stackra/ui/react\";",
+  "key": "free/reveal",
+  "parts": [
+    {
+      "name": "Reveal",
+      "props": [
+        {
+          "description": "The content that fades in and rises into place.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Its place in a row revealed one after another, counted from 0: each place waits one `stagger` step longer.\nDefaults to 0, no wait.",
+          "name": "index",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Off, the content shows at once with no motion. Defaults to on; the reduced-motion setting turns it off too.",
+          "name": "isAnimated",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "unknown"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "unknown"
+        },
+        {
+          "description": "",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "unknown"
+        },
+        {
+          "description": "The React DOM `style` prop, enhanced with support for `MotionValue`s and separate `transform` values.\n\n```jsx\nexport const MyComponent = () => {\n  const x = useMotionValue(0)\n\n  return <motion.div style={{ x, opacity: 1, scale: 0.5 }} />\n}\n```",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionStyle"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeAdvancedOptions",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeAdvancedOptions"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeAnimationOptions",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeAnimationOptions"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeDraggableOptions",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeDraggableOptions"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeDragHandlers",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeDragHandlers"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeEventOptions",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeEventOptions"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeFocusHandlers",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeFocusHandlers"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeHoverHandlers",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeHoverHandlers"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeLayoutOptions",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeLayoutOptions"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeOptions",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeOptions"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodePanHandlers",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodePanHandlers"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeTapHandlers",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeTapHandlers"
+        },
+        {
+          "description": "",
+          "name": "...MotionNodeViewportOptions",
+          "required": false,
+          "source": "react-aria",
+          "type": "MotionNodeViewportOptions"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

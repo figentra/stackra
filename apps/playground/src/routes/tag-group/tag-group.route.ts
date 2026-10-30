@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the tag group route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the tag group route of @figentra/playground: its path. The page it renders is
  *          `tag-group.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The TagGroup page, at `/tag-group`. */
-export class TagGroupRoute extends Route({ path: "/tag-group" }) {
-  /** The page title. */
-  static readonly title = "Tag group";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Selection";
-}
+export class TagGroupRoute extends Route({ path: "/tag-group" }) {}

@@ -1,0 +1,241 @@
+{
+  "generatedFrom": {
+    "hash": "96da5d994991929c",
+    "heroDoc": "vendor/heroui/native/radio-group.json",
+    "propsFiles": ["ui/src/native/radio-group/radio-group.props.ts"]
+  },
+  "importLine": "import { RadioGroup } from \"@stackra/ui/native\";",
+  "key": "free/radio-group",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "replaces": "onValueChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        }
+      ],
+      "extends": "RadioGroup",
+      "name": "RadioGroup",
+      "props": [
+        {
+          "description": "The radios, in the order they are drawn; the group's value is the `value` of the one chosen.",
+          "name": "options",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChoiceOption[]"
+        },
+        {
+          "default": "vertical",
+          "description": "`vertical` stacks the options, `horizontal` puts them in a wrapping row under the label. Defaults to `vertical`.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "Lays the options out in this many equal columns, under the label (the label, description and error never take a\ncell). Left out, the options stack (or wrap in a row, with `orientation=\"horizontal\"`).",
+          "name": "columns",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The look of every radio in the group; left out, each runtime picks the one that suits where it sits.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "\"disable-all\""
+        },
+        {
+          "default": "undefined",
+          "description": "Custom class name",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "heroui",
+          "type": "Ref<View>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "All standard React Native View props are supported",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

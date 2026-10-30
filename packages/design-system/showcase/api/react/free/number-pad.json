@@ -1,0 +1,137 @@
+{
+  "generatedFrom": {
+    "hash": "871b410b9bad85fd",
+    "propsFiles": ["ui/src/react/number-pad/number-pad.props.ts"]
+  },
+  "importLine": "import { NumberPad } from \"@stackra/ui/react\";",
+  "key": "free/number-pad",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new value on every key.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        },
+        {
+          "description": "Called with the value once it reaches `maxLength`.",
+          "name": "onComplete",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        }
+      ],
+      "name": "NumberPad",
+      "props": [
+        {
+          "description": "The digits typed, for a controlled pad; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The digits at the start, for an uncontrolled pad.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The most characters the value takes. In PIN mode it is the code's length and defaults to 4.",
+          "name": "maxLength",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True for a PIN: the display shows dots, the decimal key is gone, and `onComplete` fires at full length.",
+          "name": "isPin",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to offer the decimal key (amounts); it types one separator at most.",
+          "name": "hasDecimal",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The spoken name of the pad and its display, for example \"Amount\" or \"Staff PIN\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The delete key's accessible name. Defaults to the catalogue's \"Delete\".",
+          "name": "deleteLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to hide the display row, when the value shows elsewhere.",
+          "name": "isDisplayHidden",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse every key.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,6 +1,6 @@
 ---
 title: "0294 — Programming model v3: grammar, group folders, derived identities and naming"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456) · amended 2026-10-24 (STA-469) · amended 2026-10-24 (STA-479)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456) · amended 2026-10-24 (STA-469) · amended 2026-10-24 (STA-479) · amended 2026-10-27 (showcase registry)"
 ---
 
 <Note>
@@ -646,6 +646,19 @@ decision it changes. Everything else stands.
    module of a registered prefix's owner (the `identity` service for `usr`, `identity.user`) may declare a model with
    that prefix under its own module key. The manifest's model entry records the key it hosts (`hosts`), and a hosted
    package manifest with the same model is not `prefix_duplicate`.
+
+## Amendment 2026-10-27: showcase routes read their words from the registry
+
+**Context.** The playground's route classes (`apps/playground/src/routes/<name>/<name>.route.ts`) carry static `title`
+and `category` fields beside `path` and `ownsMain`. The mobile showcase keeps a second list of the same components with
+its own copies of the titles and categories, and neither can be translated. The showcase redesign (2026-10-27) adds
+one registry, `@stackra/showcase` (`packages/design-system/showcase`), that both apps, the API generator and search read.
+
+**Decision.** A showcase route class declares only what routing needs, `path` and `ownsMain`. Its title, description,
+category, tier and platforms are derived from the registry entry whose `webPath` is the route's path, and its words are
+`showcase::` catalogue keys. The rule that a route writes its `path` once (decision 20) stands; `/<slug>` and
+`/pro-<slug>` keep their URLs. The `title` and `category` statics are removed by the WP5 route codemod; until then the
+registry wins where they differ. Product apps are unchanged.
 
 ## Supersedes and sources
 

@@ -88,7 +88,18 @@
   },
   "sidebar": {
     "collapse": "Comprimi la barra laterale",
-    "expand": "Espandi la barra laterale"
+    "expand": "Espandi la barra laterale",
+    "open": "Apri la navigazione",
+    "resize": "Ridimensiona la barra laterale",
+    "search": "Filtra la navigazione",
+    "no_results": "Nessuna voce corrispondente",
+    "loading": "Caricamento della navigazione",
+    "sub_toggle": "Pagine di {label}"
+  },
+  "side_panel": {
+    "expand": "Espandi il pannello",
+    "close": "Chiudi il pannello",
+    "resize": "Ridimensiona il pannello"
   },
   "data_table": {
     "loading": "Caricamento",
@@ -107,5 +118,662 @@
   },
   "search_field": {
     "clear": "Cancella ricerca"
+  },
+  "overflow_list": {
+    "more": "+{count, number} altri",
+    "less": "Mostra meno"
+  },
+  "tree_view": {
+    "expand": "Espandi {label}",
+    "collapse": "Comprimi {label}"
+  },
+  "sortable_list": {
+    "handle": "Riordina {label}",
+    "move_up": "Sposta su",
+    "move_down": "Sposta giù",
+    "moved": "{label} spostato in posizione {position, number} di {count, number}",
+    "hint": "Trascina la maniglia o usa le azioni per spostare questa riga."
+  },
+  "filter_panel": {
+    "applied": "Filtri applicati",
+    "views": "Viste salvate",
+    "sort": "Ordina",
+    "order": "Ordine",
+    "results": "{count, plural, =0 {Nessun risultato} one {# risultato} other {# risultati}}",
+    "facet_option": "{label} ({count, number})"
+  },
+  "notifications_panel": {
+    "label": "Notifiche",
+    "label_unread": "Notifiche, {count, plural, one {# non letta} other {# non lette}}",
+    "title": "Notifiche",
+    "mark_all_read": "Segna tutte come lette",
+    "dismiss": "Ignora notifica",
+    "empty": "Sei in pari",
+    "unread": "Non letta"
+  },
+  "system_banner": {
+    "dismiss": "Ignora messaggio"
+  },
+  "route_progress": {
+    "label": "Caricamento della pagina"
+  },
+  "copy_button": {
+    "copy": "Copia",
+    "copied": "Copiato"
+  },
+  "file_trigger": {
+    "files": "Scegli file",
+    "photos": "Scegli foto",
+    "camera": "Scatta una foto"
+  },
+  "upload_list": {
+    "label": "Caricamenti",
+    "queued": "In attesa",
+    "uploading": "Caricamento di {name}",
+    "done": "Caricato",
+    "failed": "Caricamento non riuscito",
+    "retry": "Riprova {name}",
+    "remove": "Rimuovi {name}",
+    "preview": "Anteprima di {name}",
+    "preview_hint": "Tieni premuto per l’anteprima"
+  },
+  "avatar_group": {
+    "more": "{count, plural, other {+#}}",
+    "more_label": "{count, plural, one {# altra persona} other {# altre persone}}",
+    "summary": "{label}: {names}"
+  },
+  "save_bar": {
+    "label": "Modifiche non salvate",
+    "message": "Modifiche non salvate",
+    "save": "Salva",
+    "discard": "Annulla modifiche",
+    "saving": "Salvataggio…",
+    "saved": "Tutte le modifiche salvate",
+    "failed": "Impossibile salvare"
+  },
+  "setup_guide": {
+    "progress": "{done} di {total} attività completate",
+    "complete": "Tutto pronto",
+    "show": "Mostra attività",
+    "hide": "Nascondi attività"
+  },
+  "inline_loading": {
+    "loading": "Caricamento…",
+    "success": "Fatto",
+    "error": "Non riuscito"
+  },
+  "date_label": {
+    "due_soon": "In scadenza",
+    "overdue": "Scaduto",
+    "expiring_soon": "Scade a breve",
+    "expired": "Scaduto",
+    "with_state": "{state} · {when}",
+    "with_date": "{label}, {date}"
+  },
+  "permissions_matrix": {
+    "permission": "Permesso",
+    "all_for_role": "Tutti i permessi per {role}",
+    "group_for_role": "Tutti i permessi {group} per {role}",
+    "cell": "{permission} per {role}",
+    "cell_state": "{permission} per {role}: {state}",
+    "allowed": "Consentito",
+    "denied": "Non consentito",
+    "summary": "{count} di {total}"
+  },
+  "money_field": {
+    "currency": "Valuta"
+  },
+  "password_field": {
+    "show": "Mostra password",
+    "hide": "Nascondi password",
+    "caps_lock": "Il blocco maiuscole è attivo"
+  },
+  "multi_select": {
+    "remove": "Rimuovi {label}",
+    "search": "Cerca",
+    "close": "Fine",
+    "no_matches": "Nessun risultato"
+  },
+  "inline_edit": {
+    "edit": "Modifica",
+    "save": "Salva",
+    "cancel": "Annulla"
+  },
+  "export_dialog": {
+    "title": "Esporta",
+    "format": "Formato",
+    "columns": "Colonne",
+    "scope": "Righe",
+    "delivery": "Consegna",
+    "scope_selection": "{count, plural, =0 {Righe selezionate (nessuna)} one {Riga selezionata (#)} other {Righe selezionate (#)}}",
+    "scope_filtered": "{count, plural, =0 {Righe filtrate (nessuna)} other {Righe filtrate (#)}}",
+    "scope_all": "{count, plural, other {Tutte le righe (#)}}",
+    "download": "Scarica un file",
+    "email": "Invia per email",
+    "email_to": "Invialo a {email}",
+    "cancel": "Annulla",
+    "export": "Esporta",
+    "done": "Fatto",
+    "done_download": "L’esportazione è pronta e in download.",
+    "done_email": "L’esportazione è in arrivo nella tua casella di posta.",
+    "failed": "L’esportazione non è riuscita. Riprova.",
+    "no_columns": "Scegli almeno una colonna.",
+    "close": "Chiudi",
+    "preparing": "Preparazione del file"
+  },
+  "error_page": {
+    "retry": "Riprova",
+    "forbidden": {
+      "title": "Non hai accesso a questa pagina",
+      "description": "Chiedi l’accesso a un amministratore di questo spazio di lavoro."
+    },
+    "not_found": {
+      "title": "Questa pagina non esiste",
+      "description": "Il link potrebbe essere vecchio, oppure la pagina è stata spostata o eliminata."
+    },
+    "server_error": {
+      "title": "Qualcosa è andato storto da parte nostra",
+      "description": "Ne siamo stati informati. Riprova tra un momento."
+    },
+    "offline": {
+      "title": "Sei offline",
+      "description": "Controlla la connessione di rete, poi riprova."
+    }
+  },
+  "fullscreen_bar": {
+    "exit": "Esci dallo schermo intero",
+    "reveal": "Mostra la barra dello schermo intero",
+    "reveal_locked": "Mostra la barra dello schermo intero (tieni premuto)"
+  },
+  "coach_mark": {
+    "progress": "Passaggio {current} di {total}",
+    "back": "Indietro",
+    "next": "Avanti",
+    "done": "Fatto",
+    "skip": "Salta il tour"
+  },
+  "chart": {
+    "category": "Categoria",
+    "value": "Valore",
+    "previous": "{series}, periodo precedente",
+    "previous_period": "Periodo precedente",
+    "series": "Serie mostrate",
+    "zoom": "Intervallo di zoom",
+    "bin": "Intervallo",
+    "count": "Conteggio",
+    "minimum": "Minimo",
+    "lower_quartile": "Primo quartile",
+    "median": "Mediana",
+    "upper_quartile": "Terzo quartile",
+    "maximum": "Massimo",
+    "outliers": "Valori anomali",
+    "low": "Minimo",
+    "high": "Massimo",
+    "target": "Obiettivo",
+    "less": "Meno",
+    "more": "Più",
+    "cell": "{row}, {column}: {value}",
+    "open": "Apertura",
+    "close": "Chiusura",
+    "volume": "Volume",
+    "change": "Variazione",
+    "total": "Totale",
+    "of_target": "{value} su {target}",
+    "date": "Data",
+    "group": "Gruppo",
+    "from": "Da",
+    "to": "A",
+    "task": "Attività",
+    "lane": "Corsia",
+    "start": "Inizio",
+    "end": "Fine",
+    "today": "Oggi",
+    "region": "Regione",
+    "no_data": "Nessun dato"
+  },
+  "data_grid": {
+    "changes": "{count, plural, one {# modifica non salvata} other {# modifiche non salvate}}",
+    "errors": "{count, plural, one {# cella da correggere} other {# celle da correggere}}",
+    "undo": "Annulla",
+    "redo": "Ripeti",
+    "total": "Totale",
+    "required": "Obbligatorio",
+    "type": "Valore non valido",
+    "min": "Almeno {limit}",
+    "max": "Al massimo {limit}",
+    "edit": "Modifica",
+    "edit_row": "Modifica {name}",
+    "bulk_edit": "Modifica {count, plural, one {# riga} other {# righe}}",
+    "bulk_edit_title": "Modifica le righe selezionate",
+    "bulk_column": "Campo",
+    "bulk_value": "Nuovo valore",
+    "apply": "Applica",
+    "cancel": "Annulla",
+    "done": "Fine",
+    "select": "Seleziona",
+    "selected": "{count, plural, one {# selezionata} other {# selezionate}}",
+    "fill_handle": "Quadratino di riempimento",
+    "yes": "Sì",
+    "no": "No"
+  },
+  "data_table_tools": {
+    "columns": "Colonne",
+    "views": "Viste",
+    "save_view": "Salva vista",
+    "group_count": "{count, plural, one {# riga} other {# righe}}",
+    "total": "Totale",
+    "aggregate_sum": "Somma",
+    "aggregate_avg": "Media",
+    "aggregate_min": "Minimo",
+    "aggregate_max": "Massimo",
+    "aggregate_count": "Conteggio"
+  },
+  "collection": {
+    "sort_rank": "ordinamento {rank, number}",
+    "column_menu": "Opzioni di {label}",
+    "sort_ascending": "Ordina in modo crescente",
+    "sort_descending": "Ordina in modo decrescente",
+    "add_sort": "Aggiungi all’ordinamento",
+    "clear_sort": "Rimuovi dall’ordinamento",
+    "filter_column": "Filtra per questa colonna",
+    "pin_start": "Fissa all’inizio",
+    "pin_end": "Fissa alla fine",
+    "unpin": "Sblocca",
+    "hide_column": "Nascondi colonna",
+    "group_by_column": "Raggruppa per questa colonna",
+    "ungroup": "Smetti di raggruppare",
+    "summary": "Riepilogo",
+    "summary_none": "Nessun riepilogo",
+    "resize_column": "Ridimensiona colonna",
+    "resize_handle": "Ridimensiona {label}",
+    "move_start": "Sposta verso l’inizio",
+    "move_end": "Sposta verso la fine",
+    "column_moved": "{label} spostata in posizione {position, number} di {count, number}",
+    "editor_title": "Disponi le colonne",
+    "editor_hint": "Trascina per riordinare; rinomina, fissa, ridimensiona e nascondi le colonne.",
+    "show_column": "Mostra {label}",
+    "rename_column": "Rinomina {label}",
+    "column_name": "Nome della colonna",
+    "pin": "Fissa",
+    "pin_none": "Non fissata",
+    "width": "Larghezza",
+    "width_auto": "Automatica",
+    "fit_width": "Adatta al contenuto",
+    "wrap": "A capo automatico",
+    "reset_columns": "Ripristina colonne",
+    "density": "Densità delle righe",
+    "density_compact": "Compatta",
+    "density_normal": "Normale",
+    "density_roomy": "Ampia",
+    "toolbar": "Strumenti di {label}",
+    "search": "Cerca in {label}",
+    "filter": "Filtra",
+    "filter_count": "{count, plural, =0 {Filtra} one {Filtra, # regola} other {Filtra, # regole}}",
+    "filter_title": "Filtra {label}",
+    "add_group": "Aggiungi un gruppo",
+    "remove_group": "Rimuovi il gruppo",
+    "group_match": "Gruppo {index, number}",
+    "clear_filters": "Cancella filtri",
+    "remove_filter": "Rimuovi filtro: {text}",
+    "sort": "Ordina",
+    "sort_count": "{count, plural, =0 {Ordina} one {Ordina, # chiave} other {Ordina, # chiavi}}",
+    "sort_title": "Ordina {label}",
+    "add_sort_key": "Aggiungi chiave di ordinamento",
+    "remove_sort": "Rimuovi {label} dall’ordinamento",
+    "sort_direction": "Direzione di {label}",
+    "sort_empty": "Non ordinato: le righe mantengono l’ordine della fonte.",
+    "group": "Raggruppa",
+    "group_by": "Raggruppa per",
+    "group_none": "Nessun raggruppamento",
+    "layout": "Visualizza come",
+    "layout_table": "Tabella",
+    "layout_grid": "Griglia",
+    "layout_list": "Elenco",
+    "layout_cards": "Schede",
+    "layout_board": "Bacheca",
+    "views": "Viste",
+    "all_records": "Tutti i record",
+    "view_menu": "Azioni della vista",
+    "save_view": "Salva le modifiche alla vista",
+    "save_view_as": "Salva come nuova vista",
+    "rename_view": "Rinomina vista",
+    "share_view": "Condividi vista",
+    "set_default": "Imposta come predefinita",
+    "unset_default": "Non usare più come predefinita",
+    "delete_view": "Elimina vista",
+    "view_name": "Nome della vista",
+    "default_view": "{label} (predefinita)",
+    "shared_view": "{label} (condivisa)",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "export": "Esporta",
+    "import": "Importa",
+    "refresh": "Aggiorna",
+    "fullscreen": "Schermo intero",
+    "exit_fullscreen": "Esci da schermo intero",
+    "more_tools": "Altri strumenti",
+    "results": "{count, plural, =0 {Nessun risultato} one {# risultato} other {# risultati}}",
+    "options": "Cerca, filtra e ordina",
+    "done": "Fatto",
+    "previous_page": "Pagina precedente",
+    "next_page": "Pagina successiva",
+    "page_of": "Pagina {page, number} di {count, number}",
+    "load_more": "Carica altro"
+  },
+  "number_pad": {
+    "delete": "Elimina",
+    "decimal": "Separatore decimale"
+  },
+  "quantity_stepper": {
+    "remove": "Rimuovi"
+  },
+  "social_sign_in": {
+    "continue_with": "Continua con {provider}"
+  },
+  "widget_frame": {
+    "loading": "Caricamento",
+    "empty": "Ancora nessun dato per questo periodo",
+    "error": "Impossibile caricare questo widget",
+    "retry": "Riprova",
+    "refreshing": "Aggiornamento",
+    "updated": "Aggiornato {time}",
+    "refresh": "Aggiorna",
+    "more": "Altre azioni",
+    "csv": "Scarica CSV",
+    "png": "Scarica PNG",
+    "table": "Mostra come tabella",
+    "chart": "Mostra come grafico",
+    "fullscreen": "Schermo intero",
+    "close": "Chiudi",
+    "link": "Copia link",
+    "link_copied": "Link copiato",
+    "sort": "Ordina",
+    "sort_value_desc": "Prima il più grande",
+    "sort_value_asc": "Prima il più piccolo",
+    "sort_label": "Per nome",
+    "compare": "Confronta con il periodo precedente"
+  },
+  "trend_chip": {
+    "up": "In aumento di {value}",
+    "down": "In calo di {value}",
+    "flat": "Nessuna variazione"
+  },
+  "stat": {
+    "target": "Obiettivo {value}",
+    "drill_down": "Apri {label}"
+  },
+  "funnel_chart": {
+    "conversion": "{value} del passo precedente"
+  },
+  "stacked_meter": {
+    "free": "Libero",
+    "total": "{used} di {max}"
+  },
+  "code_block": {
+    "code": "Codice",
+    "show_all": "Mostra tutte le {count} righe",
+    "show_less": "Mostra meno righe",
+    "wrap": "Manda a capo le righe lunghe",
+    "files": "File"
+  },
+  "json_viewer": {
+    "expand": "Espandi",
+    "collapse": "Comprimi"
+  },
+  "toc_rail": {
+    "label": "In questa pagina",
+    "open": "Apri l'indice"
+  },
+  "carousel": {
+    "previous": "Diapositiva precedente",
+    "next": "Diapositiva successiva",
+    "slide": "Diapositiva {index} di {count}",
+    "pages": "Scegli una diapositiva"
+  },
+  "command_palette": {
+    "label": "Tavolozza dei comandi",
+    "placeholder": "Cerca comandi",
+    "empty": "Nessun comando corrisponde"
+  },
+  "import_flow": {
+    "mapping": "Abbina le colonne",
+    "column": "Colonna del file",
+    "field": "Campo",
+    "skip": "Salta questa colonna",
+    "sample": "es. {value}",
+    "required_missing": "Abbina prima questi campi obbligatori: {fields}",
+    "check": "Controlla il file",
+    "import": "Importa",
+    "back": "Modifica l'abbinamento",
+    "created": "Da creare",
+    "updated": "Da aggiornare",
+    "failed": "Rifiutate",
+    "issues": "Problemi trovati",
+    "row": "Riga {row}",
+    "no_issues": "Nessun problema"
+  },
+  "rule_builder": {
+    "match": "Condizioni da rispettare",
+    "match_all": "Tutte",
+    "match_any": "Almeno una",
+    "add": "Aggiungi condizione",
+    "remove": "Rimuovi la condizione",
+    "field": "Campo",
+    "operator": "Operatore",
+    "value": "Valore",
+    "empty": "Nessuna condizione: tutto corrisponde"
+  },
+  "rule_operator": {
+    "equals": "è",
+    "not_equals": "non è",
+    "contains": "contiene",
+    "not_contains": "non contiene",
+    "greater": "è maggiore di",
+    "less": "è minore di",
+    "is_empty": "è vuoto",
+    "is_not_empty": "non è vuoto"
+  },
+  "comment_thread": {
+    "reply": "Rispondi",
+    "send": "Invia",
+    "resolve": "Risolvi",
+    "reopen": "Riapri",
+    "resolved": "Risolto",
+    "people": "Persone da menzionare"
+  },
+  "diff_review": {
+    "before": "Prima",
+    "after": "Dopo",
+    "accept": "Accetta",
+    "reject": "Rifiuta",
+    "accept_all": "Accetta tutto",
+    "apply": "Applica le modifiche",
+    "pending": "{count} da rivedere",
+    "not_set": "Non impostato",
+    "accepted": "Accettato",
+    "rejected": "Rifiutato"
+  },
+  "wheel": {
+    "day": "Giorno",
+    "month": "Mese",
+    "year": "Anno",
+    "hour": "Ora",
+    "minute": "Minuto",
+    "period": "Mattina o pomeriggio"
+  },
+  "time_picker": {
+    "open": "Scegli un orario"
+  },
+  "date_time_picker": {
+    "date": "Data",
+    "time": "Ora"
+  },
+  "date_range_picker": {
+    "calendar": "Scegli le date",
+    "presets": "Intervalli rapidi",
+    "today": "Oggi",
+    "yesterday": "Ieri",
+    "last_7_days": "Ultimi 7 giorni",
+    "last_30_days": "Ultimi 30 giorni",
+    "this_month": "Questo mese",
+    "last_month": "Il mese scorso",
+    "this_year": "Quest’anno"
+  },
+  "year_picker": {
+    "label": "Scegli un anno"
+  },
+  "emoji_picker": {
+    "label": "Emoji",
+    "search": "Cerca emoji",
+    "recent": "Usati di recente",
+    "no_matches": "Nessuna emoji corrisponde.",
+    "smileys": "Faccine",
+    "people": "Persone e gesti",
+    "nature": "Natura",
+    "food": "Cibo e bevande",
+    "activities": "Attività",
+    "travel": "Viaggi e luoghi",
+    "objects": "Oggetti",
+    "symbols": "Simboli"
+  },
+  "reaction_button": {
+    "label": "{emoji}: {count}"
+  },
+  "otp_input": {
+    "label": "Codice di verifica",
+    "digit": "Cifra {index} di {total}"
+  },
+  "phone_field": {
+    "country": "Prefisso internazionale",
+    "number": "Numero di telefono",
+    "empty": "Nessun paese corrisponde.",
+    "selected": "{country}, {code}",
+    "close": "Chiudi"
+  },
+  "country_select": {
+    "label": "Paese",
+    "search": "Cerca paese"
+  },
+  "address_field": {
+    "line1": "Indirizzo",
+    "line2": "Edificio o interno (facoltativo)",
+    "city": "Città",
+    "region": "Regione",
+    "postal_code": "CAP",
+    "country": "Paese"
+  },
+  "drop_zone": {
+    "label": "Trascina qui i file",
+    "browse": "Scegli i file",
+    "label_one": "Trascina qui un file",
+    "browse_one": "Scegli un file"
+  },
+  "color_picker": {
+    "label": "Colore",
+    "hex": "Codice esadecimale",
+    "hue": "Tonalità",
+    "swatches": "Colori pronti"
+  },
+  "locale_switcher": {
+    "label": "Lingua"
+  },
+  "range_calendar": {
+    "previous": "Mese precedente",
+    "next": "Mese successivo"
+  },
+  "drawer": {
+    "resize": "Cambia l'altezza del pannello",
+    "back": "Indietro",
+    "expand": "Espandi il pannello",
+    "close_escape": "{label}, Esc"
+  },
+  "import_dialog": {
+    "title": "Importa",
+    "close": "Chiudi",
+    "step_of": "Passo {step} di {total}",
+    "step_upload": "Carica il file",
+    "step_match": "Abbina le colonne",
+    "step_review": "Controlla le modifiche",
+    "step_import": "Importa",
+    "upload_label": "Trascina qui un file CSV o Excel",
+    "upload_hint": "Un solo foglio, con i nomi delle colonne nella prima riga.",
+    "template": "Scarica il modello",
+    "reading": "Lettura del file",
+    "read_failed": "Impossibile leggere il file. Verifica che sia un CSV o un Excel e riprova.",
+    "file_rows": "{count, plural, one {# riga} other {# righe}}",
+    "check_failed": "Impossibile controllare il file. Riprova.",
+    "skipped": "Da saltare",
+    "download_errors": "Scarica l'elenco degli errori",
+    "error_row": "Riga",
+    "error_field": "Campo",
+    "error_message": "Problema",
+    "importing": "Importazione delle righe",
+    "done_title": "Importazione completata",
+    "import_failed": "L'importazione non è riuscita. Riprova.",
+    "cancel": "Annulla",
+    "back": "Indietro",
+    "next": "Continua",
+    "retry": "Riprova",
+    "done": "Fatto",
+    "done_created": "Create",
+    "done_updated": "Aggiornate",
+    "done_skipped": "Saltate",
+    "done_failed": "Non riuscite"
+  },
+  "pagination": {
+    "label": "Paginazione",
+    "previous": "Pagina precedente",
+    "next": "Pagina successiva",
+    "page": "Pagina {page}",
+    "more": "Altre pagine",
+    "per_page": "Righe per pagina",
+    "jump": "Vai alla pagina",
+    "go": "Vai",
+    "summary": "{from}–{to} di {total}"
+  },
+  "tag_input": {
+    "remove": "Rimuovi {tag}",
+    "duplicate": "«{tag}» è già stato aggiunto.",
+    "max": "Puoi aggiungere fino a {max} tag.",
+    "count": "{count} di {max}"
+  },
+  "stepper": {
+    "label": "Avanzamento",
+    "step_of": "Passo {step} di {total}",
+    "complete": "Completato",
+    "error": "Da verificare",
+    "optional": "Facoltativo"
+  },
+  "timeline": {
+    "label": "Attività",
+    "today": "Oggi",
+    "yesterday": "Ieri"
+  },
+  "loading_overlay": {
+    "loading": "Caricamento…"
+  },
+  "truncate": {
+    "more": "Mostra di più",
+    "less": "Mostra meno"
+  },
+  "countdown": {
+    "left": "Mancano {time}",
+    "elapsed": "Trascorsi {time}",
+    "done": "Tempo scaduto"
+  },
+  "multi_select_more": {
+    "select_all": "Seleziona tutto",
+    "clear_all": "Cancella tutto",
+    "more": "+{count}",
+    "more_label": "Altri {count}: {labels}"
+  },
+  "date_presets": {
+    "label": "Date rapide",
+    "today": "Oggi",
+    "yesterday": "Ieri",
+    "tomorrow": "Domani",
+    "in_7_days": "Tra 7 giorni",
+    "start_of_month": "Inizio mese",
+    "end_of_month": "Fine mese"
   }
 }

@@ -8,6 +8,8 @@
  *          (`minValue`, `maxValue`, `isDateUnavailable`, `shouldCloseOnSelect`, `validationBehavior`, `className`,
  *          `aria-label`) through to HeroUI's root. The value is a `CalendarDate` of `@internationalized/date`, or `null`
  *          for an empty field.
+ *          `calendar: "islamic-umalqura"` shows the field and the calendar in the Hijri calendar; the value stays
+ *          Gregorian.
  * Boundary: no styling of its own beyond the minimum size of a segment and of the button and the flip of the month
  *           chevrons in a right-to-left page; the look is HeroUI's, themed by `@stackra/tokens`. The calendar refuses a day
  *           before `minValue`, after `maxValue` or for which `isDateUnavailable` is true (the bounds are given to the
@@ -24,20 +26,22 @@
  *          decision 6 of STA-350 (thin wrappers).
  */
 import {
-  Calendar,
   DateField,
   DatePicker as HeroDatePicker,
   Description,
   FieldError,
   Label,
-  type CalendarHeaderProps,
 } from "@heroui/react";
-import type { CalendarDate } from "@internationalized/date";
-import type { ComponentProps, ReactElement } from "react";
+import { getLocalTimeZone, today as todayIn, type CalendarDate } from "@internationalized/date";
+import type { ReactElement } from "react";
 import { composeRenderProps, type DateValue } from "react-aria-components";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { toGregorian } from "#core/functions/to-gregorian.function";
+import { CalendarLocale } from "#react/date-picker/calendar-locale";
+import { DateCalendar } from "#react/date-picker/date-calendar";
+import { DatePresets } from "#react/date-picker/date-presets";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { DatePickerProps } from "#react/date-picker/date-picker.props";
 
@@ -50,13 +54,6 @@ const SEGMENT_CLASS = "min-h-6 min-w-6";
 const BUTTON_CLASS = "size-6";
 
 /**
- * The chevrons of the two month buttons point the other way in a right-to-left page, where the previous month is to the
- * right. HeroUI flips them, but its date picker then resets the flip inside its popover, so the flip is made again here
- * (`!` because the reset is the more specific rule).
- */
-const MONTH_BUTTON_CLASS = "rtl:[&_svg]:rotate-180!";
-
-/**
  * React Aria types the callback for every kind of date, but a picker holding a `CalendarDate` is only ever asked about
  * `CalendarDate`s, so the narrower function the contract takes is safe to hand over.
  */
@@ -64,12 +61,6 @@ const asDateValueCallback = (
   callback: ((date: CalendarDate) => boolean) | undefined,
 ): ((date: DateValue) => boolean) | undefined =>
   callback as ((date: DateValue) => boolean) | undefined;
-
-/** Draws the calendar's header as a `div`, with the props and the ref HeroUI hands it. */
-// A cast: HeroUI types the props for the `header` element it would draw, and a `div` takes the same attributes.
-const renderAsDiv: NonNullable<CalendarHeaderProps["render"]> = (props) => (
-  <div {...(props as unknown as ComponentProps<"div">)} />
-);
 
 /**
  * A labelled field for one calendar day, typed or chosen from a calendar that opens from a button. The value is a
@@ -91,6 +82,10 @@ export function DatePicker({
   onOpenChange,
   isReadOnly,
   className,
+  calendar,
+  onChange,
+  presets,
+  today,
   ...rest
 }: DatePickerProps): ReactElement {
   const t = useUiText();
@@ -99,57 +94,55 @@ export function DatePicker({
   // (1900 to 2099) as props, and props win over context, so the calendar must be given the bounds itself.
   const bounds = omitUndefined({ minValue, maxValue });
   return (
-    <HeroDatePicker
-      {...omitUndefined(rest)}
-      {...bounds}
-      {...omitUndefined({
-        isDateUnavailable: asDateValueCallback(isDateUnavailable),
-        isReadOnly,
-        isOpen,
-        defaultOpen,
-        // A read-only picker never opens, so nothing is reported either.
-        onOpenChange: isReadOnly ? undefined : onOpenChange,
-      })}
-      // The button is off when read-only, but React Aria's Alt+Arrow shortcut would still open a calendar that refuses
-      // every day.
-      {...(isReadOnly ? { isOpen: false } : {})}
-      // HeroUI's picker has no width variant of its own, so a full-width picker gets the utility, in front of the caller's.
-      className={composeRenderProps(className, (own) =>
-        [isFullWidth ? "w-full" : "", own].filter(Boolean).join(" "),
-      )}
-    >
-      {label ? <Label>{label}</Label> : null}
-      <DateField.Group fullWidth={isFullWidth} variant={variant}>
-        <DateField.Input>
-          {(segment) => <DateField.Segment segment={segment} className={SEGMENT_CLASS} />}
-        </DateField.Input>
-        <DateField.Suffix>
-          <HeroDatePicker.Trigger aria-label={calendarButtonLabel} className={BUTTON_CLASS}>
-            <HeroDatePicker.TriggerIndicator />
-          </HeroDatePicker.Trigger>
-        </DateField.Suffix>
-      </DateField.Group>
-      {description ? <Description>{description}</Description> : null}
-      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
-      {/* A popover with no dialog inside is the dialog itself, and a dialog needs a name. */}
-      <HeroDatePicker.Popover aria-label={calendarButtonLabel}>
-        <Calendar {...bounds}>
-          {/* A div, not HeroUI's `header`: inside React Aria's `application` calendar a `header` is a banner landmark. */}
-          <Calendar.Header render={renderAsDiv}>
-            <Calendar.Heading />
-            <Calendar.NavButton slot="previous" className={MONTH_BUTTON_CLASS} />
-            <Calendar.NavButton slot="next" className={MONTH_BUTTON_CLASS} />
-          </Calendar.Header>
-          {/* Narrow weekday names: HeroUI's short ones are whole words in Arabic and overflow its fixed-width grid.
-              A day is still read by its full date. */}
-          <Calendar.Grid weekdayStyle="narrow">
-            <Calendar.GridHeader>
-              {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-            </Calendar.GridHeader>
-            <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
-          </Calendar.Grid>
-        </Calendar>
-      </HeroDatePicker.Popover>
-    </HeroDatePicker>
+    <CalendarLocale calendar={calendar}>
+      <HeroDatePicker
+        {...omitUndefined(rest)}
+        // Shown in the Hijri calendar, React Aria hands out Hijri dates; the contract's value stays Gregorian.
+        {...(onChange
+          ? { onChange: (date: CalendarDate | null) => onChange(toGregorian(date)) }
+          : {})}
+        {...bounds}
+        {...omitUndefined({
+          isDateUnavailable: asDateValueCallback(isDateUnavailable),
+          isReadOnly,
+          isOpen,
+          defaultOpen,
+          // A read-only picker never opens, so nothing is reported either.
+          onOpenChange: isReadOnly ? undefined : onOpenChange,
+        })}
+        // The button is off when read-only, but React Aria's Alt+Arrow shortcut would still open a calendar that refuses
+        // every day.
+        {...(isReadOnly ? { isOpen: false } : {})}
+        // HeroUI's picker has no width variant of its own, so a full-width picker gets the utility, in front of the caller's.
+        className={composeRenderProps(className, (own) =>
+          [isFullWidth ? "w-full" : "", own].filter(Boolean).join(" "),
+        )}
+      >
+        {label ? <Label>{label}</Label> : null}
+        <DateField.Group fullWidth={isFullWidth} variant={variant}>
+          <DateField.Input>
+            {(segment) => <DateField.Segment segment={segment} className={SEGMENT_CLASS} />}
+          </DateField.Input>
+          <DateField.Suffix>
+            <HeroDatePicker.Trigger aria-label={calendarButtonLabel} className={BUTTON_CLASS}>
+              <HeroDatePicker.TriggerIndicator />
+            </HeroDatePicker.Trigger>
+          </DateField.Suffix>
+        </DateField.Group>
+        {description ? <Description>{description}</Description> : null}
+        {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+        {/* A popover with no dialog inside is the dialog itself, and a dialog needs a name. */}
+        <HeroDatePicker.Popover aria-label={calendarButtonLabel}>
+          {presets?.length ? (
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <DatePresets presets={presets} today={today ?? todayIn(getLocalTimeZone())} />
+              <DateCalendar {...bounds} />
+            </div>
+          ) : (
+            <DateCalendar {...bounds} />
+          )}
+        </HeroDatePicker.Popover>
+      </HeroDatePicker>
+    </CalendarLocale>
   );
 }

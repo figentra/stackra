@@ -1,0 +1,389 @@
+{
+  "page": {
+    "document_title": "Theme Studio · Stackra Playground",
+    "title": "Theme Studio",
+    "exit": "Exit",
+    "theme": "Theme",
+    "history": "History",
+    "undo": "Undo",
+    "redo": "Redo",
+    "reset": "Reset theme",
+    "link": "Copy link",
+    "link_copied": "Link copied.",
+    "dismiss": "Dismiss",
+    "imported": "Imported theme: not kept in the address.",
+    "invalid": "These controls make a theme that cannot be used; the last good one is shown:",
+    "device": "Device",
+    "devices": {
+      "desktop": "Desktop",
+      "tablet": "iPad",
+      "iphone": "iPhone",
+      "android": "Android"
+    },
+    "landscape": "Landscape",
+    "scheme": "Preview scheme",
+    "schemes": {
+      "light": "Light preview",
+      "dark": "Dark preview",
+      "system": "System"
+    },
+    "direction": "Direction",
+    "directions": {
+      "ltr": "LTR: left to right (English)",
+      "rtl": "RTL: right to left (Arabic)"
+    },
+    "export": "Export",
+    "inspector": "Inspector",
+    "show_inspector": "Show the inspector",
+    "hide_inspector": "Hide the inspector",
+    "display": "Display",
+    "mode": "Mode",
+    "layout": "Layout",
+    "layouts": {
+      "single": "One scheme",
+      "side_by_side": "Light and dark"
+    },
+    "sections": {
+      "preview": "Preview",
+      "language": "Language"
+    }
+  },
+  "rail": {
+    "label": "Theme settings",
+    "brand": "Brand",
+    "colours": "Colours",
+    "type": "Type",
+    "shape": "Shape",
+    "motion": "Motion",
+    "effects": "Effects"
+  },
+  "brands": {
+    "title": "Brand"
+  },
+  "controls": {
+    "name": "Theme name",
+    "name_note": "Lower case words joined by hyphens, as in acme-dark.",
+    "preset": "Preset",
+    "custom": "Custom",
+    "presets": {
+      "ember": "Ember",
+      "moss": "Moss",
+      "violet": "Violet"
+    },
+    "accent": "Custom accent colour",
+    "accent_hue": "Accent hue",
+    "accent_chroma": "Accent strength",
+    "neutral": "Neutrals",
+    "neutral_hue": "Neutral hue",
+    "neutral_chroma": "Neutral tint",
+    "radius": "Corner radius",
+    "radius_steps": "Radius steps",
+    "latin": "Latin face",
+    "arabic": "Arabic face",
+    "display": "Latin display face",
+    "display_arabic": "Arabic display face",
+    "faces": {
+      "geist": "Geist",
+      "system": "System",
+      "serif": "Serif",
+      "mono": "Geist Mono",
+      "plex": "IBM Plex Sans Arabic"
+    },
+    "motion_note": "The theme's motion steps, as components use them. Hover a row to play it.",
+    "blur": "Glass blur",
+    "levels": {
+      "thin": "Thin glass blur",
+      "regular": "Regular glass blur",
+      "thick": "Thick glass blur"
+    },
+    "shadows": "Shadows",
+    "shadow_names": {
+      "surface": "Surface",
+      "overlay": "Overlay",
+      "field": "Field"
+    }
+  },
+  "canvas": {
+    "label": "Canvas",
+    "templates": "Templates",
+    "template_names": {
+      "dashboard": "Dashboard",
+      "form": "Settings form",
+      "store": "Storefront",
+      "onboarding": "Onboarding",
+      "mobile": "Mobile app",
+      "sheet": "Component sheet"
+    },
+    "zoom": "Zoom",
+    "fit": "Fit",
+    "side_by_side": "Light and dark side by side",
+    "frame": "{template} in {scheme}",
+    "light": "light",
+    "dark": "dark",
+    "status_time": "9:41"
+  },
+  "contrast": {
+    "title": "Contrast",
+    "note": "Text needs 4.5:1, edges and focus 3:1 (WCAG 2.2 AA).",
+    "passes": "Passes AA",
+    "fails": "Below AA",
+    "summary": "{passing} of {total} pairs pass",
+    "pairs": {
+      "text": "Text on background",
+      "muted": "Muted text on background",
+      "surface": "Text on surface",
+      "accent": "Accent label",
+      "accent_hover": "Accent label on hover",
+      "accent_soft": "Soft accent label",
+      "link": "Link on background",
+      "field": "Field text",
+      "warning_hover": "Warning label on hover",
+      "danger": "Danger label",
+      "danger_soft": "Soft danger label",
+      "field_edge": "Field edge",
+      "focus": "Focus ring"
+    }
+  },
+  "export": {
+    "title": "Export and import",
+    "format": "Format",
+    "formats": {
+      "web": "Web CSS",
+      "native": "Native CSS",
+      "json": "JSON",
+      "changes": "Changes",
+      "dtcg": "DTCG tokens"
+    },
+    "code": "{format}, the export",
+    "copy": "Copy",
+    "copied": "Copied to the clipboard.",
+    "copy_failed": "The browser refused the clipboard; select the text instead.",
+    "download": "Download",
+    "import": "Import",
+    "paste": "Paste a theme JSON",
+    "paste_note": "A full export, a changes-only export or a bare theme. It is checked before it is used.",
+    "imported": "Imported the \"{name}\" theme.",
+    "invalid": "That theme cannot be used:"
+  },
+  "dashboard": {
+    "title": "Overview",
+    "subtitle": "Sales across every channel in the last 30 days.",
+    "search": "Search orders",
+    "new": "New order",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "customers": "Customers",
+    "conversion": "Conversion",
+    "versus": "against last month",
+    "up": "Rising",
+    "down": "Falling",
+    "chart": "Revenue by month",
+    "months": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun"
+    },
+    "goal": "Monthly goal",
+    "goal_note": "72% of the 180,000 target, 9 days left.",
+    "recent": "Recent orders",
+    "column_order": "Order",
+    "column_customer": "Customer",
+    "column_status": "Status",
+    "column_total": "Total",
+    "paid": "Paid",
+    "pending": "Pending",
+    "refunded": "Refunded",
+    "people": {
+      "layla": "Layla Haddad",
+      "omar": "Omar Farouk",
+      "sara": "Sara Nasser"
+    },
+    "view_all": "View all"
+  },
+  "form": {
+    "title": "Workspace settings",
+    "subtitle": "Manage how your workspace looks and who hears about it.",
+    "profile": "Profile",
+    "profile_note": "Shown to everyone in the workspace.",
+    "name": "Workspace name",
+    "name_value": "Atlas Studio",
+    "email": "Billing email",
+    "email_value": "billing@atlas.studio",
+    "role": "Default role",
+    "roles": {
+      "admin": "Admin",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    },
+    "bio": "Description",
+    "bio_value": "A small team that designs calm software.",
+    "notifications": "Notifications",
+    "email_updates": "Email me about activity",
+    "push": "Push notifications",
+    "digest": "Send a weekly digest",
+    "language": "Language",
+    "languages": {
+      "en": "English",
+      "ar": "Arabic"
+    },
+    "danger": "Delete this workspace",
+    "danger_note": "Every project and file in it is removed for good.",
+    "delete": "Delete workspace",
+    "cancel": "Cancel",
+    "save": "Save changes"
+  },
+  "store": {
+    "brand": "Atelier",
+    "nav": {
+      "shop": "Shop",
+      "new": "New in",
+      "journal": "Journal"
+    },
+    "cart": "Cart, 2 items",
+    "eyebrow": "The autumn edit",
+    "headline": "Made slowly, to last",
+    "body": "Natural fibres, cut in small runs and finished by hand.",
+    "shop": "Shop the collection",
+    "lookbook": "View the lookbook",
+    "featured": "Featured",
+    "products": {
+      "coat": "Wool overcoat",
+      "scarf": "Linen scarf",
+      "bag": "Leather tote",
+      "boots": "Suede boots"
+    },
+    "new": "New",
+    "sale": "Sale",
+    "add": "Add to bag",
+    "rating": "Rated {value} out of 5",
+    "newsletter": "Letters from the studio",
+    "newsletter_note": "New pieces and stories, once a month.",
+    "email": "Email address",
+    "subscribe": "Subscribe"
+  },
+  "onboarding": {
+    "steps_label": "Set-up steps",
+    "steps": {
+      "account": "Account",
+      "workspace": "Workspace",
+      "team": "Team"
+    },
+    "title": "Set up your workspace",
+    "subtitle": "This takes about a minute. You can change everything later.",
+    "workspace": "Workspace name",
+    "workspace_value": "Atlas",
+    "address": "Workspace address",
+    "address_note": "atlas.stackra.app",
+    "size": "Team size",
+    "sizes": {
+      "solo": "Just me",
+      "small": "2 to 10",
+      "medium": "11 to 50",
+      "large": "More than 50"
+    },
+    "terms": "I agree to the terms of service",
+    "progress": "Set-up progress",
+    "back": "Back",
+    "continue": "Continue"
+  },
+  "mobile": {
+    "greeting": "Good morning",
+    "name": "Layla",
+    "notifications": "Notifications",
+    "balance": "Balance",
+    "balance_value": "4,280.50",
+    "currency": "SAR",
+    "send": "Send",
+    "request": "Request",
+    "top_up": "Top up",
+    "activity": "Recent activity",
+    "items": {
+      "groceries": "Groceries",
+      "salary": "Salary",
+      "coffee": "Coffee"
+    },
+    "times": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "monday": "Monday"
+    },
+    "tabs_label": "App sections",
+    "tabs": {
+      "home": "Home",
+      "cards": "Cards",
+      "activity": "Activity",
+      "profile": "Profile"
+    }
+  },
+  "sheet": {
+    "buttons": "Buttons",
+    "variants": {
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "tertiary": "Tertiary",
+      "outline": "Outline",
+      "ghost": "Ghost",
+      "danger": "Danger"
+    },
+    "sizes": {
+      "sm": "Small",
+      "md": "Medium",
+      "lg": "Large"
+    },
+    "disabled": "Disabled",
+    "loading": "Loading",
+    "icon_add": "Add",
+    "icon_settings": "Settings",
+    "chips": "Chips and badges",
+    "statuses": {
+      "live": "Live",
+      "building": "Building",
+      "failed": "Failed",
+      "draft": "Draft"
+    },
+    "fields": "Fields",
+    "field": "Project name",
+    "field_value": "Atlas",
+    "field_empty": "Owner",
+    "field_placeholder": "Someone on the team",
+    "field_invalid": "Slug",
+    "field_invalid_value": "Atlas Studio",
+    "field_error": "Use lower case letters and hyphens.",
+    "field_disabled": "Region",
+    "field_disabled_value": "Gulf",
+    "choices": "Choices",
+    "checked": "Checked",
+    "unchecked": "Not checked",
+    "indeterminate": "Some chosen",
+    "switch_on": "On",
+    "switch_off": "Off",
+    "plan": "Plan",
+    "plans": {
+      "free": "Free",
+      "team": "Team",
+      "business": "Business"
+    },
+    "tabs_label": "Sections",
+    "tabs": {
+      "overview": "Overview",
+      "activity": "Activity",
+      "settings": "Settings"
+    },
+    "tab_body": "{name} goes here.",
+    "feedback": "Feedback",
+    "alerts": {
+      "accent": "A new version is ready",
+      "success": "Changes saved",
+      "warning": "Storage is almost full",
+      "danger": "The payment failed"
+    },
+    "alert_note": "This is how a message of this tone reads.",
+    "progress": "Upload",
+    "spinner": "Loading",
+    "people": "People",
+    "scenes": "Scenes"
+  }
+}

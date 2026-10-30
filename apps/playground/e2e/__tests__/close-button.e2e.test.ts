@@ -12,6 +12,8 @@
 // @covers sta-350:FR-022 sta-350:FR-024 sta-350:FR-027 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -21,7 +23,9 @@ const LABELS = ["Close", "Dismiss with a custom icon", "Close (disabled)", "Dism
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/close-button?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Close button" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Close button", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -67,7 +71,7 @@ test("dismissing the notice by keyboard hides it until Show again", async ({ pag
   await page.getByRole("button", { name: "Dismiss notice" }).focus();
   await page.keyboard.press("Enter");
   await expect(notice).toBeHidden();
-  await expect(page.getByRole("status")).toHaveText("The notice is hidden.");
+  await expect(example(page, "use").getByRole("status")).toHaveText("The notice is hidden.");
   await page.getByRole("button", { name: "Show again" }).click();
   await expect(notice).toBeVisible();
 });

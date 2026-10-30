@@ -18,6 +18,8 @@
 // @covers sta-350:FR-173 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -26,7 +28,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/section?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Section" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Section", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -48,12 +52,12 @@ const boxOf = async (locator: Locator) => {
   return box;
 };
 
-/** The samples of a page section, found by CSS. */
-const samples = (page: Page, id: string) => page.locator(`#${id} ~ ul > li`);
+/** The samples of an example, one list item each. */
+const samples = (page: Page, id: string) => example(page, id).locator("ul > li");
 
 /** The live section and its report. */
-const liveSection = (page: Page) => page.locator('[data-sample="live"] section');
-const liveStatus = (page: Page) => page.locator('[data-sample="live-status"]');
+const liveSection = (page: Page) => example(page, "live").locator("section");
+const liveStatus = (page: Page) => example(page, "live").getByRole("status");
 
 for (const scheme of SCHEMES)
   for (const locale of LOCALES) {
@@ -66,8 +70,11 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      await liveSection(page).getByRole("button", { name: "Edit" }).click();
-      await expect(liveSection(page).getByText("Editing the contact details.")).toBeVisible();
+      // The primary action, by position: its name ("Edit", then "Done") is in the page's locale.
+      const primary = liveSection(page).getByRole("button").first();
+      const viewing = await primary.textContent();
+      await primary.click();
+      await expect(primary).not.toHaveText(viewing ?? "");
       await expectAxeClean(page);
     });
   }
@@ -75,8 +82,8 @@ for (const scheme of SCHEMES)
 test("the page holds one h1 and its samples are level-3 headings", async ({ page }) => {
   await open(page, "light", "en");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-  await expect(samples(page, "section-parts").getByRole("heading", { level: 3 })).toHaveCount(5);
-  await expect(samples(page, "section-actions").getByRole("heading", { level: 3 })).toHaveCount(5);
+  await expect(samples(page, "usage").getByRole("heading", { level: 3 })).toHaveCount(5);
+  await expect(samples(page, "actions").getByRole("heading", { level: 3 })).toHaveCount(5);
   await expect(page.getByRole("heading", { level: 4 })).toHaveCount(0);
 });
 
@@ -84,7 +91,7 @@ test("each section is a region named by its title, and two with one title by the
   page,
 }) => {
   await open(page, "light", "en");
-  const parts = samples(page, "section-parts");
+  const parts = samples(page, "usage");
   await expect(parts.nth(4).locator("section")).toHaveAccessibleName("Order details");
   await expect(page.getByRole("region", { name: "Order details" })).toHaveCount(1);
   await expect(page.getByRole("region", { name: "Billing address" })).toBeVisible();
@@ -95,24 +102,24 @@ test("each section is a region named by its title, and two with one title by the
 for (const locale of LOCALES)
   test(`the title leads and the actions follow it in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const section = samples(page, "section-actions").nth(1).locator("section");
+    const section = samples(page, "actions").nth(1).locator("section");
     const title = await boxOf(section.getByRole("heading", { level: 3 }));
     const buttons = await section.getByRole("button").all();
     expect(buttons).toHaveLength(3);
     const first = await boxOf(buttons[0] as Locator);
     const last = await boxOf(buttons[2] as Locator);
-    if (locale === "en") {
-      expect(first.x).toBeGreaterThan(title.x + title.width - 1);
-      expect(last.x).toBeGreaterThan(first.x);
-    } else {
-      expect(first.x + first.width).toBeLessThan(title.x + 1);
-      expect(last.x).toBeLessThan(first.x);
-    }
+    // In a narrow example pane the header wraps its actions onto the next row: they still follow the title.
+    if (Math.abs(first.y - title.y) < title.height) {
+      if (locale === "en") expect(first.x).toBeGreaterThan(title.x + title.width - 1);
+      else expect(first.x + first.width).toBeLessThan(title.x + 1);
+    } else expect(first.y).toBeGreaterThanOrEqual(title.y + title.height);
+    if (locale === "en") expect(last.x).toBeGreaterThan(first.x);
+    else expect(last.x).toBeLessThan(first.x);
   });
 
 test("the first action is the primary button and the next two are secondary", async ({ page }) => {
   await open(page, "light", "en");
-  const buttons = samples(page, "section-actions").nth(1).getByRole("button");
+  const buttons = samples(page, "actions").nth(1).getByRole("button");
   await expect(buttons.nth(0)).toHaveClass(/button--primary/);
   await expect(buttons.nth(1)).toHaveClass(/button--secondary/);
   await expect(buttons.nth(2)).toHaveClass(/button--secondary/);
@@ -122,7 +129,7 @@ test("six actions draw three buttons and a menu of three that opens from the key
   page,
 }) => {
   await open(page, "light", "en");
-  const section = samples(page, "section-actions").nth(2).locator("section");
+  const section = samples(page, "actions").nth(2).locator("section");
   await expect(section.getByRole("button")).toHaveCount(4);
   const more = section.locator('button[aria-label="More actions for this section"]');
   await more.focus();
@@ -140,7 +147,7 @@ test("a disabled action is a disabled button and a danger action is drawn in the
   page,
 }) => {
   await open(page, "light", "en");
-  const section = samples(page, "section-actions").nth(3).locator("section");
+  const section = samples(page, "actions").nth(3).locator("section");
   await expect(section.getByRole("button", { name: "Archive" })).toBeDisabled();
   await expect(section.getByRole("button", { name: "Delete" })).toHaveClass(/button--danger-soft/);
 });
@@ -149,9 +156,7 @@ test("an action with an href is a link drawn as a button, and following it navig
   page,
 }) => {
   await open(page, "light", "en");
-  const link = samples(page, "section-actions")
-    .nth(4)
-    .getByRole("link", { name: "Open the page header" });
+  const link = samples(page, "actions").nth(4).getByRole("link", { name: "Open the page header" });
   await expect(link).toHaveAttribute("href", "/page-header");
   await expect(link).toHaveClass(/button--primary/);
   await link.focus();
@@ -161,7 +166,8 @@ test("an action with an href is a link drawn as a button, and following it navig
 
 test("every action reaches 24 px", async ({ page }) => {
   await open(page, "light", "en");
-  const controls = page.locator("#section-actions ~ ul section").locator("button, a[href]");
+  const controls = example(page, "actions").locator("ul section").locator("button, a[href]");
+  await expect(controls.first()).toBeVisible();
   expect(await controls.count()).toBeGreaterThan(0);
   for (const control of await controls.all()) {
     const box = await boxOf(control);
@@ -208,8 +214,12 @@ for (const locale of LOCALES)
     page,
   }) => {
     await open(page, "light", locale);
-    const section = page.locator('[data-sample="arabic"] section');
+    const section = example(page, "arabic").locator("section");
+    const box = await boxOf(section);
     const title = await boxOf(section.getByRole("heading", { level: 3 }));
     const edit = await boxOf(section.getByRole("button", { name: "تعديل" }));
-    expect(title.x).toBeGreaterThan(edit.x);
+    // The title starts at the right edge; the actions follow it to its left, or wrap under it from the right.
+    expect(title.x + title.width / 2).toBeGreaterThan(box.x + box.width / 2);
+    if (Math.abs(edit.y - title.y) < title.height) expect(title.x).toBeGreaterThan(edit.x);
+    else expect(edit.x + edit.width / 2).toBeGreaterThan(box.x + box.width / 2);
   });

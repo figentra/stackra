@@ -12,7 +12,13 @@
  */
 // @covers sta-350:FR-020 sta-350:FR-021 sta-350:P-012 sta-350:P-015 sta-350:SC-004
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { fontStackOf, STACKRA_THEME } from "@stackra/tokens";
+import { pageTitle } from "../support/page-title.function";
+import { fontStackOf } from "@stackra/tokens";
+import { buildBrandTheme } from "#src/constants/brand-themes/build-brand-theme.function";
+import STACKRA from "#src/constants/brand-themes/stackra.json" with { type: "json" };
+
+/** The theme the page draws: the Stackra steel layer over the base (`SHOWCASE_THEME`), not the bare base theme. */
+const SHOWCASE_THEME = buildBrandTheme(STACKRA);
 
 const LOCALES = ["en", "ar"] as const;
 
@@ -20,10 +26,15 @@ const LOCALES = ["en", "ar"] as const;
 const TEXT_TYPES = ["body", "small", "caption"] as const;
 const HEADING_TYPES = ["h1", "h2", "h3", "h4", "h5", "h6"] as const;
 
+/** The live examples, without the Stackra section's hidden copies of the usage (which repeat its test ids). */
+const demos = (page: Page) => page.locator("section:is(#usage, #examples)");
+
 const open = async (page: Page, locale: string) => {
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
   await page.goto(`/typography?scheme=light&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Typography" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Typography", locale) }),
+  ).toBeVisible();
 };
 
 /** The computed type of an element, in numbers: px for the lengths (`normal` letter spacing is 0). */
@@ -41,7 +52,7 @@ const typeOf = (locator: Locator) =>
 
 /** What the theme says a token draws: px for each length, as the renderers compute them. */
 const tokenOf = (name: string) => {
-  const style = STACKRA_THEME.typography[name];
+  const style = SHOWCASE_THEME.typography[name];
   if (!style) throw new Error(`the theme has no ${name} token`);
   const size = Number.parseFloat(style.size);
   const em = (value: string) => Number.parseFloat(value) * size;
@@ -70,7 +81,7 @@ const expectToken = async (locator: Locator, name: string) => {
   expect(actual.letterSpacing, `${name} letter spacing`).toBeCloseTo(expected.letterSpacing, 1);
   expect(actual.weight, `${name} weight`).toBe(expected.weight);
   expect(firstFamily(actual.family), `${name} family`).toBe(
-    firstFamily(fontStackOf(STACKRA_THEME, expected.family)),
+    firstFamily(fontStackOf(SHOWCASE_THEME, expected.family)),
   );
 };
 
@@ -80,8 +91,8 @@ for (const locale of LOCALES) {
   }) => {
     await open(page, locale);
     for (const type of TEXT_TYPES) {
-      await expectToken(page.getByTestId(`text-${type}`), type);
-      await expectToken(page.getByTestId(`text-${type}-ar`), `${type}-ar`);
+      await expectToken(demos(page).getByTestId(`text-${type}`), type);
+      await expectToken(demos(page).getByTestId(`text-${type}-ar`), `${type}-ar`);
     }
   });
 
@@ -90,8 +101,8 @@ for (const locale of LOCALES) {
   }) => {
     await open(page, locale);
     for (const type of HEADING_TYPES) {
-      await expectToken(page.getByTestId(`heading-${type}`), type);
-      await expectToken(page.getByTestId(`heading-${type}-ar`), `${type}-ar`);
+      await expectToken(demos(page).getByTestId(`heading-${type}`), type);
+      await expectToken(demos(page).getByTestId(`heading-${type}-ar`), `${type}-ar`);
     }
   });
 
@@ -99,25 +110,25 @@ for (const locale of LOCALES) {
     page,
   }) => {
     await open(page, locale);
-    await expectToken(page.getByTestId("lang-ar"), "body-ar");
-    await expectToken(page.getByTestId("lang-en"), "body");
+    await expectToken(demos(page).getByTestId("lang-ar"), "body-ar");
+    await expectToken(demos(page).getByTestId("lang-en"), "body");
   });
 }
 
 test("draws each heading level in its own style", async ({ page }) => {
   await open(page, "en");
   for (const level of [3, 4, 5, 6])
-    await expectToken(page.getByTestId(`level-${level}`), `h${level}`);
+    await expectToken(demos(page).getByTestId(`level-${level}`), `h${level}`);
 });
 
 test("keeps the bold weight against the font shorthand of the type", async ({ page }) => {
   await open(page, "en");
-  expect((await typeOf(page.getByTestId("weight-bold"))).weight).toBe(700);
+  expect((await typeOf(demos(page).getByTestId("weight-bold"))).weight).toBe(700);
 });
 
 test("cuts a truncated sample to one line with an ellipsis", async ({ page }) => {
   await open(page, "en");
-  const sample = page.getByTestId("truncated");
+  const sample = demos(page).getByTestId("truncated");
   const facts = await sample.evaluate((element) => ({
     overflow: getComputedStyle(element).textOverflow,
     whiteSpace: getComputedStyle(element).whiteSpace,
@@ -143,6 +154,8 @@ test("declares one level-1 heading and the levels 4 to 6 once each", async ({ pa
 test("changes the live tone when its button is pressed", async ({ page }) => {
   await open(page, "en");
   await page.getByRole("button", { name: "Next tone" }).click();
-  await expect(page.getByRole("status")).toHaveText("Tone muted, pressed 1 time.");
-  await expect(page.getByTestId("live-text")).toHaveClass(/typography--color-muted/);
+  await expect(page.locator("section#example-live").getByRole("status")).toHaveText(
+    "Tone muted, pressed 1 time.",
+  );
+  await expect(demos(page).getByTestId("live-text")).toHaveClass(/typography--color-muted/);
 });

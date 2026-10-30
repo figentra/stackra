@@ -1,0 +1,20 @@
+{
+  "region_name": "Register screen",
+  "preset_label": "Preset",
+  "home": "Go to the dashboard",
+  "recovered": "Back online. The register is in sync.",
+  "break_again": "Go offline again",
+  "attempts": "{count, plural, =0 {Not retried yet.} one {Retried once.} other {Retried # times.}}",
+  "presets": {
+    "forbidden": "403 Forbidden",
+    "not_found": "404 Not found",
+    "server_error": "500 Server error",
+    "offline": "Offline"
+  },
+  "custom": {
+    "title": "Refunds need a manager",
+    "description": "Only a shift manager can open refunds at this branch.",
+    "back_to_orders": "Back to orders",
+    "contact_manager": "Call a manager"
+  }
+}

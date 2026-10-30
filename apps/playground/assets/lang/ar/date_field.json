@@ -1,0 +1,16 @@
+{
+  "empty": "تاريخ البدء",
+  "empty_description": "اكتب الشهر واليوم والسنة.",
+  "filled": "تاريخ الاستحقاق",
+  "filled_description": "اليوم الذي تستحق فيه الفاتورة.",
+  "bounded_label": "تاريخ الحجز",
+  "bounded_description": "لا تُقبل إلا أيام مارس 2026.",
+  "bounded_message": "اختر يومًا في مارس 2026.",
+  "invalid": "تاريخ التوصيل",
+  "invalid_message": "لا نوصل في عطلة نهاية الأسبوع.",
+  "read_only": "تاريخ التوقيع",
+  "disabled": "تاريخ الإلغاء",
+  "live_label": "تاريخ الوصول",
+  "live_empty": "لم يُختر يوم بعد.",
+  "live_chosen": "اليوم المختار: {day}"
+}

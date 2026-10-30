@@ -1,0 +1,6 @@
+{
+  "environment": "Sandbox",
+  "description": "Payments are test payments and messages are captured, not sent.",
+  "publish": "Publish to live",
+  "production": "Show as production"
+}

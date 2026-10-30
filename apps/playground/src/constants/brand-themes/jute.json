@@ -1,0 +1,341 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "jute",
+  "changes": {
+    "colors": {
+      "background": {
+        "light": "#F9F7EE",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#F9F7EE",
+        "hexDark": "#0B0D0F"
+      },
+      "foreground": {
+        "light": "#1F111B",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#1F111B",
+        "hexDark": "#F5F6F3"
+      },
+      "surface": {
+        "light": "#FFFEF9",
+        "dark": "oklch(0.195 0.006 250)",
+        "hexLight": "#FFFEF9",
+        "hexDark": "#131518"
+      },
+      "surface-foreground": {
+        "light": "#1F111B",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#1F111B",
+        "hexDark": "#F5F6F3"
+      },
+      "surface-secondary": {
+        "light": "#F3F1E1",
+        "dark": "oklch(0.235 0.007 250)",
+        "hexLight": "#F3F1E1",
+        "hexDark": "#1C1E21"
+      },
+      "surface-secondary-foreground": {
+        "light": "#1F111B",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#1F111B",
+        "hexDark": "#F5F6F3"
+      },
+      "surface-tertiary": {
+        "light": "#EAE8CA",
+        "dark": "oklch(0.285 0.007 250)",
+        "hexLight": "#EAE8CA",
+        "hexDark": "#282A2D"
+      },
+      "surface-tertiary-foreground": {
+        "light": "#1F111B",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#1F111B",
+        "hexDark": "#F5F6F3"
+      },
+      "overlay": {
+        "light": "#FFFEF9",
+        "dark": "oklch(0.215 0.006 250)",
+        "hexLight": "#FFFEF9",
+        "hexDark": "#171A1C"
+      },
+      "overlay-foreground": {
+        "light": "#1F111B",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#1F111B",
+        "hexDark": "#F5F6F3"
+      },
+      "muted": {
+        "light": "#735B6B",
+        "dark": "oklch(0.72 0.008 250)",
+        "hexLight": "#735B6B",
+        "hexDark": "#A1A5A9"
+      },
+      "default": {
+        "light": "#EAE8CA",
+        "dark": "oklch(0.285 0.007 250)",
+        "hexLight": "#EAE8CA",
+        "hexDark": "#282A2D"
+      },
+      "default-foreground": {
+        "light": "#1F111B",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#1F111B",
+        "hexDark": "#F5F6F3"
+      },
+      "accent": {
+        "light": "#642254",
+        "dark": "#DCADCE",
+        "hexLight": "#642254",
+        "hexDark": "#DCADCE"
+      },
+      "accent-foreground": {
+        "light": "#F9F7EE",
+        "dark": "#1F111B",
+        "hexLight": "#F9F7EE",
+        "hexDark": "#1F111B"
+      },
+      "success": {
+        "light": "oklch(0.5 0.13 135)",
+        "dark": "oklch(0.72 0.15 135)",
+        "hexLight": "#40731A",
+        "hexDark": "#7AB953"
+      },
+      "success-foreground": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#0B0D0F"
+      },
+      "warning": {
+        "light": "oklch(0.55 0.15 47)",
+        "dark": "oklch(0.72 0.17 47)",
+        "hexLight": "#B54F05",
+        "hexDark": "#F87D38"
+      },
+      "warning-foreground": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#0B0D0F"
+      },
+      "danger": {
+        "light": "oklch(0.45 0.17 24)",
+        "dark": "oklch(0.66 0.2 22)",
+        "hexLight": "#9E1421",
+        "hexDark": "#F45058"
+      },
+      "danger-foreground": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#0B0D0F"
+      },
+      "field-background": {
+        "light": "#FFFEF9",
+        "dark": "oklch(0.235 0.007 250)",
+        "hexLight": "#FFFEF9",
+        "hexDark": "#1C1E21"
+      },
+      "field-foreground": {
+        "light": "#1F111B",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#1F111B",
+        "hexDark": "#F5F6F3"
+      },
+      "field-placeholder": {
+        "light": "#735B6B",
+        "dark": "oklch(0.72 0.008 250)",
+        "hexLight": "#735B6B",
+        "hexDark": "#A1A5A9"
+      },
+      "field-border": {
+        "light": "#8F7B87",
+        "dark": "oklch(0.56 0.008 250)",
+        "hexLight": "#8F7B87",
+        "hexDark": "#717579"
+      },
+      "border": {
+        "light": "#E3DFCB",
+        "dark": "oklch(0.35 0.008 250)",
+        "hexLight": "#E3DFCB",
+        "hexDark": "#373B3F"
+      },
+      "separator": {
+        "light": "#EEEBDC",
+        "dark": "oklch(0.27 0.007 250)",
+        "hexLight": "#EEEBDC",
+        "hexDark": "#24272A"
+      },
+      "focus": {
+        "light": "#642254",
+        "dark": "#DCADCE",
+        "hexLight": "#642254",
+        "hexDark": "#DCADCE"
+      },
+      "link": {
+        "light": "#642254",
+        "dark": "#DCADCE",
+        "hexLight": "#642254",
+        "hexDark": "#DCADCE"
+      },
+      "backdrop": {
+        "light": "oklch(0.2 0.03 338 / 0.4)",
+        "dark": "oklch(0.08 0.004 248 / 0.6)",
+        "hexLight": "#1F111B66",
+        "hexDark": "#01020299"
+      }
+    },
+    "palette": {
+      "pith": {
+        "light": "#F9F7EE",
+        "dark": "#F9F7EE",
+        "hexLight": "#F9F7EE",
+        "hexDark": "#F9F7EE"
+      },
+      "pith-card": {
+        "light": "#FFFEF9",
+        "dark": "#FFFEF9",
+        "hexLight": "#FFFEF9",
+        "hexDark": "#FFFEF9"
+      },
+      "flesh": {
+        "light": "#EAE8CA",
+        "dark": "#EAE8CA",
+        "hexLight": "#EAE8CA",
+        "hexDark": "#EAE8CA"
+      },
+      "flesh-100": {
+        "light": "#F3F1E1",
+        "dark": "#F3F1E1",
+        "hexLight": "#F3F1E1",
+        "hexDark": "#F3F1E1"
+      },
+      "aubergine": {
+        "light": "#642254",
+        "dark": "#642254",
+        "hexLight": "#642254",
+        "hexDark": "#642254"
+      },
+      "aubergine-700": {
+        "light": "#531B46",
+        "dark": "#531B46",
+        "hexLight": "#531B46",
+        "hexDark": "#531B46"
+      },
+      "aubergine-800": {
+        "light": "#431538",
+        "dark": "#431538",
+        "hexLight": "#431538",
+        "hexDark": "#431538"
+      },
+      "aubergine-100": {
+        "light": "#F3E4EE",
+        "dark": "#F3E4EE",
+        "hexLight": "#F3E4EE",
+        "hexDark": "#F3E4EE"
+      },
+      "seed": {
+        "light": "#1F111B",
+        "dark": "#1F111B",
+        "hexLight": "#1F111B",
+        "hexDark": "#1F111B"
+      },
+      "stem": {
+        "light": "#735B6B",
+        "dark": "#735B6B",
+        "hexLight": "#735B6B",
+        "hexDark": "#735B6B"
+      },
+      "peel": {
+        "light": "#DCADCE",
+        "dark": "#DCADCE",
+        "hexLight": "#DCADCE",
+        "hexDark": "#DCADCE"
+      },
+      "sticker": {
+        "light": "#642254",
+        "dark": "#DCADCE",
+        "hexLight": "#642254",
+        "hexDark": "#DCADCE"
+      },
+      "sticker-on": {
+        "light": "#F9F7EE",
+        "dark": "#1F111B",
+        "hexLight": "#F9F7EE",
+        "hexDark": "#1F111B"
+      },
+      "accent-hover": {
+        "light": "#531B46",
+        "dark": "#E5BED9",
+        "hexLight": "#531B46",
+        "hexDark": "#E5BED9"
+      },
+      "accent-pressed": {
+        "light": "#431538",
+        "dark": "#EED0E4",
+        "hexLight": "#431538",
+        "hexDark": "#EED0E4"
+      },
+      "accent-soft": {
+        "light": "#F3E4EE",
+        "dark": "#4A2A41",
+        "hexLight": "#F3E4EE",
+        "hexDark": "#4A2A41"
+      },
+      "accent-soft-foreground": {
+        "light": "#642254",
+        "dark": "#F9F7EE",
+        "hexLight": "#642254",
+        "hexDark": "#F9F7EE"
+      },
+      "cursor": {
+        "light": "oklch(0.47 0.095 75)",
+        "dark": "oklch(0.83 0.15 82)",
+        "hexLight": "#79520A",
+        "hexDark": "#F8BD40"
+      }
+    },
+    "fontFamily": {
+      "sans": "\"Geist\", ui-sans-serif, system-ui, sans-serif",
+      "mono": "\"Geist Mono\", ui-monospace, \"SFMono-Regular\", \"Menlo\", monospace",
+      "arabic": "\"IBM Plex Sans Arabic\", \"Geist\", system-ui, \"Segoe UI\", \"Tahoma\", sans-serif",
+      "display": "\"Bricolage Grotesque\", \"Geist\", sans-serif",
+      "displayArabic": "\"Baloo Bhaijaan 2\", \"IBM Plex Sans Arabic\", sans-serif"
+    },
+    "radius": {
+      "base": "0.75rem",
+      "field": "0.75rem",
+      "steps": {
+        "sm": "8px",
+        "lg": "20px",
+        "full": "9999px",
+        "sticker": "50%"
+      }
+    },
+    "shadows": {
+      "surface": {
+        "light": "0px 0px 0px 1px oklch(0.22 0.035 338 / 0.06), 0px 1px 2px 0px oklch(0.22 0.035 338 / 0.05)",
+        "dark": "0px 0px 0px 1px oklch(0.27 0.007 250), inset 0px 1px 0px 0px oklch(1 0 0 / 0.02)"
+      },
+      "overlay": {
+        "light": "0px 0px 0px 1px oklch(0.22 0.035 338 / 0.07), 0px 12px 32px -8px oklch(0.22 0.035 338 / 0.18)",
+        "dark": "0px 0px 0px 1px oklch(0.35 0.008 250), 0px 16px 32px -8px oklch(0 0 0 / 0.55)"
+      },
+      "field": {
+        "light": "0px 1px 0px 0px oklch(0.22 0.035 338 / 0.04)",
+        "dark": "0px 1px 0px 0px oklch(0 0 0 / 0.2)"
+      }
+    },
+    "motion": {
+      "fast": {
+        "duration": "140ms",
+        "easing": "cubic-bezier(0.22, 0.61, 0.36, 1)"
+      },
+      "base": {
+        "duration": "240ms",
+        "easing": "cubic-bezier(0.65, 0, 0.35, 1)"
+      }
+    }
+  }
+}

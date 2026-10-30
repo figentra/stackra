@@ -1,0 +1,5 @@
+{
+  "label": "Webhook payload",
+  "source": "## Release notes\n\nThe **checkout** now remembers the last card. See the [guide](https://stackra.dev).\n\n- Faster search\n- Arabic receipts\n\n> Update the app to get them.",
+  "rtl_title": "greeting.ts in an Arabic page"
+}

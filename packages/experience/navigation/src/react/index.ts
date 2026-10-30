@@ -50,3 +50,4 @@ export type { RouteLeaveConfirmationProps } from "#react/route-leave-confirmatio
 export { RouteOverlay } from "#react/route-overlay/route-overlay";
 export type { RouteOverlayProps } from "#react/route-overlay/route-overlay.props";
 export { useRouteOverlay } from "#react/route-overlay/use-route-overlay";
+export { ROUTE_OVERLAY_MAX_DEPTH } from "#react/route-overlay/route-overlay-max-depth.constant";

@@ -163,4 +163,32 @@ describe("RadioGroup (web)", () => {
     expectTypeOf<RadioGroupProps["value"]>().toEqualTypeOf<string | undefined>();
     expect(children).toBeTruthy();
   });
+  it("lays the options out in columns under the label, never the label or the error in a cell", () => {
+    const { container } = render(
+      <RadioGroup
+        label="Channels"
+        options={OPTIONS}
+        columns={2}
+        errorMessage="Pick one"
+        isInvalid
+      />,
+    );
+    const grid = container.querySelector('[data-slot="radio-group-columns"]') as HTMLElement;
+    expect(grid.style.gridTemplateColumns).toBe("repeat(2, minmax(0, 1fr))");
+    expect(grid.querySelectorAll('input[type="radio"]')).toHaveLength(OPTIONS.length);
+    expect(grid.textContent).not.toContain("Channels");
+    expect(grid.textContent).not.toContain("Pick one");
+  });
+
+  it("puts a horizontal group's options in a row of their own, under the label", () => {
+    const { container } = render(
+      <RadioGroup label="Format" options={OPTIONS} orientation="horizontal" />,
+    );
+    const row = container.querySelector('[data-slot="radio-group-row"]') as HTMLElement;
+    expect(row.querySelectorAll('input[type="radio"]')).toHaveLength(OPTIONS.length);
+    expect(row.textContent).not.toContain("Format");
+    expect(screen.getByRole("radiogroup").className).toContain(
+      "data-[orientation=horizontal]:flex-col",
+    );
+  });
 });

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: proves the Theme Studio titles itself, reads its knobs from the address, writes a change back to it,
- *          undoes and redoes a change, resets to the stackra theme, shows the preview in the derived theme, exports the
+ *          undoes and redoes a change, resets to the brand's theme (from the Display popover), shows the preview in the derived theme, exports the
  *          full JSON by default and a changes-only JSON on request, and lists what is wrong with a bad import.
  * Boundary: a memory router in jsdom inside the DesignSystemProvider; no network, no clipboard.
  * Runtime: browser
@@ -9,6 +9,7 @@
  */
 import { DesignSystemProvider, RouterProvider as AriaRouterProvider } from "@stackra/ui/react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { vi } from "vitest";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { ThemeStudio } from "#src/routes/theme-studio/theme-studio";
@@ -16,6 +17,13 @@ import { ThemeStudioRoute } from "#src/routes/theme-studio/theme-studio.route";
 import { routePath } from "#src/components/playground-pages/route-path.function";
 
 function renderStudio(url = routePath(ThemeStudioRoute)) {
+  // A wide window: the inspector starts open only where it has room (80rem and up).
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: true,
+    media: query,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
   const router = createMemoryRouter(
     [
       {
@@ -36,7 +44,7 @@ function renderStudio(url = routePath(ThemeStudioRoute)) {
 }
 
 const preview = () =>
-  screen.getByRole("region", { name: "Preview" }).querySelector<HTMLElement>("[data-theme]") ??
+  screen.getByRole("region", { name: "Canvas" }).querySelector<HTMLElement>("[data-theme]") ??
   document.body;
 const history = () => within(screen.getByRole("toolbar", { name: "History" }));
 const code = () => screen.getByRole("region", { name: /the export/ }).textContent ?? "";
@@ -62,12 +70,14 @@ describe("ThemeStudio", () => {
 
   it("reads its knobs from the address and shows the derived theme in the preview", () => {
     renderStudio("/theme-studio?accent=40,0.16&radius=8");
+    // A hue keeps the base accent's lightness: the default brand, Stackra, is a mid steel (L 0.546).
     expect(preview().style.getPropertyValue("--accent")).toBe("oklch(0.546 0.16 40)");
     expect(preview().style.getPropertyValue("--radius")).toBe("8px");
   });
 
   it("writes a change to the address, undoes and redoes it", () => {
     const router = renderStudio("/theme-studio?scheme=dark");
+    act(() => screen.getByRole("button", { name: "Shape" }).click());
     act(() => {
       fireEvent.change(screen.getByRole("slider", { name: "Corner radius" }), {
         target: { value: "10" },
@@ -78,7 +88,9 @@ describe("ThemeStudio", () => {
     expect(router.state.location.search).toBe("?scheme=dark");
     act(() => history().getByRole("button", { name: "Redo" }).click());
     expect(router.state.location.search).toBe("?scheme=dark&radius=10");
-    act(() => history().getByRole("button", { name: "Reset" }).click());
+    // Reset lives in the top bar's Display popover.
+    act(() => screen.getByRole("button", { name: "Display" }).click());
+    act(() => screen.getByRole("button", { name: "Reset theme" }).click());
     expect(router.state.location.search).toBe("?scheme=dark");
   });
 

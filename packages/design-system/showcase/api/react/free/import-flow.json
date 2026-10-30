@@ -1,0 +1,167 @@
+{
+  "generatedFrom": {
+    "hash": "929ba11449f475d6",
+    "propsFiles": [
+      "ui/src/react/import-flow/import-flow.props.ts",
+      "ui/src/react/import-flow/import-mapping-list.props.ts",
+      "ui/src/react/import-flow/import-review.props.ts"
+    ]
+  },
+  "importLine": "import { ImportFlow } from \"@stackra/ui/react\";",
+  "key": "free/import-flow",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new mapping when the user changes a column.",
+          "name": "onMappingChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(mapping: Readonly<Record<string, string | null>>) => void"
+        },
+        {
+          "description": "Called to check the file with the mapping; the result comes back as `dryRun`.",
+          "name": "onDryRun",
+          "required": true,
+          "source": "stackra",
+          "type": "(mapping: Readonly<Record<string, string | null>>) => void"
+        },
+        {
+          "description": "Called to import for real.",
+          "name": "onImport",
+          "required": true,
+          "source": "stackra",
+          "type": "(mapping: Readonly<Record<string, string | null>>) => void"
+        },
+        {
+          "description": "Called from the review step to change the mapping again.",
+          "name": "onBack",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "ImportFlow",
+      "props": [
+        {
+          "description": "The file's column names, in order.",
+          "name": "columns",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The first value of each column, shown as a hint beside it.",
+          "name": "sample",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, string>>"
+        },
+        {
+          "description": "The fields a column can map to.",
+          "name": "fields",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ImportField[]"
+        },
+        {
+          "description": "The mapping; leave it out to start from the automatic match.",
+          "name": "mapping",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, string | null>>"
+        },
+        {
+          "description": "The dry run's result; the flow shows the review step while it is set.",
+          "name": "dryRun",
+          "required": false,
+          "source": "stackra",
+          "type": "ImportDryRun"
+        },
+        {
+          "description": "True while the dry run or the import runs.",
+          "name": "isBusy",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with the new mapping when a column changes.",
+          "name": "onChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(mapping: Readonly<Record<string, string | null>>) => void"
+        }
+      ],
+      "name": "ImportMappingList",
+      "props": [
+        {
+          "description": "The file column names, in order.",
+          "name": "columns",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The first value of each column, shown as a hint.",
+          "name": "sample",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, string>>"
+        },
+        {
+          "description": "The fields a column can map to.",
+          "name": "fields",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ImportField[]"
+        },
+        {
+          "description": "The current mapping of columns to fields.",
+          "name": "mapping",
+          "required": true,
+          "source": "stackra",
+          "type": "Readonly<Record<string, string | null>>"
+        }
+      ]
+    },
+    {
+      "name": "ImportReview",
+      "props": [
+        {
+          "description": "The counts and problems to show.",
+          "name": "result",
+          "required": true,
+          "source": "stackra",
+          "type": "ImportDryRun"
+        },
+        {
+          "description": "Drawn beside the problems' heading, such as a button that downloads them.",
+          "name": "issuesAction",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True for the summary of a finished import: the labels say what was done, not what would be.",
+          "name": "isDone",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

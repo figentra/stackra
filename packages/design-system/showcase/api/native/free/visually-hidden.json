@@ -1,0 +1,79 @@
+{
+  "generatedFrom": {
+    "hash": "19d870b98b656fd3",
+    "propsFiles": ["ui/src/native/visually-hidden/visually-hidden.props.ts"]
+  },
+  "importLine": "import { VisuallyHidden } from \"@stackra/ui/native\";",
+  "key": "free/visually-hidden",
+  "parts": [
+    {
+      "name": "VisuallyHidden",
+      "props": [
+        {
+          "description": "What a screen reader reads and the screen does not show, usually translated text.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...TextProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TextProps"
+        },
+        {
+          "description": "",
+          "name": "...TextPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "TextPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...TextPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TextPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

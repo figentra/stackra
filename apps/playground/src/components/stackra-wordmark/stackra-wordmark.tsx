@@ -4,7 +4,7 @@
  *          light, steel on dark, the brand's artwork colours) and can draw it filled or as a hairline outline.
  * Boundary: the artwork only, always decorative here (`aria-hidden`): the caller names the page in text. Copied from
  *          apps/docs/src/assets/brand/logos/stackra-wordmark-light.svg (an app may not import another app); re-copy it
- *          when the wordmark changes; the beam-S is the brand's redraw (86ec08a, ADR 0463 decision 4). The wordmark
+ *          when the wordmark changes; the beam-S is the brand's redraw (86ec08a, ADR 0463 decision 4), unchanged at the pinned 17f24d2. The wordmark
  *          never animates (brand rule).
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 5); ADR 0320 (glass and the showcase stage); the stackra brand kit.

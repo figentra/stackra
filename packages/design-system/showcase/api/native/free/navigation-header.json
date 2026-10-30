@@ -1,0 +1,181 @@
+{
+  "generatedFrom": {
+    "hash": "980a13559f547a6d",
+    "propsFiles": ["ui/src/native/navigation-header/navigation-header.props.ts"]
+  },
+  "importLine": "import { NavigationHeader } from \"@stackra/ui/native\";",
+  "key": "free/navigation-header",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the back button is pressed; giving it draws the button.",
+          "name": "onBack",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "NavigationHeader",
+      "props": [
+        {
+          "description": "What the screen is called, in a few words. Required: it is the heading a screen reader announces for the screen.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The title's place in the document outline, 1 to 6, on web. Defaults to 1; native has no levels and ignores it.",
+          "name": "headingLevel",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "True to draw the title large under the bar, which then holds only the back button and the slots.",
+          "name": "hasLargeTitle",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Where the back button leads when it is a link; giving it draws the button, which also calls `onBack` first.",
+          "name": "backHref",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "ui::navigation_header.back",
+          "description": "The accessible name of the back button. Defaults to `ui::navigation_header.back` in the active locale.",
+          "name": "backLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken name of the region, for example \"Main navigation\"; required when the page holds two of its kind.",
+          "name": "label",
+          "replaces": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A node at the logical start of the bar, before its main content.",
+          "name": "startContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "A node at the logical end of the bar, after its main content.",
+          "name": "endContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True to pad the top by the status bar's safe-area inset. Defaults to true.",
+          "name": "hasTopInset",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

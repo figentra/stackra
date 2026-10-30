@@ -1,0 +1,78 @@
+{
+  "slug": "kbd",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(typography)/kbd.mdx",
+  "parts": [
+    {
+      "name": "Kbd",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content of the key"
+        },
+        {
+          "name": "variant",
+          "type": "`\"default\"",
+          "default": "\"light\"`",
+          "description": "`default`"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Custom CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Kbd.Abbr",
+      "props": [
+        {
+          "name": "title",
+          "type": "string",
+          "description": "Title attribute for accessibility (e.g., \"Command\" for ⌘)"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "The symbol or text to display (e.g., ⌘, ⌥, ⇧)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Custom CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Kbd.Key",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Text content of the key"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Custom CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".kbd",
+      "description": "Base keyboard key styles with background, border, and spacing"
+    },
+    {
+      "name": ".kbd__abbr",
+      "description": "Abbreviation element for modifier keys"
+    },
+    {
+      "name": ".kbd__content",
+      "description": "Content wrapper for key text"
+    }
+  ]
+}

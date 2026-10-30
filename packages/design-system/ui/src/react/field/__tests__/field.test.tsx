@@ -9,7 +9,7 @@
  */
 // @vitest-environment jsdom
 import { registerSchemas } from "@stackra/validation";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { z } from "zod";
 
 import { Field } from "#react/field/field";
@@ -104,5 +104,50 @@ describe("Field (web)", () => {
     expect(screen.getByRole("textbox", { name: "Code" })).toBeTruthy();
     expect(screen.getByText("tenant")).toBeTruthy();
     expect(screen.getByRole("switch", { name: "Present" })).toBeTruthy();
+  });
+
+  it("binds Field.RadioGroup and Field.ComboBox to the form and submits their picks", async () => {
+    const submit = vi.fn((_values: object) => Promise.resolve());
+    const schemes = [
+      { code: "light", name: "Light" },
+      { code: "dark", name: "Dark" },
+    ];
+    function Picks() {
+      const form = useSchemaForm(QuickOrderForm, {
+        defaultValues: { sku: "SKU-1", quantity: 2, scheme: "dark" },
+      });
+      return (
+        <Form aria-label="Picks" form={form} submit={submit}>
+          <Field.RadioGroup
+            name="sku"
+            label="Code"
+            options={[
+              { value: "SKU-1", label: "One" },
+              { value: "SKU-2", label: "Two" },
+            ]}
+          />
+          <Field.ComboBox
+            name="scheme"
+            label="Scheme"
+            items={schemes}
+            itemKey="code"
+            itemLabel={(item) => item.name}
+          />
+          <button type="submit">Save</button>
+        </Form>
+      );
+    }
+    render(<Picks />);
+    expect((screen.getByRole("combobox", { name: "Scheme" }) as HTMLInputElement).value).toBe(
+      "Dark",
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Two" }));
+    const input = screen.getByRole("combobox", { name: "Scheme" });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: "Lig" } });
+    act(() => screen.getByRole("option", { name: /Light/ }).click());
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(submit).toHaveBeenCalledOnce());
+    expect(submit.mock.calls[0]?.[0]).toMatchObject({ sku: "SKU-2", scheme: "light" });
   });
 });

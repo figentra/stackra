@@ -1,0 +1,239 @@
+{
+  "slug": "tag-group",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(collections)/tag-group.mdx",
+  "parts": [
+    {
+      "name": "TagGroup",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Child elements to render inside the tag group"
+        },
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'md'",
+          "description": "Size of all tags in the group"
+        },
+        {
+          "name": "variant",
+          "type": "'default' | 'surface'",
+          "default": "'default'",
+          "description": "Visual variant of all tags in the group"
+        },
+        {
+          "name": "selectionMode",
+          "type": "'none' | 'single' | 'multiple'",
+          "default": "'none'",
+          "description": "The type of selection allowed in the tag group"
+        },
+        {
+          "name": "selectedKeys",
+          "type": "Iterable<TagKey>",
+          "description": "The currently selected keys (controlled)"
+        },
+        {
+          "name": "defaultSelectedKeys",
+          "type": "Iterable<TagKey>",
+          "description": "The initial selected keys (uncontrolled)"
+        },
+        {
+          "name": "disabledKeys",
+          "type": "Iterable<TagKey>",
+          "description": "Keys of tags that should be disabled"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the entire tag group is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the tag group is in an invalid state"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the tag group is required"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the tag group container"
+        },
+        {
+          "name": "style",
+          "type": "StyleProp<ViewStyle>",
+          "description": "Additional styles for the tag group container"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "description": "Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(keys: Set<TagKey>) => void",
+          "description": "Handler called when the selection changes"
+        },
+        {
+          "name": "onRemove",
+          "type": "(keys: Set<TagKey>) => void",
+          "description": "Handler called when tags are removed"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "TagGroup.List",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Child elements to render inside the list"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the list container"
+        },
+        {
+          "name": "style",
+          "type": "StyleProp<ViewStyle>",
+          "description": "Additional styles for the list container"
+        },
+        {
+          "name": "renderEmptyState",
+          "type": "() => React.ReactNode",
+          "description": "Function to render when the list has no tags"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "TagGroup.Item",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((renderProps: TagRenderProps) => React.ReactNode)",
+          "description": "Tag content: string, elements, or a render function receiving TagRenderProps"
+        },
+        {
+          "name": "id",
+          "type": "TagKey",
+          "description": "Unique identifier for this tag"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether this specific tag is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the tag"
+        },
+        {
+          "name": "style",
+          "type": "StyleProp<ViewStyle>",
+          "description": "Additional styles for the tag"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the tag is currently selected"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the tag is disabled (merged from root, disabledKeys, and item prop)"
+        }
+      ]
+    },
+    {
+      "name": "TagGroup.ItemLabel",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Text content to render"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the label"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "TagGroup.ItemRemoveButton",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom icon or content for the remove button. Defaults to close icon when omitted"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the remove button"
+        },
+        {
+          "name": "iconProps",
+          "type": "TagRemoveButtonIconProps",
+          "description": "Props for customizing the default close icon. Only applies when no children are provided"
+        },
+        {
+          "name": "hitSlop",
+          "type": "number",
+          "default": "8",
+          "description": "Extends the touchable area"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useTagGroup",
+      "signature": "useTagGroup()",
+      "returns": []
+    },
+    {
+      "name": "useTagGroupItem",
+      "signature": "useTagGroupItem()",
+      "returns": []
+    }
+  ],
+  "slots": []
+}

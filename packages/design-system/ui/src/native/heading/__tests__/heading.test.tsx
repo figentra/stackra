@@ -80,7 +80,7 @@ describe("Heading (native)", () => {
       </Heading>,
     );
     expect(propsOf()).toMatchObject({
-      className: "text-danger type-h2-ar",
+      className: "!text-danger type-h2-ar",
       truncate: true,
       accessibilityLanguage: "ar",
     });

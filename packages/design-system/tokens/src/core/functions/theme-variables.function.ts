@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: a theme as its web CSS custom properties, split into HeroUI's own (the colour roles, the three shadows,
- *          `--radius`, `--field-radius`) and Stackra's additions (palette, fonts, type, spacing, radius steps, motion and
- *          the glass material), each with its mode-independent set and one per colour mode. `renderWebCss` writes
- *          these; the Theme Studio sets them inline on its preview and exports them as JSON. Every font stack is
- *          written, the display ones resolved (`--font-display` is the sans stack when the theme sets none, and
- *          `--font-display-arabic` the arabic one), and a text style names its stack's property.
+ *          `--radius`, `--field-radius`, `--field-border-width`) and Stackra's additions (palette, fonts, type, spacing,
+ *          radius steps and roles, motion, the glass material and the syntax colours, `--syntax-<role>`), each with its
+ *          mode-independent set and one per colour mode. `renderWebCss` writes these; the Theme Studio sets them inline
+ *          on its preview and exports them as JSON. Every font stack is written, the display ones resolved
+ *          (`--font-display` is the sans stack when the theme sets none, and `--font-display-arabic` the arabic one),
+ *          and a text style names its stack's property.
  * Boundary: a pure function from a Theme to property names (with their leading `--`) and values; it validates
  *          nothing (`defineTheme` does). The material's fills and filters sit in the colour sets, so an element that
  *          sets a mode's set computes them again from its own surface.
@@ -17,12 +18,28 @@ import { MaterialLevel } from "#contracts/enums/material-level.enum";
 import type { FontFamilyName } from "#contracts/types/font-family-name.type";
 import type { Theme } from "#contracts/types/theme.type";
 import type { ThemeVariables } from "#contracts/types/theme-variables.type";
+import { FIELD_BORDER_WIDTH } from "#core/constants/field-border-width.constant";
 import { FONT_FAMILY_VARIABLES } from "#core/constants/font-family-variables.constant";
 import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
 import { fontStackOf } from "#core/functions/font-stack-of.function";
 import { materialModeVariables } from "#core/functions/material-mode-variables.function";
+import { syntaxColours } from "#core/functions/syntax-colours.function";
 
 const SHADOWS = ["surface", "overlay", "field"] as const;
+
+/**
+ * The radius roles, derived from the theme's field radius so every brand keeps its own corners: `control` for
+ * fields, buttons, segmented controls and their segments, nav rows and tabs; `container` a step larger for cards,
+ * popovers, menus and code frames (capped, so a round brand's panels stay panels); `pill` for chips and counts only.
+ * An element inside another takes the outer radius less the padding between them: `control-inner` is a segment or
+ * thumb inside a control's 0.25rem padding.
+ */
+const RADIUS_ROLES = {
+  "--radius-control": "var(--field-radius)",
+  "--radius-control-inner": "max(0px, calc(var(--field-radius) - 0.25rem))",
+  "--radius-container": "min(calc(var(--field-radius) * 2), 1.5rem)",
+  "--radius-pill": "9999px",
+} as const;
 
 /** The least fill share of a level: the mode's floor, and for the thick level, which muted text sits on, its own too. */
 const floorOf = (level: MaterialLevel) =>
@@ -74,10 +91,17 @@ export function themeVariables(theme: Theme): ThemeVariables {
       Object.entries(theme.palette).map(([name, token]) => [`--${name}`, token[mode]]),
     ),
     ...materialColours(theme, mode),
+    ...Object.fromEntries(
+      Object.entries(syntaxColours(theme, mode)).map(([role, hex]) => [`--syntax-${role}`, hex]),
+    ),
   });
   return {
     heroui: {
-      root: { "--radius": theme.radius.base, "--field-radius": theme.radius.field },
+      root: {
+        "--radius": theme.radius.base,
+        "--field-radius": theme.radius.field,
+        "--field-border-width": FIELD_BORDER_WIDTH,
+      },
       light: heroui("light"),
       dark: heroui("dark"),
     },
@@ -104,6 +128,7 @@ export function themeVariables(theme: Theme): ThemeVariables {
         ...Object.fromEntries(
           Object.entries(theme.radius.steps).map(([name, size]) => [`--radius-${name}`, size]),
         ),
+        ...RADIUS_ROLES,
         ...Object.fromEntries(
           Object.entries(theme.motion).flatMap(([name, step]) => [
             [`--duration-${name}`, step.duration],

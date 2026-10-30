@@ -1,0 +1,54 @@
+{
+  "slug": "text-field",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/text-field.mdx",
+  "parts": [
+    {
+      "name": "TextFieldRenderProps",
+      "props": [
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the field is disabled."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the field is currently invalid."
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the field is read-only."
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "description": "Whether the field is required."
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the field is currently focused (DEPRECATED - use `isFocusWithin`)."
+        },
+        {
+          "name": "isFocusWithin",
+          "type": "boolean",
+          "description": "Whether any child element is focused."
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether focus is visible (keyboard navigation)."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".textfield",
+      "description": "Root container with minimal styling (`flex flex-col gap-1`)"
+    }
+  ]
+}

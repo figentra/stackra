@@ -14,6 +14,8 @@
 // @covers sta-350:FR-116 sta-350:SC-002 sta-350:SC-010
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -41,7 +43,9 @@ const TONES = [
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/alert?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Alert" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Alert", locale) }),
+  ).toBeVisible();
 };
 
 /** The text colour an element paints as `#rrggbb`: drawn on a canvas, so any CSS colour form (oklch too) reads. */
@@ -91,9 +95,9 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      const live = page.getByRole("region", { name: "Try it" });
-      await live.getByRole("button", { name: "Show payment error" }).click();
-      await live.getByRole("button", { name: "Show save confirmation" }).click();
+      const live = example(page, "live");
+      await live.locator("[id$=-show-error]").click();
+      await live.locator("[id$=-show-error-saved]").click();
       await expect(live.getByRole("alert")).toBeVisible();
       await expect(live.getByRole("status")).toBeVisible();
       const { violations, incomplete } = await new AxeBuilder({ page })
@@ -112,7 +116,7 @@ for (const scheme of SCHEMES)
 
 test("each tone is announced as an alert or a status, as its tone says", async ({ page }) => {
   await open(page, "light", "en");
-  const tones = page.getByRole("region", { name: "Tones" });
+  const tones = example(page, "usage");
   await expect(tones.getByRole("alert")).toHaveCount(2);
   await expect(tones.getByRole("status")).toHaveCount(3);
   for (const { title, isUrgent } of TONES) {
@@ -125,7 +129,7 @@ test("each tone is announced as an alert or a status, as its tone says", async (
 for (const scheme of SCHEMES)
   test(`each title is painted in its tone's colour in ${scheme}`, async ({ page }) => {
     await open(page, scheme, "en");
-    const tones = page.getByRole("region", { name: "Tones" });
+    const tones = example(page, "usage");
     for (const { title, role, tone } of TONES) {
       const painted = await paintedColor(
         tones.locator('[data-slot="alert-title"]').filter({ hasText: title }),
@@ -138,8 +142,9 @@ test("every icon is 16 px and decorative, and an alert with icon false has none"
   page,
 }) => {
   await open(page, "light", "en");
+  // The Usage and Parts samples; the Stackra section draws Usage again in hidden frames.
   const indicators = page
-    .getByRole("main")
+    .locator("section#usage, section#example-parts")
     .locator('[data-slot="alert-root"]')
     .locator('[data-slot="alert-indicator"] svg');
   // Five tones, and three of the four parts: the fourth has no icon.
@@ -151,7 +156,7 @@ test("every icon is 16 px and decorative, and an alert with icon false has none"
     expect([Math.round(box.width), Math.round(box.height)]).toEqual([16, 16]);
   }
   const noIcon = page
-    .getByRole("region", { name: "Parts" })
+    .locator("section#example-parts")
     .locator('[data-slot="alert-root"]')
     .filter({ hasText: "Payment failed" });
   await expect(noIcon.locator('[data-slot="alert-indicator"]')).toHaveCount(0);
@@ -160,10 +165,7 @@ test("every icon is 16 px and decorative, and an alert with icon false has none"
 for (const locale of LOCALES)
   test(`the icon sits on the reading-start side of the title in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const alert = page
-      .getByRole("region", { name: "Tones" })
-      .locator('[data-slot="alert-root"]')
-      .first();
+    const alert = page.locator("section#usage").locator('[data-slot="alert-root"]').first();
     const icon = await alert.locator('[data-slot="alert-indicator"]').boundingBox();
     const title = await alert.locator('[data-slot="alert-title"]').boundingBox();
     if (!icon || !title) throw new Error("a box is missing");
@@ -173,7 +175,7 @@ for (const locale of LOCALES)
 test("every action reaches 24 px and the actions sit under the description", async ({ page }) => {
   await open(page, "light", "en");
   const alert = page
-    .getByRole("region", { name: "Parts" })
+    .locator("section#example-parts")
     .locator('[data-slot="alert-root"]')
     .filter({ hasText: "Storage is almost full" });
   const buttons = alert.getByRole("button");
@@ -194,7 +196,7 @@ test("a failure from the keyboard is an assertive alert, a retry makes it a poli
   page,
 }) => {
   await open(page, "light", "en");
-  const live = page.getByRole("region", { name: "Try it" });
+  const live = example(page, "live");
   await expect(live.getByRole("alert")).toHaveCount(0);
   await live.getByRole("button", { name: "Show payment error" }).focus();
   await page.keyboard.press("Enter");

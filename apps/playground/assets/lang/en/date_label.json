@@ -1,0 +1,16 @@
+{
+  "created": "Order created",
+  "invoice_due": "Invoice from Al Nakheel Trading",
+  "invoice_due_soon": "Invoice from Gulf Fresh Foods",
+  "invoice_far": "Rent for the Olaya branch",
+  "batch_expired": "Laban batch L-2210",
+  "batch_expiring": "Yoghurt batch Y-0931",
+  "invoices": "Open invoices",
+  "invoice": "Invoice",
+  "gregorian": "Gregorian",
+  "hijri": "Hijri (Umm al-Qura)",
+  "promotion_ends": "The Ramadan promotion ends",
+  "earlier": "A day earlier",
+  "later": "A day later",
+  "due_date": "Purchase order due"
+}

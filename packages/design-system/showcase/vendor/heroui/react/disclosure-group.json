@@ -1,0 +1,68 @@
+{
+  "slug": "disclosure-group",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(navigation)/disclosure-group.mdx",
+  "parts": [
+    {
+      "name": "DisclosureGroup",
+      "props": [
+        {
+          "name": "expandedKeys",
+          "type": "Set<Key>",
+          "description": "The currently expanded items (controlled)"
+        },
+        {
+          "name": "defaultExpandedKeys",
+          "type": "Iterable<Key>",
+          "description": "The initially expanded items (uncontrolled)"
+        },
+        {
+          "name": "onExpandedChange",
+          "type": "(keys: Set<Key>) => void",
+          "description": "Handler called when expanded items change"
+        },
+        {
+          "name": "allowsMultipleExpanded",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether multiple items can be expanded simultaneously"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether all disclosures in the group are disabled"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Disclosure items to render"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "expandedKeys",
+          "type": "Set<Key>",
+          "description": "Currently expanded item keys"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the group is disabled"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".disclosure-group",
+      "description": "Base container styles with layout containment"
+    }
+  ]
+}

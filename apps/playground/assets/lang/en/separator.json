@@ -1,0 +1,21 @@
+{
+  "before": "The first paragraph ends here.",
+  "after": "The second paragraph starts here.",
+  "level": "Level {level}",
+  "links": "Related pages",
+  "group_name": "Text formatting",
+  "rule_name": "Between character and paragraph styles",
+  "bold": "Bold",
+  "italic": "Italic",
+  "left": "Align start",
+  "right": "Align end",
+  "turn": "Turn the rule",
+  "orientation": "The rule is {value, select, vertical {vertical} other {horizontal}}.",
+  "block_a": "Block A",
+  "block_b": "Block B",
+  "sample": {
+    "foundations": "Foundations",
+    "typography": "Typography",
+    "card": "Card"
+  }
+}

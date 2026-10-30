@@ -1,0 +1,70 @@
+{
+  "slug": "toolbar",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(layout)/toolbar.mdx",
+  "parts": [
+    {
+      "name": "Toolbar",
+      "props": [
+        {
+          "name": "isAttached",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the toolbar has a surface background with full rounding"
+        },
+        {
+          "name": "orientation",
+          "type": "\"horizontal\" | \"vertical\"",
+          "default": "\"horizontal\"",
+          "description": "The orientation of the toolbar"
+        },
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "An accessible label for the toolbar"
+        },
+        {
+          "name": "aria-labelledby",
+          "type": "string",
+          "description": "The id of an element that labels the toolbar"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (values: ToolbarRenderProps) => React.ReactNode",
+          "description": "Content or render prop"
+        },
+        {
+          "name": "className",
+          "type": "string | (values: ToolbarRenderProps) => string",
+          "description": "Additional CSS classes"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "orientation",
+          "type": "\"horizontal\" | \"vertical\"",
+          "description": "The current orientation of the toolbar"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".toolbar",
+      "description": "Base container"
+    },
+    {
+      "name": ".toolbar--horizontal",
+      "description": "Horizontal orientation (default)"
+    },
+    {
+      "name": ".toolbar--vertical",
+      "description": "Vertical orientation"
+    },
+    {
+      "name": ".toolbar--attached",
+      "description": "Attached variant with surface background and full rounding"
+    }
+  ]
+}

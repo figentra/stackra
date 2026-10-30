@@ -121,11 +121,11 @@ const SNAPSHOT: Readonly<
     "banner-staging-foreground": ["oklch(1 0 0)", "oklch(0.158 0.005 248)"],
     "banner-acting-as": ["oklch(0.5 0.17 350)", "oklch(0.72 0.15 350)"],
     "banner-acting-as-foreground": ["oklch(1 0 0)", "oklch(0.158 0.005 248)"],
-    "chart-1": ["oklch(0.55 0.12 248)", "oklch(0.72 0.11 248)"],
-    "chart-2": ["oklch(0.6 0.1 185)", "oklch(0.78 0.11 185)"],
-    "chart-3": ["oklch(0.52 0.16 300)", "oklch(0.7 0.14 300)"],
-    "chart-4": ["oklch(0.62 0.15 55)", "oklch(0.78 0.14 60)"],
-    "chart-5": ["oklch(0.55 0.17 355)", "oklch(0.72 0.15 355)"],
+    "chart-1": ["oklch(0.5 0.13 252)", "oklch(0.7 0.12 252)"],
+    "chart-2": ["oklch(0.64 0.11 185)", "oklch(0.86 0.11 185)"],
+    "chart-3": ["oklch(0.4 0.15 300)", "oklch(0.6 0.17 300)"],
+    "chart-4": ["oklch(0.65 0.15 55)", "oklch(0.8 0.14 60)"],
+    "chart-5": ["oklch(0.54 0.18 355)", "oklch(0.68 0.17 355)"],
   },
 };
 

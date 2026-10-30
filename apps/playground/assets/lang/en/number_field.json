@@ -1,0 +1,20 @@
+{
+  "plain": "Quantity",
+  "plain_description": "Type a number or step it with the buttons.",
+  "bounded": "Seats, 1 to 10",
+  "bounded_description": "Type 40 and leave the field: it becomes 10.",
+  "percent": "Discount",
+  "percent_description": "Held as a fraction, shown as a percentage.",
+  "currency": "Price",
+  "currency_description": "Dollars, in steps of fifty cents.",
+  "no_steppers": "Years of experience",
+  "no_steppers_description": "Press the up or down arrow key.",
+  "invalid": "Guests",
+  "invalid_message": "Enter at least one guest.",
+  "disabled": "Rooms",
+  "read_only": "Floors",
+  "live_label": "Seats to book",
+  "live_description": "Between one and ten.",
+  "live_empty": "No seats chosen yet.",
+  "live_chosen": "{seats, plural, one {# seat chosen.} other {# seats chosen.}}"
+}

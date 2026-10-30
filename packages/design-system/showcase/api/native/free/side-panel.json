@@ -1,0 +1,82 @@
+{
+  "generatedFrom": {
+    "hash": "c90f821652b8d799",
+    "propsFiles": ["ui/src/native/side-panel/side-panel.props.ts"]
+  },
+  "importLine": "import { SidePanel } from \"@stackra/ui/native\";",
+  "key": "free/side-panel",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the panel opens, expands, collapses back or closes.",
+          "name": "onStateChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(state: \"open\" | \"closed\" | \"expanded\") => void"
+        }
+      ],
+      "name": "SidePanel",
+      "props": [
+        {
+          "description": "On web the page (`SidePanel.Inset`), the panel (`SidePanel.Panel`) and the launcher; on native the panel's parts.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The panel's spoken name, for its `complementary` landmark (or its drawer), for example \"Assistant\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The state, for a controlled panel; pair it with `onStateChange`.",
+          "name": "state",
+          "required": false,
+          "source": "stackra",
+          "type": "\"open\" | \"closed\" | \"expanded\""
+        },
+        {
+          "default": "closed",
+          "description": "The starting state of an uncontrolled panel. Defaults to `closed`.",
+          "name": "defaultState",
+          "required": false,
+          "source": "stackra",
+          "type": "\"open\" | \"closed\" | \"expanded\""
+        }
+      ]
+    },
+    {
+      "name": "SidePanel.Inset",
+      "props": []
+    },
+    {
+      "name": "SidePanel.Panel",
+      "props": []
+    },
+    {
+      "name": "SidePanel.Header",
+      "props": []
+    },
+    {
+      "name": "SidePanel.Body",
+      "props": []
+    },
+    {
+      "name": "SidePanel.Footer",
+      "props": []
+    },
+    {
+      "name": "SidePanel.Handle",
+      "props": []
+    },
+    {
+      "name": "SidePanel.Launcher",
+      "props": []
+    }
+  ],
+  "platform": "native"
+}

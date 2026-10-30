@@ -1,0 +1,51 @@
+{
+  "generatedFrom": {
+    "hash": "a017d224db256ec9",
+    "propsFiles": ["ui/src/native/qr-code/qr-code.props.ts"]
+  },
+  "importLine": "import { QrCode } from \"@stackra/ui/native\";",
+  "key": "free/qr-code",
+  "parts": [
+    {
+      "name": "QrCode",
+      "props": [
+        {
+          "description": "The text or link to encode.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What the code opens, for people who cannot scan it, for example \"Pay invoice INV-2207\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The side in pixels; defaults to 160.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Error correction: `L`, `M` (the default), `Q` or `H` (survives a logo or damage).",
+          "name": "level",
+          "required": false,
+          "source": "stackra",
+          "type": "\"L\" | \"M\" | \"Q\" | \"H\""
+        },
+        {
+          "description": "Styles the tile.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -1,0 +1,20 @@
+{
+  "title_only": "Title only",
+  "with_description": "With a description",
+  "description": "Where we send invoices and how we address you.",
+  "several": "Several fields",
+  "name": "Full name",
+  "company": "Company",
+  "country": "Country",
+  "disabled_section": "Disabled section",
+  "kept": "Kept value",
+  "live_name": "Billing form",
+  "profile": "Profile",
+  "profile_description": "Shown on your invoices.",
+  "display_name": "Display name",
+  "billing": "Billing",
+  "billing_description": "Used for the receipt.",
+  "address": "Billing address",
+  "vat_number": "VAT number",
+  "disable_billing": "Disable the billing section"
+}

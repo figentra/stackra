@@ -1,0 +1,88 @@
+{
+  "slug": "color-picker",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(colors)/color-picker.mdx",
+  "parts": [
+    {
+      "name": "ColorPicker",
+      "props": [
+        {
+          "name": "value",
+          "type": "string | Color",
+          "description": "The current color value (controlled)"
+        },
+        {
+          "name": "defaultValue",
+          "type": "string | Color",
+          "description": "The default color value (uncontrolled)"
+        },
+        {
+          "name": "onChange",
+          "type": "(color: Color) => void",
+          "description": "Handler called when the color changes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content of the color picker (Trigger, Popover, etc.)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "ColorPicker.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((renderProps) => React.ReactNode)",
+          "description": "Trigger content or render prop"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "ColorPicker.Popover",
+      "props": [
+        {
+          "name": "placement",
+          "type": "Placement",
+          "default": "\"bottom left\"",
+          "description": "Placement of the popover"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Popover content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".color-picker",
+      "description": "Base container"
+    },
+    {
+      "name": ".color-picker__trigger",
+      "description": "Trigger button"
+    },
+    {
+      "name": ".color-picker__popover",
+      "description": "Popover container"
+    }
+  ]
+}

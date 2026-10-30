@@ -1,0 +1,272 @@
+{
+  "generatedFrom": {
+    "hash": "e62eb584d265eab3",
+    "propsFiles": ["ui/src/react/dropdown/dropdown-item.props.ts"]
+  },
+  "importLine": "import { DropdownItem } from \"@stackra/ui/react\";",
+  "key": "free/dropdown",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Handler that is called when the item is selected.",
+          "name": "onAction",
+          "required": false,
+          "source": "react-aria",
+          "type": "() => void"
+        },
+        {
+          "description": "Handler that is called when the element loses focus.",
+          "name": "onBlur",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "**Not recommended – use `onPress` instead.** `onClick` is an alias for `onPress`\nprovided for compatibility with other libraries. `onPress` provides\nadditional event details for non-mouse interactions.",
+          "name": "onClick",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: MouseEvent<FocusableElement, MouseEvent>) => void"
+        },
+        {
+          "description": "Handler that is called when the element receives focus.",
+          "name": "onFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the element's focus status changes.",
+          "name": "onFocusChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isFocused: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when the hover state changes.",
+          "name": "onHoverChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isHovering: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a hover interaction ends.",
+          "name": "onHoverEnd",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: HoverEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a hover interaction starts.",
+          "name": "onHoverStart",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: HoverEvent) => void"
+        },
+        {
+          "description": "Handler that is called when the press is released over the target.",
+          "name": "onPress",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when the press state changes.",
+          "name": "onPressChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isPressed: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a press interaction ends, either\nover the target or when the pointer leaves the target.",
+          "name": "onPressEnd",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a press interaction starts.",
+          "name": "onPressStart",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a press is released over the target, regardless of\nwhether it started on the target or not.",
+          "name": "onPressUp",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        }
+      ],
+      "name": "DropdownItem",
+      "props": [
+        {
+          "description": "The label of the item.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "A second, muted line under the label.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The tone of the item; `danger` marks a destructive action. Defaults to `default`.",
+          "name": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "default": "'react-aria-MenuItem'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "An accessibility label for this item.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Causes the browser to download the linked URL. A string may be provided to suggest a file name.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#download).",
+          "name": "download",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | boolean"
+        },
+        {
+          "description": "A URL to link to. See [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#href).",
+          "name": "href",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Hints at the human language of the linked URL.\nSee[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#hreflang).",
+          "name": "hrefLang",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The unique id of the item.",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "Key"
+        },
+        {
+          "description": "Whether the item is disabled.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "A space-separated list of URLs to ping when the link is followed. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#ping).",
+          "name": "ping",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "How much of the referrer to send when following the link. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#referrerpolicy).",
+          "name": "referrerPolicy",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"\" | \"origin\" | \"no-referrer\" | \"no-referrer-when-downgrade\" | \"origin-when-cross-origin\" | \"same-origin\" | \"strict-origin\" | \"strict-origin-when-cross-origin\" | \"unsafe-url\""
+        },
+        {
+          "description": "The relationship between the linked resource and the current page. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel).",
+          "name": "rel",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nNote: You can check if `'href' in props` in order to tell whether to render an `<a>` element.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<a>` is expected, you cannot render a\n  `<button>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "react-aria",
+          "type": "(props: DetailedHTMLProps<LinkWithRequiredHref, HTMLAnchorElement> | DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, renderProps: MenuItemRenderProps) => ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "Options for the configured client side router.",
+          "name": "routerOptions",
+          "required": false,
+          "source": "react-aria",
+          "type": "never"
+        },
+        {
+          "description": "Whether the menu should close when the menu item is selected.",
+          "name": "shouldCloseOnSelect",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<MenuItemRenderProps>"
+        },
+        {
+          "description": "The target window for the link. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#target).",
+          "name": "target",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributeAnchorTarget"
+        },
+        {
+          "description": "A string representation of the item's contents, used for features like typeahead.",
+          "name": "textValue",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The object value that this item represents. When using dynamic collections, this is set\nautomatically.",
+          "name": "value",
+          "required": false,
+          "source": "react-aria",
+          "type": "unknown"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

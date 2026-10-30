@@ -3,7 +3,7 @@
  * Purpose: `intlLocale(locale, numerals, hourCycle)`, the locale tag every Intl formatter of this package is built
  *          with: the locale plus the `-u-` extension of the configured clock (`hc`) and digits (`nu`), so messages,
  *          numbers, money and dates share one digit and clock choice.
- * Boundary: pure; internal to the package (the React provider and its tests use it). `NumberingSystem.User` adds no
+ * Boundary: pure; public (2026-10-28) so a caller outside the provider builds the same tag (a hero side, `translatorFor`). `NumberingSystem.User` adds no
  *           `nu`, so the locale's and the device's own default applies; no `hourCycle` adds no `hc`.
  * Runtime: isomorphic
  * Governing contract: ADR 0192 (decision 2: digits are the user's choice, Latin by default); ADR 0403 (formats).

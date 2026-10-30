@@ -1,0 +1,16 @@
+{
+  "return_policy": "Return policy",
+  "delivery_times": "Delivery times",
+  "read_more": "Read more",
+  "about": " about {topic}",
+  "cart": "Cart",
+  "items_in_cart": "{count, plural, one {, # item in the cart} other {, # items in the cart}}",
+  "add_item": "Add an item",
+  "product": "Product {sku}",
+  "in_stock": ", in stock",
+  "low_stock": ", low stock",
+  "out_of_stock": ", out of stock",
+  "skip": "Skip to the register",
+  "register": "Register",
+  "register_body": "Scan an item or search for a product to start a sale."
+}

@@ -82,6 +82,19 @@ describe("renderWebCss", () => {
     );
   });
 
+  it("ends every transition and animation at once under data-motion none", () => {
+    expect(css).toContain(
+      'html[data-motion="none"] {\n  --duration-fast: 0ms;\n  --duration-base: 0ms;\n  --duration-blink: 0ms;\n  --duration-reveal: 0ms;\n  --duration-stagger: 0ms;\n  scroll-behavior: auto;\n}',
+    );
+    const all = css.split('html[data-motion="none"] *::after {\n')[1]?.split("\n}")[0] ?? "";
+    expect(all).toContain("animation-duration: 0s !important;");
+    expect(all).toContain("transition-duration: 0s !important;");
+    // Unlayered and outside the components layer, so it beats every component's own timing.
+    expect(css.indexOf('html[data-motion="none"] *')).toBeLessThan(
+      css.indexOf("@layer components"),
+    );
+  });
+
   it("draws HeroUI's Typography classes in the theme's scale inside the one components layer", () => {
     expect(css.match(/@layer components \{/g)).toHaveLength(1);
     expect(layer).toContain(
@@ -175,6 +188,16 @@ describe("renderWebCss", () => {
     expect(layer).toContain("    border: 1px solid var(--material-edge);");
   });
 
+  it("draws the bar material as the theme's background glass with foreground text, solid without color-mix", () => {
+    expect(layer).toContain(
+      "  .material-bar {\n    background-color: var(--background);\n    color: var(--foreground);\n  }",
+    );
+    // The mode's floor lifts the share: the solid mode (and so reduced transparency and more contrast) is opaque.
+    expect(layer).toContain(
+      "      background-color: color-mix(in oklch, var(--background) calc(max(var(--material-fill-floor), 0.88) * 100%), transparent);",
+    );
+  });
+
   it("turns the material solid under reduced transparency, more contrast and no backdrop filter", () => {
     expect(css).toContain(
       "@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {\n  :root,\n  [data-material] {\n    --material-fill-scale: 1;\n    --material-fill-floor: 1;\n    --material-thick-floor: 1;\n    --material-blur-scale: 0;",
@@ -213,6 +236,8 @@ describe("renderWebCss", () => {
       "  .close-button--default {\n    background-color: var(--material-control-fill);",
     );
     expect(layer).not.toContain(".button--primary");
+    // One box for every variant: the solid ones keep a transparent border the width of the outlined ones' edge.
+    expect(layer).toContain("  .button {\n    border: 1px solid transparent;\n  }");
     const buttons = layer.slice(layer.indexOf(".button--secondary"));
     // Decision 2: a control carries the fill and a hairline edge, never a backdrop filter.
     expect(buttons).not.toContain("backdrop-filter");
@@ -220,6 +245,20 @@ describe("renderWebCss", () => {
     expect(buttons).not.toContain("box-shadow");
     expect(css).toContain(
       "  .button--outline,\n  .close-button--default {\n    border-color: CanvasText;",
+    );
+  });
+
+  it("draws the radio and the switch round, the off track on the field edge, a selected toggle button solid accent, fields with a 1px edge and help text in its own direction", () => {
+    expect(layer).toContain(
+      "  .radio .radio__control,\n  .radio .radio__indicator,\n  .radio .radio__indicator::before,\n  .switch .switch__control,\n  .switch .switch__thumb {\n    border-radius: var(--radius-full);\n  }",
+    );
+    expect(layer).toContain("  .switch {\n    --switch-control-bg: var(--field-border);\n  }");
+    expect(layer).toContain(
+      "  .toggle-button {\n    --toggle-button-bg-selected: var(--accent);\n    --toggle-button-bg-selected-hover: var(--accent-hover);\n    --toggle-button-bg-selected-pressed: var(--accent-hover);\n    --toggle-button-fg-selected: var(--accent-foreground);\n  }",
+    );
+    expect(blockOf(":root")).toContain("  --field-border-width: 1px;");
+    expect(layer).toContain(
+      '  [data-slot="description"],\n  [data-slot="field-error"] {\n    unicode-bidi: plaintext;\n  }',
     );
   });
 

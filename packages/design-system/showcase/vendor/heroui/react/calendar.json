@@ -1,0 +1,187 @@
+{
+  "slug": "calendar",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(date-and-time)/calendar.mdx",
+  "parts": [
+    {
+      "name": "Calendar",
+      "props": [
+        {
+          "name": "value",
+          "type": "DateValue | null",
+          "description": "Controlled selected date."
+        },
+        {
+          "name": "defaultValue",
+          "type": "DateValue | null",
+          "description": "Initial selected date (uncontrolled)."
+        },
+        {
+          "name": "onChange",
+          "type": "(value: DateValue) => void",
+          "description": "Called when selection changes."
+        },
+        {
+          "name": "focusedValue",
+          "type": "DateValue",
+          "description": "Controlled focused date."
+        },
+        {
+          "name": "onFocusChange",
+          "type": "(value: DateValue) => void",
+          "description": "Called when focus moves to another date."
+        },
+        {
+          "name": "minValue",
+          "type": "DateValue",
+          "default": "Calendar-aware `1900-01-01`",
+          "description": "Earliest selectable date."
+        },
+        {
+          "name": "maxValue",
+          "type": "DateValue",
+          "default": "Calendar-aware `2099-12-31`",
+          "description": "Latest selectable date."
+        },
+        {
+          "name": "isDateUnavailable",
+          "type": "(date: DateValue) => boolean",
+          "description": "Marks dates as unavailable."
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Disables interaction and selection."
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "default": "false",
+          "description": "Keeps content readable but prevents selection changes."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Marks the calendar as invalid for validation UI."
+        },
+        {
+          "name": "visibleDuration",
+          "type": "{months?: number}",
+          "default": "{months: 1}",
+          "description": "Number of visible months."
+        },
+        {
+          "name": "defaultYearPickerOpen",
+          "type": "boolean",
+          "default": "false",
+          "description": "Initial open state of internal year picker."
+        },
+        {
+          "name": "isYearPickerOpen",
+          "type": "boolean",
+          "description": "Controlled year picker open state."
+        },
+        {
+          "name": "onYearPickerOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Called when year picker open state changes."
+        }
+      ]
+    },
+    {
+      "name": "Calendar.Cell Render",
+      "props": [
+        {
+          "name": "formattedDate",
+          "type": "string",
+          "description": "Localized day label for the cell."
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the date is selected."
+        },
+        {
+          "name": "isUnavailable",
+          "type": "boolean",
+          "description": "Whether the date is unavailable."
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the cell is disabled."
+        },
+        {
+          "name": "isOutsideMonth",
+          "type": "boolean",
+          "description": "Whether the date belongs to adjacent month."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".calendar",
+      "description": "Root container."
+    },
+    {
+      "name": ".calendar__header",
+      "description": "Header row containing nav buttons and heading."
+    },
+    {
+      "name": ".calendar__heading",
+      "description": "Current month label."
+    },
+    {
+      "name": ".calendar__nav-button",
+      "description": "Previous/next navigation controls."
+    },
+    {
+      "name": ".calendar__grid",
+      "description": "Main day grid."
+    },
+    {
+      "name": ".calendar__grid-header",
+      "description": "Weekday header row wrapper."
+    },
+    {
+      "name": ".calendar__grid-body",
+      "description": "Date rows wrapper."
+    },
+    {
+      "name": ".calendar__header-cell",
+      "description": "Weekday header cell."
+    },
+    {
+      "name": ".calendar__cell",
+      "description": "Interactive day cell."
+    },
+    {
+      "name": ".calendar__cell-indicator",
+      "description": "Dot indicator inside a day cell."
+    },
+    {
+      "name": ".calendar-year-picker__trigger",
+      "description": "Year picker toggle button."
+    },
+    {
+      "name": ".calendar-year-picker__trigger-heading",
+      "description": "Heading text inside year picker trigger."
+    },
+    {
+      "name": ".calendar-year-picker__trigger-indicator",
+      "description": "Indicator icon inside year picker trigger."
+    },
+    {
+      "name": ".calendar-year-picker__year-grid",
+      "description": "Overlay grid of selectable years."
+    },
+    {
+      "name": ".calendar-year-picker__year-cell",
+      "description": "Individual year option."
+    }
+  ]
+}

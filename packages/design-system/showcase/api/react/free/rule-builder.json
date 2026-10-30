@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "1aa06c047bb5633f",
+    "propsFiles": ["ui/src/react/rule-builder/rule-builder.props.ts"]
+  },
+  "importLine": "import { RuleBuilder } from \"@stackra/ui/react\";",
+  "key": "free/rule-builder",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new rule after each edit.",
+          "name": "onChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(value: RuleGroup) => void"
+        }
+      ],
+      "name": "RuleBuilder",
+      "props": [
+        {
+          "description": "The fields a condition can test.",
+          "name": "fields",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly RuleField[]"
+        },
+        {
+          "description": "The rule being edited.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "RuleGroup"
+        },
+        {
+          "description": "The builder's accessible name, such as \"Discount applies when\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to show the rule but refuse edits.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

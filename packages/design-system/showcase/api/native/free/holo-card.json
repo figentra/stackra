@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "ed1472f3c00e594a",
+    "propsFiles": ["ui/src/native/holo-card/holo-card.props.ts"]
+  },
+  "importLine": "import { HoloCard } from \"@stackra/ui/native\";",
+  "key": "free/holo-card",
+  "parts": [
+    {
+      "name": "HoloCard",
+      "props": [
+        {
+          "description": "The content drawn on the card.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The most the card tilts, in degrees; 10 by default.",
+          "name": "maxTilt",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "True to hold the card still with no sheen.",
+          "name": "isStill",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -14,7 +14,12 @@ import { Chip } from "#react/chip/chip";
 import type { StatusBadgeProps } from "#react/status-badge/status-badge.props";
 
 /** The dot's shape: a 6 px circle HeroUI's own status sample uses, which never shrinks in a tight row. */
-const DOT_STYLE: CSSProperties = { width: 6, height: 6, borderRadius: 9999, flexShrink: 0 };
+const DOT_STYLE: CSSProperties = {
+  width: 6,
+  height: 6,
+  borderRadius: "var(--radius-pill)",
+  flexShrink: 0,
+};
 
 /**
  * A record's state: its name as text, with a dot in the state's tone before it. The chip stays neutral so the text

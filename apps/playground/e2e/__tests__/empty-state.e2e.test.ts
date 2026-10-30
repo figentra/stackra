@@ -14,6 +14,11 @@
 // @covers sta-350:FR-151 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
+
+/** The live examples, without the Stackra section's hidden preview copies of the usage. */
+const DEMOS = "section:is(#usage, #examples)";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +27,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/empty-state?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Empty state" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Empty state", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -49,10 +56,11 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      const live = page.getByRole("region", { name: "Try it" });
-      await live.getByRole("searchbox", { name: "Search orders" }).fill("zzz");
+      // By id and place: the words speak the page's locale.
+      const live = example(page, "live");
+      await live.getByRole("searchbox").fill("zzz");
       await expect(
-        live.getByRole("heading", { level: 3, name: "No orders match your filters" }),
+        live.locator('[data-reason="no-results"]').getByRole("heading", { level: 3 }),
       ).toBeVisible();
       await expectAxeClean(page);
     });
@@ -60,10 +68,10 @@ for (const scheme of SCHEMES)
 
 test("every reason has a level-3 heading, and none skips an outline level", async ({ page }) => {
   await open(page, "light", "en");
-  const reasons = page.getByRole("region", { name: "Reasons" });
+  const reasons = page.getByRole("region", { name: "Usage" });
   for (const name of ["No orders yet", "No orders match your filters", "You cannot see orders"])
     await expect(reasons.getByRole("heading", { level: 3, name })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 4 })).toHaveCount(0);
+  await expect(page.locator(DEMOS).getByRole("heading", { level: 4 })).toHaveCount(0);
 });
 
 for (const locale of LOCALES)
@@ -71,7 +79,7 @@ for (const locale of LOCALES)
     page,
   }) => {
     await open(page, "light", locale);
-    const states = page.getByRole("main").locator("[data-reason]");
+    const states = page.locator(DEMOS).locator("[data-reason]");
     await expect(states).toHaveCount(3 + 4);
     for (const state of await states.all()) {
       const well = state.locator('[data-slot="state-icon"]');
@@ -93,7 +101,8 @@ for (const locale of LOCALES)
 
 test("every action reaches 24 px", async ({ page }) => {
   await open(page, "light", "en");
-  const buttons = page.getByRole("main").locator("[data-reason]").getByRole("button");
+  const buttons = page.locator(DEMOS).locator("[data-reason]").getByRole("button");
+  await expect(page.locator(DEMOS).locator("[data-reason]")).toHaveCount(3 + 4);
   expect(await buttons.count()).toBeGreaterThan(0);
   for (const button of await buttons.all()) {
     const box = await button.boundingBox();

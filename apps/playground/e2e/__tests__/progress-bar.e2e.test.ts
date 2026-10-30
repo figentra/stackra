@@ -14,6 +14,7 @@
 // @covers sta-350:FR-120 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 import { contrastRatio } from "@stackra/tokens";
 
 const SCHEMES = ["light", "dark"] as const;
@@ -30,7 +31,9 @@ const open = async (
 ) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion });
   await page.goto(`/progress-bar?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Progress bar" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Progress bar", locale) }),
+  ).toBeVisible();
 };
 
 /** A computed colour as `#rrggbb`, drawn on a canvas so any CSS colour form (oklch, `color-mix`) reads. */
@@ -71,9 +74,12 @@ for (const scheme of SCHEMES)
 
 test("every bar is a progressbar with an accessible name", async ({ page }) => {
   await open(page, "light", "en");
+  await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
+  // The examples' fifteen, and the knobs playground's own bar once it has mounted with its label.
   const bars = page.getByRole("progressbar");
-  await expect(bars).toHaveCount(15);
-  for (let index = 0; index < 15; index += 1)
+  const count = await bars.count();
+  expect(count).toBeGreaterThanOrEqual(15);
+  for (let index = 0; index < count; index += 1)
     await expect(bars.nth(index)).toHaveAccessibleName(/\S/);
 });
 
@@ -111,7 +117,9 @@ test("a visible label names the bar and the value text is shown and spoken", asy
 test("the three sizes are 4, 8 and 12 px thick", async ({ page }) => {
   await open(page, "light", "en");
   for (const [size, pixels] of Object.entries(SIZES)) {
-    const box = await boxOf(page.locator(`[data-size="${size}"] .progress-bar__track`));
+    const box = await boxOf(
+      page.locator(`section#usage [data-size="${size}"] .progress-bar__track`),
+    );
     expect(box.height, size).toBeCloseTo(pixels, 0);
   }
 });

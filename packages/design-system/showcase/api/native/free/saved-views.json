@@ -1,0 +1,165 @@
+{
+  "generatedFrom": {
+    "hash": "19e55d4a0b03c864",
+    "propsFiles": ["ui/src/native/saved-views/saved-views.props.ts"]
+  },
+  "importLine": "import { SavedViews } from \"@stackra/ui/native\";",
+  "key": "free/saved-views",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Saves the current query as a view; left out, there is no Save view button.",
+          "name": "onSaveView",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with the whole next query each time the user changes any part of it.",
+          "name": "onQueryChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(query: ResourceQuery) => void"
+        }
+      ],
+      "name": "SavedViews",
+      "props": [
+        {
+          "description": "The group's spoken name, for example \"Order views\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The saved views, in order.",
+          "name": "views",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SavedView[]"
+        },
+        {
+          "description": "The id of the multi-select filter the facet chips toggle.",
+          "name": "facetFilterId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The facet chips.",
+          "name": "facets",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly FacetOption[]"
+        },
+        {
+          "description": "The facet group's spoken name, for example \"Status\".",
+          "name": "facetLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The query in force: the search text, the applied filters and the sort.",
+          "name": "query",
+          "required": true,
+          "source": "stackra",
+          "type": "ResourceQuery"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

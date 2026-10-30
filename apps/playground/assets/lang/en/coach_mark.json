@@ -1,0 +1,28 @@
+{
+  "start": "Start the tour",
+  "outcome_done": "Tour finished: it will not show again.",
+  "outcome_skipped": "Tour skipped: offer it again from Help.",
+  "pos": {
+    "scan": "Scan",
+    "scan_title": "Scan items",
+    "scan_text": "Scan a barcode, or type the SKU if the label is damaged.",
+    "basket": "Basket is empty",
+    "basket_title": "Check the basket",
+    "basket_text": "Each item shows here with its price; swipe a line to remove it.",
+    "pay": "Pay",
+    "pay_title": "Take payment",
+    "pay_text": "Choose cash, card or a split payment, then print or send the receipt."
+  },
+  "admin": {
+    "navigation": "Admin",
+    "orders": "Orders",
+    "orders_title": "Orders",
+    "orders_text": "Every order from every branch, with refunds and returns.",
+    "products": "Products",
+    "products_title": "Products",
+    "products_text": "Prices, stock and Arabic and English names for the menu.",
+    "reports": "Reports",
+    "reports_title": "Reports",
+    "reports_text": "Sales by day, branch and staff, ready to export."
+  }
+}

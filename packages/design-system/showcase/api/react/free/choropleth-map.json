@@ -1,0 +1,79 @@
+{
+  "generatedFrom": {
+    "hash": "fc35b3d865e5643b",
+    "propsFiles": ["ui/src/react/choropleth-map/choropleth-map.props.ts"]
+  },
+  "importLine": "import { ChoroplethMap } from \"@stackra/ui/react\";",
+  "key": "free/choropleth-map",
+  "parts": [
+    {
+      "name": "ChoroplethMap",
+      "props": [
+        {
+          "description": "The regions, a GeoJSON FeatureCollection of polygons in longitude and latitude.",
+          "name": "features",
+          "required": true,
+          "source": "stackra",
+          "type": "GeoFeatureCollection"
+        },
+        {
+          "description": "Each region's value, by its `idKey` property; a region with none is drawn empty.",
+          "name": "values",
+          "required": true,
+          "source": "stackra",
+          "type": "Readonly<Record<string, number>>"
+        },
+        {
+          "description": "The property that identifies a region in `values`; `id` by default.",
+          "name": "idKey",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The property that names a region; `name` by default.",
+          "name": "nameKey",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The map's accessible name and the data table's caption, such as \"Orders by region, October\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How values are written; plain numbers in the locale by default.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The colour the five shades are made from; the first accent step by default.",
+          "name": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"danger\" | \"accent\" | \"success\" | \"warning\" | \"chart-ramp-1\" | \"chart-ramp-2\" | \"chart-ramp-3\" | \"chart-ramp-4\" | \"chart-ramp-5\" | \"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\""
+        },
+        {
+          "description": "The map's height in pixels; 280 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

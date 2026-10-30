@@ -1,0 +1,88 @@
+{
+  "slug": "label",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/label.mdx",
+  "parts": [
+    {
+      "name": "Label",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Label content. When string is provided, automatically renders as Label.Text. Otherwise renders children as-is"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the label is required. Shows asterisk indicator when true"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the label is in an invalid state. Changes text color to danger"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the label is disabled. Applies disabled styling and prevents interaction"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Label.Text",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Label text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply to the text element"
+        },
+        {
+          "name": "classNames",
+          "type": "ElementSlots<LabelSlots>",
+          "description": "Additional CSS classes for different parts of the label"
+        },
+        {
+          "name": "styles",
+          "type": "Partial<Record<LabelSlots, TextStyle>>",
+          "description": "Styles for different parts of the label"
+        },
+        {
+          "name": "nativeID",
+          "type": "string",
+          "description": "Native ID for accessibility. Used to link label to form fields via aria-labelledby"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

@@ -1,0 +1,178 @@
+{
+  "generatedFrom": {
+    "hash": "7a35e4801e7e73b4",
+    "propsFiles": ["ui/src/native/page-header/page-header.props.ts"]
+  },
+  "importLine": "import { PageHeader } from \"@stackra/ui/native\";",
+  "key": "free/page-header",
+  "parts": [
+    {
+      "name": "PageHeader",
+      "props": [
+        {
+          "description": "The trail from the root to the current page, drawn above the title; left out or empty, there is no trail.",
+          "name": "breadcrumbs",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly BreadcrumbItem[]"
+        },
+        {
+          "description": "The state of the page's record, drawn beside the title, usually a `StatusBadge`.",
+          "name": "status",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The page's actions in priority order: the first is primary, three at most show and the rest go in an ActionMenu.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly MenuLeafItem[]"
+        },
+        {
+          "description": "The accessible name of the ActionMenu button the overflowing actions go in. Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "moreActionsLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What the region is about, in a few words. Required: it is the heading a screen reader jumps to.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "One muted line under the title, for example what the section holds.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The title's place in the document outline, 1 to 6.",
+          "name": "headingLevel",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "The spoken name of the region, for example \"Main navigation\"; required when the page holds two of its kind.",
+          "name": "label",
+          "replaces": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A node at the logical start of the bar, before its main content.",
+          "name": "startContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "A node at the logical end of the bar, after its main content.",
+          "name": "endContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

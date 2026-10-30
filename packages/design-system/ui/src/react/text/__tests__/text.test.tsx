@@ -61,7 +61,12 @@ describe("Text (web)", () => {
     const utility = TONE_CLASS_NAME[tone];
     expect(text.classList.contains("typography--color-muted")).toBe(tone === "muted");
     expect(text.classList.contains("typography--color-default")).toBe(tone !== "muted");
-    for (const name of ["text-accent", "text-success", "text-warning", "text-danger"])
+    for (const name of [
+      "text-accent-soft-foreground",
+      "text-success",
+      "text-warning",
+      "text-danger",
+    ])
       expect(text.classList.contains(name), name).toBe(name === utility);
   });
 

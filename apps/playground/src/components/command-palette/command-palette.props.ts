@@ -5,13 +5,12 @@
  * Runtime: browser
  * Governing contract: ADR 0305 (rule 12).
  */
-import type { PageLink } from "#src/types/page-link.type";
 import type { PaletteAction } from "#src/components/command-palette/palette-action.type";
 
 /** Props of {@link CommandPalette}. */
 export interface CommandPaletteProps {
-  /** Every page, in navigation order. */
-  pages: readonly PageLink[];
+  /** The locale the index is searched in: `en` or `ar`. */
+  locale: string;
   /** The quick actions. */
   actions: readonly PaletteAction[];
   /** The URL search params each page link keeps. */

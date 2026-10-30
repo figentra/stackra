@@ -1,0 +1,26 @@
+{
+  "slug": "label",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/label.mdx",
+  "parts": [],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".label",
+      "description": "Base label styles with text styling"
+    },
+    {
+      "name": ".label--required",
+      "description": "or `[data-required=\"true\"] > .label` - Shows required asterisk indicator"
+    },
+    {
+      "name": ".label--disabled",
+      "description": "or `[data-disabled=\"true\"] .label` - Disabled state styling"
+    },
+    {
+      "name": ".label--invalid",
+      "description": "or `[data-invalid=\"true\"] .label` or `[aria-invalid=\"true\"] .label` - Invalid state styling (danger/red text color)"
+    }
+  ],
+  "a11y": "The Label component is built on the native HTML `<label>` element ([MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label)) and follows WAI-ARIA best practices:\n\n- Associates with form controls using the `htmlFor` attribute\n- Provides semantic HTML `<label>` element\n- Supports keyboard navigation when associated with form controls\n- Communicates required and invalid states to screen readers\n- Clicking the label focuses/activates the associated form control\n\n<RelatedComponents component=\"label\" />"
+}

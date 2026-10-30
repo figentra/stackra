@@ -1,0 +1,202 @@
+{
+  "slug": "avatar",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(media)/avatar.mdx",
+  "parts": [
+    {
+      "name": "Avatar",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Avatar content (Image and/or Fallback components)"
+        },
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'md'",
+          "description": "Size of the avatar"
+        },
+        {
+          "name": "variant",
+          "type": "'default' | 'soft'",
+          "default": "'default'",
+          "description": "Visual variant of the avatar"
+        },
+        {
+          "name": "color",
+          "type": "'default' | 'accent' | 'success' | 'warning' | 'danger'",
+          "default": "'accent'",
+          "description": "Color variant of the avatar"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "animation",
+          "type": "`\"disable-all\"` | `undefined`",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "alt",
+          "type": "string",
+          "default": "'Avatar'",
+          "description": "Alternative text description for accessibility"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Avatar.Image",
+      "props": [
+        {
+          "name": "source",
+          "type": "ImageSourcePropType",
+          "description": "Image source (required when `asChild={false}`)"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to use a custom image component as child"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "animation",
+          "type": "AvatarImageAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "...AnimatedProps",
+          "type": "`AnimatedProps<ImageProps>` or primitive props",
+          "description": "Additional props based on `asChild` value"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number]",
+          "default": "[0, 1]",
+          "description": "Opacity values [initial, loaded] for image animation"
+        },
+        {
+          "name": "opacity.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 200, easing: Easing.in(Easing.ease) }",
+          "description": "Animation timing configuration"
+        }
+      ]
+    },
+    {
+      "name": "Avatar.Fallback",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Fallback content (text, icon, or custom element)"
+        },
+        {
+          "name": "delayMs",
+          "type": "number",
+          "default": "0",
+          "description": "Delay in milliseconds before showing the fallback (applied to entering animation)"
+        },
+        {
+          "name": "color",
+          "type": "'default' | 'accent' | 'success' | 'warning' | 'danger'",
+          "default": "inherited from parent",
+          "description": "Color variant of the fallback"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the container"
+        },
+        {
+          "name": "classNames",
+          "type": "ElementSlots<AvatarFallbackSlots>",
+          "description": "Additional CSS classes for different parts"
+        },
+        {
+          "name": "styles",
+          "type": "{ container?: ViewStyle; text?: TextStyle }",
+          "description": "Styles for different parts of the avatar fallback"
+        },
+        {
+          "name": "textProps",
+          "type": "TextProps",
+          "description": "Props to pass to Text component when children is a string"
+        },
+        {
+          "name": "iconProps",
+          "type": "PersonIconProps",
+          "description": "Props to customize the default person icon"
+        },
+        {
+          "name": "animation",
+          "type": "AvatarFallbackAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering.value",
+          "type": "EntryOrExitLayoutType",
+          "default": "`FadeIn`<br/>`.duration(200)`<br/>`.easing(Easing.in(Easing.ease))`<br/>`.delay(0)`",
+          "description": "Custom entering animation for fallback"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useAvatar Hook",
+      "signature": "useAvatar Hook()",
+      "returns": [
+        {
+          "name": "status",
+          "type": "'loading' | 'loaded' | 'error'",
+          "description": "Current loading state of the avatar image."
+        },
+        {
+          "name": "setStatus",
+          "type": "(status: 'loading' | 'loaded' | 'error') => void",
+          "description": "Function to manually set the avatar status (advanced usage)"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

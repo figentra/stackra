@@ -73,8 +73,8 @@ export class OrderResource extends Resource(Order, {
 ## Web rules
 
 - Vite and React Router 7 framework mode; no other React framework (ADR 0165).
-- HeroUI v3 through `@stackra/ui`; form adapters live in `@stackra/ui`, never in the app. HeroUI Pro only in our own
-  apps; free packages never depend on Pro components (ADR 0165, 0197).
+- HeroUI v3 through `@stackra/ui`; form adapters live in `@stackra/ui`, never in the app. No HeroUI Pro anywhere:
+  free HeroUI and Stackra's own components only (ADR 0165, 0469).
 - Strings are `<module>::key` i18n keys; logical properties; tokens only; light and dark (ADR 0080, 0231).
 - Budgets: entry 200 KB gzipped, route chunk 100 KB, LCP 2.5 s, INP 200 ms, CLS 0.1 (ADR 0183).
 

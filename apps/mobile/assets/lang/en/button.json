@@ -1,0 +1,37 @@
+{
+  "variants": {
+    "title": "Variants and sizes",
+    "note": "One row per size, one button per variant, each labelled with its variant name.",
+    "size": "Size {size}"
+  },
+  "states": {
+    "title": "States",
+    "note": "Each variant default, `isDisabled` and `isLoading`. A loading button refuses presses and reports busy.",
+    "default": "Default",
+    "disabled": "Disabled",
+    "loading": "Loading"
+  },
+  "icons": {
+    "title": "Icons",
+    "note": "`startIcon`, `endIcon` or both. The end icon is mirrored in right-to-left: switch to Arabic.",
+    "add": "Add",
+    "next": "Next",
+    "download": "Download"
+  },
+  "full_width": {
+    "title": "Full width",
+    "note": "`isFullWidth` stretches the button to its container.",
+    "primary": "Primary",
+    "secondary": "Secondary"
+  },
+  "live": {
+    "title": "Try it",
+    "note": "Press Save: it loads for a moment. The counter button counts presses; the disabled one does not.",
+    "save": "Save",
+    "saving": "Saving…",
+    "idle": "Idle.",
+    "count": "Count",
+    "count_disabled": "Count (disabled)",
+    "presses": "{count, plural, one {Pressed # time.} other {Pressed # times.}}"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "slug": "description",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/description.mdx",
+  "parts": [
+    {
+      "name": "Description",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Description text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "nativeID",
+          "type": "string",
+          "description": "Native ID for accessibility. Used to link description to form fields via aria-describedby."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the description is in an invalid state (overrides context)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the description is disabled (overrides context)"
+        },
+        {
+          "name": "hideOnInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to hide the description when invalid"
+        },
+        {
+          "name": "animation",
+          "type": "DescriptionAnimation | undefined",
+          "description": "Animation configuration for description transitions"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

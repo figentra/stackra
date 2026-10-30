@@ -1,0 +1,98 @@
+{
+  "slug": "number-field",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/number-field.mdx",
+  "parts": [
+    {
+      "name": "NumberFieldRenderProps",
+      "props": [
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the field is disabled."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the field is currently invalid."
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the field is read-only."
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "description": "Whether the field is required."
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the field is currently focused (DEPRECATED - use `isFocusWithin`)."
+        },
+        {
+          "name": "isFocusWithin",
+          "type": "boolean",
+          "description": "Whether any child element is focused."
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether focus is visible (keyboard navigation)."
+        },
+        {
+          "name": "value",
+          "type": "number | undefined",
+          "description": "Current value."
+        },
+        {
+          "name": "minValue",
+          "type": "number | undefined",
+          "description": "Minimum allowed value."
+        },
+        {
+          "name": "maxValue",
+          "type": "number | undefined",
+          "description": "Maximum allowed value."
+        },
+        {
+          "name": "step",
+          "type": "number",
+          "description": "Step value for increment/decrement."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".number-field",
+      "description": "Root container with minimal styling (`flex flex-col gap-1`)"
+    },
+    {
+      "name": ".number-field__group",
+      "description": "Container for input and buttons with border and background styling"
+    },
+    {
+      "name": ".number-field__input",
+      "description": "The numeric input field"
+    },
+    {
+      "name": ".number-field__increment-button",
+      "description": "Button to increment the value"
+    },
+    {
+      "name": ".number-field__decrement-button",
+      "description": "Button to decrement the value"
+    },
+    {
+      "name": ".number-field--primary",
+      "description": "Primary variant with shadow (default)"
+    },
+    {
+      "name": ".number-field--secondary",
+      "description": "Secondary variant without shadow, suitable for use in surfaces"
+    }
+  ]
+}

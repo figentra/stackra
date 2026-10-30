@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "ca17a11d3a46f37c",
+    "propsFiles": ["ui/src/native/number-ticker/number-ticker.props.ts"]
+  },
+  "importLine": "import { NumberTicker } from \"@stackra/ui/native\";",
+  "key": "free/number-ticker",
+  "parts": [
+    {
+      "name": "NumberTicker",
+      "props": [
+        {
+          "description": "The number to show; a change counts from the number on screen to the new one.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The number the first count starts from. Defaults to 0.",
+          "name": "from",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "How long a count takes, in milliseconds. Defaults to 900.",
+          "name": "duration",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "How the number is written (`Intl.NumberFormat` options), for example a currency or a fixed number of decimals.",
+          "name": "format",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

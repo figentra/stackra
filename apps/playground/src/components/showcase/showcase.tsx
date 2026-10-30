@@ -57,7 +57,7 @@ const DEPLOYS: readonly { name: string; version: string; status: string; tone: T
   { name: "Sara Kim", version: "v2.13.9", status: "Failed", tone: "danger" },
 ];
 
-const CARD = "material-thick rounded-3xl";
+const CARD = "material-thick rounded-[var(--radius-container)]";
 
 /** Three composed scenes. */
 export function Showcase({ headingLevel }: ShowcaseProps) {

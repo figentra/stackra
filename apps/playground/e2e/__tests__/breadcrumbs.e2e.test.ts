@@ -14,6 +14,8 @@
 // @covers sta-350:FR-144 sta-350:FR-146 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +24,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/breadcrumbs?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Breadcrumbs" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Breadcrumbs", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -58,9 +62,13 @@ test("each trail is a named navigation over an ordered list, ending in the curre
   await expect(current).toHaveText("Order 1042");
   await expect(current).not.toHaveAttribute("href", /.*/);
   // Every landmark has its own name, so a screen reader's landmark list tells them apart.
-  const names = await page
-    .locator("nav[aria-label]")
-    .evaluateAll((navs) => navs.map((nav) => nav.getAttribute("aria-label")));
+  const names = await page.locator("nav[aria-label]").evaluateAll((navs) =>
+    navs
+      // The preview copies are hidden from assistive tech, and the "On this page" menu or rail the width does not
+      // draw is display: none, so neither is a landmark.
+      .filter((nav) => nav.checkVisibility() && !nav.closest('[aria-hidden="true"]'))
+      .map((nav) => nav.getAttribute("aria-label")),
+  );
   expect(new Set(names).size).toBe(names.length);
 });
 
@@ -107,10 +115,8 @@ for (const locale of LOCALES)
     page,
   }) => {
     await open(page, "light", locale);
-    const first = page
-      .getByRole("navigation", { name: "Order location" })
-      .locator("ol > li")
-      .first();
+    // By place: the trail's name speaks the page's locale.
+    const first = example(page, "usage").getByRole("navigation").locator("ol > li").first();
     const [link, separator] = await Promise.all([
       first.getByRole("link").boundingBox(),
       first.locator("[data-slot='breadcrumbs-separator']").boundingBox(),

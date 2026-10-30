@@ -1,0 +1,11 @@
+{
+  "size": "Size {size}",
+  "settings": "Settings",
+  "delete": "Delete",
+  "disabled": "Disabled",
+  "loading": "Loading",
+  "count": "Count presses",
+  "load": "Load",
+  "presses": "{count, plural, one {Pressed # time.} other {Pressed # times.}}",
+  "load_state": "{is_loading, select, true {Loading…} other {Idle.}}"
+}

@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "storage": "Storage, Riyadh cluster",
+    "cpu": "CPU",
+    "disk": "Backup disk"
+  },
+  "score": {
+    "label": "Rating, Al Olaya branch",
+    "value": "4.6 out of 5"
+  },
+  "arabic": {
+    "label": "مساحة التخزين"
+  }
+}

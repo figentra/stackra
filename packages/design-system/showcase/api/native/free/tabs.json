@@ -1,0 +1,221 @@
+{
+  "generatedFrom": {
+    "hash": "485444419ac0ad4b",
+    "heroDoc": "vendor/heroui/native/tabs.json",
+    "propsFiles": ["ui/src/native/tabs/tabs.props.ts"]
+  },
+  "importLine": "import { Tabs } from \"@stackra/ui/native\";",
+  "key": "free/tabs",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
+          "name": "onSelectionChange",
+          "replaces": "onValueChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        }
+      ],
+      "extends": "Tabs",
+      "name": "Tabs",
+      "props": [
+        {
+          "description": "The spoken name of the tab list, for example \"Order sections\"; name it when a page holds more than one.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "horizontal",
+          "description": "The axis the tabs run along. Defaults to `horizontal`; native has no vertical tabs and reads it as horizontal.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "default": "primary",
+          "description": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "True to show every tab but refuse selecting any of them.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TabItem[]"
+        },
+        {
+          "description": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
+          "name": "emptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
+          "name": "loadingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
+          "name": "selectedKeys",
+          "replaces": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids selected at the start, for an uncontrolled collection.",
+          "name": "defaultSelectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "\"disable-all\""
+        },
+        {
+          "description": "",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Additional CSS classes for the container",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "heroui",
+          "type": "Ref<View>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "All standard React Native View props are supported",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

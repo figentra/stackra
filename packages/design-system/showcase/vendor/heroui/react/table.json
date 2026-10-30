@@ -1,0 +1,398 @@
+{
+  "slug": "table",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(data-display)/table.mdx",
+  "parts": [
+    {
+      "name": "Table",
+      "props": [
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "default": "\"primary\"",
+          "description": "Visual variant. Primary has a gray background container; secondary is flat with transparent rows."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the root container"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Table content (ScrollContainer, Footer, etc.)"
+        }
+      ]
+    },
+    {
+      "name": "Table.ScrollContainer",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Table.Content element"
+        }
+      ]
+    },
+    {
+      "name": "Table.Content",
+      "props": [
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "Accessible label for the table"
+        },
+        {
+          "name": "selectionMode",
+          "type": "\"none\" | \"single\" | \"multiple\"",
+          "default": "\"none\"",
+          "description": "Selection behavior"
+        },
+        {
+          "name": "selectedKeys",
+          "type": "Selection",
+          "description": "Controlled selected keys"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(keys: Selection) => void",
+          "description": "Selection change handler"
+        },
+        {
+          "name": "sortDescriptor",
+          "type": "SortDescriptor",
+          "description": "Current sort state"
+        },
+        {
+          "name": "onSortChange",
+          "type": "(descriptor: SortDescriptor) => void",
+          "description": "Sort change handler"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Table.Header",
+      "props": [
+        {
+          "name": "columns",
+          "type": "T[]",
+          "description": "Dynamic column data for render prop pattern"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (column: T) => React.ReactNode",
+          "description": "Static columns or render prop"
+        }
+      ]
+    },
+    {
+      "name": "Table.Column",
+      "props": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Column identifier"
+        },
+        {
+          "name": "allowsSorting",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the column is sortable"
+        },
+        {
+          "name": "isRowHeader",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether this column is a row header"
+        },
+        {
+          "name": "defaultWidth",
+          "type": "string | number",
+          "description": "Default width for resizable columns"
+        },
+        {
+          "name": "minWidth",
+          "type": "number",
+          "description": "Minimum width for resizable columns"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (values: ColumnRenderProps) => React.ReactNode",
+          "description": "Column content or render prop with sort direction"
+        }
+      ]
+    },
+    {
+      "name": "Table.Body",
+      "props": [
+        {
+          "name": "items",
+          "type": "T[]",
+          "description": "Dynamic row data for render prop pattern"
+        },
+        {
+          "name": "renderEmptyState",
+          "type": "() => React.ReactNode",
+          "description": "Content to display when the table is empty"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (item: T) => React.ReactNode",
+          "description": "Static rows or render prop"
+        }
+      ]
+    },
+    {
+      "name": "Table.Row",
+      "props": [
+        {
+          "name": "id",
+          "type": "string | number",
+          "description": "Row identifier"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Row cells"
+        }
+      ]
+    },
+    {
+      "name": "Table.Cell",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Cell content"
+        }
+      ]
+    },
+    {
+      "name": "Table.Footer",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Footer content (e.g., pagination)"
+        }
+      ]
+    },
+    {
+      "name": "Table.ColumnResizer",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Table.ResizableContainer",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Table.Content element"
+        }
+      ]
+    },
+    {
+      "name": "Table.LoadMore",
+      "props": [
+        {
+          "name": "isLoading",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether data is currently loading"
+        },
+        {
+          "name": "onLoadMore",
+          "type": "() => void",
+          "description": "Handler called when the sentinel row is visible"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Loading indicator content"
+        }
+      ]
+    },
+    {
+      "name": "Table.LoadMoreContent",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Loading indicator content (e.g., Spinner)"
+        }
+      ]
+    },
+    {
+      "name": "Table.Collection",
+      "props": [
+        {
+          "name": "items",
+          "type": "T[]",
+          "description": "Collection items"
+        },
+        {
+          "name": "children",
+          "type": "(item: T) => React.ReactNode",
+          "description": "Render prop for each item"
+        }
+      ]
+    },
+    {
+      "name": "TableLayout",
+      "props": [
+        {
+          "name": "rowHeight",
+          "type": "number | undefined",
+          "default": "48",
+          "description": "The fixed height of a row in px."
+        },
+        {
+          "name": "estimatedRowHeight",
+          "type": "number | undefined",
+          "default": "—",
+          "description": "The estimated height of a row, when row heights are variable."
+        },
+        {
+          "name": "headingHeight",
+          "type": "number | undefined",
+          "default": "48",
+          "description": "The fixed height of a section header in px."
+        },
+        {
+          "name": "estimatedHeadingHeight",
+          "type": "number | undefined",
+          "default": "—",
+          "description": "The estimated height of a section header, when the height is variable."
+        },
+        {
+          "name": "loaderHeight",
+          "type": "number | undefined",
+          "default": "48",
+          "description": "The fixed height of a loader element in px. This loader is specifically for \"load more\" elements rendered when loading more rows at the root level or inside nested row/sections."
+        },
+        {
+          "name": "dropIndicatorThickness",
+          "type": "number | undefined",
+          "default": "2",
+          "description": "The thickness of the drop indicator."
+        },
+        {
+          "name": "gap",
+          "type": "number | undefined",
+          "default": "0",
+          "description": "The gap between items."
+        },
+        {
+          "name": "padding",
+          "type": "number | undefined",
+          "default": "0",
+          "description": "The padding around the list."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".table-root",
+      "description": "Root container (named `table-root` instead of `table` because `table` is a built-in Tailwind CSS utility class for `display: table`)"
+    },
+    {
+      "name": ".table__scroll-container",
+      "description": "Horizontal scroll wrapper with custom scrollbar"
+    },
+    {
+      "name": ".table__content",
+      "description": "The `<table>` element"
+    },
+    {
+      "name": ".table__header",
+      "description": "Header row (`<thead>`)"
+    },
+    {
+      "name": ".table__column",
+      "description": "Column header cell (`<th>`)"
+    },
+    {
+      "name": ".table__body",
+      "description": "Body section (`<tbody>`)"
+    },
+    {
+      "name": ".table__row",
+      "description": "Row element (`<tr>`)"
+    },
+    {
+      "name": ".table__cell",
+      "description": "Data cell (`<td>`)"
+    },
+    {
+      "name": ".table__footer",
+      "description": "Footer container (outside table)"
+    },
+    {
+      "name": ".table__column-resizer",
+      "description": "Drag handle for column resizing"
+    },
+    {
+      "name": ".table__resizable-container",
+      "description": "Wrapper enabling column resizing"
+    },
+    {
+      "name": ".table__load-more",
+      "description": "Sentinel row for infinite scrolling"
+    },
+    {
+      "name": ".table__load-more-content",
+      "description": "Styled container for the loading indicator"
+    },
+    {
+      "name": ".table-root--primary",
+      "description": "Gray background container with card-style body (default)"
+    },
+    {
+      "name": ".table-root--secondary",
+      "description": "No background, standalone rounded headers"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "generatedFrom": {
+    "hash": "f9a4a354a6cb8811",
+    "propsFiles": ["ui/src/react/year-picker/year-picker.props.ts"]
+  },
+  "importLine": "import { YearPicker } from \"@stackra/ui/react\";",
+  "key": "free/year-picker",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the year chosen.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(year: number) => void"
+        }
+      ],
+      "name": "YearPicker",
+      "props": [
+        {
+          "description": "The chosen Gregorian year, for a controlled picker.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "number | null"
+        },
+        {
+          "description": "The starting year, for an uncontrolled picker.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number | null"
+        },
+        {
+          "description": "The first year; defaults to 10 years before this one.",
+          "name": "minYear",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The last year; defaults to 10 years after this one.",
+          "name": "maxYear",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "default": "gregory",
+          "description": "The calendar the years are written in; `islamic-umalqura` adds the Hijri year under each. Defaults to `gregory`.",
+          "name": "calendar",
+          "required": false,
+          "source": "stackra",
+          "type": "\"gregory\" | \"islamic-umalqura\""
+        },
+        {
+          "description": "The spoken name of the grid.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse every change.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the grid.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,21 @@
+{
+  "title_only": "Title only",
+  "back_button": "With a back button",
+  "back_link": "With a back link",
+  "slots": "Start and end slots",
+  "long": "A long title shortens",
+  "long_title": "Order 10482 from Acme Wholesale Distribution and Fulfilment Services International",
+  "large": "A large title",
+  "title": "Orders",
+  "order_title": "Order 10482",
+  "back_home": "Back to home",
+  "notifications": "Notifications",
+  "add": "Add order",
+  "large_switch": "Large title",
+  "back_status": "{count, plural, =0 {Back not pressed yet.} one {Back pressed once.} other {Back pressed # times.}}",
+  "action_status": "{count, plural, =0 {No orders added yet.} one {# order added.} other {# orders added.}}",
+  "title_status": "{is_large, select, true {The title is large, under the bar.} other {The title is compact, in the bar.}}",
+  "arabic_title": "الطلبات",
+  "arabic_back": "رجوع",
+  "arabic_notifications": "الإشعارات"
+}

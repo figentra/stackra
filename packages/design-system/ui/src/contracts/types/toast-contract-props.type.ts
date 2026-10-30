@@ -12,6 +12,7 @@
  */
 import type { FeedbackContractProps } from "#contracts/types/feedback-contract-props.type";
 import type { ToastAction } from "#contracts/types/toast-action.type";
+import type { ToastAvatar } from "#contracts/types/toast-avatar.type";
 
 /** The options of one toast, as the second argument of `toast(message, options)`. */
 export interface ToastContractProps extends FeedbackContractProps {
@@ -21,6 +22,8 @@ export interface ToastContractProps extends FeedbackContractProps {
   readonly action?: ToastAction | undefined;
   /** How long the toast stays, in milliseconds. 0 keeps it until it is dismissed. Defaults to 4000, or 8000 when the toast has an action. */
   readonly timeout?: number | undefined;
+  /** The person the toast is about, drawn in place of the tone icon; the `bubble` look is made for it. */
+  readonly avatar?: ToastAvatar | undefined;
   /** Called when the toast closes, whether it timed out, was dismissed or was closed from code. */
   readonly onClose?: (() => void) | undefined;
 }

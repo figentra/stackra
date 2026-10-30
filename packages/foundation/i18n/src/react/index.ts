@@ -10,6 +10,7 @@
 export { useDateTime } from "#react/formatting/use-date-time";
 export { useMoney } from "#react/formatting/use-money";
 export { useNumber } from "#react/formatting/use-number";
+export { useNumerals } from "#react/formatting/use-numerals";
 export { I18nProvider } from "#react/i18n-provider/i18n-provider";
 export type { I18nProviderProps } from "#react/i18n-provider/i18n-provider-props.type";
 export { useLocale } from "#react/locale/use-locale";

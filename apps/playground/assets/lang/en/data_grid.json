@@ -1,0 +1,23 @@
+{
+  "sheet_label": "Menu prices",
+  "matrix_label": "T-shirt stock by colour and size",
+  "hint": "Select cells and copy them into Excel or Google Sheets, or paste a block back in. Drag the corner square to fill down.",
+  "saved": "Saved",
+  "item": "Item",
+  "price": "Price",
+  "size": "Size",
+  "in_stock": "In stock",
+  "from": "On the menu from",
+  "colour": "Colour",
+  "small": "Small",
+  "large": "Large",
+  "latte": "Latte",
+  "mocha": "Mocha",
+  "flat_white": "Flat white",
+  "espresso": "Espresso",
+  "cortado": "Cortado",
+  "black": "Black",
+  "white": "White",
+  "olive": "Olive",
+  "price_rule": "Prices go up in steps of 0.5"
+}

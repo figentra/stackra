@@ -1,0 +1,74 @@
+{
+  "generatedFrom": {
+    "hash": "ae2d86f2749baaee",
+    "propsFiles": ["ui/src/native/command-palette/command-palette.props.ts"]
+  },
+  "importLine": "import { CommandPalette } from \"@stackra/ui/native\";",
+  "key": "free/command-palette",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the id of the command chosen; the palette then closes.",
+          "name": "onAction",
+          "required": true,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "CommandPalette",
+      "props": [
+        {
+          "description": "The groups of commands to offer, in order.",
+          "name": "sections",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly CommandSection[]"
+        },
+        {
+          "description": "The search field's hint; \"Search commands\" by default.",
+          "name": "placeholder",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key that opens it with Cmd or Ctrl (web); `k` by default, `false` for none.",
+          "name": "hotkey",
+          "required": false,
+          "source": "stackra",
+          "type": "string | false"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

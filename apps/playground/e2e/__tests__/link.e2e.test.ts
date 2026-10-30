@@ -13,6 +13,8 @@
 // @covers sta-350:FR-025 sta-350:FR-026 sta-350:FR-028 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -21,7 +23,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/link?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Link" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Link", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -48,9 +52,10 @@ test("an internal link navigates without a reload, keeps the display and focuses
   await page.evaluate(() => {
     (window as unknown as { marker: string }).marker = "kept";
   });
-  await page.getByRole("link", { name: "Go to Foundations" }).click();
+  // By id: the link's name speaks the page's locale.
+  await example(page, "router").getByRole("link").click();
   await expect(page).toHaveURL(/\/foundations\?scheme=dark&locale=ar$/);
-  const heading = page.getByRole("heading", { level: 1, name: "Foundations" });
+  const heading = page.getByRole("heading", { level: 1, name: pageTitle("Foundations", "ar") });
   await expect(heading).toBeFocused();
   expect(await page.evaluate(() => (window as unknown as { marker?: string }).marker)).toBe("kept");
 });
@@ -87,7 +92,8 @@ test("the keyboard reaches the press-only link and skips the disabled one", asyn
 for (const locale of LOCALES)
   test(`the external mark sits at the inline end in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const link = page.getByRole("link", { name: "HeroUI documentation" });
+    // By place: the link's name speaks the page's locale.
+    const link = example(page, "external").getByRole("link").first();
     const [mark, box] = await Promise.all([
       link.locator("[data-slot='link-icon']").boundingBox(),
       link.boundingBox(),
@@ -101,7 +107,8 @@ for (const scheme of SCHEMES)
   test(`every link inside a paragraph is underlined in ${scheme}`, async ({ page }) => {
     await open(page, scheme, "en");
     const links = page.locator("main p a");
-    expect(await links.count()).toBeGreaterThan(0);
+    // The demos load lazily: wait for the running-text example's link before reading them.
+    await expect(page.locator("section#example-running p a").first()).toBeVisible();
     const lines = await links.evaluateAll((anchors) =>
       anchors.map((anchor) => getComputedStyle(anchor).textDecorationLine),
     );

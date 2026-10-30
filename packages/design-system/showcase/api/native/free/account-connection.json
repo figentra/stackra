@@ -1,0 +1,244 @@
+{
+  "generatedFrom": {
+    "hash": "a8a12ddf9c6ac9fc",
+    "propsFiles": ["ui/src/native/account-connection/account-connection.props.ts"]
+  },
+  "importLine": "import { AccountConnection } from \"@stackra/ui/native\";",
+  "key": "free/account-connection",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the connect button is pressed.",
+          "name": "onConnect",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called when the disconnect button is pressed.",
+          "name": "onDisconnect",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "AccountConnection",
+      "props": [
+        {
+          "description": "The service's name, for example \"Stripe\" or \"Talabat\".",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What connecting does, under the name.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The service's logo, usually a square `Avatar`. Decorative: the name beside it is read.",
+          "name": "logo",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when an account is connected.",
+          "name": "isConnected",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The connected account, for example its email or store id; shown only while connected.",
+          "name": "accountName",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The status while connected, for example \"Connected\".",
+          "name": "connectedLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The status while not connected, for example \"Not connected\".",
+          "name": "disconnectedLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The connect button's label.",
+          "name": "connectLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The disconnect button's label.",
+          "name": "disconnectLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True while connecting or disconnecting: the button shows a spinner and refuses presses.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "A footnote under the row, usually the terms the user accepts by connecting.",
+          "name": "details",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The surface level of the card; `transparent` drops the background and shadow. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"secondary\" | \"tertiary\" | \"transparent\""
+        },
+        {
+          "description": "Animation configuration for surface\n- `\"disable-all\"`: Disable all animations including children\n- `undefined`: Use default animations",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "\"disable-all\""
+        },
+        {
+          "default": "false",
+          "description": "When `true`, merges surface styling onto the single child element (Slot pattern).\nThe child must be one React element. Uses `Slot.View` internally.",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Background layer rendered behind the surface content.\n- `undefined` (default): renders `Surface.Background` for non-transparent\n  variants when the active library theme registers default background\n  content (e.g. `glass`); otherwise no layer\n- custom node: replaces the default layer entirely (wrap content in\n  `Surface.Background` to keep the absolute-fill and clipping)\n- `null`: removes the background layer\n\nNot injected when `asChild` is `true` — the Slot pattern requires a\nsingle child; render `Surface.Background` inside your child instead.",
+          "name": "background",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "heroui",
+          "type": "Ref<View>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

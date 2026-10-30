@@ -1,0 +1,39 @@
+{
+  "orders": {
+    "label": "Filter orders",
+    "status": "Payment status",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "refunded": "Refunded",
+    "channel": "Channel",
+    "online": "Online",
+    "in_store": "In store",
+    "total": "Order total",
+    "all": "All orders",
+    "view_unpaid": "Awaiting payment",
+    "view_refunds": "Refunds",
+    "date": "Date",
+    "customer": "Customer"
+  },
+  "products": {
+    "label": "Filter products",
+    "category": "Category",
+    "drinks": "Drinks",
+    "food": "Food",
+    "merch": "Merchandise",
+    "in_stock": "In stock",
+    "price": "Price",
+    "name": "Name"
+  },
+  "tickets": {
+    "label": "Filter tickets",
+    "priority": "Priority",
+    "high": "High",
+    "normal": "Normal",
+    "low": "Low",
+    "mine": "Assigned to me",
+    "open": "Open",
+    "view_mine": "My tickets",
+    "closed": "Closed"
+  }
+}

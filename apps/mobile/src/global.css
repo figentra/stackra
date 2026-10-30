@@ -6,3 +6,5 @@
 @import "@stackra/tokens/themes/stackra/native.css";
 
 @source "../node_modules/heroui-native/lib";
+/* The native components of @stackra/ui: their class names are generated only when Tailwind scans their source. */
+@source "../../../packages/design-system/ui/src/native";

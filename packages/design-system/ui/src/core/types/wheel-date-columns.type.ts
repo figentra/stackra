@@ -1,0 +1,16 @@
+/**
+ * Stackra file contract:
+ * Purpose: `WheelDateColumns`, the wheels of a WheelDatePicker and the day as their keys.
+ * Boundary: types only.
+ * Runtime: isomorphic
+ * Governing contract: wave 3a forms and pickers (owner approval 2026-10-28); ADR 0305 (rules 10 to 13).
+ */
+import type { WheelPickerColumn } from "#contracts/types/wheel-picker-column.type";
+
+/** The wheels and the value as their keys. */
+export interface WheelDateColumns {
+  /** The day, month and year wheels, in locale order. */
+  readonly columns: readonly WheelPickerColumn[];
+  /** The chosen item key of each wheel, by wheel key. */
+  readonly value: Readonly<Record<string, string>>;
+}

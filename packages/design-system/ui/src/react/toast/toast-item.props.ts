@@ -8,6 +8,7 @@
  */
 import type { ToastContentValue } from "@heroui/react";
 import type { QueuedToast } from "react-aria-components/Toast";
+import type { ToastVariant } from "#contracts/enums/toast-variant.enum";
 
 /** Props of ToastItem. */
 export interface ToastItemProps {
@@ -15,4 +16,6 @@ export interface ToastItemProps {
   readonly toast: QueuedToast<ToastContentValue>;
   /** The accessible name of the dismiss button. */
   readonly dismissLabel: string;
+  /** The look the provider gives every toast. Defaults to `alert`. */
+  readonly variant?: ToastVariant | undefined;
 }

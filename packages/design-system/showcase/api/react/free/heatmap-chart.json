@@ -1,0 +1,79 @@
+{
+  "generatedFrom": {
+    "hash": "2b52359366a1c20c",
+    "propsFiles": ["ui/src/react/heatmap-chart/heatmap-chart.props.ts"]
+  },
+  "importLine": "import { HeatmapChart } from \"@stackra/ui/react\";",
+  "key": "free/heatmap-chart",
+  "parts": [
+    {
+      "name": "HeatmapChart",
+      "props": [
+        {
+          "description": "One row per cell.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly Readonly<Record<string, string | number | null | undefined>>[]"
+        },
+        {
+          "description": "The key of each cell's column category, such as the hour.",
+          "name": "xKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each cell's row category, such as the weekday.",
+          "name": "yKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each cell's number.",
+          "name": "valueKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Orders by hour and weekday\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How values are written; plain numbers in the locale by default.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The colour the shades are mixed from; the first step of the accent ramp by default.",
+          "name": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"danger\" | \"accent\" | \"success\" | \"warning\" | \"chart-ramp-1\" | \"chart-ramp-2\" | \"chart-ramp-3\" | \"chart-ramp-4\" | \"chart-ramp-5\" | \"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\""
+        },
+        {
+          "description": "Shows the \"Less … More\" scale under the grid; on by default.",
+          "name": "showLegend",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Classes for the figure, such as a width or margin.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

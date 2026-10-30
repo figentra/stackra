@@ -107,7 +107,7 @@ export function AlertDialog({
         >
           {drawn === undefined ? null : (
             <View
-              className="mb-3 size-10 items-center justify-center rounded-3xl"
+              className="mb-3 size-10 items-center justify-center rounded-[var(--radius-container)]"
               style={{ backgroundColor: background }}
             >
               <LucideProvider size={ICON_SIZES.md} color={foreground}>

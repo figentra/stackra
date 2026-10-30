@@ -1,0 +1,15 @@
+{
+  "store": "Branch name",
+  "store_value": "Olaya branch",
+  "product": "Product name (Arabic)",
+  "product_value": "قهوة عربية بالهيل",
+  "note": "Kitchen note",
+  "note_placeholder": "Add a note",
+  "sku": "SKU",
+  "sku_error": "Use two capital letters, a dash and four digits, like CF-0042.",
+  "name_required": "Enter a name.",
+  "read_only": "VAT number",
+  "tax_value": "300123456700003",
+  "disabled": "Branch name (locked)",
+  "saved": "Saved: {value}"
+}

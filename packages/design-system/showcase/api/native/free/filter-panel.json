@@ -1,0 +1,180 @@
+{
+  "generatedFrom": {
+    "hash": "f02a559477b6fc49",
+    "propsFiles": ["ui/src/native/filter-panel/filter-panel.props.ts"]
+  },
+  "importLine": "import { FilterPanel } from \"@stackra/ui/native\";",
+  "key": "free/filter-panel",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with a view's id when it is chosen, after `onQueryChange` has its query.",
+          "name": "onViewChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with the whole next query each time the user changes any part of it.",
+          "name": "onQueryChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(query: ResourceQuery) => void"
+        }
+      ],
+      "name": "FilterPanel",
+      "props": [
+        {
+          "description": "The facets, in the order the panel lists them; `id`s are unique in the list.",
+          "name": "filters",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly FilterDefinition[]"
+        },
+        {
+          "description": "The panel's heading and accessible name, for example \"Filter products\".",
+          "name": "label",
+          "replaces": "accessibilityLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How many records each option of a choice facet would match, by filter `id` then option `id`.",
+          "name": "counts",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, Readonly<Record<string, number>>>>"
+        },
+        {
+          "description": "How many records the query matches; it rolls to its new value when it changes.",
+          "name": "resultCount",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The saved views, drawn as tabs above the chips; choosing one applies its whole query.",
+          "name": "views",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SavedView[]"
+        },
+        {
+          "description": "The id of the view in force; left out, the first view is shown as chosen.",
+          "name": "activeViewId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The columns the sort menu offers; left out or empty, there is no sort menu.",
+          "name": "sortOptions",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SortOption[]"
+        },
+        {
+          "description": "The query in force: the search text, the applied filters and the sort.",
+          "name": "query",
+          "required": true,
+          "source": "stackra",
+          "type": "ResourceQuery"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

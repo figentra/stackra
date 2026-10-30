@@ -1,0 +1,51 @@
+{
+  "generatedFrom": {
+    "hash": "9e6d6129c608e68f",
+    "propsFiles": ["ui/src/react/truncate/truncate.props.ts"]
+  },
+  "importLine": "import { Truncate } from \"@stackra/ui/react\";",
+  "key": "free/truncate",
+  "parts": [
+    {
+      "name": "Truncate",
+      "props": [
+        {
+          "description": "The text to clip and expand.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How many lines show while closed; defaults to 3.",
+          "name": "lines",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "`expand` (the default) adds Show more and Show less; `tooltip` shows the whole text on hover and focus (web; native expands).",
+          "name": "mode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"expand\" | \"tooltip\""
+        },
+        {
+          "description": "The starting state, for an uncontrolled expand.",
+          "name": "defaultExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

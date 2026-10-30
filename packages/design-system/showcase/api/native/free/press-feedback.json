@@ -1,0 +1,189 @@
+{
+  "generatedFrom": {
+    "hash": "65dfcf8744c11f14",
+    "propsFiles": ["ui/src/native/press-feedback/press-feedback.props.ts"]
+  },
+  "importLine": "import { PressFeedback } from \"@stackra/ui/native\";",
+  "key": "free/press-feedback",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called on a press, by pointer, touch or keyboard.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "PressFeedback",
+      "props": [
+        {
+          "description": "What is pressed.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The accessible name when the content does not say it.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "scale",
+          "description": "How the press shows. Defaults to `scale`.",
+          "name": "feedback",
+          "required": false,
+          "source": "stackra",
+          "type": "\"scale\" | \"highlight\" | \"ripple\""
+        },
+        {
+          "description": "True to refuse presses and drop the feedback.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Animation configuration for the root component.\n\n- Leave `undefined` or `true` for the default built-in scale animation.\n- Provide an object with `scale` to customize the built-in scale:\n  ```tsx\n  <PressableFeedback animation={{ scale: { value: 0.97 } }}>\n    {content}\n  </PressableFeedback>\n  ```\n- Set to `false` or `\"disabled\"` to disable the built-in scale (use when applying\n  scale via `PressableFeedback.Scale` on a specific child instead).\n- Set to `'disable-all'` to cascade-disable all animations including children.",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "PressableFeedbackRootAnimation"
+        },
+        {
+          "default": "false",
+          "description": "When `true`, merges press behavior and animated scale onto the single child (Slot pattern).\nThe child must be one React element. Uses `Animated.createAnimatedComponent(Slot.Pressable)` internally.",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "default": "true",
+          "description": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
+          "name": "isAnimatedStyleActive",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Either view styles or a function that receives a boolean reflecting whether\nthe component is currently pressed and returns view styles.",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<AnimatedStyle<StyleProp<ViewStyle> | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>)>>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...PressableProps",
+          "required": false,
+          "source": "heroui",
+          "type": "PressableProps"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

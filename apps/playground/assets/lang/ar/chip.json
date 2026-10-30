@@ -1,0 +1,14 @@
+{
+  "size": "المقاس {size}",
+  "variant_column": "النمط",
+  "start": "موثَّق",
+  "end": "التالي",
+  "both": "معتمد",
+  "sentence_prefix": "هذا الطلب",
+  "sentence_suffix": "ويُشحن غدًا.",
+  "sentence_chip": "في الموعد",
+  "categories": "الفئات",
+  "next_variant": "النمط التالي",
+  "next_tone": "النبرة التالية",
+  "current": "{variant}، {tone}"
+}

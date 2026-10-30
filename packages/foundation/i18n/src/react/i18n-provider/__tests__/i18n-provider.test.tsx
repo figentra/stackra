@@ -29,6 +29,12 @@ class ArabicDigitsConfig extends I18nConfig {
   override numerals: NumberingSystem = NumberingSystem.Arab;
 }
 
+class ScopeDigitsConfig extends I18nConfig {
+  override locales: Locale[] = [Locale.En, Locale.Ar];
+
+  override scopeChoosesNumerals = true;
+}
+
 class DutchClockConfig extends I18nConfig {
   override locales: Locale[] = [Locale.En, Locale.Nl];
 
@@ -71,6 +77,26 @@ describe("I18nProvider", () => {
     expect(states[0]?.format).toEqual({ weekStart: 6, hourCycle: "h12" });
     expect(states[0]?.messages).toBe(messages);
     expect(states[0]?.config.locales).toEqual(["en", "ar"]);
+  });
+
+  it("takes the customer's digits where a scope may choose them, and the configured default otherwise", async () => {
+    const states: I18nState[] = [];
+    const tree = (type: typeof I18nConfig, numerals?: NumberingSystem) => async () =>
+      renderToString(
+        <ContainerProvider container={await containerWith(type)}>
+          <I18nProvider locale={Locale.En} messages={{}} numerals={numerals}>
+            <Probe onState={(state) => states.push(state)} />
+          </I18nProvider>
+        </ContainerProvider>,
+      );
+    await tree(ScopeDigitsConfig, NumberingSystem.Arab)();
+    await tree(ScopeDigitsConfig)();
+    await tree(I18nConfig, NumberingSystem.Arab)();
+    expect(states.map(({ numerals, intlLocale }) => [numerals, intlLocale])).toEqual([
+      ["arab", "en-u-hc-h12-nu-arab"],
+      ["latn", "en-u-hc-h12-nu-latn"],
+      ["latn", "en-u-hc-h12-nu-latn"],
+    ]);
   });
 
   it("applies the locale's clock and the configured week start override", async () => {

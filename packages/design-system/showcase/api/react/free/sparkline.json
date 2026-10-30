@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "b25607416fb87f1a",
+    "propsFiles": ["ui/src/react/sparkline/sparkline.props.ts"]
+  },
+  "importLine": "import { Sparkline } from \"@stackra/ui/react\";",
+  "key": "free/sparkline",
+  "parts": [
+    {
+      "name": "Sparkline",
+      "props": [
+        {
+          "description": "The values, oldest first.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly number[]"
+        },
+        {
+          "description": "The accessible name, such as \"Revenue, last 12 weeks\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "`line` (the default), `area` or `bar`.",
+          "name": "kind",
+          "required": false,
+          "source": "stackra",
+          "type": "\"area\" | \"line\" | \"bar\""
+        },
+        {
+          "description": "Its theme colour; `accent` by default.",
+          "name": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"danger\" | \"accent\" | \"success\" | \"warning\" | \"chart-ramp-1\" | \"chart-ramp-2\" | \"chart-ramp-3\" | \"chart-ramp-4\" | \"chart-ramp-5\" | \"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\""
+        },
+        {
+          "description": "How the spoken values are written.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "Its height in pixels; 32 by default. It fills its container's width.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Classes for the figure, such as a width or margin.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,750 @@
+{
+  "slug": "select",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/select.mdx",
+  "parts": [
+    {
+      "name": "Select",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The content of the select"
+        },
+        {
+          "name": "value",
+          "type": "SelectOption | SelectOption[]",
+          "description": "The selected value(s) (controlled mode)"
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: SelectOption | SelectOption[]) => void",
+          "description": "Callback when the value changes"
+        },
+        {
+          "name": "defaultValue",
+          "type": "SelectOption | SelectOption[]",
+          "description": "The default selected value(s) (uncontrolled mode)"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Whether the select is open (controlled mode)"
+        },
+        {
+          "name": "isDefaultOpen",
+          "type": "boolean",
+          "description": "Whether the select is open when initially rendered (uncontrolled mode)"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Callback when the select open state changes"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the select is disabled"
+        },
+        {
+          "name": "presentation",
+          "type": "'popover' | 'bottom-sheet' | 'dialog'",
+          "default": "'popover'",
+          "description": "Presentation mode for the select content"
+        },
+        {
+          "name": "animation",
+          "type": "SelectRootAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | 'disable-all' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering.value",
+          "type": "SpringAnimationConfig | TimingAnimationConfig",
+          "description": "Animation configuration for when select opens"
+        },
+        {
+          "name": "exiting.value",
+          "type": "SpringAnimationConfig | TimingAnimationConfig",
+          "description": "Animation configuration for when select closes"
+        }
+      ]
+    },
+    {
+      "name": "Select.Trigger",
+      "props": [
+        {
+          "name": "variant",
+          "type": "'default' | 'unstyled'",
+          "default": "'default'",
+          "description": "The variant of the trigger. `'default'` applies pre-styled container styles, `'unstyled'` removes default styling"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The trigger element content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the trigger"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the trigger is disabled"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Select.Value",
+      "props": [
+        {
+          "name": "placeholder",
+          "type": "string",
+          "description": "Placeholder text when no value is selected"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the value"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Select.TriggerIndicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom indicator content. Defaults to animated chevron icon"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the trigger indicator"
+        },
+        {
+          "name": "style",
+          "type": "ViewStyle",
+          "description": "Custom styles for the trigger indicator"
+        },
+        {
+          "name": "iconProps",
+          "type": "SelectTriggerIndicatorIconProps",
+          "description": "Chevron icon configuration"
+        },
+        {
+          "name": "animation",
+          "type": "SelectTriggerIndicatorAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "rotation.value",
+          "type": "[number, number]",
+          "default": "[0, -180]",
+          "description": "Rotation values [closed, open] in degrees"
+        },
+        {
+          "name": "rotation.springConfig",
+          "type": "WithSpringConfig",
+          "default": "{ damping: 140, stiffness: 1000, mass: 4 }",
+          "description": "Spring animation configuration for rotation"
+        }
+      ]
+    },
+    {
+      "name": "Select.Portal",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The portal content (required)"
+        },
+        {
+          "name": "disableFullWindowOverlay",
+          "type": "boolean",
+          "default": "false",
+          "description": "When true on iOS, uses View instead of FullWindowOverlay. Enables element inspector; overlay won't appear above native modals"
+        },
+        {
+          "name": "unstable_accessibilityContainerViewIsModal",
+          "type": "boolean",
+          "default": "false",
+          "description": "Controls whether VoiceOver treats the overlay window as a modal container. When `true`, VoiceOver is restricted to elements inside the overlay. iOS only. Unstable: may change with react-native-screens updates"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the portal container"
+        },
+        {
+          "name": "hostName",
+          "type": "string",
+          "description": "Optional name of the host element for the portal"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Whether to force mount the component in the DOM"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Select.Overlay",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the overlay"
+        },
+        {
+          "name": "animation",
+          "type": "SelectOverlayAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "closeOnPress",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether to close the select when overlay is pressed"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Whether to force mount the component in the DOM"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number, number]",
+          "default": "[0, 1, 0]",
+          "description": "Opacity values [idle, open, close] (for bottom-sheet/dialog presentation)"
+        },
+        {
+          "name": "entering",
+          "type": "EntryOrExitLayoutType",
+          "description": "Custom Keyframe animation for entering transition (for popover presentation)"
+        },
+        {
+          "name": "exiting",
+          "type": "EntryOrExitLayoutType",
+          "description": "Custom Keyframe animation for exiting transition (for popover presentation)"
+        }
+      ]
+    },
+    {
+      "name": "Select.Content (Popover Presentation)",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The select content"
+        },
+        {
+          "name": "width",
+          "type": "number | 'trigger' | 'content-fit' | 'full'",
+          "default": "'content-fit'",
+          "description": "Width sizing strategy for the content"
+        },
+        {
+          "name": "presentation",
+          "type": "'popover'",
+          "default": "'popover'",
+          "description": "Presentation mode for the select"
+        },
+        {
+          "name": "placement",
+          "type": "'top' | 'bottom' | 'left' | 'right'",
+          "default": "'bottom'",
+          "description": "Placement of the content relative to trigger"
+        },
+        {
+          "name": "align",
+          "type": "'start' | 'center' | 'end'",
+          "default": "'center'",
+          "description": "Alignment along the placement axis"
+        },
+        {
+          "name": "avoidCollisions",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether to flip placement when close to viewport edges"
+        },
+        {
+          "name": "offset",
+          "type": "number",
+          "default": "8",
+          "description": "Distance from trigger element in pixels"
+        },
+        {
+          "name": "alignOffset",
+          "type": "number",
+          "default": "0",
+          "description": "Offset along the alignment axis in pixels"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the content container"
+        },
+        {
+          "name": "animation",
+          "type": "SelectContentPopoverAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Whether to force mount the component in the DOM"
+        },
+        {
+          "name": "insets",
+          "type": "Insets",
+          "description": "Screen edge insets to respect when positioning"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering",
+          "type": "EntryOrExitLayoutType",
+          "description": "Custom Keyframe animation for entering transition (default: Keyframe with translateY/translateX, scale, opacity based on placement, 200ms)"
+        },
+        {
+          "name": "exiting",
+          "type": "EntryOrExitLayoutType",
+          "description": "Custom Keyframe animation for exiting transition (default: Keyframe mirroring entering animation, 150ms)"
+        }
+      ]
+    },
+    {
+      "name": "Select.Content (Bottom Sheet Presentation)",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The bottom sheet content"
+        },
+        {
+          "name": "presentation",
+          "type": "'bottom-sheet'",
+          "description": "Presentation mode for the select"
+        },
+        {
+          "name": "contentContainerClassName",
+          "type": "string",
+          "description": "Additional CSS classes for the content container"
+        },
+        {
+          "name": "...BottomSheetProps",
+          "type": "BottomSheetProps",
+          "description": "All @gorhom/bottom-sheet props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Select.Content (Dialog Presentation)",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The dialog content"
+        },
+        {
+          "name": "presentation",
+          "type": "'dialog'",
+          "description": "Presentation mode for the select"
+        },
+        {
+          "name": "classNames",
+          "type": "{ wrapper?: string; content?: string }",
+          "description": "Additional CSS classes for wrapper and content"
+        },
+        {
+          "name": "styles",
+          "type": "Partial<Record<DialogContentFallbackSlots, ViewStyle>>",
+          "description": "Styles for different parts of the dialog content"
+        },
+        {
+          "name": "animation",
+          "type": "SelectContentAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isSwipeable",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether the dialog content can be swiped to dismiss"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Whether to force mount the component in the DOM"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering",
+          "type": "EntryOrExitLayoutType",
+          "description": "Custom Keyframe animation for entering transition (default: Keyframe with scale and opacity, 200ms)"
+        },
+        {
+          "name": "exiting",
+          "type": "EntryOrExitLayoutType",
+          "description": "Custom Keyframe animation for exiting transition (default: Keyframe mirroring entering animation, 150ms)"
+        }
+      ]
+    },
+    {
+      "name": "Select.ListLabel",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The label text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the list label"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Select.Item",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode | ((props: SelectItemRenderProps) => ReactNode)",
+          "description": "Custom item content. Defaults to label and indicator, or a render function"
+        },
+        {
+          "name": "value",
+          "type": "any",
+          "description": "The value associated with this item (required)"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "description": "The label text for this item (required)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether this item is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the item"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether this item is currently selected"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "The value of the item"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the item is disabled"
+        }
+      ]
+    },
+    {
+      "name": "Select.ItemLabel",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the item label"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Select.ItemDescription",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The description text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the item description"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Select.ItemIndicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom indicator content. Defaults to check icon"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the item indicator"
+        },
+        {
+          "name": "iconProps",
+          "type": "SelectItemIndicatorIconProps",
+          "description": "Check icon configuration"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useSelect",
+      "signature": "useSelect()",
+      "returns": [
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Whether the select is currently open"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "description": "Callback to change the open state"
+        },
+        {
+          "name": "isDefaultOpen",
+          "type": "boolean | undefined",
+          "description": "Whether the select is open by default (uncontrolled mode)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean | undefined",
+          "description": "Whether the select is disabled"
+        },
+        {
+          "name": "presentation",
+          "type": "'popover' | 'bottom-sheet' | 'dialog'",
+          "description": "Presentation mode for the select content"
+        },
+        {
+          "name": "triggerPosition",
+          "type": "LayoutPosition | null",
+          "description": "Position of the trigger element relative to viewport"
+        },
+        {
+          "name": "setTriggerPosition",
+          "type": "(position: LayoutPosition | null) => void",
+          "description": "Updates the trigger element's position"
+        },
+        {
+          "name": "contentLayout",
+          "type": "LayoutRectangle | null",
+          "description": "Layout measurements of the select content"
+        },
+        {
+          "name": "setContentLayout",
+          "type": "(layout: LayoutRectangle | null) => void",
+          "description": "Updates the content layout measurements"
+        },
+        {
+          "name": "nativeID",
+          "type": "string",
+          "description": "Unique identifier for the select instance"
+        },
+        {
+          "name": "value",
+          "type": "SelectOption | SelectOption[]",
+          "description": "Currently selected option"
+        },
+        {
+          "name": "onValueChange",
+          "type": "(option: SelectOption | SelectOption[]) => void",
+          "description": "Callback fired when the selected value changes"
+        }
+      ]
+    },
+    {
+      "name": "useSelectAnimation",
+      "signature": "useSelectAnimation()",
+      "returns": [
+        {
+          "name": "progress",
+          "type": "SharedValue<number>",
+          "description": "Progress value for animations (0=idle, 1=open, 2=close)"
+        },
+        {
+          "name": "isDragging",
+          "type": "SharedValue<boolean>",
+          "description": "Whether the select content is currently being dragged"
+        },
+        {
+          "name": "isGestureReleaseAnimationRunning",
+          "type": "SharedValue<boolean>",
+          "description": "Whether the gesture release animation is currently running"
+        }
+      ]
+    },
+    {
+      "name": "useSelectItem",
+      "signature": "useSelectItem()",
+      "returns": [
+        {
+          "name": "itemValue",
+          "type": "string",
+          "description": "The value of the current item"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "description": "The label text of the current item"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

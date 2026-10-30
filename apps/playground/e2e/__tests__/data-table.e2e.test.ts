@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the data table route's own end-to-end checks: axe finds nothing (violations or incomplete) on the page, and
+ * Purpose: the data table route's own end-to-end checks: axe finds nothing (violations or incomplete, pinned amounts
+ *          measured by their own test instead) on the page, and
  *          with a row menu open, in light, dark, left-to-right and right-to-left; a sortable header sorts through the
  *          query by the pointer and the keyboard; a row's menu opens from the keyboard, runs an action, and gives focus
  *          back to its button; a slow action shows itself working and refuses a second run, a refused action says why, and
@@ -20,19 +21,22 @@
 // @covers sta-350:FR-188 sta-350:FR-189 sta-350:FR-190 sta-350:FR-192 sta-350:FR-193 sta-350:SC-013
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { contrastRatio } from "@stackra/tokens";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
+import { expectNoAxeFindings } from "../support/expect-no-axe-findings.function";
 
 const SCHEMES = ["light", "dark"] as const;
-const LOCALES = ["en", "ar"] as const;
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
+const LOCALES = ["en", "ar"] as const;
 
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/data-table?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Data table" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Data table", locale) }),
+  ).toBeVisible();
 };
-
-/** A section by its heading id: CSS, because role queries find nothing while a menu is open. */
-const sectionOf = (page: Page, id: string) => page.locator(`section[aria-labelledby="${id}"]`);
 
 /** The visible box of a selection checkbox inside a row or the header: the input itself is visually hidden. */
 const boxIn = (scope: Locator) => scope.locator('[data-slot="checkbox-content"]');
@@ -40,9 +44,9 @@ const boxIn = (scope: Locator) => scope.locator('[data-slot="checkbox-content"]'
 /** The text of a grid's row-header cells, in row order. */
 const rowHeaders = (grid: Locator) => grid.getByRole("rowheader").allTextContents();
 
-/** A row's menu button, by its accessible name, found by CSS. */
+/** A row's menu button, by the order its accessible name ends with ("Actions for #1002", "إجراءات #1002"), found by CSS. */
 const menuButton = (section: Locator, order: string) =>
-  section.locator(`button[aria-label="Actions for ${order}"]`);
+  section.locator(`button[aria-label$=" ${order}"]`);
 
 /** Opens a menu with a click and returns it once it is on screen. */
 const openMenu = async (page: Page, button: Locator) => {
@@ -53,23 +57,74 @@ const openMenu = async (page: Page, button: Locator) => {
   return menu;
 };
 
-const axe = async (page: Page) => {
-  const { violations, incomplete } = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
-  expect(
-    violations.map((finding) => finding.id),
-    "axe violations",
-  ).toEqual([]);
-  expect(
-    incomplete.map((finding) => finding.id),
-    "axe checks left for review",
-  ).toEqual([]);
-};
+const axe = expectNoAxeFindings;
 
 for (const scheme of SCHEMES)
   for (const locale of LOCALES)
     test(`axe finds nothing on the data table page in ${scheme}, ${locale}`, async ({ page }) => {
       await open(page, scheme, locale);
-      await axe(page);
+      const { violations, incomplete } = await new AxeBuilder({ page })
+        .withTags(AXE_TAGS)
+        .analyze();
+      expect(
+        violations.map((finding) => finding.id),
+        "axe violations",
+      ).toEqual([]);
+      // In right to left, an Arabic amount in a column pinned to the end sits over the scrolled cells beneath its
+      // opaque sticky cell, and axe 4.14 cannot settle that background ("partially overlaps"); the test below measures
+      // every pinned amount against its cell instead.
+      expect(
+        incomplete
+          .filter(
+            (finding) =>
+              finding.id !== "color-contrast" ||
+              finding.nodes.some((node) => !node.html.includes('data-slot="money-value"')),
+          )
+          .map((finding) => finding.id),
+        "axe checks left for review",
+      ).toEqual([]);
+    });
+
+for (const scheme of SCHEMES)
+  for (const locale of LOCALES)
+    test(`every pinned amount stands 4.5:1 on its own opaque cell in ${scheme}, ${locale}`, async ({
+      page,
+    }) => {
+      await open(page, scheme, locale);
+      const pinned = example(page, "pinned");
+      await expect(pinned.locator('[data-slot="money-value"]').first()).toBeAttached();
+      const cells = await pinned.locator('[data-slot="money-value"]').evaluateAll((amounts) => {
+        const context = document.createElement("canvas").getContext("2d");
+        if (!context) throw new Error("no 2d canvas");
+        const painted = (colour: string) => {
+          context.clearRect(0, 0, 1, 1);
+          context.fillStyle = colour;
+          context.fillRect(0, 0, 1, 1);
+          const [red = 0, green = 0, blue = 0, alpha = 0] = context.getImageData(0, 0, 1, 1).data;
+          return {
+            hex: `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`,
+            alpha,
+          };
+        };
+        return amounts.flatMap((amount) => {
+          const cell = amount.closest('[role="gridcell"], [role="rowheader"], td');
+          if (!cell || getComputedStyle(cell).position !== "sticky") return [];
+          return [
+            {
+              name: amount.textContent ?? "",
+              text: painted(getComputedStyle(amount).color).hex,
+              cell: painted(getComputedStyle(cell).backgroundColor),
+            },
+          ];
+        });
+      });
+      expect(cells.length).toBeGreaterThan(5);
+      const failures = cells.flatMap(({ name, text, cell }) => {
+        if (cell.alpha !== 255) return [`${name}: the pinned cell is not opaque`];
+        const ratio = contrastRatio(text, cell.hex);
+        return ratio < 4.5 ? [`${name}: ${ratio.toFixed(2)}`] : [];
+      });
+      expect(failures, `pinned amounts in ${scheme}, ${locale}`).toEqual([]);
     });
 
 for (const [scheme, locale] of [
@@ -78,7 +133,7 @@ for (const [scheme, locale] of [
 ] as const)
   test(`axe finds nothing with a row menu open in ${scheme}, ${locale}`, async ({ page }) => {
     await open(page, scheme, locale);
-    await openMenu(page, menuButton(sectionOf(page, "data-table-row-actions"), "#1002"));
+    await openMenu(page, menuButton(example(page, "row-actions"), "#1002"));
     await axe(page);
   });
 
@@ -86,7 +141,7 @@ test("a press on a sortable header sorts through the query, and Enter and Space 
   page,
 }) => {
   await open(page, "light", "en");
-  const sorting = sectionOf(page, "data-table-sorting");
+  const sorting = example(page, "sorting");
   const grid = sorting.getByRole("grid", { name: "Orders, sorted by the server" });
   await expect(sorting.getByTestId("data-table-sort")).toHaveText("Sorted by: total, descending");
   expect(await rowHeaders(grid)).toEqual(["#1018", "#1013", "#1008", "#1003", "#1020", "#1015"]);
@@ -112,7 +167,7 @@ test("a row menu opens from the keyboard, runs an action and gives focus back to
   page,
 }) => {
   await open(page, "light", "en");
-  const actions = sectionOf(page, "data-table-row-actions");
+  const actions = example(page, "row-actions");
   const trigger = menuButton(actions, "#1002");
   // As a keyboard user does: onto the row, then along its cells with the arrow keys to the menu button. A script's
   // own focus on the button is moved to the grid's first row by React Aria.
@@ -135,7 +190,7 @@ test("a row menu opens from the keyboard, runs an action and gives focus back to
 
 test("a slow action shows itself working and refuses a second run", async ({ page }) => {
   await open(page, "light", "en");
-  const actions = sectionOf(page, "data-table-row-actions");
+  const actions = example(page, "row-actions");
   const trigger = menuButton(actions, "#1002");
   const menu = await openMenu(page, trigger);
   await menu.getByRole("menuitem", { name: "Archive" }).click();
@@ -158,7 +213,7 @@ test("a slow action shows itself working and refuses a second run", async ({ pag
 
 test("a refused action says why and is not run by the pointer", async ({ page }) => {
   await open(page, "light", "en");
-  const actions = sectionOf(page, "data-table-row-actions");
+  const actions = example(page, "row-actions");
   // Order #1002 is pending, so it cannot be refunded; #1001 is paid.
   const menu = await openMenu(page, menuButton(actions, "#1002"));
   const refund = menu.getByRole("menuitem", { name: /^Refund/ });
@@ -182,7 +237,7 @@ test("a failing action is reported by the page and no error reaches the browser"
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await open(page, "light", "en");
-  const actions = sectionOf(page, "data-table-row-actions");
+  const actions = example(page, "row-actions");
   const menu = await openMenu(page, menuButton(actions, "#1001"));
   await menu.getByRole("menuitem", { name: "Delete" }).click();
   await expect(actions.getByTestId("data-table-last-action")).toHaveText(
@@ -195,7 +250,7 @@ test("several selected rows bring up the bulk bar with a polite count and select
   page,
 }) => {
   await open(page, "light", "en");
-  const selection = sectionOf(page, "data-table-selection");
+  const selection = example(page, "selection");
   const toolbar = selection.getByRole("toolbar", { name: "Orders, several selected actions" });
   const grid = selection.getByRole("grid", { name: "Orders, several selected" });
   const count = selection.locator('div[role="status"].sr-only', { hasText: /selected$/ });
@@ -218,7 +273,7 @@ test("a failing bulk action leaves the selection, and a successful one clears it
   page,
 }) => {
   await open(page, "light", "en");
-  const selection = sectionOf(page, "data-table-selection");
+  const selection = example(page, "selection");
   const toolbar = selection.getByRole("toolbar", { name: "Orders, several selected actions" });
   const selected = selection.getByTestId("data-table-selected");
 
@@ -242,7 +297,7 @@ test("the clear button empties the selection from the keyboard and moves focus o
   page,
 }) => {
   await open(page, "light", "en");
-  const selection = sectionOf(page, "data-table-selection");
+  const selection = example(page, "selection");
   const toolbar = selection.getByRole("toolbar", { name: "Orders, several selected actions" });
   await toolbar.getByRole("button", { name: "Clear selection" }).focus();
   await page.keyboard.press("Enter");
@@ -253,7 +308,7 @@ test("the clear button empties the selection from the keyboard and moves focus o
 
 test("the toolbar moves between its buttons with the arrow keys", async ({ page }) => {
   await open(page, "light", "en");
-  const toolbar = sectionOf(page, "data-table-selection").getByRole("toolbar", {
+  const toolbar = example(page, "selection").getByRole("toolbar", {
     name: "Orders, several selected actions",
   });
   await toolbar.getByRole("button").first().focus();
@@ -263,7 +318,7 @@ test("the toolbar moves between its buttons with the arrow keys", async ({ page 
 
 test("the filter bar slot narrows the rows from a search field", async ({ page }) => {
   await open(page, "light", "en");
-  const slot = sectionOf(page, "data-table-filter-slot");
+  const slot = example(page, "filter-slot");
   const grid = slot.getByRole("grid", { name: "Orders, with a search above" });
   await expect(grid.getByRole("row")).toHaveCount(6);
   await slot.getByRole("searchbox", { name: "Search the orders" }).fill("grace");
@@ -273,7 +328,7 @@ test("the filter bar slot narrows the rows from a search field", async ({ page }
 
 test("each state of the list is shown", async ({ page }) => {
   await open(page, "light", "en");
-  const states = sectionOf(page, "data-table-states");
+  const states = example(page, "states");
   await expect(states.getByRole("heading", { name: "Nothing here yet" })).toBeVisible();
   await expect(states.getByRole("heading", { name: "No results", exact: true })).toBeVisible();
   await expect(states.getByRole("button", { name: "Clear filters" })).toBeVisible();
@@ -288,7 +343,7 @@ test("each state of the list is shown", async ({ page }) => {
 
 test("the cursor pager walks forward and back with no page number", async ({ page }) => {
   await open(page, "light", "en");
-  const paging = sectionOf(page, "data-table-paging");
+  const paging = example(page, "paging");
   const grid = paging.getByRole("grid", { name: "Orders, paged" });
   const pager = paging.getByRole("navigation", { name: "Orders, paged pagination" });
   await expect(pager.getByRole("button", { name: "Previous" })).toBeDisabled();
@@ -301,7 +356,7 @@ test("the cursor pager walks forward and back with no page number", async ({ pag
 
 test("the live table searches, shows a failed load and recovers", async ({ page }) => {
   await open(page, "light", "en");
-  const live = sectionOf(page, "data-table-live");
+  const live = example(page, "live");
   await expect(live.getByTestId("data-table-live-matching")).toHaveText("Matching: 24");
   await live.getByRole("searchbox", { name: "Search the live orders" }).fill("ada");
   await expect(live.getByTestId("data-table-live-matching")).toHaveText("Matching: 6");
@@ -317,7 +372,7 @@ test("a query change in the live table clears the selection and returns to the f
   page,
 }) => {
   await open(page, "light", "en");
-  const live = sectionOf(page, "data-table-live");
+  const live = example(page, "live");
   const grid = live.getByRole("grid", { name: "Orders, live" });
   await boxIn(grid.getByRole("row", { name: /#1001/ })).click();
   await expect(live.getByTestId("data-table-live-selected")).toHaveText("Selected: ord-1001");
@@ -333,9 +388,9 @@ test("a query change in the live table clears the selection and returns to the f
 
 test("every press target of the table and the bar is at least 24 px square", async ({ page }) => {
   await open(page, "light", "en");
-  const selection = sectionOf(page, "data-table-selection");
+  const selection = example(page, "selection");
   const targets = [
-    menuButton(sectionOf(page, "data-table-row-actions"), "#1001"),
+    menuButton(example(page, "row-actions"), "#1001"),
     ...(await selection
       .getByRole("toolbar", { name: "Orders, several selected actions" })
       .getByRole("button")
@@ -357,11 +412,29 @@ test("every press target of the table and the bar is at least 24 px square", asy
 for (const locale of LOCALES)
   test(`the first column sits at the reading-start side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const headers = sectionOf(page, "data-table-basics")
-      .getByRole("grid", { name: "Orders, primary variant" })
+    const headers = example(page, "usage")
+      .getByRole("grid", {
+        name: locale === "en" ? "Orders, primary variant" : "الطلبات، النمط الأساسي",
+      })
       .getByRole("columnheader");
     const first = await headers.nth(0).boundingBox();
     const second = await headers.nth(1).boundingBox();
     if (!first || !second) throw new Error("a box is missing");
     expect(first.x < second.x, locale).toBe(locale === "en");
   });
+
+test("the density control sets the row height: 32, 44 and 56 px", async ({ page }) => {
+  await open(page, "light", "en");
+  const section = example(page, "density");
+  const rows = section.getByRole("grid").locator("tbody tr");
+  for (const [name, height] of [
+    ["Compact", 32],
+    ["Normal", 44],
+    ["Roomy", 56],
+  ] as const) {
+    await section.getByText(name, { exact: true }).click();
+    await expect
+      .poll(() => rows.first().evaluate((row) => row.getBoundingClientRect().height))
+      .toBe(height);
+  }
+});

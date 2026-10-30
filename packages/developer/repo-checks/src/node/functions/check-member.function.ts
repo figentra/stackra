@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `checkMember(member)`, the manifest findings of one member: its name by placement, catalog-only versions,
- *          forbidden dependencies, no `@stackra-pro/*` dependency at all, HeroUI Pro in apps only, one tier tag
+ *          forbidden dependencies, no `@stackra-pro/*` dependency at all, no HeroUI Pro anywhere, one tier tag
  *          matching its directory and a @stackra/typescript-config preset.
  * Boundary: pure: the caller passes the parsed package.json, turbo.jsonc and tsconfig.json (undefined when absent).
  * Runtime: node
- * Governing contract: ADR 0011; ADR 0019; ADR 0310; ADR 0461 (decision 3); ADR 0003 (tiers).
+ * Governing contract: ADR 0011; ADR 0019; ADR 0310; ADR 0461 (decision 3); ADR 0469; ADR 0003 (tiers).
  */
 import { DEPENDENCY_FIELDS } from "#node/constants/dependency-fields.constant";
 import { FORBIDDEN_DEPENDENCIES } from "#node/constants/forbidden-dependencies.constant";
@@ -46,8 +46,8 @@ export function checkMember(member: {
         out.push(
           `${field}.${dep} is a Pro package: it lives in figentra/stackra-pro, and no member here may depend on it (ADR 0461)`,
         );
-      if (PRO_DEPENDENCIES.includes(dep) && !isApp)
-        out.push(`${field}.${dep} is HeroUI Pro: only apps may depend on it (ADR 0310)`);
+      if (PRO_DEPENDENCIES.includes(dep))
+        out.push(`${field}.${dep} is HeroUI Pro: no member here may depend on it (ADR 0469)`);
       if (version === "catalog:uniwind-pro" && !isApp)
         out.push(
           `${field}.${dep} is Uniwind Pro: only apps may use catalog:uniwind-pro (ADR 0310)`,

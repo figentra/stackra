@@ -1,0 +1,16 @@
+{
+  "variant_label": "{tone} {variant}: 5 new",
+  "size_label": "{size}: {count} new",
+  "corner_label": "Dot at {placement}",
+  "online": "Online",
+  "away": "Away",
+  "busy": "Busy",
+  "number": "8 new",
+  "word": "New item",
+  "icon_label": "Alerts",
+  "control_label": "Notifications, {count} unread",
+  "presses": "{count, plural, one {Pressed # time.} other {Pressed # times.}}",
+  "sample": {
+    "new": "New"
+  }
+}

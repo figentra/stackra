@@ -1,0 +1,38 @@
+{
+  "slug": "skeleton",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(feedback)/skeleton.mdx",
+  "parts": [
+    {
+      "name": "Skeleton",
+      "props": [
+        {
+          "name": "animationType",
+          "type": "\"shimmer\" | \"pulse\" | \"none\"",
+          "default": "`\"shimmer\"` or CSS variable",
+          "description": "The animation type for the skeleton. Can be globally configured via `--skeleton-animation` CSS variable"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".skeleton--shimmer",
+      "description": "Adds shimmer animation with gradient effect (default)"
+    },
+    {
+      "name": ".skeleton--pulse",
+      "description": "Adds pulse animation using Tailwind's animate-pulse"
+    },
+    {
+      "name": ".skeleton--none",
+      "description": "No animation, static skeleton"
+    }
+  ]
+}

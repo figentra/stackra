@@ -55,6 +55,7 @@ The package has the one entry `.` (ADR 0127, 2026-10-24 note). Until `stackra ge
 | `docblock-shape`              | One line of TSDoc text is written `/** ... */`; a block with a tag is multi-line                                                                                                                              | yes | owner R-11           |
 | `file-contract`               | Every file opens with the `Stackra file contract:` docblock: Purpose, Boundary, Runtime, Governing contract                                                                                                   | no  | owner H              |
 | `no-tenant-vocabulary`        | No declaration of a `tenant` identifier outside tenancy and IAM scope code (uses allowed); use `ScopeRef`                                                                                                     | no  | ADR 0323, R-59       |
+| `no-literal-radius`           | No `rounded-*` class literal or numeric `borderRadius` in apps/ and packages/design-system/; radii come from `--radius-*` tokens through `@stackra/ui`                                                        | no  | ADR 0302             |
 | `no-raw-key-literal`          | No string literal in an `icon`, `columnKey`, `routeKey` or `permission(s)` property; use the generated constant (generated files and a `*.constant.*` file's exported SCREAMING_SNAKE definitions are exempt) | no  | owner R-56, ADR 0322 |
 
 ### What the rules do not check

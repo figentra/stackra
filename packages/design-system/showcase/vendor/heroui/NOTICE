@@ -1,0 +1,9 @@
+The JSON files under this folder are derived from the HeroUI v3 documentation
+(https://github.com/heroui-inc/heroui, apps/docs/content/docs/{react,native}/components).
+
+Modification: the API Reference tables, render-prop and animation tables, hook return tables, CSS class lists and
+accessibility notes of each MDX page were parsed and converted to JSON by
+packages/design-system/showcase/scripts/gen-hero.ts. No text was edited.
+
+The HeroUI repository's LICENSE file (copied beside this notice) is the Apache License 2.0; its npm packages declare
+MIT. Both permit this redistribution with the licence text and this notice kept.

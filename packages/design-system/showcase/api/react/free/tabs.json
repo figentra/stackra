@@ -1,0 +1,241 @@
+{
+  "generatedFrom": {
+    "hash": "597ed3b5975f0b5a",
+    "heroDoc": "vendor/heroui/react/tabs.json",
+    "propsFiles": ["ui/src/react/tabs/tabs.props.ts"]
+  },
+  "importLine": "import { Tabs } from \"@stackra/ui/react\";",
+  "key": "free/tabs",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
+          "name": "onSelectionChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        }
+      ],
+      "extends": "Tabs",
+      "name": "Tabs",
+      "props": [
+        {
+          "description": "The spoken name of the tab list, for example \"Order sections\"; name it when a page holds more than one.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "horizontal",
+          "description": "The axis the tabs run along. Defaults to `horizontal`; native has no vertical tabs and reads it as horizontal.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "default": "primary",
+          "description": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "True to show every tab but refuse selecting any of them.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TabItem[]"
+        },
+        {
+          "description": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
+          "name": "emptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
+          "name": "loadingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
+          "name": "selectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids selected at the start, for an uncontrolled collection.",
+          "name": "defaultSelectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "default": "'react-aria-Tabs'",
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", TabsRenderProps>"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Defines a string value that labels the current element.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "default": "'automatic'",
+          "description": "Whether tabs are activated automatically on focus or manually.",
+          "name": "keyboardActivation",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"manual\" | \"automatic\""
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<TabsRenderProps>"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base tabs container",
+      "name": ".tabs"
+    },
+    {
+      "description": "Tab list container wrapper",
+      "name": ".tabs__list-container"
+    },
+    {
+      "description": "Tab list container",
+      "name": ".tabs__list"
+    },
+    {
+      "description": "Individual tab button",
+      "name": ".tabs__tab"
+    },
+    {
+      "description": "Separator between tabs",
+      "name": ".tabs__separator"
+    },
+    {
+      "description": "Tab panel content",
+      "name": ".tabs__panel"
+    },
+    {
+      "description": "Tab indicator",
+      "name": ".tabs__indicator"
+    },
+    {
+      "description": "Horizontal tab layout (default)",
+      "name": ".tabs[data-orientation=\"horizontal\"]"
+    },
+    {
+      "description": "Vertical tab layout",
+      "name": ".tabs[data-orientation=\"vertical\"]"
+    },
+    {
+      "description": "Secondary variant with underline indicator",
+      "name": ".tabs--secondary"
+    }
+  ]
+}

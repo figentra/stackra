@@ -1,0 +1,285 @@
+{
+  "generatedFrom": {
+    "hash": "6c6678877d73dac2",
+    "heroDoc": "vendor/heroui/react/alert-dialog.json",
+    "propsFiles": ["ui/src/react/alert-dialog/alert-dialog.props.ts"]
+  },
+  "importLine": "import { AlertDialog } from \"@stackra/ui/react\";",
+  "key": "free/alert-dialog",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the user confirms, just before the dialog closes.",
+          "name": "onConfirm",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called when the user refuses: the cancel button, Escape or the Android back button, or a press outside.",
+          "name": "onCancel",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "extends": "AlertDialog",
+      "name": "AlertDialog",
+      "props": [
+        {
+          "description": "The question, required: it names the dialog for assistive technology, so word it as a decision.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What the decision does, read out with the dialog; text, because it is what the dialog is described by.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Anything more the decision needs, shown under the description: a field to type a name into, say.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The label of the button that agrees, in the app's language, for example \"Delete project\".",
+          "name": "confirmLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The label of the button that refuses, in the app's language, for example \"Keep project\". On web it takes focus first; on native it comes first in reading order.",
+          "name": "cancelLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse the confirming press until the decision is ready, as when the user must still type a name.",
+          "name": "isConfirmDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True, the default, to close the overlay on a press outside it (the backdrop on a modal, a drawer and a dialog).\nSet false for a step the user must finish, and give the content its own close control.",
+          "name": "isDismissable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to keep the Escape key from closing the overlay. It is for a flow with unsaved work or a nested overlay\nopen, so set it only with `isDismissable` false or a close control in reach. Native has no Escape key, so it\nstays unread there unless a component's own page says it maps to the Android back button.",
+          "name": "isKeyboardDismissDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "default",
+          "description": "The kind of message. Defaults to `default`; `danger` and `warning` are announced at once.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "An icon in place of the tone's own, or `false` for none. Left out, the tone's icon is drawn.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Defines a string value that labels the current element.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "default": "'react-aria-Dialog'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement.",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Whether the dialog is currently performing an entry animation. Focus is not moved into the\ndialog until the animation completes, since moving the screen reader cursor may cause scrolling\nthat interrupts the animation.",
+          "name": "isEntering",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMRenderFunction<\"section\", undefined>"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Trigger element that opens the alert dialog",
+      "name": ".alert-dialog__trigger"
+    },
+    {
+      "description": "Overlay backdrop behind the dialog",
+      "name": ".alert-dialog__backdrop"
+    },
+    {
+      "description": "Positioning wrapper with placement support",
+      "name": ".alert-dialog__container"
+    },
+    {
+      "description": "Dialog content container",
+      "name": ".alert-dialog__dialog"
+    },
+    {
+      "description": "Header section for icon and title",
+      "name": ".alert-dialog__header"
+    },
+    {
+      "description": "Heading text styles",
+      "name": ".alert-dialog__heading"
+    },
+    {
+      "description": "Main content area",
+      "name": ".alert-dialog__body"
+    },
+    {
+      "description": "Footer section for actions",
+      "name": ".alert-dialog__footer"
+    },
+    {
+      "description": "Icon container with status colors",
+      "name": ".alert-dialog__icon"
+    },
+    {
+      "description": "Close button element",
+      "name": ".alert-dialog__close-trigger"
+    },
+    {
+      "description": "Opaque colored backdrop (default)",
+      "name": ".alert-dialog__backdrop--opaque"
+    },
+    {
+      "description": "Blurred backdrop with glass effect",
+      "name": ".alert-dialog__backdrop--blur"
+    },
+    {
+      "description": "Transparent backdrop (no overlay)",
+      "name": ".alert-dialog__backdrop--transparent"
+    },
+    {
+      "description": "Default gray status",
+      "name": ".alert-dialog__icon--default"
+    },
+    {
+      "description": "Accent blue status",
+      "name": ".alert-dialog__icon--accent"
+    },
+    {
+      "description": "Success green status",
+      "name": ".alert-dialog__icon--success"
+    },
+    {
+      "description": "Warning orange status",
+      "name": ".alert-dialog__icon--warning"
+    },
+    {
+      "description": "Danger red status",
+      "name": ".alert-dialog__icon--danger"
+    }
+  ]
+}

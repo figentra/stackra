@@ -38,8 +38,20 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     "Expo autolinking reads this fixed name as strict JSON (ADR 0478)",
   ],
   [
-    /^brand\.json$/,
-    "the brand CLI (figentra-brand pull) reads and writes a product root's brand.json as strict JSON",
+    /^(?:apps\/[\w-]+\/)?brand\.json$/,
+    "the brand CLI (figentra-brand pull, and brand-pull.mjs until it ships) reads and writes a product root's or an app's brand.json as strict JSON",
+  ],
+  [
+    /^apps\/[\w-]+\/src\/constants\/brand-themes\/[\w-]+\.json$/,
+    "theme-diff layers copied from figentra/brand's brands/<id>/tokens/theme.json; Vite and Metro import them as JSON modules",
+  ],
+  [
+    /^packages\/design-system\/showcase\/(api|search)\/.+\.json$/,
+    "@stackra/showcase gen output; the playground's import.meta.glob and the mobile app's require() load it as JSON modules",
+  ],
+  [
+    /^packages\/design-system\/showcase\/vendor\/[\w-]+\/(react|native)\/[\w-]+\.json$/,
+    "HeroUI's component docs data, vendored byte-for-byte; gen-api JSON.parses it",
   ],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [/^\.github\/rulesets\/[\w-]+\.json$/, "GitHub REST ruleset payload (PUT …/rulesets/<id>)"],

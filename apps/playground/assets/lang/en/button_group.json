@@ -1,0 +1,20 @@
+{
+  "period": {
+    "label": "Report period",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month"
+  },
+  "actions": {
+    "label": "Invoice actions",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "export": "Export"
+  },
+  "arabic": {
+    "label": "فترة التقرير",
+    "day": "يوم",
+    "week": "أسبوع",
+    "month": "شهر"
+  }
+}

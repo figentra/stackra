@@ -23,6 +23,6 @@ export interface IconContractProps {
   readonly tone?: TextTone | undefined;
   /** What the icon means, read by screen readers. Left out or empty, the icon is decorative and hidden from them. */
   readonly label?: string | undefined;
-  /** Whether it is drawn mirrored in right-to-left text: true for icons that point the reading way (arrows, chevrons). */
+  /** Whether it is drawn mirrored in right-to-left text. Left out, an icon that points the reading way (arrows, chevrons, panel sides, the external link: `isDirectionalIcon`) mirrors and any other does not; `false` keeps a directional one as drawn. */
   readonly isMirroredInRtl?: boolean | undefined;
 }

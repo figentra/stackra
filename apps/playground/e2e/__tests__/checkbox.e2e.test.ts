@@ -13,7 +13,9 @@
 // @covers sta-350:FR-082 sta-350:FR-086 sta-350:FR-087 sta-350:FR-089 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 import { contrastRatio } from "@stackra/tokens";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +24,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/checkbox?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Checkbox" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Checkbox", locale) }),
+  ).toBeVisible();
 };
 
 /** A computed colour as `#rrggbb`, composited over `base`: drawn on a canvas, so any CSS colour form reads. */
@@ -66,6 +70,8 @@ for (const scheme of SCHEMES)
 test("every checkbox has an accessible name", async ({ page }) => {
   await open(page, "light", "en");
   const boxes = page.locator("article").getByRole("checkbox");
+  // The demos load lazily: wait for the last example's checkbox before counting.
+  await expect(page.locator("section#example-live").getByRole("checkbox").first()).toBeVisible();
   const count = await boxes.count();
   expect(count).toBeGreaterThan(10);
   for (let index = 0; index < count; index += 1) {
@@ -87,7 +93,7 @@ test("Space toggles a focused checkbox, and a click on its label does too", asyn
   await expect(box).not.toBeChecked();
   await page.keyboard.press("Space");
   await expect(box).toBeChecked();
-  await page.getByText("Subscribe to the newsletter", { exact: true }).click();
+  await example(page, "usage").getByText("Subscribe to the newsletter", { exact: true }).click();
   await expect(box).not.toBeChecked();
 });
 
@@ -120,14 +126,14 @@ test("the invalid checkbox is described by its message until it is checked", asy
   await expect(box).toHaveAccessibleDescription("Confirm your age to continue.");
   await box.focus();
   await page.keyboard.press("Space");
-  await expect(page.getByText("Confirm your age to continue.")).toBeHidden();
+  await expect(box).not.toHaveAccessibleDescription("Confirm your age to continue.");
 });
 
 for (const locale of LOCALES)
   test(`the control sits on the reading-start side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const box = page.getByRole("checkbox", { name: "Subscribe to the newsletter" });
-    const item = page.locator('[data-slot="checkbox"]').filter({ has: box });
+    // The demo speaks the page's locale, so the first sample is found by place, not by its English name.
+    const item = example(page, "usage").locator('[data-slot="checkbox"]').first();
     const control = await item.locator('[data-slot="checkbox-control"]').boundingBox();
     const label = await item.locator('[data-slot="label"]').boundingBox();
     if (!control || !label) throw new Error("a box is missing");

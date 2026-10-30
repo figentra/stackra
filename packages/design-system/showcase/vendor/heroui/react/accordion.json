@@ -1,0 +1,236 @@
+{
+  "slug": "accordion",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(navigation)/accordion.mdx",
+  "parts": [
+    {
+      "name": "Accordion",
+      "props": [
+        {
+          "name": "allowsMultipleExpanded",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether multiple items can be expanded at once"
+        },
+        {
+          "name": "defaultExpandedKeys",
+          "type": "Iterable<Key>",
+          "description": "The initial expanded keys"
+        },
+        {
+          "name": "expandedKeys",
+          "type": "Iterable<Key>",
+          "description": "The controlled expanded keys"
+        },
+        {
+          "name": "onExpandedChange",
+          "type": "(keys: Set<Key>) => void",
+          "description": "Handler called when expanded keys change"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the entire accordion is disabled"
+        },
+        {
+          "name": "variant",
+          "type": "\"default\" | \"surface\"",
+          "default": "\"default\"",
+          "description": "The visual variant of the accordion"
+        },
+        {
+          "name": "hideSeparator",
+          "type": "boolean",
+          "default": "false",
+          "description": "Hide separator lines between accordion items"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The accordion items"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, AccordionRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Accordion.Item",
+      "props": [
+        {
+          "name": "id",
+          "type": "Key",
+          "description": "Unique identifier for the item"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether this item is disabled"
+        },
+        {
+          "name": "defaultExpanded",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether item is initially expanded"
+        },
+        {
+          "name": "isExpanded",
+          "type": "boolean",
+          "description": "Controlled expanded state"
+        },
+        {
+          "name": "onExpandedChange",
+          "type": "(isExpanded: boolean) => void",
+          "description": "Handler for expanded state changes"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The item content"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, AccordionItemRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Accordion.Trigger",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Trigger content or render function"
+        },
+        {
+          "name": "onPress",
+          "type": "() => void",
+          "description": "Additional press handler"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether trigger is disabled"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, TriggerRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Accordion.Panel",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Panel content"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, AccordionPanelRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Accordion.Indicator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom indicator icon"
+        }
+      ]
+    },
+    {
+      "name": "Accordion.Body",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Body content"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".accordion",
+      "description": "Base accordion container"
+    },
+    {
+      "name": ".accordion__body",
+      "description": "Content body container"
+    },
+    {
+      "name": ".accordion__heading",
+      "description": "Heading wrapper"
+    },
+    {
+      "name": ".accordion__indicator",
+      "description": "Expand/collapse indicator icon"
+    },
+    {
+      "name": ".accordion__item",
+      "description": "Individual accordion item"
+    },
+    {
+      "name": ".accordion__panel",
+      "description": "Collapsible panel container"
+    },
+    {
+      "name": ".accordion__trigger",
+      "description": "Clickable trigger button"
+    },
+    {
+      "name": ".accordion--outline",
+      "description": "Outline variant with border and background"
+    },
+    {
+      "name": ".accordion__trigger[aria-expanded=\"true\"]",
+      "description": "Expanded state"
+    },
+    {
+      "name": ".accordion__panel[aria-hidden=\"false\"]",
+      "description": "Panel visible state"
+    }
+  ]
+}

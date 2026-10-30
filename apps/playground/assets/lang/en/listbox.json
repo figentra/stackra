@@ -1,0 +1,30 @@
+{
+  "branch": {
+    "label": "Pickup branch",
+    "olaya": "Al Olaya",
+    "olaya_hint": "Open until 11 pm",
+    "malqa": "Al Malqa",
+    "malqa_hint": "Open until midnight",
+    "sulay": "Al Sulay",
+    "sulay_hint": "Closed for renovation"
+  },
+  "access": {
+    "label": "Cashier permissions",
+    "orders": "Orders",
+    "view_orders": "View orders",
+    "edit_orders": "Edit orders",
+    "refund": "Issue refunds",
+    "catalogue": "Catalogue",
+    "edit_prices": "Change prices",
+    "publish": "Publish products"
+  },
+  "arabic": {
+    "label": "فرع الاستلام",
+    "olaya": "العليا",
+    "olaya_hint": "مفتوح حتى 11 مساءً",
+    "malqa": "الملقا",
+    "malqa_hint": "مفتوح حتى منتصف الليل",
+    "sulay": "السلي",
+    "sulay_hint": "مغلق للتجديد"
+  }
+}

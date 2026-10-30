@@ -115,7 +115,9 @@ describe("CloseButton (native)", () => {
   it("hands over the disabled flag and the press, and leaves them out when not given", () => {
     const onPress = vi.fn();
     render(<CloseButton label="Dismiss" isDisabled onPress={onPress} />);
-    expect(received.props).toMatchObject({ isDisabled: true, onPress });
+    expect(received.props).toMatchObject({ isDisabled: true });
+    (received.props["onPress"] as () => void)();
+    expect(onPress).toHaveBeenCalledOnce();
     render(<CloseButton label="Dismiss" />);
     expect(received.props).not.toHaveProperty("isDisabled");
     expect(received.props).not.toHaveProperty("onPress");

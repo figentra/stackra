@@ -1,0 +1,16 @@
+{
+  "note_label": "Note",
+  "note_placeholder": "Write something",
+  "save": "Save",
+  "leave": "Leave this page",
+  "dirty": "Unsaved changes: yes. The browser will ask before the tab closes.",
+  "clean": "Unsaved changes: none. The browser will not ask.",
+  "no_answer": "You are still on this page.",
+  "left": "You left the page.",
+  "stayed": "You stayed on the page.",
+  "title": "Discard unsaved changes?",
+  "description": "Your edits to this note will be lost.",
+  "stay": "Stay on page",
+  "discard": "Discard changes",
+  "draft_text": "A draft reply"
+}

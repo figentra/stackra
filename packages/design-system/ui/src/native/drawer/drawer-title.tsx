@@ -6,11 +6,13 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0312; WCAG 2.2 SC 1.3.1 and 4.1.2.
  */
-import { BottomSheet } from "heroui-native";
-import type { ReactElement } from "react";
+import { BottomSheet, Dialog } from "heroui-native";
+import { use, type ReactElement } from "react";
 import type { DrawerTitleProps } from "#native/drawer/drawer-title.props";
+import { DrawerLayerContext } from "#native/drawer/drawer-layer-context";
 
 /** The drawer's title. `level` keeps the shared contract and is not used: the heading role carries no level. */
 export function DrawerTitle({ level: _level, ...rest }: DrawerTitleProps): ReactElement {
-  return <BottomSheet.Title {...rest} />;
+  const Title = use(DrawerLayerContext)?.isPanel ? Dialog.Title : BottomSheet.Title;
+  return <Title {...rest} />;
 }

@@ -1,0 +1,273 @@
+{
+  "slug": "list-box",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(collections)/list-box.mdx",
+  "parts": [
+    {
+      "name": "ListBox",
+      "props": [
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "Accessibility label for the listbox"
+        },
+        {
+          "name": "aria-labelledby",
+          "type": "string",
+          "description": "ID of element that labels the listbox"
+        },
+        {
+          "name": "selectionMode",
+          "type": "\"none\" | \"single\" | \"multiple\"",
+          "default": "\"single\"",
+          "description": "Selection behavior"
+        },
+        {
+          "name": "selectedKeys",
+          "type": "Selection",
+          "description": "Controlled selected keys"
+        },
+        {
+          "name": "defaultSelectedKeys",
+          "type": "Selection",
+          "description": "Initial selected keys"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(keys: Selection) => void",
+          "description": "Handler called when selection changes"
+        },
+        {
+          "name": "disabledKeys",
+          "type": "Iterable<Key>",
+          "description": "Keys of disabled items"
+        },
+        {
+          "name": "onAction",
+          "type": "(key: Key) => void",
+          "description": "Handler called when an item is activated"
+        },
+        {
+          "name": "variant",
+          "type": "\"default\" | \"danger\"",
+          "default": "\"default\"",
+          "description": "Visual variant"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "ListBox items and sections"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, ListBoxRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "ListBox.Item",
+      "props": [
+        {
+          "name": "id",
+          "type": "Key",
+          "description": "Unique identifier for the item"
+        },
+        {
+          "name": "textValue",
+          "type": "string",
+          "description": "Text value for accessibility and typeahead"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether this item is disabled"
+        },
+        {
+          "name": "variant",
+          "type": "\"default\" | \"danger\"",
+          "default": "\"default\"",
+          "description": "Visual variant"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Item content or render function"
+        },
+        {
+          "name": "render",
+          "type": "(props: DetailedHTMLProps<LinkWithRequiredHref, HTMLAnchorElement> | React.JSX.IntrinsicElements[keyof React.JSX.IntrinsicElements], renderProps: ListBoxItemRenderProps) => ReactElement",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "ListBox.ItemIndicator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Custom indicator content or render function"
+        }
+      ]
+    },
+    {
+      "name": "ListBox.Section",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Section content including Header and Items"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the item is selected"
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the item is focused"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the item is disabled"
+        },
+        {
+          "name": "isPressed",
+          "type": "boolean",
+          "description": "Whether the item is being pressed"
+        }
+      ]
+    },
+    {
+      "name": "ListLayout",
+      "props": [
+        {
+          "name": "rowHeight",
+          "type": "number | undefined",
+          "default": "48",
+          "description": "The fixed height of a row in px."
+        },
+        {
+          "name": "estimatedRowHeight",
+          "type": "number | undefined",
+          "default": "—",
+          "description": "The estimated height of a row, when row heights are variable."
+        },
+        {
+          "name": "headingHeight",
+          "type": "number | undefined",
+          "default": "48",
+          "description": "The fixed height of a section header in px."
+        },
+        {
+          "name": "estimatedHeadingHeight",
+          "type": "number | undefined",
+          "default": "—",
+          "description": "The estimated height of a section header, when the height is variable."
+        },
+        {
+          "name": "loaderHeight",
+          "type": "number | undefined",
+          "default": "48",
+          "description": "The fixed height of a loader element in px. This loader is specifically for \"load more\" elements rendered when loading more rows at the root level or inside nested row/sections."
+        },
+        {
+          "name": "dropIndicatorThickness",
+          "type": "number | undefined",
+          "default": "2",
+          "description": "The thickness of the drop indicator."
+        },
+        {
+          "name": "gap",
+          "type": "number | undefined",
+          "default": "0",
+          "description": "The gap between items."
+        },
+        {
+          "name": "padding",
+          "type": "number | undefined",
+          "default": "0",
+          "description": "The padding around the list."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".list-box",
+      "description": "Base listbox container"
+    },
+    {
+      "name": ".list-box-item",
+      "description": "Individual listbox item"
+    },
+    {
+      "name": ".list-box-item__indicator",
+      "description": "Selection indicator icon"
+    },
+    {
+      "name": ".list-box-section",
+      "description": "Section container for grouping items"
+    },
+    {
+      "name": ".list-box--default",
+      "description": "Default variant styling"
+    },
+    {
+      "name": ".list-box--danger",
+      "description": "Danger variant styling"
+    },
+    {
+      "name": ".list-box-item--default",
+      "description": "Default item variant"
+    },
+    {
+      "name": ".list-box-item--danger",
+      "description": "Danger item variant"
+    },
+    {
+      "name": ".list-box-item[data-selected=\"true\"]",
+      "description": "Selected item state"
+    },
+    {
+      "name": ".list-box-item[data-focus-visible=\"true\"]",
+      "description": "Focused item state"
+    },
+    {
+      "name": ".list-box-item[data-disabled=\"true\"]",
+      "description": "Disabled item state"
+    },
+    {
+      "name": ".list-box-item__indicator[data-visible=\"true\"]",
+      "description": "Visible indicator state"
+    }
+  ],
+  "a11y": "The ListBox component implements the ARIA listbox pattern and provides:\n\n- Full keyboard navigation support\n- Screen reader announcements for selection changes\n- Proper focus management\n- Support for disabled states\n- Typeahead search functionality\n\nFor more information, see the [React Aria ListBox documentation](https://react-spectrum.adobe.com/react-aria/ListBox.html)."
+}

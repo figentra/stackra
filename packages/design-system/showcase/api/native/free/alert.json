@@ -1,0 +1,166 @@
+{
+  "generatedFrom": {
+    "hash": "f04fdacb516dc710",
+    "heroDoc": "vendor/heroui/native/alert.json",
+    "propsFiles": ["ui/src/native/alert/alert.props.ts"]
+  },
+  "importLine": "import { Alert } from \"@stackra/ui/native\";",
+  "key": "free/alert",
+  "parts": [
+    {
+      "extends": "Alert",
+      "name": "Alert",
+      "props": [
+        {
+          "description": "What happened, in the app's language and a few words. Required: it is the first thing a screen reader says.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Detail under the title: what to do next, or why.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Buttons or links for the reader's next step, drawn under the description in a wrapping row.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The kind of message. Defaults to `default`; `danger` and `warning` are announced at once.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "An icon in place of the tone's own, or `false` for none. Left out, the tone's icon is drawn.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Background layer rendered behind the alert surface.\n- `undefined` (default): renders `Alert.Background` when the active\n  library theme registers default background content (e.g. `glass`);\n  otherwise no layer\n- custom node: replaces the default layer entirely (wrap content in\n  `Alert.Background` to keep the absolute-fill and clipping)\n- `null`: removes the background layer",
+          "name": "background",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Unique identifier for the alert. Auto-generated when not provided",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional styles applied to the root container",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "All standard React Native View props are supported",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

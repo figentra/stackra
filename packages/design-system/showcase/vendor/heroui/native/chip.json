@@ -1,0 +1,95 @@
+{
+  "slug": "chip",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(data-display)/chip.mdx",
+  "parts": [
+    {
+      "name": "Chip",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to render inside the chip"
+        },
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "default": "'md'",
+          "description": "Size of the chip"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary' | 'tertiary' | 'soft'",
+          "default": "'primary'",
+          "description": "Visual variant of the chip"
+        },
+        {
+          "name": "color",
+          "type": "'accent' | 'default' | 'success' | 'warning' | 'danger'",
+          "default": "'accent'",
+          "description": "Color theme of the chip"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All Pressable props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Chip.Label",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Text or content to render as the label"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard Text props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useChip",
+      "signature": "useChip()",
+      "returns": [
+        {
+          "name": "size",
+          "type": "'sm' | 'md' | 'lg'",
+          "description": "Size of the chip"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary' | 'tertiary' | 'soft'",
+          "description": "Visual variant of the chip"
+        },
+        {
+          "name": "color",
+          "type": "'accent' | 'default' | 'success' | 'warning' | 'danger'",
+          "description": "Color theme of the chip"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

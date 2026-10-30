@@ -23,6 +23,7 @@ import {
 import type { MouseEvent, ReactElement, ReactNode } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { contentWidthClassName } from "#react/text-field/content-width-class-name.function";
 import type { InputGroupProps } from "#react/input-group/input-group.props";
 
 /** The click handler an element affix takes so HeroUI's focus-the-input rule skips it; text affixes need none. */
@@ -49,7 +50,12 @@ export function InputGroup({
   ...rest
 }: InputGroupProps): ReactElement {
   return (
-    <HeroTextField {...omitUndefined(rest)} variant={variant} fullWidth={isFullWidth}>
+    <HeroTextField
+      {...omitUndefined(rest)}
+      {...(isFullWidth ? {} : { className: contentWidthClassName(rest.className) })}
+      variant={variant}
+      fullWidth={isFullWidth}
+    >
       {label == null ? null : <Label>{label}</Label>}
       {/* The text field's full-width rule reaches only inputs, so the group is told too. */}
       {/* `aria-disabled`: a disabled field's text affixes are exempt from contrast, but only a checker that reads it here

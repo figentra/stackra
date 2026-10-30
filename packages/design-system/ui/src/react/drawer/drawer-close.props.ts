@@ -8,10 +8,17 @@
  */
 import type { DrawerCloseTriggerProps as HeroDrawerCloseProps } from "@heroui/react";
 import type { CloseButtonContractProps } from "#contracts/types/close-button-contract-props.type";
+import type { CloseControl } from "#contracts/types/close-control.type";
 
 /**
  * Props of the web Drawer.Close: the close-button contract plus HeroUI v3's own close-trigger props, passed through.
  * HeroUI's `aria-label` is the contract's `label`, and its children are the contract's `icon`.
  */
 export type DrawerCloseProps = CloseButtonContractProps &
-  Omit<HeroDrawerCloseProps, keyof CloseButtonContractProps | "children" | "aria-label">;
+  Omit<HeroDrawerCloseProps, keyof CloseButtonContractProps | "children" | "aria-label"> & {
+    /**
+     * How the control is drawn: `"esc"` (default) one button showing the Escape key cap, the close mark on a touch
+     * screen; `"icon"` the close mark; `"both"` the key cap and the close mark in one button; `"none"` nothing.
+     */
+    readonly closeButton?: CloseControl | undefined;
+  };

@@ -1,0 +1,111 @@
+{
+  "slug": "toggle-button-group",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(buttons)/toggle-button-group.mdx",
+  "parts": [
+    {
+      "name": "ToggleButtonGroup",
+      "props": [
+        {
+          "name": "selectionMode",
+          "type": "\"single\" | \"multiple\"",
+          "default": "\"single\"",
+          "description": "Whether one or multiple buttons can be selected"
+        },
+        {
+          "name": "selectedKeys",
+          "type": "Iterable<Key>",
+          "description": "Controlled selection state"
+        },
+        {
+          "name": "defaultSelectedKeys",
+          "type": "Iterable<Key>",
+          "description": "Default selected keys (uncontrolled)"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(keys: Set<Key>) => void",
+          "description": "Called when selection changes"
+        },
+        {
+          "name": "disallowEmptySelection",
+          "type": "boolean",
+          "default": "false",
+          "description": "Prevents clearing all selections"
+        },
+        {
+          "name": "orientation",
+          "type": "\"horizontal\" | \"vertical\"",
+          "default": "\"horizontal\"",
+          "description": "Layout direction"
+        },
+        {
+          "name": "size",
+          "type": "\"sm\" | \"md\" | \"lg\"",
+          "default": "\"md\"",
+          "description": "Size propagated to child ToggleButtons"
+        },
+        {
+          "name": "isDetached",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether buttons are visually separated with gaps"
+        },
+        {
+          "name": "fullWidth",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the group fills available width"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Disables all buttons in the group"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "ToggleButtonGroup.Separator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".toggle-button-group",
+      "description": "Base container styles"
+    },
+    {
+      "name": ".toggle-button-group--horizontal",
+      "description": "Horizontal orientation"
+    },
+    {
+      "name": ".toggle-button-group--vertical",
+      "description": "Vertical orientation"
+    },
+    {
+      "name": ".toggle-button-group--full-width",
+      "description": "Full width modifier"
+    },
+    {
+      "name": ".toggle-button-group__separator",
+      "description": "Separator element between buttons"
+    },
+    {
+      "name": ".toggle-button-group--detached",
+      "description": "Detached mode (separated buttons with gaps)"
+    }
+  ]
+}

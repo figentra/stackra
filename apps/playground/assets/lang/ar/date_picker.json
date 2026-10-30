@@ -1,0 +1,29 @@
+{
+  "empty": "تاريخ البدء",
+  "empty_description": "اكتب يومًا أو افتح التقويم.",
+  "empty_button": "اختر تاريخ البدء",
+  "filled": "تاريخ الاستحقاق",
+  "filled_description": "اليوم الذي تستحق فيه الفاتورة.",
+  "filled_button": "اختر تاريخ الاستحقاق",
+  "bounded_label": "تاريخ الحجز",
+  "bounded_description": "لا تُقبل إلا أيام مارس 2026.",
+  "bounded_message": "اختر يومًا في مارس 2026.",
+  "bounded_button": "اختر تاريخ الحجز",
+  "invalid": "تاريخ التوصيل",
+  "invalid_message": "لا نوصل في عطلة نهاية الأسبوع.",
+  "invalid_button": "اختر تاريخ التوصيل",
+  "read_only": "تاريخ التوقيع",
+  "disabled": "تاريخ الإلغاء",
+  "live_label": "تاريخ الوصول",
+  "live_button": "اختر تاريخ الوصول",
+  "live_empty": "لم يُختر يوم بعد.",
+  "live_chosen": "اليوم المختار: {day}",
+  "live_open": "التقويم مفتوح.",
+  "live_closed": "التقويم مغلق.",
+  "open_from_outside": "فتح التقويم",
+  "hijri": {
+    "label": "تاريخ العقد",
+    "hint": "يظهر بتقويم أم القرى، ويُحفظ بالتاريخ الميلادي.",
+    "button": "اختر تاريخ العقد"
+  }
+}

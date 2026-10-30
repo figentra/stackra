@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the form-field route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the form-field route of @figentra/playground: its path. The page it renders is
  *          `form-field.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The FormField page, at `/form-field`. */
-export class FormFieldRoute extends Route({ path: "/form-field" }) {
-  /** The page title. */
-  static readonly title = "Form field";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Inputs and forms";
-}
+export class FormFieldRoute extends Route({ path: "/form-field" }) {}

@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "32943089990caabd",
+    "propsFiles": ["ui/src/native/chart-legend/chart-legend.props.ts"]
+  },
+  "importLine": "import { ChartLegend } from \"@stackra/ui/native\";",
+  "key": "free/chart-legend",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with a series' key when its entry is pressed; each entry is then a toggle (selected while shown).",
+          "name": "onToggle",
+          "required": false,
+          "source": "stackra",
+          "type": "(key: string) => void"
+        }
+      ],
+      "name": "ChartLegend",
+      "props": [
+        {
+          "description": "The series named, in order; each takes its colour as the chart does.",
+          "name": "series",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChartSeries[]"
+        },
+        {
+          "description": "The palette the chart colours its series from; `accent` by default, as on the chart.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "The keys of the series hidden from the plot: their swatch is hollow and their label struck through.",
+          "name": "hiddenKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Adds a dashed \"Previous period\" entry, for a chart drawing its comparison.",
+          "name": "showComparison",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Extra classes for the legend container.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

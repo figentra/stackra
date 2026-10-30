@@ -53,6 +53,7 @@ export function List<TItem extends ListItemData = ListItemData>({
   hasMore,
   onLoadMore,
   isAnimated = true,
+  scrollEnabled = true,
   ...rest
 }: ListProps<TItem>): ReactElement {
   const [ownKeys, setOwnKeys] = useState<readonly string[]>(defaultSelectedKeys ?? []);
@@ -85,6 +86,7 @@ export function List<TItem extends ListItemData = ListItemData>({
               data={items}
               extraData={selected}
               keyExtractor={(item) => item.id}
+              scrollEnabled={scrollEnabled}
               accessibilityRole="list"
               accessibilityLabel={label}
               ItemSeparatorComponent={RowSeparator}

@@ -1,0 +1,247 @@
+{
+  "generatedFrom": {
+    "hash": "73cbce199ee81075",
+    "heroDoc": "vendor/heroui/native/skeleton.json",
+    "propsFiles": ["ui/src/native/skeleton/skeleton.props.ts"]
+  },
+  "importLine": "import { Skeleton } from \"@stackra/ui/native\";",
+  "key": "free/skeleton",
+  "parts": [
+    {
+      "animation": [
+        {
+          "description": "Disable animations while customizing properties",
+          "name": "state",
+          "required": false,
+          "source": "heroui",
+          "type": "'disabled' | 'disable-all' | boolean"
+        },
+        {
+          "default": "FadeIn",
+          "description": "Custom entering animation",
+          "name": "entering.value",
+          "required": false,
+          "source": "heroui",
+          "type": "EntryOrExitLayoutType"
+        },
+        {
+          "default": "FadeOut",
+          "description": "Custom exiting animation",
+          "name": "exiting.value",
+          "required": false,
+          "source": "heroui",
+          "type": "EntryOrExitLayoutType"
+        },
+        {
+          "default": "1500",
+          "description": "Animation duration in milliseconds",
+          "name": "shimmer.duration",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "1",
+          "description": "Speed multiplier for the animation",
+          "name": "shimmer.speed",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "description": "Highlight color for the shimmer effect",
+          "name": "shimmer.highlightColor",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "Easing.linear",
+          "description": "Easing function for the animation",
+          "name": "shimmer.easing",
+          "required": false,
+          "source": "heroui",
+          "type": "EasingFunction"
+        },
+        {
+          "default": "1000",
+          "description": "Animation duration in milliseconds",
+          "name": "pulse.duration",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "0.5",
+          "description": "Minimum opacity value",
+          "name": "pulse.minOpacity",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "1",
+          "description": "Maximum opacity value",
+          "name": "pulse.maxOpacity",
+          "required": false,
+          "source": "heroui",
+          "type": "number"
+        },
+        {
+          "default": "Easing.inOut(Easing.ease)",
+          "description": "Easing function for the animation",
+          "name": "pulse.easing",
+          "required": false,
+          "source": "heroui",
+          "type": "EasingFunction"
+        }
+      ],
+      "extends": "Skeleton",
+      "name": "Skeleton",
+      "props": [
+        {
+          "description": "The content the placeholder stands for, drawn in its place once loading ends and never while it loads.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True while the content loads, showing the placeholder; defaults to true, or to the enclosing group's value.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "How the placeholder moves while loading; defaults to `shimmer`, or to the enclosing group's animation.",
+          "name": "animationType",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"shimmer\" | \"pulse\""
+        },
+        {
+          "description": "Animation configuration",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "SkeletonRootAnimation"
+        },
+        {
+          "description": "Additional CSS classes for styling",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active",
+          "name": "isAnimatedStyleActive",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

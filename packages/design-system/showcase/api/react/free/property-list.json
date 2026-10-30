@@ -1,0 +1,95 @@
+{
+  "generatedFrom": {
+    "hash": "b660db8a15e45fd5",
+    "propsFiles": ["ui/src/react/property-list/property-list.props.ts"]
+  },
+  "importLine": "import { PropertyList } from \"@stackra/ui/react\";",
+  "key": "free/property-list",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the row and its text once the text is on the clipboard. On web the list writes the clipboard itself; on\nnative it has no clipboard module, so the app writes it here and a row has a copy button only when this is given.",
+          "name": "onCopy",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, text: string) => void"
+        }
+      ],
+      "name": "PropertyList",
+      "props": [
+        {
+          "description": "The rows, in order.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TItem[]"
+        },
+        {
+          "description": "How many columns of rows to draw. Defaults to 1; on a narrow screen two columns stack into one.",
+          "name": "columns",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2"
+        },
+        {
+          "description": "What shows in place of an empty value. Defaults to an en dash; pass words (\"Not set\") when a dash would not say enough.",
+          "name": "emptyValue",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Spoken, and on web also drawn as a check, after a value is copied, for example \"Copied\". Defaults to the `ui` catalogue's word in the active locale, so a copy is never silent.",
+          "name": "copiedLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -19,6 +19,8 @@
 // @covers sta-350:FR-109 sta-350:SC-009
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -29,11 +31,29 @@ const TOLERANCE = 3;
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/menu?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Menu" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Menu", locale) }),
+  ).toBeVisible();
 };
 
-/** A section by its heading id: CSS, because role queries find nothing while a menu is open. */
-const sectionOf = (page: Page, id: string) => page.locator(`section[aria-labelledby="${id}"]`);
+/** An example's section by its old heading id (`menu-<example>`): CSS, because role queries find nothing while a menu is open. */
+const sectionOf = (page: Page, id: string) =>
+  example(page, id === "menu-basics" ? "usage" : id.slice("menu-".length));
+
+/** The demos speak the page's locale: the Arabic of each English word a test in both directions reads. */
+const ARABIC: Record<string, string> = {
+  "Order actions": "إجراءات الطلب",
+  Rename: "إعادة تسمية",
+  Side: "الجهة",
+  Align: "المحاذاة",
+  Columns: "الأعمدة",
+  Customer: "العميل",
+  File: "ملف",
+  Export: "تصدير",
+  "As PDF": "بصيغة PDF",
+};
+const say = (locale: string, english: string) =>
+  locale === "ar" ? (ARABIC[english] ?? english) : english;
 
 /** A trigger by its text inside a section. */
 const triggerIn = (page: Page, id: string, text: string) =>
@@ -88,7 +108,7 @@ for (const scheme of SCHEMES)
 
     test(`axe finds nothing in the open menu in ${scheme}, ${locale}`, async ({ page }) => {
       await open(page, scheme, locale);
-      await openMenu(page, triggerIn(page, "menu-basics", "Order actions"));
+      await openMenu(page, triggerIn(page, "menu-basics", say(locale, "Order actions")));
       await setPageHidden(page, true);
       const { violations, incomplete } = await new AxeBuilder({ page })
         .include('[role="menu"]')
@@ -138,9 +158,11 @@ test("an action shows its icon, second line, reason, shortcut hint and danger to
 for (const locale of LOCALES)
   test(`the shortcut hint sits at the reading-end side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const menu = await openMenu(page, triggerIn(page, "menu-basics", "Order actions"));
-    const item = await boxOf(menu.getByRole("menuitem", { name: "Rename" }));
-    const hint = await boxOf(menu.getByRole("menuitem", { name: "Rename" }).locator("kbd"));
+    const menu = await openMenu(page, triggerIn(page, "menu-basics", say(locale, "Order actions")));
+    const item = await boxOf(menu.getByRole("menuitem", { name: say(locale, "Rename") }));
+    const hint = await boxOf(
+      menu.getByRole("menuitem", { name: say(locale, "Rename") }).locator("kbd"),
+    );
     const isAfterMiddle = hint.x + hint.width / 2 > item.x + item.width / 2;
     expect(isAfterMiddle, locale).toBe(locale === "en");
   });
@@ -246,7 +268,7 @@ for (const locale of LOCALES)
     const placement = "menu-placement";
 
     for (const side of ["top", "bottom", "start", "end"] as const) {
-      const trigger = triggerIn(page, placement, `Side ${side}`);
+      const trigger = triggerIn(page, placement, `${say(locale, "Side")} ${side}`);
       // Centred in the viewport, so there is room on every side and the menu does not flip.
       await trigger.evaluate((element) => element.scrollIntoView({ block: "center" }));
       const menu = await openMenu(page, trigger);
@@ -264,7 +286,7 @@ for (const locale of LOCALES)
     }
 
     for (const align of ["start", "center", "end"] as const) {
-      const trigger = triggerIn(page, placement, `Align ${align}`);
+      const trigger = triggerIn(page, placement, `${say(locale, "Align")} ${align}`);
       await trigger.evaluate((element) => element.scrollIntoView({ block: "center" }));
       const menu = await openMenu(page, trigger);
       const t = await boxOf(trigger);
@@ -334,8 +356,8 @@ test("several choices are kept in one group and the menu stays open", async ({ p
 for (const locale of LOCALES)
   test(`the selection mark sits at the reading-start side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const menu = await openMenu(page, triggerIn(page, "menu-selection", "Columns"));
-    const item = menu.getByRole("menuitemcheckbox", { name: "Customer" });
+    const menu = await openMenu(page, triggerIn(page, "menu-selection", say(locale, "Columns")));
+    const item = menu.getByRole("menuitemcheckbox", { name: say(locale, "Customer") });
     const itemBox = await boxOf(item);
     const mark = await boxOf(item.locator('[data-slot="menu-item-indicator"]'));
     const isBeforeMiddle = mark.x + mark.width / 2 < itemBox.x + itemBox.width / 2;
@@ -345,12 +367,12 @@ for (const locale of LOCALES)
 for (const locale of LOCALES)
   test(`a submenu opens on the reading-end side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const menu = await openMenu(page, triggerIn(page, "menu-submenu", "File"));
-    const parent = menu.getByRole("menuitem", { name: "Export" });
+    const menu = await openMenu(page, triggerIn(page, "menu-submenu", say(locale, "File")));
+    const parent = menu.getByRole("menuitem", { name: say(locale, "Export") });
     await expect(parent).toHaveAttribute("aria-haspopup", "menu");
     await parent.focus();
     await page.keyboard.press(locale === "en" ? "ArrowRight" : "ArrowLeft");
-    const sub = page.getByRole("menuitem", { name: "As PDF" });
+    const sub = page.getByRole("menuitem", { name: say(locale, "As PDF") });
     await expect(sub).toBeVisible();
     await settled(page);
     const parentBox = await boxOf(menu);

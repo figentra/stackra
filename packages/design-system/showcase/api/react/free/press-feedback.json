@@ -1,0 +1,351 @@
+{
+  "generatedFrom": {
+    "hash": "e4708594976acd1b",
+    "propsFiles": ["ui/src/react/press-feedback/press-feedback.props.ts"]
+  },
+  "importLine": "import { PressFeedback } from \"@stackra/ui/react\";",
+  "key": "free/press-feedback",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called on a press, by pointer, touch or keyboard.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Handler that is called when the element loses focus.",
+          "name": "onBlur",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "**Not recommended – use `onPress` instead.** `onClick` is an alias for `onPress`\nprovided for compatibility with other libraries. `onPress` provides\nadditional event details for non-mouse interactions.",
+          "name": "onClick",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: MouseEvent<FocusableElement, MouseEvent>) => void"
+        },
+        {
+          "description": "Handler that is called when the element receives focus.",
+          "name": "onFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: FocusEvent<Element, Element>) => void"
+        },
+        {
+          "description": "Handler that is called when the element's focus status changes.",
+          "name": "onFocusChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isFocused: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when the hover state changes.",
+          "name": "onHoverChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isHovering: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a hover interaction ends.",
+          "name": "onHoverEnd",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: HoverEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a hover interaction starts.",
+          "name": "onHoverStart",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: HoverEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a key is pressed.",
+          "name": "onKeyDown",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: KeyboardEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a key is released.",
+          "name": "onKeyUp",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: KeyboardEvent) => void"
+        },
+        {
+          "description": "Handler that is called when the press state changes.",
+          "name": "onPressChange",
+          "required": false,
+          "source": "react-aria",
+          "type": "(isPressed: boolean) => void"
+        },
+        {
+          "description": "Handler that is called when a press interaction ends, either\nover the target or when the pointer leaves the target.",
+          "name": "onPressEnd",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a press interaction starts.",
+          "name": "onPressStart",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        },
+        {
+          "description": "Handler that is called when a press is released over the target, regardless of\nwhether it started on the target or not.",
+          "name": "onPressUp",
+          "required": false,
+          "source": "react-aria",
+          "type": "(e: PressEvent) => void"
+        }
+      ],
+      "name": "PressFeedback",
+      "props": [
+        {
+          "description": "What is pressed.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The accessible name when the content does not say it.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "scale",
+          "description": "How the press shows. Defaults to `scale`.",
+          "name": "feedback",
+          "required": false,
+          "source": "stackra",
+          "type": "\"scale\" | \"highlight\" | \"ripple\""
+        },
+        {
+          "description": "True to refuse presses and drop the feedback.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
+          "name": "aria-controls",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates whether this element represents the current item within a container or set of related\nelements.",
+          "name": "aria-current",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"time\" | \"true\" | \"false\" | \"step\" | \"page\" | \"location\" | \"date\""
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates whether the element is disabled to users of assistive technology.",
+          "name": "aria-disabled",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"true\" | \"false\""
+        },
+        {
+          "description": "Indicates whether the element, or another grouping element it controls, is currently expanded\nor collapsed.",
+          "name": "aria-expanded",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"true\" | \"false\""
+        },
+        {
+          "description": "Indicates the availability and type of interactive popup element, such as menu or dialog, that\ncan be triggered by an element.",
+          "name": "aria-haspopup",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"dialog\" | \"menu\" | \"true\" | \"false\" | \"grid\" | \"listbox\" | \"tree\""
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates the current \"pressed\" state of toggle buttons.",
+          "name": "aria-pressed",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean | \"true\" | \"false\" | \"mixed\""
+        },
+        {
+          "description": "Whether the element should receive focus on render.",
+          "name": "autoFocus",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "default": "'react-aria-Button'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "ClassNameOrFunction<ButtonRenderProps>"
+        },
+        {
+          "description": "Whether to exclude the element from the sequential tab order. If true,\nthe element will not be focusable via the keyboard by tabbing. This should\nbe avoided except in rare scenarios where an alternative means of accessing\nthe element or its functionality via the keyboard is available.",
+          "name": "excludeFromTabOrder",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "The `<form>` element to associate the button with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button#form).",
+          "name": "form",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The URL that processes the information submitted by the button.\nOverrides the action attribute of the button's form owner.",
+          "name": "formAction",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | ((formData: FormData) => void | Promise<void>)"
+        },
+        {
+          "description": "Indicates how to encode the form data that is submitted.",
+          "name": "formEncType",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates the HTTP method used to submit the form.",
+          "name": "formMethod",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Indicates that the form is not to be validated when it is submitted.",
+          "name": "formNoValidate",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Overrides the target attribute of the button's form owner.",
+          "name": "formTarget",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Whether the button is in a pending state. This disables press and hover events\nwhile retaining focusability, and announces the pending state to screen readers.",
+          "name": "isPending",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Submitted as a pair with the button's value as part of the form data.",
+          "name": "name",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
+          "name": "preventFocusOnPress",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMRenderFunction<\"button\", ButtonRenderProps>"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<ButtonRenderProps>"
+        },
+        {
+          "default": "'button'",
+          "description": "The behavior of the button when used in an HTML form.",
+          "name": "type",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"button\" | \"submit\" | \"reset\""
+        },
+        {
+          "description": "The value associated with the button's name when it's submitted with the form data.",
+          "name": "value",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

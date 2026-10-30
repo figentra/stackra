@@ -1,0 +1,225 @@
+{
+  "generatedFrom": {
+    "hash": "d549b0fb26bef6c4",
+    "heroDoc": "vendor/heroui/native/menu.json",
+    "propsFiles": ["ui/src/native/menu/menu.props.ts"]
+  },
+  "importLine": "import { Menu } from \"@stackra/ui/native\";",
+  "key": "free/menu",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new list of chosen keys each time the selection changes.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: readonly string[]) => void"
+        },
+        {
+          "description": "Called with the key of every action chosen, after the action's own `onPress`.",
+          "name": "onAction",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "extends": "Menu",
+      "name": "Menu",
+      "props": [
+        {
+          "description": "The element that opens the menu, usually a `Button` or `IconButton`; it must be pressable and named.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "The groups of actions, in order, with a divider between them.",
+          "name": "sections",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly MenuSection[]"
+        },
+        {
+          "description": "What choosing an action does: just run it (`none`, the default), or also keep it chosen, one per section\n(`single`) or any number (`multiple`). A chosen action shows a mark and is reported in `onChange`.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"multiple\" | \"single\""
+        },
+        {
+          "description": "The keys of the chosen actions, for a controlled menu; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The keys chosen at the start, for an uncontrolled menu.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"start\" | \"end\""
+        },
+        {
+          "default": "center",
+          "description": "Where along that side it lines up with the trigger. Defaults to `center`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\""
+        },
+        {
+          "description": "Animation configuration for menu root",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "\"disable-all\""
+        },
+        {
+          "description": "",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Whether the menu is disabled",
+          "name": "isDisabled",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "'popover'",
+          "description": "Presentation mode for the menu content",
+          "name": "presentation",
+          "required": false,
+          "source": "heroui",
+          "type": "\"popover\" | \"bottom-sheet\""
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "All standard React Native View props are supported",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

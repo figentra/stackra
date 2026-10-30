@@ -14,6 +14,7 @@ import type { Quantity } from "@stackra/support";
 import { LengthUnit } from "#core/enums/length-unit.enum";
 import type { NumberingSystem } from "#core/enums/numbering-system.enum";
 import { intlLocale } from "#core/functions/intl-locale.function";
+import { numberFormatIn } from "#core/functions/number-format-in.function";
 
 /**
  * `length` in `unit`, formatted for `options.locale`.
@@ -29,10 +30,14 @@ export function formatLength(
   options: { readonly locale: string; readonly numerals: NumberingSystem; readonly places: number },
 ): string {
   const converted = length.to(unit).toDecimal(options.places);
-  return new Intl.NumberFormat(intlLocale(options.locale, options.numerals), {
-    style: "unit",
-    unit: Enum.meta(LengthUnit, unit).intl,
-    minimumFractionDigits: options.places,
-    maximumFractionDigits: options.places,
-  }).format(Number(converted));
+  return numberFormatIn(
+    intlLocale(options.locale, options.numerals),
+    {
+      style: "unit",
+      unit: Enum.meta(LengthUnit, unit).intl,
+      minimumFractionDigits: options.places,
+      maximumFractionDigits: options.places,
+    },
+    options.numerals,
+  ).format(Number(converted));
 }

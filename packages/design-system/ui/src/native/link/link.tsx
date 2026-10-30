@@ -15,7 +15,7 @@ import { use, type ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
-import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
+import { NATIVE_TONE_CLASS_NAME } from "#core/constants/native-tone-class-name.constant";
 import { Icon } from "#native/icon/icon";
 import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
@@ -40,6 +40,7 @@ export function Link({
   externalLabel: externalLabelProp,
   children,
   accessibilityHint,
+  className,
   ...rest
 }: LinkProps): ReactElement {
   const t = useUiText();
@@ -50,13 +51,16 @@ export function Link({
     if (href) followHref(href, navigate, COULD_NOT_OPEN, isExternal);
   };
   // Written out in full: Uniwind finds `text-link` and `underline` here, and `default` has no entry in the map.
-  const toneClass = tone === "default" ? "text-link" : TONE_CLASS_NAME[tone];
+  const toneClass = tone === "default" ? "text-link" : NATIVE_TONE_CLASS_NAME[tone];
   const hint = isExternal ? externalLabel : accessibilityHint;
 
   return (
     <LinkButton
       hitSlop={8}
       {...rest}
+      // HeroUI's button centres its content, so a link stretched by a column sat mid-row; it starts at the reading edge
+      // (`!` because the component sheet sets `justify-content` after the utilities).
+      className={className ? `!justify-start ${className}` : "!justify-start"}
       isDisabled={isDisabled}
       onPress={follow}
       {...(label ? { accessibilityLabel: label } : {})}
@@ -67,12 +71,7 @@ export function Link({
         {children}
       </LinkButton.Label>
       {isExternal ? (
-        <Icon
-          name="external-link"
-          size="sm"
-          tone={tone === "default" ? undefined : tone}
-          isMirroredInRtl
-        />
+        <Icon name="external-link" size="sm" tone={tone === "default" ? undefined : tone} />
       ) : null}
     </LinkButton>
   );

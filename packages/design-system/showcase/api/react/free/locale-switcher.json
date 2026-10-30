@@ -1,0 +1,53 @@
+{
+  "generatedFrom": {
+    "hash": "c75c584f25ce2717",
+    "propsFiles": ["ui/src/react/locale-switcher/locale-switcher.props.ts"]
+  },
+  "importLine": "import { LocaleSwitcher } from \"@stackra/ui/react\";",
+  "key": "free/locale-switcher",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the locale chosen.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(locale: string) => void"
+        }
+      ],
+      "name": "LocaleSwitcher",
+      "props": [
+        {
+          "description": "The locales offered, as BCP 47 tags.",
+          "name": "locales",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The active locale.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The visible label; defaults to the `ui` catalogue's \"Language\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

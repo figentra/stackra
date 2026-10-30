@@ -41,6 +41,7 @@ export function CheckboxGroup({
   isReadOnly,
   variant,
   name,
+  columns,
   ...rest
 }: CheckboxGroupProps): ReactElement {
   const labelId = useId();
@@ -54,6 +55,17 @@ export function CheckboxGroup({
     setHeld(next);
     onChange?.(next);
   };
+  const boxes = options.map((option) => (
+    <Checkbox
+      key={option.value}
+      label={option.label}
+      description={option.description}
+      value={chosen.includes(option.value)}
+      onChange={(isChecked) => toggle(option.value, isChecked)}
+      isDisabled={isDisabled === true || option.isDisabled === true}
+      {...omitUndefined({ isInvalid, isReadOnly, variant })}
+    />
+  ));
   return (
     <View
       accessibilityLabel={typeof label === "string" ? label : undefined}
@@ -67,17 +79,17 @@ export function CheckboxGroup({
           {label}
         </Label>
       ) : null}
-      {options.map((option) => (
-        <Checkbox
-          key={option.value}
-          label={option.label}
-          description={option.description}
-          value={chosen.includes(option.value)}
-          onChange={(isChecked) => toggle(option.value, isChecked)}
-          isDisabled={isDisabled === true || option.isDisabled === true}
-          {...omitUndefined({ isInvalid, isReadOnly, variant })}
-        />
-      ))}
+      {columns ? (
+        <View className="flex-row flex-wrap gap-y-2">
+          {boxes.map((box) => (
+            <View key={box.key} style={{ width: `${100 / columns}%` }}>
+              {box}
+            </View>
+          ))}
+        </View>
+      ) : (
+        boxes
+      )}
       {description ? <Description>{description}</Description> : null}
       {errorMessage ? (
         <FieldError {...omitUndefined({ isInvalid })}>{errorMessage}</FieldError>

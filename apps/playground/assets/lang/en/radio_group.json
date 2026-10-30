@@ -1,0 +1,45 @@
+{
+  "captions": {
+    "disabled": "Disabled",
+    "option_disabled": "One option disabled",
+    "read_only": "Read-only",
+    "required": "Required",
+    "invalid": "Invalid, with a message"
+  },
+  "group_labels": {
+    "vertical": "Shipping speed",
+    "horizontal": "Size",
+    "disabled": "Billing cycle",
+    "option_disabled": "Payment method",
+    "read_only": "Your plan",
+    "required": "Account type",
+    "invalid": "Delivery window",
+    "live": "Fruit",
+    "primary": "Primary group",
+    "secondary": "Secondary group"
+  },
+  "vertical_description": "Prices include tax.",
+  "invalid_description": "Pick the time that suits you.",
+  "invalid_error": "Choose a delivery window to continue.",
+  "chosen": "Chosen: {key}",
+  "pick_apple": "Choose apple",
+  "pick_pear": "Choose pear",
+  "sample": {
+    "standard": "Standard",
+    "delivered_in_5_to_7": "Delivered in 5 to 7 days.",
+    "express": "Express",
+    "delivered_in_2_to_3": "Delivered in 2 to 3 days.",
+    "overnight": "Overnight",
+    "small": "Small",
+    "medium": "Medium",
+    "large": "Large",
+    "apple": "Apple",
+    "pear": "Pear",
+    "plum": "Plum",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "card": "Card",
+    "bank_transfer": "Bank transfer",
+    "cheque": "Cheque"
+  }
+}

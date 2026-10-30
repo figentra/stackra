@@ -4,7 +4,7 @@
  *          `isSelected`, `onChange` with the new state, `defaultValue` held in state because HeroUI Native's field is
  *          controlled only) and draws the label, description and error message with the switch at the row's end in one
  *          pressable row; every other ControlField prop passes through.
- * Boundary: no styling of its own beyond the row's layout. Documented adaptations, where HeroUI Native has no
+ * Boundary: no styling of its own beyond the row's layout and the off track, which takes the theme's field edge. Documented adaptations, where HeroUI Native has no
  *          equivalent: `isReadOnly` refuses the press (React Native has no read-only state to announce); `name` is
  *          accepted for a form adapter but native has no form to submit. The row is the one accessible `switch` and
  *          the inner control is hidden from VoiceOver and TalkBack, so it is not read twice.
@@ -12,11 +12,19 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0303 (decision 7); ADR 0055
  *          (forms); owner decision 6 of STA-350 (thin wrappers).
  */
-import { ControlField, Description, FieldError, Label } from "heroui-native";
+import {
+  ControlField,
+  Description,
+  FieldError,
+  Label,
+  Switch as HeroSwitch,
+  useThemeColor,
+} from "heroui-native";
 import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { haptics } from "#native/haptics/haptics";
 import type { SwitchProps } from "#native/switch/switch.props";
 
 /**
@@ -40,11 +48,14 @@ export function Switch({
   ...rest
 }: SwitchProps): ReactElement {
   const [held, setHeld] = useState(defaultValue);
+  // HeroUI Native's off track is `default`, about 1.3:1 on the dark page; the field edge holds 3:1 in both schemes.
+  const [edge, accent] = useThemeColor(["field-border", "accent"] as const);
   const isSelected = value ?? held;
   // The name only keys a web form's submission and a form adapter's binding; there is nothing to submit on native.
   void name;
   const change = (next: boolean) => {
     if (isReadOnly) return;
+    haptics.play("selection");
     setHeld(next);
     onChange?.(next);
   };
@@ -73,7 +84,9 @@ export function Switch({
           importantForAccessibility="no-hide-descendants"
           // The row takes every press, so the switch and the row always agree on what the next state is.
           pointerEvents="none"
-        />
+        >
+          <HeroSwitch animation={{ backgroundColor: { value: [edge, accent] } }} />
+        </ControlField.Indicator>
       </View>
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </ControlField>

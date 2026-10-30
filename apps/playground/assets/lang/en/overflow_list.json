@@ -1,0 +1,26 @@
+{
+  "tags": {
+    "label": "Dish tags",
+    "vegan": "Vegan",
+    "spicy": "Spicy",
+    "gluten_free": "Gluten free",
+    "halal": "Halal",
+    "new": "New",
+    "best_seller": "Best seller"
+  },
+  "roles": {
+    "label": "Staff roles",
+    "cashier": "Cashier",
+    "shift_lead": "Shift lead",
+    "inventory": "Inventory clerk",
+    "refunds": "Refunds approver"
+  },
+  "channels": {
+    "label": "Sales channels",
+    "online": "Online store",
+    "pos": "POS · Riyadh branch (BR-01)",
+    "marketplace": "Marketplace",
+    "wholesale": "Wholesale",
+    "kiosk": "Self-order kiosk"
+  }
+}

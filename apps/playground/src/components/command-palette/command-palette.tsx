@@ -1,67 +1,88 @@
 /**
  * Stackra file contract:
- * Purpose: the playground's command palette, a launcher in a modal glass dialog.
+ * Purpose: the playground's command palette, a launcher in a modal dialog over the registry's search index, on a solid
+ *          surface (only the scrim behind it blurs), so its muted text is measured against one colour.
  *          - One large search field drives a list of results; focus stays in the field while an active row moves
- *            (the combobox pattern).
- *          - Empty, it offers the recent pages, the quick actions (scheme, language, places) and every page by
- *            category. Typed, it ranks pages and actions by how well their names match (start of the name, start of
- *            a word, anywhere), and marks the match.
- *          - Each page row wears its category's brand glyph and its category; a preview of the active
- *            row sits beside the list on a wide screen.
+ *            (the combobox pattern). A Web / Native tag beside it narrows the index to one platform.
+ *          - Empty, it offers the recent pages, the quick actions (scheme, language, places) and every component by
+ *            category. Typed, it groups the hits as HeroUI's search does: Components (a title, keyword or
+ *            description hit, the reason shown), Sections (a heading or prop hit, opening the page at that section)
+ *            and Categories, then the matching quick actions.
+ *          - Each component row wears its category's glyph, and its category; a preview of
+ *            the active row sits beside the list on a wide screen.
  *          - ↑ ↓ move, Enter opens, Escape or the scrim closes. The shell opens it from its search button, ⌘K or
  *            Ctrl+K, and `/`.
- * Boundary: the dialog, the ranking and the recent list (this browser only, in localStorage, guarded) only; the shell
- *          owns whether it is open, supplies the actions and closes it on a route change. A native input carries
+ * Boundary: the dialog, the grouping and the recent list (shared with the home row) only; the shell owns whether it
+ *          is open, supplies the actions and closes it on a route change. The ranking is the registry's
+ *          `matchEntries`; the docs are `searchDocs` (the generated index once WP2 lands). A native input carries
  *          the combobox semantics, which @stackra/ui's SearchField does not expose.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 5); WAI-ARIA 1.2 combobox and listbox; WCAG 2.2 SC 2.1.1, 2.4.3, 4.1.2, 4.1.3.
+ * Governing contract: ADR 0302 (decision 5); showcase redesign spec section 3.2 (Search); WAI-ARIA 1.2 combobox and
+ *          listbox; WCAG 2.2 SC 2.1.1, 2.4.3, 4.1.2, 4.1.3.
  */
 import type { IconName } from "@stackra/icons/contracts";
-import { Icon } from "@stackra/ui/react";
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import type { I18nKey } from "@stackra/i18n";
+import {
+  byCategory,
+  CATEGORIES,
+  categoryKeys,
+  categoryPath,
+  matchEntries,
+  webPath,
+  type ComponentCategory,
+  type ComponentTier,
+  Platform,
+  type SearchHit,
+} from "@stackra/showcase";
+import { Chip, Icon, ToggleButton, ToggleButtonGroup, useCatalogueText } from "@stackra/ui/react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import { useNavigate } from "react-router";
 
 import { CategoryGlyph } from "#src/components/category-glyph";
-import { PageCategory } from "#src/enums/page-category.enum";
-import type { PageLink } from "#src/types/page-link.type";
+import { PALETTE_KEYS } from "#src/components/command-palette/palette-keys.constant";
+import { searchDocs } from "#src/components/command-palette/search-docs.function";
+import { readRecent, rememberRecent } from "#src/components/recent-chips";
+import { MESSAGES } from "#src/constants/messages.constant";
+import { SHOWCASE_KEYS } from "#src/constants/showcase-keys.constant";
 import type { CommandPaletteProps } from "#src/components/command-palette/command-palette.props";
 import type { PaletteAction } from "#src/components/command-palette/palette-action.type";
 
-// shortcut: English strings in one place until @stackra/i18n ships; then `playground::palette.*` keys.
-const STRINGS = {
-  label: "Search components",
-  placeholder: "Search components, categories and actions…",
-  results: "Results",
-  recent: "Recent",
-  actions: "Quick actions",
-  best: "Best matches",
-  count: (count: number) =>
-    count === 0 ? "No results" : count === 1 ? "1 result" : `${count} results`,
-  empty: (query: string) => `Nothing matches “${query}”.`,
-  emptyHint: "Try a component, a category such as Selection, or an action such as Dark.",
-  page: "Page",
-  action: "Action",
-  open: "Open",
-  run: "Run",
-  hints: [
-    { keys: ["arrow-up", "arrow-down"], action: "move" },
-    { keys: ["corner-down-left"], action: "open" },
-    { keys: ["esc"], action: "close" },
-  ],
-} as const;
+/** The palette's keys and the showcase's. */
+const P = PALETTE_KEYS.palette;
+const S = SHOWCASE_KEYS.showcase;
 
-/** The pages kept in the recent list, newest first, and where. */
-const RECENT_KEY = "stackra-playground:recent";
-const RECENT_SIZE = 5;
+/** The anchor a section hit opens: a prop hit lands on the API table, a heading hit on the examples. */
+const SECTION_ANCHOR: Readonly<Partial<Record<SearchHit["reason"], string>>> = {
+  prop: "api",
+  heading: "examples",
+};
 
-/** One row: a page or an action. */
+/** The key hints in the footer. */
+const HINTS = [
+  { keys: ["arrow-up", "arrow-down"], action: "move" },
+  { keys: ["corner-down-left"], action: "open" },
+  { keys: ["esc"], action: "close" },
+] as const;
+
+/** One row: a component, a section of one, a category or an action. */
 interface Item {
   readonly id: string;
-  readonly kind: "page" | "action";
+  readonly kind: "component" | "section" | "category" | "action";
   readonly label: string;
   readonly detail: string;
   readonly keywords: string;
-  readonly page?: PageLink;
+  readonly category?: ComponentCategory;
+  readonly tier?: ComponentTier;
+  /** Where the row goes; an action has none. */
+  readonly href?: string;
   readonly action?: PaletteAction;
 }
 
@@ -71,25 +92,7 @@ interface Group {
   readonly items: readonly Item[];
 }
 
-const readRecent = (): readonly string[] => {
-  try {
-    const value: unknown = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
-    return Array.isArray(value) ? value.filter((path) => typeof path === "string") : [];
-  } catch {
-    return [];
-  }
-};
-
-const remember = (path: string) => {
-  try {
-    const next = [path, ...readRecent().filter((recent) => recent !== path)].slice(0, RECENT_SIZE);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-  } catch {
-    // shortcut: a browser that refuses storage keeps no recent list; nothing else depends on it.
-  }
-};
-
-/** How well `item` matches every word: −1 when one is missing, more when names start with the words. */
+/** How well an action matches every word: −1 when one is missing, more when the label starts with the words. */
 function score(item: Item, words: readonly string[]): number {
   const label = item.label.toLowerCase();
   const text = `${label} ${item.detail.toLowerCase()} ${item.keywords}`;
@@ -120,15 +123,16 @@ function Marked({ label, words }: { label: string; words: readonly string[] }) {
   );
 }
 
-/** The leading tile of a row: the page's category glyph or the action's icon. */
+/** The leading tile of a row: the category glyph or the action's icon. */
 function Tile({ item, size = "size-9" }: { item: Item; size?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`grid ${size} shrink-0 place-items-center rounded-xl border border-border bg-surface-secondary`}
+      className={`grid ${size} shrink-0 place-items-center border border-border bg-surface-secondary`}
+      style={{ borderRadius: "var(--radius-lg)" }}
     >
-      {item.page ? (
-        <CategoryGlyph category={item.page.category} className="size-[45%]" />
+      {item.category ? (
+        <CategoryGlyph category={item.category} className="size-[45%]" />
       ) : item.action ? (
         <Icon name={item.action.icon} size="sm" />
       ) : null}
@@ -142,7 +146,8 @@ function Key({ name }: { name: string }) {
     <kbd
       aria-hidden="true"
       dir="ltr"
-      className="inline-flex min-h-5 items-center rounded-md border border-border px-1.5 font-mono text-xs"
+      className="inline-flex min-h-5 items-center border border-border px-1.5 font-mono text-xs"
+      style={{ borderRadius: "var(--radius-sm)" }}
     >
       {name === "esc" ? name : <Icon name={name as IconName} size="sm" />}
     </kbd>
@@ -150,13 +155,17 @@ function Key({ name }: { name: string }) {
 }
 
 /** The launcher of the playground. */
-export function CommandPalette({ pages, actions, search, isOpen, onClose }: CommandPaletteProps) {
+export function CommandPalette({ locale, actions, search, isOpen, onClose }: CommandPaletteProps) {
+  const t = useCatalogueText(MESSAGES.en);
   const dialog = useRef<HTMLDialogElement>(null);
   const navigate = useNavigate();
   const listId = useId();
   const [query, setQuery] = useState("");
+  const [platform, setPlatform] = useState<Platform | undefined>();
   const [active, setActive] = useState(0);
   const [recent, setRecent] = useState<readonly string[]>([]);
+  const lang = locale.startsWith("ar") ? "ar" : "en";
+  const docs = useMemo(() => searchDocs(MESSAGES[lang], lang), [lang]);
 
   useEffect(() => {
     const element = dialog.current;
@@ -169,14 +178,23 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
     } else if (!isOpen && element.open) element.close();
   }, [isOpen]);
 
-  const pageItems: Item[] = pages.map((page) => ({
-    id: `page${page.path.replaceAll("/", "-")}`,
-    kind: "page",
-    label: page.title,
-    detail: page.category,
-    keywords: page.path.toLowerCase(),
-    page,
-  }));
+  const categoryTitle = (category: ComponentCategory) => t(categoryKeys(category).title as I18nKey);
+  const componentItem = (doc: SearchHit["doc"], reason?: SearchHit, prefix = ""): Item => {
+    const [tier, slug] = doc.key.split("/") as [ComponentTier, string];
+    const detail = categoryTitle(doc.category);
+    return {
+      id: `${prefix}component-${tier}-${slug}`,
+      kind: "component",
+      label: doc.title,
+      detail: reason
+        ? `${detail} · ${t(S.search.reason[reason.reason], { name: reason.matched })}`
+        : detail,
+      keywords: "",
+      category: doc.category,
+      tier,
+      href: `${webPath({ tier, slug })}${search}`,
+    };
+  };
   const actionItems: Item[] = actions.map((action) => ({
     id: `action-${action.id}`,
     kind: "action",
@@ -187,35 +205,70 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
   }));
 
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  const groups: readonly Group[] =
-    words.length > 0
-      ? [
-          {
-            title: STRINGS.best,
-            items: [...pageItems, ...actionItems]
-              .map((item, order) => ({ item, order, rank: score(item, words) }))
-              .filter(({ rank }) => rank >= 0)
-              // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-              .sort((a, b) => b.rank - a.rank || a.order - b.order)
-              .map(({ item }) => item),
-          },
-        ]
-      : [
-          {
-            title: STRINGS.recent,
-            // Copies with their own ids: a recent page also lists under its category, as a row of its own.
-            items: recent.flatMap((path) =>
-              pageItems
-                .filter((item) => item.page?.path === path)
-                .map((item) => ({ ...item, id: `recent-${item.id}` })),
-            ),
-          },
-          { title: STRINGS.actions, items: actionItems },
-          ...PageCategory.map((category) => ({
-            title: category,
-            items: pageItems.filter((item) => item.page?.category === category),
-          })),
-        ];
+  let groups: readonly Group[];
+  if (words.length > 0) {
+    const hits = matchEntries(docs, query, platform ? { platform } : {});
+    const sections = hits.filter((hit) => SECTION_ANCHOR[hit.reason]);
+    groups = [
+      {
+        title: t(S.search.components),
+        items: hits
+          .filter((hit) => !SECTION_ANCHOR[hit.reason])
+          .map((hit) => componentItem(hit.doc, hit)),
+      },
+      {
+        title: t(S.search.sections),
+        items: sections.map((hit) => {
+          const item = componentItem(hit.doc, hit, "section-");
+          return { ...item, kind: "section", href: `${item.href}#${SECTION_ANCHOR[hit.reason]}` };
+        }),
+      },
+      {
+        title: t(S.search.categories),
+        items: CATEGORIES.map(({ id }) => ({
+          id: `category-${id}`,
+          kind: "category" as const,
+          label: categoryTitle(id),
+          detail: t(S.ui.count_components, { count: byCategory(id).length }),
+          keywords: id.replaceAll("_", " "),
+          category: id,
+          href: `${categoryPath(id)}${search}`,
+        })).filter((item) => score(item, words) >= 0),
+      },
+      {
+        title: t(P.actions),
+        items: actionItems
+          .map((item, order) => ({ item, order, rank: score(item, words) }))
+          .filter(({ rank }) => rank >= 0)
+          // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+          .sort((a, b) => b.rank - a.rank || a.order - b.order)
+          .map(({ item }) => item),
+      },
+    ];
+  } else {
+    const byKey = new Map(
+      docs.map((doc) => [
+        webPath({ tier: doc.tier, slug: doc.key.slice(doc.key.indexOf("/") + 1) }),
+        doc,
+      ]),
+    );
+    groups = [
+      {
+        title: t(P.recent),
+        items: recent.flatMap((path) => {
+          const doc = byKey.get(path);
+          return doc ? [componentItem(doc, undefined, "recent-")] : [];
+        }),
+      },
+      { title: t(P.actions), items: actionItems },
+      ...CATEGORIES.map(({ id }) => ({
+        title: categoryTitle(id),
+        items: docs
+          .filter((doc) => doc.category === id && (!platform || doc.platforms.includes(platform)))
+          .map((doc) => componentItem(doc)),
+      })),
+    ];
+  }
   const shown = groups.filter((group) => group.items.length > 0);
   const flat = shown.flatMap((group) => group.items);
   const current = flat[Math.min(active, flat.length - 1)];
@@ -228,9 +281,9 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
 
   const run = (item: Item | undefined) => {
     if (!item) return;
-    if (item.page) {
-      remember(item.page.path);
-      void navigate(`${item.page.path}${search}`);
+    if (item.href) {
+      if (item.kind === "component") rememberRecent(item.href.split(/[?#]/)[0] ?? item.href);
+      void navigate(item.href);
     }
     item.action?.run();
     onClose();
@@ -253,14 +306,24 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
     if (event.target === event.currentTarget) onClose();
   };
 
+  const kindLabel = (kind: Item["kind"]) =>
+    kind === "component"
+      ? t(P.component)
+      : kind === "section"
+        ? t(P.section)
+        : kind === "category"
+          ? t(P.category)
+          : t(P.action);
+
   return (
     // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- reason: a click on the scrim closes the dialog; Escape closes it natively
     <dialog
       ref={dialog}
-      aria-label={STRINGS.label}
+      aria-label={t(P.label)}
       onClose={onClose}
       onClick={onScrim}
-      className="command-palette material-thick m-auto mt-[10vh] w-[min(100%-2rem,54rem)] max-w-none overflow-hidden rounded-3xl p-0 text-foreground"
+      className="command-palette m-auto mt-[10vh] border border-border bg-overlay shadow-overlay w-[min(100%-2rem,54rem)] max-w-none overflow-hidden p-0 text-foreground"
+      style={{ borderRadius: "var(--radius-container)" }}
     >
       {isOpen ? (
         <div className="grid max-h-[min(76vh,42rem)] grid-rows-[auto_minmax(0,1fr)_auto]">
@@ -270,12 +333,12 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
               type="text"
               // oxlint-disable-next-line jsx-a11y/role-has-required-aria-props -- reason: aria-controls is spread in only while the list is shown
               role="combobox"
-              aria-label={STRINGS.label}
+              aria-label={t(P.label)}
               aria-expanded={flat.length > 0}
               {...(flat.length > 0 ? { "aria-controls": listId } : {})}
               aria-autocomplete="list"
               aria-activedescendant={current ? optionId(current) : undefined}
-              placeholder={STRINGS.placeholder}
+              placeholder={t(S.ui.search_placeholder)}
               autoComplete="off"
               spellCheck={false}
               autoFocus
@@ -287,28 +350,47 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
               onKeyDown={onKeyDown}
               className="min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-muted"
             />
+            <ToggleButtonGroup
+              aria-label={t(P.platform)}
+              size="sm"
+              selectionMode="single"
+              selectedKeys={platform ? [platform] : []}
+              onSelectionChange={(keys) => {
+                setPlatform(Platform.find((candidate) => keys.has(candidate)));
+                setActive(0);
+              }}
+              className="max-sm:hidden"
+            >
+              {Platform.map((candidate) => (
+                <ToggleButton key={candidate} id={candidate}>
+                  {t(S.platform[candidate])}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
             <Key name="esc" />
           </div>
           <div className="grid min-h-0 md:grid-cols-[minmax(0,1fr)_16rem]">
             {/* With nothing to list there is no listbox: an empty one would hold no option (ARIA 1.2). */}
             {flat.length === 0 ? (
-              <div className="grid content-center justify-items-center gap-1 px-4 py-12 text-center">
+              // With no row there is nothing to preview: the message takes the whole width, the hint on one line.
+              <div className="grid content-center justify-items-center gap-1 px-4 py-12 text-center md:col-span-2">
                 <p className="font-medium">
-                  <bdi>{STRINGS.empty(query)}</bdi>
+                  <bdi>{t(S.ui.no_results, { query })}</bdi>
                 </p>
                 <p className="text-sm text-muted">
-                  <bdi>{STRINGS.emptyHint}</bdi>
+                  <bdi>{t(P.empty_hint)}</bdi>
                 </p>
               </div>
             ) : (
               <div
                 id={listId}
                 role="listbox"
-                aria-label={STRINGS.results}
+                aria-label={t(P.results)}
                 className="min-h-0 overflow-y-auto overscroll-contain p-2"
               >
-                {shown.map((group) => {
-                  const headingId = `${listId}-${group.title.toLowerCase().replaceAll(/\W+/g, "-")}`;
+                {shown.map((group, index) => {
+                  // By position: an Arabic title has no \w letter to build a distinct id from.
+                  const headingId = `${listId}-${index}`;
                   return (
                     <div
                       key={group.title}
@@ -337,14 +419,17 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
                                 setActive(flat.indexOf(item));
                             }}
                             onClick={() => run(item)}
-                            className={`flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2 ${isActive ? "bg-default" : ""}`}
+                            className={`flex cursor-pointer items-center gap-3 px-3 py-2 ${isActive ? "bg-default" : ""}`}
+                            style={{ borderRadius: "var(--radius-control)" }}
                           >
                             <Tile item={item} />
                             <span className="grid min-w-0 flex-1">
                               <span className="truncate font-medium">
                                 <Marked label={item.label} words={words} />
                               </span>
-                              <span className="truncate text-xs text-muted">{item.detail}</span>
+                              <span className="truncate text-xs text-muted">
+                                <bdi>{item.detail}</bdi>
+                              </span>
                             </span>
                             {isActive ? <Key name="corner-down-left" /> : null}
                           </div>
@@ -358,31 +443,32 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
             {/* The preview repeats what the active row says, bigger; screen readers have it from the row. */}
             <div
               aria-hidden="true"
-              className="hidden border-s border-separator p-5 md:grid md:content-start md:gap-4"
+              className={`hidden border-s border-separator p-5 md:content-start md:gap-4 ${flat.length === 0 ? "" : "md:grid"}`}
             >
               {current ? (
                 <>
                   <Tile item={current} size="size-16" />
                   <div className="grid gap-1">
                     <p className="text-lg font-semibold">{current.label}</p>
-                    <p className="text-sm text-muted">{current.detail}</p>
+                    <p className="text-sm text-muted">
+                      <bdi>{current.detail}</bdi>
+                    </p>
                   </div>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-full border border-border px-2 py-0.5">
-                      {current.kind === "page" ? STRINGS.page : STRINGS.action}
-                    </span>
-                    {current.page ? (
-                      <span
-                        dir="ltr"
-                        className="rounded-full border border-border px-2 py-0.5 font-mono"
-                      >
-                        {current.page.path}
-                      </span>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip size="sm" variant="secondary">
+                      {kindLabel(current.kind)}
+                    </Chip>
+                    {current.href ? (
+                      <Chip size="sm" variant="secondary">
+                        <bdi dir="ltr" className="font-mono">
+                          {current.href.split("?")[0]}
+                        </bdi>
+                      </Chip>
                     ) : null}
                   </div>
                   <p className="flex items-center gap-2 text-sm text-muted">
                     <Key name="corner-down-left" />
-                    {current.kind === "page" ? STRINGS.open : STRINGS.run}
+                    {current.kind === "action" ? t(P.run) : t(P.open)}
                   </p>
                 </>
               ) : null}
@@ -390,16 +476,16 @@ export function CommandPalette({ pages, actions, search, isOpen, onClose }: Comm
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-separator px-5 py-2.5 text-xs text-muted">
             <ul aria-hidden="true" className="flex flex-wrap gap-4">
-              {STRINGS.hints.map(({ keys, action }) => (
+              {HINTS.map(({ keys, action }) => (
                 <li key={action} className="flex items-center gap-1.5">
                   {keys.map((key) => (
                     <Key key={key} name={key} />
                   ))}
-                  {action}
+                  {t(P[action])}
                 </li>
               ))}
             </ul>
-            <p role="status">{STRINGS.count(flat.length)}</p>
+            <p role="status">{t(P.count, { count: flat.length })}</p>
           </div>
         </div>
       ) : null}

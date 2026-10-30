@@ -13,7 +13,9 @@
 // @covers sta-350:FR-036 sta-350:P-023 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 import { contrastRatio } from "@stackra/tokens";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +24,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/chip?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Chip" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Chip", locale) }),
+  ).toBeVisible();
 };
 
 /**
@@ -65,11 +69,10 @@ for (const scheme of SCHEMES)
   test(`the text of every chip stands 4.5:1 on its chip in ${scheme}`, async ({ page }) => {
     await open(page, scheme, "en");
     const pageBackground = await paintedOver(page.locator("body"), "backgroundColor", "#ffffff");
-    const chips = page
-      .getByRole("region", { name: "Variants and tones" })
-      .locator('[data-slot="chip"]');
+    const chips = page.getByRole("region", { name: "Usage" }).locator('[data-slot="chip"]');
+    // The demo loads lazily: wait for every chip before walking them.
+    await expect(chips).toHaveCount(60);
     const count = await chips.count();
-    expect(count).toBe(60);
     const failures: string[] = [];
     for (let index = 0; index < count; index += 1) {
       const chip = chips.nth(index);
@@ -108,7 +111,8 @@ test("an icon is the size of its chip's text", async ({ page }) => {
 for (const locale of LOCALES)
   test(`the start icon sits on the reading-start side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const chip = page.getByRole("region", { name: "Icons" }).locator('[data-slot="chip"]').first();
+    // By id: the section's heading speaks the page's locale.
+    const chip = example(page, "icons").locator('[data-slot="chip"]').first();
     const icon = await chip.locator("svg").boundingBox();
     const label = await chip.locator(".chip__label").boundingBox();
     if (!icon || !label) throw new Error("a box is missing");

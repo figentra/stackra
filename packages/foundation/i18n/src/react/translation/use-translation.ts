@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `useTranslation()`, the hook a component translates with: `translation = useTranslation()` as a class
  *          component field, then `t(I18n.web.nav.home)` or `t(I18n.web.locale_suggestion.body, { language })`.
- * Boundary: formats through `formatMessage` with the provider's catalogues and digit-aware locale tag; the returned
+ * Boundary: formats through `formatMessage` with the provider's catalogues, digit-aware locale tag and digits; the returned
  *           object is stable while the locale and catalogues are.
  * Runtime: isomorphic
  * Governing contract: ADR 0268 (R15: ICU, typed keys), ADR 0080, ADR 0305 (class components: hooks as fields).
@@ -22,9 +22,9 @@ import type { Translation } from "./translation.type";
  * t(I18n.pages.home.title);
  */
 export function useTranslation(): Translation {
-  const { messages, intlLocale } = useI18nState();
+  const { messages, intlLocale, numerals } = useI18nState();
   return useMemo<Translation>(
-    () => ({ t: (key, values) => formatMessage(messages, key, values, intlLocale) }),
-    [messages, intlLocale],
+    () => ({ t: (key, values) => formatMessage(messages, key, values, intlLocale, numerals) }),
+    [messages, intlLocale, numerals],
   );
 }

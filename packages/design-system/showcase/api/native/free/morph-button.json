@@ -1,0 +1,227 @@
+{
+  "generatedFrom": {
+    "hash": "fbea09913a451ba7",
+    "propsFiles": ["ui/src/native/morph-button/morph-button.props.ts"]
+  },
+  "importLine": "import { MorphButton } from \"@stackra/ui/native\";",
+  "key": "free/morph-button",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the success check settles back to the label, so the app can move its state to `idle`.",
+          "name": "onSuccessEnd",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called on a press while `idle` or `error`; presses are refused while `loading` and `success`.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "MorphButton",
+      "props": [
+        {
+          "default": "idle",
+          "description": "The state shown. Defaults to `idle`.",
+          "name": "state",
+          "required": false,
+          "source": "stackra",
+          "type": "\"success\" | \"loading\" | \"error\" | \"idle\""
+        },
+        {
+          "description": "The words of each state; `idle` is required, the others fall back to it (and are read aloud while shown).",
+          "name": "labels",
+          "required": true,
+          "source": "stackra",
+          "type": "{ readonly idle: string; } & Readonly<Partial<Record<\"success\" | \"loading\" | \"error\", string>>>"
+        },
+        {
+          "description": "How long the success check shows before the button settles back to its label, in ms. Defaults to 1500.",
+          "name": "successDuration",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "default": "primary",
+          "description": "The emphasis. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+        },
+        {
+          "default": "md",
+          "description": "The size. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "True to refuse presses.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Animation configuration for scale and highlight feedback",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "AnimationRoot<{ scale?: PressableFeedbackScaleAnimation; highlight?: PressableFeedbackHighlightAnimation; }>"
+        },
+        {
+          "default": "false",
+          "description": "When `true`, merges press behavior and animated scale onto the single child (Slot pattern).\nThe child must be one React element. Uses `Animated.createAnimatedComponent(Slot.Pressable)` internally.",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Background layer rendered behind the button surface.\n- `undefined` (default): renders `Button.Background` for the `secondary`\n  and `tertiary` variants when the active library theme registers\n  default background content (e.g. `glass`); otherwise no layer\n- custom node: replaces the default layer entirely\n- `null`: removes the background layer",
+          "name": "background",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "'scale-highlight'",
+          "description": "Feedback variant that renders Scale + Highlight compound parts",
+          "name": "feedbackVariant",
+          "required": false,
+          "source": "heroui",
+          "type": "\"scale-highlight\""
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "default": "true",
+          "description": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
+          "name": "isAnimatedStyleActive",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Either view styles or a function that receives a boolean reflecting whether\nthe component is currently pressed and returns view styles.",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<AnimatedStyle<StyleProp<ViewStyle> | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>)>>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...PressableProps",
+          "required": false,
+          "source": "heroui",
+          "type": "PressableProps"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

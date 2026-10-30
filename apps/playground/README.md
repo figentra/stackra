@@ -92,7 +92,6 @@ src/
 ├── components/page-gallery/           the index gallery: a glass panel per category
 ├── components/showcase/               the index page's live scenes
 ├── components/hero-art/               the index hero's decorative glass stack
-├── components/choice/                 a switcher choice with a check mark
 ├── routes/home/                       `/`
 ├── routes/foundations/                `/foundations`
 ├── routes/icon/                       `/icon`

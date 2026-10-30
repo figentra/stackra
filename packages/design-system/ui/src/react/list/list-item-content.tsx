@@ -47,7 +47,7 @@ export function ListItemContent({
       )}
       {hasChevron === true ? (
         <span className="flex shrink-0 items-center text-muted">
-          <Icon name="chevron-right" size="sm" isMirroredInRtl />
+          <Icon name="chevron-right" size="sm" />
         </span>
       ) : null}
     </>

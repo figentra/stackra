@@ -1,0 +1,218 @@
+{
+  "generatedFrom": {
+    "hash": "f441dfd618f58fa5",
+    "heroDoc": "vendor/heroui/react/form.json",
+    "propsFiles": ["ui/src/react/form/form.props.ts"]
+  },
+  "importLine": "import { Form } from \"@stackra/ui/react\";",
+  "key": "free/form",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called on each key press in the form, before the form's own handling; calling `preventDefault` skips that.",
+          "name": "onKeyDown",
+          "required": false,
+          "source": "stackra",
+          "type": "KeyboardEventHandler<HTMLFormElement>"
+        },
+        {
+          "description": "Handler called when the form validation fails. By default, the first invalid field will be focused. Use `preventDefault()` to customize focus behavior.",
+          "name": "onInvalid",
+          "required": false,
+          "source": "heroui",
+          "type": "(event: FormEvent<HTMLFormElement>) => void"
+        },
+        {
+          "description": "Handler called when the form is reset.",
+          "name": "onReset",
+          "required": false,
+          "source": "heroui",
+          "type": "(event: FormEvent<HTMLFormElement>) => void"
+        },
+        {
+          "description": "Handler called when the form is submitted.",
+          "name": "onSubmit",
+          "required": false,
+          "source": "heroui",
+          "type": "(event: FormEvent<HTMLFormElement>) => void"
+        }
+      ],
+      "extends": "Form",
+      "name": "Form",
+      "props": [
+        {
+          "description": "The fields and the submit button.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True to submit on Cmd or Ctrl plus Enter, and to stop Enter alone submitting from a text box (a long form is too\neasy to send by accident). Defaults to false, the browser's own behaviour.",
+          "name": "isSubmitOnModEnter",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The schema form from `useSchemaForm`, provided to the `Field.*` parts inside.",
+          "name": "form",
+          "required": false,
+          "source": "stackra",
+          "type": "SchemaFormHandle<T>"
+        },
+        {
+          "description": "Where a valid submit posts its values, such as a route's `useSubmit()`; needs `form`.",
+          "name": "submit",
+          "required": false,
+          "source": "stackra",
+          "type": "(values: Readonly<Record<string, unknown>>) => Promise<void>"
+        },
+        {
+          "description": "The URL to submit the form data to.",
+          "name": "action",
+          "required": false,
+          "source": "heroui",
+          "type": "string | ((formData: FormData) => void | Promise<void>)"
+        },
+        {
+          "description": "Accessibility label for the form.",
+          "name": "aria-label",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "ID of element that labels the form. Creates a form landmark when provided.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "'react-aria-Form'",
+          "description": "Tailwind CSS classes applied to the form element.",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "The encoding type for form data submission.",
+          "name": "encType",
+          "required": false,
+          "source": "heroui",
+          "type": "\"application/x-www-form-urlencoded\" | \"multipart/form-data\" | \"text/plain\""
+        },
+        {
+          "description": "The HTTP method to use when submitting the form.",
+          "name": "method",
+          "required": false,
+          "source": "heroui",
+          "type": "\"dialog\" | \"get\" | \"post\""
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"form\", undefined>"
+        },
+        {
+          "description": "Where to display the response after submitting the form.",
+          "name": "target",
+          "required": false,
+          "source": "heroui",
+          "type": "\"_self\" | \"_blank\" | \"_parent\" | \"_top\""
+        },
+        {
+          "default": "'native'",
+          "description": "Whether to use native HTML validation or ARIA validation. 'native' blocks form submission, 'aria' displays errors in realtime.",
+          "name": "validationBehavior",
+          "required": false,
+          "source": "heroui",
+          "type": "\"native\" | \"aria\""
+        },
+        {
+          "description": "Server-side validation errors mapped by field name. Displayed immediately and cleared when user modifies the field.",
+          "name": "validationErrors",
+          "required": false,
+          "source": "heroui",
+          "type": "ValidationErrors"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Controls whether inputted text is automatically capitalized and, if so, in what manner.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize).",
+          "name": "autoCapitalize",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"off\" | \"none\" | \"on\" | \"sentences\" | \"words\" | \"characters\""
+        },
+        {
+          "description": "Indicates whether input elements can by default have their values automatically completed by\nthe browser. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#autocomplete).",
+          "name": "autoComplete",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"off\" | \"on\""
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLFormElement>"
+        },
+        {
+          "description": "An ARIA role override to apply to the form element.",
+          "name": "role",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"search\" | \"presentation\""
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -19,6 +19,7 @@ import { useId, useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { haptics } from "#native/haptics/haptics";
 import type { RadioGroupProps } from "#native/radio-group/radio-group.props";
 
 /**
@@ -40,6 +41,7 @@ export function RadioGroup({
   orientation = "vertical",
   variant,
   name,
+  columns,
   ...rest
 }: RadioGroupProps): ReactElement {
   const labelId = useId();
@@ -48,6 +50,7 @@ export function RadioGroup({
   void name;
   const change = (next: string) => {
     if (isReadOnly) return;
+    haptics.play("selection");
     setHeld(next);
     onChange?.(next);
   };
@@ -65,12 +68,17 @@ export function RadioGroup({
           {label}
         </Label>
       ) : null}
-      <View {...(orientation === "horizontal" ? { className: "flex-row flex-wrap gap-x-4" } : {})}>
+      <View
+        {...(columns || orientation === "horizontal"
+          ? { className: columns ? "flex-row flex-wrap" : "flex-row flex-wrap gap-x-4" }
+          : {})}
+      >
         {options.map((option) => (
           <HeroRadioGroup.Item
             key={option.value}
             value={option.value}
             {...omitUndefined({ isDisabled: option.isDisabled })}
+            {...(columns ? { style: { width: `${100 / columns}%` } } : {})}
           >
             <View className="flex-1">
               <Label>{option.label}</Label>

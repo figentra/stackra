@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the number-field route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the number-field route of @figentra/playground: its path. The page it renders is
  *          `number-field.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The NumberField page, at `/number-field`. */
-export class NumberFieldRoute extends Route({ path: "/number-field" }) {
-  /** The page title. */
-  static readonly title = "Number field";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Inputs and forms";
-}
+export class NumberFieldRoute extends Route({ path: "/number-field" }) {}

@@ -1,0 +1,126 @@
+{
+  "slug": "color-field",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(colors)/color-field.mdx",
+  "parts": [
+    {
+      "name": "ColorFieldRenderProps",
+      "props": [
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the field is disabled."
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the field is currently invalid."
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the field is read-only."
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "description": "Whether the field is required."
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the field is currently focused."
+        },
+        {
+          "name": "isFocusWithin",
+          "type": "boolean",
+          "description": "Whether any child element is focused."
+        },
+        {
+          "name": "isFocusVisible",
+          "type": "boolean",
+          "description": "Whether focus is visible (keyboard navigation)."
+        }
+      ]
+    },
+    {
+      "name": "ColorField.Group",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        },
+        {
+          "name": "fullWidth",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the color input group should take full width of its container"
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "default": "\"primary\"",
+          "description": "Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces."
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, GroupRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "ColorField.Input",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        },
+        {
+          "name": "placeholder",
+          "type": "string",
+          "description": "Placeholder text shown when empty."
+        }
+      ]
+    },
+    {
+      "name": "ColorField.Prefix",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content to display in the prefix slot."
+        }
+      ]
+    },
+    {
+      "name": "ColorField.Suffix",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content to display in the suffix slot."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".color-field",
+      "description": "Root container with minimal styling (`flex flex-col gap-1`)"
+    }
+  ]
+}

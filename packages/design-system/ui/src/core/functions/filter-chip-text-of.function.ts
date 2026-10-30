@@ -17,6 +17,7 @@ import type { FilterValue } from "#contracts/types/filter-value.type";
 import { filterValueOfKind } from "#core/functions/filter-value-of-kind.function";
 import { isFilterValueEmpty } from "#core/functions/is-filter-value-empty.function";
 import type { FilterChipWords } from "#core/types/filter-chip-words.type";
+import { listFormatOf } from "#core/functions/list-format-of.function";
 
 /** How many chosen options a chip names before it counts the rest. */
 const NAMED_CHOICES = 2;
@@ -27,7 +28,7 @@ const NAMED_CHOICES = 2;
  */
 const listOf = (labels: readonly string[], locale: string): string =>
   typeof Intl.ListFormat === "function"
-    ? new Intl.ListFormat(locale, { type: "conjunction", style: "narrow" }).format(labels)
+    ? listFormatOf(locale, { type: "conjunction", style: "narrow" }).format(labels)
     : labels.join(", ");
 
 /**

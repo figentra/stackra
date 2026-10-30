@@ -1,0 +1,6 @@
+{
+  "target_title": "Monthly sales",
+  "target_description": "October, against the monthly target",
+  "label": "Sales this month against the target",
+  "sold": "sold so far"
+}

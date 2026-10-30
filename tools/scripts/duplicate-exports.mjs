@@ -44,6 +44,32 @@ export const ALLOWED = Object.freeze({
     "tooling presets (tsdown, vitest) are tier:config with no workspace dependency (ADR 0300); each preset owns its options",
   libraryPreset:
     "tooling presets (tsdown, vitest) are tier:config with no workspace dependency (ADR 0300); each preset owns its factory",
+  // Two concepts that share a name.
+  AddressField:
+    "@stackra/ui's native address field component vs @stackra/validation's address field type; different things",
+  CATEGORIES:
+    "repo-checks' member categories vs the showcase's component categories; different lists",
+  CommentThread:
+    "@stackra/collaboration's comment thread model vs @stackra/ui's native comment thread component",
+  ContextMenu:
+    "@stackra/navigation's native long-press menu on a navigation item vs @stackra/ui's web context menu component",
+  ContextMenuProps: "the props of the two ContextMenu components above",
+  Meter: "@stackra/model's usage-meter decorator vs @stackra/ui's native meter component",
+  Platform: "@stackra/platform's device platform port vs the showcase's web/native platform enum",
+  // One shape, kept by the design system so it depends on no domain package.
+  HourCycle:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/i18n's enum has the same values",
+  RuleBuilder:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/rules' web RuleBuilder is the domain one; ui's is the native renderer",
+  RuleBuilderProps: "the props of the two RuleBuilder components above",
+  RuleField:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/rules maps its field onto it",
+  SavedView:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/panel's schema validates the stored one",
+  SocialProvider:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/identity's enum names the same providers",
+  WidgetSize:
+    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/panel's enum has the same sizes",
 });
 
 /** The names stackra-225 (STA-1383) renames or gives one home: its issue list plus gap-analysis row 22. */

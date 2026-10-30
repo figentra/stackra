@@ -16,7 +16,7 @@ import type { ReactNode } from "react";
 import { TextTone } from "#contracts/enums/text-tone.enum";
 import { TextType } from "#contracts/enums/text-type.enum";
 import type { TextContractProps } from "#contracts/types/text-contract-props.type";
-import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
+import { NATIVE_TONE_CLASS_NAME } from "#core/constants/native-tone-class-name.constant";
 import { TYPOGRAPHY_TYPE } from "#core/constants/typography-type.constant";
 import { Text } from "#native/text/text";
 import type { TextProps } from "#native/text/text.props";
@@ -73,7 +73,7 @@ describe("Text (native)", () => {
   it.each(TextTone)("draws the %s tone with HeroUI's colour or the theme's utility", (tone) => {
     render(<Text tone={tone}>Hello</Text>);
     expect(propsOf()["color"]).toBe(tone === "muted" ? "muted" : "default");
-    expect(propsOf()["className"]).toBe(TONE_CLASS_NAME[tone]);
+    expect(propsOf()["className"]).toBe(NATIVE_TONE_CLASS_NAME[tone]);
   });
 
   it("puts the caller's class after the tone class", () => {
@@ -82,7 +82,7 @@ describe("Text (native)", () => {
         Hello
       </Text>,
     );
-    expect(propsOf()["className"]).toBe("text-danger mt-2");
+    expect(propsOf()["className"]).toBe("!text-danger mt-2");
   });
 
   it("maps alignment and truncation", () => {

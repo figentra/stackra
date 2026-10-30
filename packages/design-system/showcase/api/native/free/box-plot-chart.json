@@ -1,0 +1,72 @@
+{
+  "generatedFrom": {
+    "hash": "a1f7fdb36ca291cc",
+    "propsFiles": ["ui/src/native/box-plot-chart/box-plot-chart.props.ts"]
+  },
+  "importLine": "import { BoxPlotChart } from \"@stackra/ui/native\";",
+  "key": "free/box-plot-chart",
+  "parts": [
+    {
+      "name": "BoxPlotChart",
+      "props": [
+        {
+          "description": "The boxes, in reading order.",
+          "name": "groups",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly BoxPlotGroup[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Delivery time by city\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How values are written, such as `{ style: \"unit\", unit: \"minute\" }`.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "`accent` steps (the default) or the `categorical` set.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Draws the value axis; on by default, since a box is read against it.",
+          "name": "showValueAxis",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the pointed or pressed box's summary; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

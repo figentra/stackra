@@ -1,0 +1,186 @@
+{
+  "generatedFrom": {
+    "hash": "88723ab6ec6dc99b",
+    "heroDoc": "vendor/heroui/react/avatar.json",
+    "propsFiles": ["ui/src/react/avatar/avatar.props.ts"]
+  },
+  "importLine": "import { Avatar } from \"@stackra/ui/react\";",
+  "key": "free/avatar",
+  "parts": [
+    {
+      "extends": "Avatar",
+      "name": "Avatar",
+      "props": [
+        {
+          "description": "The person's or organisation's name; its initials are drawn when there is no image.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The image URL; the fallback shows when it is missing or fails to load.",
+          "name": "src",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The accessible name; without it the avatar is decorative and hidden from assistive technology.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "md",
+          "description": "The diameter and the text size of the initials. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "default",
+          "description": "The colour role of the initials and fallback icon. Defaults to `default`.",
+          "name": "tone",
+          "replaces": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "default": "default",
+          "description": "The background behind the fallback: neutral or the tone's soft colour. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"soft\""
+        },
+        {
+          "default": "circle",
+          "description": "A circle for people, a rounded square for organisations. Defaults to `circle`.",
+          "name": "shape",
+          "required": false,
+          "source": "stackra",
+          "type": "\"circle\" | \"square\""
+        },
+        {
+          "description": "An element drawn in place of the initials, usually an `Icon`; sized and coloured like the initials.",
+          "name": "fallback",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLSpanElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base container with default size (size-10)",
+      "name": ".avatar"
+    },
+    {
+      "description": "Image element with aspect-square sizing",
+      "name": ".avatar__image"
+    },
+    {
+      "description": "Fallback container with centered content",
+      "name": ".avatar__fallback"
+    },
+    {
+      "description": "Small avatar (size-8)",
+      "name": ".avatar--sm"
+    },
+    {
+      "description": "Medium avatar (default, no additional styles)",
+      "name": ".avatar--md"
+    },
+    {
+      "description": "Large avatar (size-12)",
+      "name": ".avatar--lg"
+    },
+    {
+      "description": "Soft variant with lighter background",
+      "name": ".avatar--soft"
+    },
+    {
+      "description": "Default text color",
+      "name": ".avatar__fallback--default"
+    },
+    {
+      "description": "Accent text color",
+      "name": ".avatar__fallback--accent"
+    },
+    {
+      "description": "Success text color",
+      "name": ".avatar__fallback--success"
+    },
+    {
+      "description": "Warning text color",
+      "name": ".avatar__fallback--warning"
+    },
+    {
+      "description": "Danger text color",
+      "name": ".avatar__fallback--danger"
+    }
+  ]
+}

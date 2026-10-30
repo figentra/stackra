@@ -110,7 +110,7 @@ describe("RouteOverlay (web)", () => {
 
   it("closes to the parent route from the close button, keeping the search and replacing the entry", async () => {
     const router = build(["/orders/1/edit?tab=a"]);
-    press("Close");
+    press("Close, Esc");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(where(router)).toBe("/orders/1?tab=a");
     expect(router.state.historyAction).toBe("REPLACE");
@@ -139,7 +139,7 @@ describe("RouteOverlay (web)", () => {
       await router.navigate("/orders/1/edit", { state: { returnTo: "/orders/1" } });
     });
     expect(router.state.historyAction).toBe("PUSH");
-    press("Close");
+    press("Close, Esc");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(where(router)).toBe("/orders/1");
     expect(router.state.historyAction).toBe("POP");
@@ -147,7 +147,7 @@ describe("RouteOverlay (web)", () => {
 
   it("replaces with returnTo after a deep link, where there is no entry to step back to", async () => {
     const router = build([{ pathname: "/orders/1/edit", state: { returnTo: "/orders" } }]);
-    press("Close");
+    press("Close, Esc");
     await waitFor(() => expect(where(router)).toBe("/orders"));
     expect(router.state.historyAction).toBe("REPLACE");
   });

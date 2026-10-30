@@ -1,0 +1,9 @@
+{
+  "slug": "description",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/description.mdx",
+  "parts": [],
+  "hooks": [],
+  "slots": [],
+  "a11y": "The Description component enhances accessibility by:\n\n- Using semantic HTML that screen readers can identify\n- Providing the `slot=\"description\"` attribute for React Aria integration\n- Supporting proper text contrast ratios"
+}

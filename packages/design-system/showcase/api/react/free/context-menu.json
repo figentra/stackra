@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "a67f4bcf9416e8f5",
+    "propsFiles": ["ui/src/react/context-menu/context-menu.props.ts"]
+  },
+  "importLine": "import { ContextMenu } from \"@stackra/ui/react\";",
+  "key": "free/context-menu",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the id of the chosen action, after its own `onPress`.",
+          "name": "onAction",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "ContextMenu",
+      "props": [
+        {
+          "description": "The area that answers a right-click: a row, a card, a canvas.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The actions, in groups.",
+          "name": "sections",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly MenuSection[]"
+        },
+        {
+          "description": "The menu's accessible name, such as \"Order actions\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to let the browser's own menu open instead.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

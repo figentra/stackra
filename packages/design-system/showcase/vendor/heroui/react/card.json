@@ -1,0 +1,106 @@
+{
+  "slug": "card",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(layout)/card.mdx",
+  "parts": [
+    {
+      "name": "Card",
+      "props": [
+        {
+          "name": "variant",
+          "type": "\"transparent\" | \"default\" | \"secondary\" | \"tertiary\"",
+          "default": "\"default\"",
+          "description": "Semantic variant indicating prominence level"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Card content"
+        }
+      ]
+    },
+    {
+      "name": "Card.Header",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Header content"
+        }
+      ]
+    },
+    {
+      "name": "Card.Title",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Title content (renders as `h3`)"
+        }
+      ]
+    },
+    {
+      "name": "Card.Description",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Description content (renders as `p`)"
+        }
+      ]
+    },
+    {
+      "name": "Card.Content",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Main content"
+        }
+      ]
+    },
+    {
+      "name": "Card.Footer",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Footer content"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [],
+  "a11y": "```tsx\nimport { Card } from '@heroui/react';\nimport { cardVariants } from '@heroui/styles';\n\n// Semantic markup\n<Card role=\"article\" aria-labelledby=\"card-title\">\n  <Card.Header>\n    <Card.Title id=\"card-title\">Article Title</Card.Title>\n  </Card.Header>\n</Card>\n\n// Interactive cards\n<a className={cardVariants().base()} href=\"/details\" aria-label=\"View product details\">\n  <Card.Title>Product Name</Card.Title>\n</a>\n```\n\n<RelatedComponents component=\"card\" />"
+}

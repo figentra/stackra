@@ -1,0 +1,42 @@
+{
+  "captions": {
+    "disabled": "معطل",
+    "option_disabled": "خيار واحد معطل",
+    "read_only": "للقراءة فقط",
+    "required": "مطلوب",
+    "invalid": "غير صالح، مع رسالة"
+  },
+  "group_labels": {
+    "basic": "أبلغني عبر",
+    "disabled": "التقارير الأسبوعية",
+    "option_disabled": "صيغ التصدير",
+    "read_only": "مشمول في خطتك",
+    "required": "المواضيع",
+    "invalid": "أيام التوصيل",
+    "live": "الإضافات",
+    "primary": "مجموعة أساسية",
+    "secondary": "مجموعة ثانوية"
+  },
+  "basic_description": "يمكنك تغيير هذا في أي وقت.",
+  "invalid_description": "اختر يومًا واحدًا على الأقل.",
+  "invalid_error": "اختر يوم توصيل للمتابعة.",
+  "chosen": "المختار: {keys}",
+  "none": "لا شيء",
+  "all": "اختيار الكل",
+  "clear": "مسح",
+  "sample": {
+    "email": "البريد الإلكتروني",
+    "a_weekly_digest": "ملخص أسبوعي.",
+    "text_message": "رسالة نصية",
+    "push_notification": "إشعار فوري",
+    "cheese": "جبن",
+    "olives": "زيتون",
+    "basil": "ريحان",
+    "chilli": "فلفل حار",
+    "csv": "CSV",
+    "excel": "Excel",
+    "pdf": "PDF",
+    "monday": "الاثنين",
+    "thursday": "الخميس"
+  }
+}

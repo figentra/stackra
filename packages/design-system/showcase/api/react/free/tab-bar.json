@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "b054e031a226aefc",
+    "propsFiles": ["ui/src/react/tab-bar/tab-bar.props.ts"]
+  },
+  "importLine": "import { TabBar } from \"@stackra/ui/react\";",
+  "key": "free/tab-bar",
+  "parts": [
+    {
+      "name": "TabBar",
+      "props": [
+        {
+          "description": "The tabs, in order from the inline start; only the first five are drawn.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly NavigationItem[]"
+        },
+        {
+          "description": "The spoken name of the region, for example \"Main navigation\"; required when the page holds two of its kind.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "`fixed` (the default) pins it to the bottom of the viewport on small screens; `static` keeps it in the flow.",
+          "name": "position",
+          "required": false,
+          "source": "stackra",
+          "type": "\"fixed\" | \"static\""
+        },
+        {
+          "description": "Styles the bar.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

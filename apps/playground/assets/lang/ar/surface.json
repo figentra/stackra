@@ -1,0 +1,8 @@
+{
+  "level": "المستوى {level}",
+  "level_line": "نص على هذا السطح.",
+  "default_text": "نص افتراضي",
+  "muted_text": "نص خافت",
+  "pick": "استخدام {level}",
+  "current": "هذا السطح {level}."
+}

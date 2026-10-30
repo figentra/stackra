@@ -1,0 +1,19 @@
+{
+  "desktop": "سطح المكتب",
+  "mobile": "الجوال",
+  "visitors": "الزوار",
+  "months_description": "يناير إلى يونيو 2026",
+  "trend": "ارتفاع 5.2% هذا الشهر",
+  "chrome": "Chrome",
+  "safari": "Safari",
+  "firefox": "Firefox",
+  "edge": "Edge",
+  "other": "أخرى",
+  "multiple_title": "الزوار حسب الجهاز",
+  "stacked_title": "الزوار حسب الجهاز، مكدسة",
+  "horizontal_title": "الزوار حسب المتصفح",
+  "single_title": "زوار سطح المكتب",
+  "month": "الشهر",
+  "previous": "{series}، الفترة السابقة",
+  "percent_title": "حصة الزوار حسب الجهاز"
+}

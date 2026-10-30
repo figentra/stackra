@@ -18,6 +18,8 @@
 // @covers sta-350:FR-156 sta-350:FR-162 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -26,7 +28,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/navigation-list?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Navigation list" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Navigation list", locale) }),
+  ).toBeVisible();
 };
 
 const weight = (link: Locator) =>
@@ -62,9 +66,15 @@ for (const scheme of SCHEMES)
 
 test("every list is a navigation landmark with its own name", async ({ page }) => {
   await open(page, "light", "en");
-  const names = await page
-    .locator("main nav")
-    .evaluateAll((navs) => navs.map((nav) => nav.getAttribute("aria-label")));
+  // The demos load lazily: wait for the last example's list before reading the names.
+  await expect(page.locator("section#example-live nav").first()).toBeVisible();
+  const names = await page.locator("main nav").evaluateAll((navs) =>
+    navs
+      // The preview copies are hidden from assistive tech, and the "On this page" menu or rail the width does not
+      // draw is display: none, so neither is a landmark.
+      .filter((nav) => nav.checkVisibility() && !nav.closest('[aria-hidden="true"]'))
+      .map((nav) => nav.getAttribute("aria-label")),
+  );
   expect(names.length).toBeGreaterThanOrEqual(9);
   expect(new Set(names).size).toBe(names.length);
   for (const name of names) expect(name, "an unnamed landmark").toBeTruthy();
@@ -174,9 +184,8 @@ test("the compact rail hides the labels from the screen, keeps them as names and
 for (const locale of LOCALES)
   test(`the icon sits at the reading start of each entry in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const home = page
-      .getByRole("navigation", { name: "Basic navigation" })
-      .getByRole("link", { name: "Home" });
+    // By place: the words speak the page's locale; Home is the usage list's first link.
+    const home = example(page, "usage").getByRole("navigation").getByRole("link").first();
     const link = await boxOf(home);
     const icon = await boxOf(home.locator("svg").first());
     const centre = icon.x + icon.width / 2;
@@ -197,7 +206,8 @@ test("the Arabic list reads right to left with the icon at the right", async ({ 
 
 test("every link is at least 24 by 24 pixels", async ({ page }) => {
   await open(page, "light", "en");
-  const links = page.locator("main nav a, main nav [role='link']");
+  // Drawn ones only: the "On this page" menu or rail the width does not draw is display: none.
+  const links = page.locator("main nav a, main nav [role='link']").filter({ visible: true });
   const count = await links.count();
   expect(count).toBeGreaterThan(20);
   for (let index = 0; index < count; index += 1) {

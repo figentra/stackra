@@ -1,0 +1,9 @@
+{
+  "label": "Orders by district, October",
+  "north": "North district",
+  "east": "East district",
+  "south": "South district",
+  "west": "West district",
+  "centre": "Old town",
+  "harbour": "Harbour"
+}

@@ -1,0 +1,8 @@
+{
+  "label": "Sections",
+  "home": "Home",
+  "orders": "Orders",
+  "menu": "Menu",
+  "settings": "Settings",
+  "showing": "Showing: {tab}"
+}

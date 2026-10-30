@@ -1,0 +1,13 @@
+{
+  "basics": {
+    "open": "Opens at",
+    "open_hint": "The time the shop opens its doors.",
+    "close": "Closes at"
+  },
+  "states": {
+    "invalid": "Delivery slot",
+    "invalid_message": "We deliver between 10:00 and 22:00.",
+    "read_only": "Last sync",
+    "disabled": "Break starts"
+  }
+}

@@ -1,0 +1,284 @@
+{
+  "slug": "combo-box",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(pickers)/combo-box.mdx",
+  "parts": [
+    {
+      "name": "ComboBox",
+      "props": [
+        {
+          "name": "inputValue",
+          "type": "string",
+          "description": "Current input value (controlled)"
+        },
+        {
+          "name": "defaultInputValue",
+          "type": "string",
+          "description": "Default input value (uncontrolled)"
+        },
+        {
+          "name": "onInputChange",
+          "type": "(value: string) => void",
+          "description": "Handler called when the input value changes"
+        },
+        {
+          "name": "selectedKey",
+          "type": "Key | null",
+          "description": "Current selected key (controlled)"
+        },
+        {
+          "name": "defaultSelectedKey",
+          "type": "Key | null",
+          "description": "Default selected key (uncontrolled)"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(key: Key | null) => void",
+          "description": "Handler called when the selection changes"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Sets the open state of the popover (controlled)"
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "description": "Sets the default open state of the popover (uncontrolled)"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Handler called when the open state changes"
+        },
+        {
+          "name": "items",
+          "type": "Iterable<T>",
+          "description": "The items to display in the listbox"
+        },
+        {
+          "name": "disabledKeys",
+          "type": "Iterable<Key>",
+          "description": "Keys of disabled items"
+        },
+        {
+          "name": "defaultFilter",
+          "type": "(text: string, inputValue: string) => boolean",
+          "description": "Custom filter function for filtering items"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the ComboBox is disabled"
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the input can be selected but not changed by the user"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "description": "Whether user input is required"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the ComboBox value is invalid"
+        },
+        {
+          "name": "validate",
+          "type": "(value: ComboBoxValidationValue) => ValidationError | true | null | undefined",
+          "description": "A function that returns an error message if a given value is invalid. Validation errors are displayed to the user when the form is submitted if `validationBehavior=\"native\"`. For realtime validation, use the `isInvalid` prop instead"
+        },
+        {
+          "name": "validationBehavior",
+          "type": "\"native\" | \"aria\"",
+          "default": "\"native\"",
+          "description": "Whether to use native HTML form validation to prevent form submission when the value is missing or invalid, or mark the field as required or invalid via ARIA"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The name of the input, used when submitting an HTML form"
+        },
+        {
+          "name": "form",
+          "type": "string",
+          "description": "The id of a `<form>` element to associate the input with"
+        },
+        {
+          "name": "formValue",
+          "type": "\"text\" | \"key\"",
+          "default": "\"key\"",
+          "description": "Whether the text or key of the selected item is submitted as part of an HTML form. When `allowsCustomValue` is `true`, this option does not apply and the text is always submitted"
+        },
+        {
+          "name": "autoComplete",
+          "type": "string",
+          "description": "Describes the type of autocomplete functionality"
+        },
+        {
+          "name": "autoFocus",
+          "type": "boolean",
+          "description": "Whether the element should receive focus on render"
+        },
+        {
+          "name": "allowsCustomValue",
+          "type": "boolean",
+          "description": "Whether the ComboBox allows custom values not in the list"
+        },
+        {
+          "name": "allowsEmptyCollection",
+          "type": "boolean",
+          "description": "Whether the ComboBox allows an empty collection"
+        },
+        {
+          "name": "menuTrigger",
+          "type": "\"focus\" | \"input\" | \"manual\"",
+          "default": "\"focus\"",
+          "description": "The interaction required to display the ComboBox menu"
+        },
+        {
+          "name": "shouldFocusWrap",
+          "type": "boolean",
+          "description": "Whether keyboard navigation is circular"
+        },
+        {
+          "name": "fullWidth",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the ComboBox should take full width of its container"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "ComboBox content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, ComboBoxRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "ComboBox.InputGroup",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "InputGroup content"
+        }
+      ]
+    },
+    {
+      "name": "ComboBox.Trigger",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom trigger content"
+        }
+      ]
+    },
+    {
+      "name": "ComboBox.Popover",
+      "props": [
+        {
+          "name": "placement",
+          "type": "\"bottom\" | \"bottom left\" | \"bottom right\" | \"bottom start\" | \"bottom end\" | \"top\" | \"top left\" | \"top right\" | \"top start\" | \"top end\" | \"left\" | \"left top\" | \"left bottom\" | \"start\" | \"start top\" | \"start bottom\" | \"right\" | \"right top\" | \"right bottom\" | \"end\" | \"end top\" | \"end bottom\"",
+          "default": "\"bottom\"",
+          "description": "Placement of the popover relative to the trigger"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content children"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "state",
+          "type": "ComboBoxState",
+          "description": "The state of the ComboBox"
+        },
+        {
+          "name": "inputValue",
+          "type": "string",
+          "description": "The current input value"
+        },
+        {
+          "name": "selectedKey",
+          "type": "Key | null",
+          "description": "The currently selected key"
+        },
+        {
+          "name": "selectedItem",
+          "type": "Node | null",
+          "description": "The currently selected item"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".combo-box",
+      "description": "Base ComboBox container"
+    },
+    {
+      "name": ".combo-box__input-group",
+      "description": "Container for the input and trigger button"
+    },
+    {
+      "name": ".combo-box__trigger",
+      "description": "The button that triggers the popover"
+    },
+    {
+      "name": ".combo-box__popover",
+      "description": "The popover container"
+    },
+    {
+      "name": ".combo-box[data-invalid=\"true\"]",
+      "description": "Invalid state"
+    },
+    {
+      "name": ".combo-box[data-disabled=\"true\"]",
+      "description": "Disabled ComboBox state"
+    },
+    {
+      "name": ".combo-box__trigger[data-focus-visible=\"true\"]",
+      "description": "Focused trigger state"
+    },
+    {
+      "name": ".combo-box__trigger[data-disabled=\"true\"]",
+      "description": "Disabled trigger state"
+    },
+    {
+      "name": ".combo-box__trigger[data-open=\"true\"]",
+      "description": "Open trigger state"
+    }
+  ],
+  "a11y": "The ComboBox component implements the ARIA comboBox pattern and provides:\n\n- Full keyboard navigation support\n- Screen reader announcements for selection changes and input changes\n- Proper focus management\n- Support for disabled states\n- Typeahead search functionality\n- HTML form integration\n- Support for custom values\n\nFor more information, see the [React Aria ComboBox documentation](https://react-spectrum.adobe.com/react-aria/ComboBox.html)."
+}

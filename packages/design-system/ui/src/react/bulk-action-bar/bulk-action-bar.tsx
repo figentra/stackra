@@ -93,7 +93,7 @@ export function BulkActionBar({
       {isShown ? (
         <Toolbar
           aria-label={label}
-          className="flex flex-wrap items-center gap-2 rounded-lg bg-accent-soft p-2"
+          className="flex flex-wrap items-center gap-2 rounded-[var(--radius-control)] bg-accent-soft p-2"
         >
           <Text type="small" className="px-2 font-medium">
             {countLabel(count)}

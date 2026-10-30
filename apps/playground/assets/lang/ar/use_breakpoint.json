@@ -1,0 +1,31 @@
+{
+  "size_class": "فئة الحجم: {size}",
+  "breakpoint": "نقطة التوقف: {breakpoint}",
+  "base": "الأساس",
+  "resize": "غيّر حجم النافذة لترى التغيير.",
+  "filters": "عوامل التصفية",
+  "close": "إغلاق",
+  "results": "{count, plural, zero {لا توجد منتجات} one {منتج واحد} two {منتجان} few {# منتجات} many {# منتجًا} other {# منتج}}",
+  "products": "المنتجات",
+  "size": {
+    "phone": "هاتف",
+    "tablet": "جهاز لوحي",
+    "desktop": "حاسوب مكتبي"
+  },
+  "category": {
+    "beverages": "المشروبات",
+    "bakery": "المخبوزات",
+    "dairy": "الألبان",
+    "snacks": "الوجبات الخفيفة"
+  },
+  "product": {
+    "coffee": "قهوة عربية",
+    "croissant": "كرواسون",
+    "laban": "لبن",
+    "dates": "تمر سكري",
+    "tea": "شاي كرك",
+    "cheese": "جبن أبيض",
+    "juice": "عصير برتقال",
+    "maamoul": "معمول"
+  }
+}

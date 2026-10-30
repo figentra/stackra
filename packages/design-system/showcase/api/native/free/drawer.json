@@ -1,0 +1,576 @@
+{
+  "generatedFrom": {
+    "hash": "8f5beff8529df7fd",
+    "heroDoc": "vendor/heroui/native/bottom-sheet.json",
+    "propsFiles": [
+      "ui/src/native/drawer/drawer-back.props.ts",
+      "ui/src/native/drawer/drawer-close.props.ts",
+      "ui/src/native/drawer/drawer-title.props.ts",
+      "ui/src/native/drawer/drawer.props.ts"
+    ]
+  },
+  "importLine": "import { Drawer } from \"@stackra/ui/native\";",
+  "key": "free/drawer",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "extends": "BottomSheet",
+      "name": "Drawer",
+      "props": [
+        {
+          "description": "The drawer's parts, usually a header, a body and a footer; any element is allowed.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The element that opens the drawer when pressed: a Button, or any pressable element. Leave it out for a drawer the\napp opens through `isOpen`. Focus returns to the element that opened the drawer when it closes.",
+          "name": "trigger",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "The heights a bottom drawer rests at, smallest first; it opens at the first. On native a drag moves between them\nand a drag down past the first dismisses; on web a press on the handle moves to the next.",
+          "name": "snapPoints",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SnapPoint[]"
+        },
+        {
+          "description": "The width of a side drawer: `sm` 400, `md` 560 (the default), `lg` 720 or `full`, always capped to the screen less\nthe insets. A top or bottom drawer is the full width.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\" | \"full\""
+        },
+        {
+          "description": "True, the default, to float the drawer clear of the screen's edges with rounded corners; false to sit it flush\nagainst its edge.",
+          "name": "inset",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The accessible name for a drawer that has no `Drawer.Title`; with a title, the title names it.",
+          "name": "label",
+          "replaces": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True, the default, to close the overlay on a press outside it (the backdrop on a modal, a drawer and a dialog).\nSet false for a step the user must finish, and give the content its own close control.",
+          "name": "isDismissable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to keep the Escape key from closing the overlay. It is for a flow with unsaved work or a nested overlay\nopen, so set it only with `isDismissable` false or a close control in reach. Native has no Escape key, so it\nstays unread there unless a component's own page says it maps to the Android back button.",
+          "name": "isKeyboardDismissDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"start\" | \"end\""
+        },
+        {
+          "description": "Animation configuration",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "false | \"disabled\""
+        },
+        {
+          "description": "Additional CSS class for the background",
+          "name": "backgroundClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS class for the bottom sheet",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS class for the container",
+          "name": "containerClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS class for the content container",
+          "name": "contentContainerClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Props for the content container",
+          "name": "contentContainerProps",
+          "required": false,
+          "source": "heroui",
+          "type": "Omit<BottomSheetViewProps, \"children\">"
+        },
+        {
+          "description": "Additional CSS class for the handle",
+          "name": "handleClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS class for the handle indicator",
+          "name": "handleIndicatorClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "undefined",
+          "description": "View style to be applied to the sheet container component,\nit also could be an Animated Style.",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "any"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...BottomSheetAnimationConfigs",
+          "required": false,
+          "source": "heroui",
+          "type": "BottomSheetAnimationConfigs"
+        },
+        {
+          "description": "",
+          "name": "...BottomSheetProps",
+          "required": false,
+          "source": "heroui",
+          "type": "BottomSheetProps"
+        },
+        {
+          "description": "",
+          "name": "...NullableAccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "NullableAccessibilityProps"
+        }
+      ]
+    },
+    {
+      "name": "Drawer.Header",
+      "props": []
+    },
+    {
+      "events": [
+        {
+          "description": "Called instead of the default (pop the view, or close this layer).",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "Drawer.Back",
+      "props": [
+        {
+          "description": "The accessible name; defaults to \"Back\" in the app's language.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Drawer.Title",
+      "props": [
+        {
+          "description": "The title's text; it is also the overlay's accessible name.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The title's level in the outline, 1 to 6. Defaults to 2: the page keeps its own `h1`, and the overlay's title is a\nsection of it. React Native has no heading level, so native accepts and ignores it.",
+          "name": "level",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "Additional CSS class for the title",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<TextStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...TextProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TextProps"
+        },
+        {
+          "description": "",
+          "name": "...TextPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "TextPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...TextPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TextPropsIOS"
+        }
+      ]
+    },
+    {
+      "name": "Drawer.Description",
+      "props": []
+    },
+    {
+      "events": [
+        {
+          "description": "Called when the button is pressed, by pointer, touch or keyboard.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "Drawer.Close",
+      "props": [
+        {
+          "description": "The accessible name in the app's language, for example \"Close\" or \"Dismiss notification\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "An icon in place of HeroUI's close mark: an icon name or any icon element.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "True to refuse presses and show the disabled style.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Web parity: native always draws the close mark (a phone has no Escape key); `\"none\"` draws nothing.",
+          "name": "closeButton",
+          "required": false,
+          "source": "stackra",
+          "type": "\"icon\" | \"none\" | \"both\" | \"esc\""
+        },
+        {
+          "description": "Animation configuration for scale and highlight feedback",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "AnimationRoot<{ scale?: PressableFeedbackScaleAnimation; highlight?: PressableFeedbackHighlightAnimation; }>"
+        },
+        {
+          "default": "false",
+          "description": "When `true`, merges press behavior and animated scale onto the single child (Slot pattern).\nThe child must be one React element. Uses `Animated.createAnimatedComponent(Slot.Pressable)` internally.",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Background layer rendered behind the button surface.\n- `undefined` (default): renders `Button.Background` for the `secondary`\n  and `tertiary` variants when the active library theme registers\n  default background content (e.g. `glass`); otherwise no layer\n- custom node: replaces the default layer entirely\n- `null`: removes the background layer",
+          "name": "background",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "'scale-highlight'",
+          "description": "Feedback variant that renders Scale + Highlight compound parts",
+          "name": "feedbackVariant",
+          "required": false,
+          "source": "heroui",
+          "type": "\"scale-highlight\""
+        },
+        {
+          "description": "Props for customizing the close icon",
+          "name": "iconProps",
+          "required": false,
+          "source": "heroui",
+          "type": "CloseButtonIconProps"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "default": "true",
+          "description": "Whether the root's built-in animated styles (react-native-reanimated) are active.\nWhen `false`, the animated scale style is not applied and you can implement custom logic.",
+          "name": "isAnimatedStyleActive",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "false",
+          "description": "Whether the button displays an icon only (needed for correct layout)",
+          "name": "isIconOnly",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "default": "'md'",
+          "description": "Size of the button",
+          "name": "size",
+          "required": false,
+          "source": "heroui",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "Either view styles or a function that receives a boolean reflecting whether\nthe component is currently pressed and returns view styles.",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<AnimatedStyle<StyleProp<ViewStyle> | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>)>>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string | SharedValue<string | undefined>"
+        },
+        {
+          "default": "'primary'",
+          "description": "Visual variant of the button",
+          "name": "variant",
+          "required": false,
+          "source": "heroui",
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...PressableProps",
+          "required": false,
+          "source": "heroui",
+          "type": "PressableProps"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    },
+    {
+      "name": "Drawer.SubHeader",
+      "props": []
+    },
+    {
+      "name": "Drawer.Body",
+      "props": []
+    },
+    {
+      "name": "Drawer.Footer",
+      "props": []
+    }
+  ],
+  "platform": "native"
+}

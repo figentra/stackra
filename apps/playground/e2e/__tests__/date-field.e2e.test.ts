@@ -16,6 +16,7 @@
 // @covers sta-350:FR-208 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -24,12 +25,28 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/date-field?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Date field" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Date field", locale) }),
+  ).toBeVisible();
 };
+
+/** The demos' labels in Arabic: the page translates its demos, so an Arabic page is searched by these. */
+const ARABIC: Record<string, string> = {
+  "Start date": "تاريخ البدء",
+  "Due date": "تاريخ الاستحقاق",
+  "Check-in date": "تاريخ الوصول",
+};
+
+/** A label in the page's language. */
+const inLocale = (page: Page, label: string) =>
+  new URL(page.url()).searchParams.get("locale") === "ar" ? (ARABIC[label] ?? label) : label;
 
 /** The whole field (label, group and messages) whose label contains this text. */
 const fieldOf = (page: Page, label: string) =>
-  page.locator('[data-slot="date-field"]', { hasText: label });
+  // Not the hidden, inert copies the Stackra section draws of the usage demo.
+  page.locator('[data-slot="date-field"]:not([aria-hidden="true"] *)', {
+    hasText: inLocale(page, label),
+  });
 
 /** The editable segments (month, day and year) of the field whose label contains this text, in the order drawn. */
 const segmentsOf = (page: Page, label: string) =>

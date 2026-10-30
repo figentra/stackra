@@ -1,0 +1,23 @@
+{
+  "save": "حفظ",
+  "more_save_options": "خيارات حفظ أخرى",
+  "save_options": "خيارات الحفظ",
+  "save_new": "حفظ وإنشاء جديد",
+  "save_draft": "حفظ كمسودة",
+  "discard": "تجاهل التغييرات",
+  "chosen": "الإجراء المختار: {action}",
+  "nothing_chosen": "لم يُختر أي إجراء بعد",
+  "charge": "تحصيل 245٫50 ر.س",
+  "more_charge_options": "خيارات دفع أخرى",
+  "charge_options": "خيارات الدفع",
+  "split_bill": "تقسيم الفاتورة",
+  "pay_later": "الدفع لاحقًا",
+  "print": "طباعة الإيصال",
+  "more_print_options": "خيارات طباعة أخرى",
+  "print_options": "خيارات الطباعة",
+  "gift_receipt": "إيصال هدية",
+  "email_receipt": "إرسال الإيصال بالبريد",
+  "disabled": "معطّل",
+  "start_saving": "بدء الحفظ",
+  "stop_saving": "إيقاف الحفظ"
+}

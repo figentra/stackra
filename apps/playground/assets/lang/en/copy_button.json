@@ -1,0 +1,9 @@
+{
+  "order": "Order",
+  "copy_order": "Copy order number",
+  "order_copied": "Order number copied",
+  "api_key": "API key",
+  "copy_key": "Copy API key",
+  "key_copied": "API key copied",
+  "variant": "Variant {variant}"
+}

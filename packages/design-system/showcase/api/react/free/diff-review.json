@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "93ac3822d0c3b147",
+    "propsFiles": ["ui/src/react/diff-review/diff-review.props.ts"]
+  },
+  "importLine": "import { DiffReview } from \"@stackra/ui/react\";",
+  "key": "free/diff-review",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new decisions when the reviewer accepts or rejects a change.",
+          "name": "onDecisionsChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(decisions: Readonly<Record<string, \"accepted\" | \"rejected\">>) => void"
+        },
+        {
+          "description": "Called with the decisions when the reviewer applies them.",
+          "name": "onApply",
+          "required": false,
+          "source": "stackra",
+          "type": "(decisions: Readonly<Record<string, \"accepted\" | \"rejected\">>) => void"
+        }
+      ],
+      "name": "DiffReview",
+      "props": [
+        {
+          "description": "The changes to review, in order.",
+          "name": "changes",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly DiffChange[]"
+        },
+        {
+          "description": "The reviewer decision for each change, by change id.",
+          "name": "decisions",
+          "required": true,
+          "source": "stackra",
+          "type": "Readonly<Record<string, \"accepted\" | \"rejected\">>"
+        },
+        {
+          "description": "The review's accessible name, such as \"Changes from the supplier feed\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -18,7 +18,7 @@
 import { readdirSync } from "node:fs";
 
 import { AxeBuilder } from "@axe-core/playwright";
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { contrastRatio } from "@stackra/tokens";
 import { MaterialMode } from "@stackra/tokens/contracts";
 
@@ -56,6 +56,21 @@ const paintedAlpha = (locator: Locator, property: "backgroundColor" | "borderTop
     return context.getImageData(0, 0, 1, 1).data[3];
   }, property);
 
+/** Opens the top bar's Display settings (English or Arabic name) and returns its popover, where the switcher sits. */
+const openDisplay = async (page: Page) => {
+  await page
+    .getByRole("banner")
+    .getByRole("button", { name: /^(Display|العرض)$/ })
+    .click();
+  const display = page.getByRole("dialog");
+  await expect(display).toBeVisible();
+  return display;
+};
+
+/** The command palette's trigger in the top bar, whatever the locale names it. */
+const searchButton = (page: Page) =>
+  page.getByRole("banner").getByRole("button", { name: /^(Search components|البحث في المكونات)/ });
+
 /**
  * The incomplete axe results a route's own suite measures instead, by route: a rule id and the markup its nodes carry.
  * A translucent badge straddles its anchor's corner, so the background under its count is part disc and part page and
@@ -63,6 +78,8 @@ const paintedAlpha = (locator: Locator, property: "backgroundColor" | "borderTop
  */
 const MEASURED_INSTEAD: Readonly<Record<string, { rule: string; markup: string }>> = {
   "/badge": { rule: "color-contrast", markup: 'data-slot="badge-label"' },
+  // Pinned amounts in right to left; data-table.e2e measures each against its opaque sticky cell.
+  "/data-table": { rule: "color-contrast", markup: 'data-slot="money-value"' },
 };
 
 test("the route list is not empty", () => {
@@ -85,9 +102,31 @@ for (const path of ROUTES)
         await expect(html).toHaveClass(new RegExp(`\\b${scheme}\\b`));
         await expect(html).toHaveAttribute("dir", dir);
         await expect(html).toHaveAttribute("lang", locale);
+        // Every lazy demo mounted: one arriving mid-scan leaves heading-order unable to place its headings.
+        await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
+        // Every finite, time-based animation finished (a reduced-motion fade still runs): axe measures the page at
+        // rest. Scroll-driven and endless ones (a shimmer) are left running.
+        await expect
+          .poll(() =>
+            page.evaluate(() =>
+              document.getAnimations().some((animation) => {
+                const end = animation.effect?.getComputedTiming().endTime;
+                return (
+                  animation.playState === "running" &&
+                  animation.timeline instanceof DocumentTimeline &&
+                  typeof end === "number" &&
+                  Number.isFinite(end)
+                );
+              }),
+            ),
+          )
+          .toBe(false);
 
+        // Text inside a chart's SVG is left out, as in `charts.e2e.test.ts`, which measures it instead: axe stops at
+        // the <svg> in the background stack and leaves every tick as "contains an image node".
         const { violations, incomplete } = await new AxeBuilder({ page })
           .withTags(AXE_TAGS)
+          .exclude("[data-slot=chart] svg text")
           .analyze();
         const measured = MEASURED_INSTEAD[path];
         const unsettled = incomplete
@@ -115,7 +154,8 @@ for (const scheme of SCHEMES)
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto("/foundations?scheme=system&locale=en");
     const html = page.locator("html");
-    await expect(page.getByRole("radio", { name: "System" })).toHaveAttribute(
+    const display = await openDisplay(page);
+    await expect(display.getByRole("radio", { name: "System" })).toHaveAttribute(
       "aria-checked",
       "true",
     );
@@ -132,10 +172,11 @@ for (const scheme of SCHEMES)
   }) => {
     await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
     await page.goto(`/?scheme=${scheme}&locale=en`);
-    const selected = page.getByRole("radio", { name: scheme === "dark" ? "Dark" : "Light" });
+    const display = await openDisplay(page);
+    const selected = display.getByRole("radio", { name: scheme === "dark" ? "Dark" : "Light" });
     await expect(selected).toHaveAttribute("aria-checked", "true");
     for (const name of ["System", scheme === "dark" ? "Light" : "Dark"]) {
-      const unselected = page.getByRole("radio", { name });
+      const unselected = display.getByRole("radio", { name });
       await expect(unselected).toHaveAttribute("aria-checked", "false");
       const ratio = contrastRatio(
         await paintedBackground(selected),
@@ -149,8 +190,9 @@ test("the switcher works from the keyboard in right-to-left: arrows follow the d
   page,
 }) => {
   await page.goto("/foundations?scheme=light&locale=ar");
-  const light = page.getByRole("radio", { name: "Light" });
-  const dark = page.getByRole("radio", { name: "Dark" });
+  const display = await openDisplay(page);
+  const light = display.getByRole("radio", { name: "فاتح" });
+  const dark = display.getByRole("radio", { name: "داكن" });
   // Mirrored: the next choice sits to the left, and ArrowLeft moves to it.
   expect((await dark.boundingBox())?.x).toBeLessThan((await light.boundingBox())?.x ?? 0);
   await light.focus();
@@ -170,8 +212,9 @@ test("the switcher writes the scheme and direction to the URL and the document",
   page,
 }) => {
   await page.goto("/foundations?scheme=light&locale=en");
-  await page.getByRole("radio", { name: "Dark" }).click();
-  await page.getByRole("radio", { name: /العربية/ }).click();
+  const display = await openDisplay(page);
+  await display.getByRole("radio", { name: "Dark" }).click();
+  await display.getByRole("radio", { name: /العربية/ }).click();
   await expect(page).toHaveURL(/scheme=dark/);
   await expect(page).toHaveURL(/locale=ar/);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -186,10 +229,10 @@ test("a client-side navigation titles the document and moves focus to the new h1
   page,
 }) => {
   await page.goto("/?scheme=light&locale=en");
-  await page.getByRole("navigation", { name: "Pages" }).getByRole("link").first().click();
+  await page.getByRole("navigation", { name: "Site" }).getByRole("link", { name: "Docs" }).click();
   await expect(page).toHaveURL(/\/foundations\?/);
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
-  await expect(page).toHaveTitle("Foundations · Stackra Playground");
+  await expect(page).toHaveTitle("Foundations · Stackra Design System");
 });
 
 test("the command palette opens from the keyboard, filters, and Enter opens the match with focus on its h1", async ({
@@ -213,28 +256,30 @@ test("Escape closes the command palette and hands focus back to the search butto
   page,
 }) => {
   await page.goto("/foundations?scheme=dark&locale=ar");
-  const trigger = page.getByRole("button", { name: /Search components/ });
+  const trigger = searchButton(page);
   await trigger.click();
-  await expect(page.getByRole("dialog", { name: "Search components" })).toBeVisible();
+  // Arabic page: the palette carries its Arabic name, so it is found by role alone (it is the only dialog).
+  await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "Search components" })).toBeHidden();
+  await expect(page.getByRole("dialog")).toBeHidden();
   await expect(trigger).toBeFocused();
 });
 
-test("a component page marks itself in its category strip and links the pages before and after it", async ({
+test("a component page marks itself in the components navigation and links the pages before and after it", async ({
   page,
 }) => {
-  await page.goto("/button?scheme=light&locale=en");
-  const strip = page.getByRole("navigation", { name: "Pages" });
-  await expect(strip.getByRole("link", { name: "Button", exact: true })).toHaveAttribute(
+  // Close button sits between Button and Copy button in Actions, so the pager links both neighbours.
+  await page.goto("/close-button?scheme=light&locale=en");
+  const strip = page.getByRole("navigation", { name: "Components" });
+  await expect(strip.getByRole("link", { name: "Close button", exact: true })).toHaveAttribute(
     "aria-current",
     "page",
   );
-  const pager = page.getByRole("navigation", { name: "Previous and next page" });
+  const pager = page.getByRole("navigation", { name: "More in this category" });
   await expect(pager.getByRole("link")).toHaveCount(2);
   await pager.getByRole("link", { name: /Next/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
-  await expect(page).not.toHaveURL(/\/button\?/);
+  await expect(page).not.toHaveURL(/\/close-button\?/);
 });
 
 for (const scheme of SCHEMES)
@@ -258,6 +303,8 @@ for (const material of MaterialMode)
         await page.goto(`/?scheme=${scheme}&locale=${locale}&material=${material}`);
         await expect(page.locator("html")).toHaveAttribute("data-material", material);
         await expect(page.locator("html")).toHaveAttribute("dir", dir);
+        // The home's hero (and its h1) arrives after the first cards: axe scans the finished page.
+        await expect(page.getByRole("heading", { level: 1 })).toBeAttached();
         // The page root stays opaque in every mode, so the material always blurs a painted page.
         expect(await paintedAlpha(page.locator("html"), "backgroundColor")).toBe(255);
         expect(await paintedAlpha(page.locator("body"), "backgroundColor")).toBe(255);
@@ -284,26 +331,45 @@ test("the glass turns solid under reduced transparency, even in the liquid mater
   expect(await paintedAlpha(bar, "backgroundColor")).toBe(255);
 });
 
+/**
+ * A surface of one material level added to the page: the top bar is the bar material now (a tinted glass of the theme's
+ * background, 4a44c0e), so the levels are measured on a surface of their own.
+ */
+const materialSurface = async (page: Page, level: string) => {
+  await page.evaluate((name) => {
+    const surface = document.createElement("div");
+    surface.className = name;
+    surface.dataset["testid"] = "material-surface";
+    surface.textContent = name;
+    document.body.append(surface);
+  }, level);
+  return page.getByTestId("material-surface");
+};
+
 test("the thick level, which muted text sits on, is solid in the liquid material", async ({
   page,
 }) => {
   await page.goto("/?scheme=light&locale=en&material=liquid");
-  expect(await paintedAlpha(page.getByRole("banner"), "backgroundColor")).toBe(255);
+  expect(await paintedAlpha(await materialSurface(page, "material-thick"), "backgroundColor")).toBe(
+    255,
+  );
 });
 
 test("the glass keeps a visible edge in forced colours", async ({ page }) => {
   await page.emulateMedia({ forcedColors: "active" });
   await page.goto("/?scheme=light&locale=en&material=glass");
-  const bar = page.getByRole("banner");
-  expect(await bar.evaluate((element) => getComputedStyle(element).borderTopStyle)).toBe("solid");
-  expect(await bar.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe("1px");
-  expect(await paintedAlpha(bar, "borderTopColor")).toBe(255);
+  const surface = await materialSurface(page, "material");
+  expect(await surface.evaluate((element) => getComputedStyle(element).borderTopStyle)).toBe(
+    "solid",
+  );
+  expect(await surface.evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe("1px");
+  expect(await paintedAlpha(surface, "borderTopColor")).toBe(255);
 });
 
 test("the hero's jump to the gallery keeps the scheme and the locale", async ({ page }) => {
   await page.goto("/?scheme=dark&locale=ar");
-  await page.getByRole("link", { name: /Browse components/ }).click();
-  await expect(page).toHaveURL(/\?scheme=dark&locale=ar#components$/);
+  await page.getByRole("button", { name: "تصفح المكونات" }).click();
+  await expect(page).toHaveURL(/\/components\?scheme=dark&locale=ar$/);
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
 });
 
@@ -316,11 +382,12 @@ for (const scheme of SCHEMES)
         await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
         await page.goto(`/button?scheme=${scheme}&locale=${locale}`);
         await page.keyboard.press("ControlOrMeta+k");
-        const palette = page.getByRole("dialog", { name: "Search components" });
+        // In Arabic the palette carries its Arabic name; it is the only dialog, so its role finds it.
+        const palette = page.getByRole("dialog");
         await expect(palette).toBeVisible();
         if (query) await page.keyboard.type(query);
         if (query === "zzz") {
-          await expect(palette.getByText(`Nothing matches “${query}”.`)).toBeVisible();
+          await expect(palette.getByText(new RegExp(`“?${query}”?`))).toBeVisible();
           await expect(palette.getByRole("listbox")).toHaveCount(0);
           await expect(palette.getByRole("combobox")).toHaveAttribute("aria-expanded", "false");
         } else await expect(palette.getByRole("option").first()).toBeVisible();

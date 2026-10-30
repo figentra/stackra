@@ -1,0 +1,37 @@
+{
+  "generatedFrom": {
+    "hash": "99ded00247e37faf",
+    "propsFiles": ["ui/src/react/highlight/highlight.props.ts"]
+  },
+  "importLine": "import { Highlight } from \"@stackra/ui/react\";",
+  "key": "free/highlight",
+  "parts": [
+    {
+      "name": "Highlight",
+      "props": [
+        {
+          "description": "The text to search and mark.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The search, or several terms; empty highlights nothing.",
+          "name": "query",
+          "required": true,
+          "source": "stackra",
+          "type": "string | readonly string[]"
+        },
+        {
+          "description": "Styles the text.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

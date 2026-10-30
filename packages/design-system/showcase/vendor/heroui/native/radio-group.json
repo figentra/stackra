@@ -1,0 +1,341 @@
+{
+  "slug": "radio-group",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/radio-group.mdx",
+  "parts": [
+    {
+      "name": "RadioGroup",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "default": "undefined",
+          "description": "Radio group content"
+        },
+        {
+          "name": "value",
+          "type": "string | undefined",
+          "default": "undefined",
+          "description": "The currently selected value of the radio group"
+        },
+        {
+          "name": "onValueChange",
+          "type": "(val: string) => void",
+          "default": "undefined",
+          "description": "Callback fired when the selected value changes"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the entire radio group is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the radio group is invalid"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary'",
+          "default": "undefined",
+          "description": "Variant style for the radio group (inherited by items if not set on item)"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Custom class name"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "RadioGroup.Item",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: RadioGroupItemRenderProps) => React.ReactNode)",
+          "default": "undefined",
+          "description": "Radio item content or render function to customize the radio item"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "default": "undefined",
+          "description": "The value associated with this radio item"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether this specific radio item is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the radio item is invalid"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary'",
+          "default": "'primary'",
+          "description": "Variant style for the radio item"
+        },
+        {
+          "name": "hitSlop",
+          "type": "number",
+          "default": "6",
+          "description": "Hit slop for the pressable area"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Custom class name"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported (except disabled)"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the radio item is selected"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the radio item is invalid"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the radio item is disabled"
+        }
+      ]
+    },
+    {
+      "name": "Radio (inside RadioGroup.Item)",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: RadioRenderProps) => React.ReactNode)",
+          "default": "undefined",
+          "description": "Child elements or render function to customize the radio"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary'",
+          "default": "'primary'",
+          "description": "Variant style for the radio"
+        },
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "default": "undefined",
+          "description": "Whether the radio is currently selected"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "undefined",
+          "description": "Whether the radio is disabled and cannot be interacted with"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the radio is invalid (shows danger color)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "animation",
+          "type": "RadioRootAnimation",
+          "description": "Animation configuration for radio"
+        },
+        {
+          "name": "onSelectedChange",
+          "type": "(isSelected: boolean) => void",
+          "default": "undefined",
+          "description": "Callback fired when the radio selection state changes"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported (except disabled)"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the radio is selected"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the radio is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the radio is invalid"
+        }
+      ]
+    },
+    {
+      "name": "Radio.Indicator",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "default": "undefined",
+          "description": "Content for the radio indicator"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Additional CSS classes for the indicator"
+        },
+        {
+          "name": "...AnimatedViewProps",
+          "type": "AnimatedProps<ViewProps>",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Radio.IndicatorThumb",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "default": "undefined",
+          "description": "Additional CSS classes for the thumb"
+        },
+        {
+          "name": "animation",
+          "type": "RadioIndicatorThumbAnimation",
+          "description": "Animation configuration for the thumb"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "...AnimatedViewProps",
+          "type": "AnimatedProps<ViewProps>",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "scale.value",
+          "type": "[number, number]",
+          "default": "[1.5, 1]",
+          "description": "Scale values [unselected, selected]"
+        },
+        {
+          "name": "scale.timingConfig",
+          "type": "WithTimingConfig",
+          "default": "{ duration: 300, easing: Easing.out(Easing.ease) }",
+          "description": "Animation timing configuration"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useRadioGroup",
+      "signature": "useRadioGroup()",
+      "returns": [
+        {
+          "name": "value",
+          "type": "string | undefined",
+          "description": "Currently selected value"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the radio group is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the radio group is in an invalid state"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary'",
+          "description": "Variant style for the radio group"
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string) => void",
+          "description": "Function to change the selected value"
+        }
+      ]
+    },
+    {
+      "name": "useRadioGroupItem",
+      "signature": "useRadioGroupItem()",
+      "returns": [
+        {
+          "name": "isSelected",
+          "type": "boolean",
+          "description": "Whether the radio item is selected"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean | undefined",
+          "description": "Whether the radio item is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean | undefined",
+          "description": "Whether the radio item is invalid"
+        },
+        {
+          "name": "variant",
+          "type": "'primary' | 'secondary' | undefined",
+          "description": "Variant style for the radio item"
+        },
+        {
+          "name": "onSelectedChange",
+          "type": "((isSelected: boolean) => void) | undefined",
+          "description": "Callback to change the selection state (selects this item in the group)"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

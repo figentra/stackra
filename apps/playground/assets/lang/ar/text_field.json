@@ -1,0 +1,23 @@
+{
+  "primary": "حقل أساسي",
+  "secondary": "حقل ثانوي",
+  "label_only": "تسمية فقط",
+  "with_placeholder": "مع نص إرشادي",
+  "placeholder": "Ada Lovelace",
+  "with_description": "مع وصف",
+  "description": "كما يظهر على فواتيرك.",
+  "required": "حقل مطلوب",
+  "invalid": "حقل غير صالح",
+  "invalid_message": "أدخل اسمًا من حرفين على الأقل.",
+  "disabled": "حقل معطل",
+  "read_only": "حقل للقراءة فقط",
+  "kept": "قيمة محفوظة",
+  "kind_label": "النوع: {kind}",
+  "full": "بعرض كامل",
+  "content": "بعرض المحتوى",
+  "live_label": "بريد العمل",
+  "live_description": "نستخدمه لإرسال الفاتورة.",
+  "live_error": "أدخل عنوان بريد إلكتروني يحتوي على @.",
+  "live_empty": "لم يُكتب شيء بعد.",
+  "live_typed": "{count, plural, zero {لم تكتب أي حرف: {text}} one {كتبت حرفًا واحدًا: {text}} two {كتبت حرفين: {text}} few {كتبت # أحرف: {text}} many {كتبت # حرفًا: {text}} other {كتبت # حرف: {text}}}"
+}

@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "7afcbca99b0b18e7",
+    "propsFiles": ["ui/src/native/carousel/carousel.props.ts"]
+  },
+  "importLine": "import { Carousel } from \"@stackra/ui/native\";",
+  "key": "free/carousel",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the index of the slide in view.",
+          "name": "onIndexChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(index: number) => void"
+        }
+      ],
+      "name": "Carousel",
+      "props": [
+        {
+          "description": "The slides, one element each.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ReactNode[]"
+        },
+        {
+          "description": "The carousel's accessible name, such as \"Featured products\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Shows the page dots; on by default.",
+          "name": "showDots",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the previous and next buttons; on by default.",
+          "name": "showArrows",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -1,0 +1,25 @@
+{
+  "search_label": "Search orders",
+  "search_placeholder": "Try “refund”",
+  "clear_search": "Clear search",
+  "show_all": "Show all orders",
+  "results_intro": "Orders",
+  "create": "Create an order",
+  "clear_filters": "Clear filters",
+  "learn_more": "Request access",
+  "count": "{shown, plural, =0 {No orders match.} one {# order shown.} other {# orders shown.}}",
+  "sample": {
+    "no_orders_yet": "No orders yet",
+    "orders_appear_here_once_a": "Orders appear here once a customer pays.",
+    "no_orders_match_your_filters": "No orders match your filters",
+    "try_a_different_status_or": "Try a different status or a wider date range.",
+    "you_cannot_see_orders": "You cannot see orders",
+    "ask_an_administrator_to_give": "Ask an administrator to give you the orders permission.",
+    "title_only": "Title only",
+    "with_an_action": "With an action",
+    "an_icon_of_your_own": "An icon of your own",
+    "importing_is_paused": "Importing is paused",
+    "orders_will_appear_here_when": "Orders will appear here when the import resumes.",
+    "no_icon": "No icon"
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "generatedFrom": {
+    "hash": "1318b7637995046e",
+    "heroDoc": "vendor/heroui/react/spinner.json",
+    "propsFiles": ["ui/src/react/spinner/spinner.props.ts"]
+  },
+  "importLine": "import { Spinner } from \"@stackra/ui/react\";",
+  "key": "free/spinner",
+  "parts": [
+    {
+      "extends": "Spinner",
+      "name": "Spinner",
+      "props": [
+        {
+          "default": "md",
+          "description": "The diameter: `sm` 16, `md` 24 or `lg` 32 pixels on both runtimes. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "accent",
+          "description": "The colour role it spins in; `default` is the foreground colour. Defaults to `accent`, as in HeroUI.",
+          "name": "tone",
+          "replaces": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\" | \"muted\""
+        },
+        {
+          "description": "The spoken name, for example \"Loading orders\". Given, the spinner is announced as a status; left out, it is\nhidden from screen readers, so text beside it must say what is loading.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"span\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLSpanElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base spinner styles with default size",
+      "name": ".spinner"
+    },
+    {
+      "description": "Small size variant",
+      "name": ".spinner--sm"
+    },
+    {
+      "description": "Medium size variant (default)",
+      "name": ".spinner--md"
+    },
+    {
+      "description": "Large size variant",
+      "name": ".spinner--lg"
+    },
+    {
+      "description": "Extra large size variant",
+      "name": ".spinner--xl"
+    },
+    {
+      "description": "Inherits current text color",
+      "name": ".spinner--current"
+    },
+    {
+      "description": "Accent color variant",
+      "name": ".spinner--accent"
+    },
+    {
+      "description": "Danger color variant",
+      "name": ".spinner--danger"
+    },
+    {
+      "description": "Success color variant",
+      "name": ".spinner--success"
+    },
+    {
+      "description": "Warning color variant",
+      "name": ".spinner--warning"
+    }
+  ]
+}

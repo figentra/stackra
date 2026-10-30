@@ -1,0 +1,28 @@
+{
+  "plain": "Archive project",
+  "danger": "Delete project",
+  "typed": "Delete workspace",
+  "no_answer": "No answer yet.",
+  "yes": "{name}: confirmed.",
+  "no": "{name}: declined.",
+  "deleted": "Workspaces deleted: {count}.",
+  "plain_dialog": {
+    "title": "Archive this project?",
+    "description": "It leaves the list but can be restored later.",
+    "confirm": "Archive",
+    "cancel": "Keep active"
+  },
+  "danger_dialog": {
+    "title": "Delete this project?",
+    "description": "This cannot be undone.",
+    "confirm": "Yes, delete it",
+    "cancel": "Keep project"
+  },
+  "typed_dialog": {
+    "title": "Delete the Acme workspace?",
+    "description": "Every project in it is deleted too. This cannot be undone.",
+    "confirm": "Delete Acme",
+    "cancel": "Keep Acme",
+    "confirmation": "Type “Acme” to confirm"
+  }
+}

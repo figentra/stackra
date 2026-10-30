@@ -1,0 +1,12 @@
+{
+  "basics": {
+    "title": "Receipt",
+    "print": "Print receipts",
+    "print_line": "After every sale",
+    "paper": "Paper width",
+    "small": "58 mm",
+    "large": "80 mm",
+    "size": "Text size",
+    "accent": "Brand colour"
+  }
+}

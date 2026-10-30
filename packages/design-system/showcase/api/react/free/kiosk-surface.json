@@ -1,0 +1,67 @@
+{
+  "generatedFrom": {
+    "hash": "2010380d0d04d93c",
+    "propsFiles": ["ui/src/react/kiosk-surface/kiosk-surface.props.ts"]
+  },
+  "importLine": "import { KioskSurface } from \"@stackra/ui/react\";",
+  "key": "free/kiosk-surface",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Resets the kiosk: drops the session and the basket and shows the attract screen.",
+          "name": "onIdle",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "KioskSurface",
+      "props": [
+        {
+          "description": "The kiosk's screens.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "How long, in milliseconds, without a touch, a key or a pointer before the kiosk resets (a device setting).",
+          "name": "idleTimeoutMs",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The reach layout; `standing` when left out.",
+          "name": "reach",
+          "required": false,
+          "source": "stackra",
+          "type": "\"standing\" | \"seated\""
+        },
+        {
+          "description": "True for the high-contrast presentation.",
+          "name": "isHighContrast",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to speak announcements aloud (audio guidance through the kiosk's speaker or headphone jack).",
+          "name": "isAudioOn",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Speaks a text aloud in the kiosk's language. On web the browser's speech synthesis speaks when this is left out;\non native the caller passes the platform's speech, since React Native has none of its own.",
+          "name": "speak",
+          "required": false,
+          "source": "stackra",
+          "type": "(text: string) => void"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

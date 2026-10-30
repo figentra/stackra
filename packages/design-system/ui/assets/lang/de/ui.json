@@ -88,7 +88,18 @@
   },
   "sidebar": {
     "collapse": "Seitenleiste einklappen",
-    "expand": "Seitenleiste ausklappen"
+    "expand": "Seitenleiste ausklappen",
+    "open": "Navigation öffnen",
+    "resize": "Breite der Seitenleiste ändern",
+    "search": "Navigation filtern",
+    "no_results": "Keine passenden Einträge",
+    "loading": "Navigation wird geladen",
+    "sub_toggle": "Seiten unter {label}"
+  },
+  "side_panel": {
+    "expand": "Bereich vergrößern",
+    "close": "Bereich schließen",
+    "resize": "Breite des Bereichs ändern"
   },
   "data_table": {
     "loading": "Wird geladen",
@@ -107,5 +118,662 @@
   },
   "search_field": {
     "clear": "Suche löschen"
+  },
+  "overflow_list": {
+    "more": "+{count, number} weitere",
+    "less": "Weniger anzeigen"
+  },
+  "tree_view": {
+    "expand": "{label} aufklappen",
+    "collapse": "{label} zuklappen"
+  },
+  "sortable_list": {
+    "handle": "{label} neu anordnen",
+    "move_up": "Nach oben",
+    "move_down": "Nach unten",
+    "moved": "{label} an Position {position, number} von {count, number} verschoben",
+    "hint": "Ziehen Sie den Griff oder verwenden Sie die Aktionen, um diese Zeile zu verschieben."
+  },
+  "filter_panel": {
+    "applied": "Angewendete Filter",
+    "views": "Gespeicherte Ansichten",
+    "sort": "Sortieren",
+    "order": "Reihenfolge",
+    "results": "{count, plural, =0 {Keine Ergebnisse} one {# Ergebnis} other {# Ergebnisse}}",
+    "facet_option": "{label} ({count, number})"
+  },
+  "notifications_panel": {
+    "label": "Benachrichtigungen",
+    "label_unread": "Benachrichtigungen, {count, plural, one {# ungelesen} other {# ungelesen}}",
+    "title": "Benachrichtigungen",
+    "mark_all_read": "Alle als gelesen markieren",
+    "dismiss": "Benachrichtigung schließen",
+    "empty": "Alles gelesen",
+    "unread": "Ungelesen"
+  },
+  "system_banner": {
+    "dismiss": "Meldung schließen"
+  },
+  "route_progress": {
+    "label": "Seite wird geladen"
+  },
+  "copy_button": {
+    "copy": "Kopieren",
+    "copied": "Kopiert"
+  },
+  "file_trigger": {
+    "files": "Dateien auswählen",
+    "photos": "Fotos auswählen",
+    "camera": "Foto aufnehmen"
+  },
+  "upload_list": {
+    "label": "Uploads",
+    "queued": "Wartet",
+    "uploading": "{name} wird hochgeladen",
+    "done": "Hochgeladen",
+    "failed": "Upload fehlgeschlagen",
+    "retry": "{name} erneut versuchen",
+    "remove": "{name} entfernen",
+    "preview": "Vorschau von {name}",
+    "preview_hint": "Lange drücken für die Vorschau"
+  },
+  "avatar_group": {
+    "more": "{count, plural, other {+#}}",
+    "more_label": "{count, plural, one {# weitere Person} other {# weitere Personen}}",
+    "summary": "{label}: {names}"
+  },
+  "save_bar": {
+    "label": "Nicht gespeicherte Änderungen",
+    "message": "Nicht gespeicherte Änderungen",
+    "save": "Speichern",
+    "discard": "Verwerfen",
+    "saving": "Wird gespeichert…",
+    "saved": "Alle Änderungen gespeichert",
+    "failed": "Speichern fehlgeschlagen"
+  },
+  "setup_guide": {
+    "progress": "{done} von {total} Aufgaben erledigt",
+    "complete": "Alles erledigt",
+    "show": "Aufgaben anzeigen",
+    "hide": "Aufgaben ausblenden"
+  },
+  "inline_loading": {
+    "loading": "Wird geladen…",
+    "success": "Fertig",
+    "error": "Fehlgeschlagen"
+  },
+  "date_label": {
+    "due_soon": "Bald fällig",
+    "overdue": "Überfällig",
+    "expiring_soon": "Läuft bald ab",
+    "expired": "Abgelaufen",
+    "with_state": "{state} · {when}",
+    "with_date": "{label}, {date}"
+  },
+  "permissions_matrix": {
+    "permission": "Berechtigung",
+    "all_for_role": "Alle Berechtigungen für {role}",
+    "group_for_role": "Alle Berechtigungen „{group}“ für {role}",
+    "cell": "{permission} für {role}",
+    "cell_state": "{permission} für {role}: {state}",
+    "allowed": "Erlaubt",
+    "denied": "Nicht erlaubt",
+    "summary": "{count} von {total}"
+  },
+  "money_field": {
+    "currency": "Währung"
+  },
+  "password_field": {
+    "show": "Passwort anzeigen",
+    "hide": "Passwort verbergen",
+    "caps_lock": "Feststelltaste ist aktiviert"
+  },
+  "multi_select": {
+    "remove": "{label} entfernen",
+    "search": "Suchen",
+    "close": "Fertig",
+    "no_matches": "Keine Treffer"
+  },
+  "inline_edit": {
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  },
+  "export_dialog": {
+    "title": "Exportieren",
+    "format": "Format",
+    "columns": "Spalten",
+    "scope": "Zeilen",
+    "delivery": "Zustellung",
+    "scope_selection": "{count, plural, =0 {Ausgewählte Zeilen (keine)} one {Ausgewählte Zeile (#)} other {Ausgewählte Zeilen (#)}}",
+    "scope_filtered": "{count, plural, =0 {Gefilterte Zeilen (keine)} other {Gefilterte Zeilen (#)}}",
+    "scope_all": "{count, plural, other {Alle Zeilen (#)}}",
+    "download": "Datei herunterladen",
+    "email": "Per E-Mail senden",
+    "email_to": "An {email} senden",
+    "cancel": "Abbrechen",
+    "export": "Exportieren",
+    "done": "Fertig",
+    "done_download": "Der Export ist fertig und wird heruntergeladen.",
+    "done_email": "Der Export ist auf dem Weg in Ihr Postfach.",
+    "failed": "Der Export ist fehlgeschlagen. Versuchen Sie es erneut.",
+    "no_columns": "Wählen Sie mindestens eine Spalte.",
+    "close": "Schließen",
+    "preparing": "Datei wird vorbereitet"
+  },
+  "error_page": {
+    "retry": "Erneut versuchen",
+    "forbidden": {
+      "title": "Sie haben keinen Zugriff auf diese Seite",
+      "description": "Bitten Sie eine Administratorin oder einen Administrator dieses Arbeitsbereichs um Zugriff."
+    },
+    "not_found": {
+      "title": "Diese Seite gibt es nicht",
+      "description": "Der Link ist vielleicht veraltet, oder die Seite wurde verschoben oder gelöscht."
+    },
+    "server_error": {
+      "title": "Bei uns ist etwas schiefgelaufen",
+      "description": "Wir wurden informiert. Versuchen Sie es gleich noch einmal."
+    },
+    "offline": {
+      "title": "Sie sind offline",
+      "description": "Prüfen Sie die Netzwerkverbindung und versuchen Sie es dann erneut."
+    }
+  },
+  "fullscreen_bar": {
+    "exit": "Vollbild beenden",
+    "reveal": "Vollbildleiste einblenden",
+    "reveal_locked": "Vollbildleiste einblenden (lange drücken)"
+  },
+  "coach_mark": {
+    "progress": "Schritt {current} von {total}",
+    "back": "Zurück",
+    "next": "Weiter",
+    "done": "Fertig",
+    "skip": "Tour überspringen"
+  },
+  "chart": {
+    "category": "Kategorie",
+    "value": "Wert",
+    "previous": "{series}, Vorperiode",
+    "previous_period": "Vorperiode",
+    "series": "Angezeigte Reihen",
+    "zoom": "Zoombereich",
+    "bin": "Bereich",
+    "count": "Anzahl",
+    "minimum": "Minimum",
+    "lower_quartile": "Unteres Quartil",
+    "median": "Median",
+    "upper_quartile": "Oberes Quartil",
+    "maximum": "Maximum",
+    "outliers": "Ausreißer",
+    "low": "Tief",
+    "high": "Hoch",
+    "target": "Ziel",
+    "less": "Weniger",
+    "more": "Mehr",
+    "cell": "{row}, {column}: {value}",
+    "open": "Eröffnung",
+    "close": "Schluss",
+    "volume": "Volumen",
+    "change": "Änderung",
+    "total": "Gesamt",
+    "of_target": "{value} von {target}",
+    "date": "Datum",
+    "group": "Gruppe",
+    "from": "Von",
+    "to": "Nach",
+    "task": "Aufgabe",
+    "lane": "Spur",
+    "start": "Beginn",
+    "end": "Ende",
+    "today": "Heute",
+    "region": "Region",
+    "no_data": "Keine Daten"
+  },
+  "data_grid": {
+    "changes": "{count, plural, one {# ungespeicherte Änderung} other {# ungespeicherte Änderungen}}",
+    "errors": "{count, plural, one {# Zelle muss korrigiert werden} other {# Zellen müssen korrigiert werden}}",
+    "undo": "Rückgängig",
+    "redo": "Wiederholen",
+    "total": "Summe",
+    "required": "Pflichtfeld",
+    "type": "Ungültiger Wert",
+    "min": "Mindestens {limit}",
+    "max": "Höchstens {limit}",
+    "edit": "Bearbeiten",
+    "edit_row": "{name} bearbeiten",
+    "bulk_edit": "{count, plural, one {# Zeile bearbeiten} other {# Zeilen bearbeiten}}",
+    "bulk_edit_title": "Ausgewählte Zeilen bearbeiten",
+    "bulk_column": "Feld",
+    "bulk_value": "Neuer Wert",
+    "apply": "Anwenden",
+    "cancel": "Abbrechen",
+    "done": "Fertig",
+    "select": "Auswählen",
+    "selected": "{count, plural, one {# ausgewählt} other {# ausgewählt}}",
+    "fill_handle": "Ausfüllkästchen",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "data_table_tools": {
+    "columns": "Spalten",
+    "views": "Ansichten",
+    "save_view": "Ansicht speichern",
+    "group_count": "{count, plural, one {# Zeile} other {# Zeilen}}",
+    "total": "Summe",
+    "aggregate_sum": "Summe",
+    "aggregate_avg": "Durchschnitt",
+    "aggregate_min": "Minimum",
+    "aggregate_max": "Maximum",
+    "aggregate_count": "Anzahl"
+  },
+  "collection": {
+    "sort_rank": "Sortierung {rank, number}",
+    "column_menu": "Optionen für {label}",
+    "sort_ascending": "Aufsteigend sortieren",
+    "sort_descending": "Absteigend sortieren",
+    "add_sort": "Zur Sortierung hinzufügen",
+    "clear_sort": "Aus der Sortierung entfernen",
+    "filter_column": "Nach dieser Spalte filtern",
+    "pin_start": "Am Anfang fixieren",
+    "pin_end": "Am Ende fixieren",
+    "unpin": "Lösen",
+    "hide_column": "Spalte ausblenden",
+    "group_by_column": "Nach dieser Spalte gruppieren",
+    "ungroup": "Gruppierung aufheben",
+    "summary": "Zusammenfassung",
+    "summary_none": "Keine Zusammenfassung",
+    "resize_column": "Spaltenbreite ändern",
+    "resize_handle": "Breite von {label} ändern",
+    "move_start": "Richtung Anfang verschieben",
+    "move_end": "Richtung Ende verschieben",
+    "column_moved": "{label} an Position {position, number} von {count, number} verschoben",
+    "editor_title": "Spalten anordnen",
+    "editor_hint": "Ziehen zum Umordnen; Spalten umbenennen, fixieren, Breite setzen und ausblenden.",
+    "show_column": "{label} anzeigen",
+    "rename_column": "{label} umbenennen",
+    "column_name": "Spaltenname",
+    "pin": "Fixieren",
+    "pin_none": "Nicht fixiert",
+    "width": "Breite",
+    "width_auto": "Automatisch",
+    "fit_width": "An Inhalt anpassen",
+    "wrap": "Text umbrechen",
+    "reset_columns": "Spalten zurücksetzen",
+    "density": "Zeilendichte",
+    "density_compact": "Kompakt",
+    "density_normal": "Normal",
+    "density_roomy": "Großzügig",
+    "toolbar": "Werkzeuge für {label}",
+    "search": "{label} durchsuchen",
+    "filter": "Filtern",
+    "filter_count": "{count, plural, =0 {Filtern} one {Filtern, # Regel} other {Filtern, # Regeln}}",
+    "filter_title": "{label} filtern",
+    "add_group": "Gruppe hinzufügen",
+    "remove_group": "Gruppe entfernen",
+    "group_match": "Gruppe {index, number}",
+    "clear_filters": "Filter löschen",
+    "remove_filter": "Filter entfernen: {text}",
+    "sort": "Sortieren",
+    "sort_count": "{count, plural, =0 {Sortieren} one {Sortieren, # Schlüssel} other {Sortieren, # Schlüssel}}",
+    "sort_title": "{label} sortieren",
+    "add_sort_key": "Sortierschlüssel hinzufügen",
+    "remove_sort": "{label} aus der Sortierung entfernen",
+    "sort_direction": "Richtung von {label}",
+    "sort_empty": "Nicht sortiert: Zeilen behalten die Reihenfolge der Quelle.",
+    "group": "Gruppieren",
+    "group_by": "Gruppieren nach",
+    "group_none": "Keine Gruppierung",
+    "layout": "Anzeigen als",
+    "layout_table": "Tabelle",
+    "layout_grid": "Raster",
+    "layout_list": "Liste",
+    "layout_cards": "Karten",
+    "layout_board": "Board",
+    "views": "Ansichten",
+    "all_records": "Alle Datensätze",
+    "view_menu": "Ansichtsaktionen",
+    "save_view": "Änderungen an der Ansicht speichern",
+    "save_view_as": "Als neue Ansicht speichern",
+    "rename_view": "Ansicht umbenennen",
+    "share_view": "Ansicht teilen",
+    "set_default": "Als Standard festlegen",
+    "unset_default": "Nicht mehr als Standard verwenden",
+    "delete_view": "Ansicht löschen",
+    "view_name": "Name der Ansicht",
+    "default_view": "{label} (Standard)",
+    "shared_view": "{label} (geteilt)",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "refresh": "Aktualisieren",
+    "fullscreen": "Vollbild",
+    "exit_fullscreen": "Vollbild beenden",
+    "more_tools": "Weitere Werkzeuge",
+    "results": "{count, plural, =0 {Keine Ergebnisse} one {# Ergebnis} other {# Ergebnisse}}",
+    "options": "Suchen, filtern und sortieren",
+    "done": "Fertig",
+    "previous_page": "Vorherige Seite",
+    "next_page": "Nächste Seite",
+    "page_of": "Seite {page, number} von {count, number}",
+    "load_more": "Mehr laden"
+  },
+  "number_pad": {
+    "delete": "Löschen",
+    "decimal": "Dezimaltrennzeichen"
+  },
+  "quantity_stepper": {
+    "remove": "Entfernen"
+  },
+  "social_sign_in": {
+    "continue_with": "Weiter mit {provider}"
+  },
+  "widget_frame": {
+    "loading": "Wird geladen",
+    "empty": "Noch keine Daten für diesen Zeitraum",
+    "error": "Dieses Widget konnte nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "refreshing": "Wird aktualisiert",
+    "updated": "Aktualisiert {time}",
+    "refresh": "Aktualisieren",
+    "more": "Weitere Aktionen",
+    "csv": "CSV herunterladen",
+    "png": "PNG herunterladen",
+    "table": "Als Tabelle anzeigen",
+    "chart": "Als Diagramm anzeigen",
+    "fullscreen": "Vollbild",
+    "close": "Schließen",
+    "link": "Link kopieren",
+    "link_copied": "Link kopiert",
+    "sort": "Sortieren",
+    "sort_value_desc": "Größte zuerst",
+    "sort_value_asc": "Kleinste zuerst",
+    "sort_label": "Nach Name",
+    "compare": "Mit Vorperiode vergleichen"
+  },
+  "trend_chip": {
+    "up": "Plus {value}",
+    "down": "Minus {value}",
+    "flat": "Unverändert"
+  },
+  "stat": {
+    "target": "Ziel {value}",
+    "drill_down": "{label} öffnen"
+  },
+  "funnel_chart": {
+    "conversion": "{value} des vorherigen Schritts"
+  },
+  "stacked_meter": {
+    "free": "Frei",
+    "total": "{used} von {max}"
+  },
+  "code_block": {
+    "code": "Code",
+    "show_all": "Alle {count} Zeilen anzeigen",
+    "show_less": "Weniger Zeilen anzeigen",
+    "wrap": "Lange Zeilen umbrechen",
+    "files": "Dateien"
+  },
+  "json_viewer": {
+    "expand": "Aufklappen",
+    "collapse": "Zuklappen"
+  },
+  "toc_rail": {
+    "label": "Auf dieser Seite",
+    "open": "Inhaltsverzeichnis öffnen"
+  },
+  "carousel": {
+    "previous": "Vorherige Folie",
+    "next": "Nächste Folie",
+    "slide": "Folie {index} von {count}",
+    "pages": "Folie wählen"
+  },
+  "command_palette": {
+    "label": "Befehlspalette",
+    "placeholder": "Befehle suchen",
+    "empty": "Keine passenden Befehle"
+  },
+  "import_flow": {
+    "mapping": "Spalten zuordnen",
+    "column": "Spalte in der Datei",
+    "field": "Feld",
+    "skip": "Spalte überspringen",
+    "sample": "z. B. {value}",
+    "required_missing": "Ordnen Sie zuerst diese Pflichtfelder zu: {fields}",
+    "check": "Datei prüfen",
+    "import": "Importieren",
+    "back": "Zuordnung ändern",
+    "created": "Neu",
+    "updated": "Aktualisiert",
+    "failed": "Abgelehnt",
+    "issues": "Gefundene Probleme",
+    "row": "Zeile {row}",
+    "no_issues": "Keine Probleme"
+  },
+  "rule_builder": {
+    "match": "Bedingungen, die gelten müssen",
+    "match_all": "Alle",
+    "match_any": "Mindestens eine",
+    "add": "Bedingung hinzufügen",
+    "remove": "Bedingung entfernen",
+    "field": "Feld",
+    "operator": "Operator",
+    "value": "Wert",
+    "empty": "Noch keine Bedingungen: alles passt"
+  },
+  "rule_operator": {
+    "equals": "ist",
+    "not_equals": "ist nicht",
+    "contains": "enthält",
+    "not_contains": "enthält nicht",
+    "greater": "ist größer als",
+    "less": "ist kleiner als",
+    "is_empty": "ist leer",
+    "is_not_empty": "ist nicht leer"
+  },
+  "comment_thread": {
+    "reply": "Antworten",
+    "send": "Senden",
+    "resolve": "Erledigt",
+    "reopen": "Wieder öffnen",
+    "resolved": "Erledigt",
+    "people": "Personen erwähnen"
+  },
+  "diff_review": {
+    "before": "Vorher",
+    "after": "Nachher",
+    "accept": "Annehmen",
+    "reject": "Ablehnen",
+    "accept_all": "Alle annehmen",
+    "apply": "Änderungen anwenden",
+    "pending": "Noch {count} zu prüfen",
+    "not_set": "Nicht gesetzt",
+    "accepted": "Angenommen",
+    "rejected": "Abgelehnt"
+  },
+  "wheel": {
+    "day": "Tag",
+    "month": "Monat",
+    "year": "Jahr",
+    "hour": "Stunde",
+    "minute": "Minute",
+    "period": "Vormittag oder Nachmittag"
+  },
+  "time_picker": {
+    "open": "Uhrzeit wählen"
+  },
+  "date_time_picker": {
+    "date": "Datum",
+    "time": "Uhrzeit"
+  },
+  "date_range_picker": {
+    "calendar": "Zeitraum wählen",
+    "presets": "Schnellauswahl",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "last_7_days": "Letzte 7 Tage",
+    "last_30_days": "Letzte 30 Tage",
+    "this_month": "Dieser Monat",
+    "last_month": "Letzter Monat",
+    "this_year": "Dieses Jahr"
+  },
+  "year_picker": {
+    "label": "Jahr wählen"
+  },
+  "emoji_picker": {
+    "label": "Emojis",
+    "search": "Emoji suchen",
+    "recent": "Zuletzt verwendet",
+    "no_matches": "Keine passenden Emojis.",
+    "smileys": "Smileys",
+    "people": "Menschen und Gesten",
+    "nature": "Natur",
+    "food": "Essen und Trinken",
+    "activities": "Aktivitäten",
+    "travel": "Reisen und Orte",
+    "objects": "Objekte",
+    "symbols": "Symbole"
+  },
+  "reaction_button": {
+    "label": "{emoji}: {count}"
+  },
+  "otp_input": {
+    "label": "Bestätigungscode",
+    "digit": "Ziffer {index} von {total}"
+  },
+  "phone_field": {
+    "country": "Ländervorwahl",
+    "number": "Telefonnummer",
+    "empty": "Kein Land gefunden.",
+    "selected": "{country}, {code}",
+    "close": "Schließen"
+  },
+  "country_select": {
+    "label": "Land",
+    "search": "Land suchen"
+  },
+  "address_field": {
+    "line1": "Adresse",
+    "line2": "Gebäude oder Wohnung (optional)",
+    "city": "Stadt",
+    "region": "Region",
+    "postal_code": "Postleitzahl",
+    "country": "Land"
+  },
+  "drop_zone": {
+    "label": "Dateien hier ablegen",
+    "browse": "Dateien wählen",
+    "label_one": "Datei hier ablegen",
+    "browse_one": "Datei auswählen"
+  },
+  "color_picker": {
+    "label": "Farbe",
+    "hex": "Hex-Code",
+    "hue": "Farbton",
+    "swatches": "Fertige Farben"
+  },
+  "locale_switcher": {
+    "label": "Sprache"
+  },
+  "range_calendar": {
+    "previous": "Vorheriger Monat",
+    "next": "Nächster Monat"
+  },
+  "drawer": {
+    "resize": "Höhe des Panels ändern",
+    "back": "Zurück",
+    "expand": "Bereich vergrößern",
+    "close_escape": "{label}, Esc"
+  },
+  "import_dialog": {
+    "title": "Importieren",
+    "close": "Schließen",
+    "step_of": "Schritt {step} von {total}",
+    "step_upload": "Datei hochladen",
+    "step_match": "Spalten zuordnen",
+    "step_review": "Änderungen prüfen",
+    "step_import": "Importieren",
+    "upload_label": "CSV- oder Excel-Datei hier ablegen",
+    "upload_hint": "Ein Blatt, mit den Spaltennamen in der ersten Zeile.",
+    "template": "Vorlage herunterladen",
+    "reading": "Datei wird gelesen",
+    "read_failed": "Die Datei konnte nicht gelesen werden. Prüfen Sie, ob es eine CSV- oder Excel-Datei ist, und versuchen Sie es erneut.",
+    "file_rows": "{count, plural, one {# Zeile} other {# Zeilen}}",
+    "check_failed": "Die Datei konnte nicht geprüft werden. Versuchen Sie es erneut.",
+    "skipped": "Zu überspringen",
+    "download_errors": "Fehlerliste herunterladen",
+    "error_row": "Zeile",
+    "error_field": "Feld",
+    "error_message": "Problem",
+    "importing": "Zeilen werden importiert",
+    "done_title": "Import abgeschlossen",
+    "import_failed": "Der Import ist fehlgeschlagen. Versuchen Sie es erneut.",
+    "cancel": "Abbrechen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "retry": "Erneut versuchen",
+    "done": "Fertig",
+    "done_created": "Erstellt",
+    "done_updated": "Aktualisiert",
+    "done_skipped": "Übersprungen",
+    "done_failed": "Fehlgeschlagen"
+  },
+  "pagination": {
+    "label": "Seitennavigation",
+    "previous": "Vorherige Seite",
+    "next": "Nächste Seite",
+    "page": "Seite {page}",
+    "more": "Weitere Seiten",
+    "per_page": "Zeilen pro Seite",
+    "jump": "Gehe zu Seite",
+    "go": "Los",
+    "summary": "{from}–{to} von {total}"
+  },
+  "tag_input": {
+    "remove": "{tag} entfernen",
+    "duplicate": "„{tag}“ ist bereits hinzugefügt.",
+    "max": "Sie können bis zu {max} Tags hinzufügen.",
+    "count": "{count} von {max}"
+  },
+  "stepper": {
+    "label": "Fortschritt",
+    "step_of": "Schritt {step} von {total}",
+    "complete": "Abgeschlossen",
+    "error": "Bitte prüfen",
+    "optional": "Optional"
+  },
+  "timeline": {
+    "label": "Aktivität",
+    "today": "Heute",
+    "yesterday": "Gestern"
+  },
+  "loading_overlay": {
+    "loading": "Wird geladen…"
+  },
+  "truncate": {
+    "more": "Mehr anzeigen",
+    "less": "Weniger anzeigen"
+  },
+  "countdown": {
+    "left": "Noch {time}",
+    "elapsed": "{time} vergangen",
+    "done": "Die Zeit ist um"
+  },
+  "multi_select_more": {
+    "select_all": "Alle auswählen",
+    "clear_all": "Alle entfernen",
+    "more": "+{count}",
+    "more_label": "{count} weitere: {labels}"
+  },
+  "date_presets": {
+    "label": "Schnellauswahl",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "tomorrow": "Morgen",
+    "in_7_days": "In 7 Tagen",
+    "start_of_month": "Monatsanfang",
+    "end_of_month": "Monatsende"
   }
 }

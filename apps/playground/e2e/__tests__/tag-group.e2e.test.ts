@@ -13,6 +13,8 @@
 // @covers sta-350:FR-080 sta-350:FR-081 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -21,7 +23,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/tag-group?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Tag group" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Tag group", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -43,7 +47,7 @@ for (const scheme of SCHEMES)
 
 test("each group is named, and the description and the error are tied to it", async ({ page }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  const basics = page.getByRole("region", { name: "Usage" });
   await expect(basics.getByRole("grid", { name: "Topics" })).toBeVisible();
   await expect(basics.getByRole("grid", { name: "Post tags" })).toBeVisible();
   await expect(basics.getByRole("grid", { name: "Amenities" })).toHaveAccessibleDescription(
@@ -156,10 +160,8 @@ test("tags grow from small to large", async ({ page }) => {
 for (const locale of LOCALES)
   test(`the first tag sits at the reading-start side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const tags = page
-      .getByRole("region", { name: "Basics" })
-      .getByRole("grid", { name: "Topics" })
-      .locator('[data-slot="tag"]');
+    // By id and place: the words speak the page's locale.
+    const tags = example(page, "usage").getByRole("grid").first().locator('[data-slot="tag"]');
     const first = await tags.nth(0).boundingBox();
     const second = await tags.nth(1).boundingBox();
     if (!first || !second) throw new Error("a box is missing");

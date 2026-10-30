@@ -1,0 +1,8 @@
+{
+  "name": "Full name",
+  "email": "Email",
+  "phone": "Phone",
+  "city": "City",
+  "bad_email": "Not an email address",
+  "done": "{count} customers imported"
+}

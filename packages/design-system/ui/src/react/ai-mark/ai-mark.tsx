@@ -18,7 +18,7 @@ export function AiMark({ kind, label, isLabelVisible, size = "sm" }: AiMarkProps
     <span
       data-slot="ai-mark"
       data-kind={kind}
-      className="inline-flex items-center gap-1 text-accent"
+      className="inline-flex items-center gap-1 text-accent-soft-foreground"
     >
       <Icon name="sparkles" size={size} label={isLabelVisible ? undefined : label} />
       {isLabelVisible ? <span className="text-xs">{label}</span> : null}

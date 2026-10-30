@@ -1,0 +1,132 @@
+{
+  "slug": "progress-bar",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(feedback)/progress-bar.mdx",
+  "parts": [
+    {
+      "name": "ProgressBar",
+      "props": [
+        {
+          "name": "value",
+          "type": "number",
+          "default": "0",
+          "description": "The current value"
+        },
+        {
+          "name": "minValue",
+          "type": "number",
+          "default": "0",
+          "description": "The minimum value"
+        },
+        {
+          "name": "maxValue",
+          "type": "number",
+          "default": "100",
+          "description": "The maximum value"
+        },
+        {
+          "name": "isIndeterminate",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether progress is indeterminate"
+        },
+        {
+          "name": "size",
+          "type": "\"sm\" | \"md\" | \"lg\"",
+          "default": "\"md\"",
+          "description": "Size of the progress track"
+        },
+        {
+          "name": "color",
+          "type": "\"default\" | \"accent\" | \"success\" | \"warning\" | \"danger\"",
+          "default": "\"accent\"",
+          "description": "Color of the fill bar"
+        },
+        {
+          "name": "formatOptions",
+          "type": "Intl.NumberFormatOptions",
+          "default": "{style: 'percent'}",
+          "description": "Number format for the value display"
+        },
+        {
+          "name": "valueLabel",
+          "type": "ReactNode",
+          "description": "Custom value label content"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | (values: ProgressBarRenderProps) => ReactNode",
+          "description": "Content or render prop"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "percentage",
+          "type": "number",
+          "description": "The percentage of the progress (0-100)"
+        },
+        {
+          "name": "valueText",
+          "type": "string",
+          "description": "The formatted value text"
+        },
+        {
+          "name": "isIndeterminate",
+          "type": "boolean",
+          "description": "Whether progress is indeterminate"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".progress-bar",
+      "description": "Base container (grid layout)"
+    },
+    {
+      "name": ".progress-bar__output",
+      "description": "Value text display"
+    },
+    {
+      "name": ".progress-bar__track",
+      "description": "Track background"
+    },
+    {
+      "name": ".progress-bar__fill",
+      "description": "Filled portion of the track"
+    },
+    {
+      "name": ".progress-bar--sm",
+      "description": "Small size variant (thinner track)"
+    },
+    {
+      "name": ".progress-bar--md",
+      "description": "Medium size variant (default)"
+    },
+    {
+      "name": ".progress-bar--lg",
+      "description": "Large size variant (thicker track)"
+    },
+    {
+      "name": ".progress-bar--default",
+      "description": "Default color variant"
+    },
+    {
+      "name": ".progress-bar--accent",
+      "description": "Accent color variant"
+    },
+    {
+      "name": ".progress-bar--success",
+      "description": "Success color variant"
+    },
+    {
+      "name": ".progress-bar--warning",
+      "description": "Warning color variant"
+    },
+    {
+      "name": ".progress-bar--danger",
+      "description": "Danger color variant"
+    }
+  ]
+}

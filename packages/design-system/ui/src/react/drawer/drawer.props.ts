@@ -16,4 +16,15 @@ import type { DrawerContractProps } from "#contracts/types/drawer-contract-props
  * `end`.
  */
 export type DrawerProps = DrawerContractProps &
-  Omit<HeroDrawerDialogProps, keyof DrawerContractProps | "aria-label">;
+  Omit<HeroDrawerDialogProps, keyof DrawerContractProps | "aria-label"> & {
+    /**
+     * True to let a side drawer's inner edge be dragged (or arrow-keyed) to set its width, from 320 px to the screen
+     * less the insets. Defaults to false. Ignored on the top and bottom edges.
+     */
+    readonly isResizable?: boolean | undefined;
+    /**
+     * True to draw an expand button in `Drawer.Header` that moves a side drawer between its width and the full screen.
+     * Defaults to false. Ignored on the top and bottom edges.
+     */
+    readonly isExpandable?: boolean | undefined;
+  };

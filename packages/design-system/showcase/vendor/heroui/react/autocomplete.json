@@ -1,0 +1,304 @@
+{
+  "slug": "autocomplete",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(pickers)/autocomplete.mdx",
+  "parts": [
+    {
+      "name": "Autocomplete",
+      "props": [
+        {
+          "name": "placeholder",
+          "type": "string",
+          "default": "'Select an item'",
+          "description": "Temporary text that occupies the autocomplete when it is empty"
+        },
+        {
+          "name": "selectionMode",
+          "type": "\"single\" | \"multiple\"",
+          "default": "\"single\"",
+          "description": "Whether single or multiple selection is enabled"
+        },
+        {
+          "name": "allowsEmptyCollection",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the autocomplete allows an empty collection. When true, the autocomplete can function even with no items."
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Sets the open state of the popover (controlled)"
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "description": "Sets the default open state of the popover (uncontrolled)"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Handler called when the open state changes"
+        },
+        {
+          "name": "disabledKeys",
+          "type": "Iterable<Key>",
+          "description": "Keys of disabled items"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the autocomplete is disabled"
+        },
+        {
+          "name": "value",
+          "type": "Key | Key[] | null",
+          "description": "Current value (controlled)"
+        },
+        {
+          "name": "defaultValue",
+          "type": "Key | Key[] | null",
+          "description": "Default value (uncontrolled)"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: Key | Key[] | null) => void",
+          "description": "Handler called when the value changes"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "description": "Whether user input is required"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the autocomplete value is invalid"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The name of the input, used when submitting an HTML form"
+        },
+        {
+          "name": "fullWidth",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the autocomplete should take full width of its container"
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "default": "\"primary\"",
+          "description": "Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Autocomplete content or render function"
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Trigger",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Trigger content or render function"
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Value",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Value content or render function"
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Indicator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom indicator content"
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.ClearButton",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "onClick",
+          "type": "(e: MouseEvent) => void",
+          "description": "Handler called when button is clicked"
+        },
+        {
+          "name": "ref",
+          "type": "RefObject<HTMLButtonElement>",
+          "description": "Ref to the clear button element"
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Popover",
+      "props": [
+        {
+          "name": "placement",
+          "type": "\"bottom\" | \"bottom left\" | \"bottom right\" | \"bottom start\" | \"bottom end\" | \"top\" | \"top left\" | \"top right\" | \"top start\" | \"top end\" | \"left\" | \"left top\" | \"left bottom\" | \"start\" | \"start top\" | \"start bottom\" | \"right\" | \"right top\" | \"right bottom\" | \"end\" | \"end top\" | \"end bottom\"",
+          "default": "\"bottom\"",
+          "description": "Placement of the popover relative to the trigger"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content children"
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete.Filter",
+      "props": [
+        {
+          "name": "filter",
+          "type": "(text: string, input: string) => boolean",
+          "description": "Custom filter function"
+        },
+        {
+          "name": "inputValue",
+          "type": "string",
+          "description": "Controlled input value"
+        },
+        {
+          "name": "onInputChange",
+          "type": "(value: string) => void",
+          "description": "Handler called when input value changes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Filter content (SearchField and ListBox)"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "defaultChildren",
+          "type": "ReactNode",
+          "description": "The default rendered value"
+        },
+        {
+          "name": "isPlaceholder",
+          "type": "boolean",
+          "description": "Whether the value is a placeholder"
+        },
+        {
+          "name": "state",
+          "type": "SelectState",
+          "description": "The state of the autocomplete"
+        },
+        {
+          "name": "selectedItems",
+          "type": "Node[]",
+          "description": "The currently selected items"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".autocomplete",
+      "description": "Base autocomplete container"
+    },
+    {
+      "name": ".autocomplete__trigger",
+      "description": "The button that triggers the autocomplete"
+    },
+    {
+      "name": ".autocomplete__value",
+      "description": "The displayed value or placeholder"
+    },
+    {
+      "name": ".autocomplete__clear-button",
+      "description": "The clear button that removes the selected value"
+    },
+    {
+      "name": ".autocomplete__indicator",
+      "description": "The dropdown indicator icon"
+    },
+    {
+      "name": ".autocomplete__popover",
+      "description": "The popover container"
+    },
+    {
+      "name": ".autocomplete__filter",
+      "description": "The filter wrapper"
+    },
+    {
+      "name": ".autocomplete--primary",
+      "description": "Primary variant with shadow (default)"
+    },
+    {
+      "name": ".autocomplete--secondary",
+      "description": "Secondary variant without shadow, suitable for use in surfaces"
+    },
+    {
+      "name": ".autocomplete[data-invalid=\"true\"]",
+      "description": "Invalid state"
+    },
+    {
+      "name": ".autocomplete__trigger[data-focus-visible=\"true\"]",
+      "description": "Focused trigger state"
+    },
+    {
+      "name": ".autocomplete__trigger[data-disabled=\"true\"]",
+      "description": "Disabled trigger state"
+    },
+    {
+      "name": ".autocomplete__value[data-placeholder=\"true\"]",
+      "description": "Placeholder state"
+    },
+    {
+      "name": ".autocomplete__clear-button[data-empty=\"true\"]",
+      "description": "Clear button hidden when no selection"
+    },
+    {
+      "name": ".autocomplete__indicator[data-open=\"true\"]",
+      "description": "Open indicator state"
+    }
+  ],
+  "a11y": "The Autocomplete component implements the ARIA select pattern with filtering and provides:\n\n- Full keyboard navigation support\n- Screen reader announcements for selection changes\n- Proper focus management\n- Support for disabled states\n- Search functionality with filtering\n- HTML form integration\n\nFor more information, see the [React Aria Select documentation](https://react-spectrum.adobe.com/react-aria/Select.html)."
+}

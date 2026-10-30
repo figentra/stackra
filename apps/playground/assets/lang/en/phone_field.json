@@ -1,0 +1,7 @@
+{
+  "basics": {
+    "label": "Mobile number",
+    "hint": "Digits typed in Arabic are kept as Latin digits.",
+    "value": "Saved as {phone}"
+  }
+}

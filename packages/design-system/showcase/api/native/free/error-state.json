@@ -1,0 +1,171 @@
+{
+  "generatedFrom": {
+    "hash": "30a32103f2563243",
+    "propsFiles": ["ui/src/native/error-state/error-state.props.ts"]
+  },
+  "importLine": "import { ErrorState } from \"@stackra/ui/native\";",
+  "key": "free/error-state",
+  "parts": [
+    {
+      "name": "ErrorState",
+      "props": [
+        {
+          "default": "unexpected",
+          "description": "What kind of failure it is: `unauthenticated`, `forbidden`, `not-found` or `unexpected`. Defaults to `unexpected`.",
+          "name": "kind",
+          "required": false,
+          "source": "stackra",
+          "type": "\"unauthenticated\" | \"forbidden\" | \"not-found\" | \"unexpected\""
+        },
+        {
+          "description": "The thrown value, as caught. An `Error` or a string shows its message outside production; its stack is shown\noutside production only.",
+          "name": "error",
+          "required": false,
+          "source": "stackra",
+          "type": "unknown"
+        },
+        {
+          "description": "Whether the error's message is shown. It defaults to true outside production and false in production, because a\nserver or driver message (a database or gateway error) is an internal the user must not read. An app whose error\ncarries text written for the user (a typed refusal's message) sets it to true.",
+          "name": "isMessageShown",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "A button that tries again: its label in the app's language and what it runs. Left out, there is no button.",
+          "name": "retry",
+          "required": false,
+          "source": "stackra",
+          "type": "{ readonly label: string; readonly onPress: () => void; }"
+        },
+        {
+          "description": "What is the matter, in a few words. Required: it is the heading a screen reader jumps to.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "One or two sentences: why it is so, and what to do next.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "An icon in place of the reason's or kind's own, or `false` for none.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "Buttons or links for the reader's next step, drawn under the description in a wrapping row.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The title's place in the document outline, 1 to 6, so the page keeps one outline wherever this sits.",
+          "name": "headingLevel",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

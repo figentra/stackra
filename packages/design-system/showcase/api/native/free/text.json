@@ -1,0 +1,139 @@
+{
+  "generatedFrom": {
+    "hash": "abe3f88b78c8cff2",
+    "propsFiles": ["ui/src/native/text/text.props.ts"]
+  },
+  "importLine": "import { Text } from \"@stackra/ui/native\";",
+  "key": "free/text",
+  "parts": [
+    {
+      "name": "Text",
+      "props": [
+        {
+          "default": "body",
+          "description": "The text style from the theme's type scale. Defaults to `body`.",
+          "name": "type",
+          "required": false,
+          "source": "stackra",
+          "type": "\"body\" | \"caption\" | \"small\""
+        },
+        {
+          "description": "The text to show; it may hold inline elements and nested Text.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The colour of the text: `muted` for secondary copy, a status tone for meaning. Defaults to `default`.",
+          "name": "tone",
+          "replaces": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\" | \"muted\""
+        },
+        {
+          "default": "start",
+          "description": "The horizontal alignment; `start` and `end` follow the text direction, `justify` is iOS-only on native. Defaults to `start`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\" | \"justify\""
+        },
+        {
+          "description": "True to cut the text to one line with an ellipsis; assistive technology still reads all of it.",
+          "name": "isTruncated",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The BCP 47 language of this text when it differs from the screen's, for example `ar` inside an English page.",
+          "name": "lang",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<TextStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Font weight override. When set, overrides the weight implied by `type`.",
+          "name": "weight",
+          "required": false,
+          "source": "heroui",
+          "type": "\"bold\" | \"normal\" | \"medium\" | \"semibold\""
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...TextProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TextProps"
+        },
+        {
+          "description": "",
+          "name": "...TextPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "TextPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...TextPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TextPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

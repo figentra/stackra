@@ -10,13 +10,15 @@
  *           them. The `filterBar` slot takes any node, so the table never imports `FilterBar`.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decisions 3 and 4); ADR 0318
- *          (decisions 2 and 4 to 6).
+ *          (decisions 2 and 4 to 6); product audit 2026-10-28 (group-by, aggregates, column chooser); data-collection plan (owner, 2026-10-29).
  */
 import type { ReactNode } from "react";
 
+import type { AggregateKind } from "#contracts/enums/aggregate-kind.enum";
 import type { ErrorStateKind } from "#contracts/enums/error-state-kind.enum";
 import type { HeadingLevel } from "#contracts/enums/heading-level.enum";
 import type { AllMatchingSelectionContractProps } from "#contracts/types/all-matching-selection-contract-props.type";
+import type { CollectionController } from "#contracts/types/collection-controller.type";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { CursorPaginationContractProps } from "#contracts/types/cursor-pagination-contract-props.type";
 import type { ResourceAction } from "#contracts/types/resource-action.type";
@@ -26,7 +28,10 @@ import type { TableContractProps } from "#contracts/types/table-contract-props.t
 /** Props shared by the web and native `DataTable`. */
 export interface DataTableContractProps<TItem extends CollectionItem = CollectionItem>
   extends
-    Omit<TableContractProps<TItem>, "sortDescriptor" | "onSortChange" | "onLoadMore">,
+    Omit<
+      TableContractProps<TItem>,
+      "sortDescriptor" | "onSortChange" | "onLoadMore" | "sort" | "renderColumnMenu"
+    >,
     ResourceQueryContractProps,
     AllMatchingSelectionContractProps,
     Pick<CursorPaginationContractProps, "hasPrevious" | "onNext" | "onPrevious" | "mode"> {
@@ -63,4 +68,29 @@ export interface DataTableContractProps<TItem extends CollectionItem = Collectio
   readonly paginationLabel?: string | undefined;
   /** The spoken name of the bulk bar. Defaults to the table's `label` and the word "actions". */
   readonly bulkActionsLabel?: string | undefined;
+  /**
+   * The id of a column to group the rows by: the rows on screen are gathered under a heading row per value of that
+   * column (in the order the values first appear), which carries the group's count and aggregates.
+   */
+  readonly groupBy?: string | undefined;
+  /** The aggregate of each numeric column, by column id: a heading row per group and a total row at the end show it. */
+  readonly aggregates?: Readonly<Record<string, AggregateKind>> | undefined;
+  /** The ids of the columns not drawn, usually from a `ColumnChooser`; the row-header column is always drawn. */
+  readonly hiddenColumns?: readonly string[] | undefined;
+  /**
+   * The collection engine to draw from (`useCollection`), as DataView passes it: the columns as arranged, the sort
+   * keys, the selection, the density, the group and the totals are its, and every change goes back to it. Left out,
+   * the table runs its own engine over `columns`, controlled by `query`, `selectedKeys`, `groupBy`, `aggregates` and
+   * `hiddenColumns` as before.
+   */
+  readonly collection?: CollectionController<TItem> | undefined;
+  /** The key the table's own engine keeps the user's column layout under (left out, nothing persists). */
+  readonly collectionKey?: string | undefined;
+  /**
+   * True to give each header the column tools: a menu (sort, add to sort, filter, pin, hide, group, summary, resize,
+   * move), a resize handle and drag to reorder.
+   */
+  readonly hasColumnTools?: boolean | undefined;
+  /** Called by a column menu's "Filter by this column"; left out, the menu has no such item. */
+  readonly onFilterColumn?: ((columnId: string) => void) | undefined;
 }

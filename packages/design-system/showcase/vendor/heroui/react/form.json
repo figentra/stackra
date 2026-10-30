@@ -1,0 +1,85 @@
+{
+  "slug": "form",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/form.mdx",
+  "parts": [
+    {
+      "name": "Form",
+      "props": [
+        {
+          "name": "action",
+          "type": "string | FormHTMLAttributes['action']",
+          "description": "The URL to submit the form data to."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind CSS classes applied to the form element."
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Form content (fields, buttons, etc.)."
+        },
+        {
+          "name": "encType",
+          "type": "'application/x-www-form-urlencoded' | 'multipart/form-data' | 'text/plain'",
+          "description": "The encoding type for form data submission."
+        },
+        {
+          "name": "method",
+          "type": "'get' | 'post'",
+          "description": "The HTTP method to use when submitting the form."
+        },
+        {
+          "name": "onInvalid",
+          "type": "(event: FormEvent<HTMLFormElement>) => void",
+          "description": "Handler called when the form validation fails. By default, the first invalid field will be focused. Use `preventDefault()` to customize focus behavior."
+        },
+        {
+          "name": "onReset",
+          "type": "(event: FormEvent<HTMLFormElement>) => void",
+          "description": "Handler called when the form is reset."
+        },
+        {
+          "name": "onSubmit",
+          "type": "(event: FormEvent<HTMLFormElement>) => void",
+          "description": "Handler called when the form is submitted."
+        },
+        {
+          "name": "target",
+          "type": "'_self' | '_blank' | '_parent' | '_top'",
+          "description": "Where to display the response after submitting the form."
+        },
+        {
+          "name": "validationBehavior",
+          "type": "'native' | 'aria'",
+          "default": "'native'",
+          "description": "Whether to use native HTML validation or ARIA validation. 'native' blocks form submission, 'aria' displays errors in realtime."
+        },
+        {
+          "name": "validationErrors",
+          "type": "ValidationErrors",
+          "description": "Server-side validation errors mapped by field name. Displayed immediately and cleared when user modifies the field."
+        },
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "Accessibility label for the form."
+        },
+        {
+          "name": "aria-labelledby",
+          "type": "string",
+          "description": "ID of element that labels the form. Creates a form landmark when provided."
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, undefined>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

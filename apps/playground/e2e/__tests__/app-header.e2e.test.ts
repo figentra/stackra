@@ -17,6 +17,8 @@
 // @covers sta-350:FR-168 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -25,7 +27,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/app-header?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "App header" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("App header", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -47,12 +51,13 @@ const boxOf = async (locator: Locator) => {
   return box;
 };
 
-/** The bars of the parts section, by their sample, found by CSS. */
-const bars = (page: Page) => page.locator("#app-header-parts ~ ul > li header");
+/** The bars of the Usage example (every part, title only, logo, search and menu, long title), found by CSS. */
+const bars = (page: Page) => example(page, "usage").locator("header");
 
 /** The live bar and its reports. */
-const liveBar = (page: Page) => page.locator('[data-sample="live"] header');
-const liveStatus = (page: Page) => page.locator('[data-sample="live-status"] [role="status"]');
+const liveBar = (page: Page) => example(page, "live").locator('[data-sample="live"] header');
+const liveStatus = (page: Page) =>
+  example(page, "live").locator('[data-sample="live-status"] [role="status"]');
 
 for (const scheme of SCHEMES)
   for (const locale of LOCALES)
@@ -75,12 +80,17 @@ for (const locale of LOCALES)
   test(`the parts run from the start to the end of the bar in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
     const bar = bars(page).first();
+    // The demo speaks the page's language (`assets/lang/<locale>/app_header.json`).
+    const [navigation, search, bell, account] =
+      locale === "en"
+        ? ["Open navigation", "Search orders", "Notifications, 2 unread", "Account menu"]
+        : ["فتح التنقل", "البحث في الطلبات", "الإشعارات، 2 غير مقروءة", "قائمة الحساب"];
     const names = [
-      'button[aria-label="Open navigation"]',
+      `button[aria-label="${navigation}"]`,
       '[data-slot="app-header-title"]',
-      'input[aria-label="Search orders"]',
-      'button[aria-label="Notifications, 2 unread"]',
-      'button[aria-label="Account menu"]',
+      `input[aria-label="${search}"]`,
+      `button[aria-label="${bell}"]`,
+      `button[aria-label="${account}"]`,
     ];
     const xs: number[] = [];
     for (const selector of names) xs.push((await boxOf(bar.locator(selector))).x);
@@ -88,11 +98,10 @@ for (const locale of LOCALES)
     const sorted = [...xs].sort((a, b) => (locale === "en" ? a - b : b - a));
     expect(xs).toEqual(sorted);
     const barBox = await boxOf(bar);
-    const account = await boxOf(bar.locator('button[aria-label="Account menu"]'));
+    const menu = await boxOf(bar.locator(`button[aria-label="${account}"]`));
     // The user menu is the last part: it sits at the end edge, inside the bar's padding, in either direction.
-    if (locale === "en")
-      expect(barBox.x + barBox.width - (account.x + account.width)).toBeLessThan(24);
-    else expect(account.x - barBox.x).toBeLessThan(24);
+    if (locale === "en") expect(barBox.x + barBox.width - (menu.x + menu.width)).toBeLessThan(24);
+    else expect(menu.x - barBox.x).toBeLessThan(24);
   });
 
 test("the search slot takes the room left over, so the end parts stay at the end without a search", async ({
@@ -108,8 +117,9 @@ test("the search slot takes the room left over, so the end parts stay at the end
 
 test("every control in a bar reaches 24 px", async ({ page }) => {
   await open(page, "light", "en");
-  const controls = page.locator("#app-header-parts ~ ul > li header").locator("button, input");
-  expect(await controls.count()).toBeGreaterThan(0);
+  const controls = bars(page).locator("button, input");
+  // The demos load lazily: wait for the first before counting.
+  await expect(controls.first()).toBeVisible();
   for (const control of await controls.all()) {
     if (!(await control.isVisible())) continue;
     const box = await boxOf(control);
@@ -190,7 +200,7 @@ test("Escape closes the account menu and returns focus to its button", async ({ 
 for (const locale of LOCALES)
   test(`the Arabic bar mirrors the English one in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const bar = page.locator('[data-sample="arabic"] header');
+    const bar = example(page, "arabic").locator('[data-sample="arabic"] header');
     const menu = await boxOf(bar.locator('button[aria-label="قائمة الحساب"]'));
     const navigation = await boxOf(bar.locator('button[aria-label="فتح التنقل"]'));
     // The block is right-to-left whatever the page's direction: the start slot is right of the user menu.

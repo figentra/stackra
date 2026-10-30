@@ -1,0 +1,107 @@
+{
+  "generatedFrom": {
+    "hash": "0e731a893b3dbc56",
+    "propsFiles": ["ui/src/react/split-view/split-view.props.ts"]
+  },
+  "importLine": "import { SplitView } from \"@stackra/ui/react\";",
+  "key": "free/split-view",
+  "parts": [
+    {
+      "name": "SplitView",
+      "props": [
+        {
+          "description": "The list pane, at the reading start.",
+          "name": "primary",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The detail pane, at the reading end.",
+          "name": "secondary",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "On a phone, true to show the detail pane in place of the list. Ignored when both fit.",
+          "name": "isSecondaryShown",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The landmark name of the list pane, for example \"Orders\".",
+          "name": "primaryLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The landmark name of the detail pane, for example \"Order details\".",
+          "name": "secondaryLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The list pane's width when side by side, in points or CSS pixels. Defaults to 320.",
+          "name": "primaryWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "",
+          "name": "children",
+          "required": false,
+          "source": "react-aria",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

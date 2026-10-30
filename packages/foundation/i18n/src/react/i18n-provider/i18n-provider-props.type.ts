@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `I18nProviderProps`, what the generated `Contexts` of `@stackra/app` hands `I18nProvider`: the active
- *          locale, its merged catalogues, on a member whose locale is a stored choice the setter, and on native the
- *          phone's region formats.
+ *          locale, its merged catalogues, the customer's digits setting, on a member whose locale is a stored choice
+ *          the setter, and on native the phone's region formats.
  * Boundary: type only.
  * Runtime: isomorphic
  * Governing contract: ADR 0080, ADR 0295 (decision 7: createApp mounts the contexts), ADR 0297 (decision 4).
@@ -10,6 +10,7 @@
 import type { ReactNode } from "react";
 
 import type { Locale } from "#core/enums/locale.enum";
+import type { NumberingSystem } from "#core/enums/numbering-system.enum";
 import type { Messages } from "#core/types/messages.type";
 import type { RegionFormat } from "#core/types/region-format.type";
 
@@ -26,6 +27,13 @@ export interface I18nProviderProps {
    * the locale (the web), so `useLocale().setLocale` rejects there and the switcher navigates instead.
    */
   readonly setLocale?: (locale: Locale) => Promise<void>;
+
+  /**
+   * The digits the customer (a tenant, a store, a user) chose: their setting, read at run time, over the member's
+   * `I18nConfig.numerals` default (Latin, ADR 0192). Taken only where the member's `I18nConfig.scopeChoosesNumerals`
+   * allows a scope to choose; omitted, the configured default applies.
+   */
+  readonly numerals?: NumberingSystem | undefined;
 
   /**
    * A native app's region formats (`regionFormat`): the phone's region, clock, week start and time zone, which replace

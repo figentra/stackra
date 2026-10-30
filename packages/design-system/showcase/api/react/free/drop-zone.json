@@ -1,0 +1,67 @@
+{
+  "generatedFrom": {
+    "hash": "c13d87adc9ddae80",
+    "propsFiles": ["ui/src/react/drop-zone/drop-zone.props.ts"]
+  },
+  "importLine": "import { DropZone } from \"@stackra/ui/react\";",
+  "key": "free/drop-zone",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the files dropped or picked.",
+          "name": "onSelect",
+          "required": false,
+          "source": "stackra",
+          "type": "(files: readonly File[]) => void"
+        }
+      ],
+      "name": "DropZone",
+      "props": [
+        {
+          "description": "The headline in the zone; defaults to the `ui` catalogue's phrase.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A line under it, for example the accepted types and size.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The MIME types or extensions accepted; all when empty.",
+          "name": "acceptedFileTypes",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "True to take more than one file.",
+          "name": "allowsMultiple",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse drops and picks.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

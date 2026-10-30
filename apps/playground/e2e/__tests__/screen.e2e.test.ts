@@ -17,6 +17,7 @@
 // @covers sta-350:FR-177 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -25,7 +26,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/screen?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Screen" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Screen", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -47,8 +50,9 @@ const boxOf = async (locator: Locator) => {
   return box;
 };
 
-/** One sample screen, by its `data-sample`. */
-const sample = (page: Page, name: string) => page.locator(`[data-sample="${name}"]`);
+/** One sample screen, by its `data-sample`, in the live examples (not the Stackra section's hidden copies). */
+const sample = (page: Page, name: string) =>
+  page.locator(`section:is(#usage, #examples) [data-sample="${name}"]`);
 
 /** How much of a sample's content is out of sight, and its vertical overflow rule. */
 const scrollOf = (locator: Locator) =>
@@ -132,7 +136,9 @@ for (const locale of LOCALES)
 
 test("every button in a sample reaches 24 px", async ({ page }) => {
   await open(page, "light", "en");
-  const buttons = page.locator("[data-sample]").getByRole("button");
+  const buttons = page.locator("section:is(#usage, #examples) [data-sample]").getByRole("button");
+  // The demos load lazily: wait for the live example's sample before counting.
+  await expect(sample(page, "live")).toBeVisible();
   expect(await buttons.count()).toBeGreaterThan(0);
   for (const button of await buttons.all()) {
     const box = await boxOf(button);

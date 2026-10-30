@@ -1,0 +1,23 @@
+{
+  "primary": "Primary area",
+  "secondary": "Secondary area",
+  "label_only": "Label only",
+  "with_placeholder": "With a placeholder",
+  "placeholder": "Tell us what happened",
+  "with_description": "With a description",
+  "description": "Include the order number if you have one.",
+  "two_lines": "Two lines",
+  "six_lines": "Six lines",
+  "required": "Required area",
+  "invalid": "Invalid area",
+  "invalid_message": "Write at least ten characters.",
+  "disabled": "Disabled area",
+  "read_only": "Read-only area",
+  "kept": "Kept value",
+  "full": "Full width area",
+  "content": "Content width area",
+  "live_label": "Message",
+  "live_description": "Keep it short.",
+  "live_error": "The message is over 40 characters.",
+  "live_count": "{count} of 40 characters"
+}

@@ -1,0 +1,18 @@
+{
+  "customer": "Customer",
+  "phone": "Phone",
+  "email": "E-mail",
+  "sku": "SKU",
+  "order_ready": "Order {sku} is ready for pickup.",
+  "transfer": "Bank transfer",
+  "iban": "IBAN",
+  "note": "Note",
+  "note_value": "Supplier invoice payment",
+  "steps": "Checkout steps",
+  "cart": "Cart",
+  "payment": "Payment",
+  "receipt": "Receipt",
+  "next": "Next",
+  "back": "Back",
+  "step_of": "Step {step} of {total}"
+}

@@ -15,6 +15,8 @@
 // @covers sta-350:FR-105 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -23,12 +25,14 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/use-confirmation?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "useConfirmation" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("useConfirmation", locale) }),
+  ).toBeVisible();
 };
 
-/** Presses the button of a question and waits for the dialog, named by its title. */
-const ask = async (page: Page, trigger: string, title: string) => {
-  await page.getByRole("button", { name: trigger, exact: true }).click();
+/** Presses the button of a question in the Usage example (or `scope`) and waits for the dialog, named by its title. */
+const ask = async (page: Page, trigger: string, title: string, scope = example(page, "usage")) => {
+  await scope.getByRole("button", { name: trigger, exact: true }).click();
   const dialog = page.getByRole("alertdialog", { name: title });
   await expect(dialog).toBeVisible();
   return dialog;
@@ -60,27 +64,30 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      await ask(page, "Delete workspace", "Delete the Acme workspace?");
+      // The demo speaks the page's language (`assets/lang/<locale>/use_confirmation.json`).
+      if (locale === "en") await ask(page, "Delete workspace", "Delete the Acme workspace?");
+      else await ask(page, "حذف مساحة العمل", "حذف مساحة عمل Acme؟");
       await expectNothing(page, '[role="alertdialog"]');
     });
   }
 
 test("a question resolves true on confirm and false on Cancel and Escape", async ({ page }) => {
   await open(page, "light", "en");
-  const status = page.getByRole("region", { name: "Last answer" }).getByRole("status");
+  const answer = example(page, "answer");
+  const status = answer.getByRole("status");
   await expect(status).toHaveText("No answer yet.");
 
-  const first = await ask(page, "Archive project", "Archive this project?");
+  const first = await ask(page, "Archive project", "Archive this project?", answer);
   await first.getByRole("button", { name: "Archive", exact: true }).click();
   await expect(first).toBeHidden();
   await expect(status).toHaveText("Archive project: confirmed.");
 
-  const second = await ask(page, "Archive project", "Archive this project?");
+  const second = await ask(page, "Archive project", "Archive this project?", answer);
   await second.getByRole("button", { name: "Keep active" }).click();
   await expect(second).toBeHidden();
   await expect(status).toHaveText("Archive project: declined.");
 
-  const third = await ask(page, "Archive project", "Archive this project?");
+  const third = await ask(page, "Archive project", "Archive this project?", answer);
   await page.keyboard.press("Escape");
   await expect(third).toBeHidden();
   await expect(status).toHaveText("Archive project: declined.");
@@ -92,14 +99,16 @@ test("focus starts on Cancel and returns to the button that asked", async ({ pag
   await expect(dialog.getByRole("button", { name: "Keep project" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("button", { name: "Delete project", exact: true })).toBeFocused();
+  await expect(
+    example(page, "usage").getByRole("button", { name: "Delete project", exact: true }),
+  ).toBeFocused();
 });
 
 test("the typed question stays locked until the name is typed exactly", async ({ page }) => {
   await open(page, "light", "en");
   const dialog = await ask(page, "Delete workspace", "Delete the Acme workspace?");
   const confirm = dialog.getByRole("button", { name: "Delete Acme" });
-  const field = dialog.getByRole("textbox", { name: 'Type "Acme" to confirm' });
+  const field = dialog.getByRole("textbox", { name: "Type “Acme” to confirm" });
   await expect(confirm).toBeDisabled();
 
   await field.fill("acme");
@@ -112,12 +121,12 @@ test("the typed question stays locked until the name is typed exactly", async ({
 
 test("the counter moves only when the typed deletion is confirmed", async ({ page }) => {
   await open(page, "light", "en");
-  await expect(page.getByText("Workspaces deleted: 0.")).toBeVisible();
+  await expect(example(page, "usage").getByText("Workspaces deleted: 0.")).toBeVisible();
 
   const refused = await ask(page, "Delete workspace", "Delete the Acme workspace?");
   await refused.getByRole("button", { name: "Keep Acme" }).click();
   await expect(refused).toBeHidden();
-  await expect(page.getByText("Workspaces deleted: 0.")).toBeVisible();
+  await expect(example(page, "usage").getByText("Workspaces deleted: 0.")).toBeVisible();
 
   // Each question starts with an empty field, so the name typed for the first one does not carry over.
   const confirmed = await ask(page, "Delete workspace", "Delete the Acme workspace?");
@@ -125,8 +134,8 @@ test("the counter moves only when the typed deletion is confirmed", async ({ pag
   await confirmed.getByRole("textbox").fill("Acme");
   await confirmed.getByRole("button", { name: "Delete Acme" }).click();
   await expect(confirmed).toBeHidden();
-  await expect(page.getByText("Workspaces deleted: 1.")).toBeVisible();
-  await expect(page.getByRole("region", { name: "Last answer" }).getByRole("status")).toHaveText(
+  await expect(example(page, "usage").getByText("Workspaces deleted: 1.")).toBeVisible();
+  await expect(example(page, "usage").getByRole("status")).toHaveText(
     "Delete workspace: confirmed.",
   );
 });

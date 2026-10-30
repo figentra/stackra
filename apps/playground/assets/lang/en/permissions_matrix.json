@@ -1,0 +1,47 @@
+{
+  "store_roles": "Store roles",
+  "cashier_access": "Cashier access",
+  "warehouse_roles": "Warehouse roles",
+  "changes": "{count, plural, one {# unsaved change} other {# unsaved changes}}",
+  "save": "Save",
+  "reset": "Reset",
+  "saved": "All changes saved",
+  "role": {
+    "cashier": "Cashier",
+    "supervisor": "Shift supervisor",
+    "manager": "Store manager",
+    "owner": "Owner",
+    "picker": "Picker",
+    "receiver": "Receiver",
+    "stock_controller": "Stock controller"
+  },
+  "group": {
+    "sales": "Sales",
+    "cash": "Cash drawer",
+    "inventory": "Inventory",
+    "receiving": "Receiving",
+    "picking": "Picking"
+  },
+  "permission_name": {
+    "sell": "Ring up sales",
+    "discount": "Apply discounts",
+    "refund": "Issue refunds",
+    "void": "Void sales",
+    "open_drawer": "Open the cash drawer",
+    "count_cash": "Count cash",
+    "close_shift": "Close the shift",
+    "receive": "Receive stock",
+    "adjust": "Adjust stock",
+    "transfer": "Transfer between branches",
+    "check_in": "Check in deliveries",
+    "put_away": "Put stock away",
+    "pick": "Pick orders",
+    "pack": "Pack orders"
+  },
+  "description": {
+    "discount": "Up to the limit the store sets",
+    "refund": "To the original payment method",
+    "void": "Cancel a sale before it is paid",
+    "adjust": "Write stock up or down with a reason"
+  }
+}

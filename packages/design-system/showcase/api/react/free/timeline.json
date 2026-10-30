@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "b6b1f98a650f57e9",
+    "propsFiles": ["ui/src/react/timeline/timeline.props.ts"]
+  },
+  "importLine": "import { Timeline } from \"@stackra/ui/react\";",
+  "key": "free/timeline",
+  "parts": [
+    {
+      "name": "Timeline",
+      "props": [
+        {
+          "description": "The entries, in the order they are shown.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TimelineItem[]"
+        },
+        {
+          "description": "False to show one list without day headings. Defaults to true.",
+          "name": "groupByDay",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "`default` with bodies, or `compact`: one line per entry.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"compact\""
+        },
+        {
+          "description": "The list's name, for example \"Order activity\"; defaults to the catalogue's \"Activity\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The time zone the days and times are shown in; defaults to the reader's.",
+          "name": "timeZone",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The moment \"Today\" is counted from; defaults to now.",
+          "name": "now",
+          "required": false,
+          "source": "stackra",
+          "type": "Date"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -8,10 +8,9 @@ package, `packages/design-system/<name>`, named `@stackra/<name>`
 
 **Today:** [`tokens`](tokens) (`@stackra/tokens`): the theme schema, the default stackra theme, its HeroUI v3 web CSS
 and its HeroUI Native / Uniwind CSS, and the theme's fonts. [`ui`](ui) (`@stackra/ui`): the component API, contracts
-shared, HeroUI v3 on web and HeroUI Native with Uniwind on native. The HeroUI Pro wrappers, `@stackra-pro/ui`, moved
-to figentra/stackra-pro and are internal-only on the Stackra registry
-([ADR 0461](../../apps/docs/src/docs/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers.mdx)
-decision 3).
+shared, HeroUI v3 on web and HeroUI Native with Uniwind on native. Stackra ships no HeroUI Pro: free HeroUI and its own
+components only
+([ADR 0469](../../apps/docs/src/docs/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only.mdx)).
 
 **Planned here:** icons. A product brings its own brand as a theme for `@stackra/tokens`; Stackra's own logos and brand
 assets live in the docs app (`apps/docs/src/assets/brand/`).

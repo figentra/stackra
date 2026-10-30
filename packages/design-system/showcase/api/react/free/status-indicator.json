@@ -1,0 +1,95 @@
+{
+  "generatedFrom": {
+    "hash": "b0c1f7de59f5b77d",
+    "propsFiles": ["ui/src/react/status-indicator/status-indicator.props.ts"]
+  },
+  "importLine": "import { StatusIndicator } from \"@stackra/ui/react\";",
+  "key": "free/status-indicator",
+  "parts": [
+    {
+      "name": "StatusIndicator",
+      "props": [
+        {
+          "description": "The state's name in the app's language (\"Late\", \"Ready\"); required because the shape alone is not a name.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The state's role, which picks the colour and the shape. Defaults to `default`.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "An icon in place of the tone's shape.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "True for a state that needs attention now (a late order, an alarm): the shape pulses.",
+          "name": "isAttention",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "md",
+          "description": "The shape's and text's size. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

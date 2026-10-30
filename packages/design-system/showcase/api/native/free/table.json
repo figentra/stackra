@@ -1,0 +1,315 @@
+{
+  "generatedFrom": {
+    "hash": "c06e8449be31dfd5",
+    "propsFiles": ["ui/src/native/table/table.props.ts"]
+  },
+  "importLine": "import { Table } from \"@stackra/ui/native\";",
+  "key": "free/table",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the sort a press on a sortable header asks for; the app fetches the rows in that order.",
+          "name": "onSortChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(sort: SortDescriptor) => void"
+        },
+        {
+          "description": "Called when the end of the rows is reached while `hasMore` is true and nothing is loading.",
+          "name": "onLoadMore",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Web: called with a column's new width, in CSS pixels, when a resize ends.",
+          "name": "onColumnResize",
+          "required": false,
+          "source": "stackra",
+          "type": "(columnId: string, width: number) => void"
+        },
+        {
+          "description": "Web: given, headers can be dragged to reorder the columns; called with the column and its new index.",
+          "name": "onColumnMove",
+          "required": false,
+          "source": "stackra",
+          "type": "(columnId: string, toIndex: number) => void"
+        },
+        {
+          "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
+          "name": "onSelectionChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        }
+      ],
+      "name": "Table",
+      "props": [
+        {
+          "description": "The spoken name of the table, for example \"Orders\"; a table without one is anonymous to assistive technology.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The columns, in reading order.",
+          "name": "columns",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TableColumn[]"
+        },
+        {
+          "description": "The content of one cell. Left out, a cell shows the text of the row's property named by the column's `id`; give it\nto draw a badge, a date or a link, and give the app's own text for each value, as the table adds none.",
+          "name": "renderCell",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, column: TableColumn) => ReactNode"
+        },
+        {
+          "default": "primary",
+          "description": "The look of the table. Defaults to `primary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"primary\""
+        },
+        {
+          "description": "The sort in force, for a controlled table: the rows arrive sorted, and this only marks the header.",
+          "name": "sortDescriptor",
+          "required": false,
+          "source": "stackra",
+          "type": "SortDescriptor"
+        },
+        {
+          "description": "True while a cursor page after the last row exists; with `onLoadMore` it loads it when the end comes into view.",
+          "name": "hasMore",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to keep the header in view while the rows scroll; the table then scrolls inside `maxHeight`.",
+          "name": "isStickyHeader",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "24rem",
+          "description": "The height the rows scroll inside when the header is sticky, as a CSS length. Defaults to `24rem`.",
+          "name": "maxHeight",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Every sort key, most significant first, for a multi-sort: the first marks its header as `sortDescriptor` does and\nthe others show their rank. Given, it wins over `sortDescriptor`.",
+          "name": "sort",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SortDescriptor[]"
+        },
+        {
+          "description": "How tightly the rows are drawn: `compact`, `normal` (the default) or `roomy`. Native reads it as nothing.",
+          "name": "density",
+          "required": false,
+          "source": "stackra",
+          "type": "\"compact\" | \"normal\" | \"roomy\""
+        },
+        {
+          "description": "Web: true to give each header a resize handle (pointer, and the keyboard through the column menu's \"Resize\"); the\ncolumns then take their `width`, `minWidth` and `maxWidth`, and the table scrolls sideways past its width.",
+          "name": "isColumnResizable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Web: what sits at the end of a header, usually the column's menu. `startResize` starts a keyboard resize of the\ncolumn (arrows, then Enter or Escape) when the table is resizable.",
+          "name": "renderColumnMenu",
+          "required": false,
+          "source": "stackra",
+          "type": "(column: TableColumn, tools: { readonly startResize: () => void; }) => ReactNode"
+        },
+        {
+          "description": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TItem[]"
+        },
+        {
+          "description": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
+          "name": "emptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
+          "name": "loadingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "none",
+          "description": "What a press or Space does: nothing, select one item, or toggle several. Defaults to `none`.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"multiple\" | \"single\""
+        },
+        {
+          "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
+          "name": "selectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids selected at the start, for an uncontrolled collection.",
+          "name": "defaultSelectedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Style",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...FlatListProps",
+          "required": false,
+          "source": "heroui",
+          "type": "FlatListProps"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...ScrollViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ScrollViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ScrollViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ScrollViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ScrollViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ScrollViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...VirtualizedListWithoutRenderItemProps",
+          "required": false,
+          "source": "heroui",
+          "type": "VirtualizedListWithoutRenderItemProps"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -4,7 +4,7 @@
  *          nearest `I18nProvider`'s `t`, or the package's English catalogue when no provider is above the component or
  *          the provider's catalogues hold no message for the key.
  * Boundary: the shared React layer of the `./react` and `./native` entries (native composes react, ADR 0004 §1),
- *           so it may import `@stackra/i18n/react`; exported from both entries for @stackra/ui-pro and any package
+ *           so it may import `@stackra/i18n/react`; exported from both entries for any package
  *           that ships its own English catalogue (each passes its own). The English answer
  *           keeps an app or a test that has not mounted i18n working, never a raw key; a key missing from English too
  *           throws `RangeError`, as `formatMessage` does. Whether a provider is above is fixed for a tree position, so

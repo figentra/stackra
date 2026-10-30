@@ -24,6 +24,7 @@ import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { haptics } from "#native/haptics/haptics";
 import type { CheckboxProps } from "#native/checkbox/checkbox.props";
 
 /**
@@ -54,6 +55,7 @@ export function Checkbox({
   void name;
   const change = (next: boolean) => {
     if (isReadOnly) return;
+    haptics.play("selection");
     setHeld(next);
     onChange?.(next);
   };
@@ -87,7 +89,7 @@ export function Checkbox({
           >
             {isIndeterminate ? (
               <HeroCheckbox.Indicator>
-                <View className="bg-accent-foreground h-0.5 w-2.5 rounded-full" />
+                <View className="bg-accent-foreground h-0.5 w-2.5 rounded-[var(--radius-pill)]" />
               </HeroCheckbox.Indicator>
             ) : undefined}
           </HeroCheckbox>

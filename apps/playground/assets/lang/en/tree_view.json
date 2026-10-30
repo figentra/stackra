@@ -1,0 +1,38 @@
+{
+  "accounts": {
+    "label": "Chart of accounts",
+    "assets": "Assets",
+    "cash": "Cash on hand",
+    "bank": "Bank accounts",
+    "receivables": "Accounts receivable",
+    "liabilities": "Liabilities",
+    "payables": "Accounts payable",
+    "vat": "VAT payable",
+    "revenue": "Revenue",
+    "sales": "Product sales",
+    "services": "Service income"
+  },
+  "categories": {
+    "label": "Product categories",
+    "selected": "{count, plural, =0 {No categories selected} one {# category selected} other {# categories selected}}",
+    "beverages": "Beverages",
+    "coffee": "Coffee",
+    "tea": "Tea",
+    "juices": "Fresh juices",
+    "bakery": "Bakery",
+    "bread": "Bread",
+    "pastries": "Pastries"
+  },
+  "org": {
+    "label": "Organisation",
+    "opened": "Opened: {name}",
+    "none": "Nothing opened yet.",
+    "company": "Figentra Retail",
+    "operations": "Operations",
+    "riyadh": "Riyadh branch",
+    "jeddah": "Jeddah branch",
+    "finance": "Finance",
+    "payroll": "Payroll",
+    "it": "IT support"
+  }
+}

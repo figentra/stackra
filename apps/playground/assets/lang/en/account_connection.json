@@ -1,0 +1,15 @@
+{
+  "connected": "Connected",
+  "not_connected": "Not connected",
+  "connect": "Connect",
+  "disconnect": "Disconnect",
+  "stripe": "Stripe",
+  "stripe_description": "Take card payments online and at the counter.",
+  "terms": "By connecting, you agree to Stripe's services agreement and allow Figentra to share order totals with Stripe.",
+  "talabat": "Talabat",
+  "talabat_description": "Receive delivery orders straight into the kitchen queue.",
+  "talabat_account": "Store ID 4471-RYD",
+  "xero": "Xero",
+  "xero_description": "Send daily sales and refunds to your accounting books.",
+  "xero_account": "finance@souq-alnakheel.sa"
+}

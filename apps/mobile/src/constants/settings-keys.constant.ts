@@ -1,0 +1,86 @@
+/**
+ * Stackra file contract:
+ * Purpose: `SETTINGS_KEYS`, the typed keys of the Settings screen's words in `assets/lang/<locale>/settings.json`.
+ * Boundary: keys only; the words live in the catalogues. A stand-in for the `#stackra/i18n` keys gen writes (STA-339).
+ * Runtime: react-native
+ * Governing contract: ADR 0080 (typed i18n keys); ADR 0231 (`<module>::<path>`); ADR 0305 (catalogue layout).
+ */
+import { keys } from "@stackra/i18n";
+
+/** The settings namespace's keys. */
+export const SETTINGS_KEYS = keys({
+  settings: {
+    _: [
+      "appearance",
+      "scheme",
+      "language",
+      "motion",
+      "theme",
+      "brand",
+      "transition",
+      "preset",
+      "accent",
+      "accent_swatch",
+      "accent_hue",
+      "accent_chroma",
+      "neutral_hue",
+      "neutral_chroma",
+      "radius",
+      "latin",
+      "arabic",
+      "faces_note",
+      "invalid",
+      "contrast",
+      "contrast_note",
+      "contrast_label",
+      "passes",
+      "fails",
+      "actions",
+      "undo",
+      "redo",
+      "reset",
+      "share",
+      "share_failed",
+      "paste",
+      "paste_note",
+      "import",
+      "imported",
+      "import_invalid",
+      "version",
+      "feedback",
+      "haptics",
+      "haptics_note",
+    ],
+    schemes: ["system", "light", "dark"],
+    motions: ["full", "reduced", "none"],
+    faces: ["theme", "system", "serif", "mono"],
+    transitions: [
+      "circle_from_tap",
+      "slide_from_tap",
+      "blur_from_tap",
+      "fade",
+      "blur",
+      "circle_centre",
+      "circle_top_left",
+      "circle_top_right",
+      "circle_bottom_left",
+      "circle_bottom_right",
+      "slide_left_to_right",
+      "slide_right_to_left",
+      "blur_left_to_right",
+      "blur_right_to_left",
+      "none",
+    ],
+    contrast_pairs: [
+      "text_on_background",
+      "muted_text_on_background",
+      "text_on_surface",
+      "accent_label",
+      "link_on_background",
+      "field_text",
+      "danger_label",
+      "field_edge",
+      "focus_ring",
+    ],
+  },
+});

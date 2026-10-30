@@ -1,0 +1,263 @@
+{
+  "slug": "modal",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(overlays)/modal.mdx",
+  "parts": [
+    {
+      "name": "Modal",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Trigger and container elements"
+        }
+      ]
+    },
+    {
+      "name": "Modal.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom trigger content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Modal.Backdrop",
+      "props": [
+        {
+          "name": "variant",
+          "type": "\"opaque\" | \"blur\" | \"transparent\"",
+          "default": "\"opaque\"",
+          "description": "Backdrop overlay style"
+        },
+        {
+          "name": "isDismissable",
+          "type": "boolean",
+          "default": "true",
+          "description": "Close on backdrop click"
+        },
+        {
+          "name": "isKeyboardDismissDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Disable ESC key to close"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Controlled open state"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Open state change handler"
+        },
+        {
+          "name": "className",
+          "type": "string | (values) => string",
+          "description": "Backdrop CSS classes"
+        },
+        {
+          "name": "UNSTABLE_portalContainer",
+          "type": "HTMLElement",
+          "description": "Custom portal container"
+        }
+      ]
+    },
+    {
+      "name": "Modal.Container",
+      "props": [
+        {
+          "name": "placement",
+          "type": "\"auto\" | \"center\" | \"top\" | \"bottom\"",
+          "default": "\"auto\"",
+          "description": "Modal position on screen"
+        },
+        {
+          "name": "scroll",
+          "type": "\"inside\" | \"outside\"",
+          "default": "\"inside\"",
+          "description": "Scroll behavior"
+        },
+        {
+          "name": "size",
+          "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"cover\" | \"full\"",
+          "default": "\"md\"",
+          "description": "Modal size variant"
+        },
+        {
+          "name": "className",
+          "type": "string | (values) => string",
+          "description": "Container CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Modal.Dialog",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode | ({close}) => ReactNode",
+          "description": "Content or render function"
+        },
+        {
+          "name": "className",
+          "type": "string | (values) => string",
+          "description": "CSS classes"
+        },
+        {
+          "name": "role",
+          "type": "string",
+          "default": "\"dialog\"",
+          "description": "ARIA role"
+        },
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "Accessibility label"
+        },
+        {
+          "name": "aria-labelledby",
+          "type": "string",
+          "description": "ID of label element"
+        },
+        {
+          "name": "aria-describedby",
+          "type": "string",
+          "description": "ID of description element"
+        }
+      ]
+    },
+    {
+      "name": "Modal.Header",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Header content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Modal.Body",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Body content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Modal.Footer",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Footer content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Modal.CloseTrigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom close button"
+        },
+        {
+          "name": "className",
+          "type": "string | (values) => string",
+          "description": "CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".modal__trigger",
+      "description": "Trigger element that opens the modal"
+    },
+    {
+      "name": ".modal__backdrop",
+      "description": "Overlay backdrop behind the modal"
+    },
+    {
+      "name": ".modal__container",
+      "description": "Positioning wrapper with placement support"
+    },
+    {
+      "name": ".modal__dialog",
+      "description": "Modal content container"
+    },
+    {
+      "name": ".modal__header",
+      "description": "Header section for titles and icons"
+    },
+    {
+      "name": ".modal__body",
+      "description": "Main content area"
+    },
+    {
+      "name": ".modal__footer",
+      "description": "Footer section for actions"
+    },
+    {
+      "name": ".modal__close-trigger",
+      "description": "Close button element"
+    },
+    {
+      "name": ".modal__backdrop--opaque",
+      "description": "Opaque colored backdrop (default)"
+    },
+    {
+      "name": ".modal__backdrop--blur",
+      "description": "Blurred backdrop with glass effect"
+    },
+    {
+      "name": ".modal__backdrop--transparent",
+      "description": "Transparent backdrop (no overlay)"
+    },
+    {
+      "name": ".modal__container--scroll-outside",
+      "description": "Enables scrolling the entire modal"
+    },
+    {
+      "name": ".modal__dialog--scroll-inside",
+      "description": "Constrains modal height for body scrolling"
+    },
+    {
+      "name": ".modal__body--scroll-inside",
+      "description": "Makes only the body scrollable"
+    },
+    {
+      "name": ".modal__body--scroll-outside",
+      "description": "Allows full-page scrolling"
+    }
+  ],
+  "a11y": "Implements [WAI-ARIA Dialog pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/):\n\n- **Focus trap**: Focus locked within modal\n- **Keyboard**: `ESC` closes (when enabled), `Tab` cycles elements\n- **Screen readers**: Proper ARIA attributes\n- **Scroll lock**: Body scroll disabled when open"
+}

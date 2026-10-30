@@ -1,0 +1,33 @@
+{
+  "one": "One selected",
+  "several": "Three selected",
+  "nothing": "Nothing selected",
+  "one_action": "One action",
+  "three_actions": "Three actions",
+  "disabled_action": "A disabled action",
+  "matching": "Select all matching",
+  "offered": "The choice is offered",
+  "chosen": "All matching chosen",
+  "bar_label": "Actions, {name}",
+  "live_label": "Orders, live",
+  "live_list": "Orders to act on",
+  "selected": "Selected: {keys, select, none {none} other {{keys}}}",
+  "last_action": "Last action: {text}",
+  "none": "none",
+  "archive": "Archive",
+  "export": "Export",
+  "delete": "Delete",
+  "refund": "Refund",
+  "refund_reason": "Paid orders stay",
+  "working": "Archive running",
+  "done": "{name} done",
+  "failed": "{name} failed",
+  "failure": "The order service did not answer.",
+  "sample": {
+    "order_1001": "Order #1001",
+    "order_1002": "Order #1002",
+    "order_1003": "Order #1003",
+    "order_1004": "Order #1004",
+    "order_1005": "Order #1005"
+  }
+}

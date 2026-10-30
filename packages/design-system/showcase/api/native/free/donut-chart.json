@@ -1,0 +1,100 @@
+{
+  "generatedFrom": {
+    "hash": "f9d6c13f5336ce12",
+    "propsFiles": ["ui/src/native/donut-chart/donut-chart.props.ts"]
+  },
+  "importLine": "import { DonutChart } from \"@stackra/ui/native\";",
+  "key": "free/donut-chart",
+  "parts": [
+    {
+      "name": "DonutChart",
+      "props": [
+        {
+          "description": "The word under the total in the hole, such as \"Visitors\"; no total is shown without it.",
+          "name": "centerLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each row's slice name, matched to a series' `key`.",
+          "name": "nameKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The key of each row's value.",
+          "name": "valueKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The rows, in reading order.",
+          "name": "data",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly Readonly<Record<string, string | number | null | undefined>>[]"
+        },
+        {
+          "description": "The series drawn, in legend order.",
+          "name": "series",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ChartSeries[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Visitors, last six months\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The colours series take by position: `accent` steps (the default) or the `categorical` set.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "How values are written: `{ style: \"currency\", currency: \"USD\" }`, `{ notation: \"compact\" }`.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The plot's height in pixels; 240 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Shows the legend under the plot; on by default when there are two series or more.",
+          "name": "showLegend",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows the values of the pointed or pressed row; on by default.",
+          "name": "showTooltip",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

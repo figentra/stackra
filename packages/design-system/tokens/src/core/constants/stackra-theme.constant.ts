@@ -118,12 +118,14 @@ export const STACKRA_THEME = defineTheme({
     "banner-acting-as": color("oklch(0.5 0.17 350)", "oklch(0.72 0.15 350)"),
     "banner-acting-as-foreground": ON_STATUS,
     // ADR 0340 decision 9: a categorical chart set at 3:1 or more against the surface in both schemes, so a product
-    // accent never pushes a chart under it. On the web the names are HeroUI Pro's own chart properties.
-    "chart-1": color("oklch(0.55 0.12 248)", "oklch(0.72 0.11 248)"),
-    "chart-2": color("oklch(0.6 0.1 185)", "oklch(0.78 0.11 185)"),
-    "chart-3": color("oklch(0.52 0.16 300)", "oklch(0.7 0.14 300)"),
-    "chart-4": color("oklch(0.62 0.15 55)", "oklch(0.78 0.14 60)"),
-    "chart-5": color("oklch(0.55 0.17 355)", "oklch(0.72 0.15 355)"),
+    // accent never pushes a chart under it. Neighbours step in lightness as well as hue (blue mid, teal light, violet
+    // dark, orange light, pink mid), so the set stays apart under protan, deutan and tritan vision: the closest pair
+    // keeps an OKLab distance of 0.09 or more in both schemes. Read by @stackra/ui's charts as `var(--chart-<n>)`.
+    "chart-1": color("oklch(0.5 0.13 252)", "oklch(0.7 0.12 252)"),
+    "chart-2": color("oklch(0.64 0.11 185)", "oklch(0.86 0.11 185)"),
+    "chart-3": color("oklch(0.4 0.15 300)", "oklch(0.6 0.17 300)"),
+    "chart-4": color("oklch(0.65 0.15 55)", "oklch(0.8 0.14 60)"),
+    "chart-5": color("oklch(0.54 0.18 355)", "oklch(0.68 0.17 355)"),
   },
   // No display stacks: they default to sans and arabic, and a brand's theme.json sets its own (brand rules §33).
   fontFamily: {

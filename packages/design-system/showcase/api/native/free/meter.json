@@ -1,0 +1,86 @@
+{
+  "generatedFrom": {
+    "hash": "41c605b2ec1b683b",
+    "propsFiles": ["ui/src/native/meter/meter.props.ts"]
+  },
+  "importLine": "import { Meter } from \"@stackra/ui/native\";",
+  "key": "free/meter",
+  "parts": [
+    {
+      "name": "Meter",
+      "props": [
+        {
+          "description": "The measure the bar fills to.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The scale's start; defaults to 0.",
+          "name": "minValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The scale's end; defaults to 100.",
+          "name": "maxValue",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Where the low part of the scale ends.",
+          "name": "low",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Where the high part of the scale starts.",
+          "name": "high",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The best value: its part is green, the next part amber, the far part red. Defaults to the middle.",
+          "name": "optimum",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The visible name, which is also the spoken one.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How the value is written; defaults to a percent of the scale.",
+          "name": "formatOptions",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "Words to show and say instead of the number, for example \"8.2 of 10 GB\".",
+          "name": "valueLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

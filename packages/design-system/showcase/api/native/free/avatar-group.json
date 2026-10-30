@@ -1,0 +1,168 @@
+{
+  "generatedFrom": {
+    "hash": "06ca0daa851e52b3",
+    "propsFiles": ["ui/src/native/avatar-group/avatar-group.props.ts"]
+  },
+  "importLine": "import { AvatarGroup } from \"@stackra/ui/native\";",
+  "key": "free/avatar-group",
+  "parts": [
+    {
+      "name": "AvatarGroup",
+      "props": [
+        {
+          "description": "The people, in the order they stack (the first on the inline-start side).",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly AvatarGroupItem[]"
+        },
+        {
+          "description": "How many avatars show before a \"+N\" count stands for the rest. Defaults to 4.",
+          "name": "max",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The group's accessible name, for example \"Assigned staff\".",
+          "name": "label",
+          "replaces": "accessibilityLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "default",
+          "description": "The background behind the fallback: neutral or the tone's soft colour. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"soft\""
+        },
+        {
+          "default": "md",
+          "description": "The diameter and the text size of the initials. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "default",
+          "description": "The colour role of the initials and fallback icon. Defaults to `default`.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "default": "circle",
+          "description": "A circle for people, a rounded square for organisations. Defaults to `circle`.",
+          "name": "shape",
+          "required": false,
+          "source": "stackra",
+          "type": "\"circle\" | \"square\""
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Either view styles or a function that receives a boolean reflecting whether\nthe component is currently pressed and returns view styles.",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle> | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>)"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...PressableProps",
+          "required": false,
+          "source": "heroui",
+          "type": "PressableProps"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

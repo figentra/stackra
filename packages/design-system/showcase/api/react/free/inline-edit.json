@@ -1,0 +1,137 @@
+{
+  "generatedFrom": {
+    "hash": "48139fe94f48b9d5",
+    "propsFiles": ["ui/src/react/inline-edit/inline-edit.props.ts"]
+  },
+  "importLine": "import { InlineEdit } from \"@stackra/ui/react\";",
+  "key": "free/inline-edit",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        }
+      ],
+      "name": "InlineEdit",
+      "props": [
+        {
+          "description": "Checks the draft before it is saved; a message keeps the editor open and shows it as the error.",
+          "name": "validate",
+          "required": false,
+          "source": "stackra",
+          "type": "(draft: string) => string | undefined"
+        },
+        {
+          "description": "The muted text shown in read mode while the value is empty, and inside the empty input.",
+          "name": "placeholder",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken name of the read-mode value, which opens the editor. Defaults to the `ui` catalogue's \"Edit\".",
+          "name": "editLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken name of the save button. Defaults to the `ui` catalogue's \"Save\".",
+          "name": "saveLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken name of the cancel button. Defaults to the `ui` catalogue's \"Cancel\".",
+          "name": "cancelLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Classes for the root element.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

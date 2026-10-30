@@ -1,0 +1,114 @@
+{
+  "slug": "disclosure",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(navigation)/disclosure.mdx",
+  "parts": [
+    {
+      "name": "Disclosure",
+      "props": [
+        {
+          "name": "isExpanded",
+          "type": "boolean",
+          "default": "false",
+          "description": "Controls the expanded state"
+        },
+        {
+          "name": "onExpandedChange",
+          "type": "(isExpanded: boolean) => void",
+          "description": "Callback when expanded state changes"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the disclosure is disabled"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Content to render"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, DisclosureRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "DisclosureTrigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Trigger content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "DisclosureContent",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Content to show/hide"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, DisclosureContentRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "isExpanded",
+          "type": "boolean",
+          "description": "Current expanded state"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether disclosure is disabled"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".disclosure",
+      "description": "Base container styles"
+    },
+    {
+      "name": ".disclosure__heading",
+      "description": "Heading wrapper"
+    },
+    {
+      "name": ".disclosure__trigger",
+      "description": "Trigger button styles"
+    },
+    {
+      "name": ".disclosure__indicator",
+      "description": "Chevron indicator styles"
+    },
+    {
+      "name": ".disclosure__content",
+      "description": "Content container with animations"
+    }
+  ]
+}

@@ -8,10 +8,11 @@ icon: "smartphone"
   Status: target. `apps/mobile` has `eas.json` with `development` (simulator), `development-device`,
   `preview` and `production` profiles, but there is no Expo project link (`extra.eas.projectId`), no
   store records, no `.eas/workflows/`, no `updates` config and no `staging` profile. The app
-  installs the licensed packages HeroUI Native Pro and Uniwind Pro
-  ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers)), so an EAS build needs
-  `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` as secret variables (the licence-token steps below).
-  App: Expo SDK 57, code-based React Navigation.
+  installs the licensed Uniwind Pro ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers)
+  decision 11; no HeroUI Pro,
+  [0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only)), so an
+  EAS build needs `UNIWIND_AUTH_TOKEN` as a secret variable (the licence-token steps below). App:
+  Expo SDK 57, code-based React Navigation.
 </Note>
 
 ## Concepts
@@ -114,9 +115,8 @@ eas update:rollback                                         # roll back a bad up
 
 - **Development on a device:** `development` builds the dev client for the simulator only. `development-device` builds
   it for an iPhone registered with `eas device:create`, once the project is linked (the "Expo: link the project" step
-  above). It resolves to the EAS `development` environment and installs the licensed packages like every profile, so
-  `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` must be secret variables in `development` first, or the install gets
-  stubs. Expo Go cannot run the app: `react-native-bottom-tabs`, `react-native-nitro-modules` and Uniwind Pro need
+  above). It resolves to the EAS `development` environment and installs the licensed Uniwind Pro like every profile,
+  so `UNIWIND_AUTH_TOKEN` must be a secret variable in `development` first, or the install gets a stub. Expo Go cannot run the app: `react-native-bottom-tabs`, `react-native-nitro-modules` and Uniwind Pro need
   the dev client.
 - **Internal testers:** `eas device:create` registers each iPhone, then `eas credentials:configure-build -p ios -e preview` builds an ad-hoc profile that includes them. TestFlight builds need no device registration.
 - **iOS submit:** `--auto-submit`, or `eas submit -p ios --profile production --latest`. Apple processes the upload for 10 to 30 minutes, then add testers under TestFlight, Internal Testing. External testers need one Beta App Review. Fallback: download the `.ipa` and use Apple's Transporter.

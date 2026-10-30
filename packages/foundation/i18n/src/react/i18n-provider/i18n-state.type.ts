@@ -10,6 +10,7 @@
  */
 import type { I18nConfig } from "#config/i18n.config";
 import type { Locale } from "#core/enums/locale.enum";
+import type { NumberingSystem } from "#core/enums/numbering-system.enum";
 import type { LocaleFormat } from "#core/types/locale-format.type";
 import type { Messages } from "#core/types/messages.type";
 
@@ -20,6 +21,9 @@ export interface I18nState {
 
   /** The BCP 47 tag every formatter uses: the locale plus the `-u-` clock (`hc`) and digits (`nu`) extension. */
   readonly intlLocale: string;
+
+  /** The digits every formatter writes: the customer's setting where allowed, else `I18nConfig.numerals`. */
+  readonly numerals: NumberingSystem;
 
   /** The active locale's week start and clock: its defaults with the configured override (a date picker reads it). */
   readonly format: LocaleFormat;

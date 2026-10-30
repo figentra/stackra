@@ -1,0 +1,89 @@
+{
+  "slug": "color-swatch",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(colors)/color-swatch.mdx",
+  "parts": [
+    {
+      "name": "ColorSwatch",
+      "props": [
+        {
+          "name": "color",
+          "type": "string | Color",
+          "description": "The color value to display (hex, rgb, hsl, etc.)"
+        },
+        {
+          "name": "colorName",
+          "type": "string",
+          "description": "Accessible name for the color (overrides auto-generated description)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "shape",
+          "type": "\"circle\" | \"square\"",
+          "default": "\"circle\"",
+          "description": "Shape of the swatch"
+        },
+        {
+          "name": "size",
+          "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",
+          "default": "\"md\"",
+          "description": "Size of the swatch"
+        },
+        {
+          "name": "style",
+          "type": "CSSProperties | ((renderProps) => CSSProperties)",
+          "description": "Inline styles or render props function with access to color"
+        },
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "Accessible label for the swatch"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, ColorSwatchRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".color-swatch",
+      "description": "Base swatch styles with checkered background for transparency"
+    },
+    {
+      "name": ".color-swatch--circle",
+      "description": "Circular shape (default)"
+    },
+    {
+      "name": ".color-swatch--square",
+      "description": "Square shape with rounded corners"
+    },
+    {
+      "name": ".color-swatch--xs",
+      "description": "Extra small (16px)"
+    },
+    {
+      "name": ".color-swatch--sm",
+      "description": "Small (24px)"
+    },
+    {
+      "name": ".color-swatch--md",
+      "description": "Medium (32px, default)"
+    },
+    {
+      "name": ".color-swatch--lg",
+      "description": "Large (36px)"
+    },
+    {
+      "name": ".color-swatch--xl",
+      "description": "Extra large (40px)"
+    }
+  ]
+}

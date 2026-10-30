@@ -1,0 +1,12 @@
+{
+  "basics": {
+    "label": "Invoices pages"
+  },
+  "sizes": {
+    "label": "Orders pages",
+    "showing": "You are on page {page}."
+  },
+  "arabic": {
+    "label": "صفحات العملاء"
+  }
+}

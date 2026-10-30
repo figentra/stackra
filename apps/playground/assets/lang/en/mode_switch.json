@@ -1,0 +1,5 @@
+{
+  "label": "Developer mode",
+  "description": "Show ids, keys and raw values.",
+  "current": "Current mode: {mode, select, developer {developer} other {normal}}"
+}

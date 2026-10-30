@@ -28,7 +28,7 @@ import { Link } from "#react/link/link";
 import type { NavigationHeaderProps } from "#react/navigation-header/navigation-header.props";
 
 /** The back chevron, mirrored in right-to-left because it points the reading way back. */
-const BACK_ICON = <Icon name="chevron-left" isMirroredInRtl />;
+const BACK_ICON = <Icon name="chevron-left" />;
 
 /**
  * The compact header of one screen: back button, start slot, title and end slot, in that order from the inline start.
@@ -77,7 +77,7 @@ export function NavigationHeader({
             label={backLabel}
             underline="hover"
             data-slot="navigation-header-back"
-            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-pill)]"
             {...(onBack ? { onPress: onBack } : {})}
           >
             {BACK_ICON}

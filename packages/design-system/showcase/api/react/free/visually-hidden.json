@@ -1,0 +1,73 @@
+{
+  "generatedFrom": {
+    "hash": "3a8527d14ccf6b1e",
+    "propsFiles": ["ui/src/react/visually-hidden/visually-hidden.props.ts"]
+  },
+  "importLine": "import { VisuallyHidden } from \"@stackra/ui/react\";",
+  "key": "free/visually-hidden",
+  "parts": [
+    {
+      "name": "VisuallyHidden",
+      "props": [
+        {
+          "description": "What a screen reader reads and the screen does not show, usually translated text.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "default": "'div'",
+          "description": "The element type for the container.",
+          "name": "elementType",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | JSXElementConstructor<any>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Whether the element should become visible on focus, for example skip links.",
+          "name": "isFocusable",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

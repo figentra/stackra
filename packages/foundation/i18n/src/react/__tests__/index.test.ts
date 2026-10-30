@@ -21,6 +21,7 @@ describe("@stackra/i18n/react", () => {
       "useLocaleChoice",
       "useMoney",
       "useNumber",
+      "useNumerals",
       "useTranslation",
     ]);
   });

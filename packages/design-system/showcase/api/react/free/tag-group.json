@@ -1,0 +1,337 @@
+{
+  "generatedFrom": {
+    "hash": "4a0a6eb31ca9bcae",
+    "heroDoc": "vendor/heroui/react/tag-group.json",
+    "propsFiles": ["ui/src/react/tag-group/tag-group.props.ts"]
+  },
+  "importLine": "import { TagGroup } from \"@stackra/ui/react\";",
+  "key": "free/tag-group",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Without a removal handler the tags have no remove button, so there is no name to give it.",
+          "name": "onRemove",
+          "required": false,
+          "source": "stackra",
+          "type": "undefined"
+        },
+        {
+          "description": "Called with the new value each time the user changes it.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: readonly string[]) => void"
+        },
+        {
+          "description": "Handler that is called when a user performs an action on an item. The exact user event depends\non the collection's `selectionBehavior` prop and the interaction modality.",
+          "name": "onAction",
+          "required": false,
+          "source": "react-aria",
+          "type": "(key: Key) => void"
+        }
+      ],
+      "extends": "TagGroup",
+      "name": "TagGroup",
+      "props": [
+        {
+          "description": "Not used: there is no remove button.",
+          "name": "removeLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "undefined"
+        },
+        {
+          "description": "The tags, in order. Removing one is the app's job: it drops the tag from this list in `onRemove`.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TagItem[]"
+        },
+        {
+          "default": "none",
+          "description": "What a press does: nothing, select one tag, or toggle several. Defaults to `none`, a plain list of tags.",
+          "name": "selectionMode",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"multiple\" | \"single\""
+        },
+        {
+          "default": "md",
+          "description": "The padding and text size of the tags. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "default",
+          "description": "The surface of the tags: `default` on the page, `surface` on a tinted card. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"surface\""
+        },
+        {
+          "description": "What the group says when it has no tags, for example \"No filters\"; without it an empty group draws nothing.",
+          "name": "emptyMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Help text under the field, tied to it for assistive technology.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+          "name": "isRequired",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The current value, for a controlled field; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The starting value, for an uncontrolled field.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "'react-aria-TagGroup'",
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", undefined>"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Defines a string value that labels the current element.",
+          "name": "aria-label",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Whether the collection allows empty selection.",
+          "name": "disallowEmptySelection",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "default": "'clearSelection'",
+          "description": "Whether pressing the escape key should clear selection in the TagGroup or not.\n\nMost experiences should not modify this option as it eliminates a keyboard user's ability to\neasily clear selection. Only use if the escape key is being handled externally or should not\ntrigger selection clearing contextually.",
+          "name": "escapeKeyBehavior",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"none\" | \"clearSelection\""
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "default": "'toggle'",
+          "description": "How multiple selection should behave in the collection.",
+          "name": "selectionBehavior",
+          "required": false,
+          "source": "react-aria",
+          "type": "\"replace\" | \"toggle\""
+        },
+        {
+          "description": "Whether selection should occur on press up instead of press down.",
+          "name": "shouldSelectOnPressUp",
+          "required": false,
+          "source": "react-aria",
+          "type": "boolean"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base tag group container",
+      "name": ".tag-group"
+    },
+    {
+      "description": "Container for the list of tags",
+      "name": ".tag-group__list"
+    },
+    {
+      "description": "Base tag styles",
+      "name": ".tag"
+    },
+    {
+      "description": "Remove button trigger",
+      "name": ".tag__remove-button"
+    },
+    {
+      "description": "Description slot styles",
+      "name": ".tag-group [slot=\"description\"]"
+    },
+    {
+      "description": "ErrorMessage slot styles",
+      "name": ".tag-group [slot=\"errorMessage\"]"
+    },
+    {
+      "description": "Small size tag",
+      "name": ".tag--sm"
+    },
+    {
+      "description": "Medium size tag (default)",
+      "name": ".tag--md"
+    },
+    {
+      "description": "Large size tag",
+      "name": ".tag--lg"
+    },
+    {
+      "description": "Default variant",
+      "name": ".tag--default"
+    },
+    {
+      "description": "Surface variant with surface background",
+      "name": ".tag--surface"
+    },
+    {
+      "description": "Selected tag state",
+      "name": ".tag[data-selected=\"true\"]"
+    },
+    {
+      "description": "Disabled tag state",
+      "name": ".tag[data-disabled=\"true\"]"
+    },
+    {
+      "description": "Hovered tag state",
+      "name": ".tag[data-hovered=\"true\"]"
+    },
+    {
+      "description": "Pressed tag state",
+      "name": ".tag[data-pressed=\"true\"]"
+    },
+    {
+      "description": "Focused tag state (keyboard focus)",
+      "name": ".tag[data-focus-visible=\"true\"]"
+    }
+  ]
+}

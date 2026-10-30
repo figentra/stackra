@@ -12,6 +12,8 @@
 // @covers sta-350:FR-032 sta-350:P-019 sta-350:P-022 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -20,7 +22,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/separator?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Separator" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Separator", locale) }),
+  ).toBeVisible();
 };
 
 /** The background an element paints, as `#rrggbb`: drawn on a canvas, so any CSS colour form (oklch too) reads. */
@@ -53,7 +57,7 @@ for (const scheme of SCHEMES)
 
 test("a horizontal rule is 1 px tall and as wide as its container", async ({ page }) => {
   await open(page, "light", "en");
-  const rule = page.getByRole("region", { name: "Horizontal" }).getByRole("separator");
+  const rule = page.getByRole("region", { name: "Usage" }).getByRole("separator");
   const ruleBox = await rule.boundingBox();
   const parentBox = await rule.locator("..").boundingBox();
   if (!ruleBox || !parentBox) throw new Error("a box is missing");
@@ -64,7 +68,8 @@ test("a horizontal rule is 1 px tall and as wide as its container", async ({ pag
 for (const locale of LOCALES)
   test(`a vertical rule is 1 px wide and as tall as its row in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const rules = page.getByRole("region", { name: "Vertical" }).getByRole("separator");
+    // By id and place: the words speak the page's locale.
+    const rules = example(page, "vertical").getByRole("separator");
     await expect(rules).toHaveCount(2);
     for (const rule of await rules.all()) {
       await expect(rule).toHaveAttribute("aria-orientation", "vertical");

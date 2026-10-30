@@ -1,0 +1,88 @@
+{
+  "generatedFrom": {
+    "hash": "10d0a16dfdeec58e",
+    "propsFiles": ["ui/src/react/field-error/field-error.props.ts"]
+  },
+  "importLine": "import { FieldError } from \"@stackra/ui/react\";",
+  "key": "free/field-error",
+  "parts": [
+    {
+      "name": "FieldError",
+      "props": [
+        {
+          "description": "The message; with none, the web error shows the field's own validation messages.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True to show the error, false to hide it. Left out, the error follows the field it sits in; a form adapter that\nkeeps its own validation state sets it.",
+          "name": "isInvalid",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "'react-aria-FieldError'",
+          "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "ClassNameOrFunction<FieldErrorRenderProps>"
+        },
+        {
+          "default": "'span'",
+          "description": "The HTML element type to render. Defaults to `'span'`.\nSet to `'div'` when using block-level children (e.g. `<ul>`) to avoid invalid HTML.",
+          "name": "elementType",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLElement>"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMRenderFunction<\"div\", FieldErrorRenderProps>"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<FieldErrorRenderProps>"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

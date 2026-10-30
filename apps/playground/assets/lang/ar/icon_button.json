@@ -1,0 +1,11 @@
+{
+  "size": "المقاس {size}",
+  "settings": "الإعدادات",
+  "delete": "حذف",
+  "disabled": "معطل",
+  "loading": "قيد التحميل",
+  "count": "عدّ الضغطات",
+  "load": "تحميل",
+  "presses": "{count, plural, zero {لم يُضغط بعد.} one {ضُغط مرة واحدة.} two {ضُغط مرتين.} few {ضُغط # مرات.} many {ضُغط # مرة.} other {ضُغط # مرة.}}",
+  "load_state": "{is_loading, select, true {قيد التحميل…} other {خامل.}}"
+}

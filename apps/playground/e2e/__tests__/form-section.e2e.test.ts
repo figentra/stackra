@@ -13,6 +13,8 @@
 // @covers sta-350:FR-060 sta-350:SC-007 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -21,7 +23,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/form-section?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Form section" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Form section", locale) }),
+  ).toBeVisible();
 };
 
 /** Turns the billing switch on from the keyboard: HeroUI's hidden input is overlapped by its drawn control, so a pointer click on the input is refused. */
@@ -66,7 +70,7 @@ test("each section is a group named by its title, and a described one is read wi
   page,
 }) => {
   await open(page, "light", "en");
-  const parts = page.getByRole("region", { name: "Parts" });
+  const parts = page.getByRole("region", { name: "Usage" });
   await expect(parts.getByRole("group", { name: "Title only" })).toBeVisible();
   const described = parts.getByRole("group", { name: "With a description" });
   await expect(described).toBeVisible();
@@ -114,9 +118,8 @@ test("a disabled section takes every field inside it out of the tab order", asyn
 for (const locale of LOCALES)
   test(`the title sits at the reading-start side of the section in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const group = page
-      .getByRole("region", { name: "Parts" })
-      .getByRole("group", { name: "With a description" });
+    // By place: the section's title speaks the page's locale; With a description is the usage's second group.
+    const group = example(page, "usage").getByRole("group").nth(1);
     const title = group.locator("legend");
     const groupBox = await group.boundingBox();
     const titleBox = await title.boundingBox();

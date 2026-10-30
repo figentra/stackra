@@ -1,6 +1,6 @@
 ---
 title: "0317 — @stackra/ui wave 6: the shell and routing props vocabulary, and @stackra/navigation"
-description: "Accepted · 2026-10-24"
+description: "Accepted · 2026-10-24 · amended 2026-10-28"
 ---
 
 <Note>
@@ -121,6 +121,32 @@ Accepted ADR's body changes only for typos and Enforcement, so the additions are
   drifts from it.
 - **`primaryAction` and `secondaryActions`.** Not chosen: one ordered list overflows by itself, and a page with no
   primary action is just a list with no first entry marked.
+
+## Amendment 2026-10-28: stacked route overlays and the DataGrid (wave 3d)
+
+Owner-approved on 2026-10-28 (STA-1371). Decisions 1 to 9 are unchanged; these rows are added.
+
+1. **Stacked overlays.** A `RouteOverlay` rendered in another overlay's page, as the element of a child route of the
+   overlay's route, is a layer over it; each layer is a route, so the URL alone reopens the whole stack. On web and
+   tablet a stacked drawer or sheet shows a `Breadcrumbs` trail of the layers under it, and a crumb navigates to that
+   layer's route, which unmounts every layer above it. Escape and a press outside close the top layer only. The stack
+   stops at three layers (`ROUTE_OVERLAY_MAX_DEPTH`); a deeper layer still opens, with a development warning, because
+   the URL is the truth. On native each layer is its own overlay screen, so the stack's Back walks the layers and
+   there is no breadcrumb. The new prop is `trailLabel?: string` (the layer's crumb; defaults to `title` when it is
+   text), web only.
+2. **DataGrid.** `DataGrid` takes `label`, `columns` (`DataGridColumn`: `id`, `label`, `type` of `text`, `number`,
+   `select`, `date` or `boolean`, `options`, `isRequired`, `min`, `max`, `isReadOnly`, `width`, `align`, `validate`),
+   `rows` (`DataGridRow`), `onSave(changes)`, `onChangesChange`, `isReadOnly`, `variant` (`sheet` or `matrix`) and, on
+   web only, `frozenColumns`, `rowHeight` and `height`. The grid keeps the pending changes (`DataGridChanges`, by row
+   id then column id) with undo and redo and never writes the rows; Save hands them to `onSave`. Web is a spreadsheet
+   (cell range, tab-separated copy, cut and paste, fill handle and Ctrl+D, typed editors, virtualised rows, frozen
+   columns, the `SaveBar`); a phone is a list with a quick-edit sheet and a bulk edit. `matrix` adds a total per row
+   and per column. Fill repeats the pattern only; series fills wait for a request.
+3. **DataTable tools.** `DataTable` gains `groupBy` (a column id: a heading row per value with its count and
+   aggregates), `aggregates` (`AggregateKind` per column: `sum`, `avg`, `min`, `max`, `count`; a total row ends the
+   table) and `hiddenColumns`. `ColumnChooser` (`columns`, `hiddenColumns`, `onHiddenColumnsChange`) and `SavedViews`
+   (`views`, `query`, `onQueryChange`, `facetFilterId`, `facets` of `FacetOption`, `onSaveView`) sit above it; the
+   active view is the one whose query equals the current one.
 
 ## Supersedes and sources
 

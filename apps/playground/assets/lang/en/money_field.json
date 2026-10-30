@@ -1,0 +1,10 @@
+{
+  "price": "Item price",
+  "price_hint": "Shown on the POS menu and on the receipt.",
+  "stored": "Stored in minor units: {minor}",
+  "amount": "Supplier payment",
+  "currency": "Currency",
+  "currency_hint": "The Kuwaiti dinar has three decimal places.",
+  "refund": "Refund amount",
+  "refund_hint": "You can refund up to the amount paid on this order."
+}

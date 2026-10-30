@@ -1,0 +1,16 @@
+{
+  "basics": {
+    "label": "Plan",
+    "starter": "Starter",
+    "starter_line": "One branch, the essentials",
+    "growth": "Growth",
+    "growth_line": "Up to five branches and reports",
+    "scale": "Scale",
+    "scale_line": "Unlimited branches and support"
+  },
+  "horizontal": {
+    "label": "Order type",
+    "pickup": "Pickup",
+    "delivery": "Delivery"
+  }
+}

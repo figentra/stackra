@@ -1,0 +1,32 @@
+{
+  "generatedFrom": {
+    "hash": "a95892971cb59886",
+    "propsFiles": ["ui/src/react/use-breakpoint/use-breakpoint.returns.ts"]
+  },
+  "hooks": [
+    {
+      "name": "useBreakpoint",
+      "returns": [
+        {
+          "description": "The widest breakpoint the width reaches, or `undefined` below `sm` (Tailwind's base, a narrow phone).",
+          "name": "breakpoint",
+          "required": true,
+          "source": "stackra",
+          "type": "undefined | \"sm\" | \"md\" | \"lg\" | \"xl\""
+        },
+        {
+          "description": "`phone` below `md`, `tablet` from `md`, `desktop` from `lg`.",
+          "name": "sizeClass",
+          "required": true,
+          "source": "stackra",
+          "type": "\"phone\" | \"tablet\" | \"desktop\""
+        }
+      ],
+      "signature": "useBreakpoint(): BreakpointState"
+    }
+  ],
+  "importLine": "import { useBreakpoint } from \"@stackra/ui/react\";",
+  "key": "free/use-breakpoint",
+  "parts": [],
+  "platform": "react"
+}

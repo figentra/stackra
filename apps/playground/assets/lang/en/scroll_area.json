@@ -1,0 +1,32 @@
+{
+  "terms": {
+    "label": "Delivery terms",
+    "p1": "Orders placed before 2 pm reach Riyadh, Jeddah and Dammam the next working day.",
+    "p2": "Other cities take two to four working days.",
+    "p3": "Cash on delivery is available up to SAR 2,000 per order.",
+    "p4": "Chilled items travel in insulated boxes and cannot be left at the door.",
+    "p5": "Returns are free within 14 days, unopened and with the receipt."
+  },
+  "chips": {
+    "label": "Categories",
+    "all": "All",
+    "dates": "Dates",
+    "coffee": "Arabic coffee",
+    "perfume": "Oud and perfume",
+    "abayas": "Abayas",
+    "spices": "Spices",
+    "sweets": "Sweets",
+    "gifts": "Eid gifts"
+  },
+  "arabic": {
+    "label": "أقسام المتجر",
+    "all": "الكل",
+    "dates": "التمور",
+    "coffee": "القهوة العربية",
+    "perfume": "العود والعطور",
+    "abayas": "العبايات",
+    "spices": "البهارات",
+    "sweets": "الحلويات",
+    "gifts": "هدايا العيد"
+  }
+}

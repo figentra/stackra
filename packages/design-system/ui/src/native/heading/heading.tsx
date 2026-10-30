@@ -10,7 +10,7 @@
 import type { ReactElement } from "react";
 import { Typography } from "heroui-native";
 
-import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
+import { NATIVE_TONE_CLASS_NAME } from "#core/constants/native-tone-class-name.constant";
 import { isArabic } from "#core/functions/is-arabic.function";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
 import type { HeadingProps } from "#native/heading/heading.props";
@@ -37,7 +37,7 @@ export function Heading({
       color={tone === "muted" ? "muted" : "default"}
       align={align ?? "start"}
       truncate={isTruncated ?? false}
-      className={[TONE_CLASS_NAME[tone], arabicClass, className].filter(Boolean).join(" ")}
+      className={[NATIVE_TONE_CLASS_NAME[tone], arabicClass, className].filter(Boolean).join(" ")}
       {...(lang ? { accessibilityLanguage: lang } : {})}
       {...rest}
     />

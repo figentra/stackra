@@ -1,0 +1,381 @@
+{
+  "slug": "input-otp",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/input-otp.mdx",
+  "parts": [
+    {
+      "name": "InputOTP",
+      "props": [
+        {
+          "name": "maxLength",
+          "type": "number",
+          "description": "Maximum length of the OTP (required)"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Controlled value for the OTP input"
+        },
+        {
+          "name": "defaultValue",
+          "type": "string",
+          "description": "Default value for uncontrolled usage"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: string) => void",
+          "description": "Callback when value changes"
+        },
+        {
+          "name": "onComplete",
+          "type": "(value: string) => void",
+          "description": "Handler called when all slots are filled"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the input is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the input is in an invalid state"
+        },
+        {
+          "name": "pattern",
+          "type": "string",
+          "description": "Regex pattern for allowed characters (e.g., REGEXP_ONLY_DIGITS, REGEXP_ONLY_CHARS)"
+        },
+        {
+          "name": "inputMode",
+          "type": "TextInputProps['inputMode']",
+          "default": "'numeric'",
+          "description": "Input mode for the input"
+        },
+        {
+          "name": "placeholder",
+          "type": "string",
+          "description": "Placeholder text for the input. Each character corresponds to a slot position"
+        },
+        {
+          "name": "placeholderTextColor",
+          "type": "string",
+          "description": "Placeholder text color for all slots"
+        },
+        {
+          "name": "placeholderTextClassName",
+          "type": "string",
+          "description": "Placeholder text class name for all slots"
+        },
+        {
+          "name": "pasteTransformer",
+          "type": "(text: string) => string",
+          "description": "Transform pasted text (e.g., remove hyphens). Defaults to removing non-matching characters"
+        },
+        {
+          "name": "onFocus",
+          "type": "(e: FocusEvent) => void",
+          "description": "Handler for focus events"
+        },
+        {
+          "name": "onBlur",
+          "type": "(e: BlurEvent) => void",
+          "description": "Handler for blur events"
+        },
+        {
+          "name": "textInputProps",
+          "type": "Omit<TextInputProps, ...>",
+          "description": "Additional props to pass to the underlying TextInput component"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Children elements to be rendered inside the InputOTP"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "style",
+          "type": "PressableProps['style']",
+          "description": "Style to pass to the container Pressable component"
+        },
+        {
+          "name": "isBottomSheetAware",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether the InputOTP automatically handles keyboard state when rendered inside a BottomSheet. Set to `false` to disable"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        }
+      ]
+    },
+    {
+      "name": "InputOTP.Group",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode | ((props: InputOTPGroupRenderProps) => React.ReactNode)",
+          "description": "Children elements to be rendered inside the group, or a render function that receives slot data and other context values"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "slots",
+          "type": "SlotData[]",
+          "description": "Array of slot data for each position"
+        },
+        {
+          "name": "maxLength",
+          "type": "number",
+          "description": "Maximum length of the OTP"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Current OTP value"
+        },
+        {
+          "name": "isFocused",
+          "type": "boolean",
+          "description": "Whether the input is currently focused"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the input is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the input is in an invalid state"
+        }
+      ]
+    },
+    {
+      "name": "InputOTP.Slot",
+      "props": [
+        {
+          "name": "index",
+          "type": "number",
+          "description": "Zero-based index of the slot (required). Must be between 0 and maxLength - 1"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom slot content. If not provided, defaults to SlotPlaceholder, SlotValue, and SlotCaret"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "style",
+          "type": "ViewStyle",
+          "description": "Additional styles to apply"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "InputOTP.SlotPlaceholder",
+      "props": [
+        {
+          "name": "children",
+          "type": "string",
+          "description": "Text content to display (optional, defaults to slot.placeholderChar)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "style",
+          "type": "TextStyle",
+          "description": "Additional styles to apply"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "InputOTP.SlotValue",
+      "props": [
+        {
+          "name": "children",
+          "type": "string",
+          "description": "Text content to display (optional, defaults to slot.char)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "animation",
+          "type": "InputOTPSlotValueAnimation",
+          "description": "Animation configuration for SlotValue"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "wrapper.entering",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeIn.duration(250)",
+          "description": "Entering animation for wrapper"
+        },
+        {
+          "name": "wrapper.exiting",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeOut.duration(100)",
+          "description": "Exiting animation for wrapper"
+        },
+        {
+          "name": "text.entering",
+          "type": "EntryOrExitLayoutType",
+          "default": "FlipInXDown.duration(250).easing(...)",
+          "description": "Entering animation for text"
+        },
+        {
+          "name": "text.exiting",
+          "type": "EntryOrExitLayoutType",
+          "default": "FlipOutXDown.duration(250).easing(...)",
+          "description": "Exiting animation for text"
+        }
+      ]
+    },
+    {
+      "name": "InputOTP.SlotCaret",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "style",
+          "type": "ViewStyle",
+          "description": "Additional styles to apply"
+        },
+        {
+          "name": "animation",
+          "type": "InputOTPSlotCaretAnimation",
+          "description": "Animation configuration for SlotCaret"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active. When `false`, the animated style is removed and you can implement custom logic"
+        },
+        {
+          "name": "pointerEvents",
+          "type": "'none' | 'auto' | ...",
+          "default": "'none'",
+          "description": "Pointer events configuration"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number]",
+          "default": "[0, 1]",
+          "description": "Opacity values [min, max]"
+        },
+        {
+          "name": "opacity.duration",
+          "type": "number",
+          "default": "500",
+          "description": "Animation duration in milliseconds"
+        },
+        {
+          "name": "height.value",
+          "type": "[number, number]",
+          "default": "[16, 18]",
+          "description": "Height values [min, max] in pixels"
+        },
+        {
+          "name": "height.duration",
+          "type": "number",
+          "default": "500",
+          "description": "Animation duration in milliseconds"
+        }
+      ]
+    },
+    {
+      "name": "InputOTP.Separator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes to apply"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useInputOTP",
+      "signature": "useInputOTP()",
+      "returns": []
+    },
+    {
+      "name": "useInputOTPSlot",
+      "signature": "useInputOTPSlot()",
+      "returns": []
+    }
+  ],
+  "slots": []
+}

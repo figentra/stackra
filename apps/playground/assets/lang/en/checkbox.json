@@ -1,0 +1,43 @@
+{
+  "captions": {
+    "unchecked": "Unchecked",
+    "checked": "Checked",
+    "indeterminate": "Indeterminate",
+    "disabled": "Disabled",
+    "disabled_checked": "Disabled and checked",
+    "read_only": "Read-only",
+    "required": "Required",
+    "description": "With a description",
+    "invalid": "Invalid, with a message"
+  },
+  "labels": {
+    "unchecked": "Subscribe to the newsletter",
+    "checked": "Remember this device",
+    "indeterminate": "Select every invoice",
+    "disabled": "Share usage data",
+    "disabled_checked": "Use the company sign-in",
+    "read_only": "Your plan includes backups",
+    "required": "I accept the terms",
+    "description": "Send me product updates",
+    "invalid": "I am over eighteen"
+  },
+  "description_text": "At most one email a month.",
+  "error_text": "Confirm your age to continue.",
+  "primary": "Primary variant",
+  "secondary": "Secondary variant",
+  "row_selector": "Select row 3",
+  "parent": "Select all toppings",
+  "children": "Toppings",
+  "chosen": "Chosen: {names}",
+  "none": "none",
+  "clear": "Clear",
+  "sample": {
+    "cheese": "Cheese",
+    "olives": "Olives",
+    "basil": "Basil",
+    "primary_unchecked": "Primary, unchecked",
+    "primary_checked": "Primary, checked",
+    "secondary_unchecked": "Secondary, unchecked",
+    "secondary_checked": "Secondary, checked"
+  }
+}

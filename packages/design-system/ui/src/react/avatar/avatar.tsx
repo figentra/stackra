@@ -51,7 +51,10 @@ export function Avatar({
       {...omitUndefined({ size, variant })}
       color={tone}
       className={
-        cn(shape === "square" ? AVATAR_SQUARE_CLASS_NAME : "rounded-full", className) ?? ""
+        cn(
+          shape === "square" ? AVATAR_SQUARE_CLASS_NAME : "rounded-[var(--radius-pill)]",
+          className,
+        ) ?? ""
       }
     >
       {src ? <HeroAvatar.Image src={src} alt="" /> : null}

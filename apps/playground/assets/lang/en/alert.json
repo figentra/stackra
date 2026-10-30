@@ -1,0 +1,24 @@
+{
+  "show_error": "Show payment error",
+  "show_saved": "Show save confirmation",
+  "retry": "Try again",
+  "dismiss": "Dismiss",
+  "upgrade": "Upgrade plan",
+  "manage": "Manage files",
+  "sample": {
+    "your_trial_is_active": "Your trial is active",
+    "you_have_14_days_left": "You have 14 days left to try every feature.",
+    "a_new_version_is_available": "A new version is available",
+    "reload_the_page_to_get": "Reload the page to get the latest changes.",
+    "changes_saved": "Changes saved",
+    "your_profile_is_up_to": "Your profile is up to date.",
+    "storage_is_almost_full": "Storage is almost full",
+    "delete_files_or_upgrade_to": "Delete files or upgrade to keep uploading.",
+    "payment_failed": "Payment failed",
+    "your_card_was_declined_check": "Your card was declined. Check the details and try again.",
+    "title_only": "Title only",
+    "with_actions": "With actions",
+    "an_icon_of_your_own": "An icon of your own",
+    "no_icon": "No icon"
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "figentra",
+  "changes": {
+    "colors": {
+      "background": {
+        "light": "oklch(0.972 0.004 122)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#F5F6F3",
+        "hexDark": "#0B0D0F"
+      },
+      "foreground": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F5F6F3"
+      },
+      "surface": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.195 0.006 250)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#131518"
+      },
+      "surface-foreground": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F5F6F3"
+      },
+      "surface-secondary": {
+        "light": "oklch(0.955 0.004 110)",
+        "dark": "oklch(0.235 0.007 250)",
+        "hexLight": "#F0F0ED",
+        "hexDark": "#1C1E21"
+      },
+      "surface-secondary-foreground": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F5F6F3"
+      },
+      "surface-tertiary": {
+        "light": "oklch(0.935 0.004 110)",
+        "dark": "oklch(0.285 0.007 250)",
+        "hexLight": "#E9EAE7",
+        "hexDark": "#282A2D"
+      },
+      "surface-tertiary-foreground": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F5F6F3"
+      },
+      "overlay": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.215 0.006 250)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#171A1C"
+      },
+      "overlay-foreground": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F5F6F3"
+      },
+      "muted": {
+        "light": "oklch(0.5 0.01 250)",
+        "dark": "oklch(0.72 0.008 250)",
+        "hexLight": "#5F6469",
+        "hexDark": "#A1A5A9"
+      },
+      "default": {
+        "light": "oklch(0.935 0.004 110)",
+        "dark": "oklch(0.285 0.007 250)",
+        "hexLight": "#E9EAE7",
+        "hexDark": "#282A2D"
+      },
+      "default-foreground": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F5F6F3"
+      },
+      "accent": {
+        "light": "oklch(0.519 0.1044 73.8)",
+        "dark": "oklch(0.83 0.15 82)",
+        "hexLight": "#8C5E10",
+        "hexDark": "#F8BD40"
+      },
+      "accent-foreground": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#0B0D0F"
+      },
+      "success": {
+        "light": "oklch(0.5 0.13 135)",
+        "dark": "oklch(0.72 0.15 135)",
+        "hexLight": "#40731A",
+        "hexDark": "#7AB953"
+      },
+      "success-foreground": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#0B0D0F"
+      },
+      "warning": {
+        "light": "oklch(0.55 0.15 47)",
+        "dark": "oklch(0.72 0.17 47)",
+        "hexLight": "#B54F05",
+        "hexDark": "#F87D38"
+      },
+      "warning-foreground": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#0B0D0F"
+      },
+      "danger": {
+        "light": "oklch(0.45 0.17 24)",
+        "dark": "oklch(0.66 0.2 22)",
+        "hexLight": "#9E1421",
+        "hexDark": "#F45058"
+      },
+      "danger-foreground": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.158 0.005 248)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#0B0D0F"
+      },
+      "field-background": {
+        "light": "oklch(1 0 0)",
+        "dark": "oklch(0.235 0.007 250)",
+        "hexLight": "#FFFFFF",
+        "hexDark": "#1C1E21"
+      },
+      "field-foreground": {
+        "light": "oklch(0.158 0.005 248)",
+        "dark": "oklch(0.972 0.004 122)",
+        "hexLight": "#0B0D0F",
+        "hexDark": "#F5F6F3"
+      },
+      "field-placeholder": {
+        "light": "oklch(0.5 0.01 250)",
+        "dark": "oklch(0.72 0.008 250)",
+        "hexLight": "#5F6469",
+        "hexDark": "#A1A5A9"
+      },
+      "field-border": {
+        "light": "oklch(0.6 0.008 250)",
+        "dark": "oklch(0.56 0.008 250)",
+        "hexLight": "#7D8185",
+        "hexDark": "#717579"
+      },
+      "border": {
+        "light": "oklch(0.885 0.005 110)",
+        "dark": "oklch(0.35 0.008 250)",
+        "hexLight": "#D9D9D6",
+        "hexDark": "#373B3F"
+      },
+      "separator": {
+        "light": "oklch(0.92 0.004 110)",
+        "dark": "oklch(0.27 0.007 250)",
+        "hexLight": "#E4E5E2",
+        "hexDark": "#24272A"
+      },
+      "focus": {
+        "light": "oklch(0.47 0.095 75)",
+        "dark": "oklch(0.83 0.15 82)",
+        "hexLight": "#79520A",
+        "hexDark": "#F8BD40"
+      },
+      "link": {
+        "light": "oklch(0.47 0.095 75)",
+        "dark": "oklch(0.83 0.15 82)",
+        "hexLight": "#79520A",
+        "hexDark": "#F8BD40"
+      },
+      "backdrop": {
+        "light": "oklch(0.158 0.005 248 / 0.4)",
+        "dark": "oklch(0.08 0.004 248 / 0.6)",
+        "hexLight": "#0B0D0F66",
+        "hexDark": "#01020299"
+      }
+    },
+    "palette": {
+      "amber": {
+        "light": "oklch(0.83 0.15 82)",
+        "dark": "oklch(0.83 0.15 82)",
+        "hexLight": "#F8BD40",
+        "hexDark": "#F8BD40"
+      },
+      "amber-strong": {
+        "light": "oklch(0.47 0.095 75)",
+        "dark": "oklch(0.83 0.15 82)",
+        "hexLight": "#79520A",
+        "hexDark": "#F8BD40"
+      }
+    },
+    "fontFamily": {
+      "display": "\"Geist\", ui-sans-serif, system-ui, sans-serif",
+      "displayArabic": "\"IBM Plex Sans Arabic\", \"Geist\", system-ui, \"Segoe UI\", \"Tahoma\", sans-serif"
+    }
+  }
+}

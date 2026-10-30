@@ -1,0 +1,73 @@
+{
+  "generatedFrom": {
+    "hash": "65498c98bdfbb2df",
+    "propsFiles": ["ui/src/react/hover-card/hover-card.props.ts"]
+  },
+  "importLine": "import { HoverCard } from \"@stackra/ui/react\";",
+  "key": "free/hover-card",
+  "parts": [
+    {
+      "name": "HoverCard",
+      "props": [
+        {
+          "description": "The element previewed, usually a link or a name.",
+          "name": "trigger",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "The card's content.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The card's accessible name, such as \"Profile preview\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Milliseconds of hover before the card opens (web); 500 by default.",
+          "name": "openDelay",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Milliseconds after the pointer leaves before it closes (web); 200 by default.",
+          "name": "closeDelay",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"start\" | \"end\""
+        },
+        {
+          "default": "center",
+          "description": "Where along that side it lines up with the trigger. Defaults to `center`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,114 @@
+{
+  "generatedFrom": {
+    "hash": "8f78bb9c6792b6f0",
+    "propsFiles": ["ui/src/react/state-layout/state-layout.props.ts"]
+  },
+  "importLine": "import { StateLayout } from \"@stackra/ui/react\";",
+  "key": "free/state-layout",
+  "parts": [
+    {
+      "name": "StateLayout",
+      "props": [
+        {
+          "description": "What is the matter, in a few words. Required: it is the heading a screen reader jumps to.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "One or two sentences: why it is so, and what to do next.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "An icon in place of the reason's or kind's own, or `false` for none.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "false | IconSlot"
+        },
+        {
+          "description": "Buttons or links for the reader's next step, drawn under the description in a wrapping row.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The icon drawn when the caller gave none, by name.",
+          "name": "defaultIcon",
+          "required": true,
+          "source": "stackra",
+          "type": "IconName"
+        },
+        {
+          "description": "The title's outline level, already defaulted by the state.",
+          "name": "headingLevel",
+          "required": true,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "Extra content between the description and the actions.",
+          "name": "children",
+          "required": false,
+          "source": "react-aria",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

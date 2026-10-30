@@ -1,0 +1,125 @@
+{
+  "generatedFrom": {
+    "hash": "c572abe300f60338",
+    "propsFiles": ["ui/src/react/text/text.props.ts"]
+  },
+  "importLine": "import { Text } from \"@stackra/ui/react\";",
+  "key": "free/text",
+  "parts": [
+    {
+      "name": "Text",
+      "props": [
+        {
+          "default": "body",
+          "description": "The text style from the theme's type scale. Defaults to `body`.",
+          "name": "type",
+          "required": false,
+          "source": "stackra",
+          "type": "\"body\" | \"caption\" | \"small\""
+        },
+        {
+          "description": "The text to show; it may hold inline elements and nested Text.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "default",
+          "description": "The colour of the text: `muted` for secondary copy, a status tone for meaning. Defaults to `default`.",
+          "name": "tone",
+          "replaces": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\" | \"muted\""
+        },
+        {
+          "default": "start",
+          "description": "The horizontal alignment; `start` and `end` follow the text direction, `justify` is iOS-only on native. Defaults to `start`.",
+          "name": "align",
+          "required": false,
+          "source": "stackra",
+          "type": "\"center\" | \"start\" | \"end\" | \"justify\""
+        },
+        {
+          "description": "True to cut the text to one line with an ellipsis; assistive technology still reads all of it.",
+          "name": "isTruncated",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The BCP 47 language of this text when it differs from the screen's, for example `ar` inside an English page.",
+          "name": "lang",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "weight",
+          "required": false,
+          "source": "heroui",
+          "type": "\"bold\" | \"normal\" | \"medium\" | \"semibold\""
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLElement>"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMRenderFunction<any, any>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

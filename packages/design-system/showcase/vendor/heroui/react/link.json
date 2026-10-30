@@ -1,0 +1,90 @@
+{
+  "slug": "link",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(navigation)/link.mdx",
+  "parts": [
+    {
+      "name": "Link",
+      "props": [
+        {
+          "name": "href",
+          "type": "string",
+          "description": "Destination URL for the anchor"
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "default": "\"_self\"",
+          "description": "Controls where to open the linked document"
+        },
+        {
+          "name": "rel",
+          "type": "string",
+          "description": "Relationship between the current and linked documents"
+        },
+        {
+          "name": "download",
+          "type": "boolean | string",
+          "description": "Prompts file download instead of navigation"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Disables pointer and keyboard interaction"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Custom classes merged with the default styles"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content rendered inside the link"
+        },
+        {
+          "name": "onPress",
+          "type": "(e: PressEvent) => void",
+          "description": "Fired when the link is activated"
+        },
+        {
+          "name": "autoFocus",
+          "type": "boolean",
+          "description": "Whether the element should receive focus on render"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, LinkRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Link.Icon",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Custom icon element; defaults to the built-in arrow icon when omitted"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".link",
+      "description": "Base link styles"
+    },
+    {
+      "name": ".link__icon",
+      "description": "Link icon styles"
+    }
+  ]
+}

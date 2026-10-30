@@ -1,0 +1,170 @@
+{
+  "generatedFrom": {
+    "hash": "cafcb021a37ad2ea",
+    "heroDoc": "vendor/heroui/react/accordion.json",
+    "propsFiles": ["ui/src/react/accordion/accordion.props.ts"]
+  },
+  "importLine": "import { Accordion } from \"@stackra/ui/react\";",
+  "key": "free/accordion",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the ids now expanded each time a section opens or closes, in the order the items are in.",
+          "name": "onExpandedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        }
+      ],
+      "extends": "Accordion",
+      "name": "Accordion",
+      "props": [
+        {
+          "description": "The ids of the expanded sections, for a controlled accordion; pair it with `onExpandedChange`.",
+          "name": "expandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids expanded at the start, for an uncontrolled accordion.",
+          "name": "defaultExpandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "True to let several sections stay open at once; otherwise opening one closes the others. Defaults to false.",
+          "name": "canExpandMultiple",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "default",
+          "description": "The surface of the accordion: `default` on the page, `surface` as a panel of its own. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"surface\""
+        },
+        {
+          "description": "True to show every section but refuse expanding or collapsing any of them.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly AccordionItem[]"
+        },
+        {
+          "default": "'react-aria-DisclosureGroup'",
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "ClassNameOrFunction<DisclosureGroupRenderProps>"
+        },
+        {
+          "default": "false",
+          "description": "Hide separator lines between accordion items",
+          "name": "hideSeparator",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", DisclosureGroupRenderProps>"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "StyleOrFunction<DisclosureGroupRenderProps>"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base accordion container",
+      "name": ".accordion"
+    },
+    {
+      "description": "Content body container",
+      "name": ".accordion__body"
+    },
+    {
+      "description": "Heading wrapper",
+      "name": ".accordion__heading"
+    },
+    {
+      "description": "Expand/collapse indicator icon",
+      "name": ".accordion__indicator"
+    },
+    {
+      "description": "Individual accordion item",
+      "name": ".accordion__item"
+    },
+    {
+      "description": "Collapsible panel container",
+      "name": ".accordion__panel"
+    },
+    {
+      "description": "Clickable trigger button",
+      "name": ".accordion__trigger"
+    },
+    {
+      "description": "Outline variant with border and background",
+      "name": ".accordion--outline"
+    },
+    {
+      "description": "Expanded state",
+      "name": ".accordion__trigger[aria-expanded=\"true\"]"
+    },
+    {
+      "description": "Panel visible state",
+      "name": ".accordion__panel[aria-hidden=\"false\"]"
+    }
+  ]
+}

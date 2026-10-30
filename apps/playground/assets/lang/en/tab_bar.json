@@ -1,0 +1,18 @@
+{
+  "main": {
+    "label": "Main",
+    "home": "Home",
+    "orders": "Orders",
+    "products": "Products",
+    "alerts": "Alerts",
+    "settings": "Settings"
+  },
+  "arabic": {
+    "label": "تنقل المتجر",
+    "home": "الرئيسية",
+    "orders": "الطلبات",
+    "products": "المنتجات",
+    "alerts": "التنبيهات",
+    "settings": "الإعدادات"
+  }
+}

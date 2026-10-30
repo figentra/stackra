@@ -17,6 +17,8 @@
 // @covers sta-350:FR-168 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -25,7 +27,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/page-header?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Page header" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Page header", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -47,8 +51,9 @@ const boxOf = async (locator: Locator) => {
   return box;
 };
 
-/** The headers of a section's samples, found by CSS. */
-const samples = (page: Page, id: string) => page.locator(`#${id} ~ ul > li`);
+/** The samples of an example, the items of its outer list. */
+const samples = (page: Page, id: string) =>
+  example(page, id).getByRole("list").first().locator(":scope > li");
 
 /** The live header and its report. */
 const liveHeader = (page: Page) => page.locator('[data-sample="live"] header');
@@ -65,8 +70,13 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      await liveHeader(page).getByRole("button", { name: "Mark as shipped" }).click();
-      await expect(liveHeader(page).getByText("Shipped", { exact: true })).toBeVisible();
+      // The first action, Mark as shipped, by position: the Arabic page translates it.
+      const badge = liveHeader(page).locator('[data-slot="chip-label"]');
+      const before = await badge.textContent();
+      await liveHeader(page).getByRole("button").first().click();
+      await expect(badge).not.toHaveText(before ?? "");
+      if (locale === "en")
+        await expect(liveHeader(page).getByText("Shipped", { exact: true })).toBeVisible();
       await expectAxeClean(page);
     });
   }
@@ -78,22 +88,29 @@ test("the page holds one h1, the page header's, and its samples are level-3 head
   const h1 = page.getByRole("heading", { level: 1 });
   await expect(h1).toHaveCount(1);
   await expect(h1.locator("xpath=ancestor::header")).toHaveCount(1);
-  await expect(samples(page, "page-header-parts").getByRole("heading", { level: 3 })).toHaveCount(
-    5,
-  );
+  await expect(samples(page, "usage").getByRole("heading", { level: 3 })).toHaveCount(5);
   await expect(page.getByRole("heading", { level: 4 })).toHaveCount(0);
 });
 
 for (const locale of LOCALES)
   test(`the title leads and the actions follow it in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const header = samples(page, "page-header-actions").nth(1).locator("header");
-    const title = await boxOf(header.getByRole("heading", { level: 3 }));
-    const buttons = await header.getByRole("button").all();
-    expect(buttons).toHaveLength(3);
-    const first = await boxOf(buttons[0] as Locator);
-    const last = await boxOf(buttons[2] as Locator);
-    if (locale === "en") {
+    const header = samples(page, "actions").nth(1).locator("header");
+    await expect(header.getByRole("button")).toHaveCount(3);
+    // Measured in one frame: the page above may still shift while its lazy demos load.
+    const [title, first, last] = await header.evaluate((node) =>
+      [node.querySelector("h3"), ...node.querySelectorAll("button")]
+        .filter((_, index) => index !== 2)
+        .map((element) => element?.getBoundingClientRect().toJSON() as DOMRect | undefined),
+    );
+    if (!title || !first || !last) throw new Error("a box is missing");
+    // The example's pane is narrower than title and actions together, so the actions wrap onto the next row,
+    // from the reading start.
+    if (first.y >= title.y + title.height - 1) {
+      if (locale === "en") expect(Math.abs(first.x - title.x)).toBeLessThanOrEqual(1);
+      else expect(Math.abs(first.x + first.width - (title.x + title.width))).toBeLessThanOrEqual(1);
+      expect(last.x > first.x, locale).toBe(locale === "en");
+    } else if (locale === "en") {
       expect(first.x).toBeGreaterThan(title.x + title.width - 1);
       expect(last.x).toBeGreaterThan(first.x);
     } else {
@@ -104,7 +121,7 @@ for (const locale of LOCALES)
 
 test("the first action is the primary button and the next two are secondary", async ({ page }) => {
   await open(page, "light", "en");
-  const buttons = samples(page, "page-header-actions").nth(1).getByRole("button");
+  const buttons = samples(page, "actions").nth(1).getByRole("button");
   await expect(buttons.nth(0)).toHaveClass(/button--primary/);
   await expect(buttons.nth(1)).toHaveClass(/button--secondary/);
   await expect(buttons.nth(2)).toHaveClass(/button--secondary/);
@@ -114,7 +131,7 @@ test("six actions draw three buttons and a menu of three that opens from the key
   page,
 }) => {
   await open(page, "light", "en");
-  const header = samples(page, "page-header-actions").nth(2).locator("header");
+  const header = samples(page, "actions").nth(2).locator("header");
   await expect(header.getByRole("button")).toHaveCount(4);
   const more = header.locator('button[aria-label="More actions for this order"]');
   await more.focus();
@@ -132,7 +149,7 @@ test("a disabled action is a disabled button and a danger action is drawn in the
   page,
 }) => {
   await open(page, "light", "en");
-  const header = samples(page, "page-header-actions").nth(3).locator("header");
+  const header = samples(page, "actions").nth(3).locator("header");
   await expect(header.getByRole("button", { name: "Archive" })).toBeDisabled();
   await expect(header.getByRole("button", { name: "Delete" })).toHaveClass(/button--danger-soft/);
 });
@@ -141,9 +158,7 @@ test("an action with an href is a link drawn as a button, and following it navig
   page,
 }) => {
   await open(page, "light", "en");
-  const link = samples(page, "page-header-actions")
-    .nth(4)
-    .getByRole("link", { name: "Open the app header" });
+  const link = samples(page, "actions").nth(4).getByRole("link", { name: "Open the app header" });
   await expect(link).toHaveAttribute("href", "/app-header");
   await expect(link).toHaveClass(/button--primary/);
   await link.focus();
@@ -153,7 +168,8 @@ test("an action with an href is a link drawn as a button, and following it navig
 
 test("every action reaches 24 px", async ({ page }) => {
   await open(page, "light", "en");
-  const controls = page.locator("#page-header-actions ~ ul header").locator("button, a[href]");
+  await expect(example(page, "actions").locator("header").first()).toBeVisible();
+  const controls = samples(page, "actions").locator("header").locator("button, a[href]");
   expect(await controls.count()).toBeGreaterThan(0);
   for (const control of await controls.all()) {
     const box = await boxOf(control);

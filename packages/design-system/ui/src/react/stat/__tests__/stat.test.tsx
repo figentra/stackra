@@ -16,11 +16,12 @@ import { Stat } from "#react/stat/stat";
 describe("Stat (web)", () => {
   it("shows the label before the figure, formatted in the provider's locale", () => {
     const { container } = render(
-      <DesignSystemContext value={{ locale: "de-DE" } as DesignSystemState}>
+      <DesignSystemContext value={{ locale: "de-DE", resolvedMotion: "none" } as DesignSystemState}>
         <Stat label="Points" value={12_500} badge="Gold" />
       </DesignSystemContext>,
     );
-    expect(container.textContent).toBe("Points12.500Gold");
+    // The ticker draws the figure, then keeps a spoken copy for screen readers.
+    expect(container.textContent).toBe("Points12.50012.500Gold");
   });
 
   it("shows text as given and draws no empty badge", () => {

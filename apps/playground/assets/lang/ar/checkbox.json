@@ -1,0 +1,43 @@
+{
+  "captions": {
+    "unchecked": "غير محدد",
+    "checked": "محدد",
+    "indeterminate": "غير محسوم",
+    "disabled": "معطل",
+    "disabled_checked": "معطل ومحدد",
+    "read_only": "للقراءة فقط",
+    "required": "مطلوب",
+    "description": "مع وصف",
+    "invalid": "غير صالح، مع رسالة"
+  },
+  "labels": {
+    "unchecked": "الاشتراك في النشرة",
+    "checked": "تذكر هذا الجهاز",
+    "indeterminate": "تحديد كل الفواتير",
+    "disabled": "مشاركة بيانات الاستخدام",
+    "disabled_checked": "استخدام تسجيل دخول الشركة",
+    "read_only": "خطتك تشمل النسخ الاحتياطي",
+    "required": "أوافق على الشروط",
+    "description": "أرسل لي تحديثات المنتج",
+    "invalid": "عمري فوق الثامنة عشرة"
+  },
+  "description_text": "رسالة واحدة شهريًا على الأكثر.",
+  "error_text": "أكّد عمرك للمتابعة.",
+  "primary": "النمط الأساسي",
+  "secondary": "النمط الثانوي",
+  "row_selector": "تحديد الصف 3",
+  "parent": "تحديد كل الإضافات",
+  "children": "الإضافات",
+  "chosen": "المختار: {names}",
+  "none": "لا شيء",
+  "clear": "مسح",
+  "sample": {
+    "cheese": "جبن",
+    "olives": "زيتون",
+    "basil": "ريحان",
+    "primary_unchecked": "أساسي، غير محدد",
+    "primary_checked": "أساسي، محدد",
+    "secondary_unchecked": "ثانوي، غير محدد",
+    "secondary_checked": "ثانوي، محدد"
+  }
+}

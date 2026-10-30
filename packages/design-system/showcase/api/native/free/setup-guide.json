@@ -1,0 +1,223 @@
+{
+  "generatedFrom": {
+    "hash": "87c59c46d28228b8",
+    "propsFiles": ["ui/src/native/setup-guide/setup-guide.props.ts"]
+  },
+  "importLine": "import { SetupGuide } from \"@stackra/ui/native\";",
+  "key": "free/setup-guide",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the user ticks or unticks a task; left out, the boxes are read-only.",
+          "name": "onCompleteChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string, isComplete: boolean) => void"
+        },
+        {
+          "description": "Called when the user shows or hides the task list.",
+          "name": "onExpandedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isExpanded: boolean) => void"
+        }
+      ],
+      "name": "SetupGuide",
+      "props": [
+        {
+          "description": "The card's title, for example \"Set up your store\".",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "One line under the title.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The tasks, in order.",
+          "name": "tasks",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SetupGuideTask[]"
+        },
+        {
+          "description": "Whether the task list is shown, for a controlled guide.",
+          "name": "isExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Whether the task list starts shown. Defaults to true until every task is done.",
+          "name": "defaultExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Writes the progress, for example \"2 of 5 tasks done\". Defaults to the `ui` catalogue's sentence.",
+          "name": "progressLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(done: number, total: number) => string"
+        },
+        {
+          "description": "The text shown once every task is done. Defaults to the `ui` catalogue's \"All set\".",
+          "name": "completeLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The spoken name of the show/hide button. Defaults to the `ui` catalogue's \"Show tasks\" or \"Hide tasks\".",
+          "name": "toggleLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(isExpanded: boolean) => string"
+        },
+        {
+          "default": "default",
+          "description": "The surface level of the card; `transparent` drops the background and shadow. Defaults to `default`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"secondary\" | \"tertiary\" | \"transparent\""
+        },
+        {
+          "description": "Animation configuration for surface\n- `\"disable-all\"`: Disable all animations including children\n- `undefined`: Use default animations",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "\"disable-all\""
+        },
+        {
+          "default": "false",
+          "description": "When `true`, merges surface styling onto the single child element (Slot pattern).\nThe child must be one React element. Uses `Slot.View` internally.",
+          "name": "asChild",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
+        },
+        {
+          "description": "Background layer rendered behind the surface content.\n- `undefined` (default): renders `Surface.Background` for non-transparent\n  variants when the active library theme registers default background\n  content (e.g. `glass`); otherwise no layer\n- custom node: replaces the default layer entirely (wrap content in\n  `Surface.Background` to keep the absolute-fill and clipping)\n- `null`: removes the background layer\n\nNot injected when `asChild` is `true` — the Slot pattern requires a\nsingle child; render `Surface.Background` inside your child instead.",
+          "name": "background",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "heroui",
+          "type": "Ref<View>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

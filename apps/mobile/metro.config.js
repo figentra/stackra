@@ -21,7 +21,8 @@ config.resolver.unstable_conditionNames = [
 
 // One copy of each of these, resolved from the app wherever the importer lives: the packages under
 // packages/design-system have their own node_modules, with the web catalog's React 19.3, and a second React,
-// Reanimated, HeroUI or react-hook-form instance breaks hooks, shared values and context.
+// Reanimated, HeroUI or react-hook-form instance breaks hooks, shared values and context. Lucide too: a button's
+// `LucideProvider` (@stackra/ui) must be the context the icons (@stackra/icons) read, or they draw black.
 const SINGLETONS = [
   "react",
   "react-native",
@@ -33,6 +34,7 @@ const SINGLETONS = [
   "react-native-safe-area-context",
   "react-native-screens",
   "react-native-svg",
+  "lucide-react-native",
   "@gorhom/bottom-sheet",
   "@internationalized/date",
   "@internationalized/number",

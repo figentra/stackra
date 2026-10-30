@@ -1,0 +1,16 @@
+{
+  "hover": "Underline on hover",
+  "always": "Underline always",
+  "before_links": "Links come in every tone: ",
+  "after_links": ", and each stays underlined in the sentence.",
+  "external_text": "HeroUI documentation",
+  "external_label": "HeroUI website",
+  "router_link": "Go to Foundations",
+  "disabled_link": "Disabled link",
+  "press_link": "Press only",
+  "press_count": "{count, plural, one {Pressed # time.} other {Pressed # times.}}",
+  "settings_label": "Settings",
+  "arabic": "هذه جملة عربية طويلة تحتوي على رابط يلتف عبر عدة أسطر عندما يضيق المكان، ليظهر كيف يتصرف الخط السفلي والاتجاه داخل النص.",
+  "arabic_link_text": "رابط يلتف عبر عدة أسطر داخل الجملة",
+  "arabic_sentence_end": "، ثم تتابع الجملة بعده."
+}

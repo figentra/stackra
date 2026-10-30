@@ -1,0 +1,10 @@
+{
+  "basics": {
+    "label": "Branch",
+    "hint": "Uses the device's own chooser.",
+    "placeholder": "Choose a branch",
+    "riyadh": "Riyadh",
+    "jeddah": "Jeddah",
+    "dammam": "Dammam"
+  }
+}

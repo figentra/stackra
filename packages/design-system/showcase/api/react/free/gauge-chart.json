@@ -1,0 +1,86 @@
+{
+  "generatedFrom": {
+    "hash": "fd634da4692c121f",
+    "propsFiles": ["ui/src/react/gauge-chart/gauge-chart.props.ts"]
+  },
+  "importLine": "import { GaugeChart } from \"@stackra/ui/react\";",
+  "key": "free/gauge-chart",
+  "parts": [
+    {
+      "name": "GaugeChart",
+      "props": [
+        {
+          "description": "The measure the ring fills to.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The ring's start; 0 by default.",
+          "name": "min",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The ring's end; 100 by default.",
+          "name": "max",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "A mark across the ring where the goal is.",
+          "name": "target",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The gauge's accessible name, such as \"Monthly sales target\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A word under the figure in the middle, such as \"of target\".",
+          "name": "centerLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How the value and target are written.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "The value arc's colour; the first step of the accent ramp by default.",
+          "name": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"danger\" | \"accent\" | \"success\" | \"warning\" | \"chart-ramp-1\" | \"chart-ramp-2\" | \"chart-ramp-3\" | \"chart-ramp-4\" | \"chart-ramp-5\" | \"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\""
+        },
+        {
+          "description": "The gauge's width and height in pixels; 200 by default.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Classes for the figure, such as a width or margin.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,144 @@
+{
+  "generatedFrom": {
+    "hash": "d021d488753a25bd",
+    "propsFiles": ["ui/src/native/property-list/property-list.props.ts"]
+  },
+  "importLine": "import { PropertyList } from \"@stackra/ui/native\";",
+  "key": "free/property-list",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the row and its text once the text is on the clipboard. On web the list writes the clipboard itself; on\nnative it has no clipboard module, so the app writes it here and a row has a copy button only when this is given.",
+          "name": "onCopy",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, text: string) => void"
+        }
+      ],
+      "name": "PropertyList",
+      "props": [
+        {
+          "description": "The rows, in order.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TItem[]"
+        },
+        {
+          "description": "How many columns of rows to draw. Defaults to 1; on a narrow screen two columns stack into one.",
+          "name": "columns",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2"
+        },
+        {
+          "description": "What shows in place of an empty value. Defaults to an en dash; pass words (\"Not set\") when a dash would not say enough.",
+          "name": "emptyValue",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Spoken, and on web also drawn as a check, after a value is copied, for example \"Copied\". Defaults to the `ui` catalogue's word in the active locale, so a copy is never silent.",
+          "name": "copiedLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

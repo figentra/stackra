@@ -50,7 +50,8 @@ export function Section({
     <Card role="group" {...(name ? { accessibilityLabel: name } : {})} {...rest}>
       <Card.Header>
         <View className="flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <View className="min-w-0 flex-1 flex-row items-start gap-3">
+          {/* A basis, not flex-1 (basis 0): the actions wrap below a narrow title instead of squeezing it. */}
+          <View className="min-w-0 grow basis-48 flex-row items-start gap-3">
             {textual(startContent)}
             <View className="min-w-0 flex-1 gap-1">
               <Card.Title level={headingLevel}>{title}</Card.Title>

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the Mode switch route of @figentra/playground: its path, title and category. The page it renders is
+ * Purpose: the Mode switch route of @figentra/playground: its path. The page it renders is
  *          `mode-switch.tsx` beside it (ADR 0294 decision 14).
  * Boundary: route declaration only; no data loading.
  * Runtime: browser
@@ -8,13 +8,5 @@
  */
 import { Route } from "@stackra/navigation";
 
-import type { PageCategory } from "#src/enums/page-category.enum";
-
 /** The `@stackra/ui` Mode switch page, at `/mode-switch`. */
-export class ModeSwitchRoute extends Route({ path: "/mode-switch" }) {
-  /** The page title, the component's name. */
-  static readonly title = "Mode switch";
-
-  /** The category the page is listed under. */
-  static readonly category: PageCategory = "Inputs and forms";
-}
+export class ModeSwitchRoute extends Route({ path: "/mode-switch" }) {}

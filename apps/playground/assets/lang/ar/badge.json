@@ -1,0 +1,16 @@
+{
+  "variant_label": "{tone} {variant}: 5 جديدة",
+  "size_label": "{size}: {count} جديدة",
+  "corner_label": "نقطة عند {placement}",
+  "online": "متصل",
+  "away": "بالخارج",
+  "busy": "مشغول",
+  "number": "8 جديدة",
+  "word": "عنصر جديد",
+  "icon_label": "التنبيهات",
+  "control_label": "الإشعارات، {count} غير مقروءة",
+  "presses": "{count, plural, zero {لم يُضغط بعد.} one {ضُغط مرة واحدة.} two {ضُغط مرتين.} few {ضُغط # مرات.} many {ضُغط # مرة.} other {ضُغط # مرة.}}",
+  "sample": {
+    "new": "جديد"
+  }
+}

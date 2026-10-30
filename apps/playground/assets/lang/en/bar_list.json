@@ -1,0 +1,23 @@
+{
+  "cities": {
+    "label": "Sales by city, Q3",
+    "riyadh": "Riyadh",
+    "jeddah": "Jeddah",
+    "dammam": "Dammam",
+    "makkah": "Makkah",
+    "abha": "Abha"
+  },
+  "sources": {
+    "label": "Visitors by source",
+    "search": "Search",
+    "direct": "Direct",
+    "social": "Social media",
+    "email": "Email campaigns"
+  },
+  "arabic": {
+    "label": "المبيعات حسب المدينة",
+    "riyadh": "الرياض",
+    "jeddah": "جدة",
+    "dammam": "الدمام"
+  }
+}

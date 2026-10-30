@@ -1,0 +1,39 @@
+{
+  "document_title": "{title} · Stackra Playground",
+  "intro": "Button is HeroUI’s button with one props API on web and native: seven variants, three sizes, a disabled and a loading state, icons on either side and a full-width form. The look is HeroUI’s, themed by the stackra tokens.",
+  "variants": {
+    "title": "Variants and sizes",
+    "note": "One row per size, one button per variant, each labelled with its variant name.",
+    "size": "Size {size}"
+  },
+  "states": {
+    "title": "States",
+    "note": "Each variant default, disabled and loading. A loading button refuses presses and keeps focus.",
+    "default": "Default",
+    "disabled": "Disabled",
+    "loading": "Loading"
+  },
+  "icons": {
+    "title": "Icons",
+    "note": "An icon on the inline-start side, the inline-end side or both. The chevron is mirrored in right-to-left: switch to Arabic.",
+    "add": "Add",
+    "next": "Next",
+    "download": "Download"
+  },
+  "full_width": {
+    "title": "Full width",
+    "note": "The button stretches to its container, here a narrow column.",
+    "primary": "Primary",
+    "secondary": "Secondary"
+  },
+  "live": {
+    "title": "Try it",
+    "note": "Press Save: it loads for a moment and keeps focus. The counter button counts presses; the disabled one does not.",
+    "save": "Save",
+    "saving": "Saving…",
+    "idle": "Idle.",
+    "count": "Count",
+    "count_disabled": "Count (disabled)",
+    "presses": "{count, plural, one {Pressed # time.} other {Pressed # times.}}"
+  }
+}

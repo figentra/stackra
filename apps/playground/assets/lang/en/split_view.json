@@ -1,0 +1,8 @@
+{
+  "orders": "Orders",
+  "details": "Order details",
+  "order": "Order {number}",
+  "ready": "Ready for pickup",
+  "pick": "Pick an order to see it here",
+  "back": "Back to orders"
+}

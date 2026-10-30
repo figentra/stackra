@@ -2,12 +2,13 @@
  * Stackra file contract:
  * Purpose: `useNumber()`, the hook a component shows a plain number with: `number = useNumber()`, then
  *          `this.number(data.balance)` or `this.number(ratio, { style: "percent" })`.
- * Boundary: Intl.NumberFormat in the active locale and the configured digits; the options are Intl's own.
+ * Boundary: `formatNumber` in the active locale and the configured digits (on every engine); the options are Intl's own.
  * Runtime: isomorphic
  * Governing contract: ADR 0192 (decision 2: digits), ADR 0305 (class components: hooks as fields).
  */
 import { useMemo } from "react";
 
+import { formatNumber } from "#core/functions/format-number.function";
 import { useI18nState } from "#react/i18n-provider/use-i18n-state";
 
 /**
@@ -22,10 +23,10 @@ export function useNumber(): (
   value: number | bigint,
   options?: Intl.NumberFormatOptions,
 ) => string {
-  const { intlLocale } = useI18nState();
+  const { intlLocale, numerals } = useI18nState();
   return useMemo(
     () => (value: number | bigint, options?: Intl.NumberFormatOptions) =>
-      new Intl.NumberFormat(intlLocale, options).format(value),
-    [intlLocale],
+      formatNumber(value, intlLocale, options, numerals),
+    [intlLocale, numerals],
   );
 }

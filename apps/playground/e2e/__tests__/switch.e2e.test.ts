@@ -13,7 +13,9 @@
 // @covers sta-350:FR-082 sta-350:FR-086 sta-350:FR-087 sta-350:FR-089 sta-350:SC-002 sta-350:SC-005
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 import { contrastRatio } from "@stackra/tokens";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -22,7 +24,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/switch?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Switch" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Switch", locale) }),
+  ).toBeVisible();
 };
 
 /** A computed colour as `#rrggbb`, composited over `base`: drawn on a canvas, so any CSS colour form reads. */
@@ -65,6 +69,8 @@ for (const scheme of SCHEMES)
 test("every switch has an accessible name", async ({ page }) => {
   await open(page, "light", "en");
   const switches = page.locator("article").getByRole("switch");
+  // The demos load lazily: wait for the last example's switch before counting.
+  await expect(page.locator("section#example-live").getByRole("switch").first()).toBeVisible();
   const count = await switches.count();
   expect(count).toBeGreaterThan(8);
   for (let index = 0; index < count; index += 1) {
@@ -86,7 +92,7 @@ test("Space toggles a focused switch, and a click on its label does too", async 
   await expect(control).not.toBeChecked();
   await page.keyboard.press("Space");
   await expect(control).toBeChecked();
-  await page.getByText("Airplane mode", { exact: true }).click();
+  await example(page, "usage").getByText("Airplane mode", { exact: true }).click();
   await expect(control).not.toBeChecked();
 });
 
@@ -112,7 +118,7 @@ test("the required switch is required, and the invalid one is described by its m
   await expect(invalid).toHaveAccessibleDescription("Turn this on to continue.");
   await invalid.focus();
   await page.keyboard.press("Space");
-  await expect(page.getByText("Turn this on to continue.")).toBeHidden();
+  await expect(invalid).not.toHaveAccessibleDescription("Turn this on to continue.");
 });
 
 for (const locale of LOCALES)
@@ -120,12 +126,13 @@ for (const locale of LOCALES)
     page,
   }) => {
     await open(page, "light", locale);
-    const root = rootOf(page, "Airplane mode");
+    // The demo speaks the page's locale: the first sample (Airplane mode, off) is found by place.
+    const root = example(page, "usage").locator('[data-slot="switch"]').first();
     const thumb = root.locator('[data-slot="switch-thumb"]');
     const before = await thumb.boundingBox();
     if (!before) throw new Error("the thumb has no box");
-    await root.getByText("Airplane mode", { exact: true }).click();
-    await expect(page.getByRole("switch", { name: "Airplane mode" })).toBeChecked();
+    await root.locator('[data-slot="label"]').click();
+    await expect(root.getByRole("switch")).toBeChecked();
     // The thumb slides on a transition; poll until it has left its start.
     await expect.poll(async () => (await thumb.boundingBox())?.x).not.toBe(before.x);
     const after = await thumb.boundingBox();

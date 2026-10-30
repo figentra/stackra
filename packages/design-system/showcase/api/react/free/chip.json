@@ -1,0 +1,210 @@
+{
+  "generatedFrom": {
+    "hash": "378472e9414bb858",
+    "heroDoc": "vendor/heroui/react/chip.json",
+    "propsFiles": ["ui/src/react/chip/chip.props.ts"]
+  },
+  "importLine": "import { Chip } from \"@stackra/ui/react\";",
+  "key": "free/chip",
+  "parts": [
+    {
+      "extends": "Chip",
+      "name": "Chip",
+      "props": [
+        {
+          "description": "The visible text, usually a string; it is also what assistive technology reads.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "default": "secondary",
+          "description": "The emphasis of the chip: filled, neutral, transparent or tinted. Defaults to `secondary`.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"secondary\" | \"tertiary\" | \"primary\" | \"soft\""
+        },
+        {
+          "default": "md",
+          "description": "The padding and text size of the chip. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "default",
+          "description": "The colour role of the chip, a theme role such as `success`. Defaults to `default`.",
+          "name": "tone",
+          "replaces": "color",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\""
+        },
+        {
+          "description": "An element drawn before the text, on the inline-start side: an icon name or any icon element, sized to the text.",
+          "name": "startIcon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "An element drawn after the text, on the inline-end side: an icon name or any icon element, sized to the text.",
+          "name": "endIcon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "Additional CSS classes for the root element",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"span\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLSpanElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base chip container styles",
+      "name": ".chip"
+    },
+    {
+      "description": "Label text slot styles",
+      "name": ".chip__label"
+    },
+    {
+      "description": "Accent color variant",
+      "name": ".chip--accent"
+    },
+    {
+      "description": "Danger color variant",
+      "name": ".chip--danger"
+    },
+    {
+      "description": "Default color variant",
+      "name": ".chip--default"
+    },
+    {
+      "description": "Success color variant",
+      "name": ".chip--success"
+    },
+    {
+      "description": "Warning color variant",
+      "name": ".chip--warning"
+    },
+    {
+      "description": "Primary variant with filled background",
+      "name": ".chip--primary"
+    },
+    {
+      "description": "Secondary variant with border",
+      "name": ".chip--secondary"
+    },
+    {
+      "description": "Tertiary variant with transparent background",
+      "name": ".chip--tertiary"
+    },
+    {
+      "description": "Soft variant with lighter background",
+      "name": ".chip--soft"
+    },
+    {
+      "description": "Small size",
+      "name": ".chip--sm"
+    },
+    {
+      "description": "Medium size (default)",
+      "name": ".chip--md"
+    },
+    {
+      "description": "Large size",
+      "name": ".chip--lg"
+    },
+    {
+      "description": "Primary accent combination with filled background",
+      "name": ".chip--primary.chip--accent"
+    },
+    {
+      "description": "Primary success combination with filled background",
+      "name": ".chip--primary.chip--success"
+    },
+    {
+      "description": "Primary warning combination with filled background",
+      "name": ".chip--primary.chip--warning"
+    },
+    {
+      "description": "Primary danger combination with filled background",
+      "name": ".chip--primary.chip--danger"
+    },
+    {
+      "description": "Soft accent combination with lighter background",
+      "name": ".chip--accent.chip--soft"
+    },
+    {
+      "description": "Soft success combination with lighter background",
+      "name": ".chip--success.chip--soft"
+    },
+    {
+      "description": "Soft warning combination with lighter background",
+      "name": ".chip--warning.chip--soft"
+    },
+    {
+      "description": "Soft danger combination with lighter background",
+      "name": ".chip--danger.chip--soft"
+    }
+  ]
+}

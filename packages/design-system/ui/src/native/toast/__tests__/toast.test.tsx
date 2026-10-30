@@ -41,6 +41,14 @@ vi.mock("heroui-native", async () => {
   };
 });
 
+vi.mock("react-native", async () => {
+  const { createElement } = await import("react");
+  return {
+    View: (props: Record<string, unknown>) =>
+      createElement("div", { "data-class": props["className"] }, props["children"] as ReactNode),
+  };
+});
+
 vi.mock("#native/toast/toast-item", () => ({
   ToastItem: () => null,
 }));
@@ -192,5 +200,18 @@ describe("toast (native)", () => {
     toast("Saved", { duration: 100 });
     // @ts-expect-error the shortcut sets the tone
     toast.success("Saved", { tone: "danger" });
+  });
+  it("hands the provider's look and the toast's avatar to the item, and narrows the stack by align", () => {
+    render(<ToastProvider dismissLabel="Dismiss" variant="bubble" align="end" />);
+    toast("Rana replied", { avatar: { name: "Rana Haddad" } });
+    expect(renderedProps()["variant"]).toBe("bubble");
+    expect(renderedProps()["avatar"]).toEqual({ name: "Rana Haddad" });
+    const wrapper = heroui.providerProps["contentWrapper"] as (content: ReactNode) => ReactElement;
+    expect((wrapper("x").props as Record<string, unknown>)["className"]).toContain("self-end");
+  });
+
+  it("leaves a full-width stack unwrapped", () => {
+    render(<ToastProvider dismissLabel="Dismiss" />);
+    expect(heroui.providerProps["contentWrapper"]).toBeUndefined();
   });
 });

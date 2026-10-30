@@ -23,6 +23,12 @@ describe("UI_ICONS (web)", () => {
     "chevron-down",
     "panel-left-open",
     "panel-left-close",
+    "eye",
+    "eye-off",
+    // The quantity stepper's minus once drew an empty grey button: no registry held it.
+    "minus",
+    "plus",
+    "trash",
   ] as const)("draws %s without the app registering it", (name) => {
     expect(UI_ICONS[name]).toBeDefined();
     const { container } = render(<Icon name={name} />);

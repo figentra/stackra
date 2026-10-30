@@ -1,0 +1,168 @@
+{
+  "slug": "tabs",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(navigation)/tabs.mdx",
+  "parts": [
+    {
+      "name": "Tabs",
+      "props": [
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "default": "\"primary\"",
+          "description": "Visual style variant. Primary uses a filled indicator, secondary uses an underline indicator"
+        },
+        {
+          "name": "orientation",
+          "type": "\"horizontal\" | \"vertical\"",
+          "default": "\"horizontal\"",
+          "description": "Tab layout orientation"
+        },
+        {
+          "name": "selectedKey",
+          "type": "string",
+          "description": "Controlled selected tab key"
+        },
+        {
+          "name": "defaultSelectedKey",
+          "type": "string",
+          "description": "Default selected tab key"
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(key: Key) => void",
+          "description": "Selection change handler"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, TabsRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Tabs.List",
+      "props": [
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "Accessibility label for tab list"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, TabListRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Tabs.Tab",
+      "props": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Unique tab identifier"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether tab is disabled"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, TabRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "Tabs.Separator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        }
+      ]
+    },
+    {
+      "name": "Tabs.Panel",
+      "props": [
+        {
+          "name": "id",
+          "type": "string",
+          "description": "Panel identifier matching tab id"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, TabPanelRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".tabs",
+      "description": "Base tabs container"
+    },
+    {
+      "name": ".tabs__list-container",
+      "description": "Tab list container wrapper"
+    },
+    {
+      "name": ".tabs__list",
+      "description": "Tab list container"
+    },
+    {
+      "name": ".tabs__tab",
+      "description": "Individual tab button"
+    },
+    {
+      "name": ".tabs__separator",
+      "description": "Separator between tabs"
+    },
+    {
+      "name": ".tabs__panel",
+      "description": "Tab panel content"
+    },
+    {
+      "name": ".tabs__indicator",
+      "description": "Tab indicator"
+    },
+    {
+      "name": ".tabs[data-orientation=\"horizontal\"]",
+      "description": "Horizontal tab layout (default)"
+    },
+    {
+      "name": ".tabs[data-orientation=\"vertical\"]",
+      "description": "Vertical tab layout"
+    },
+    {
+      "name": ".tabs--secondary",
+      "description": "Secondary variant with underline indicator"
+    }
+  ]
+}

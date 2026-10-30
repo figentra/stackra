@@ -1,0 +1,524 @@
+{
+  "slug": "popover",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(overlays)/popover.mdx",
+  "parts": [
+    {
+      "name": "Popover",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Children elements to be rendered inside the popover"
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Whether the popover is open (controlled mode)"
+        },
+        {
+          "name": "isDefaultOpen",
+          "type": "boolean",
+          "description": "The open state of the popover when initially rendered (uncontrolled mode)"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(isOpen: boolean) => void",
+          "description": "Callback when the popover open state changes"
+        },
+        {
+          "name": "animation",
+          "type": "AnimationRootDisableAll",
+          "description": "Animation configuration. Can be `false`, `\"disabled\"`, `\"disable-all\"`, `true`, or `undefined`"
+        },
+        {
+          "name": "presentation",
+          "type": "'popover' | 'bottom-sheet'",
+          "default": "'popover'",
+          "description": "Presentation mode for the popover content"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The trigger element content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the trigger"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...PressableProps",
+          "type": "PressableProps",
+          "description": "All standard React Native Pressable props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Portal",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The portal content (required)"
+        },
+        {
+          "name": "disableFullWindowOverlay",
+          "type": "boolean",
+          "default": "false",
+          "description": "When true on iOS, uses View instead of FullWindowOverlay. Enables element inspector; overlay won't appear above native modals"
+        },
+        {
+          "name": "unstable_accessibilityContainerViewIsModal",
+          "type": "boolean",
+          "default": "false",
+          "description": "Controls whether VoiceOver treats the overlay window as a modal container. When `true`, VoiceOver is restricted to elements inside the overlay. iOS only. Unstable: may change with react-native-screens updates"
+        },
+        {
+          "name": "hostName",
+          "type": "string",
+          "description": "Optional name of the host element for the portal"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Whether to force mount the component in the DOM"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the portal container"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Overlay",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the overlay"
+        },
+        {
+          "name": "closeOnPress",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether to close the popover when overlay is pressed"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Whether to force mount the component in the DOM"
+        },
+        {
+          "name": "animation",
+          "type": "PopoverOverlayAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "opacity.value",
+          "type": "[number, number, number]",
+          "default": "[0, 1, 0]",
+          "description": "Opacity values [idle, open, close] - Takes effect for bottom-sheet/dialog presentation"
+        },
+        {
+          "name": "entering",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeIn with duration 200ms",
+          "description": "Custom Keyframe animation for entering transition - Takes effect for popover presentation"
+        },
+        {
+          "name": "exiting",
+          "type": "EntryOrExitLayoutType",
+          "default": "FadeOut with duration 150ms",
+          "description": "Custom Keyframe animation for exiting transition - Takes effect for popover presentation"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Content (Popover Presentation)",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The popover content"
+        },
+        {
+          "name": "presentation",
+          "type": "'popover'",
+          "default": "'popover'",
+          "description": "Presentation mode - must match Popover.Root presentation prop. When not provided, defaults to 'popover'"
+        },
+        {
+          "name": "width",
+          "type": "number | 'trigger' | 'content-fit' | 'full'",
+          "default": "'content-fit'",
+          "description": "Width sizing strategy for the content"
+        },
+        {
+          "name": "placement",
+          "type": "'top' | 'bottom' | 'left' | 'right'",
+          "default": "'bottom'",
+          "description": "Placement of the popover relative to trigger"
+        },
+        {
+          "name": "align",
+          "type": "'start' | 'center' | 'end'",
+          "default": "'center'",
+          "description": "Alignment along the placement axis"
+        },
+        {
+          "name": "avoidCollisions",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether to flip placement when close to viewport edges"
+        },
+        {
+          "name": "offset",
+          "type": "number",
+          "default": "9",
+          "description": "Distance from trigger element in pixels"
+        },
+        {
+          "name": "alignOffset",
+          "type": "number",
+          "default": "0",
+          "description": "Offset along the alignment axis in pixels"
+        },
+        {
+          "name": "disablePositioningStyle",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to disable automatic positioning styles"
+        },
+        {
+          "name": "forceMount",
+          "type": "boolean",
+          "description": "Whether to force mount the component in the DOM"
+        },
+        {
+          "name": "insets",
+          "type": "Insets",
+          "description": "Screen edge insets to respect when positioning"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the content container"
+        },
+        {
+          "name": "animation",
+          "type": "PopupPopoverContentAnimation",
+          "description": "Animation configuration"
+        },
+        {
+          "name": "isAnimatedStyleActive",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether animated styles (react-native-reanimated) are active"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether to render as a child element"
+        },
+        {
+          "name": "...Animated.ViewProps",
+          "type": "Animated.ViewProps",
+          "description": "All Reanimated Animated.View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Content (Bottom Sheet Presentation)",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The bottom sheet content"
+        },
+        {
+          "name": "presentation",
+          "type": "'bottom-sheet'",
+          "description": "Presentation mode - must be 'bottom-sheet' and match Popover.Root presentation prop (required)"
+        },
+        {
+          "name": "contentContainerClassName",
+          "type": "string",
+          "description": "Additional CSS classes for the content container"
+        },
+        {
+          "name": "contentContainerProps",
+          "type": "BottomSheetViewProps",
+          "description": "Props for the content container"
+        },
+        {
+          "name": "enablePanDownToClose",
+          "type": "boolean",
+          "default": "true",
+          "description": "Whether pan down gesture closes the sheet"
+        },
+        {
+          "name": "backgroundStyle",
+          "type": "ViewStyle",
+          "description": "Style for the bottom sheet background"
+        },
+        {
+          "name": "handleIndicatorStyle",
+          "type": "ViewStyle",
+          "description": "Style for the bottom sheet handle indicator"
+        },
+        {
+          "name": "...BottomSheetProps",
+          "type": "BottomSheetProps",
+          "description": "All @gorhom/bottom-sheet props are supported"
+        }
+      ],
+      "animation": [
+        {
+          "name": "state",
+          "type": "'disabled' | boolean",
+          "description": "Disable animations while customizing properties"
+        },
+        {
+          "name": "entering",
+          "type": "EntryOrExitLayoutType",
+          "default": "Keyframe with translateY/translateX, scale, and opacity (200ms)",
+          "description": "Custom Keyframe animation for entering transition"
+        },
+        {
+          "name": "exiting",
+          "type": "EntryOrExitLayoutType",
+          "default": "Keyframe mirroring entering animation (150ms)",
+          "description": "Custom Keyframe animation for exiting transition"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Arrow",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the arrow"
+        },
+        {
+          "name": "height",
+          "type": "number",
+          "default": "12",
+          "description": "Height of the arrow in pixels"
+        },
+        {
+          "name": "width",
+          "type": "number",
+          "default": "20",
+          "description": "Width of the arrow in pixels"
+        },
+        {
+          "name": "fill",
+          "type": "string",
+          "description": "Fill color of the arrow (defaults to content background)"
+        },
+        {
+          "name": "stroke",
+          "type": "string",
+          "description": "Stroke (border) color of the arrow (defaults to content border color)"
+        },
+        {
+          "name": "strokeWidth",
+          "type": "number",
+          "default": "1",
+          "description": "Stroke width of the arrow border in pixels"
+        },
+        {
+          "name": "strokeBaselineInset",
+          "type": "number",
+          "default": "1",
+          "description": "Baseline inset in pixels for stroke alignment"
+        },
+        {
+          "name": "placement",
+          "type": "'top' | 'bottom' | 'left' | 'right'",
+          "description": "Placement of the popover (inherited from content)"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "Custom arrow content (replaces default SVG arrow)"
+        },
+        {
+          "name": "style",
+          "type": "StyleProp<ViewStyle>",
+          "description": "Additional styles for the arrow container"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Title",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The title text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the title"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Popover.Description",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "description": "The description text content"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the description"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native Text props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "usePopover",
+      "signature": "usePopover(): UsePopoverReturn",
+      "returns": [
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "description": "Whether the popover is currently open"
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "description": "Callback function to change the popover open state"
+        },
+        {
+          "name": "isDefaultOpen",
+          "type": "boolean | undefined",
+          "description": "Whether the popover should be open by default (uncontrolled mode)"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean | undefined",
+          "description": "Whether the popover is disabled"
+        },
+        {
+          "name": "triggerPosition",
+          "type": "LayoutPosition | null",
+          "description": "The position of the trigger element relative to the viewport"
+        },
+        {
+          "name": "setTriggerPosition",
+          "type": "(triggerPosition: LayoutPosition | null) => void",
+          "description": "Function to update the trigger element's position"
+        },
+        {
+          "name": "contentLayout",
+          "type": "LayoutRectangle | null",
+          "description": "The layout measurements of the popover content"
+        },
+        {
+          "name": "setContentLayout",
+          "type": "(contentLayout: LayoutRectangle | null) => void",
+          "description": "Function to update the content layout measurements"
+        },
+        {
+          "name": "nativeID",
+          "type": "string",
+          "description": "Unique identifier for the popover instance"
+        }
+      ]
+    },
+    {
+      "name": "usePopoverAnimation",
+      "signature": "usePopoverAnimation(): UsePopoverAnimationReturn",
+      "returns": [
+        {
+          "name": "progress",
+          "type": "SharedValue<number>",
+          "description": "Progress value for the popover animation (0=idle, 1=open, 2=close)"
+        },
+        {
+          "name": "isDragging",
+          "type": "SharedValue<boolean>",
+          "description": "Dragging state shared value"
+        }
+      ]
+    }
+  ],
+  "slots": []
+}

@@ -46,6 +46,18 @@ vi.mock("react-native", async () => {
   };
 });
 
+vi.mock("react-native-reanimated", () => ({ FlipInXUp: "flip-up", FlipInXDown: "flip-down" }));
+
+vi.mock("#native/avatar/avatar", async () => {
+  const { createElement } = await import("react");
+  return {
+    Avatar: (props: Record<string, unknown>) => {
+      received.props["avatar"] = props;
+      return createElement("i", { "data-testid": "avatar" });
+    },
+  };
+});
+
 vi.mock("#native/feedback-icon/feedback-icon", async () => {
   const { createElement } = await import("react");
   return {
@@ -136,5 +148,36 @@ describe("ToastItem (native)", () => {
   it("has no action button when there is no action", () => {
     const { container } = render(item());
     expect(container.querySelector('[data-testid="action"]')).toBeNull();
+  });
+
+  it("draws the person's avatar in place of the icon", () => {
+    received.props = {};
+    render(item({ avatar: { name: "Rana Haddad", src: "https://example.com/r.png" } }));
+    expect(propsOf("avatar")).toMatchObject({
+      name: "Rana Haddad",
+      src: "https://example.com/r.png",
+    });
+    expect(received.props["icon"]).toBeUndefined();
+  });
+
+  it("draws a bar with the tone on its start edge, and flips it in only as a flip-bar at full motion", () => {
+    render(item({ variant: "bar", tone: "success" }));
+    expect(propsOf("toast")["className"]).toContain("border-s-success");
+    expect(propsOf("toast")["animation"]).toBeUndefined();
+    render(item({ variant: "flip-bar" }));
+    expect(propsOf("toast")["animation"]).toEqual({
+      entering: { top: "flip-up", bottom: "flip-down" },
+    });
+    render(item({ variant: "bubble" }));
+    expect(propsOf("toast")["className"]).toContain("rounded-[var(--radius-pill)]");
+  });
+
+  it("puts the dismiss inside the card at the end of the title row, on the overlay surface", () => {
+    render(item({ tone: "success" }));
+    expect(propsOf("toast")["className"]).toContain("bg-overlay");
+    expect(propsOf("toast")["className"]).toContain("items-start");
+    expect(propsOf("close")["className"]).toContain("size-6");
+    expect(propsOf("close")["className"]).toContain("self-start");
+    expect(propsOf("title")["className"]).toContain("text-overlay-foreground");
   });
 });

@@ -13,6 +13,7 @@
 // @covers sta-350:FR-046 sta-350:P-031 sta-350:SC-002 sta-350:SC-006
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
 import { contrastRatio } from "@stackra/tokens";
 
 const SCHEMES = ["light", "dark"] as const;
@@ -24,7 +25,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/avatar?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Avatar" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Avatar", locale) }),
+  ).toBeVisible();
 };
 
 /**
@@ -115,7 +118,7 @@ test("a square avatar is less round than a circle", async ({ page }) => {
   await open(page, "light", "en");
   const radiusShare = (shape: string) =>
     page
-      .locator(`#avatar-sizes ~ div [data-shape="${shape}"][data-size="md"]`)
+      .locator(`section#usage [data-shape="${shape}"][data-size="md"]`)
       .first()
       .evaluate((element) => {
         const style = getComputedStyle(element);

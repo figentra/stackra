@@ -1,0 +1,195 @@
+{
+  "slug": "color-slider",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(colors)/color-slider.mdx",
+  "parts": [
+    {
+      "name": "ColorSlider",
+      "props": [
+        {
+          "name": "channel",
+          "type": "ColorChannel",
+          "description": "The color channel that the slider manipulates (hue, saturation, lightness, brightness, alpha, red, green, blue)"
+        },
+        {
+          "name": "colorSpace",
+          "type": "ColorSpace",
+          "description": "The color space (hsl, hsb, rgb). Defaults to the color space of the value"
+        },
+        {
+          "name": "value",
+          "type": "string | Color",
+          "description": "The current color value (controlled)"
+        },
+        {
+          "name": "defaultValue",
+          "type": "string | Color",
+          "description": "The default color value (uncontrolled)"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: Color) => void",
+          "description": "Handler called when the value changes during dragging"
+        },
+        {
+          "name": "onChangeEnd",
+          "type": "(value: Color) => void",
+          "description": "Handler called when dragging ends"
+        },
+        {
+          "name": "orientation",
+          "type": "\"horizontal\" | \"vertical\"",
+          "default": "\"horizontal\"",
+          "description": "The orientation of the slider"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the slider is disabled"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The name of the input element for form submission"
+        },
+        {
+          "name": "aria-label",
+          "type": "string",
+          "description": "Accessibility label for the slider"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Slider content or render function"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, ColorSliderRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ]
+    },
+    {
+      "name": "ColorSlider.Output",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Output content or render function"
+        }
+      ]
+    },
+    {
+      "name": "ColorSlider.Track",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "style",
+          "type": "CSSProperties | RenderFunction",
+          "description": "Inline styles or render function"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Track content or render function"
+        }
+      ]
+    },
+    {
+      "name": "ColorSlider.Thumb",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "style",
+          "type": "CSSProperties | RenderFunction",
+          "description": "Inline styles or render function"
+        },
+        {
+          "name": "children",
+          "type": "ReactNode | RenderFunction",
+          "description": "Thumb content or render function"
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "state",
+          "type": "ColorSliderState",
+          "description": "The state of the color slider"
+        },
+        {
+          "name": "color",
+          "type": "Color",
+          "description": "The current color value"
+        },
+        {
+          "name": "orientation",
+          "type": "\"horizontal\" | \"vertical\"",
+          "description": "The orientation of the slider"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the slider is disabled"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".color-slider",
+      "description": "Base slider container"
+    },
+    {
+      "name": ".color-slider__output",
+      "description": "Output element displaying current value"
+    },
+    {
+      "name": ".color-slider__track",
+      "description": "Track element with color gradient"
+    },
+    {
+      "name": ".color-slider__thumb",
+      "description": "Thumb element showing current color"
+    },
+    {
+      "name": ".color-slider[data-disabled=\"true\"]",
+      "description": "Disabled slider state"
+    },
+    {
+      "name": ".color-slider[data-orientation=\"vertical\"]",
+      "description": "Vertical orientation"
+    },
+    {
+      "name": ".color-slider__thumb[data-dragging=\"true\"]",
+      "description": "Thumb being dragged"
+    },
+    {
+      "name": ".color-slider__thumb[data-focus-visible=\"true\"]",
+      "description": "Thumb keyboard focused"
+    },
+    {
+      "name": ".color-slider__thumb[data-disabled=\"true\"]",
+      "description": "Disabled thumb state"
+    }
+  ],
+  "a11y": "The ColorSlider component implements the ARIA slider pattern and provides:\n\n- Full keyboard navigation support (Arrow keys, Home, End, Page Up/Down)\n- Screen reader announcements for value changes\n- Proper focus management\n- Support for disabled states\n- HTML form integration via hidden input elements\n- Internationalization support with locale-aware value formatting\n\nFor more information, see the [React Aria ColorSlider documentation](https://react-spectrum.adobe.com/react-aria/ColorSlider.html)."
+}

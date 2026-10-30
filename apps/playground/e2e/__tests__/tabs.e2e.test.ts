@@ -15,6 +15,11 @@
 // @covers sta-350:FR-139 sta-350:SC-002 sta-350:SC-011
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
+
+/** An example's Preview pane: the page wraps each demo in its own Preview, Code and Install tabs, which are not the demo's. */
+const PREVIEW = '[id$="-tabpanel-preview"]';
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -23,7 +28,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/tabs?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Tabs" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Tabs", locale) }),
+  ).toBeVisible();
 };
 
 for (const scheme of SCHEMES)
@@ -45,7 +52,7 @@ for (const scheme of SCHEMES)
 
 test("a tab list is named by its label and each panel by its tab", async ({ page }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  const basics = page.getByRole("region", { name: "Usage" });
   const list = basics.getByRole("tablist", { name: "Order sections" });
   await expect(list).toBeVisible();
   await expect(list.getByRole("tab", { name: "Overview" })).toHaveAttribute(
@@ -57,7 +64,7 @@ test("a tab list is named by its label and each panel by its tab", async ({ page
 
 test("a press selects a tab and shows only its panel", async ({ page }) => {
   await open(page, "light", "en");
-  const basics = page.getByRole("region", { name: "Basics" });
+  const basics = page.getByRole("region", { name: "Usage" });
   const list = basics.getByRole("tablist", { name: "Order sections" });
   await list.getByRole("tab", { name: "Items" }).click();
   await expect(list.getByRole("tab", { name: "Items" })).toHaveAttribute("aria-selected", "true");
@@ -66,16 +73,15 @@ test("a press selects a tab and shows only its panel", async ({ page }) => {
     "false",
   );
   // Only the selected tab's panel is in the page: the list's own root holds exactly one.
-  const root = basics.locator('[data-slot="tabs"]').first();
+  const root = basics.locator(PREVIEW).locator('[data-slot="tabs"]').first();
   await expect(root.getByRole("tabpanel")).toHaveCount(1);
   await expect(root.getByRole("tabpanel", { name: "Items" })).toBeVisible();
 });
 
 test("the arrow keys move and select, Home and End jump to the ends", async ({ page }) => {
   await open(page, "light", "en");
-  const list = page
-    .getByRole("region", { name: "Variants" })
-    .getByRole("tablist", { name: "Primary tabs" });
+  // By id and place: the words speak the page's locale.
+  const list = example(page, "variants").locator(PREVIEW).getByRole("tablist").first();
   const tab = (name: string) => list.getByRole("tab", { name });
   await tab("Overview").focus();
   await page.keyboard.press("ArrowRight");
@@ -93,9 +99,8 @@ test("the arrow keys move and select, Home and End jump to the ends", async ({ p
 
 test("the arrow keys are reversed in right-to-left", async ({ page }) => {
   await open(page, "light", "ar");
-  const list = page
-    .getByRole("region", { name: "Variants" })
-    .getByRole("tablist", { name: "Primary tabs" });
+  // By id and place: the words speak the page's locale.
+  const list = example(page, "variants").locator(PREVIEW).getByRole("tablist").first();
   const tabs = list.getByRole("tab");
   await tabs.nth(0).focus();
   await expect(tabs.nth(0)).toHaveAttribute("aria-selected", "true");
@@ -162,7 +167,7 @@ test("the empty and loading states say so", async ({ page }) => {
   const empty = page.getByRole("region", { name: "Empty and loading" });
   await expect(empty.getByText("No sections yet.")).toBeVisible();
   await expect(empty.getByLabel("Loading sections")).toBeVisible();
-  await expect(empty.getByRole("tablist")).toHaveCount(0);
+  await expect(empty.locator(PREVIEW).getByRole("tablist")).toHaveCount(0);
 });
 
 test("the controlled list follows the page's buttons and the page follows the list", async ({
@@ -181,7 +186,7 @@ test("the controlled list follows the page's buttons and the page follows the li
 
 test("every tab is a touch target of at least 24 pixels", async ({ page }) => {
   await open(page, "light", "en");
-  const tabs = page.getByRole("region", { name: "Basics" }).getByRole("tab");
+  const tabs = page.getByRole("region", { name: "Usage" }).getByRole("tab");
   for (let index = 0; index < (await tabs.count()); index += 1) {
     const box = await tabs.nth(index).boundingBox();
     if (!box) throw new Error(`no box for tab ${index}`);
@@ -193,9 +198,11 @@ test("every tab is a touch target of at least 24 pixels", async ({ page }) => {
 for (const locale of LOCALES)
   test(`the first tab sits at the reading-start side in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const tabs = page
-      .getByRole("region", { name: "Variants" })
-      .getByRole("tablist", { name: "Primary tabs" })
+    // By id and place: the words speak the page's locale.
+    const tabs = example(page, "variants")
+      .locator(PREVIEW)
+      .getByRole("tablist")
+      .first()
       .getByRole("tab");
     const first = await tabs.nth(0).boundingBox();
     const second = await tabs.nth(1).boundingBox();

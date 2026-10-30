@@ -238,4 +238,12 @@ describe("Tabs (web)", () => {
     // @ts-expect-error a tab list always holds exactly one tab
     void (<Tabs items={ITEMS} selectionMode="multiple" />);
   });
+
+  it("glides the indicator on the shared spring at the full motion level", () => {
+    const { container } = render(<Tabs items={ITEMS} label="Order sections" />);
+    const indicator = container.querySelector<HTMLElement>(
+      '[data-slot="tabs-indicator"], .tabs__indicator',
+    );
+    expect(indicator?.style.transitionDuration).toBe("520ms");
+  });
 });

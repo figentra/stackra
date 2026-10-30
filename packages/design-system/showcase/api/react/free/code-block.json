@@ -1,0 +1,177 @@
+{
+  "generatedFrom": {
+    "hash": "b203aaeecf3af541",
+    "propsFiles": [
+      "ui/src/react/code-block/code-block.props.ts",
+      "ui/src/react/code-block/json-viewer.props.ts",
+      "ui/src/react/code-block/markdown-viewer.props.ts"
+    ]
+  },
+  "importLine": "import { CodeBlock } from \"@stackra/ui/react\";",
+  "key": "free/code-block",
+  "parts": [
+    {
+      "name": "CodeBlock",
+      "props": [
+        {
+          "description": "The code. Ignored when `files` is given.",
+          "name": "code",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The language, highlighted and shown as a tag: ts, tsx, js, json, css, html, bash, md, yaml, sql, diff.",
+          "name": "language",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A file name or caption over the code.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Several files, one tab each (`title`, `code`, `language`); replaces `code`, `title` and `language`.",
+          "name": "files",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly CodeFile[]"
+        },
+        {
+          "description": "Shows a number beside each line when true.",
+          "name": "showLineNumbers",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Lines to highlight, from 1: numbers and ranges such as `[2, \"4-6\"]`.",
+          "name": "highlightLines",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (number | `${number}-${number}`)[]"
+        },
+        {
+          "description": "Reads a leading `+` as an inserted line and `-` as a deleted one; the copy button copies the result.",
+          "name": "isDiff",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "A prompt drawn before each line and left out of selection and copy, such as `$` for shell commands.",
+          "name": "prompt",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Shows the copy button; on by default.",
+          "name": "isCopyable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The copy button's accessible name; \"Copy\" by default.",
+          "name": "copyLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Wraps long lines instead of scrolling sideways (the start state when `showWrapToggle` is on).",
+          "name": "isWrapped",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Shows a header button that turns wrapping on and off.",
+          "name": "showWrapToggle",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The lines shown before a \"Show all N lines\" button (no inner scroll); 30 by default, `0` for all.",
+          "name": "maxLines",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "`auto` follows the page's scheme; `light` or `dark` keep the block in that scheme.",
+          "name": "theme",
+          "required": false,
+          "source": "stackra",
+          "type": "\"auto\" | \"light\" | \"dark\""
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "JsonViewer",
+      "props": [
+        {
+          "description": "Any JSON value: a payload, a webhook body, an event.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "unknown"
+        },
+        {
+          "description": "The tree's accessible name, such as \"Webhook payload\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How many levels start open; 1 by default.",
+          "name": "defaultExpandDepth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "MarkdownViewer",
+      "props": [
+        {
+          "description": "The Markdown text to render.",
+          "name": "source",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

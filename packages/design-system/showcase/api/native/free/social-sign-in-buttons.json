@@ -1,0 +1,159 @@
+{
+  "generatedFrom": {
+    "hash": "8f28eb790d784566",
+    "propsFiles": ["ui/src/native/social-sign-in-buttons/social-sign-in-buttons.props.ts"]
+  },
+  "importLine": "import { SocialSignInButtons } from \"@stackra/ui/native\";",
+  "key": "free/social-sign-in-buttons",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the provider's id when its button is pressed.",
+          "name": "onSignIn",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "SocialSignInButtons",
+      "props": [
+        {
+          "description": "The providers, in the order shown.",
+          "name": "providers",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SocialProvider[]"
+        },
+        {
+          "default": "vertical",
+          "description": "`vertical` stacks full-width buttons with words; `horizontal` is a row of mark-only buttons. Defaults to `vertical`.",
+          "name": "orientation",
+          "required": false,
+          "source": "stackra",
+          "type": "\"horizontal\" | \"vertical\""
+        },
+        {
+          "description": "The provider whose sign-in runs: its button shows a spinner and every button refuses presses.",
+          "name": "pendingId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The words of a button. Defaults to the catalogue's \"Continue with {provider}\".",
+          "name": "labelOf",
+          "required": false,
+          "source": "stackra",
+          "type": "(provider: SocialProvider) => string"
+        },
+        {
+          "description": "True to refuse every button.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "children",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

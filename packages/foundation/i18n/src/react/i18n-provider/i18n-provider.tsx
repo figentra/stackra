@@ -3,7 +3,9 @@
  * Purpose: `I18nProvider`, the React context component the generated `Contexts` of `@stackra/app` mounts with the
  *          active locale and its catalogues, so `useTranslation`, `useLocale`, `useLocaleChoice` and the formatting
  *          hooks read one locale on the server and in the browser or app.
- * Boundary: reads `I18nConfig` from the container of the nearest `ContainerProvider` (`useConfig`), never a static. It
+ * Boundary: reads `I18nConfig` from the container of the nearest `ContainerProvider` (`useConfig`), never a static. The
+ *           digits are the `numerals` prop (the customer's setting) where `scopeChoosesNumerals` allows, else the
+ *           configured default; every formatter of the `./react` entry writes them. It
  *           loads nothing: the catalogues arrive merged, and a locale switch is the `setLocale` prop's (absent on the
  *           web, where switching is a navigation). On native, a `region` replaces the locale's
  *           formats and adds the phone's region subtag and time zone.
@@ -43,10 +45,12 @@ export function I18nProvider({
   locale,
   messages,
   setLocale,
+  numerals: chosen,
   region,
   children,
 }: I18nProviderProps): ReactNode {
   const config = useConfig(I18nConfig);
+  const numerals = chosen !== undefined && config.scopeChoosesNumerals ? chosen : config.numerals;
   const state = useMemo<I18nState>(() => {
     const format: LocaleFormat = region
       ? { weekStart: region.weekStart, hourCycle: region.hourCycle }
@@ -55,13 +59,14 @@ export function I18nProvider({
     const tag = region?.region ? `${locale.split("-")[0]}-${region.region}` : locale;
     return {
       locale,
-      intlLocale: intlLocale(tag, config.numerals, format.hourCycle),
+      intlLocale: intlLocale(tag, numerals, format.hourCycle),
+      numerals,
       format,
       timeZone: region?.timeZone ?? null,
       messages,
       config,
       setLocale: setLocale ?? urlSelectsLocale,
     };
-  }, [locale, messages, config, setLocale, region]);
+  }, [locale, messages, config, numerals, setLocale, region]);
   return <I18nContext value={state}>{children}</I18nContext>;
 }

@@ -1,0 +1,33 @@
+{
+  "slug": "input-group",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/input-group.mdx",
+  "parts": [],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".input-group",
+      "description": "Root container with border, background, and flex layout. Uses `min-h-9` for flexible height and `items-center` by default, switching to `items-start` when a textarea is present."
+    },
+    {
+      "name": ".input-group__input",
+      "description": "Input element with transparent background and no border. Also used as the base class for textarea elements."
+    },
+    {
+      "name": ".input-group__prefix",
+      "description": "Prefix container with left border radius. Aligns to top when used with textarea."
+    },
+    {
+      "name": ".input-group__suffix",
+      "description": "Suffix container with right border radius. Aligns to top when used with textarea."
+    },
+    {
+      "name": ".input-group--primary",
+      "description": "Primary variant with shadow (default)"
+    },
+    {
+      "name": ".input-group--secondary",
+      "description": "Secondary variant without shadow, suitable for use in surfaces"
+    }
+  ]
+}

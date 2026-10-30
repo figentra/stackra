@@ -8,6 +8,8 @@
  *          `EmptyState` (`no-results` when the query narrows, `no-data` otherwise), a `PageSkeleton` for a first load,
  *          an `ErrorState` for a failed one and `CursorPagination` under the list, and passes every other `View` prop to
  *          its root.
+ *          `groupBy`, `aggregates` and `hiddenColumns` go through `useDataTableLayout`: group heading and total rows
+ *          are drawn in the rows, kept out of the selection and given no row actions.
  * Boundary: it holds no query and fetches nothing. The selection is the one state it keeps, and only when the app does
  *           not control it, so the bar can count it; choosing a row or clearing the selection while "all matching" is
  *           chosen takes the app back to the rows shown. A row action is pending while its promise is, shown as a
@@ -19,15 +21,17 @@
  *           never imports `FilterBar`, which is built beside it; the app puts one in the `filterBar` slot with the same
  *           `query`. Strings are always wrapped in `Text`, which React Native requires.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0303 (decision 7); ADR 0313; ADR 0318
+ * Governing contract: ADR 0302 (decision 3); product audit 2026-10-28 (group-by, aggregates, hidden columns); ADR 0165 (HeroUI Native on native); ADR 0303 (decision 7); ADR 0313; ADR 0318
  *          (decisions 2, 4 to 6 and 10); ADR 0139 (action UX); ADR 0060 (right-to-left); WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2;
  *          owner decision 6 of STA-350 (thin wrappers).
  */
-import { useState, type ReactElement } from "react";
+import { useContext, useState, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
+import { useDataTableLayout } from "#react/data-table/use-data-table-layout";
+import { DesignSystemContext } from "#native/design-system-provider/design-system-context";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
@@ -91,11 +95,17 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   totalCount,
   isAllMatchingSelected = false,
   onAllMatchingSelectedChange,
+  groupBy,
+  aggregates,
+  hiddenColumns,
   scrollEnabled,
   className,
   ...rest
 }: DataTableProps<TItem>): ReactElement {
   const t = useUiText();
+  // Read softly: a table with no aggregates needs no provider, and numbers fall back to English.
+  const locale = useContext(DesignSystemContext)?.locale ?? "en";
+  const layout = useDataTableLayout({ items, columns, groupBy, aggregates, hiddenColumns, locale });
   const retryLabel = retryLabelProp ?? t(UI_KEYS.ui.data_table.retry);
   const paginationLabel = paginationLabelProp ?? t(UI_KEYS.ui.data_table.pagination, { label });
   const bulkActionsLabel = bulkActionsLabelProp ?? t(UI_KEYS.ui.data_table.bulk_actions, { label });
@@ -113,7 +123,8 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   const hasRows = items.length > 0;
   const rowHeaderId = (columns.find((column) => column.isRowHeader) ?? columns[0])?.id ?? "";
 
-  const changeSelection = (keys: readonly string[]) => {
+  const changeSelection = (picked: readonly string[]) => {
+    const keys = picked.filter((key) => !layout.isSummary(key));
     setOwn(keys);
     onSelectionChange?.(keys);
     // The keys are the rows on screen once "all matching" is chosen, so any change goes back to them.
@@ -135,6 +146,14 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
     });
 
   const cellOf = (item: TItem, column: TableColumn) => {
+    if (layout.isSummary(item.id)) {
+      // Anything but a sum names itself ("Average 6.5"), so it never reads as a total.
+      const named = layout.summaryLabel(column);
+      const cell = layout.summaryCell(item.id, column);
+      return named && layout.summaryValue(item.id, column) !== null
+        ? `${named} ${String(cell)}`
+        : cell;
+    }
     if (column.id === ACTIONS_COLUMN_ID) {
       const menuItems = menuItemsOf(item);
       if (menuItems.length === 0) return null;
@@ -208,8 +227,8 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
       ) : (
         <Table
           label={label}
-          items={items}
-          columns={rowActions ? [...columns, actionsColumn] : columns}
+          items={layout.items}
+          columns={rowActions ? [...layout.columns, actionsColumn] : layout.columns}
           renderCell={cellOf}
           variant={variant}
           isStickyHeader={isStickyHeader}

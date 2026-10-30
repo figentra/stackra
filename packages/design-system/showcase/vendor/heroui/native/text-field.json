@@ -1,0 +1,59 @@
+{
+  "slug": "text-field",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/text-field.mdx",
+  "parts": [
+    {
+      "name": "TextField",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to render inside the text field"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the entire text field is disabled"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the text field is in an invalid state"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the text field is required (shows asterisk)"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Custom class name for the root element"
+        },
+        {
+          "name": "animation",
+          "type": "\"disable-all\" | undefined",
+          "default": "undefined",
+          "description": "Animation configuration. Use `\"disable-all\"` to disable all animations including children"
+        },
+        {
+          "name": "...ViewProps",
+          "type": "ViewProps",
+          "description": "All standard React Native View props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useTextField",
+      "signature": "useTextField()",
+      "returns": []
+    }
+  ],
+  "slots": []
+}

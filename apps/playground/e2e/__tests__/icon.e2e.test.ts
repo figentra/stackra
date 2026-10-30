@@ -10,6 +10,8 @@
  */
 // @covers sta-350:FR-013 sta-350:FR-014 sta-350:FR-016 sta-350:P-013 sta-350:P-015
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 import { contrastRatio } from "@stackra/tokens";
 
 const SCHEMES = ["light", "dark"] as const;
@@ -24,7 +26,9 @@ const LABELLED = [...TONES, "Rated", ...MIRRORED, ...NEVER_MIRRORED];
 const open = async (page: Page, scheme: string, locale: string) => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark" });
   await page.goto(`/icon?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Icon" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Icon", locale) }),
+  ).toBeVisible();
 };
 
 /** A computed colour property as `#rrggbb`: drawn on a canvas, so any CSS colour form (oklch too) reads. */
@@ -62,14 +66,18 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
+      // The demos load lazily: wait for the last labelled sample before reading the names.
+      await expect(page.getByRole("img", { name: "Play", exact: true })).toBeVisible();
       const names = await page
         .getByRole("img")
         .evaluateAll((images) => images.map((image) => image.getAttribute("aria-label")));
-      expect(names).toEqual(LABELLED);
-      for (const region of ["Sizes", "Decorative and labelled"]) {
-        const decorative = page
-          .getByRole("region", { name: region })
-          .locator('svg:not([role="img"])');
+      // The rated star's label speaks the page's locale; the tones and the right-to-left samples are fixed words.
+      expect(names).toEqual(
+        LABELLED.map((name) => (name === "Rated" && locale !== "en" ? expect.any(String) : name)),
+      );
+      // The size samples (the usage) and the decorative-and-labelled example, by id: their headings speak the locale.
+      for (const region of ["usage", "names"]) {
+        const decorative = example(page, region).locator('svg:not([role="img"])');
         expect(await decorative.count(), region).toBeGreaterThan(0);
         for (const svg of await decorative.all())
           await expect(svg, region).toHaveAttribute("aria-hidden", "true");
@@ -115,12 +123,15 @@ test("the live icon changes size when its button is pressed", async ({ page }) =
   await expect(live).toHaveAttribute("width", "20");
   await page.getByRole("button", { name: "Next size" }).click();
   await expect(live).toHaveAttribute("width", "24");
-  await expect(page.getByRole("status")).toContainText("pressed 1 time");
+  await expect(example(page, "live").getByRole("status")).toContainText("pressed 1 time");
 });
 
 test("draws an alias and an app's own namespaced icon by name", async ({ page }) => {
   await open(page, "light", "en");
-  const region = page.getByRole("region", { name: "Names, aliases and custom icons" });
+  // The Preview pane: the example's own Preview, Code and Install tabs draw scroll buttons with svgs of their own.
+  const region = page
+    .getByRole("region", { name: "Names, aliases and custom icons" })
+    .locator('[id$="-tabpanel-preview"]');
   // `orders` is an alias of `shopping-cart`; the three marks come from the page's own registry and the last svg is a raw element.
   await expect(region.locator("svg.lucide-shopping-cart")).toHaveCount(1);
   await expect(region.locator("svg:not(.lucide)")).toHaveCount(4);

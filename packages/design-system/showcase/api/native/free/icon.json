@@ -1,0 +1,268 @@
+{
+  "generatedFrom": {
+    "hash": "dfb396d6c7cd02cf",
+    "propsFiles": ["ui/src/native/icon/icon.props.ts"]
+  },
+  "importLine": "import { Icon } from \"@stackra/ui/native\";",
+  "key": "free/icon",
+  "parts": [
+    {
+      "name": "Icon",
+      "props": [
+        {
+          "description": "The icon to draw, by name: a Lucide name such as `chevron-right`, an alias, or a namespaced custom icon. A name no registry holds draws nothing.",
+          "name": "name",
+          "required": true,
+          "source": "stackra",
+          "type": "IconName"
+        },
+        {
+          "description": "The size: `sm` 16 px, `md` 20 px, `lg` 24 px. Left out, it is `md`, or the size the component holding it sets.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "The colour role it is drawn in, `muted` included as on Text. Left out, it takes the colour of its surroundings: the text on web, the holder on native.",
+          "name": "tone",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\" | \"muted\""
+        },
+        {
+          "description": "What the icon means, read by screen readers. Left out or empty, the icon is decorative and hidden from them.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Whether it is drawn mirrored in right-to-left text. Left out, an icon that points the reading way (arrows, chevrons, panel sides, the external link: `isDirectionalIcon`) mirrors and any other does not; `false` keeps a directional one as drawn.",
+          "name": "isMirroredInRtl",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "children",
+          "required": false,
+          "source": "heroui",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ClipProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ClipProps"
+        },
+        {
+          "description": "",
+          "name": "...CommonFilterProps",
+          "required": false,
+          "source": "heroui",
+          "type": "CommonFilterProps"
+        },
+        {
+          "description": "",
+          "name": "...CommonMarkerProps",
+          "required": false,
+          "source": "heroui",
+          "type": "CommonMarkerProps"
+        },
+        {
+          "description": "",
+          "name": "...CommonMaskProps",
+          "required": false,
+          "source": "heroui",
+          "type": "CommonMaskProps"
+        },
+        {
+          "description": "",
+          "name": "...FillProps",
+          "required": false,
+          "source": "heroui",
+          "type": "FillProps"
+        },
+        {
+          "description": "",
+          "name": "...FontObject",
+          "required": false,
+          "source": "heroui",
+          "type": "FontObject"
+        },
+        {
+          "description": "",
+          "name": "...FontProps",
+          "required": false,
+          "source": "heroui",
+          "type": "FontProps"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...GProps",
+          "required": false,
+          "source": "heroui",
+          "type": "GProps"
+        },
+        {
+          "description": "",
+          "name": "...HitSlop",
+          "required": false,
+          "source": "heroui",
+          "type": "HitSlop"
+        },
+        {
+          "description": "",
+          "name": "...LucideProps",
+          "required": false,
+          "source": "heroui",
+          "type": "LucideProps"
+        },
+        {
+          "description": "",
+          "name": "...NativeProps",
+          "required": false,
+          "source": "heroui",
+          "type": "NativeProps"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...ResponderProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ResponderProps"
+        },
+        {
+          "description": "",
+          "name": "...StrokeProps",
+          "required": false,
+          "source": "heroui",
+          "type": "StrokeProps"
+        },
+        {
+          "description": "",
+          "name": "...SvgProps",
+          "required": false,
+          "source": "heroui",
+          "type": "SvgProps"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TouchableProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TouchableProps"
+        },
+        {
+          "description": "",
+          "name": "...TransformProps",
+          "required": false,
+          "source": "heroui",
+          "type": "TransformProps"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

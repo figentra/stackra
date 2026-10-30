@@ -1,0 +1,145 @@
+{
+  "generatedFrom": {
+    "hash": "9538c0a75b3ecaf4",
+    "propsFiles": ["ui/src/react/app-shell/app-shell.props.ts"]
+  },
+  "importLine": "import { AppShell } from \"@stackra/ui/react\";",
+  "key": "free/app-shell",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "AppShell",
+      "props": [
+        {
+          "description": "The page: it is drawn inside the one `main` landmark of the shell.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The sidebar, usually a `Sidebar`; a function receives where it is drawn. Left out, the shell has no sidebar.",
+          "name": "sidebar",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode | ((state: AppShellSidebarState) => ReactNode)"
+        },
+        {
+          "description": "The bar above the page, usually an `AppHeader`.",
+          "name": "header",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The breakpoint under which the frame collapses; AppShell defaults to `md` and TwoColumnLayout to `lg`.",
+          "name": "collapseBelow",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\" | \"xl\""
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True when the shell sits inside another page: it fills its box and draws no `main` landmark or skip link.",
+          "name": "isEmbedded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The text of the skip link. Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "skipLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The frame: `flush` (the default) draws the page straight on the background; `inset` draws the header and page as\na rounded card on the app's background, clear of the edges, the look a split `SidePanel` beside it matches.",
+          "name": "frame",
+          "required": false,
+          "source": "stackra",
+          "type": "\"flush\" | \"inset\""
+        },
+        {
+          "default": "main-content",
+          "description": "The id of the main region, the skip link's target. Defaults to `main-content`.",
+          "name": "mainId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

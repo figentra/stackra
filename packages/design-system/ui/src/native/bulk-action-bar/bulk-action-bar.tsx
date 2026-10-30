@@ -124,7 +124,7 @@ export function BulkActionBar({
       {...rest}
       role="toolbar"
       accessibilityLabel={label}
-      className={`flex-row flex-wrap items-center gap-2 rounded-2xl bg-accent-soft p-3 ${className ?? ""}`}
+      className={`flex-row flex-wrap items-center gap-2 rounded-[var(--radius-container)] bg-accent-soft p-3 ${className ?? ""}`}
     >
       <Text type="small" className="px-1 font-medium">
         {countText}

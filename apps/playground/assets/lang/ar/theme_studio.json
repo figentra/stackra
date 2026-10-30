@@ -1,0 +1,389 @@
+{
+  "page": {
+    "document_title": "استوديو السمات · ملعب ستاكرا",
+    "title": "استوديو السمات",
+    "exit": "خروج",
+    "theme": "السمة",
+    "history": "السجل",
+    "undo": "تراجع",
+    "redo": "إعادة",
+    "reset": "إعادة ضبط السمة",
+    "link": "نسخ الرابط",
+    "link_copied": "نُسخ الرابط.",
+    "dismiss": "إغلاق",
+    "imported": "سمة مستوردة: لا تُحفظ في العنوان.",
+    "invalid": "هذه الإعدادات تصنع سمة لا تصلح للاستخدام؛ تُعرض آخر سمة صالحة:",
+    "device": "الجهاز",
+    "devices": {
+      "desktop": "حاسوب مكتبي",
+      "tablet": "آيباد",
+      "iphone": "آيفون",
+      "android": "أندرويد"
+    },
+    "landscape": "أفقي",
+    "scheme": "مظهر المعاينة",
+    "schemes": {
+      "light": "معاينة فاتحة",
+      "dark": "معاينة داكنة",
+      "system": "حسب النظام"
+    },
+    "direction": "الاتجاه",
+    "directions": {
+      "ltr": "LTR: من اليسار إلى اليمين (الإنجليزية)",
+      "rtl": "RTL: من اليمين إلى اليسار (العربية)"
+    },
+    "export": "تصدير",
+    "inspector": "المراجع",
+    "show_inspector": "إظهار المراجع",
+    "hide_inspector": "إخفاء المراجع",
+    "display": "العرض",
+    "mode": "المظهر",
+    "layout": "التخطيط",
+    "layouts": {
+      "single": "وضع واحد",
+      "side_by_side": "الفاتح والداكن"
+    },
+    "sections": {
+      "preview": "المعاينة",
+      "language": "اللغة"
+    }
+  },
+  "rail": {
+    "label": "إعدادات السمة",
+    "brand": "العلامة",
+    "colours": "الألوان",
+    "type": "الخطوط",
+    "shape": "الشكل",
+    "motion": "الحركة",
+    "effects": "المؤثرات"
+  },
+  "brands": {
+    "title": "العلامة"
+  },
+  "controls": {
+    "name": "اسم السمة",
+    "name_note": "كلمات بأحرف لاتينية صغيرة تفصلها شرطات، مثل acme-dark.",
+    "preset": "إعداد جاهز",
+    "custom": "مخصص",
+    "presets": {
+      "ember": "جمر",
+      "moss": "طحلب",
+      "violet": "بنفسجي"
+    },
+    "accent": "لون مميز مخصص",
+    "accent_hue": "درجة اللون المميز",
+    "accent_chroma": "قوة اللون المميز",
+    "neutral": "الألوان المحايدة",
+    "neutral_hue": "درجة المحايدات",
+    "neutral_chroma": "صبغة المحايدات",
+    "radius": "استدارة الزوايا",
+    "radius_steps": "درجات الاستدارة",
+    "latin": "الخط اللاتيني",
+    "arabic": "الخط العربي",
+    "display": "خط العناوين اللاتيني",
+    "display_arabic": "خط العناوين العربي",
+    "faces": {
+      "geist": "Geist",
+      "system": "خط النظام",
+      "serif": "خط بزوائد",
+      "mono": "Geist Mono",
+      "plex": "IBM Plex Sans Arabic"
+    },
+    "motion_note": "درجات الحركة في السمة كما تستخدمها المكوّنات. مرّر المؤشر فوق صف لتشغيله.",
+    "blur": "ضبابية الزجاج",
+    "levels": {
+      "thin": "ضبابية الزجاج الرقيق",
+      "regular": "ضبابية الزجاج العادي",
+      "thick": "ضبابية الزجاج السميك"
+    },
+    "shadows": "الظلال",
+    "shadow_names": {
+      "surface": "سطح",
+      "overlay": "طبقة علوية",
+      "field": "حقل"
+    }
+  },
+  "canvas": {
+    "label": "مساحة المعاينة",
+    "templates": "القوالب",
+    "template_names": {
+      "dashboard": "لوحة متابعة",
+      "form": "نموذج إعدادات",
+      "store": "واجهة متجر",
+      "onboarding": "بدء الاستخدام",
+      "mobile": "تطبيق هاتف",
+      "sheet": "لوحة المكوّنات"
+    },
+    "zoom": "التكبير",
+    "fit": "ملاءمة",
+    "side_by_side": "الفاتح والداكن جنبًا إلى جنب",
+    "frame": "{template} بالمظهر {scheme}",
+    "light": "الفاتح",
+    "dark": "الداكن",
+    "status_time": "9:41"
+  },
+  "contrast": {
+    "title": "التباين",
+    "note": "يحتاج النص إلى 4.5:1، والحواف والتركيز إلى 3:1 (WCAG 2.2 AA).",
+    "passes": "يجتاز AA",
+    "fails": "دون AA",
+    "summary": "{passing} من {total} أزواج تجتاز",
+    "pairs": {
+      "text": "النص على الخلفية",
+      "muted": "النص الخافت على الخلفية",
+      "surface": "النص على السطح",
+      "accent": "تسمية اللون المميز",
+      "accent_hover": "تسمية اللون المميز عند التمرير",
+      "accent_soft": "تسمية اللون المميز الهادئ",
+      "link": "الرابط على الخلفية",
+      "field": "نص الحقل",
+      "warning_hover": "تسمية التحذير عند التمرير",
+      "danger": "تسمية الخطر",
+      "danger_soft": "تسمية الخطر الهادئة",
+      "field_edge": "حافة الحقل",
+      "focus": "حلقة التركيز"
+    }
+  },
+  "export": {
+    "title": "التصدير والاستيراد",
+    "format": "الصيغة",
+    "formats": {
+      "web": "CSS للويب",
+      "native": "CSS للتطبيقات",
+      "json": "JSON",
+      "changes": "التغييرات",
+      "dtcg": "رموز DTCG"
+    },
+    "code": "{format}، الملف المصدَّر",
+    "copy": "نسخ",
+    "copied": "نُسخ إلى الحافظة.",
+    "copy_failed": "رفض المتصفح الوصول إلى الحافظة؛ حدّد النص بدلًا من ذلك.",
+    "download": "تنزيل",
+    "import": "استيراد",
+    "paste": "الصق ملف JSON لسمة",
+    "paste_note": "تصدير كامل أو تصدير للتغييرات فقط أو سمة مجردة. يُفحص قبل استخدامه.",
+    "imported": "استُوردت السمة \"{name}\".",
+    "invalid": "لا يمكن استخدام هذه السمة:"
+  },
+  "dashboard": {
+    "title": "نظرة عامة",
+    "subtitle": "المبيعات عبر كل القنوات في آخر 30 يومًا.",
+    "search": "ابحث في الطلبات",
+    "new": "طلب جديد",
+    "revenue": "الإيرادات",
+    "orders": "الطلبات",
+    "customers": "العملاء",
+    "conversion": "التحويل",
+    "versus": "مقارنةً بالشهر الماضي",
+    "up": "صاعد",
+    "down": "هابط",
+    "chart": "الإيرادات حسب الشهر",
+    "months": {
+      "jan": "يناير",
+      "feb": "فبراير",
+      "mar": "مارس",
+      "apr": "أبريل",
+      "may": "مايو",
+      "jun": "يونيو"
+    },
+    "goal": "الهدف الشهري",
+    "goal_note": "72% من هدف 180,000، وتبقّى 9 أيام.",
+    "recent": "أحدث الطلبات",
+    "column_order": "الطلب",
+    "column_customer": "العميل",
+    "column_status": "الحالة",
+    "column_total": "الإجمالي",
+    "paid": "مدفوع",
+    "pending": "قيد الانتظار",
+    "refunded": "مسترد",
+    "people": {
+      "layla": "ليلى حداد",
+      "omar": "عمر فاروق",
+      "sara": "سارة ناصر"
+    },
+    "view_all": "عرض الكل"
+  },
+  "form": {
+    "title": "إعدادات مساحة العمل",
+    "subtitle": "تحكّم في مظهر مساحة عملك ومن يتلقى أخبارها.",
+    "profile": "الملف التعريفي",
+    "profile_note": "يظهر لكل من في مساحة العمل.",
+    "name": "اسم مساحة العمل",
+    "name_value": "استوديو أطلس",
+    "email": "بريد الفوترة",
+    "email_value": "billing@atlas.studio",
+    "role": "الدور الافتراضي",
+    "roles": {
+      "admin": "مسؤول",
+      "editor": "محرر",
+      "viewer": "مشاهد"
+    },
+    "bio": "الوصف",
+    "bio_value": "فريق صغير يصمم برمجيات هادئة.",
+    "notifications": "الإشعارات",
+    "email_updates": "راسلني بالبريد عن النشاط",
+    "push": "الإشعارات الفورية",
+    "digest": "أرسل ملخصًا أسبوعيًا",
+    "language": "اللغة",
+    "languages": {
+      "en": "الإنجليزية",
+      "ar": "العربية"
+    },
+    "danger": "حذف مساحة العمل هذه",
+    "danger_note": "يُحذف كل مشروع وملف فيها نهائيًا.",
+    "delete": "حذف مساحة العمل",
+    "cancel": "إلغاء",
+    "save": "حفظ التغييرات"
+  },
+  "store": {
+    "brand": "أتيليه",
+    "nav": {
+      "shop": "تسوّق",
+      "new": "وصل حديثًا",
+      "journal": "المدوّنة"
+    },
+    "cart": "السلة، قطعتان",
+    "eyebrow": "مختارات الخريف",
+    "headline": "صُنعت بتأنٍّ لتدوم",
+    "body": "ألياف طبيعية تُقصّ بكميات صغيرة وتُشطَّب يدويًا.",
+    "shop": "تسوّق المجموعة",
+    "lookbook": "اطّلع على الكتالوج",
+    "featured": "مختارات",
+    "products": {
+      "coat": "معطف صوف",
+      "scarf": "وشاح كتّان",
+      "bag": "حقيبة جلدية",
+      "boots": "حذاء شامواه"
+    },
+    "new": "جديد",
+    "sale": "تخفيض",
+    "add": "أضف إلى الحقيبة",
+    "rating": "التقييم {value} من 5",
+    "newsletter": "رسائل من الاستوديو",
+    "newsletter_note": "قطع وقصص جديدة، مرة في الشهر.",
+    "email": "البريد الإلكتروني",
+    "subscribe": "اشترك"
+  },
+  "onboarding": {
+    "steps_label": "خطوات الإعداد",
+    "steps": {
+      "account": "الحساب",
+      "workspace": "مساحة العمل",
+      "team": "الفريق"
+    },
+    "title": "أعدّ مساحة عملك",
+    "subtitle": "يستغرق هذا دقيقة تقريبًا، ويمكنك تغيير كل شيء لاحقًا.",
+    "workspace": "اسم مساحة العمل",
+    "workspace_value": "أطلس",
+    "address": "عنوان مساحة العمل",
+    "address_note": "atlas.stackra.app",
+    "size": "حجم الفريق",
+    "sizes": {
+      "solo": "أنا فقط",
+      "small": "من 2 إلى 10",
+      "medium": "من 11 إلى 50",
+      "large": "أكثر من 50"
+    },
+    "terms": "أوافق على شروط الخدمة",
+    "progress": "تقدّم الإعداد",
+    "back": "رجوع",
+    "continue": "متابعة"
+  },
+  "mobile": {
+    "greeting": "صباح الخير",
+    "name": "ليلى",
+    "notifications": "الإشعارات",
+    "balance": "الرصيد",
+    "balance_value": "4,280.50",
+    "currency": "ر.س",
+    "send": "إرسال",
+    "request": "طلب",
+    "top_up": "شحن",
+    "activity": "أحدث العمليات",
+    "items": {
+      "groceries": "مشتريات البقالة",
+      "salary": "الراتب",
+      "coffee": "قهوة"
+    },
+    "times": {
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "monday": "الاثنين"
+    },
+    "tabs_label": "أقسام التطبيق",
+    "tabs": {
+      "home": "الرئيسية",
+      "cards": "البطاقات",
+      "activity": "النشاط",
+      "profile": "الملف"
+    }
+  },
+  "sheet": {
+    "buttons": "الأزرار",
+    "variants": {
+      "primary": "أساسي",
+      "secondary": "ثانوي",
+      "tertiary": "ثالثي",
+      "outline": "محدد",
+      "ghost": "شفاف",
+      "danger": "خطر"
+    },
+    "sizes": {
+      "sm": "صغير",
+      "md": "متوسط",
+      "lg": "كبير"
+    },
+    "disabled": "معطّل",
+    "loading": "جارٍ التحميل",
+    "icon_add": "إضافة",
+    "icon_settings": "الإعدادات",
+    "chips": "الشارات والوسوم",
+    "statuses": {
+      "live": "منشور",
+      "building": "قيد البناء",
+      "failed": "فشل",
+      "draft": "مسودة"
+    },
+    "fields": "الحقول",
+    "field": "اسم المشروع",
+    "field_value": "أطلس",
+    "field_empty": "المالك",
+    "field_placeholder": "أحد أعضاء الفريق",
+    "field_invalid": "المعرّف",
+    "field_invalid_value": "Atlas Studio",
+    "field_error": "استخدم أحرفًا لاتينية صغيرة وشرطات.",
+    "field_disabled": "المنطقة",
+    "field_disabled_value": "الخليج",
+    "choices": "الاختيارات",
+    "checked": "محدد",
+    "unchecked": "غير محدد",
+    "indeterminate": "محدد جزئيًا",
+    "switch_on": "مفعّل",
+    "switch_off": "متوقف",
+    "plan": "الباقة",
+    "plans": {
+      "free": "مجانية",
+      "team": "الفريق",
+      "business": "الأعمال"
+    },
+    "tabs_label": "الأقسام",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "activity": "النشاط",
+      "settings": "الإعدادات"
+    },
+    "tab_body": "هنا يظهر قسم {name}.",
+    "feedback": "الملاحظات",
+    "alerts": {
+      "accent": "إصدار جديد جاهز",
+      "success": "حُفظت التغييرات",
+      "warning": "التخزين على وشك الامتلاء",
+      "danger": "فشل الدفع"
+    },
+    "alert_note": "هكذا تبدو رسالة بهذه النبرة.",
+    "progress": "الرفع",
+    "spinner": "جارٍ التحميل",
+    "people": "الأشخاص",
+    "scenes": "مشاهد"
+  }
+}

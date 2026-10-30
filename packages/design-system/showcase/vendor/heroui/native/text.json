@@ -1,0 +1,130 @@
+{
+  "slug": "text",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(typography)/text.mdx",
+  "parts": [
+    {
+      "name": "Text",
+      "props": [
+        {
+          "name": "type",
+          "type": "'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'body' | 'body-sm' | 'body-xs' | 'code'",
+          "default": "'body'",
+          "description": "Semantic typography variant (size, default weight, line-height)"
+        },
+        {
+          "name": "align",
+          "type": "'start' | 'center' | 'end' | 'justify'",
+          "default": "'start'",
+          "description": "Horizontal alignment. `start` and `end` are RTL-aware. `justify` is iOS-only."
+        },
+        {
+          "name": "color",
+          "type": "'default' | 'muted'",
+          "default": "'default'",
+          "description": "Semantic foreground color preset"
+        },
+        {
+          "name": "weight",
+          "type": "'normal' | 'medium' | 'semibold' | 'bold'",
+          "description": "Font weight override. When set, overrides the weight implied by `type`."
+        },
+        {
+          "name": "truncate",
+          "type": "boolean",
+          "default": "false",
+          "description": "Truncates the text to a single line with an ellipsis (sets `numberOfLines={1}`). An explicit `numberOfLines` takes precedence."
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to render"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native `Text` props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Text.Heading",
+      "props": [
+        {
+          "name": "type",
+          "type": "'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'",
+          "default": "'h1'",
+          "description": "Heading level"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to render"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native `Text` props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Text.Paragraph",
+      "props": [
+        {
+          "name": "type",
+          "type": "'body' | 'body-sm' | 'body-xs'",
+          "default": "'body'",
+          "description": "Paragraph text size"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to render"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native `Text` props are supported"
+        }
+      ]
+    },
+    {
+      "name": "Text.Code",
+      "props": [
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "Content to render"
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes"
+        },
+        {
+          "name": "...TextProps",
+          "type": "TextProps",
+          "description": "All standard React Native `Text` props are supported"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": []
+}

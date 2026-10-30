@@ -11,7 +11,7 @@
  */
 
 /** Stubs `matchMedia` (never matching) and `ResizeObserver` (never observing) on the global scope. */
-function stubBrowserApis(): void {
+export function stubBrowserApis(): void {
   vi.stubGlobal("matchMedia", (query: string) => ({
     matches: false,
     media: query,

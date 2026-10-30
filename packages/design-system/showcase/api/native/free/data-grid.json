@@ -1,0 +1,253 @@
+{
+  "generatedFrom": {
+    "hash": "e1bc553ddfd8a8df",
+    "propsFiles": [
+      "ui/src/native/data-grid/data-grid-field.props.ts",
+      "ui/src/native/data-grid/data-grid.props.ts"
+    ]
+  },
+  "importLine": "import { DataGrid } from \"@stackra/ui/native\";",
+  "key": "free/data-grid",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Saves the pending changes; a returned promise keeps Save busy, and the changes clear once it resolves.",
+          "name": "onSave",
+          "required": false,
+          "source": "stackra",
+          "type": "(changes: Readonly<Record<string, Readonly<Record<string, DataGridValue>>>>) => void | Promise<void>"
+        },
+        {
+          "description": "Called with the pending changes each time they change, for example to warn before leaving.",
+          "name": "onChangesChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(changes: Readonly<Record<string, Readonly<Record<string, DataGridValue>>>>) => void"
+        }
+      ],
+      "name": "DataGrid",
+      "props": [
+        {
+          "description": "The grid's spoken name, for example \"Price list\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The columns in reading order; the first names each row.",
+          "name": "columns",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly DataGridColumn[]"
+        },
+        {
+          "description": "The saved rows.",
+          "name": "rows",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TRow[]"
+        },
+        {
+          "description": "True to show the values without letting them be edited.",
+          "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "`sheet`, the default, or `matrix`: number cells with a total per row and per column.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sheet\" | \"matrix\""
+        },
+        {
+          "description": "Web: how many leading columns stay in view while the grid scrolls sideways. Defaults to 1.",
+          "name": "frozenColumns",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Web: the height of a row in CSS pixels; rows are virtualised at this height. Defaults to 36.",
+          "name": "rowHeight",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "default": "24rem",
+          "description": "Web: the height the rows scroll inside, as a CSS length. Defaults to `24rem`.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The collection engine to arrange the columns from (`useCollection`), as DataView passes it: their order, names,\nwidths, pins and visibility. Left out, the grid runs its own engine over `columns`, the first `frozenColumns`\npinned to the start.",
+          "name": "collection",
+          "required": false,
+          "source": "stackra",
+          "type": "CollectionController<TRow>"
+        },
+        {
+          "description": "The key the grid's own engine keeps the user's column layout under; left out, nothing persists.",
+          "name": "collectionKey",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Web: how tall the rows are when `rowHeight` is not given: `compact` 30, `normal` 36, `roomy` 48.",
+          "name": "density",
+          "required": false,
+          "source": "stackra",
+          "type": "\"compact\" | \"normal\" | \"roomy\""
+        },
+        {
+          "description": "Web: true to give each header a resize handle (drag it, or focus it and use the arrows, Home and End), drag to\nreorder, and the column menu. Defaults to false.",
+          "name": "hasColumnTools",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called as the draft changes.",
+          "name": "onDraftChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(draft: string | boolean) => void"
+        }
+      ],
+      "name": "DataGrid.Field",
+      "props": [
+        {
+          "description": "The column, which picks the field.",
+          "name": "column",
+          "required": true,
+          "source": "stackra",
+          "type": "DataGridColumn"
+        },
+        {
+          "description": "The draft: text, or a boolean for a boolean column.",
+          "name": "draft",
+          "required": true,
+          "source": "stackra",
+          "type": "string | boolean"
+        },
+        {
+          "description": "The error to show under the field.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The field's label; defaults to the column's.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

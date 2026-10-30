@@ -1,0 +1,98 @@
+{
+  "slug": "input-otp",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/input-otp.mdx",
+  "parts": [
+    {
+      "name": "InputOTP.Group",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the group."
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode",
+          "description": "InputOTP.Slot components."
+        }
+      ]
+    },
+    {
+      "name": "InputOTP.Slot",
+      "props": [
+        {
+          "name": "index",
+          "type": "number",
+          "description": "**Required.** Zero-based index of the slot."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the slot."
+        }
+      ]
+    },
+    {
+      "name": "InputOTP.Separator",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Additional CSS classes for the separator."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".input-otp",
+      "description": "Base container"
+    },
+    {
+      "name": ".input-otp__container",
+      "description": "Inner container from input-otp library"
+    },
+    {
+      "name": ".input-otp__group",
+      "description": "Group of slots"
+    },
+    {
+      "name": ".input-otp__slot",
+      "description": "Individual input slot"
+    },
+    {
+      "name": ".input-otp__slot-value",
+      "description": "The character inside a slot"
+    },
+    {
+      "name": ".input-otp__caret",
+      "description": "Blinking caret indicator"
+    },
+    {
+      "name": ".input-otp__separator",
+      "description": "Visual separator between groups"
+    },
+    {
+      "name": ".input-otp__slot[data-active=\"true\"]",
+      "description": "Currently active slot"
+    },
+    {
+      "name": ".input-otp__slot[data-filled=\"true\"]",
+      "description": "Slot with a character"
+    },
+    {
+      "name": ".input-otp__slot[data-disabled=\"true\"]",
+      "description": "Disabled slot"
+    },
+    {
+      "name": ".input-otp__slot[data-invalid=\"true\"]",
+      "description": "Invalid slot"
+    },
+    {
+      "name": ".input-otp__container[data-disabled=\"true\"]",
+      "description": "Disabled container"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web DesignSystemProvider puts the colour scheme, the material mode, `lang` and `dir` on the
+ * Purpose: proves the web DesignSystemProvider puts the colour scheme, the material mode, the brand, `lang` and `dir` on the
  *          document element,
  *          follows the system scheme, hands React Aria the locale, and that useDesignSystem reads and sets the state.
  * Boundary: jsdom with a stubbed matchMedia; React Aria's I18nProvider is real.
@@ -9,6 +9,11 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-007 sta-350:FR-008 sta-350:P-006
+import { buildConfig } from "@stackra/config";
+import { Container } from "@stackra/container";
+import { ContainerProvider } from "@stackra/container/react";
+import { I18nConfig, Locale, NumberingSystem } from "@stackra/i18n";
+import { I18nProvider } from "@stackra/i18n/react";
 import { useLocale } from "react-aria-components";
 import { act, render, screen } from "@testing-library/react";
 
@@ -52,6 +57,22 @@ function Probe() {
       </button>
       <button type="button" onClick={() => state.setLocale("ar")}>
         ar
+      </button>
+    </>
+  );
+}
+
+/** Reads and sets the brand and the transition. */
+function BrandProbe() {
+  const { brand, transition, setBrand, setTransition } = useDesignSystem();
+  return (
+    <>
+      <output data-testid="brand">{`${brand ?? "-"} ${transition}`}</output>
+      <button type="button" onClick={() => setBrand("organza")}>
+        organza
+      </button>
+      <button type="button" onClick={() => setTransition("fade")}>
+        fade
       </button>
     </>
   );
@@ -146,6 +167,24 @@ describe("DesignSystemProvider (web)", () => {
     expect(screen.getByTestId("aria").textContent).toBe("ar rtl");
   });
 
+  it("hands React Aria the i18n provider's digits as the locale's nu keyword", async () => {
+    const container = await Container.create([], {
+      overrides: new Map([
+        [I18nConfig, buildConfig(I18nConfig, { values: { scopeChoosesNumerals: true } })],
+      ]),
+    });
+    render(
+      <ContainerProvider container={container}>
+        <I18nProvider locale={Locale.Ar} messages={{}} numerals={NumberingSystem.Arab}>
+          <DesignSystemProvider locale="ar">
+            <Probe />
+          </DesignSystemProvider>
+        </I18nProvider>
+      </ContainerProvider>,
+    );
+    expect(screen.getByTestId("aria").textContent).toBe("ar-u-nu-arab rtl");
+  });
+
   it("follows the system scheme while the scheme is system", () => {
     const setSystemDark = stubSystemScheme(true);
     render(
@@ -212,6 +251,30 @@ describe("DesignSystemProvider (web)", () => {
       "en",
       false,
     ]);
+  });
+
+  it("puts the picked brand on <html data-brand> and holds the transition", () => {
+    const onBrandChange = vi.fn();
+    const onTransitionChange = vi.fn();
+    const { unmount } = render(
+      <DesignSystemProvider
+        defaultBrand="figentra"
+        onBrandChange={onBrandChange}
+        onTransitionChange={onTransitionChange}
+      >
+        <BrandProbe />
+      </DesignSystemProvider>,
+    );
+    expect(root.dataset["brand"]).toBe("figentra");
+    expect(screen.getByTestId("brand").textContent).toBe("figentra none");
+    act(() => screen.getByText("organza").click());
+    act(() => screen.getByText("fade").click());
+    expect(root.dataset["brand"]).toBe("organza");
+    expect(screen.getByTestId("brand").textContent).toBe("organza fade");
+    expect(onBrandChange).toHaveBeenCalledWith("organza");
+    expect(onTransitionChange).toHaveBeenCalledWith("fade");
+    unmount();
+    expect(root.hasAttribute("data-brand")).toBe(false);
   });
 
   it("refuses useDesignSystem outside a provider", () => {

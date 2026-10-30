@@ -18,6 +18,7 @@ import type { ConfirmFunction } from "#contracts/types/confirm-function.type";
 import type { ConfirmationOptions } from "#contracts/types/confirmation-options.type";
 import { AlertDialog } from "#native/alert-dialog/alert-dialog";
 import { ConfirmationContext } from "#native/confirmation/confirmation-context";
+import { haptics } from "#native/haptics/haptics";
 import { usePendingChoice } from "#native/confirmation/use-pending-choice";
 import { TextField } from "#native/text-field/text-field";
 import type { ConfirmationProviderProps } from "#native/confirmation/confirmation-provider.props";
@@ -46,7 +47,11 @@ export function ConfirmationProvider({ children }: ConfirmationProviderProps): R
           onOpenChange={(next) => {
             if (!next) settle(false);
           }}
-          onConfirm={() => settle(true)}
+          onConfirm={() => {
+            // A destructive choice confirmed warns; any other succeeds.
+            haptics.play(request.tone === "danger" ? "warning" : "success");
+            settle(true);
+          }}
           title={request.title}
           description={request.description}
           confirmLabel={request.confirmLabel}

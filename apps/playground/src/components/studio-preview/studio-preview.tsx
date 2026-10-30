@@ -1,233 +1,130 @@
 /**
  * Stackra file contract:
- * Purpose: the Theme Studio's live preview: the derived theme's custom properties (HeroUI's and Stackra's, for the
- *          scheme on screen) set inline on a sheet of its own background, holding real @stackra/ui components and the
- *          index page's scenes, so every change is seen at once. Under it, the contrast of the theme's main pairs as
- *          the components paint them (HeroUI's hover and soft colours included, translucent ones composited over the
- *          page), each against WCAG 2.2 AA (4.5:1 for text, 3:1 for edges and focus).
- * Boundary: presentation only; the theme comes from the page. The canvas has its own width (fluid, tablet, phone)
- *          and scheme (the page's until one is picked), as a builder's canvas has.
+ * Purpose: the Theme Studio's canvas: a page template, built from real @stackra/ui components, drawn inside a device
+ *          (a desktop browser, an iPad, an iPhone or an Android phone, `StudioDevice`) in the derived theme, so every
+ *          change is seen at once.
+ *          - Theme: the theme's custom properties (HeroUI's and Stackra's, for the scheme drawn) and its display
+ *            faces (`--font-display`, `--font-display-arabic`) are set inline on the device's screen only, so the
+ *            theme reaches the canvas and nothing else.
+ *          - Templates: dashboard, settings form, storefront, onboarding, mobile app and the component sheet, picked
+ *            in the bar under the canvas (the house `SegmentedControl`, icon and name, on the control radius; it
+ *            scrolls sideways when the canvas is narrower than its six choices).
+ *          - View (the top bar's): Fit scales the whole device, body and all, to the room the canvas has, both ways,
+ *            so it never scrolls; a set zoom draws at that scale and the canvas scrolls. The template scrolls inside
+ *            the screen. Side by side draws the template twice, light and dark, fitted together. Below 100% the
+ *            screen's content is a picture to look at (it still scrolls); at its real size it can be tried.
+ * Boundary: presentation only; the theme, scheme and view come from the page. Overlays a template opens (a select's
+ *           list) render outside the canvas, in the page's theme.
  * Runtime: browser
- * Governing contract: ADR 0320 (the Theme Studio); ADR 0340 (decision 4: what is painted); WCAG 2.2 SC 1.4.3, 1.4.11.
+ * Governing contract: ADR 0320 (the Theme Studio); ADR 0340 (decision 2).
  */
-import { pairRatio, paintedColour, themeVariables } from "@stackra/tokens";
-import type { ContrastPair, Theme } from "@stackra/tokens/contracts";
-import {
-  Button,
-  Checkbox,
-  Chip,
-  Heading,
-  Icon,
-  StatusBadge,
-  Switch,
-  Text,
-  TextField,
-  ToggleButtonGroup,
-  Toolbar,
-} from "@stackra/ui/react";
-import { useState, type CSSProperties } from "react";
+import { themeVariables } from "@stackra/tokens";
+import { SegmentedControl, useCatalogueText } from "@stackra/ui/react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 
-import { Choice } from "#src/components/choice";
-import { Showcase } from "#src/components/showcase";
-import type { StudioPreviewProps } from "#src/components/studio-preview/studio-preview.props";
-import { Icons } from "#src/constants/icons.constant";
+import { STUDIO_TEMPLATES } from "#src/components/studio-templates";
+import { MESSAGES } from "#src/constants/messages.constant";
+import { THEME_STUDIO_KEYS } from "#src/routes/theme-studio/theme-studio-keys.constant";
 
-// shortcut: English strings in one place until @stackra/i18n ships; then `playground::studio.preview.*` keys.
-const STRINGS = {
-  title: "Preview",
-  canvas: "Canvas",
-  width: "Canvas width",
-  widths: { fluid: "Fluid", tablet: "Tablet, 768 px", phone: "Phone, 390 px" },
-  scheme: "Preview scheme",
-  schemes: { light: "Light preview", dark: "Dark preview" },
-  contrast: "Contrast",
-  contrastNote: "Text needs 4.5:1, edges and focus 3:1 (WCAG 2.2 AA).",
-  passes: "Passes AA",
-  fails: "Below AA",
-  buttons: ["Primary", "Secondary", "Tertiary", "Outline", "Ghost", "Danger"],
-  field: "Project name",
-  fieldValue: "Atlas",
-  notify: "Email me about releases",
-  remember: "Remember this device",
-  statuses: [
-    ["success", "Live"],
-    ["warning", "Building"],
-    ["danger", "Failed"],
-    ["accent", "Draft"],
-  ],
-} as const;
+import { deviceBox } from "./device-box.function";
+import { fitScale } from "./fit-scale.function";
+import { StudioDevice } from "./studio-device";
+import type { StudioPreviewProps } from "./studio-preview.props";
 
-/** The pairs the report measures, by painted name: a label, the pair and the ratio it needs. */
-const PAIRS: readonly (ContrastPair & { name: string })[] = [
-  { name: "Text on background", fg: "foreground", bg: "background", min: 4.5 },
-  { name: "Muted text on background", fg: "muted", bg: "background", min: 4.5 },
-  { name: "Text on surface", fg: "surface-foreground", bg: "surface", min: 4.5 },
-  { name: "Accent label", fg: "accent-foreground", bg: "accent", min: 4.5 },
-  { name: "Accent label on hover", fg: "accent-foreground", bg: "accent-hover", min: 4.5 },
-  { name: "Soft accent label", fg: "accent-soft-foreground", bg: "accent-soft", min: 4.5 },
-  { name: "Link on background", fg: "link", bg: "background", min: 4.5 },
-  { name: "Field text", fg: "field-foreground", bg: "field-background", min: 4.5 },
-  { name: "Warning label on hover", fg: "warning-foreground", bg: "warning-hover", min: 4.5 },
-  { name: "Danger label", fg: "danger-foreground", bg: "danger", min: 4.5 },
-  { name: "Soft danger label", fg: "danger-soft-foreground", bg: "danger-soft", min: 4.5 },
-  { name: "Field edge", fg: "field-border", bg: "field-background", min: 3 },
-  { name: "Focus ring", fg: "focus", bg: "background", min: 3 },
-];
+/** The canvas's keys. */
+const K = THEME_STUDIO_KEYS.theme_studio.canvas;
 
-/** The CSS colour painted for `name`, for the report's drawn sample; transparent when nothing paints it. */
-function cssOf(theme: Theme, name: string, scheme: "light" | "dark") {
-  const colour = paintedColour(theme, name, scheme);
-  if (!colour) return "transparent";
-  const [red, green, blue] = colour.rgb.map(Math.round);
-  return `rgb(${red} ${green} ${blue} / ${colour.alpha.toFixed(3)})`;
-}
+/** The gap between two devices side by side, in px. */
+const GAP = 32;
 
-const VARIANTS = ["primary", "secondary", "tertiary", "outline", "ghost", "danger"] as const;
+type TemplateId = (typeof STUDIO_TEMPLATES)[number]["id"];
 
-/** The canvas widths: an icon and the most the sheet may span. */
-const WIDTHS = {
-  fluid: { icon: Icons.Monitor, max: "max-w-none" },
-  tablet: { icon: Icons.Tablet, max: "max-w-[768px]" },
-  phone: { icon: Icons.Smartphone, max: "max-w-[390px]" },
-} as const;
+/** The theme studio canvas: the theme drawn on templates in device frames. */
+export function StudioPreview({ theme, scheme, view, fonts }: StudioPreviewProps) {
+  const t = useCatalogueText(MESSAGES.en);
+  const [templateId, setTemplateId] = useState<TemplateId>("dashboard");
+  const [room, setRoom] = useState({ width: 0, height: 0 });
+  const area = useRef<HTMLDivElement>(null);
 
-type CanvasWidth = keyof typeof WIDTHS;
+  // Fit follows the room the canvas has, which the rails, the inspector and the window change.
+  useEffect(() => {
+    const element = area.current;
+    if (!element || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(([entry]) =>
+      setRoom({ width: entry?.contentRect.width ?? 0, height: entry?.contentRect.height ?? 0 }),
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
-/** The live preview and its contrast report. */
-export function StudioPreview({ theme, scheme: pageScheme }: StudioPreviewProps) {
-  const [width, setWidth] = useState<CanvasWidth>("fluid");
-  const [schemeChoice, setSchemeChoice] = useState<"light" | "dark" | null>(null);
-  const scheme = schemeChoice ?? pageScheme;
+  const template = STUDIO_TEMPLATES.find(({ id }) => id === templateId) ?? STUDIO_TEMPLATES[0];
+  const schemes = view.isSideBySide ? (["light", "dark"] as const) : [scheme];
+  const isFit = view.zoom === "fit";
+  const scale = isFit
+    ? fitScale(room, deviceBox(view).body, schemes.length, GAP)
+    : Number(view.zoom) / 100;
   const { heroui, stackra } = themeVariables(theme);
-  const style = {
-    ...heroui.root,
-    ...stackra.root,
-    ...heroui[scheme],
-    ...stackra[scheme],
-  } as CSSProperties;
+  const sheetStyle = (drawn: "light" | "dark") =>
+    ({
+      ...heroui.root,
+      ...stackra.root,
+      ...heroui[drawn],
+      ...stackra[drawn],
+      "--font-display": fonts.display,
+      "--font-display-arabic": fonts.displayArabic,
+      colorScheme: drawn,
+    }) as CSSProperties;
 
   return (
-    <section aria-labelledby="studio-preview" className="grid min-w-0 content-start gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Heading id="studio-preview" level={2} className="[font:var(--h4)]">
-          {STRINGS.title}
-        </Heading>
-        <Toolbar aria-label={STRINGS.canvas} className="flex flex-wrap items-center gap-2">
-          <ToggleButtonGroup
-            aria-label={STRINGS.width}
-            size="sm"
-            selectionMode="single"
-            disallowEmptySelection
-            selectedKeys={[width]}
-            onSelectionChange={(keys) => {
-              const picked = (Object.keys(WIDTHS) as CanvasWidth[]).find((key) => keys.has(key));
-              if (picked) setWidth(picked);
-            }}
-          >
-            {(Object.keys(WIDTHS) as CanvasWidth[]).map((key) => (
-              <Choice key={key} id={key} aria-label={STRINGS.widths[key]}>
-                <Icon name={WIDTHS[key].icon} size="sm" />
-              </Choice>
-            ))}
-          </ToggleButtonGroup>
-          <ToggleButtonGroup
-            aria-label={STRINGS.scheme}
-            size="sm"
-            selectionMode="single"
-            disallowEmptySelection
-            selectedKeys={[scheme]}
-            onSelectionChange={(keys) =>
-              setSchemeChoice(keys.has("dark") ? "dark" : keys.has("light") ? "light" : null)
-            }
-          >
-            <Choice id="light" aria-label={STRINGS.schemes.light}>
-              <Icon name="sun" size="sm" />
-            </Choice>
-            <Choice id="dark" aria-label={STRINGS.schemes.dark}>
-              <Icon name="moon" size="sm" />
-            </Choice>
-          </ToggleButtonGroup>
-        </Toolbar>
-      </div>
-      {/* The canvas: a ground the sheet sits on, at the width picked, in the scheme picked. */}
-      <div className="rounded-3xl border border-separator bg-surface-secondary p-3 sm:p-5">
-        <div
-          style={style}
-          data-theme={scheme}
-          className={`mx-auto grid w-full ${WIDTHS[width].max} gap-6 rounded-3xl border border-separator bg-background p-5 text-foreground transition-[max-width] duration-300 motion-reduce:transition-none [font-family:var(--font-sans)] sm:p-6 rtl:[font-family:var(--font-arabic)] ${scheme === "dark" ? "dark" : ""}`}
-        >
-          <div className="flex flex-wrap gap-2">
-            {VARIANTS.map((variant, index) => (
-              <Button key={variant} variant={variant} size="sm">
-                {STRINGS.buttons[index]}
-              </Button>
+    <section
+      aria-label={t(K.label)}
+      className="grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto]"
+    >
+      <div
+        ref={area}
+        className={`min-h-0 bg-surface-secondary p-8 ${isFit ? "overflow-hidden" : "overflow-auto"}`}
+      >
+        {/* `m-auto` in a flex box centres the devices and, unlike `justify-center`, never cuts off what overflows. */}
+        <div className="flex min-h-full min-w-full w-max">
+          <div className="m-auto flex items-start gap-8" style={{ zoom: scale }}>
+            {schemes.map((drawn) => (
+              <StudioDevice
+                key={drawn}
+                view={view}
+                scheme={drawn}
+                sheetStyle={sheetStyle(drawn)}
+                label={t(K.frame, {
+                  template: t(K.template_names[template.id]),
+                  scheme: t(K[drawn]),
+                })}
+                time={t(K.status_time)}
+                // Shrunk, the screen is a picture: its controls would be smaller than 24px (SC 2.5.8).
+                isInert={scale < 1}
+              >
+                <template.Component />
+              </StudioDevice>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
-            {STRINGS.statuses.map(([tone, label]) => (
-              <StatusBadge key={tone} tone={tone}>
-                {label}
-              </StatusBadge>
-            ))}
-            <Chip variant="soft" tone="accent" size="sm">
-              {STRINGS.statuses[3][1]}
-            </Chip>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label={STRINGS.field} defaultValue={STRINGS.fieldValue} />
-            <div className="grid content-end gap-3">
-              <Switch label={STRINGS.notify} defaultValue />
-              <Checkbox label={STRINGS.remember} />
-            </div>
-          </div>
-          <Showcase headingLevel={3} />
         </div>
       </div>
-      <div className="material-thick grid gap-3 rounded-3xl p-5">
-        <div className="grid gap-1">
-          <Heading level={3} className="[font:var(--h5)]">
-            {STRINGS.contrast}
-          </Heading>
-          <Text tone="muted" className="text-sm">
-            <bdi>{STRINGS.contrastNote}</bdi>
-          </Text>
-        </div>
-        <ul className="grid gap-2">
-          {PAIRS.map((pair) => {
-            const { name, fg, bg, min } = pair;
-            const ratio = pairRatio(theme, pair, scheme);
-            const isPassing = ratio !== undefined && ratio >= min;
-            return (
-              <li key={name} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                {/* Lines, not text: the sample shows the theme's pair, which a checker must not take for the page's text. */}
-                <svg viewBox="0 0 32 32" aria-hidden="true" className="size-8 shrink-0">
-                  <rect
-                    x="0.5"
-                    y="0.5"
-                    width="31"
-                    height="31"
-                    rx="8"
-                    fill={cssOf(theme, bg, scheme)}
-                    stroke={cssOf(theme, min === 3 ? fg : "separator", scheme)}
-                  />
-                  {min === 3 ? null : (
-                    <g fill={cssOf(theme, fg, scheme)}>
-                      <rect x="8" y="11" width="16" height="3" rx="1.5" />
-                      <rect x="8" y="18" width="11" height="3" rx="1.5" />
-                    </g>
-                  )}
-                </svg>
-                <span className="flex-1">{name}</span>
-                <span className="font-mono text-xs">
-                  {ratio === undefined ? "—" : `${ratio.toFixed(2)}:1`}
-                </span>
-                <Chip size="sm" variant="soft" tone={isPassing ? "success" : "danger"}>
-                  {isPassing ? STRINGS.passes : STRINGS.fails}
-                </Chip>
-              </li>
-            );
-          })}
-        </ul>
+      {/* `mx-auto` on a `w-max` row centres it while it fits and, unlike `justify-center`, lets it scroll from its
+          start edge once it does not. */}
+      <div className="overflow-x-auto overscroll-x-contain border-t border-separator bg-background px-4 py-2">
+        <SegmentedControl
+          label={t(K.templates)}
+          size="sm"
+          items={STUDIO_TEMPLATES.map(({ id, icon }) => ({
+            id,
+            icon,
+            label: t(K.template_names[id]),
+          }))}
+          selectedKey={template.id}
+          onSelectionChange={(key) => {
+            const picked = STUDIO_TEMPLATES.find(({ id }) => id === key);
+            if (picked) setTemplateId(picked.id);
+          }}
+          className="mx-auto w-max"
+        />
       </div>
     </section>
   );

@@ -1,0 +1,109 @@
+{
+  "generatedFrom": {
+    "hash": "669319bdc96b11f8",
+    "heroDoc": "vendor/heroui/react/skeleton.json",
+    "propsFiles": ["ui/src/react/skeleton/skeleton.props.ts"]
+  },
+  "importLine": "import { Skeleton } from \"@stackra/ui/react\";",
+  "key": "free/skeleton",
+  "parts": [
+    {
+      "extends": "Skeleton",
+      "name": "Skeleton",
+      "props": [
+        {
+          "description": "The content the placeholder stands for, drawn in its place once loading ends and never while it loads.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True while the content loads, showing the placeholder; defaults to true, or to the enclosing group's value.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "How the placeholder moves while loading; defaults to `shimmer`, or to the enclosing group's animation.",
+          "name": "animationType",
+          "required": false,
+          "source": "stackra",
+          "type": "\"none\" | \"shimmer\" | \"pulse\""
+        },
+        {
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", undefined>"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Adds shimmer animation with gradient effect (default)",
+      "name": ".skeleton--shimmer"
+    },
+    {
+      "description": "Adds pulse animation using Tailwind's animate-pulse",
+      "name": ".skeleton--pulse"
+    },
+    {
+      "description": "No animation, static skeleton",
+      "name": ".skeleton--none"
+    }
+  ]
+}

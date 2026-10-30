@@ -8,8 +8,10 @@
  */
 import type { Tone } from "@stackra/contracts";
 import type { ToastComponentProps } from "heroui-native";
+import type { ToastVariant } from "#contracts/enums/toast-variant.enum";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 import type { ToastAction } from "#contracts/types/toast-action.type";
+import type { ToastAvatar } from "#contracts/types/toast-avatar.type";
 
 /** Props of ToastItem. */
 export interface ToastItemProps {
@@ -23,6 +25,10 @@ export interface ToastItemProps {
   readonly description?: string | undefined;
   /** The caller's icon, or `false` for none; left out, the tone's icon is drawn. */
   readonly icon?: IconSlot | false | undefined;
+  /** The person the toast is about, drawn in place of the icon. */
+  readonly avatar?: ToastAvatar | undefined;
+  /** The look the provider gives every toast. Defaults to `alert`. */
+  readonly variant?: ToastVariant | undefined;
   /** The one action beside the message. */
   readonly action?: ToastAction | undefined;
   /** The accessible name of the dismiss button. */

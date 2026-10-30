@@ -1,0 +1,136 @@
+{
+  "generatedFrom": {
+    "hash": "35d11e44c23c5525",
+    "propsFiles": ["ui/src/react/page-header/page-header.props.ts"]
+  },
+  "importLine": "import { PageHeader } from \"@stackra/ui/react\";",
+  "key": "free/page-header",
+  "parts": [
+    {
+      "name": "PageHeader",
+      "props": [
+        {
+          "description": "The trail from the root to the current page, drawn above the title; left out or empty, there is no trail.",
+          "name": "breadcrumbs",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly BreadcrumbItem[]"
+        },
+        {
+          "description": "The state of the page's record, drawn beside the title, usually a `StatusBadge`.",
+          "name": "status",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The page's actions in priority order: the first is primary, three at most show and the rest go in an ActionMenu.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly MenuLeafItem[]"
+        },
+        {
+          "description": "The accessible name of the ActionMenu button the overflowing actions go in. Defaults to the `ui` catalogue's phrase in the active locale.",
+          "name": "moreActionsLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What the region is about, in a few words. Required: it is the heading a screen reader jumps to.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "One muted line under the title, for example what the section holds.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The title's place in the document outline, 1 to 6.",
+          "name": "headingLevel",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2 | 4 | 3 | 5 | 6"
+        },
+        {
+          "description": "The spoken name of the region, for example \"Main navigation\"; required when the page holds two of its kind.",
+          "name": "label",
+          "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A node at the logical start of the bar, before its main content.",
+          "name": "startContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "A node at the logical end of the bar, after its main content.",
+          "name": "endContent",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

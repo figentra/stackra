@@ -17,6 +17,8 @@
 // @covers sta-350:FR-173 sta-350:SC-012 sta-350:SC-002
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { pageTitle } from "../support/page-title.function";
+import { example } from "../support/example.function";
 
 const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
@@ -26,7 +28,9 @@ const open = async (page: Page, scheme: string, locale: string, width = 1280) =>
   await page.setViewportSize({ width, height: 900 });
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
   await page.goto(`/two-column-layout?scheme=${scheme}&locale=${locale}`);
-  await expect(page.getByRole("heading", { level: 1, name: "Two column layout" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: pageTitle("Two column layout", locale) }),
+  ).toBeVisible();
 };
 
 /** Runs axe over the page and expects neither violations nor checks left for review. */
@@ -48,10 +52,23 @@ const boxOf = async (locator: Locator) => {
   return box;
 };
 
+/** The example each sample is drawn in. */
+const EXAMPLE_OF: Record<string, string> = {
+  default: "usage",
+  md: "breakpoints",
+  xl: "breakpoints",
+  arabic: "arabic",
+  live: "live",
+};
+
+/** A sample of its example, kept off the hidden copies of Usage in the Stackra section's frames. */
+const sample = (page: Page, name: string) =>
+  example(page, EXAMPLE_OF[name] ?? name).locator(`[data-sample="${name}"]`);
+
 /** The two columns of a sample's layout, found by CSS. */
 const columns = (page: Page, name: string) => ({
-  main: page.locator(`[data-sample="${name}"] [data-slot="two-column-main"]`),
-  aside: page.locator(`[data-sample="${name}"] [data-slot="two-column-aside"]`),
+  main: sample(page, name).locator('[data-slot="two-column-main"]'),
+  aside: sample(page, name).locator('[data-slot="two-column-aside"]'),
 });
 
 /** True when the side column is beside the main one rather than under it. */
@@ -75,9 +92,10 @@ for (const scheme of SCHEMES)
       page,
     }) => {
       await open(page, scheme, locale);
-      await page.getByRole("switch", { name: "Show the history" }).focus();
+      // By role alone: the Arabic page translates the switch and the headings.
+      await example(page, "live").getByRole("switch").focus();
       await page.keyboard.press("Space");
-      await expect(page.getByRole("heading", { level: 3, name: "Live history" })).toBeVisible();
+      await expect(columns(page, "live").aside.getByRole("heading", { level: 3 })).toHaveCount(2);
       await expectAxeClean(page);
     });
 
@@ -102,9 +120,17 @@ test("from 1024 px the side column is 20 rem wide beside the main one, at the en
   page,
 }) => {
   await open(page, "light", "en");
-  const { main, aside } = columns(page, "default");
-  const mainBox = await boxOf(main);
-  const asideBox = await boxOf(aside);
+  await expect(columns(page, "default").aside).toBeVisible();
+  // Measured in one frame: the page above may still shift while its lazy demos load.
+  const [mainBox, asideBox] = await sample(page, "default").evaluate((node) =>
+    ["two-column-main", "two-column-aside"].map(
+      (slot) =>
+        node.querySelector(`[data-slot="${slot}"]`)?.getBoundingClientRect().toJSON() as
+          | DOMRect
+          | undefined,
+    ),
+  );
+  if (!mainBox || !asideBox) throw new Error("a column is missing");
   expect(await isBeside(page, "default")).toBe(true);
   expect(asideBox.width).toBeCloseTo(320, 0);
   expect(asideBox.x).toBeGreaterThan(mainBox.x + mainBox.width - 1);
@@ -146,8 +172,9 @@ test("collapseBelow md and xl move the collapse point to 768 px and 1280 px", as
 
 test("the main column comes first in the document, whatever the width", async ({ page }) => {
   await open(page, "light", "en", 700);
-  const order = await page
-    .locator('[data-sample="default"] > div > [data-slot]')
+  await expect(columns(page, "default").main).toBeVisible();
+  const order = await sample(page, "default")
+    .locator(":scope > div > [data-slot]")
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-slot")));
   expect(order).toEqual(["two-column-main", "two-column-aside"]);
 });
@@ -176,10 +203,10 @@ test("the live layout's switch adds a history section to the side column from th
 }) => {
   await open(page, "light", "en");
   const { main, aside } = columns(page, "live");
-  const status = page.locator('[data-sample="live-status"]');
+  const status = example(page, "live").locator('[data-sample="live-status"]');
   await expect(status).toHaveText("The side column holds the summary only.");
   await expect(aside.getByRole("heading", { level: 3 })).toHaveCount(1);
-  const toggle = page.getByRole("switch", { name: "Show the history" });
+  const toggle = example(page, "live").getByRole("switch", { name: "Show the history" });
   await toggle.focus();
   await page.keyboard.press("Space");
   await expect(toggle).toBeChecked();

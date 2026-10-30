@@ -1,0 +1,638 @@
+{
+  "generatedFrom": {
+    "hash": "20de9c7c54b05849",
+    "propsFiles": [
+      "ui/src/react/side-panel/side-panel-body.props.ts",
+      "ui/src/react/side-panel/side-panel-footer.props.ts",
+      "ui/src/react/side-panel/side-panel-handle.props.ts",
+      "ui/src/react/side-panel/side-panel-header.props.ts",
+      "ui/src/react/side-panel/side-panel-inset.props.ts",
+      "ui/src/react/side-panel/side-panel-launcher.props.ts",
+      "ui/src/react/side-panel/side-panel-panel.props.ts",
+      "ui/src/react/side-panel/side-panel.props.ts"
+    ]
+  },
+  "importLine": "import { SidePanel } from \"@stackra/ui/react\";",
+  "key": "free/side-panel",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the panel opens, expands, collapses back or closes.",
+          "name": "onStateChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(state: \"open\" | \"closed\" | \"expanded\") => void"
+        },
+        {
+          "description": "Called with the new width in pixels after each resize.",
+          "name": "onWidthChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(width: number) => void"
+        }
+      ],
+      "name": "SidePanel",
+      "props": [
+        {
+          "description": "On web the page (`SidePanel.Inset`), the panel (`SidePanel.Panel`) and the launcher; on native the panel's parts.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The panel's spoken name, for its `complementary` landmark (or its drawer), for example \"Assistant\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The state, for a controlled panel; pair it with `onStateChange`.",
+          "name": "state",
+          "required": false,
+          "source": "stackra",
+          "type": "\"open\" | \"closed\" | \"expanded\""
+        },
+        {
+          "default": "closed",
+          "description": "The starting state of an uncontrolled panel. Defaults to `closed`.",
+          "name": "defaultState",
+          "required": false,
+          "source": "stackra",
+          "type": "\"open\" | \"closed\" | \"expanded\""
+        },
+        {
+          "description": "The open panel's width in pixels, for a controlled width; pair it with `onWidthChange`.",
+          "name": "width",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The look: `attached` (the default), a column joined to the page by a border; `split`, the page and the panel\nas two rounded cards on the app's background with a gap around and between them.",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"split\" | \"attached\""
+        },
+        {
+          "description": "The open panel's starting width in pixels. Defaults to 432 (27 rem).",
+          "name": "defaultWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The narrowest width a resize reaches, in pixels. Defaults to 320 (20 rem).",
+          "name": "minWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The widest width a resize reaches, in pixels. Defaults to half the window's width.",
+          "name": "maxWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "A key under which the state and the width are kept in local storage, so they survive a reload.",
+          "name": "storageKey",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "md",
+          "description": "Below this breakpoint there is no room to push the page, so opening draws the panel in the house Drawer over it;\nfalse keeps it in the page at every width. Defaults to `md`.",
+          "name": "drawerBelow",
+          "required": false,
+          "source": "stackra",
+          "type": "false | \"sm\" | \"md\" | \"lg\" | \"xl\""
+        },
+        {
+          "description": "True, the default, to move focus into the panel when it opens: to the element inside marked `data-autofocus`,\nelse the panel itself. False leaves focus where it is.",
+          "name": "isFocusOnOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "SidePanel.Inset",
+      "props": [
+        {
+          "description": "",
+          "name": "children",
+          "required": false,
+          "source": "react-aria",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "SidePanel.Panel",
+      "props": [
+        {
+          "description": "",
+          "name": "children",
+          "required": false,
+          "source": "react-aria",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "SidePanel.Header",
+      "props": [
+        {
+          "description": "The start of the row: a title, or a menu of recent items.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The panel's own actions, drawn before the built-in buttons at the end of the row.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True, the default, to draw the expand button (hidden while the panel is a drawer).",
+          "name": "isExpandable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True, the default, to draw the close button.",
+          "name": "isClosable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "SidePanel.Body",
+      "props": [
+        {
+          "description": "",
+          "name": "children",
+          "required": false,
+          "source": "react-aria",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "SidePanel.Footer",
+      "props": [
+        {
+          "description": "",
+          "name": "children",
+          "required": false,
+          "source": "react-aria",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "SidePanel.Handle",
+      "props": [
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    },
+    {
+      "name": "SidePanel.Launcher",
+      "props": [
+        {
+          "description": "The words of the button that opens the panel, for example \"Ask the assistant\".",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "An icon before the title.",
+          "name": "icon",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "An optional slot after the title, for an input; open the panel from it with `useSidePanel`.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Buttons at the end of the bar.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "react-aria",
+          "type": "CSSProperties"
+        },
+        {
+          "description": "",
+          "name": "...AriaAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "AriaAttributes"
+        },
+        {
+          "description": "",
+          "name": "...DOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "DOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...HTMLAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "HTMLAttributes"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

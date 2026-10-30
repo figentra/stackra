@@ -1,0 +1,120 @@
+{
+  "slug": "input",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/input.mdx",
+  "parts": [
+    {
+      "name": "Input",
+      "props": [
+        {
+          "name": "className",
+          "type": "string",
+          "description": "Tailwind classes merged with the component styles."
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "default": "\"text\"",
+          "description": "Input type (text, email, password, number, etc.)."
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Controlled value."
+        },
+        {
+          "name": "defaultValue",
+          "type": "string",
+          "description": "Uncontrolled initial value."
+        },
+        {
+          "name": "onChange",
+          "type": "(event: React.ChangeEvent<HTMLInputElement>) => void",
+          "description": "Change handler."
+        },
+        {
+          "name": "placeholder",
+          "type": "string",
+          "description": "Placeholder text."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Disables the input."
+        },
+        {
+          "name": "readOnly",
+          "type": "boolean",
+          "default": "false",
+          "description": "Makes the input read-only."
+        },
+        {
+          "name": "required",
+          "type": "boolean",
+          "default": "false",
+          "description": "Marks the input as required."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Name for form submission."
+        },
+        {
+          "name": "autoComplete",
+          "type": "string",
+          "description": "Autocomplete hint for the browser."
+        },
+        {
+          "name": "maxLength",
+          "type": "number",
+          "description": "Maximum number of characters."
+        },
+        {
+          "name": "minLength",
+          "type": "number",
+          "description": "Minimum number of characters."
+        },
+        {
+          "name": "pattern",
+          "type": "string",
+          "description": "Regex pattern for validation."
+        },
+        {
+          "name": "min",
+          "type": "number | string",
+          "description": "Minimum value (for number/date inputs)."
+        },
+        {
+          "name": "max",
+          "type": "number | string",
+          "description": "Maximum value (for number/date inputs)."
+        },
+        {
+          "name": "step",
+          "type": "number | string",
+          "description": "Stepping interval (for number inputs)."
+        },
+        {
+          "name": "fullWidth",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the input should take full width of its container"
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "default": "\"primary\"",
+          "description": "Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".input",
+      "description": "Native input element styling"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "size_label": "الرفع، {size}",
+  "tone_label": "الرفع، {tone}",
+  "value_label": "الرفع عند {value} بالمئة",
+  "indeterminate_label": "تجهيز الرفع",
+  "storage": "مساحة التخزين المستخدمة",
+  "files": "رفع الفواتير",
+  "files_text": "3 من 12 ملفًا",
+  "action_label": "تقدم الرفع",
+  "advance": "تقدم بنسبة 10%",
+  "reset": "إعادة تعيين",
+  "complete": "اكتمل الرفع"
+}

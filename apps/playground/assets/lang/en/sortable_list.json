@@ -1,0 +1,30 @@
+{
+  "menu": {
+    "label": "Menu categories",
+    "order": "Order: {list}",
+    "hot": "Hot drinks",
+    "cold": "Cold drinks",
+    "pastries": "Pastries",
+    "sandwiches": "Sandwiches",
+    "desserts": "Desserts",
+    "items": "{count, plural, one {# item} other {# items}}"
+  },
+  "checkout": {
+    "label": "Checkout steps",
+    "step": "Step {number, number}",
+    "cart": "Review cart",
+    "address": "Delivery address",
+    "shipping": "Shipping method",
+    "payment": "Payment",
+    "locked": "Payment stays last."
+  },
+  "widgets": {
+    "label": "Dashboard widgets",
+    "lock": "Lock layout",
+    "unlock": "Unlock layout",
+    "sales_today": "Sales today",
+    "open_orders": "Open orders",
+    "low_stock": "Low stock",
+    "top_products": "Top products"
+  }
+}

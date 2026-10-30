@@ -1,0 +1,8 @@
+{
+  "slug": "text-area",
+  "platform": "native",
+  "source": "apps/docs/content/docs/native/components/(forms)/text-area.mdx",
+  "parts": [],
+  "hooks": [],
+  "slots": []
+}

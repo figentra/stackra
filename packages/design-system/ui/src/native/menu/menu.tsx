@@ -60,8 +60,9 @@ function MenuAction({
       onPress={() => onChoose(item)}
     >
       <MenuItemIcon item={item} />
-      <View className="flex-1">
-        <HeroMenu.ItemTitle>{item.label}</HeroMenu.ItemTitle>
+      {/* Grow from the text's own width: HeroUI's title is flex-1, which starts at zero and leaves a content-fit popover none. */}
+      <View className="shrink grow">
+        <HeroMenu.ItemTitle className="flex-auto">{item.label}</HeroMenu.ItemTitle>
         {detail ? <HeroMenu.ItemDescription>{detail}</HeroMenu.ItemDescription> : null}
       </View>
       {isSelectable ? <HeroMenu.ItemIndicator /> : null}
@@ -124,7 +125,9 @@ export function Menu({
                 <SubMenu.Trigger textValue={item.label} isDisabled={item.isDisabled ?? false}>
                   <SubMenu.TriggerIndicator />
                   <MenuItemIcon item={item} />
-                  <Text className="flex-1 text-base font-medium text-foreground">{item.label}</Text>
+                  <Text className="shrink grow text-base font-medium text-foreground">
+                    {item.label}
+                  </Text>
                 </SubMenu.Trigger>
                 <SubMenu.Content>
                   {item.items.map((sub) => (

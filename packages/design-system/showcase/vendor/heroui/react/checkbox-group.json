@@ -1,0 +1,100 @@
+{
+  "slug": "checkbox-group",
+  "platform": "react",
+  "source": "apps/docs/content/docs/react/components/(forms)/checkbox-group.mdx",
+  "parts": [
+    {
+      "name": "CheckboxGroup",
+      "props": [
+        {
+          "name": "value",
+          "type": "string[]",
+          "description": "The current selected values (controlled)"
+        },
+        {
+          "name": "defaultValue",
+          "type": "string[]",
+          "description": "The default selected values (uncontrolled)"
+        },
+        {
+          "name": "onChange",
+          "type": "(value: string[]) => void",
+          "description": "Handler called when the selected values change"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox group is disabled"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox group is required"
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox group is read only"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "default": "false",
+          "description": "Whether the checkbox group is in an invalid state"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The name of the checkbox group, used when submitting an HTML form"
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode | (values: CheckboxGroupRenderProps) => React.ReactNode",
+          "description": "Checkbox group content or render prop"
+        },
+        {
+          "name": "render",
+          "type": "DOMRenderFunction<keyof React.JSX.IntrinsicElements, CheckboxGroupRenderProps>",
+          "description": "Overrides the default DOM element with a custom render function."
+        }
+      ],
+      "renderProps": [
+        {
+          "name": "value",
+          "type": "string[]",
+          "description": "The currently selected values"
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "description": "Whether the checkbox group is disabled"
+        },
+        {
+          "name": "isReadOnly",
+          "type": "boolean",
+          "description": "Whether the checkbox group is read only"
+        },
+        {
+          "name": "isInvalid",
+          "type": "boolean",
+          "description": "Whether the checkbox group is in an invalid state"
+        },
+        {
+          "name": "isRequired",
+          "type": "boolean",
+          "description": "Whether the checkbox group is required"
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [
+    {
+      "name": ".checkbox-group",
+      "description": "Base checkbox group container"
+    }
+  ]
+}

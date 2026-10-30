@@ -1,0 +1,19 @@
+{
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "minutes_ago": "{count, plural, one {# min ago} other {# min ago}}",
+  "yesterday_at": "Yesterday, {time}",
+  "low_stock_title": "Low stock: Oat milk 1 L",
+  "low_stock_detail": "3 left at the Olaya branch. Reorder before Friday.",
+  "order_title": "New online order #{id}",
+  "order_detail": "2 items, pickup at 6:30 PM",
+  "refund_title": "Refund approved for order #1038",
+  "refund_detail": "SAR 86.25 returned to the customer's mada card.",
+  "shift_title": "Shift report is ready",
+  "shift_detail": "Till 2 closed by Layla, no cash difference.",
+  "view_all": "View all notifications",
+  "simulate": "Receive a new order",
+  "reset": "Reset",
+  "empty": "Nothing new. Orders and stock alerts will appear here.",
+  "opened": "Opened: {title}"
+}

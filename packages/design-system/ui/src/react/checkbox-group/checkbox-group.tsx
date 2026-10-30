@@ -3,7 +3,7 @@
  * Purpose: the web `CheckboxGroup` on HeroUI v3's CheckboxGroup (React Aria): a labelled set of checkboxes whose
  *          value is the list of chosen keys. Each of `options` becomes a HeroUI checkbox in the group, with the
  *          group's own label, description and error message around them; every other HeroUI prop passes through.
- * Boundary: no styling of its own. The group is a `role="group"` named by its label, so a group with none takes
+ * Boundary: no styling of its own beyond `columns`, a grid around the options alone. The group is a `role="group"` named by its label, so a group with none takes
  *          `aria-label`. Options are data, not children, so the same list draws the same group on native.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0303 (decision 7);
@@ -39,8 +39,26 @@ export function CheckboxGroup({
   isReadOnly,
   variant,
   name,
+  columns,
   ...rest
 }: CheckboxGroupProps): ReactElement {
+  const items = options.map((option) => (
+    <HeroCheckbox
+      key={option.value}
+      value={option.value}
+      {...omitUndefined({ isDisabled: option.isDisabled })}
+    >
+      <HeroCheckbox.Content>
+        <HeroCheckbox.Control>
+          <HeroCheckbox.Indicator />
+        </HeroCheckbox.Control>
+        <Label {...omitUndefined({ isDisabled: isDisabled || option.isDisabled })}>
+          {option.label}
+        </Label>
+      </HeroCheckbox.Content>
+      {option.description ? <Description>{option.description}</Description> : null}
+    </HeroCheckbox>
+  ));
   return (
     <HeroCheckboxGroup
       {...rest}
@@ -60,23 +78,18 @@ export function CheckboxGroup({
       {label ? (
         <Label {...omitUndefined({ isRequired, isInvalid, isDisabled })}>{label}</Label>
       ) : null}
-      {options.map((option) => (
-        <HeroCheckbox
-          key={option.value}
-          value={option.value}
-          {...omitUndefined({ isDisabled: option.isDisabled })}
+      {columns ? (
+        // The options get their own grid, so the label, description and error stay full width above and below it.
+        <div
+          data-slot="checkbox-group-columns"
+          className="grid gap-x-4"
+          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
         >
-          <HeroCheckbox.Content>
-            <HeroCheckbox.Control>
-              <HeroCheckbox.Indicator />
-            </HeroCheckbox.Control>
-            <Label {...omitUndefined({ isDisabled: isDisabled || option.isDisabled })}>
-              {option.label}
-            </Label>
-          </HeroCheckbox.Content>
-          {option.description ? <Description>{option.description}</Description> : null}
-        </HeroCheckbox>
-      ))}
+          {items}
+        </div>
+      ) : (
+        items
+      )}
       {description ? <Description>{description}</Description> : null}
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </HeroCheckboxGroup>
