@@ -46,7 +46,10 @@ vi.mock("@react-native-community/netinfo", () => ({
 }));
 
 /** A driver over `modules`, as the host declares it; `asks` stands for an app with the tracking usage string. */
-function driverWith(modules: Partial<ExpoSystemModules> = {}, asks = true): ExpoSystemSettingsDriver {
+function driverWith(
+  modules: Partial<ExpoSystemModules> = {},
+  asks = true,
+): ExpoSystemSettingsDriver {
   const all: ExpoSystemModules = {
     trackingTransparency: null,
     battery: null,
@@ -91,7 +94,12 @@ describe("ExpoSystemSettingsDriver", () => {
     const read = vi.fn(async () => ({ granted: false, status: "undetermined" }));
     const request = vi.fn(async () => ({ granted: true, status: "granted" }));
     const settings = driverWith(
-      { trackingTransparency: { getTrackingPermissionsAsync: read, requestTrackingPermissionsAsync: request } },
+      {
+        trackingTransparency: {
+          getTrackingPermissionsAsync: read,
+          requestTrackingPermissionsAsync: request,
+        },
+      },
       false,
     );
     expect(await settings.tracking()).toBe("denied");
