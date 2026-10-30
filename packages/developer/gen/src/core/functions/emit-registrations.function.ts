@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `emitRegistrations`, the member's `#stackra/registrations` (`.stackra/gen/registrations.ts`): it loads the
  *          generated entity and schemas files, then makes every registration call the platform packages wait for,
- *          from the identities the manifest locked: the hosted packages' entity lists, the model partners of each
+ *          from the identities the manifest locked: the hosted packages' entities (the service's own files written from
+ *          their manifests, STA-1667, or an older manifest's entity list), the model partners of each
  *          `CrudService<M>` (and of a platform one it injects, from `PLATFORM_PARTNERS`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the change consumers with the models their `@ConsumesChanges` names, the outbound webhooks, the job actions for the queue
@@ -25,6 +26,7 @@ import type { StackraManifest } from "@stackra/contracts";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { PLATFORM_PARTNERS } from "#core/constants/platform-partners.constant";
+import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -107,12 +109,21 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     ...schemaModules(ir).map((module) => `import "#stackra/schemas/${module}";`),
   ];
 
-  // The hosted packages' entity lists; a package's own entity files register themselves.
+  // The hosted packages' entities: the service's own files written from their manifests (STA-1667), which register
+  // themselves when loaded; a package whose manifest records no entity facts keeps its `<MODULE>_ENTITIES` import.
   if (ir.layout === "service") {
+    const hosted = emitHostedEntities(ir).map((file) => file.path);
+    loads.push(
+      ...hosted.map(
+        (path) => `import "#stackra/${path.slice(".stackra/gen/".length, -".ts".length)}";`,
+      ),
+    );
+    const covered = new Set(hosted.map((path) => path.split("/")[4]));
     const lists = ir.dependencies
       .filter(
         ({ manifest: dependency }) =>
           dependency.kind !== "app" &&
+          !covered.has(dependency.member) &&
           (dependency.models ?? []).some((model) => model["from"] === undefined),
       )
       .map(({ package: name, manifest: dependency }) =>
