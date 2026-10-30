@@ -21,40 +21,41 @@ and `yaml`.
 
 ## Commands
 
-| Command                                | Does                                                                                          |
-| -------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `stackra new <kind> <name>`            | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`       |
-| `stackra gen [--check] [--manifests]`  | gen-core on the member or every workspace member: manifests first, then the rest              |
-| `stackra dev [--target <t>]`           | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify             |
-| `stackra dev --surface <surface>`      | a product surface in its real shell (published or `--os` checkout), Vite with hot reload      |
-| `stackra dev --mobile <app> --os <c>`  | a product mobile app from its template line, Release build on the iOS simulator (`--device`)  |
-| `stackra dev --product --os <c>`       | every surface and mobile app of the root runway at once                                       |
-| `stackra build [--target <t>]`         | gen, then build: tsdown (package), Vite (web), `expo export` (native), Wrangler dry run       |
-| `stackra build --product [--dry-run]`  | a product's surface bundles and mobile EAS builds, and `dist/product/build.json`              |
-| `stackra deploy --product --env <e>`   | publish a built product: bundles and host rows to the edge, mobile builds to the stores       |
-| `stackra mobile onboard [--app <key>]` | take a product's mobile app from nothing to store-ready (ADR 0482); `--check`, `--live` in CI |
-| `stackra start`                        | gen, then `vite preview` of an app's web build                                                |
-| `stackra typecheck`                    | gen, then `tsc --noEmit`                                                                      |
-| `stackra test [--tier unit\|e2e]`      | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)             |
-| `stackra lint`                         | `oxlint .`                                                                                    |
-| `stackra check [flags]`                | the quality gate: every check phase in order at the workspace root (see below)                |
-| `stackra validate`                     | `check --only config,structure,docs,catalogues,spec`                                          |
-| `stackra verify`                       | `check --with-tests`                                                                          |
-| `stackra code:check` / `code:fix`      | `check --only format,lint` (`code:fix` adds `--fix`)                                          |
-| `stackra seed-pack <product>`          | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants      |
-| `stackra settings:diff <pack.yaml>`    | what a settings pack would change at a scope node (`--scope-id`, `--scope-path`)              |
-| `stackra settings:apply <pack.yaml>`   | apply a settings pack to a sandbox node as revisions (`--author`, `--reason`)                 |
-| `stackra search:reindex [Model]`       | queue a resumable search reindex job (`--scope-id`/`--scope-path`, `--since`, `--semantic`)   |
-| `stackra search:status`                | each search index's state, document count and rebuild progress                                |
-| `stackra ops bootstrap-operator`       | give an environment's first operator a role, once, through its API (`--email`, `--dry-run`)   |
-| `stackra ls [section]`                 | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…)      |
-| `stackra mcp`                          | the local developer MCP over stdio; its tools run these commands in-process                   |
-| `stackra mcp sync`                     | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                                |
-| `stackra mcp exec [--env] [--path] --` | start an MCP server with its secrets, expanded by its own shell under `infisical run`         |
-| `stackra agents sync`                  | write the project's generated agent files (`.mcp.json`)                                       |
-| `stackra agents check`                 | fail when `.mcp.json` drifted from `.mcp.yaml`                                                |
-| `stackra add <kind> <name>[@version]`  | install a registry skill, agent, MCP server, plugin or package (see below)                    |
-| `stackra publish [--dry-run]`          | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry       |
+| Command                                      | Does                                                                                                                          |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `stackra new <kind> <name>`                  | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                       |
+| `stackra gen [--check] [--manifests]`        | gen-core on the member or every workspace member: manifests first, then the rest                                              |
+| `stackra dev [--target <t>]`                 | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify                                             |
+| `stackra dev --surface <surface>`            | a product surface in its real shell (published or `--os` checkout), Vite with hot reload                                      |
+| `stackra dev --mobile <app> --os <c>`        | a product mobile app from its template line, Release build on the iOS simulator (`--device`)                                  |
+| `stackra dev --product --os <c>`             | every surface and mobile app of the root runway at once                                                                       |
+| `stackra build [--target <t>]`               | gen, then build: tsdown (package), Vite (web), `expo export` (native), Wrangler dry run                                       |
+| `stackra build --product [--dry-run]`        | a product's surface bundles and mobile EAS builds, and `dist/product/build.json`                                              |
+| `stackra deploy --product --env <e>`         | publish a built product: bundles and host rows to the edge, mobile builds to the stores                                       |
+| `stackra mobile onboard [--app <key>]`       | take a product's mobile app from nothing to store-ready (ADR 0482); `--check`, `--live` in CI                                 |
+| `stackra smoke --env <e> [--only <targets>]` | after a preview deploy: Playwright on each web surface, Maestro on the given mobile builds; exit 1 blocks promotion (STA-265) |
+| `stackra start`                              | gen, then `vite preview` of an app's web build                                                                                |
+| `stackra typecheck`                          | gen, then `tsc --noEmit`                                                                                                      |
+| `stackra test [--tier unit\|e2e]`            | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)                                             |
+| `stackra lint`                               | `oxlint .`                                                                                                                    |
+| `stackra check [flags]`                      | the quality gate: every check phase in order at the workspace root (see below)                                                |
+| `stackra validate`                           | `check --only config,structure,docs,catalogues,spec`                                                                          |
+| `stackra verify`                             | `check --with-tests`                                                                                                          |
+| `stackra code:check` / `code:fix`            | `check --only format,lint` (`code:fix` adds `--fix`)                                                                          |
+| `stackra seed-pack <product>`                | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants                                      |
+| `stackra settings:diff <pack.yaml>`          | what a settings pack would change at a scope node (`--scope-id`, `--scope-path`)                                              |
+| `stackra settings:apply <pack.yaml>`         | apply a settings pack to a sandbox node as revisions (`--author`, `--reason`)                                                 |
+| `stackra search:reindex [Model]`             | queue a resumable search reindex job (`--scope-id`/`--scope-path`, `--since`, `--semantic`)                                   |
+| `stackra search:status`                      | each search index's state, document count and rebuild progress                                                                |
+| `stackra ops bootstrap-operator`             | give an environment's first operator a role, once, through its API (`--email`, `--dry-run`)                                   |
+| `stackra ls [section]`                       | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…)                                      |
+| `stackra mcp`                                | the local developer MCP over stdio; its tools run these commands in-process                                                   |
+| `stackra mcp sync`                           | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                                                                |
+| `stackra mcp exec [--env] [--path] --`       | start an MCP server with its secrets, expanded by its own shell under `infisical run`                                         |
+| `stackra agents sync`                        | write the project's generated agent files (`.mcp.json`)                                                                       |
+| `stackra agents check`                       | fail when `.mcp.json` drifted from `.mcp.yaml`                                                                                |
+| `stackra add <kind> <name>[@version]`        | install a registry skill, agent, MCP server, plugin or package (see below)                                                    |
+| `stackra publish [--dry-run]`                | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry                                       |
 
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
 run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.

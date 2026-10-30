@@ -4,8 +4,9 @@
  *          web surface but `ops` at its canonical host for the environment, from `platformRows`; each mobile app on
  *          each platform it has a build for), checks each with the driver of its target, and throws
  *          `RunwaySmokeFailedError` with every result when any failed or had no driver, so promotion is blocked.
- * Boundary: reads the root runway; every effect is a driver's. Subjects are checked one at a time, web first, so a
- *           failure leaves the evidence of all of them. Desktop subjects arrive with the first desktop target.
+ * Boundary: reads the root runway; every effect is a driver's. `only` keeps the targets one CI job checks (the web
+ *           job, a mobile job per platform). Subjects are checked one at a time, web first, so a failure leaves the
+ *           evidence of all of them. Desktop subjects arrive with the first desktop target.
  * Runtime: node
  * Governing contract: STA-265 spec (D5, D6, FR-009); ADR 0437 (the hosts of `platformRows`).
  */
@@ -32,7 +33,7 @@ import type { SmokePreviewRequest } from "#node/types/smoke-preview-request.type
  * await smokePreview({ repository: ".", environment: "preview", drivers: [new PlaywrightSmokeDriver()] });
  */
 export async function smokePreview(request: SmokePreviewRequest): Promise<SmokeResult[]> {
-  const { repository, environment, drivers, builds = {}, templateDir } = request;
+  const { repository, environment, drivers, builds = {}, templateDir, only } = request;
   const root = readRunway(join(repository, "runway.yaml"), "root");
   const subjects: SmokeSubject[] = [];
   const urls = new Map<string, string>();
@@ -58,7 +59,7 @@ export async function smokePreview(request: SmokePreviewRequest): Promise<SmokeR
   }
 
   const results: SmokeResult[] = [];
-  for (const subject of subjects) {
+  for (const subject of subjects.filter((item) => only?.includes(item.target) ?? true)) {
     const driver = drivers.find((item) => item.target === subject.target);
     results.push(
       driver === undefined

@@ -113,6 +113,22 @@ describe("smokePreview", () => {
   });
 
   // @covers sta-265:FR-009
+  it("checks only the targets of this run", async () => {
+    const web = new FakeSmokeDriver("web");
+    const mobile = new FakeSmokeDriver("mobile");
+    const results = await smokePreview({
+      repository,
+      environment: "preview",
+      only: ["mobile"],
+      drivers: [web, mobile],
+      builds: { staff: { android: "build/staff.apk" } },
+      templateDir: "template",
+    });
+    expect(web.checked).toEqual([]);
+    expect(results.map((result) => result.name)).toEqual(["staff"]);
+  });
+
+  // @covers sta-265:FR-009
   it("refuses builds without the template checkout", async () => {
     await expect(
       smokePreview({

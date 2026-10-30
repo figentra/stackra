@@ -155,6 +155,11 @@ already uses. Out of scope to write now; the job takes a list of flows so nothin
   the failing command as its problem and the report folder as its evidence.
 - **FR-012**: `ElectronSmokeDriver` (desktop) shall be a placeholder that fails every subject with "not built"
   (ADR 0058) until a desktop target exists.
+- **FR-013**: `stackra smoke --env <environment> [--only <targets>] [--app <key> --ios <.app> --android <.apk>
+--template-dir <dir>]` shall run `smokePreview` and exit 1 when any subject failed; Runway's public reusable
+  workflow `runway-smoke.yml` shall run it in one job per runner (web on Linux, iOS on the Mac runner, Android on
+  Linux with KVM and the pinned emulator action), upload the evidence, and fail the call so a caller's promote job that
+  `needs` it does not run. The OS line runs the same launch check on a change to `apps/mobile` (`lines-launch.yml`).
 
 ### Success Criteria
 
@@ -181,12 +186,12 @@ already uses. Out of scope to write now; the job takes a list of flows so nothin
 | L5 smoke step | core, `figentra/sta-265-mobile-launch-check`      | `src/core/ports/smoke-driver.port.ts`, `src/**/smoke*`, the three drivers, `package.json` e2e deps | runway vitest, typecheck, lockfile; one real run on a preview |
 | L4 runbook    | core                                              | the mobile release runbook section                                                                 | docs build                                                    |
 
-Lane state (2026-10-30, not gated): L1 built on core `figentra/sta-265-mobile-launch-check`; L2 built on os
-`figentra/sta-265-launch-flow` (off `figentra/sta-1602-template-lines`, Maestro `cli-2.12.0` pinned in os `mise.toml`);
-L4 built with L1 (`apps/docs/src/docs/runbooks/mobile-release.mdx`). L3 is not built: no workflow calls the capture job
-or the launch check yet, and a workflow needs a CLI entry (`stackra mobile launch-check`) or a node script to call
-`launchCheckJob`; that, the `lines.yml` jobs and the promote `needs` are the next build round. L5 (the smoke step,
-D6) built on the core branch; the lockfile change for the e2e devDependencies is the tester's (`pnpm install`).
+Lane state (2026-10-30, not gated): L1, L4 and L5 built on core `figentra/sta-265-mobile-launch-check`; L2 built on
+os `figentra/sta-265-launch-flow` (off `figentra/sta-1602-template-lines`, Maestro `cli-2.12.0` pinned in os
+`mise.toml`). L3 built: `stackra smoke` (cli), core's reusable `runway-smoke.yml`, the caller example with the promote
+`needs` in `runbooks/deploys.mdx`, and os `lines-launch.yml`. No product repository calls `runway-smoke.yml` yet: each
+product adds the caller job with its first preview deploy workflow. The lockfile change for the e2e devDependencies is
+the tester's (`pnpm install`).
 
 ## Status history
 

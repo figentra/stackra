@@ -214,7 +214,7 @@ Validate with `eas workflow:validate .eas/workflows/<file>.yml`; run by hand wit
 | App config and `eas.json` stay valid  | `pnpm run doctor` (expo install --check) in `apps/mobile`, `npx expo config --type public` | Manual    |
 | No secret in `eas.json` or app config | gitleaks                                                                                   | Live      |
 | Workflows validate                    | `eas workflow:validate`                                                                    | Not built |
-| The app launches before promotion     | Runway `launchCheckJob` + Maestro on CI (STA-265)                                          | Not wired |
+| The app launches before promotion     | `runway-smoke.yml` (`stackra smoke`, Maestro) on CI (STA-265)                              | Built     |
 | Local build from a clean deployed sha | `pnpm eas:preflight check` (`tools/scripts/eas-preflight.mjs`, + test)                     | Manual    |
 
 See also [Secrets](/runbooks/secrets), [CI](/runbooks/ci) and [Upgrade](/runbooks/upgrade).

@@ -8,6 +8,7 @@
  */
 import type { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 import type { SmokeDriver } from "#core/ports/smoke-driver.port";
+import type { SmokeSubject } from "#core/types/smoke-subject.type";
 
 /** The smoke step's inputs. */
 export type SmokePreviewRequest = {
@@ -15,6 +16,8 @@ export type SmokePreviewRequest = {
   readonly repository: string;
   /** The environment just deployed; its hosts are opened. */
   readonly environment: RunwayEnvironment;
+  /** The targets this run checks (one CI job per runner); every target when absent. */
+  readonly only?: readonly SmokeSubject["target"][];
   /** One driver per target (`PlaywrightSmokeDriver`, `MaestroSmokeDriver`, `ElectronSmokeDriver`). */
   readonly drivers: readonly SmokeDriver[];
   /** The Release simulator builds per mobile app and platform; an app or platform left out is not checked. */

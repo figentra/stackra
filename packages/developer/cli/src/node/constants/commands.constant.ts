@@ -35,6 +35,7 @@ import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
 import { BUILD_COMMAND } from "#node/product/constants/build-command.constant";
 import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant";
 import { MOBILE_ONBOARD_COMMAND } from "#node/product/constants/mobile-onboard-command.constant";
+import { SMOKE_COMMAND } from "#node/product/constants/smoke-command.constant";
 import { addCommand } from "#node/functions/add-command.function";
 import { checkCommand } from "#node/functions/check-command.function";
 import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
@@ -86,6 +87,7 @@ export const COMMANDS: readonly CliCommand[] = [
   AUDIT_VERIFY_COMMAND,
   DEPLOY_COMMAND,
   MOBILE_ONBOARD_COMMAND,
+  SMOKE_COMMAND,
   OPS_BOOTSTRAP_OPERATOR_COMMAND,
   LS_COMMAND,
   MCP_COMMAND,

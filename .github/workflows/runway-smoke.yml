@@ -1,0 +1,237 @@
+# Stackra file contract:
+# Purpose: Runway's smoke step after a preview deploy (STA-265, owner decisions D5 and D6), a public reusable workflow
+#          (ADR 0168 decision 1). Up to three jobs, one per runner, each running `stackra smoke` for its target:
+#          `web` opens every web surface's preview host with Playwright (Linux); `ios` launches the app's simulator
+#          build with Maestro on the Mac runner; `android` launches its APK with Maestro on an emulator (Linux with
+#          KVM). A failed job fails the call, so a caller's promote job that `needs` it does not run. Evidence
+#          (screenshots, JUnit reports) is uploaded per job.
+#          A caller is a thin job after its preview deploy; another repository pins
+#          `figentra/stackra/.github/workflows/runway-smoke.yml@<sha> # runway-v<n>` (runbooks/deploys).
+# Secrets: none. Build URLs are EAS artifact links the caller passes; preview hosts are public.
+# Owner: release-operations
+name: Runway smoke
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: The Runway environment just deployed, whose hosts are opened.
+        type: string
+        default: preview
+      sha:
+        description: The commit deployed. Empty checks out the triggering commit.
+        type: string
+        default: ""
+      web:
+        description: Smoke-check every web surface of the root runway.
+        type: boolean
+        default: true
+      app:
+        description: The mobile app key under the root runway's `mobile`; empty skips the mobile jobs.
+        type: string
+        default: ""
+      ios-build:
+        description: URL of the app's `simulator` EAS build for iOS (a `.tar.gz` holding the `.app`); empty skips iOS.
+        type: string
+        default: ""
+      android-build:
+        description: URL of the app's `simulator` EAS build for Android (an `.apk`); empty skips Android.
+        type: string
+        default: ""
+      line-package:
+        description: The template line package holding the Maestro flows (`@figentra/os-mobile@3` for os/mobile@3).
+        type: string
+        default: "@figentra/os-mobile@3"
+      install-args:
+        description: Arguments to `pnpm install`, space-separated words with no quoting.
+        type: string
+        default: --frozen-lockfile
+
+# ADR 0019: nothing by default; each job asks for what it needs.
+permissions: {}
+
+jobs:
+  web:
+    name: Smoke web
+    if: inputs.web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # checkout
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+          persist-credentials: false
+          submodules: false
+
+      # ADR 0027 D2: node and pnpm come from the caller's mise.toml.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm
+
+      # The arguments arrive through the environment, never spliced into the script (zizmor template-injection).
+      - name: Install dependencies
+        env:
+          INSTALL_ARGS: ${{ inputs.install-args }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the argument list is the point
+          pnpm install $INSTALL_ARGS
+
+      # @playwright/test comes from catalog:e2e through @stackra/runway's optional peer; the browser is installed here.
+      - name: Browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Smoke
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: pnpm exec stackra smoke --env "$ENVIRONMENT" --only web
+
+      - name: Evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: smoke-web
+          path: .stackra/smoke
+          if-no-files-found: ignore
+
+  ios:
+    name: Smoke iOS
+    if: inputs.app != '' && inputs.ios-build != ''
+    # The store-screenshot capture job's runner (SCREENSHOT_CAPTURE_DEFAULTS.runner); macOS minutes are billed, so a
+    # caller runs this only when the app or its line changed (D3).
+    runs-on: macos-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read # checkout
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+          persist-credentials: false
+          submodules: false
+
+      # Maestro is pinned in the caller's mise.toml (D1); it needs Java 17, which the runner has.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm maestro
+
+      - name: Install dependencies
+        env:
+          INSTALL_ARGS: ${{ inputs.install-args }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the argument list is the point
+          pnpm install $INSTALL_ARGS
+
+      # The build and the line's flows, both outside the checkout.
+      - name: Build and flows
+        id: inputs
+        env:
+          BUILD_URL: ${{ inputs.ios-build }}
+          LINE_PACKAGE: ${{ inputs.line-package }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/build" "$RUNNER_TEMP/line"
+          curl -fsSL "$BUILD_URL" -o "$RUNNER_TEMP/build/app.tar.gz"
+          tar -xzf "$RUNNER_TEMP/build/app.tar.gz" -C "$RUNNER_TEMP/build"
+          app="$(find "$RUNNER_TEMP/build" -maxdepth 3 -name '*.app' -type d | head -n 1)"
+          [ -n "$app" ] || { echo "::error title=No .app::the iOS build holds no .app"; exit 1; }
+          tarball="$(npm pack "$LINE_PACKAGE" --pack-destination "$RUNNER_TEMP/line" --json | jq -r '.[0].filename')"
+          tar -xzf "$RUNNER_TEMP/line/$tarball" -C "$RUNNER_TEMP/line"
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "line=$RUNNER_TEMP/line/package" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          APP: ${{ inputs.app }}
+          APP_PATH: ${{ steps.inputs.outputs.app }}
+          LINE: ${{ steps.inputs.outputs.line }}
+        run: >-
+          pnpm exec stackra smoke --env "$ENVIRONMENT" --only mobile
+          --app "$APP" --ios "$APP_PATH" --template-dir "$LINE"
+
+      - name: Evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: smoke-ios
+          path: .stackra/launch-check
+          if-no-files-found: ignore
+
+  android:
+    name: Smoke Android
+    if: inputs.app != '' && inputs.android-build != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read # checkout
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          install_args: node pnpm maestro
+
+      - name: Install dependencies
+        env:
+          INSTALL_ARGS: ${{ inputs.install-args }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the argument list is the point
+          pnpm install $INSTALL_ARGS
+
+      - name: Build and flows
+        id: inputs
+        env:
+          BUILD_URL: ${{ inputs.android-build }}
+          LINE_PACKAGE: ${{ inputs.line-package }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/build" "$RUNNER_TEMP/line"
+          curl -fsSL "$BUILD_URL" -o "$RUNNER_TEMP/build/app.apk"
+          tarball="$(npm pack "$LINE_PACKAGE" --pack-destination "$RUNNER_TEMP/line" --json | jq -r '.[0].filename')"
+          tar -xzf "$RUNNER_TEMP/line/$tarball" -C "$RUNNER_TEMP/line"
+          echo "apk=$RUNNER_TEMP/build/app.apk" >> "$GITHUB_OUTPUT"
+          echo "line=$RUNNER_TEMP/line/package" >> "$GITHUB_OUTPUT"
+
+      # Hardware acceleration for the emulator on GitHub's Linux runners.
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # D2: the emulator action, pinned; it boots the emulator, runs the script, and shuts it down.
+      - name: Smoke
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          APP: ${{ inputs.app }}
+          APP_PATH: ${{ steps.inputs.outputs.apk }}
+          LINE: ${{ steps.inputs.outputs.line }}
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: pnpm exec stackra smoke --env "$ENVIRONMENT" --only mobile --app "$APP" --android "$APP_PATH" --template-dir "$LINE"
+
+      - name: Evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: smoke-android
+          path: .stackra/launch-check
+          if-no-files-found: ignore

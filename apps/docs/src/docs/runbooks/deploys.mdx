@@ -60,6 +60,34 @@ icon: "rocket"
   </Step>
 </Steps>
 
+## Smoke after a preview deploy (STA-265)
+
+A product's CI calls Runway's reusable `runway-smoke.yml` right after its preview deploy, and its promote job
+`needs` it, so a failed smoke blocks promotion with no override. Each job runs `stackra smoke --env <e> --only <target>`
+on its own runner: `web` (Linux, Playwright and axe), `ios` (the Mac runner, Maestro on the simulator) and `android`
+(Linux with KVM, Maestro on the emulator). Pass the mobile builds only when the app or its line changed: macOS minutes
+are billed.
+
+```yaml
+jobs:
+  smoke:
+    needs: deploy-preview
+    uses: figentra/stackra/.github/workflows/runway-smoke.yml@<sha> # runway-v<n>
+    with:
+      environment: preview
+      sha: ${{ needs.deploy-preview.outputs.sha }}
+      app: shopper
+      ios-build: ${{ needs.build-mobile.outputs.ios-simulator-url }}
+      android-build: ${{ needs.build-mobile.outputs.android-simulator-url }}
+      line-package: "@figentra/os-mobile@3"
+  promote:
+    needs: smoke
+    # ...the promote job, behind its protected environment
+```
+
+Each job uploads its evidence (`smoke-web`, `smoke-ios`, `smoke-android`): the page screenshots and the Maestro JUnit
+reports and screenshots. Locally, after a preview deploy: `pnpm exec stackra smoke --env preview --only web`.
+
 ## First operator (once per environment, owner)
 
 A new environment's operator roster is empty, and no one can grant the first operator from the UI. Never write SQL for
@@ -135,7 +163,7 @@ The kill switch is a `sw.js` that removes itself.
 | Owner approval for production  | Protected environment                          | Not built |
 | Migrations are expand-only     | Migration-safety check, once a database exists | Not built |
 | No agent sets a secret         | `guard-bash`                                   | Live      |
-| Preview smoke before promotion | Runway `smokePreview` (STA-265)                | Not wired |
+| Preview smoke before promotion | `runway-smoke.yml`, `stackra smoke` (STA-265)  | Built     |
 | First operator without SQL     | `stackra ops bootstrap-operator` (STA-1586)    | Built     |
 
 See also [Runway](/runbooks/runway), [Release](/runbooks/release), [Secrets](/runbooks/secrets) and [CI](/runbooks/ci).
