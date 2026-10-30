@@ -56,6 +56,23 @@ and `yaml`.
 | `stackra agents check`                       | fail when `.mcp.json` drifted from `.mcp.yaml`                                                                                |
 | `stackra add <kind> <name>[@version]`        | install a registry skill, agent, MCP server, plugin or package (see below)                                                    |
 | `stackra publish [--dry-run]`                | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry                                       |
+| `stackra testbed <verb>`                     | the shared test boxes: `run`, `status`, `unlock`, `ip`, `ssh`, `sync`, `scale`, `image` (below)                               |
+
+`stackra testbed` (ADR 0484) replaces the Mac script `ci-box`; it starts `aws`, `ssh`, `rsync` and `gh` without a shell
+and never prints or passes a secret value. Defaults: AWS profile `academorix`, region `eu-west-1`, key
+`~/.ssh/academorix-ci.pem`, user `ubuntu`; override with `STACKRA_TESTBED_AWS_PROFILE`, `STACKRA_TESTBED_REGION`,
+`STACKRA_TESTBED_SSH_KEY` or `--profile`, `--region`, `--key`.
+
+- `run "<session> <what>" <dir> "<cmd>"` claims a free slot (heavy for `encore test`, `playwright`, `e2e`, `act `,
+  `build`; else light), rsyncs `<dir>` into the box's job directory and runs the command there under the slot's lock.
+  A command naming `ci-box` or `stackra testbed` is refused (exit 2). With every slot busy it prints "every box busy,
+  waiting", polls every 20 s and, after 2 minutes, raises the group's desired count by one. `--no-wait` exits 75 when
+  no box is healthy; `--preset verify|e2e|integration --ref <ref>` dispatches `testbed-fallback.yml` instead. A job
+  never runs on the Mac.
+- `status`, `unlock [--box N|id] [--slot heavy|light]`, `ip`, `ssh [--box] [cmd]`, `sync [--box] <dir>`; box numbers
+  are by launch time.
+- `scale [--slot heavy|light]` prints the groups' counts, or raises one by one; `image` prints the AMI id and its age
+  from SSM `/stackra/testbed/ami`.
 
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
 run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
