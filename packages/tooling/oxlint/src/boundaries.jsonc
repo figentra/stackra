@@ -1183,6 +1183,29 @@
       },
     },
     {
+      // STA-1655 (repeated after the host-entry rule above, which a later override must follow): a component may be a class whose hook fields (`i18n = useTranslation()`) gen compiles into hook
+      // calls (ADR 0305 rules 37 and 38; Commerce's AGENTS.md R7 makes every component a class). Rule 41 runs the
+      // hooks lint on gen's compiled output, so the source rule is off for .tsx files in the component homes; it stays
+      // on for hook files, every .ts file and tests. The compiled-output lint is not built yet, so a function component
+      // in these homes is unchecked until it is.
+      "files": [
+        "**/src/components/**/*.tsx",
+        "**/src/blocks/**/*.tsx",
+        "**/src/routes/**/*.tsx",
+        "**/src/react/**/*.tsx",
+        "**/src/native/**/*.tsx",
+        "**/*.mail.tsx",
+      ],
+      "plugins": ["react"],
+      "rules": { "react/rules-of-hooks": "off" },
+    },
+    {
+      // STA-1655: a hook file and a test keep the source rule inside the component homes.
+      "files": ["**/use-*.tsx", "**/__tests__/**"],
+      "plugins": ["react"],
+      "rules": { "react/rules-of-hooks": "error" },
+    },
+    {
       // Tests of a package use empty classes as tokens and test doubles.
       "files": [
         "**/packages/**/__tests__/**/*.ts",
