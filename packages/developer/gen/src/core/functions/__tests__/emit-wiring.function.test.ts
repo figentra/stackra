@@ -158,6 +158,35 @@ describe("emitWiring", () => {
     expect(content).toContain('import { LoyaltyKitModule } from "@acme/loyalty-kit/node";');
   });
 
+  it("keys a dependency module by its package when the member has a module of that key (STA-1666)", () => {
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      dependencies: [
+        {
+          package: "@acme/orders",
+          manifest: {
+            member: "orders",
+            package: "@acme/orders",
+            version: "0.1.0",
+            modules: [
+              {
+                key: "orders",
+                class: "OrdersKitModule",
+                file: "src/node/orders.module.ts",
+                dependsOn: [],
+              },
+            ],
+          },
+        },
+      ],
+    });
+    expect(COMMERCE_IR.modules).toContain("orders");
+    expect(content.match(/^ {4}orders: /gm)).toHaveLength(1);
+    expect(content).toContain(
+      '    "@acme/orders": { exports: [], dependsOn: [], from: "@acme/orders", type: OrdersKitModule },',
+    );
+  });
+
   it("adds the bindings no class declares", () => {
     const billing = emitWiring(BILLING_IR);
     for (const line of [

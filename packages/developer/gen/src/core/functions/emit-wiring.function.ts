@@ -351,14 +351,24 @@ export function emitWiring(ir: MemberIR): string {
         `${type !== undefined ? `, type: ${type}` : ""} },`,
     );
   }
+  // A dependency whose member key is one of the member's own module keys (an OS `payments` service over
+  // `@stackra/payments`) is keyed by its package name, so the graph never holds one key twice (STA-1666).
+  const dependencyKeys = new Map(
+    ir.dependencies.map(({ package: name, manifest }) => [
+      manifest.member,
+      ir.modules.includes(manifest.member) ? name : manifest.member,
+    ]),
+  );
   for (const { package: name, manifest } of ir.dependencies) {
     const entry = manifest.modules?.find((candidate) => candidate.key === manifest.member);
     // A module class without its `file` is generated inside the dependency and exported by no entry.
     if (entry?.class === undefined || typeof entry["file"] !== "string" || manifest.kind === "app")
       continue;
     const type = ref({ name: entry.class, from: packageSpecifier(name, entry["file"]) });
+    const key = dependencyKeys.get(manifest.member) ?? manifest.member;
+    const edges = entry.dependsOn.map((edge) => JSON.stringify(dependencyKeys.get(edge) ?? edge));
     moduleLines.push(
-      `    ${manifest.member}: { exports: [], dependsOn: ${list(entry.dependsOn.map((edge) => JSON.stringify(edge)))}, ` +
+      `    ${key === manifest.member ? key : JSON.stringify(key)}: { exports: [], dependsOn: ${list(edges)}, ` +
         `from: ${JSON.stringify(name)}, type: ${type} },`,
     );
   }
