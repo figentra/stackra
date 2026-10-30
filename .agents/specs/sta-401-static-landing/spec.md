@@ -58,7 +58,7 @@ wordmark, the footer and the absence of any schema listing; the wrangler test as
 ## Requirements
 
 - **FR-001**: THE builder SHALL write one self-contained HTML page (Stackra wordmark, stackra theme colours in light
-  and dark, `lang="en"`, a docs link, the footer "© Figentra Technologies L.L.C", no script, no external request, no
+  and dark, `lang="en"`, a docs link, the footer "© Fulers Technologies L.L.C.", no script, no external request, no
   schema listing) as `/index.html` and `/404.html`.
 - **FR-002**: THE Worker SHALL serve `/404.html` with status 404 for every unknown path (`not_found_handling:
 "404-page"`), and `_headers` SHALL give `/` a short Cache-Control while JSON paths keep their headers and caching.

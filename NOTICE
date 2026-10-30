@@ -7,4 +7,4 @@ Stackra is MIT-licensed (LICENSE), with these exclusions (ADR 0024):
   packages/design-system/tokens/assets/public/fonts/OFL-*.txt.
 - Code from paid licences (HeroUI Pro, Uniwind Pro and similar) is never committed. It is consumed as a dependency
   under its vendor's terms and is not covered by the MIT licence.
-- The Stackra and Figentra names, logos and marks are trademarks of Figentra Technologies L.L.C. See TRADEMARKS.md.
+- The Stackra and Figentra names, logos and marks are trademarks of Fulers Technologies L.L.C. See TRADEMARKS.md.

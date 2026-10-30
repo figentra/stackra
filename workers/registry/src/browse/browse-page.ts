@@ -84,7 +84,7 @@ export async function browsePage(input: BrowsePageInput): Promise<Response> {
 <main id="main">
 ${input.body}
 </main>
-<footer><div><span>© Figentra Technologies L.L.C</span><span dir="ltr">npm.stackra.figentra.com</span></div></footer>
+<footer><div><span>© Fulers Technologies L.L.C.</span><span dir="ltr">npm.stackra.figentra.com</span></div></footer>
 </body>
 </html>
 `;

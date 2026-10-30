@@ -44,7 +44,7 @@ describe("renderPage", () => {
     const page = renderPage();
     expect(page).toMatch(/<svg [^>]*role="img" aria-label="Stackra">/);
     expect(page).toContain('<a href="https://docs.stackra.figentra.com">');
-    expect(page).toContain("<footer>© Figentra Technologies L.L.C</footer>");
+    expect(page).toContain("<footer>© Fulers Technologies L.L.C.</footer>");
     expect(page).toContain('<html lang="en">');
     expect(page).toContain("@media (prefers-color-scheme: dark)");
   });

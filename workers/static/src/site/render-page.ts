@@ -90,7 +90,7 @@ ${STACKRA_WORDMARK_SVG}
 <p>This host serves Stackra’s static files, such as JSON Schemas, to editors and tools. There is no website to browse.</p>
 <p>Looking for Stackra? <a href="${DOCS_URL}">Read the documentation</a>.</p>
 </main>
-<footer>© Figentra Technologies L.L.C</footer>
+<footer>© Fulers Technologies L.L.C.</footer>
 </body>
 </html>
 `;
