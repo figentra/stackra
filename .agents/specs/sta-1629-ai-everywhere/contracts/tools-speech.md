@@ -11,8 +11,16 @@ integrations (D06) writes the speech Connection driver against it. ADR 0492 deci
 - **Zero retention.** Audio and text live in memory for the request only. Nothing is written to disk or logged
   except durations and status codes. A driver reports `retainsAudio: false`, so it may serve the health and
   privileged classes.
-- Base URL: the `ToolEndpoint` of tool `speech` (`http://speech.<region>.tools.<project>.internal:8080`), category
-  `speech`, provider `faster-whisper`.
+- Base URL: the `baseUrl` of the `speech` `ToolEndpoint` (category `speech`, provider `faster-whisper`), stored in the
+  Connection config and used verbatim, with its scheme and port. A driver never builds a URL from a host.
+
+## The rule for every tools-* image
+
+Every tools-stack Connection (ocr, translate, speech, forecast, recommend, retrieval) stores the endpoint's full
+`baseUrl` in its config and uses it as given. Today `toolsStackPlan` publishes `http://<tool>.<region>.tools.<project>.internal:<port>`,
+which is plain HTTP inside the VPC: a private Cloud Map namespace, reachable only from the service subnets through
+security groups. If the tools stack moves to TLS (ECS Service Connect with a private CA), only `baseUrl` changes and
+no driver does.
 
 ## Auth
 
