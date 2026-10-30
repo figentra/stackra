@@ -19,6 +19,16 @@ describe("Same", () => {
     expectTypeOf<Same<PublicId<"ord">, `ord_${string}`>>().toEqualTypeOf<true>();
   });
 
+  it("ignores readonly on arrays, at any depth, and nothing else (STA-1682)", () => {
+    expectTypeOf<Same<{ a: readonly string[] }, { a: string[] }>>().toEqualTypeOf<true>();
+    expectTypeOf<
+      Same<{ b: readonly { c: readonly number[] }[] }, { b: { c: number[] }[] }>
+    >().toEqualTypeOf<true>();
+    expectTypeOf<Same<{ a: readonly string[] }, { a: number[] }>>().toEqualTypeOf<false>();
+    expectTypeOf<Same<{ a?: readonly string[] }, { a: string[] }>>().toEqualTypeOf<false>();
+    expectTypeOf<Same<{ at: Date }, { at: string }>>().toEqualTypeOf<false>();
+  });
+
   it("is false for a wider, a narrower or a different type", () => {
     expectTypeOf<Same<string, "a">>().toEqualTypeOf<false>();
     expectTypeOf<Same<{ a: string }, { a: string; b: number }>>().toEqualTypeOf<false>();
