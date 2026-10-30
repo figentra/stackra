@@ -20,6 +20,14 @@ export type AwsRuntimeOptions = {
     /** The VPC the subnets belong to; required once the plan has a database or a workload (ADR 0493). */
     readonly vpcId?: Input<string> | undefined;
   };
+  /** What public workloads need: the public subnets for their load balancers and the ACM certificate they serve. */
+  readonly workloads?:
+    | {
+        readonly publicSubnetIds?: Input<Input<string>[]> | undefined;
+        readonly certificateArn?: Input<string> | undefined;
+        readonly logRetentionDays?: number | undefined;
+      }
+    | undefined;
   /** Each database's admin password by plan key (`resources.main-db`), as a Pulumi secret; never logged. */
   readonly databasePasswords?: Readonly<Record<string, Input<string>>> | undefined;
   /** Tags every resource carries besides the plan's `env`, `service` and `group` (which win on a clash). */

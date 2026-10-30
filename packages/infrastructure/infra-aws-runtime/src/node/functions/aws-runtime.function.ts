@@ -6,7 +6,8 @@
  *          subscription and the queue policy that admits only that topic, each Valkey replication group (TLS and
  *          at-rest encryption, its own parameter group for an eviction policy, one subnet group for all) and each S3
  *          bucket (public access blocked, versioning and the noncurrent-version expiry the plan asks for), then the
- *          Postgres resources through `awsDatabases` (ADR 0493).
+ *          Postgres resources through `awsDatabases` and the container workloads through `awsWorkloads`, with the one
+ *          workload security group the databases admit (ADR 0493).
  * Boundary: declares resources only, inside the Pulumi program that calls it; `pulumi preview` shows them and only the
  *           owner applies them (agents never run `pulumi up`). No secret is created or read: caches are reached
  *           over TLS inside the given security groups.
@@ -19,6 +20,7 @@ import * as pulumi from "@pulumi/pulumi";
 
 import { resourceName } from "#core/functions/resource-name.function";
 import { awsDatabases } from "#node/functions/aws-databases.function";
+import { awsWorkloads } from "#node/functions/aws-workloads.function";
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
 import type { AwsRuntime } from "#node/types/aws-runtime.type";
 import type { AwsRuntimeOptions } from "#node/types/aws-runtime-options.type";
@@ -194,5 +196,36 @@ export function awsRuntime(plan: RuntimePlan, options: AwsRuntimeOptions): AwsRu
     buckets[bucket.key] = s3Bucket.bucket;
   }
 
-  return { queues, topics, caches, buckets, databases: awsDatabases(plan, options) };
+  // One security group for every workload task, so the databases can admit them before the workloads exist.
+  const workloadGroup =
+    plan.workloads.length === 0 || options.network.vpcId === undefined
+      ? undefined
+      : new aws.ec2.SecurityGroup(
+          resourceName([plan.project, plan.environment, "workloads"], SUBNET_GROUP_NAME_LIMIT),
+          {
+            vpcId: options.network.vpcId,
+            description: "Workload tasks: each other and the runtime in; all out",
+            ingress: [
+              { protocol: "-1", fromPort: 0, toPort: 0, self: true },
+              {
+                protocol: "-1",
+                fromPort: 0,
+                toPort: 0,
+                securityGroups: options.network.securityGroupIds,
+              },
+            ],
+            egress: [{ protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }],
+            tags: { ...options.tags, env: plan.environment, service: "workloads" },
+          },
+        );
+  const groups = workloadGroup === undefined ? [] : [workloadGroup.id];
+  return {
+    queues,
+    topics,
+    caches,
+    buckets,
+    databases: awsDatabases(plan, options, groups),
+    // awsWorkloads refuses a workload without a VPC before it would read the missing group.
+    workloads: awsWorkloads(plan, options, workloadGroup?.id ?? ""),
+  };
 }

@@ -25,4 +25,15 @@ export type AwsRuntime = {
   readonly databases: Readonly<
     Record<string, { readonly endpoint: Output<string>; readonly port: number }>
   >;
+  /** Each workload's ECS service name, its internal host in the namespace, and its load balancer host when public. */
+  readonly workloads: Readonly<
+    Record<
+      string,
+      {
+        readonly service: Output<string>;
+        readonly internalHost: string;
+        readonly publicHost?: Output<string> | undefined;
+      }
+    >
+  >;
 };

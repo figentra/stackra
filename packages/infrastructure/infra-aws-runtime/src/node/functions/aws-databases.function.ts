@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `awsDatabases(plan, options)`, the Pulumi program part that declares a runtime plan's Postgres resources:
  *          one subnet group, then per database a security group that admits port 5432 only from the runtime's security
- *          groups, the RDS instance (or the Aurora cluster and its instances) encrypted with automated backups, and RDS
+ *          groups and the workloads' group, the RDS instance (or the Aurora cluster and its instances) encrypted with automated backups, and RDS
  *          Proxy in front with TLS required. RDS Proxy logs in with a Secrets Manager secret, so the admin password is
  *          also stored there for the proxy alone, read by a role only RDS Proxy may assume.
  * Boundary: declares resources only, inside the Pulumi program that calls it; only the owner applies them. The
@@ -38,12 +38,14 @@ const THROWAWAY = new Set(["dev", "preview"]);
  * Declares the Postgres resources of `plan` and returns each one's proxy endpoint, by plan key.
  *
  * @throws TypeError when the plan has a database and the options name no VPC or no password for it.
+ * @param workloadGroups - the shared workload security group, when the plan has workloads; databases admit it too.
  * @example
  * const databases = awsDatabases(plan, { network, databasePasswords: { "resources.main-db": pulumi.secret(password) } });
  */
 export function awsDatabases(
   plan: RuntimePlan,
   options: AwsRuntimeOptions,
+  workloadGroups: readonly pulumi.Input<string>[] = [],
 ): Record<string, { endpoint: pulumi.Output<string>; port: number }> {
   const out: Record<string, { endpoint: pulumi.Output<string>; port: number }> = {};
   if (plan.databases.length === 0) return out;
@@ -81,6 +83,16 @@ export function awsDatabases(
           toPort: PORT,
           securityGroups: options.network.securityGroupIds,
         },
+        ...(workloadGroups.length === 0
+          ? []
+          : [
+              {
+                protocol: "tcp",
+                fromPort: PORT,
+                toPort: PORT,
+                securityGroups: [...workloadGroups],
+              },
+            ]),
         // The proxy reaches the database through the same group.
         { protocol: "tcp", fromPort: PORT, toPort: PORT, self: true },
       ],
