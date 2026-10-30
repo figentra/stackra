@@ -2,18 +2,22 @@
  * Stackra file contract:
  * Purpose: unit tests of the builder records' own checks: a span or grid outside 1 to 12, a list limit outside 1 to 100, an
  *          empty KPI group and an empty place list are refused, a field records `essential`, a later call of a table
- *          method replaces the earlier, and operator filters and tiebreak sort keys record (two tiebreaks at most).
+ *          method replaces the earlier, operator filters and tiebreak sort keys record (two tiebreaks at most), and a
+ *          column or entry records its enum labels.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (rules 5, 11 and 14).
  */
 import { SortDirection } from "@stackra/contracts";
+import type { I18nKey } from "@stackra/i18n";
 import { describe, expect, it } from "@stackra/testing";
 
 import { Count } from "#core/enums/count.enum";
 import { FilterComparison } from "#core/enums/filter-comparison.enum";
 import { ActionsRecord } from "#core/records/actions.record";
+import { ColumnsRecord } from "#core/records/columns.record";
 import { DisplayRecord } from "#core/records/display.record";
+import { EntriesRecord } from "#core/records/entries.record";
 import { FieldsRecord } from "#core/records/fields.record";
 import { TableRecord } from "#core/records/table.record";
 
@@ -80,5 +84,13 @@ describe("builder records", () => {
       defaultSort: { key: "id", direction: "asc" },
       count: "exact",
     });
+  });
+
+  it("records the enum labels a column or an entry names", () => {
+    const labels = { paid: "orders::enums.order_status.paid" as I18nKey };
+    const columns = new ColumnsRecord<{ status: string }>();
+    const entries = new EntriesRecord<{ status: string }>();
+    expect(columns.from("status").labels(labels).toNode()).toMatchObject({ key: "status", labels });
+    expect(entries.from("status").labels(labels).toNode()).toMatchObject({ key: "status", labels });
   });
 });

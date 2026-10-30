@@ -39,7 +39,9 @@
     "all_views": "Alles",
     "saved_views": "Opgeslagen weergaven",
     "count": "{count, plural, one {# record} other {# records}}",
-    "count_capped": "{count, plural, other {#+ records}}"
+    "count_capped": "{count, plural, other {#+ records}}",
+    "yes": "Ja",
+    "no": "Nee"
   },
   "plan_catalogue": {
     "history": "Versies",

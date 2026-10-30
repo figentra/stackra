@@ -6,6 +6,7 @@
  * Governing contract: ADR 0307 (rule 1: infolist keys come from the get output).
  */
 import type { Enum } from "@stackra/contracts";
+import type { I18nKey } from "@stackra/i18n";
 
 /** One infolist element. */
 export type EntryNode =
@@ -18,6 +19,8 @@ export type EntryNode =
       readonly copyable?: boolean;
       /** The enum whose labels and tones render the value; gen fills it from the record type. */
       readonly enum?: Enum.Any;
+      /** The label key of each enum code, from the generated keys (`I18n.orders.enums.order_status`). */
+      readonly labels?: Readonly<Record<string, I18nKey>>;
     }
   | {
       /** Money in its currency. */

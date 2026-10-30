@@ -7,6 +7,7 @@
  * Governing contract: ADR 0307 (rule 1).
  */
 import type { Enum } from "@stackra/contracts";
+import type { I18nKey } from "@stackra/i18n";
 
 import type { EntryNode } from "#core/types/entry-node.type";
 
@@ -14,6 +15,7 @@ import type { EntryNode } from "#core/types/entry-node.type";
 interface EntryOptions {
   readonly copyable?: boolean;
   readonly enum?: Enum.Any;
+  readonly labels?: Readonly<Record<string, I18nKey>>;
 }
 
 /**

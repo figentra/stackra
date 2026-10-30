@@ -5,6 +5,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 1 and 2).
  */
+import type { I18nKey } from "@stackra/i18n";
+
 import { DraftRecord } from "#core/records/draft.record";
 import type { ColumnBuilder } from "#core/types/column-builder.type";
 import type { ColumnNode } from "#core/types/column-node.type";
@@ -14,6 +16,7 @@ interface ColumnFlags {
   readonly copyable?: boolean;
   readonly sortable?: boolean;
   readonly hidden?: boolean;
+  readonly labels?: Readonly<Record<string, I18nKey>>;
 }
 
 /** Records the flags of one column before it builds. */
@@ -38,5 +41,10 @@ export class ColumnRecord extends DraftRecord<ColumnFlags, ColumnNode> implement
   /** Starts the column hidden. */
   hidden(): this {
     return this.set({ hidden: true });
+  }
+
+  /** Names the label key of each enum code. */
+  labels(labels: Readonly<Record<string, I18nKey>>): this {
+    return this.set({ labels });
   }
 }

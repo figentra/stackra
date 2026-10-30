@@ -6,6 +6,7 @@
  * Governing contract: ADR 0307 (rules 1, 2 and 13: keys are row paths; no custom column renderers in v3.1).
  */
 import type { Enum } from "@stackra/contracts";
+import type { I18nKey } from "@stackra/i18n";
 
 /** One table column. */
 export interface ColumnNode {
@@ -29,4 +30,6 @@ export interface ColumnNode {
 
   /** The enum whose labels and tones render the value; gen fills it from the row type. */
   readonly enum?: Enum.Any;
+  /** The label key of each enum code, from the generated keys (`I18n.orders.enums.order_status`). */
+  readonly labels?: Readonly<Record<string, I18nKey>>;
 }

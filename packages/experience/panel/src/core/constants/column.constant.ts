@@ -8,6 +8,7 @@
  * Governing contract: ADR 0307 (rules 1, 2 and 13).
  */
 import type { Enum } from "@stackra/contracts";
+import type { I18nKey } from "@stackra/i18n";
 
 import type { ColumnNode } from "#core/types/column-node.type";
 
@@ -17,6 +18,7 @@ interface ColumnOptions {
   readonly sortable?: boolean;
   readonly hidden?: boolean;
   readonly enum?: Enum.Any;
+  readonly labels?: Readonly<Record<string, I18nKey>>;
 }
 
 /** A frozen column node. */

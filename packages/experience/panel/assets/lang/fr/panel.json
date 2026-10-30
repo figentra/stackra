@@ -39,7 +39,9 @@
     "all_views": "Tout",
     "saved_views": "Vues enregistrées",
     "count": "{count, plural, one {# enregistrement} other {# enregistrements}}",
-    "count_capped": "{count, plural, other {#+ enregistrements}}"
+    "count_capped": "{count, plural, other {#+ enregistrements}}",
+    "yes": "Oui",
+    "no": "Non"
   },
   "plan_catalogue": {
     "history": "Versions",

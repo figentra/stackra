@@ -78,9 +78,12 @@ function Entries({
           />
         ) : (
           <ResourceValue
+            resourceKey={resourceKey}
+            path={entry.key}
             kind={entry.kind}
             value={value}
             currency={entry.kind === "money" ? valueAt(record, entry.currency) : undefined}
+            labels={entry.kind === "value" ? entry.labels : undefined}
           />
         ),
     });
