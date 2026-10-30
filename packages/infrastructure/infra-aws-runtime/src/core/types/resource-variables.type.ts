@@ -9,9 +9,14 @@
 
 /** One resource's variable names. */
 export type ResourceVariables = {
+  /** The connection URL's name (`MAIN_DB_URL`). */
   readonly url: string;
+  /** The host's name (`MAIN_DB_HOST`). */
   readonly host: string;
+  /** The port's name (`MAIN_DB_PORT`). */
   readonly port: string;
+  /** The user's name (`MAIN_DB_USER`). */
   readonly user: string;
+  /** The password's name (`MAIN_DB_PASSWORD`). */
   readonly password: string;
 };
