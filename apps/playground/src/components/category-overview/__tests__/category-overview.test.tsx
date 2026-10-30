@@ -33,6 +33,7 @@ describe("CategoryOverview", () => {
     window.innerWidth = 1024;
   });
 
+  // shortcut: renders every built card; on the shared CI runner this took up to 57 s, so the budget is 120 s. Render fewer cards once it grows.
   it("is one shelf per filled category on a phone, each with View all and its built cards", () => {
     renderAt(390);
     const viewAll = screen.getAllByRole("link", { name: /^(View all|عرض الكل)$/ });
@@ -42,7 +43,7 @@ describe("CategoryOverview", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(
       FILLED.reduce((sum, built) => sum + built.length, 0),
     );
-  });
+  }, 120_000);
 
   it("is one group card per filled category from sm", () => {
     renderAt(1024);

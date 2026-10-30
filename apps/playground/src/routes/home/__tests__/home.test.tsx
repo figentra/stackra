@@ -36,10 +36,11 @@ describe("HomeRoute", () => {
     Element.prototype.scrollIntoView = () => undefined;
   });
 
+  // shortcut: renders every built card; on the shared CI runner this took up to 57 s, so the budget is 120 s. Render fewer cards once it grows.
   it("renders its page at / with a group card per non-empty category that keeps the search params", async () => {
     renderHome("/?scheme=dark&locale=ar");
     // The hero loads on demand.
-    const heading = await screen.findByRole("heading", { level: 1 }, { timeout: 15_000 });
+    const heading = await screen.findByRole("heading", { level: 1 }, { timeout: 60_000 });
     expect(heading.textContent).toBe("Tokens. Components. Products.");
     expect(document.title).toBe(`${heading.textContent} · ${HomeRoute.title}`);
     const categories = within(screen.getByRole("region", { name: "Categories" }));
@@ -53,7 +54,7 @@ describe("HomeRoute", () => {
     expect(categories.getByRole("link", { name: /Inputs and forms/ }).getAttribute("href")).toBe(
       "/components/inputs-and-forms?scheme=dark&locale=ar",
     );
-  });
+  }, 120_000);
 
   it("counts the built components, not the planned ones", async () => {
     renderHome();
