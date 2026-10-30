@@ -18,6 +18,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { camelCase, kebabCase } from "@stackra/support";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
+import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -61,6 +62,7 @@ export function emitEncoreQueues(
     path: `.stackra/encore/${ir.member}/queues.ts`,
     content: [
       header,
+      ...encoreDatabaseImport(ir),
       'import { registerBrokerTopics } from "@stackra/queue";',
       'import type { BrokerMessage, QueuedJob } from "@stackra/queue/contracts";',
       'import { QueueWorkerService } from "@stackra/queue/node";',

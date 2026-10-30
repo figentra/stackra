@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `emitEncoreDatabase`: a service with a model gets one `SQLDatabase` named after the member,
- *          its migrations the compiled `.stackra/migrations` folder; a package, an app or a service without a database
+ *          its migrations the compiled `.stackra/migrations` folder, providing its url to `#stackra/boot`; a package, an app or a service without a database
  *          gets no file.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
@@ -26,6 +26,8 @@ describe("emitEncoreDatabase", () => {
         "});",
       ].join("\n"),
     );
+    expect(file?.content).toContain('import { provideDatabaseUrl } from "@stackra/database/node";');
+    expect(file?.content).toContain("provideDatabaseUrl(database.connectionString);");
   });
 
   it("names the database in snake case", () => {

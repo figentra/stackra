@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `emitBoot`, a service's `#stackra/boot` (`.stackra/gen/boot.ts`): one `boot(container, { signal })`
  *          that connects what needs the booted container, in order: the bound `HoldRegistry` and `SequenceTimeZone`
- *          drivers (or none), `PostgresDatabaseDriver.connect` with the url of the service's Encore `database`
- *          (`emitEncoreDatabase`), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
+ *          drivers (or none), `PostgresDatabaseDriver.connect` with `databaseUrl()`, the url the service's Encore
+ *          `database` provides (`emitEncoreDatabase`; boot never imports `.stackra/encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
  *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
  *          instance's share of the runway `poolBudget`, ADR 0473) and the subscribers: the legal-hold one, the
  *          `StampSubscriber`, the `AppendOnlySubscriber` (stackra-256), the trait subscribers of `traitSubscribers`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` and, when bound, the `KeyProvider` its blind indexes need (when a model, own or a declared package's, has
@@ -131,8 +131,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',
       // The trait subscribers' names (Tree, ValidateOnFlush) sort after StampSubscriber, so appending keeps the order.
       `import { ${["AppendOnlySubscriber", "connectHoldRegistry", "connectSequenceTimeZone", "DatabaseConfig", "HoldSubscriber", "StampSubscriber", ...traits].join(", ")} } from "@stackra/database";`,
-      'import { PostgresDatabaseDriver } from "@stackra/database/node";',
-      `import { database } from "../encore/${ir.member}/database";`,
+      'import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";',
     );
     if (encrypted)
       imports.push(
@@ -149,7 +148,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
       '  const poolMax = Number(process.env["DATABASE_POOL_MAX"] ?? "");',
       "  await PostgresDatabaseDriver.connect({",
-      "    url: database.connectionString,",
+      "    url: databaseUrl(),",
       "    replicas,",
       "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
       "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
