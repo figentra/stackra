@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ResourceValue`: a flag is a localised yes or no, an enum code takes its named label, else the
- *          first derived label the catalogue has, else shows as its code; free text and money are unchanged.
+ *          first derived label the catalogue has, else shows as its code; a money object is money in its currency;
+ *          free text and money are unchanged.
  * Boundary: unit tier, jsdom; translation reads a small catalogue and throws on a missing key as the real one does.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 decision 22; ADR 0307.
@@ -66,6 +67,18 @@ describe("ResourceValue", () => {
   it("draws the named label of an enum another module declares", () => {
     const labels = { live: "commerce_packs::enums.provider_mode.live" as I18nKey };
     expect(shown({ path: "mode", value: "live", labels })).toBe("Live");
+  });
+
+  it("draws a money object in its own currency, in any kind", () => {
+    expect(shown({ path: "lines.unitPrice", value: { minor: 1250, currency: "SAR" } })).toBe(
+      "SAR 1250",
+    );
+    expect(shown({ kind: "count", path: "total", value: { minor: -99, currency: "KWD" } })).toBe(
+      "KWD -99",
+    );
+    expect(shown({ path: "owner", value: { minor: "x", currency: "SAR", name: "Ada" } })).toBe(
+      "Ada",
+    );
   });
 
   it("shows a code without a label, free text and money as before", () => {
