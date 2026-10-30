@@ -8,26 +8,25 @@
  */
 import { COUNTRY_DIAL_CODES } from "#core/constants/country-dial-codes.constant";
 import { flagOf } from "#core/functions/flag-of.function";
+import { regionNamesOf } from "#core/functions/region-names-of.function";
 import type { PhoneCountry } from "#core/types/phone-country.type";
-
-const names = (lang: string) => new Intl.DisplayNames([lang], { type: "region", fallback: "code" });
 
 /** The countries offered, with a dial code, sorted by name in the locale. */
 export function phoneCountriesOf(
   locale: string,
   countries?: readonly string[],
 ): readonly PhoneCountry[] {
-  const local = names(locale);
-  const english = names("en");
-  const arabic = names("ar");
+  const local = regionNamesOf(locale);
+  const english = regionNamesOf("en");
+  const arabic = regionNamesOf("ar");
   const collator = new Intl.Collator(locale);
   return (
     (countries ?? Object.keys(COUNTRY_DIAL_CODES))
       .filter((code) => COUNTRY_DIAL_CODES[code])
       .map((code) => {
-        const name = local.of(code) ?? code;
+        const name = local(code);
         const dial = COUNTRY_DIAL_CODES[code] ?? "";
-        const search = [name, english.of(code), arabic.of(code), code, dial]
+        const search = [name, english(code), arabic(code), code, dial]
           .join(" ")
           .toLocaleLowerCase();
         return { code, name, dial, flag: flagOf(code), search };

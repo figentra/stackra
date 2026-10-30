@@ -14,6 +14,7 @@ import { View } from "react-native";
 import Animated, { FadeIn, LinearTransition, useReducedMotion } from "react-native-reanimated";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { listFormatOf } from "#core/functions/list-format-of.function";
 import { Button } from "#native/button/button";
 import { Chip } from "#native/chip/chip";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
@@ -72,7 +73,7 @@ export function OverflowList({
                   // shortcut: a comma join where Hermes lacks Intl.ListFormat; drop the fallback once every engine has it.
                   accessibilityHint:
                     typeof Intl.ListFormat === "function"
-                      ? new Intl.ListFormat(locale, { type: "conjunction" }).format(
+                      ? listFormatOf(locale, { type: "conjunction" }).format(
                           folded.map((item) => item.label),
                         )
                       : folded.map((item) => item.label).join(", "),

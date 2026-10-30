@@ -2,13 +2,15 @@
  * Stackra file contract:
  * Purpose: `countryItemsOf(input)`, the choices of a CountrySelect: each country's flag and name in the active
  *          language, the preferred ones first, the rest in the language's alphabetical order.
- * Boundary: pure; Intl.DisplayNames names them, and an unknown code keeps its code as its name.
+ * Boundary: pure; `regionNamesOf` names them, and an unknown code (or a runtime without Intl.DisplayNames) keeps
+ *           its code as its name.
  * Runtime: isomorphic
  * Governing contract: wave 3a forms and pickers (owner approval 2026-10-28).
  */
 import type { SelectItem } from "#contracts/types/select-item.type";
 import { COUNTRY_DIAL_CODES } from "#core/constants/country-dial-codes.constant";
 import { flagOf } from "#core/functions/flag-of.function";
+import { regionNamesOf } from "#core/functions/region-names-of.function";
 
 /**
  * The countries as choices.
@@ -21,10 +23,9 @@ export function countryItemsOf(input: {
   readonly preferred?: readonly string[] | undefined;
   readonly withDialCode?: boolean | undefined;
 }): SelectItem[] {
-  const names = new Intl.DisplayNames([input.locale], { type: "region", fallback: "code" });
   const collator = new Intl.Collator(input.locale);
   const preferred = input.preferred ?? [];
-  const nameOf = (code: string) => names.of(code) ?? code;
+  const nameOf = regionNamesOf(input.locale);
   const item = (code: string): SelectItem => ({
     id: code,
     label: `${flagOf(code)} ${nameOf(code)}`,

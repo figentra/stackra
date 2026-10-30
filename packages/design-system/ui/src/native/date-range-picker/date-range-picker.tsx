@@ -19,6 +19,7 @@ import { DateRangePreset } from "#contracts/enums/date-range-preset.enum";
 import type { DateRangeValue } from "#contracts/types/date-range-value.type";
 import { FORMS_KEYS } from "#core/constants/forms-keys.constant";
 import { dateRangeOfPreset } from "#core/functions/date-range-of-preset.function";
+import { formatDateRange } from "#core/functions/format-date-range.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
@@ -50,16 +51,7 @@ export function DateRangePicker({
   const [shown, setShown] = useState<DateRangeValue | null>(null);
   const [key, setKey] = useState(0);
   const from = today ?? todayIn(getLocalTimeZone());
-  const text =
-    range?.start && range.end
-      ? withDigits(
-          new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).formatRange(
-            range.start.toDate("UTC"),
-            range.end.toDate("UTC"),
-          ),
-          numerals,
-        )
-      : "";
+  const text = range ? withDigits(formatDateRange(range, locale), numerals) : "";
   return (
     <PickerField
       {...field}

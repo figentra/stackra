@@ -14,5 +14,7 @@ import type { CoachMarkContractProps } from "#contracts/types/coach-mark-contrac
  * `View` this package sees.
  */
 export type CoachMarkProps = CoachMarkContractProps<{
-  measureInWindow(callback: (x: number, y: number, width: number, height: number) => void): void;
+  readonly measureInWindow: (
+    callback: (x: number, y: number, width: number, height: number) => void,
+  ) => void;
 }>;

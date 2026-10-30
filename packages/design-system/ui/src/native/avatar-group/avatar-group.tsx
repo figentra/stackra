@@ -21,6 +21,7 @@ import Animated, {
 import type { ReactElement } from "react";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { listFormatOf } from "#core/functions/list-format-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Avatar } from "#native/avatar/avatar";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
@@ -63,7 +64,7 @@ export function AvatarGroup({
   // shortcut: a comma join where Hermes lacks Intl.ListFormat; drop the fallback once every engine has it.
   const list =
     typeof Intl.ListFormat === "function"
-      ? new Intl.ListFormat(locale, { type: "conjunction" }).format(names)
+      ? listFormatOf(locale, { type: "conjunction" }).format(names)
       : names.join(", ");
   const shared = {
     size,

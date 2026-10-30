@@ -37,6 +37,7 @@ export { COUNTRY_DIAL_CODES } from "#core/constants/country-dial-codes.constant"
 export { dateRangeOfPreset } from "#core/functions/date-range-of-preset.function";
 export { flagOf } from "#core/functions/flag-of.function";
 export { hexColorOf } from "#core/functions/hex-color-of.function";
+export { listFormatOf } from "#core/functions/list-format-of.function";
 export { localeNameOf } from "#core/functions/locale-name-of.function";
 export { phoneValueOf } from "#core/functions/phone-value-of.function";
 export { toGregorian } from "#core/functions/to-gregorian.function";

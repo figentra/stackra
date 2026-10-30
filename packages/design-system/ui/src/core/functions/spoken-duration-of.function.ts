@@ -7,6 +7,7 @@
  * Governing contract: STA-1371 (wave A).
  */
 import type { ClockParts } from "#core/types/clock-parts.type";
+import { listFormatOf } from "#core/functions/list-format-of.function";
 
 /** The duration in words. */
 export function spokenDurationOf(
@@ -23,6 +24,7 @@ export function spokenDurationOf(
   )
     .filter(([, value]) => value > 0)
     .map(([unit, value]) => format(value, { style: "unit", unit, unitDisplay: "long" }));
-  if (words.length === 0) words.push(format(parts.seconds, { style: "unit", unit: "second", unitDisplay: "long" }));
-  return new Intl.ListFormat(locale, { style: "long", type: "unit" }).format(words);
+  if (words.length === 0)
+    words.push(format(parts.seconds, { style: "unit", unit: "second", unitDisplay: "long" }));
+  return listFormatOf(locale, { style: "long", type: "unit" }).format(words);
 }
