@@ -13,7 +13,13 @@ import * as node from "#node/index";
 describe("@stackra/analytics/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "AnalyticsBatchAccepted",
+      "AnalyticsBatchPermissions",
       "EraseAnalyticsPersonListener",
+      "FanOutAnalyticsListener",
+      "IngestAnalyticsBatchAction",
+      "IngestAnalyticsBatchInput",
+      "IngestAnalyticsBatchOutput",
       "RelayTrackedAnalyticsListener",
     ]);
   });
