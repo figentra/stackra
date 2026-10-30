@@ -17,7 +17,7 @@ export default mergeConfig(
       // A page test mounts a whole page of real HeroUI components in jsdom; beside the other members' suites on a shared
       // runner it needs more than the 5000 ms default (about 300 ms alone).
       testTimeout: 30_000,
-      setupFiles: ["src/__tests__/async-timeout.setup.ts"],
+      setupFiles: ["src/__tests__/async-timeout.setup.ts", "src/__tests__/settle-imports.setup.ts"],
       include: ["src/**/__tests__/**/*.test.{ts,tsx}", "scripts/**/__tests__/**/*.test.ts"],
       exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],
     },
