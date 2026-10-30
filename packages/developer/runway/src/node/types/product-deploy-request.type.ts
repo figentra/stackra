@@ -12,6 +12,7 @@
 import type { EdgeKvWriter } from "@stackra/app/contracts";
 
 import type { RunwayEnvironment } from "#core/enums/runway-environment.enum";
+import type { PlayConsole } from "#core/ports/play-console.port";
 import type { AppLinkKeys } from "#node/types/app-link-keys.type";
 import type { CommandRunner } from "#node/types/command-runner.type";
 import type { MobileStoreAccount } from "#node/types/mobile-store-account.type";
@@ -45,6 +46,10 @@ export type ProductDeployRequest = {
   readonly stores?: Readonly<Record<string, readonly MobileStoreAccount[]>>;
   /** Publish the web surfaces only: no store check and no submission (a dev or preview deploy). */
   readonly surfacesOnly?: boolean;
+  /** Submit the mobile builds only: no web publish, so no KV writer or asset store is needed. */
+  readonly mobileOnly?: boolean;
+  /** Google Play, to hold an Android build back while the app has no release (the first upload is by hand). */
+  readonly play?: PlayConsole;
   /** Record every upload, KV write and submission instead of making it. */
   readonly dryRun?: boolean;
   /** The command runner; `runCommand` when absent. */

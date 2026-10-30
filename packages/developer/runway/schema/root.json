@@ -1116,12 +1116,41 @@
         },
         "eas": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "project": {
               "type": "string"
             },
             "channel": {
               "type": "string"
+            },
+            "owner": {
+              "type": "string"
+            }
+          }
+        },
+        "google": {
+          "type": "object",
+          "properties": {
+            "project": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{4,28}[a-z0-9]$"
+            },
+            "analyticsAccount": {
+              "type": "string"
+            }
+          }
+        },
+        "sentry": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "project": {
+              "type": "string"
+            },
+            "dsn": {
+              "type": "string",
+              "format": "uri"
             }
           }
         },

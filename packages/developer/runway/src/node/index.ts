@@ -14,18 +14,34 @@
  *          template line step (`checkoutLine`, `shellReleaseOf`) with the dry-run runner and KV driver
  *          (`dryRunCommand`, `DryRunEdgeKvDriver`, ADR 0481), a product mobile app's local run (`prepareMobileDev`), and a product's build and deploy (`buildProduct`,
  *          `deployProduct`, `workspacePackages`).
+ *          Mobile onboarding (`onboardMobile`, `easJsonOf`, `toolVersionOf`, and the real and memory drivers of its
+ *          App Store Connect, Play, Expo, Google Cloud, Firebase, Sentry and Infisical ports, ADR 0482).
  * Boundary: names each re-export and declares nothing. Node only: it reads files. Imports `.` internals one way
  *           (ADR 0294 decision 15); exports none of `.`'s symbols.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note; ADR 0439;
  *                     ADR 0441; ADR 0436 (decisions 4 and 10); ADR 0437; ADR 0481; app-shells 4.2, 5.3, 15 and 16.
  */
+export { AscAppleDeveloperDriver } from "#node/drivers/asc-apple-developer.driver";
 export { EasProviderDriver } from "#node/drivers/eas-provider.driver";
+export { ExpoGraphqlProjectsDriver } from "#node/drivers/expo-graphql-projects.driver";
+export { FirebaseManagementDriver } from "#node/drivers/firebase-management.driver";
+export { GoogleCloudDriver } from "#node/drivers/google-cloud.driver";
+export { GooglePlayConsoleDriver } from "#node/drivers/google-play-console.driver";
+export { InfisicalVaultWriterDriver } from "#node/drivers/infisical-vault-writer.driver";
+export { SentryApiProjectsDriver } from "#node/drivers/sentry-api-projects.driver";
 export { EncoreCloudProviderDriver } from "#node/drivers/encore-cloud-provider.driver";
 export { MintlifyProviderDriver } from "#node/drivers/mintlify-provider.driver";
 export { NeonPreviewDatabaseDriver } from "#node/drivers/neon-preview-database.driver";
 export { WranglerEdgeKvDriver } from "#node/drivers/wrangler-edge-kv.driver";
 export { DryRunEdgeKvDriver } from "#node/drivers/dry-run-edge-kv.driver";
+export { MemoryAppleDeveloperDriver } from "#node/drivers/memory-apple-developer.driver";
+export { MemoryExpoProjectsDriver } from "#node/drivers/memory-expo-projects.driver";
+export { MemoryFirebaseDriver } from "#node/drivers/memory-firebase.driver";
+export { MemoryGoogleCloudDriver } from "#node/drivers/memory-google-cloud.driver";
+export { MemoryPlayConsoleDriver } from "#node/drivers/memory-play-console.driver";
+export { MemorySentryProjectsDriver } from "#node/drivers/memory-sentry-projects.driver";
+export { MemoryVaultWriterDriver } from "#node/drivers/memory-vault-writer.driver";
 export { EdgeKvConfig } from "#node/config/edge-kv.config";
 export { EdgeKvOptions } from "#node/schemas/edge-kv-options.schema";
 export { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
@@ -33,6 +49,7 @@ export { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constan
 export { SCREENSHOT_CAPTURE_DEFAULTS } from "#node/constants/screenshot-capture-defaults.constant";
 export { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
 export { MOBILE_DEV_SETTINGS } from "#node/constants/mobile-dev-settings.constant";
+export { MOBILE_ONBOARD_SETTINGS } from "#node/constants/mobile-onboard-settings.constant";
 export { PRODUCT_BUILD_SETTINGS } from "#node/constants/product-build-settings.constant";
 export { buildProduct } from "#node/functions/build-product.function";
 export { bundleSurfaces } from "#node/functions/bundle-surfaces.function";
@@ -44,7 +61,9 @@ export { checkShellCompatibility } from "#node/functions/check-shell-compatibili
 export { committedBrandOutputs } from "#node/functions/committed-brand-outputs.function";
 export { definesFor } from "#node/functions/defines-for.function";
 export { dryRunCommand } from "#node/functions/dry-run-command.function";
+export { easJsonOf } from "#node/functions/eas-json-of.function";
 export { exportSourceOf } from "#node/functions/export-source-of.function";
+export { onboardMobile } from "#node/functions/onboard-mobile.function";
 export { deployProduct } from "#node/functions/deploy-product.function";
 export { devServer } from "#node/functions/dev-server.function";
 export { platformRows } from "#node/functions/platform-rows.function";
@@ -60,6 +79,7 @@ export { runMobileJob } from "#node/functions/run-mobile-job.function";
 export { runScreenshotCapture } from "#node/functions/run-screenshot-capture.function";
 export { screenshotCaptureJob } from "#node/functions/screenshot-capture-job.function";
 export { shellReleaseOf } from "#node/functions/shell-release-of.function";
+export { toolVersionOf } from "#node/functions/tool-version-of.function";
 export { workspacePackages } from "#node/functions/workspace-packages.function";
 export { uploadBundle } from "#node/functions/upload-bundle.function";
 export type { AppLinkKeys } from "#node/types/app-link-keys.type";
@@ -76,6 +96,7 @@ export type { EdgeHostRow } from "#node/types/edge-host-row.type";
 export type { EdgeRelease } from "#node/types/edge-release.type";
 export type { EdgeShellRelease } from "#node/types/edge-shell-release.type";
 export type { EdgeShellRow } from "#node/types/edge-shell-row.type";
+export type { OnboardStep } from "#node/types/onboard-step.type";
 export type { OpsReview } from "#node/types/ops-review.type";
 export type { ProductPublishRequest } from "#node/types/product-publish-request.type";
 export type { ProductPublishResult } from "#node/types/product-publish-result.type";
@@ -106,6 +127,8 @@ export type { MobileCapability } from "#node/types/mobile-capability.type";
 export type { MobileCapabilityConfig } from "#node/types/mobile-capability-config.type";
 export type { MobileJobRequest } from "#node/types/mobile-job-request.type";
 export type { MobileJobResult } from "#node/types/mobile-job-result.type";
+export type { MobileOnboard } from "#node/types/mobile-onboard.type";
+export type { MobileOnboardRequest } from "#node/types/mobile-onboard-request.type";
 export type { MobileStoreAccount } from "#node/types/mobile-store-account.type";
 export type { MobileVariant } from "#node/types/mobile-variant.type";
 export type { ScreenshotCaptureJob } from "#node/types/screenshot-capture-job.type";
