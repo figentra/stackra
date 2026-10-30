@@ -57,6 +57,10 @@ const listOf = (value: unknown): readonly Readonly<Record<string, unknown>>[] =>
       })
     : [];
 
+/** The first of `fields` each object of `value` carries as text. */
+const keysOf = (value: unknown, ...fields: string[]): string[] =>
+  listOf(value).flatMap((item) => fields.map((field) => textOf(item[field])).find(Boolean) ?? []);
+
 /** An object JSON Schema over `properties`. */
 const objectSchema = (properties: JsonSchema, required: readonly string[] = []): JsonSchema => ({
   type: "object",
@@ -213,11 +217,9 @@ export function clientToolsOf(ir: MemberIR): {
     const module = key.slice(0, key.indexOf("."));
     const read = `${key}.read`;
     const table = objectOf(tree["table"]);
-    const columns = listOf(table?.["columns"]).flatMap((column) => textOf(column["key"]) ?? []);
-    const filters = listOf(table?.["filters"]).flatMap((filter) => textOf(filter["key"]) ?? []);
-    const views = listOf(tree["views"]).flatMap(
-      (view) => textOf(view["key"]) ?? textOf(view["name"]) ?? [],
-    );
+    const columns = keysOf(table?.["columns"], "key");
+    const filters = keysOf(table?.["filters"], "key");
+    const views = keysOf(tree["views"], "key", "name");
     const file = "package.json";
     const own = (kind: string, name: string, schema: JsonSchema): void =>
       add(file, kind, `${key}.${name}`, key, module, schema, read);

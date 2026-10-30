@@ -12,37 +12,17 @@
  * Runtime: node
  * Governing contract: ADR 0490 (decisions 1 and 10); STA-1631.
  */
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { readFileSync } from "node:fs";
+import { relative } from "node:path";
 
 import type { AnchorIR } from "#core/types/anchor-ir.type";
+import { sourceFiles } from "#node/functions/source-files.function";
 
 /** A JSX attribute `anchor="x"` or `anchor={"x"}`; the lookbehind keeps `data-anchor=` and `x.anchor=` out. */
 const DECLARATION = /(?<![\w$.-])anchor=\{?\s*["']([^"']+)["']/g;
 
 /** An object property `anchor: "x"`. */
 const REFERENCE = /(?<![\w$.-])anchor\s*:\s*["']([^"']+)["']/g;
-
-/** The `.ts`/`.tsx` files under `folder`, sorted, without tests and tool folders. */
-function sourceFiles(folder: string): string[] {
-  return (
-    readdirSync(folder, { withFileTypes: true })
-      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-      .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))
-      .flatMap((entry) => {
-        if (entry.isDirectory())
-          return entry.name.startsWith(".") ||
-            entry.name === "node_modules" ||
-            entry.name === "dist" ||
-            entry.name === "__tests__"
-            ? []
-            : sourceFiles(join(folder, entry.name));
-        return /\.tsx?$/.test(entry.name) && !entry.name.endsWith(".d.ts")
-          ? [join(folder, entry.name)]
-          : [];
-      })
-  );
-}
 
 /**
  * The anchors the member at `root` declares and refers to.
@@ -57,7 +37,7 @@ export function readAnchors(root: string): {
 } {
   const anchors: AnchorIR[] = [];
   const references: AnchorIR[] = [];
-  for (const path of sourceFiles(root)) {
+  for (const path of sourceFiles(root, ["__tests__"])) {
     const text = readFileSync(path, "utf8");
     if (!text.includes("anchor")) continue;
     text.split("\n").forEach((line, index) => {

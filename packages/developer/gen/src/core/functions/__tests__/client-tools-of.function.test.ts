@@ -15,45 +15,61 @@ import type { MemberIR } from "#core/types/member-ir.type";
 
 const keys = (ir: MemberIR): string[] => clientToolsOf(ir).tools.map((tool) => tool.key);
 
-const orders = {
-  package: "@acme/orders",
-  manifest: {
-    member: "orders",
+/** The orders package's manifest; `purgeAi` is the `ai` flag of its `tool: false` action's placement. */
+const ordersWith = (purgeAi?: boolean) =>
+  ({
     package: "@acme/orders",
-    version: "0.1.0",
-    actions: [
-      {
-        key: "orders.order.cancel@1",
-        kind: "action",
-        module: "orders",
-        class: "CancelOrderAction",
-        permission: "orders.order.cancel",
-        risk: "L2",
-        tool: { name: "orders_order_cancel" },
-      },
-      {
-        key: "orders.order.purge@1",
-        kind: "action",
-        module: "orders",
-        class: "PurgeOrderAction",
-        permission: "orders.order.purge",
-        risk: "L3",
-        toolOff: "never an agent",
-      },
-    ],
-    ui: {
-      resources: {
-        "orders.order": {
-          table: { columns: [{ key: "placedAt" }], filters: [{ key: "status" }] },
-          actions: [
-            { kind: "run", action: { $class: "CancelOrderAction" } },
-            { kind: "run", action: { $class: "PurgeOrderAction" } },
-          ],
+    manifest: {
+      member: "orders",
+      package: "@acme/orders",
+      version: "0.1.0",
+      actions: [
+        {
+          key: "orders.order.cancel@1",
+          kind: "action",
+          module: "orders",
+          class: "CancelOrderAction",
+          permission: "orders.order.cancel",
+          risk: "L2",
+          tool: { name: "orders_order_cancel" },
+        },
+        {
+          key: "orders.order.purge@1",
+          kind: "action",
+          module: "orders",
+          class: "PurgeOrderAction",
+          permission: "orders.order.purge",
+          risk: "L3",
+          toolOff: "never an agent",
+        },
+      ],
+      ui: {
+        resources: {
+          "orders.order": {
+            table: { columns: [{ key: "placedAt" }], filters: [{ key: "status" }] },
+            actions: [
+              { kind: "run", action: { $class: "CancelOrderAction" } },
+              {
+                kind: "run",
+                action: { $class: "PurgeOrderAction" },
+                ...(purgeAi === undefined ? {} : { ai: purgeAi }),
+              },
+            ],
+          },
         },
       },
     },
-  },
-} as never;
+  }) as never;
+
+/** The codes of the refusals `clientToolsOf` gives `ir`. */
+const codesOf = (ir: MemberIR): string[] => clientToolsOf(ir).errors.map((error) => error.code);
+
+/** The web app with no routes of its own and `dependency` declared. */
+const withDependency = (dependency: unknown): MemberIR => ({
+  ...WEB_APP_IR,
+  classes: [],
+  dependencies: [dependency as never],
+});
 
 const route = (name: string, options: Record<string, unknown>) => ({
   ...(WEB_APP_IR.classes.find((declared) => declared.kind === "route") as never as object),
@@ -83,7 +99,7 @@ describe("clientToolsOf", () => {
   });
 
   it("derives the resource tools and a prefill per placed tool action", () => {
-    const result = clientToolsOf({ ...WEB_APP_IR, classes: [], dependencies: [orders] });
+    const result = clientToolsOf(withDependency(ordersWith()));
     expect(result.errors).toEqual([]);
     expect(result.tools.map((tool) => tool.key)).toEqual([
       "orders.order.cancel.prefill",
@@ -100,17 +116,7 @@ describe("clientToolsOf", () => {
   });
 
   it("refuses ai: true on a placement of a tool: false action", () => {
-    const forced = structuredClone(orders) as never as {
-      manifest: {
-        ui: { resources: Record<string, { actions: [unknown, Record<string, unknown>] }> };
-      };
-    };
-    forced.manifest.ui.resources["orders.order"].actions[1].ai = true;
-    expect(
-      clientToolsOf({ ...WEB_APP_IR, classes: [], dependencies: [forced as never] }).errors.map(
-        (error) => error.code,
-      ),
-    ).toEqual(["prefill_tool_off"]);
+    expect(codesOf(withDependency(ordersWith(true)))).toEqual(["prefill_tool_off"]);
   });
 
   it("writes ui.point for declared anchors and refuses an undeclared reference", () => {
@@ -128,20 +134,13 @@ describe("clientToolsOf", () => {
   });
 
   it("refuses a record param that is not a public id, and two tools with one name", () => {
-    const bad = clientToolsOf({
-      ...WEB_APP_IR,
-      classes: [
-        route("OrderDetailRoute", {
-          path: "/orders/:orderId",
-          context: { record: { model: "orders.order", param: "orderId" } },
-        }) as never,
-      ],
-    });
-    expect(bad.errors.map((error) => error.code)).toEqual(["context_record_not_public_id"]);
+    const bad = route("OrderDetailRoute", {
+      path: "/orders/:orderId",
+      context: { record: { model: "orders.order", param: "orderId" } },
+    }) as never;
+    expect(codesOf({ ...WEB_APP_IR, classes: [bad] })).toEqual(["context_record_not_public_id"]);
     const twin = WEB_APP_IR.classes.find((declared) => declared.kind === "route") as never;
-    expect(
-      clientToolsOf({ ...WEB_APP_IR, classes: [twin, twin] }).errors.map((error) => error.code),
-    ).toEqual(["client_tool_collision"]);
+    expect(codesOf({ ...WEB_APP_IR, classes: [twin, twin] })).toEqual(["client_tool_collision"]);
   });
 
   it("has no tools outside an app", () => {

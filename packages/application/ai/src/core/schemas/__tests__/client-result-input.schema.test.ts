@@ -13,7 +13,7 @@ import { CLIENT_RESULT_ACTION } from "#core/constants/client-result-action.const
 import { CLIENT_RESULT_INPUT_SCHEMA } from "#core/constants/client-result-input-schema.constant";
 import { ClientResultInput } from "#core/schemas/client-result-input.schema";
 
-const RUN = "airun_01h2j3k4l5m6n7p8q9r0s1t2v3";
+const RUN = "airun_01h2j3k4m5n6p7q8r9s0t1v2w3";
 
 describe("ClientResultInput", () => {
   it("registers the shipped schema and takes a result or a refusal", () => {

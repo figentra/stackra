@@ -12,7 +12,7 @@ import { schemaOf, validate } from "@stackra/validation";
 import { PAGE_CONTEXT_SCHEMA } from "#core/constants/page-context-schema.constant";
 import { PageContext } from "#core/schemas/page-context.schema";
 
-const ORDER = "ord_01h2j3k4l5m6n7p8q9r0s1t2v3";
+const ORDER = "ord_01h2j3k4m5n6p7q8r9s0t1v2w3";
 
 describe("PageContext", () => {
   it("registers the shipped schema and parses a full context", () => {
