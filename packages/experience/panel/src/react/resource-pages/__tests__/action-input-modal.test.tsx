@@ -17,6 +17,7 @@ import { vi } from "vitest";
 import { z } from "zod";
 
 import { ActionInputModal } from "#react/resource-pages/action-input-modal";
+import type { ReactNode } from "react";
 
 const spies = vi.hoisted(() => ({
   run: vi.fn(),
@@ -29,8 +30,13 @@ vi.mock("@stackra/i18n/react", () => ({ useTranslation: () => ({ t: (key: string
 
 vi.mock("@stackra/ui/react", async () => {
   const { createElement } = await import("react");
-  // oxlint-disable-next-line typescript/no-explicit-any -- reason: the DOM stand-ins read the kit's props loosely
-  type Props = Record<string, any>;
+  // The few props the DOM stand-ins read; React passes the rest, which they ignore.
+  type Props = {
+    readonly children?: ReactNode;
+    readonly name?: string;
+    readonly onOpenChange: (open: boolean) => void;
+    readonly submit: (values: unknown) => void;
+  };
   const part = (tag: string) => (props: Props) => createElement(tag, null, props.children);
   const field = (kind: string) => (props: Props) =>
     createElement("label", { "data-kind": kind }, `${kind}:${props.name}`);
