@@ -62,7 +62,7 @@ export class MemoryGoogleCloudDriver extends Driver(GoogleCloud) {
     return email;
   }
 
-  /** Answers `key`. */
+  /** Answers the fixed `key` and records the call, never the key. */
   override async createKey(project: string, email: string): Promise<string> {
     this.calls.push(`createKey ${project} ${email}`);
     return this.key;

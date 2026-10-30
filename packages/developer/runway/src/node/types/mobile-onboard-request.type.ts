@@ -22,7 +22,7 @@ export type MobileOnboardRequest = {
   readonly app: string;
   /** App Store Connect. */
   readonly apple: AppleDeveloper;
-  /** Google Play. */
+  /** The Google Play console, read for the app and its first release. */
   readonly play: PlayConsole;
   /** Expo and EAS. */
   readonly expo: ExpoProjects;
@@ -30,7 +30,7 @@ export type MobileOnboardRequest = {
   readonly google: GoogleCloud;
   /** Firebase on that project. */
   readonly firebase: Firebase;
-  /** Sentry. */
+  /** The Sentry projects, found or created for the app. */
   readonly sentry: SentryProjects;
   /** Where a generated key is written blind (the FCM key). */
   readonly vault: VaultWriter;

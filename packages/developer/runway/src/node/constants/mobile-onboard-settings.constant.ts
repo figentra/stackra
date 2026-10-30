@@ -9,7 +9,7 @@
  * Governing contract: ADR 0482 (decisions 5 to 7), ADR 0480 (decision 1), ADR 0173.
  */
 
-/** Onboarding facts. */
+/** The fixed names and defaults every onboarding run uses. */
 export const MOBILE_ONBOARD_SETTINGS = Object.freeze({
   /** The Expo account a project is created under when `mobile.<app>.eas.owner` is absent. */
   easOwner: "figentra",

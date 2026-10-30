@@ -18,7 +18,7 @@ import type { ExpoCredentials } from "#core/types/expo-credentials.type";
 import { requestJson } from "#node/functions/request-json.function";
 import { secretOf } from "#node/functions/secret-of.function";
 
-/** Expo's API. */
+/** Expo's GraphQL endpoint, the one eas-cli calls. */
 const URL = "https://api.expo.dev/graphql";
 
 /** The credentials query. */

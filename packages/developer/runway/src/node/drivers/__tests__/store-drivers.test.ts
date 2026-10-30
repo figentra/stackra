@@ -51,7 +51,8 @@ function fakeFetch(answers: Record<string, [number, unknown]>): {
     const key = keys.find((candidate) => `${method} ${url}`.startsWith(candidate));
     const [status, body] =
       key === undefined ? [599, { message: "unexpected" }] : (answers[key] as [number, unknown]);
-    return new Response(body === undefined ? "" : JSON.stringify(body), { status });
+    // A 204 answer may not carry a body, not even an empty one.
+    return new Response(body === undefined ? null : JSON.stringify(body), { status });
   };
   return { fetch: fake as typeof fetch, sent };
 }

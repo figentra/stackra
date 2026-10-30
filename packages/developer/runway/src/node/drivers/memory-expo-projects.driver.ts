@@ -12,7 +12,7 @@ import { Driver } from "@stackra/container";
 import { ExpoProjects } from "#core/ports/expo-projects.port";
 import type { ExpoCredentials } from "#core/types/expo-credentials.type";
 
-/** Nothing held. */
+/** The credentials of a project EAS holds nothing for. */
 const NONE: ExpoCredentials = {
   ios: { signing: false, push: false },
   android: { signing: false, push: false },

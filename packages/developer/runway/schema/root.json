@@ -1116,7 +1116,6 @@
         },
         "eas": {
           "type": "object",
-          "additionalProperties": false,
           "properties": {
             "project": {
               "type": "string"
@@ -1131,6 +1130,7 @@
         },
         "google": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "project": {
               "type": "string",
