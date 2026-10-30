@@ -31,6 +31,12 @@ describe("allowFields", () => {
     expect(allowFields(facts, "toString", {})).toEqual({});
   });
 
+  it("never lets a credential through, even when the list names it (ADR 0494)", () => {
+    expect(
+      allowFields({ accessToken: "t" }, "credential", { credential: ["accessToken"] }),
+    ).toEqual({});
+  });
+
   it("never reads inherited keys", () => {
     expect(allowFields(facts, "customer", { customer: ["constructor", "id.length"] })).toEqual({});
   });

@@ -122,7 +122,8 @@ pipeline resolves optionally, so its wiring writes the port's table from the dec
 
 The model encryption path (`checkEncryptedFields`, full pass only, stackra-262): `encrypted_field_unknown` (a
 `HasEncryptedFields` field the model does not declare), `encrypted_field_unclassified` (an encrypted field without
-`@Classified`), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder
+`@Classified`), `credential_field_not_encrypted` (a `@Classified(DataClassification.Credential)` field not named by
+`HasEncryptedFields`, ADR 0494), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder
 insert or update, or raw `insert into`/`update` statement on an encrypted model, own or a declared package's, found by
 `readNativeWrites` outside `__tests__` and `database/`). A service with an encrypted model gets
 `new EncryptedFieldsSubscriber(container.get(FieldCipher), undefined, <the bound KeyProvider>)` among its boot

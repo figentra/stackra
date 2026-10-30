@@ -119,6 +119,7 @@ describe("@stackra/model", () => {
       "Classify",
       "Collection",
       "Commentable",
+      "CredentialDataClass",
       "DataClass",
       "DocumentNumber",
       "EncryptedFieldsResealService",

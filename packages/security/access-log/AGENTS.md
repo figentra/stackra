@@ -38,7 +38,7 @@ decisions 3, 5 and 6). Member at `packages/security/access-log` (`tier:lib`), in
   with a `.comment()` equal to the model field's docblock, raw SQL only through `schema.sql(statement, { inverse })`.
 - A sink failure is always logged as `access_log_write_failed`. It fails the logged call only for a class that fails
   closed: a classification in `AccessLogConfig.failClosed` (financial, health and regulated by default, configuration, never
-  code) or a facet marked `failClosed: true` (a privileged surface). Every other read is served (ADR 0409).
+  code) a `credential` read (always, whatever the configuration says, ADR 0494), or a facet marked `failClosed: true` (a privileged surface). Every other read is served (ADR 0409).
 - The write audit (`PostgresAuditTrailDriver`, `AuditLogEntry`, `AuditQuery`) is its own chain beside the access
   chain: build links only with `linkAuditEntry`, verify only with `findAuditChainBreak`, and never fail a call in no
   tenant (log `audit_write_skipped`). The table reuses migration 0001's `refuse_update()` trigger function.

@@ -18,6 +18,7 @@ describe("DataClassification", () => {
       "health",
       "pseudonymous",
       "regulated",
+      "credential",
     ]);
   });
 

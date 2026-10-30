@@ -267,7 +267,8 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
 - `checkModelScope` (core, full pass only, stackra-258): `model_tenancy_missing` for a service running
   `@stackra/tenancy` only (packages' platform tables are not checked). `emitIsolationTest` writes
   `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.
-- `checkEncryptedFields` (core, full pass only, stackra-262): `encrypted_field_unknown`, `encrypted_field_unclassified`
+- `checkEncryptedFields` (core, full pass only, stackra-262): `encrypted_field_unknown`, `encrypted_field_unclassified`,
+  `credential_field_not_encrypted` (a `credential` field outside `HasEncryptedFields`, ADR 0494)
   (the reader puts the `@Classified` code on `FieldIR.classified`) and `encrypted_native_write` over
   `MemberIR.nativeWrites` (`readNativeWrites`, a same-line text scan). `emitBoot` adds the `EncryptedFieldsSubscriber`
   over the bound `FieldCipher` when any model, own or a declared package's, has `HasEncryptedFields`. The

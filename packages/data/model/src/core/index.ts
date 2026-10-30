@@ -11,6 +11,7 @@
  */
 export { Collection } from "@mikro-orm/core";
 export type { Ref } from "@mikro-orm/core";
+export { CredentialDataClass } from "#core/access/credential.data-class";
 export { PrivilegedDataClass } from "#core/access/privileged.data-class";
 export { DataClass } from "#core/bases/data-class.base";
 export { Model } from "#core/bases/model.base";

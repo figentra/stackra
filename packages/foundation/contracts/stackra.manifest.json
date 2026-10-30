@@ -50,7 +50,7 @@
     },
     "contracts.DataClassification": {
       "type": "string",
-      "enum": ["personal", "financial", "health", "pseudonymous", "regulated"]
+      "enum": ["personal", "financial", "health", "pseudonymous", "regulated", "credential"]
     },
     "contracts.HealthStatus": {
       "type": "string",

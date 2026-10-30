@@ -3,7 +3,8 @@
  * Purpose: `checkEncryptedFields`, the gen checks of the model encryption path: a `HasEncryptedFields` field the
  *          model does not declare (`encrypted_field_unknown`), one that carries no `@Classified` class
  *          (`encrypted_field_unclassified`: the classification and the encryption are two statements of one fact,
- *          so they must agree), and a write that skips the unit of work on an encrypted model, by its class or its
+ *          so they must agree), a `credential` field that is not encrypted (`credential_field_not_encrypted`: a
+ *          provider secret never rests in clear, ADR 0494), and a write that skips the unit of work on an encrypted model, by its class or its
  *          table (`encrypted_native_write`: the `EncryptedFieldsSubscriber` never sees it, so the value would rest in
  *          clear).
  * Boundary: pure, over the IR. Encrypted models are the member's own (its model shapes and their traits) and its
@@ -11,7 +12,7 @@
  *           here, its own gen does that. The `PersonalData` erasure methods are not compared yet: gen does not read
  *           them (gov3 is one `DataClass` declaration, stackra-314).
  * Runtime: isomorphic
- * Governing contract: ADR 0465 (decision 5: the model encryption path); ADR 0134 (decision 2: classification).
+ * Governing contract: ADR 0465 (decision 5: the model encryption path); ADR 0134 (decision 2: classification); ADR 0494 (credential).
  */
 import { tableName } from "#core/functions/table-name.function";
 import type { GenError } from "#core/types/gen-error.type";
@@ -31,6 +32,20 @@ export function checkEncryptedFields(ir: MemberIR): GenError[] {
   for (const declared of ir.classes) {
     if (declared.kind !== "model") continue;
     const trait = declared.traits.find((use) => use.name === "HasEncryptedFields");
+    // A `credential` field is always encrypted (ADR 0494 rule 1), so it must be named by HasEncryptedFields.
+    for (const field of ir.shapes.find(
+      (candidate) => candidate.name === declared.name && candidate.file === declared.file,
+    )?.fields ?? [])
+      if (field.classified === "credential" && !trait?.args.includes(field.name))
+        errors.push({
+          code: "credential_field_not_encrypted",
+          file: declared.file,
+          line: 0,
+          column: 0,
+          subject: `${declared.name}.${field.name}`,
+          message: `${declared.name}.${field.name} is classified credential but is not encrypted, so a provider secret would rest in clear`,
+          fix: `add \`"${field.name}"\` to HasEncryptedFields on ${declared.name}`,
+        });
     if (trait === undefined) continue;
     classes.add(declared.name);
     tables.add(tableName(declared.module, declared.name));
@@ -53,7 +68,7 @@ export function checkEncryptedFields(ir: MemberIR): GenError[] {
           ...at,
           code: "encrypted_field_unclassified",
           message: `${declared.name}.${field} is encrypted but carries no @Classified class, so export, erasure and the logs do not treat it as personal or regulated data`,
-          fix: `add \`@Classified(DataClassification.<Class>)\` to ${field} (Personal, Financial, Health, Pseudonymous or Regulated)`,
+          fix: `add \`@Classified(DataClassification.<Class>)\` to ${field} (Personal, Financial, Health, Pseudonymous, Regulated or Credential)`,
         });
     }
   }

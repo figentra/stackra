@@ -4,6 +4,13 @@ description: "Proposed · 2026-10-26"
 ---
 
 <Note>
+  Amended 2026-10-30 (STA-1677) by [0494](/adr/0494-credential-data-class-for-provider-secrets): the
+  built-in classes gain `credential`, whose floor is the strictest value on every effect (`ai:
+  never`, `support: hidden`, `search: no_snippet`, `export: excluded`) and is code, never seed data.
+  `ExportLabel` gains `excluded`.
+</Note>
+
+<Note>
   Proposed (STA-806). It sets the four effects that
   [0341](/adr/0341-product-defined-data-classes-and-the-privileged-class) decision 2 left to "the
   change that ships `DataClass`" for the six classes of

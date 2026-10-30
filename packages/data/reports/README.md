@@ -153,6 +153,8 @@ an unconfigured service, unbound token, unreachable service, error status or mis
 A dimension or measure may carry a `permission` (a `Permissions` static) and a `dataClass` (a `DataClassification`
 code or a product class key, ADR 0341):
 
+A `credential` column is hidden even from the holder of its permission (ADR 0494).
+
 ```ts
 measures: {
   margin: { kind: MeasureKind.Sum, field: "margin", metric: ReportMetric.Money, permission: OrderPermissions.margin },

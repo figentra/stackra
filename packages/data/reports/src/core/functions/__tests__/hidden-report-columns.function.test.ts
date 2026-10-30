@@ -18,6 +18,11 @@ const declaration: ReportDeclaration = {
   dimensions: {
     status: { path: "status" },
     email: { path: "customer.email", dataClass: "personal" },
+    token: {
+      path: "connection.accessToken",
+      dataClass: "credential",
+      permission: "orders.order.token",
+    },
   },
   measures: {
     orders: { kind: MeasureKind.Count, metric: ReportMetric.Count },
@@ -48,9 +53,11 @@ describe(hiddenReportColumns, () => {
       "margin",
       "marginPct",
       "marginRate",
+      "token",
     ]);
-    expect([...hiddenReportColumns(declaration, new Set(["orders.order.margin"]))]).toEqual([
-      "email",
-    ]);
+    // a credential column stays hidden even when its permission is held (ADR 0494)
+    expect([
+      ...hiddenReportColumns(declaration, new Set(["orders.order.margin", "orders.order.token"])),
+    ]).toEqual(["email", "token"]);
   });
 });

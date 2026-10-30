@@ -46,6 +46,13 @@ const table: RouteTable = {
 };
 
 describe("routeModel", () => {
+  it("always refuses a credential, even with no rule for it (ADR 0494)", () => {
+    expect(routeModel({ task: "chat", region: "eu", dataClass: "credential" }, table)).toEqual({
+      kind: "refused",
+      reason: "class_closed",
+    });
+  });
+
   it("routes in-region by row order, the tenant's rows first", () => {
     expect(routeModel({ task: "chat", region: "eu" }, table)).toEqual({
       kind: "routed",

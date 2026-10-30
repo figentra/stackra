@@ -71,3 +71,5 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 | A subject's declared fields | DSAR zips on the host disk            | random file name; signed link for `exportTtlDays`; purged nightly after that |
 | Subject public id           | `EraseSubjectInput`, receipts, events | pseudonymous id only, kept as the proof the request was honoured             |
 | Subject salt                | `privacy.subject_salts` or the host's | read only to derive the subject key; destroyed on erasure; never logged      |
+
+- `personalDataDeclarations` drops every field a model classifies `credential` and any declaration left empty: a provider secret is never in a DSAR export and erasure skips it (ADR 0494).

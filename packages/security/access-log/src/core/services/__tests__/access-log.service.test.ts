@@ -6,7 +6,8 @@
  *          fails closed: a configured classification (financial, health and regulated by default) or a `failClosed` facet.
  * Boundary: test only; the service is built with the package's sink fake, a fixed clock and a logger fake.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0212 (decision 5 and open question 1); ADR 0134; ADR 0409 (STA-821).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0212 (decision 5 and open question 1); ADR 0134; ADR 0409 (STA-821);
+ *                     ADR 0494 (a credential read always fails closed).
  */
 import { buildConfig } from "@stackra/config";
 import { ActorKind, Clock, DataClassification, Logger, Realm } from "@stackra/contracts";
@@ -117,6 +118,19 @@ describe("AccessLogService", () => {
       ACCESS_LOG_WRITE_FAILED,
       expect.objectContaining({ callId: "call_1", target: "Reads.view" }),
     );
+  });
+
+  it("always refuses a credential read whose record is lost, even when the configuration lists no class (ADR 0494)", async () => {
+    const { service } = serviceWith(AccessLogSinkFake.with({ failing: true }), []);
+    await expect(
+      service.record(
+        "call_3",
+        STAFF,
+        "Connections.token",
+        { classification: DataClassification.Credential },
+        [],
+      ),
+    ).rejects.toBeInstanceOf(AccessLogWriteFailedError);
   });
 
   it("refuses a financial, health or regulated read whose record is lost, after logging it (STA-821, STA-1300)", async () => {

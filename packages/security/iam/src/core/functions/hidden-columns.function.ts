@@ -3,12 +3,12 @@
  * Purpose: `hiddenColumns(columns, held)`, the column side of access: the names of the columns a caller holding the
  *          permission keys `held` may not see. A column with a permission is hidden unless it is held; a column with a
  *          data class and no permission is hidden from everyone, since a classified column is shown only under a
- *          permission that opts it in.
+ *          permission that opts it in. A `credential` column is hidden even from a holder of its permission.
  * Boundary: pure; the caller decides `held` (the decision point's `check` per key for a reader, the audience's keys for
  *           a shared definition) and drops or masks what this returns. Rows stay the visibility filter's.
  * Runtime: isomorphic
  * Governing contract: ADR 0470 (decision 6); ADR 0341 (data classes); ADR 0307 (rule 10: classified columns are
- *                     excluded unless opted in under a permission); ADR 0208 (decision 3).
+ *                     excluded unless opted in under a permission); ADR 0208 (decision 3); ADR 0494 (credential).
  */
 import type { ColumnRule } from "#core/types/column-rule.type";
 
@@ -24,8 +24,10 @@ export function hiddenColumns(
   held: ReadonlySet<string>,
 ): string[] {
   return Object.entries(columns)
-    .filter(([, rule]) =>
-      rule.permission === undefined ? rule.dataClass !== undefined : !held.has(rule.permission),
+    .filter(
+      ([, rule]) =>
+        rule.dataClass === "credential" || // a provider secret is shown to nobody, whatever permission is held (ADR 0494)
+        (rule.permission === undefined ? rule.dataClass !== undefined : !held.has(rule.permission)),
     )
     .map(([name]) => name);
 }

@@ -30,7 +30,7 @@
     },
     "model.ExportLabel": {
       "type": "string",
-      "enum": ["labelled"]
+      "enum": ["labelled", "excluded"]
     },
     "model.OnDelete": {
       "type": "string",

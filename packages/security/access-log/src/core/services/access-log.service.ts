@@ -10,9 +10,11 @@
  *           code. `Logger` and `Clock` are ports of @stackra/contracts, injected by type.
  * Runtime: isomorphic
  * Governing contract: ADR 0212 (decision 5 and open question 1); ADR 0134 (classification); ADR 0184 (telemetry);
- *                     ADR 0294 (decisions 6 and 16); ADR 0409 (fail-closed classes, STA-821).
+ *                     ADR 0294 (decisions 6 and 16); ADR 0409 (fail-closed classes, STA-821);
+ *                     ADR 0494 (a credential read always fails closed).
  */
 import { Service } from "@stackra/container";
+import { DataClassification } from "@stackra/contracts";
 import type { Actor, Clock, Logger } from "@stackra/contracts";
 
 import type { AccessLogConfig } from "#config/access-log.config";
@@ -89,9 +91,16 @@ export class AccessLogService extends Service {
     }
   }
 
-  /** Whether a call of a class with `options` is refused when its record cannot be written. */
+  /**
+   * Whether a call of a class with `options` is refused when its record cannot be written. A `credential` read always
+   * fails closed, whatever the configuration says: every read of a provider secret is logged (ADR 0494 rule 3).
+   */
   failsClosed(options: AccessLoggedOptions): boolean {
-    return options.failClosed === true || this.config.failClosed.includes(options.classification);
+    return (
+      options.failClosed === true ||
+      options.classification === DataClassification.Credential ||
+      this.config.failClosed.includes(options.classification)
+    );
   }
 
   /**

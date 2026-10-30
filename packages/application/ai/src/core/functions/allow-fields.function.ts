@@ -6,7 +6,7 @@
  *           dotted (`customer.firstName`); a path ending on an object copies that object whole, so list leaves for
  *           anything nested that may hold more than the list means.
  * Runtime: isomorphic
- * Governing contract: ADR 0360 (decision 15).
+ * Governing contract: ADR 0360 (decision 15); ADR 0494 (a credential contributes nothing).
  */
 import type { FieldAllowList } from "#core/types/field-allow-list.type";
 
@@ -27,6 +27,7 @@ export function allowFields(
   allowList: FieldAllowList,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
+  if (dataClass === "credential") return out; // never in a model's context, whatever the list says (ADR 0494)
   for (const path of Object.hasOwn(allowList, dataClass) ? (allowList[dataClass] ?? []) : []) {
     const parts = path.split(".");
     let value: unknown = facts;

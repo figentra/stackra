@@ -253,7 +253,7 @@
         },
         "classification": {
           "type": "string",
-          "enum": ["personal", "financial", "health", "pseudonymous", "regulated"]
+          "enum": ["personal", "financial", "health", "pseudonymous", "regulated", "credential"]
         },
         "subjects": {
           "type": "array",
@@ -306,7 +306,7 @@
         },
         "classification": {
           "type": "string",
-          "enum": ["personal", "financial", "health", "pseudonymous", "regulated"]
+          "enum": ["personal", "financial", "health", "pseudonymous", "regulated", "credential"]
         },
         "actor": {
           "x-stackra-schema": "@stackra/validation#Actor$"

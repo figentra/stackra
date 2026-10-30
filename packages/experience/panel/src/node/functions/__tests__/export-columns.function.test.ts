@@ -15,6 +15,7 @@ const classified = new Map<string, DataClassification>([
   ["email", DataClassification.Personal],
   ["customer", DataClassification.Personal],
   ["iban", DataClassification.Financial],
+  ["accessToken", DataClassification.Credential],
 ]);
 
 describe("exportColumns", () => {
@@ -32,5 +33,15 @@ describe("exportColumns", () => {
         new Set(["email", "customer.name"]),
       ),
     ).toEqual({ columns: ["email", "customer.name"], classes: [DataClassification.Personal] });
+  });
+
+  it("never writes a credential column, even when opted in", () => {
+    expect(
+      exportColumns(
+        ["number", "accessToken", "email"],
+        classified,
+        new Set(["accessToken", "email"]),
+      ),
+    ).toEqual({ columns: ["number", "email"], classes: [DataClassification.Personal] });
   });
 });

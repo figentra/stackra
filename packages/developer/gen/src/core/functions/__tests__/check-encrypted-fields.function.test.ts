@@ -63,6 +63,13 @@ describe("checkEncryptedFields", () => {
     ]);
   });
 
+  it("refuses a credential field that is not encrypted, and accepts one that is (ADR 0494)", () => {
+    expect(checkEncryptedFields(encrypted([], "credential")).map((error) => error.code)).toEqual([
+      "credential_field_not_encrypted",
+    ]);
+    expect(checkEncryptedFields(encrypted([FIELD], "credential"))).toEqual([]);
+  });
+
   it("refuses an encrypted field the model does not declare", () => {
     expect(
       checkEncryptedFields(encrypted([FIELD, "nowhere"], "personal")).map((error) => error.code),

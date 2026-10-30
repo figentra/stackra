@@ -43,8 +43,9 @@ adds up to half again).
 
 ## Data classification and principals
 
-`DataClassification` has five codes: `personal`, `financial`, `health`, `pseudonymous` and `regulated` (identifiers a
-regulator issues or governs, such as a tax registration number or a national id). `IdentityResolver#principalOf`
+`DataClassification` has six codes: `personal`, `financial`, `health`, `pseudonymous`, `regulated` (identifiers a
+regulator issues or governs, such as a tax registration number or a national id) and `credential` (a provider secret:
+an OAuth token, a client secret, an API key; encrypted, never exported, skipped by erasure, always access-logged, ADR 0494). `IdentityResolver#principalOf`
 returns the verified address, verified phone, locale and time zone of a principal; `PrincipalDirectory#supervisorOf`
 returns who a principal reports to in a scope, or `null`. Both answer at the moment of use, so no caller stores them.
 The canonical JSON of a value and its hash are `canonicalJson` and `canonicalHash` of `@stackra/support`, not here.
