@@ -24,6 +24,9 @@ import { useActionRunner } from "#react/action-runner/use-action-runner";
 import type { ActionInputModalProps } from "#react/resource-pages/action-input-modal.props";
 import { ResourceFormField } from "#react/resource-pages/resource-form-field";
 
+/** No bound inputs; one stable object, so a default prop does not change every render. */
+const NOTHING_BOUND: Readonly<Record<string, unknown>> = Object.freeze({});
+
 /**
  * The modal form of `action` over `ids`, or run once without a record when `idKey` is absent.
  *
@@ -37,6 +40,7 @@ export function ActionInputModal({
   idKey,
   ids,
   record,
+  bound = NOTHING_BOUND,
   keys,
   onClose,
 }: ActionInputModalProps): ReactElement {
@@ -59,7 +63,9 @@ export function ActionInputModal({
   const form = useSchemaForm(action as unknown as abstract new () => Record<string, unknown>, {
     // The id field is not drawn; it is filled so the schema validates, and replaced per record on submit.
     defaultValues:
-      idKey === undefined || ids?.[0] === undefined ? prefill : { ...prefill, [idKey]: ids[0] },
+      idKey === undefined || ids?.[0] === undefined
+        ? { ...bound, ...prefill }
+        : { ...bound, ...prefill, [idKey]: ids[0] },
     serverErrors,
   });
   const ask = action.texts.confirm;
@@ -68,7 +74,8 @@ export function ActionInputModal({
     let errors: Readonly<Record<string, string>> = {};
     // A bulk run fans out per record, so the policy decides each one (ADR 0307 rule 3).
     for (const id of left) {
-      const input = idKey === undefined || id === undefined ? values : { ...values, [idKey]: id };
+      const filled = { ...values, ...bound };
+      const input = idKey === undefined || id === undefined ? filled : { ...filled, [idKey]: id };
       const done = await run(action, input as never, { confirmed: true });
       if (done.status === ActionRunStatus.Refused) {
         refused.push(id);

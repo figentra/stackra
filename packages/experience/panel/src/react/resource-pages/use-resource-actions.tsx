@@ -6,8 +6,9 @@
  *          through its modal form) plus the derived operations (view and edit links, delete, the create link).
  * Boundary: internal to the resource pages. Reads the recorded placements (`placementsAt`) and the resource's
  *           operation refs; every run goes through `useActionRunner`, so the declared confirmation, the cache refresh
- *           and the toasts are the runner's. The page draws `modal`, the open `ActionInputModal`. Export and import
- *           placements are not drawn (their queued pipelines are not built).
+ *           and the toasts are the runner's. The page draws `modal`, the open `ActionInputModal`. `bound` inputs (a
+ *           relation manager's parent id) go into every run and are never asked for. Export and import placements are
+ *           not drawn (their queued pipelines are not built).
  * Runtime: browser
  * Governing contract: ADR 0307 (rules 3 and 4); ADR 0139 (declared confirmation).
  */
@@ -45,6 +46,7 @@ type Pages = { readonly view?: PageRef; readonly edit?: PageRef; readonly create
 export function useResourceActions(
   resource: ResourceRoutes,
   tree: Partial<ResourceTree>,
+  bound: Readonly<Record<string, unknown>> = {},
 ): ResourceActions {
   const { t } = useTranslation();
   const run = useActionRunner();
@@ -78,17 +80,20 @@ export function useResourceActions(
       const key = ids === undefined ? undefined : idKey(action);
       // An input that needs more than the id opens one modal form for every record, or once without a record
       // (ADR 0307 rule 3).
-      const keys = actionFormKeys(action.input, key);
+      // A bound input (a relation's parent id) is filled in, never asked for.
+      const keys = actionFormKeys(action.input, key).filter(
+        (field) => !Object.hasOwn(bound, field),
+      );
       if (keys.length > 0) {
         setPending({ action, idKey: key, ids, record, keys });
         return;
       }
       if (ids === undefined || key === undefined) {
-        await run(action, {} as never);
+        await run(action, bound as never);
         return;
       }
       // A bulk run fans out per record, so the policy decides each one (ADR 0307 rule 3).
-      for (const recordId of ids) await run(action, { [key]: recordId } as never);
+      for (const recordId of ids) await run(action, { ...bound, [key]: recordId } as never);
     },
   });
 
@@ -107,6 +112,7 @@ export function useResourceActions(
           idKey={pending.idKey}
           ids={pending.ids}
           record={pending.record}
+          bound={bound}
           keys={pending.keys}
           onClose={() => setPending(undefined)}
         />

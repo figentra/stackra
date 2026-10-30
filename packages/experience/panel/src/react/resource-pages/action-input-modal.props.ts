@@ -25,6 +25,9 @@ export interface ActionInputModalProps {
   /** The record a row or a View header pressed the button on; a form key it has a value for starts from that value. */
   readonly record?: object | undefined;
 
+  /** Inputs filled in rather than asked for: a relation manager's bound parent id (`runId`). */
+  readonly bound?: Readonly<Record<string, unknown>> | undefined;
+
   /** The input keys the form asks for (`actionFormKeys`). */
   readonly keys: readonly string[];
 

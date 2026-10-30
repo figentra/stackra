@@ -222,6 +222,7 @@ Every `toResource(Resources.Order)` route renders a generic page, Filament-style
   `fieldErrors` show on their fields; a done run opens the record's View page (else the list). Edit starts from the
   record, its id under the input's id key.
 - **Relation managers** (`RelationManager`): the related list query's table, its input bound from the record.
+  `actions` on a relation are row actions of the related model, with the bound inputs filled in.
 - **Actions**: placed actions follow ADR 0307 rule 3 (`placementsAt`): a record action on the row, View and Edit, and in
   the bulk bar with `.bulk()` (one run per selected record); an action without a record in the list header. View and
   edit links, the create link and delete (`operations.delete`) are derived. Every run goes through `useActionRunner`.
