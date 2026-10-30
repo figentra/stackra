@@ -49,5 +49,10 @@ export const POPOVER_KEYS = keys({
     "live_body",
     "live_open",
     "state",
+    "reposition_trigger",
+    "reposition_title",
+    "reposition_line",
+    "reposition_more",
+    "reposition_move",
   ],
 });

@@ -125,6 +125,7 @@ vi.mock("@shopify/react-native-skia", async () => {
     Line: mark("SkiaLine"),
     LinearGradient: mark("LinearGradient"),
     DashPathEffect: mark("DashPathEffect"),
+    Paint: mark("Paint"),
   };
 });
 vi.mock("victory-native", async () => {
@@ -364,12 +365,21 @@ describe("CartesianFigure", () => {
     expect(chart()["domain"]).toEqual({ y: [0, 80] });
   });
 
-  it("draws one series as plain columns and groups several with the faded previous period first", () => {
+  it("draws one series as context columns and its latest in full, plain without emphasis, and groups several", () => {
     within(
       "ltr",
       <BarChart data={DATA} series={[MOBILE]} xKey="month" label="Visits" sort="value-desc" />,
     );
+    // The context columns, edged in the field border, then the emphasised latest one.
+    expect(marks("Bar")).toHaveLength(2);
+    expect(marks("Paint")).toHaveLength(1);
+    state.marks.length = 0;
+    within(
+      "ltr",
+      <BarChart data={DATA} series={[MOBILE]} xKey="month" label="Visits" emphasis="none" />,
+    );
     expect(marks("Bar")).toHaveLength(1);
+    expect(marks("Paint")).toHaveLength(0);
     state.marks.length = 0;
     within(
       "ltr",
@@ -460,12 +470,13 @@ describe("CandlestickChart", () => {
     { date: "D2", open: 12, high: 13, low: 8, close: 9 },
   ];
 
-  it("draws a hollow rising candle, a filled falling one and volume bars, with the pressed prices", () => {
+  it("draws each candle as a tinted body with an outline, and volume bars, with the pressed prices", () => {
     state.active = true;
     within("ltr", <CandlestickChart data={candles} label="Price" />);
     expect(marks("SkiaLine")).toHaveLength(2);
-    expect(marks("Rect").filter((props) => props["style"] === "stroke")).toHaveLength(1);
-    expect(marks("Rect")).toHaveLength(4);
+    // A body and its outline per candle, and one volume bar (D2 has no volume).
+    expect(marks("Rect").filter((props) => props["style"] === "stroke")).toHaveLength(2);
+    expect(marks("Rect")).toHaveLength(5);
     expect(screen.getByText("ui::chart.volume")).toBeTruthy();
     const yAxis = (chart()["yAxis"] as { formatYLabel: (value: unknown) => string }[])[0];
     expect(yAxis?.formatYLabel(12)).toBe("12");
@@ -478,7 +489,7 @@ describe("CandlestickChart", () => {
       "rtl",
       <CandlestickChart data={candles} showVolume={false} showTooltip={false} label="Price" />,
     );
-    expect(marks("Rect")).toHaveLength(3);
+    expect(marks("Rect")).toHaveLength(4);
     expect(chart()["domain"]).toEqual({ y: [8, 14] });
     expect(screen.queryByText("ui::chart.open")).toBeNull();
   });
@@ -500,7 +511,8 @@ describe("WaterfallChart", () => {
         label="Profit"
       />,
     );
-    expect(marks("RoundedRect")).toHaveLength(4);
+    // The two totals are one block each; a step is a tinted block with an outline.
+    expect(marks("RoundedRect")).toHaveLength(6);
     expect(screen.getByText("ui::chart.change")).toBeTruthy();
     expect(screen.getByText("+30")).toBeTruthy();
     const yAxis = (chart()["yAxis"] as { formatYLabel: (value: unknown) => string }[])[0];

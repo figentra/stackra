@@ -22,6 +22,7 @@ import { gridCellErrorOf } from "#core/functions/grid-cell-error-of.function";
 import type { GridCellError } from "#core/types/grid-cell-error.type";
 import type { DataGridModel } from "#react/data-grid/data-grid-model.type";
 import type { DataGridWrite } from "#react/data-grid/data-grid-write.type";
+import { useGridErrorText } from "#react/data-grid/use-grid-error-text";
 import { useUiText } from "#react/hooks/use-ui-text";
 
 /** The grid's words. */
@@ -109,25 +110,7 @@ export function useDataGridModel(
     return value;
   };
 
-  const wordsOf = (error: GridCellError): string => {
-    switch (error.kind) {
-      case "required": {
-        return t(K.required);
-      }
-      case "type": {
-        return t(K.type);
-      }
-      case "min": {
-        return t(K.min, { limit: numbers.format(error.limit) });
-      }
-      case "max": {
-        return t(K.max, { limit: numbers.format(error.limit) });
-      }
-      case "custom": {
-        return error.message;
-      }
-    }
-  };
+  const wordsOf = useGridErrorText(locale);
   const rowById = useMemo(() => new Map(rows.map((row) => [row.id, row])), [rows]);
   const errors = useMemo(() => {
     const found = new Map<string, GridCellError>();

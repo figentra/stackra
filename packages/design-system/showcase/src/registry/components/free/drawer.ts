@@ -56,6 +56,7 @@ export const FREE_DRAWER: ComponentEntry = {
     { id: "long", platforms: ["react"] },
     { id: "live", platforms: ["react"] },
     { id: "snap" },
+    { id: "resize", platforms: ["native"] },
     { id: "basics", platforms: ["native"] },
     { id: "controlled", platforms: ["native"] },
     { id: "locked", platforms: ["native"] },

@@ -1,0 +1,37 @@
+{
+  "generatedFrom": {
+    "hash": "04b16bef44110aa9",
+    "propsFiles": ["ui/src/react/message-scroller/message-scroller.props.ts"]
+  },
+  "importLine": "import { MessageScroller } from \"@stackra/ui/react\";",
+  "key": "free/message-scroller",
+  "parts": [
+    {
+      "name": "MessageScroller",
+      "props": [
+        {
+          "description": "The messages, oldest first, one child each: the jump button counts the children added since the person left.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The region's accessible name. Defaults to the catalogue's \"Conversation\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the scrolling region; give it a height (or a flex parent) so it can scroll.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

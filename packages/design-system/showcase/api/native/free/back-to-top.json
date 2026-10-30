@@ -1,0 +1,51 @@
+{
+  "generatedFrom": {
+    "hash": "76588d4052c1b4de",
+    "propsFiles": ["ui/src/native/back-to-top/back-to-top.props.ts"]
+  },
+  "importLine": "import { BackToTop } from \"@stackra/ui/native\";",
+  "key": "free/back-to-top",
+  "parts": [
+    {
+      "name": "BackToTop",
+      "props": [
+        {
+          "description": "How far down, in pixels, before the button shows. Defaults to 400.",
+          "name": "threshold",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The button's accessible name. Defaults to the catalogue's \"Back to top\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The scroll view (or list) to take back to the top.",
+          "name": "scrollRef",
+          "required": true,
+          "source": "stackra",
+          "type": "RefObject<Scrollable | null>"
+        },
+        {
+          "description": "How far it is scrolled now, from its `onScroll` (`contentOffset.y`).",
+          "name": "offsetY",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Styles the button's wrapper, for example to move it above a tab bar.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

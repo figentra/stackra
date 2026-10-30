@@ -1,0 +1,74 @@
+{
+  "generatedFrom": {
+    "hash": "35ac66034daf320b",
+    "propsFiles": ["ui/src/native/questionnaire-card/questionnaire-card.props.ts"]
+  },
+  "importLine": "import { QuestionnaireCard } from \"@stackra/ui/native\";",
+  "key": "free/questionnaire-card",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the answers when the person sends them from the summary.",
+          "name": "onSubmit",
+          "required": true,
+          "source": "stackra",
+          "type": "(answers: Readonly<Record<string, string | readonly string[]>>) => void"
+        }
+      ],
+      "name": "QuestionnaireCard",
+      "props": [
+        {
+          "description": "The card's title, for example \"A few questions before I draft the offer\".",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A muted line under the title.",
+          "name": "description",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The questions, asked in this order, one per step; a summary of the answers follows the last.",
+          "name": "questions",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly QuestionnaireQuestion[]"
+        },
+        {
+          "description": "Answers to start from, for example the ones given last time.",
+          "name": "defaultAnswers",
+          "required": false,
+          "source": "stackra",
+          "type": "Readonly<Record<string, string | readonly string[]>>"
+        },
+        {
+          "description": "The send button's words. Defaults to the catalogue's \"Send answers\".",
+          "name": "submitLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True while the answers are being sent: the send button shows a spinner and refuses presses.",
+          "name": "isSubmitting",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the card.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

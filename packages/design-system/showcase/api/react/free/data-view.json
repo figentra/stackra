@@ -1,9 +1,10 @@
 {
   "generatedFrom": {
-    "hash": "c56ba3ad39fe563b",
+    "hash": "5facb34ad2212168",
     "propsFiles": [
       "ui/src/react/data-view/collection-filter-editor.props.ts",
       "ui/src/react/data-view/collection-sort-editor.props.ts",
+      "ui/src/react/data-view/data-view-board.props.ts",
       "ui/src/react/data-view/data-view-cards.props.ts",
       "ui/src/react/data-view/data-view.props.ts"
     ]
@@ -40,6 +41,34 @@
           "required": false,
           "source": "stackra",
           "type": "() => void"
+        },
+        {
+          "description": "Given, each row gets a drag handle (pointer, keyboard and screen reader, through React Aria's drag and drop) and a\ndrop calls this with the rows shown in their new order (group and total rows left out). Nothing moves until the\napp passes the rows back; reordering a sorted view is the app's call.",
+          "name": "onReorder",
+          "required": false,
+          "source": "stackra",
+          "type": "(items: readonly TItem[]) => void"
+        },
+        {
+          "description": "Called with the ids of the expanded rows after a row or \"expand all\" is pressed.",
+          "name": "onExpandedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        },
+        {
+          "description": "Called when a row is opened: a press on the row (Enter from the keyboard).",
+          "name": "onRowOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => void"
+        },
+        {
+          "description": "Called with a valid edited value; the app writes the row (a promise is awaited by nobody: report failures yourself).",
+          "name": "onCellEdit",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, columnId: string, value: DataGridValue) => void | Promise<void>"
         }
       ],
       "name": "DataView",
@@ -158,6 +187,76 @@
           "type": "Omit<ImportDialogProps, \"trigger\">"
         },
         {
+          "description": "True to draw the row actions that have an icon as buttons revealed on hover or keyboard focus, beside the row\nmenu, which still lists them all.",
+          "name": "hasHoverActions",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to leave the browser's own menu on a right-click; by default a row's right-click (or Shift+F10) opens its actions.",
+          "name": "hasContextMenu",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Given, each row gets a disclosure button and an expanded row shows this under it across every column.",
+          "name": "renderRowDetail",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => ReactNode"
+        },
+        {
+          "description": "The ids of the expanded rows, for a controlled expansion.",
+          "name": "expandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids of the rows expanded at first.",
+          "name": "defaultExpandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Given, an opened row shows this in a resizable side panel beside the table (a drawer on a small screen).",
+          "name": "renderRowPanel",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => ReactNode"
+        },
+        {
+          "description": "The typed columns edited in place, matched to the table's columns by id: their kind picks the DataGrid editor and\ntheir rules (required, range, the app's own) validate the value. A read-only one is not edited.",
+          "name": "editableColumns",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly DataGridColumn[]"
+        },
+        {
+          "description": "True to draw only the rows, cards or board cards in view (React Aria's Virtualizer), for 10,000 rows and more.",
+          "name": "isVirtualized",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The DataView's own width, in CSS pixels, under which the table view is drawn as cards (the engine's layout stays\n`table`, so a wider frame shows the table again). Defaults to 600; `null` keeps the table at any width.",
+          "name": "cardsBelow",
+          "required": false,
+          "source": "stackra",
+          "type": "number | null"
+        },
+        {
+          "description": "Given, the view switcher offers the Board: cards in columns by one field, moved by drag or from a menu.",
+          "name": "board",
+          "required": false,
+          "source": "stackra",
+          "type": "DataViewBoard<TItem>"
+        },
+        {
           "description": "",
           "name": "className",
           "required": false,
@@ -244,8 +343,61 @@
       "props": []
     },
     {
+      "name": "DataViewBoard",
+      "props": []
+    },
+    {
       "name": "SavedViewsMenu",
       "props": []
+    },
+    {
+      "events": [
+        {
+          "description": "Called when a card is opened (a press, or Enter on it).",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => void"
+        }
+      ],
+      "name": "DataView.Board",
+      "props": [
+        {
+          "description": "The engine whose rows are drawn.",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The records' name; each column's list is named \"{label}: {column}\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The field, the card and the move.",
+          "name": "board",
+          "required": true,
+          "source": "stackra",
+          "type": "DataViewBoard<TItem>"
+        },
+        {
+          "description": "The content of a value; left out, the column's text.",
+          "name": "renderCell",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, column: TableColumn) => ReactNode"
+        },
+        {
+          "description": "True to draw only the cards in view in each column.",
+          "name": "isVirtualized",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        }
+      ]
     },
     {
       "events": [
@@ -293,6 +445,13 @@
           "required": false,
           "source": "stackra",
           "type": "\"list\" | \"cards\""
+        },
+        {
+          "description": "True to draw only the cards or rows in view (React Aria's Virtualizer), for thousands of rows.",
+          "name": "isVirtualized",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         }
       ]
     }

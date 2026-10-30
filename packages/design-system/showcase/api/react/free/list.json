@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "54b9730715cdca8d",
+    "hash": "e9eb00b69a7276f5",
     "heroDoc": "vendor/heroui/react/list-box.json",
     "propsFiles": ["ui/src/react/list/list-item.props.ts", "ui/src/react/list/list.props.ts"]
   },
@@ -105,6 +105,21 @@
           "required": false,
           "source": "stackra",
           "type": "readonly string[]"
+        },
+        {
+          "description": "Web: true to draw only the rows in view (React Aria's Virtualizer over HeroUI's ListBox), for thousands of rows;\nthe rows then scroll inside `maxHeight`, are reached with the arrow keys, and a pressable row is actioned with\nEnter or a press.",
+          "name": "isVirtualized",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "32rem",
+          "description": "Web: the height a virtualised list scrolls within (any CSS length). Defaults to `32rem`.",
+          "name": "maxHeight",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "Additional CSS classes",

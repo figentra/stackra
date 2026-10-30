@@ -24,6 +24,7 @@ vi.mock("react-native", async () => {
   const { createElement: h } = await import("react");
   return {
     View: (props: Props) => h("div", null, props.children),
+    ScrollView: (props: Props) => h("div", null, props.children),
     Pressable: (props: Props) =>
       h(
         "button",
@@ -71,6 +72,7 @@ vi.mock("#native/icon-button/icon-button", () => ({
     ),
 }));
 vi.mock("#native/checkbox/checkbox", () => ({ Checkbox: () => null }));
+vi.mock("#native/icon/icon", () => ({ Icon: () => null }));
 vi.mock("#native/select/select", () => ({
   Select: (props: Props & { items: { id: string; label: string }[] }) =>
     createElement(
@@ -250,7 +252,8 @@ describe("DataGrid fields (native)", () => {
         ]}
       />,
     );
-    expect(screen.getByText(`${K}total`)).toBeTruthy();
+    // The totals column's heading and the total row's name.
+    expect(screen.getAllByText(`${K}total`)).toHaveLength(2);
     expect(screen.getByText("5")).toBeTruthy();
     expect(screen.getByText("9")).toBeTruthy();
     expect(
@@ -258,10 +261,10 @@ describe("DataGrid fields (native)", () => {
     ).toBeTruthy();
   });
 
-  it("edits nothing when read-only and names a headless row by its id", () => {
+  it("offers no selection and no row editor when read-only", () => {
     render(<DataGrid label="Menu" columns={[]} rows={[{ id: "r1" }]} isReadOnly className="x" />);
     expect(screen.queryByText(`${K}select`)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: `${K}edit_row(r1)` }));
+    expect(screen.queryByRole("button", { name: `${K}edit_row(r1)` })).toBeNull();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

@@ -1,0 +1,14 @@
+{
+  "payments_title": "طرق الدفع",
+  "payments_description": "1,000 طلب في أكتوبر",
+  "card": "بطاقة",
+  "cod": "الدفع عند الاستلام",
+  "wallet": "محفظة رقمية",
+  "later": "ادفع لاحقًا",
+  "status_title": "حالة الطلبات",
+  "status_description": "840 طلبًا هذا الأسبوع، لكل مربع 1%",
+  "delivered": "تم التوصيل",
+  "shipped": "تم الشحن",
+  "processing": "قيد التجهيز",
+  "cancelled": "ملغى"
+}

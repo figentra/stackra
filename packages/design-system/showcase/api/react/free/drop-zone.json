@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "c13d87adc9ddae80",
+    "hash": "36093a111b8e3916",
     "propsFiles": ["ui/src/react/drop-zone/drop-zone.props.ts"]
   },
   "importLine": "import { DropZone } from \"@stackra/ui/react\";",
@@ -11,6 +11,13 @@
         {
           "description": "Called with the files dropped or picked.",
           "name": "onSelect",
+          "required": false,
+          "source": "stackra",
+          "type": "(files: readonly File[]) => void"
+        },
+        {
+          "description": "With `showPreviews`, called with every file the zone now holds, after a file is taken or removed.",
+          "name": "onFilesChange",
           "required": false,
           "source": "stackra",
           "type": "(files: readonly File[]) => void"
@@ -49,6 +56,27 @@
         {
           "description": "True to refuse drops and picks.",
           "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to add a \"Take a photo\" button beside the file button (the camera on a phone, the webcam picker on web).",
+          "name": "allowsCamera",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Web: true to take files pasted anywhere on the page (a copied screenshot), not only while the zone has focus;\na paste into a text field is left to that field. Native has no file clipboard and ignores it.",
+          "name": "allowsPaste",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to keep the files taken and list them under the zone, an image as its thumbnail, each with a remove button.",
+          "name": "showPreviews",
           "required": false,
           "source": "stackra",
           "type": "boolean"

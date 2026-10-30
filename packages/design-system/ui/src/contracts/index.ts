@@ -270,6 +270,13 @@ export type { ToastContractProps } from "#contracts/types/toast-contract-props.t
 export type { ToastProviderContractProps } from "#contracts/types/toast-provider-contract-props.type";
 export type { ToastAction } from "#contracts/types/toast-action.type";
 export type { ToastAvatar } from "#contracts/types/toast-avatar.type";
+export type { ToastPromiseMessages } from "#contracts/types/toast-promise-messages.type";
+export type { ToastUndoOptions } from "#contracts/types/toast-undo-options.type";
+export type { RecurrenceWeekday } from "#contracts/types/recurrence-weekday.type";
+export type { RecurrenceRule } from "#contracts/types/recurrence-rule.type";
+export type { RecurrenceEditorContractProps } from "#contracts/types/recurrence-editor-contract-props.type";
+export type { TaskTrayTask } from "#contracts/types/task-tray-task.type";
+export type { TaskTrayContractProps } from "#contracts/types/task-tray-contract-props.type";
 export type { SnapPoint } from "#contracts/types/snap-point.type";
 export type { ViewStackContractProps } from "#contracts/types/view-stack-contract-props.type";
 export type { ViewStackViewContractProps } from "#contracts/types/view-stack-view-contract-props.type";
@@ -280,7 +287,18 @@ export type { TextRevealContractProps } from "#contracts/types/text-reveal-contr
 export type { TooltipContractProps } from "#contracts/types/tooltip-contract-props.type";
 export type { TreeViewContractProps } from "#contracts/types/tree-view-contract-props.type";
 export type { TreeViewNode } from "#contracts/types/tree-view-node.type";
+export type { TreeViewDropTarget } from "#contracts/types/tree-view-drop-target.type";
+export type { TreeSelectContractProps } from "#contracts/types/tree-select-contract-props.type";
+export type { MaskedFieldContractProps } from "#contracts/types/masked-field-contract-props.type";
+export type { MentionInputContractProps } from "#contracts/types/mention-input-contract-props.type";
 export type { TwoColumnLayoutContractProps } from "#contracts/types/two-column-layout-contract-props.type";
+export { Space } from "#contracts/enums/space.enum";
+export type { StackContractProps } from "#contracts/types/stack-contract-props.type";
+export type { ClusterContractProps } from "#contracts/types/cluster-contract-props.type";
+export type { GridContractProps } from "#contracts/types/grid-contract-props.type";
+export type { CenterContractProps } from "#contracts/types/center-contract-props.type";
+export type { DisclosureContractProps } from "#contracts/types/disclosure-contract-props.type";
+export type { NavigationMenuContractProps } from "#contracts/types/navigation-menu-contract-props.type";
 export type { TypographyContractProps } from "#contracts/types/typography-contract-props.type";
 export type { UploadItem } from "#contracts/types/upload-item.type";
 export type { UploadListContractProps } from "#contracts/types/upload-list-contract-props.type";
@@ -294,6 +312,7 @@ export type { BarChartContractProps } from "#contracts/types/bar-chart-contract-
 export type { CartesianChartContractProps } from "#contracts/types/cartesian-chart-contract-props.type";
 export type { ChartContractProps } from "#contracts/types/chart-contract-props.type";
 export type { ChartDatum } from "#contracts/types/chart-datum.type";
+export type { ChartEmphasis } from "#contracts/types/chart-emphasis.type";
 export type { ChartReference } from "#contracts/types/chart-reference.type";
 export type { ChartSeries } from "#contracts/types/chart-series.type";
 export type { ChartTable } from "#contracts/types/chart-table.type";
@@ -317,6 +336,8 @@ export type { CountrySelectContractProps } from "#contracts/types/country-select
 export type { DateRangePickerContractProps } from "#contracts/types/date-range-picker-contract-props.type";
 export type { DateTimePickerContractProps } from "#contracts/types/date-time-picker-contract-props.type";
 export type { DropZoneContractProps } from "#contracts/types/drop-zone-contract-props.type";
+export type { AttachmentCardContractProps } from "#contracts/types/attachment-card-contract-props.type";
+export type { ShareButtonContractProps } from "#contracts/types/share-button-contract-props.type";
 export type { EmojiPickerContractProps } from "#contracts/types/emoji-picker-contract-props.type";
 export type { InlineSelectContractProps } from "#contracts/types/inline-select-contract-props.type";
 export type { ItemCardContractProps } from "#contracts/types/item-card-contract-props.type";
@@ -379,6 +400,11 @@ export { WidgetMenuAction } from "#contracts/enums/widget-menu-action.enum";
 export { WidgetSize } from "#contracts/enums/widget-size.enum";
 export { WidgetState } from "#contracts/enums/widget-state.enum";
 export type { CarouselContractProps } from "#contracts/types/carousel-contract-props.type";
+export type { GalleryImage } from "#contracts/types/gallery-image.type";
+export type { LightboxContractProps } from "#contracts/types/lightbox-contract-props.type";
+export type { GalleryContractProps } from "#contracts/types/gallery-contract-props.type";
+export type { ImageCrop } from "#contracts/types/image-crop.type";
+export type { ImageCropperContractProps } from "#contracts/types/image-cropper-contract-props.type";
 export type { CodeBlockContractProps } from "#contracts/types/code-block-contract-props.type";
 export type { CodeFile } from "#contracts/types/code-file.type";
 export type { CommandItem } from "#contracts/types/command-item.type";
@@ -497,7 +523,9 @@ export type { CollectionFilter } from "#contracts/types/collection-filter.type";
 export type { CollectionGroup } from "#contracts/types/collection-group.type";
 export type { CollectionPage } from "#contracts/types/collection-page.type";
 export type { CollectionQuery } from "#contracts/types/collection-query.type";
+export type { CollectionSelection } from "#contracts/types/collection-selection.type";
 export type { CollectionSnapshot } from "#contracts/types/collection-snapshot.type";
+export type { CollectionSource } from "#contracts/types/collection-source.type";
 export type { CollectionState } from "#contracts/types/collection-state.type";
 export type { CollectionStore } from "#contracts/types/collection-store.type";
 export type { CollectionView } from "#contracts/types/collection-view.type";
@@ -505,4 +533,74 @@ export type { ResolvedCollectionColumn } from "#contracts/types/resolved-collect
 export type { ColumnEditorContractProps } from "#contracts/types/column-editor-contract-props.type";
 export type { DataViewContractProps } from "#contracts/types/data-view-contract-props.type";
 export type { DataViewFields } from "#contracts/types/data-view-fields.type";
+export type { DataViewBoard } from "#contracts/types/data-view-board.type";
 export type { SavedViewsMenuContractProps } from "#contracts/types/saved-views-menu-contract-props.type";
+
+// Wave B: charts (annotations, dual axis, log scale, sync, tracker strip).
+export { TrackerStatus } from "#contracts/enums/tracker-status.enum";
+export type { TrackerCell } from "#contracts/types/tracker-cell.type";
+export type { TrackerStripContractProps } from "#contracts/types/tracker-strip-contract-props.type";
+export type { ChartAnnotation } from "#contracts/types/chart-annotation.type";
+
+// Wave B: KPI comparison.
+
+// Wave B: period picker.
+export { PeriodCompareMode } from "#contracts/enums/period-compare-mode.enum";
+export type { PeriodComparison } from "#contracts/types/period-comparison.type";
+export type { PeriodValue } from "#contracts/types/period-value.type";
+export type { PeriodPickerContractProps } from "#contracts/types/period-picker-contract-props.type";
+
+// Wave B: dashboard grid.
+export type { DashboardTile } from "#contracts/types/dashboard-tile.type";
+export type { DashboardLayout } from "#contracts/types/dashboard-layout.type";
+export type { DashboardLayoutPort } from "#contracts/types/dashboard-layout-port.type";
+export type { DashboardGridContractProps } from "#contracts/types/dashboard-grid-contract-props.type";
+
+// Wave B: form error summary.
+export type { FormErrorItem } from "#contracts/types/form-error-item.type";
+export type { FormErrorSummaryContractProps } from "#contracts/types/form-error-summary-contract-props.type";
+// Wave D: AI and the long tail (STA-1371).
+export type { PolarChartContractProps } from "#contracts/types/polar-chart-contract-props.type";
+export type { WaffleChartContractProps } from "#contracts/types/waffle-chart-contract-props.type";
+export { BarcodeFormat } from "#contracts/enums/barcode-format.enum";
+export type { AspectRatioContractProps } from "#contracts/types/aspect-ratio-contract-props.type";
+export type { BackToTopContractProps } from "#contracts/types/back-to-top-contract-props.type";
+export type { BarcodeContractProps } from "#contracts/types/barcode-contract-props.type";
+export type { FooterContractProps } from "#contracts/types/footer-contract-props.type";
+export type { FooterLink } from "#contracts/types/footer-link.type";
+export type { FooterLinkGroup } from "#contracts/types/footer-link-group.type";
+export type { MarqueeContractProps } from "#contracts/types/marquee-contract-props.type";
+export type { PageIndicatorContractProps } from "#contracts/types/page-indicator-contract-props.type";
+export { ConversationGroupId } from "#contracts/enums/conversation-group-id.enum";
+export { MessageFeedback } from "#contracts/enums/message-feedback.enum";
+export type { ConversationGroup } from "#contracts/types/conversation-group.type";
+export type { ConversationListContractProps } from "#contracts/types/conversation-list-contract-props.type";
+export type { ConversationSummary } from "#contracts/types/conversation-summary.type";
+export type { MessageActionsContractProps } from "#contracts/types/message-actions-contract-props.type";
+export type { MessageScrollerContractProps } from "#contracts/types/message-scroller-contract-props.type";
+export type { PromptSuggestion } from "#contracts/types/prompt-suggestion.type";
+export type { PromptSuggestionsContractProps } from "#contracts/types/prompt-suggestions-contract-props.type";
+export type { ShimmerContractProps } from "#contracts/types/shimmer-contract-props.type";
+export { AiModelBadge } from "#contracts/enums/ai-model-badge.enum";
+export { QuestionnaireQuestionKind } from "#contracts/enums/questionnaire-question-kind.enum";
+export { VoiceInputState } from "#contracts/enums/voice-input-state.enum";
+export type { VoiceRecorderPort } from "#contracts/ports/voice-recorder.port";
+export type { AiModel } from "#contracts/types/ai-model.type";
+export type { ModelPickerContractProps } from "#contracts/types/model-picker-contract-props.type";
+export type { QuestionnaireAnswers } from "#contracts/types/questionnaire-answers.type";
+export type { QuestionnaireCardContractProps } from "#contracts/types/questionnaire-card-contract-props.type";
+export type { QuestionnaireQuestion } from "#contracts/types/questionnaire-question.type";
+export type { VoiceInputContractProps } from "#contracts/types/voice-input-contract-props.type";
+export type { VoiceInputEvent } from "#contracts/types/voice-input-event.type";
+export type { VoiceRecording } from "#contracts/types/voice-recording.type";
+export type { AngleSliderContractProps } from "#contracts/types/angle-slider-contract-props.type";
+export type { ClockView } from "#contracts/types/clock-view.type";
+export type { MediaPlayerContractProps } from "#contracts/types/media-player-contract-props.type";
+export type { MediaTrack } from "#contracts/types/media-track.type";
+export type { TimeClockContractProps } from "#contracts/types/time-clock-contract-props.type";
+export type { PopconfirmContractProps } from "#contracts/types/popconfirm-contract-props.type";
+export type { MenubarContractProps } from "#contracts/types/menubar-contract-props.type";
+export type { MenubarMenu } from "#contracts/types/menubar-menu.type";
+export type { FloatingPanelContractProps } from "#contracts/types/floating-panel-contract-props.type";
+export type { CascaderContractProps } from "#contracts/types/cascader-contract-props.type";
+export type { TransferListContractProps } from "#contracts/types/transfer-list-contract-props.type";

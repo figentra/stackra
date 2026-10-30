@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "026d478079923cf6",
+    "hash": "949185609e9ba0e7",
     "propsFiles": ["ui/src/react/tree-view/tree-view.props.ts"]
   },
   "importLine": "import { TreeView } from \"@stackra/ui/react\";",
@@ -21,6 +21,20 @@
           "required": false,
           "source": "stackra",
           "type": "(id: string) => void"
+        },
+        {
+          "description": "Loads the children of a row marked `hasChildren` the first time it is expanded. A spinner row shows while the\npromise is pending and the tree keeps the rows it resolves to; a rejection closes the row so it can be tried again.",
+          "name": "onLoadChildren",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => Promise<readonly TreeViewNode[]>"
+        },
+        {
+          "description": "Called when rows are dragged (or moved from the keyboard) to a new place: before or after a row, or inside it.\nGiven, rows can be dragged on web; the tree does not move them itself, so update `items` (`moveTreeNodes` does\nit). Native has no dragging and ignores it.",
+          "name": "onMove",
+          "required": false,
+          "source": "stackra",
+          "type": "(ids: readonly string[], target: TreeViewDropTarget) => void"
         },
         {
           "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
@@ -60,6 +74,13 @@
           "required": false,
           "source": "stackra",
           "type": "readonly string[]"
+        },
+        {
+          "description": "True with `selectionMode=\"multiple\"`: checking a row checks every row under it, a row is checked once all its\nrows are, and a row with only some of its rows checked shows a dash. The selection holds every checked id.",
+          "name": "isSelectionPropagated",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "default": "none",

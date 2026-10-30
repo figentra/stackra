@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "4a8622ccb66568b6",
+    "propsFiles": ["ui/src/react/marquee/marquee.props.ts"]
+  },
+  "importLine": "import { Marquee } from \"@stackra/ui/react\";",
+  "key": "free/marquee",
+  "parts": [
+    {
+      "name": "Marquee",
+      "props": [
+        {
+          "description": "The items, in reading order, for example brand logos or short announcements.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "What the strip is, for screen readers, for example \"Brands we carry\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Speed in pixels per second. Defaults to 40.",
+          "name": "speed",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

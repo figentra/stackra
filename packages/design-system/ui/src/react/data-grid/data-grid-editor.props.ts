@@ -22,4 +22,6 @@ export interface DataGridEditorProps {
   readonly onCancel: () => void;
   /** The input's accessible name: the column and the row. */
   readonly label: string;
+  /** The id of the element that says why the draft is refused; given, the input is marked invalid and described by it. */
+  readonly errorId?: string | undefined;
 }

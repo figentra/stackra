@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the native `TreemapChart`: tiles sized by value in the shared squarified layout, painted in the palette
- *          with a 2px surface gap, each with its name and value on a small surface label.
+ *          with a 2px surface gap, each lit softly from the top (`LitFill`, flat in a flat brand) with its name and
+ *          value on a small surface label.
  * Boundary: Views placed with `start`, so Arabic starts at the right; labels are design-system Text (no Skia text).
  *           The plot is one image whose spoken value lists every tile.
  * Runtime: react-native
@@ -14,6 +15,7 @@ import { chartColorOf } from "#core/functions/chart-color-of.function";
 import { formatChartNumber } from "#core/functions/format-chart-number.function";
 import { sortChartItems } from "#core/functions/sort-chart-items.function";
 import { treemapLayoutOf } from "#core/functions/treemap-layout-of.function";
+import { LitFill } from "#native/chart/lit-fill";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import { Text } from "#native/text/text";
@@ -68,11 +70,16 @@ export function TreemapChart({
                 backgroundColor: paint.series[items.indexOf(tile.item)],
               }}
             >
+              <LitFill
+                color={paint.series[items.indexOf(tile.item)] ?? ""}
+                lift={paint.lift}
+                height={(tile.height / 100) * height}
+              />
               <View className="self-start rounded-[var(--radius-control-inner)] bg-surface/85 px-1.5 py-0.5">
                 <Text type="caption" tone="muted" numberOfLines={1}>
                   {tile.item.label}
                 </Text>
-                <Text type="caption" numberOfLines={1} className="font-semibold">
+                <Text type="caption" numberOfLines={2} className="font-semibold">
                   {value(tile.item.value)}
                 </Text>
               </View>

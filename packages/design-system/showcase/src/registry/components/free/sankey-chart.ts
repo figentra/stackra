@@ -22,4 +22,5 @@ export const FREE_SANKEY_CHART: ComponentEntry = {
   tokens: ["color.chart-ramp-1", "color.chart-ramp-5", "color.surface"],
   keywords: ["sankey", "flow", "journey", "source to outcome", "alluvial"],
   status: "new",
+  advanced: true,
 };

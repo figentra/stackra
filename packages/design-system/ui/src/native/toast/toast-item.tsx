@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: draws one toast on native from HeroUI Native's Toast parts, as the web lays it out: the tone's icon (or the
- *          caller's, or none) at the start, the message with its description below, the optional action, and the
+ *          caller's, or none; a spinner while a promise toast's work runs; an undo toast's seconds left) at the start, the message with its description below, the optional action, and the
  *          dismiss button (named by the provider, 24 pt) inside the card at the end of the title row. The card is the
  *          overlay surface with the overlay shadow; the tone colours only the icon (and the bar looks' thin start
  *          edge), the text stays foreground. The tone's live-region attributes sit on the toast. Looks: the `alert` card, a compact `bar` with the tone
@@ -21,13 +21,17 @@ import { View } from "react-native";
 import { FlipInXDown, FlipInXUp } from "react-native-reanimated";
 
 import type { ToastVariant } from "#contracts/enums/toast-variant.enum";
+import { TOAST_KEYS } from "#core/constants/toast-keys.constant";
 import { liveRegionOf } from "#core/functions/live-region-of.function";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { Avatar } from "#native/avatar/avatar";
 import { useMotion } from "#native/design-system-provider/use-motion";
 import { FeedbackIcon } from "#native/feedback-icon/feedback-icon";
 import type { HapticKind } from "#native/haptics/haptic-kind.type";
 import { haptics } from "#native/haptics/haptics";
+import { Spinner } from "#native/spinner/spinner";
 import type { ToastItemProps } from "#native/toast/toast-item.props";
+import { UndoCountdown } from "#native/toast/undo-countdown";
 
 /** The outcome feedback of each tone that has one. */
 const TONE_HAPTICS: Readonly<Partial<Record<ToastItemProps["tone"], HapticKind>>> = {
@@ -64,10 +68,13 @@ export function ToastItem({
   icon,
   avatar,
   action,
+  isLoading,
+  countdown,
   dismissLabel,
   variant = "alert",
 }: ToastItemProps): ReactElement {
   const motion = useMotion();
+  const t = useUiText();
   // Played once, when the toast appears; a neutral toast plays nothing.
   useEffect(() => {
     const kind = TONE_HAPTICS[tone];
@@ -81,7 +88,15 @@ export function ToastItem({
       className={`flex-row items-start gap-3 bg-overlay py-3 ps-3 pe-2 shadow-overlay ${lookClassName(variant, tone)}`}
       {...(variant === "flip-bar" && motion === "full" ? { animation: FLIP } : {})}
     >
-      {avatar ? (
+      {isLoading ? (
+        <View>
+          <Spinner size="sm" tone="muted" />
+        </View>
+      ) : countdown !== undefined ? (
+        <View>
+          <UndoCountdown duration={countdown} />
+        </View>
+      ) : avatar ? (
         <View>
           <Avatar name={avatar.name} size="sm" {...(avatar.src ? { src: avatar.src } : {})} />
         </View>
@@ -104,7 +119,7 @@ export function ToastItem({
             toast.hide(toast.id);
           }}
         >
-          {action.label}
+          {action.label || t(TOAST_KEYS.ui.toast.undo)}
         </HeroToast.Action>
       )}
       <HeroToast.Close aria-label={dismissLabel} className="size-6 self-start" />

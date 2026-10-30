@@ -3,7 +3,9 @@
  * Purpose: proves `useCollection`: client mode searches, sorts and pages; column changes (move, rename, pin, hide,
  *          reset) show in the resolved columns; a controlled slice wins and every change is reported; a store keeps and
  *          restores the state and the views but not the selection; saved views apply, rename, become the default and
- *          delete; server mode hands the fetcher the query and drops a stale answer.
+ *          delete; server mode hands the fetcher the query and drops a stale answer; a server adapter (`source`) with
+ *          `infinite` paging appends each next page, the cursor moving on, and an unticked row stays out of "all
+ *          matching".
  * Boundary: the hook alone, through `renderHook`; the store is an in-memory one.
  * Runtime: node
  * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0022 (test placement); STA-1371.
@@ -15,6 +17,7 @@ import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { CollectionQuery } from "#contracts/types/collection-query.type";
 import type { CollectionSnapshot } from "#contracts/types/collection-snapshot.type";
 import type { CollectionStore } from "#contracts/types/collection-store.type";
+import { createMemoryCollectionSource } from "#core/functions/create-memory-collection-source.function";
 import { useCollection } from "#react/hooks/use-collection";
 
 const COLUMNS: readonly CollectionColumn[] = [
@@ -176,5 +179,39 @@ describe("useCollection", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.rows).toHaveLength(3);
     expect(result.current.totalCount).toBe(99);
+  });
+
+  it("appends each next page from a server adapter with infinite paging, the cursor moving on", async () => {
+    const source = createMemoryCollectionSource(ROWS, COLUMNS);
+    const { result } = renderHook(() =>
+      useCollection({
+        columns: COLUMNS,
+        mode: "server",
+        paging: "infinite",
+        initialState: { pageSize: 10 },
+        source,
+      }),
+    );
+    await waitFor(() => expect(result.current.rows).toHaveLength(10));
+    expect(result.current.hasMore).toBe(true);
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(result.current.rows).toHaveLength(20));
+    expect(result.current.query.cursor).toBe("10");
+    expect(result.current.rows.map((row) => row.id).slice(9, 11)).toEqual(["o9", "o10"]);
+    // A new query starts again from the first page.
+    act(() => result.current.setSearch("riyadh"));
+    await waitFor(() => expect(result.current.totalCount).toBe(15));
+    expect(result.current.rows).toHaveLength(10);
+  });
+
+  it("keeps all matching rows chosen when one is unticked, and leaves that row out", async () => {
+    const { result } = renderHook(() => useCollection({ columns: COLUMNS, items: ROWS }));
+    act(() => result.current.setAllMatchingSelected(true));
+    act(() => result.current.setExcludedKeys(["o3"]));
+    expect(result.current.state.isAllMatchingSelected).toBe(true);
+    expect(result.current.selected).toMatchObject({ kind: "ids" });
+    expect(result.current.selected.kind === "ids" && result.current.selected.ids).toHaveLength(29);
+    act(() => result.current.setSelection([]));
+    expect(result.current.state.excludedKeys).toEqual([]);
   });
 });

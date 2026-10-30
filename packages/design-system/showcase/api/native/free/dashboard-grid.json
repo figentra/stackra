@@ -1,0 +1,81 @@
+{
+  "generatedFrom": {
+    "hash": "41cbe2c71febc264",
+    "propsFiles": ["ui/src/native/dashboard-grid/dashboard-grid.props.ts"]
+  },
+  "importLine": "import { DashboardGrid } from \"@stackra/ui/native\";",
+  "key": "free/dashboard-grid",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the whole new layout after each move or resize.",
+          "name": "onLayoutChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(layout: DashboardLayout) => void"
+        }
+      ],
+      "name": "DashboardGrid",
+      "props": [
+        {
+          "description": "The grid's accessible name, such as \"Sales overview\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Draws the tile with this id, usually a `WidgetFrame`.",
+          "name": "renderTile",
+          "required": true,
+          "source": "stackra",
+          "type": "(id: string) => ReactNode"
+        },
+        {
+          "description": "The tile's name, read by the move and size controls and their announcements.",
+          "name": "tileLabel",
+          "required": true,
+          "source": "stackra",
+          "type": "(id: string) => string"
+        },
+        {
+          "description": "The layout, when the caller owns it.",
+          "name": "layout",
+          "required": false,
+          "source": "stackra",
+          "type": "DashboardLayout"
+        },
+        {
+          "description": "The starting layout when uncontrolled, and the full set of tiles a saved layout is reconciled with.",
+          "name": "defaultLayout",
+          "required": false,
+          "source": "stackra",
+          "type": "DashboardLayout"
+        },
+        {
+          "description": "Where an uncontrolled grid loads and saves the reader's layout.",
+          "name": "layoutPort",
+          "required": false,
+          "source": "stackra",
+          "type": "DashboardLayoutPort"
+        },
+        {
+          "description": "Shows each tile's drag handle, move and size controls (web; native lists the tiles by name to reorder). Off by default.",
+          "name": "isEditing",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Classes for the column, such as a gap or padding.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

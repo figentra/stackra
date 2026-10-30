@@ -22,4 +22,9 @@ export interface TreeViewNode {
   readonly isDisabled?: boolean | undefined;
   /** The rows nested under this one; a row with children can be expanded. */
   readonly children?: readonly TreeViewNode[] | undefined;
+  /**
+   * True when the row has children that are not loaded yet: it can be expanded, and the tree's `onLoadChildren` is
+   * called the first time it is.
+   */
+  readonly hasChildren?: boolean | undefined;
 }

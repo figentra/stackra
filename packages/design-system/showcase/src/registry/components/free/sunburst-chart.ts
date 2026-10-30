@@ -22,4 +22,5 @@ export const FREE_SUNBURST_CHART: ComponentEntry = {
   tokens: ["color.chart-ramp-1", "color.chart-ramp-5", "color.surface"],
   keywords: ["sunburst", "hierarchy", "nested share", "rings"],
   status: "new",
+  advanced: true,
 };

@@ -1,10 +1,11 @@
 {
   "generatedFrom": {
-    "hash": "0edfc843a367f791",
+    "hash": "d3ad9fdab521c60f",
     "heroDoc": "vendor/heroui/native/toast.json",
     "propsFiles": [
       "ui/src/native/toast/toast-item.props.ts",
-      "ui/src/native/toast/toast-provider.props.ts"
+      "ui/src/native/toast/toast-provider.props.ts",
+      "ui/src/native/toast/undo-countdown.props.ts"
     ]
   },
   "hooks": [
@@ -76,6 +77,20 @@
           "required": false,
           "source": "stackra",
           "type": "ToastAction"
+        },
+        {
+          "description": "True while a promise toast's work runs: a spinner stands in for the icon.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "An undo toast's countdown, in milliseconds: the seconds left count down in a ring in place of the icon.",
+          "name": "countdown",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
         },
         {
           "description": "The accessible name of the dismiss button.",
@@ -173,6 +188,18 @@
           "required": false,
           "source": "heroui",
           "type": "boolean"
+        }
+      ]
+    },
+    {
+      "name": "UndoCountdown",
+      "props": [
+        {
+          "description": "How long it counts down, in milliseconds: the toast's timeout.",
+          "name": "duration",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
         }
       ]
     }

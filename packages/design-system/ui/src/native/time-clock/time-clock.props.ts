@@ -1,0 +1,15 @@
+/**
+ * Stackra file contract:
+ * Purpose: `TimeClockProps`, the props of the native `TimeClock`: the shared contract and a class name.
+ * Boundary: types only.
+ * Runtime: react-native
+ * Governing contract: ADR 0302 (decision 3); ADR 0305 (one declaration per file); STA-1371 (wave D, owner approval
+ *          2026-10-30).
+ */
+import type { TimeClockContractProps } from "#contracts/types/time-clock-contract-props.type";
+
+/** Props of the native TimeClock. */
+export type TimeClockProps = TimeClockContractProps & {
+  /** Styles the outer view. */
+  readonly className?: string | undefined;
+};

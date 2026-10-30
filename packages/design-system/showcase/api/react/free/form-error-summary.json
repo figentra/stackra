@@ -1,0 +1,53 @@
+{
+  "generatedFrom": {
+    "hash": "756e685445eaca87",
+    "propsFiles": ["ui/src/react/form-error-summary/form-error-summary.props.ts"]
+  },
+  "importLine": "import { FormErrorSummary } from \"@stackra/ui/react\";",
+  "key": "free/form-error-summary",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the field's id after its link is followed (web), or instead of following it (native).",
+          "name": "onSelectError",
+          "required": false,
+          "source": "stackra",
+          "type": "(field: string) => void"
+        }
+      ],
+      "name": "FormErrorSummary",
+      "props": [
+        {
+          "description": "The errors, in the form's order. Left out on the web inside a schema `Form`, the form's own field errors are listed.",
+          "name": "errors",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly FormErrorItem[]"
+        },
+        {
+          "description": "The heading; \"There are 3 problems\" in the reader's language by default.",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Bump it after each failed submit to move focus to the summary again (a schema form's own count is read).",
+          "name": "submitCount",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Classes for the box, such as a margin.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

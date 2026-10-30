@@ -4,9 +4,14 @@
  *          search, the and/or filter with its chips, the multi-sort, group by, the column editor, density, the view
  *          switcher, export, import, refresh and full screen) and, below it, the active view drawn from the same state,
  *          so switching between Table, Grid, List and Cards keeps the search, filter, sort and columns. The board of
- *          wave 4 (or any other view) comes in through `renderLayout`. Under 37.5rem of its own width the toolbar keeps
+ *          wave 4 is drawn from `board` (or any view through `renderLayout`). Under 37.5rem of its own width the toolbar keeps
  *          the search and the filter and moves every other tool (the view switcher too) into a "More tools" drawer; a phone
- *          opens on the list (or cards) view when the engine was never switched.
+ *          opens on the list (or cards) view when the engine was never switched. The table view takes the row tools of
+ *          wave 3 (drag to reorder, hover and context actions, expand, inline edit), and `renderRowPanel` opens a
+ *          table row, a list row or a card in the shared side panel beside whichever view is shown. Wave 4 (scale):
+ *          `isVirtualized` draws only what is in view in every view (10,000 rows and more), `infinite` paging loads
+ *          the next page at the end of any view, and under `cardsBelow` (600 px) of its own width the table is drawn
+ *          as cards without changing the engine's layout.
  * Boundary: it keeps no data state: every tool changes the engine (persisted by its collection key). The filter and sort
  *           editors sit in popovers on wide containers and in bottom drawers on narrow ones. The result count is a
  *           polite status. Full screen is the browser's own, on the DataView's root, and follows Escape. Words come from
@@ -25,6 +30,7 @@ import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { DataGridRow } from "#contracts/types/data-grid-row.type";
 import type { RuleCondition } from "#contracts/types/rule-condition.type";
 import { COLLECTION_KEYS } from "#core/constants/collection-keys.constant";
+import { cellTextOf } from "#core/functions/cell-text-of.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { filterConditionCountOf } from "#core/functions/filter-condition-count-of.function";
 import { Button } from "#react/button/button";
@@ -34,9 +40,11 @@ import { ColumnEditor } from "#react/column-chooser/column-editor";
 import { ColumnEditorPanel } from "#react/column-chooser/column-editor-panel";
 import { DataGrid } from "#react/data-grid/data-grid";
 import { COLLECTION_ICONS } from "#react/data-table/collection-icons.constant";
+import { CollectionRowPanel } from "#react/data-table/collection-row-panel";
 import { DataTable } from "#react/data-table/data-table";
 import { CollectionFilterEditor } from "#react/data-view/collection-filter-editor";
 import { CollectionSortEditor } from "#react/data-view/collection-sort-editor";
+import { DataViewBoard } from "#react/data-view/data-view-board";
 import { DataViewCards } from "#react/data-view/data-view-cards";
 import { DATA_VIEW_ICONS as I } from "#react/data-view/data-view-icons.constant";
 import type { DataViewProps } from "#react/data-view/data-view.props";
@@ -82,6 +90,20 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
   hasFullscreen = true,
   renderLayout,
   emptyState,
+  onReorder,
+  hasHoverActions,
+  hasContextMenu,
+  renderRowDetail,
+  expandedKeys,
+  defaultExpandedKeys,
+  onExpandedChange,
+  onRowOpen,
+  renderRowPanel,
+  editableColumns,
+  onCellEdit,
+  isVirtualized = false,
+  cardsBelow = NARROW,
+  board,
   className,
   ...rest
 }: DataViewProps<TItem>): ReactElement {
@@ -90,10 +112,27 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
   const [width, setWidth] = useState(1024);
   const [isFullscreen, setFullscreen] = useState(false);
   const { state } = collection;
-  const layouts: readonly CollectionLayout[] =
-    givenLayouts ?? (gridColumns ? ["table", "grid", "list", "cards"] : ["table", "list", "cards"]);
+  const layouts: readonly CollectionLayout[] = givenLayouts ?? [
+    "table" as const,
+    ...(gridColumns ? (["grid"] as const) : []),
+    "list" as const,
+    "cards" as const,
+    ...(board ? (["board"] as const) : []),
+  ];
   const layout = layouts.includes(state.layout) ? state.layout : (layouts[0] ?? "table");
   const isNarrow = width < NARROW;
+  // A table too narrow for its columns is drawn as cards; the engine keeps `table`, so a wider frame shows it again.
+  const isTableAsCards = layout === "table" && cardsBelow !== null && width < cardsBelow;
+  // The record open in the side panel, from any view.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const openItem =
+    openId === null ? null : (collection.rows.find((item) => item.id === openId) ?? null);
+  const openRow = (item: TItem) => {
+    onRowOpen?.(item);
+    if (renderRowPanel) setOpenId(item.id);
+  };
+  const rowHeaderId =
+    (collection.columns.find((column) => column.isRowHeader) ?? collection.columns[0])?.id ?? "";
 
   useEffect(() => {
     const element = root.current;
@@ -321,7 +360,7 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
               {importButton}
               {refreshButton}
             </div>
-            {layout === "table" || layout === "grid" ? (
+            {(layout === "table" && !isTableAsCards) || layout === "grid" ? (
               <section className="grid gap-2" aria-label={t(K.editor_title)}>
                 <h3 className="m-0 text-sm font-medium">{t(K.editor_title)}</h3>
                 <ColumnEditorPanel collection={collection} />
@@ -355,7 +394,9 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         <div className="w-[min(22rem,calc(100vw-2rem))]">{sortEditor}</div>
       </Popover>
       {groupMenu}
-      {layout === "table" || layout === "grid" ? <ColumnEditor collection={collection} /> : null}
+      {(layout === "table" && !isTableAsCards) || layout === "grid" ? (
+        <ColumnEditor collection={collection} />
+      ) : null}
       {densityMenu}
       {switcher}
       {exportButton}
@@ -403,8 +444,25 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
     ) : null;
 
   const tableSelection = selectionMode ?? (bulkActions ? "multiple" : "none");
+  const openItemPress =
+    renderRowPanel || onRowOpen
+      ? (item: TItem) => {
+          onItemPress?.(item);
+          openRow(item);
+        }
+      : onItemPress;
   const body: ReactNode =
     renderLayout?.[layout]?.() ??
+    (layout === "board" && board ? (
+      <DataViewBoard
+        collection={collection}
+        label={label}
+        board={{ ...board, card: board.card ?? cards }}
+        renderCell={renderCell}
+        onItemPress={openItemPress}
+        isVirtualized={isVirtualized}
+      />
+    ) : null) ??
     (layout === "grid" && gridColumns ? (
       <DataGrid
         label={label}
@@ -416,14 +474,15 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         hasColumnTools
         onSave={onGridSave}
       />
-    ) : layout === "list" || layout === "cards" ? (
+    ) : layout === "list" || layout === "cards" || isTableAsCards ? (
       <DataViewCards
         collection={collection}
         label={label}
-        layout={layout}
+        layout={layout === "list" ? "list" : "cards"}
         fields={layout === "list" ? list : cards}
         renderCell={renderCell}
-        onItemPress={onItemPress}
+        onItemPress={openItemPress}
+        isVirtualized={isVirtualized}
       />
     ) : (
       <DataTable
@@ -433,6 +492,7 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         collection={collection}
         hasColumnTools
         isStickyHeader
+        isVirtualized={isVirtualized}
         maxHeight={isFullscreen ? "calc(100vh - 12rem)" : "32rem"}
         renderCell={renderCell}
         rowActions={rowActions}
@@ -442,6 +502,16 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         error={collection.error}
         onRetry={collection.refresh}
         emptyState={emptyState}
+        onReorder={onReorder}
+        hasHoverActions={hasHoverActions}
+        hasContextMenu={hasContextMenu}
+        renderRowDetail={renderRowDetail}
+        expandedKeys={expandedKeys}
+        defaultExpandedKeys={defaultExpandedKeys}
+        onExpandedChange={onExpandedChange}
+        editableColumns={editableColumns}
+        onCellEdit={onCellEdit}
+        {...(renderRowPanel || onRowOpen ? { onRowOpen: openRow } : {})}
         query={{
           search: state.search,
           filterValues: {},
@@ -487,8 +557,22 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
             </span>
           </div>
         </div>
-        {body}
-        {collection.paging === "page" && layout !== "table" && collection.pageCount > 1 ? (
+        {renderRowPanel ? (
+          <CollectionRowPanel
+            label={label}
+            item={openItem}
+            title={openItem ? cellTextOf(openItem, rowHeaderId) || openItem.id : ""}
+            renderPanel={renderRowPanel}
+            onClose={() => setOpenId(null)}
+          >
+            {body}
+          </CollectionRowPanel>
+        ) : (
+          body
+        )}
+        {collection.paging === "page" &&
+        (layout !== "table" || isTableAsCards) &&
+        collection.pageCount > 1 ? (
           <nav
             className="flex items-center justify-end gap-2"
             aria-label={t(K.page_of, { page: state.page + 1, count: collection.pageCount })}
@@ -514,7 +598,11 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
             </Button>
           </nav>
         ) : null}
-        {collection.paging === "infinite" && layout !== "table" && collection.hasMore ? (
+        {/* Virtualised views load the next page as their end comes into view; the others offer a button. */}
+        {collection.paging === "infinite" &&
+        (layout !== "table" || isTableAsCards) &&
+        !isVirtualized &&
+        collection.hasMore ? (
           <div className="flex justify-center">
             <Button
               size="sm"

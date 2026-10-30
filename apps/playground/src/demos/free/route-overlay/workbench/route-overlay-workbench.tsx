@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `RouteOverlayWorkbench`, the in-memory app the web Route overlay demos share: a workbench page whose
  *          triggers navigate to child routes that draw a modal, sheet, drawer, full-screen, locked or editing overlay,
- *          with closing stepping Back. `section` picks the triggers a demo shows.
+ *          with closing stepping Back. `section` picks the triggers a demo shows. The open overlay is mirrored in the page
+ *          URL (`?overlay=<page section id>:<path>`), so Back, Forward and a deep link open and close it.
  * Boundary: demo support, one folder below the demos so the demos glob does not list it. The workbench runs in a React
  *           root of its own: React Router refuses a router inside another, and the playground already runs one. Its
  *           root takes the page's scheme, locale, direction and icons. Every string and class here is a stand-in a real
@@ -29,10 +30,11 @@ import {
   useCatalogueText,
   useDesignSystem,
 } from "@stackra/ui/react";
-import { StrictMode, useEffect, useRef, useState } from "react";
+import { StrictMode, useCallback, useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import {
   createMemoryRouter,
+  NavigationType,
   Outlet,
   RouterProvider,
   useLocation,
@@ -352,18 +354,111 @@ function routesOf(section: Section) {
   ];
 }
 
-/** The workbench app: its in-memory router, made once so an open overlay survives a render. */
-function WorkbenchApp({ section }: { readonly section: Section }) {
-  const [router] = useState(() => createMemoryRouter(routesOf(section), { initialEntries: ["/"] }));
+/** The page URL's search parameter that holds the open overlay, as `<page section id>:<path>`. */
+const OVERLAY_PARAM = "overlay";
+
+/** Reports a move of the workbench's own route: its path and how it moved. */
+type OnPathChange = (path: string, action: NavigationType) => void;
+
+/**
+ * The workbench app: its in-memory router, made once so an open overlay survives a render, kept in step with the page
+ * URL. A move inside the workbench is reported up (`onPathChange`); a new `path` from the page URL (Back, Forward, a
+ * deep link) moves the workbench, and that move is not reported back.
+ */
+function WorkbenchApp({
+  section,
+  path,
+  sync,
+  onPathChange,
+}: {
+  readonly section: Section;
+  readonly path: string;
+  /** Changes on every Back or Forward of the page, so the workbench checks its route against `path` again. */
+  readonly sync: number;
+  readonly onPathChange: OnPathChange;
+}) {
+  const [router] = useState(() =>
+    createMemoryRouter(routesOf(section), { initialEntries: [path] }),
+  );
+  const report = useRef(onPathChange);
+  const fromPage = useRef<string | null>(null);
+  useEffect(() => {
+    report.current = onPathChange;
+  }, [onPathChange]);
+  useEffect(() => {
+    let last = router.state.location.key;
+    return router.subscribe((state) => {
+      if (state.location.key === last) return; // a blocker or a pending state, not a move
+      last = state.location.key;
+      const moved = state.location.pathname;
+      if (fromPage.current === moved) {
+        fromPage.current = null;
+        return;
+      }
+      report.current(moved, state.historyAction);
+    });
+  }, [router]);
+  useEffect(() => {
+    if (router.state.location.pathname === path) return;
+    fromPage.current = path;
+    void router.navigate(path);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- `sync` is the trigger: a quick Back can undo the page's push of the opened overlay before React commits it, so `path` never changes from "/" while the workbench still shows the overlay; every Back and Forward checks again
+  }, [router, path, sync]);
   return <RouterProvider router={router} />;
 }
 
-/** Hosts the workbench of `section` in a React root of its own, with the page's scheme, locale and icons. */
+/**
+ * Hosts the workbench of `section` in a React root of its own, with the page's scheme, locale and icons. The open
+ * overlay is mirrored in the page URL (`?overlay=<page section id>:<path>`): opening pushes an entry, closing steps Back (or
+ * replaces, after a deep link), and Back, Forward and a shared link open and close it.
+ */
 export function RouteOverlayWorkbench({ section }: { readonly section: Section }) {
   const host = useRef<HTMLDivElement>(null);
   const root = useRef<Root | null>(null);
   const unmount = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const { colorScheme, locale, direction } = useDesignSystem();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // The URL key is the id of the page section the workbench sits in (`example-route`), so two copies of one demo on a
+  // page (the hero and the Usage example) never open together; a copy outside a section leaves the URL alone.
+  const [owner, setOwner] = useState<string | null>(null);
+  useEffect(() => setOwner(host.current?.closest("section[id]")?.id ?? null), []);
+  const prefix = owner === null ? null : `${owner}:`;
+  const value = new URLSearchParams(location.search).get(OVERLAY_PARAM);
+  const path =
+    prefix !== null && value?.startsWith(prefix) === true ? value.slice(prefix.length) || "/" : "/";
+
+  // Bumped on every Back and Forward of the page (see WorkbenchApp's `sync`).
+  const [sync, setSync] = useState(0);
+  useEffect(() => {
+    const onPop = () => setSync((count) => count + 1);
+    addEventListener("popstate", onPop);
+    return () => removeEventListener("popstate", onPop);
+  }, []);
+
+  const search = useRef(location.search);
+  useEffect(() => {
+    search.current = location.search;
+  }, [location.search]);
+  const onPathChange = useCallback<OnPathChange>(
+    (next, action) => {
+      if (prefix === null) return;
+      // Closing stepped Back inside the workbench: step Back on the page too, so Forward reopens it.
+      if (action === NavigationType.Pop) {
+        void navigate(-1);
+        return;
+      }
+      const params = new URLSearchParams(search.current);
+      if (next === "/") params.delete(OVERLAY_PARAM);
+      else params.set(OVERLAY_PARAM, `${prefix}${next}`);
+      const query = params.toString();
+      void navigate(
+        { search: query ? `?${query}` : "" },
+        { replace: action === NavigationType.Replace, preventScrollReset: true },
+      );
+    },
+    [navigate, prefix],
+  );
 
   useEffect(() => {
     // A pending unmount from Strict Mode's rehearsal is called off, so the root is made once per container.
@@ -386,13 +481,13 @@ export function RouteOverlayWorkbench({ section }: { readonly section: Section }
         <PlaygroundIcons>
           <DesignSystemProvider colorScheme={colorScheme} locale={locale} direction={direction}>
             <ShowcaseI18n locale={locale}>
-              <WorkbenchApp section={section} />
+              <WorkbenchApp section={section} path={path} sync={sync} onPathChange={onPathChange} />
             </ShowcaseI18n>
           </DesignSystemProvider>
         </PlaygroundIcons>
       </StrictMode>,
     );
-  }, [colorScheme, locale, direction, section]);
+  }, [colorScheme, locale, direction, section, path, sync, onPathChange]);
 
   return <div ref={host} />;
 }

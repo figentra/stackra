@@ -1,0 +1,36 @@
+{
+  "basics": {
+    "label": "Stock locations",
+    "description": "Orders for this product ship from the nearest chosen warehouse.",
+    "available": "All warehouses",
+    "chosen": "Stocks this product",
+    "riyadh": "Riyadh central",
+    "riyadh_note": "Same-day in Riyadh",
+    "jeddah": "Jeddah port",
+    "jeddah_note": "Western region",
+    "dammam": "Dammam",
+    "dammam_note": "Eastern Province",
+    "medina": "Medina",
+    "medina_note": "Opens in January",
+    "dubai": "Dubai hub",
+    "dubai_note": "UAE and Oman",
+    "kuwait": "Kuwait City",
+    "kuwait_note": "Kuwait and Bahrain"
+  },
+  "export_columns": {
+    "label": "Orders export",
+    "available": "Columns",
+    "chosen": "In the export",
+    "number": "Order number",
+    "number_note": "Always included",
+    "date": "Order date",
+    "customer": "Customer",
+    "phone": "Phone",
+    "total": "Total",
+    "tax": "VAT",
+    "payment": "Payment method",
+    "status": "Status",
+    "courier": "Courier",
+    "summary": "{count, plural, one {# column} other {# columns}} will be exported."
+  }
+}

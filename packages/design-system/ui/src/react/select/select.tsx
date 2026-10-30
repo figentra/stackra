@@ -3,18 +3,28 @@
  * Purpose: the web `Select` on HeroUI v3's Select: draws the shared contract (`items`, `label`, `description`,
  *          `errorMessage`, `placeholder`, `isFullWidth` and the field props) as HeroUI's label, trigger, popover and
  *          list box, maps the key in and out as a string, and passes every other HeroUI Select prop through.
- * Boundary: no styling of its own; the look is HeroUI's, themed by `@stackra/tokens`. A field that edits one key from a
+ * Boundary: no styling of its own; the look is HeroUI's, themed by `@stackra/tokens`. Choices that name a `section`
+ *          are drawn as list box sections under a header (`groupSelectItems`), which React Aria announces as the
+ *          group's name. A field that edits one key from a
  *          short list; a long or searchable list is a ComboBox. A field without a `label` names itself with
  *          `aria-label`, which passes through.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0055 (one field contract);
  *          owner decision 6 of STA-350 (thin wrappers).
  */
-import { Description, FieldError, Label, ListBox, Select as HeroSelect } from "@heroui/react";
+import {
+  Description,
+  FieldError,
+  Header,
+  Label,
+  ListBox,
+  Select as HeroSelect,
+} from "@heroui/react";
 import type { KeyboardEvent, ReactElement } from "react";
 import { Text } from "react-aria-components";
 
 import type { SelectItem } from "#contracts/types/select-item.type";
+import { groupSelectItems } from "#core/functions/group-select-items.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import type { SelectProps } from "#react/select/select.props";
 
@@ -102,9 +112,19 @@ export function Select({
         {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
         <HeroSelect.Popover>
           <ListBox>
-            {items.map((item) => (
-              <SelectOption key={item.id} item={item} />
-            ))}
+            {groupSelectItems(items).flatMap(({ section, items: group }) =>
+              section === undefined
+                ? group.map((item) => <SelectOption key={item.id} item={item} />)
+                : [
+                    // React Aria names the group by its header, so a screen reader hears the section on entering it.
+                    <ListBox.Section key={`section:${section}`}>
+                      <Header>{section}</Header>
+                      {group.map((item) => (
+                        <SelectOption key={item.id} item={item} />
+                      ))}
+                    </ListBox.Section>,
+                  ],
+            )}
           </ListBox>
         </HeroSelect.Popover>
       </HeroSelect>

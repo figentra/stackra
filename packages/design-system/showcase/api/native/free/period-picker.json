@@ -1,0 +1,81 @@
+{
+  "generatedFrom": {
+    "hash": "0a6548e841e30285",
+    "propsFiles": ["ui/src/native/period-picker/period-picker.props.ts"]
+  },
+  "importLine": "import { PeriodPicker } from \"@stackra/ui/native\";",
+  "key": "free/period-picker",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the whole new value each time the period, the comparison or its mode changes.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: PeriodValue) => void"
+        }
+      ],
+      "name": "PeriodPicker",
+      "props": [
+        {
+          "description": "The group's accessible name; \"Period\" by default.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The current value, for a controlled picker; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "PeriodValue"
+        },
+        {
+          "description": "The starting value, for an uncontrolled picker; the last 30 days with no comparison by default.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "PeriodValue"
+        },
+        {
+          "description": "The presets offered, in order, before \"Custom range\"; a dashboard set by default.",
+          "name": "presets",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"today\" | \"yesterday\" | \"last_7_days\" | \"last_30_days\" | \"last_90_days\" | \"this_month\" | \"last_month\" | \"this_quarter\" | \"last_quarter\" | \"this_year\" | \"last_12_months\")[]"
+        },
+        {
+          "description": "Offers the compare switch and its mode; on by default.",
+          "name": "showComparison",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The day the presets count from; today by default.",
+          "name": "today",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "Refuses changes and shows the disabled style.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

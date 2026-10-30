@@ -140,6 +140,17 @@ html {
   font-family: var(--font-display-arabic, var(--font-arabic));
 }
 
+/* The doc hero's text column is a size container, so its h1 is sized by the column it has beside the demo card: a
+   long single word in a brand's display face ("Questionnaire") ran into the card at lg widths. The heading's own
+   size is the ceiling; the grid's gap keeps the card apart. */
+.doc-hero-text {
+  container-type: inline-size;
+}
+
+.doc-hero-text h1 {
+  font-size: clamp(1.75rem, 12cqi, 2.5rem);
+}
+
 /* The heroes' corners, in steps of the theme's radius, so a re-theme rounds them too: the hero panel and big card,
    a card or tile, a chip or swatch, a bar (rounded top, square-ish foot) and a dot or pill. */
 .hero-panel {
@@ -156,6 +167,12 @@ html {
 
 .hero-bar {
   border-radius: var(--radius) var(--radius) var(--radius-sm) var(--radius-sm);
+}
+
+/* The charts' context tone (@stackra/ui CHART_CONTEXT_SHARE, 35%): a soft fill, edged in the field border (3:1). */
+.hero-bar-context {
+  background-color: color-mix(in oklab, var(--accent) 35%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--field-border);
 }
 
 .hero-round {
@@ -393,6 +410,33 @@ html {
       );
       animation: nav-fade linear both;
       animation-timeline: scroll(self);
+    }
+  }
+
+  /* A row that scrolls sideways (the Theme Studio's template bar) fades at an edge it scrolls under, on the same
+     scroll-driven lengths as the sidebar: a row at its start shows no start fade, a row that does not scroll none at
+     all. The gradient runs from the inline start, so it mirrors in right-to-left with the scroll position. */
+  @supports (animation-timeline: scroll()) {
+    .edge-fade-x {
+      mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--nav-fade-start),
+        #000 calc(100% - var(--nav-fade-end)),
+        transparent
+      );
+      animation: nav-fade linear both;
+      animation-timeline: scroll(self inline);
+    }
+
+    .edge-fade-x:dir(rtl) {
+      mask-image: linear-gradient(
+        to left,
+        transparent,
+        #000 var(--nav-fade-start),
+        #000 calc(100% - var(--nav-fade-end)),
+        transparent
+      );
     }
   }
 

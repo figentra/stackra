@@ -1,0 +1,88 @@
+{
+  "generatedFrom": {
+    "hash": "bd941d237746eadc",
+    "propsFiles": ["ui/src/react/floating-panel/floating-panel.props.ts"]
+  },
+  "importLine": "import { FloatingPanel } from \"@stackra/ui/react\";",
+  "key": "free/floating-panel",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "FloatingPanel",
+      "props": [
+        {
+          "description": "The panel's title in its header; it names the panel.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The panel's content, which scrolls when it is taller than the panel.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The starting width in pixels. Defaults to 360.",
+          "name": "defaultWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The starting height in pixels. Defaults to 420.",
+          "name": "defaultHeight",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The narrowest the panel resizes to, in pixels. Defaults to 240.",
+          "name": "minWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The shortest the panel resizes to, in pixels. Defaults to 160.",
+          "name": "minHeight",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the panel.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

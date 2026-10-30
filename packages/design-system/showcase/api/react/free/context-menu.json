@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "a67f4bcf9416e8f5",
+    "hash": "51d1d3793c5d70e8",
     "propsFiles": ["ui/src/react/context-menu/context-menu.props.ts"]
   },
   "importLine": "import { ContextMenu } from \"@stackra/ui/react\";",
@@ -19,7 +19,7 @@
       "name": "ContextMenu",
       "props": [
         {
-          "description": "The area that answers a right-click: a row, a card, a canvas.",
+          "description": "The area that answers a right-click or a long press: a row, a card, a canvas.",
           "name": "children",
           "required": true,
           "source": "stackra",
@@ -40,7 +40,7 @@
           "type": "string"
         },
         {
-          "description": "True to let the browser's own menu open instead.",
+          "description": "True to open no menu: on web the browser's own menu opens instead.",
           "name": "isDisabled",
           "required": false,
           "source": "stackra",

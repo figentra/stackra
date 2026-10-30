@@ -47,7 +47,12 @@ describe("ComponentPage", () => {
       },
     );
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(async () => {
+    // The page preloads every demo and API doc as it opens; each test waits for those imports to land, so none is
+    // still loading when the environment is torn down (an EnvironmentTeardownError on a slow runner).
+    await vi.dynamicImportSettled();
+    vi.unstubAllGlobals();
+  });
 
   it("draws the header, the sections in order and the registry links", async () => {
     renderPage();

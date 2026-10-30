@@ -1,0 +1,30 @@
+{
+  "basics": {
+    "label": "Store",
+    "products": "Products",
+    "pos": "Point of sale",
+    "pos_note": "Sell in store and online from one stock",
+    "store": "Online store",
+    "store_note": "Your shop on your own domain",
+    "payments": "Payments",
+    "payments_note": "Mada, Apple Pay and cards",
+    "pricing": "Pricing",
+    "resources": "Resources",
+    "guides": "Guides",
+    "guides_note": "Step by step, from setup to first sale",
+    "help": "Help centre",
+    "help_note": "Answers in Arabic and English"
+  },
+  "mega": {
+    "label": "Back office",
+    "sell": "Sell",
+    "shipping": "Shipping",
+    "shipping_note": "Rates, zones and couriers",
+    "invoices": "Invoices",
+    "invoices_note": "E-invoices ready for ZATCA",
+    "reports": "Reports",
+    "reports_note": "Sales and stock, day by day",
+    "customers": "Customers",
+    "settings": "Settings"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "generatedFrom": {
+    "hash": "7ed40a665dc8713c",
+    "propsFiles": ["ui/src/react/back-to-top/back-to-top.props.ts"]
+  },
+  "importLine": "import { BackToTop } from \"@stackra/ui/react\";",
+  "key": "free/back-to-top",
+  "parts": [
+    {
+      "name": "BackToTop",
+      "props": [
+        {
+          "description": "How far down, in pixels, before the button shows. Defaults to 400.",
+          "name": "threshold",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The button's accessible name. Defaults to the catalogue's \"Back to top\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The scrolling element to watch and scroll; left out, the window. The button is then fixed to the viewport.",
+          "name": "scrollRef",
+          "required": false,
+          "source": "stackra",
+          "type": "RefObject<HTMLElement | null>"
+        },
+        {
+          "description": "The id of the element that takes focus once at the top, for example the skip link's target or the page's `h1`.\nLeft out, the scrolling element (or the body) does.",
+          "name": "focusTargetId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the button's wrapper, for example to move it above a bottom bar.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

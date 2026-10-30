@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "d021d488753a25bd",
+    "hash": "ef4248b29251ec54",
     "propsFiles": ["ui/src/native/property-list/property-list.props.ts"]
   },
   "importLine": "import { PropertyList } from \"@stackra/ui/native\";",
@@ -26,11 +26,11 @@
           "type": "readonly TItem[]"
         },
         {
-          "description": "How many columns of rows to draw. Defaults to 1; on a narrow screen two columns stack into one.",
+          "description": "How many columns of rows to draw. Defaults to 1; on a narrow screen two columns stack into one. `auto` follows the\nlist's own width (a container query on web): one column when narrow, two from 28rem, three from 48rem.",
           "name": "columns",
           "required": false,
           "source": "stackra",
-          "type": "1 | 2"
+          "type": "1 | 2 | \"auto\""
         },
         {
           "description": "What shows in place of an empty value. Defaults to an en dash; pass words (\"Not set\") when a dash would not say enough.",

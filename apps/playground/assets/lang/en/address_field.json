@@ -2,5 +2,11 @@
   "basics": {
     "label": "Delivery address",
     "hint": "For a Saudi short address, write it in the first line."
+  },
+  "container": {
+    "narrow": "In a narrow column (16rem): one column.",
+    "wide": "In a wide column: from 28rem the city, region and postal code share rows.",
+    "billing": "Billing address",
+    "shipping": "Shipping address"
   }
 }

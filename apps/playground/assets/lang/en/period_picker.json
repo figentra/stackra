@@ -1,0 +1,8 @@
+{
+  "label": "Report period",
+  "showing": "Showing {range}",
+  "comparing": "Compared with {range}",
+  "nothing": "No comparison",
+  "revenue": "Revenue",
+  "revenue_range": "Daily revenue for the period picked"
+}

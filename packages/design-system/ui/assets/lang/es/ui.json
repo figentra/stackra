@@ -40,6 +40,14 @@
   "tab_bar": {
     "label": "Pestañas"
   },
+  "tabs": {
+    "more": "Más",
+    "more_label": "Más pestañas",
+    "close": "Cerrar {tab}"
+  },
+  "navigation_menu": {
+    "label": "Navegación principal"
+  },
   "entity_picker": {
     "search": "Buscar",
     "close": "Cerrar"
@@ -101,6 +109,9 @@
     "close": "Cerrar el panel",
     "resize": "Cambiar el ancho del panel"
   },
+  "split_view": {
+    "resize": "Cambiar el ancho de los paneles"
+  },
   "data_table": {
     "loading": "Cargando",
     "actions_column": "Acciones",
@@ -125,7 +136,15 @@
   },
   "tree_view": {
     "expand": "Expandir {label}",
-    "collapse": "Contraer {label}"
+    "collapse": "Contraer {label}",
+    "loading": "Cargando…"
+  },
+  "tree_select": {
+    "placeholder": "Elegir",
+    "count": "{count, plural, one {# elegido} other {# elegidos}}"
+  },
+  "mention_input": {
+    "people": "Personas para mencionar"
   },
   "sortable_list": {
     "handle": "Reordenar {label}",
@@ -196,6 +215,51 @@
     "complete": "Todo listo",
     "show": "Mostrar tareas",
     "hide": "Ocultar tareas"
+  },
+  "recurrence_editor": {
+    "label": "Repetir",
+    "every": "Repetir cada",
+    "unit": "{unit, select, daily {{count, plural, one {día} other {días}}} weekly {{count, plural, one {semana} other {semanas}}} monthly {{count, plural, one {mes} other {meses}}} other {{count, plural, one {año} other {años}}}}",
+    "weekdays": "Los días",
+    "monthly": "Cada mes",
+    "ends": "Termina",
+    "never": "Nunca",
+    "until_label": "En una fecha",
+    "count_label": "Tras un número de veces",
+    "end_date": "Fecha de fin",
+    "occurrences": "Veces",
+    "summary": "Se repite",
+    "every_unit": "{unit, select, daily {{interval, plural, one {Cada día} other {Cada {n} días}}} weekly {{interval, plural, one {Cada semana} other {Cada {n} semanas}}} monthly {{interval, plural, one {Cada mes} other {Cada {n} meses}}} other {{interval, plural, one {Cada año} other {Cada {n} años}}}}",
+    "on_days": "{rule} el {days}",
+    "on_day": "{rule} el día {day}",
+    "on_last_day": "{rule} el último día",
+    "on_nth": "{rule} el {nth, select, 1 {primer} 2 {segundo} 3 {tercer} 4 {cuarto} other {último}} {weekday}",
+    "on_date": "{rule} el {date}",
+    "until": "{rule}, hasta el {date}",
+    "times": "{rule}, {count, plural, one {una vez} other {{n} veces}}",
+    "hijri": "{rule}, en el calendario hégira",
+    "day_option": "El día {day}",
+    "last_day_option": "El último día",
+    "nth_option": "El {nth, select, 1 {primer} 2 {segundo} 3 {tercer} 4 {cuarto} other {último}} {weekday}"
+  },
+  "task_tray": {
+    "label": "Tareas en segundo plano",
+    "running": "{count, plural, one {{n} tarea en curso} other {{n} tareas en curso}}",
+    "finished": "{count, plural, one {{n} tarea terminada} other {{n} tareas terminadas}}",
+    "failed": "{count, plural, one {{n} con error} other {{n} con error}}",
+    "show": "Mostrar tareas",
+    "hide": "Ocultar tareas",
+    "clear": "Quitar terminadas",
+    "cancel": "Cancelar {name}",
+    "retry": "Reintentar {name}",
+    "dismiss": "Quitar {name}",
+    "queued": "En espera",
+    "done": "Terminada",
+    "error": "Error",
+    "canceled": "Cancelada"
+  },
+  "toast": {
+    "undo": "Deshacer"
   },
   "inline_loading": {
     "loading": "Cargando…",
@@ -458,7 +522,24 @@
     "previous_page": "Página anterior",
     "next_page": "Página siguiente",
     "page_of": "Página {page, number} de {count, number}",
-    "load_more": "Cargar más"
+    "load_more": "Cargar más",
+    "row_handle": "Arrastrar {name}",
+    "reorder_column": "Orden",
+    "details_column": "Detalles",
+    "expand_row": "Mostrar detalles de {name}",
+    "collapse_row": "Ocultar detalles de {name}",
+    "expand_all": "Mostrar todos los detalles",
+    "collapse_all": "Ocultar todos los detalles",
+    "row_detail": "Detalles de {name}",
+    "edit_cell": "Editar {column} de {name}",
+    "open_row": "Abrir {name}",
+    "row_panel": "Detalles de {label}",
+    "board_column": "{label}: {column}",
+    "board_empty": "Aún no hay nada aquí",
+    "board_count": "{count, plural, one {# tarjeta} other {# tarjetas}}",
+    "move_to": "Mover a",
+    "move_card": "Mover {name}",
+    "card_moved": "{name} movido a {column}"
   },
   "number_pad": {
     "delete": "Borrar",
@@ -491,7 +572,8 @@
     "sort_value_desc": "Mayor primero",
     "sort_value_asc": "Menor primero",
     "sort_label": "Por nombre",
-    "compare": "Comparar con el periodo anterior"
+    "compare": "Comparar con el periodo anterior",
+    "svg": "Descargar SVG"
   },
   "trend_chip": {
     "up": "Sube {value}",
@@ -500,7 +582,8 @@
   },
   "stat": {
     "target": "Objetivo {value}",
-    "drill_down": "Abrir {label}"
+    "drill_down": "Abrir {label}",
+    "previous": "Periodo anterior: {value}"
   },
   "funnel_chart": {
     "conversion": "{value} del paso anterior"
@@ -529,6 +612,25 @@
     "next": "Diapositiva siguiente",
     "slide": "Diapositiva {index} de {count}",
     "pages": "Elegir diapositiva"
+  },
+  "lightbox": {
+    "label": "Visor de imágenes",
+    "previous": "Imagen anterior",
+    "next": "Imagen siguiente",
+    "close": "Cerrar",
+    "counter": "{index} de {count}",
+    "zoom_in": "Acercar",
+    "zoom_out": "Alejar"
+  },
+  "gallery": {
+    "open": "Abrir {name}"
+  },
+  "image_cropper": {
+    "label": "Recortar imagen",
+    "zoom": "Zoom",
+    "hint": "Arrastra la imagen o muévela con las flechas. Más y menos cambian el zoom.",
+    "hint_touch": "Arrastra la imagen para moverla y usa el control deslizante para el zoom.",
+    "loading": "Cargando imagen"
   },
   "command_palette": {
     "label": "Paleta de comandos",
@@ -617,7 +719,11 @@
     "last_30_days": "Últimos 30 días",
     "this_month": "Este mes",
     "last_month": "El mes pasado",
-    "this_year": "Este año"
+    "this_year": "Este año",
+    "last_90_days": "Últimos 90 días",
+    "this_quarter": "Este trimestre",
+    "last_quarter": "Trimestre anterior",
+    "last_12_months": "Últimos 12 meses"
   },
   "year_picker": {
     "label": "Elegir un año"
@@ -666,7 +772,22 @@
     "label": "Suelta los archivos aquí",
     "browse": "Elegir archivos",
     "label_one": "Suelta un archivo aquí",
-    "browse_one": "Elegir un archivo"
+    "browse_one": "Elegir un archivo",
+    "paste_hint": "También puedes pegar un archivo o una captura de pantalla",
+    "taken": "Archivos elegidos"
+  },
+  "attachment_card": {
+    "remove": "Quitar {name}",
+    "download": "Descargar {name}",
+    "open": "Abrir {name}",
+    "uploading": "Subiendo",
+    "failed": "Error al subir",
+    "retry": "Reintentar {name}"
+  },
+  "share_button": {
+    "share": "Compartir",
+    "copied": "Enlace copiado",
+    "copy_link": "Copiar enlace"
   },
   "color_picker": {
     "label": "Color",
@@ -775,5 +896,175 @@
     "in_7_days": "En 7 días",
     "start_of_month": "Inicio de mes",
     "end_of_month": "Fin de mes"
+  },
+  "period_picker": {
+    "label": "Periodo",
+    "preset": "Rango",
+    "custom": "Rango personalizado",
+    "dates": "Fechas",
+    "compare": "Comparar con el periodo anterior",
+    "mode": "Comparar con",
+    "previous": "Periodo anterior",
+    "year": "Mismo periodo del año pasado",
+    "versus": "vs. {range}"
+  },
+  "tracker_strip": {
+    "up": "Operativo",
+    "degraded": "Degradado",
+    "down": "Caído",
+    "none": "Sin datos",
+    "uptime": "{value} de disponibilidad",
+    "cell": "{label}: {status}"
+  },
+  "dashboard_grid": {
+    "handle": "Arrastrar {label}",
+    "earlier": "Adelantar {label}",
+    "later": "Atrasar {label}",
+    "size": "Cambiar el tamaño de {label}, ahora {size}",
+    "size_small": "Pequeño",
+    "size_medium": "Mediano",
+    "size_large": "Grande",
+    "size_full": "Ancho completo",
+    "moved": "{label} movido a la posición {position, number} de {count, number}",
+    "resized": "{label} ahora es {size}"
+  },
+  "form_error_summary": {
+    "title": "{count, plural, one {Hay # problema} other {Hay # problemas}}"
+  },
+  "marquee": {
+    "pause": "Pausar desplazamiento",
+    "play": "Reanudar desplazamiento"
+  },
+  "barcode": {
+    "invalid": "No se puede dibujar este código de barras: revisa el valor."
+  },
+  "page_indicator": {
+    "pages": "Páginas",
+    "page": "Página {index} de {count}"
+  },
+  "back_to_top": {
+    "label": "Volver arriba"
+  },
+  "footer": {
+    "label": "Pie de página"
+  },
+  "waffle_chart": {
+    "share": "Proporción"
+  },
+  "questionnaire_card": {
+    "from_assistant": "Preguntas de tu asistente",
+    "progress": "Pregunta {current} de {total}",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "skip": "Omitir",
+    "review": "Revisar respuestas",
+    "submit": "Enviar respuestas",
+    "summary": "Tus respuestas",
+    "edit": "Editar",
+    "edit_answer": "Editar la respuesta a: {question}",
+    "other": "Otro",
+    "other_label": "Tu respuesta",
+    "skipped": "Omitida"
+  },
+  "model_picker": {
+    "label": "Modelo",
+    "placeholder": "Elige un modelo",
+    "context": "Contexto de {size}",
+    "new": "Nuevo",
+    "beta": "Beta",
+    "unavailable": "No disponible"
+  },
+  "voice_input": {
+    "start": "Empezar a grabar",
+    "stop": "Detener la grabación",
+    "idle": "Pulsa el micrófono para hablar",
+    "requesting": "Esperando acceso al micrófono…",
+    "listening": "Escuchando…",
+    "cancel_hint": "Esc para cancelar",
+    "processing": "Procesando…",
+    "denied": "El acceso al micrófono está bloqueado. Permítelo en los ajustes y vuelve a intentarlo.",
+    "error": "No se pudo grabar. Inténtalo de nuevo.",
+    "cancelled": "Grabación cancelada"
+  },
+  "popconfirm": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
+  },
+  "menubar": {
+    "label": "Menú de la aplicación"
+  },
+  "floating_panel": {
+    "move": "Mover el panel",
+    "move_hint": "Muévelo con las flechas; mantén Mayús para pasos más largos.",
+    "resize": "Cambiar el tamaño del panel",
+    "resize_hint": "Cambia el tamaño con las flechas; mantén Mayús para pasos más largos.",
+    "minimise": "Minimizar",
+    "restore": "Restaurar",
+    "close": "Cerrar"
+  },
+  "cascader": {
+    "placeholder": "Elegir",
+    "back": "Atrás",
+    "loading": "Cargando…",
+    "empty": "No hay nada"
+  },
+  "transfer_list": {
+    "available": "Disponibles",
+    "chosen": "Elegidos",
+    "filter": "Filtrar {list}",
+    "add": "Añadir los marcados",
+    "remove": "Quitar los marcados",
+    "add_all": "Añadir todos",
+    "remove_all": "Quitar todos",
+    "empty": "No hay nada",
+    "moved": "{count, plural, one {# elemento movido} other {# elementos movidos}}"
+  },
+  "media_player": {
+    "play": "Reproducir",
+    "pause": "Pausa",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "volume": "Volumen",
+    "seek": "Buscar",
+    "time_of": "{elapsed} de {duration}",
+    "speed": "Velocidad de reproducción",
+    "normal_speed": "Normal",
+    "captions": "Subtítulos",
+    "fullscreen": "Pantalla completa",
+    "exit_fullscreen": "Salir de pantalla completa"
+  },
+  "conversation_list": {
+    "label": "Conversaciones",
+    "pinned": "Fijadas",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "previous_7_days": "Últimos 7 días",
+    "older": "Anteriores",
+    "actions": "Acciones de {title}",
+    "pin": "Fijar",
+    "unpin": "Desfijar",
+    "rename": "Cambiar nombre",
+    "delete": "Eliminar",
+    "empty_title": "Aún no hay conversaciones",
+    "empty_description": "Tus chats con el asistente aparecerán aquí."
+  },
+  "message_actions": {
+    "label": "Acciones del mensaje",
+    "copy": "Copiar mensaje",
+    "retry": "Reintentar",
+    "edit": "Editar",
+    "good": "Buena respuesta",
+    "bad": "Mala respuesta"
+  },
+  "message_scroller": {
+    "label": "Conversación",
+    "new_messages": "Mensajes nuevos",
+    "new_messages_count": "{count, plural, one {# mensaje nuevo} other {# mensajes nuevos}}"
+  },
+  "prompt_suggestions": {
+    "label": "Sugerencias"
+  },
+  "shimmer": {
+    "thinking": "Pensando…"
   }
 }

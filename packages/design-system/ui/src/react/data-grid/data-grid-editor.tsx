@@ -16,7 +16,7 @@ import type { DataGridEditorProps } from "#react/data-grid/data-grid-editor.prop
 
 /** The input's look: it fills the cell and keeps the grid's font. */
 const INPUT =
-  "absolute inset-0 size-full bg-background px-2 text-sm text-foreground outline-2 -outline-offset-2 outline-accent";
+  "absolute inset-0 size-full bg-background px-2 text-sm text-foreground outline-2 -outline-offset-2";
 
 /** The in-cell editor. */
 export function DataGridEditor({
@@ -26,6 +26,7 @@ export function DataGridEditor({
   onCommit,
   onCancel,
   label,
+  errorId,
 }: DataGridEditorProps): ReactElement {
   const input = useRef<HTMLInputElement & HTMLSelectElement>(null);
   const isDone = useRef(false);
@@ -58,7 +59,8 @@ export function DataGridEditor({
   const common = {
     ref: input,
     "aria-label": label,
-    className: INPUT,
+    ...(errorId ? { "aria-invalid": true, "aria-describedby": errorId } : {}),
+    className: `${INPUT} ${errorId ? "outline-danger" : "outline-accent"}`,
     onKeyDown,
     onBlur: () => {
       if (!isDone.current) finish("stay");

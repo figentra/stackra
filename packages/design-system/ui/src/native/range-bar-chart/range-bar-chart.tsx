@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the native `RangeBarChart`: one floating bar per category from its low to its high value, standing
  *          (`vertical`) or lying (`horizontal`, growing from the reading start), a press readout of the range, and
- *          every range spoken after the chart's name.
+ *          every range spoken after the chart's name. With `emphasis` one bar (or the pressed one) carries the
+ *          colour and the rest its soft tone, as on the web.
  * Boundary: Views placed in percent of one shared scale and RN Text; categories run right to left in Arabic.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0060 (right-to-left); WCAG 2.2 SC 1.1.1 and 1.4.11; STA-1371.
@@ -13,10 +14,13 @@ import { Pressable, View } from "react-native";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { chartTextOf } from "#core/functions/chart-text-of.function";
 import { formatChartCategory } from "#core/functions/format-chart-category.function";
+import { emphasisIndexOf } from "#core/functions/emphasis-index-of.function";
 import { formatChartNumber } from "#core/functions/format-chart-number.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { ChartFrame } from "#native/chart/chart-frame";
 import { ChartReadout } from "#native/chart/chart-readout";
+import { CHART_CONTEXT_SHARE } from "#core/constants/chart-context-share.constant";
+import { mixOf } from "#native/chart/mix-of.function";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { RangeBarChartProps } from "#native/range-bar-chart/range-bar-chart.props";
@@ -70,6 +74,17 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
     rows: rows.map((row) => [row.name, cell(row.from), cell(row.to)]),
   };
   const active = rows[pressed];
+  const emphasis = props.emphasis ?? "none";
+  const emphasised = emphasisIndexOf(emphasis, rows.length, pressed);
+  // A context mark's soft fill is edged in the field border, 3:1 on the card (WCAG 1.4.11).
+  const edgeOf = (index: number) =>
+    emphasis === "none" || index === emphasised
+      ? {}
+      : { borderWidth: 1, borderColor: paint.fieldBorder };
+  const fillOf = (index: number) =>
+    emphasis === "none" || index === emphasised
+      ? paint.series[0]
+      : mixOf(paint.series[0] ?? "", paint.surface, 1 - CHART_CONTEXT_SHARE);
   return (
     <ChartFrame
       label={label}
@@ -108,7 +123,8 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
                       start: `${percent(row.range[0])}%`,
                       width: `${percent(row.range[1]) - percent(row.range[0])}%`,
                       minWidth: 4,
-                      backgroundColor: paint.series[0],
+                      backgroundColor: fillOf(index),
+                      ...edgeOf(index),
                     }}
                   />
                 ) : null}
@@ -133,7 +149,8 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
                       bottom: `${percent(row.range[0])}%`,
                       top: `${100 - percent(row.range[1])}%`,
                       minHeight: 4,
-                      backgroundColor: paint.series[0],
+                      backgroundColor: fillOf(index),
+                      ...edgeOf(index),
                     }}
                   />
                 ) : null}

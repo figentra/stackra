@@ -1,0 +1,14 @@
+{
+  "payments_title": "Payment methods",
+  "payments_description": "1,000 orders in October",
+  "card": "Card",
+  "cod": "Cash on delivery",
+  "wallet": "Digital wallet",
+  "later": "Pay later",
+  "status_title": "Order status",
+  "status_description": "This week's 840 orders, one square per 1%",
+  "delivered": "Delivered",
+  "shipped": "Shipped",
+  "processing": "Processing",
+  "cancelled": "Cancelled"
+}

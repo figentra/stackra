@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the native Switch hands HeroUI Native's ControlField the selected state from `value` or from its
+ * Purpose: proves the native Switch paints off and on apart (track, edge and thumb fill), hands HeroUI Native's ControlField the selected state from `value` or from its
  *          own state (`defaultValue`), reports each change with the new state, refuses the press while read-only,
  *          announces itself as the one `switch` with the inner control hidden, draws the label before the control, the
  *          description and the error message, passes the states and unknown props through, and refuses HeroUI Native's
@@ -32,7 +32,7 @@ vi.mock("heroui-native", async () => {
     Label: record("label"),
     Description: record("description"),
     FieldError: record("field-error"),
-    Switch: record("switch"),
+    Switch: Object.assign(record("switch"), { Thumb: record("thumb") }),
     useThemeColor: (names: readonly string[]) => names.map((name) => `color:${name}`),
   };
 });
@@ -129,11 +129,22 @@ describe("Switch (native)", () => {
     expect("isRequired" in propsOf("control-field")).toBe(false);
   });
 
-  it("draws the off track in the field edge colour and the on track in the accent", () => {
+  it("draws off as a muted track edged in the field border with a muted thumb, and on as the accent", () => {
     render(<Switch label="A" />);
     expect(propsOf("switch")["animation"]).toEqual({
-      backgroundColor: { value: ["color:field-border", "color:accent"] },
+      backgroundColor: { value: ["color:default", "color:accent"] },
     });
+    expect(propsOf("switch")["style"]).toEqual({
+      borderWidth: 1,
+      borderColor: "color:field-border",
+    });
+    // The thumb's fill differs between the states, so off never reads as on by position alone (in RTL it rests right).
+    expect(propsOf("thumb")["animation"]).toEqual({
+      backgroundColor: { value: ["color:muted", "color:accent-foreground"] },
+    });
+    received.props = {};
+    render(<Switch label="B" defaultValue />);
+    expect(propsOf("switch")["style"]).toEqual({ borderWidth: 1, borderColor: "color:accent" });
   });
 
   it("refuses HeroUI Native's names for what the contract names", () => {

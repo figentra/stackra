@@ -43,6 +43,11 @@ export interface ComponentEntry {
   readonly keywords: readonly string[];
   /** The status chip. */
   readonly status?: ComponentStatus;
+  /**
+   * An "Advanced" chip on the page and in the nav: a specialist component (a box plot, a sankey) most screens never
+   * need. A marker only, unrelated to the tier: an advanced entry stays free.
+   */
+  readonly advanced?: true;
   /** Accessibility notes, keys into `showcase::a11y.<key>`, used when HeroUI has no section. */
   readonly a11y?: readonly string[];
 }

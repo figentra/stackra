@@ -48,6 +48,7 @@
     "stable": "Stable"
   },
   "ui": {
+    "advanced": "Advanced",
     "all": "All",
     "components": "Components",
     "count_components": "{count, plural, one {# component} other {# components}}",
@@ -492,7 +493,17 @@
       "toast": {
         "title": "Toast",
         "description": "A short message that appears and goes away on its own.",
-        "keywords": "snackbar, notification, message"
+        "keywords": "snackbar, notification, message, promise, undo"
+      },
+      "task_tray": {
+        "title": "Task tray",
+        "description": "Uploads, exports and imports running in the background, docked in a corner with progress, cancel and retry.",
+        "keywords": "task tray, background tasks, uploads, exports, imports, progress"
+      },
+      "recurrence_editor": {
+        "title": "Recurrence editor",
+        "description": "Builds a repeating rule (RRULE) from plain controls and says it in one sentence, in the Gregorian or Hijri calendar.",
+        "keywords": "recurrence, repeat, rrule, schedule, recurring, hijri"
       },
       "breadcrumbs": {
         "title": "Breadcrumbs",
@@ -666,8 +677,23 @@
       },
       "tree_view": {
         "title": "Tree view",
-        "description": "Nested rows that expand, collapse and select.",
-        "keywords": "tree, hierarchy, accounts, categories"
+        "description": "Nested rows that expand, collapse and select, with checkboxes, rows loaded on demand and dragging.",
+        "keywords": "tree, hierarchy, accounts, categories, checkboxes, lazy loading, drag and drop"
+      },
+      "tree_select": {
+        "title": "Tree select",
+        "description": "A field whose options are a tree: pick a category, an account or branches from nested rows.",
+        "keywords": "tree select, nested select, category picker, cascader, hierarchy"
+      },
+      "masked_field": {
+        "title": "Masked field",
+        "description": "A text field that writes what is typed into a pattern, such as a mobile number, an IBAN or a card number.",
+        "keywords": "mask, input mask, pattern, IBAN, card number, phone, format as you type"
+      },
+      "mention_input": {
+        "title": "Mention input",
+        "description": "A text box where typing @ suggests people, and the people mentioned are reported.",
+        "keywords": "mention, at mention, tag people, notify, comment"
       },
       "system_banner": {
         "title": "System banner",
@@ -902,7 +928,22 @@
       "carousel": {
         "title": "Carousel",
         "description": "Let people swipe through offers or products one at a time, at their own pace.",
-        "keywords": "carousel, slides, gallery"
+        "keywords": "carousel, slides, gallery, thumbnails"
+      },
+      "lightbox": {
+        "title": "Lightbox",
+        "description": "Show pictures full screen, one at a time, with swipe, arrow keys and zoom.",
+        "keywords": "lightbox, image viewer, photo, zoom, fullscreen"
+      },
+      "gallery": {
+        "title": "Gallery",
+        "description": "Pictures in a square grid or a masonry of their own shapes; a press opens them full screen.",
+        "keywords": "gallery, masonry, photos, images, grid"
+      },
+      "image_cropper": {
+        "title": "Image cropper",
+        "description": "Let people place and zoom a picture in a fixed frame, square, wide or round, before it is saved.",
+        "keywords": "crop, cropper, avatar, image, photo, zoom"
       },
       "holo_card": {
         "title": "Holo card",
@@ -926,8 +967,23 @@
       },
       "context_menu": {
         "title": "Context menu",
-        "description": "The actions people expect on a right-click, also reachable from the keyboard.",
-        "keywords": "context menu, right click"
+        "description": "The actions people expect on a right-click or a long press, also reachable from the keyboard.",
+        "keywords": "context menu, right click, long press"
+      },
+      "disclosure": {
+        "title": "Disclosure",
+        "description": "One section whose title shows and hides its details, for the extra that most people skip.",
+        "keywords": "disclosure, show more, collapse, expand, details"
+      },
+      "navigation_menu": {
+        "title": "Navigation menu",
+        "description": "A site's top bar of links, with panels of links under it, up to a two-column mega menu.",
+        "keywords": "navigation menu, mega menu, top bar, header links"
+      },
+      "layout": {
+        "title": "Layout primitives",
+        "description": "Stack, Cluster, Grid and Center: spacing and columns from the scale, so screens line up without custom CSS.",
+        "keywords": "stack, cluster, grid, center, layout, spacing, gap"
       },
       "command_palette": {
         "title": "Command palette",
@@ -1046,8 +1102,18 @@
       },
       "drop_zone": {
         "title": "Drop zone",
-        "description": "A place to drop or pick files.",
-        "keywords": "upload, files, drag, drop"
+        "description": "A place to drop, paste, pick or photograph files, with previews.",
+        "keywords": "upload, files, drag, drop, paste, camera, preview"
+      },
+      "attachment_card": {
+        "title": "Attachment card",
+        "description": "One attached file: its type or thumbnail, name and size, an upload's progress, and open, download and remove.",
+        "keywords": "attachment, file, upload, download, document"
+      },
+      "share_button": {
+        "title": "Share button",
+        "description": "Opens the system share sheet with a link, or copies the link where there is none.",
+        "keywords": "share, link, social, copy, send"
       },
       "color_picker": {
         "title": "Colour picker",
@@ -1258,6 +1324,186 @@
         "title": "Data view",
         "description": "One toolbar and four views of the same records: table, grid, list and cards.",
         "keywords": "data view, toolbar, filter, sort, group, saved views, cards, list, export"
+      },
+      "period_picker": {
+        "title": "Period picker",
+        "description": "Pick a dashboard period from ready ranges or the calendar, and compare it with the one before.",
+        "keywords": "period, date range, compare, previous period"
+      },
+      "tracker_strip": {
+        "title": "Tracker strip",
+        "description": "Uptime at a glance: one cell per day or hour, coloured by how the service did.",
+        "keywords": "tracker, uptime, status"
+      },
+      "dashboard_grid": {
+        "title": "Dashboard grid",
+        "description": "Lay out dashboard widgets that readers can reorder, resize and keep.",
+        "keywords": "dashboard, layout, drag, resize"
+      },
+      "form_error_summary": {
+        "title": "Form error summary",
+        "description": "List a form's problems above it, each linked to its field.",
+        "keywords": "errors, validation, form"
+      },
+      "checkbox_field": {
+        "title": "Checkbox field",
+        "description": "A checkbox whose label is a sentence, ready for a schema form's binding.",
+        "keywords": "consent, terms, agree, form binding, checkbox"
+      },
+      "text_area_field": {
+        "title": "Text area field",
+        "description": "A multi-line text field ready for a schema form's binding.",
+        "keywords": "multiline, note, form binding, textarea"
+      },
+      "dropdown": {
+        "title": "Dropdown",
+        "description": "A menu behind a button, written inline: trigger, menu and items.",
+        "keywords": "menu, account menu, locale switcher, dropdown"
+      },
+      "heading": {
+        "title": "Heading",
+        "description": "A heading whose level places it in the outline and whose look can differ.",
+        "keywords": "heading, title, h1, outline, level"
+      },
+      "kiosk_surface": {
+        "title": "Kiosk surface",
+        "description": "The unattended mode of a screen: an idle reset, a reach layout, high contrast and spoken announcements.",
+        "keywords": "kiosk, self-service, idle reset, unattended, accessibility"
+      },
+      "turnstile": {
+        "title": "Turnstile",
+        "description": "Cloudflare's Turnstile challenge in a form, posting its token with the fields.",
+        "keywords": "captcha, bot check, cloudflare, challenge, spam"
+      },
+      "chart_legend": {
+        "title": "Chart legend",
+        "description": "A row of series swatches and labels, toggles when a chart can hide series.",
+        "keywords": "legend, series, chart key, toggle series"
+      },
+      "chart_tooltip": {
+        "title": "Chart tooltip",
+        "description": "The card a chart shows at the pointed row: its title and one line per series.",
+        "keywords": "tooltip, chart, recharts, values"
+      },
+      "polar_chart": {
+        "title": "Polar area chart",
+        "description": "Equal slices whose reach is their value, for a cycle such as weekdays or months.",
+        "keywords": "polar area, nightingale, rose, coxcomb, radial, cycle"
+      },
+      "waffle_chart": {
+        "title": "Waffle chart",
+        "description": "Parts of a whole as a grid of a hundred squares, one square per percent.",
+        "keywords": "waffle, square pie, grid, percent, share, part to whole"
+      },
+      "marquee": {
+        "title": "Marquee",
+        "description": "A strip of logos or short news that scrolls on a loop and stops when people need it to.",
+        "keywords": "marquee, ticker, logo strip, scrolling text, announcements"
+      },
+      "barcode": {
+        "title": "Barcode",
+        "description": "A Code 128 or EAN-13 barcode drawn in SVG, with its digits under it.",
+        "keywords": "barcode, ean, ean-13, code 128, sku, label, scan"
+      },
+      "aspect_ratio": {
+        "title": "Aspect ratio",
+        "description": "A box that keeps its shape, so photos and videos load without the page jumping.",
+        "keywords": "aspect ratio, ratio, 16:9, square, media"
+      },
+      "page_indicator": {
+        "title": "Page indicator",
+        "description": "The dots under a carousel or onboarding that show which page is open.",
+        "keywords": "dots, page dots, pager, carousel dots, onboarding"
+      },
+      "back_to_top": {
+        "title": "Back to top",
+        "description": "A floating button that appears on long pages and takes people back to the top.",
+        "keywords": "back to top, scroll to top, jump, floating button"
+      },
+      "footer": {
+        "title": "Footer",
+        "description": "A site footer with your brand, columns of links, the copyright and the legal links.",
+        "keywords": "footer, site footer, links, copyright, legal, sitemap"
+      },
+      "questionnaire_card": {
+        "title": "Questionnaire card",
+        "description": "An assistant asks a few questions, one at a time, then shows the answers to check and send.",
+        "keywords": "ai, assistant, questions, survey, clarify, wizard"
+      },
+      "model_picker": {
+        "title": "Model picker",
+        "description": "Picks an AI model from a list grouped by provider, with capabilities, context size and availability.",
+        "keywords": "ai, model, llm, provider, select"
+      },
+      "voice_input": {
+        "title": "Voice input",
+        "description": "A microphone button with a live level that records a voice note and says what it is doing.",
+        "keywords": "voice, microphone, record, dictation, speech"
+      },
+      "conversation_list": {
+        "title": "Conversation list",
+        "description": "Past AI conversations grouped by day, with pin, rename and delete.",
+        "keywords": "ai, chat, history, conversations, threads"
+      },
+      "message_actions": {
+        "title": "Message actions",
+        "description": "Copy, retry, edit and rate an assistant's answer.",
+        "keywords": "ai, chat, copy, retry, feedback, thumbs up"
+      },
+      "message_scroller": {
+        "title": "Message scroller",
+        "description": "A chat's scrolling area that follows new messages and offers a jump back down.",
+        "keywords": "ai, chat, scroll, new messages, stick to bottom"
+      },
+      "prompt_suggestions": {
+        "title": "Prompt suggestions",
+        "description": "Suggested prompts as cards or chips that start a conversation.",
+        "keywords": "ai, chat, prompts, suggestions, starters"
+      },
+      "shimmer": {
+        "title": "Shimmer",
+        "description": "A light that sweeps over \"Thinking…\" or placeholder lines while an answer loads.",
+        "keywords": "ai, loading, thinking, shimmer, placeholder"
+      },
+      "media_player": {
+        "title": "Media player",
+        "description": "Plays a video or audio file with play, a timeline, volume, speed, captions and full screen.",
+        "keywords": "video, audio, player, captions, playback, speed"
+      },
+      "time_clock": {
+        "title": "Time clock",
+        "description": "Picks a time of day on an analogue face: the hours first, then the minutes.",
+        "keywords": "time, clock, hour, minute, analogue, picker"
+      },
+      "angle_slider": {
+        "title": "Angle slider",
+        "description": "Sets an angle from 0 to 359 degrees on a dial, for a gradient or a rotation.",
+        "keywords": "angle, rotation, degrees, dial, gradient"
+      },
+      "popconfirm": {
+        "title": "Popconfirm",
+        "description": "A small yes-or-no question beside the control that asked it, with a confirm that can wait for the server.",
+        "keywords": "popconfirm, confirm, inline confirmation, are you sure, delete"
+      },
+      "menubar": {
+        "title": "Menubar",
+        "description": "An application's bar of menus, File, Edit and View, moved through with the arrow keys like a desktop app.",
+        "keywords": "menubar, application menu, file menu, edit menu, desktop menu"
+      },
+      "floating_panel": {
+        "title": "Floating panel",
+        "description": "A window over the page that people drag, resize, minimise and close, by pointer or keyboard.",
+        "keywords": "floating panel, window, chat window, tool palette, draggable, resizable"
+      },
+      "cascader": {
+        "title": "Cascader",
+        "description": "Picks a path through a hierarchy one level at a time, and shows it as Country / Region / City.",
+        "keywords": "cascader, cascading select, region picker, path picker, drill down"
+      },
+      "transfer_list": {
+        "title": "Transfer list",
+        "description": "Two lists, available and chosen, with filters and counts, and buttons to move items between them.",
+        "keywords": "transfer list, dual list, shuttle, move items, pick list"
       }
     }
   },
@@ -1635,6 +1881,9 @@
         },
         "presentation": {
           "title": "Full width and sheet"
+        },
+        "sections": {
+          "title": "Sections"
         }
       },
       "switch": {
@@ -1879,6 +2128,27 @@
         },
         "reorder_resize": {
           "title": "Reorder and resize headers"
+        },
+        "row_reorder": {
+          "title": "Drag rows to reorder"
+        },
+        "hover_actions": {
+          "title": "Hover and right-click actions"
+        },
+        "expandable_rows": {
+          "title": "Expandable rows"
+        },
+        "row_panel": {
+          "title": "Open a row in a side panel"
+        },
+        "inline_edit": {
+          "title": "Edit cells in place"
+        },
+        "select_all_pages": {
+          "title": "Select all across pages"
+        },
+        "virtual": {
+          "title": "Ten thousand rows"
         }
       },
       "filter_bar": {
@@ -1934,6 +2204,9 @@
         },
         "collection": {
           "title": "On the collection engine"
+        },
+        "virtual": {
+          "title": "Ten thousand rows"
         }
       },
       "property_list": {
@@ -2188,6 +2461,37 @@
         },
         "styles": {
           "title": "Styles and position"
+        },
+        "promise": {
+          "title": "Following a promise"
+        },
+        "undo": {
+          "title": "Undo with a countdown"
+        }
+      },
+      "task_tray": {
+        "live": {
+          "title": "Try it"
+        },
+        "states": {
+          "title": "Every state"
+        },
+        "rtl": {
+          "title": "Right to left"
+        }
+      },
+      "recurrence_editor": {
+        "weekly": {
+          "title": "Weekly"
+        },
+        "monthly": {
+          "title": "Monthly, with an end"
+        },
+        "hijri": {
+          "title": "Hijri calendar"
+        },
+        "rtl": {
+          "title": "Right to left"
         }
       },
       "breadcrumbs": {
@@ -2388,6 +2692,12 @@
         "empty": {
           "title": "Empty and loading"
         },
+        "closable": {
+          "title": "Closable"
+        },
+        "overflow": {
+          "title": "More menu for overflow"
+        },
         "live": {
           "title": "Try it"
         }
@@ -2474,6 +2784,9 @@
         },
         "snap": {
           "title": "Snap points"
+        },
+        "resize": {
+          "title": "Resize handle"
         },
         "basic": {
           "title": "Basic"
@@ -2593,6 +2906,9 @@
         },
         "locked": {
           "title": "Not dismissable"
+        },
+        "reposition": {
+          "title": "Re-anchoring"
         }
       },
       "route_overlay": {
@@ -2606,7 +2922,8 @@
           "title": "Try it"
         },
         "route": {
-          "title": "Current route"
+          "title": "Current route",
+          "note": "The open overlay is also kept in the page address, so Back closes it, Forward reopens it and a shared link opens it."
         },
         "stacked": {
           "title": "Stacked drawers"
@@ -2877,6 +3194,39 @@
         },
         "org": {
           "title": "Organisation chart"
+        },
+        "checked": {
+          "title": "Checkboxes that carry down"
+        },
+        "lazy": {
+          "title": "Rows loaded on demand"
+        },
+        "drag": {
+          "title": "Drag to move"
+        }
+      },
+      "tree_select": {
+        "basics": {
+          "title": "One category"
+        },
+        "multiple": {
+          "title": "Several branches"
+        },
+        "invalid": {
+          "title": "Required"
+        }
+      },
+      "masked_field": {
+        "patterns": {
+          "title": "Common patterns"
+        },
+        "raw": {
+          "title": "The raw value"
+        }
+      },
+      "mention_input": {
+        "basics": {
+          "title": "Mention a teammate"
         }
       },
       "sortable_list": {
@@ -3240,6 +3590,15 @@
         },
         "linear": {
           "title": "Linear"
+        },
+        "annotations": {
+          "title": "Annotations"
+        },
+        "log_scale": {
+          "title": "Log scale"
+        },
+        "synced": {
+          "title": "Synced crosshair"
         }
       },
       "pie_chart": {
@@ -3291,6 +3650,12 @@
         },
         "column_tools": {
           "title": "Column tools"
+        },
+        "column_editor": {
+          "title": "Column editor"
+        },
+        "virtual": {
+          "title": "Ten thousand rows"
         }
       },
       "fab": {
@@ -3299,6 +3664,9 @@
         },
         "speed_dial": {
           "title": "Speed dial"
+        },
+        "toast": {
+          "title": "Beside a toast"
         }
       },
       "flip_card": {
@@ -3309,6 +3677,10 @@
       "split_view": {
         "basics": {
           "title": "Basics"
+        },
+        "resizable": {
+          "title": "Resizable",
+          "note": "The border is a window splitter on the same pane engine as Sidebar and Side panel; it is drawn only while both panes fit."
         }
       },
       "slide_to_confirm": {
@@ -3385,6 +3757,9 @@
       "composed_chart": {
         "revenue_target": {
           "title": "Revenue against target"
+        },
+        "dual_axis": {
+          "title": "Two value axes"
         }
       },
       "funnel_chart": {
@@ -3408,6 +3783,9 @@
         },
         "tiles": {
           "title": "Tiles with icons and drill-down"
+        },
+        "previous": {
+          "title": "Against the previous period"
         }
       },
       "stacked_meter": {
@@ -3450,6 +3828,30 @@
       "carousel": {
         "offers": {
           "title": "This week's offers"
+        },
+        "thumbnails": {
+          "title": "With thumbnails"
+        }
+      },
+      "lightbox": {
+        "basic": {
+          "title": "Open the viewer"
+        }
+      },
+      "gallery": {
+        "grid": {
+          "title": "Grid"
+        },
+        "masonry": {
+          "title": "Masonry"
+        }
+      },
+      "image_cropper": {
+        "avatar": {
+          "title": "Round avatar"
+        },
+        "cover": {
+          "title": "Wide cover"
         }
       },
       "holo_card": {
@@ -3474,7 +3876,37 @@
       },
       "context_menu": {
         "rows": {
-          "title": "Rows with a right-click menu"
+          "title": "Rows with a context menu"
+        }
+      },
+      "disclosure": {
+        "basics": {
+          "title": "Basics"
+        },
+        "states": {
+          "title": "Open and disabled"
+        }
+      },
+      "navigation_menu": {
+        "basics": {
+          "title": "Basics"
+        },
+        "mega": {
+          "title": "Mega menu"
+        }
+      },
+      "layout": {
+        "stack": {
+          "title": "Stack"
+        },
+        "cluster": {
+          "title": "Cluster"
+        },
+        "grid": {
+          "title": "Grid"
+        },
+        "center": {
+          "title": "Center"
         }
       },
       "command_palette": {
@@ -3606,6 +4038,9 @@
       "address_field": {
         "basics": {
           "title": "Basics"
+        },
+        "container": {
+          "title": "In a narrow or wide column"
         }
       },
       "country_select": {
@@ -3616,6 +4051,28 @@
       "drop_zone": {
         "basics": {
           "title": "Basics"
+        },
+        "paste": {
+          "title": "Paste a screenshot"
+        },
+        "previews": {
+          "title": "Camera and previews"
+        }
+      },
+      "attachment_card": {
+        "basics": {
+          "title": "Basics"
+        },
+        "upload_states": {
+          "title": "Upload states"
+        }
+      },
+      "share_button": {
+        "basics": {
+          "title": "Basics"
+        },
+        "icon_only": {
+          "title": "Icon only"
         }
       },
       "color_picker": {
@@ -3837,7 +4294,7 @@
       },
       "choropleth_map": {
         "districts": {
-          "title": "Orders by district"
+          "title": "Orders by region"
         }
       },
       "scatter_chart": {
@@ -3988,6 +4445,333 @@
         },
         "orders": {
           "title": "Orders on a phone"
+        },
+        "rows": {
+          "title": "Row tools"
+        },
+        "scale": {
+          "title": "Ten thousand rows in every view"
+        },
+        "server_scale": {
+          "title": "Server mode with infinite scroll"
+        },
+        "board": {
+          "title": "Board"
+        },
+        "mobile_cards": {
+          "title": "Cards on a narrow screen"
+        }
+      },
+      "period_picker": {
+        "basics": {
+          "title": "Basics"
+        },
+        "compare": {
+          "title": "Compare periods"
+        },
+        "widget": {
+          "title": "In a widget"
+        }
+      },
+      "tracker_strip": {
+        "uptime": {
+          "title": "90 days of uptime"
+        },
+        "services": {
+          "title": "A status page"
+        }
+      },
+      "dashboard_grid": {
+        "editable": {
+          "title": "Editable sales dashboard"
+        }
+      },
+      "form_error_summary": {
+        "checkout": {
+          "title": "Delivery details"
+        }
+      },
+      "checkbox_field": {
+        "consent": {
+          "title": "Consent"
+        },
+        "states": {
+          "title": "States"
+        }
+      },
+      "text_area_field": {
+        "basics": {
+          "title": "Basics"
+        },
+        "live": {
+          "title": "Try it"
+        }
+      },
+      "dropdown": {
+        "basics": {
+          "title": "Basics"
+        },
+        "selection": {
+          "title": "Selection"
+        }
+      },
+      "heading": {
+        "levels": {
+          "title": "Levels"
+        },
+        "look": {
+          "title": "Level and look"
+        }
+      },
+      "kiosk_surface": {
+        "idle": {
+          "title": "Idle reset"
+        },
+        "reach": {
+          "title": "Seated reach and announcements"
+        }
+      },
+      "turnstile": {
+        "basics": {
+          "title": "In a form"
+        },
+        "blocked": {
+          "title": "A refused visitor"
+        }
+      },
+      "chart_legend": {
+        "basics": {
+          "title": "Basics"
+        },
+        "toggles": {
+          "title": "Hide and show series"
+        }
+      },
+      "chart_tooltip": {
+        "dot": {
+          "title": "Dot indicator"
+        },
+        "line": {
+          "title": "Line indicator and formats"
+        }
+      },
+      "polar_chart": {
+        "orders_by_weekday": {
+          "title": "Orders by weekday"
+        },
+        "store_and_online": {
+          "title": "Branch and online"
+        },
+        "monthly_returns": {
+          "title": "Returns by month"
+        }
+      },
+      "waffle_chart": {
+        "payment_methods": {
+          "title": "Payment methods"
+        },
+        "order_status": {
+          "title": "Order status, 20 by 5"
+        }
+      },
+      "marquee": {
+        "brands": {
+          "title": "Brands we carry"
+        },
+        "announcements": {
+          "title": "Shop announcements"
+        }
+      },
+      "barcode": {
+        "product_ean": {
+          "title": "Product EAN-13"
+        },
+        "shipping_label": {
+          "title": "Shipping label, Code 128"
+        },
+        "invalid": {
+          "title": "A wrong check digit"
+        }
+      },
+      "aspect_ratio": {
+        "product_photo": {
+          "title": "Square product photos"
+        },
+        "video": {
+          "title": "A 16:9 video"
+        }
+      },
+      "page_indicator": {
+        "onboarding": {
+          "title": "Onboarding steps"
+        },
+        "display_only": {
+          "title": "Display only"
+        }
+      },
+      "back_to_top": {
+        "container": {
+          "title": "In a scrolling panel"
+        },
+        "window": {
+          "title": "On the whole page"
+        },
+        "scroll_view": {
+          "title": "On a scroll view"
+        }
+      },
+      "footer": {
+        "storefront": {
+          "title": "A shop footer"
+        },
+        "minimal": {
+          "title": "Minimal"
+        }
+      },
+      "questionnaire_card": {
+        "offer_brief": {
+          "title": "Offer brief"
+        },
+        "edit_answers": {
+          "title": "Edit earlier answers"
+        }
+      },
+      "model_picker": {
+        "basics": {
+          "title": "Basics"
+        },
+        "compact": {
+          "title": "In a composer"
+        }
+      },
+      "voice_input": {
+        "basics": {
+          "title": "Basics"
+        },
+        "dictation": {
+          "title": "Dictation"
+        },
+        "denied": {
+          "title": "Access denied"
+        }
+      },
+      "conversation_list": {
+        "support_history": {
+          "title": "Support history"
+        },
+        "actions": {
+          "title": "Pin, rename and delete"
+        },
+        "empty": {
+          "title": "Empty"
+        }
+      },
+      "message_actions": {
+        "basics": {
+          "title": "Basics"
+        },
+        "feedback": {
+          "title": "Feedback"
+        }
+      },
+      "message_scroller": {
+        "streaming": {
+          "title": "Streaming answer"
+        },
+        "new_count": {
+          "title": "New message count"
+        }
+      },
+      "prompt_suggestions": {
+        "cards": {
+          "title": "Cards"
+        },
+        "chips": {
+          "title": "Chips"
+        },
+        "scroll": {
+          "title": "Scrolling row"
+        }
+      },
+      "shimmer": {
+        "thinking": {
+          "title": "Thinking"
+        },
+        "block": {
+          "title": "Block"
+        }
+      },
+      "media_player": {
+        "video": {
+          "title": "Video with captions"
+        },
+        "audio": {
+          "title": "Voice note"
+        }
+      },
+      "time_clock": {
+        "basics": {
+          "title": "Pickup time"
+        },
+        "twenty_four_hour": {
+          "title": "24 hours, five-minute steps"
+        },
+        "with_field": {
+          "title": "With a time field"
+        }
+      },
+      "angle_slider": {
+        "gradient": {
+          "title": "Gradient angle"
+        },
+        "rotation": {
+          "title": "Rotation in 15° steps"
+        }
+      },
+      "popconfirm": {
+        "basics": {
+          "title": "Delete a draft"
+        },
+        "async_confirm": {
+          "title": "Wait for the server"
+        },
+        "row_action": {
+          "title": "In a table row"
+        }
+      },
+      "menubar": {
+        "basics": {
+          "title": "Order editor"
+        },
+        "checkable": {
+          "title": "Checkable view options"
+        }
+      },
+      "floating_panel": {
+        "basics": {
+          "title": "Support chat"
+        },
+        "tool_palette": {
+          "title": "Bulk edit palette"
+        }
+      },
+      "cascader": {
+        "basics": {
+          "title": "Delivery area"
+        },
+        "lazy": {
+          "title": "Load levels on demand"
+        },
+        "invalid": {
+          "title": "Required field"
+        }
+      },
+      "transfer_list": {
+        "basics": {
+          "title": "Stock locations"
+        },
+        "export_columns": {
+          "title": "Export columns"
         }
       }
     }
@@ -4074,7 +4858,16 @@
       "jump_region": "Jump to the notifications",
       "dismiss": "Dismiss",
       "select_row": "Select the row",
-      "row_action": "Run the row action"
+      "row_action": "Run the row action",
+      "cancel": "Cancel",
+      "play_pause": "Play or pause",
+      "seek": "Go back or forward five seconds",
+      "volume": "Turn the volume up or down",
+      "mute": "Mute or unmute",
+      "fullscreen": "Enter or leave full screen",
+      "next_view": "Go from the hours to the minutes",
+      "previous_view": "Go back to the hours",
+      "resize": "Resize"
     },
     "anatomy": {
       "container": "Container",
@@ -4132,7 +4925,10 @@
       "pagination": "Pagination",
       "dot": "Dot",
       "back": "Back button",
-      "sub_header": "Sub-header"
+      "sub_header": "Sub-header",
+      "media": "Video or audio",
+      "hand": "Hand",
+      "handle": "Move handle"
     },
     "category": {
       "foundations": {
@@ -4283,7 +5079,7 @@
           "intro": "Fields follow the order each country writes its addresses, so parcels and invoices arrive.",
           "tags": "Forms · Autocomplete · Countries",
           "what": "A grouped field set for a postal address.",
-          "when": "Use it at checkout, in a profile or anywhere a parcel or invoice must find its way.",
+          "when": "Use it at checkout, in a profile or anywhere a parcel or invoice must find its way. It lays out by the room it is given: one column in a side panel, two in a wide card, whatever the screen.",
           "rtl": "Labels and lines align to the start; postal codes and numbers keep their own direction."
         },
         "ai_mark": {
@@ -4317,7 +5113,19 @@
           "tags": "Confirmation · Focus trap · Destructive",
           "what": "A modal that asks to confirm or cancel.",
           "when": "Use it before deleting, cancelling or sending something final.",
-          "rtl": "Buttons follow the reading order; the primary sits at the end."
+          "rtl": "Buttons follow the reading order; the primary sits at the end.",
+          "when_not": "When people need to enter or edit anything, use a modal; when nothing is at stake, a toast with Undo interrupts less.",
+          "do_1": "Ask one question and name the action on the button: \"Delete 3 invoices?\" with Delete and Cancel.",
+          "do_2": "Say what will be lost and whether it can be undone.",
+          "do_3": "Use the danger tone only when the action destroys data.",
+          "dont_1": "Do not put a form or a choice of several actions in it; that is a modal.",
+          "dont_2": "Do not confirm routine, reversible actions such as saving or archiving.",
+          "dont_3": "Do not label the buttons Yes and No; name what each one does.",
+          "alternative": {
+            "modal": "When people enter or edit something before going on.",
+            "use_confirmation": "To ask from code and await the answer.",
+            "toast": "When the action can be undone instead of confirmed."
+          }
         },
         "app_header": {
           "headline": "A top bar that keeps the whole app in reach.",
@@ -4445,11 +5253,62 @@
         },
         "carousel": {
           "headline": "Show more without crowding the screen.",
-          "intro": "Dots show where people are, and arrows and the keyboard work as well as a swipe.",
+          "intro": "Dots or a strip of thumbnails show where people are, and arrows and the keyboard work as well as a swipe.",
           "tags": "Swipe · Keyboard · Snap",
           "what": "A row of slides shown one at a time.",
           "when": "Use it for offers, products or onboarding steps that deserve a full view each.",
           "rtl": "Slides run from the right in Arabic and the next arrow points left."
+        },
+        "lightbox": {
+          "headline": "Every picture, full size.",
+          "intro": "Pictures open over a dark screen, one at a time; people swipe, use the arrow keys or zoom in, and Escape takes them back.",
+          "tags": "Fullscreen · Swipe · Zoom",
+          "what": "A full-screen viewer for a set of pictures.",
+          "when": "Use it for product photos, receipts and attachments people need to see in detail.",
+          "rtl": "Pictures run from the right in Arabic: the left arrow key and a rightward swipe go forward.",
+          "when_not": "For one small picture that is already clear; show it in place.",
+          "do_1": "Write an alt text for every picture.",
+          "do_2": "Add a caption when the picture needs context.",
+          "dont_1": "Do not put actions or forms inside the viewer.",
+          "dont_2": "Do not open it on hover.",
+          "alternative": {
+            "gallery": "To lay out the pictures that open it.",
+            "carousel": "To browse slides in the page, without leaving it."
+          }
+        },
+        "gallery": {
+          "headline": "Pictures, laid out well.",
+          "intro": "A square grid for catalogues and a masonry for photos of mixed shapes; each picture opens in the lightbox.",
+          "tags": "Grid · Masonry · Lightbox",
+          "what": "A set of pictures in columns.",
+          "when": "Use it for product photos, a portfolio or a property's pictures.",
+          "rtl": "The grid starts at the right in Arabic, and the lightbox runs from the right too.",
+          "when_not": "For a single hero picture; use a card or an image.",
+          "do_1": "Give each picture its width and height, so a masonry keeps its shape while loading.",
+          "do_2": "Use a small thumbnail source for big galleries.",
+          "dont_1": "Do not mix the grid and the masonry on one page.",
+          "dont_2": "Do not crop faces in the square grid; use the masonry.",
+          "alternative": {
+            "carousel": "To show one picture at a time.",
+            "lightbox": "To open pictures from a layout of your own."
+          }
+        },
+        "image_cropper": {
+          "headline": "The right part of the picture.",
+          "intro": "People drag the picture into the frame and zoom with the slider or the keyboard; you get the kept rectangle in the image's own pixels.",
+          "tags": "Drag · Zoom · Avatar",
+          "what": "A frame that picks the part of an image to keep.",
+          "when": "Use it for profile photos, logos, covers and product images with a fixed shape.",
+          "rtl": "Moving is spatial, so the arrow keys move the picture the way they point in every language.",
+          "when_not": "For free-form edits such as rotation or filters; use an image editor.",
+          "do_1": "Match the frame to where the picture will show.",
+          "do_2": "Cut the file on the server from the reported rectangle.",
+          "dont_1": "Do not crop without showing the result.",
+          "dont_2": "Do not lock the zoom at one level.",
+          "alternative": {
+            "drop_zone": "To pick the file before cropping.",
+            "thumbnail": "To show the cropped picture."
+          }
         },
         "checkbox": {
           "headline": "A clear yes or no.",
@@ -4571,7 +5430,7 @@
           "headline": "Two stories on one axis.",
           "intro": "One shared scale means the gap between plan and result is visible at once.",
           "tags": "Columns · Line · Tooltip",
-          "what": "A chart that mixes columns and a line over the same categories.",
+          "what": "Columns and lines over one category axis, with an optional second value axis for a measure of a different size.",
           "when": "Use it to compare an amount with a goal or a rate over time.",
           "rtl": "Time runs from the right in Arabic and the value axis moves to the start side."
         },
@@ -4579,9 +5438,60 @@
           "headline": "The right action, right where you clicked.",
           "intro": "Power users move faster, and nothing is hidden from people who never right-click.",
           "tags": "Right-click · Long press · Keyboard",
-          "what": "A menu of actions for the item under the pointer.",
+          "what": "A menu of actions for the item under the pointer, or under a finger's long press on a phone.",
           "when": "Use it for secondary actions on rows, cards and files.",
           "rtl": "Items align to the start and submenus open toward the end."
+        },
+        "disclosure": {
+          "headline": "Details when they are wanted.",
+          "intro": "The page stays short, and the delivery terms, advanced settings or fine print are one press away.",
+          "tags": "Show and hide · Keyboard · Native",
+          "what": "One titled section that opens and closes.",
+          "when": "Use it for one optional block: advanced settings, terms, more about a product.",
+          "rtl": "The chevron sits at the left end in Arabic, and the title reads from the right.",
+          "when_not": "For several sections side by side; use an accordion.",
+          "do_1": "Say in the title what opens.",
+          "do_2": "Start it open when most people need it.",
+          "dont_1": "Do not hide a required field in it.",
+          "dont_2": "Do not nest one inside another.",
+          "alternative": {
+            "accordion": "For a list of sections that open and close.",
+            "popover": "For a short note over the page, not in its flow."
+          }
+        },
+        "navigation_menu": {
+          "headline": "Every page, two presses away.",
+          "intro": "Visitors see the sections at a glance and open a panel for the pages in each, by mouse, touch or keyboard.",
+          "tags": "Mega menu · Keyboard · Landmark",
+          "what": "A top bar of links whose entries can open panels of links.",
+          "when": "Use it for the main navigation of a website or a wide back office.",
+          "rtl": "In Arabic the bar starts on the right, and panels open under their entry toward the left.",
+          "when_not": "For a phone app; use the tab bar or a navigation list.",
+          "do_1": "Keep the bar to seven entries or fewer.",
+          "do_2": "Give each link in a panel a short line.",
+          "dont_1": "Do not put actions in it; it is for places.",
+          "dont_2": "Do not nest panels inside panels.",
+          "alternative": {
+            "navigation_list": "For a side menu of many places.",
+            "menu": "For actions, not pages."
+          }
+        },
+        "layout": {
+          "headline": "Spacing that adds up.",
+          "intro": "Columns, rows and gaps come from one scale, so every screen lines up and mirrors in Arabic with no custom CSS.",
+          "tags": "Stack · Cluster · Grid · Center",
+          "what": "Four primitives: a column (Stack), a wrapping row (Cluster), equal columns (Grid) and a centred measure (Center).",
+          "when": "Use them for the space between blocks, wherever a component does not already own it.",
+          "rtl": "Rows and grids fill from the right in Arabic, and Center is the same both ways.",
+          "when_not": "For a page with a side column; use the two-column layout.",
+          "do_1": "Pick a gap from the scale, not a pixel value.",
+          "do_2": "Give Grid a minimum width so it reflows on a phone.",
+          "dont_1": "Do not add margins to children to space them.",
+          "dont_2": "Do not use Grid for a table of data.",
+          "alternative": {
+            "two_column_layout": "For a main column with a side column.",
+            "single_column_layout": "For a detail page of stacked sections."
+          }
         },
         "contextual_help": {
           "headline": "Answers right where questions come up.",
@@ -4617,7 +5527,7 @@
         },
         "data_grid": {
           "headline": "Spreadsheet speed, with guard rails.",
-          "intro": "Mistakes are caught before saving, and every change can be undone.",
+          "intro": "Mistakes are caught before saving, and every change can be undone. Its typed editors and rules also edit a DataTable's marked cells in place, and its rows are virtualised, so ten thousand stay quick.",
           "tags": "Ranges · Paste · Validation · Undo · Pin and resize",
           "what": "An editable grid of typed cells with a save bar.",
           "when": "Use it for bulk edits of prices, stock or schedules; on a phone it becomes a list with quick edit.",
@@ -4625,8 +5535,8 @@
         },
         "data_table": {
           "headline": "Find, sort, arrange and act on records fast.",
-          "intro": "Multi-sort, selection, row actions, pinned and resizable columns, a column editor, density and a totals footer in one accessible grid on the collection engine.",
-          "tags": "Multi-sort · Column editor · Pin and resize · Density · Totals",
+          "intro": "Multi-sort, selection with select all across pages (unticked rows stay out), row actions on hover and right-click, rows you drag, expand, open in a side panel or edit in place, pinned and resizable columns, a column editor, density and a totals footer in one accessible grid on the collection engine; with virtual scrolling it draws ten thousand rows and more, header and start pins in place.",
+          "tags": "Multi-sort · Column editor · Drag rows · Expand · Inline edit · Side panel · Totals · 10k rows",
           "what": "A table with sorting, selection and row actions.",
           "when": "Use it for lists of records people search, compare and act on.",
           "rtl": "Columns start from the right in Arabic; numbers keep their alignment.",
@@ -4724,11 +5634,45 @@
         },
         "drop_zone": {
           "headline": "Drop it here and you're done.",
-          "intro": "Clear limits and a progress line for each file mean no upload is a mystery.",
-          "tags": "Upload · Drag and drop · Limits",
-          "what": "An area that accepts dropped or picked files.",
+          "intro": "Drop a file, paste a screenshot, pick one or take a photo; clear limits and a preview of each file mean no upload is a mystery.",
+          "tags": "Upload · Paste · Camera · Previews",
+          "what": "An area that accepts dropped, pasted, picked or photographed files.",
           "when": "Use it wherever people attach invoices, images or spreadsheets.",
           "rtl": "The icon and text centre the same in Arabic; file names keep their own direction."
+        },
+        "attachment_card": {
+          "headline": "Every file, at a glance.",
+          "intro": "People see what a file is, how big it is and whether it arrived, and open, download or remove it in place.",
+          "tags": "Files · Upload · Download",
+          "what": "One attached file with its type, size, upload state and actions.",
+          "when": "In messages, comments, orders and records that carry files.",
+          "rtl": "The row mirrors in Arabic; a Latin file name keeps its own order.",
+          "when_not": "To pick or drop files; use the drop zone.",
+          "do_1": "Show the size, so people know what they download.",
+          "do_2": "Say why an upload failed and offer a retry.",
+          "dont_1": "Don't rename the file in the card.",
+          "dont_2": "Don't hide the remove button in a menu.",
+          "alternative": {
+            "drop_zone": "To take new files.",
+            "file_trigger": "A button that opens the file picker."
+          }
+        },
+        "share_button": {
+          "headline": "Share it the way people already do.",
+          "intro": "On a phone the system sheet opens with every app people use; on a desktop without one, the link is copied and the button says so.",
+          "tags": "Share sheet · Link · Clipboard",
+          "what": "A button that shares a link, a title and a line of text.",
+          "when": "On products, orders, invoices and pages people send to others.",
+          "rtl": "The icon sits at the start in Arabic; the link keeps its own direction.",
+          "when_not": "To copy a code or a key; use the copy button.",
+          "do_1": "Share a link that opens without signing in when you can.",
+          "do_2": "Give the share a title people recognise.",
+          "dont_1": "Don't put more than one share button on a card.",
+          "dont_2": "Don't share links that expire within minutes.",
+          "alternative": {
+            "copy_button": "To copy a value without sharing it.",
+            "button": "For an action that is not sharing."
+          }
         },
         "emoji_picker": {
           "headline": "The right feeling in one tap.",
@@ -4791,7 +5735,7 @@
           "intro": "It stays within the thumb's reach, and a speed dial keeps related actions close.",
           "tags": "Speed dial · Haptics · Mobile",
           "what": "A floating button for a screen's main action.",
-          "when": "Use it on mobile screens with one clear next step, such as new order or add item.",
+          "when": "Use it on mobile screens with one clear next step, such as new order or add item. While it floats, a bottom toast on a phone rises above it rather than covering it.",
           "rtl": "The button floats at the end corner, which is the left in Arabic."
         },
         "file_trigger": {
@@ -4982,8 +5926,8 @@
         "line_chart": {
           "headline": "Follow every trend without the noise.",
           "intro": "Clean lines with optional dots, a dashed hover guide and a ringed active point that stays legible on any surface.",
-          "tags": "Trends · Multi-series · Tooltip",
-          "what": "A chart of one or more trends as lines.",
+          "tags": "Trends · Multi-series · Annotations · Log scale · Synced",
+          "what": "A chart of one or more trends as lines, with target lines, notes pinned to dates, a log axis and crosshairs shared across charts.",
           "when": "Use it to show change over time and compare a few series.",
           "rtl": "Time runs from right to left in Arabic; the tooltip opens toward the inside."
         },
@@ -5005,7 +5949,7 @@
         },
         "list": {
           "headline": "Clean lists that scale from three items to thousands.",
-          "intro": "A vertical list with optional selection, keyboard movement and start and end slots for icons and actions.",
+          "intro": "A vertical list with optional selection, keyboard movement and start and end slots for icons and actions. With virtual scrolling it draws only the rows in view, for ten thousand and more.",
           "tags": "Selection · Keyboard · Slots · Collection engine",
           "what": "A vertical list of items.",
           "when": "Use it for simple collections where a table is too much.",
@@ -5046,8 +5990,10 @@
           "when_not": "For long tasks or anything people need to compare with the page; use a drawer or a page.",
           "do_1": "Give it a clear title and one primary action.",
           "do_2": "Return focus to the trigger on close.",
+          "do_3": "Use a modal when people enter or edit something: \"Rename project\" with a name field, Save and Cancel.",
           "dont_1": "Do not stack modals.",
           "dont_2": "Do not open a modal on page load.",
+          "dont_3": "Do not use a modal for a yes-or-no question such as \"Delete this file?\"; that is an alert dialog.",
           "alternative": {
             "drawer": "When the page should stay visible.",
             "alert_dialog": "For confirming one decision.",
@@ -5246,7 +6192,8 @@
           "alternative": {
             "tooltip": "For a short label.",
             "modal": "For a task that needs full attention."
-          }
+          },
+          "do_3": "Call updatePosition from usePopoverPosition when the trigger moves without changing size; growing content re-anchors on its own."
         },
         "press_feedback": {
           "headline": "Every touch gets an answer.",
@@ -5719,7 +6666,7 @@
         },
         "tabs": {
           "headline": "Switch views without losing your place.",
-          "intro": "Tabs with a sliding indicator, full arrow-key support and panels that keep their state.",
+          "intro": "Tabs with a sliding indicator, full arrow-key support and panels that keep their state. Tabs can close, and the ones that do not fit can move into a More menu.",
           "tags": "Keyboard · Indicator · Panels",
           "what": "Switches between views in one place.",
           "when": "Use it for peer views of the same thing.",
@@ -5810,7 +6757,7 @@
         },
         "toast": {
           "headline": "Confirm it, then get out of the way.",
-          "intro": "Short messages that slide in, stack and leave on their own, with an action and a pause on hover or focus.",
+          "intro": "Short messages that slide in, stack and leave on their own, with an action and a pause on hover or focus. One toast can follow a save from spinner to result, and an undo toast counts down before the change is kept.",
           "tags": "Feedback · Stacking · Live region",
           "what": "A short message that disappears on its own.",
           "when": "Use it to confirm an action that just happened.",
@@ -5823,6 +6770,40 @@
           "alternative": {
             "alert": "For messages tied to a page.",
             "system_banner": "For app-wide news."
+          }
+        },
+        "task_tray": {
+          "headline": "Long jobs, out of the way.",
+          "intro": "People keep working while uploads, exports and imports run. The tray shows how far each one is, says when one finishes or fails, and lets them cancel or try again.",
+          "tags": "Background · Progress · Live region",
+          "what": "A docked card listing background tasks with their progress and state.",
+          "when": "For uploads, exports, imports and any job that outlasts a click.",
+          "rtl": "The tray docks in the bottom-left corner in Arabic, and each row reads from the right.",
+          "when_not": "For a job people must wait for; show progress in place instead.",
+          "do_1": "Name each task by what it makes, such as the file name.",
+          "do_2": "Keep failed tasks until they are retried or removed.",
+          "dont_1": "Do not open it for jobs that finish in a second.",
+          "dont_2": "Do not hide the reason a task failed.",
+          "alternative": {
+            "toast": "For one result that needs no follow-up.",
+            "progress_bar": "For progress inside the page."
+          }
+        },
+        "recurrence_editor": {
+          "headline": "Say how often, in plain words.",
+          "intro": "People set up a repeating meeting, delivery or reminder with a few controls and read the rule back in one sentence. Rules can count months in the Hijri calendar, so the first of Ramadan stays the first of Ramadan.",
+          "tags": "RRULE · Hijri · Schedule",
+          "what": "Controls that build an RFC 5545 repeating rule, with a summary.",
+          "when": "For recurring events, subscriptions, reports and reminders.",
+          "rtl": "The weekdays start on Sunday for Arabic and run from the right; the summary reads in Arabic with the customer's digits.",
+          "when_not": "For a single date; use a date picker.",
+          "do_1": "Start from the event's first day.",
+          "do_2": "Show the summary so people can check the rule.",
+          "dont_1": "Do not offer every RRULE part; keep to what people ask for.",
+          "dont_2": "Do not store the summary; store the rule.",
+          "alternative": {
+            "date_picker": "For one date.",
+            "calendar": "To see dates on a month grid."
           }
         },
         "toc_rail": {
@@ -5860,11 +6841,71 @@
         },
         "tree_view": {
           "headline": "Navigate deep structures without getting lost.",
-          "intro": "Nested rows expand, collapse and select with full keyboard support and clear levels.",
-          "tags": "Hierarchy · Keyboard · Selection",
+          "intro": "Nested rows expand, collapse and select with full keyboard support and clear levels. Checkboxes can carry down to every row under a group, rows can load the first time their parent opens, and rows can be dragged to a new place.",
+          "tags": "Hierarchy · Checkboxes · Lazy loading · Drag",
           "what": "Nested rows that expand and collapse.",
-          "when": "Use it for folders, categories and org charts.",
-          "rtl": "Indentation grows from the start edge; chevrons mirror in Arabic."
+          "when": "Use it for folders, categories, permissions and org charts.",
+          "rtl": "Indentation grows from the start edge; chevrons mirror in Arabic.",
+          "when_not": "For choosing a value in a form; use a tree select.",
+          "do_1": "Load large branches on demand instead of all at once.",
+          "do_2": "Let a group's checkbox tick every row under it.",
+          "dont_1": "Do not nest more than four or five levels.",
+          "dont_2": "Do not make dragging the only way to move a row.",
+          "alternative": {
+            "accordion": "For a few sections of content.",
+            "list": "For rows with no nesting."
+          }
+        },
+        "tree_select": {
+          "headline": "A whole tree in one field.",
+          "intro": "People pick a category, an account or several branches from nested rows without leaving the form; ticking a region ticks its branches.",
+          "tags": "Selection · Hierarchy · Form",
+          "what": "A field whose options are a tree.",
+          "when": "Use it when the choices are nested: categories, chart of accounts, regions and branches.",
+          "rtl": "The trigger, the rows and their indentation start from the right in Arabic, and the chevrons mirror.",
+          "when_not": "For a flat list of options; use a select.",
+          "do_1": "Open the group that holds the current value.",
+          "do_2": "Keep row names short so the field can show them.",
+          "dont_1": "Do not hide the only rows people need under deep levels.",
+          "dont_2": "Do not use it for more than a few hundred rows without loading on demand.",
+          "alternative": {
+            "select": "For a flat list of options.",
+            "multi_select": "For several options from a flat list."
+          }
+        },
+        "masked_field": {
+          "headline": "The right format, as they type.",
+          "intro": "Mobile numbers, IBANs and card numbers take their spaces and separators as people type or paste, while the form receives only the characters.",
+          "tags": "Pattern · Paste · Digits",
+          "what": "A text field that writes its value into a pattern.",
+          "when": "Use it for values with a fixed shape: phone numbers, IBANs, card numbers, dates and plates.",
+          "rtl": "The pattern reads left to right in Arabic too, sits at the field's start edge, and digits follow the digits setting.",
+          "when_not": "For free text or values of any length; use a text field.",
+          "do_1": "Show the pattern as the placeholder.",
+          "do_2": "Accept pasted values with or without separators.",
+          "dont_1": "Do not mask names or addresses.",
+          "dont_2": "Do not store the separators with the value.",
+          "alternative": {
+            "text_field": "For free text.",
+            "phone_field": "For phone numbers with a country."
+          }
+        },
+        "mention_input": {
+          "headline": "Bring the right person in.",
+          "intro": "Typing @ suggests teammates by name; choosing one writes the name into the note, and the app learns who to notify.",
+          "tags": "Mentions · Keyboard · Notify",
+          "what": "A text box that suggests people after @.",
+          "when": "Use it for comments, notes and messages that should reach someone.",
+          "rtl": "The list opens under the box from the right in Arabic, and Arabic and English names match as typed.",
+          "when_not": "For picking people into a field; use an entity picker.",
+          "do_1": "Show a face or initials beside each name.",
+          "do_2": "Tell people who will be notified.",
+          "dont_1": "Do not list everyone in the company at once.",
+          "dont_2": "Do not notify without showing the mention in the text.",
+          "alternative": {
+            "text_area": "For text with no mentions.",
+            "tag_input": "For a list of free-form tags."
+          }
         },
         "treemap_chart": {
           "headline": "Every share, sized to scale.",
@@ -6396,11 +7437,513 @@
         },
         "data_view": {
           "headline": "Every way to see your records, from one toolbar.",
-          "intro": "Search, filter with and/or rules, sort by several columns, group, arrange the columns and save the result as a view; then switch between table, grid, list and cards without losing any of it.",
-          "tags": "Saved views · Rule builder · Multi-sort · Group · Views · Export",
-          "what": "A toolbar and the table, grid, list and cards views of one collection.",
+          "intro": "Search, filter with and/or rules, sort by several columns, group, arrange the columns and save the result as a view; then switch between table, grid, list, cards and a kanban board without losing any of it. Every view scrolls ten thousand rows (only what is on screen is drawn), server mode sends the query to a server adapter and loads more as you scroll, and under 600 px of its own width the table turns into cards. Rows reorder, expand, edit in place and open in a side panel from any view.",
+          "tags": "Saved views · Rule builder · Multi-sort · Group · Board · Row tools · Server mode · 10k rows · Export",
+          "what": "A toolbar and the table, grid, list, cards and board views of one collection.",
           "when": "Use it for any index people search, slice and come back to: orders, customers, products.",
           "rtl": "The toolbar, the pinned columns and the drag all mirror in Arabic; amounts keep their digits' direction."
+        },
+        "period_picker": {
+          "headline": "This period, and the one before.",
+          "intro": "Ready ranges for the usual questions, the calendar for the rest, and one switch to set the numbers beside last period or last year.",
+          "tags": "Presets · Custom range · Compare",
+          "what": "A row of controls for a dashboard period: a preset, a custom range and the comparison.",
+          "when": "Use it above a dashboard or in a widget’s controls row, wherever charts and KPIs read one period.",
+          "rtl": "The controls run from the right in Arabic, the switch thumb moves to the left when on, and dates read in Arabic order."
+        },
+        "tracker_strip": {
+          "headline": "Every day of uptime, in one line.",
+          "intro": "A row of quiet cells shows how a service did, period by period; the bad days stand out without a chart.",
+          "tags": "Uptime · Incidents · Keyboard",
+          "what": "An even row of cells, one per period, filled by its state, with the uptime worked out from them.",
+          "when": "Use it on status pages and service dashboards, and anywhere a run of days matters more than one figure.",
+          "rtl": "The oldest period sits at the right in Arabic and the arrow keys follow the reading direction."
+        },
+        "dashboard_grid": {
+          "headline": "A dashboard each reader arranges.",
+          "intro": "Widgets sit in a responsive 12-column grid. In edit mode readers drag, move and resize them, and the layout is saved for next time.",
+          "tags": "Drag and drop · Resize · Saved layouts",
+          "what": "A grid of dashboard tiles with an edit mode: a slim toolbar on each tile to drag, move and step its size, and an edge to drag between the four sizes, saved through a layout port.",
+          "when": "Use it for home and analytics dashboards where each person watches different numbers.",
+          "rtl": "Tiles flow from the right in Arabic; earlier and later follow the reading order, and the resize edge is on the left."
+        },
+        "form_error_summary": {
+          "headline": "Every problem, one step from its fix.",
+          "intro": "After a failed send, a summary lists what is wrong. Each item jumps to its field, and focus lands on the summary first.",
+          "tags": "Validation · Focus · Links",
+          "what": "A danger box above a form listing each error as a link to its field.",
+          "when": "Use it on long forms and checkout steps, where an error can sit out of view.",
+          "rtl": "The list reads from the right in Arabic, each field's name before its message."
+        },
+        "checkbox_field": {
+          "headline": "Consent, in a sentence.",
+          "intro": "Its label is its children, so a consent can read as a full sentence with emphasis.",
+          "tags": "Forms · Consent · Binding",
+          "what": "A Checkbox with its label as children, for a schema form's field binding.",
+          "when": "Use it for a consent or terms box inside a form written against the binding.",
+          "rtl": "The box sits at the start of the line, which is the right in Arabic."
+        },
+        "text_area_field": {
+          "headline": "A longer answer, bound to the form.",
+          "intro": "It takes the binding's value, handlers and error as they come, and draws the Text area.",
+          "tags": "Forms · Binding · Multiline",
+          "what": "A Text area for a schema form's field binding.",
+          "when": "Use it for a note, a reason or a message inside a form written against the binding.",
+          "rtl": "The text starts at the right in Arabic, and the count follows the reading direction."
+        },
+        "dropdown": {
+          "headline": "A short menu, written where it is used.",
+          "intro": "Each item can carry a second line and a danger look, and a menu can hold one choice.",
+          "tags": "Menu · Selection · Keyboard",
+          "what": "A button that opens a menu of actions or choices.",
+          "when": "Use it for an account menu or a locale switcher written inline; for a menu built from data, use Menu.",
+          "rtl": "The menu opens under the button and its items read from the right in Arabic."
+        },
+        "heading": {
+          "headline": "The outline and the look, kept apart.",
+          "intro": "The level is required, so every heading is placed on purpose; the type changes only how it looks.",
+          "tags": "Typography · Outline · Accessibility",
+          "what": "A heading from level 1 to 6, drawn in the type scale.",
+          "when": "Use it for every title of a page or a section; pick the level from the outline, then the type from the design.",
+          "rtl": "A heading aligns to the start, which is the right in Arabic."
+        },
+        "kiosk_surface": {
+          "headline": "A screen that looks after itself.",
+          "intro": "It resets when nobody touches it, keeps controls within reach and can speak what changes.",
+          "tags": "Kiosk · Accessibility · Idle",
+          "what": "A wrapper that puts a screen in kiosk mode.",
+          "when": "Use it for a self-service kiosk, a lane screen or a gate screen that nobody attends.",
+          "rtl": "The layout follows the reading direction; announcements speak in the provider's locale."
+        },
+        "turnstile": {
+          "headline": "Keep bots out without a puzzle.",
+          "intro": "The widget loads Cloudflare's script once, puts its token in a hidden field and the server checks it.",
+          "tags": "Forms · Security · Cloudflare",
+          "what": "Cloudflare's bot check, drawn where the form needs it.",
+          "when": "Use it on a public form that bots abuse: sign up, contact or password reset.",
+          "rtl": "Cloudflare draws the widget in the browser's language; it sits at the start of the form row."
+        },
+        "chart_legend": {
+          "headline": "Which colour is which.",
+          "intro": "A hidden series reads as a hollow swatch and a struck label, so the state never rests on colour alone.",
+          "tags": "Charts · Toggle · Colour",
+          "what": "The legend every chart draws, for one set apart from its chart.",
+          "when": "Use it when a legend sits away from its chart, or for a chart composed from Recharts directly.",
+          "rtl": "The row wraps from the right in Arabic, and the swatch stays before its label."
+        },
+        "chart_tooltip": {
+          "headline": "The numbers behind the point.",
+          "intro": "Values are written in the locale with tabular figures, beside a dot or a short bar in the series' colour.",
+          "tags": "Charts · Recharts · Numbers",
+          "what": "The tooltip card every chart passes to Recharts.",
+          "when": "Use it as the tooltip content of a chart composed from Recharts directly.",
+          "rtl": "Each line reads from the right in Arabic, with the value at the line's end."
+        },
+        "polar_chart": {
+          "headline": "See which part of the cycle runs hot.",
+          "intro": "Every weekday or month gets the same slice; how far it reaches is how much happened, so the peaks stand out at a glance.",
+          "tags": "Polar area · Cycle · Series",
+          "what": "A chart of equal slices whose length is their value.",
+          "when": "For a value over a cycle: weekdays, hours or months.",
+          "rtl": "Slices keep their clockwise order; the names sit outside the ring and read in Arabic.",
+          "when_not": "To compare parts of a whole; use a pie chart.",
+          "do_1": "Use it for a cycle of five to twelve steps.",
+          "do_2": "Keep to two series so the slices stay wide.",
+          "dont_1": "Don't use it for categories with no order.",
+          "dont_2": "Don't make people read exact numbers off it; the tooltip and table give them.",
+          "alternative": {
+            "radar_chart": "To compare profiles across several measures.",
+            "bar_chart": "To compare exact values side by side."
+          }
+        },
+        "waffle_chart": {
+          "headline": "A hundred squares make the whole.",
+          "intro": "Each part fills its run of squares, so shares are counted rather than guessed, and the legend gives each part's value and percentage.",
+          "tags": "Part to whole · Percent · Legend",
+          "what": "A grid of squares that shows how a whole splits into parts.",
+          "when": "For two to five parts of one whole, such as payment methods or stock states.",
+          "rtl": "Squares fill from the right in Arabic, in reading order, and the legend reads right to left.",
+          "when_not": "To show change over time; use a bar or line chart.",
+          "do_1": "Keep to five parts or fewer.",
+          "do_2": "Order the parts from largest to smallest.",
+          "dont_1": "Don't show parts that do not add up to one whole.",
+          "dont_2": "Don't rely on colour alone; keep the legend on.",
+          "alternative": {
+            "pie_chart": "For the same shares as slices.",
+            "stacked_meter": "For the shares as one compact bar."
+          }
+        },
+        "marquee": {
+          "headline": "Keep the strip moving, never in the way.",
+          "intro": "Logos and short news glide past and stop under the pointer, on focus or with the pause button; with reduced motion they simply sit still.",
+          "tags": "Loop · Pause · Reduced motion",
+          "what": "A strip whose content scrolls on a seamless loop.",
+          "when": "For partner logos, delivery notices and short offers that are fine to miss.",
+          "rtl": "In Arabic the strip moves to the right, toward where reading starts.",
+          "when_not": "For anything people must read to act; put it in a banner.",
+          "do_1": "Keep each item short enough to read while it moves.",
+          "do_2": "Name the strip so screen readers know what it holds.",
+          "dont_1": "Don't put the only link to something in a moving strip.",
+          "dont_2": "Don't speed it up to fit more in.",
+          "alternative": {
+            "carousel": "For a few large items people step through.",
+            "system_banner": "For one message everyone must see."
+          }
+        },
+        "barcode": {
+          "headline": "Print it, scan it, ship it.",
+          "intro": "Product numbers and parcel labels are encoded by our own Code 128 and EAN-13 encoders, with the check digit worked out for you.",
+          "tags": "Code 128 · EAN-13 · Check digit",
+          "what": "A value drawn as a linear barcode with its digits.",
+          "when": "For product labels, packing slips, shelf tags and receipts.",
+          "rtl": "A barcode never mirrors: bars and digits read left to right in Arabic too.",
+          "when_not": "For links or long text; use a QR code.",
+          "do_1": "Show the digits under the bars for anyone typing them in.",
+          "do_2": "Leave the light margin around the bars when printing.",
+          "dont_1": "Don't invert the colours in dark mode.",
+          "dont_2": "Don't stretch the bars to fit a box.",
+          "alternative": {
+            "qr_code": "For links and longer text.",
+            "copy_button": "To copy the number instead of scanning it."
+          }
+        },
+        "aspect_ratio": {
+          "headline": "The space is ready before the picture arrives.",
+          "intro": "Give a photo or video its shape up front and the page holds still while it loads, on any width.",
+          "tags": "16:9 · 1:1 · 4:3",
+          "what": "A full-width box held at a width to height ratio.",
+          "when": "For product photos, videos, maps and cover images.",
+          "rtl": "Nothing changes in Arabic; the box keeps its shape.",
+          "when_not": "For text, which should set its own height.",
+          "do_1": "Use one ratio for every photo in a grid.",
+          "do_2": "Crop the picture to the box, not the box to the picture.",
+          "dont_1": "Don't put long text in a fixed box.",
+          "dont_2": "Don't use a ratio that cuts off the product.",
+          "alternative": {
+            "thumbnail": "For a small picture with a fallback.",
+            "layout": "For arranging blocks without a ratio."
+          }
+        },
+        "page_indicator": {
+          "headline": "Know where you are at a glance.",
+          "intro": "The current page stretches into a bar; press a dot to jump to its page, or leave the dots to show the place.",
+          "tags": "Dots · Press to jump · Reduced motion",
+          "what": "A row of dots, one per page, the current one longer.",
+          "when": "Under carousels, onboarding screens and image viewers with a few pages.",
+          "rtl": "Page one is on the right in Arabic, and the dots fill toward the left.",
+          "when_not": "For more than about eight pages; use pagination.",
+          "do_1": "Keep the dots close to what they page.",
+          "do_2": "Name each dot so it is clear where it goes.",
+          "dont_1": "Don't use the dots as the only way forward.",
+          "dont_2": "Don't colour dots to mean anything but the current page.",
+          "alternative": {
+            "pagination": "For many pages of results.",
+            "stepper": "For steps people must finish in order."
+          }
+        },
+        "back_to_top": {
+          "headline": "One tap from the bottom to the top.",
+          "intro": "It waits until people have scrolled a fair way, then takes them back and puts keyboard focus where the page begins.",
+          "tags": "Threshold · Smooth scroll · Focus",
+          "what": "A floating button that scrolls back to the top.",
+          "when": "On long product lists, articles and order histories.",
+          "rtl": "It sits at the bottom left in Arabic, at the end of the line.",
+          "when_not": "On short pages that fit in two screens.",
+          "do_1": "Show it only after a real scroll.",
+          "do_2": "Keep it clear of chat and cart buttons.",
+          "dont_1": "Don't cover content people need at the corner.",
+          "dont_2": "Don't add a second one inside the same page.",
+          "alternative": {
+            "fab": "For the page's main action.",
+            "toc_rail": "For jumping between sections."
+          }
+        },
+        "footer": {
+          "headline": "Everything people look for at the end of the page.",
+          "intro": "Help, policies and contact sit in clear columns that stack on a phone, with the copyright and legal links on one quiet row.",
+          "tags": "Landmark · Columns · Locale slot",
+          "what": "The site's footer: brand, link columns and a bottom row.",
+          "when": "At the end of every page of a shop or marketing site.",
+          "rtl": "The brand starts on the right in Arabic and the columns read right to left.",
+          "when_not": "In an app screen; use the tab bar.",
+          "do_1": "Group links under headings people recognise.",
+          "do_2": "Keep returns and contact links one tap away.",
+          "dont_1": "Don't repeat the whole main menu.",
+          "dont_2": "Don't hide legal links in small grey text no one can read.",
+          "alternative": {
+            "navigation_menu": "For the main navigation at the top.",
+            "sidebar": "For an app's sections."
+          }
+        },
+        "questionnaire_card": {
+          "headline": "Ask before you guess.",
+          "intro": "When a request is unclear, the assistant asks a few short questions in one card, one at a time, and shows the answers before anything is sent.",
+          "tags": "One question per step · Other · Summary",
+          "what": "A card that asks single-choice, multiple-choice and free-text questions in steps, then summarises the answers.",
+          "when": "When an assistant needs two to five details before it drafts an offer, a report or a reply.",
+          "rtl": "Back points to the right in Arabic, options and summaries read from the right, and the step count keeps its numbers.",
+          "when_not": "For a long form people fill in on their own; use a form with sections.",
+          "do_1": "Keep it to five questions or fewer, each answerable in seconds.",
+          "do_2": "Offer \"Other\" when your options may not cover every case.",
+          "dont_1": "Don't ask what the assistant already knows from the conversation.",
+          "dont_2": "Don't make every question required; let people skip.",
+          "alternative": {
+            "stepper": "For a long task with named stages.",
+            "radio_group": "For one question on its own."
+          }
+        },
+        "model_picker": {
+          "headline": "The right model, plainly described.",
+          "intro": "Each model shows what it is good at, how much it can read at once, and why it is unavailable when it is.",
+          "tags": "Grouped by provider · Capabilities · Context",
+          "what": "A select whose options are AI models, with tags, context size, a New or Beta badge and a reason when disabled.",
+          "when": "In an assistant's composer or settings, where people choose which model answers.",
+          "rtl": "The list and badges read from the right; model names and sizes keep their own direction.",
+          "when_not": "When the product picks the model for people; don't ask.",
+          "do_1": "Describe each model by what it is good at, in a few words.",
+          "do_2": "Say why a model is unavailable, such as the plan it needs.",
+          "dont_1": "Don't list more than about ten models.",
+          "dont_2": "Don't hide unavailable models people may want to upgrade for.",
+          "alternative": {
+            "select": "For a plain list of choices.",
+            "chip": "To show the model in use without changing it."
+          }
+        },
+        "voice_input": {
+          "headline": "Speak instead of typing.",
+          "intro": "Press the microphone, speak, press again. The bars show it hears you, and every step, from asking for the microphone to processing, is announced.",
+          "tags": "Microphone · Live level · Port and drivers",
+          "what": "A toggle button that records through a recorder port: the browser's microphone on web, a mock driver on native until a native one is chosen.",
+          "when": "In a composer or a notes field where dictating is faster than typing.",
+          "rtl": "The button sits at the start in Arabic and the status follows it; the level bars are symmetric.",
+          "when_not": "For long recordings or calls; use a dedicated recorder.",
+          "do_1": "Show what happens to the recording, such as the transcript, once it is processed.",
+          "do_2": "Tell people how to allow the microphone when it is blocked.",
+          "dont_1": "Don't start recording without a press.",
+          "dont_2": "Don't keep a recording after it is cancelled.",
+          "alternative": {
+            "icon_button": "For a one-off action with no recording.",
+            "text_area": "For typed text only."
+          }
+        },
+        "conversation_list": {
+          "headline": "Pick up any conversation where you left it.",
+          "intro": "Past chats with the assistant sit under Today, Yesterday and the week before, pinned ones on top, each with its last words and how long ago it was.",
+          "tags": "Grouped by day · Pinned · Keyboard",
+          "what": "A list of past AI conversations, grouped by when they last changed.",
+          "when": "In the side panel of an assistant, a support inbox or a shopping helper.",
+          "rtl": "Rows, times and the menu button mirror in Arabic; arrow keys follow the reading direction.",
+          "when_not": "For a list of records that are not conversations; use the list box.",
+          "do_1": "Title each conversation from its first question.",
+          "do_2": "Ask before deleting a conversation.",
+          "dont_1": "Don't show the whole last message; a line is enough.",
+          "dont_2": "Don't hide pinned conversations inside the day groups.",
+          "alternative": {
+            "listbox": "To choose items that are not conversations.",
+            "navigation_list": "For pages of an app."
+          }
+        },
+        "message_actions": {
+          "headline": "Every answer, one tap from useful.",
+          "intro": "Under each answer people copy it, ask again, edit their question or say whether it helped; the thumbs say when they are pressed.",
+          "tags": "Toolbar · Arrow keys · Pressed state",
+          "what": "A row of icon buttons under an assistant's message.",
+          "when": "Under every answer an assistant writes.",
+          "rtl": "The row starts at the right in Arabic and the arrow keys follow it.",
+          "when_not": "For emoji reactions on people's messages; use the reaction button.",
+          "do_1": "Keep the same actions in the same order under every answer.",
+          "do_2": "Use the rating to improve answers, and say so.",
+          "dont_1": "Don't ask for a reason on every thumbs down.",
+          "dont_2": "Don't show retry on an answer that is still being written.",
+          "alternative": {
+            "reaction_button": "For emoji reactions with a count.",
+            "copy_button": "To copy one value."
+          }
+        },
+        "message_scroller": {
+          "headline": "Read back without losing the thread.",
+          "intro": "While people are at the bottom the answer streams into view; when they scroll up to read, it stays put and a button says how many new messages wait below.",
+          "tags": "Sticks to bottom · Jump button · Live region",
+          "what": "The scrolling area of a conversation.",
+          "when": "Around the messages of an assistant or a support chat.",
+          "rtl": "The jump button stays centred and its words read right to left in Arabic.",
+          "when_not": "For a page or a panel that is not a conversation; use the scroll area.",
+          "do_1": "Give it a height so it can scroll.",
+          "do_2": "Give each message its own child, so the new-message count is right.",
+          "dont_1": "Don't pull people down while they read further up.",
+          "dont_2": "Don't animate the jump for people who asked for less motion.",
+          "alternative": {
+            "scroll_area": "For any other scrolling region."
+          }
+        },
+        "prompt_suggestions": {
+          "headline": "Show people what to ask.",
+          "intro": "A few good first questions as cards or chips; one tap sends it, so nobody stares at an empty box.",
+          "tags": "Cards · Chips · Keyboard",
+          "what": "A set of suggested prompts.",
+          "when": "On an empty conversation, or after an answer to suggest the next step.",
+          "rtl": "Cards start at the right in Arabic and the scrolling row starts there too.",
+          "when_not": "To filter a list; use chips or a segmented control.",
+          "do_1": "Write each suggestion as the person would ask it.",
+          "do_2": "Offer three to six; fewer are easier to read.",
+          "dont_1": "Don't suggest what the assistant cannot do.",
+          "dont_2": "Don't keep old suggestions once the conversation moved on.",
+          "alternative": {
+            "chip": "For a tag or a filter.",
+            "button": "For one clear action."
+          }
+        },
+        "shimmer": {
+          "headline": "Show the assistant is working, quietly.",
+          "intro": "A soft light sweeps across \"Thinking…\" in the reading direction, or over placeholder lines while a longer answer loads; it stands still for people who asked for less motion.",
+          "tags": "Reading direction · Reduced motion · Skeleton",
+          "what": "A loading shimmer over text, or over placeholder lines.",
+          "when": "While an assistant thinks, searches or writes.",
+          "rtl": "The light sweeps from right to left in Arabic, and the text is never drawn letter by letter.",
+          "when_not": "For a page that loads; use the skeleton.",
+          "do_1": "Say what is happening: Searching orders, Reading the invoice.",
+          "do_2": "Replace it with the answer as soon as the first words arrive.",
+          "dont_1": "Don't shimmer more than one line of text at a time.",
+          "dont_2": "Don't leave it running when the request failed.",
+          "alternative": {
+            "skeleton": "For the shape of content that is loading."
+          }
+        },
+        "media_player": {
+          "headline": "Play it here, in your own controls.",
+          "intro": "The browser plays the file; the controls are the house ones, in the customer's language and digits, with captions and the shortcuts people already know.",
+          "tags": "Video · Audio · Captions · Speed",
+          "what": "Controls over a video or audio file: play, a timeline with what is loaded, the time, volume, speed, captions and full screen.",
+          "when": "For product videos, tutorials, voice notes and recorded calls inside the app.",
+          "rtl": "The controls and timeline stay left to right in Arabic, as on YouTube and every system player: time runs left to right on a media timeline, and the play icon is not mirrored. Names and the speed menu are Arabic.",
+          "when_not": "For a moving background or a decorative loop; use a plain video without controls.",
+          "do_1": "Add captions to every video with speech.",
+          "do_2": "Name the player after what it plays.",
+          "dont_1": "Don't start playing with sound on its own.",
+          "dont_2": "Don't put two players side by side that play at once.",
+          "alternative": {
+            "lightbox": "To show photos full screen.",
+            "attachment_card": "To offer the file to download instead of playing it."
+          }
+        },
+        "time_clock": {
+          "headline": "A time, set the way a clock reads.",
+          "intro": "Press the hour, then the minute, on a face people have read all their lives. Keys step it, and screen readers hear the whole time.",
+          "tags": "12 or 24 hours · Minute steps · Keyboard",
+          "what": "An analogue face for picking a time of day: the hours ring, then the minutes.",
+          "when": "For pickup, delivery and booking times on a touch screen, beside or inside a time field.",
+          "rtl": "The face is not mirrored in Arabic: clocks run clockwise everywhere. The numerals use the customer's digits, and the time above reads hours then minutes.",
+          "when_not": "For a time typed from memory, such as a date of birth's hour; use a time field.",
+          "do_1": "Use minute steps that match your slots, such as 15.",
+          "do_2": "Pair it with a time field so the time can also be typed.",
+          "dont_1": "Don't use it for durations; it picks a time of day.",
+          "dont_2": "Don't hide which half of the day is chosen.",
+          "alternative": {
+            "time_field": "To type a time exactly.",
+            "wheel_picker": "For a compact wheel on phones."
+          }
+        },
+        "angle_slider": {
+          "headline": "Turn it to the angle you want.",
+          "intro": "Drag the hand round the dial or step it with the keys. The angle is shown and spoken in degrees.",
+          "tags": "Dial · Steps · Quarter marks",
+          "what": "A circular slider for an angle from 0 to 359 degrees.",
+          "when": "For a gradient's direction, an image's rotation or a heading.",
+          "rtl": "The dial is not mirrored in Arabic: an angle is absolute, so 90 degrees points right in every language and the keys turn it clockwise.",
+          "when_not": "For an amount on a scale; use a slider.",
+          "do_1": "Show what the angle changes beside the dial.",
+          "do_2": "Use a step of 15 or 45 when only common angles make sense.",
+          "dont_1": "Don't use it for values that don't go round.",
+          "dont_2": "Don't make the dial smaller than a fingertip can drag.",
+          "alternative": {
+            "slider": "For a value on a straight scale.",
+            "number_field": "To type an exact angle."
+          }
+        },
+        "popconfirm": {
+          "headline": "Ask right where it happens.",
+          "intro": "A short question opens beside the button that raised it, so people confirm a delete or a refund without losing their place, and a slow confirm shows it is working.",
+          "tags": "Overlay · Confirmation · Destructive",
+          "what": "A popover that asks one yes-or-no question about the control it is anchored to.",
+          "when": "Before a small, reversible-looking action that deserves a second look: deleting a draft, removing a row, refunding an order.",
+          "rtl": "The popover follows its trigger to the other side in Arabic, and the buttons keep their reading order with confirm at the end.",
+          "when_not": "For a decision that needs explaining, a typed name or a list of what will change; use an alert dialog.",
+          "do_1": "Word the title as the question and the confirm button as the action: \"Delete draft?\", \"Delete\".",
+          "do_2": "Use the danger tone for anything that removes data, so focus starts on cancel.",
+          "dont_1": "Don't ask for an action people take many times a minute; offer undo instead.",
+          "dont_2": "Don't put a form or more than one line of detail in it.",
+          "alternative": {
+            "alert_dialog": "For a heavier decision that needs the whole screen's attention.",
+            "popover": "For rich content anchored to a control that is not a yes-or-no question."
+          }
+        },
+        "menubar": {
+          "headline": "The desktop menu, in the browser.",
+          "intro": "Editors and back-office tools get File, Edit and View menus that people already know: one tab stop, the arrow keys between menus, and checkable view options with their shortcuts.",
+          "tags": "Navigation · Menus · Keyboard",
+          "what": "A horizontal bar of menus, each a list of actions in sections.",
+          "when": "In a dense editor or tool with many commands people reach by keyboard: an order editor, a report builder, a page designer.",
+          "rtl": "The bar starts from the right in Arabic, the Left and Right keys follow the reading direction, and the menus open from their item's right edge.",
+          "when_not": "On a phone, or for a handful of page actions; use a menu or the page's own buttons.",
+          "do_1": "Group actions in sections and show their shortcuts.",
+          "do_2": "Use checkable actions for view options that stay on.",
+          "dont_1": "Don't put navigation between pages in a menubar.",
+          "dont_2": "Don't hide an action that is only in the menubar; keep key actions on the page too.",
+          "alternative": {
+            "menu": "For one menu of actions behind a button.",
+            "app_header": "For the app's top bar with navigation and the account."
+          }
+        },
+        "floating_panel": {
+          "headline": "A window that stays out of the way.",
+          "intro": "A chat, a tool palette or a preview floats over the page while people keep working underneath; they drag it aside, resize it, fold it to its title and bring it back.",
+          "tags": "Overlay · Window · Non-modal",
+          "what": "A movable, resizable, non-modal panel with a title bar, minimise and close.",
+          "when": "For a helper people use alongside the page: support chat, bulk-edit tools, a live preview.",
+          "rtl": "In Arabic it opens at the bottom left and its resize grip sits at the bottom left corner; the arrow keys still move it the way they point.",
+          "when_not": "For a task that blocks the page until it is done; use a drawer or a modal.",
+          "do_1": "Give it a short title that names the tool.",
+          "do_2": "Open it from a clear button and remember where people left it.",
+          "dont_1": "Don't open more than one floating panel at a time.",
+          "dont_2": "Don't cover the page's main action where it first opens.",
+          "alternative": {
+            "side_panel": "For a helper docked beside the page that resizes the content.",
+            "drawer": "For a task in a panel that blocks the page."
+          }
+        },
+        "cascader": {
+          "headline": "One path through many levels.",
+          "intro": "People pick a country, then a region, then a district in columns side by side, and the field shows the whole path, so the choice is clear at a glance.",
+          "tags": "Selection · Hierarchy · Form",
+          "what": "A field that picks a path through a tree, one level per column.",
+          "when": "When every choice needs its parents: delivery areas, product categories, organisation units.",
+          "rtl": "Columns open to the left in Arabic and the path reads right to left with its slash between names; the chevrons mirror.",
+          "when_not": "When people pick rows at any level or several at once; use a tree select.",
+          "do_1": "Load deep levels on demand when the tree is large.",
+          "do_2": "Keep names short so the path fits the field.",
+          "dont_1": "Don't use it for more than four or five levels.",
+          "dont_2": "Don't mix levels of different kinds in one column.",
+          "alternative": {
+            "tree_select": "To pick rows at any level, or several at once.",
+            "select": "For one flat list of options."
+          }
+        },
+        "transfer_list": {
+          "headline": "Move what you need, see what is left.",
+          "intro": "Two lists side by side show what is available and what is chosen; people tick, filter and move items across, and the counts keep up.",
+          "tags": "Selection · Lists · Form",
+          "what": "Two filterable lists with buttons that move ticked items between them.",
+          "when": "When people choose many items from a long list and need to see both sides: stock locations, export columns, team members.",
+          "rtl": "The available list sits on the right in Arabic and the move arrows point to the list they move to.",
+          "when_not": "For a few options; use a checkbox group or a multi select.",
+          "do_1": "Name both lists for what they mean here, not just Available and Chosen.",
+          "do_2": "Keep a filter on long lists.",
+          "dont_1": "Don't use it when the order of chosen items matters; use a sortable list.",
+          "dont_2": "Don't put more than a few hundred items in one list.",
+          "alternative": {
+            "multi_select": "For several choices in a compact field.",
+            "checkbox_group": "For a short list of options to tick."
+          }
         }
       }
     }

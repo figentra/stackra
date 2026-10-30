@@ -86,4 +86,11 @@ describe("Stat (native)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open Revenue" }));
     expect(onPress).toHaveBeenCalledOnce();
   });
+
+  it("works the trend out from the previous period and writes it under the figure", async () => {
+    const { screen } = await import("@testing-library/react");
+    render(<Stat label="Revenue" value={1200} previousValue={1000} />);
+    expect(screen.getByText("0.2")).toBeTruthy();
+    expect(screen.getByText("Previous period: 1,000")).toBeTruthy();
+  });
 });

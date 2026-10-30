@@ -1,0 +1,10 @@
+{
+  "note": "Delivery note",
+  "note_hint": "The driver sees this note at the door.",
+  "reason": "Reason for the return",
+  "reason_value": "The parcel arrived damaged.",
+  "live_label": "Message to the shop",
+  "live_description": "At most 60 characters.",
+  "live_error": "The message is longer than 60 characters.",
+  "live_count": "{count, plural, one {# character} other {# characters}}"
+}

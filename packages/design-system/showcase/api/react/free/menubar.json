@@ -1,0 +1,67 @@
+{
+  "generatedFrom": {
+    "hash": "a93eb5da44250505",
+    "propsFiles": ["ui/src/react/menubar/menubar.props.ts"]
+  },
+  "importLine": "import { Menubar } from \"@stackra/ui/react\";",
+  "key": "free/menubar",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new list of checked keys each time a checkable action changes.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: readonly string[]) => void"
+        },
+        {
+          "description": "Called with the key of every action chosen, after the action's own `onPress`.",
+          "name": "onAction",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "Menubar",
+      "props": [
+        {
+          "description": "The menus, in order on the bar.",
+          "name": "menus",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly MenubarMenu[]"
+        },
+        {
+          "description": "The keys of the checked actions across all menus, for a controlled menubar; pair it with `onChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The keys checked at the start, for an uncontrolled menubar.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The bar's accessible name. Defaults to the catalogue's \"Application menu\".",
+          "name": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the bar.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

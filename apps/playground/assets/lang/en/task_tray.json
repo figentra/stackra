@@ -1,0 +1,16 @@
+{
+  "start": "Export orders",
+  "fail": "Import customers",
+  "export": "orders-october.csv",
+  "import": "customers.xlsx",
+  "upload": "store-logo.png",
+  "rows": "{done} of {total} rows",
+  "no_phone": "Row 12 has no phone number",
+  "rtl": {
+    "label": "مهام المتجر الجارية",
+    "export": "طلبات-أكتوبر.csv",
+    "import": "العملاء.xlsx",
+    "upload": "شعار-المتجر.png",
+    "no_phone": "الصف ١٢ بلا رقم جوال"
+  }
+}

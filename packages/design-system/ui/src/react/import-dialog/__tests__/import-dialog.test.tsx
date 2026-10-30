@@ -86,7 +86,11 @@ describe("ImportDialog (web)", () => {
     );
     open({ onDryRun, onImport });
     await pick();
-    await screen.findByText("customers.csv");
+    await screen.findByText(
+      (_, element) =>
+        element?.getAttribute("data-slot") === "file-name" &&
+        element.textContent === "customers.csv",
+    );
     await act(async () => fireEvent.click(button(/import_flow\.check$/)));
     expect(onDryRun).toHaveBeenCalledWith({ Name: "name", "E-mail": "email", City: "city" });
     await screen.findByText("Not an email");
@@ -146,7 +150,11 @@ describe("ImportDialog (web)", () => {
       .mockImplementation(() => undefined);
     open({ onOpenChange });
     await pick();
-    await screen.findByText("customers.csv");
+    await screen.findByText(
+      (_, element) =>
+        element?.getAttribute("data-slot") === "file-name" &&
+        element.textContent === "customers.csv",
+    );
     fireEvent.click(button(/import_dialog\.back$/));
     expect(document.querySelector('input[type="file"]')).toBeTruthy();
     await pick();

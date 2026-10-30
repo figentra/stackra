@@ -65,6 +65,10 @@ import FreeAlertDialogTyped from "#src/demos/free/alert-dialog/typed";
 import FreeAlertDialogTypedCode from "#src/demos/free/alert-dialog/typed.code";
 import FreeAlertDialogLive from "#src/demos/free/alert-dialog/live";
 import FreeAlertDialogLiveCode from "#src/demos/free/alert-dialog/live.code";
+import FreeAngleSliderGradient from "#src/demos/free/angle-slider/gradient";
+import FreeAngleSliderGradientCode from "#src/demos/free/angle-slider/gradient.code";
+import FreeAngleSliderRotation from "#src/demos/free/angle-slider/rotation";
+import FreeAngleSliderRotationCode from "#src/demos/free/angle-slider/rotation.code";
 import FreeAreaChartInteractive from "#src/demos/free/area-chart/interactive";
 import FreeAreaChartInteractiveCode from "#src/demos/free/area-chart/interactive.code";
 import FreeAreaChartStacked from "#src/demos/free/area-chart/stacked";
@@ -75,6 +79,14 @@ import FreeAreaChartAxes from "#src/demos/free/area-chart/axes";
 import FreeAreaChartAxesCode from "#src/demos/free/area-chart/axes.code";
 import FreeAreaChartPercent from "#src/demos/free/area-chart/percent";
 import FreeAreaChartPercentCode from "#src/demos/free/area-chart/percent.code";
+import FreeAspectRatioProductPhoto from "#src/demos/free/aspect-ratio/product-photo";
+import FreeAspectRatioProductPhotoCode from "#src/demos/free/aspect-ratio/product-photo.code";
+import FreeAspectRatioVideo from "#src/demos/free/aspect-ratio/video";
+import FreeAspectRatioVideoCode from "#src/demos/free/aspect-ratio/video.code";
+import FreeAttachmentCardBasics from "#src/demos/free/attachment-card/basics";
+import FreeAttachmentCardBasicsCode from "#src/demos/free/attachment-card/basics.code";
+import FreeAttachmentCardUploadStates from "#src/demos/free/attachment-card/upload-states";
+import FreeAttachmentCardUploadStatesCode from "#src/demos/free/attachment-card/upload-states.code";
 import FreeAvatarSizes from "#src/demos/free/avatar/sizes";
 import FreeAvatarSizesCode from "#src/demos/free/avatar/sizes.code";
 import FreeAvatarTones from "#src/demos/free/avatar/tones";
@@ -93,6 +105,8 @@ import FreeAvatarGroupSizes from "#src/demos/free/avatar-group/sizes";
 import FreeAvatarGroupSizesCode from "#src/demos/free/avatar-group/sizes.code";
 import FreeAvatarGroupShift from "#src/demos/free/avatar-group/shift";
 import FreeAvatarGroupShiftCode from "#src/demos/free/avatar-group/shift.code";
+import FreeBackToTopScrollView from "#src/demos/free/back-to-top/scroll-view";
+import FreeBackToTopScrollViewCode from "#src/demos/free/back-to-top/scroll-view.code";
 import FreeBadgeVariants from "#src/demos/free/badge/variants";
 import FreeBadgeVariantsCode from "#src/demos/free/badge/variants.code";
 import FreeBadgeSizes from "#src/demos/free/badge/sizes";
@@ -119,6 +133,12 @@ import FreeBarListCities from "#src/demos/free/bar-list/cities";
 import FreeBarListCitiesCode from "#src/demos/free/bar-list/cities.code";
 import FreeBarListSources from "#src/demos/free/bar-list/sources";
 import FreeBarListSourcesCode from "#src/demos/free/bar-list/sources.code";
+import FreeBarcodeProductEan from "#src/demos/free/barcode/product-ean";
+import FreeBarcodeProductEanCode from "#src/demos/free/barcode/product-ean.code";
+import FreeBarcodeShippingLabel from "#src/demos/free/barcode/shipping-label";
+import FreeBarcodeShippingLabelCode from "#src/demos/free/barcode/shipping-label.code";
+import FreeBarcodeInvalid from "#src/demos/free/barcode/invalid";
+import FreeBarcodeInvalidCode from "#src/demos/free/barcode/invalid.code";
 import FreeBidiMixedText from "#src/demos/free/bidi/mixed-text";
 import FreeBidiMixedTextCode from "#src/demos/free/bidi/mixed-text.code";
 import FreeBidiLocalDirection from "#src/demos/free/bidi/local-direction";
@@ -181,6 +201,14 @@ import FreeCardDismissible from "#src/demos/free/card/dismissible";
 import FreeCardDismissibleCode from "#src/demos/free/card/dismissible.code";
 import FreeCarouselOffers from "#src/demos/free/carousel/offers";
 import FreeCarouselOffersCode from "#src/demos/free/carousel/offers.code";
+import FreeCarouselThumbnails from "#src/demos/free/carousel/thumbnails";
+import FreeCarouselThumbnailsCode from "#src/demos/free/carousel/thumbnails.code";
+import FreeCascaderBasics from "#src/demos/free/cascader/basics";
+import FreeCascaderBasicsCode from "#src/demos/free/cascader/basics.code";
+import FreeCascaderLazy from "#src/demos/free/cascader/lazy";
+import FreeCascaderLazyCode from "#src/demos/free/cascader/lazy.code";
+import FreeChartLegendBasics from "#src/demos/free/chart-legend/basics";
+import FreeChartLegendBasicsCode from "#src/demos/free/chart-legend/basics.code";
 import FreeCheckboxStates from "#src/demos/free/checkbox/states";
 import FreeCheckboxStatesCode from "#src/demos/free/checkbox/states.code";
 import FreeCheckboxVariants from "#src/demos/free/checkbox/variants";
@@ -245,12 +273,20 @@ import FreeCommentThreadDiscussion from "#src/demos/free/comment-thread/discussi
 import FreeCommentThreadDiscussionCode from "#src/demos/free/comment-thread/discussion.code";
 import FreeComposedChartRevenueTarget from "#src/demos/free/composed-chart/revenue-target";
 import FreeComposedChartRevenueTargetCode from "#src/demos/free/composed-chart/revenue-target.code";
+import FreeComposedChartDualAxis from "#src/demos/free/composed-chart/dual-axis";
+import FreeComposedChartDualAxisCode from "#src/demos/free/composed-chart/dual-axis.code";
+import FreeContextMenuRows from "#src/demos/free/context-menu/rows";
+import FreeContextMenuRowsCode from "#src/demos/free/context-menu/rows.code";
 import FreeContextualHelpBasics from "#src/demos/free/contextual-help/basics";
 import FreeContextualHelpBasicsCode from "#src/demos/free/contextual-help/basics.code";
 import FreeContextualHelpInfo from "#src/demos/free/contextual-help/info";
 import FreeContextualHelpInfoCode from "#src/demos/free/contextual-help/info.code";
 import FreeContextualHelpField from "#src/demos/free/contextual-help/field";
 import FreeContextualHelpFieldCode from "#src/demos/free/contextual-help/field.code";
+import FreeConversationListSupportHistory from "#src/demos/free/conversation-list/support-history";
+import FreeConversationListSupportHistoryCode from "#src/demos/free/conversation-list/support-history.code";
+import FreeConversationListActions from "#src/demos/free/conversation-list/actions";
+import FreeConversationListActionsCode from "#src/demos/free/conversation-list/actions.code";
 import FreeCopyButtonOrderNumber from "#src/demos/free/copy-button/order-number";
 import FreeCopyButtonOrderNumberCode from "#src/demos/free/copy-button/order-number.code";
 import FreeCopyButtonApiKey from "#src/demos/free/copy-button/api-key";
@@ -267,6 +303,8 @@ import FreeDataGridSheet from "#src/demos/free/data-grid/sheet";
 import FreeDataGridSheetCode from "#src/demos/free/data-grid/sheet.code";
 import FreeDataGridMatrix from "#src/demos/free/data-grid/matrix";
 import FreeDataGridMatrixCode from "#src/demos/free/data-grid/matrix.code";
+import FreeDataGridColumnEditor from "#src/demos/free/data-grid/column-editor";
+import FreeDataGridColumnEditorCode from "#src/demos/free/data-grid/column-editor.code";
 import FreeDataTableBasics from "#src/demos/free/data-table/basics";
 import FreeDataTableBasicsCode from "#src/demos/free/data-table/basics.code";
 import FreeDataTableRowActions from "#src/demos/free/data-table/row-actions";
@@ -325,6 +363,10 @@ import FreeDateTimePickerBasics from "#src/demos/free/date-time-picker/basics";
 import FreeDateTimePickerBasicsCode from "#src/demos/free/date-time-picker/basics.code";
 import FreeDiffReviewSupplierFeed from "#src/demos/free/diff-review/supplier-feed";
 import FreeDiffReviewSupplierFeedCode from "#src/demos/free/diff-review/supplier-feed.code";
+import FreeDisclosureBasics from "#src/demos/free/disclosure/basics";
+import FreeDisclosureBasicsCode from "#src/demos/free/disclosure/basics.code";
+import FreeDisclosureStates from "#src/demos/free/disclosure/states";
+import FreeDisclosureStatesCode from "#src/demos/free/disclosure/states.code";
 import FreeDonutChartTotal from "#src/demos/free/donut-chart/total";
 import FreeDonutChartTotalCode from "#src/demos/free/donut-chart/total.code";
 import FreeDonutChartPlain from "#src/demos/free/donut-chart/plain";
@@ -345,6 +387,8 @@ import FreeDrawerPlacement from "#src/demos/free/drawer/placement";
 import FreeDrawerPlacementCode from "#src/demos/free/drawer/placement.code";
 import FreeDrawerSnap from "#src/demos/free/drawer/snap";
 import FreeDrawerSnapCode from "#src/demos/free/drawer/snap.code";
+import FreeDrawerResize from "#src/demos/free/drawer/resize";
+import FreeDrawerResizeCode from "#src/demos/free/drawer/resize.code";
 import FreeDrawerBasics from "#src/demos/free/drawer/basics";
 import FreeDrawerBasicsCode from "#src/demos/free/drawer/basics.code";
 import FreeDrawerControlled from "#src/demos/free/drawer/controlled";
@@ -355,6 +399,8 @@ import FreeDrawerForm from "#src/demos/free/drawer/form";
 import FreeDrawerFormCode from "#src/demos/free/drawer/form.code";
 import FreeDropZoneBasics from "#src/demos/free/drop-zone/basics";
 import FreeDropZoneBasicsCode from "#src/demos/free/drop-zone/basics.code";
+import FreeDropZonePreviews from "#src/demos/free/drop-zone/previews";
+import FreeDropZonePreviewsCode from "#src/demos/free/drop-zone/previews.code";
 import FreeEmojiPickerBasics from "#src/demos/free/emoji-picker/basics";
 import FreeEmojiPickerBasicsCode from "#src/demos/free/emoji-picker/basics.code";
 import FreeEmptyStateReasons from "#src/demos/free/empty-state/reasons";
@@ -397,6 +443,12 @@ import FreeErrorStateRetry from "#src/demos/free/error-state/retry";
 import FreeErrorStateRetryCode from "#src/demos/free/error-state/retry.code";
 import FreeErrorStateActions from "#src/demos/free/error-state/actions";
 import FreeErrorStateActionsCode from "#src/demos/free/error-state/actions.code";
+import FreeExportDialogOrders from "#src/demos/free/export-dialog/orders";
+import FreeExportDialogOrdersCode from "#src/demos/free/export-dialog/orders.code";
+import FreeExportDialogDelivery from "#src/demos/free/export-dialog/delivery";
+import FreeExportDialogDeliveryCode from "#src/demos/free/export-dialog/delivery.code";
+import FreeExportDialogFailure from "#src/demos/free/export-dialog/failure";
+import FreeExportDialogFailureCode from "#src/demos/free/export-dialog/failure.code";
 import FreeFabBasics from "#src/demos/free/fab/basics";
 import FreeFabBasicsCode from "#src/demos/free/fab/basics.code";
 import FreeFabSpeedDial from "#src/demos/free/fab/speed-dial";
@@ -447,8 +499,14 @@ import FreeFullscreenBarPinned from "#src/demos/free/fullscreen-bar/pinned";
 import FreeFullscreenBarPinnedCode from "#src/demos/free/fullscreen-bar/pinned.code";
 import FreeFunnelChartCheckout from "#src/demos/free/funnel-chart/checkout";
 import FreeFunnelChartCheckoutCode from "#src/demos/free/funnel-chart/checkout.code";
+import FreeGalleryGrid from "#src/demos/free/gallery/grid";
+import FreeGalleryGridCode from "#src/demos/free/gallery/grid.code";
+import FreeGalleryMasonry from "#src/demos/free/gallery/masonry";
+import FreeGalleryMasonryCode from "#src/demos/free/gallery/masonry.code";
 import FreeGaugeChartTarget from "#src/demos/free/gauge-chart/target";
 import FreeGaugeChartTargetCode from "#src/demos/free/gauge-chart/target.code";
+import FreeHeadingLevels from "#src/demos/free/heading/levels";
+import FreeHeadingLevelsCode from "#src/demos/free/heading/levels.code";
 import FreeHeatmapChartHours from "#src/demos/free/heatmap-chart/hours";
 import FreeHeatmapChartHoursCode from "#src/demos/free/heatmap-chart/hours.code";
 import FreeHighlightSearch from "#src/demos/free/highlight/search";
@@ -479,6 +537,8 @@ import FreeIconButtonStates from "#src/demos/free/icon-button/states";
 import FreeIconButtonStatesCode from "#src/demos/free/icon-button/states.code";
 import FreeIconButtonLive from "#src/demos/free/icon-button/live";
 import FreeIconButtonLiveCode from "#src/demos/free/icon-button/live.code";
+import FreeImageCropperAvatar from "#src/demos/free/image-cropper/avatar";
+import FreeImageCropperAvatarCode from "#src/demos/free/image-cropper/avatar.code";
 import FreeImportDialogCustomers from "#src/demos/free/import-dialog/customers";
 import FreeImportDialogCustomersCode from "#src/demos/free/import-dialog/customers.code";
 import FreeImportDialogErrors from "#src/demos/free/import-dialog/errors";
@@ -515,16 +575,34 @@ import FreeInputGroupLive from "#src/demos/free/input-group/live";
 import FreeInputGroupLiveCode from "#src/demos/free/input-group/live.code";
 import FreeItemCardBasics from "#src/demos/free/item-card/basics";
 import FreeItemCardBasicsCode from "#src/demos/free/item-card/basics.code";
+import FreeKioskSurfaceIdle from "#src/demos/free/kiosk-surface/idle";
+import FreeKioskSurfaceIdleCode from "#src/demos/free/kiosk-surface/idle.code";
 import FreeKpiBand from "#src/demos/free/kpi/band";
 import FreeKpiBandCode from "#src/demos/free/kpi/band.code";
 import FreeKpiTiles from "#src/demos/free/kpi/tiles";
 import FreeKpiTilesCode from "#src/demos/free/kpi/tiles.code";
+import FreeKpiPrevious from "#src/demos/free/kpi/previous";
+import FreeKpiPreviousCode from "#src/demos/free/kpi/previous.code";
+import FreeLayoutStack from "#src/demos/free/layout/stack";
+import FreeLayoutStackCode from "#src/demos/free/layout/stack.code";
+import FreeLayoutCluster from "#src/demos/free/layout/cluster";
+import FreeLayoutClusterCode from "#src/demos/free/layout/cluster.code";
+import FreeLayoutGrid from "#src/demos/free/layout/grid";
+import FreeLayoutGridCode from "#src/demos/free/layout/grid.code";
+import FreeLayoutCenter from "#src/demos/free/layout/center";
+import FreeLayoutCenterCode from "#src/demos/free/layout/center.code";
+import FreeLightboxBasic from "#src/demos/free/lightbox/basic";
+import FreeLightboxBasicCode from "#src/demos/free/lightbox/basic.code";
 import FreeLineChartMultiple from "#src/demos/free/line-chart/multiple";
 import FreeLineChartMultipleCode from "#src/demos/free/line-chart/multiple.code";
 import FreeLineChartDots from "#src/demos/free/line-chart/dots";
 import FreeLineChartDotsCode from "#src/demos/free/line-chart/dots.code";
 import FreeLineChartLinear from "#src/demos/free/line-chart/linear";
 import FreeLineChartLinearCode from "#src/demos/free/line-chart/linear.code";
+import FreeLineChartAnnotations from "#src/demos/free/line-chart/annotations";
+import FreeLineChartAnnotationsCode from "#src/demos/free/line-chart/annotations.code";
+import FreeLineChartLogScale from "#src/demos/free/line-chart/log-scale";
+import FreeLineChartLogScaleCode from "#src/demos/free/line-chart/log-scale.code";
 import FreeLinkTones from "#src/demos/free/link/tones";
 import FreeLinkTonesCode from "#src/demos/free/link/tones.code";
 import FreeLinkRunning from "#src/demos/free/link/running";
@@ -557,6 +635,16 @@ import FreeLoadingOverlayDefault from "#src/demos/free/loading-overlay/default";
 import FreeLoadingOverlayDefaultCode from "#src/demos/free/loading-overlay/default.code";
 import FreeLocaleSwitcherBasics from "#src/demos/free/locale-switcher/basics";
 import FreeLocaleSwitcherBasicsCode from "#src/demos/free/locale-switcher/basics.code";
+import FreeMarqueeBrands from "#src/demos/free/marquee/brands";
+import FreeMarqueeBrandsCode from "#src/demos/free/marquee/brands.code";
+import FreeMarqueeAnnouncements from "#src/demos/free/marquee/announcements";
+import FreeMarqueeAnnouncementsCode from "#src/demos/free/marquee/announcements.code";
+import FreeMaskedFieldPatterns from "#src/demos/free/masked-field/patterns";
+import FreeMaskedFieldPatternsCode from "#src/demos/free/masked-field/patterns.code";
+import FreeMaskedFieldRaw from "#src/demos/free/masked-field/raw";
+import FreeMaskedFieldRawCode from "#src/demos/free/masked-field/raw.code";
+import FreeMentionInputBasics from "#src/demos/free/mention-input/basics";
+import FreeMentionInputBasicsCode from "#src/demos/free/mention-input/basics.code";
 import FreeMenuBasics from "#src/demos/free/menu/basics";
 import FreeMenuBasicsCode from "#src/demos/free/menu/basics.code";
 import FreeMenuSubmenu from "#src/demos/free/menu/submenu";
@@ -571,6 +659,12 @@ import FreeMenuMultiple from "#src/demos/free/menu/multiple";
 import FreeMenuMultipleCode from "#src/demos/free/menu/multiple.code";
 import FreeMenuSheet from "#src/demos/free/menu/sheet";
 import FreeMenuSheetCode from "#src/demos/free/menu/sheet.code";
+import FreeMessageActionsBasics from "#src/demos/free/message-actions/basics";
+import FreeMessageActionsBasicsCode from "#src/demos/free/message-actions/basics.code";
+import FreeMessageActionsFeedback from "#src/demos/free/message-actions/feedback";
+import FreeMessageActionsFeedbackCode from "#src/demos/free/message-actions/feedback.code";
+import FreeMessageScrollerStreaming from "#src/demos/free/message-scroller/streaming";
+import FreeMessageScrollerStreamingCode from "#src/demos/free/message-scroller/streaming.code";
 import FreeMeterServers from "#src/demos/free/meter/servers";
 import FreeMeterServersCode from "#src/demos/free/meter/servers.code";
 import FreeMeterScore from "#src/demos/free/meter/score";
@@ -591,6 +685,10 @@ import FreeModeSwitchLive from "#src/demos/free/mode-switch/live";
 import FreeModeSwitchLiveCode from "#src/demos/free/mode-switch/live.code";
 import FreeModeSwitchDisabled from "#src/demos/free/mode-switch/disabled";
 import FreeModeSwitchDisabledCode from "#src/demos/free/mode-switch/disabled.code";
+import FreeModelPickerBasics from "#src/demos/free/model-picker/basics";
+import FreeModelPickerBasicsCode from "#src/demos/free/model-picker/basics.code";
+import FreeModelPickerCompact from "#src/demos/free/model-picker/compact";
+import FreeModelPickerCompactCode from "#src/demos/free/model-picker/compact.code";
 import FreeMoneyFieldBasics from "#src/demos/free/money-field/basics";
 import FreeMoneyFieldBasicsCode from "#src/demos/free/money-field/basics.code";
 import FreeMoneyFieldCurrencies from "#src/demos/free/money-field/currencies";
@@ -673,6 +771,10 @@ import FreePageHeaderTrail from "#src/demos/free/page-header/trail";
 import FreePageHeaderTrailCode from "#src/demos/free/page-header/trail.code";
 import FreePageHeaderSlots from "#src/demos/free/page-header/slots";
 import FreePageHeaderSlotsCode from "#src/demos/free/page-header/slots.code";
+import FreePageIndicatorOnboarding from "#src/demos/free/page-indicator/onboarding";
+import FreePageIndicatorOnboardingCode from "#src/demos/free/page-indicator/onboarding.code";
+import FreePageIndicatorDisplayOnly from "#src/demos/free/page-indicator/display-only";
+import FreePageIndicatorDisplayOnlyCode from "#src/demos/free/page-indicator/display-only.code";
 import FreePageSkeletonLayouts from "#src/demos/free/page-skeleton/layouts";
 import FreePageSkeletonLayoutsCode from "#src/demos/free/page-skeleton/layouts.code";
 import FreePageSkeletonAnimations from "#src/demos/free/page-skeleton/animations";
@@ -689,6 +791,10 @@ import FreePasswordFieldPin from "#src/demos/free/password-field/pin";
 import FreePasswordFieldPinCode from "#src/demos/free/password-field/pin.code";
 import FreePasswordFieldStates from "#src/demos/free/password-field/states";
 import FreePasswordFieldStatesCode from "#src/demos/free/password-field/states.code";
+import FreePeriodPickerBasics from "#src/demos/free/period-picker/basics";
+import FreePeriodPickerBasicsCode from "#src/demos/free/period-picker/basics.code";
+import FreePeriodPickerCompare from "#src/demos/free/period-picker/compare";
+import FreePeriodPickerCompareCode from "#src/demos/free/period-picker/compare.code";
 import FreePermissionsMatrixStoreRoles from "#src/demos/free/permissions-matrix/store-roles";
 import FreePermissionsMatrixStoreRolesCode from "#src/demos/free/permissions-matrix/store-roles.code";
 import FreePermissionsMatrixSingleRole from "#src/demos/free/permissions-matrix/single-role";
@@ -701,6 +807,16 @@ import FreePieChartSimple from "#src/demos/free/pie-chart/simple";
 import FreePieChartSimpleCode from "#src/demos/free/pie-chart/simple.code";
 import FreePieChartLegend from "#src/demos/free/pie-chart/legend";
 import FreePieChartLegendCode from "#src/demos/free/pie-chart/legend.code";
+import FreePolarChartOrdersByWeekday from "#src/demos/free/polar-chart/orders-by-weekday";
+import FreePolarChartOrdersByWeekdayCode from "#src/demos/free/polar-chart/orders-by-weekday.code";
+import FreePolarChartStoreAndOnline from "#src/demos/free/polar-chart/store-and-online";
+import FreePolarChartStoreAndOnlineCode from "#src/demos/free/polar-chart/store-and-online.code";
+import FreePolarChartMonthlyReturns from "#src/demos/free/polar-chart/monthly-returns";
+import FreePolarChartMonthlyReturnsCode from "#src/demos/free/polar-chart/monthly-returns.code";
+import FreePopconfirmBasics from "#src/demos/free/popconfirm/basics";
+import FreePopconfirmBasicsCode from "#src/demos/free/popconfirm/basics.code";
+import FreePopconfirmAsyncConfirm from "#src/demos/free/popconfirm/async-confirm";
+import FreePopconfirmAsyncConfirmCode from "#src/demos/free/popconfirm/async-confirm.code";
 import FreePopoverPlacement from "#src/demos/free/popover/placement";
 import FreePopoverPlacementCode from "#src/demos/free/popover/placement.code";
 import FreePopoverAlignment from "#src/demos/free/popover/alignment";
@@ -741,6 +857,10 @@ import FreeProgressCircleSpoken from "#src/demos/free/progress-circle/spoken";
 import FreeProgressCircleSpokenCode from "#src/demos/free/progress-circle/spoken.code";
 import FreeProgressCircleLive from "#src/demos/free/progress-circle/live";
 import FreeProgressCircleLiveCode from "#src/demos/free/progress-circle/live.code";
+import FreePromptSuggestionsCards from "#src/demos/free/prompt-suggestions/cards";
+import FreePromptSuggestionsCardsCode from "#src/demos/free/prompt-suggestions/cards.code";
+import FreePromptSuggestionsScroll from "#src/demos/free/prompt-suggestions/scroll";
+import FreePromptSuggestionsScrollCode from "#src/demos/free/prompt-suggestions/scroll.code";
 import FreePropertyListBasics from "#src/demos/free/property-list/basics";
 import FreePropertyListBasicsCode from "#src/demos/free/property-list/basics.code";
 import FreePropertyListEmpty from "#src/demos/free/property-list/empty";
@@ -757,6 +877,10 @@ import FreeQrCodeWifi from "#src/demos/free/qr-code/wifi";
 import FreeQrCodeWifiCode from "#src/demos/free/qr-code/wifi.code";
 import FreeQuantityStepperBasics from "#src/demos/free/quantity-stepper/basics";
 import FreeQuantityStepperBasicsCode from "#src/demos/free/quantity-stepper/basics.code";
+import FreeQuestionnaireCardOfferBrief from "#src/demos/free/questionnaire-card/offer-brief";
+import FreeQuestionnaireCardOfferBriefCode from "#src/demos/free/questionnaire-card/offer-brief.code";
+import FreeQuestionnaireCardEditAnswers from "#src/demos/free/questionnaire-card/edit-answers";
+import FreeQuestionnaireCardEditAnswersCode from "#src/demos/free/questionnaire-card/edit-answers.code";
 import FreeRadarChartSingle from "#src/demos/free/radar-chart/single";
 import FreeRadarChartSingleCode from "#src/demos/free/radar-chart/single.code";
 import FreeRadarChartMultiple from "#src/demos/free/radar-chart/multiple";
@@ -787,6 +911,12 @@ import FreeRangeSliderBasics from "#src/demos/free/range-slider/basics";
 import FreeRangeSliderBasicsCode from "#src/demos/free/range-slider/basics.code";
 import FreeReactionButtonBasics from "#src/demos/free/reaction-button/basics";
 import FreeReactionButtonBasicsCode from "#src/demos/free/reaction-button/basics.code";
+import FreeRecurrenceEditorWeekly from "#src/demos/free/recurrence-editor/weekly";
+import FreeRecurrenceEditorWeeklyCode from "#src/demos/free/recurrence-editor/weekly.code";
+import FreeRecurrenceEditorMonthly from "#src/demos/free/recurrence-editor/monthly";
+import FreeRecurrenceEditorMonthlyCode from "#src/demos/free/recurrence-editor/monthly.code";
+import FreeRecurrenceEditorHijri from "#src/demos/free/recurrence-editor/hijri";
+import FreeRecurrenceEditorHijriCode from "#src/demos/free/recurrence-editor/hijri.code";
 import FreeResultPaid from "#src/demos/free/result/paid";
 import FreeResultPaidCode from "#src/demos/free/result/paid.code";
 import FreeResultStates from "#src/demos/free/result/states";
@@ -851,6 +981,8 @@ import FreeSelectStates from "#src/demos/free/select/states";
 import FreeSelectStatesCode from "#src/demos/free/select/states.code";
 import FreeSelectLive from "#src/demos/free/select/live";
 import FreeSelectLiveCode from "#src/demos/free/select/live.code";
+import FreeSelectSections from "#src/demos/free/select/sections";
+import FreeSelectSectionsCode from "#src/demos/free/select/sections.code";
 import FreeSelectPresentation from "#src/demos/free/select/presentation";
 import FreeSelectPresentationCode from "#src/demos/free/select/presentation.code";
 import FreeSeparatorHorizontal from "#src/demos/free/separator/horizontal";
@@ -875,6 +1007,14 @@ import FreeSetupGuidePosOnboarding from "#src/demos/free/setup-guide/pos-onboard
 import FreeSetupGuidePosOnboardingCode from "#src/demos/free/setup-guide/pos-onboarding.code";
 import FreeSetupGuideComplete from "#src/demos/free/setup-guide/complete";
 import FreeSetupGuideCompleteCode from "#src/demos/free/setup-guide/complete.code";
+import FreeShareButtonBasics from "#src/demos/free/share-button/basics";
+import FreeShareButtonBasicsCode from "#src/demos/free/share-button/basics.code";
+import FreeShareButtonIconOnly from "#src/demos/free/share-button/icon-only";
+import FreeShareButtonIconOnlyCode from "#src/demos/free/share-button/icon-only.code";
+import FreeShimmerThinking from "#src/demos/free/shimmer/thinking";
+import FreeShimmerThinkingCode from "#src/demos/free/shimmer/thinking.code";
+import FreeShimmerBlock from "#src/demos/free/shimmer/block";
+import FreeShimmerBlockCode from "#src/demos/free/shimmer/block.code";
 import FreeSkeletonAnimations from "#src/demos/free/skeleton/animations";
 import FreeSkeletonAnimationsCode from "#src/demos/free/skeleton/animations.code";
 import FreeSkeletonShapes from "#src/demos/free/skeleton/shapes";
@@ -987,6 +1127,8 @@ import FreeTabsStates from "#src/demos/free/tabs/states";
 import FreeTabsStatesCode from "#src/demos/free/tabs/states.code";
 import FreeTabsEmpty from "#src/demos/free/tabs/empty";
 import FreeTabsEmptyCode from "#src/demos/free/tabs/empty.code";
+import FreeTabsClosable from "#src/demos/free/tabs/closable";
+import FreeTabsClosableCode from "#src/demos/free/tabs/closable.code";
 import FreeTabsLive from "#src/demos/free/tabs/live";
 import FreeTabsLiveCode from "#src/demos/free/tabs/live.code";
 import FreeTagGroupBasics from "#src/demos/free/tag-group/basics";
@@ -1003,6 +1145,10 @@ import FreeTagInputBasics from "#src/demos/free/tag-input/basics";
 import FreeTagInputBasicsCode from "#src/demos/free/tag-input/basics.code";
 import FreeTagInputEmails from "#src/demos/free/tag-input/emails";
 import FreeTagInputEmailsCode from "#src/demos/free/tag-input/emails.code";
+import FreeTaskTrayLive from "#src/demos/free/task-tray/live";
+import FreeTaskTrayLiveCode from "#src/demos/free/task-tray/live.code";
+import FreeTaskTrayStates from "#src/demos/free/task-tray/states";
+import FreeTaskTrayStatesCode from "#src/demos/free/task-tray/states.code";
 import FreeTextAreaVariants from "#src/demos/free/text-area/variants";
 import FreeTextAreaVariantsCode from "#src/demos/free/text-area/variants.code";
 import FreeTextAreaParts from "#src/demos/free/text-area/parts";
@@ -1037,6 +1183,10 @@ import FreeThumbnailMenuItems from "#src/demos/free/thumbnail/menu-items";
 import FreeThumbnailMenuItemsCode from "#src/demos/free/thumbnail/menu-items.code";
 import FreeThumbnailBlurUp from "#src/demos/free/thumbnail/blur-up";
 import FreeThumbnailBlurUpCode from "#src/demos/free/thumbnail/blur-up.code";
+import FreeTimeClockBasics from "#src/demos/free/time-clock/basics";
+import FreeTimeClockBasicsCode from "#src/demos/free/time-clock/basics.code";
+import FreeTimeClockTwentyFourHour from "#src/demos/free/time-clock/twenty-four-hour";
+import FreeTimeClockTwentyFourHourCode from "#src/demos/free/time-clock/twenty-four-hour.code";
 import FreeTimeFieldBasics from "#src/demos/free/time-field/basics";
 import FreeTimeFieldBasicsCode from "#src/demos/free/time-field/basics.code";
 import FreeTimeFieldStates from "#src/demos/free/time-field/states";
@@ -1051,6 +1201,10 @@ import FreeTimelineChartLaunch from "#src/demos/free/timeline-chart/launch";
 import FreeTimelineChartLaunchCode from "#src/demos/free/timeline-chart/launch.code";
 import FreeToastTones from "#src/demos/free/toast/tones";
 import FreeToastTonesCode from "#src/demos/free/toast/tones.code";
+import FreeToastPromise from "#src/demos/free/toast/promise";
+import FreeToastPromiseCode from "#src/demos/free/toast/promise.code";
+import FreeToastUndo from "#src/demos/free/toast/undo";
+import FreeToastUndoCode from "#src/demos/free/toast/undo.code";
 import FreeToastDetail from "#src/demos/free/toast/detail";
 import FreeToastDetailCode from "#src/demos/free/toast/detail.code";
 import FreeToastAction from "#src/demos/free/toast/action";
@@ -1075,12 +1229,26 @@ import FreeTooltipIcon from "#src/demos/free/tooltip/icon";
 import FreeTooltipIconCode from "#src/demos/free/tooltip/icon.code";
 import FreeTooltipOwn from "#src/demos/free/tooltip/own";
 import FreeTooltipOwnCode from "#src/demos/free/tooltip/own.code";
+import FreeTrackerStripUptime from "#src/demos/free/tracker-strip/uptime";
+import FreeTrackerStripUptimeCode from "#src/demos/free/tracker-strip/uptime.code";
+import FreeTransferListBasics from "#src/demos/free/transfer-list/basics";
+import FreeTransferListBasicsCode from "#src/demos/free/transfer-list/basics.code";
+import FreeTreeSelectBasics from "#src/demos/free/tree-select/basics";
+import FreeTreeSelectBasicsCode from "#src/demos/free/tree-select/basics.code";
+import FreeTreeSelectMultiple from "#src/demos/free/tree-select/multiple";
+import FreeTreeSelectMultipleCode from "#src/demos/free/tree-select/multiple.code";
+import FreeTreeSelectInvalid from "#src/demos/free/tree-select/invalid";
+import FreeTreeSelectInvalidCode from "#src/demos/free/tree-select/invalid.code";
 import FreeTreeViewAccounts from "#src/demos/free/tree-view/accounts";
 import FreeTreeViewAccountsCode from "#src/demos/free/tree-view/accounts.code";
 import FreeTreeViewCategories from "#src/demos/free/tree-view/categories";
 import FreeTreeViewCategoriesCode from "#src/demos/free/tree-view/categories.code";
 import FreeTreeViewOrg from "#src/demos/free/tree-view/org";
 import FreeTreeViewOrgCode from "#src/demos/free/tree-view/org.code";
+import FreeTreeViewChecked from "#src/demos/free/tree-view/checked";
+import FreeTreeViewCheckedCode from "#src/demos/free/tree-view/checked.code";
+import FreeTreeViewLazy from "#src/demos/free/tree-view/lazy";
+import FreeTreeViewLazyCode from "#src/demos/free/tree-view/lazy.code";
 import FreeTreemapChartCategories from "#src/demos/free/treemap-chart/categories";
 import FreeTreemapChartCategoriesCode from "#src/demos/free/treemap-chart/categories.code";
 import FreeTruncateReview from "#src/demos/free/truncate/review";
@@ -1121,6 +1289,16 @@ import FreeVisuallyHiddenCartCount from "#src/demos/free/visually-hidden/cart-co
 import FreeVisuallyHiddenCartCountCode from "#src/demos/free/visually-hidden/cart-count.code";
 import FreeVisuallyHiddenStockStatus from "#src/demos/free/visually-hidden/stock-status";
 import FreeVisuallyHiddenStockStatusCode from "#src/demos/free/visually-hidden/stock-status.code";
+import FreeVoiceInputBasics from "#src/demos/free/voice-input/basics";
+import FreeVoiceInputBasicsCode from "#src/demos/free/voice-input/basics.code";
+import FreeVoiceInputDictation from "#src/demos/free/voice-input/dictation";
+import FreeVoiceInputDictationCode from "#src/demos/free/voice-input/dictation.code";
+import FreeVoiceInputDenied from "#src/demos/free/voice-input/denied";
+import FreeVoiceInputDeniedCode from "#src/demos/free/voice-input/denied.code";
+import FreeWaffleChartPaymentMethods from "#src/demos/free/waffle-chart/payment-methods";
+import FreeWaffleChartPaymentMethodsCode from "#src/demos/free/waffle-chart/payment-methods.code";
+import FreeWaffleChartOrderStatus from "#src/demos/free/waffle-chart/order-status";
+import FreeWaffleChartOrderStatusCode from "#src/demos/free/waffle-chart/order-status.code";
 import FreeWaterfallChartBridge from "#src/demos/free/waterfall-chart/bridge";
 import FreeWaterfallChartBridgeCode from "#src/demos/free/waterfall-chart/bridge.code";
 import FreeWheelPickerBasics from "#src/demos/free/wheel-picker/basics";
@@ -1208,6 +1386,14 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/alert-dialog.json") as ApiDoc,
   },
+  "free/angle-slider": {
+    examples: {
+      gradient: { Demo: FreeAngleSliderGradient, code: FreeAngleSliderGradientCode },
+      rotation: { Demo: FreeAngleSliderRotation, code: FreeAngleSliderRotationCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/angle-slider.json") as ApiDoc,
+  },
   "free/area-chart": {
     examples: {
       interactive: { Demo: FreeAreaChartInteractive, code: FreeAreaChartInteractiveCode },
@@ -1218,6 +1404,25 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/area-chart.json") as ApiDoc,
+  },
+  "free/aspect-ratio": {
+    examples: {
+      "product-photo": { Demo: FreeAspectRatioProductPhoto, code: FreeAspectRatioProductPhotoCode },
+      video: { Demo: FreeAspectRatioVideo, code: FreeAspectRatioVideoCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/aspect-ratio.json") as ApiDoc,
+  },
+  "free/attachment-card": {
+    examples: {
+      basics: { Demo: FreeAttachmentCardBasics, code: FreeAttachmentCardBasicsCode },
+      "upload-states": {
+        Demo: FreeAttachmentCardUploadStates,
+        code: FreeAttachmentCardUploadStatesCode,
+      },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/attachment-card.json") as ApiDoc,
   },
   "free/avatar": {
     examples: {
@@ -1239,6 +1444,13 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/avatar-group.json") as ApiDoc,
+  },
+  "free/back-to-top": {
+    examples: {
+      "scroll-view": { Demo: FreeBackToTopScrollView, code: FreeBackToTopScrollViewCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/back-to-top.json") as ApiDoc,
   },
   "free/badge": {
     examples: {
@@ -1270,6 +1482,15 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/bar-list.json") as ApiDoc,
+  },
+  "free/barcode": {
+    examples: {
+      "product-ean": { Demo: FreeBarcodeProductEan, code: FreeBarcodeProductEanCode },
+      "shipping-label": { Demo: FreeBarcodeShippingLabel, code: FreeBarcodeShippingLabelCode },
+      invalid: { Demo: FreeBarcodeInvalid, code: FreeBarcodeInvalidCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/barcode.json") as ApiDoc,
   },
   "free/bidi": {
     examples: {
@@ -1373,9 +1594,25 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
   "free/carousel": {
     examples: {
       offers: { Demo: FreeCarouselOffers, code: FreeCarouselOffersCode },
+      thumbnails: { Demo: FreeCarouselThumbnails, code: FreeCarouselThumbnailsCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/carousel.json") as ApiDoc,
+  },
+  "free/cascader": {
+    examples: {
+      basics: { Demo: FreeCascaderBasics, code: FreeCascaderBasicsCode },
+      lazy: { Demo: FreeCascaderLazy, code: FreeCascaderLazyCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/cascader.json") as ApiDoc,
+  },
+  "free/chart-legend": {
+    examples: {
+      basics: { Demo: FreeChartLegendBasics, code: FreeChartLegendBasicsCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/chart-legend.json") as ApiDoc,
   },
   "free/checkbox": {
     examples: {
@@ -1486,9 +1723,17 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
         Demo: FreeComposedChartRevenueTarget,
         code: FreeComposedChartRevenueTargetCode,
       },
+      "dual-axis": { Demo: FreeComposedChartDualAxis, code: FreeComposedChartDualAxisCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/composed-chart.json") as ApiDoc,
+  },
+  "free/context-menu": {
+    examples: {
+      rows: { Demo: FreeContextMenuRows, code: FreeContextMenuRowsCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/context-menu.json") as ApiDoc,
   },
   "free/contextual-help": {
     examples: {
@@ -1498,6 +1743,17 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/contextual-help.json") as ApiDoc,
+  },
+  "free/conversation-list": {
+    examples: {
+      "support-history": {
+        Demo: FreeConversationListSupportHistory,
+        code: FreeConversationListSupportHistoryCode,
+      },
+      actions: { Demo: FreeConversationListActions, code: FreeConversationListActionsCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/conversation-list.json") as ApiDoc,
   },
   "free/copy-button": {
     examples: {
@@ -1527,6 +1783,7 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     examples: {
       sheet: { Demo: FreeDataGridSheet, code: FreeDataGridSheetCode },
       matrix: { Demo: FreeDataGridMatrix, code: FreeDataGridMatrixCode },
+      "column-editor": { Demo: FreeDataGridColumnEditor, code: FreeDataGridColumnEditorCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/data-grid.json") as ApiDoc,
@@ -1608,6 +1865,14 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/diff-review.json") as ApiDoc,
   },
+  "free/disclosure": {
+    examples: {
+      basics: { Demo: FreeDisclosureBasics, code: FreeDisclosureBasicsCode },
+      states: { Demo: FreeDisclosureStates, code: FreeDisclosureStatesCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/disclosure.json") as ApiDoc,
+  },
   "free/donut-chart": {
     examples: {
       total: { Demo: FreeDonutChartTotal, code: FreeDonutChartTotalCode },
@@ -1626,6 +1891,7 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
       views: { Demo: FreeDrawerViews, code: FreeDrawerViewsCode },
       placement: { Demo: FreeDrawerPlacement, code: FreeDrawerPlacementCode },
       snap: { Demo: FreeDrawerSnap, code: FreeDrawerSnapCode },
+      resize: { Demo: FreeDrawerResize, code: FreeDrawerResizeCode },
       basics: { Demo: FreeDrawerBasics, code: FreeDrawerBasicsCode },
       controlled: { Demo: FreeDrawerControlled, code: FreeDrawerControlledCode },
       locked: { Demo: FreeDrawerLocked, code: FreeDrawerLockedCode },
@@ -1637,6 +1903,7 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
   "free/drop-zone": {
     examples: {
       basics: { Demo: FreeDropZoneBasics, code: FreeDropZoneBasicsCode },
+      previews: { Demo: FreeDropZonePreviews, code: FreeDropZonePreviewsCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/drop-zone.json") as ApiDoc,
@@ -1697,6 +1964,15 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/error-state.json") as ApiDoc,
+  },
+  "free/export-dialog": {
+    examples: {
+      orders: { Demo: FreeExportDialogOrders, code: FreeExportDialogOrdersCode },
+      delivery: { Demo: FreeExportDialogDelivery, code: FreeExportDialogDeliveryCode },
+      failure: { Demo: FreeExportDialogFailure, code: FreeExportDialogFailureCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/export-dialog.json") as ApiDoc,
   },
   "free/fab": {
     examples: {
@@ -1783,12 +2059,27 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/funnel-chart.json") as ApiDoc,
   },
+  "free/gallery": {
+    examples: {
+      grid: { Demo: FreeGalleryGrid, code: FreeGalleryGridCode },
+      masonry: { Demo: FreeGalleryMasonry, code: FreeGalleryMasonryCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/gallery.json") as ApiDoc,
+  },
   "free/gauge-chart": {
     examples: {
       target: { Demo: FreeGaugeChartTarget, code: FreeGaugeChartTargetCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/gauge-chart.json") as ApiDoc,
+  },
+  "free/heading": {
+    examples: {
+      levels: { Demo: FreeHeadingLevels, code: FreeHeadingLevelsCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/heading.json") as ApiDoc,
   },
   "free/heatmap-chart": {
     examples: {
@@ -1846,6 +2137,13 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/icon-button.json") as ApiDoc,
+  },
+  "free/image-cropper": {
+    examples: {
+      avatar: { Demo: FreeImageCropperAvatar, code: FreeImageCropperAvatarCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/image-cropper.json") as ApiDoc,
   },
   "free/import-dialog": {
     examples: {
@@ -1907,19 +2205,46 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/item-card.json") as ApiDoc,
   },
+  "free/kiosk-surface": {
+    examples: {
+      idle: { Demo: FreeKioskSurfaceIdle, code: FreeKioskSurfaceIdleCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/kiosk-surface.json") as ApiDoc,
+  },
   "free/kpi": {
     examples: {
       band: { Demo: FreeKpiBand, code: FreeKpiBandCode },
       tiles: { Demo: FreeKpiTiles, code: FreeKpiTilesCode },
+      previous: { Demo: FreeKpiPrevious, code: FreeKpiPreviousCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/kpi.json") as ApiDoc,
+  },
+  "free/layout": {
+    examples: {
+      stack: { Demo: FreeLayoutStack, code: FreeLayoutStackCode },
+      cluster: { Demo: FreeLayoutCluster, code: FreeLayoutClusterCode },
+      grid: { Demo: FreeLayoutGrid, code: FreeLayoutGridCode },
+      center: { Demo: FreeLayoutCenter, code: FreeLayoutCenterCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/layout.json") as ApiDoc,
+  },
+  "free/lightbox": {
+    examples: {
+      basic: { Demo: FreeLightboxBasic, code: FreeLightboxBasicCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/lightbox.json") as ApiDoc,
   },
   "free/line-chart": {
     examples: {
       multiple: { Demo: FreeLineChartMultiple, code: FreeLineChartMultipleCode },
       dots: { Demo: FreeLineChartDots, code: FreeLineChartDotsCode },
       linear: { Demo: FreeLineChartLinear, code: FreeLineChartLinearCode },
+      annotations: { Demo: FreeLineChartAnnotations, code: FreeLineChartAnnotationsCode },
+      "log-scale": { Demo: FreeLineChartLogScale, code: FreeLineChartLogScaleCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/line-chart.json") as ApiDoc,
@@ -1970,6 +2295,29 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/locale-switcher.json") as ApiDoc,
   },
+  "free/marquee": {
+    examples: {
+      brands: { Demo: FreeMarqueeBrands, code: FreeMarqueeBrandsCode },
+      announcements: { Demo: FreeMarqueeAnnouncements, code: FreeMarqueeAnnouncementsCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/marquee.json") as ApiDoc,
+  },
+  "free/masked-field": {
+    examples: {
+      patterns: { Demo: FreeMaskedFieldPatterns, code: FreeMaskedFieldPatternsCode },
+      raw: { Demo: FreeMaskedFieldRaw, code: FreeMaskedFieldRawCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/masked-field.json") as ApiDoc,
+  },
+  "free/mention-input": {
+    examples: {
+      basics: { Demo: FreeMentionInputBasics, code: FreeMentionInputBasicsCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/mention-input.json") as ApiDoc,
+  },
   "free/menu": {
     examples: {
       basics: { Demo: FreeMenuBasics, code: FreeMenuBasicsCode },
@@ -1982,6 +2330,21 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/menu.json") as ApiDoc,
+  },
+  "free/message-actions": {
+    examples: {
+      basics: { Demo: FreeMessageActionsBasics, code: FreeMessageActionsBasicsCode },
+      feedback: { Demo: FreeMessageActionsFeedback, code: FreeMessageActionsFeedbackCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/message-actions.json") as ApiDoc,
+  },
+  "free/message-scroller": {
+    examples: {
+      streaming: { Demo: FreeMessageScrollerStreaming, code: FreeMessageScrollerStreamingCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/message-scroller.json") as ApiDoc,
   },
   "free/meter": {
     examples: {
@@ -2010,6 +2373,14 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/mode-switch.json") as ApiDoc,
+  },
+  "free/model-picker": {
+    examples: {
+      basics: { Demo: FreeModelPickerBasics, code: FreeModelPickerBasicsCode },
+      compact: { Demo: FreeModelPickerCompact, code: FreeModelPickerCompactCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/model-picker.json") as ApiDoc,
   },
   "free/money-field": {
     examples: {
@@ -2142,6 +2513,17 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/page-header.json") as ApiDoc,
   },
+  "free/page-indicator": {
+    examples: {
+      onboarding: { Demo: FreePageIndicatorOnboarding, code: FreePageIndicatorOnboardingCode },
+      "display-only": {
+        Demo: FreePageIndicatorDisplayOnly,
+        code: FreePageIndicatorDisplayOnlyCode,
+      },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/page-indicator.json") as ApiDoc,
+  },
   "free/page-skeleton": {
     examples: {
       layouts: { Demo: FreePageSkeletonLayouts, code: FreePageSkeletonLayoutsCode },
@@ -2167,6 +2549,14 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/password-field.json") as ApiDoc,
+  },
+  "free/period-picker": {
+    examples: {
+      basics: { Demo: FreePeriodPickerBasics, code: FreePeriodPickerBasicsCode },
+      compare: { Demo: FreePeriodPickerCompare, code: FreePeriodPickerCompareCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/period-picker.json") as ApiDoc,
   },
   "free/permissions-matrix": {
     examples: {
@@ -2197,6 +2587,32 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/pie-chart.json") as ApiDoc,
+  },
+  "free/polar-chart": {
+    examples: {
+      "orders-by-weekday": {
+        Demo: FreePolarChartOrdersByWeekday,
+        code: FreePolarChartOrdersByWeekdayCode,
+      },
+      "store-and-online": {
+        Demo: FreePolarChartStoreAndOnline,
+        code: FreePolarChartStoreAndOnlineCode,
+      },
+      "monthly-returns": {
+        Demo: FreePolarChartMonthlyReturns,
+        code: FreePolarChartMonthlyReturnsCode,
+      },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/polar-chart.json") as ApiDoc,
+  },
+  "free/popconfirm": {
+    examples: {
+      basics: { Demo: FreePopconfirmBasics, code: FreePopconfirmBasicsCode },
+      "async-confirm": { Demo: FreePopconfirmAsyncConfirm, code: FreePopconfirmAsyncConfirmCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/popconfirm.json") as ApiDoc,
   },
   "free/popover": {
     examples: {
@@ -2251,6 +2667,14 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/progress-circle.json") as ApiDoc,
   },
+  "free/prompt-suggestions": {
+    examples: {
+      cards: { Demo: FreePromptSuggestionsCards, code: FreePromptSuggestionsCardsCode },
+      scroll: { Demo: FreePromptSuggestionsScroll, code: FreePromptSuggestionsScrollCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/prompt-suggestions.json") as ApiDoc,
+  },
   "free/property-list": {
     examples: {
       basics: { Demo: FreePropertyListBasics, code: FreePropertyListBasicsCode },
@@ -2282,6 +2706,20 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/quantity-stepper.json") as ApiDoc,
+  },
+  "free/questionnaire-card": {
+    examples: {
+      "offer-brief": {
+        Demo: FreeQuestionnaireCardOfferBrief,
+        code: FreeQuestionnaireCardOfferBriefCode,
+      },
+      "edit-answers": {
+        Demo: FreeQuestionnaireCardEditAnswers,
+        code: FreeQuestionnaireCardEditAnswersCode,
+      },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/questionnaire-card.json") as ApiDoc,
   },
   "free/radar-chart": {
     examples: {
@@ -2348,6 +2786,15 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/reaction-button.json") as ApiDoc,
+  },
+  "free/recurrence-editor": {
+    examples: {
+      weekly: { Demo: FreeRecurrenceEditorWeekly, code: FreeRecurrenceEditorWeeklyCode },
+      monthly: { Demo: FreeRecurrenceEditorMonthly, code: FreeRecurrenceEditorMonthlyCode },
+      hijri: { Demo: FreeRecurrenceEditorHijri, code: FreeRecurrenceEditorHijriCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/recurrence-editor.json") as ApiDoc,
   },
   "free/result": {
     examples: {
@@ -2449,6 +2896,7 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
       items: { Demo: FreeSelectItems, code: FreeSelectItemsCode },
       states: { Demo: FreeSelectStates, code: FreeSelectStatesCode },
       live: { Demo: FreeSelectLive, code: FreeSelectLiveCode },
+      sections: { Demo: FreeSelectSections, code: FreeSelectSectionsCode },
       presentation: { Demo: FreeSelectPresentation, code: FreeSelectPresentationCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
@@ -2491,6 +2939,22 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/setup-guide.json") as ApiDoc,
+  },
+  "free/share-button": {
+    examples: {
+      basics: { Demo: FreeShareButtonBasics, code: FreeShareButtonBasicsCode },
+      "icon-only": { Demo: FreeShareButtonIconOnly, code: FreeShareButtonIconOnlyCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/share-button.json") as ApiDoc,
+  },
+  "free/shimmer": {
+    examples: {
+      thinking: { Demo: FreeShimmerThinking, code: FreeShimmerThinkingCode },
+      block: { Demo: FreeShimmerBlock, code: FreeShimmerBlockCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/shimmer.json") as ApiDoc,
   },
   "free/skeleton": {
     examples: {
@@ -2676,6 +3140,7 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
       variants: { Demo: FreeTabsVariants, code: FreeTabsVariantsCode },
       states: { Demo: FreeTabsStates, code: FreeTabsStatesCode },
       empty: { Demo: FreeTabsEmpty, code: FreeTabsEmptyCode },
+      closable: { Demo: FreeTabsClosable, code: FreeTabsClosableCode },
       live: { Demo: FreeTabsLive, code: FreeTabsLiveCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
@@ -2699,6 +3164,14 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/tag-input.json") as ApiDoc,
+  },
+  "free/task-tray": {
+    examples: {
+      live: { Demo: FreeTaskTrayLive, code: FreeTaskTrayLiveCode },
+      states: { Demo: FreeTaskTrayStates, code: FreeTaskTrayStatesCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/task-tray.json") as ApiDoc,
   },
   "free/text-area": {
     examples: {
@@ -2741,6 +3214,17 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/thumbnail.json") as ApiDoc,
   },
+  "free/time-clock": {
+    examples: {
+      basics: { Demo: FreeTimeClockBasics, code: FreeTimeClockBasicsCode },
+      "twenty-four-hour": {
+        Demo: FreeTimeClockTwentyFourHour,
+        code: FreeTimeClockTwentyFourHourCode,
+      },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/time-clock.json") as ApiDoc,
+  },
   "free/time-field": {
     examples: {
       basics: { Demo: FreeTimeFieldBasics, code: FreeTimeFieldBasicsCode },
@@ -2774,6 +3258,8 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
   "free/toast": {
     examples: {
       tones: { Demo: FreeToastTones, code: FreeToastTonesCode },
+      promise: { Demo: FreeToastPromise, code: FreeToastPromiseCode },
+      undo: { Demo: FreeToastUndo, code: FreeToastUndoCode },
       detail: { Demo: FreeToastDetail, code: FreeToastDetailCode },
       action: { Demo: FreeToastAction, code: FreeToastActionCode },
       duration: { Demo: FreeToastDuration, code: FreeToastDurationCode },
@@ -2808,11 +3294,36 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/tooltip.json") as ApiDoc,
   },
+  "free/tracker-strip": {
+    examples: {
+      uptime: { Demo: FreeTrackerStripUptime, code: FreeTrackerStripUptimeCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/tracker-strip.json") as ApiDoc,
+  },
+  "free/transfer-list": {
+    examples: {
+      basics: { Demo: FreeTransferListBasics, code: FreeTransferListBasicsCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/transfer-list.json") as ApiDoc,
+  },
+  "free/tree-select": {
+    examples: {
+      basics: { Demo: FreeTreeSelectBasics, code: FreeTreeSelectBasicsCode },
+      multiple: { Demo: FreeTreeSelectMultiple, code: FreeTreeSelectMultipleCode },
+      invalid: { Demo: FreeTreeSelectInvalid, code: FreeTreeSelectInvalidCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/tree-select.json") as ApiDoc,
+  },
   "free/tree-view": {
     examples: {
       accounts: { Demo: FreeTreeViewAccounts, code: FreeTreeViewAccountsCode },
       categories: { Demo: FreeTreeViewCategories, code: FreeTreeViewCategoriesCode },
       org: { Demo: FreeTreeViewOrg, code: FreeTreeViewOrgCode },
+      checked: { Demo: FreeTreeViewChecked, code: FreeTreeViewCheckedCode },
+      lazy: { Demo: FreeTreeViewLazy, code: FreeTreeViewLazyCode },
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/tree-view.json") as ApiDoc,
@@ -2889,6 +3400,26 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/visually-hidden.json") as ApiDoc,
+  },
+  "free/voice-input": {
+    examples: {
+      basics: { Demo: FreeVoiceInputBasics, code: FreeVoiceInputBasicsCode },
+      dictation: { Demo: FreeVoiceInputDictation, code: FreeVoiceInputDictationCode },
+      denied: { Demo: FreeVoiceInputDenied, code: FreeVoiceInputDeniedCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/voice-input.json") as ApiDoc,
+  },
+  "free/waffle-chart": {
+    examples: {
+      "payment-methods": {
+        Demo: FreeWaffleChartPaymentMethods,
+        code: FreeWaffleChartPaymentMethodsCode,
+      },
+      "order-status": { Demo: FreeWaffleChartOrderStatus, code: FreeWaffleChartOrderStatusCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/waffle-chart.json") as ApiDoc,
   },
   "free/waterfall-chart": {
     examples: {

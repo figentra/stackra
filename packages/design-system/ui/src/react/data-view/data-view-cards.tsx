@@ -6,11 +6,22 @@
  *          trailing meta). Grouped rows sit under a heading per group with its count. A pressable card or row opens the record.
  * Boundary: it draws `collection.rows` (already searched, filtered, sorted and paged) and `collection.groups`, and keeps
  *           no state. A pressable card's title is the one button, stretched over the card, so the card is one tab stop.
- *           Cards and rows fill the container's width.
+ *           Cards and rows fill the container's width. With `isVirtualized` only the cards or rows in view are drawn
+ *           (React Aria's Virtualizer: a grid of `ListBox` options for cards, the virtualised `List` for rows), each
+ *           group in its own scroll area, and with `infinite` paging the end of the rows loads the next page.
  * Runtime: browser
  * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3); WCAG 2.2 SC 1.3.1, 2.4.4, 2.5.8.
  */
 import { isValidElement, type ReactElement, type ReactNode } from "react";
+import {
+  Collection,
+  GridLayout,
+  ListBox,
+  ListBoxItem,
+  ListBoxLoadMoreItem,
+  Size,
+  Virtualizer,
+} from "react-aria-components";
 
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { ResolvedCollectionColumn } from "#contracts/types/resolved-collection-column.type";
@@ -20,6 +31,11 @@ import { dataViewFieldsOf } from "#core/functions/data-view-fields-of.function";
 import type { DataViewCardsProps } from "#react/data-view/data-view-cards.props";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { List } from "#react/list/list";
+import { Spinner } from "#react/spinner/spinner";
+
+/** The narrowest a virtualised card is, and the room between cards. */
+const CARD_WIDTH = 256;
+const CARD_GAP = 12;
 
 /** The cards or list view of a collection. */
 export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
@@ -29,6 +45,7 @@ export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
   renderCell,
   onItemPress,
   layout = "cards",
+  isVirtualized = false,
 }: DataViewCardsProps<TItem>): ReactElement {
   const t = useUiText();
   const slots = dataViewFieldsOf(fields, collection.visibleColumns);
@@ -39,6 +56,40 @@ export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
         ? renderCell(item, column)
         : cellTextOf(item, column.id);
   const isList = layout === "list";
+  // With `infinite` paging the end of the rows asks for the next page.
+  const more =
+    collection.paging === "infinite" && collection.hasMore
+      ? { hasMore: true, onLoadMore: collection.loadMore, isLoading: collection.isLoading }
+      : {};
+  // A virtualised card has one height: its padding, title, subtitle and one line per field.
+  const cardHeight =
+    32 +
+    24 +
+    (slots.subtitle ? 24 : 0) +
+    (slots.fields.length > 0 ? 12 + slots.fields.length * 24 : 0);
+  const cardBody = (item: TItem) => (
+    <>
+      <div className="flex items-start justify-between gap-2">
+        <span className="min-w-0 truncate text-base font-medium">
+          {valueOf(item, slots.title) ?? item.id}
+        </span>
+        {slots.meta ? <span className="shrink-0 text-sm">{valueOf(item, slots.meta)}</span> : null}
+      </div>
+      {slots.subtitle ? (
+        <span className="-mt-2 truncate text-sm text-muted">{valueOf(item, slots.subtitle)}</span>
+      ) : null}
+      {slots.fields.length > 0 ? (
+        <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+          {slots.fields.map((column) => (
+            <div key={column.id} className="contents">
+              <dt className="text-muted">{column.label}</dt>
+              <dd className="m-0 min-w-0 truncate text-end">{valueOf(item, column)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+    </>
+  );
 
   const card = (item: TItem) => {
     const title = valueOf(item, slots.title) ?? item.id;
@@ -96,6 +147,8 @@ export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
       <List
         label={name}
         isAnimated={false}
+        isVirtualized={isVirtualized}
+        {...more}
         className="w-full"
         items={items.map((item) => {
           const media = fields?.media?.(item);
@@ -110,6 +163,51 @@ export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
           };
         })}
       />
+    ) : isVirtualized ? (
+      <Virtualizer
+        layout={GridLayout}
+        layoutOptions={{
+          minItemSize: new Size(CARD_WIDTH, cardHeight),
+          maxItemSize: new Size(Number.POSITIVE_INFINITY, cardHeight),
+          minSpace: new Size(CARD_GAP, CARD_GAP),
+          loaderHeight: 48,
+        }}
+      >
+        <ListBox
+          aria-label={name}
+          layout="grid"
+          className="overflow-auto outline-none"
+          style={{ maxHeight: "32rem" }}
+          {...(onItemPress
+            ? {
+                onAction: (key) => {
+                  const item = items.find((entry) => entry.id === key);
+                  if (item) onItemPress(item);
+                },
+              }
+            : {})}
+        >
+          <Collection items={items}>
+            {(item) => (
+              <ListBoxItem
+                id={item.id}
+                textValue={slots.title ? cellTextOf(item, slots.title.id) : item.id}
+                className="grid grid-cols-[minmax(0,1fr)] content-start gap-3 overflow-hidden border border-separator bg-surface p-4 shadow-surface outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus data-[hovered]:bg-surface-secondary"
+                style={{ borderRadius: "var(--radius-container)" }}
+              >
+                {cardBody(item)}
+              </ListBoxItem>
+            )}
+          </Collection>
+          {"hasMore" in more && collection.isLoading ? (
+            <ListBoxLoadMoreItem isLoading>
+              <span className="flex justify-center p-3">
+                <Spinner />
+              </span>
+            </ListBoxLoadMoreItem>
+          ) : null}
+        </ListBox>
+      </Virtualizer>
     ) : (
       <ul
         aria-label={name}
@@ -120,7 +218,22 @@ export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
     );
 
   return (
-    <div className={"grid w-full min-w-0 gap-4"} data-slot={`data-view-${layout}`}>
+    <div
+      className={"grid w-full min-w-0 gap-4"}
+      data-slot={`data-view-${layout}`}
+      // Virtualised cards ask for the next page once the end is near (they scroll inside themselves).
+      onScrollCapture={(event) => {
+        const element = event.target as HTMLElement;
+        if (
+          isVirtualized &&
+          !isList &&
+          "hasMore" in more &&
+          !collection.isLoading &&
+          element.scrollTop + element.clientHeight >= element.scrollHeight - 300
+        )
+          collection.loadMore();
+      }}
+    >
       {collection.groups
         ? collection.groups.map((group) => {
             const name = `${group.key} · ${t(DATA_GRID_KEYS.ui.data_table_tools.group_count, { count: group.items.length })}`;

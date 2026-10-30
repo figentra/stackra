@@ -46,7 +46,7 @@ export default function Multiple() {
       onSortChange={setSort}
       isComparing={isComparing}
       onCompareChange={setComparing}
-      menu={["csv", "png", "table", "fullscreen", "link"]}
+      menu={["csv", "png", "svg", "table", "fullscreen", "link"]}
       data={chartDataOf({
         data: DATA,
         series,

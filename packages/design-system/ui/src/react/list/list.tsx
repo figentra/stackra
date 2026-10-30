@@ -9,14 +9,17 @@
  *          off); the Reveal sits inside the surface, so a glass surface never has an animated ancestor (ADR 0329).
  * Boundary: no styling layer of its own beyond the divider and corner utilities of the surface; the look is HeroUI's,
  *           themed by `@stackra/tokens`. It never sorts, filters or fetches. While the list selects, a row's `onPress`
- *           is not called: a row selects or acts, never both. Not built here, and not in the contract: sections,
- *           virtualisation and pull to refresh (native keeps its own scrolling list).
+ *           is not called: a row selects or acts, never both. With `isVirtualized` (web) the rows are always HeroUI's
+ *           `ListBox` under React Aria's Virtualizer: only the rows in view are drawn, a pressable row is an action (Enter
+ *           or a press), and the end loads more through React Aria's load-more row. Not built here, and not in the
+ *           contract: sections and pull to refresh (native keeps its own scrolling list).
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313 (decisions 1, 2, 4 and 5); ADR 0165
  *          (HeroUI v3 on web); WCAG 2.2 SC 4.1.2 and 4.1.3.
  */
 import type { ReactElement } from "react";
 import { ListBox } from "@heroui/react";
+import { Collection, ListBoxLoadMoreItem, ListLayout, Virtualizer } from "react-aria-components";
 
 import type { ListItemData } from "#contracts/types/list-item-data.type";
 import { keysOfSelection } from "#core/functions/keys-of-selection.function";
@@ -49,12 +52,80 @@ export function List<TItem extends ListItemData = ListItemData>({
   hasMore,
   onLoadMore,
   isAnimated = true,
+  isVirtualized = false,
+  maxHeight = "32rem",
   style,
   ...rest
 }: ListProps<TItem>): ReactElement {
   const ids = items.map((item) => item.id);
   const onReach = hasMore === true && !isLoading ? onLoadMore : undefined;
-  const marker = useEndReached(onReach, items.length);
+  const marker = useEndReached(isVirtualized ? undefined : onReach, items.length);
+  if (isVirtualized && items.length > 0)
+    return (
+      <div
+        {...rest}
+        aria-busy={isLoading}
+        style={{ inlineSize: "100%", minInlineSize: "min(24rem, 100%)", ...style }}
+        // The next page is asked for once the end of the rows is near (the list scrolls inside itself).
+        onScrollCapture={(event) => {
+          const element = event.target as HTMLElement;
+          if (onReach && element.scrollTop + element.clientHeight >= element.scrollHeight - 300)
+            onReach();
+        }}
+      >
+        <Surface
+          {...omitUndefined({ variant })}
+          className="overflow-hidden rounded-[var(--radius-container)]"
+        >
+          {/* Rows are measured as they come into view, so a row with a description takes its own height. */}
+          <Virtualizer
+            layout={ListLayout}
+            layoutOptions={{ estimatedRowHeight: 56, loaderHeight: 48 }}
+          >
+            <ListBox
+              aria-label={label}
+              selectionMode={selectionMode}
+              {...omitUndefined({ selectedKeys, defaultSelectedKeys })}
+              onSelectionChange={(selection) =>
+                onSelectionChange?.(keysOfSelection(selection, ids))
+              }
+              onAction={(key) => items.find((item) => item.id === key)?.onPress?.()}
+              className="overflow-auto p-0"
+              style={{ maxHeight }}
+            >
+              <Collection items={items}>
+                {(item) => (
+                  <ListBox.Item
+                    id={item.id}
+                    textValue={textValueOf(item)}
+                    className="rounded-none border-b border-separator px-4 py-3"
+                    {...omitUndefined({ isDisabled: item.isDisabled })}
+                    {...(item.label === undefined ? {} : { "aria-label": item.label })}
+                  >
+                    <ListItemContent
+                      title={item.title}
+                      description={item.description}
+                      startIcon={item.startIcon}
+                      endContent={item.endContent}
+                      hasChevron={item.hasChevron}
+                    />
+                    {selectionMode === "none" ? null : <ListBox.ItemIndicator />}
+                  </ListBox.Item>
+                )}
+              </Collection>
+              {hasMore === true && isLoading ? (
+                // The loading row only: the scroll asks for the page (React Aria's sentinel sits in a clipped box).
+                <ListBoxLoadMoreItem isLoading>
+                  <span className="flex justify-center p-3">
+                    <Spinner {...omitUndefined({ label: loadingLabel })} />
+                  </span>
+                </ListBoxLoadMoreItem>
+              ) : null}
+            </ListBox>
+          </Virtualizer>
+        </Surface>
+      </div>
+    );
   return (
     // A list fills its parent and keeps a floor, so a shrink-to-fit parent (a centred frame) never squeezes it to its
     // content; the floor is capped at its grid cell, so two lists side by side never overlap. Inline, so it holds

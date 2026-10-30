@@ -22,4 +22,5 @@ export const FREE_BOX_PLOT_CHART: ComponentEntry = {
   tokens: ["color.chart-ramp-1", "color.muted", "color.surface"],
   keywords: ["box plot", "box and whisker", "quartiles", "median", "outliers", "distribution"],
   status: "new",
+  advanced: true,
 };

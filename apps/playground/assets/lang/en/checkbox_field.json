@@ -1,0 +1,10 @@
+{
+  "agree": "I agree to the",
+  "terms": "terms of sale",
+  "agreed": "Thanks: you can place the order.",
+  "not_agreed": "Agree to the terms to place the order.",
+  "required": "I confirm the delivery address",
+  "required_error": "Confirm the address to continue.",
+  "disabled": "Email me the receipt",
+  "read_only": "Keep me signed in"
+}

@@ -1,0 +1,15 @@
+{
+  "stored": "Stored as",
+  "weekly": {
+    "label": "Team stand-up"
+  },
+  "monthly": {
+    "label": "Payroll report"
+  },
+  "hijri": {
+    "label": "Ramadan offer"
+  },
+  "rtl": {
+    "label": "اجتماع الفريق"
+  }
+}

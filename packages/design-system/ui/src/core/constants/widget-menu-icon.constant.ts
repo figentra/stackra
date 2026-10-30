@@ -13,6 +13,7 @@ import type { WidgetMenuAction } from "#contracts/enums/widget-menu-action.enum"
 export const WIDGET_MENU_ICON: Readonly<Record<WidgetMenuAction | "chart", IconName>> = {
   csv: "download",
   png: "image",
+  svg: "file-code",
   table: "table-2",
   chart: "chart-column",
   fullscreen: "maximize-2",

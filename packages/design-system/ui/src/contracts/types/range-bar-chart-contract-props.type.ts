@@ -9,6 +9,7 @@
 import type { ChartColor } from "#contracts/enums/chart-color.enum";
 import type { Orientation } from "#contracts/enums/orientation.enum";
 import type { ChartDatum } from "#contracts/types/chart-datum.type";
+import type { ChartEmphasis } from "#contracts/types/chart-emphasis.type";
 
 /** Props shared by the web and native `RangeBarChart`. */
 export interface RangeBarChartContractProps {
@@ -30,6 +31,8 @@ export interface RangeBarChartContractProps {
   readonly orientation?: Orientation | undefined;
   /** The bars' colour; the first step of the accent ramp by default. */
   readonly color?: ChartColor | undefined;
+  /** Which bar carries the colour while the rest stand back in its soft tone: `none` (the default), `latest` or an index. */
+  readonly emphasis?: ChartEmphasis | undefined;
   /** The plot's height in pixels; 240 by default. */
   readonly height?: number | undefined;
   /** Draws the value axis; on by default, since a floating bar is read against it. */

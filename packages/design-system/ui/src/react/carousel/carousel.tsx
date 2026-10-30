@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the web `Carousel`: a scroll-snapping row of full-width slides that people swipe, scroll or step with the
  *          previous and next buttons and the page dots; a region with the carousel role description, each slide a
- *          group named "Slide 2 of 5".
+ *          group named "Slide 2 of 5". With `thumbnails`, a strip of small pictures to press replaces the dots.
  * Boundary: native scrolling does the motion (smooth only without reduced motion); it never auto-advances, so there
  *           is nothing to pause (WCAG 2.2.2). The row follows the page direction: Arabic starts at the right.
  * Runtime: browser
@@ -16,6 +16,7 @@ import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import type { CarouselProps } from "#react/carousel/carousel.props";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { IconButton } from "#react/icon-button/icon-button";
+import { PageIndicator } from "#react/page-indicator/page-indicator";
 
 /** K: the carousel's words. */
 const K = UI_KEYS.ui.carousel;
@@ -26,6 +27,7 @@ export function Carousel({
   label,
   showDots = true,
   showArrows = true,
+  thumbnails,
   onIndexChange,
   className,
 }: CarouselProps): ReactElement {
@@ -78,7 +80,7 @@ export function Carousel({
           </div>
         ))}
       </div>
-      {showArrows || showDots ? (
+      {showArrows || showDots || thumbnails?.length ? (
         <div className="flex items-center justify-between gap-2">
           {showArrows ? (
             <IconButton
@@ -92,27 +94,42 @@ export function Carousel({
           ) : (
             <span />
           )}
-          {showDots ? (
-            <div role="group" aria-label={t(K.pages)} className="flex items-center">
+          {thumbnails?.length ? (
+            <div
+              role="group"
+              aria-label={t(K.pages)}
+              data-slot="carousel-thumbnails"
+              className="flex min-w-0 items-center gap-2 overflow-x-auto p-1 [scrollbar-width:none]"
+            >
               {Children.map(children, (_, position) => (
-                // A 24px target around the drawn dot (WCAG 2.5.8); the dot itself stays small.
                 <button
                   type="button"
                   aria-label={t(K.slide, { index: position + 1, count })}
                   aria-current={position === index ? "true" : undefined}
                   onClick={() => goTo(position)}
-                  className="group grid h-6 min-w-6 place-items-center rounded-[var(--radius-pill)] outline-none"
+                  className={cn(
+                    "size-14 shrink-0 overflow-hidden rounded-[var(--radius-control)] bg-default outline-none focus-visible:ring-2 focus-visible:ring-focus",
+                    position === index ? "ring-2 ring-accent" : "opacity-60 hover:opacity-100",
+                  )}
                 >
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "h-2 rounded-[var(--radius-pill)] transition-all group-focus-visible:ring-2 group-focus-visible:ring-focus motion-reduce:transition-none",
-                      position === index ? "w-5 bg-foreground" : "w-2 bg-default",
-                    )}
-                  />
+                  {thumbnails[position] ? (
+                    <img
+                      src={thumbnails[position]}
+                      alt=""
+                      className="block size-full object-cover"
+                    />
+                  ) : null}
                 </button>
               ))}
             </div>
+          ) : showDots ? (
+            <PageIndicator
+              count={count}
+              index={index}
+              onChange={goTo}
+              label={t(K.pages)}
+              getPageLabel={(page, total) => t(K.slide, { index: page, count: total })}
+            />
           ) : null}
           {showArrows ? (
             <IconButton
