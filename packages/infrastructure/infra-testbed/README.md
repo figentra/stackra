@@ -16,16 +16,16 @@ replaced, never repaired.
 
 ## The shape (owner answers of 2026-10-30)
 
-| Part    | Value                                                                                                                   |
-| ------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Region  | `eu-west-1`, one                                                                                                        |
-| `heavy` | on-demand `c7i.2xlarge`, min 2, max 6, slots heavy and light                                                            |
-| `light` | spot across `c7i`, `c6i`, `m7i` `.2xlarge` with capacity rebalancing, min 1, max 4, slot light                          |
-| Disks   | 40 GB gp3 root; 200 GB gp3 XFS (reflink) at `/data`; both deleted with the instance                                     |
-| Guard   | every 5 min: clean at 70%, drain at 85% or under 10 GB free on `/`; turbo cache 20 GB; seeds 7 days                     |
-| Idle    | a box above its group's minimum with no job for 60 minutes terminates itself and lowers desired                         |
-| Image   | weekly Sunday 03:00 UTC, AMI id published to SSM `/stackra/testbed/ami`                                                 |
-| Secrets | Infisical machine identity `figentra-ci-boxes` (AWS IAM auth); grants map a project to project id, environment and path |
+| Part    | Value                                                                                                                                                    |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Region  | `eu-west-1`, one                                                                                                                                         |
+| `heavy` | on-demand `c7i.2xlarge`, min 2, max 6, slots heavy and light                                                                                             |
+| `light` | spot across `c7i`, `c6i`, `m7i` `.2xlarge` with capacity rebalancing, min 1, max 4, slot light                                                           |
+| Disks   | 40 GB gp3 root; 200 GB gp3 XFS (reflink) at `/data`; both deleted with the instance                                                                      |
+| Guard   | every 5 min: clean at 70%, drain at 85% or under 10 GB free on `/`; turbo cache 20 GB; seeds 7 days                                                      |
+| Idle    | a box above its group's minimum with no job for 60 minutes terminates itself and lowers desired                                                          |
+| Image   | weekly Sunday 03:00 UTC, AMI id published to SSM `/stackra/testbed/ami`                                                                                  |
+| Secrets | the shared gate identity (`INFISICAL_GATE_IDENTITY_ID`), AWS Auth added beside its GitHub OIDC; grants map a project to project id, environment and path |
 
 ## Using it
 

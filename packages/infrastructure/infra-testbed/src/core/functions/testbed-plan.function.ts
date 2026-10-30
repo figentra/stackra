@@ -31,14 +31,13 @@ export function testbedPlan(input: TestbedPlanInput = {}): TestbedPlan {
     given.ciGateProjectId === undefined
       ? {}
       : {
-          // The paths CI reads (ci.yml): the licence tokens in /ci, the remote cache in /ci/turbo.
+          // The paths CI reads (ci.yml): the licence tokens in /ci; the remote cache in /ci/turbo only when the
+          // gate identity was given access to the turbo project (without it, jobs use the local turbo cache).
           core: [
             { projectId: given.ciGateProjectId, environment, path: "/ci" },
-            {
-              projectId: given.turboProjectId ?? given.ciGateProjectId,
-              environment,
-              path: "/ci/turbo",
-            },
+            ...(given.turboProjectId === undefined
+              ? []
+              : [{ projectId: given.turboProjectId, environment, path: "/ci/turbo" }]),
           ],
         };
 
@@ -83,7 +82,7 @@ export function testbedPlan(input: TestbedPlanInput = {}): TestbedPlan {
     },
     toolchain: { ...TOOLCHAIN_PINS },
     secretGrants: {
-      identityName: "figentra-ci-boxes",
+      identityName: "gate",
       identityId: given.identityId,
       projects: grants,
     },

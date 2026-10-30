@@ -22,11 +22,11 @@ export const TESTBED_PLAN_INPUT_SCHEMA = z
       .object({ min: COUNT.optional(), max: COUNT.min(1).optional() })
       .strict()
       .optional(),
-    /** Infisical machine identity id (`figentra-ci-boxes`), from Pulumi config. */
+    /** Infisical machine identity id: the shared gate identity (CI's INFISICAL_GATE_IDENTITY_ID), from Pulumi config. */
     identityId: z.string().min(1).optional(),
     /** Infisical project id of `figentra-ci-gate`, from Pulumi config; without it no project has a grant. */
     ciGateProjectId: z.string().min(1).optional(),
-    /** Infisical project id holding `/ci/turbo`, when it is not `figentra-ci-gate` (CI's INFISICAL_TURBO_PROJECT_ID). */
+    /** Infisical project id holding `/ci/turbo` (CI's INFISICAL_TURBO_PROJECT_ID); set only once the gate identity can read it. */
     turboProjectId: z.string().min(1).optional(),
     /** The Infisical environment slug the grants read. */
     infisicalEnvironment: z.string().min(1).optional(),

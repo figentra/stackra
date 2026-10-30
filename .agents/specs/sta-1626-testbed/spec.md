@@ -22,7 +22,7 @@ identical infrastructure in Stackra core, image-based, with a sandbox per job, s
 - **Agent files**: new skill `.agents/skills/test-infra/`
 - **Cross-service events**: none
 - **Tenancy and data**: none (no tenant data on a box)
-- **Secrets**: Infisical machine identity `figentra-ci-boxes` (AWS IAM auth), read-only on `figentra-ci-gate`; no
+- **Secrets**: the shared gate identity (`INFISICAL_GATE_IDENTITY_ID`) with AWS IAM auth added, reading `figentra-ci-gate` `/ci`; no
   value in git, on a disk, or on a command line. `~/.ci-env` retired.
 - **ADR needed**: yes, 0484 (Proposed); amends 0166 CI2
 - **New dependencies**: none in the CLI (it runs `aws`, `ssh`, `rsync`); `infra-testbed` uses `@pulumi/aws` and
@@ -92,7 +92,8 @@ Read from `~/.local/bin/ci-box` on 2026-10-30. Each row is a requirement on `sta
 
 - **Q1 Region.** eu-west-1 (cheapest EU region checked, boxes 1 and 2 already there) or another?
 - **Q2 Counts.** `heavy` on-demand min 2, max 6; `light` spot min 1, max 4. Accept, or other numbers?
-- **Q3 Infisical.** Use the fourth machine identity `figentra-ci-boxes` with AWS IAM auth, read-only on
+- **Q3 Infisical.** (Amended 2026-10-30: the owner chose the shared gate identity, with AWS Auth added, instead of a new
+  identity.) Originally: the fourth machine identity `figentra-ci-boxes` with AWS IAM auth, read-only on
   `figentra-ci-gate` (and the other products' CI projects when they join)? You make the Infisical change.
 - **Q4 AWS account.** The boxes live in the `academorix` profile's account. Keep the testbed there?
 - **Q5 Connection.** Keep SSH with the IP allowlist (no change for agents), or move to SSM Session Manager (no open

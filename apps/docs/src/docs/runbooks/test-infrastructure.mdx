@@ -24,7 +24,7 @@ tests, e2e and integration tests all run on the testbed: identical EC2 boxes, bu
 | Disks     | 40 GB root (OS and images); 200 GB XFS data volume at `/data` (jobs, seeds, pnpm store, turbo cache, Docker)            |
 | Slots     | One heavy and one light job per box. Heavy: `encore test`, `playwright`, `e2e`, `act `, `build`. Everything else: light |
 | Jobs      | A fresh container per job, workspace `/data/jobs/<id>`, read-only pnpm store, optional Postgres; all deleted after      |
-| Secrets   | Fetched per job from Infisical by the instance role (identity `figentra-ci-boxes`). There is no token file              |
+| Secrets   | Fetched per job from Infisical by the instance role (the shared gate identity). There is no token file                  |
 | Box agent | `testbed-agent` on every box: health, slots, the disk guard and the idle check                                          |
 
 ## Running work
@@ -94,8 +94,8 @@ Repeat with `stackra-testbed-light`.
 
 ## Secrets
 
-- Each box authenticates to Infisical by AWS IAM auth, as the machine identity `figentra-ci-boxes`. That is the
-  free plan's fourth identity, read-only on `figentra-ci-gate`.
+- Each box authenticates to Infisical by AWS IAM auth, as the shared gate identity (`INFISICAL_GATE_IDENTITY_ID`, the
+  one the Quality Gate uses over GitHub OIDC). AWS Auth sits beside its OIDC auth; no new identity is created.
 - At job start the agent gets a token that lives for the job's timeout. The container runs the command under
   `infisical run`. No value touches a disk, a log or a command line.
 - Which project paths a job may read is `secretGrants` in `@stackra/infra-testbed`, reviewed like code. The identity's
@@ -127,8 +127,7 @@ yes ([plan](https://github.com/figentra/stackra/tree/main/.agents/specs/sta-1626
 
 <Steps>
   <Step title="Infisical">
-    The owner creates `figentra-ci-boxes` with AWS IAM auth, bound to the testbed instance role,
-    read-only on `figentra-ci-gate`.
+    The owner adds AWS Auth to the shared gate identity, bound to the testbed instance role.
   </Step>
   <Step title="Stand up beside">
     `pulumi up` of `@stackra/infra-testbed` in eu-west-1: the image pipeline, the first AMI, `heavy`
@@ -154,13 +153,15 @@ yes ([plan](https://github.com/figentra/stackra/tree/main/.agents/specs/sta-1626
 
 Rollback before the last step: the shim still names the old boxes, and `aws ec2 start-instances` brings them back.
 
-## Step 1 in detail: the Infisical identity
+## Step 1 in detail: AWS Auth on the gate identity
 
-All of this happens in the Infisical web app (EU, `eu.infisical.com`) as the owner. No value is typed anywhere.
+The boxes use the shared gate identity, the one whose id is the GitHub variable `INFISICAL_GATE_IDENTITY_ID` and which
+the Quality Gate already uses to read `/ci` in `figentra-ci-gate`. Nothing is created; one login method is added. All of
+this happens in the Infisical web app (EU, `eu.infisical.com`) as the owner, and no value is typed anywhere.
 
-1. **Create the identity.** Organization, Access Control, Machine Identities, Create. Name it `figentra-ci-boxes`,
-   with the organization role **No Access**. Project access is granted in step 3, and nothing else is needed.
-2. **Switch its auth to AWS.** On the identity's page, remove **Universal Auth** and add **AWS Auth** with:
+1. **Open the identity.** Organization, Access Control, Machine Identities, then the gate identity. Leave its OIDC
+   auth exactly as it is: CI depends on it.
+2. **Add AWS Auth** (Authentication, Add auth method, AWS Auth) with:
 
    | Field                           | Value                                                                      |
    | ------------------------------- | -------------------------------------------------------------------------- |
@@ -172,17 +173,16 @@ All of this happens in the Infisical web app (EU, `eu.infisical.com`) as the own
    | Access Token Max Number of Uses | `0`                                                                        |
    | Access Token Trusted IPs        | leave `0.0.0.0/0` (boxes have changing public IPs)                         |
 
-   The role does not exist yet; the ARN may be added before it does. Account `591473336656` is the `academorix`
-   profile's.
+   These settings belong to the AWS Auth method only; the OIDC tokens CI gets keep their own. The role does not exist
+   yet; the ARN may be added before it does. Account `591473336656` is the `academorix` profile's.
 
-3. **Give it read access.** Open the project `figentra-ci-gate`, Access Control, Machine Identities, Add, pick
-   `figentra-ci-boxes` with the **Viewer** role. If the turbo values (`/ci/turbo`) live in another project (CI reads
-   them through `INFISICAL_TURBO_PROJECT_ID`), add the identity as Viewer there too.
-4. **Copy three ids**, none of them secret: the identity's **ID** (the identity page), the project id of
-   `figentra-ci-gate` (Project Settings), and, if it differs, the turbo project's id. They go into the Pulumi config in
-   step 2.
-
-The free plan allows four identities; this is the fourth.
+3. **Project access is already there** for `/ci` in `figentra-ci-gate`. The turbo values (`/ci/turbo`) live behind a
+   separate identity and project in CI (`INFISICAL_TURBO_IDENTITY_ID`, `INFISICAL_TURBO_PROJECT_ID`). Optional: give
+   the gate identity the **Viewer** role on that project too, and set `turboProjectId` in step 2. Without it, testbed
+   jobs use the local turbo cache only, as fork pull requests do in CI.
+4. **Copy the ids**, none of them secret: the gate identity's **ID** (the identity page, or the
+   `INFISICAL_GATE_IDENTITY_ID` variable), the project id of `figentra-ci-gate` (`INFISICAL_GATE_PROJECT_ID`), and the
+   turbo project's id if you did the optional part.
 
 ## Step 2 in detail: the first deploy
 
@@ -207,7 +207,7 @@ pulumi config set identityId <identity id> && pulumi config set ciGateProjectId 
 pulumi config set --path 'sshCidrs[0]' "$(curl -s https://checkip.amazonaws.com)/32"
 ```
 
-Add `pulumi config set turboProjectId <id>` only when the turbo values live in another project. Then the stand-up
+Add `pulumi config set turboProjectId <id>` only if you did the optional part of step 1. Then the stand-up
 counts and the first pass:
 
 ```bash
