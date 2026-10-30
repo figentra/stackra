@@ -14,8 +14,7 @@
 
 **Input**: the owner's decision, relayed by the leader on 2026-10-30. One runway.yaml declares everything a product
 needs, and Runway provisions it per environment in the product's AWS account. `resources:` are managed kinds that
-extend `@stackra/infra-aws-runtime`: postgres (RDS or Aurora) and kafka (MSK) first, opensearch, ses and others
-later. `workloads:` is a generic ECS Fargate container kind, only for servers with no managed option; the first
+extend `@stackra/infra-aws-runtime`: postgres (RDS or Aurora) first; kafka, opensearch, ses and others later. `workloads:` is a generic ECS Fargate container kind, only for servers with no managed option; the first
 planned user is self-hosted ZITADEL. Connection strings and secrets go to Infisical and are injected into the
 consumer. Sizes and cost limits per environment come from the root runway (dev small). The ADR rule is managed first,
 a workload only when nothing managed fits or residency forces it. The owner approves before any code; no
@@ -64,9 +63,6 @@ resources:
     size:
       production: large
       staging: medium # dev and preview fall back to small
-  events:
-    kind: kafka
-    reason: "Ingest from the Footbar wearable at a rate the outbox relay cannot carry"
 workloads:
   zitadel:
     image: ghcr.io/zitadel/zitadel@sha256:…
@@ -88,7 +84,7 @@ environments:
       monthly: 150 # USD, the plan's estimate cap
 ```
 
-A service member's runway names the resources it uses: `uses: [main-db, events]`. Member `requires` and root
+A service member's runway names the resources it uses: `uses: [main-db]`. Member `requires` and root
 `shared` keep working as implicit resources.
 
 ## User Scenarios & Testing _(mandatory)_
@@ -123,9 +119,8 @@ A product adds `workloads.zitadel`. The plan holds a Fargate task and service, s
 
 ## Requirements _(mandatory)_
 
-- **FR-001**: The root runway shall accept `resources.<name>` with `kind` in `postgres | kafka | queue | topic | cache
-| bucket`, kind options, a `size` per environment and an optional `reason`; `opensearch` and `ses` are reserved
-  kinds, refused until built.
+- **FR-001**: The root runway shall accept `resources.<name>` with `kind` in `postgres | queue | topic | cache | bucket`, kind options, a `size` per environment and an optional `reason`; `kafka`, `opensearch` and `ses` are
+  reserved kinds, refused until built.
 - **FR-002**: The root runway shall accept `workloads.<name>` with `image` (pinned by digest), `port`, `health`,
   `expose`, `uses`, `env`, `secrets` (names), `size` and `scale` per environment, and a required `reason`.
 - **FR-003**: A member runway and a workload shall name the resources they use (`uses`); an unknown name is refused.
@@ -137,7 +132,8 @@ A product adds `workloads.zitadel`. The plan holds a Fargate task and service, s
   any declaration.
 - **FR-007**: Postgres shall plan RDS (default) or Aurora, RDS Proxy (ADR 0473), encryption, backups (ADR 0186) and
   a security group open only to its consumers.
-- **FR-008**: Kafka shall plan MSK Serverless (default) or provisioned, with IAM auth, open only to its consumers.
+- **FR-008**: Kafka is reserved (owner, 2026-10-30): no consumer needs it, and ADR 0227 keeps it deferred until the
+  event bus (0142) meets its measured limit.
 - **FR-009**: A workload shall plan on one Fargate cluster per environment, with service discovery, an ALB when
   public, the health check, autoscaling and SSM secret references.
 - **FR-010**: Generated credentials shall be created in the CI job and written blind to Infisical under
@@ -155,9 +151,7 @@ A product adds `workloads.zitadel`. The plan holds a Fargate task and service, s
 
 ## Owner questions
 
-- **Q1: Kafka.** ADR 0227 defers Kafka "as the bus" until a measured limit. Recommended: allow `kafka` as a resource
-  kind with a required `reason`, and leave the event bus (0142) unchanged until its own trigger. What is Kafka's first
-  consumer?
+- **Q1: Kafka.** Answered 2026-10-30: not now. It stays a reserved kind, and ADR 0227's deferral stands.
 - **Q2: Postgres and Encore.** Encore Cloud creates the environment's Postgres today. Recommended: `resources.postgres`
   serves workloads and non-Encore consumers now, and Encore services keep Encore's own until the Encore deploy path
   (STA-136) settles; one server per environment (0238) is then reconciled. Alternative: Runway owns the one server and
@@ -181,12 +175,12 @@ A product adds `workloads.zitadel`. The plan holds a Fargate task and service, s
 | L1   | Runway schema: `resources`, `workloads`, `limits`, member `uses`, refines; canonical schema; implicit resources from `requires` and `shared` | —          |
 | L2   | Size catalogue and monthly estimate per kind; the cost cap check in the plan                                                                 | L1         |
 | L3   | Postgres kind: plan and Pulumi (RDS or Aurora, RDS Proxy, security group, backups), mock tests                                               | L1, L2     |
-| L4   | Kafka kind: plan and Pulumi (MSK Serverless or provisioned, IAM auth), mock tests                                                            | L1, L2     |
+| L4   | (cancelled: Kafka not needed now, Q1) Kafka kind: plan and Pulumi (MSK Serverless or provisioned, IAM auth), mock tests                      | L1, L2     |
 | L5   | Secrets: generated credentials written blind to Infisical, consumer variable names, Encore sync list and SSM parameters                      | L3         |
 | L6   | Workload construct: Fargate cluster, task, service, discovery, ALB, autoscaling, health, extracted from infra-tools into infra-aws-runtime   | L1, L2, L5 |
 | L7   | infra-tools onto the workload construct, with an unchanged plan                                                                              | L6         |
 | L8   | Docs: runbook, READMEs, AGENTS.md, ADR 0227 rows, schema docs                                                                                | L1–L6      |
-| L9   | First users, after Q1 and Q3: the ZITADEL workload in the product runway it serves; Kafka's first consumer                                   | L4, L6     |
+| L9   | First user, after Q3: the ZITADEL workload in the product runway it serves                                                                   | L4, L6     |
 
 ## Linear
 
@@ -195,3 +189,4 @@ Epic STA-1640; lanes L1 to L9 are STA-1641 to STA-1649.
 ## Status history
 
 - 2026-10-30 Draft, waiting for the owner on Q1 to Q7.
+- 2026-10-30 Q1 answered: no Kafka now; L4 cancelled.
