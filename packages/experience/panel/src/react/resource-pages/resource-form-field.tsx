@@ -343,6 +343,9 @@ function DateInput({
 /**
  * An instant, entered as a day, an hour and a minute in the viewer's own time zone (named under the title) and held as
  * the UTC ISO 8601 string (`2026-11-01T06:30:00.000Z`) every instant schema accepts.
+ *
+ * shortcut: the hour and minute are two NumberFields because @stackra/ui wraps no TimeField; STA-1668 adds one, which
+ * replaces them.
  */
 function DateTimeInput({
   name,
