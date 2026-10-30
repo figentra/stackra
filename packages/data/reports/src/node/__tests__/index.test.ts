@@ -13,6 +13,10 @@ describe("@stackra/reports/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "EngineReportRunnerDriver",
+      "ForecastQueryInvalidError",
+      "ForecastUnavailableError",
+      "HttpForecasterDriver",
+      "MemoryForecasterDriver",
       "PostgresReportEngineDriver",
       "PosthogProductAnalyticsDriver",
       "ProductAnalyticsQueryInvalidError",

@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/reports until `stackra gen` writes the entry barrels
  *          (STA-339): the engine report runner (`EngineReportRunnerDriver`, the `ReportRunner` driver), the Postgres
  *          report engine (`PostgresReportEngineDriver`, the report compiler), the PostHog product analytics
- *          driver (`PosthogProductAnalyticsDriver`, funnels, retention and cohorts), their configuration, the source
+ *          driver (`PosthogProductAnalyticsDriver`, funnels, retention and cohorts), the `Forecaster` drivers
+ *          (`HttpForecasterDriver`, `MemoryForecasterDriver`), their configuration, the source
  *          registration generated wiring calls, and the refusals.
  * Boundary: names each re-export and declares nothing. Node only: the driver reaches the database.
  * Runtime: node
@@ -13,8 +14,12 @@
 export { ReportsConfig } from "#node/config/reports.config";
 export { REPORTS_CONFIG_SCHEMA as ReportsConfig$ } from "#node/constants/reports-config-schema.constant";
 export { EngineReportRunnerDriver } from "#node/drivers/engine-report-runner.driver";
+export { HttpForecasterDriver } from "#node/drivers/http-forecaster.driver";
+export { MemoryForecasterDriver } from "#node/drivers/memory-forecaster.driver";
 export { PosthogProductAnalyticsDriver } from "#node/drivers/posthog-product-analytics.driver";
 export { PostgresReportEngineDriver } from "#node/drivers/postgres-report-engine.driver";
+export { ForecastQueryInvalidError } from "#node/errors/forecast-query-invalid.error";
+export { ForecastUnavailableError } from "#node/errors/forecast-unavailable.error";
 export { ProductAnalyticsQueryInvalidError } from "#node/errors/product-analytics-query-invalid.error";
 export { ProductAnalyticsScopeMissingError } from "#node/errors/product-analytics-scope-missing.error";
 export { ProductAnalyticsUnavailableError } from "#node/errors/product-analytics-unavailable.error";

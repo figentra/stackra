@@ -9,7 +9,8 @@
  *          package-cycle check (`package-cycles.mjs`) and the architecture map drift check (`architecture-map.mjs`, its candidate in apps/docs
  *          `scripts/architecture-map`), STA-1373, the duplicate-export check (`duplicate-exports.mjs`, stackra-224, its
  *          PENDING list shrink-only since stackra-229) and the `no-explicit-any` disable ratchet (`any-ratchet.mjs`,
- *          rule-gap N-5, stackra-229) and the Expo app native-dependency check (`app-native-deps.mjs`, STA-1544).
+ *          rule-gap N-5, stackra-229), the Expo app native-dependency check (`app-native-deps.mjs`, STA-1544) and the
+ *          Python placement check (`python-placement.mjs`, ADR 0492 decision 7, STA-1637).
  *          Prints the findings as `<dir>: <finding>` and exits 1; prints nothing on success.
  * Boundary: a thin wrapper; the checks themselves are @stackra/repo-checks'.
  * Runtime: node
@@ -24,6 +25,7 @@ import { appNativeDependencyFindings } from "./app-native-deps.mjs";
 import { architectureMapFindings } from "./architecture-map.mjs";
 import { duplicateExportFindings } from "./duplicate-exports.mjs";
 import { packageCycleFindings } from "./package-cycles.mjs";
+import { pythonPlacementFindings } from "./python-placement.mjs";
 import { checks } from "./repo-checks.mjs";
 
 export const {
@@ -71,6 +73,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ...duplicateExportFindings(ROOT),
     ...anyRatchetFindings(ROOT),
     ...architectureMapFindings(ROOT),
+    ...pythonPlacementFindings(ROOT),
   ];
   for (const { dir, text } of findings) console.error(`${dir || "."}: ${text}`);
   if (findings.length) {

@@ -37,15 +37,20 @@ export const endpoints = tools.endpoints;
 
 ## The tools
 
-| Key               | Default                                       | Provider category      | Keeps data                   |
-| ----------------- | --------------------------------------------- | ---------------------- | ---------------------------- |
-| `documenso`       | `documenso/documenso` (unmodified, AGPL)      | `e-signature`          | no (shared Postgres)         |
-| `ocr`             | `images/ocr` (PaddleOCR; Surya by `provider`) | `ocr`                  | no                           |
-| `nominatim`       | `mediagis/nominatim` on the region's extract  | `geocoding`            | yes (EBS)                    |
-| `photon`          | `images/photon`, imported from Nominatim      | `address-autocomplete` | yes (EFS)                    |
-| `libretranslate`  | `libretranslate/libretranslate`               | `translation`          | yes (models, EFS)            |
-| `chatwoot`        | `chatwoot/chatwoot` (headless, our screens)   | `help-desk`            | no (shared Postgres, Valkey) |
-| `chatwoot-worker` | Chatwoot's image running Sidekiq              | none                   | no                           |
+| Key                | Default                                       | Provider category      | Keeps data                    |
+| ------------------ | --------------------------------------------- | ---------------------- | ----------------------------- |
+| `documenso`        | `documenso/documenso` (unmodified, AGPL)      | `e-signature`          | no (shared Postgres)          |
+| `ocr`              | `images/ocr` (PaddleOCR; Surya by `provider`) | `ocr`                  | no                            |
+| `nominatim`        | `mediagis/nominatim` on the region's extract  | `geocoding`            | yes (EBS)                     |
+| `photon`           | `images/photon`, imported from Nominatim      | `address-autocomplete` | yes (EFS)                     |
+| `libretranslate`   | `libretranslate/libretranslate`               | `translation`          | yes (models, EFS)             |
+| `chatwoot`         | `chatwoot/chatwoot` (headless, our screens)   | `help-desk`            | no (shared Postgres, Valkey)  |
+| `chatwoot-worker`  | Chatwoot's image running Sidekiq              | none                   | no                            |
+| `retrieval-embed`  | Hugging Face TEI, `BAAI/bge-m3` (GPU)         | `embedder`             | no                            |
+| `retrieval-rerank` | Hugging Face TEI, `BAAI/bge-reranker-v2-m3`   | `reranker`             | no                            |
+| `forecast`         | `images/forecast` (StatsForecast, CPU)        | `forecaster`           | no                            |
+| `recommend`        | `images/recommend` (`implicit` ALS, CPU)      | `recommender`          | yes (EFS), **off by default** |
+| `speech`           | `images/speech` (faster-whisper, GPU)         | `speech`               | no, **off by default**        |
 
 Disabling Chatwoot disables its worker, its database and the Valkey. Photon reads Nominatim's database, so disabling
 Nominatim alone fails the plan. An environment value may hold `{namespace}` (Photon's `NOMINATIM_HOST`).
@@ -55,16 +60,20 @@ Nominatim alone fails the plan. An environment value may hold `{namespace}` (Pho
 Checked against their registries on 2026-10-27; each tag is at least two weeks old. The stackra-154 tags (Documenso
 v1.9.0, Nominatim 4.5, LibreTranslate v1.6.2, Chatwoot v4.1.0) were far behind and were replaced. None has run yet.
 
-| Tool             | Image                                        | Notes                                                         |
-| ---------------- | -------------------------------------------- | ------------------------------------------------------------- |
-| `documenso`      | `documenso/documenso:v2.20.0`                | v2 env names checked against its `.env.example`               |
-| `ocr`            | `ghcr.io/figentra/tools-ocr:1.0.0-paddleocr` | built from `images/ocr` (`ENGINE=paddleocr`), not yet pushed  |
-| `ocr` (surya)    | `ghcr.io/figentra/tools-ocr:1.0.0-surya`     | `ENGINE=surya`; weights licence limits use above USD 2M       |
-| `nominatim`      | `mediagis/nominatim:5.3.2`                   | Postgres 16 data path unchanged                               |
-| `photon`         | `ghcr.io/figentra/tools-photon:1.3.0`        | built from `images/photon` (Photon 1.3.0 jar), not yet pushed |
-| `libretranslate` | `libretranslate/libretranslate:v1.9.6`       |                                                               |
-| `chatwoot`       | `chatwoot/chatwoot:v4.18.0`                  | needs `pg_trgm`, `pgcrypto`, `pg_stat_statements`, `vector`   |
-| database task    | `postgres:17.6-alpine`                       | psql only                                                     |
+| Tool             | Image                                                    | Notes                                                                                                              |
+| ---------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `documenso`      | `documenso/documenso:v2.20.0`                            | v2 env names checked against its `.env.example`                                                                    |
+| `ocr`            | `ghcr.io/figentra/tools-ocr:1.0.0-paddleocr`             | built from `images/ocr` (`ENGINE=paddleocr`), not yet pushed                                                       |
+| `ocr` (surya)    | `ghcr.io/figentra/tools-ocr:1.0.0-surya`                 | `ENGINE=surya`; weights licence limits use above USD 2M                                                            |
+| `nominatim`      | `mediagis/nominatim:5.3.2`                               | Postgres 16 data path unchanged                                                                                    |
+| `photon`         | `ghcr.io/figentra/tools-photon:1.3.0`                    | built from `images/photon` (Photon 1.3.0 jar), not yet pushed                                                      |
+| `libretranslate` | `libretranslate/libretranslate:v1.9.6`                   |                                                                                                                    |
+| `retrieval-*`    | `ghcr.io/huggingface/text-embeddings-inference:89-1.9.4` | verified 2026-10-30: built 2026-09-15; the `89-` build is for Ada GPUs (the L4 of g6); models pinned by `REVISION` |
+| `forecast`       | `ghcr.io/figentra/tools-forecast:1.0.0`                  | built from `images/forecast` (StatsForecast 2.1.1), not yet pushed                                                 |
+| `recommend`      | `ghcr.io/figentra/tools-recommend:1.0.0`                 | built from `images/recommend` (implicit 0.7.3), not yet pushed                                                     |
+| `speech`         | `ghcr.io/figentra/tools-speech:1.0.0`                    | built from `images/speech` (faster-whisper 1.2.1, `large-v3` revision `edaa852e`), not yet pushed                  |
+| `chatwoot`       | `chatwoot/chatwoot:v4.18.0`                              | needs `pg_trgm`, `pgcrypto`, `pg_stat_statements`, `vector`                                                        |
+| database task    | `postgres:17.6-alpine`                                   | psql only                                                                                                          |
 
 ## The images Figentra builds
 
@@ -74,7 +83,37 @@ v1.9.0, Nominatim 4.5, LibreTranslate v1.6.2, Chatwoot v4.1.0) were far behind a
 - `images/photon`: on first start, imports from the region's Nominatim (`nominatim.<namespace>:5432`, the
   `NOMINATIM_PASSWORD` parameter) into its volume, then serves on 2322.
 
-CI builds and pushes both to GHCR; that workflow is not in this package.
+- `images/forecast`: `POST /forecast {series: [{id, timestamps, values}], horizon, frequency: H|D|W|M, models?}` returns
+  `[{id, model, timestamps, mean, lo80, hi80}]`. AutoETS and AutoARIMA by default, CrostonOptimized for an intermittent
+  series (half its values zero); a model that cannot fit a series leaves no row for it. `HttpForecasterDriver` of
+  `@stackra/reports` calls it. Tests: `images/forecast/__tests__/test_server.py` with a stub engine.
+- `images/recommend`: `POST /train {tenant, interactions: [{user, item, weight}]}` and
+  `POST /recommend {tenant, item, kind: similar|bought_together, limit}` returning `[{id, score}]`. One `implicit` ALS
+  model per tenant, in memory and under `/models/<tenant>` on the EFS volume. Off by default. Tests:
+  `images/recommend/__tests__/test_server.py`.
+- `images/speech`: faster-whisper `large-v3`, recognition only, zero retention. Its contract is
+  `.agents/specs/sta-1629-ai-everywhere/contracts/tools-speech.md` (see `images/speech/README.md`); OS integrations
+  writes the speech Connection driver, not this package. Off by default.
+- `retrieval-embed` and `retrieval-rerank` run Hugging Face's text-embeddings-inference unmodified (Apache-2.0; one
+  model per instance), each on its own GPU. They are tools, not images built here.
+
+Image licences: TEI Apache-2.0, StatsForecast Apache-2.0, implicit MIT, faster-whisper MIT; models bge-m3 MIT,
+bge-reranker-v2-m3 Apache-2.0, Whisper large-v3 MIT. Python lives only under `images/` (`pnpm validate`, ADR 0492
+decision 7).
+
+CI builds and pushes the images to GHCR; that workflow is not in this package.
+
+## GPU tools
+
+A tool with `gpu: true` (`retrieval-embed`, `retrieval-rerank`, `speech`) runs on an ECS capacity provider of GPU
+instances in the region's cluster, not on Fargate. Per GPU instance type (`instanceType`, default `g6.xlarge`: one
+NVIDIA L4) the stack declares a launch template on the ECS GPU-optimised Amazon Linux 2023 image (read by its public SSM
+parameter), an Auto Scaling group that starts at zero and grows to the sum of its tools' `replicas`, and the capacity
+provider with managed scaling. Each task asks for one GPU, so **one GPU instance runs per replica**. Per region with the
+defaults that is two `g6.xlarge` (embed and rerank), three when `speech` is enabled: an owner cost line per region
+(ADR 0492 consequences). Instances have no public address and need IMDSv2. shortcut: managed termination protection is
+off, so a scale-in may stop a running task. The plan's `ToolPlan.gpu` carries the instance type; a runway override of
+`providers.tools.tools.<key>.instanceType` changes it.
 
 ## Data on EBS
 
@@ -142,7 +181,7 @@ The regions are the environment's `regions`, each defined under the root `region
 An AWS provider pinned to the region and its account, an ECS cluster, the private DNS namespace
 `<region>.tools.<project>.internal`, one log group, the task execution role (it reads only the parameters under the
 stack's secret path), an encrypted EFS file system with one access point per tool that keeps data on EFS, an EC2
-instance and EBS disk per tool that keeps data on EBS, the Valkey, the database task, the Infisical sync role, and per
+instance and EBS disk per tool that keeps data on EBS, a GPU capacity provider per GPU instance type, the Valkey, the database task, the Infisical sync role, and per
 tool a task definition and service with no public address. A tool with an endpoint is registered in the namespace, so
 it answers at `http://<tool>.<region>.tools.<project>.internal:<port>` inside the VPC.
 

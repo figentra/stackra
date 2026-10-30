@@ -3,16 +3,18 @@
  * Purpose: `REPORTS_CONFIG_SCHEMA`, the zod schema of the report runner's configuration (`ReportsConfig$`): the page
  *          size when a request names none, the row cap (the most groups one run reads), the statement timeout and
  *          whether runs go to the read replica, the report engine runs execute on (`postgres`), and the product
- *          analytics driver (`posthog`) with the PostHog project it queries.
+ *          analytics driver (`posthog`) with the PostHog project it queries, and the forecaster driver (`http`, or
+ *          `memory`) with the forecast service it calls.
  * Boundary: the stand-in for what gen will write for this package. Defaults only; a host or runway layer overrides them.
  * Runtime: isomorphic
  * Governing contract: ADR 0363 (configuration, not code); ADR 0470 (decision 3: replica by default, timeout, row cap;
  *                     decision 8: the engine is configuration); ADR 0163 (decision 5 as amended 2026-10-28); ADR 0173 (a
- *                     credential is a secret name, never a value).
+ *                     credential is a secret name, never a value); ADR 0492 (decision 8).
  */
 import { Duration } from "@stackra/contracts";
 import { z } from "zod";
 
+import { FORECASTER_DRIVERS } from "#node/constants/forecaster-drivers.constant";
 import { PRODUCT_ANALYTICS_DRIVERS } from "#node/constants/product-analytics-drivers.constant";
 import { REPORT_ENGINES } from "#node/constants/report-engines.constant";
 
@@ -37,6 +39,17 @@ export const REPORTS_CONFIG_SCHEMA = z.object({
   replica: z.boolean().default(true),
   engine: z.enum(REPORT_ENGINES).default("postgres"),
   productAnalytics: z.enum(PRODUCT_ANALYTICS_DRIVERS).default("posthog"),
+  forecaster: z.enum(FORECASTER_DRIVERS).default("http"),
+  forecast: z
+    .object({
+      baseUrl: z.url().nullable().default(null),
+      tokenSecret: z
+        .string()
+        .regex(/^[A-Z][A-Z0-9_]*$/)
+        .nullable()
+        .default(null),
+    })
+    .default(() => ({ baseUrl: null, tokenSecret: null })),
   posthog: z
     .object({
       host: z.url().default("https://eu.posthog.com"),

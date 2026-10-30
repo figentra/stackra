@@ -16,6 +16,20 @@
   "permissions": [],
   "errors": [
     {
+      "code": "forecast_query_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "reports",
+      "class": "ForecastQueryInvalidError"
+    },
+    {
+      "code": "forecast_unavailable",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "reports",
+      "class": "ForecastUnavailableError"
+    },
+    {
       "code": "product_analytics_query_invalid",
       "kind": "validation",
       "category": "validation",
@@ -138,6 +152,41 @@
         }
       },
       "selectedBy": "config:reports.productAnalytics",
+      "config": {
+        "class": "ReportsConfig",
+        "from": "@stackra/reports/node"
+      }
+    },
+    {
+      "port": "Forecaster",
+      "key": "reports.Forecaster",
+      "candidates": ["http", "memory"],
+      "classes": {
+        "http": {
+          "class": "HttpForecasterDriver",
+          "from": "@stackra/reports/node",
+          "deps": [
+            {
+              "class": {
+                "name": "ReportsConfig",
+                "from": "@stackra/reports/node"
+              }
+            },
+            {
+              "class": {
+                "name": "SecretStore",
+                "from": "@stackra/config/contracts"
+              }
+            }
+          ]
+        },
+        "memory": {
+          "class": "MemoryForecasterDriver",
+          "from": "@stackra/reports/node",
+          "deps": []
+        }
+      },
+      "selectedBy": "config:reports.forecaster",
       "config": {
         "class": "ReportsConfig",
         "from": "@stackra/reports/node"

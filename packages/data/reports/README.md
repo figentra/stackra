@@ -123,6 +123,31 @@ never carrying the key or the reply body).
 | `PosthogProductAnalyticsDriver` (`./node`)                                         | the `posthog` driver                               |
 | `ProductAnalyticsQueryInvalidError`, `...ScopeMissingError`, `...UnavailableError` | `validation`, `failed precondition`, `unavailable` |
 
+## Forecasts (`Forecaster`)
+
+`Forecaster` (`reports.Forecaster`, in `./contracts`) forecasts batches of series, such as demand per item and location
+(ADR 0492 decision 8). `forecast({ series: [{ id, timestamps, values }], horizon, frequency: "H"|"D"|"W"|"M", models? })`
+returns one `{ id, model, timestamps, mean, lo80, hi80 }` row per series and model: AutoETS and AutoARIMA by default,
+`CrostonOptimized` for an intermittent series. Forecasts run as scheduled jobs in the owning service, which stores the rows
+as records; the port stores nothing. Which driver runs is `ReportsConfig.forecaster`.
+
+`HttpForecasterDriver` (`http`, `./node`) posts the query to `<reports.forecast.baseUrl>/forecast`, the `forecast` tool of
+the regional tools stack (`@stackra/infra-tools`). The image sits in the private namespace and takes no token; when
+`reports.forecast.tokenSecret` names a secret, its value is read from `SecretStore` at call time and sent as a bearer
+token, never logged or put in an error. `MemoryForecasterDriver` (`memory`) carries the last value forward with a band,
+for tests and local hosts. A malformed query (horizon outside 1 to 366, an unknown frequency or model, more than 5000
+series, a duplicate id, fewer than three points, a non-finite value) is `ForecastQueryInvalidError` before any request;
+an unconfigured service, unbound token, unreachable service, error status or misshapen reply is
+`ForecastUnavailableError` (retryable).
+
+| Symbol                                                      | Use                                    |
+| ----------------------------------------------------------- | -------------------------------------- |
+| `Forecaster` (`./contracts`)                                | the port                               |
+| `ForecastQuery`, `ForecastSeries`, `ForecastRow`            | the batch asked and the rows answered  |
+| `ForecastFrequency`, `ForecastModel`                        | the steps and models the image accepts |
+| `HttpForecasterDriver`, `MemoryForecasterDriver` (`./node`) | the `http` and `memory` drivers        |
+| `ForecastQueryInvalidError`, `ForecastUnavailableError`     | `validation`, `unavailable`            |
+
 ## Column visibility
 
 A dimension or measure may carry a `permission` (a `Permissions` static) and a `dataClass` (a `DataClassification`

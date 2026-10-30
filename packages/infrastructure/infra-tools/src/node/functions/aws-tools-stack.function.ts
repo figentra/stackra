@@ -4,7 +4,9 @@
  *          self-hosted tools stack from a `ToolsStackPlan`: an AWS provider pinned to the region and its account, an
  *          ECS cluster, a private DNS namespace in the region's VPC, one log group, the task execution role (reads only
  *          the stack's own parameters), an encrypted EFS file system for the tools that keep data there, one EC2
- *          instance with an encrypted EBS disk per tool that keeps data on EBS (Nominatim's Postgres), a Valkey
+ *          instance with an encrypted EBS disk per tool that keeps data on EBS (Nominatim's Postgres), a GPU capacity
+ *          provider per GPU instance type (launch template on the ECS GPU-optimised image, an Auto Scaling group from
+ *          zero, one GPU per task) for the tools flagged `gpu`, a Valkey
  *          replication group when a tool reads a cache URL, the one-shot task that creates the tools' databases on
  *          the shared Postgres server, the role Infisical assumes to sync the parameters, and per tool a task
  *          definition and service, registered in the namespace when it serves an endpoint.
@@ -36,6 +38,13 @@ const INSTANCE_POLICY = "arn:aws:iam::aws:policy/service-role/AmazonEC2Container
 /** The current ECS-optimised Amazon Linux 2023 image, published by AWS as a public parameter. */
 const ECS_AMI_PARAMETER = "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id";
 
+/** The ECS-optimised GPU image (NVIDIA drivers and container runtime), published by AWS as a public parameter. */
+const ECS_GPU_AMI_PARAMETER =
+  "/aws/service/ecs/optimized-ami/amazon-linux-2023/gpu/recommended/image_id";
+
+/** The root disk of a GPU instance in GiB: the CUDA images and model downloads need more than the AMI's 30. */
+const GPU_ROOT_DISK_GB = 100;
+
 /** The pinned Postgres client image the database task runs. */
 const POSTGRES_CLIENT_IMAGE = "postgres:17.6-alpine";
 
@@ -51,6 +60,11 @@ const TOOL_ATTRIBUTE = "stackra.tool";
 /** The parameter folder of `parameter` (`/a/b/NAME` to `/a/b`). */
 function folderOf(parameter: string): string {
   return parameter.slice(0, parameter.lastIndexOf("/"));
+}
+
+/** Whether `tool` runs on the GPU capacity provider. */
+function onGpu(tool: ToolPlan): boolean {
+  return tool.gpu !== undefined;
 }
 
 /** Whether `tool` keeps its volume on an EC2 instance's EBS disk. */
@@ -249,8 +263,9 @@ export function awsToolsStack(
         );
 
   const anyEbs = region.tools.some(onEbs);
+  const gpuTypes = [...new Set(region.tools.flatMap((tool) => tool.gpu?.instanceType ?? []))];
   let instanceProfile: aws.iam.InstanceProfile | undefined;
-  if (anyEbs) {
+  if (anyEbs || gpuTypes.length > 0) {
     const instanceRole = new aws.iam.Role(
       `${prefix}-instance`,
       { name: `${prefix}-instance`, assumeRolePolicy: assumedBy("ec2.amazonaws.com") },
@@ -275,6 +290,83 @@ export function awsToolsStack(
   const ami = anyEbs
     ? aws.ssm.getParameterOutput({ name: ECS_AMI_PARAMETER }, opts).value
     : undefined;
+
+  // One capacity provider per GPU instance type: an Auto Scaling group from zero that ECS grows when a GPU task
+  // waits, one instance per GPU task (a g6.xlarge has one GPU). shortcut: managed termination protection is off, so
+  // a scale-in may stop a running task; turn it on (and protect scale-in) when a GPU task must never be interrupted.
+  const gpuAmi =
+    gpuTypes.length === 0
+      ? undefined
+      : aws.ssm.getParameterOutput({ name: ECS_GPU_AMI_PARAMETER }, opts).value;
+  const gpuProviders = new Map<string, aws.ecs.CapacityProvider>();
+  for (const instanceType of gpuTypes) {
+    const slug = instanceType.replaceAll(".", "-");
+    const name = `${prefix}-gpu-${slug}`;
+    const tasks = region.tools
+      .filter((tool) => tool.gpu?.instanceType === instanceType)
+      .reduce((total, tool) => total + tool.replicas, 0);
+    const template = new aws.ec2.LaunchTemplate(
+      name,
+      {
+        name,
+        imageId: gpuAmi ?? "",
+        instanceType,
+        iamInstanceProfile: { name: instanceProfile?.name ?? "" },
+        vpcSecurityGroupIds: securityGroups,
+        metadataOptions: { httpTokens: "required" },
+        blockDeviceMappings: [
+          {
+            deviceName: "/dev/xvda",
+            ebs: { volumeSize: GPU_ROOT_DISK_GB, volumeType: "gp3", encrypted: "true" },
+          },
+        ],
+        userData: cluster.name.apply((clusterName) =>
+          Buffer.from(
+            `#!/bin/bash\necho "ECS_CLUSTER=${clusterName}" >> /etc/ecs/ecs.config\n`,
+          ).toString("base64"),
+        ),
+      },
+      opts,
+    );
+    const group = new aws.autoscaling.Group(
+      name,
+      {
+        name,
+        minSize: 0,
+        maxSize: tasks,
+        vpcZoneIdentifiers: subnets,
+        launchTemplate: { id: template.id, version: "$Latest" },
+        tags: [{ key: "AmazonECSManaged", value: "true", propagateAtLaunch: true }],
+      },
+      opts,
+    );
+    gpuProviders.set(
+      instanceType,
+      new aws.ecs.CapacityProvider(
+        name,
+        {
+          name,
+          autoScalingGroupProvider: {
+            autoScalingGroupArn: group.arn,
+            managedScaling: { status: "ENABLED", targetCapacity: 100 },
+            managedTerminationProtection: "DISABLED",
+          },
+        },
+        opts,
+      ),
+    );
+  }
+  const clusterProviders =
+    gpuProviders.size === 0
+      ? undefined
+      : new aws.ecs.ClusterCapacityProviders(
+          prefix,
+          {
+            clusterName: cluster.name,
+            capacityProviders: [...gpuProviders.values()].map((capacity) => capacity.name),
+          },
+          opts,
+        );
 
   let cacheAddress: pulumi.Output<string> | undefined;
   if (region.cache !== undefined) {
@@ -392,6 +484,7 @@ echo 'ECS_INSTANCE_ATTRIBUTES={"${TOOL_ATTRIBUTE}":"${tool.key}"}' >> /etc/ecs/e
           : [{ name: tool.cacheVariable, value: cacheUrl }]),
       ],
       secrets: tool.secrets.map((secret) => ({ name: secret.name, valueFrom: secret.parameter })),
+      ...(onGpu(tool) ? { resourceRequirements: [{ type: "GPU", value: "1" }] } : {}),
       mountPoints:
         tool.volume === undefined ? [] : [{ sourceVolume: "data", containerPath: tool.volume }],
       logConfiguration: logging(tool.key),
@@ -414,7 +507,7 @@ echo 'ECS_INSTANCE_ATTRIBUTES={"${TOOL_ATTRIBUTE}":"${tool.key}"}' >> /etc/ecs/e
       {
         family: tool.name,
         networkMode: "awsvpc",
-        requiresCompatibilities: [instance === undefined ? "FARGATE" : "EC2"],
+        requiresCompatibilities: [instance === undefined && !onGpu(tool) ? "FARGATE" : "EC2"],
         cpu: String(tool.cpu),
         memory: String(tool.memoryMb),
         executionRoleArn: executionRole.arn,
@@ -444,6 +537,8 @@ echo 'ECS_INSTANCE_ATTRIBUTES={"${TOOL_ATTRIBUTE}":"${tool.key}"}' >> /etc/ecs/e
             opts,
           );
 
+    const gpuProvider =
+      tool.gpu === undefined ? undefined : gpuProviders.get(tool.gpu.instanceType);
     const service = new aws.ecs.Service(
       tool.name,
       {
@@ -451,12 +546,14 @@ echo 'ECS_INSTANCE_ATTRIBUTES={"${TOOL_ATTRIBUTE}":"${tool.key}"}' >> /etc/ecs/e
         cluster: cluster.arn,
         taskDefinition: task.arn,
         desiredCount: tool.replicas,
-        launchType: instance === undefined ? "FARGATE" : "EC2",
+        ...(gpuProvider === undefined
+          ? { launchType: instance === undefined ? "FARGATE" : "EC2" }
+          : { capacityProviderStrategies: [{ capacityProvider: gpuProvider.name, weight: 1 }] }),
         // A public address is a Fargate-only setting; an EC2 task never gets one.
         networkConfiguration:
-          instance === undefined
+          instance === undefined && gpuProvider === undefined
             ? { subnets, securityGroups, assignPublicIp: false }
-            : { subnets: [firstSubnet], securityGroups },
+            : { subnets: gpuProvider === undefined ? [firstSubnet] : subnets, securityGroups },
         placementConstraints:
           instance === undefined
             ? undefined
@@ -464,7 +561,15 @@ echo 'ECS_INSTANCE_ATTRIBUTES={"${TOOL_ATTRIBUTE}":"${tool.key}"}' >> /etc/ecs/e
         serviceRegistries: registry === undefined ? undefined : { registryArn: registry.arn },
         deploymentCircuitBreaker: { enable: true, rollback: true },
       },
-      { ...opts, dependsOn: instance === undefined ? mountTargets : [instance] },
+      {
+        ...opts,
+        dependsOn: [
+          ...(instance === undefined ? mountTargets : [instance]),
+          ...(gpuProvider === undefined || clusterProviders === undefined
+            ? []
+            : [clusterProviders]),
+        ],
+      },
     );
     services[tool.key] = service.id;
   }

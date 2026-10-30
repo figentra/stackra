@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `ReportsOptions`, the shape of `ReportsConfig`: the default page size, the row cap, the statement timeout
  *          whether report runs go to the read replica, which `ReportEngine` driver runs them, and which
- *          `ProductAnalytics` driver computes funnels, retention and cohorts, with the PostHog project it reads.
+ *          `ProductAnalytics` driver computes funnels, retention and cohorts, with the PostHog project it reads, and which
+ *          `Forecaster` driver forecasts series, with the forecast service it calls.
  * Boundary: a schema class over `REPORTS_CONFIG_SCHEMA`; its initializers equal the shipped defaults (tested).
  * Runtime: isomorphic
  * Governing contract: ADR 0363; ADR 0470 (decisions 3 and 8); ADR 0163 (decision 5 as amended 2026-10-28); ADR 0173; ADR 0095 as amended by ADR 0294.
@@ -12,6 +13,7 @@ import type { DriverName } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import { Field, Int, registerSchemas, Schema } from "@stackra/validation";
 
+import type { Forecaster } from "#contracts/ports/forecaster.port";
 import type { ProductAnalytics } from "#contracts/ports/product-analytics.port";
 import type { ReportEngine } from "#contracts/ports/report-engine.port";
 import { REPORTS_CONFIG_SCHEMA } from "#node/constants/reports-config-schema.constant";
@@ -67,11 +69,27 @@ export class ReportsOptions extends Schema {
     scopeProperty: "scope_id",
   };
 
+  /**
+   * The forecast service the `http` forecaster driver calls. No credential is a field: `tokenSecret` names the runtime
+   * secret of an optional bearer token (ADR 0173).
+   */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(REPORTS_CONFIG_SCHEMA.shape.forecast)
+  forecast: {
+    /** The `forecast` tool's endpoint (`http://forecast.<region>.tools.<project>.internal:8080`); `null` while none. */
+    baseUrl: string | null;
+    /** The secret holding an optional bearer token, read through `SecretStore`; `null` when the service takes none. */
+    tokenSecret: string | null;
+  } = { baseUrl: null, tokenSecret: null };
+
   /** The `ReportEngine` driver runs execute on: `postgres`; the Pro OLAP engines join with stackra-417. */
   engine: DriverName<ReportEngine> = "postgres";
 
   /** The `ProductAnalytics` driver funnels, retention and cohorts run on: `posthog`. */
   productAnalytics: DriverName<ProductAnalytics> = "posthog";
+
+  /** The `Forecaster` driver forecasts run on: `http` (the `tools-forecast` image) or `memory`. */
+  forecaster: DriverName<Forecaster> = "http";
 }
 
 registerSchemas([[ReportsOptions, REPORTS_CONFIG_SCHEMA]]);

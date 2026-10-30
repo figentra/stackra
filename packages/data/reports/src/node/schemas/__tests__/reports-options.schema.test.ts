@@ -12,6 +12,7 @@ import { Duration } from "@stackra/contracts";
 import type { DriverName } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
+import type { Forecaster } from "#contracts/ports/forecaster.port";
 import type { ProductAnalytics } from "#contracts/ports/product-analytics.port";
 import type { ReportEngine } from "#contracts/ports/report-engine.port";
 
@@ -28,6 +29,8 @@ describe(ReportsOptions, () => {
       replica: options.replica,
       engine: options.engine,
       productAnalytics: options.productAnalytics,
+      forecaster: options.forecaster,
+      forecast: options.forecast,
       posthog: options.posthog,
     });
   });
@@ -42,6 +45,24 @@ describe(ReportsOptions, () => {
     expect(new ReportsOptions().engine).toBe("postgres");
     expect(REPORTS_CONFIG_SCHEMA.safeParse({ engine: "clickhouse" }).success).toBe(false);
     expectTypeOf<DriverName<ReportEngine>>().toEqualTypeOf<"postgres">();
+  });
+
+  it("selects a shipped forecaster driver and checks the forecast settings", () => {
+    expect(new ReportsOptions().forecaster).toBe("http");
+    expectTypeOf<DriverName<Forecaster>>().toEqualTypeOf<"http" | "memory">();
+    expect(REPORTS_CONFIG_SCHEMA.safeParse({ forecaster: "prophet" }).success).toBe(false);
+    expect(REPORTS_CONFIG_SCHEMA.parse({}).forecast).toEqual({ baseUrl: null, tokenSecret: null });
+    const forecast = {
+      baseUrl: "http://forecast.gcc.tools.acme.internal:8080",
+      tokenSecret: "FORECAST_TOKEN",
+    };
+    expect(REPORTS_CONFIG_SCHEMA.parse({ forecast }).forecast).toEqual(forecast);
+    expect(REPORTS_CONFIG_SCHEMA.safeParse({ forecast: { baseUrl: "no url" } }).success).toBe(
+      false,
+    );
+    expect(REPORTS_CONFIG_SCHEMA.safeParse({ forecast: { tokenSecret: "lower" } }).success).toBe(
+      false,
+    );
   });
 
   it("selects a shipped product analytics driver and checks the PostHog settings", () => {

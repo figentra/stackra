@@ -4,7 +4,8 @@
  *          each region the environment lists (when `providers.tools.environments` includes it), every enabled tool of
  *          the catalogue with the runway's overrides (the image chosen by provider, `{namespace}` filled in), the
  *          region's OpenStreetMap extract in the geocoders' variables, each secret's parameter, where its volume lives
- *          (EFS, or EBS on one EC2 instance), its Valkey variable and its endpoint; per region the Valkey, the tools'
+ *          (EFS, or EBS on one EC2 instance), its Valkey variable, its GPU
+ *          instance type and its endpoint; per region the Valkey, the tools'
  *          databases on the shared Postgres server and the Infisical role; and the Infisical folders to sync.
  * Boundary: pure and isomorphic; reads the parsed root runway only. Every missing fact (a region's definition,
  *           network or extract, an unknown extract, a tool image no upstream builds, a required tool turned off, a
@@ -29,6 +30,9 @@ import type { ToolsStackPlan } from "#core/types/tools-stack-plan.type";
 
 /** The libpq variables of the shared server's admin login, read by the database task. */
 const DATABASE_ADMIN = ["PGHOST", "PGUSER", "PGPASSWORD"] as const;
+
+/** The instance type of a GPU tool that names none: one NVIDIA L4. */
+const DEFAULT_GPU_INSTANCE = "g6.xlarge";
 
 /** The parameter folder of the admin login, under the secret path. */
 const DATABASE_ADMIN_FOLDER = "postgres";
@@ -71,7 +75,8 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
       message: "Name the external id Infisical presents when it assumes the sync role",
     });
   const catalogue: Readonly<Record<string, ToolDefinition>> = TOOLS_CATALOGUE;
-  const isEnabled = (key: string): boolean => tools.tools[key as ToolKey]?.enabled !== false;
+  const isEnabled = (key: string): boolean =>
+    tools.tools[key as ToolKey]?.enabled ?? catalogue[key]?.enabled ?? true;
   // Parameter folder to the secret names the stack reads from it.
   const synced = new Map<string, Set<string>>();
   const parameterOf = (folder: string, name: string): string => {
@@ -91,7 +96,8 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
       const parent = definition.partOf === undefined ? undefined : catalogue[definition.partOf];
       const parentOverride =
         definition.partOf === undefined ? {} : (tools.tools[definition.partOf as ToolKey] ?? {});
-      if (override.enabled === false || parentOverride.enabled === false) return [];
+      if (!isEnabled(key) || (definition.partOf !== undefined && !isEnabled(definition.partOf)))
+        return [];
 
       const path = `providers.tools.tools.${key}`;
       if (definition.requires !== undefined && !isEnabled(definition.requires))
@@ -178,6 +184,14 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
                   instanceType: override.instanceType ?? definition.instanceType ?? "m6i.large",
                 },
               }),
+          ...(definition.gpu === true
+            ? {
+                gpu: {
+                  instanceType:
+                    override.instanceType ?? definition.instanceType ?? DEFAULT_GPU_INSTANCE,
+                },
+              }
+            : {}),
           ...(definition.cache === undefined ? {} : { cacheVariable: definition.cache }),
           ...(port === undefined || connection === undefined || provider === undefined
             ? {}

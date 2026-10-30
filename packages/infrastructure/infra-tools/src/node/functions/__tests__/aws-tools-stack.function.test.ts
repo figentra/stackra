@@ -2,6 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `awsToolsStack` under Pulumi's mocks: the provider is pinned to the region and its account;
  *          a tool with an endpoint gets a service with no public address, registered in the private namespace; a
+ *          GPU tool runs on a capacity provider of GPU instances (launch template on the GPU image, Auto Scaling group,
+ *          one GPU in its container) and not on Fargate; a
  *          worker gets no registration and reads the Valkey URL; an EFS tool mounts its access point; an EBS tool runs
  *          on its own EC2 instance with an encrypted, retained disk and a host volume; secrets are parameter references
  *          the execution role may read, never values; the database task carries the admin login and each password as
@@ -80,6 +82,25 @@ const PLAN: ToolsStackPlan = {
           environment: {},
           secrets: [],
           volume: "/home/libretranslate/.local",
+        },
+        {
+          key: "retrieval-embed",
+          name: "acme-production-gcc-retrieval-embed",
+          image: "ghcr.io/huggingface/text-embeddings-inference:89-1.9.4",
+          port: 80,
+          cpu: 2048,
+          memoryMb: 8192,
+          replicas: 1,
+          environment: { MODEL_ID: "BAAI/bge-m3" },
+          secrets: [],
+          gpu: { instanceType: "g6.xlarge" },
+          endpoint: {
+            tool: "retrieval-embed",
+            category: "embedder",
+            provider: "tei",
+            region: "gcc",
+            baseUrl: "http://retrieval-embed.gcc.tools.acme.internal:80",
+          },
         },
         {
           key: "chatwoot-worker",
@@ -323,8 +344,43 @@ describe("awsToolsStack", () => {
     expect(policy).not.toContain("parameter/acme/production/tools/nominatim/*");
   });
 
+  it("places a GPU tool on a capacity provider of GPU instances, not Fargate", () => {
+    const name = "acme-production-gcc-tools-gpu-g6-xlarge";
+    const template = resource("LaunchTemplate", name);
+    expect(template.inputs).toMatchObject({
+      imageId: "ami-ecs",
+      instanceType: "g6.xlarge",
+      metadataOptions: { httpTokens: "required" },
+    });
+    expect(Buffer.from(String(template.inputs.userData), "base64").toString()).toContain(
+      "ECS_CLUSTER=",
+    );
+    expect(resource("Group", name).inputs).toMatchObject({ minSize: 0, maxSize: 1 });
+    expect(resource("CapacityProvider", name).inputs).toMatchObject({
+      autoScalingGroupProvider: {
+        managedScaling: { status: "ENABLED", targetCapacity: 100 },
+      },
+    });
+    expect(resource("ClusterCapacityProviders", "acme-production-gcc-tools").inputs).toBeDefined();
+
+    const service = resource("ecs/service:Service", "acme-production-gcc-retrieval-embed");
+    expect(service.inputs.launchType).toBeUndefined();
+    expect(service.inputs.capacityProviderStrategies).toEqual([
+      { capacityProvider: name, weight: 1 },
+    ]);
+    expect(service.inputs.networkConfiguration).not.toHaveProperty("assignPublicIp");
+    const task = resource("TaskDefinition", "acme-production-gcc-retrieval-embed");
+    expect(task.inputs.requiresCompatibilities).toEqual(["EC2"]);
+    expect(containerOf("acme-production-gcc-retrieval-embed").resourceRequirements).toEqual([
+      { type: "GPU", value: "1" },
+    ]);
+  });
+
   it("returns the region's endpoints", () => {
-    expect(stack.endpoints).toEqual([ENDPOINT]);
+    expect(stack.endpoints.map((endpoint) => endpoint.tool)).toEqual([
+      "nominatim",
+      "retrieval-embed",
+    ]);
   });
 
   it("refuses a region on another cloud", () => {

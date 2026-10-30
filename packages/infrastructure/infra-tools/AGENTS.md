@@ -23,6 +23,7 @@ The per-region self-hosted tools stack (ADR 0444), as a Pulumi program part. Mem
 | Pulumi resources or a file reader      | `src/node/functions/<name>.function.ts`                                |
 | A test                                 | `__tests__/<name>.<kind>.test.ts` beside it                            |
 | An image Figentra builds               | `images/<tool>/` (Dockerfile, its tests in `images/<tool>/__tests__/`) |
+| A GPU tool                             | a catalogue entry with `gpu: true` (and `instanceType`)                |
 
 ## Rules
 
@@ -30,6 +31,10 @@ The per-region self-hosted tools stack (ADR 0444), as a Pulumi program part. Mem
   `TOOLS_RUNWAY_SCHEMA` with its default in the catalogue. Never branch on a region, market or product.
 - Images are pinned to a tag at least two weeks old; record each in README "Pinned images". An image Figentra builds
   lives in `images/` and its catalogue tag is the one CI pushes; per-provider builds go in `providerImages`.
+- Python lives only in `images/` (ADR 0492 decision 7; `pnpm validate` refuses a `.py` file elsewhere), behind a port in
+  a TypeScript package; an image takes data in and returns numbers or text, with no business rule. A tool that is off by
+  default says `enabled: false` in the catalogue. A `gpu: true` tool is placed on the GPU capacity provider, one GPU per
+  task: say what the instance count costs in the commit.
 - A database, extension or Valkey need is a catalogue field (`database`, `cache`), never code in the program.
 - Never build an image, run Python or call a cloud on a workstation; CI builds, `pulumi up` is the owner's.
 - `.` never imports `@pulumi/*` or `node:*`; endpoints stay computable without Pulumi.

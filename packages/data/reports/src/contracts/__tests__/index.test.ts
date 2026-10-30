@@ -38,6 +38,7 @@ class EchoReportEngineDriver extends Driver(ReportEngine) {
 describe("@stackra/reports/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "Forecaster",
       "ProductAnalytics",
       "ReportEngine",
       "RetentionPeriod",

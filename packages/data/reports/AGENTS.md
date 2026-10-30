@@ -2,7 +2,8 @@
 
 Module reports: the `Report<Source>({ key, dimensions, measures, defaultFilter, permission })` kind base, its closed
 vocabulary, the `ReportRunner` port, the `ReportEngine` port (ADR 0470) and the `ProductAnalytics`
-port for funnels, retention and cohorts (ADR 0163 decision 5 as amended 2026-10-28). Member at `packages/data/reports` (`tier:lib`), in the programming
+port for funnels, retention and cohorts (ADR 0163 decision 5 as amended 2026-10-28), and the `Forecaster` port for
+series forecasts (ADR 0492 decision 8). Member at `packages/data/reports` (`tier:lib`), in the programming
 model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts` (the `ReportEngine` port, stackra-398) and `./node` (the engine runner and the Postgres
 report engine, stackra-390 and stackra-398).
 
@@ -34,6 +35,9 @@ report engine, stackra-390 and stackra-398).
 - A `ProductAnalytics` driver runs the shared checks (`check-product-analytics-query.function.ts`) before it reaches its
   store, sends caller values only as structured query values (never HogQL or SQL text), isolates the call's scope
   itself and refuses a call with none, and returns counts of people only.
+- A `Forecaster` driver runs `checkForecastQuery` first, never sends a series anywhere but the configured forecast
+  service, and returns numbers and ids only. A new forecaster driver adds its name to `FORECASTER_DRIVERS` in the same
+  commit as the driver; the bounds in `FORECAST_LIMITS` mirror the image's (`@stackra/infra-tools` `images/forecast`).
 - A credential is a secret name in config read through `SecretStore` at call time; never a value, never in an error.
 
 ## This package

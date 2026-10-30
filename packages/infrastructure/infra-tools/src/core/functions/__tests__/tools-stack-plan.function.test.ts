@@ -5,7 +5,8 @@
  *          in Nominatim's variables, Photon pointed at the region's Nominatim, Nominatim on EBS, secrets under the
  *          default parameter path (the worker reads Chatwoot's), the Valkey, the databases with the admin login and
  *          the Infisical folders to sync; overrides replace image (by provider), size, storage and provider; disabling
- *          Chatwoot drops its worker, its Valkey and its database; missing facts fail together, naming their paths.
+ *          Chatwoot drops its worker, its Valkey and its database; the ML workers plan (retrieval on GPU, forecast on CPU) while `recommend` and `speech` stay off until the runway
+ *          enables them; missing facts fail together, naming their paths.
  * Boundary: test only; the runway goes through `parseRunway`, so the plan reads what the schemas let through.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0444; owner decisions R2-5, R2-9 and R3-5; ADR 0173; ADR 0238.
@@ -75,6 +76,9 @@ describe("toolsStackPlan", () => {
       "libretranslate",
       "chatwoot",
       "chatwoot-worker",
+      "retrieval-embed",
+      "retrieval-rerank",
+      "forecast",
     ]);
 
     const nominatim = eg?.tools.find((tool) => tool.key === "nominatim");
@@ -98,6 +102,18 @@ describe("toolsStackPlan", () => {
     const ocr = gcc?.tools.find((tool) => tool.key === "ocr");
     expect(ocr?.image).toBe("ghcr.io/figentra/tools-ocr:1.0.0-paddleocr");
     expect(ocr?.endpoint?.provider).toBe("paddleocr");
+
+    const embed = gcc?.tools.find((tool) => tool.key === "retrieval-embed");
+    expect(embed?.image).toBe("ghcr.io/huggingface/text-embeddings-inference:89-1.9.4");
+    expect(embed?.gpu).toEqual({ instanceType: "g6.xlarge" });
+    expect(embed?.environment.MODEL_ID).toBe("BAAI/bge-m3");
+    expect(embed?.endpoint?.category).toBe("embedder");
+    expect(gcc?.tools.find((tool) => tool.key === "retrieval-rerank")?.endpoint?.category).toBe(
+      "reranker",
+    );
+    const forecast = gcc?.tools.find((tool) => tool.key === "forecast");
+    expect(forecast?.gpu).toBeUndefined();
+    expect(forecast?.endpoint?.category).toBe("forecaster");
 
     const documenso = gcc?.tools.find((tool) => tool.key === "documenso");
     expect(documenso?.name).toBe("acme-production-gcc-documenso");
@@ -189,6 +205,23 @@ describe("toolsStackPlan", () => {
       "/acme/prod/tools/nominatim/NOMINATIM_PASSWORD",
     );
     expect(plan.secretsSync[0]?.source).toBe("/runtime/tools/documenso");
+  });
+
+  it("keeps a catalogue-disabled tool off until the runway enables it, and sizes its GPU", () => {
+    const keys = (tools: Record<string, unknown>) =>
+      toolsStackPlan(rootWith({ ...TOOLS, tools }), "production").regions[0]?.tools.map(
+        (tool) => tool.key,
+      ) ?? [];
+    expect(keys({})).not.toContain("recommend");
+    expect(keys({})).not.toContain("speech");
+    expect(keys({ recommend: { enabled: true } })).toContain("recommend");
+    expect(keys({ forecast: { enabled: false } })).not.toContain("forecast");
+    const speech = toolsStackPlan(
+      rootWith({ ...TOOLS, tools: { speech: { enabled: true, instanceType: "g6e.xlarge" } } }),
+      "production",
+    ).regions[0]?.tools.find((tool) => tool.key === "speech");
+    expect(speech?.gpu).toEqual({ instanceType: "g6e.xlarge" });
+    expect(speech?.endpoint).toMatchObject({ category: "speech", provider: "faster-whisper" });
   });
 
   it("fails naming every missing fact", () => {

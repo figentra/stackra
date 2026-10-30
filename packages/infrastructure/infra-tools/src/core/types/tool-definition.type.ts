@@ -4,7 +4,8 @@
  *          size, command), the public environment and the secret names it reads, the volume it keeps its data on,
  *          the OpenStreetMap extract variables it takes, and the provider category and code its managed Connection
  *          carries; the image per provider, the tool it needs, the Valkey variable, its database on the shared server,
- *          and whether its volume is on EFS or on an EC2 instance's EBS disk.
+ *          whether its volume is on EFS or on an EC2 instance's EBS disk, whether it needs a GPU, and whether it runs by
+ *          default.
  * Boundary: type only; `TOOLS_CATALOGUE` holds the defaults and the root runway's `providers.tools.tools.<key>`
  *           overrides them. Secret names only, never a value (ADR 0173). An environment value may hold
  *           `{namespace}`, replaced by the region's private namespace.
@@ -50,6 +51,10 @@ export type ToolDefinition = {
   readonly storage?: "efs" | "ebs";
   /** The EBS disk size in GiB, when `storage` is `ebs`. */
   readonly diskGb?: number;
-  /** The EC2 instance type, when `storage` is `ebs`. */
+  /** The EC2 instance type, when `storage` is `ebs` or the tool is `gpu` (`g6.xlarge` when left out). */
   readonly instanceType?: string;
+  /** Runs on an ECS capacity provider of GPU instances (one GPU per task) instead of Fargate. */
+  readonly gpu?: boolean;
+  /** Whether the tool runs unless the runway says otherwise; true when left out. */
+  readonly enabled?: boolean;
 };
