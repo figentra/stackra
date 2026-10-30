@@ -53,6 +53,7 @@ export type { ResolvedMenuItem } from "#core/types/resolved-menu-item.type";
 export type { ResolvedNavigationGroup } from "#core/types/resolved-navigation-group.type";
 export type { RouteActionResult } from "#core/types/route-action-result.type";
 export type { RouteCache } from "#core/types/route-cache.type";
+export type { RoutePageContext } from "#core/types/route-page-context.type";
 export type { RouteChrome } from "#core/types/route-chrome.type";
 export type { RouteClass } from "#core/types/route-class.type";
 export type { RouteContext } from "#core/types/route-context.type";

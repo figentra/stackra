@@ -5,7 +5,7 @@
  *          file and one entity file per module, the wiring, the member module when none is authored, the
  *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
  *          (CORS preflights and headers, STA-1385), broker-delivered
- *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
+ *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, its client tool table (`#stackra/client-tools`, ADR 0490), the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
  *          (the setting keys of its settings classes, stackra-209), `#stackra/reports` (one query per report,
  *          ADR 0470), `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6; both
@@ -29,7 +29,7 @@
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) or a recorded resource table that sorts or filters on an unindexed path
- *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
+ *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
  *           (`formatJson`, stackra-247), so the committed manifest and openapi.json pass `oxfmt --check`.
  * Runtime: isomorphic
@@ -38,7 +38,8 @@
  *                     (decisions 3, 4 and 6: Encore CronJobs and Pub/Sub in SaaS); ADR 0260 (decision 3: one
  *                     generated client per service; decision 4: the relay hears every event; a cycle between services is allowed at the manifest level); STA-1293 (the i18n target, clients
  *                     imported by any file, undeclared packages refused); ADR 0452 (the member graph); STA-1365 (a
- *                     member off `@stackra/container` gets no wiring and no member module, `usesContainer`).
+ *                     member off `@stackra/container` gets no wiring and no member module, `usesContainer`); ADR 0490
+ *                     (the client tool table, STA-1631).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -60,6 +61,7 @@ import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
 import { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 import { emitClients } from "#core/functions/emit-clients.function";
+import { emitClientTools } from "#core/functions/emit-client-tools.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
@@ -173,6 +175,9 @@ export function generateMember(
   // An app's Expo config, from `defineApp`, the config classes, the lang and the icon sets (ADR 0295 decision 5).
   const expo = emitExpoConfig(ir);
   all.push(...expo.errors);
+  // An app's client tools, from its routes, resources, placements, theming, tours and anchors (ADR 0490).
+  const clientTools = emitClientTools(ir);
+  all.push(...clientTools.errors);
   if (all.length > 0) return { files: [], errors: all, manifest };
 
   const files: GeneratedFile[] = [{ path: "stackra.manifest.json", content: json(manifest) }];
@@ -208,6 +213,7 @@ export function generateMember(
     [".stackra/gen/webhooks.ts", emitWebhooks(ir)],
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
+    [".stackra/gen/client-tools.ts", clientTools.content],
     [".stackra/gen/settings.ts", emitSettings(ir)],
     [".stackra/gen/reports.ts", emitReports(authored)],
     [".stackra/gen/search.ts", emitSearchQueries(authored)],

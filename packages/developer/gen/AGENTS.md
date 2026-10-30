@@ -35,6 +35,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 
 ## This package
 
+- Client tools (ADR 0490): `clientToolsOf` is the one place a client tool is derived; never hand-write a row. The row type
+  is structural (`ClientToolIR`), because gen imports no AI package; `emitClientTools` types the file from
+  `@stackra/ai/contracts` only when the app declares it. A tool never calls a server action (L0, screen only).
+
 - The committed `stackra.manifest.json` is the IR; a dependency is described by its manifest, never its `.d.ts`.
 - Output is deterministic: files sorted by path, stable key order. Every refusal has a snake_case code, a position and
   a fix; when there is one, nothing is written.

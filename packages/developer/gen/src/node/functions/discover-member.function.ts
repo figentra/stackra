@@ -4,7 +4,7 @@
  *          class, shape, enum, shell slot, slot fill and file export of its own sources (sorted by path), its dependency package names and the
  *          committed manifests of those that ship one, the committed manifests of the services it injects a client
  *          of or listens to an event of (for a member with a relay, every publishing sibling service's; and which of those exist beside it in the workspace), the services any of its files imports a client from, its lang catalogues
- *          (`assets/lang/<locale>/*.json`), those its declared `@stackra/*` packages ship and those of the services it consumes through a client (STA-1363), the `I18n` keys its files use, its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
+ *          (`assets/lang/<locale>/*.json`), those its declared `@stackra/*` packages ship and those of the services it consumes through a client (STA-1363), the `I18n` keys its files use, the anchors its components declare and refer to (`readAnchors`, STA-1631), its modules and its authored root module, and fills each `DriverName<Port>` field with the driver names
  *          found for that port, the writes that skip the unit of work (`readNativeWrites`, stackra-262) and the
  *          `t.searchable` literals of its migrations (`readSearchableColumns`, data-layer gap se10) and an app's static
  *          `defineApp` data and icon sets (`readAppDefinition`): the
@@ -16,7 +16,7 @@
  *                     (discovery from the member's folders); ADR 0260 (decisions 3 and 4: clients and events from the
  *                     producer's manifest); STA-1293 (client imports and lang
  *                     catalogues); STA-1298 (package catalogues and key references); ADR 0438 (slots and fills);
- *                     STA-1363 (consumed services' catalogues).
+ *                     STA-1363 (consumed services' catalogues); ADR 0490 (anchors, STA-1631).
  */
 import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -37,6 +37,7 @@ import { createSourceReader } from "#node/functions/create-source-reader.functio
 import { openHost } from "#node/functions/open-host.function";
 import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
 import { readMemberFacts } from "#node/functions/read-member-facts.function";
+import { readAnchors } from "#node/functions/read-anchors.function";
 import { readAppDefinition } from "#node/functions/read-app-definition.function";
 import { readCatalogues } from "#node/functions/read-catalogues.function";
 import { readI18nReferences } from "#node/functions/read-i18n-references.function";
@@ -123,6 +124,8 @@ export async function discoverMember(
     // devDependency's lang never reaches the runtime, so it is neither merged nor a clash (STA-1309).
     const shippedCatalogues = readPackageCatalogues(facts.root, facts.runtimeDependencies ?? []);
     const i18nReferences = readI18nReferences(facts.root);
+    // The anchors its components declare, which an app's client tools point at (ADR 0490).
+    const { anchors, references: anchorReferences } = readAnchors(facts.root);
     // Writes that skip the unit of work, refused on an encrypted model (stackra-262).
     const nativeWrites = readNativeWrites(facts.root);
     // The search columns each migration declares, refused when a facet drifts from them (data-layer gap se10).
@@ -232,6 +235,8 @@ export async function discoverMember(
       ...(catalogues !== undefined ? { catalogues } : {}),
       ...(packageCatalogues.length > 0 ? { packageCatalogues } : {}),
       ...(i18nReferences.length > 0 ? { i18nReferences } : {}),
+      ...(anchors.length > 0 ? { anchors } : {}),
+      ...(anchorReferences.length > 0 ? { anchorReferences } : {}),
       ...(nativeWrites.length > 0 ? { nativeWrites } : {}),
       ...(searchableColumns.length > 0 ? { searchableColumns } : {}),
       errors: [...reader.errors, ...appDefinition.errors],

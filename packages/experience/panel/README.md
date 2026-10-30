@@ -244,6 +244,13 @@ input), `placementsAt`, `recordIdKey`, `inputKind`, `resourceLabel` and `resourc
 built: `@stackra/ui/native` has no `DataTable` or `FilterBar` yet (gap-analysis P1), so a native list, filter bar,
 bulk bar and form page wait for those.
 
+## AI page context
+
+A panel page publishes its AI page context with no declaration (ADR 0490 decision 5): `pageContextOf(listState, record,
+selection)` returns `{ record?, selection?: { ids (at most 200), count }, filters? }`, ids and filter keys only, never
+a field value. It is pure and structural, so the SDK of `@stackra/ai` takes the result as the matching fields of its
+`PageContext`; this package imports no AI package. The server resolves it under the caller's permissions.
+
 ## Search palette
 
 `SearchPalette` is the web Cmd+K palette (ADR 0221 d4, settled 2026-10-29). It searches each source model's generated

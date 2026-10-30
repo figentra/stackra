@@ -16,7 +16,7 @@
  *                     extension bundle manifest and `modulepreloadOf`, stackra-04); ADR 0336 (`additionsOf`,
  *                     `AdditionEntry`, stackra-64); ADR 0452 (the system graph: `memberGraphOf`, `systemGraph`,
  *                     `GRAPH_NOTICE` and the graph types, stackra-59); ADR 0470 (`reportsOf`, `emitReports`,
- *                     stackra-389).
+ *                     stackra-389); ADR 0490 (`clientToolsOf`, `emitClientTools`, STA-1631).
  */
 export { DocsConfig } from "#core/bases/docs-config.base";
 export { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
@@ -47,6 +47,8 @@ export { driverName } from "#core/functions/driver-name.function";
 export { egressOf } from "#core/functions/egress-of.function";
 export { emitBlocks } from "#core/functions/emit-blocks.function";
 export { emitBoot } from "#core/functions/emit-boot.function";
+export { clientToolsOf } from "#core/functions/client-tools-of.function";
+export { emitClientTools } from "#core/functions/emit-client-tools.function";
 export { emitClients } from "#core/functions/emit-clients.function";
 export { emitDocsSite } from "#core/functions/emit-docs-site.function";
 export { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
@@ -96,7 +98,9 @@ export { toolHints } from "#core/functions/tool-hints.function";
 export { toolName } from "#core/functions/tool-name.function";
 export { webhookPath } from "#core/functions/webhook-path.function";
 export type { AdditionEntry } from "#core/types/addition-entry.type";
+export type { AnchorIR } from "#core/types/anchor-ir.type";
 export type { ClassRef } from "#core/types/class-ref.type";
+export type { ClientToolIR } from "#core/types/client-tool-ir.type";
 export type { ClassValue } from "#core/types/class-value.type";
 export type { DeclaredClass } from "#core/types/declared-class.type";
 export type { Endpoint } from "#core/types/endpoint.type";

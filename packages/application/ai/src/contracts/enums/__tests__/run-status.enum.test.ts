@@ -19,6 +19,7 @@ describe("RunStatus", () => {
       "queued",
       "running",
       "waiting_approval",
+      "waiting_client_tool",
       "completed",
       "failed",
     ]);
@@ -30,6 +31,7 @@ describe("RunStatus", () => {
       "refused",
       "approval_required",
       "proposed",
+      "client_tool",
     ]);
     expect(Enum.values(RunApprovalStatus)).toEqual(["pending", "granted", "denied"]);
   });

@@ -549,6 +549,17 @@ await pipeline.execute(X, input, { actor, ...requestCallOptions(request) });
 The emitter calls the function instead of writing header reads into each endpoint, so a new header-borne option is one
 change in `@stackra/actions` and no gen change; adding it adds no pipeline step (ADR 0138).
 
+## Client tools (ADR 0490, STA-1631)
+
+For an app, `emitClientTools` writes `.stackra/gen/client-tools.ts` (`#stackra/client-tools`): the app key, a hash and one
+L0 row per tool the agent may call to change the viewer's screen, grouped by declaring module. Rows come from the
+routes (`navigate.<route>`, input the `:param` segments), the panel resources of the dependency manifests' `ui.resources`
+(`<resource>.list.open`, `.list.filter`, `.list.sort`, `.list.select`, `.view.apply`, `.record.open`), every placed action
+that is a tool (`<resource>.<verb>.prefill`), `ui.theme|mode|density.preview` for an app declaring `@stackra/theming`,
+`tour.start|next|stop` once the app declares a `tour`, and `ui.point` at the `anchor="..."` keys. `ai: false` on a route,
+a resource tree or a placement opts out; `defineApp({ ai: false })` opts the app out. Refusals: `client_tool_collision`,
+`prefill_tool_off`, `anchor_undeclared` and `context_record_not_public_id`. Anchors are read by `readAnchors` (a text scan).
+
 ## Public SDKs
 
 An action or query marked `public: true` (OS ADR 0039 d2; Stackra ADR 0217, 2026-10-26 note) is written to the

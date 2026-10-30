@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: `RouteOptions`, what `Route({...})` takes: the path and the layout, the title and tab, the gates (session,
  *          permission, flag, capability), the shapes of `params` and `search`, the static head, the web render mode and
- *          prerender flag, the native presentation and chrome, a document the route renders, and the offline cache.
+ *          prerender flag, the native presentation and chrome, a document the route renders, the offline cache, the AI client-tool opt-out and the page context the route
+ *          publishes.
  * Boundary: a type only; every option is static data gen reads from the syntax tree. The route key, the derived
  *           permission of a route with a loader and the title of a route that sets none are derived, not options.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 14, 16 and 20); ADR 0295 (decision 12); ADR 0297; ADR 0301 (the SEO chain).
+ * Governing contract: ADR 0294 (decisions 14, 16 and 20); ADR 0295 (decision 12); ADR 0297; ADR 0301 (the SEO chain); ADR 0490 (decisions 1 and 5: client tools, page context);
+ *                     STA-1631.
  */
 import type { AnyClass } from "@stackra/container";
 import type { FlagRef } from "@stackra/feature-flags";
@@ -19,6 +21,7 @@ import type { Presentation } from "#core/enums/presentation.enum";
 import type { RenderMode } from "#core/enums/render-mode.enum";
 import type { RouteCache } from "#core/types/route-cache.type";
 import type { RouteChrome } from "#core/types/route-chrome.type";
+import type { RoutePageContext } from "#core/types/route-page-context.type";
 import type { RouteTab } from "#core/types/route-tab.type";
 
 /** The options of a route class. */
@@ -76,4 +79,13 @@ export interface RouteOptions {
 
   /** How long the persisted query cache serves the route offline. */
   readonly cache?: RouteCache;
+
+  /**
+   * `false` keeps the route out of the agent's client tools (`navigate.<route>`); gen writes the tool for every other
+   * route. The tool's input is the route's `:param` segments.
+   */
+  readonly ai?: false;
+
+  /** The page context the route publishes with each AI turn: ids and declared keys only, never field values. */
+  readonly context?: RoutePageContext;
 }

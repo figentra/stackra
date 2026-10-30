@@ -10,7 +10,7 @@
  *           leaves `pending`, `RunCompleted` on the run as it completes or fails. The table names stay `ai_*` until the
  *           owner confirms the `ai.<name>` schema (ADR 0399).
  * Runtime: node
- * Governing contract: ADR 0100 (decisions 2, 3, 9, 10 and 11); ADR 0399; ADR 0078 (decision 3); STA-781.
+ * Governing contract: ADR 0100 (decisions 2, 3, 9, 10 and 11); ADR 0399; ADR 0078 (decision 3); STA-781; ADR 0490 (decision 4).
  */
 import { Driver } from "@stackra/container";
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
@@ -20,6 +20,7 @@ import { recordEvent } from "@stackra/events";
 import { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
 import { RunStatus } from "#contracts/enums/run-status.enum";
 import { RunStore } from "#contracts/ports/run-store.port";
+import type { ClientToolPending } from "#contracts/types/client-tool-pending.type";
 import type { RecordScope } from "#contracts/types/record-scope.type";
 import type { RunApprovalRecord } from "#contracts/types/run-approval-record.type";
 import type { RunRecord } from "#contracts/types/run-record.type";
@@ -50,6 +51,19 @@ function runOf(row: Run): RunRecord {
     ...(row.pendingApprovalId === null || row.pendingToolCallId === null
       ? {}
       : { pending: { approvalId: row.pendingApprovalId, toolCallId: row.pendingToolCallId } }),
+    ...(row.pendingSurfaceId === null ||
+    row.pendingTool === null ||
+    row.pendingToolCallId === null ||
+    row.pendingExpiresAt === null
+      ? {}
+      : {
+          clientPending: {
+            toolCallId: row.pendingToolCallId,
+            surfaceId: row.pendingSurfaceId,
+            tool: row.pendingTool,
+            expiresAt: row.pendingExpiresAt,
+          },
+        }),
     steps: row.steps,
     ...(row.errorCode === null ? {} : { errorCode: row.errorCode }),
     startedAt: row.createdAt,
@@ -155,6 +169,7 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
     change: {
       readonly status: RunStatus;
       readonly pending?: { readonly approvalId: string; readonly toolCallId: string } | null;
+      readonly clientPending?: ClientToolPending | null;
       readonly steps?: number;
       readonly errorCode?: string;
       readonly finishedAt?: Date;
@@ -175,6 +190,14 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
     if (change.pending !== undefined) {
       row.pendingApprovalId = change.pending?.approvalId ?? null;
       row.pendingToolCallId = change.pending?.toolCallId ?? null;
+    }
+    if (change.clientPending !== undefined) {
+      row.pendingSurfaceId = change.clientPending?.surfaceId ?? null;
+      row.pendingTool = change.clientPending?.tool ?? null;
+      row.pendingExpiresAt = change.clientPending?.expiresAt ?? null;
+      // a client park shares the tool call id column with an approval park, and clearing it must not outlive either
+      if (change.clientPending !== null) row.pendingToolCallId = change.clientPending.toolCallId;
+      else if (change.pending === undefined) row.pendingToolCallId = null;
     }
     if (change.steps !== undefined) row.steps = change.steps;
     if (change.errorCode !== undefined) row.errorCode = change.errorCode;

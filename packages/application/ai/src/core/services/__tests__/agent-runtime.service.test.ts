@@ -7,12 +7,15 @@
  *          `runQueued` runs; `stream` streams text and settles; the session's bypass switch reaches each tool call; a
  *          conversation of another principal is refused; each settled loop meters its tokens on `ai.tokens` with the
  *          model as subject; a blocked prompt opens no run, a redacted prompt and answer are stored redacted, and a
- *          blocked answer fails the run with `guardrail_blocked`.
+ *          blocked answer fails the run with `guardrail_blocked`; a client tool call parks the run without dispatching,
+ *          emits the part to the surface, and `resolveClientTool` resumes it with the answer, a refusal or
+ *          `client_result_invalid`, `expireClientTool` with `client_unavailable`, a repeat answer is refused with
+ *          `client_tool_not_pending`, and a timer is armed while parked and cleared once answered.
  * Boundary: test only; the model is AI SDK's `MockLanguageModelV4`, the stores are the memory drivers, and the
  *           dispatcher, models, instructions, queue, outbox, discovery and guardrail layers are stand-ins.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0100 (decisions 2, 3, 9 and 10); STA-781; STA-1256; ADR 0156
- *                     (decision 4); ADR 0216 (decision 2); STA-1385.
+ *                     (decision 4); ADR 0216 (decision 2); STA-1385; ADR 0490 (decision 4); STA-1631.
  */
 import { type DiscoveryService, Driver } from "@stackra/container";
 import { type Actor, ActorKind, Clock, Realm } from "@stackra/contracts";
@@ -23,7 +26,10 @@ import { describe, expect, it } from "@stackra/testing";
 import type { LanguageModel } from "ai";
 import { simulateReadableStream } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
+import { vi } from "vitest";
 
+import { ClientToolKind } from "#contracts/enums/client-tool-kind.enum";
+import { SurfaceKind } from "#contracts/enums/surface-kind.enum";
 import { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
 import { RunStatus } from "#contracts/enums/run-status.enum";
 import { ToolCallOutcome } from "#contracts/enums/tool-call-outcome.enum";
@@ -32,11 +38,15 @@ import { AgentQueue } from "#contracts/ports/agent-queue.port";
 import { InstructionSource } from "#contracts/ports/instruction-source.port";
 import { ToolDispatcher } from "#contracts/ports/tool-dispatcher.port";
 import type { AgentTool } from "#contracts/types/agent-tool.type";
+import type { ClientToolPart } from "#contracts/types/client-tool-part.type";
+import type { ClientToolRow } from "#contracts/types/client-tool-row.type";
+import type { SurfaceDescriptor } from "#contracts/types/surface-descriptor.type";
 import type { ToolCallContext } from "#contracts/types/tool-call-context.type";
 import type { ToolCallResult } from "#contracts/types/tool-call-result.type";
 import { AGENT_REGISTRY } from "#core/constants/agent-registry.constant";
 import { MemoryConversationStoreDriver } from "#core/drivers/memory-conversation-store.driver";
 import { MemoryRunStoreDriver } from "#core/drivers/memory-run-store.driver";
+import { ClientToolNotPendingError } from "#core/errors/client-tool-not-pending.error";
 import { GuardrailBlockedError } from "#core/errors/guardrail-blocked.error";
 import { AiMeter } from "#core/services/ai-meter.service";
 import { AgentRuntime } from "#core/services/agent-runtime.service";
@@ -77,6 +87,38 @@ const toolCall = (toolCallId: string) => ({
   usage,
   warnings: [],
 });
+
+const clientCall = (toolCallId: string) => ({
+  content: [
+    {
+      type: "tool-call" as const,
+      toolCallId,
+      toolName: "orders_order_list_filter",
+      input: JSON.stringify({ status: "open" }),
+    },
+  ],
+  finishReason: { unified: "tool-calls" as const, raw: undefined },
+  usage,
+  warnings: [],
+});
+const filterRow: ClientToolRow = {
+  key: "orders.order.list.filter",
+  name: "orders_order_list_filter",
+  from: "client",
+  risk: "L0",
+  kind: ClientToolKind.Filter,
+  target: "orders.order",
+  module: "orders",
+  inputSchema: { type: "object", properties: { status: { type: "string" } } },
+};
+const surface: SurfaceDescriptor = {
+  id: "srf_1",
+  kind: SurfaceKind.Screen,
+  app: "console",
+  hash: "h1",
+  route: "orders",
+  locale: "en-US",
+};
 
 class FixedClock extends Clock {
   now(): Date {
@@ -335,6 +377,144 @@ describe(AgentRuntime, () => {
     expect(runs.steps).toEqual([]);
     // The tokens were spent, so they are metered before the block.
     expect(outbox.writes).toHaveLength(1);
+  });
+
+  it("parks on a client tool call, emits it to the surface and resumes with the answer", async () => {
+    const parts: ClientToolPart[] = [];
+    const model = new MockLanguageModelV4({
+      doGenerate: [clientCall("call_c1"), text("Filtered.")],
+    });
+    const { runtime, conversations, runs, dispatcher } = setup(model);
+    const parked = await runtime.prompt(agent, "Show open orders", {
+      actor,
+      surface,
+      clientTools: [filterRow],
+      onClientTool: (part) => parts.push(part),
+    });
+    expect(parked).toMatchObject({
+      status: RunStatus.WaitingClientTool,
+      clientPending: { toolCallId: "call_c1", surfaceId: "srf_1", tool: filterRow.key },
+    });
+    expect(parts).toEqual([
+      {
+        type: "client_tool",
+        runId: parked.runId,
+        toolCallId: "call_c1",
+        surfaceId: "srf_1",
+        tool: filterRow.key,
+        input: { status: "open" },
+        expiresAt: new Date(NOW.getTime() + 30_000).toISOString(),
+      },
+    ]);
+    // A client tool never reaches the dispatcher and its placeholder result is not stored.
+    expect(dispatcher.calls).toHaveLength(0);
+    expect(
+      (await conversations.messages(parked.conversationId)).some(
+        (message) => message.role === "tool",
+      ),
+    ).toBe(false);
+    expect((await runs.get(parked.runId))?.clientPending?.toolCallId).toBe("call_c1");
+
+    const done = await runtime.resolveClientTool(parked.runId, {
+      toolCallId: "call_c1",
+      result: { done: true },
+    });
+    expect(done).toMatchObject({ status: RunStatus.Completed, text: "Filtered." });
+    expect((await runs.toolCalls(parked.runId)).map(({ outcome }) => outcome)).toEqual([
+      ToolCallOutcome.ClientTool,
+      ToolCallOutcome.Ok,
+    ]);
+    expect((await runs.get(parked.runId))?.clientPending).toBeUndefined();
+    const results = (await conversations.messages(parked.conversationId)).filter(
+      (message) => message.role === "tool",
+    );
+    expect(results).toHaveLength(1);
+    expect(JSON.stringify(results[0])).toContain('"done":true');
+  });
+
+  it("refuses an answer for an unknown or already answered tool call", async () => {
+    const model = new MockLanguageModelV4({ doGenerate: [clientCall("call_c2"), text("Ok.")] });
+    const { runtime } = setup(model);
+    const parked = await runtime.prompt(agent, "Show open orders", {
+      actor,
+      surface,
+      clientTools: [filterRow],
+    });
+    await expect(
+      runtime.resolveClientTool(parked.runId, { toolCallId: "call_other", result: { done: true } }),
+    ).rejects.toBeInstanceOf(ClientToolNotPendingError);
+    await runtime.resolveClientTool(parked.runId, {
+      toolCallId: "call_c2",
+      result: { done: true },
+    });
+    await expect(
+      runtime.resolveClientTool(parked.runId, { toolCallId: "call_c2", result: { done: true } }),
+    ).rejects.toBeInstanceOf(ClientToolNotPendingError);
+  });
+
+  it("tells the model a refusal or an invalid result, never the raw answer", async () => {
+    for (const [answer, code] of [
+      [{ toolCallId: "call_c3", refusal: "handler_missing" }, "handler_missing"],
+      [{ toolCallId: "call_c3", result: { done: "yes" } }, "client_result_invalid"],
+    ] as const) {
+      const model = new MockLanguageModelV4({ doGenerate: [clientCall("call_c3"), text("Ok.")] });
+      const { runtime, conversations, runs } = setup(model);
+      const parked = await runtime.prompt(agent, "Show open orders", {
+        actor,
+        surface,
+        clientTools: [filterRow],
+      });
+      await runtime.resolveClientTool(parked.runId, answer as never);
+      const result = (await conversations.messages(parked.conversationId)).find(
+        (message) => message.role === "tool",
+      );
+      expect(JSON.stringify(result)).toContain(code);
+      expect((await runs.toolCalls(parked.runId)).at(-1)).toMatchObject({
+        outcome: ToolCallOutcome.Refused,
+        code,
+      });
+    }
+  });
+
+  it("resumes with client_unavailable when the wait ends", async () => {
+    const model = new MockLanguageModelV4({ doGenerate: [clientCall("call_c4"), text("Sorry.")] });
+    const { runtime, conversations } = setup(model);
+    const parked = await runtime.prompt(agent, "Show open orders", {
+      actor,
+      surface,
+      clientTools: [filterRow],
+    });
+    const done = await runtime.expireClientTool(parked.runId, "call_c4");
+    expect(done).toMatchObject({ status: RunStatus.Completed, text: "Sorry." });
+    const result = (await conversations.messages(parked.conversationId)).find(
+      (message) => message.role === "tool",
+    );
+    expect(JSON.stringify(result)).toContain("client_unavailable");
+    await expect(runtime.expireClientTool(parked.runId, "call_c4")).rejects.toBeInstanceOf(
+      ClientToolNotPendingError,
+    );
+  });
+
+  it("arms a timer while parked and clears it once answered", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const model = new MockLanguageModelV4({ doGenerate: [clientCall("call_c5"), text("Ok.")] });
+      const { runtime } = setup(model);
+      const parked = await runtime.prompt(agent, "Show open orders", {
+        actor,
+        surface,
+        clientTools: [filterRow],
+        clientToolTimeoutMs: 5000,
+      });
+      expect(vi.getTimerCount()).toBe(1);
+      await runtime.resolveClientTool(parked.runId, {
+        toolCallId: "call_c5",
+        result: { done: true },
+      });
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("refuses another principal's conversation", async () => {

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MemoryRunStoreDriver`: it is a `RunStore`; it creates runs with no steps, updates their
- *          status and parked call (and clears it with `null`), and keeps steps, tool calls and approvals per run, an
+ *          status and parked call (and clears it with `null`) and its parked client tool call, and keeps steps, tool calls and approvals per run, an
  *          approval's later status replacing its first.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -60,5 +60,25 @@ describe(MemoryRunStoreDriver, () => {
     ]);
     expect((await store.approvals(run.id)).map(({ status }) => status)).toEqual(["granted"]);
     expect(await store.toolCalls("airun_other")).toEqual([]);
+  });
+
+  it("parks a run on a client tool call and clears it", async () => {
+    const store = new MemoryRunStoreDriver();
+    const run = await store.create({
+      conversationId: "aiconv_1",
+      agent: "matter_assistant",
+      actor: { kind: ActorKind.Agent, id: "agt_1" },
+      status: RunStatus.Running,
+    });
+    const clientPending = {
+      toolCallId: "call_1",
+      surfaceId: "srf_1",
+      tool: "orders.order.list.filter",
+      expiresAt: at,
+    };
+    await store.update(run.id, { status: RunStatus.WaitingClientTool, clientPending });
+    expect(await store.get(run.id)).toMatchObject({ status: "waiting_client_tool", clientPending });
+    await store.update(run.id, { status: RunStatus.Running, clientPending: null });
+    expect((await store.get(run.id))?.clientPending).toBeUndefined();
   });
 });

@@ -10,7 +10,7 @@
  *           versions return no data, nothing and an empty head. The route key and the title of a route that sets none
  *           are derived by gen. Dependencies arrive through the constructor.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 14, 16, 17 and 25); ADR 0305 (rules 2 and 3); registry v3.1 (kind-base
+ * Governing contract: ADR 0294 (decisions 14, 16, 17 and 25); ADR 0305 (rules 2 and 3); ADR 0490 (decisions 1 and 5); registry v3.1 (kind-base
  *                     ownership: Route, Layout, Menu are navigation's).
  */
 import { createKind } from "@stackra/container";
@@ -80,6 +80,8 @@ function readRouteOptions(options: RouteOptions): Readonly<Record<string, unknow
     chrome: Object.freeze({ ...options.chrome }),
     document: options.document ?? null,
     cache: options.cache === undefined ? null : Object.freeze({ ...options.cache }),
+    ai: options.ai ?? null,
+    context: options.context === undefined ? null : Object.freeze({ ...options.context }),
   };
 }
 

@@ -6,7 +6,7 @@ Purpose: the agent rules of @stackra/panel: where code goes, the package rules (
          pages included) and the rules that fail the build.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0164; ADR 0307; ADR 0306; ADR 0336; ADR 0350; ADR 0438 (shell slots, stackra-03).
+Governing contract: ADR 0164; ADR 0307; ADR 0306; ADR 0336; ADR 0350; ADR 0438 (shell slots, stackra-03); ADR 0490 (page context, STA-1631).
 -->
 
 The panel: the `Resource`, `Widget`, `Document` and `Panel` kinds, their pure builders, the metric shapes and the time
@@ -46,6 +46,8 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./react`, `./native
 - The records, the widget and resource registries, `PANEL_KEYS`, `widgetsFor`, `widgetInput`, `widgetTitle`, `toneOf`,
   `changeOf`, `valueAt`, `resourceTreeOf`, `resourceLabel`, `tableInput`, `placementsAt`, `recordIdKey`,
   `actionFormKeys`, `fieldsForInput`, `enumLabelKeys`, `listCellCurrency` and `inputKind` are internal: `react` and `native` import them by path, and no barrel exports them.
+- `pageContextOf(listState, record, selection)` is the panel's AI page context (ADR 0490 decision 5): pure, structural
+  (`PanelPageContext`), ids and filter keys only. Panel imports no `@stackra/ai`; the SDK reads its result.
 - Case helpers (`snakeCase`) come from `@stackra/support`; never add a copy here (stackra-224).
 
 ## This package

@@ -6,12 +6,14 @@
  *          guardrails (the layered check, `GuardrailBlockedError`, and its pattern, PII, prompt-injection and model-classifier drivers), evals
  *          and intents, the token meter (`AiMeter`, `AI_METERS`), the `ModelProviders` token, and the agent runtime
  *          (`Agent`, `Promptable`, `AgentRuntime`, the memory stores), and the page reader drivers (memory,
- *          egress-bounded HTTP) with `checkEgress` and `parsePage`.
+ *          egress-bounded HTTP) with `checkEgress` and `parsePage`, and the client tool vocabulary of ADR 0490:
+ *          `offerClientTools`, the page context (`PageContext`, `resolvePageContext`), `ClientResultInput` with
+ *          `CLIENT_RESULT_ACTION`, and `ClientToolNotPendingError`.
  * Boundary: names each re-export and declares nothing. The one entry serves the module's `ai/` group, the generated
  *           tool table and the service that calls a model.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note; the STA-347 stand-in barrel decision; ADR 0360;
- *                     ADR 0450.
+ *                     ADR 0450; ADR 0490.
  */
 export { Agent } from "#core/bases/agent.base";
 export { Facts } from "#core/bases/facts.base";
@@ -19,6 +21,8 @@ export { Prompt } from "#core/bases/prompt.base";
 export { Promptable } from "#core/bases/promptable.base";
 export { Skill } from "#core/bases/skill.base";
 export { AI_METERS } from "#core/constants/ai-meters.constant";
+export { CLIENT_RESULT_ACTION } from "#core/constants/client-result-action.constant";
+export { CLIENT_TOOL_TIMEOUT_MS } from "#core/constants/client-tool-timeout.constant";
 export { ClassifierGuardrailDriver } from "#core/drivers/classifier-guardrail.driver";
 export { HttpPageReaderDriver } from "#core/drivers/http-page-reader.driver";
 export { InjectionGuardrailDriver } from "#core/drivers/injection-guardrail.driver";
@@ -34,6 +38,7 @@ export { GuardrailEffect } from "#core/enums/guardrail-effect.enum";
 export { ToolSource } from "#core/enums/tool-source.enum";
 export { ApprovalRequested } from "#core/events/approval-requested.event";
 export { ApprovalResolved } from "#core/events/approval-resolved.event";
+export { ClientToolNotPendingError } from "#core/errors/client-tool-not-pending.error";
 export { GuardrailBlockedError } from "#core/errors/guardrail-blocked.error";
 export { RunCompleted } from "#core/events/run-completed.event";
 export { allowFields } from "#core/functions/allow-fields.function";
@@ -41,10 +46,12 @@ export { approvalFor } from "#core/functions/approval-for.function";
 export { checkBudget } from "#core/functions/check-budget.function";
 export { checkEgress } from "#core/functions/check-egress.function";
 export { decide } from "#core/functions/decide.function";
+export { offerClientTools } from "#core/functions/offer-client-tools.function";
 export { parsePage } from "#core/functions/parse-page.function";
 export { redact } from "#core/functions/redact.function";
 export { resolveApproval } from "#core/functions/resolve-approval.function";
 export { resolveModel } from "#core/functions/resolve-model.function";
+export { resolvePageContext } from "#core/functions/resolve-page-context.function";
 export { retrieve } from "#core/functions/retrieve.function";
 export { routeIntent } from "#core/functions/route-intent.function";
 export { routeModel } from "#core/functions/route-model.function";
@@ -52,6 +59,11 @@ export { runEvals } from "#core/functions/run-evals.function";
 export { runGuardrails } from "#core/functions/run-guardrails.function";
 export { GuardrailLayer } from "#core/ports/guardrail-layer.port";
 export { ModelProviders } from "#core/ports/model-providers.port";
+export { ClientResultInput } from "#core/schemas/client-result-input.schema";
+export { ClientToolResult } from "#core/schemas/client-tool-result.schema";
+export { PageContext } from "#core/schemas/page-context.schema";
+export { PageContextModal } from "#core/schemas/page-context-modal.schema";
+export { PageContextSelection } from "#core/schemas/page-context-selection.schema";
 export { AgentRuntime } from "#core/services/agent-runtime.service";
 export { AiMeter } from "#core/services/ai-meter.service";
 export type { ActionPermissionRow } from "#core/types/action-permission-row.type";
@@ -87,6 +99,7 @@ export type { Intent } from "#core/types/intent.type";
 export type { ModelProviderDriver } from "#core/types/model-provider-driver.type";
 export type { ModelRoute } from "#core/types/model-route.type";
 export { PatternGuardrailOptions } from "#core/types/pattern-guardrail-options.type";
+export type { PageContextSources } from "#core/types/page-context-sources.type";
 export type { PageReaderPolicy } from "#core/types/page-reader-policy.type";
 export { PiiGuardrailOptions } from "#core/types/pii-guardrail-options.type";
 export type { PendingApproval } from "#core/types/pending-approval.type";
@@ -97,6 +110,8 @@ export type { QueuedRun } from "#core/types/queued-run.type";
 export type { RedactionRule } from "#core/types/redaction-rule.type";
 export type { RegionRule } from "#core/types/region-rule.type";
 export type { ResumeDecision } from "#core/types/resume-decision.type";
+export type { ResolvedPageContext } from "#core/types/resolved-page-context.type";
+export type { ResolvedPageRecord } from "#core/types/resolved-page-record.type";
 export type { RetrieveOptions } from "#core/types/retrieve-options.type";
 export type { RetrievedPassage } from "#core/types/retrieved-passage.type";
 export type { RouteChoice } from "#core/types/route-choice.type";

@@ -89,6 +89,7 @@ describe("@stackra/panel", () => {
       "fillSlot",
       "groupRows",
       "lineEditorOf",
+      "pageContextOf",
       "panels",
       "registerResources",
       "registerWidgets",

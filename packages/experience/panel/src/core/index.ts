@@ -4,7 +4,7 @@
  *          metric shapes and the time range input with their shipped schemas, the enums, the data constructors gen
  *          writes into `#stackra/resources`, `#stackra/panels` and `#stackra/slots`, the recorders gen runs, the saved
  *          views with their store port, layouts, key validator and grouping, the display-mode field filter, the line-editor and inert
- *          contribution rules, `registerResources` for the generic resource pages, and the public types) until `stackra gen` writes the entry barrels (STA-339).
+ *          contribution rules, `registerResources` for the generic resource pages, `pageContextOf` (the AI page context a panel page publishes), and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
  *           (`CountMetric$`, `MoneyMetric$`, `SavedView$` with its `SavedViewSort$`, `SavedViewGroup$` and
  *           `SavedViewTotal$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
@@ -12,7 +12,7 @@
  *           and the renderers' helpers are internal: the `./react` and `./native` entries import them by path. The
  *           kind instance bases are types only, so no class skips its options.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 15); ADR 0307; the STA-347 stand-in barrel decision; ADR 0438 (`defineSlot`,
+ * Governing contract: ADR 0294 (decision 15); ADR 0307; the STA-347 stand-in barrel decision; ADR 0490 (`pageContextOf`); ADR 0438 (`defineSlot`,
  *                     `fillSlot` and the shell slot types, stackra-03).
  */
 export type { DocumentBase } from "#core/bases/document-base.base";
@@ -68,6 +68,7 @@ export { document } from "#core/functions/document.function";
 export { fillSlot } from "#core/functions/fill-slot.function";
 export { groupRows } from "#core/functions/group-rows.function";
 export { lineEditorOf } from "#core/functions/line-editor-of.function";
+export { pageContextOf } from "#core/functions/page-context-of.function";
 export { panels } from "#core/functions/panels.function";
 export { registerResources } from "#core/functions/register-resources.function";
 export { registerWidgets } from "#core/functions/register-widgets.function";

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresRunStoreDriver`: it creates runs with their scope and record, updates the status and
- *          the parked call (cleared with `null`), records steps and tool calls, keeps one approval row per id whose
+ *          the parked call (cleared with `null`), parks on a client tool call and clears it, records steps and tool calls, keeps one approval row per id whose
  *          status a later record changes, and reads them per run; it records `ApprovalRequested` on the run as it
  *          parks, `ApprovalResolved` on the approval as it leaves `pending` and `RunCompleted` as the run ends.
  * Boundary: test only; the repositories are in-memory stand-ins (the unit of work's flush is the database's). The SQL
@@ -67,6 +67,9 @@ describe(PostgresRunStoreDriver, () => {
     const runs = rowsOf<Run>("airun", {
       pendingApprovalId: null,
       pendingToolCallId: null,
+      pendingSurfaceId: null,
+      pendingTool: null,
+      pendingExpiresAt: null,
       steps: 0,
       errorCode: null,
       finishedAt: null,
@@ -166,5 +169,43 @@ describe(PostgresRunStoreDriver, () => {
     expect(await store.toolCalls(run.id)).toEqual([
       expect.objectContaining({ outcome: "refused", code: "forbidden" }),
     ]);
+  });
+
+  it("parks a run on a client tool call and clears it, leaving an approval park alone", async () => {
+    const runs = rowsOf<Run>("airun", {
+      pendingApprovalId: null,
+      pendingToolCallId: null,
+      pendingSurfaceId: null,
+      pendingTool: null,
+      pendingExpiresAt: null,
+      steps: 0,
+      errorCode: null,
+      finishedAt: null,
+    });
+    const store = new PostgresRunStoreDriver(
+      runs,
+      rowsOf<RunStep>("aistep"),
+      rowsOf<ToolCall>("aitool"),
+      rowsOf<RunApproval>("aiappr"),
+    );
+    const run = await store.create({
+      conversationId: "aiconv_1",
+      agent: "matter_assistant",
+      actor: { kind: ActorKind.Agent, id: "agt_1" },
+      status: RunStatus.Running,
+    });
+    expect(run.clientPending).toBeUndefined();
+    const clientPending = {
+      toolCallId: "call_9",
+      surfaceId: "srf_1",
+      tool: "orders.order.list.filter",
+      expiresAt: new Date(at.getTime() + 30_000),
+    };
+    await store.update(run.id, { status: RunStatus.WaitingClientTool, clientPending });
+    expect(await store.get(run.id)).toMatchObject({ status: "waiting_client_tool", clientPending });
+    expect((await store.get(run.id))?.pending).toBeUndefined();
+    await store.update(run.id, { status: RunStatus.Running, clientPending: null });
+    expect((await store.get(run.id))?.clientPending).toBeUndefined();
+    expect(runs.rows[0]).toMatchObject({ pendingToolCallId: null, pendingSurfaceId: null });
   });
 });

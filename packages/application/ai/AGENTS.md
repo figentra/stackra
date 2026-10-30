@@ -3,7 +3,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/ai: where code goes, entries, the package invariants (page reader included), PII.
 Boundary: documentation only; the user-facing guide is README.md.
 Runtime: none (Markdown)
-Governing contract: ADR 0100, ADR 0155, ADR 0156, ADR 0216, ADR 0294, ADR 0360, ADR 0399; ADR 0450; STA-1377.
+Governing contract: ADR 0100, ADR 0155, ADR 0156, ADR 0216, ADR 0294, ADR 0360, ADR 0399; ADR 0450; STA-1377; ADR 0490 (client tools, page context); STA-1631.
 -->
 
 # AGENTS — @stackra/ai
@@ -21,6 +21,7 @@ ADR 0100 tables, the Postgres stores; storage home: ADR 0399).
 | A kind base      | `src/core/bases/<name>.base.ts`             |
 | An enum          | `src/core/enums/<name>.enum.ts`             |
 | A function       | `src/core/functions/<name>.function.ts`     |
+| A schema         | `src/core/schemas/<name>.schema.ts`         |
 | A type           | `src/core/types/<name>.type.ts`             |
 | A port or record | `src/contracts/{ports,enums,types}/`        |
 | A core-type port | `src/core/ports/<name>.port.ts`             |
@@ -75,6 +76,14 @@ ADR 0100 tables, the Postgres stores; storage home: ADR 0399).
 - `AgentRuntime` takes `AiMeter` and `DiscoveryService` by constructor type: it meters every settled loop (before the
   output check, since the tokens were spent) and runs `getAll(GuardrailLayer)` on the prompt (before anything is
   stored) and on the final answer. Store only the guarded text.
+- Client tools (ADR 0490): a `ClientToolRow` is L0 and `from: "client"`, written by gen, never by hand. `PromptCall.surface`,
+  `.clientTools` and `.onClientTool` carry the turn's surface; `AgentRuntime` keeps its tools, emitter and timers in
+  process (`sessions`, `timers`), parks on the first client call of a step, and never dispatches one. A surface answer
+  only ever reaches the model as `{ done, note? }` or a refusal code, never as free text. `ai.run.client_result` is the
+  OS ai service's action; this package owns only its contract (`CLIENT_RESULT_ACTION`) and `ClientResultInput`.
+- `resolvePageContext` drops any id whose `Facts` lookup refuses or is missing; add no id the caller sent to the model
+  without it. Migration 0004 (`pending_surface_id`, `pending_tool`, `pending_expires_at`) widens `ck_runs_status` and
+  `ck_tool_calls_outcome`.
 - Only add a symbol a consumer imports today (the template, a package, or the registry row).
 
 ## Rules that fail the build

@@ -122,6 +122,7 @@ describe("generateMember", () => {
       "stackra.manifest.json",
       ".stackra/gen/wiring.ts",
       ".stackra/gen/module.ts",
+      ".stackra/gen/client-tools.ts",
       ".stackra/gen/routes/browser.ts",
       ".stackra/gen/routes/native.ts",
       ".stackra/gen/blocks/browser.ts",

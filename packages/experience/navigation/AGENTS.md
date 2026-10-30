@@ -35,6 +35,7 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `
 - `toResource` uses panel's page names (`list`, `view`, `create`, `edit`); `RoutePages.resource` takes the same.
 - `./testing` builds on `@stackra/testing/react` (an optional peer) and passes the caller's providers through; it adds
   none of its own and imports no tenancy, settings or identity code (their fakes arrive as testing parts).
+- `ai: false` and `context` of `Route` are read by gen's client-tool target (`#stackra/client-tools`, ADR 0490); nothing here reads them at run time.
 - `src/*/index.ts` are stand-in barrels until gen writes them (STA-339).
 
 ## Rules that fail the build

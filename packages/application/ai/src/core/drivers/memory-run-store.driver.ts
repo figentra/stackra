@@ -5,13 +5,14 @@
  * Boundary: one process only; a restart loses every run, so a queued or parked run never survives it. A service binds
  *           the Postgres driver of `./node`. Ids are random `airun_` public ids.
  * Runtime: isomorphic
- * Governing contract: ADR 0100 (decisions 2, 3 and 10); STA-781.
+ * Governing contract: ADR 0100 (decisions 2, 3 and 10); STA-781; ADR 0490 (decision 4).
  */
 import { Driver } from "@stackra/container";
 import type { Actor, ScopeRef } from "@stackra/contracts";
 
 import type { RunStatus } from "#contracts/enums/run-status.enum";
 import { RunStore } from "#contracts/ports/run-store.port";
+import type { ClientToolPending } from "#contracts/types/client-tool-pending.type";
 import type { RecordScope } from "#contracts/types/record-scope.type";
 import type { RunApprovalRecord } from "#contracts/types/run-approval-record.type";
 import type { RunRecord } from "#contracts/types/run-record.type";
@@ -72,6 +73,7 @@ export class MemoryRunStoreDriver extends Driver(RunStore) {
     change: {
       readonly status: RunStatus;
       readonly pending?: { readonly approvalId: string; readonly toolCallId: string } | null;
+      readonly clientPending?: ClientToolPending | null;
       readonly steps?: number;
       readonly errorCode?: string;
       readonly finishedAt?: Date;
@@ -79,10 +81,15 @@ export class MemoryRunStoreDriver extends Driver(RunStore) {
   ): Promise<void> {
     const row = this.rows.get(id);
     if (row === undefined) throw new RangeError(`No run ${id}`);
-    const { pending, ...rest } = change;
+    const { pending, clientPending, ...rest } = change;
     const next: RunRecord = { ...row, ...rest };
     if (pending === null) delete (next as { pending?: unknown }).pending;
-    this.rows.set(id, pending === undefined || pending === null ? next : { ...next, pending });
+    if (clientPending === null) delete (next as { clientPending?: unknown }).clientPending;
+    this.rows.set(id, {
+      ...next,
+      ...(pending === undefined || pending === null ? {} : { pending }),
+      ...(clientPending === undefined || clientPending === null ? {} : { clientPending }),
+    });
   }
 
   /** Implements `RunStore.recordStep`, documented there. */

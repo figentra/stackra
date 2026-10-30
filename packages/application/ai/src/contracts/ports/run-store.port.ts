@@ -6,11 +6,12 @@
  *           `ai.runs`, `ai.steps`, `ai.tool_calls` and `ai.approvals` under the tenant's row-level security; the memory
  *           driver in `.` serves tests and local runs. No text: hashes, codes and counts only (ADR 0100 decision 9).
  * Runtime: isomorphic
- * Governing contract: ADR 0100 (decisions 2, 3, 9 and 10); ADR 0399 (storage home); STA-781.
+ * Governing contract: ADR 0100 (decisions 2, 3, 9 and 10); ADR 0399 (storage home); STA-781; ADR 0490 (decision 4).
  */
 import { type Actor, Port, type ScopeRef } from "@stackra/contracts";
 
 import type { RunStatus } from "#contracts/enums/run-status.enum";
+import type { ClientToolPending } from "#contracts/types/client-tool-pending.type";
 import type { RecordScope } from "#contracts/types/record-scope.type";
 import type { RunApprovalRecord } from "#contracts/types/run-approval-record.type";
 import type { RunRecord } from "#contracts/types/run-record.type";
@@ -41,12 +42,13 @@ export abstract class RunStore extends Port {
   /** The run with `id`, or `undefined` when none is visible. */
   abstract get(id: string): Promise<RunRecord | undefined>;
 
-  /** Changes the run's status and bookkeeping; `pending: null` clears the parked call. */
+  /** Changes the run's status and bookkeeping; `pending: null` and `clientPending: null` clear the parked call. */
   abstract update(
     id: string,
     change: {
       readonly status: RunStatus;
       readonly pending?: { readonly approvalId: string; readonly toolCallId: string } | null;
+      readonly clientPending?: ClientToolPending | null;
       readonly steps?: number;
       readonly errorCode?: string;
       readonly finishedAt?: Date;

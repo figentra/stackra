@@ -1,17 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: `MemberIR`, everything discovery read from one member: its facts, modules, kind classes, shapes, enums,
- *          file exports, shell slots and slot fills, its lang catalogues and those its declared packages ship, its `I18n` key references, the services its files import a client from, the committed manifests of its dependencies and of the services it injects a client of (and, for a relay service, of every publishing sibling), and which
+ *          file exports, shell slots and slot fills, its lang catalogues and those its declared packages ship, its `I18n` key references, the anchors its components declare and the anchor keys its source refers to, the services its files import a client from, the committed manifests of its dependencies and of the services it injects a client of (and, for a relay service, of every publishing sibling), and which
  *          of those services exist in the workspace. Every gen output is a pure function of it.
  * Boundary: a type only. The committed `stackra.manifest.json` is the IR other members read (ADR 0127 2026-10-24
  *           note: `ir` folds into gen); this in-memory form never leaves a gen run.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20 and 25); ADR 0295 (decisions 1 and 7); ADR 0305 (rules 15 and 16); ADR 0260
  *                     (decision 3: clients from the producer's manifest); STA-1298 (package catalogues, key references);
- *                     ADR 0438 (shell slots and fills, stackra-03).
+ *                     ADR 0438 (shell slots and fills, stackra-03); ADR 0490 (anchors, STA-1631).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
+import type { AnchorIR } from "#core/types/anchor-ir.type";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
@@ -186,6 +187,18 @@ export interface MemberIR {
     readonly column: number;
     readonly path: readonly string[];
   }[];
+
+  /**
+   * Every `anchor="<key>"` the member's components declare (a client tool target, ADR 0490 decision 1), with its place.
+   * Absent when none (STA-1631).
+   */
+  readonly anchors?: readonly AnchorIR[];
+
+  /**
+   * Every `anchor: "<key>"` property in the member's source (a tour step or an answer pointing at an anchor), with its
+   * place; `anchor_undeclared` refuses one no anchor declares. Absent when none (STA-1631).
+   */
+  readonly anchorReferences?: readonly AnchorIR[];
 
   /** What discovery refused. */
   readonly errors: readonly GenError[];

@@ -6,7 +6,7 @@
  *          layout's data.
  * Boundary: test only; the classes restate the template's console, web and mobile routes with local stand-ins.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 14, 16 and 25).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 14, 16 and 25); ADR 0490 (decisions 1 and 5).
  */
 import { kindOf } from "@stackra/container";
 import { describe, expect, expectTypeOf, it } from "vitest";
@@ -82,7 +82,21 @@ describe("Route", () => {
         chrome: { header: "large" },
         document: null,
         cache: null,
+        ai: null,
+        context: null,
       },
+    });
+  });
+
+  it("records the AI opt-out and the page context it publishes", () => {
+    class ReportRoute extends Route({
+      path: "/reports/:reportId",
+      ai: false,
+      context: { record: { model: "reports.report", param: "reportId" }, filters: true },
+    }) {}
+    expect(kindOf(ReportRoute)?.options).toMatchObject({
+      ai: false,
+      context: { record: { model: "reports.report", param: "reportId" }, filters: true },
     });
   });
 

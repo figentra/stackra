@@ -5,7 +5,7 @@
  *          the type exports resolve.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias and the runner through @stackra/testing.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0127 2026-10-24 note.
+ * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0127 2026-10-24 note; ADR 0490.
  */
 import type { QueryContext } from "@stackra/actions";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
@@ -69,8 +69,13 @@ describe("@stackra/ai", () => {
       "ApprovalMode",
       "ApprovalRequested",
       "ApprovalResolved",
+      "CLIENT_RESULT_ACTION",
+      "CLIENT_TOOL_TIMEOUT_MS",
       "ClassifierGuardrailDriver",
       "ClassifierGuardrailOptions",
+      "ClientResultInput",
+      "ClientToolNotPendingError",
+      "ClientToolResult",
       "Facts",
       "GuardrailBlockedError",
       "GuardrailEffect",
@@ -82,6 +87,9 @@ describe("@stackra/ai", () => {
       "MemoryPageReaderDriver",
       "MemoryRunStoreDriver",
       "ModelProviders",
+      "PageContext",
+      "PageContextModal",
+      "PageContextSelection",
       "PatternGuardrailDriver",
       "PatternGuardrailOptions",
       "PiiGuardrailDriver",
@@ -96,10 +104,12 @@ describe("@stackra/ai", () => {
       "checkBudget",
       "checkEgress",
       "decide",
+      "offerClientTools",
       "parsePage",
       "redact",
       "resolveApproval",
       "resolveModel",
+      "resolvePageContext",
       "retrieve",
       "routeIntent",
       "routeModel",

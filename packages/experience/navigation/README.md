@@ -63,6 +63,19 @@ type only. `ctx.params` and `ctx.search` are typed by the route's `params` and `
 and the data the route's layout resolved is spread into the context (`ctx.site` under `SiteLayout`). A loader returns
 data, `ctx.redirect(Routes.x, params)`, `ctx.data(value, { status })`, or throws `ctx.notFound()`.
 
+## AI: client tool and page context
+
+Gen writes the agent a client tool `navigate.<route>` for every route (ADR 0490); its input is the route's `:param`
+segments. `ai: false` keeps a route out. `context` names what the route publishes with each AI turn: the `:param` that
+holds a record's public id and whether it publishes a selection, filters, a view and a modal. It holds keys, never values.
+
+```ts
+export class OrderRoute extends Route({
+  path: "/orders/:orderId",
+  context: { record: { model: "orders.order", param: "orderId" } },
+}) {}
+```
+
 ## Links and locale mounts
 
 Every link names a `Routes.<key>` ref, a settings page or a resource, never a path: `<Link to={Routes.product}

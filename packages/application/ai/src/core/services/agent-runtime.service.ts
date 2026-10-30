@@ -9,19 +9,27 @@
  *          queued run has no session, so its calls carry none. Every bound `GuardrailLayer` checks the prompt before
  *          it is stored and the answer before it is stored (`runGuardrails`; a redaction is what gets stored, a block
  *          fails the run with `GuardrailBlockedError`), and `AiMeter` meters each settled loop's token usage.
+ *          A client tool the turn's surface was offered (`PromptCall.clientTools`) is a tool whose `execute` parks: the
+ *          run stores the call, parks as `waiting_client_tool`, emits the `client_tool` part to that surface only
+ *          (`PromptCall.onClientTool`) and arms a 30 second timer; `resolveClientTool` validates the surface's answer
+ *          and resumes the loop, and `expireClientTool` resumes it with the refusal `client_unavailable`.
  * Boundary: a service over the ai ports (`ConversationStore`, `RunStore`, `ToolDispatcher`, `AgentModels`,
  *           `InstructionSource`, `AgentQueue`), the `Clock`, `AiMeter` and the bound `GuardrailLayer`s (through
  *           `DiscoveryService`, in wiring order); it names no provider, prompt or policy. Text lives only
  *           in the conversation; runs, steps and tool calls hold hashes, codes and counts (ADR 0100 decision 9). A run
  *           acts only as its stored principal, scope and record, never as anything the model says. The tool result of a
- *           parked call is not stored, so the conversation holds exactly one result per call once it resumes.
+ *           parked call is not stored, so the conversation holds exactly one result per call once it resumes. A client
+ *           tool never reaches the dispatcher and changes only the viewer's screen. shortcut: the surface's tools, its
+ *           emitter and the 30 second timers live in this process; a restart loses them, so a stale parked run is
+ *           expired by calling `expireClientTool` once its stored `expiresAt` has passed (a worker sweep), and a run
+ *           resumed in another process continues with its server tools only.
  * Runtime: isomorphic
  * Governing contract: ADR 0100 (decisions 2, 3, 5, 9 and 10); ADR 0155 (no hosted gateway); ADR 0227 (no separate
  *                     agent runtime); STA-781; STA-1256 (bypass switch); ADR 0156 (decision 4), ADR 0216 (decision 2),
- *                     STA-1385 (guardrails and meter wired).
+ *                     STA-1385 (guardrails and meter wired); ADR 0490 (decisions 3 and 4: client tools); STA-1631.
  */
 import { type DiscoveryService, Service } from "@stackra/container";
-import type { Actor, Clock } from "@stackra/contracts";
+import type { Actor, Clock, Json } from "@stackra/contracts";
 import { ForbiddenError, NotFoundError } from "@stackra/errors";
 import {
   type AssistantContent,
@@ -45,8 +53,16 @@ import type { InstructionSource } from "#contracts/ports/instruction-source.port
 import type { RunStore } from "#contracts/ports/run-store.port";
 import type { ToolDispatcher } from "#contracts/ports/tool-dispatcher.port";
 import type { AgentTool } from "#contracts/types/agent-tool.type";
+import type { ClientToolAnswer } from "#contracts/types/client-tool-answer.type";
+import type { ClientToolPart } from "#contracts/types/client-tool-part.type";
+import type { ClientToolPending } from "#contracts/types/client-tool-pending.type";
+import type { ClientToolRow } from "#contracts/types/client-tool-row.type";
 import type { RunRecord } from "#contracts/types/run-record.type";
+import type { SurfaceDescriptor } from "#contracts/types/surface-descriptor.type";
 import { AGENT_REGISTRY } from "#core/constants/agent-registry.constant";
+import { CLIENT_TOOL_RESULT_SCHEMA } from "#core/constants/client-tool-result-schema.constant";
+import { CLIENT_TOOL_TIMEOUT_MS } from "#core/constants/client-tool-timeout.constant";
+import { ClientToolNotPendingError } from "#core/errors/client-tool-not-pending.error";
 import { GuardrailBlockedError } from "#core/errors/guardrail-blocked.error";
 import { runGuardrails } from "#core/functions/run-guardrails.function";
 import { GuardrailLayer } from "#core/ports/guardrail-layer.port";
@@ -63,6 +79,11 @@ import type { ResumeDecision } from "#core/types/resume-decision.type";
 interface LoopState {
   /** The first tool call the gate parked in this loop. */
   paused: PendingApproval | undefined;
+
+  /** The first client tool call the model made in this loop: the run parks on it. */
+  client:
+    | { readonly toolCallId: string; readonly row: ClientToolRow; readonly input: unknown }
+    | undefined;
 
   /** The session's bypass switch, passed to every tool call. */
   readonly bypass: boolean;
@@ -83,6 +104,24 @@ interface Settled {
     };
   }[];
   readonly text: string;
+}
+
+/** What a run keeps in this process about the surface that opened its turn. */
+interface ClientSession {
+  /** The surface the `client_tool` parts go to. */
+  readonly surface: SurfaceDescriptor;
+
+  /** The client tools it was offered. */
+  readonly tools: readonly ClientToolRow[];
+
+  /** Receives each `client_tool` part. */
+  readonly emit: ((part: ClientToolPart) => void) | undefined;
+
+  /** How long to wait for an answer. */
+  readonly timeoutMs: number;
+
+  /** The session's bypass switch, for the calls after an answer. */
+  readonly bypass: boolean;
 }
 
 /** The human a principal acts for: the end of its on-behalf-of chain. */
@@ -177,6 +216,12 @@ export class AgentRuntime extends Service {
 
   private readonly discovery: DiscoveryService;
 
+  /** The surface session of each run that has one, by run id. */
+  private readonly sessions = new Map<string, ClientSession>();
+
+  /** The timer of each run parked on a client tool call, by run id. */
+  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
+
   /**
    * @param conversations - where conversations and their (sealed) messages live.
    * @param runs - where runs, steps, tool calls and approvals live.
@@ -219,13 +264,15 @@ export class AgentRuntime extends Service {
    */
   async prompt(agent: AgentDefinition, text: string, call: PromptCall): Promise<AgentReply> {
     const run = await this.begin(agent, text, call, RunStatus.Running);
+    this.attach(run.id, call);
     return this.loop(agent, run, call.locale, call.abortSignal, call.bypass === true);
   }
 
   /** Runs `text` for `agent`, streaming the model's text; `reply` settles as `prompt` does. */
   async stream(agent: AgentDefinition, text: string, call: PromptCall): Promise<AgentStream> {
     const run = await this.begin(agent, text, call, RunStatus.Running);
-    const state: LoopState = { paused: undefined, bypass: call.bypass === true };
+    this.attach(run.id, call);
+    const state: LoopState = { paused: undefined, client: undefined, bypass: call.bypass === true };
     const result = streamText({
       ...(await this.setup(agent, run, state, call.locale)),
       ...(call.abortSignal === undefined ? {} : { abortSignal: call.abortSignal }),
@@ -317,7 +364,7 @@ export class AgentRuntime extends Service {
         )
       : undefined;
     const bypass = decision.bypass === true;
-    const state: LoopState = { paused: undefined, bypass };
+    const state: LoopState = { paused: undefined, client: undefined, bypass };
     const output =
       offered === undefined
         ? {
@@ -365,6 +412,59 @@ export class AgentRuntime extends Service {
     return this.loop(agent, { ...run, status: RunStatus.Running }, locale, abortSignal, bypass);
   }
 
+  /**
+   * Continues the run `runId` parked on a client tool call with the surface's answer: its result when it is valid, the
+   * refusal it sent, or `client_result_invalid` when the result breaks the client tool result schema; then the loop
+   * goes on. The result reports only what the screen did; the model never takes it as data about records.
+   *
+   * @throws NotFoundError when the run is not visible.
+   * @throws ClientToolNotPendingError when the run is not waiting on `answer.toolCallId` (unknown, answered or expired).
+   */
+  async resolveClientTool(
+    runId: string,
+    answer: ClientToolAnswer,
+    abortSignal?: AbortSignal,
+    locale?: string,
+  ): Promise<AgentReply> {
+    const run = await this.stored(runId);
+    const pending = this.clientPendingOf(run, answer.toolCallId);
+    const parsed = CLIENT_TOOL_RESULT_SCHEMA.safeParse(answer.result);
+    const refusal = answer.refusal ?? (parsed.success ? undefined : "client_result_invalid");
+    return this.finishClient(
+      run,
+      pending,
+      refusal === undefined ? parsed.data : { refused: refusal },
+      refusal,
+      abortSignal,
+      locale,
+    );
+  }
+
+  /**
+   * Ends the wait on a client tool call: the loop goes on with the refusal `client_unavailable`, which the model sees as
+   * a tool error. Called by the timer, or by a sweep of runs past their stored `expiresAt`.
+   *
+   * @throws NotFoundError when the run is not visible.
+   * @throws ClientToolNotPendingError when the run is not waiting on `toolCallId` (it was answered meanwhile).
+   */
+  async expireClientTool(
+    runId: string,
+    toolCallId: string,
+    abortSignal?: AbortSignal,
+    locale?: string,
+  ): Promise<AgentReply> {
+    const run = await this.stored(runId);
+    const pending = this.clientPendingOf(run, toolCallId);
+    return this.finishClient(
+      run,
+      pending,
+      { refused: "client_unavailable" },
+      "client_unavailable",
+      abortSignal,
+      locale,
+    );
+  }
+
   /** Opens or continues the conversation, starts the run in `status` and stores the prompt. */
   private async begin(
     agent: AgentDefinition,
@@ -410,8 +510,18 @@ export class AgentRuntime extends Service {
       this.conversations.messages(run.conversationId),
       this.dispatcher.tools(agent.tools, this.listingOf(run)),
     ]);
-    const tools: ToolSet = Object.fromEntries(
-      offered.map((each) => [
+    // A server tool wins a name clash; gen refuses a clash inside the client table (`client_tool_collision`).
+    const tools: ToolSet = Object.fromEntries([
+      ...(this.sessions.get(run.id)?.tools ?? []).map((row) => [
+        row.name,
+        tool({
+          description: `Changes only the user's screen: ${row.key}`,
+          inputSchema: jsonSchema(row.inputSchema as never),
+          execute: (input: unknown, { toolCallId }: { toolCallId: string }) =>
+            this.clientCalled(run, row, input, toolCallId, state),
+        }),
+      ]),
+      ...offered.map((each) => [
         each.name,
         tool({
           ...(each.description === undefined ? {} : { description: each.description }),
@@ -420,14 +530,17 @@ export class AgentRuntime extends Service {
             this.called(run, each, input, toolCallId, state),
         }),
       ]),
-    );
+    ]);
     state.model = modelLabel(model);
     return {
       model,
       instructions,
       messages: [...messages],
       tools,
-      stopWhen: [stepCountIs(agent.maxSteps), () => state.paused !== undefined],
+      stopWhen: [
+        stepCountIs(agent.maxSteps),
+        () => state.paused !== undefined || state.client !== undefined,
+      ],
     };
   }
 
@@ -439,7 +552,7 @@ export class AgentRuntime extends Service {
     abortSignal: AbortSignal | undefined,
     bypass = false,
   ): Promise<AgentReply> {
-    const state: LoopState = { paused: undefined, bypass };
+    const state: LoopState = { paused: undefined, client: undefined, bypass };
     try {
       const result = await generateText({
         ...(await this.setup(agent, run, state, locale)),
@@ -454,6 +567,31 @@ export class AgentRuntime extends Service {
       await this.fail(run, error);
       throw error;
     }
+  }
+
+  /**
+   * Records one client tool call and parks the loop on it: the surface runs it, so nothing is dispatched here. The model
+   * sees that the call waits; the loop stops after this step.
+   */
+  private async clientCalled(
+    run: RunRecord,
+    row: ClientToolRow,
+    input: unknown,
+    toolCallId: string,
+    state: LoopState,
+  ): Promise<unknown> {
+    await this.runs.recordToolCall({
+      runId: run.id,
+      toolCallId,
+      tool: row.key,
+      inputHash: await hashOf(input),
+      outcome: ToolCallOutcome.ClientTool,
+      at: this.clock.now(),
+    });
+    // shortcut: a run parks on its first client call; a second one in the same step is told it waits and is never
+    // answered. Park one at a time until a surface needs parallel client tools.
+    state.client ??= { toolCallId, row, input };
+    return { waiting: "client_tool" };
   }
 
   /**
@@ -535,10 +673,9 @@ export class AgentRuntime extends Service {
       },
     );
     const answer = settled.text === "" ? "" : await this.guarded(settled.text, "output");
+    const parkedCall = state.paused?.toolCallId ?? state.client?.toolCallId;
     const kept =
-      state.paused === undefined
-        ? settled.messages
-        : withoutResult(settled.messages, state.paused.toolCallId);
+      parkedCall === undefined ? settled.messages : withoutResult(settled.messages, parkedCall);
     const messages = answer === settled.text ? kept : withAnswer(kept, answer);
     await this.conversations.append(run.conversationId, run.id, messages);
     for (const [offset, step] of settled.steps.entries())
@@ -559,6 +696,24 @@ export class AgentRuntime extends Service {
       });
       return { ...base, status: RunStatus.WaitingApproval, pending: state.paused };
     }
+    const session = this.sessions.get(run.id);
+    if (state.client !== undefined && session !== undefined) {
+      const clientPending: ClientToolPending = {
+        toolCallId: state.client.toolCallId,
+        surfaceId: session.surface.id,
+        tool: state.client.row.key,
+        expiresAt: new Date(this.clock.now().getTime() + session.timeoutMs),
+      };
+      await this.runs.update(run.id, {
+        status: RunStatus.WaitingClientTool,
+        clientPending,
+        steps,
+      });
+      // Only after the park is stored: an answer that comes back at once finds the run waiting.
+      this.announce(run.id, session, clientPending, state.client.input);
+      return { ...base, status: RunStatus.WaitingClientTool, clientPending };
+    }
+    this.release(run.id);
     await this.runs.update(run.id, {
       status: RunStatus.Completed,
       pending: null,
@@ -586,6 +741,7 @@ export class AgentRuntime extends Service {
 
   /** Marks `run` failed with the error's code (a refusal's), or `error`. */
   private async fail(run: RunRecord, error: unknown): Promise<void> {
+    this.release(run.id);
     const code =
       typeof error === "object" &&
       error !== null &&
@@ -622,6 +778,123 @@ export class AgentRuntime extends Service {
         `No agent "${run.agent}" is declared here: import its class in the worker`,
       );
     return agent;
+  }
+
+  /** Keeps what the call says about its surface, when it was offered client tools. */
+  private attach(runId: string, call: PromptCall): void {
+    if (
+      call.surface === undefined ||
+      call.clientTools === undefined ||
+      call.clientTools.length === 0
+    )
+      return;
+    this.sessions.set(runId, {
+      surface: call.surface,
+      tools: call.clientTools,
+      emit: call.onClientTool,
+      timeoutMs: call.clientToolTimeoutMs ?? CLIENT_TOOL_TIMEOUT_MS,
+      bypass: call.bypass === true,
+    });
+  }
+
+  /** Sends the `client_tool` part to the session's surface and arms the timer that ends the wait. */
+  private announce(
+    runId: string,
+    session: ClientSession,
+    pending: ClientToolPending,
+    input: unknown,
+  ): void {
+    session.emit?.({
+      type: "client_tool",
+      runId,
+      toolCallId: pending.toolCallId,
+      surfaceId: pending.surfaceId,
+      tool: pending.tool,
+      input: input as Json,
+      expiresAt: pending.expiresAt.toISOString(),
+    });
+    const timer = setTimeout(() => {
+      // A late timer finds the run answered or gone: that is not an error.
+      this.expireClientTool(runId, pending.toolCallId).catch(() => undefined);
+    }, session.timeoutMs);
+    (timer as { unref?: () => void }).unref?.();
+    this.timers.set(runId, timer);
+  }
+
+  /** Forgets the surface session and the timer of `runId`. */
+  private release(runId: string): void {
+    clearTimeout(this.timers.get(runId));
+    this.timers.delete(runId);
+    this.sessions.delete(runId);
+  }
+
+  /**
+   * The client tool call `run` is parked on.
+   *
+   * @throws ClientToolNotPendingError when it is not waiting on `toolCallId`.
+   */
+  private clientPendingOf(run: RunRecord, toolCallId: string): ClientToolPending {
+    const { clientPending } = run;
+    if (
+      run.status !== RunStatus.WaitingClientTool ||
+      clientPending === undefined ||
+      clientPending.toolCallId !== toolCallId
+    )
+      throw ClientToolNotPendingError.create({ toolCallId });
+    return clientPending;
+  }
+
+  /** Stores the answer to the parked client tool call as its tool result and goes on with the loop. */
+  private async finishClient(
+    run: RunRecord,
+    pending: ClientToolPending,
+    output: unknown,
+    refusal: string | undefined,
+    abortSignal: AbortSignal | undefined,
+    locale: string | undefined,
+  ): Promise<AgentReply> {
+    // Before anything else: a second answer, or the timer after an answer, finds nothing to resume.
+    clearTimeout(this.timers.get(run.id));
+    this.timers.delete(run.id);
+    const agent = this.agentOf(run);
+    const history = await this.conversations.messages(run.conversationId);
+    const callPart = history
+      .flatMap((message) =>
+        message.role === "assistant" && Array.isArray(message.content) ? message.content : [],
+      )
+      .find((part) => part.type === "tool-call" && part.toolCallId === pending.toolCallId);
+    if (callPart === undefined || callPart.type !== "tool-call")
+      throw new RangeError(`Run ${run.id} has no stored tool call ${pending.toolCallId}`);
+    await this.runs.recordToolCall({
+      runId: run.id,
+      toolCallId: pending.toolCallId,
+      tool: pending.tool,
+      inputHash: await hashOf(callPart.input),
+      outcome: refusal === undefined ? ToolCallOutcome.Ok : ToolCallOutcome.Refused,
+      ...(refusal === undefined ? {} : { code: refusal }),
+      at: this.clock.now(),
+    });
+    await this.conversations.append(run.conversationId, run.id, [
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: pending.toolCallId,
+            toolName: callPart.toolName,
+            output: { type: "json", value: output as never },
+          },
+        ],
+      },
+    ]);
+    await this.runs.update(run.id, { status: RunStatus.Running, clientPending: null });
+    return this.loop(
+      agent,
+      { ...run, status: RunStatus.Running },
+      locale,
+      abortSignal,
+      this.sessions.get(run.id)?.bypass ?? false,
+    );
   }
 
   /** The tool listing of `run`: its stored principal, scope and record. */
