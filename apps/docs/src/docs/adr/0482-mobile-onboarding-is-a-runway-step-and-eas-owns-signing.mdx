@@ -7,9 +7,9 @@ description: "Proposed · 2026-10-30"
 
 <Note>
   Proposed (STA-1623); owner answers of 2026-10-30. Amends 0480 decision 8. Builds on
-  [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) decision 6 (ids),
-  [0480](/adr/0480-api-first-release-and-vault-keeper-agents) (store APIs, root kit, dry run by
-  default) and [0062](/adr/0062-mobile-release-push-and-crash-reporting) (Expo push).
+  [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) decision 6 (ids), 0480
+  (store APIs, root kit, dry run by default) and
+  [0062](/adr/0062-mobile-release-push-and-crash-reporting) (Expo push).
 </Note>
 
 ## Context
@@ -43,7 +43,7 @@ only the template has an EAS project.
    decision 3).
 7. **Generated keys are written blind.** A third-party key Runway must create (the FCM v1 service-account key, later
    the Wallet pass certificate) is created inside the CI job, written straight into Infisical and handed to EAS; it is
-   never returned, printed or written to disk. This amends [0480](/adr/0480-api-first-release-and-vault-keeper-agents)
+   never returned, printed or written to disk. This amends 0480
    decision 8, which allowed only machine secrets (owner decision 2026-10-30).
 8. **Manual where no API exists, detected when done.** The App Store Connect app record and the Play app with its first
    upload are owner steps with exact values from the runway and `assets/store`; Runway reads the store APIs to mark
