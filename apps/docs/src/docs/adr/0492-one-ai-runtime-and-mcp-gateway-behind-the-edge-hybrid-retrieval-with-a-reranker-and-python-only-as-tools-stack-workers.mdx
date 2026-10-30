@@ -114,6 +114,15 @@ tools stack on ECS Fargate (0444), reached as a Connection behind `TextExtractor
 - `TOOLS_CATALOGUE` pins every image to a tag (`packages/infrastructure/infra-tools/src/core/constants/tools-catalogue.constant.ts`
   and its test).
 
+## Note 2026-10-30: speech providers for GCC (decision 9)
+
+The owner chose all three speech providers behind the speech Connection of 0376. Azure AI Speech in UAE North is the
+region's platform default: Microsoft lists real-time and batch speech to text there, processed in the resource's
+region. The self-hosted `tools-speech` is pinned for the health and privileged data classes (0376 decision 7). AWS
+Transcribe is not offered in me-central-1, only in me-south-1 (Bahrain), so it can be only a per-tenant choice that
+processes outside the tenant's region, pending the owner's answer and a catalog entry. Creating the Azure account and
+its Connection is an owner step.
+
 ## Supersedes and sources
 
 `Supersedes: none`. Sources: the leader's brief and the owner's message of 2026-10-30 (STA-1629); os
