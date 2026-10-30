@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `ResourceFormField`, one recorded form element bound into the surrounding schema form: a value field drawn
- *          by its input type (switch, number, select of the enum's codes, text), a picker over an options query, a grid
- *          of fields, and the steps of a set as titled sections.
- * Boundary: internal to the form page; draws `@stackra/ui`'s `Field.*` parts, which read the binding by name, so
- *           validation errors (the schema's and the server's) show on each field. An upload field and a repeater are
- *           not drawn yet; the step set is not a wizard yet (its steps show one under another).
+ *          by its input type (switch, number, select of the enum's codes, text, an object's keys as a titled group, a
+ *          list as rows to add and remove), a picker over an options query, a grid of fields, and the steps of a set as
+ *          titled sections.
+ * Boundary: internal to the form page and the action modal; draws `@stackra/ui`'s `Field.*` parts, which read the
+ *           binding by name, so validation errors (the schema's and the server's) show on each field. A list binds its
+ *           path with `useSchemaField` and its rows by index (`parcels.0.weight`); a row's label drops the index. An
+ *           upload field and the recorded repeater node are not drawn yet; the step set is not a wizard yet.
  * Runtime: browser
  * Governing contract: ADR 0307 (form keys are paths of the create or update input); ADR 0055 (thin field adapters).
  */
@@ -13,10 +15,12 @@ import type { QueryRef } from "@stackra/clients";
 import { useQuery } from "@stackra/clients/react";
 import { Enum } from "@stackra/contracts";
 import { useTranslation } from "@stackra/i18n/react";
-import { Field, FormSection } from "@stackra/ui/react";
+import { useSchemaField } from "@stackra/ui/form";
+import { Button, Field, FormSection } from "@stackra/ui/react";
 import type { ReactElement } from "react";
 import type { ZodType } from "zod";
 
+import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { inputKind } from "#core/functions/input-kind.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
 import { valueAt } from "#core/functions/value-at.function";
@@ -67,6 +71,60 @@ function OptionsField({
   );
 }
 
+/** The label path of a form key: a list row's index is dropped (`parcels.0.weight` is `parcels.weight`). */
+const fieldLabelPath = (key: string): string => key.replaceAll(/\.\d+(?=\.|$)/g, "");
+
+/** The rows of a list field: per row an object's group or one field, each with a remove button, and an add button. */
+function ListField({
+  resourceKey,
+  schema,
+  name,
+  label,
+  item,
+}: {
+  readonly resourceKey: string;
+  readonly schema: ZodType;
+  readonly name: string;
+  readonly label: string;
+  readonly item: "object" | "value";
+}): ReactElement {
+  const { t } = useTranslation();
+  const list = useSchemaField<readonly unknown[] | null | undefined>(name);
+  const rows = Array.isArray(list.value) ? list.value : [];
+  const error =
+    list.isInvalid === true && typeof list.errorMessage === "string"
+      ? list.errorMessage
+      : undefined;
+  return (
+    <FormSection title={label} {...(error === undefined ? {} : { description: error })}>
+      {rows.map((_, index) => (
+        // oxlint-disable-next-line react/no-array-index-key -- reason: a row is its place in the list; the form binds rows by index
+        <div key={index} className="flex items-end gap-2">
+          <div className="flex-1">
+            <ResourceFormField
+              resourceKey={resourceKey}
+              schema={schema}
+              node={{ kind: "value", key: `${name}.${index}` }}
+            />
+          </div>
+          <Button
+            variant="ghost"
+            onPress={() => list.onChange(rows.filter((__, other) => other !== index))}
+          >
+            {t(PANEL_KEYS.panel.resources.remove_item, { number: index + 1 })}
+          </Button>
+        </div>
+      ))}
+      <Button
+        variant="secondary"
+        onPress={() => list.onChange([...rows, item === "object" ? {} : undefined])}
+      >
+        {t(PANEL_KEYS.panel.resources.add_item)}
+      </Button>
+    </FormSection>
+  );
+}
+
 /**
  * One form element.
  *
@@ -97,7 +155,7 @@ export function ResourceFormField({
       </>
     );
   if (node.kind !== "value") return null;
-  const label = t(resourceLabel(resourceKey, "fields", node.key));
+  const label = t(resourceLabel(resourceKey, "fields", fieldLabelPath(node.key)));
   if (node.options !== undefined)
     return (
       <OptionsField
@@ -108,6 +166,22 @@ export function ResourceFormField({
       />
     );
   const kind = inputKind(schema, node.key);
+  if (kind.kind === "object")
+    return (
+      <FormSection title={label}>
+        {children(kind.keys.map((key) => ({ kind: "value", key: `${node.key}.${key}` })))}
+      </FormSection>
+    );
+  if (kind.kind === "list")
+    return (
+      <ListField
+        resourceKey={resourceKey}
+        schema={schema}
+        name={node.key}
+        label={label}
+        item={kind.item}
+      />
+    );
   const codes =
     node.enum === undefined
       ? kind.kind === "enum"

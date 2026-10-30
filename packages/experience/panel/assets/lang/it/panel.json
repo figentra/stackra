@@ -41,7 +41,9 @@
     "count": "{count, plural, one {# record} other {# record}}",
     "count_capped": "{count, plural, other {#+ record}}",
     "yes": "Sì",
-    "no": "No"
+    "no": "No",
+    "add_item": "Aggiungi",
+    "remove_item": "Rimuovi l’elemento {number}"
   },
   "plan_catalogue": {
     "history": "Versioni",

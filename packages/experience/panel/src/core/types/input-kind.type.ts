@@ -17,4 +17,16 @@ export type InputKind =
       readonly kind: "enum";
       /** The codes, in the schema's order. */
       readonly options: readonly string[];
+    }
+  | {
+      /** A nested object, drawn as a titled group of its keys. */
+      readonly kind: "object";
+      /** Its keys, in the schema's order. */
+      readonly keys: readonly string[];
+    }
+  | {
+      /** A list, drawn as rows to add and remove; each row is an object's group or one field. */
+      readonly kind: "list";
+      /** Whether an item is an object (a group per row) or a single value. */
+      readonly item: "object" | "value";
     };

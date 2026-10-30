@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `inputKind(schema, path)`, which control a form field draws from the input schema at `path`: a switch, a
- *          number, a choice of the enum's codes, or text; the optional, nullable and default wrappers are looked
- *          through.
- * Boundary: internal; reads zod 4's `def` (type, innerType, shape, entries) only, never parses. A path the schema does
+ *          number, a choice of the enum's codes, a group of an object's keys, a list of rows, or text; the optional,
+ *          nullable and default wrappers are looked through, and a numeric segment of the path is a list's item
+ *          (`parcels.0.weight`).
+ * Boundary: internal; reads zod 4's `def` (type, innerType, shape, element, entries) only, never parses. A path the schema does
  *           not have is text. Web and native forms share it.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (form keys are paths of the create or update input); ADR 0055 (thin field adapters).
@@ -17,6 +18,7 @@ interface Def {
   readonly type?: string;
   readonly innerType?: ZodType;
   readonly shape?: Readonly<Record<string, ZodType>>;
+  readonly element?: ZodType;
   readonly entries?: Readonly<Record<string, string>>;
 }
 
@@ -40,12 +42,19 @@ function bare(schema: ZodType | undefined): ZodType | undefined {
  */
 export function inputKind(schema: ZodType | undefined, path: string): InputKind {
   let current = bare(schema);
-  for (const segment of path.split(".")) current = bare(defOf(current).shape?.[segment]);
+  for (const segment of path.split(".")) {
+    const outer = defOf(current);
+    current = bare(outer.type === "array" ? outer.element : outer.shape?.[segment]);
+  }
   const def = defOf(current);
   if (def.type === "boolean") return { kind: "boolean" };
   if (def.type === "number" || def.type === "int" || def.type === "bigint")
     return { kind: "number" };
   if (def.type === "enum" && def.entries !== undefined)
     return { kind: "enum", options: Object.values(def.entries) };
+  if (def.type === "object" && def.shape !== undefined)
+    return { kind: "object", keys: Object.keys(def.shape) };
+  if (def.type === "array")
+    return { kind: "list", item: defOf(bare(def.element)).type === "object" ? "object" : "value" };
   return { kind: "text" };
 }

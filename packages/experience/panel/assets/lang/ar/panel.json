@@ -41,7 +41,9 @@
     "count": "{count, plural, zero {لا سجلات} one {سجل واحد} two {سجلان} few {# سجلات} many {# سجلًا} other {# سجل}}",
     "count_capped": "{count, plural, other {أكثر من # سجل}}",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "add_item": "إضافة",
+    "remove_item": "إزالة العنصر {number}"
   },
   "plan_catalogue": {
     "history": "الإصدارات",

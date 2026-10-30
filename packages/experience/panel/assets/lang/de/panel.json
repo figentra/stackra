@@ -41,7 +41,9 @@
     "count": "{count, plural, one {# Datensatz} other {# Datensätze}}",
     "count_capped": "{count, plural, other {#+ Datensätze}}",
     "yes": "Ja",
-    "no": "Nein"
+    "no": "Nein",
+    "add_item": "Hinzufügen",
+    "remove_item": "Eintrag {number} entfernen"
   },
   "plan_catalogue": {
     "history": "Versionen",
