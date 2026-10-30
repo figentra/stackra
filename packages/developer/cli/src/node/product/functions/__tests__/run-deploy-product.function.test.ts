@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `stackra deploy --product`: it refuses a missing or unknown environment, splits the comma
  *          lists, hands Runway the facts, the store accounts and the flags, fills dry-run stand-ins from the build
- *          manifest, and reports the rows, uploads, submissions and landing seeds.
+ *          manifest, and reports the rows, uploads, submissions and landing seeds; `--mobile-only` needs no edge fact,
+ *          passes the Play driver and reports a held Android build.
  * Boundary: test only; Runway's `readRunway` and `deployProduct` are mocked, nothing is deployed; the dry-run case
  *           writes a build manifest into a temporary folder.
  * Runtime: node (vitest)
@@ -129,6 +130,34 @@ describe("runDeployProduct", () => {
     );
     expect(output()).toContain("landing landing: 2 seed document(s) listed");
     expect(output()).toContain(`wrote ${PRODUCT_BUILD_SETTINGS.deployManifest("staging")}`);
+  });
+
+  // @covers sta-1623:FR-008
+  it("submits the mobile builds alone with --mobile-only: no edge fact, no KV writer, Play checked", async () => {
+    vi.mocked(deployProduct).mockResolvedValueOnce({
+      ...DEPLOY,
+      surfaces: { written: [], uploaded: [] },
+      seeds: {},
+      held: { app: "com.acme.app has no Play release yet: upload android-1 by hand first" },
+    } as never);
+    const { code, output } = run({ product: true, env: "staging", "mobile-only": true });
+
+    expect(await code).toBe(0);
+    const options = vi.mocked(deployProduct).mock.calls[0]?.[0];
+    expect(options).toMatchObject({
+      mobileOnly: true,
+      served: [],
+      assets: { bucket: "", origin: "" },
+    });
+    expect(options).not.toHaveProperty("kv");
+    expect(options).toHaveProperty("play");
+    expect(output()).toContain("held: com.acme.app has no Play release yet");
+  });
+
+  it("refuses --surfaces-only with --mobile-only", async () => {
+    await expect(
+      run({ product: true, env: "staging", "mobile-only": true, "surfaces-only": true }).code,
+    ).rejects.toBeInstanceOf(CliUsageError);
   });
 
   it("fills dry-run stand-ins from the build manifest and needs no KV namespace", async () => {

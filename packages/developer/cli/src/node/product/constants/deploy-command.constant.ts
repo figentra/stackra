@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `DEPLOY_COMMAND`, `stackra deploy --product --env <environment> [--dry-run] [--approved] [--first-release]
- *          [--assets-bucket <b>] [--assets-origin <url>] [--kv-namespace <id>] [--served <lines>]
+ * Purpose: `DEPLOY_COMMAND`, `stackra deploy --product --env <environment> [--dry-run] [--surfaces-only|--mobile-only]
+ *          [--approved] [--first-release] [--assets-bucket <b>] [--assets-origin <url>] [--kv-namespace <id>] [--served <lines>]
  *          [--canary-scopes <ids>] [--region <r>]`: deploys a built product (`runDeployProduct`).
  * Boundary: data plus dispatch; only the product mode exists, so `--product` is required.
  * Runtime: node
- * Governing contract: ADR 0436 (decisions 4 and 13); ADR 0437; ADR 0439 (decision 7); ADR 0170.
+ * Governing contract: ADR 0436 (decisions 4 and 13); ADR 0437; ADR 0439 (decision 7); ADR 0170; ADR 0482.
  */
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { runDeployProduct } from "#node/product/functions/run-deploy-product.function";
@@ -17,12 +17,13 @@ export const DEPLOY_COMMAND: CliCommand = {
   summary:
     "Deploy a built product to an environment: its surfaces to the edge, its mobile builds to the stores",
   usage:
-    "stackra deploy --product --env <dev|preview|staging|production> [--dry-run] [--surfaces-only] [--approved] [--first-release] [--assets-bucket <bucket>] [--assets-origin <url>] [--kv-namespace <id>] [--served <surface@major,…>] [--canary-scopes <id,…>] [--region <region>]",
+    "stackra deploy --product --env <dev|preview|staging|production> [--dry-run] [--surfaces-only|--mobile-only] [--approved] [--first-release] [--assets-bucket <bucket>] [--assets-origin <url>] [--kv-namespace <id>] [--served <surface@major,…>] [--canary-scopes <id,…>] [--region <region>]",
   options: {
     product: { type: "boolean" },
     env: { type: "string" },
     "dry-run": { type: "boolean" },
     "surfaces-only": { type: "boolean" },
+    "mobile-only": { type: "boolean" },
     approved: { type: "boolean" },
     "first-release": { type: "boolean" },
     "assets-bucket": { type: "string" },

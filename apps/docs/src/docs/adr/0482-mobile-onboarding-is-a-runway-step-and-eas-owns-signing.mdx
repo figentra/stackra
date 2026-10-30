@@ -1,12 +1,12 @@
 ---
 title: "0482 — Mobile onboarding is a Runway step, and EAS owns signing"
-description: "Draft · 2026-10-30"
+description: "Proposed · 2026-10-30"
 ---
 
 {/* Stackra file contract: Purpose: the decision record that taking a product's mobile app from nothing to store-ready is one idempotent Runway step list (`stackra mobile onboard`) behind store ports with mock drivers, that ids derive from the product key, that EAS creates and holds every signing credential, and that Runway detects the manual first Play upload. Boundary: decision text only; the code is @stackra/runway `onboardMobile` and its ports (STA-1623). Runtime: docs. Governing contract: ADR template; ADR 0439, 0441, 0480, 0352, 0062, 0173, 0257. */}
 
 <Note>
-  Draft (STA-1623), waiting for the owner. Builds on
+  Proposed (STA-1623); owner answers of 2026-10-30. Amends 0480 decision 8. Builds on
   [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) decision 6 (ids),
   [0480](/adr/0480-api-first-release-and-vault-keeper-agents) (store APIs, root kit, dry run by
   default) and [0062](/adr/0062-mobile-release-push-and-crash-reporting) (Expo push).
@@ -22,26 +22,41 @@ only the template has an EAS project.
 ## Decision
 
 1. **One step list.** `stackra mobile onboard --app <key>` runs Runway's `onboardMobile`: identity, EAS project, EAS
-   profiles, Apple bundle id and capabilities, App Store Connect app record, signing, push, store keys, Play app. Each
-   step is idempotent and reports done, planned, manual or blocked; the run stops at the first manual step (exit 2).
+   profiles, Apple bundle id and capabilities, App Store Connect app record, Google project, Firebase, Analytics link,
+   Sentry, signing, push, store keys, Play app. Each step is idempotent and reports done, planned, manual or blocked;
+   every step runs, and the exit code is 3 while one is manual or blocked.
 2. **Ids derive from the product key** when the runway does not set them: `com.figentra.<product>.<app>`, without
    `<app>` when it repeats `<product>`, `_` for `-` on Android. A set id is never changed (0439 decision 6).
 3. **EAS owns signing.** Distribution certificates, provisioning profiles, the APNs key and the Android upload keystore
    are created and held by EAS. Runway never generates, stores, prints or moves one; it only asks EAS whether they
    exist.
-4. **Store calls behind ports.** `AppleDeveloper`, `PlayConsole` and `ExpoProjects` are ports with a real driver and a
-   mock driver. ADR 0480's API clients become their real drivers (owner question Q2 of STA-1623).
-5. **Firebase is one key.** Android push uses Expo push; the only Firebase artefact is the FCM v1 service-account key,
-   held in Infisical by name and uploaded to EAS from CI. No Firebase project automation.
-6. **Manual where no API exists, detected when done.** The App Store Connect app record and the Play app with its first
+4. **Store calls behind ports.** `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase` and
+   `SentryProjects` are ports with a real driver and a memory driver. ADR 0480's API clients move into Runway as the
+   Apple and Play real drivers, and `pnpm store` imports them.
+5. **One Google project per product, named, with Firebase.** Runway creates the Google Cloud project with the id the
+   runway names (default the product key, never a generated id) under Figentra's organisation folder, adds Firebase,
+   registers the iOS and Android apps, fetches their config files into `assets/mobile/<app>/`, and links Figentra's
+   Google Analytics account. Runway signs in to Google with GitHub OIDC through workload identity federation; there is
+   no Google key. The app carries no Firebase Analytics SDK: Android push is Expo push over FCM v1 (0062), and product
+   analytics leave the app only through our analytics service (its own ADR, STA-1624).
+6. **Sentry per app.** Runway creates the Sentry project `<product>-<app>` and writes its public DSN to the runway (0062
+   decision 3).
+7. **Generated keys are written blind.** A third-party key Runway must create (the FCM v1 service-account key, later
+   the Wallet pass certificate) is created inside the CI job, written straight into Infisical and handed to EAS; it is
+   never returned, printed or written to disk. This amends [0480](/adr/0480-api-first-release-and-vault-keeper-agents)
+   decision 8, which allowed only machine secrets (owner decision 2026-10-30).
+8. **Manual where no API exists, detected when done.** The App Store Connect app record and the Play app with its first
    upload are owner steps with exact values from the runway and `assets/store`; Runway reads the store APIs to mark
    them done.
-7. **ADR 0480's limits hold:** dry run by default, live only in CI, portal-creating steps only in the product's
+9. **ADR 0480's limits hold:** dry run by default, live only in CI, portal-creating steps only in the product's
    `production` environment, nobody reads a value.
 
 ## Consequences
 
-- A new product's app is: owner creates two portal records once, everything else is the command.
+- A new product's app is: the owner creates the App Store Connect app record and the Play app with its first upload,
+  and once for all products sets up the Google workload identity pool and its Analytics grant; everything else is the
+  command.
+- Agents still never read a value; a generated key exists only inside the CI job that made it.
 - A store-side change in Apple, Google or Expo shows as a failing onboarding step, caught by the mock-driver contract
   tests only when a recorded fixture is refreshed.
 

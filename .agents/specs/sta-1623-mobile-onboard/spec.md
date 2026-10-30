@@ -4,13 +4,13 @@
 
 **Created**: 2026-10-30
 
-**Status**: Draft
+**Status**: Implementing
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
 **Linear**: STA-1623
 
-**Clarifications status**: open (owner questions Q1 to Q4 below)
+**Clarifications status**: complete (owner answers 2026-10-30, below)
 
 **Input**: "One runway command takes a product from no mobile app to a store-ready, auto-releasing app": identity,
 EAS project and profiles, Apple bundle id and capabilities, EAS-managed signing, store keys by name from Infisical,
@@ -48,9 +48,13 @@ upload detection) and one **release** entry that strings the existing steps toge
   checkout's `eas.json`; white-label variants keep using `runMobileJob` unchanged
 - **Secrets** (names only): `ASC_API_KEY_ID`, `ASC_API_ISSUER_ID`, `ASC_API_PRIVATE_KEY`,
   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `EXPO_TOKEN` (all ADR 0480 root kit, `prod:/ci/store`), new
-  `FCM_SERVICE_ACCOUNT_JSON` per product (`prod:/ci/store/<product>`). Read by name in CI only; no agent reads a value
+  `FCM_SERVICE_ACCOUNT_JSON` per product (`prod:/ci/store/<product>`, generated in CI and written blind, Q6),
+  `SENTRY_AUTH_TOKEN` (exists in `/ci`; needs the `project:write` scope). Google Cloud needs no key: GitHub OIDC
+  through workload identity federation (Q5). Read by name in CI only; no agent reads a value
 - **ADR needed**: yes, ADR 0482 (draft beside this spec): EAS owns signing, onboarding is a Runway step with store
-  ports, identity derivation rule, Play first-upload detection
+  ports, identity derivation rule, Google project and Firebase per product, generated keys written blind (amends ADR
+  0480 decision 8), Play first-upload detection. The analytics relay (Q7) is its own ADR and issue (STA-1624), not
+  this spec
 - **New dependencies**: none (fetch and `node:crypto`, as ADR 0480)
 - **Deploy modes**: SaaS (Figentra's store accounts) and white-label managed; bring-your-own accounts reuse the same ports
   with the scope's Connection credentials later (out of scope here)
@@ -65,7 +69,8 @@ upload detection) and one **release** entry that strings the existing steps toge
 ### User Story 1 - Onboard a product's mobile app (Priority: P1)
 
 The owner (or an agent, dry run) runs `stackra mobile onboard --app <key>` at a product root. Runway prints every step,
-each as done, would-do, or manual, and stops at the first step that needs an owner portal action.
+each as done, planned, manual or blocked. Every step runs and reports; a step that depends on a missing earlier one
+is blocked. Exit code 3 while any step is manual or blocked.
 
 Steps, in order, each idempotent (a second run reports `done` and changes nothing):
 
@@ -81,15 +86,27 @@ Steps, in order, each idempotent (a second run reports `done` and changes nothin
    stay manual per ADR 0480).
 5. **apple-app-record**: look up the App Store Connect app by bundle id. The API cannot create one: if missing, a
    manual step with the exact values (name, bundle id, SKU `<product>-<app>`, primary locale) and stop.
-6. **signing**: `eas credentials` non-interactively through a build-credentials setup for `production` on both
-   platforms; EAS creates and holds the distribution certificate, provisioning profile and Android keystore. Runway only
-   reads whether they exist.
-7. **push**: iOS: EAS's push key (created with signing). Android: the FCM v1 service-account key, read by name from
-   Infisical in CI and uploaded to EAS (Q3). No Firebase project automation.
-8. **store-keys**: check the root-kit names exist (vault preflight, ADR 0480 decision 8) and that the submit profile
-   points at them; never a value.
-9. **play-app**: look up the Play app by package name. The Play API cannot create an app nor take the first bundle: if
-   missing or without any release, print the one-time checklist (FR-009) and stop; once a release exists, `done`.
+6. **google-project**: create the Google Cloud project with the id `mobile.<app>.google.project` (default the
+   product key; never a generated id) under Figentra's organisation folder, and write the id back. An id taken
+   elsewhere is a manual step (pick another id). Runway signs in to Google with GitHub OIDC through workload identity
+   federation, which the owner sets up once (Q5).
+7. **firebase**: add Firebase to that project, register the iOS and Android apps, and fetch `GoogleService-Info.plist`
+   and `google-services.json` into `assets/mobile/<app>/` (config, not secrets); the mobile job points `app.json`'s
+   `googleServicesFile` at them. No Firebase Analytics SDK in the app (Q8).
+8. **analytics-link**: link the Firebase project to Figentra's Google Analytics account
+   (`mobile.<app>.google.analyticsAccount`). Manual once: the owner grants the federated identity Editor on that
+   Analytics account.
+9. **sentry**: create the Sentry project `<product>-<app>` in Figentra's organisation (ADR 0062) and write its DSN
+   (public) to `mobile.<app>.sentry.dsn`; the build uploads source maps and debug symbols with `SENTRY_AUTH_TOKEN`.
+10. **signing**: EAS creates and holds the distribution certificate, provisioning profile, APNs key and Android
+    keystore on the first production build (`eas build --non-interactive` with the root kit's App Store Connect key).
+    Runway only reads whether they exist.
+11. **push**: iOS uses EAS's APNs key (step 10). Android: create the service account `eas-fcm` in the Google project,
+    create its key inside the CI job, write it blind into Infisical as `FCM_SERVICE_ACCOUNT_JSON` and upload it to
+    EAS; never printed (Q6, amends ADR 0480 decision 8).
+12. **store-keys**: check the root-kit names exist (vault preflight, ADR 0480 decision 8); never a value.
+13. **play-app**: look up the Play app by package name. The Play API can neither create an app nor take the first
+    bundle: if missing or without any release, print the one-time checklist (FR-009); once a release exists, `done`.
 
 **Acceptance Scenarios**:
 
@@ -99,8 +116,8 @@ Steps, in order, each idempotent (a second run reports `done` and changes nothin
 2. **Given** a product with no `identity.ios`, **When** onboard runs, **Then** `com.figentra.<product>.<app>` is written.
 3. **Given** every step already done (mock drivers), **When** onboard runs again, **Then** every step is `done` and no
    write or create call is made.
-4. **Given** the Apple app record is missing, **When** onboard runs live, **Then** it stops at `apple-app-record` with
-   the exact manual values and exit code 2 (manual step pending), and later steps are listed as blocked.
+4. **Given** the Apple app record is missing, **When** onboard runs live, **Then** `apple-app-record` is manual with
+   the exact values, the other steps still run, and the exit code is 3.
 5. **Given** a live run outside CI, **Then** it refuses (ADR 0480 decision 5).
 
 ### User Story 2 - Release the mobile app (Priority: P1)
@@ -136,12 +153,15 @@ blocked`, with the planned call or the manual instructions; the CLI `stackra mob
   lower-case, `-` kept on iOS and turned into `_` on Android; it only fills absent ids.
 - **FR-003**: Every external call shall go through a port with a real driver and a mock driver:
   `ExpoProjects` (find, create, credentials status, FCM key upload), `AppleDeveloper` (bundle id, capabilities, app
-  lookup), `PlayConsole` (app lookup, has-release). The CLI-backed steps keep using `CommandRunner`.
+  lookup), `PlayConsole` (app lookup, has-release), `GoogleCloud` (project, service account, blind key into the vault),
+  `Firebase` (add, apps, config files, Analytics link), `SentryProjects` (project, DSN). The CLI-backed steps keep
+  using `CommandRunner`.
 - **FR-004**: A dry run shall make no external call and write no file, and print every planned call.
 - **FR-005**: Live runs shall run only in CI (GitHub Actions), in the product's `production` environment for anything
   that creates in a portal; the dry run needs no secret.
-- **FR-006**: Runway shall never generate, hold, print or write a signing credential or store key; secrets are read by
-  name from the environment the CI job gets from Infisical.
+- **FR-006**: Runway shall never generate, hold, print or write a signing credential (EAS holds them); a third-party
+  key it must create (the FCM service-account key) is created inside the CI job and written straight into Infisical,
+  never returned, printed or written to disk; every other secret is read by name from the job's environment.
 - **FR-007**: `eas.json` written by Runway shall pin node to the exact `mise.toml` version and refuse a major-only
   value.
 - **FR-008**: `EasProviderDriver` shall gain `submit(target, record)`; `deployProduct` shall use it instead of its
@@ -151,7 +171,8 @@ blocked`, with the planned call or the manual instructions; the CLI `stackra mob
   content rating, target audience, Data safety (answers from `pnpm store build`), app access with the demo account
   name; download the first `.aab` from EAS (`eas build:view`) and upload it to the internal track by hand; accept the
   Play App Signing default. Done is detected when the Play API shows any release on any track.
-- **FR-010**: Exit codes: 0 all done, 2 a manual step is pending, 1 an error.
+- **FR-010**: Exit codes: 0 every step done or planned, 3 a manual or blocked step is pending, 2 a usage error, 1 an
+  error.
 - **FR-011**: A runbook `apps/docs/src/docs/runbooks/mobile-onboarding.mdx` shall describe the command, every manual
   step and who does it.
 
@@ -162,7 +183,9 @@ blocked`, with the planned call or the manual instructions; the CLI `stackra mob
 - **SC-002**: A recorded dry run against a copy of academorix's runway lists every step and every owner step.
 - **SC-003**: `pnpm verify` green on the tester's box.
 
-## Open questions for the owner
+## Owner answers (2026-10-30)
+
+All recommended options were taken.
 
 - **Q1 — command shape.** The CLI is `stackra`, not `runway`. Recommended: `stackra mobile onboard [--app]` and
   `stackra deploy --product --env <e> --mobile-only` (mirrors `--surfaces-only`). Alternative: a new `stackra release
@@ -174,13 +197,28 @@ blocked`, with the planned call or the manual instructions; the CLI `stackra mob
 - **Q3 — FCM v1 key into EAS.** `eas credentials` has no non-interactive upload. Recommended: the Expo GraphQL
   mutation eas-cli itself uses, behind `ExpoProjects` (a break shows as a failing step, not a bad release).
   Alternative: one manual `eas credentials` step per app in the runbook.
-- **Q4 — Expo account per product.** `mobile.<app>.eas.owner`, default `figentra`; academorix → `academorix`. Others?
+- **Q4 — Expo account per product.** `mobile.<app>.eas.owner`, default `figentra`; academorix → `academorix`.
+- **Q5 — Google sign-in for Runway.** GitHub OIDC through workload identity federation; no key. The owner sets up the
+  pool and grants it Project Creator and Firebase Admin on a Figentra organisation folder once.
+- **Q6 — generated keys.** Runway's CI job may create third-party keys (FCM service-account key, later the Wallet pass
+  certificate) and write them blind into Infisical. Amends ADR 0480 decision 8.
+- **Q7 — analytics path.** The app sends analytics only to our analytics service, which fans out to PostHog and GA4
+  server-side. Its own ADR and issue (STA-1624); out of this spec.
+- **Q8 — Firebase Analytics SDK.** Not in the app; GA4 is fed from the server. The `AD_ID` block stays, no ATT prompt.
+
+## Gaps found, left to their own issues
+
+Tap to Pay on iPhone entitlement (Apple approval, owner), Apple Pass Type ID and certificate and the Google Wallet
+issuer (wallet capability), app groups (no API), `assetlinks.json` from the Play App Signing SHA-256 after the first
+upload, Sign in with Apple and Google server-side keys and OAuth clients, the Expo push security token, export
+compliance in `app.json`, privacy rows for Sentry, data residency of Sentry, PostHog and GA4 for GCC users.
 
 ## Lanes (after approval)
 
 | Lane | Content                                                                                                          | Depends                                    |
 | ---- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | L1   | Ports `ExpoProjects`, `AppleDeveloper`, `PlayConsole` + mock drivers; identity derivation; `eas.owner` in schema | —                                          |
+| L1b  | Ports `GoogleCloud`, `Firebase`, `SentryProjects` + mock drivers; `google`, `sentry` blocks in the schema        | L1                                         |
 | L2   | `onboardMobile` steps and output; `eas.json` profile writer (node pin)                                           | L1                                         |
 | L3   | Real drivers (per Q2/Q3)                                                                                         | L1, release-automation landed if Q2 = move |
 | L4   | `EasProviderDriver.submit`; `deployProduct` uses it; Play first-release refusal                                  | L1                                         |
@@ -190,3 +228,7 @@ blocked`, with the planned call or the manual instructions; the CLI `stackra mob
 ## Status history
 
 - 2026-10-30 Draft, waiting for the owner on Q1 to Q4.
+- 2026-10-30 Clarified: owner took every recommended answer (Q1 to Q8); Google project, Firebase and Sentry added.
+- 2026-10-30 Implementing: L1 to L5 built on `figentra/sta-1623-mobile-onboard` (runway ports, real and memory drivers,
+  `onboardMobile`, `eas` submit, `--mobile-only`, `stackra mobile onboard`, runbook). Tests written, not run on the Mac;
+  handed to the tester. L6 (academorix `--check` record) waits for the root kit and the Google federation.

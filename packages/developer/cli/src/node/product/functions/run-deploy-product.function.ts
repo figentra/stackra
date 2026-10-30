@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `runDeployProduct(context)`, the run of `stackra deploy --product --env <environment> [--dry-run]
- *          [--surfaces-only]
+ *          [--surfaces-only|--mobile-only]
  *          [--approved] [--first-release]` at a product root: publishes the built web surfaces to the edge, lists the
- *          landing seeds and submits the mobile builds (Runway's `deployProduct`). The OS facts come from flags or the
+ *          landing seeds and submits the mobile builds (Runway's `deployProduct`); `--mobile-only` submits the mobile
+ *          builds alone and needs none of the edge facts, and an Android build waits while Play has no release. The OS facts come from flags or the
  *          deploy job's environment: `--assets-bucket`/`STACKRA_ASSETS_BUCKET`, `--assets-origin`/`STACKRA_ASSETS_ORIGIN`,
  *          `--kv-namespace`/`STACKRA_EDGE_KV_NAMESPACE`, `--served`/`STACKRA_SERVED_SHELLS` and
  *          `--canary-scopes`/`STACKRA_CANARY_SCOPES` (comma lists), `--region`. A dry run fills what is missing with
@@ -12,7 +13,7 @@
  *           environment whose runway names an approval deploys only with `--approved`, which the CI job behind the
  *           GitHub environment passes.
  * Runtime: node
- * Governing contract: ADR 0436 (decisions 4 and 13); ADR 0437; ADR 0439 (decision 7); ADR 0170 (approvals).
+ * Governing contract: ADR 0436 (decisions 4 and 13); ADR 0437; ADR 0439 (decision 7); ADR 0170 (approvals); ADR 0482.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -22,6 +23,7 @@ import { RunwayEnvironment } from "@stackra/runway";
 import {
   deployProduct,
   EdgeKvConfig,
+  GooglePlayConsoleDriver,
   PRODUCT_BUILD_SETTINGS,
   readRunway,
   WranglerEdgeKvDriver,
@@ -79,12 +81,18 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
       ? Object.values(build.surfaces).map((surface) => surface.shell.line.split("/")[1] ?? "")
       : undefined);
   const canaryScopes = list(deployFact(values, "canary-scopes", "STACKRA_CANARY_SCOPES"));
-  const missing = [
-    ...(bucket === undefined ? ["--assets-bucket"] : []),
-    ...(origin === undefined ? ["--assets-origin"] : []),
-    ...(namespace === undefined && !dryRun ? ["--kv-namespace"] : []),
-    ...(served === undefined ? ["--served"] : []),
-  ];
+  const mobileOnly = values["mobile-only"] === true;
+  if (mobileOnly && values["surfaces-only"] === true)
+    throw new CliUsageError("pass --surfaces-only or --mobile-only, not both");
+  // A mobile-only deploy publishes no surface, so it needs none of the edge facts.
+  const missing = mobileOnly
+    ? []
+    : [
+        ...(bucket === undefined ? ["--assets-bucket"] : []),
+        ...(origin === undefined ? ["--assets-origin"] : []),
+        ...(namespace === undefined && !dryRun ? ["--kv-namespace"] : []),
+        ...(served === undefined ? ["--served"] : []),
+      ];
   if (missing.length > 0)
     throw new CliUsageError(`name ${missing.join(", ")} (or their STACKRA_* variables)`);
 
@@ -118,25 +126,28 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
     repository: cwd,
     environment: environment as RunwayEnvironment,
     approved: values["approved"] === true,
-    ...(namespace === undefined || dryRun
+    ...(namespace === undefined || dryRun || mobileOnly
       ? {}
       : {
           kv: new WranglerEdgeKvDriver(
             buildConfig(EdgeKvConfig, { values: { namespaceId: namespace } }),
           ),
         }),
-    assets: { bucket: bucket as string, origin: origin as string },
-    served: served as string[],
+    assets: { bucket: bucket ?? "", origin: origin ?? "" },
+    served: served ?? [],
     ...(canaryScopes === undefined ? {} : { canaryScopes }),
     firstRelease: values["first-release"] === true || (dryRun && canaryScopes === undefined),
     ...(region === undefined ? {} : { region }),
     stores,
     surfacesOnly: values["surfaces-only"] === true,
+    mobileOnly,
+    ...(dryRun ? {} : { play: new GooglePlayConsoleDriver() }),
     dryRun,
   });
   io.out(
     `deployed ${deploy.product} ${deploy.sha.slice(0, 12)} to ${environment}${dryRun ? " (dry run)" : ""}: ${deploy.surfaces.written.length} KV row(s), ${deploy.surfaces.uploaded.length} upload(s), ${Object.values(deploy.submitted).flat().length} mobile submission(s)\n`,
   );
+  for (const reason of Object.values(deploy.held ?? {})) io.out(`held: ${reason}\n`);
   for (const [surface, documents] of Object.entries(deploy.seeds))
     io.out(
       `landing ${surface}: ${documents.length} seed document(s) listed; the import into experience is not wired yet\n`,
