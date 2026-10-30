@@ -34,6 +34,10 @@ describe(egressOf, () => {
     });
   });
 
+  it("accepts a whole-URL placeholder", () => {
+    expect(egressOf("{baseUrl}")).toEqual({ origin: "{baseUrl}", fields: ["baseUrl"] });
+  });
+
   it("refuses what the managed client would refuse", () => {
     for (const bad of [
       "http://api.example.com",
@@ -44,6 +48,9 @@ describe(egressOf, () => {
       "https://api.example.com/v1?key=1",
       "https://api.example.com#x",
       "ftp://api.example.com",
+      "{base_url}",
+      "{a}{b}",
+      "http://x",
     ])
       expect(egressOf(bad)).toBeUndefined();
   });

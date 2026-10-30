@@ -572,6 +572,9 @@ describe("buildManifest", () => {
         egress: { origin: "https://{region}.api.stripe.com", fields: ["region"] },
       }),
     ]);
+    expect(buildManifest(withBase("{baseUrl}")).manifest["integrations"]).toEqual([
+      expect.objectContaining({ egress: { origin: "{baseUrl}", fields: ["baseUrl"] } }),
+    ]);
     expect(
       buildManifest(withBase("http://api.stripe.com")).errors.map(
         (error) => `${error.code} ${error.subject}`,

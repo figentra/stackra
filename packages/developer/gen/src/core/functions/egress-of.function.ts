@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `egressOf`, an Integration's egress allow-list entry derived from its `baseUrl`: the https origin the
  *          managed client may call, and the credential-set fields its host is filled from when the provider runs per
- *          region (`https://{region}.api.example.com`). A `{field}` host is data: the entry allows the origin the
+ *          region (`https://{region}.api.example.com`), or the whole origin when the base URL is exactly one `{field}`
+ *          (`{baseUrl}`: the resolved value is checked at run time, https or http on `.internal`). A `{field}` host is data: the entry allows the origin the
  *          connection's own credential set names, never any host.
  * Boundary: pure. Undefined for a base URL the managed client would refuse: not https, a placeholder outside the
  *           host, a field that is not camelCase, credentials, a query or a fragment in the URL, or an empty static
@@ -23,13 +24,18 @@ const FIELD = /^[a-z][A-Za-z0-9]*$/;
  *
  * @example
  * egressOf("https://api.stripe.com/v1"); // { origin: "https://api.stripe.com", fields: [] }
+ * egressOf("{baseUrl}"); // { origin: "{baseUrl}", fields: ["baseUrl"] }
  * egressOf("https://{region}.api.example.com"); // { origin: "https://{region}.api.example.com", fields: ["region"] }
  */
 export function egressOf(
   baseUrl: string,
 ): { readonly origin: string; readonly fields: readonly string[] } | undefined {
   const match = /^https:\/\/([^/?#]+)([^?#]*)$/.exec(baseUrl);
-  if (match === null) return undefined;
+  if (match === null) {
+    // the whole origin is credential-set data; the managed client checks the resolved value (https, or http on .internal)
+    const whole = /^\{([a-z][A-Za-z0-9]*)\}$/.exec(baseUrl);
+    return whole === null ? undefined : { origin: baseUrl, fields: [whole[1] ?? ""] };
+  }
   const [, host = "", path = ""] = match;
   if (path.includes("{") || path.includes("}") || host.includes("@")) return undefined;
   const fields = [...host.matchAll(PLACEHOLDER)].map((found) => found[1] ?? "");

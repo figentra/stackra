@@ -574,7 +574,7 @@ export function buildManifest(ir: MemberIR): {
         declared,
         "egress_invalid",
         `\`baseUrl\` ${JSON.stringify(baseUrl)} is not an https origin the managed client can call`,
-        'write an https URL; a per-region host is a camelCase `{field}` of the credential set ("https://{region}.api.example.com")',
+        'write an https URL; a per-region host is a camelCase `{field}` of the credential set ("https://{region}.api.example.com"), or the whole URL is one `{field}` ("{baseUrl}")',
       );
     integrations.push({
       key,
