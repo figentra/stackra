@@ -9,7 +9,8 @@
  *           collides; zod is imported only when the file builds a schema. A `@Hidden` field is left out of `X$` and of `X$Check` (stackra-260); `@Lowercase` compiles to
  *           `.toLowerCase()` after `.trim()`. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
  *           to its codes in source order; a member base is `.extend`ed and a package base's shipped `X$` gets only new
- *           defaults. A reference to a shape declared later in the file is `z.lazy`, so a cycle still loads. A
+ *           defaults. A field naming a shape declared later in the file (itself, or a cycle) is a zod getter, so a
+ *           cycle still loads and its type is inferred (STA-1683). A
  *           `Translated` field is a locale map decoded through `Translated.of` (`TranslatedStrings` to `{ values }`),
  *           its `@Str` rules on each text; an `Upload<Bucket>` field is `@stackra/media`'s `Upload.schema`. A bare
  *           `PublicId` checks the format with any prefix; a prefix union is a union of `publicId(prefix)`. A `@stackra/*` type with a shipped `X$` imports that schema
@@ -251,13 +252,24 @@ function ordered(shapes: readonly ShapeIR[], module: string): ShapeIR[] {
   return out;
 }
 
+/** A reference to a schema not declared yet, as `reference` writes it. */
+const LAZY = /z\.lazy\(\(\) => (\w+\$)\)/;
+const LAZY_ALL = new RegExp(LAZY.source, "g");
+
 /** The `X$` declaration of one shape and its `X$Check`. */
 function shapeOf(context: Context, shape: ShapeIR): string[] {
   const lines = [`/** ${shape.kind} \`${shape.name}\` (${shape.file}). */`];
   // A `@Hidden` field never goes out on the wire: no `X$` key, and `X$Check` omits it like a relation (stackra-260).
   const wire = shape.fields.filter((field) => field.hidden !== true);
   const hidden = shape.fields.filter((field) => field.hidden === true).map((field) => field.name);
-  const body = wire.map((field) => `  ${field.name}: ${fieldOf(context, field)},`);
+  const body = wire.map((field) => {
+    const expression = fieldOf(context, field);
+    // A shape not declared yet (this one, or a later one in a cycle) is read through a getter, which zod 4 infers and
+    // evaluates only when parsing; `z.lazy` inside the object initializer is TS7022 (implicit any, STA-1683).
+    return LAZY.test(expression)
+      ? `  get ${field.name}() {\n    return ${expression.replaceAll(LAZY_ALL, "$1")};\n  },`
+      : `  ${field.name}: ${expression},`;
+  });
   const base = shape.base;
   if (base?.kind === "package") {
     const alias = `Base${base.name}$`;
