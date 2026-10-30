@@ -93,6 +93,8 @@ function ResourceForm({
           resourceKey={resource.key}
           schema={action.input}
           node={node}
+          // On Edit the defaults are the record, whose currency a `…Minor` field is entered in.
+          record={recordId === undefined ? undefined : defaults}
         />
       ))}
       <Button type="submit" isLoading={form.formState.isSubmitting}>

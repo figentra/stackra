@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `listCellCurrency(item, column, record, currencyPath)`, the currency a list entry's cell is money in: a
- *          `…Minor` column (`valueMinor`, `totals.totalMinor`) takes the `currency` beside it in the item, else the
- *          record's currency at `currencyPath`; any other column, or no currency found, is not money.
+ * Purpose: `listCellCurrency(item, column, record, currencyPath)`, the currency a list entry's cell (or a form's
+ *          field) is money in: a `…Minor` column (`valueMinor`, `totals.totalMinor`) takes the `currency` beside it in
+ *          the item, else the record's currency at `currencyPath`; any other column, or no currency found, is not money.
  * Boundary: internal; pure. Minor units are named `…Minor` by the house rule, so the column name says it is money; the
- *           list entry names no money columns of its own. Web and native View pages share it.
+ *           list entry names no money columns of its own. Web and native View pages and forms share it.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 1: wire paths); ADR 0164.
  */

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ResourceFormField`'s objects and lists: an object input draws its keys as a titled group; a
  *          list of objects draws a group per row bound by index, labelled without the index, with remove and add; a list
- *          of values adds an empty row; a select's options take their enum labels.
+ *          of values adds an empty row; a select's options take their enum labels; a `…Minor` amount is entered in
+ *          major units of the record's currency, or in minor units without one.
  * Boundary: unit tier, jsdom; the web kit and the list binding are stand-ins, translation returns the key.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (form keys are input paths).
@@ -56,6 +57,17 @@ vi.mock("@stackra/ui/react", async () => {
         ),
       ComboBox: field("combo"),
     },
+    NumberField: (props: {
+      readonly name: string;
+      readonly value: number | null;
+      readonly formatOptions: { readonly currency: string };
+      readonly onChange: (value: number) => void;
+    }) =>
+      createElement(
+        "button",
+        { type: "button", onClick: () => props.onChange(130.5) },
+        `money:${props.name}:${props.value}:${props.formatOptions.currency}`,
+      ),
     FormSection: (props: { readonly title: string; readonly children?: ReactNode }) =>
       createElement("fieldset", null, createElement("legend", null, props.title), props.children),
     Button: (props: { readonly onPress?: () => void; readonly children?: ReactNode }) =>
@@ -70,15 +82,17 @@ const BuyLabelInput = z.object({
   tags: z.array(z.string()).optional(),
   service: z.enum(["standard", "express"]),
   mode: z.enum(["live", "test"]),
+  handedOverMinor: z.number().int(),
 });
 
-/** Draws the field of `key`, as the buy-label action's modal does. */
-function draw(key: string): void {
+/** Draws the field of `key`, as the buy-label action's modal does over `record`. */
+function draw(key: string, record?: object): void {
   render(
     <ResourceFormField
       resourceKey="shipping.shipment"
       schema={BuyLabelInput}
       enumOwner="shipping.label"
+      record={record}
       node={{ kind: "value", key }}
     />,
   );
@@ -132,5 +146,18 @@ describe("ResourceFormField objects and lists", () => {
     cleanup();
     draw("mode");
     expect(screen.getByText("select:mode:live|test")).toBeTruthy();
+  });
+
+  it("enters a minor-unit amount in major units of the record's currency", () => {
+    spies.lists = { handedOverMinor: 12_550 };
+    draw("handedOverMinor", { id: "run_1", currency: "SAR" });
+    const field = screen.getByText("money:handedOverMinor:125.5:SAR");
+    fireEvent.click(field);
+    expect(spies.onChange).toHaveBeenLastCalledWith("handedOverMinor", 13_050);
+  });
+
+  it("keeps minor units without a known currency", () => {
+    draw("handedOverMinor", { id: "run_1" });
+    expect(screen.getByText(/^number:handedOverMinor:/)).toBeTruthy();
   });
 });

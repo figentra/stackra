@@ -98,6 +98,7 @@ export function ActionInputModal({
               resourceKey={resourceKey}
               schema={action.input}
               enumOwner={action.key.slice(0, action.key.lastIndexOf("."))}
+              record={record}
               node={{ kind: "value", key }}
             />
           ))}
