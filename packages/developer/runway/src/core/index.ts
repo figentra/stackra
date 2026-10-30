@@ -7,7 +7,8 @@
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
- *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), their enums, errors and types.
+ *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), the `SmokeDriver` port of the smoke
+ *          step (STA-265), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
  * Runtime: isomorphic
@@ -31,6 +32,7 @@ export { TopologyMode } from "#core/enums/topology-mode.enum";
 export { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 export { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 export { RunwayLockedError } from "#core/errors/runway-locked.error";
+export { RunwaySmokeFailedError } from "#core/errors/runway-smoke-failed.error";
 export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
 export { brandsOf } from "#core/functions/brands-of.function";
@@ -60,6 +62,7 @@ export { PlayConsole } from "#core/ports/play-console.port";
 export { PreviewDatabaseBrancher } from "#core/ports/preview-database-brancher.port";
 export { RunwayProvider } from "#core/ports/runway-provider.port";
 export { SentryProjects } from "#core/ports/sentry-projects.port";
+export { SmokeDriver } from "#core/ports/smoke-driver.port";
 export { VaultWriter } from "#core/ports/vault-writer.port";
 export type { AppRunway } from "#core/types/app-runway.type";
 export type { AppleBundle } from "#core/types/apple-bundle.type";
@@ -84,4 +87,6 @@ export type { RunwayDocument } from "#core/types/runway-document.type";
 export type { RunwayFacts } from "#core/types/runway-facts.type";
 export type { RunwayIssue } from "#core/types/runway-issue.type";
 export type { RunwayRegion } from "#core/types/runway-region.type";
+export type { SmokeResult } from "#core/types/smoke-result.type";
+export type { SmokeSubject } from "#core/types/smoke-subject.type";
 export type { ServiceRunway } from "#core/types/service-runway.type";

@@ -4,7 +4,8 @@
  *          `devServer` from `@stackra/runway/node`; with `readRunway`, `runCommand`, the three provider drivers and the
  *          mobile job (`runMobileJob`, `capabilityConfig`), the brand step (`runBrandStep`, `committedBrandOutputs`,
  *          `BRAND_STEP_SETTINGS`) and the capture job (`screenshotCaptureJob`, `runScreenshotCapture`,
- *          `SCREENSHOT_CAPTURE_DEFAULTS`), the launch check (`launchCheckJob`, `runLaunchCheck`, `LAUNCH_CHECK_DEFAULTS`) and the publish step (`publishProduct`, `publishShell`, `promoteCanary`,
+ *          `SCREENSHOT_CAPTURE_DEFAULTS`), the smoke step and its drivers (`smokePreview`, `PlaywrightSmokeDriver`, `MaestroSmokeDriver`,
+ *          `ElectronSmokeDriver`), the launch check (`launchCheckJob`, `runLaunchCheck`, `LAUNCH_CHECK_DEFAULTS`) and the publish step (`publishProduct`, `publishShell`, `promoteCanary`,
  *          `canaryVerdict`, `checkShellCompatibility`, `checkOpsReview`, `platformRows`, `readBundles`, `uploadBundle`,
  *          `bundleSurfaces`, `EDGE_PUBLISH_SETTINGS`, `WranglerEdgeKvDriver`, `EdgeKvConfig`, `EdgeKvOptions`) those
  *          are its only values, none of them shared with `.`, and the types resolve.
@@ -43,6 +44,7 @@ describe("@stackra/runway/node", () => {
       "EasProviderDriver",
       "EdgeKvConfig",
       "EdgeKvOptions",
+      "ElectronSmokeDriver",
       "EncoreCloudProviderDriver",
       "ExpoGraphqlProjectsDriver",
       "FirebaseManagementDriver",
@@ -53,6 +55,7 @@ describe("@stackra/runway/node", () => {
       "LINE_CHECKOUT_SETTINGS",
       "MOBILE_DEV_SETTINGS",
       "MOBILE_ONBOARD_SETTINGS",
+      "MaestroSmokeDriver",
       "MemoryAppleDeveloperDriver",
       "MemoryExpoProjectsDriver",
       "MemoryFirebaseDriver",
@@ -63,6 +66,7 @@ describe("@stackra/runway/node", () => {
       "MintlifyProviderDriver",
       "NeonPreviewDatabaseDriver",
       "PRODUCT_BUILD_SETTINGS",
+      "PlaywrightSmokeDriver",
       "SCREENSHOT_CAPTURE_DEFAULTS",
       "SentryApiProjectsDriver",
       "WranglerEdgeKvDriver",
@@ -96,6 +100,7 @@ describe("@stackra/runway/node", () => {
       "runScreenshotCapture",
       "screenshotCaptureJob",
       "shellReleaseOf",
+      "smokePreview",
       "toolVersionOf",
       "uploadBundle",
       "workspacePackages",

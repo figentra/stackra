@@ -94,6 +94,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:e2e",
+    "@playwright/test": "catalog:e2e",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -105,6 +107,18 @@
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "@axe-core/playwright": "catalog:e2e",
+    "@playwright/test": "catalog:e2e"
+  },
+  "peerDependenciesMeta": {
+    "@axe-core/playwright": {
+      "optional": true
+    },
+    "@playwright/test": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=24.0.0"

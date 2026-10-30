@@ -45,7 +45,11 @@ icon: "rocket"
   <Step title="Smoke test">
     The service's health endpoint answers 200 and reports the new SHA; the console and docs load
     with no console errors, in both directions (LTR and RTL) and both themes where the app supports
-    them; sign-in works against the target API.
+    them; sign-in works against the target API. For a product, Runway's smoke step (`smokePreview`,
+    STA-265) runs this automatically after each preview deploy: Playwright opens every web surface's
+    preview host (it must load, render its first screen and raise no console error or critical axe
+    violation), and Maestro launches each mobile app on a simulator and an emulator. A failed or
+    missing check blocks promotion.
   </Step>
   <Step title="Promote to production (owner)">
     The owner deploys the same SHA to production, approves explicitly and repeats the smoke test.
@@ -131,6 +135,7 @@ The kill switch is a `sw.js` that removes itself.
 | Owner approval for production  | Protected environment                          | Not built |
 | Migrations are expand-only     | Migration-safety check, once a database exists | Not built |
 | No agent sets a secret         | `guard-bash`                                   | Live      |
+| Preview smoke before promotion | Runway `smokePreview` (STA-265)                | Not wired |
 | First operator without SQL     | `stackra ops bootstrap-operator` (STA-1586)    | Built     |
 
 See also [Runway](/runbooks/runway), [Release](/runbooks/release), [Secrets](/runbooks/secrets) and [CI](/runbooks/ci).

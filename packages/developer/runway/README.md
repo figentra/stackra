@@ -50,6 +50,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `./node`    | `dryRunCommand(options)`, `DryRunEdgeKvDriver`                                                                                                              | dry runs: every command and KV write recorded, local outputs still written                                                                                             |
 | `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`                                                 | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check                                                                 |
 | `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, …                                           | the store-screenshot capture job on a Mac CI runner                                                                                                                    |
+| `./node`    | `smokePreview(request)`, `PlaywrightSmokeDriver`, `MaestroSmokeDriver`, `ElectronSmokeDriver`, `SmokePreviewRequest`                                        | the smoke step after a preview deploy (STA-265); the `SmokeDriver` port and smoke types are `.`'s                                                                      |
 | `./node`    | `launchCheckJob(request)`, `runLaunchCheck`, `LAUNCH_CHECK_DEFAULTS`, `LaunchCheckJob`, `LaunchCheckRequest`                                                | the mobile launch check: Maestro flows on a CI simulator or emulator (STA-265)                                                                                         |
 | `./node`    | `publishProduct(request)`, `ProductPublishRequest`, `ProductPublishResult`                                                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary                                                              |
 | `./node`    | `publishShell`, `promoteCanary`, `canaryVerdict`, `EDGE_PUBLISH_SETTINGS`, `EdgeCanary`, `CanarySample`, …                                                  | the shell canary list and health-gated promotion of release and shell canaries                                                                                         |
@@ -267,6 +268,23 @@ the demo-data simulator build, and per locale launch in that language, open the 
 overrides any of them. `runScreenshotCapture(job, repository)` runs exactly that list, on a Mac CI runner only (never a
 developer's Mac). Not built: the CI workflow that schedules it (it needs a Mac runner), and the app's handling of the
 two links (the mobile template line's).
+
+## The smoke step after a preview deploy
+
+`smokePreview` (`./node`) checks every target of a product after its preview deploy, and a failure blocks promotion
+(STA-265, owner decision D6). From the root runway it lists the subjects: each web surface but `ops` at its canonical
+host for the environment (the hosts `platformRows` writes), and each mobile app on each platform the request has a
+build for. Each subject goes to the driver of its target, behind one port, `SmokeDriver` (`.`):
+
+| Target  | Driver                  | Checks                                                                                                       |
+| ------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| web     | `PlaywrightSmokeDriver` | the page loads below HTTP 400, the first screen renders text, no console or page error, no critical axe rule |
+| mobile  | `MaestroSmokeDriver`    | the launch check below, on the iOS simulator or the Android emulator                                         |
+| desktop | `ElectronSmokeDriver`   | nothing yet: a placeholder that fails as "not built" until a desktop target exists (ADR 0058)                |
+
+Every result carries its evidence (`.stackra/smoke/web/<surface>.png`, the launch check's report folder). A subject
+that fails, or whose target has no driver, makes the step throw `RunwaySmokeFailedError` with every result.
+`@playwright/test` and `@axe-core/playwright` are optional peers (`catalog:e2e`), loaded only when the web driver runs.
 
 ## The mobile launch check
 

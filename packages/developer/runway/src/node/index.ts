@@ -7,8 +7,9 @@
  *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
  *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439) with its types, the brand step
  *          (`runBrandStep`, `committedBrandOutputs`) and the store-screenshot capture job (`screenshotCaptureJob`,
- *          `runScreenshotCapture`, ADR 0441 as amended: D17, D19), the mobile launch check (`launchCheckJob`,
- *          `runLaunchCheck`, STA-265), and the publish step (`publishProduct`,
+ *          `runScreenshotCapture`, ADR 0441 as amended: D17, D19), the smoke step after a preview deploy (`smokePreview`, with the
+ *          `PlaywrightSmokeDriver`, `MaestroSmokeDriver` and placeholder `ElectronSmokeDriver`) and the mobile launch
+ *          check (`launchCheckJob`, `runLaunchCheck`, STA-265), and the publish step (`publishProduct`,
  *          `publishShell`, `promoteCanary`, `canaryVerdict`, `checkShellCompatibility`, `checkOpsReview`,
  *          `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`, `EDGE_PUBLISH_SETTINGS`) with the
  *          `wrangler` driver of the `EdgeKvWriter` port and its `EdgeKvConfig` (ADR 0436, 0437; stackra-07), and the
@@ -31,9 +32,12 @@ export { GoogleCloudDriver } from "#node/drivers/google-cloud.driver";
 export { GooglePlayConsoleDriver } from "#node/drivers/google-play-console.driver";
 export { InfisicalVaultWriterDriver } from "#node/drivers/infisical-vault-writer.driver";
 export { SentryApiProjectsDriver } from "#node/drivers/sentry-api-projects.driver";
+export { ElectronSmokeDriver } from "#node/drivers/electron-smoke.driver";
 export { EncoreCloudProviderDriver } from "#node/drivers/encore-cloud-provider.driver";
+export { MaestroSmokeDriver } from "#node/drivers/maestro-smoke.driver";
 export { MintlifyProviderDriver } from "#node/drivers/mintlify-provider.driver";
 export { NeonPreviewDatabaseDriver } from "#node/drivers/neon-preview-database.driver";
+export { PlaywrightSmokeDriver } from "#node/drivers/playwright-smoke.driver";
 export { WranglerEdgeKvDriver } from "#node/drivers/wrangler-edge-kv.driver";
 export { DryRunEdgeKvDriver } from "#node/drivers/dry-run-edge-kv.driver";
 export { MemoryAppleDeveloperDriver } from "#node/drivers/memory-apple-developer.driver";
@@ -83,6 +87,7 @@ export { runMobileJob } from "#node/functions/run-mobile-job.function";
 export { runScreenshotCapture } from "#node/functions/run-screenshot-capture.function";
 export { screenshotCaptureJob } from "#node/functions/screenshot-capture-job.function";
 export { shellReleaseOf } from "#node/functions/shell-release-of.function";
+export { smokePreview } from "#node/functions/smoke-preview.function";
 export { toolVersionOf } from "#node/functions/tool-version-of.function";
 export { workspacePackages } from "#node/functions/workspace-packages.function";
 export { uploadBundle } from "#node/functions/upload-bundle.function";
@@ -137,5 +142,6 @@ export type { MobileStoreAccount } from "#node/types/mobile-store-account.type";
 export type { MobileVariant } from "#node/types/mobile-variant.type";
 export type { LaunchCheckJob } from "#node/types/launch-check-job.type";
 export type { LaunchCheckRequest } from "#node/types/launch-check-request.type";
+export type { SmokePreviewRequest } from "#node/types/smoke-preview-request.type";
 export type { ScreenshotCaptureJob } from "#node/types/screenshot-capture-job.type";
 export type { ScreenshotCaptureRequest } from "#node/types/screenshot-capture-request.type";
