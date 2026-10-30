@@ -76,6 +76,34 @@ Settled by the ADRs, recorded for review (ADR 0485 takes these as its proposal):
 - Erasure: no `user_id` is sent, the Measurement Protocol cannot delete, so deletion inside the tenant's property is
   the controller's; our hop keeps nothing beyond the outbox row.
 
+### Owner answers, 2026-10-30 (second session: routing across the tenant tree)
+
+The owner widened the scope: every connector (PostHog, GA4, Firebase, Meta, TikTok and others) lives in the
+integrations service and is offered to tenants at every level of the tree; Figentra and each level above must see
+transactions from everywhere. Answers:
+
+- **Roll-up.** Full event-level detail goes to the parties (the tenant whose surface it happened on, and the seller)
+  and to every organisation ancestor (ADR 0243). Other ancestors (host, reseller) get full detail only if the child
+  agreed at join, otherwise aggregates. Disclosed in each child's settings.
+- **Figentra's view.** Full event level across all tenants. Figentra has a dual role like Shopify: processor of tenant
+  data in general, and controller for named purposes of its own (platform analytics, fraud, billing, product
+  improvement), stated in the platform terms. That data stays in each region (Figentra's warehouse and a self-hosted
+  PostHog per region); Figentra's global tools (PostHog EU, GA4) get events without hashed contacts.
+- **Payload to tenant connectors.** Behaviour, conversions, and hashed contact data, but contacts go only to
+  connectors where we can carry out an erasure (a deletion API reachable with the tenant's grant); the others get
+  behaviour and conversions without contacts. Contacts need the per-person stored consent proof (ADR 0472 decision 5).
+- **Routing.** The analytics service checks consent and decides which connections get which events, then publishes
+  one event per connection; the integrations service owns the connector, its credentials and the vendor call. Tenant
+  secrets never leave integrations. This replaces ADR 0485 decisions 2 and 6 as drafted.
+- **Delivery guarantees.** All four: a health page per connection (sent, dropped by consent with reason, failed, last
+  error); a replay window (delivered events kept encrypted in region for a set number of days); alerts on repeated
+  failure or rejected credentials; a daily reconciliation report (ledger orders and revenue against what each tool
+  was sent).
+
+Still open: the replay window length; the source of the Firebase app stream (its app reports need the Firebase SDK on
+the device, which ADR 0483 removed); legal review of the KSA and UAE transfer rules. ADR 0485 must be rewritten to
+these answers before Q1 to Q8 below are reconsidered; several (Q1, Q4, Q5, Q6) are superseded by them.
+
 ### Open questions for the owner
 
 - **Q1 — Google's role on our documents.** Proposed: Google is the controller's own vendor for this flow, named in a
