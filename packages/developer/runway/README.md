@@ -102,6 +102,16 @@ capability flags, `tablet`, store accounts, EAS project and `whiteLabel` (the en
 `bring-your-own` modes of the tenant-started per-tenant build, ADR 0439). Every asset path sits inside `assets/`.
 An app runway's `release.mobile.whiteLabel` takes `true` or the same `whiteLabel` block.
 
+## Resources and workloads
+
+`resources.<name>` declares a managed resource (`postgres` with `engine: rds | aurora` and a major `version`, or
+`queue`, `topic`, `cache`, `bucket`) and `workloads.<name>` a container (an image pinned by digest, `port`, `health`,
+`expose: internal | public`, `uses`, public `env`, `secrets` names, and a required `reason`). Both size per environment
+(`small`, `medium`, `large`; `small` where unsized), a workload also `scale`s per environment, and
+`environments.<env>.limits.monthly` caps the plan's estimate (ADR 0493). A service runway names the resources it uses
+(`uses`); a workload's `uses` must name a declared resource. Kafka, OpenSearch and SES are reserved and refused.
+@stackra/infra-aws-runtime plans and declares them.
+
 ## Template lines
 
 A root runway names each surface's shell and each mobile app's template as a line, `<owner>/<name>@<major>`. A line is

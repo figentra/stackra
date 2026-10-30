@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-30
 
-**Status**: Clarified
+**Status**: Implementing
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
@@ -173,9 +173,9 @@ A product adds `workloads.zitadel`. The plan holds a Fargate task and service, s
 | L4   | (cancelled: Kafka not needed now, Q1) Kafka kind: plan and Pulumi (MSK Serverless or provisioned, IAM auth), mock tests                      | L1, L2     |
 | L5   | Secrets: generated credentials written blind to Infisical, consumer variable names, Encore sync list and SSM parameters                      | L3         |
 | L6   | Workload construct: Fargate cluster, task, service, discovery, ALB, autoscaling, health, extracted from infra-tools into infra-aws-runtime   | L1, L2, L5 |
-| L7   | infra-tools onto the workload construct, with an unchanged plan                                                                              | L6         |
+| L7   | (held, see status) infra-tools onto the workload construct, with an unchanged plan                                                           | L6         |
 | L8   | Docs: runbook, READMEs, AGENTS.md, ADR 0227 rows, schema docs                                                                                | L1–L6      |
-| L9   | First user, after Q3: the ZITADEL workload in the product runway it serves                                                                   | L4, L6     |
+| L9   | (held, see status) First user, after Q3: the ZITADEL workload in the product runway it serves                                                | L4, L6     |
 
 ## Linear
 
@@ -187,3 +187,7 @@ Epic STA-1640; lanes L1 to L9 are STA-1641 to STA-1649.
 - 2026-10-30 Q1 answered: no Kafka now; L4 cancelled.
 - 2026-10-30 Clarified: owner approved Q2 to Q7 as recommended (via the leader), with caps dev $150 and staging $500,
   production warn-only. ADR 0493 Accepted.
+- 2026-10-30 Implementing: L1, L2, L3, L5, L6 and L8 built and handed to stackra-f4. L7 held: moving the tools stack
+  renames its Pulumi resources (replaced on the next apply) for no gain now; it needs the owner's yes. L9 held: the
+  ZITADEL workload needs its runway (the OS repository or the in-country environment) and a pinned image digest; the
+  runbook shows the declaration.
