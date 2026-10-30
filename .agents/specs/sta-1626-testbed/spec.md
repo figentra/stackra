@@ -4,11 +4,11 @@
 
 **Created**: 2026-10-30
 
-**Status**: Draft, waiting for the owner's approval of ADR 0484 and the open questions below
+**Status**: Implementing <!-- owner approved ADR 0484 and the proposed answers, 2026-10-30; no apply -->
 
 **Linear**: STA-1626
 
-**Clarifications status**: open (questions Q1 to Q6)
+**Clarifications status**: complete (Q1 to Q6 answered as proposed)
 
 **Input**: The owner's brief: turn the eight shared EC2 test boxes behind `~/.local/bin/ci-box` into disposable,
 identical infrastructure in Stackra core, image-based, with a sandbox per job, so testing is never interrupted.
@@ -86,7 +86,7 @@ Read from `~/.local/bin/ci-box` on 2026-10-30. Each row is a requirement on `sta
 - No secret value on disk, in logs, in user data, in a process argument, or in `stackra testbed` output.
 - Cost at the proposed minimums is at most about $1,100 a month (ADR 0484 Consequences).
 
-## Open questions for the owner
+## Owner answers (2026-10-30: "Approve, build", each as proposed)
 
 - **Q1 Region.** eu-west-1 (cheapest EU region checked, boxes 1 and 2 already there) or another?
 - **Q2 Counts.** `heavy` on-demand min 2, max 6; `light` spot min 1, max 4. Accept, or other numbers?
