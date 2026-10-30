@@ -10,7 +10,7 @@ lower package (`@stackra/database`, `@stackra/search`, `@stackra/outbox`) keeps 
 
 **Tier:** `tier:lib` (`packages/data/data-maintenance`). Entries `.` (the permissions) and `./node` (the jobs). Depends
 on `@stackra/actions`, `@stackra/container`, `@stackra/contracts`, `@stackra/database`, `@stackra/errors`, `@stackra/iam`, `@stackra/model`,
-`@stackra/outbox`, `@stackra/queue`, `@stackra/search`, `@stackra/tenancy`, `@stackra/validation` and zod. None of them depends on it.
+`@stackra/outbox`, `@stackra/queue`, `@stackra/scheduler` (gen's cron registrations), `@stackra/search`, `@stackra/tenancy`, `@stackra/validation` and zod. None of them depends on it.
 
 ## The jobs
 
