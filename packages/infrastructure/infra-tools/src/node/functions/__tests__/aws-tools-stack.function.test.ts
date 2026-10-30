@@ -52,6 +52,7 @@ const PLAN: ToolsStackPlan = {
       },
       namespace: "gcc.tools.acme.internal",
       logRetentionDays: 30,
+      gpuHourlyUsdAtMax: 0.98,
       tools: [
         {
           key: "nominatim",
@@ -90,10 +91,10 @@ const PLAN: ToolsStackPlan = {
           port: 80,
           cpu: 2048,
           memoryMb: 8192,
-          replicas: 1,
+          replicas: 0,
           environment: { MODEL_ID: "BAAI/bge-m3" },
           secrets: [],
-          gpu: { instanceType: "g6.xlarge" },
+          gpu: { instanceType: "g6.xlarge", hourlyUsd: 0.98, maxReplicas: 1 },
           endpoint: {
             tool: "retrieval-embed",
             category: "embedder",
@@ -139,6 +140,7 @@ const PLAN: ToolsStackPlan = {
       location: "me-central2",
       namespace: "ksa.tools.acme.internal",
       logRetentionDays: 30,
+      gpuHourlyUsdAtMax: 0,
       tools: [],
       databases: [],
       databaseAdmin: [],
@@ -355,7 +357,9 @@ describe("awsToolsStack", () => {
     expect(Buffer.from(String(template.inputs.userData), "base64").toString()).toContain(
       "ECS_CLUSTER=",
     );
-    expect(resource("Group", name).inputs).toMatchObject({ minSize: 0, maxSize: 1 });
+    const group = resource("Group", name).inputs;
+    expect(group).toMatchObject({ minSize: 0, maxSize: 1 });
+    expect(group.desiredCapacity).toBeUndefined();
     expect(resource("CapacityProvider", name).inputs).toMatchObject({
       autoScalingGroupProvider: {
         managedScaling: { status: "ENABLED", targetCapacity: 100 },
@@ -365,6 +369,7 @@ describe("awsToolsStack", () => {
 
     const service = resource("ecs/service:Service", "acme-production-gcc-retrieval-embed");
     expect(service.inputs.launchType).toBeUndefined();
+    expect(service.inputs.desiredCount).toBe(0);
     expect(service.inputs.capacityProviderStrategies).toEqual([
       { capacityProvider: name, weight: 1 },
     ]);
@@ -374,6 +379,36 @@ describe("awsToolsStack", () => {
     expect(containerOf("acme-production-gcc-retrieval-embed").resourceRequirements).toEqual([
       { type: "GPU", value: "1" },
     ]);
+  });
+
+  it("starts a GPU tool asleep and scales it to zero after 30 idle minutes", () => {
+    const name = "acme-production-gcc-retrieval-embed";
+    expect(resource("Target", name).inputs).toMatchObject({
+      serviceNamespace: "ecs",
+      scalableDimension: "ecs:service:DesiredCount",
+      minCapacity: 0,
+      maxCapacity: 1,
+    });
+    const policy = resource("Policy", `${name}-idle`).inputs;
+    expect(policy.policyType).toBe("StepScaling");
+    expect(policy.stepScalingPolicyConfiguration).toMatchObject({
+      adjustmentType: "ExactCapacity",
+      stepAdjustments: [{ metricIntervalUpperBound: "0", scalingAdjustment: 0 }],
+    });
+    expect(resource("MetricAlarm", `${name}-idle`).inputs).toMatchObject({
+      namespace: "AWS/ECS",
+      metricName: "CPUUtilization",
+      threshold: 5,
+      evaluationPeriods: 30,
+      period: 60,
+      comparisonOperator: "LessThanThreshold",
+    });
+    // Fargate tools get no idle scaling.
+    expect(
+      registered.some(
+        (entry) => entry.type.endsWith(":Target") && entry.name.includes("libretranslate"),
+      ),
+    ).toBe(false);
   });
 
   it("returns the region's endpoints", () => {

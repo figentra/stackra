@@ -134,13 +134,15 @@ export const TOOLS_CATALOGUE = {
     secrets: ["SECRET_KEY_BASE", "DATABASE_URL"],
     cache: "REDIS_URL",
   },
-  // ADR 0492 decision 8: TEI serves one model per instance, so retrieval is two entries, one GPU each.
+  // ADR 0492 decision 8: TEI serves one model per instance, so retrieval is two entries, one GPU each. A GPU tool starts
+  // asleep (`replicas: 0`) in every environment: only a runway `replicas` above 0 keeps it up, and it scales back to
+  // zero after 30 idle minutes (README "GPU tools").
   "retrieval-embed": {
     image: TEI_IMAGE,
     port: 80,
     cpu: 2048,
     memoryMb: 8192,
-    replicas: 1,
+    replicas: 0,
     gpu: true,
     instanceType: "g6.xlarge",
     // Revision of BAAI/bge-m3 (MIT) as of 2026-10-30.
@@ -153,7 +155,7 @@ export const TOOLS_CATALOGUE = {
     port: 80,
     cpu: 2048,
     memoryMb: 8192,
-    replicas: 1,
+    replicas: 0,
     gpu: true,
     instanceType: "g6.xlarge",
     // Revision of BAAI/bge-reranker-v2-m3 (Apache-2.0) as of 2026-10-30.
@@ -194,7 +196,7 @@ export const TOOLS_CATALOGUE = {
     port: 8080,
     cpu: 2048,
     memoryMb: 8192,
-    replicas: 1,
+    replicas: 0,
     enabled: false,
     gpu: true,
     instanceType: "g6.xlarge",

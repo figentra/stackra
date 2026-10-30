@@ -101,19 +101,49 @@ Image licences: TEI Apache-2.0, StatsForecast Apache-2.0, implicit MIT, faster-w
 bge-reranker-v2-m3 Apache-2.0, Whisper large-v3 MIT. Python lives only under `images/` (`pnpm validate`, ADR 0492
 decision 7).
 
-CI builds and pushes the images to GHCR; that workflow is not in this package.
+CI builds and pushes the images to GHCR; that workflow is not in this package yet (shortcut: STA-1659).
 
 ## GPU tools
 
 A tool with `gpu: true` (`retrieval-embed`, `retrieval-rerank`, `speech`) runs on an ECS capacity provider of GPU
 instances in the region's cluster, not on Fargate. Per GPU instance type (`instanceType`, default `g6.xlarge`: one
 NVIDIA L4) the stack declares a launch template on the ECS GPU-optimised Amazon Linux 2023 image (read by its public SSM
-parameter), an Auto Scaling group that starts at zero and grows to the sum of its tools' `replicas`, and the capacity
-provider with managed scaling. Each task asks for one GPU, so **one GPU instance runs per replica**. Per region with the
-defaults that is two `g6.xlarge` (embed and rerank), three when `speech` is enabled: an owner cost line per region
-(ADR 0492 consequences). Instances have no public address and need IMDSv2. shortcut: managed termination protection is
-off, so a scale-in may stop a running task. The plan's `ToolPlan.gpu` carries the instance type; a runway override of
-`providers.tools.tools.<key>.instanceType` changes it.
+parameter), an Auto Scaling group that stays at min 0 and desired 0 (ECS managed scaling grows it when a task waits, up
+to the tools' `maxReplicas`), and the capacity provider. Each task asks for one GPU, so one GPU instance runs per
+awake replica. Instances have no public address and need IMDSv2.
+
+**Asleep by default, in every environment.** A GPU tool's service starts with `desiredCount` 0 (catalogue
+`replicas: 0`), so nothing costs anything until someone wakes it. Only a runway `providers.tools.tools.<key>.replicas`
+above 0 keeps tasks running (it is also the autoscaling floor); production sizing waits for the owner's cost cap.
+Each GPU service has an Application Auto Scaling target (min `replicas`, max `maxReplicas`, 1 by default) and a step
+policy that sets it back to its minimum after 30 minutes of the service's CPUUtilization under 5% (a CloudWatch alarm;
+the closest metric without a load balancer). A sleeping tool reports no metric, which the alarm ignores. A deploy keeps
+a woken tool's desired count unless the runway names `replicas` above 0.
+
+**Waking is manual for now.** shortcut: wake-on-request is STA-1661. Until then a driver that finds the tool asleep gets
+a refused connection (no task is registered in the namespace) or `not_ready` from `/health` while the model loads. Wake
+a tool, then wait for the instance and the model (several minutes):
+
+```sh
+# <project>-<environment>-<region>-tools is the cluster, <project>-<environment>-<region>-<tool> the service
+aws ecs update-service --region me-central-1 \
+  --cluster acme-production-gcc-tools --service acme-production-gcc-retrieval-embed --desired-count 1
+aws ecs update-service --region me-central-1 \
+  --cluster acme-production-gcc-tools --service acme-production-gcc-retrieval-rerank --desired-count 1
+aws ecs update-service --region me-central-1 \
+  --cluster acme-production-gcc-tools --service acme-production-gcc-speech --desired-count 1   # if enabled
+```
+
+Replace `acme`, `production`, `gcc` and the `--region` with the project, environment (`dev`, `preview`, `staging`,
+`production`), region key and its AWS location from the plan; `endpoints` in the stack's outputs lists each tool.
+
+**Owner cost line: zero by default.** An awake GPU tool costs one instance per replica: about $0.98 an hour for a
+`g6.xlarge` in me-central-1 (an estimate in `GPU_HOURLY_USD`, not verified against AWS pricing; the table also holds
+g6.2xlarge and the eu-central-1, me-south-1 and us-east-1 prices). `ToolPlan.gpu` carries the instance type, `hourlyUsd`
+and `maxReplicas`, and each region's plan returns `gpuHourlyUsdAtMax`, the cost per hour with every GPU tool awake at
+its maximum. The runway cost cap (STA-1640, not landed) will count it as `tools.<tool>` at `hourlyUsd` x 730 x max
+replicas in STA-1662; nothing reads it yet. shortcut: managed termination protection is off, so a scale-in may stop a
+running task (STA-1660).
 
 ## Data on EBS
 

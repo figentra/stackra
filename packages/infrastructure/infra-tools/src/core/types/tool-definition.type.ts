@@ -53,8 +53,10 @@ export type ToolDefinition = {
   readonly diskGb?: number;
   /** The EC2 instance type, when `storage` is `ebs` or the tool is `gpu` (`g6.xlarge` when left out). */
   readonly instanceType?: string;
-  /** Runs on an ECS capacity provider of GPU instances (one GPU per task) instead of Fargate. */
+  /** Runs on an ECS capacity provider of GPU instances (one GPU per task) instead of Fargate; `replicas` 0 sleeps it. */
   readonly gpu?: boolean;
+  /** The most replicas a `gpu` tool may scale to (1 when left out); the cost cap sums it. */
+  readonly maxReplicas?: number;
   /** Whether the tool runs unless the runway says otherwise; true when left out. */
   readonly enabled?: boolean;
 };

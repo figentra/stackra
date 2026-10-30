@@ -3,8 +3,8 @@
 #          ghcr.io/figentra/tools-recommend:<version>.
 # Boundary: build recipe only; CI builds and publishes it, agents never build on the Mac. Licences: implicit MIT; numpy
 #           and scipy BSD-3-Clause. CPU only (`use_gpu=False`). Models are written under /models, the task's volume
-#           (the catalogue mounts it from EFS). shortcut: only the direct packages are pinned; CI should add a hashed
-#           constraints file once it builds this.
+#           (the catalogue mounts it from EFS). shortcut: only the direct packages are pinned and there is no build
+#           workflow yet; a hashed constraints file is STA-1658, the image build and push workflow STA-1659.
 # Runtime: container (linux/amd64)
 # Governing contract: ADR 0492 (decision 8); ADR 0444.
 FROM python:3.12.11-slim-bookworm

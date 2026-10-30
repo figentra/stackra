@@ -17,6 +17,7 @@
 import { RunwayInvalidError } from "@stackra/runway";
 import type { RootRunway, RunwayEnvironment, RunwayIssue } from "@stackra/runway";
 
+import { GPU_HOURLY_USD } from "#core/constants/gpu-hourly-usd.constant";
 import { OSM_EXTRACTS } from "#core/constants/osm-extracts.constant";
 import { ROOT_SOURCE } from "#core/constants/root-source.constant";
 import { TOOLS_CATALOGUE } from "#core/constants/tools-catalogue.constant";
@@ -156,6 +157,22 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
           passwordParameter: parameterOf(key, "DATABASE_PASSWORD"),
         });
 
+      const gpuInstance =
+        definition.gpu === true
+          ? (override.instanceType ?? definition.instanceType ?? DEFAULT_GPU_INSTANCE)
+          : undefined;
+      const gpuPrice =
+        gpuInstance === undefined
+          ? undefined
+          : GPU_HOURLY_USD[gpuInstance]?.[region?.location ?? ""];
+      if (gpuInstance !== undefined && gpuPrice === undefined) {
+        issues.push({
+          path: `${path}.instanceType`,
+          message: `No price for ${gpuInstance} in ${region?.location ?? regionKey}: add it to GPU_HOURLY_USD`,
+        });
+        return [];
+      }
+      const replicas = override.replicas ?? definition.replicas;
       const folder = definition.partOf ?? key;
       const storage = override.storage ?? definition.storage ?? "efs";
       const port = definition.port;
@@ -168,7 +185,7 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
           ...(port === undefined ? {} : { port }),
           cpu: override.cpu ?? definition.cpu,
           memoryMb: override.memoryMb ?? definition.memoryMb,
-          replicas: override.replicas ?? definition.replicas,
+          replicas,
           ...(definition.command === undefined ? {} : { command: definition.command }),
           environment: environmentVars,
           secrets: definition.secrets.map((name) => ({
@@ -184,14 +201,15 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
                   instanceType: override.instanceType ?? definition.instanceType ?? "m6i.large",
                 },
               }),
-          ...(definition.gpu === true
-            ? {
+          ...(gpuInstance === undefined || gpuPrice === undefined
+            ? {}
+            : {
                 gpu: {
-                  instanceType:
-                    override.instanceType ?? definition.instanceType ?? DEFAULT_GPU_INSTANCE,
+                  instanceType: gpuInstance,
+                  hourlyUsd: gpuPrice,
+                  maxReplicas: Math.max(definition.maxReplicas ?? 1, replicas),
                 },
-              }
-            : {}),
+              }),
           ...(definition.cache === undefined ? {} : { cacheVariable: definition.cache }),
           ...(port === undefined || connection === undefined || provider === undefined
             ? {}
@@ -224,6 +242,13 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
       ...(network === undefined ? {} : { network }),
       namespace,
       logRetentionDays: tools.logRetentionDays,
+      gpuHourlyUsdAtMax:
+        Math.round(
+          planned.reduce(
+            (sum, tool) => sum + (tool.gpu ? tool.gpu.hourlyUsd * tool.gpu.maxReplicas : 0),
+            0,
+          ) * 10_000,
+        ) / 10_000,
       tools: planned,
       ...(planned.some((tool) => tool.cacheVariable !== undefined)
         ? { cache: { nodeType: tools.cacheNodeType } }

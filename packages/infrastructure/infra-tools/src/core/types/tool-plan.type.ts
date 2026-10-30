@@ -41,5 +41,11 @@ export type ToolPlan = {
   /** Set when `volume` lives on one EC2 instance's EBS disk instead of EFS. */
   readonly ebs?: { readonly diskGb: number; readonly instanceType: string };
   /** Set when the task runs on the region's GPU capacity provider, one GPU per task, on this instance type. */
-  readonly gpu?: { readonly instanceType: string };
+  readonly gpu?: {
+    readonly instanceType: string;
+    /** The estimated on-demand dollars per hour of one instance in this region (`GPU_HOURLY_USD`). */
+    readonly hourlyUsd: number;
+    /** The most replicas it may scale to; each is one instance. */
+    readonly maxReplicas: number;
+  };
 };

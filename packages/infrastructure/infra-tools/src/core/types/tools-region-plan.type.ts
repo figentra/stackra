@@ -27,6 +27,12 @@ export type ToolsRegionPlan = {
   readonly namespace: string;
   /** How many days the region's tool logs are kept. */
   readonly logRetentionDays: number;
+  /**
+   * Estimated dollars per hour of this region's GPU tools all awake at their maximum replicas. shortcut: the runway cost
+   * cap (STA-1640, ADR 0493, not landed) will count it as `tools.<tool>` at `hourlyUsd` x 730 x max replicas in
+   * STA-1662, after STA-1640 lands; nothing reads it yet.
+   */
+  readonly gpuHourlyUsdAtMax: number;
   /** The tools this region runs. */
   readonly tools: readonly ToolPlan[];
   /** The region's Valkey, present when a tool reads a cache URL. */

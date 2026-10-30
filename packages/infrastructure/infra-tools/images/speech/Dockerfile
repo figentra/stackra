@@ -5,8 +5,8 @@
 #           CTranslate2 MIT, aiohttp Apache-2.0, numpy BSD-3-Clause; the model Systran/faster-whisper-large-v3 (a
 #           conversion of OpenAI Whisper large-v3) is MIT. The NVIDIA cuBLAS and cuDNN wheels carry NVIDIA's licence.
 #           The model is baked in at the pinned revision so a task never downloads weights or reaches the internet at
-#           start; the container writes nothing at run time. shortcut: only the direct packages are pinned; CI should add
-#           a hashed constraints file once it builds this.
+#           start; the container writes nothing at run time. shortcut: only the direct packages are pinned and there is no build
+#           workflow yet; a hashed constraints file is STA-1658, the image build and push workflow STA-1659.
 # Runtime: container (linux/amd64, NVIDIA GPU, ECS GPU-optimised host)
 # Governing contract: ADR 0492 (decisions 8 and 9); ADR 0444; contracts/tools-speech.md of the sta-1629 spec.
 FROM python:3.12.11-slim-bookworm

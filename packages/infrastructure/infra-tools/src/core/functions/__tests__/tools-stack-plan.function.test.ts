@@ -105,7 +105,10 @@ describe("toolsStackPlan", () => {
 
     const embed = gcc?.tools.find((tool) => tool.key === "retrieval-embed");
     expect(embed?.image).toBe("ghcr.io/huggingface/text-embeddings-inference:89-1.9.4");
-    expect(embed?.gpu).toEqual({ instanceType: "g6.xlarge" });
+    expect(embed?.gpu).toEqual({ instanceType: "g6.xlarge", hourlyUsd: 0.98, maxReplicas: 1 });
+    expect(embed?.replicas).toBe(0);
+    expect(gcc?.gpuHourlyUsdAtMax).toBe(1.96);
+    expect(eg?.gpuHourlyUsdAtMax).toBe(1.94);
     expect(embed?.environment.MODEL_ID).toBe("BAAI/bge-m3");
     expect(embed?.endpoint?.category).toBe("embedder");
     expect(gcc?.tools.find((tool) => tool.key === "retrieval-rerank")?.endpoint?.category).toBe(
@@ -217,11 +220,35 @@ describe("toolsStackPlan", () => {
     expect(keys({ recommend: { enabled: true } })).toContain("recommend");
     expect(keys({ forecast: { enabled: false } })).not.toContain("forecast");
     const speech = toolsStackPlan(
-      rootWith({ ...TOOLS, tools: { speech: { enabled: true, instanceType: "g6e.xlarge" } } }),
+      rootWith({ ...TOOLS, tools: { speech: { enabled: true, instanceType: "g6.2xlarge" } } }),
       "production",
     ).regions[0]?.tools.find((tool) => tool.key === "speech");
-    expect(speech?.gpu).toEqual({ instanceType: "g6e.xlarge" });
+    expect(speech?.gpu).toEqual({ instanceType: "g6.2xlarge", hourlyUsd: 1.18, maxReplicas: 1 });
     expect(speech?.endpoint).toMatchObject({ category: "speech", provider: "faster-whisper" });
+  });
+
+  it("keeps a GPU tool asleep unless the runway names replicas, and prices the maximum", () => {
+    const plan = toolsStackPlan(
+      rootWith({ ...TOOLS, tools: { "retrieval-embed": { replicas: 2 } } }),
+      "production",
+    );
+    const gcc = plan.regions[0];
+    const embed = gcc?.tools.find((tool) => tool.key === "retrieval-embed");
+    expect([embed?.replicas, embed?.gpu?.maxReplicas]).toEqual([2, 2]);
+    expect(gcc?.gpuHourlyUsdAtMax).toBe(2.94);
+    expect(gcc?.tools.find((tool) => tool.key === "retrieval-rerank")?.replicas).toBe(0);
+  });
+
+  it("fails a GPU instance type with no price, naming its path", () => {
+    const failure = failureOf(() =>
+      toolsStackPlan(
+        rootWith({ ...TOOLS, tools: { speech: { enabled: true, instanceType: "p5.48xlarge" } } }),
+        "production",
+      ),
+    );
+    expect(failure.issues.map((issue) => issue.path)).toContain(
+      "providers.tools.tools.speech.instanceType",
+    );
   });
 
   it("fails naming every missing fact", () => {

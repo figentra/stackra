@@ -5,8 +5,9 @@
  *          ECS cluster, a private DNS namespace in the region's VPC, one log group, the task execution role (reads only
  *          the stack's own parameters), an encrypted EFS file system for the tools that keep data there, one EC2
  *          instance with an encrypted EBS disk per tool that keeps data on EBS (Nominatim's Postgres), a GPU capacity
- *          provider per GPU instance type (launch template on the ECS GPU-optimised image, an Auto Scaling group from
- *          zero, one GPU per task) for the tools flagged `gpu`, a Valkey
+ *          provider per GPU instance type (launch template on the ECS GPU-optimised image, an Auto Scaling group that
+ *          stays at zero, one GPU per task) for the tools flagged `gpu`, whose services start asleep and scale back to
+ *          zero after 30 idle minutes (an Application Auto Scaling target, a step policy and a CPU alarm), a Valkey
  *          replication group when a tool reads a cache URL, the one-shot task that creates the tools' databases on
  *          the shared Postgres server, the role Infisical assumes to sync the parameters, and per tool a task
  *          definition and service, registered in the namespace when it serves an endpoint.
@@ -44,6 +45,15 @@ const ECS_GPU_AMI_PARAMETER =
 
 /** The root disk of a GPU instance in GiB: the CUDA images and model downloads need more than the AMI's 30. */
 const GPU_ROOT_DISK_GB = 100;
+
+/** How long a GPU tool must stay under `IDLE_CPU_PERCENT` before it scales in to its minimum. */
+const IDLE_MINUTES = 30;
+
+/** The service CPU utilisation (percent) under which a GPU tool counts as idle: the closest metric without an ALB. */
+const IDLE_CPU_PERCENT = 5;
+
+/** The wait in seconds between two idle scale-in actions. */
+const IDLE_COOLDOWN_SECONDS = 300;
 
 /** The pinned Postgres client image the database task runs. */
 const POSTGRES_CLIENT_IMAGE = "postgres:17.6-alpine";
@@ -291,9 +301,11 @@ export function awsToolsStack(
     ? aws.ssm.getParameterOutput({ name: ECS_AMI_PARAMETER }, opts).value
     : undefined;
 
-  // One capacity provider per GPU instance type: an Auto Scaling group from zero that ECS grows when a GPU task
-  // waits, one instance per GPU task (a g6.xlarge has one GPU). shortcut: managed termination protection is off, so
-  // a scale-in may stop a running task; turn it on (and protect scale-in) when a GPU task must never be interrupted.
+  // One capacity provider per GPU instance type: an Auto Scaling group that stays at 0 (min 0, desired 0) and that ECS
+  // grows when a GPU task waits, one instance per GPU task (a g6.xlarge has one GPU). A GPU service starts asleep
+  // (desiredCount 0) and scales itself back to zero when idle (below). shortcut: managed termination protection is off,
+  // so a scale-in may stop a running task (STA-1660); turn it on (and protect scale-in) when a GPU task must never be
+  // interrupted.
   const gpuAmi =
     gpuTypes.length === 0
       ? undefined
@@ -304,7 +316,7 @@ export function awsToolsStack(
     const name = `${prefix}-gpu-${slug}`;
     const tasks = region.tools
       .filter((tool) => tool.gpu?.instanceType === instanceType)
-      .reduce((total, tool) => total + tool.replicas, 0);
+      .reduce((total, tool) => total + (tool.gpu?.maxReplicas ?? 0), 0);
     const template = new aws.ec2.LaunchTemplate(
       name,
       {
@@ -563,6 +575,10 @@ echo 'ECS_INSTANCE_ATTRIBUTES={"${TOOL_ATTRIBUTE}":"${tool.key}"}' >> /etc/ecs/e
       },
       {
         ...opts,
+        // A woken GPU service keeps its desired count across a deploy; only a runway `replicas` above 0 pins one.
+        ...(gpuProvider !== undefined && tool.replicas === 0
+          ? { ignoreChanges: ["desiredCount"] }
+          : {}),
         dependsOn: [
           ...(instance === undefined ? mountTargets : [instance]),
           ...(gpuProvider === undefined || clusterProviders === undefined
@@ -572,6 +588,60 @@ echo 'ECS_INSTANCE_ATTRIBUTES={"${TOOL_ATTRIBUTE}":"${tool.key}"}' >> /etc/ecs/e
       },
     );
     services[tool.key] = service.id;
+
+    // Idle scale-in: the service may run 0 (or the runway's `replicas`) to its maximum, and goes to its minimum after
+    // 30 minutes below 5% CPU. A GPU tool is woken by hand (README "GPU tools"). shortcut: wake-on-request is STA-1661;
+    // until then a driver that finds the tool asleep gets a refused connection or `not_ready` from /health.
+    if (gpuProvider !== undefined && tool.gpu !== undefined) {
+      const target = new aws.appautoscaling.Target(
+        tool.name,
+        {
+          serviceNamespace: "ecs",
+          scalableDimension: "ecs:service:DesiredCount",
+          resourceId: pulumi.interpolate`service/${cluster.name}/${service.name}`,
+          minCapacity: tool.replicas,
+          maxCapacity: tool.gpu.maxReplicas,
+        },
+        opts,
+      );
+      const scaleIn = new aws.appautoscaling.Policy(
+        `${tool.name}-idle`,
+        {
+          name: `${tool.name}-idle`,
+          policyType: "StepScaling",
+          serviceNamespace: target.serviceNamespace,
+          scalableDimension: target.scalableDimension,
+          resourceId: target.resourceId,
+          stepScalingPolicyConfiguration: {
+            adjustmentType: "ExactCapacity",
+            cooldown: IDLE_COOLDOWN_SECONDS,
+            metricAggregationType: "Average",
+            stepAdjustments: [{ metricIntervalUpperBound: "0", scalingAdjustment: tool.replicas }],
+          },
+        },
+        opts,
+      );
+      // oxlint-disable-next-line no-new -- reason: Pulumi registers a resource when it is constructed
+      new aws.cloudwatch.MetricAlarm(
+        `${tool.name}-idle`,
+        {
+          name: `${tool.name}-idle`,
+          alarmDescription: `${tool.key} used under ${IDLE_CPU_PERCENT}% CPU for ${IDLE_MINUTES} minutes: scale in`,
+          namespace: "AWS/ECS",
+          metricName: "CPUUtilization",
+          dimensions: { ClusterName: cluster.name, ServiceName: service.name },
+          statistic: "Average",
+          period: 60,
+          evaluationPeriods: IDLE_MINUTES,
+          threshold: IDLE_CPU_PERCENT,
+          comparisonOperator: "LessThanThreshold",
+          // A sleeping service reports nothing, which is not idleness to act on.
+          treatMissingData: "notBreaching",
+          alarmActions: [scaleIn.arn],
+        },
+        opts,
+      );
+    }
   }
 
   const databaseTask =
