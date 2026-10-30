@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0490 (decisions 5 and 6); ADR 0305 (one declaration per file); STA-1631.
  */
-import type { PublicId } from "@stackra/contracts";
+import type { Json, PublicId } from "@stackra/contracts";
 import { Int, List, registerSchemas, Schema } from "@stackra/validation";
 
 import { PAGE_CONTEXT_SELECTION_SCHEMA } from "#core/constants/page-context-selection-schema.constant";
@@ -28,7 +28,7 @@ export class PageContextSelection extends Schema {
   count!: number;
 
   /** The filter of "everything matching", by declared filter key. */
-  filter?: Record<string, string | number | boolean | string[]>;
+  filter?: Record<string, Json>;
 }
 
 registerSchemas([[PageContextSelection, PAGE_CONTEXT_SELECTION_SCHEMA]]);

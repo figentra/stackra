@@ -11,9 +11,9 @@
 import { type Actor, Port, type ScopeRef } from "@stackra/contracts";
 
 import type { RunStatus } from "#contracts/enums/run-status.enum";
-import type { ClientToolPending } from "#contracts/types/client-tool-pending.type";
 import type { RecordScope } from "#contracts/types/record-scope.type";
 import type { RunApprovalRecord } from "#contracts/types/run-approval-record.type";
+import type { RunChange } from "#contracts/types/run-change.type";
 import type { RunRecord } from "#contracts/types/run-record.type";
 import type { RunStepRecord } from "#contracts/types/run-step-record.type";
 import type { ToolCallRecord } from "#contracts/types/tool-call-record.type";
@@ -43,17 +43,7 @@ export abstract class RunStore extends Port {
   abstract get(id: string): Promise<RunRecord | undefined>;
 
   /** Changes the run's status and bookkeeping; `pending: null` and `clientPending: null` clear the parked call. */
-  abstract update(
-    id: string,
-    change: {
-      readonly status: RunStatus;
-      readonly pending?: { readonly approvalId: string; readonly toolCallId: string } | null;
-      readonly clientPending?: ClientToolPending | null;
-      readonly steps?: number;
-      readonly errorCode?: string;
-      readonly finishedAt?: Date;
-    },
-  ): Promise<void>;
+  abstract update(id: string, change: RunChange): Promise<void>;
 
   /** Records one model step. */
   abstract recordStep(step: RunStepRecord): Promise<void>;

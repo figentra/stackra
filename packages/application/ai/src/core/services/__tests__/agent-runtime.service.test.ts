@@ -167,6 +167,16 @@ const censor: Guardrail = {
       : { pass: true, text: value.replaceAll("secret", "[redacted]") },
 };
 
+/** Prompts the runtime as a screen offered the filter tool, so the run parks on the model's client tool call. */
+function parkOnClient(runtime: AgentRuntime, clientToolTimeoutMs?: number) {
+  return runtime.prompt(agent, "Show open orders", {
+    actor,
+    surface,
+    clientTools: [filterRow],
+    ...(clientToolTimeoutMs === undefined ? {} : { clientToolTimeoutMs }),
+  });
+}
+
 /** A runtime over memory stores, the given model answers and the given guardrail layers. */
 function setup(model: Exclude<LanguageModel, string>, layers: readonly Guardrail[] = []) {
   const conversations = new MemoryConversationStoreDriver();
@@ -435,11 +445,7 @@ describe(AgentRuntime, () => {
   it("refuses an answer for an unknown or already answered tool call", async () => {
     const model = new MockLanguageModelV4({ doGenerate: [clientCall("call_c2"), text("Ok.")] });
     const { runtime } = setup(model);
-    const parked = await runtime.prompt(agent, "Show open orders", {
-      actor,
-      surface,
-      clientTools: [filterRow],
-    });
+    const parked = await parkOnClient(runtime);
     await expect(
       runtime.resolveClientTool(parked.runId, { toolCallId: "call_other", result: { done: true } }),
     ).rejects.toBeInstanceOf(ClientToolNotPendingError);
@@ -459,11 +465,7 @@ describe(AgentRuntime, () => {
     ] as const) {
       const model = new MockLanguageModelV4({ doGenerate: [clientCall("call_c3"), text("Ok.")] });
       const { runtime, conversations, runs } = setup(model);
-      const parked = await runtime.prompt(agent, "Show open orders", {
-        actor,
-        surface,
-        clientTools: [filterRow],
-      });
+      const parked = await parkOnClient(runtime);
       await runtime.resolveClientTool(parked.runId, answer as never);
       const result = (await conversations.messages(parked.conversationId)).find(
         (message) => message.role === "tool",
@@ -479,11 +481,7 @@ describe(AgentRuntime, () => {
   it("resumes with client_unavailable when the wait ends", async () => {
     const model = new MockLanguageModelV4({ doGenerate: [clientCall("call_c4"), text("Sorry.")] });
     const { runtime, conversations } = setup(model);
-    const parked = await runtime.prompt(agent, "Show open orders", {
-      actor,
-      surface,
-      clientTools: [filterRow],
-    });
+    const parked = await parkOnClient(runtime);
     const done = await runtime.expireClientTool(parked.runId, "call_c4");
     expect(done).toMatchObject({ status: RunStatus.Completed, text: "Sorry." });
     const result = (await conversations.messages(parked.conversationId)).find(
@@ -500,12 +498,7 @@ describe(AgentRuntime, () => {
     try {
       const model = new MockLanguageModelV4({ doGenerate: [clientCall("call_c5"), text("Ok.")] });
       const { runtime } = setup(model);
-      const parked = await runtime.prompt(agent, "Show open orders", {
-        actor,
-        surface,
-        clientTools: [filterRow],
-        clientToolTimeoutMs: 5000,
-      });
+      const parked = await parkOnClient(runtime, 5000);
       expect(vi.getTimerCount()).toBe(1);
       await runtime.resolveClientTool(parked.runId, {
         toolCallId: "call_c5",

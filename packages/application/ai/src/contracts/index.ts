@@ -35,6 +35,7 @@ export type { PageReading } from "#contracts/types/page-reading.type";
 export type { ProductHint } from "#contracts/types/product-hint.type";
 export type { RecordScope } from "#contracts/types/record-scope.type";
 export type { RunApprovalRecord } from "#contracts/types/run-approval-record.type";
+export type { RunChange } from "#contracts/types/run-change.type";
 export type { RunRecord } from "#contracts/types/run-record.type";
 export type { RunStepRecord } from "#contracts/types/run-step-record.type";
 export type { SurfaceDescriptor } from "#contracts/types/surface-descriptor.type";

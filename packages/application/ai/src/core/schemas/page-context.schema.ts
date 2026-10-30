@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0490 (decisions 5 and 6); ADR 0305 (one declaration per file); STA-1631.
  */
-import type { PublicId } from "@stackra/contracts";
+import type { Json, PublicId } from "@stackra/contracts";
 import { registerSchemas, Schema } from "@stackra/validation";
 
 import { PAGE_CONTEXT_SCHEMA } from "#core/constants/page-context-schema.constant";
@@ -38,7 +38,7 @@ export class PageContext extends Schema {
   selection?: PageContextSelection;
 
   /** The list filters, by declared filter key. */
-  filters?: Record<string, string | number | boolean | string[]>;
+  filters?: Record<string, Json>;
 
   /** The saved view's key. */
   view?: string;

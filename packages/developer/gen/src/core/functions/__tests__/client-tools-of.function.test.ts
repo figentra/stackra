@@ -101,11 +101,13 @@ describe("clientToolsOf", () => {
 
   it("refuses ai: true on a placement of a tool: false action", () => {
     const forced = structuredClone(orders) as never as {
-      manifest: { ui: { resources: Record<string, { actions: Record<string, unknown>[] }> } };
+      manifest: {
+        ui: { resources: Record<string, { actions: [unknown, Record<string, unknown>] }> };
+      };
     };
     forced.manifest.ui.resources["orders.order"].actions[1].ai = true;
     expect(
-      clientToolsOf({ ...WEB_APP_IR, classes: [], dependencies: [forced] }).errors.map(
+      clientToolsOf({ ...WEB_APP_IR, classes: [], dependencies: [forced as never] }).errors.map(
         (error) => error.code,
       ),
     ).toEqual(["prefill_tool_off"]);

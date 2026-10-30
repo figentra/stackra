@@ -219,58 +219,32 @@ export function clientToolsOf(ir: MemberIR): {
       (view) => textOf(view["key"]) ?? textOf(view["name"]) ?? [],
     );
     const file = "package.json";
-    add(file, "list_open", `${key}.list.open`, key, module, objectSchema({}), read);
-    add(
-      file,
+    const own = (kind: string, name: string, schema: JsonSchema): void =>
+      add(file, kind, `${key}.${name}`, key, module, schema, read);
+    own("list_open", "list.open", objectSchema({}));
+    own(
       "filter",
-      `${key}.list.filter`,
-      key,
-      module,
+      "list.filter",
       objectSchema({
         search: stringSchema(),
         filters: objectSchema(Object.fromEntries(filters.map((filter) => [filter, {}]))),
       }),
-      read,
     );
     if (columns.length > 0)
-      add(
-        file,
+      own(
         "sort",
-        `${key}.list.sort`,
-        key,
-        module,
+        "list.sort",
         objectSchema({ key: stringSchema(columns), direction: stringSchema(["asc", "desc"]) }, [
           "key",
         ]),
-        read,
       );
-    add(
-      file,
+    own(
       "select",
-      `${key}.list.select`,
-      key,
-      module,
+      "list.select",
       objectSchema({ ids: { type: "array", items: stringSchema(), maxItems: 200 } }, ["ids"]),
-      read,
     );
-    add(
-      file,
-      "view_apply",
-      `${key}.view.apply`,
-      key,
-      module,
-      objectSchema({ view: stringSchema(views) }, ["view"]),
-      read,
-    );
-    add(
-      file,
-      "record_open",
-      `${key}.record.open`,
-      key,
-      module,
-      objectSchema({ id: stringSchema() }, ["id"]),
-      read,
-    );
+    own("view_apply", "view.apply", objectSchema({ view: stringSchema(views) }, ["view"]));
+    own("record_open", "record.open", objectSchema({ id: stringSchema() }, ["id"]));
     for (const placement of listOf(tree["actions"])) {
       if (placement["kind"] !== "run" || placement["ai"] === false) continue;
       const action = actionOf(manifest, placement["action"]);
@@ -302,44 +276,20 @@ export function clientToolsOf(ir: MemberIR): {
   }
 
   // Theming previews and tours (decisions 9 and 10), and `ui.point` at the declared anchors (decision 1).
-  const own = ir.member;
+  const app = (kind: string, key: string, target: string, schema: JsonSchema): void =>
+    add("package.json", kind, key, target, ir.member, schema);
   if (declares(ir, "@stackra/theming"))
-    for (const [name, property] of [
-      ["theme", "theme"],
-      ["mode", "mode"],
-      ["density", "density"],
-    ] as const)
-      add(
-        "package.json",
-        "preview",
-        `ui.${name}.preview`,
-        name,
-        own,
-        objectSchema({ [property]: stringSchema() }, [property]),
-      );
+    for (const name of ["theme", "mode", "density"])
+      app("preview", `ui.${name}.preview`, name, objectSchema({ [name]: stringSchema() }, [name]));
   // A tour is a document kind of `@stackra/experience` (lane 4); the tools exist once the app declares one.
   if (ir.classes.some((declared) => declared.kind === "tour")) {
-    add(
-      "package.json",
-      "tour_start",
-      "tour.start",
-      "tour",
-      own,
-      objectSchema({ tour: stringSchema() }, ["tour"]),
-    );
-    add("package.json", "tour_next", "tour.next", "tour", own, objectSchema({}));
-    add("package.json", "tour_stop", "tour.stop", "tour", own, objectSchema({}));
+    app("tour_start", "tour.start", "tour", objectSchema({ tour: stringSchema() }, ["tour"]));
+    app("tour_next", "tour.next", "tour", objectSchema({}));
+    app("tour_stop", "tour.stop", "tour", objectSchema({}));
   }
   const anchors = declaredAnchors(ir);
   if (anchors.length > 0)
-    add(
-      "package.json",
-      "point",
-      "ui.point",
-      "anchor",
-      own,
-      objectSchema({ anchor: stringSchema(anchors) }, ["anchor"]),
-    );
+    app("point", "ui.point", "anchor", objectSchema({ anchor: stringSchema(anchors) }, ["anchor"]));
   for (const reference of ir.anchorReferences ?? [])
     if (!anchors.includes(reference.key))
       errors.push({

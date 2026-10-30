@@ -20,9 +20,9 @@ import { recordEvent } from "@stackra/events";
 import { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
 import { RunStatus } from "#contracts/enums/run-status.enum";
 import { RunStore } from "#contracts/ports/run-store.port";
-import type { ClientToolPending } from "#contracts/types/client-tool-pending.type";
 import type { RecordScope } from "#contracts/types/record-scope.type";
 import type { RunApprovalRecord } from "#contracts/types/run-approval-record.type";
+import type { RunChange } from "#contracts/types/run-change.type";
 import type { RunRecord } from "#contracts/types/run-record.type";
 import type { RunStepRecord } from "#contracts/types/run-step-record.type";
 import type { ToolCallRecord } from "#contracts/types/tool-call-record.type";
@@ -164,17 +164,7 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
    * @throws NotFoundError when the run is not visible.
    * @throws RangeError when it parks on an approval that was not recorded first.
    */
-  async update(
-    id: string,
-    change: {
-      readonly status: RunStatus;
-      readonly pending?: { readonly approvalId: string; readonly toolCallId: string } | null;
-      readonly clientPending?: ClientToolPending | null;
-      readonly steps?: number;
-      readonly errorCode?: string;
-      readonly finishedAt?: Date;
-    },
-  ): Promise<void> {
+  async update(id: string, change: RunChange): Promise<void> {
     const row = (await this.runs.findOneOrFail({ id } as never)) as Run;
     const parksOn =
       change.status === RunStatus.WaitingApproval && change.pending

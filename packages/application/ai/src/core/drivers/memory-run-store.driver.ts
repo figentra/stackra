@@ -12,9 +12,9 @@ import type { Actor, ScopeRef } from "@stackra/contracts";
 
 import type { RunStatus } from "#contracts/enums/run-status.enum";
 import { RunStore } from "#contracts/ports/run-store.port";
-import type { ClientToolPending } from "#contracts/types/client-tool-pending.type";
 import type { RecordScope } from "#contracts/types/record-scope.type";
 import type { RunApprovalRecord } from "#contracts/types/run-approval-record.type";
+import type { RunChange } from "#contracts/types/run-change.type";
 import type { RunRecord } from "#contracts/types/run-record.type";
 import type { RunStepRecord } from "#contracts/types/run-step-record.type";
 import type { ToolCallRecord } from "#contracts/types/tool-call-record.type";
@@ -68,17 +68,7 @@ export class MemoryRunStoreDriver extends Driver(RunStore) {
    *
    * @throws RangeError when the run was never created here.
    */
-  async update(
-    id: string,
-    change: {
-      readonly status: RunStatus;
-      readonly pending?: { readonly approvalId: string; readonly toolCallId: string } | null;
-      readonly clientPending?: ClientToolPending | null;
-      readonly steps?: number;
-      readonly errorCode?: string;
-      readonly finishedAt?: Date;
-    },
-  ): Promise<void> {
+  async update(id: string, change: RunChange): Promise<void> {
     const row = this.rows.get(id);
     if (row === undefined) throw new RangeError(`No run ${id}`);
     const { pending, clientPending, ...rest } = change;
