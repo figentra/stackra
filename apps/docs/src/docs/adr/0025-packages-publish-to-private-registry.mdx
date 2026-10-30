@@ -1,17 +1,17 @@
 ---
 title: "0025 — Packages publish to npm.figentra.com; every package builds to ESM dist"
-description: "Superseded by 0177, decisions 1 and 2 amended by 0453 · 2026-10-20 · amended 2026-10-30 (STA-1656)"
+description: "Superseded by 0177, decisions 1 and 2 amended by 0453 · 2026-10-20 · amended 2026-10-30 (STA-1656, owner-approved 2026-10-30)"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0025, the first registry and dist-build decision. Boundary: decision text only; superseded by ADR 0177, its registry decisions amended by ADR 0453. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0177, 0453. */}
 
 <Note>
-  Amended 2026-10-30 (STA-1656): decision 3's `@stackra/source` condition means a member typechecks
-  the source of every workspace package it imports, decorated classes included (the config option
-  schemas, the cursor and table inputs). So `experimentalDecorators` is on in the base TypeScript
-  preset, and therefore in every preset, matching how the build compiles that source;
-  `emitDecoratorMetadata` stays off. A member on the `library` or `node` preset no longer fails with
-  TS1240 and TS1270 at another package's decorators.
+  Amended 2026-10-30 (STA-1656), approved by the owner on 2026-10-30: decision 3's `@stackra/source`
+  condition means a member typechecks the source of every workspace package it imports, decorated
+  classes included (the config option schemas, the cursor and table inputs). So
+  `experimentalDecorators` is on in the base TypeScript preset, and therefore in every preset,
+  matching how the build compiles that source; `emitDecoratorMetadata` stays off. A member on the
+  `library` or `node` preset no longer fails with TS1240 and TS1270 at another package's decorators.
 </Note>
 
 <Note>
