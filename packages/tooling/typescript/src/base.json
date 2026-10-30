@@ -15,6 +15,12 @@
     "moduleResolution": "bundler",
     // ADR 0025: typecheck reads a workspace package's source through its `@stackra/source` export condition.
     "customConditions": ["@stackra/source"],
+    // STA-1656: that source holds decorated classes (the config option schemas, the cursor and table inputs), which the
+    // build compiles as legacy decorators. A preset without this flag typechecked them as TC39 decorators and failed
+    // with TS1240 and TS1270 in a consumer's typecheck, so every preset reads them the way they are built. Metadata
+    // stays off everywhere (decorators.json says why).
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
@@ -39,8 +45,8 @@
     // imports therefore carry no extension and no `/index` (validate-repository enforces it). The flag stays
     // on only for packages/tooling/*, whose presets plain Node loads and which must keep `./x.ts`.
     "allowImportingTsExtensions": true,
-    // Hygiene for packages that do not use the DI container: no parameter properties, enums, namespaces or
-    // decorators. Workspaces that declare modules extend the decorators preset instead (ADR-0005).
+    // Hygiene for packages that do not use the DI container: no parameter properties, enums or namespaces.
+    // Workspaces that declare modules extend the decorators preset instead (ADR-0005).
     "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "types": []

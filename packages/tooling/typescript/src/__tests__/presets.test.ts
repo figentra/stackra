@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: proves every preset listed in package.json `exports` exists, parses as JSONC, and resolves its `extends`
- *          chain back to base.json — so a broken preset fails here, not in the first consumer's typecheck.
+ *          chain back to base.json — so a broken preset fails here, not in the first consumer's typecheck — and that
+ *          every preset reads decorated workspace sources as legacy decorators (STA-1656).
  * Boundary: test only; imports the subject by relative path (a package cannot depend on itself).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0025 (typecheck reads source).
@@ -62,6 +63,21 @@ describe("@stackra/typescript-config presets", () => {
     const library = readJsonc(join(root, "src", "library.json")).compilerOptions ?? {};
     expect(library["jsx"]).toBe("react-jsx");
     expect(library["lib"]).toEqual(expect.arrayContaining(["DOM", "DOM.Iterable"]));
+  });
+
+  it("every preset typechecks decorated workspace sources as legacy decorators, without metadata (STA-1656)", () => {
+    for (const file of Object.values(pkg.exports)) {
+      // The chain, base first, so a later preset's option wins as tsc's `extends` does.
+      const chain: Record<string, unknown>[] = [];
+      for (let current: string | undefined = join(root, file); current !== undefined;) {
+        const preset = readJsonc(current);
+        chain.unshift(preset.compilerOptions ?? {});
+        current = preset.extends === undefined ? undefined : join(dirname(current), preset.extends);
+      }
+      const options = Object.assign({}, ...chain) as Record<string, unknown>;
+      expect(options["experimentalDecorators"], file).toBe(true);
+      expect(options["emitDecoratorMetadata"], file).toBe(false);
+    }
   });
 
   it("base keeps the non-negotiable strictness flags", () => {
