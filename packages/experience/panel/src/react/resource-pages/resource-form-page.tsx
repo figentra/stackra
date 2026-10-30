@@ -6,8 +6,8 @@
  *          page (or the list) of the record.
  * Boundary: registers the action's input schema under the action ref so `@stackra/ui`'s schema form reads it. On Edit
  *           it reads the record first (`useRecord`) and starts the form from it, the record id under the input's id
- *           key. The PUT address a create mints (ADR 0307: a client-minted id field) and the modal form of a record
- *           action are not built.
+ *           key. The PUT address a create mints (ADR 0307: a client-minted id field) is not built; a record
+ *           action's modal form is `ActionInputModal`.
  * Runtime: browser
  * Governing contract: ADR 0307 (form keys; rule 3); ADR 0139 (declared confirmation); ADR 0055.
  */

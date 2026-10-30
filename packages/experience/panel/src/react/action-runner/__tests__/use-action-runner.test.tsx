@@ -110,6 +110,18 @@ describe("useActionRunner", () => {
     });
   });
 
+  it("skips its own dialog when the caller's modal was the confirmation", async () => {
+    const fake = fakeClient((client) =>
+      client.on(CancelOrderAction).returns({ status: "cancelled" }),
+    );
+    const run = await runnerOf(fake);
+    await expect(
+      run(CancelOrderAction, { orderId: "ord_1" }, { confirmed: true }),
+    ).resolves.toMatchObject({ status: "done" });
+    expect(ui.confirm).not.toHaveBeenCalled();
+    expect(fake.called(CancelOrderAction)).toHaveLength(1);
+  });
+
   it("runs an action without a risk at once", async () => {
     const fake = fakeClient((client) => client.on(ArchiveAction).returns({}));
     const run = await runnerOf(fake);

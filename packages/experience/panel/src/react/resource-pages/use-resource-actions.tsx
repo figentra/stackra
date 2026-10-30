@@ -2,12 +2,11 @@
  * Stackra file contract:
  * Purpose: `useResourceActions(resource, tree)`, the buttons a resource page draws at one place, as `@stackra/ui`
  *          `ResourceAction`s: the placed actions run through the action runner (a record action filled with the
- *          record's id, a bulk action fanned out per selected record) plus the derived operations (view and edit links,
- *          delete, the create link).
+ *          record's id, a bulk action fanned out per selected record, an action whose input needs more than the id
+ *          through its modal form) plus the derived operations (view and edit links, delete, the create link).
  * Boundary: internal to the resource pages. Reads the recorded placements (`placementsAt`) and the resource's
  *           operation refs; every run goes through `useActionRunner`, so the declared confirmation, the cache refresh
- *           and the toasts are the runner's. An action whose input needs more than the record id is sent with the id
- *           only and the server refuses it (the modal form of ADR 0307 rule 3 is not built). Export and import
+ *           and the toasts are the runner's. The page draws `modal`, the open `ActionInputModal`. Export and import
  *           placements are not drawn (their queued pipelines are not built).
  * Runtime: browser
  * Governing contract: ADR 0307 (rules 3 and 4); ADR 0139 (declared confirmation).
@@ -17,9 +16,11 @@ import type { AnyClass } from "@stackra/container";
 import { useTranslation } from "@stackra/i18n/react";
 import { useNavigate } from "@stackra/navigation/react";
 import type { ResourceAction } from "@stackra/ui/contracts";
+import { useState } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { ActionPlace } from "#core/enums/action-place.enum";
+import { actionFormKeys } from "#core/functions/action-form-keys.function";
 import { idOf } from "#core/functions/id-of.function";
 import { placementsAt } from "#core/functions/placements-at.function";
 import { recordIdKey } from "#core/functions/record-id-key.function";
@@ -28,6 +29,7 @@ import type { ResourceRoutes } from "#core/types/resource-routes.type";
 import type { ResourceTree } from "#core/types/resource-tree.type";
 import type { PageRef } from "#core/types/page-ref.type";
 import { useActionRunner } from "#react/action-runner/use-action-runner";
+import { ActionInputModal } from "#react/resource-pages/action-input-modal";
 import type { ResourceActions } from "#react/resource-pages/resource-actions.type";
 
 /** The verb of an action key (`orders.order.cancel@1` is `cancel`). */
@@ -55,6 +57,10 @@ export function useResourceActions(
   const remove = tree.options?.operations.delete;
   const removeRef = typeof remove === "function" ? (remove as ActionRef) : undefined;
   const placed = tree.actions ?? [];
+  const [pending, setPending] = useState<
+    | { readonly action: ActionRef; readonly idKey: string; readonly ids: readonly string[] }
+    | undefined
+  >();
 
   /** A button that runs `action` once per id in `ids`, or once with no record. */
   const runner = (
@@ -70,6 +76,11 @@ export function useResourceActions(
         await run(action, {} as never);
         return;
       }
+      // An input that needs more than the id opens one modal form for every record (ADR 0307 rule 3).
+      if (actionFormKeys(action.input, key).length > 0) {
+        setPending({ action, idKey: key, ids });
+        return;
+      }
       // A bulk run fans out per record, so the policy decides each one (ADR 0307 rule 3).
       for (const recordId of ids) await run(action, { [key]: recordId } as never);
     },
@@ -82,6 +93,17 @@ export function useResourceActions(
   });
 
   return {
+    modal:
+      pending === undefined ? null : (
+        <ActionInputModal
+          resourceKey={resource.key}
+          action={pending.action}
+          idKey={pending.idKey}
+          ids={pending.ids}
+          keys={actionFormKeys(pending.action.input, pending.idKey)}
+          onClose={() => setPending(undefined)}
+        />
+      ),
     at(place, record) {
       const ids = record === undefined ? undefined : [idOf(record)];
       const out: ResourceAction[] = [];

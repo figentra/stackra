@@ -118,6 +118,7 @@ export function ResourceViewPage({ resource, id }: ResourceViewPageProps): React
   return (
     <>
       <PageHeader title={title} actions={actions.at(ActionPlace.View, record)} />
+      {actions.modal}
       <Entries
         resourceKey={resource.key}
         entries={tree.infolist?.entries ?? derived(record)}

@@ -89,6 +89,7 @@ export function ResourceListPage({
   return (
     <>
       <PageHeader title={title} actions={actions.at(ActionPlace.ListHeader)} />
+      {actions.modal}
       {saved.length === 0 ? (
         table(undefined)
       ) : (
