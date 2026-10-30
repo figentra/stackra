@@ -1,0 +1,17 @@
+{
+  "account": "الحساب",
+  "account_menu": "إجراءات الحساب",
+  "profile": "الملف الشخصي",
+  "profile_hint": "الاسم والصورة وبيانات التواصل",
+  "billing": "الفوترة",
+  "billing_hint": "الخطة والفواتير ووسيلة الدفع",
+  "sign_out": "تسجيل الخروج",
+  "chosen": "تم اختيار: {action}",
+  "nothing_chosen": "لم يُختر شيء بعد",
+  "language": "اللغة",
+  "languages": "اللغات",
+  "english": "الإنجليزية",
+  "arabic": "العربية",
+  "french": "الفرنسية",
+  "current": "يُعرض المتجر باللغة {language}"
+}

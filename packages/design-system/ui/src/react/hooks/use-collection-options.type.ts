@@ -14,6 +14,7 @@ import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { CollectionPage } from "#contracts/types/collection-page.type";
 import type { CollectionQuery } from "#contracts/types/collection-query.type";
+import type { CollectionSource } from "#contracts/types/collection-source.type";
 import type { CollectionState } from "#contracts/types/collection-state.type";
 import type { CollectionStore } from "#contracts/types/collection-store.type";
 import type { CollectionView } from "#contracts/types/collection-view.type";
@@ -42,6 +43,8 @@ export interface UseCollectionOptions<TItem extends CollectionItem = CollectionI
   readonly views?: readonly CollectionView[] | undefined;
   /** The view applied on open, when the store has none. */
   readonly defaultViewId?: string | null | undefined;
+  /** Server mode: the server adapter whose `fetch` answers each query (`fetch` below wins when both are given). */
+  readonly source?: CollectionSource<TItem> | undefined;
   /** Server mode: fetches the page of a query; the engine aborts a fetch a newer query replaces. */
   readonly fetch?:
     | ((query: CollectionQuery, signal: AbortSignal) => Promise<CollectionPage<TItem>>)

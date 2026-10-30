@@ -63,7 +63,7 @@ export default function Interactive() {
       isRefreshing={isRefreshing}
       isComparing={isComparing}
       onCompareChange={setComparing}
-      menu={["csv", "png", "table", "fullscreen", "link"]}
+      menu={["csv", "png", "svg", "table", "fullscreen", "link"]}
       data={chartDataOf({
         data,
         series,

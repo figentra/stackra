@@ -1,9 +1,16 @@
 {
-  "label": "Orders by district, October",
-  "north": "North district",
-  "east": "East district",
-  "south": "South district",
-  "west": "West district",
-  "centre": "Old town",
-  "harbour": "Harbour"
+  "label": "Orders by region, October",
+  "riyadh": "Riyadh",
+  "makkah": "Makkah",
+  "madinah": "Madinah",
+  "eastern": "Eastern Province",
+  "qassim": "Al-Qassim",
+  "hail": "Hail",
+  "tabuk": "Tabuk",
+  "northern_borders": "Northern Borders",
+  "jawf": "Al-Jawf",
+  "jazan": "Jazan",
+  "najran": "Najran",
+  "bahah": "Al-Bahah",
+  "asir": "Asir"
 }

@@ -2,15 +2,20 @@
  * Stackra file contract:
  * Purpose: proves the web `DataView`: a named region with a named toolbar and a result count; the quick search narrows
  *          the rows; switching to the cards and list views and back keeps the search, the sort and the hidden columns;
- *          a filter condition shows as a removable chip; the views menu saves the current state as a named view.
+ *          a filter condition shows as a removable chip; the views menu saves the current state as a named view; a card
+ *          opens its record in the side panel; "select all N" across pages ticks every page and the engine answers
+ *          every matching id (client mode); under 600 px of its own width the table is drawn as cards; a `board` adds
+ *          the Board view.
  * Boundary: DataView over a real `useCollection` in client mode, in jsdom (wide: the toolbar is not folded).
  * Runtime: node
  * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0022 (test placement); STA-1371.
  */
 // @vitest-environment jsdom
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 
 import type { CollectionColumn } from "#contracts/types/collection-column.type";
+import type { CollectionController } from "#contracts/types/collection-controller.type";
 import { DataView } from "#react/data-view/data-view";
 import { useCollection } from "#react/hooks/use-collection";
 
@@ -42,7 +47,71 @@ function Harness({ initialFilter }: { readonly initialFilter?: boolean }) {
   return <DataView label="Customers" collection={collection} />;
 }
 
+/** A paged DataView with a bulk action and a side panel; it hands its engine out for the test to read. */
+function Rows({
+  onEngine,
+  renderRowPanel,
+}: {
+  readonly onEngine?: (collection: CollectionController) => void;
+  readonly renderRowPanel?: (item: (typeof ROWS)[number]) => ReactNode;
+}) {
+  const collection = useCollection({
+    columns: COLUMNS,
+    items: ROWS,
+    paging: "page",
+    initialState: { pageSize: 2 },
+  });
+  onEngine?.(collection as unknown as CollectionController);
+  return (
+    <DataView
+      label="Customers"
+      collection={collection}
+      bulkActions={[{ id: "tag", label: "Tag" }]}
+      renderRowPanel={renderRowPanel}
+    />
+  );
+}
+
+/** A DataView with a board by city. */
+function Boarded() {
+  const collection = useCollection({ columns: COLUMNS, items: ROWS });
+  return (
+    <DataView
+      label="Customers"
+      collection={collection}
+      board={{ field: "city", onMove: () => undefined }}
+    />
+  );
+}
+
 describe("DataView (web)", () => {
+  it("opens a card's record in the side panel", async () => {
+    render(<Rows renderRowPanel={(item) => `Panel of ${item.customer}`} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Cards" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Gulf Dates Co." }));
+    });
+    expect(await screen.findByText("Panel of Gulf Dates Co.")).toBeTruthy();
+  });
+
+  it("selects every matching row across pages and answers every id", async () => {
+    let engine: CollectionController | undefined;
+    render(<Rows onEngine={(collection) => (engine = collection)} />);
+    const grid = screen.getByRole("grid", { name: "Customers" });
+    await act(async () => {
+      fireEvent.click(within(grid).getAllByRole("checkbox")[0] as HTMLElement);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Select all 3" }));
+    });
+    expect(engine?.selected).toEqual({ kind: "ids", ids: ["1", "2", "3"] });
+    await act(async () => {
+      engine?.setPage(1);
+    });
+    const boxes = within(screen.getByRole("grid", { name: "Customers" })).getAllByRole("checkbox");
+    for (const box of boxes) expect((box as HTMLInputElement).checked).toBe(true);
+  });
+
   it("is a named region with a named toolbar and a result count", () => {
     render(<Harness />);
     expect(screen.getByRole("region", { name: "Customers" })).toBeTruthy();
@@ -90,5 +159,33 @@ describe("DataView (web)", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(screen.getAllByText("Riyadh VIP").length).toBeGreaterThan(0);
+  });
+
+  it("draws the table as cards below its own 600 px", () => {
+    // The DataView measures itself: 400 px wide here.
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+
+        unobserve() {}
+
+        disconnect() {}
+      },
+    );
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(400);
+    const { unmount } = render(<Harness />);
+    expect(screen.queryByRole("grid", { name: "Customers" })).toBeNull();
+    expect(screen.getByRole("list", { name: "Customers" })).toBeTruthy();
+    unmount();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("offers the board in the view switcher when a board is given", () => {
+    render(<Boarded />);
+    fireEvent.click(screen.getByRole("radio", { name: "Board" }));
+    expect(screen.getByRole("grid", { name: "Customers: Riyadh" })).toBeTruthy();
+    expect(screen.getByRole("grid", { name: "Customers: Jeddah" })).toBeTruthy();
   });
 });

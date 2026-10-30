@@ -9,6 +9,7 @@
 import type { ChartSort } from "#contracts/enums/chart-sort.enum";
 import type { Orientation } from "#contracts/enums/orientation.enum";
 import type { CartesianChartContractProps } from "#contracts/types/cartesian-chart-contract-props.type";
+import type { ChartEmphasis } from "#contracts/types/chart-emphasis.type";
 
 /** Props shared by the web and native `BarChart`. */
 export interface BarChartContractProps extends CartesianChartContractProps {
@@ -16,4 +17,9 @@ export interface BarChartContractProps extends CartesianChartContractProps {
   readonly orientation?: Orientation | undefined;
   /** Orders the categories: largest first, smallest first, or by label; the rows' own order by default. */
   readonly sort?: ChartSort | undefined;
+  /**
+   * Which column carries the colour while the rest stand back in its soft tone: `latest` (the default for one
+   * unstacked series), `none` (the default for several, which keep their own colours) or an index.
+   */
+  readonly emphasis?: ChartEmphasis | undefined;
 }

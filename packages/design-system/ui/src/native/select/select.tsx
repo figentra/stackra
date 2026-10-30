@@ -8,7 +8,8 @@
  *          `isFullWidth` says so, as on web. HeroUI Native's Select has no read-only state, so a read-only field is one
  *          that never opens, and no invalid state, so `isInvalid` reaches the label, the description and the error but
  *          the trigger is neither drawn nor announced as invalid (the error text carries it). The list opens as a popover by default; `presentation` picks a bottom sheet or a dialog,
- *          and is given to both the root and the content, which HeroUI Native requires to agree. A field without a
+ *          and is given to both the root and the content, which HeroUI Native requires to agree. Choices that name a
+ *          `section` are drawn under a header (`Select.ListLabel`, read as a heading) by `groupSelectItems`. A field without a
  *          visible `label` names itself with `accessibilityLabel`, which passes through.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0055 (one field contract); owner
@@ -20,6 +21,7 @@ import { cn, Description, FieldError, Label, Select as HeroSelect } from "heroui
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { SelectItem } from "#contracts/types/select-item.type";
+import { groupSelectItems } from "#core/functions/group-select-items.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import type { SelectProps } from "#native/select/select.props";
 
@@ -112,9 +114,17 @@ export function Select({
               }
             : {})}
         >
-          {items.map((item) => (
-            <SelectOption key={item.id} item={item} />
-          ))}
+          {groupSelectItems(items).flatMap(({ section, items: group }) => [
+            // A section's header is a label read as a heading, never a choice.
+            ...(section === undefined
+              ? []
+              : [
+                  <HeroSelect.ListLabel key={`section:${section}`} accessibilityRole="header">
+                    {section}
+                  </HeroSelect.ListLabel>,
+                ]),
+            ...group.map((item) => <SelectOption key={item.id} item={item} />),
+          ])}
         </HeroSelect.Content>
       </HeroSelect.Portal>
     </HeroSelect>

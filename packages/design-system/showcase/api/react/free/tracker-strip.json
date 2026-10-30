@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "40b77741448fb68b",
+    "propsFiles": ["ui/src/react/tracker-strip/tracker-strip.props.ts"]
+  },
+  "importLine": "import { TrackerStrip } from \"@stackra/ui/react\";",
+  "key": "free/tracker-strip",
+  "parts": [
+    {
+      "name": "TrackerStrip",
+      "props": [
+        {
+          "description": "The periods, oldest first.",
+          "name": "cells",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TrackerCell[]"
+        },
+        {
+          "description": "The strip's accessible name, such as \"API, last 30 days\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The line at the header's end, such as \"99.98% uptime\"; worked out from the cells by default.",
+          "name": "summary",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The caption under the first cell, such as \"30 days ago\".",
+          "name": "startLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The caption under the last cell, such as \"Today\".",
+          "name": "endLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The cells' height in pixels; 32 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Classes for the figure, such as a width or margin.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

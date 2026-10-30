@@ -1,8 +1,11 @@
 {
   "orders": "Orders",
   "details": "Order details",
+  "orders_resizable": "Orders, resizable",
+  "details_resizable": "Order details, resizable",
   "order": "Order {number}",
   "ready": "Ready for pickup",
   "pick": "Pick an order to see it here",
-  "back": "Back to orders"
+  "back": "Back to orders",
+  "width": "List pane: {width} px. Drag the border, or focus it and use the arrow keys, Home and End."
 }

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the web `Dropdown` compound on HeroUI v3's Dropdown (React Aria menu): `Dropdown` holds the open state,
- *          `Dropdown.Trigger` is the button, `Dropdown.Menu` is the menu in its popover, and `Dropdown.Item` draws its
+ *          `Dropdown.Trigger` is the button (a Button's look with `variant`), `Dropdown.Menu` is the menu in its popover, and `Dropdown.Item` draws its
  *          label, an optional `description` line and the selection mark, in the `danger` look when `color` is the
  *          danger tone. For a menu written inline, such as an account or a locale switcher.
  * Boundary: thin: every HeroUI and React Aria prop passes through (`selectionMode`, `selectedKeys`, `onAction`,
@@ -16,11 +16,31 @@
 /* oxlint-disable react/only-export-components -- the compound is Object.assign(Root, parts), so the export is the
    root function, which React Refresh takes as a component; the boundary holds (rule-gap B-6). */
 import {
+  buttonVariants,
+  cn,
   Dropdown as HeroDropdown,
   type DropdownMenuProps as HeroDropdownMenuProps,
 } from "@heroui/react";
 import type { ReactElement } from "react";
 import type { DropdownItemProps } from "#react/dropdown/dropdown-item.props";
+import type { DropdownTriggerProps } from "#react/dropdown/dropdown-trigger.props";
+
+/** The button that opens the menu: HeroUI's trigger, drawn as a Button of `variant` when one is given. */
+function DropdownTrigger({ variant, className, ...rest }: DropdownTriggerProps): ReactElement {
+  if (variant === undefined)
+    return <HeroDropdown.Trigger {...rest} {...(className === undefined ? {} : { className })} />;
+  const look = buttonVariants({ variant });
+  return (
+    <HeroDropdown.Trigger
+      {...rest}
+      className={
+        typeof className === "function"
+          ? (state) => cn(look, className(state)) ?? ""
+          : (cn(look, className) ?? "")
+      }
+    />
+  );
+}
 
 /** The menu in its popover, so a dropdown is written as trigger plus menu. */
 function DropdownMenu<T extends object>(props: HeroDropdownMenuProps<T>): ReactElement {
@@ -60,8 +80,11 @@ function DropdownRoot(props: Parameters<typeof HeroDropdown>[0]): ReactElement {
 
 /** The parts of the compound, typed from HeroUI's own so the declaration output can name them (TS2883). */
 interface DropdownParts {
-  /** The button that opens the menu; give it an `aria-label` when it shows no text. */
-  readonly Trigger: typeof HeroDropdown.Trigger;
+  /**
+   * The button that opens the menu; give it an `aria-label` when it shows no text, and a `variant` to draw it as a
+   * Button.
+   */
+  readonly Trigger: typeof DropdownTrigger;
   /** The menu, drawn in its popover. */
   readonly Menu: typeof DropdownMenu;
   /** One action or choice. */
@@ -70,7 +93,7 @@ interface DropdownParts {
 
 /** A menu behind a button: `Dropdown`, `Dropdown.Trigger`, `Dropdown.Menu` and `Dropdown.Item`. */
 export const Dropdown: typeof DropdownRoot & DropdownParts = Object.assign(DropdownRoot, {
-  Trigger: HeroDropdown.Trigger,
+  Trigger: DropdownTrigger,
   Menu: DropdownMenu,
   Item: DropdownItem,
 });

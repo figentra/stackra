@@ -1,0 +1,74 @@
+{
+  "generatedFrom": {
+    "hash": "4a57a12bc48dacbc",
+    "propsFiles": ["ui/src/native/time-clock/time-clock.props.ts"]
+  },
+  "importLine": "import { TimeClock } from \"@stackra/ui/native\";",
+  "key": "free/time-clock",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with each new time.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: TimeValue) => void"
+        }
+      ],
+      "name": "TimeClock",
+      "props": [
+        {
+          "description": "The time, for a controlled clock.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "TimeValue"
+        },
+        {
+          "description": "The starting time, for an uncontrolled clock; defaults to 12:00.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "TimeValue"
+        },
+        {
+          "description": "The minutes the minute hand snaps to, for example 5 or 15; defaults to 1.",
+          "name": "minuteStep",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "12 hours with AM and PM, or 24 hours on two rings; defaults to the locale's.",
+          "name": "hourCycle",
+          "required": false,
+          "source": "stackra",
+          "type": "12 | 24"
+        },
+        {
+          "description": "The clock's name, for example \"Pickup time\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to show the time but refuse changes.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the outer view.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

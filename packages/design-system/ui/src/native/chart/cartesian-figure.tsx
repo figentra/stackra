@@ -2,10 +2,14 @@
  * Stackra file contract:
  * Purpose: `CartesianFigure`, the native area, line and column chart on Victory Native, in the quiet chart style:
  *          series in the accent ramp (or the palette asked for); areas fade from 35% to clear under a 2px monotone
- *          edge; columns, grouped or stacked, round only their data end; 10px muted category labels, no axis lines,
+ *          edge; columns, grouped or stacked, round only their data end, and one series is lit softly from the top
+ *          and speaks through its latest (or pressed, or `emphasis`) column, the rest in its soft tone; 10px muted
+ *          category labels, no axis lines,
  *          a horizontal grid of the muted colour at 15%; and, while pressed, a 1px muted 4/4 dashed cursor with each
  *          series' dot in a 2px surface ring (a 5% foreground block behind a column) and the readout card.
- * Boundary: right to left the categories run from the right and the value axis sits on the right. Labels are Skia
+ * Boundary: right to left the categories run from the right and the value axis sits on the right (a second value
+ *           axis for `secondaryKeys` on the other side). Annotations are dashed guides through their category; a
+ *           `log` value scale is Victory's own; `syncId` is web only. Labels are Skia
  *           paragraphs, which shape Arabic and fall back to a system face that has Arabic-Indic digits. Paths ease
  *           in only when Reduce Motion is off.
  * Runtime: react-native
@@ -17,6 +21,7 @@ import {
   Group,
   LinearGradient,
   Line as SkiaLine,
+  Paint,
   Rect,
   Skia,
   TextAlign,
@@ -47,7 +52,10 @@ import {
 } from "victory-native";
 
 import { chartColorOf } from "#core/functions/chart-color-of.function";
+import { emphasisIndexOf } from "#core/functions/emphasis-index-of.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { chartAnnotationTextOf } from "#core/functions/chart-annotation-text-of.function";
+import { logTicksOf } from "#core/functions/log-ticks-of.function";
 import { chartReferenceTextOf } from "#core/functions/chart-reference-text-of.function";
 import { chartTableOf } from "#core/functions/chart-table-of.function";
 import { chartTextOf } from "#core/functions/chart-text-of.function";
@@ -61,6 +69,8 @@ import { alphaOf } from "#native/chart/alpha-of.function";
 import type { CartesianFigureProps } from "#native/chart/cartesian-figure.props";
 import { ChartFrame } from "#native/chart/chart-frame";
 import { ChartReadout } from "#native/chart/chart-readout";
+import { CHART_CONTEXT_SHARE } from "#core/constants/chart-context-share.constant";
+import { mixOf } from "#native/chart/mix-of.function";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 
@@ -149,6 +159,10 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
     ...series.map((item, index) => chartColorOf(item, index, palette)),
     // Each reference's own colour after the series' (the muted text colour stands in when it has none).
     ...(props.references ?? []).map((item) =>
+      item.color === undefined || item.color === "muted" ? "accent" : item.color,
+    ),
+    // Then each annotation's.
+    ...(props.annotations ?? []).map((item) =>
       item.color === undefined || item.color === "muted" ? "accent" : item.color,
     ),
   ]);
@@ -242,10 +256,22 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
     categoryFormat: xFormat,
     words,
   });
-  const notes = (props.references ?? []).map((item) =>
-    chartReferenceTextOf(item, locale, valueFormat),
-  );
+  const notes = [
+    ...(props.references ?? []).map((item) => chartReferenceTextOf(item, locale, valueFormat)),
+    ...(props.annotations ?? []).map((item) => chartAnnotationTextOf(item, locale, xFormat)),
+  ];
   const row = isActive ? raw[pressed] : undefined;
+  // One unstacked series speaks through its latest (or pressed) column, the rest in its soft tone, as on the web. The
+  // rows are drawn reversed in Arabic, so the data's index is turned round both ways.
+  const emphasis =
+    props.emphasis ?? (series.length === 1 && props.stacked !== true ? "latest" : "none");
+  const turn = (index: number) => (isRtl ? rows.length - 1 - index : index);
+  const emphasisData = emphasisIndexOf(
+    emphasis,
+    rows.length,
+    isActive && pressed >= 0 ? turn(pressed) : null,
+  );
+  const emphasised = emphasisData === null ? null : turn(emphasisData);
   const isStacked = props.stacked === true;
   // Victory scales a stack to its tallest series, not its tallest sum, so a stack states its own top.
   const stackTop = Math.max(
@@ -259,9 +285,39 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
     0,
     ...(props.references ?? []).map((item) => item.value ?? item.to ?? 0),
   );
-  const values = rows.flatMap((datum) =>
-    keys.map((key) => Number(datum[key])).filter(Number.isFinite),
+  const valuesOf = (axisKeys: readonly string[]) =>
+    rows.flatMap((datum) => axisKeys.map((key) => Number(datum[key])).filter(Number.isFinite));
+  const values = valuesOf(keys);
+  const isLog = props.valueScale === "log";
+  // The series on the second value axis (their previous-period twins with them), and the rest on the first.
+  const secondary = new Set(props.secondaryKeys ?? []);
+  const secondaryKeys = keys.filter(
+    (key) =>
+      secondary.has(key) ||
+      compared.some((twin) => twin.key === key && secondary.has(twin.series.key)),
   );
+  const primaryKeys = keys.filter((key) => !secondaryKeys.includes(key));
+  const isDual = secondaryKeys.length > 0 && primaryKeys.length > 0;
+  // One axis' span: from zero (or the lowest line value) to its highest value, a stack's top or a reference.
+  const spanOf = (axisKeys: readonly string[], isFirst: boolean): [number, number] => [
+    kind === "line" ? Math.min(0, ...valuesOf(axisKeys)) : 0,
+    Math.max(
+      isStacked && isFirst ? stackTop : 0,
+      isFirst ? referenceTop : 0,
+      ...valuesOf(axisKeys),
+    ),
+  ];
+  const valueLabels = props.showValueAxis
+    ? {
+        labelRenderer: labels,
+        formatYLabel: (figure: unknown) =>
+          typeof figure !== "number"
+            ? String(figure)
+            : isShare
+              ? formatChartNumber(figure, locale, { style: "percent" })
+              : formatChartNumber(figure, locale, { notation: "compact", ...valueFormat }),
+      }
+    : {};
   // One label per row up to six; past six, five labels centred in equal spans, clear of the plot's edges.
   const step = rows.length <= 6 ? 1 : Math.ceil(rows.length / 5);
   const ticks = rows
@@ -308,7 +364,8 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
           domainPadding={
             kind === "bar" ? { left: 36, right: 36, top: 8 } : { left: 16, right: 16, top: 8 }
           }
-          {...(kind === "line" && referenceTop === 0
+          {...(isLog ? { axisScales: { yAxisScale: "log" } } : {})}
+          {...(isLog || isDual || (kind === "line" && referenceTop === 0)
             ? {}
             : {
                 domain: {
@@ -331,25 +388,35 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
           yAxis={[
             {
               axisSide: isRtl ? "right" : "left",
-              ...(props.showValueAxis
-                ? {
-                    labelRenderer: labels,
-                    formatYLabel: (figure: unknown) =>
-                      typeof figure !== "number"
-                        ? String(figure)
-                        : isShare
-                          ? formatChartNumber(figure, locale, { style: "percent" })
-                          : formatChartNumber(figure, locale, {
-                              notation: "compact",
-                              ...valueFormat,
-                            }),
-                  }
-                : {}),
+              ...valueLabels,
               labelColor: paint.muted,
               lineColor: paint.grid,
               lineWidth: props.showGrid === false ? 0 : 1,
               tickCount: 4,
+              ...(isDual ? { yKeys: primaryKeys } : {}),
+              // A log axis ticks at each power of ten across its values; Victory takes its span from them.
+              ...(isLog
+                ? { tickValues: logTicksOf(valuesOf(isDual ? primaryKeys : keys)) }
+                : isDual
+                  ? { domain: spanOf(primaryKeys, true) }
+                  : {}),
             },
+            // The second value axis at the reading end: labels only, the first axis' grid serves both.
+            ...(isDual
+              ? [
+                  {
+                    axisSide: isRtl ? "left" : "right",
+                    ...valueLabels,
+                    labelColor: paint.muted,
+                    lineWidth: 0,
+                    tickCount: 4,
+                    yKeys: secondaryKeys,
+                    ...(isLog
+                      ? { tickValues: logTicksOf(valuesOf(secondaryKeys)) }
+                      : { domain: spanOf(secondaryKeys, false) }),
+                  },
+                ]
+              : []),
           ]}
         >
           {({ points, chartBounds, yScale }) => {
@@ -399,6 +466,38 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
                 </Group>
               );
             });
+            // Annotations: a dashed guide through each marked category, its label centred at the top.
+            const guide = points[keys[0] ?? ""] ?? [];
+            const annotations = (props.annotations ?? []).map((annotation, index) => {
+              const x = guide[rows.findIndex((datum) => datum[xKey] === annotation.at)]?.x;
+              if (x === undefined) return null;
+              const color =
+                annotation.color === undefined || annotation.color === "muted"
+                  ? paint.muted
+                  : (paint.series[series.length + (props.references?.length ?? 0) + index] ??
+                    paint.muted);
+              const width = 96;
+              return (
+                // oxlint-disable-next-line react/no-array-index-key -- annotations carry no id and may share a category; the list is fixed per render
+                <Group key={`annotation-${index}`}>
+                  <SkiaLine
+                    p1={vec(x, chartBounds.top + 14)}
+                    p2={vec(x, chartBounds.bottom)}
+                    color={color}
+                    strokeWidth={1}
+                  >
+                    <DashPathEffect intervals={[3, 3]} />
+                  </SkiaLine>
+                  {labels.render({
+                    text: annotation.label,
+                    x: x - width / 2,
+                    y: chartBounds.top,
+                    width,
+                    color,
+                  } as never)}
+                </Group>
+              );
+            });
             const twins = compared.map((twin) => (
               <Line
                 key={`previous-${twin.key}`}
@@ -436,6 +535,7 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
                 return (
                   <>
                     {references}
+                    {annotations}
                     {cursor}
                     <StackedBar
                       points={sets}
@@ -453,21 +553,58 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
                     />
                   </>
                 );
-              if (sets.length === 1 && compared.length === 0)
+              if (sets.length === 1 && compared.length === 0) {
+                const set = sets[0] ?? [];
+                const color = colors[0] ?? "";
+                // A soft vertical light over the plot's height, flat when the theme's highlight is 0.
+                const lit = (tone: string) => (
+                  <LinearGradient
+                    start={vec(0, chartBounds.top)}
+                    end={vec(0, chartBounds.bottom)}
+                    colors={[mixOf(tone, "#ffffff", 0.16 * paint.lift), tone]}
+                  />
+                );
+                const point = emphasised === null ? undefined : set[emphasised];
                 return (
                   <>
                     {references}
+                    {annotations}
                     {cursor}
                     <Bar
-                      points={sets[0] ?? []}
+                      // With emphasis, the context columns only: the emphasised one is drawn in full below, unedged.
+                      points={point ? set.filter((entry) => entry !== point) : set}
                       chartBounds={chartBounds}
-                      color={colors[0] ?? ""}
                       innerPadding={0.55}
+                      barCount={set.length}
                       roundedCorners={{ topLeft: 4, topRight: 4 }}
                       {...(animate ? { animate } : {})}
-                    />
+                    >
+                      {lit(
+                        emphasis === "none"
+                          ? color
+                          : mixOf(color, paint.surface, 1 - CHART_CONTEXT_SHARE),
+                      )}
+                      {emphasis === "none" ? null : (
+                        // A context column's soft fill is edged in the field border, 3:1 on the card (WCAG 1.4.11).
+                        // oxlint-disable-next-line react/style-prop-object -- Skia's Paint takes its paint style as a word, not a style object
+                        <Paint style="stroke" strokeWidth={1} color={paint.fieldBorder} />
+                      )}
+                    </Bar>
+                    {point ? (
+                      // The emphasised column in full, at the same width as the context ones.
+                      <Bar
+                        points={[point]}
+                        chartBounds={chartBounds}
+                        innerPadding={0.55}
+                        barCount={set.length}
+                        roundedCorners={{ topLeft: 4, topRight: 4 }}
+                      >
+                        {lit(color)}
+                      </Bar>
+                    ) : null}
                   </>
                 );
+              }
               // A previous-period bar stands faded just before its series' bar in each group.
               const columns = shown.flatMap(({ item, index }) => {
                 const twin = compared.find((entry) => entry.series.key === item.key);
@@ -480,6 +617,7 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
               return (
                 <>
                   {references}
+                  {annotations}
                   {cursor}
                   <BarGroup
                     chartBounds={chartBounds}
@@ -503,6 +641,7 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
               return (
                 <>
                   {references}
+                  {annotations}
                   <StackedArea
                     points={sets}
                     y0={chartBounds.bottom}
@@ -530,6 +669,7 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
             return (
               <>
                 {references}
+                {annotations}
                 {twins}
                 {sets.map((set, index) => {
                   const color = colors[index] ?? "";

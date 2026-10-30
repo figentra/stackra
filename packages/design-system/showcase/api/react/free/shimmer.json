@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "5abd2f68688b167c",
+    "propsFiles": ["ui/src/react/shimmer/shimmer.props.ts"]
+  },
+  "importLine": "import { Shimmer } from \"@stackra/ui/react\";",
+  "key": "free/shimmer",
+  "parts": [
+    {
+      "name": "Shimmer",
+      "props": [
+        {
+          "description": "`text` (the default) shimmers the words; `block` draws placeholder lines.",
+          "name": "kind",
+          "required": false,
+          "source": "stackra",
+          "type": "\"text\" | \"block\""
+        },
+        {
+          "description": "The words of the text kind, and the loading region's name for the block kind. Defaults to \"Thinking…\".",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How many placeholder lines the block kind draws; defaults to 3.",
+          "name": "lines",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Styles the text or the block of lines.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

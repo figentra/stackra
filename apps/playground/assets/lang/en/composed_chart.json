@@ -1,5 +1,10 @@
 {
   "label": "Revenue against target, January to June 2026",
   "revenue": "Revenue",
-  "target": "Target"
+  "target": "Target",
+  "dual_title": "Visitors and orders",
+  "dual_description": "Visitors on the first axis, orders on the second",
+  "visitors": "Visitors",
+  "orders": "Orders",
+  "launch": "Launch"
 }

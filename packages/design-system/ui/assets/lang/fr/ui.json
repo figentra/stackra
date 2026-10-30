@@ -40,6 +40,14 @@
   "tab_bar": {
     "label": "Onglets"
   },
+  "tabs": {
+    "more": "Plus",
+    "more_label": "Autres onglets",
+    "close": "Fermer {tab}"
+  },
+  "navigation_menu": {
+    "label": "Navigation principale"
+  },
   "entity_picker": {
     "search": "Rechercher",
     "close": "Fermer"
@@ -101,6 +109,9 @@
     "close": "Fermer le panneau",
     "resize": "Redimensionner le panneau"
   },
+  "split_view": {
+    "resize": "Redimensionner les volets"
+  },
   "data_table": {
     "loading": "Chargement",
     "actions_column": "Actions",
@@ -125,7 +136,15 @@
   },
   "tree_view": {
     "expand": "Développer {label}",
-    "collapse": "Réduire {label}"
+    "collapse": "Réduire {label}",
+    "loading": "Chargement…"
+  },
+  "tree_select": {
+    "placeholder": "Choisir",
+    "count": "{count, plural, one {# choisi} other {# choisis}}"
+  },
+  "mention_input": {
+    "people": "Personnes à mentionner"
   },
   "sortable_list": {
     "handle": "Réordonner {label}",
@@ -196,6 +215,51 @@
     "complete": "Tout est prêt",
     "show": "Afficher les tâches",
     "hide": "Masquer les tâches"
+  },
+  "recurrence_editor": {
+    "label": "Répéter",
+    "every": "Répéter tous les",
+    "unit": "{unit, select, daily {{count, plural, one {jour} other {jours}}} weekly {{count, plural, one {semaine} other {semaines}}} monthly {{count, plural, one {mois} other {mois}}} other {{count, plural, one {an} other {ans}}}}",
+    "weekdays": "Le",
+    "monthly": "Chaque mois",
+    "ends": "Se termine",
+    "never": "Jamais",
+    "until_label": "À une date",
+    "count_label": "Après un nombre de fois",
+    "end_date": "Date de fin",
+    "occurrences": "Fois",
+    "summary": "Se répète",
+    "every_unit": "{unit, select, daily {{interval, plural, one {Tous les jours} other {Tous les {n} jours}}} weekly {{interval, plural, one {Toutes les semaines} other {Toutes les {n} semaines}}} monthly {{interval, plural, one {Tous les mois} other {Tous les {n} mois}}} other {{interval, plural, one {Tous les ans} other {Tous les {n} ans}}}}",
+    "on_days": "{rule} le {days}",
+    "on_day": "{rule} le {day}",
+    "on_last_day": "{rule} le dernier jour",
+    "on_nth": "{rule} le {nth, select, 1 {premier} 2 {deuxième} 3 {troisième} 4 {quatrième} other {dernier}} {weekday}",
+    "on_date": "{rule} le {date}",
+    "until": "{rule}, jusqu’au {date}",
+    "times": "{rule}, {count, plural, one {une fois} other {{n} fois}}",
+    "hijri": "{rule}, dans le calendrier hégirien",
+    "day_option": "Le {day}",
+    "last_day_option": "Le dernier jour",
+    "nth_option": "Le {nth, select, 1 {premier} 2 {deuxième} 3 {troisième} 4 {quatrième} other {dernier}} {weekday}"
+  },
+  "task_tray": {
+    "label": "Tâches en arrière-plan",
+    "running": "{count, plural, one {{n} tâche en cours} other {{n} tâches en cours}}",
+    "finished": "{count, plural, one {{n} tâche terminée} other {{n} tâches terminées}}",
+    "failed": "{count, plural, one {{n} en échec} other {{n} en échec}}",
+    "show": "Afficher les tâches",
+    "hide": "Masquer les tâches",
+    "clear": "Retirer les terminées",
+    "cancel": "Annuler {name}",
+    "retry": "Réessayer {name}",
+    "dismiss": "Retirer {name}",
+    "queued": "En attente",
+    "done": "Terminée",
+    "error": "Échec",
+    "canceled": "Annulée"
+  },
+  "toast": {
+    "undo": "Annuler"
   },
   "inline_loading": {
     "loading": "Chargement…",
@@ -458,7 +522,24 @@
     "previous_page": "Page précédente",
     "next_page": "Page suivante",
     "page_of": "Page {page, number} sur {count, number}",
-    "load_more": "Charger plus"
+    "load_more": "Charger plus",
+    "row_handle": "Faire glisser {name}",
+    "reorder_column": "Ordre",
+    "details_column": "Détails",
+    "expand_row": "Afficher les détails de {name}",
+    "collapse_row": "Masquer les détails de {name}",
+    "expand_all": "Afficher tous les détails",
+    "collapse_all": "Masquer tous les détails",
+    "row_detail": "Détails de {name}",
+    "edit_cell": "Modifier {column} de {name}",
+    "open_row": "Ouvrir {name}",
+    "row_panel": "Détails : {label}",
+    "board_column": "{label} : {column}",
+    "board_empty": "Rien ici pour l’instant",
+    "board_count": "{count, plural, one {# carte} other {# cartes}}",
+    "move_to": "Déplacer vers",
+    "move_card": "Déplacer {name}",
+    "card_moved": "{name} déplacé vers {column}"
   },
   "number_pad": {
     "delete": "Supprimer",
@@ -491,7 +572,8 @@
     "sort_value_desc": "Le plus grand d’abord",
     "sort_value_asc": "Le plus petit d’abord",
     "sort_label": "Par nom",
-    "compare": "Comparer à la période précédente"
+    "compare": "Comparer à la période précédente",
+    "svg": "Télécharger en SVG"
   },
   "trend_chip": {
     "up": "En hausse de {value}",
@@ -500,7 +582,8 @@
   },
   "stat": {
     "target": "Objectif {value}",
-    "drill_down": "Ouvrir {label}"
+    "drill_down": "Ouvrir {label}",
+    "previous": "Période précédente : {value}"
   },
   "funnel_chart": {
     "conversion": "{value} de l'étape précédente"
@@ -529,6 +612,25 @@
     "next": "Diapositive suivante",
     "slide": "Diapositive {index} sur {count}",
     "pages": "Choisir une diapositive"
+  },
+  "lightbox": {
+    "label": "Visionneuse d'images",
+    "previous": "Image précédente",
+    "next": "Image suivante",
+    "close": "Fermer",
+    "counter": "{index} sur {count}",
+    "zoom_in": "Agrandir",
+    "zoom_out": "Réduire"
+  },
+  "gallery": {
+    "open": "Ouvrir {name}"
+  },
+  "image_cropper": {
+    "label": "Recadrer l'image",
+    "zoom": "Zoom",
+    "hint": "Faites glisser l'image ou déplacez-la avec les flèches. Plus et moins règlent le zoom.",
+    "hint_touch": "Faites glisser l'image pour la déplacer et réglez le zoom avec le curseur.",
+    "loading": "Chargement de l'image"
   },
   "command_palette": {
     "label": "Palette de commandes",
@@ -617,7 +719,11 @@
     "last_30_days": "30 derniers jours",
     "this_month": "Ce mois-ci",
     "last_month": "Le mois dernier",
-    "this_year": "Cette année"
+    "this_year": "Cette année",
+    "last_90_days": "90 derniers jours",
+    "this_quarter": "Ce trimestre",
+    "last_quarter": "Trimestre dernier",
+    "last_12_months": "12 derniers mois"
   },
   "year_picker": {
     "label": "Choisir une année"
@@ -666,7 +772,22 @@
     "label": "Déposez vos fichiers ici",
     "browse": "Choisir des fichiers",
     "label_one": "Déposez un fichier ici",
-    "browse_one": "Choisir un fichier"
+    "browse_one": "Choisir un fichier",
+    "paste_hint": "Vous pouvez aussi coller un fichier ou une capture d'écran",
+    "taken": "Fichiers choisis"
+  },
+  "attachment_card": {
+    "remove": "Retirer {name}",
+    "download": "Télécharger {name}",
+    "open": "Ouvrir {name}",
+    "uploading": "Envoi en cours",
+    "failed": "Échec de l'envoi",
+    "retry": "Réessayer {name}"
+  },
+  "share_button": {
+    "share": "Partager",
+    "copied": "Lien copié",
+    "copy_link": "Copier le lien"
   },
   "color_picker": {
     "label": "Couleur",
@@ -775,5 +896,175 @@
     "in_7_days": "Dans 7 jours",
     "start_of_month": "Début du mois",
     "end_of_month": "Fin du mois"
+  },
+  "period_picker": {
+    "label": "Période",
+    "preset": "Plage",
+    "custom": "Plage personnalisée",
+    "dates": "Dates",
+    "compare": "Comparer à la période précédente",
+    "mode": "Comparer avec",
+    "previous": "Période précédente",
+    "year": "Même période l’an dernier",
+    "versus": "vs {range}"
+  },
+  "tracker_strip": {
+    "up": "Opérationnel",
+    "degraded": "Dégradé",
+    "down": "En panne",
+    "none": "Aucune donnée",
+    "uptime": "{value} de disponibilité",
+    "cell": "{label} : {status}"
+  },
+  "dashboard_grid": {
+    "handle": "Faire glisser {label}",
+    "earlier": "Avancer {label}",
+    "later": "Reculer {label}",
+    "size": "Changer la taille de {label}, actuellement {size}",
+    "size_small": "Petite",
+    "size_medium": "Moyenne",
+    "size_large": "Grande",
+    "size_full": "Pleine largeur",
+    "moved": "{label} déplacé en position {position, number} sur {count, number}",
+    "resized": "{label} est maintenant {size}"
+  },
+  "form_error_summary": {
+    "title": "{count, plural, one {Il y a # problème} other {Il y a # problèmes}}"
+  },
+  "marquee": {
+    "pause": "Mettre le défilement en pause",
+    "play": "Reprendre le défilement"
+  },
+  "barcode": {
+    "invalid": "Impossible de dessiner ce code-barres : vérifiez la valeur."
+  },
+  "page_indicator": {
+    "pages": "Pages",
+    "page": "Page {index} sur {count}"
+  },
+  "back_to_top": {
+    "label": "Retour en haut"
+  },
+  "footer": {
+    "label": "Pied de page"
+  },
+  "waffle_chart": {
+    "share": "Part"
+  },
+  "questionnaire_card": {
+    "from_assistant": "Questions de votre assistant",
+    "progress": "Question {current} sur {total}",
+    "back": "Retour",
+    "next": "Suivant",
+    "skip": "Passer",
+    "review": "Vérifier les réponses",
+    "submit": "Envoyer les réponses",
+    "summary": "Vos réponses",
+    "edit": "Modifier",
+    "edit_answer": "Modifier la réponse à : {question}",
+    "other": "Autre",
+    "other_label": "Votre réponse",
+    "skipped": "Passée"
+  },
+  "model_picker": {
+    "label": "Modèle",
+    "placeholder": "Choisir un modèle",
+    "context": "Contexte de {size}",
+    "new": "Nouveau",
+    "beta": "Bêta",
+    "unavailable": "Indisponible"
+  },
+  "voice_input": {
+    "start": "Démarrer l’enregistrement",
+    "stop": "Arrêter l’enregistrement",
+    "idle": "Appuyez sur le micro pour parler",
+    "requesting": "En attente de l’accès au micro…",
+    "listening": "À l’écoute…",
+    "cancel_hint": "Échap pour annuler",
+    "processing": "Traitement…",
+    "denied": "L’accès au micro est bloqué. Autorisez-le dans les réglages, puis réessayez.",
+    "error": "Enregistrement impossible. Réessayez.",
+    "cancelled": "Enregistrement annulé"
+  },
+  "popconfirm": {
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
+  },
+  "menubar": {
+    "label": "Menu de l’application"
+  },
+  "floating_panel": {
+    "move": "Déplacer le panneau",
+    "move_hint": "Déplacez-le avec les flèches ; maintenez Maj pour aller plus loin.",
+    "resize": "Redimensionner le panneau",
+    "resize_hint": "Redimensionnez-le avec les flèches ; maintenez Maj pour de plus grands pas.",
+    "minimise": "Réduire",
+    "restore": "Restaurer",
+    "close": "Fermer"
+  },
+  "cascader": {
+    "placeholder": "Choisir",
+    "back": "Retour",
+    "loading": "Chargement…",
+    "empty": "Rien ici"
+  },
+  "transfer_list": {
+    "available": "Disponibles",
+    "chosen": "Choisis",
+    "filter": "Filtrer {list}",
+    "add": "Ajouter les éléments cochés",
+    "remove": "Retirer les éléments cochés",
+    "add_all": "Tout ajouter",
+    "remove_all": "Tout retirer",
+    "empty": "Rien ici",
+    "moved": "{count, plural, one {# élément déplacé} other {# éléments déplacés}}"
+  },
+  "media_player": {
+    "play": "Lire",
+    "pause": "Pause",
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son",
+    "volume": "Volume",
+    "seek": "Avancer ou reculer",
+    "time_of": "{elapsed} sur {duration}",
+    "speed": "Vitesse de lecture",
+    "normal_speed": "Normale",
+    "captions": "Sous-titres",
+    "fullscreen": "Plein écran",
+    "exit_fullscreen": "Quitter le plein écran"
+  },
+  "conversation_list": {
+    "label": "Conversations",
+    "pinned": "Épinglées",
+    "today": "Aujourd’hui",
+    "yesterday": "Hier",
+    "previous_7_days": "7 derniers jours",
+    "older": "Plus anciennes",
+    "actions": "Actions pour {title}",
+    "pin": "Épingler",
+    "unpin": "Désépingler",
+    "rename": "Renommer",
+    "delete": "Supprimer",
+    "empty_title": "Aucune conversation pour l’instant",
+    "empty_description": "Vos échanges avec l’assistant apparaîtront ici."
+  },
+  "message_actions": {
+    "label": "Actions du message",
+    "copy": "Copier le message",
+    "retry": "Réessayer",
+    "edit": "Modifier",
+    "good": "Bonne réponse",
+    "bad": "Mauvaise réponse"
+  },
+  "message_scroller": {
+    "label": "Conversation",
+    "new_messages": "Nouveaux messages",
+    "new_messages_count": "{count, plural, one {# nouveau message} other {# nouveaux messages}}"
+  },
+  "prompt_suggestions": {
+    "label": "Suggestions"
+  },
+  "shimmer": {
+    "thinking": "Réflexion…"
   }
 }

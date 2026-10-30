@@ -1,0 +1,14 @@
+{
+  "patterns": {
+    "mobile": "Mobile number",
+    "iban": "IBAN",
+    "card": "Card number",
+    "expiry": "Expiry date",
+    "plate": "Plate number"
+  },
+  "raw": {
+    "label": "Commercial registration",
+    "description": "Ten digits, as on the certificate.",
+    "held": "Saved as: {value}"
+  }
+}

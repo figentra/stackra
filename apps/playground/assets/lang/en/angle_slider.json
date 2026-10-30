@@ -1,0 +1,10 @@
+{
+  "gradient": {
+    "label": "Gradient angle",
+    "preview": "Banner gradient preview"
+  },
+  "rotation": {
+    "label": "Photo rotation",
+    "preview": "Rotated photo preview"
+  }
+}

@@ -19,6 +19,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 
 import type { ToastContractProps } from "#contracts/types/toast-contract-props.type";
 import type { ToastProviderContractProps } from "#contracts/types/toast-provider-contract-props.type";
+import { FLOATING_FABS } from "#core/constants/floating-fabs.constant";
 import { toast } from "#native/toast/toast";
 import { toastBridge } from "#native/toast/toast-bridge";
 import { ToastProvider } from "#native/toast/toast-provider";
@@ -51,6 +52,10 @@ vi.mock("react-native", async () => {
 
 vi.mock("#native/toast/toast-item", () => ({
   ToastItem: () => null,
+}));
+
+vi.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 34, left: 0, right: 0 }),
 }));
 
 /** The options the manager's `show` was last called with. */
@@ -213,5 +218,18 @@ describe("toast (native)", () => {
   it("leaves a full-width stack unwrapped", () => {
     render(<ToastProvider dismissLabel="Dismiss" />);
     expect(heroui.providerProps["contentWrapper"]).toBeUndefined();
+  });
+
+  it("lifts a bottom stack over the safe area and a floating Fab only while one is on screen", () => {
+    const { rerender } = render(<ToastProvider dismissLabel="Dismiss" />);
+    expect(heroui.providerProps).not.toHaveProperty("insets");
+    const release = FLOATING_FABS.register();
+    rerender(<ToastProvider dismissLabel="Dismiss" insets={{ left: 8 }} />);
+    expect(heroui.providerProps["insets"]).toEqual({ left: 8, bottom: 34 + 76 });
+    rerender(<ToastProvider dismissLabel="Dismiss" position="top" insets={{ left: 8 }} />);
+    expect(heroui.providerProps["insets"]).toEqual({ left: 8 });
+    act(() => release());
+    rerender(<ToastProvider dismissLabel="Dismiss" />);
+    expect(heroui.providerProps).not.toHaveProperty("insets");
   });
 });

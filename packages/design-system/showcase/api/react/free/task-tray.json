@@ -1,0 +1,95 @@
+{
+  "generatedFrom": {
+    "hash": "6a7b529d67466199",
+    "propsFiles": ["ui/src/react/task-tray/task-tray.props.ts"]
+  },
+  "importLine": "import { TaskTray } from \"@stackra/ui/react\";",
+  "key": "free/task-tray",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with a queued or running task's id when its cancel button is pressed; no cancel button without it.",
+          "name": "onCancel",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with a failed task's id when its retry button is pressed; no retry button without it.",
+          "name": "onRetry",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called with a finished task's id (done, failed or canceled) when its remove button is pressed.",
+          "name": "onDismiss",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        },
+        {
+          "description": "Called when \"Clear finished\" is pressed; the button shows while a task has finished.",
+          "name": "onClear",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with the new folded state when the header's toggle is pressed.",
+          "name": "onCollapsedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isCollapsed: boolean) => void"
+        }
+      ],
+      "name": "TaskTray",
+      "props": [
+        {
+          "description": "The tasks, newest first. The tray draws nothing while this is empty.",
+          "name": "tasks",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly TaskTrayTask[]"
+        },
+        {
+          "description": "The tray's name; defaults to the catalogue's \"Background tasks\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to fold the list to the header, for a controlled tray; pair it with `onCollapsedChange`.",
+          "name": "isCollapsed",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Folded at the start, for an uncontrolled tray. Defaults to false.",
+          "name": "defaultCollapsed",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "`docked` (the default) pins it to the bottom end corner of the screen; `inline` leaves it in the flow.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"inline\" | \"docked\""
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

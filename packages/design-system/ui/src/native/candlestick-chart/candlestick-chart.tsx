@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the native `CandlestickChart` on Victory Native and Skia: one candle per period (a wick from low to high and
- *          a body from open to close; a rise hollow in success, a fall filled in danger), volume bars along the bottom
+ *          a body from open to close; a rise hollow in success, a fall filled with the danger soft-hover step, both
+ *          in a solid outline), volume bars along the bottom
  *          quarter, a readout of the pressed period's prices, and one image whose value reads every period.
  * Boundary: candles drawn as Skia lines and rects on Victory's scale; axis labels through the Paragraph API. Periods
  *           are handed over reversed in Arabic so time reads from the right.
@@ -195,20 +196,18 @@ export function CandlestickChart({
                     y={upper}
                     width={body}
                     height={Math.max(Math.abs((open as number) - (close as number)), 1.5)}
-                    color={isRise ? paint.surface : color}
+                    color={isRise ? paint.surface : alphaOf(color, 0.2)}
                   />
-                  {isRise ? (
-                    <Rect
-                      x={x - body / 2}
-                      y={upper}
-                      width={body}
-                      height={Math.max(Math.abs((open as number) - (close as number)), 1.5)}
-                      color={color}
-                      // oxlint-disable-next-line react/style-prop-object -- Skia's paint style is the string "stroke" or "fill", not a style object
-                      style="stroke"
-                      strokeWidth={1.5}
-                    />
-                  ) : null}
+                  <Rect
+                    x={x - body / 2}
+                    y={upper}
+                    width={body}
+                    height={Math.max(Math.abs((open as number) - (close as number)), 1.5)}
+                    color={color}
+                    // oxlint-disable-next-line react/style-prop-object -- Skia's paint style is the string "stroke" or "fill", not a style object
+                    style="stroke"
+                    strokeWidth={1.5}
+                  />
                 </Group>
               );
             });

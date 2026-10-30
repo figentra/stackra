@@ -37,5 +37,10 @@
   "live_title": "إجراءات الطلب",
   "live_body": "اختر ما يحدث للطلب.",
   "live_open": "فتح من الخارج",
-  "state": "الحالة: {is_open, select, true {مفتوحة} other {مغلقة}}"
+  "state": "الحالة: {is_open, select, true {مفتوحة} other {مغلقة}}",
+  "reposition_trigger": "ملاحظات التوصيل",
+  "reposition_title": "ملاحظات التوصيل",
+  "reposition_line": "الملاحظة {n}: اترك الطرد عند مكتب الاستقبال.",
+  "reposition_more": "عرض المزيد",
+  "reposition_move": "انقل الزر"
 }

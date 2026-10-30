@@ -638,6 +638,12 @@
       "body": "It opens at a peek. Drag it up to most of the screen, or down past the peek to close it.",
       "close": "Close"
     },
+    "resize": {
+      "open": "Open a resizable drawer",
+      "heading": "Delivery notes",
+      "body": "Drag the handle at the top to make the drawer half, most or all of the screen. With VoiceOver or TalkBack, focus the handle and swipe up or down.",
+      "close": "Close"
+    },
     "basic": {
       "open": "Edit customer",
       "heading": "Edit customer",
@@ -1602,6 +1608,19 @@
       "full_width": "Full width",
       "sheet": "In a bottom sheet"
     },
+    "sections": {
+      "africa": "Africa",
+      "berlin": "Berlin",
+      "cairo": "Cairo",
+      "dubai": "Dubai",
+      "europe": "Europe",
+      "label": "Office",
+      "lagos": "Lagos",
+      "middle_east": "Middle East",
+      "paris": "Paris",
+      "placeholder": "Choose an office",
+      "riyadh": "Riyadh"
+    },
     "states": {
       "disabled": "Disabled",
       "invalid": "Invalid",
@@ -1750,6 +1769,62 @@
       "refunded": "Refunded"
     }
   },
+  "context_menu": {
+    "rows": {
+      "label": "Order actions",
+      "hint": "Touch and hold an order.",
+      "open": "Open",
+      "duplicate": "Duplicate",
+      "archive": "Archive",
+      "delete": "Delete",
+      "chosen": "Chosen: {action}",
+      "actions": "Actions",
+      "danger": "Danger zone"
+    }
+  },
+  "disclosure": {
+    "basics": {
+      "title": "Delivery details",
+      "body": "Delivered by Aramex in 2 to 4 working days. You get a tracking link by SMS once the order ships."
+    },
+    "states": {
+      "advanced": "Advanced settings",
+      "advanced_body": "Webhook URL, API version and retry policy.",
+      "locked": "Billing (owner only)",
+      "locked_body": "Only the workspace owner can change billing."
+    }
+  },
+  "layout": {
+    "stack": {
+      "label": "Order timeline",
+      "placed": "Order placed",
+      "packed": "Packed",
+      "shipped": "Shipped"
+    },
+    "cluster": {
+      "label": "Order tags",
+      "new": "New",
+      "delivery": "Free delivery",
+      "gift": "Gift wrap",
+      "city": "Riyadh",
+      "mada": "Paid with Mada",
+      "express": "Express"
+    },
+    "grid": {
+      "label": "Products",
+      "shirt": "Linen shirt",
+      "perfume": "Oud perfume",
+      "dates": "Dates box",
+      "abaya": "Abaya",
+      "coffee": "Coffee beans",
+      "mat": "Prayer mat"
+    },
+    "center": {
+      "title": "Your store is ready",
+      "body": "Add your first product, and customers can order from today.",
+      "action": "Add a product"
+    }
+  },
   "tabs": {
     "basics": {
       "label": "Order sections"
@@ -1787,6 +1862,15 @@
     },
     "variants": {
       "label": "Sections, {variant} variant"
+    },
+    "closable": {
+      "label": "Open views",
+      "orders": "Orders",
+      "returns": "Returns",
+      "customers": "Customers",
+      "add": "New view",
+      "draft": "Draft {n}",
+      "empty": "Every view is closed. Add a new one."
     }
   },
   "tag_group": {
@@ -1966,7 +2050,35 @@
       "saved": "Changes saved",
       "mention": "Rana mentioned you in order 1042",
       "person": "Rana Haddad"
+    },
+    "promise": {
+      "save": "Save the order",
+      "fail": "Save while offline",
+      "loading": "Saving order 1042…",
+      "success": "Order 1042 saved",
+      "error": "Could not save. Check your connection."
+    },
+    "undo": {
+      "delete": "Delete the order",
+      "deleted": "Order 1042 deleted",
+      "undone": "Order 1042 restored",
+      "committed": "Order 1042 deleted for good",
+      "waiting": "Nothing deleted yet"
     }
+  },
+  "recurrence_editor": {
+    "stored": "Stored as",
+    "weekly": "Team stand-up",
+    "monthly": "Payroll report",
+    "hijri": "Ramadan offer"
+  },
+  "task_tray": {
+    "start": "Export orders",
+    "fail": "Import customers",
+    "export": "orders-october.csv",
+    "import": "customers.xlsx",
+    "upload": "store-logo.png",
+    "no_phone": "Row 12 has no phone number"
   },
   "tooltip": {
     "caption": "Hint: {hint}",
@@ -2181,6 +2293,84 @@
       "finance": "Finance",
       "payroll": "Payroll",
       "it": "IT support"
+    },
+    "checked": {
+      "label": "Cashier permissions",
+      "summary": "{count, plural, =0 {No permissions granted} one {# permission granted} other {# permissions granted}}",
+      "orders": "Orders",
+      "orders_view": "View orders",
+      "orders_refund": "Refund orders",
+      "catalogue": "Catalogue",
+      "catalogue_edit": "Edit products",
+      "catalogue_prices": "Change prices",
+      "reports": "Daily reports"
+    },
+    "lazy": {
+      "label": "Branches by region",
+      "central": "Central region",
+      "western": "Western region",
+      "eastern": "Eastern region",
+      "olaya": "Olaya, Riyadh",
+      "malqa": "Al Malqa, Riyadh",
+      "tahlia": "Tahlia, Jeddah",
+      "aziziyah": "Al Aziziyah, Makkah",
+      "dammam": "Dammam",
+      "khobar": "Al Khobar"
+    }
+  },
+  "tree_select": {
+    "basics": {
+      "label": "Category",
+      "description": "Where the product shows in the store.",
+      "women": "Women",
+      "abayas": "Abayas",
+      "dresses": "Dresses",
+      "men": "Men",
+      "thobes": "Thobes",
+      "shemaghs": "Shemaghs",
+      "kids": "Kids"
+    },
+    "multiple": {
+      "label": "Branches",
+      "description": "The offer runs in these branches.",
+      "central": "Central region",
+      "olaya": "Olaya, Riyadh",
+      "malqa": "Al Malqa, Riyadh",
+      "western": "Western region",
+      "tahlia": "Tahlia, Jeddah",
+      "aziziyah": "Al Aziziyah, Makkah",
+      "online": "Online store"
+    },
+    "invalid": {
+      "label": "Department",
+      "error": "Choose the department this person works in.",
+      "finance": "Finance",
+      "payroll": "Payroll",
+      "accounts": "Accounts",
+      "sales": "Sales"
+    }
+  },
+  "masked_field": {
+    "patterns": {
+      "mobile": "Mobile number",
+      "iban": "IBAN",
+      "card": "Card number",
+      "expiry": "Expiry date",
+      "plate": "Plate number"
+    },
+    "raw": {
+      "label": "Commercial registration",
+      "description": "Ten digits, as on the certificate.",
+      "held": "Saved as: {value}"
+    }
+  },
+  "mention_input": {
+    "basics": {
+      "label": "Note on the order",
+      "placeholder": "Type @ to mention someone",
+      "description": "People you mention are told.",
+      "mentioned": "Will be told: {names}",
+      "nobody": "Nobody mentioned yet."
     }
   },
   "sortable_list": {
@@ -2816,6 +3006,17 @@
     "linear": {
       "desktop": "Desktop",
       "label": "Visitors, January to June"
+    },
+    "annotations": {
+      "label": "Visitors with launch and outage",
+      "visitors": "Visitors",
+      "target": "Target",
+      "launch": "Launch",
+      "outage": "Outage"
+    },
+    "log_scale": {
+      "label": "Sign-ups, log scale",
+      "signups": "Sign-ups"
     }
   },
   "radar_chart": {
@@ -3070,6 +3271,11 @@
       "label": "Revenue against target, January to June 2026",
       "revenue": "Revenue",
       "target": "Target"
+    },
+    "dual_axis": {
+      "label": "Visitors and orders",
+      "visitors": "Visitors",
+      "orders": "Orders"
     }
   },
   "funnel_chart": {
@@ -3117,6 +3323,12 @@
       "customers": "New customers",
       "opened": "Opened: {name}",
       "vs_last": "vs last month"
+    },
+    "previous": {
+      "revenue": "Revenue",
+      "orders": "Orders",
+      "refunds": "Refunds",
+      "opened": "Opened: {name}"
     }
   },
   "stacked_meter": {
@@ -3145,6 +3357,21 @@
       "two_note": "Ethiopia, light roast",
       "three": "Free delivery",
       "three_note": "On orders over 100 SAR"
+    }
+  },
+  "gallery": {
+    "photos": {
+      "label": "Trip photos",
+      "masonry_label": "Coast photos",
+      "dunes": "Dunes at sunset",
+      "harbour": "Boats in the harbour",
+      "palms": "Palm grove",
+      "souk": "Old souk",
+      "oasis": "An oasis pool",
+      "skyline": "City skyline at dusk",
+      "dunes_caption": "Al-Ula, golden hour",
+      "open_viewer": "View the trip photos",
+      "avatar_label": "Crop your profile photo"
     }
   },
   "holo_card": {
@@ -3430,6 +3657,62 @@
       "label": "Drop your product photos here",
       "hint": "PNG or JPG, up to 5 MB each.",
       "count": "{count, plural, =0 {No files yet.} one {One file ready.} other {# files ready.}}"
+    },
+    "previews": {
+      "label": "Add product photos",
+      "hint": "Pick photos or take new ones; each one shows below."
+    }
+  },
+  "attachment_card": {
+    "basics": {
+      "invoice": "invoice-1042.pdf",
+      "stock": "stock-october.xlsx",
+      "counter": "front-counter.png",
+      "opened": "Opened {name}."
+    },
+    "upload_states": {
+      "menu": "winter-menu.jpg",
+      "contract": "lease-olaya-branch.pdf",
+      "error": "The connection dropped. Try again."
+    }
+  },
+  "share_button": {
+    "basics": {
+      "title": "Order 2048 receipt",
+      "text": "Here is the receipt for order 2048.",
+      "shared": "Shared."
+    },
+    "icon_only": {
+      "product": "Linen abaya",
+      "price": "SAR 420",
+      "label": "Share Linen abaya",
+      "text": "Look at this abaya"
+    }
+  },
+  "export_dialog": {
+    "open": "Export orders",
+    "csv": "CSV",
+    "xlsx": "Excel",
+    "pdf": "PDF",
+    "last_export": "Exported {count, plural, one {# order} other {# orders}} as {format}.",
+    "failed_once": "Export the shift report",
+    "orders": {
+      "description": "Orders from every branch, as the table shows them.",
+      "number": "Order number",
+      "customer": "Customer",
+      "branch": "Branch",
+      "total": "Total",
+      "status": "Status",
+      "paid_at": "Paid at"
+    },
+    "products": {
+      "open": "Export the catalogue",
+      "description": "Large exports are built on the server and emailed when ready.",
+      "sku": "SKU",
+      "name": "Name (English)",
+      "name_ar": "Name (Arabic)",
+      "price": "Price",
+      "stock": "Stock on hand"
     }
   },
   "color_picker": {
@@ -3658,13 +3941,20 @@
   },
   "choropleth_map": {
     "districts": {
-      "label": "Orders by district, October",
-      "north": "North district",
-      "east": "East district",
-      "south": "South district",
-      "west": "West district",
-      "centre": "Old town",
-      "harbour": "Harbour"
+      "label": "Orders by region, October",
+      "riyadh": "Riyadh",
+      "makkah": "Makkah",
+      "madinah": "Madinah",
+      "eastern": "Eastern Province",
+      "qassim": "Al-Qassim",
+      "hail": "Hail",
+      "tabuk": "Tabuk",
+      "northern_borders": "Northern Borders",
+      "jawf": "Al-Jawf",
+      "jazan": "Jazan",
+      "najran": "Najran",
+      "bahah": "Al-Bahah",
+      "asir": "Asir"
     }
   },
   "scatter_chart": {
@@ -4056,6 +4346,379 @@
       "products": "المنتجات",
       "alerts": "التنبيهات",
       "settings": "الإعدادات"
+    }
+  },
+  "period_picker": {
+    "label": "Report period"
+  },
+  "tracker_strip": {
+    "uptime": {
+      "label": "Public API",
+      "days_ago": "{count} days ago",
+      "today": "Today",
+      "slow_checkout": "Slow checkout for 40 minutes",
+      "outage": "Card payments failed for 18 minutes",
+      "maintenance": "Planned maintenance"
+    }
+  },
+  "heading": {
+    "sample": {
+      "level": "Level {level} heading"
+    }
+  },
+  "kiosk_surface": {
+    "sample": {
+      "welcome": "Welcome. Touch the screen to start your order.",
+      "start": "Start order",
+      "resets": "Resets after 8 seconds idle: {count}"
+    }
+  },
+  "chart_legend": {
+    "sample": {
+      "online": "Online",
+      "in_store": "In store",
+      "phone": "Phone"
+    }
+  },
+  "polar_chart": {
+    "orders_by_weekday": {
+      "orders": "Orders",
+      "label": "Orders by weekday, last four weeks"
+    },
+    "store_and_online": {
+      "branch": "Branch",
+      "online": "Online",
+      "label": "Branch and online orders by month"
+    },
+    "monthly_returns": {
+      "returns": "Returns",
+      "label": "Items returned by month, 2026"
+    }
+  },
+  "waffle_chart": {
+    "payment_methods": {
+      "card": "Card",
+      "cod": "Cash on delivery",
+      "wallet": "Digital wallet",
+      "later": "Pay later",
+      "label": "Payment methods, 1,000 orders in October"
+    },
+    "order_status": {
+      "delivered": "Delivered",
+      "shipped": "Shipped",
+      "processing": "Processing",
+      "cancelled": "Cancelled",
+      "label": "This week's 840 orders by status"
+    }
+  },
+  "time_clock": {
+    "basics": {
+      "label": "Pickup time"
+    },
+    "twenty_four_hour": {
+      "label": "Kitchen opens at"
+    }
+  },
+  "angle_slider": {
+    "gradient": {
+      "label": "Gradient angle",
+      "preview": "Gradient direction"
+    },
+    "rotation": {
+      "label": "Photo rotation",
+      "preview": "Rotated photo preview"
+    }
+  },
+  "conversation_list": {
+    "support_history": {
+      "label": "Support conversations",
+      "return_title": "Return for order 2048",
+      "return_preview": "Your return label is ready to print.",
+      "delivery_title": "Delivery to Jeddah",
+      "delivery_preview": "It arrives on Thursday between 2 and 6 pm.",
+      "sizes_title": "Linen abaya sizes",
+      "sizes_preview": "The M fits a chest of 96 cm.",
+      "gift_title": "Gift card balance",
+      "gift_preview": "You have SAR 150 left.",
+      "address_title": "Change of address",
+      "address_preview": "Done: the new address is saved.",
+      "refund_title": "Refund for order 2051",
+      "refund_preview": "The refund reaches your card within 5 days."
+    },
+    "actions": {
+      "return_title": "Return for order 2048",
+      "return_preview": "Your return label is ready to print.",
+      "delivery_title": "Delivery to Jeddah",
+      "delivery_preview": "It arrives on Thursday between 2 and 6 pm.",
+      "refund_title": "Refund for order 2051",
+      "refund_preview": "The refund reaches your card within 5 days.",
+      "renamed": "Return label question",
+      "pinned": "Pinned.",
+      "unpinned": "Unpinned.",
+      "renamed_done": "Renamed.",
+      "deleted": "Deleted."
+    }
+  },
+  "message_actions": {
+    "basics": {
+      "answer": "Order 2048 left our Riyadh warehouse this morning and arrives on Thursday. You can follow it from the tracking link in your email.",
+      "retried": "Asked again.",
+      "edited": "Editing your question."
+    },
+    "feedback": {
+      "answer": "The linen abaya runs true to size. If you are between two sizes, choose the larger one for a looser fit.",
+      "thanks_up": "Thanks, glad it helped.",
+      "thanks_down": "Thanks, we will use this to improve answers.",
+      "none": "Was this answer helpful?"
+    }
+  },
+  "message_scroller": {
+    "streaming": {
+      "question": "Where is my order 2048?",
+      "answer": "Your order left our Riyadh warehouse this morning. It is with the courier now and arrives on Thursday between 2 and 6 pm. You will get a text message one hour before delivery, and you can change the time from the tracking page if you are not home.",
+      "ask": "Ask again",
+      "earlier_1": "Hi! How can I help with your order today?",
+      "earlier_2": "I want to check on a delivery.",
+      "earlier_3": "Of course. Which order is it?"
+    },
+    "new_count": {
+      "receive": "Receive a message",
+      "incoming": "Update: the courier is 10 minutes away.",
+      "first": "Your order is packed and ready.",
+      "hint": "Scroll up, then receive a message."
+    }
+  },
+  "prompt_suggestions": {
+    "cards": {
+      "track": "Track my order",
+      "track_line": "See where order 2048 is now",
+      "return": "Start a return",
+      "return_line": "Send back an item within 14 days",
+      "size": "Find my size",
+      "size_line": "Compare abaya measurements",
+      "chosen": "Sent: {prompt}"
+    },
+    "chips": {
+      "refund": "When is my refund?",
+      "address": "Change my address",
+      "gift": "Check my gift card",
+      "agent": "Talk to a person"
+    },
+    "scroll": {
+      "pay": "Split the payment",
+      "cod": "Cash on delivery?",
+      "exchange": "Exchange a size",
+      "invoice": "Send my invoice",
+      "hours": "Store hours"
+    }
+  },
+  "shimmer": {
+    "thinking": {
+      "searching": "Searching your orders…"
+    },
+    "block": {
+      "question": "Summarise my orders this month"
+    }
+  },
+  "marquee": {
+    "brands": {
+      "label": "Brands we carry",
+      "brand_1": "Dukkan",
+      "brand_2": "Jute & Co.",
+      "brand_3": "Organza",
+      "brand_4": "Sadu Weaves",
+      "brand_5": "Najd Linen",
+      "brand_6": "Qahwa House"
+    },
+    "announcements": {
+      "label": "Shop announcements",
+      "item_1": "Free delivery on orders over SAR 200",
+      "item_2": "The Eid collection is here",
+      "item_3": "Returns within 14 days",
+      "item_4": "Pay in 4 instalments at checkout"
+    }
+  },
+  "barcode": {
+    "product_ean": {
+      "product": "Linen abaya",
+      "price": "SAR 420",
+      "label": "Linen abaya, EAN 6291041500213"
+    },
+    "shipping_label": {
+      "title": "Order 2048",
+      "to": "Ship to: Al Olaya, Riyadh",
+      "label": "Parcel SHP-2048-RUH"
+    },
+    "invalid": {
+      "caption": "6291041500214 ends in the wrong check digit (it should be 3)."
+    }
+  },
+  "aspect_ratio": {
+    "product_photo": {
+      "price_1": "SAR 180",
+      "price_2": "SAR 240",
+      "price_3": "SAR 95"
+    },
+    "video": {
+      "title": "How we dye our linen",
+      "duration": "2:40"
+    }
+  },
+  "page_indicator": {
+    "onboarding": {
+      "title_1": "Browse the new season",
+      "body_1": "Fresh pieces every Thursday, picked for the Gulf heat.",
+      "title_2": "Save what you love",
+      "body_2": "Tap the heart and find it again in your wishlist.",
+      "title_3": "Pay your way",
+      "body_3": "Card, Apple Pay or four instalments.",
+      "title_4": "Track every order",
+      "body_4": "From our studio to your door, step by step.",
+      "back": "Back",
+      "next": "Next",
+      "done": "Start shopping",
+      "label": "Onboarding steps",
+      "step": "Step {page} of {count}"
+    },
+    "display_only": {
+      "caption": "Photo 3 of 5"
+    }
+  },
+  "back_to_top": {
+    "scroll_view": {
+      "title": "Order history",
+      "order": "Order {number}",
+      "status": "Delivered"
+    }
+  },
+  "questionnaire_card": {
+    "offer_brief": {
+      "title": "A few questions before I draft the Eid offer",
+      "description": "Answer what you can and skip the rest.",
+      "goal": "What should the offer achieve?",
+      "goal_clear": "Clear the winter stock",
+      "goal_return": "Bring back past customers",
+      "goal_launch": "Launch the new abaya line",
+      "branches": "Which branches should run it?",
+      "branches_hint": "Pick every branch that takes part.",
+      "olaya": "Olaya, Riyadh",
+      "tahlia": "Tahlia, Jeddah",
+      "online": "Online store",
+      "discount": "How deep should the discount go?",
+      "up_to_10": "Up to 10%",
+      "up_to_20": "Up to 20%",
+      "up_to_30": "Up to 30%",
+      "avoid": "Anything I should leave out?",
+      "avoid_placeholder": "For example: no discounts on perfumes",
+      "sent": "Sent {count, plural, one {# answer} other {# answers}} to the assistant."
+    },
+    "edit_answers": {
+      "title": "Update the weekly sales report",
+      "description": "Last week's answers are filled in. Change what you need.",
+      "period": "Which period?",
+      "this_week": "This week",
+      "last_week": "Last week",
+      "this_month": "This month",
+      "metrics": "What should the report show?",
+      "revenue": "Revenue",
+      "orders": "Orders",
+      "returns": "Returns",
+      "basket": "Average basket",
+      "format": "Which format?",
+      "pdf": "PDF",
+      "excel": "Excel",
+      "submit": "Build the report",
+      "built": "Building the report for {period}."
+    }
+  },
+  "model_picker": {
+    "basics": {
+      "swift": "Short replies and quick edits",
+      "deep": "Plans, analysis and long documents",
+      "vision": "Reads receipts, shelves and screenshots",
+      "atlas": "Our largest model for hard problems",
+      "business": "On the Business plan",
+      "fast": "Fast",
+      "reasoning": "Reasoning",
+      "vision_tag": "Vision",
+      "arabic": "Arabic",
+      "picked": "Replies come from {name}."
+    },
+    "compact": {
+      "label": "Assistant model",
+      "message": "Message the assistant",
+      "placeholder": "Ask about today's orders",
+      "send": "Send"
+    }
+  },
+  "voice_input": {
+    "basics": {
+      "recorded": "Recorded {seconds} seconds."
+    },
+    "dictation": {
+      "label": "Reply to the customer",
+      "dictate": "Dictate the reply",
+      "transcript": "Thanks for your order. It leaves our Olaya branch today and should reach you within two days."
+    },
+    "denied": {
+      "label": "Record a voice note",
+      "hint": "This recorder is refused the microphone, as a phone is when access is blocked."
+    }
+  },
+  "popconfirm": {
+    "basics": {
+      "draft": "Summer sale banner",
+      "trigger": "Delete draft",
+      "title": "Delete this draft?",
+      "description": "The banner and its schedule are removed for everyone.",
+      "confirm": "Delete",
+      "cancel": "Keep it",
+      "deleted": "Draft deleted."
+    },
+    "async_confirm": {
+      "order": "Order 2048 · SAR 420",
+      "trigger": "Refund",
+      "title": "Refund SAR 420?",
+      "description": "The money goes back to the customer's card in 3 to 5 days.",
+      "confirm": "Refund",
+      "refunded": "Refunded."
+    }
+  },
+  "cascader": {
+    "basics": {
+      "label": "Delivery area",
+      "description": "Same-day delivery covers these districts.",
+      "sa": "Saudi Arabia",
+      "riyadh": "Riyadh",
+      "olaya": "Al Olaya",
+      "malqa": "Al Malqa",
+      "jeddah": "Jeddah",
+      "rawdah": "Al Rawdah",
+      "ae": "United Arab Emirates",
+      "dubai": "Dubai",
+      "marina": "Dubai Marina"
+    },
+    "lazy": {
+      "label": "Product category",
+      "description": "Sub-categories load when you open them.",
+      "women": "Women",
+      "men": "Men",
+      "abayas": "Abayas",
+      "dresses": "Dresses",
+      "thobes": "Thobes",
+      "shoes": "Shoes"
+    }
+  },
+  "transfer_list": {
+    "basics": {
+      "label": "Stock locations",
+      "available": "All warehouses",
+      "chosen": "Stocks this product",
+      "riyadh": "Riyadh central",
+      "jeddah": "Jeddah port",
+      "dammam": "Dammam",
+      "dubai": "Dubai hub",
+      "kuwait": "Kuwait City"
     }
   }
 }

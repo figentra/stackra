@@ -40,6 +40,14 @@
   "tab_bar": {
     "label": "علامات التبويب"
   },
+  "tabs": {
+    "more": "المزيد",
+    "more_label": "تبويبات أخرى",
+    "close": "إغلاق {tab}"
+  },
+  "navigation_menu": {
+    "label": "التنقل الرئيسي"
+  },
   "entity_picker": {
     "search": "بحث",
     "close": "إغلاق"
@@ -101,6 +109,9 @@
     "close": "إغلاق اللوحة",
     "resize": "تغيير عرض اللوحة"
   },
+  "split_view": {
+    "resize": "تغيير عرض الجزأين"
+  },
   "data_table": {
     "loading": "جارٍ التحميل",
     "actions_column": "الإجراءات",
@@ -125,7 +136,15 @@
   },
   "tree_view": {
     "expand": "توسيع {label}",
-    "collapse": "طيّ {label}"
+    "collapse": "طيّ {label}",
+    "loading": "جارٍ التحميل…"
+  },
+  "tree_select": {
+    "placeholder": "اختر",
+    "count": "{count, plural, zero {لا شيء} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}"
+  },
+  "mention_input": {
+    "people": "أشخاص للإشارة إليهم"
   },
   "sortable_list": {
     "handle": "إعادة ترتيب {label}",
@@ -196,6 +215,51 @@
     "complete": "اكتمل الإعداد",
     "show": "إظهار المهام",
     "hide": "إخفاء المهام"
+  },
+  "recurrence_editor": {
+    "label": "التكرار",
+    "every": "يتكرر كل",
+    "unit": "{unit, select, daily {{count, plural, few {أيام} many {يومًا} other {يوم}}} weekly {{count, plural, few {أسابيع} many {أسبوعًا} other {أسبوع}}} monthly {{count, plural, few {أشهر} many {شهرًا} other {شهر}}} other {{count, plural, few {سنوات} many {سنةً} other {سنة}}}}",
+    "weekdays": "في أيام",
+    "monthly": "كل شهر",
+    "ends": "ينتهي",
+    "never": "لا ينتهي",
+    "until_label": "في تاريخ",
+    "count_label": "بعد عدد من المرات",
+    "end_date": "تاريخ الانتهاء",
+    "occurrences": "عدد المرات",
+    "summary": "يتكرر",
+    "every_unit": "{unit, select, daily {{interval, plural, one {كل يوم} two {كل يومين} few {كل {n} أيام} many {كل {n} يومًا} other {كل {n} يوم}}} weekly {{interval, plural, one {كل أسبوع} two {كل أسبوعين} few {كل {n} أسابيع} many {كل {n} أسبوعًا} other {كل {n} أسبوع}}} monthly {{interval, plural, one {كل شهر} two {كل شهرين} few {كل {n} أشهر} many {كل {n} شهرًا} other {كل {n} شهر}}} other {{interval, plural, one {كل سنة} two {كل سنتين} few {كل {n} سنوات} many {كل {n} سنةً} other {كل {n} سنة}}}}",
+    "on_days": "{rule}، {days}",
+    "on_day": "{rule} في اليوم {day}",
+    "on_last_day": "{rule} في آخر يوم",
+    "on_nth": "{rule} يوم {weekday} {nth, select, 1 {الأول} 2 {الثاني} 3 {الثالث} 4 {الرابع} other {الأخير}}",
+    "on_date": "{rule} في {date}",
+    "until": "{rule}، حتى {date}",
+    "times": "{rule}، {count, plural, one {مرة واحدة} two {مرتين} few {{n} مرات} other {{n} مرة}}",
+    "hijri": "{rule}، بالتقويم الهجري",
+    "day_option": "في اليوم {day}",
+    "last_day_option": "في آخر يوم من الشهر",
+    "nth_option": "يوم {weekday} {nth, select, 1 {الأول} 2 {الثاني} 3 {الثالث} 4 {الرابع} other {الأخير}}"
+  },
+  "task_tray": {
+    "label": "المهام الجارية",
+    "running": "{count, plural, one {مهمة واحدة قيد التنفيذ} two {مهمتان قيد التنفيذ} few {{n} مهام قيد التنفيذ} other {{n} مهمة قيد التنفيذ}}",
+    "finished": "{count, plural, one {اكتملت مهمة واحدة} two {اكتملت مهمتان} few {اكتملت {n} مهام} other {اكتملت {n} مهمة}}",
+    "failed": "{count, plural, one {تعذّرت مهمة} two {تعذّرت مهمتان} few {تعذّرت {n} مهام} other {تعذّرت {n} مهمة}}",
+    "show": "إظهار المهام",
+    "hide": "إخفاء المهام",
+    "clear": "مسح المكتملة",
+    "cancel": "إلغاء {name}",
+    "retry": "إعادة محاولة {name}",
+    "dismiss": "إزالة {name}",
+    "queued": "في الانتظار",
+    "done": "اكتملت",
+    "error": "تعذّر الإكمال",
+    "canceled": "أُلغيت"
+  },
+  "toast": {
+    "undo": "تراجع"
   },
   "inline_loading": {
     "loading": "جارٍ التحميل…",
@@ -458,7 +522,24 @@
     "previous_page": "الصفحة السابقة",
     "next_page": "الصفحة التالية",
     "page_of": "الصفحة {page, number} من {count, number}",
-    "load_more": "حمّل المزيد"
+    "load_more": "حمّل المزيد",
+    "row_handle": "اسحب {name}",
+    "reorder_column": "الترتيب",
+    "details_column": "التفاصيل",
+    "expand_row": "اعرض تفاصيل {name}",
+    "collapse_row": "أخفِ تفاصيل {name}",
+    "expand_all": "اعرض كل التفاصيل",
+    "collapse_all": "أخفِ كل التفاصيل",
+    "row_detail": "تفاصيل {name}",
+    "edit_cell": "عدّل {column} في {name}",
+    "open_row": "افتح {name}",
+    "row_panel": "تفاصيل {label}",
+    "board_column": "{label}: {column}",
+    "board_empty": "لا شيء هنا بعد",
+    "board_count": "{count, plural, zero {لا بطاقات} one {بطاقة واحدة} two {بطاقتان} few {# بطاقات} many {# بطاقة} other {# بطاقة}}",
+    "move_to": "انقل إلى",
+    "move_card": "انقل {name}",
+    "card_moved": "نُقل {name} إلى {column}"
   },
   "number_pad": {
     "delete": "حذف",
@@ -491,7 +572,8 @@
     "sort_value_desc": "الأكبر أولًا",
     "sort_value_asc": "الأصغر أولًا",
     "sort_label": "حسب الاسم",
-    "compare": "قارن بالفترة السابقة"
+    "compare": "قارن بالفترة السابقة",
+    "svg": "تنزيل ملف SVG"
   },
   "trend_chip": {
     "up": "ارتفاع {value}",
@@ -500,7 +582,8 @@
   },
   "stat": {
     "target": "الهدف {value}",
-    "drill_down": "افتح {label}"
+    "drill_down": "افتح {label}",
+    "previous": "الفترة السابقة: {value}"
   },
   "funnel_chart": {
     "conversion": "{value} من المرحلة السابقة"
@@ -529,6 +612,25 @@
     "next": "الشريحة التالية",
     "slide": "الشريحة {index} من {count}",
     "pages": "اختر شريحة"
+  },
+  "lightbox": {
+    "label": "عارض الصور",
+    "previous": "الصورة السابقة",
+    "next": "الصورة التالية",
+    "close": "إغلاق",
+    "counter": "{index} من {count}",
+    "zoom_in": "تكبير",
+    "zoom_out": "تصغير"
+  },
+  "gallery": {
+    "open": "افتح {name}"
+  },
+  "image_cropper": {
+    "label": "قص الصورة",
+    "zoom": "التكبير",
+    "hint": "اسحب الصورة أو حرّكها بالأسهم، وكبّرها أو صغّرها بزرّي الجمع والطرح.",
+    "hint_touch": "اسحب الصورة لتحريكها، وكبّرها بالمنزلق.",
+    "loading": "جارٍ تحميل الصورة"
   },
   "command_palette": {
     "label": "لوحة الأوامر",
@@ -617,7 +719,11 @@
     "last_30_days": "الأيام الثلاثون الأخيرة",
     "this_month": "هذا الشهر",
     "last_month": "الشهر الماضي",
-    "this_year": "هذا العام"
+    "this_year": "هذا العام",
+    "last_90_days": "الأيام التسعون الأخيرة",
+    "this_quarter": "هذا الربع",
+    "last_quarter": "الربع الماضي",
+    "last_12_months": "الأشهر الاثنا عشر الأخيرة"
   },
   "year_picker": {
     "label": "اختر السنة"
@@ -666,7 +772,22 @@
     "label": "أفلِت ملفاتك هنا",
     "browse": "اختر ملفات",
     "label_one": "أفلِت ملفًا هنا",
-    "browse_one": "اختر ملفًا"
+    "browse_one": "اختر ملفًا",
+    "paste_hint": "أو الصق ملفًا أو لقطة شاشة",
+    "taken": "الملفات المختارة"
+  },
+  "attachment_card": {
+    "remove": "إزالة {name}",
+    "download": "تنزيل {name}",
+    "open": "فتح {name}",
+    "uploading": "جارٍ الرفع",
+    "failed": "تعذّر الرفع",
+    "retry": "إعادة رفع {name}"
+  },
+  "share_button": {
+    "share": "مشاركة",
+    "copied": "نُسخ الرابط",
+    "copy_link": "نسخ الرابط"
   },
   "color_picker": {
     "label": "اللون",
@@ -775,5 +896,175 @@
     "in_7_days": "بعد 7 أيام",
     "start_of_month": "بداية الشهر",
     "end_of_month": "نهاية الشهر"
+  },
+  "period_picker": {
+    "label": "الفترة",
+    "preset": "النطاق",
+    "custom": "نطاق مخصّص",
+    "dates": "التواريخ",
+    "compare": "قارن بالفترة السابقة",
+    "mode": "قارن مع",
+    "previous": "الفترة السابقة",
+    "year": "الفترة نفسها من العام الماضي",
+    "versus": "مقابل {range}"
+  },
+  "tracker_strip": {
+    "up": "يعمل",
+    "degraded": "أداء متراجع",
+    "down": "متوقف",
+    "none": "لا بيانات",
+    "uptime": "جاهزية {value}",
+    "cell": "{label}: {status}"
+  },
+  "dashboard_grid": {
+    "handle": "اسحب {label}",
+    "earlier": "قدّم {label}",
+    "later": "أخّر {label}",
+    "size": "غيّر حجم {label}، الحالي {size}",
+    "size_small": "صغير",
+    "size_medium": "متوسط",
+    "size_large": "كبير",
+    "size_full": "بعرض كامل",
+    "moved": "نُقل {label} إلى الموضع {position, number} من {count, number}",
+    "resized": "صار {label} {size}"
+  },
+  "form_error_summary": {
+    "title": "{count, plural, zero {لا توجد مشكلات} one {توجد مشكلة واحدة} two {توجد مشكلتان} few {توجد # مشكلات} many {توجد # مشكلة} other {توجد # مشكلة}}"
+  },
+  "marquee": {
+    "pause": "إيقاف التمرير",
+    "play": "متابعة التمرير"
+  },
+  "barcode": {
+    "invalid": "تعذّر رسم هذا الرمز الشريطي، تحقّق من القيمة."
+  },
+  "page_indicator": {
+    "pages": "الصفحات",
+    "page": "الصفحة {index} من {count}"
+  },
+  "back_to_top": {
+    "label": "العودة إلى الأعلى"
+  },
+  "footer": {
+    "label": "تذييل الصفحة"
+  },
+  "waffle_chart": {
+    "share": "النسبة"
+  },
+  "questionnaire_card": {
+    "from_assistant": "أسئلة من مساعدك",
+    "progress": "السؤال {current} من {total}",
+    "back": "السابق",
+    "next": "التالي",
+    "skip": "تخطٍّ",
+    "review": "مراجعة الإجابات",
+    "submit": "إرسال الإجابات",
+    "summary": "إجاباتك",
+    "edit": "تعديل",
+    "edit_answer": "تعديل الإجابة عن: {question}",
+    "other": "غير ذلك",
+    "other_label": "إجابتك",
+    "skipped": "تُخطّي"
+  },
+  "model_picker": {
+    "label": "النموذج",
+    "placeholder": "اختر نموذجًا",
+    "context": "سياق {size}",
+    "new": "جديد",
+    "beta": "تجريبي",
+    "unavailable": "غير متاح"
+  },
+  "voice_input": {
+    "start": "بدء التسجيل",
+    "stop": "إيقاف التسجيل",
+    "idle": "اضغط الميكروفون لتتحدث",
+    "requesting": "بانتظار الإذن باستخدام الميكروفون…",
+    "listening": "جارٍ الاستماع…",
+    "cancel_hint": "Esc للإلغاء",
+    "processing": "جارٍ المعالجة…",
+    "denied": "الوصول إلى الميكروفون محظور. اسمح به من الإعدادات ثم أعد المحاولة.",
+    "error": "تعذّر التسجيل. حاول مرة أخرى.",
+    "cancelled": "أُلغي التسجيل"
+  },
+  "popconfirm": {
+    "confirm": "تأكيد",
+    "cancel": "إلغاء"
+  },
+  "menubar": {
+    "label": "قائمة التطبيق"
+  },
+  "floating_panel": {
+    "move": "تحريك اللوحة",
+    "move_hint": "حرّكها بمفاتيح الأسهم، واضغط Shift مع السهم لخطوة أكبر.",
+    "resize": "تغيير حجم اللوحة",
+    "resize_hint": "غيّر حجمها بمفاتيح الأسهم، واضغط Shift مع السهم لخطوة أكبر.",
+    "minimise": "تصغير",
+    "restore": "استعادة",
+    "close": "إغلاق"
+  },
+  "cascader": {
+    "placeholder": "اختر",
+    "back": "رجوع",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا يوجد شيء هنا"
+  },
+  "transfer_list": {
+    "available": "المتاح",
+    "chosen": "المختار",
+    "filter": "تصفية {list}",
+    "add": "إضافة العناصر المحدّدة",
+    "remove": "إزالة العناصر المحدّدة",
+    "add_all": "إضافة الكل",
+    "remove_all": "إزالة الكل",
+    "empty": "لا يوجد شيء هنا",
+    "moved": "{count, plural, zero {لم يُنقل شيء} one {نُقل عنصر واحد} two {نُقل عنصران} few {نُقلت # عناصر} many {نُقل # عنصرًا} other {نُقل # عنصر}}"
+  },
+  "media_player": {
+    "play": "تشغيل",
+    "pause": "إيقاف مؤقت",
+    "mute": "كتم الصوت",
+    "unmute": "إلغاء كتم الصوت",
+    "volume": "مستوى الصوت",
+    "seek": "التقديم والإرجاع",
+    "time_of": "{elapsed} من {duration}",
+    "speed": "سرعة التشغيل",
+    "normal_speed": "عادية",
+    "captions": "الترجمة المرئية",
+    "fullscreen": "ملء الشاشة",
+    "exit_fullscreen": "الخروج من ملء الشاشة"
+  },
+  "conversation_list": {
+    "label": "المحادثات",
+    "pinned": "المثبّتة",
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "previous_7_days": "آخر 7 أيام",
+    "older": "أقدم",
+    "actions": "إجراءات {title}",
+    "pin": "تثبيت",
+    "unpin": "إلغاء التثبيت",
+    "rename": "إعادة التسمية",
+    "delete": "حذف",
+    "empty_title": "لا توجد محادثات بعد",
+    "empty_description": "ستظهر هنا محادثاتك مع المساعد."
+  },
+  "message_actions": {
+    "label": "إجراءات الرسالة",
+    "copy": "نسخ الرسالة",
+    "retry": "إعادة المحاولة",
+    "edit": "تعديل",
+    "good": "إجابة مفيدة",
+    "bad": "إجابة غير مفيدة"
+  },
+  "message_scroller": {
+    "label": "المحادثة",
+    "new_messages": "رسائل جديدة",
+    "new_messages_count": "{count, plural, zero {لا رسائل جديدة} one {رسالة جديدة واحدة} two {رسالتان جديدتان} few {# رسائل جديدة} many {# رسالة جديدة} other {# رسالة جديدة}}"
+  },
+  "prompt_suggestions": {
+    "label": "اقتراحات للبدء"
+  },
+  "shimmer": {
+    "thinking": "جارٍ التفكير…"
   }
 }

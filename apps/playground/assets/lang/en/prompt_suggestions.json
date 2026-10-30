@@ -1,0 +1,24 @@
+{
+  "cards": {
+    "track": "Track my order",
+    "track_line": "See where order 2048 is now",
+    "return": "Start a return",
+    "return_line": "Send back an item within 14 days",
+    "size": "Find my size",
+    "size_line": "Compare abaya measurements",
+    "chosen": "Sent: {prompt}"
+  },
+  "chips": {
+    "refund": "When is my refund?",
+    "address": "Change my address",
+    "gift": "Check my gift card",
+    "agent": "Talk to a person"
+  },
+  "scroll": {
+    "pay": "Split the payment",
+    "cod": "Cash on delivery?",
+    "exchange": "Exchange a size",
+    "invoice": "Send my invoice",
+    "hours": "Store hours"
+  }
+}

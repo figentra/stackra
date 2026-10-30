@@ -5,7 +5,8 @@
  *          the panel takes no width and an optional `SidePanel.Launcher` floats at the bottom centre; open, it is a
  *          column that pushes the page; expanded, it takes the whole row (the page behind it is inert). The state is
  *          controlled (`state`, `onStateChange`) or not (`defaultState`), the open width is resizable from
- *          `SidePanel.Handle` (pointer and keyboard), and both are kept under `storageKey`.
+ *          `SidePanel.Handle` (pointer and keyboard) through the shared pane engine (`usePaneWidth`, `useResizeHandle`), and
+ *          both are kept under `storageKey`.
  * Boundary: below `drawerBelow` (default `md`) there is no room to push, so the panel's parts are drawn in the house
  *           Drawer on the end edge instead (expanded is then the full-width drawer) and the Drawer owns focus; an
  *           uncontrolled panel starts shut there, so no page loads behind a modal. In the
@@ -25,6 +26,7 @@ import { LayoutBreakpoint } from "#contracts/enums/layout-breakpoint.enum";
 import { SidePanelState } from "#contracts/enums/side-panel-state.enum";
 import { readStored } from "#core/functions/read-stored.function";
 import { writeStored } from "#core/functions/write-stored.function";
+import { usePaneWidth } from "#react/hooks/use-pane-width";
 import type { SidePanelApi } from "#react/side-panel/side-panel-api.type";
 import { SidePanelBody } from "#react/side-panel/side-panel-body";
 import { SidePanelContext } from "#react/side-panel/side-panel-context";
@@ -75,21 +77,19 @@ function SidePanelRoot({
     (breakpoint === undefined ||
       LayoutBreakpoint.indexOf(breakpoint) < LayoutBreakpoint.indexOf(drawerBelow));
   const stateKey = storageKey === undefined ? undefined : `${storageKey}:state`;
-  const widthKey = storageKey === undefined ? undefined : `${storageKey}:width`;
   // An uncontrolled panel that would start open on a small screen starts shut, so no page loads behind a modal.
   const [ownState, setOwnState] = useState(() =>
     isDrawer ? "closed" : (stateOf(readStored(stateKey)) ?? defaultState),
   );
-  const [ownWidth, setOwnWidth] = useState(() => {
-    const stored = Number(readStored(widthKey));
-    return Number.isFinite(stored) && stored > 0 ? stored : defaultWidth;
+  const { width: currentWidth, setWidth } = usePaneWidth({
+    width,
+    defaultWidth,
+    minWidth,
+    maxWidth,
+    onWidthChange,
+    storageKey,
   });
   const current = state ?? ownState;
-  const clamp = useCallback(
-    (next: number) => Math.round(Math.min(maxWidth, Math.max(minWidth, next))),
-    [minWidth, maxWidth],
-  );
-  const currentWidth = clamp(width ?? ownWidth);
 
   const setState = useCallback(
     (next: SidePanelState) => {
@@ -98,15 +98,6 @@ function SidePanelRoot({
       onStateChange?.(next);
     },
     [stateKey, onStateChange],
-  );
-  const setWidth = useCallback(
-    (next: number) => {
-      const value = clamp(next);
-      setOwnWidth(value);
-      writeStored(widthKey, String(value));
-      onWidthChange?.(value);
-    },
-    [clamp, widthKey, onWidthChange],
   );
 
   // Focus follows the state however it changed (a launcher, the app's own button, a controlled prop), so it is moved

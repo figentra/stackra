@@ -49,6 +49,7 @@ vi.mock("heroui-native", async () => {
       ItemLabel: record("item-label"),
       ItemDescription: record("item-description"),
       ItemIndicator: record("item-indicator"),
+      ListLabel: record("list-label"),
     }),
     Label: record("label"),
     Description: record("description"),
@@ -118,6 +119,24 @@ describe("Select (native)", () => {
       ["sent", "Sent", false],
       ["void", "Void", true],
     ]);
+  });
+
+  it("draws each section's header, read as a heading, above its choices in first-appearance order", () => {
+    const { container } = render(
+      <Select
+        items={[
+          { id: "cairo", label: "Cairo", section: "Africa" },
+          { id: "paris", label: "Paris", section: "Europe" },
+          { id: "lagos", label: "Lagos", section: "Africa" },
+        ]}
+      />,
+    );
+    const order = [...container.querySelectorAll('[data-testid="content"] > [data-testid]')].map(
+      (node) => node.textContent,
+    );
+    expect(order).toEqual(["Africa", "", "", "Europe", ""]);
+    expect(received.items.map((item) => item["value"])).toEqual(["cairo", "lagos", "paris"]);
+    expect(propsOf("list-label")["accessibilityRole"]).toBe("header");
   });
 
   it("adds a description under the label of an item that has one, and uses HeroUI's content for the rest", () => {

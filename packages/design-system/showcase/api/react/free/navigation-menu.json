@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "b65ef2a80453b702",
+    "propsFiles": ["ui/src/react/navigation-menu/navigation-menu.props.ts"]
+  },
+  "importLine": "import { NavigationMenu } from \"@stackra/ui/react\";",
+  "key": "free/navigation-menu",
+  "parts": [
+    {
+      "name": "NavigationMenu",
+      "props": [
+        {
+          "description": "The top-level entries, in order. An entry with `children` is a button that opens a panel of its children's links\n(with their `description` and `icon`); any other entry is a link.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly NavigationItem[]"
+        },
+        {
+          "description": "The landmark's name; defaults to the catalogue's \"Main navigation\". Name it when a page has two.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The panel's columns: 1 (the default) or 2, for a mega menu of many links.",
+          "name": "columns",
+          "required": false,
+          "source": "stackra",
+          "type": "1 | 2"
+        },
+        {
+          "description": "Styles the `nav`.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

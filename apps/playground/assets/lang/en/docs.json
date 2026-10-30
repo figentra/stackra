@@ -1,0 +1,33 @@
+{
+  "title": "Docs",
+  "eyebrow": "Stackra Design System",
+  "headline": "Everything you need to build with Stackra UI.",
+  "intro": "Accessible, bilingual React and React Native components on HeroUI, with one API on web and mobile. Start with the install, learn the foundations, then pick the component you need.",
+  "start": {
+    "title": "Get started",
+    "install": "Install the package",
+    "install_body": "Add @stackra/ui to your app; the web components live in its ./react entry and the mobile ones in ./native.",
+    "provider": "Wrap the app in the provider",
+    "provider_body": "DesignSystemProvider sets the colour scheme, the locale and the reading direction for every component under it.",
+    "use": "Use a component",
+    "use_body": "Every page shows the import, live examples in light, dark, left-to-right and right-to-left, and the API."
+  },
+  "sections": {
+    "foundations": "Foundations",
+    "foundations_body": "Tokens, type, colour, motion and right-to-left text: the rules every component follows.",
+    "guides": "Guides",
+    "guides_body": "How to choose between components and get the details right."
+  },
+  "guides": {
+    "components": "Browse every component",
+    "components_body": "By category, with a live preview of each.",
+    "studio": "Make a theme",
+    "studio_body": "Pick colours, radius and type in the Theme Studio and export them.",
+    "overlays": "Choose an overlay",
+    "overlays_body": "Modal, alert dialog, drawer or route overlay: when to use which.",
+    "rtl": "Right-to-left",
+    "rtl_body": "Arabic layout, mixed-direction text and what mirrors.",
+    "llms": "For AI assistants",
+    "llms_body": "llms.txt lists every component with its page, for tools that read the docs."
+  }
+}

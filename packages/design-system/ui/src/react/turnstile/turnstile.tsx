@@ -6,7 +6,8 @@
  * Boundary: no dependency: the script is added once per page, and each widget is removed when its component unmounts.
  *           Renders an empty box on the server and fills it in the browser; the page's CSP must allow
  *           `https://challenges.cloudflare.com` in `script-src`, `frame-src` and `connect-src`. Without a site key it
- *           draws nothing and warns, so the server's verification refuses the post.
+ *           draws nothing and warns, so the server's verification refuses the post. A failed challenge goes to `onError` and is
+ *           marked handled, so Cloudflare's script does not throw it on the page.
  * Runtime: browser
  * Governing contract: ADR 0165 (decision 2: form adapters in @stackra/ui); owner decision 12 of 2026-10-25 (Turnstile
  *                     in `./react`); ADR 0302 (decision 3).
@@ -59,8 +60,12 @@ function loadTurnstile(): Promise<TurnstileApi> {
 export function Turnstile({
   name = "cf-turnstile-response",
   siteKey = PUBLIC_SITE_KEY,
+  onError,
 }: TurnstileProps): ReactElement {
   const container = useRef<HTMLDivElement>(null);
+  const latestOnError = useRef(onError);
+  // oxlint-disable-next-line react/refs -- reason: the widget's error callback reads the latest handler; the ref is never read to render
+  latestOnError.current = onError;
 
   useEffect(() => {
     if (!siteKey) {
@@ -78,6 +83,11 @@ export function Turnstile({
           widgetId = loaded.render(container.current, {
             sitekey: siteKey,
             "response-field-name": name,
+            // A truthy return tells Cloudflare the error is handled, so its script does not throw it uncaught.
+            "error-callback": (code: string) => {
+              latestOnError.current?.(code);
+              return true;
+            },
           });
       })
       // oxlint-disable-next-line no-console -- reason: a developer warning; @stackra/ui has no logger dependency

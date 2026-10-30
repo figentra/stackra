@@ -15,6 +15,7 @@ import { Line, LineChart as RechartsLineChart } from "recharts";
 
 import { chartColorOf } from "#core/functions/chart-color-of.function";
 import { activeDotOf } from "#react/chart/active-dot-of.function";
+import { axisOf } from "#react/chart/axis-of.function";
 import { cartesianParts } from "#react/chart/cartesian-parts";
 import { ChartFrame } from "#react/chart/chart-frame";
 import { paintOf } from "#react/chart/paint-of.function";
@@ -29,6 +30,7 @@ export function LineChart(props: LineChartProps): ReactElement {
   return (
     <ChartFrame {...frame}>
       <RechartsLineChart
+        {...(props.syncId === undefined ? {} : { syncId: props.syncId })}
         data={[...data]}
         responsive
         style={{ width: "100%", height: height + (props.showBrush ? 32 : 0) }}
@@ -50,6 +52,7 @@ export function LineChart(props: LineChartProps): ReactElement {
             strokeDasharray="5 4"
             dot={false}
             activeDot={false}
+            {...axisOf(twin.series.key, props.secondaryKeys)}
             hide={hidden.includes(twin.series.key)}
           />
         ))}
@@ -65,6 +68,7 @@ export function LineChart(props: LineChartProps): ReactElement {
               strokeWidth={2}
               dot={props.showDots ? { fill: color, r: 3 } : false}
               activeDot={activeDotOf(color)}
+              {...axisOf(item.key, props.secondaryKeys)}
               hide={hidden.includes(item.key)}
             />
           );

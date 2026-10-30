@@ -1,0 +1,22 @@
+{
+  "basics": {
+    "open": "Chat with support",
+    "title": "Support chat",
+    "agent": "Noura · Support",
+    "greeting": "Hi! How can I help with your store today?",
+    "customer": "You",
+    "question": "Order 2048 shows as paid but not shipped.",
+    "answer": "It is with the courier now; the tracking link arrives within the hour.",
+    "message": "Write a message",
+    "send": "Send"
+  },
+  "tool_palette": {
+    "open": "Bulk edit 12 products",
+    "title": "Bulk edit",
+    "selected": "12 products selected",
+    "price": "Price change (%)",
+    "sale": "Mark as on sale",
+    "apply": "Apply to 12 products",
+    "applied": "Changes applied to 12 products."
+  }
+}

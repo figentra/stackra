@@ -8,7 +8,9 @@
  * Boundary: presentation and input only. Entering the operating system's kiosk lock is `@stackra/platform`'s
  *           `KioskMode`; what a reset does is the caller's `onIdle`. High contrast sets `data-contrast="more"` on the
  *           surface with the stronger material edge the theme uses for `prefers-contrast: more`, so a kiosk gets it
- *           without the visitor's own setting. The timeout and the defaults are device settings (ADR 0428).
+ *           without the visitor's own setting. The timeout and the defaults are device settings (ADR 0428). Heights are
+ *           container query units: the surface fills its nearest size container (a preview frame), and with none, CSS
+ *           resolves them to the small viewport, so on a kiosk it fills the screen.
  * Runtime: browser
  * Governing contract: ADR 0428 (decision 1); R3-SO-10; WCAG 2.2 SC 1.4.6, 2.2.1, 2.5.8 and 4.1.3.
  */
@@ -100,11 +102,11 @@ export function KioskSurface({
         style={isHighContrast ? HIGH_CONTRAST_STYLE : undefined}
         className={
           reach === "seated"
-            ? "flex min-h-dvh flex-col justify-end text-lg [&_button]:min-h-14"
-            : "flex min-h-dvh flex-col"
+            ? "flex min-h-[100cqh] flex-col justify-end text-lg [&_button]:min-h-14"
+            : "flex min-h-[100cqh] flex-col"
         }
       >
-        <div className={reach === "seated" ? "max-h-[70dvh] overflow-y-auto" : "flex-1"}>
+        <div className={reach === "seated" ? "max-h-[70cqh] overflow-y-auto" : "flex-1"}>
           {children}
         </div>
         <p role="status" aria-live="polite" className="sr-only">

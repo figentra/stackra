@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the native `Stat`: one headline figure with its label above and an optional badge beside it, for a card
  *          or a widget (`<Stat label="Points" value={1200} badge="Gold" />`), drawn with the design system's `Text` and
- *          `Chip`, the same props as on web, KPI extras included: trend chip, area sparkline, target bar, drill-down.
+ *          `Chip`, the same props as on web, KPI extras included: trend chip,
+ *          previous period (the trend worked out from it when none is given), area sparkline, target bar, drill-down.
  * Boundary: no HeroUI Native component of its own (HeroUI Native has no stat); the label is read before the figure. A
  *           number is formatted in the `DesignSystemProvider`'s locale and the i18n digits setting (`useNumerals`), or
  *           the device's without one. A drill-down makes the tile one pressable button; a number counts up with
@@ -17,6 +18,7 @@ import { type ReactElement, use } from "react";
 import { Pressable, View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { changeOf } from "#core/functions/change-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Chip } from "#native/chip/chip";
 import { DesignSystemContext } from "#native/design-system-provider/design-system-context";
@@ -33,6 +35,7 @@ export function Stat({
   value,
   badge,
   trend,
+  previousValue,
   better,
   comparison,
   sparkline,
@@ -46,6 +49,7 @@ export function Stat({
   const t = useUiText();
   const format = (figure: number) => formatNumber(figure, locale, undefined, numerals);
   const name = typeof label === "string" ? label : "";
+  const change = trend ?? changeOf(value, previousValue);
   const body = (
     <View className="gap-1">
       <Text type="small" tone="muted">
@@ -56,10 +60,15 @@ export function Stat({
           {typeof value === "number" ? <NumberTicker value={value} /> : value}
         </Text>
         {badge ? <Chip size="sm">{badge}</Chip> : null}
-        {trend === undefined ? null : (
-          <TrendChip value={trend} better={better} comparison={comparison} />
+        {change === undefined ? null : (
+          <TrendChip value={change} better={better} comparison={comparison} />
         )}
       </View>
+      {previousValue === undefined ? null : (
+        <Text type="small" tone="muted">
+          {t(UI_KEYS.ui.stat.previous, { value: format(previousValue) })}
+        </Text>
+      )}
       {sparkline && sparkline.length > 1 ? (
         <Sparkline data={sparkline} kind="area" color="chart-ramp-2" height={36} label={name} />
       ) : null}

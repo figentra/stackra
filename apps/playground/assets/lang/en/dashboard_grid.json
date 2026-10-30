@@ -1,0 +1,18 @@
+{
+  "label": "Sales overview",
+  "edit": "Edit layout",
+  "range": "Last 7 days",
+  "revenue": "Revenue",
+  "orders": "Orders",
+  "customers": "New customers",
+  "refunds": "Refunds",
+  "sales_by_day": "Sales by day",
+  "sales": "Sales",
+  "sat": "Sat",
+  "sun": "Sun",
+  "mon": "Mon",
+  "tue": "Tue",
+  "wed": "Wed",
+  "thu": "Thu",
+  "fri": "Fri"
+}

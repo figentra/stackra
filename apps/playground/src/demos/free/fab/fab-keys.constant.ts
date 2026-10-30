@@ -25,5 +25,9 @@ export const FAB_KEYS = keys({
     "close",
     "created",
     "nothing_yet",
+    "toast_hint",
+    "save_draft",
+    "draft_saved",
+    "dismiss",
   ],
 });

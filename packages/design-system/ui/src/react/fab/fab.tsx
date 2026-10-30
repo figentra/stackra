@@ -5,7 +5,7 @@
  *          related actions fade up above it one after another, each a small IconButton with its label, while the plus
  *          turns into a cross. Escape closes the dial and returns focus to the Fab.
  * Boundary: builds on `#react/button/button` and `#react/icon-button/icon-button`. It floats in its nearest positioned
- *           ancestor; the fades and the turn use the theme's `fast` step and stop under reduced motion.
+ *           ancestor and, while it floats, counts itself in `FLOATING_FABS` so a bottom toast clears it on a phone; the fades and the turn use the theme's `fast` step and stop under reduced motion.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0329 (motion layer); wave 3c mobile interactions (owner approval
  *          2026-10-28); WCAG 2.2 SC 2.1.1, 4.1.2.
@@ -14,13 +14,14 @@ import type { ReactElement } from "react";
 import { cn } from "@heroui/react";
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import type { FabPlacement } from "#contracts/enums/fab-placement.enum";
 import type { FabAction } from "#contracts/types/fab-action.type";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Button } from "#react/button/button";
 import type { FabProps } from "#react/fab/fab.props";
+import { FLOATING_FABS } from "#core/constants/floating-fabs.constant";
 import { IconButton } from "#react/icon-button/icon-button";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 
@@ -59,6 +60,8 @@ export function Fab({
   const dialId = useId();
   const root = useRef<HTMLDivElement>(null);
   const isReduced = useReducedMotion() === true;
+  // A floating Fab tells the ToastProvider it is there, so a bottom toast on a phone is lifted clear of it.
+  useEffect(() => (placement === "inline" ? undefined : FLOATING_FABS.register()), [placement]);
   const setOpen = (next: boolean) => {
     setOwnOpen(next);
     onOpenChange?.(next);

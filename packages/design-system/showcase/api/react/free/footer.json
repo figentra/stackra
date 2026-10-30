@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "87b8f84c338c2d40",
+    "propsFiles": ["ui/src/react/footer/footer.props.ts"]
+  },
+  "importLine": "import { Footer } from \"@stackra/ui/react\";",
+  "key": "free/footer",
+  "parts": [
+    {
+      "name": "Footer",
+      "props": [
+        {
+          "description": "The brand block at the start: a logo, a line about the shop, social links.",
+          "name": "brand",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The link columns.",
+          "name": "groups",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly FooterLinkGroup[]"
+        },
+        {
+          "description": "The copyright line, for example \"© 2026 Dukkan\".",
+          "name": "copyright",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Privacy, terms and the like, in the bottom row.",
+          "name": "legalLinks",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly FooterLink[]"
+        },
+        {
+          "description": "A locale or currency switcher at the end of the bottom row.",
+          "name": "localeSwitcher",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The links' navigation landmark name. Defaults to the catalogue's \"Footer\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

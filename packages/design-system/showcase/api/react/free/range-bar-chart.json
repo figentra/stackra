@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "e20dd148d3e2fa1a",
+    "hash": "a3d02ae64d98ab2f",
     "propsFiles": ["ui/src/react/range-bar-chart/range-bar-chart.props.ts"]
   },
   "importLine": "import { RangeBarChart } from \"@stackra/ui/react\";",
@@ -71,6 +71,13 @@
           "required": false,
           "source": "stackra",
           "type": "\"danger\" | \"accent\" | \"success\" | \"warning\" | \"chart-ramp-1\" | \"chart-ramp-2\" | \"chart-ramp-3\" | \"chart-ramp-4\" | \"chart-ramp-5\" | \"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\""
+        },
+        {
+          "description": "Which bar carries the colour while the rest stand back in its soft tone: `none` (the default), `latest` or an index.",
+          "name": "emphasis",
+          "required": false,
+          "source": "stackra",
+          "type": "ChartEmphasis"
         },
         {
           "description": "The plot's height in pixels; 240 by default.",

@@ -94,6 +94,7 @@ export const Icons = Object.freeze({
   Truck: "truck",
   Type: "type",
   Undo2: "undo-2",
+  Upload: "upload",
   User: "user",
   UserPlus: "user-plus",
   Users: "users",

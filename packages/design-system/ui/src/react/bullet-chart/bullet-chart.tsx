@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the web `BulletChart`: one row per measure, its label at the reading start, then a scale with the
- *          qualitative bands (the muted colour at three strengths, darkest first), the value bar in the accent across
+ *          qualitative bands (three opaque neutral steps, darkest first), the value bar in the accent, lit from the top, across
  *          the middle, the target as an upright tick, and the value written at the reading end; the data table carries
  *          the numbers.
  * Boundary: HTML laid out with logical insets, so the scale grows from the reading start (the right in Arabic). The
@@ -19,11 +19,15 @@ import { formatChartNumber } from "#core/functions/format-chart-number.function"
 import type { BulletChartProps } from "#react/bullet-chart/bullet-chart.props";
 import { ChartFrame } from "#react/chart/chart-frame";
 import { paintOf } from "#react/chart/paint-of.function";
+import { topLitOf } from "#react/chart/top-lit-of.function";
 import { useChartLocale } from "#react/chart/use-chart-locale";
 import { useUiText } from "#react/hooks/use-ui-text";
 
-/** The bands' strengths of the muted colour, nearest the start first. */
-const BAND_OPACITY = [0.32, 0.2, 0.1] as const;
+/**
+ * The bands' shares of the text colour over the card, nearest the start (poor) first: three opaque neutral steps far
+ * enough apart to tell poor, fair and good apart in either scheme, and all well under the value bar.
+ */
+const BAND_SHARE = [30, 17, 7] as const;
 
 /** Measures against their targets. */
 export function BulletChart({
@@ -64,8 +68,9 @@ export function BulletChart({
                     style={{
                       insetInlineStart: `${band.from}%`,
                       width: `${band.to - band.from}%`,
-                      backgroundColor: paintOf("muted"),
-                      opacity: BAND_OPACITY[Math.min(index, BAND_OPACITY.length - 1)],
+                      backgroundColor: `color-mix(in oklab, ${paintOf("foreground")} ${
+                        BAND_SHARE[Math.min(index, BAND_SHARE.length - 1)]
+                      }%, ${paintOf("surface")})`,
                     }}
                   />
                 ))}
@@ -73,11 +78,15 @@ export function BulletChart({
                   className={cn(
                     "absolute inset-y-[30%] start-0 rounded-e-[var(--radius-sm,4px)] transition-[width] duration-500 motion-reduce:transition-none",
                   )}
-                  style={{ width: `${scale.value}%`, backgroundColor: paintOf(color) }}
+                  style={{
+                    width: `${scale.value}%`,
+                    backgroundColor: paintOf(color),
+                    backgroundImage: `linear-gradient(${topLitOf(paintOf(color))}, ${paintOf(color)})`,
+                  }}
                 />
                 {scale.target === null ? null : (
                   <span
-                    className="absolute inset-y-[15%] w-0.5 -translate-x-1/2 rtl:translate-x-1/2"
+                    className="absolute inset-y-[8%] w-[3px] -translate-x-1/2 rounded-[var(--radius-pill)] rtl:translate-x-1/2"
                     style={{
                       insetInlineStart: `${scale.target}%`,
                       backgroundColor: paintOf("foreground"),

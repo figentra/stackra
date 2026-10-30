@@ -1,0 +1,30 @@
+{
+  "support_history": {
+    "label": "محادثات الدعم",
+    "return_title": "إرجاع الطلب 2048",
+    "return_preview": "ملصق الإرجاع جاهز للطباعة.",
+    "delivery_title": "التوصيل إلى جدة",
+    "delivery_preview": "يصلك يوم الخميس بين 2 و6 مساءً.",
+    "sizes_title": "مقاسات عباءة الكتان",
+    "sizes_preview": "مقاس M يناسب محيط صدر 96 سم.",
+    "gift_title": "رصيد بطاقة الهدية",
+    "gift_preview": "رصيدك المتبقي 150 ر.س.",
+    "address_title": "تغيير العنوان",
+    "address_preview": "تم، حُفظ العنوان الجديد.",
+    "refund_title": "استرداد الطلب 2051",
+    "refund_preview": "يصل المبلغ إلى بطاقتك خلال 5 أيام."
+  },
+  "actions": {
+    "return_title": "إرجاع الطلب 2048",
+    "return_preview": "ملصق الإرجاع جاهز للطباعة.",
+    "delivery_title": "التوصيل إلى جدة",
+    "delivery_preview": "يصلك يوم الخميس بين 2 و6 مساءً.",
+    "refund_title": "استرداد الطلب 2051",
+    "refund_preview": "يصل المبلغ إلى بطاقتك خلال 5 أيام.",
+    "renamed": "سؤال عن ملصق الإرجاع",
+    "pinned": "ثُبّتت.",
+    "unpinned": "أُلغي تثبيتها.",
+    "renamed_done": "أُعيدت تسميتها.",
+    "deleted": "حُذفت."
+  }
+}

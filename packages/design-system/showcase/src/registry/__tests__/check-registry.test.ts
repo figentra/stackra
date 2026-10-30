@@ -14,6 +14,7 @@ import { describe, expect, it } from "vitest";
 
 import { checkRegistry } from "#src/registry/check-registry.function";
 import { COMPONENTS } from "#src/registry/components.generated";
+import { ComponentEntrySchema } from "#src/schemas/component-entry.schema";
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
 const PACKAGE = fileURLToPath(new URL("../../../", import.meta.url));
@@ -123,5 +124,25 @@ describe("checkRegistry", () => {
     const { errors } = checkRegistry({ entries: [broken], catalogues: CATALOGUES });
     expect(errors).toContain("free/button: needs exactly one card example, has 0");
     expect(errors).toContain("free/button: related free/nothing is not an entry");
+  });
+
+  it("marks the specialist charts advanced, apart from the tier, and takes only `true`", () => {
+    const advanced = COMPONENTS.filter((entry) => entry.advanced).map(
+      (entry) => `${entry.tier}/${entry.slug}`,
+    );
+    expect(new Set(advanced)).toEqual(
+      new Set([
+        "free/box-plot-chart",
+        "free/choropleth-map",
+        "free/sankey-chart",
+        "free/sunburst-chart",
+      ]),
+    );
+    const button = must(
+      COMPONENTS.find((entry) => entry.slug === "button"),
+      "free/button",
+    );
+    expect(ComponentEntrySchema.safeParse({ ...button, advanced: true }).success).toBe(true);
+    expect(ComponentEntrySchema.safeParse({ ...button, advanced: false }).success).toBe(false);
   });
 });

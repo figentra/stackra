@@ -13,4 +13,6 @@ export type DropZoneProps = DropZoneContractProps & {
   readonly className?: string | undefined;
   /** Called with the files dropped or picked. */
   readonly onSelect?: ((files: readonly File[]) => void) | undefined;
+  /** With `showPreviews`, called with every file the zone now holds, after a file is taken or removed. */
+  readonly onFilesChange?: ((files: readonly File[]) => void) | undefined;
 };

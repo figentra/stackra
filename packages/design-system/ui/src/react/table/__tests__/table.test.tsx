@@ -16,6 +16,7 @@
 // @vitest-environment jsdom
 // @covers sta-350:FR-123
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { I18nProvider } from "react-aria-components";
 
 import type { SortDescriptor } from "#contracts/types/sort-descriptor.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
@@ -320,6 +321,86 @@ describe("Table (web)", () => {
     fireEvent.keyDown(document.activeElement as Element, { key: "ArrowRight" });
     // React Aria's "arrow" behaviour: the cell hands focus to its button, so the button is reached from the keyboard.
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Open Ada" }));
+  });
+
+  it("draws a move grip on every column but the fixed ones", () => {
+    const { container } = render(
+      <Table {...baseProps} onColumnMove={() => undefined} fixedColumns={["total"]} />,
+    );
+    const grips = [...container.querySelectorAll("[role=columnheader] .cursor-grab")];
+    expect(grips).toHaveLength(1);
+    expect(grips[0]?.closest("[role=columnheader]")?.textContent).toContain("Customer");
+  });
+
+  it("lets the last scrolling column take the rest of the row when every column has a width", () => {
+    // jsdom lays nothing out: the resizable container is 800 px wide here.
+    for (const key of ["clientWidth", "offsetWidth"] as const)
+      vi.spyOn(HTMLElement.prototype, key, "get").mockReturnValue(800);
+    const { container } = render(
+      <Table
+        {...baseProps}
+        columns={COLUMNS.map((column) => ({ ...column, width: 150 }))}
+        isColumnResizable
+      />,
+    );
+    // React Aria lays a fraction column out from the free width; a fixed one keeps its pixels.
+    const headers = [...container.querySelectorAll<HTMLElement>("[role=columnheader]")];
+    expect(headers[0]?.style.width).toBe("150px");
+    expect(headers[1]?.style.width).toBe("650px");
+    vi.restoreAllMocks();
+  });
+
+  it("draws only the rows in view when virtualised, and names them all to assistive technology", () => {
+    for (const key of ["clientWidth", "offsetWidth"] as const)
+      vi.spyOn(HTMLElement.prototype, key, "get").mockReturnValue(800);
+    for (const key of ["clientHeight", "offsetHeight"] as const)
+      vi.spyOn(HTMLElement.prototype, key, "get").mockReturnValue(400);
+    const many = Array.from({ length: 5000 }, (_, index) => ({
+      id: `o${index}`,
+      customer: `Customer ${index}`,
+      total: index,
+    }));
+    render(<Table {...baseProps} items={many} isVirtualized maxHeight="400px" />);
+    const grid = screen.getByRole("grid", { name: "Orders" });
+    expect(grid.getAttribute("aria-rowcount")).toBe("5001");
+    const drawn = within(grid).getAllByRole("row").length;
+    expect(drawn).toBeGreaterThan(1);
+    expect(drawn).toBeLessThan(60);
+    vi.restoreAllMocks();
+  });
+
+  it("lays a virtualised row out from the right in right to left, pinned cells first and never over the next", () => {
+    for (const key of ["clientWidth", "offsetWidth"] as const)
+      vi.spyOn(HTMLElement.prototype, key, "get").mockReturnValue(800);
+    for (const key of ["clientHeight", "offsetHeight"] as const)
+      vi.spyOn(HTMLElement.prototype, key, "get").mockReturnValue(400);
+    render(
+      <I18nProvider locale="ar">
+        <Table
+          {...baseProps}
+          columns={[
+            { id: "customer", label: "Customer", width: 160, pin: "start" },
+            { id: "total", label: "Total", width: 120 },
+          ]}
+          selectionMode="multiple"
+          isVirtualized
+          maxHeight="400px"
+        />
+      </I18nProvider>,
+    );
+    const row = screen.getByRole("row", { name: /Ada/ });
+    // Each cell sits in React Aria's box; in right to left the box is placed by `right`, never `left`.
+    const boxes = [...row.children].map((box) => (box as HTMLElement).style);
+    expect(boxes.map((box) => box.left)).toEqual(["", "", ""]);
+    const spans = boxes.map((box) => [Number.parseFloat(box.right), Number.parseFloat(box.width)]);
+    expect(spans.map(([right]) => right)).toEqual([0, 44, 44 + (spans[1]?.[1] ?? 0)]);
+    // The boxes and the start pin stick; each ends where the next begins.
+    expect(boxes.slice(0, 2).map((box) => box.position)).toEqual(["sticky", "sticky"]);
+    for (let index = 1; index < spans.length; index++) {
+      const [right = 0, width = 0] = spans[index - 1] ?? [];
+      expect(right + width).toBeLessThanOrEqual(spans[index]?.[0] ?? 0);
+    }
+    vi.restoreAllMocks();
   });
 
   it("passes the root's other props through", () => {

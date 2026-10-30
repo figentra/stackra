@@ -1,0 +1,37 @@
+{
+  "generatedFrom": {
+    "hash": "3347c2ff4e7cd74e",
+    "propsFiles": ["ui/src/native/aspect-ratio/aspect-ratio.props.ts"]
+  },
+  "importLine": "import { AspectRatio } from \"@stackra/ui/native\";",
+  "key": "free/aspect-ratio",
+  "parts": [
+    {
+      "name": "AspectRatio",
+      "props": [
+        {
+          "description": "The media, which fills the box: an image, a video or a map.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Width divided by height, for example `16 / 9`, `4 / 3` or `1`. Defaults to 1.",
+          "name": "ratio",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

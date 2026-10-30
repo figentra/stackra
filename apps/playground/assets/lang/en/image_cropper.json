@@ -1,0 +1,5 @@
+{
+  "avatar_label": "Crop your profile photo",
+  "cover_label": "Crop the store cover",
+  "kept": "Keeps {width} × {height} px from {x}, {y}"
+}

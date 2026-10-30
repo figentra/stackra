@@ -1,8 +1,10 @@
 {
   "generatedFrom": {
-    "hash": "648f4082eb6f9b1f",
+    "hash": "49a16357fed07787",
     "propsFiles": [
+      "ui/src/react/data-table/collection-row-panel.props.ts",
       "ui/src/react/data-table/column-menu.props.ts",
+      "ui/src/react/data-table/data-table-cell-editor.props.ts",
       "ui/src/react/data-table/data-table.props.ts"
     ]
   },
@@ -73,6 +75,34 @@
           "required": false,
           "source": "stackra",
           "type": "() => void"
+        },
+        {
+          "description": "Given, each row gets a drag handle (pointer, keyboard and screen reader, through React Aria's drag and drop) and a\ndrop calls this with the rows shown in their new order (group and total rows left out). Nothing moves until the\napp passes the rows back; reordering a sorted view is the app's call.",
+          "name": "onReorder",
+          "required": false,
+          "source": "stackra",
+          "type": "(items: readonly TItem[]) => void"
+        },
+        {
+          "description": "Called with the ids of the expanded rows after a row or \"expand all\" is pressed.",
+          "name": "onExpandedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(keys: readonly string[]) => void"
+        },
+        {
+          "description": "Called when a row is opened: a press on the row (Enter from the keyboard).",
+          "name": "onRowOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => void"
+        },
+        {
+          "description": "Called with a valid edited value; the app writes the row (a promise is awaited by nobody: report failures yourself).",
+          "name": "onCellEdit",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, columnId: string, value: DataGridValue) => void | Promise<void>"
         }
       ],
       "name": "DataTable",
@@ -349,6 +379,62 @@
           "type": "boolean"
         },
         {
+          "description": "True to draw the row actions that have an icon as buttons revealed on hover or keyboard focus, beside the row\nmenu, which still lists them all.",
+          "name": "hasHoverActions",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to leave the browser's own menu on a right-click; by default a row's right-click (or Shift+F10) opens its actions.",
+          "name": "hasContextMenu",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Given, each row gets a disclosure button and an expanded row shows this under it across every column.",
+          "name": "renderRowDetail",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => ReactNode"
+        },
+        {
+          "description": "The ids of the expanded rows, for a controlled expansion.",
+          "name": "expandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The ids of the rows expanded at first.",
+          "name": "defaultExpandedKeys",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "Given, an opened row shows this in a resizable side panel beside the table (a drawer on a small screen).",
+          "name": "renderRowPanel",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem) => ReactNode"
+        },
+        {
+          "description": "The typed columns edited in place, matched to the table's columns by id: their kind picks the DataGrid editor and\ntheir rules (required, range, the app's own) validate the value. A read-only one is not edited.",
+          "name": "editableColumns",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly DataGridColumn[]"
+        },
+        {
+          "description": "Web: true to draw only the rows in view (the Table's virtual scrolling), for thousands of rows: the header and\nthe start pins stay stuck, group and detail rows scroll with the rest, and the rows scroll inside `maxHeight`.",
+          "name": "isVirtualized",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
           "description": "",
           "name": "className",
           "required": false,
@@ -442,6 +528,111 @@
     {
       "name": "ColumnChooser",
       "props": []
+    },
+    {
+      "events": [
+        {
+          "description": "Called when the panel is closed (its close button, Escape in the drawer).",
+          "name": "onClose",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "CollectionRowPanel",
+      "props": [
+        {
+          "description": "The records' name (\"Orders\"); the panel is named \"<label> details\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The row open in the panel, or `null` when it is shut.",
+          "name": "item",
+          "required": true,
+          "source": "stackra",
+          "type": "TItem | null"
+        },
+        {
+          "description": "The panel's heading for the open row, usually its row header text.",
+          "name": "title",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What the panel shows for the open row.",
+          "name": "renderPanel",
+          "required": true,
+          "source": "stackra",
+          "type": "(item: TItem) => ReactNode"
+        },
+        {
+          "description": "The page beside the panel: the table or the view.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with a valid value; the editor closes.",
+          "name": "onCommit",
+          "required": true,
+          "source": "stackra",
+          "type": "(value: DataGridValue) => void"
+        },
+        {
+          "description": "Called when the edit is dropped (Escape).",
+          "name": "onCancel",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "DataTable.CellEditor",
+      "props": [
+        {
+          "description": "The cell's typed column: its kind picks the DataGrid editor, its rules validate the value.",
+          "name": "column",
+          "required": true,
+          "source": "stackra",
+          "type": "DataGridColumn"
+        },
+        {
+          "description": "The row, read by the column's own rule.",
+          "name": "row",
+          "required": true,
+          "source": "stackra",
+          "type": "DataGridRow"
+        },
+        {
+          "description": "The cell drawn under the editor; the editor covers its box.",
+          "name": "anchor",
+          "required": true,
+          "source": "stackra",
+          "type": "HTMLElement"
+        },
+        {
+          "description": "The input's accessible name: the column and the row.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The locale the limits of an error are written in.",
+          "name": "locale",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
     }
   ],
   "platform": "react"

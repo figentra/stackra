@@ -1,10 +1,11 @@
 {
   "generatedFrom": {
-    "hash": "97bb9d2867752003",
+    "hash": "39e68405583e0ee8",
     "heroDoc": "vendor/heroui/react/toast.json",
     "propsFiles": [
       "ui/src/react/toast/toast-item.props.ts",
-      "ui/src/react/toast/toast-provider.props.ts"
+      "ui/src/react/toast/toast-provider.props.ts",
+      "ui/src/react/toast/undo-countdown.props.ts"
     ]
   },
   "importLine": "import { toast } from \"@stackra/ui/react\";",
@@ -198,6 +199,18 @@
           "required": false,
           "source": "react-aria",
           "type": "GlobalDOMEvents"
+        }
+      ]
+    },
+    {
+      "name": "UndoCountdown",
+      "props": [
+        {
+          "description": "How long the ring takes to empty, in milliseconds: the toast's timeout.",
+          "name": "duration",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
         }
       ]
     }

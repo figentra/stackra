@@ -21,6 +21,11 @@ export interface StatContractProps {
   readonly badge?: ReactNode;
   /** The change against the previous period as a fraction (0.12 is up 12%), drawn as a `TrendChip`. */
   readonly trend?: number | undefined;
+  /**
+   * The previous period's figure: a muted "Previous period" line under the figure, formatted like it, and, when
+   * `trend` is left out and `value` is a number, the trend worked out from the two.
+   */
+  readonly previousValue?: number | undefined;
   /** The direction that is better for the trend's colour; `up` by default. */
   readonly better?: TrendDirection | undefined;
   /** What the trend compares with: "vs last month". */

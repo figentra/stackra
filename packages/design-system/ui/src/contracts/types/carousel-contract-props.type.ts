@@ -18,6 +18,8 @@ export interface CarouselContractProps {
   readonly showDots?: boolean | undefined;
   /** Shows the previous and next buttons; on by default. */
   readonly showArrows?: boolean | undefined;
+  /** Image URLs, one per slide; given, a strip of thumbnails to press replaces the page dots. */
+  readonly thumbnails?: readonly string[] | undefined;
   /** Called with the index of the slide in view. */
   readonly onIndexChange?: ((index: number) => void) | undefined;
 }

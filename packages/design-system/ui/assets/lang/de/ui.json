@@ -40,6 +40,14 @@
   "tab_bar": {
     "label": "Tabs"
   },
+  "tabs": {
+    "more": "Mehr",
+    "more_label": "Weitere Tabs",
+    "close": "{tab} schließen"
+  },
+  "navigation_menu": {
+    "label": "Hauptnavigation"
+  },
   "entity_picker": {
     "search": "Suchen",
     "close": "Schließen"
@@ -101,6 +109,9 @@
     "close": "Bereich schließen",
     "resize": "Breite des Bereichs ändern"
   },
+  "split_view": {
+    "resize": "Breite der Bereiche ändern"
+  },
   "data_table": {
     "loading": "Wird geladen",
     "actions_column": "Aktionen",
@@ -125,7 +136,15 @@
   },
   "tree_view": {
     "expand": "{label} aufklappen",
-    "collapse": "{label} zuklappen"
+    "collapse": "{label} zuklappen",
+    "loading": "Wird geladen…"
+  },
+  "tree_select": {
+    "placeholder": "Auswählen",
+    "count": "{count, plural, one {# ausgewählt} other {# ausgewählt}}"
+  },
+  "mention_input": {
+    "people": "Personen zum Erwähnen"
   },
   "sortable_list": {
     "handle": "{label} neu anordnen",
@@ -196,6 +215,51 @@
     "complete": "Alles erledigt",
     "show": "Aufgaben anzeigen",
     "hide": "Aufgaben ausblenden"
+  },
+  "recurrence_editor": {
+    "label": "Wiederholen",
+    "every": "Wiederholen alle",
+    "unit": "{unit, select, daily {{count, plural, one {Tag} other {Tage}}} weekly {{count, plural, one {Woche} other {Wochen}}} monthly {{count, plural, one {Monat} other {Monate}}} other {{count, plural, one {Jahr} other {Jahre}}}}",
+    "weekdays": "Am",
+    "monthly": "Jeden Monat",
+    "ends": "Endet",
+    "never": "Nie",
+    "until_label": "An einem Datum",
+    "count_label": "Nach einer Anzahl",
+    "end_date": "Enddatum",
+    "occurrences": "Anzahl",
+    "summary": "Wiederholung",
+    "every_unit": "{unit, select, daily {{interval, plural, one {Jeden Tag} other {Alle {n} Tage}}} weekly {{interval, plural, one {Jede Woche} other {Alle {n} Wochen}}} monthly {{interval, plural, one {Jeden Monat} other {Alle {n} Monate}}} other {{interval, plural, one {Jedes Jahr} other {Alle {n} Jahre}}}}",
+    "on_days": "{rule} am {days}",
+    "on_day": "{rule} am {day}.",
+    "on_last_day": "{rule} am letzten Tag",
+    "on_nth": "{rule} am {nth, select, 1 {ersten} 2 {zweiten} 3 {dritten} 4 {vierten} other {letzten}} {weekday}",
+    "on_date": "{rule} am {date}",
+    "until": "{rule}, bis {date}",
+    "times": "{rule}, {count, plural, one {einmal} other {{n}-mal}}",
+    "hijri": "{rule}, im Hidschri-Kalender",
+    "day_option": "Am {day}.",
+    "last_day_option": "Am letzten Tag",
+    "nth_option": "Am {nth, select, 1 {ersten} 2 {zweiten} 3 {dritten} 4 {vierten} other {letzten}} {weekday}"
+  },
+  "task_tray": {
+    "label": "Hintergrundaufgaben",
+    "running": "{count, plural, one {{n} Aufgabe läuft} other {{n} Aufgaben laufen}}",
+    "finished": "{count, plural, one {{n} Aufgabe fertig} other {{n} Aufgaben fertig}}",
+    "failed": "{count, plural, one {{n} fehlgeschlagen} other {{n} fehlgeschlagen}}",
+    "show": "Aufgaben anzeigen",
+    "hide": "Aufgaben ausblenden",
+    "clear": "Erledigte entfernen",
+    "cancel": "{name} abbrechen",
+    "retry": "{name} erneut versuchen",
+    "dismiss": "{name} entfernen",
+    "queued": "Wartet",
+    "done": "Fertig",
+    "error": "Fehlgeschlagen",
+    "canceled": "Abgebrochen"
+  },
+  "toast": {
+    "undo": "Rückgängig"
   },
   "inline_loading": {
     "loading": "Wird geladen…",
@@ -458,7 +522,24 @@
     "previous_page": "Vorherige Seite",
     "next_page": "Nächste Seite",
     "page_of": "Seite {page, number} von {count, number}",
-    "load_more": "Mehr laden"
+    "load_more": "Mehr laden",
+    "row_handle": "{name} ziehen",
+    "reorder_column": "Reihenfolge",
+    "details_column": "Details",
+    "expand_row": "Details zu {name} anzeigen",
+    "collapse_row": "Details zu {name} ausblenden",
+    "expand_all": "Alle Details anzeigen",
+    "collapse_all": "Alle Details ausblenden",
+    "row_detail": "Details zu {name}",
+    "edit_cell": "{column} von {name} bearbeiten",
+    "open_row": "{name} öffnen",
+    "row_panel": "{label}: Details",
+    "board_column": "{label}: {column}",
+    "board_empty": "Noch nichts hier",
+    "board_count": "{count, plural, one {# Karte} other {# Karten}}",
+    "move_to": "Verschieben nach",
+    "move_card": "{name} verschieben",
+    "card_moved": "{name} nach {column} verschoben"
   },
   "number_pad": {
     "delete": "Löschen",
@@ -491,7 +572,8 @@
     "sort_value_desc": "Größte zuerst",
     "sort_value_asc": "Kleinste zuerst",
     "sort_label": "Nach Name",
-    "compare": "Mit Vorperiode vergleichen"
+    "compare": "Mit Vorperiode vergleichen",
+    "svg": "SVG herunterladen"
   },
   "trend_chip": {
     "up": "Plus {value}",
@@ -500,7 +582,8 @@
   },
   "stat": {
     "target": "Ziel {value}",
-    "drill_down": "{label} öffnen"
+    "drill_down": "{label} öffnen",
+    "previous": "Vorperiode: {value}"
   },
   "funnel_chart": {
     "conversion": "{value} des vorherigen Schritts"
@@ -529,6 +612,25 @@
     "next": "Nächste Folie",
     "slide": "Folie {index} von {count}",
     "pages": "Folie wählen"
+  },
+  "lightbox": {
+    "label": "Bildbetrachter",
+    "previous": "Vorheriges Bild",
+    "next": "Nächstes Bild",
+    "close": "Schließen",
+    "counter": "{index} von {count}",
+    "zoom_in": "Vergrößern",
+    "zoom_out": "Verkleinern"
+  },
+  "gallery": {
+    "open": "{name} öffnen"
+  },
+  "image_cropper": {
+    "label": "Bild zuschneiden",
+    "zoom": "Zoom",
+    "hint": "Ziehen Sie das Bild oder verschieben Sie es mit den Pfeiltasten. Plus und Minus zoomen.",
+    "hint_touch": "Ziehen Sie das Bild, um es zu verschieben, und zoomen Sie mit dem Regler.",
+    "loading": "Bild wird geladen"
   },
   "command_palette": {
     "label": "Befehlspalette",
@@ -617,7 +719,11 @@
     "last_30_days": "Letzte 30 Tage",
     "this_month": "Dieser Monat",
     "last_month": "Letzter Monat",
-    "this_year": "Dieses Jahr"
+    "this_year": "Dieses Jahr",
+    "last_90_days": "Letzte 90 Tage",
+    "this_quarter": "Dieses Quartal",
+    "last_quarter": "Letztes Quartal",
+    "last_12_months": "Letzte 12 Monate"
   },
   "year_picker": {
     "label": "Jahr wählen"
@@ -666,7 +772,22 @@
     "label": "Dateien hier ablegen",
     "browse": "Dateien wählen",
     "label_one": "Datei hier ablegen",
-    "browse_one": "Datei auswählen"
+    "browse_one": "Datei auswählen",
+    "paste_hint": "Sie können auch eine Datei oder einen Screenshot einfügen",
+    "taken": "Ausgewählte Dateien"
+  },
+  "attachment_card": {
+    "remove": "{name} entfernen",
+    "download": "{name} herunterladen",
+    "open": "{name} öffnen",
+    "uploading": "Wird hochgeladen",
+    "failed": "Hochladen fehlgeschlagen",
+    "retry": "{name} erneut versuchen"
+  },
+  "share_button": {
+    "share": "Teilen",
+    "copied": "Link kopiert",
+    "copy_link": "Link kopieren"
   },
   "color_picker": {
     "label": "Farbe",
@@ -775,5 +896,175 @@
     "in_7_days": "In 7 Tagen",
     "start_of_month": "Monatsanfang",
     "end_of_month": "Monatsende"
+  },
+  "period_picker": {
+    "label": "Zeitraum",
+    "preset": "Bereich",
+    "custom": "Eigener Zeitraum",
+    "dates": "Daten",
+    "compare": "Mit Vorperiode vergleichen",
+    "mode": "Vergleichen mit",
+    "previous": "Vorperiode",
+    "year": "Gleicher Zeitraum im Vorjahr",
+    "versus": "ggü. {range}"
+  },
+  "tracker_strip": {
+    "up": "In Betrieb",
+    "degraded": "Eingeschränkt",
+    "down": "Ausgefallen",
+    "none": "Keine Daten",
+    "uptime": "{value} Verfügbarkeit",
+    "cell": "{label}: {status}"
+  },
+  "dashboard_grid": {
+    "handle": "{label} ziehen",
+    "earlier": "{label} nach vorne",
+    "later": "{label} nach hinten",
+    "size": "Größe von {label} ändern, derzeit {size}",
+    "size_small": "Klein",
+    "size_medium": "Mittel",
+    "size_large": "Groß",
+    "size_full": "Volle Breite",
+    "moved": "{label} an Position {position, number} von {count, number} verschoben",
+    "resized": "{label} ist jetzt {size}"
+  },
+  "form_error_summary": {
+    "title": "{count, plural, one {Es gibt # Problem} other {Es gibt # Probleme}}"
+  },
+  "marquee": {
+    "pause": "Laufschrift anhalten",
+    "play": "Laufschrift fortsetzen"
+  },
+  "barcode": {
+    "invalid": "Dieser Barcode kann nicht gezeichnet werden: Wert prüfen."
+  },
+  "page_indicator": {
+    "pages": "Seiten",
+    "page": "Seite {index} von {count}"
+  },
+  "back_to_top": {
+    "label": "Nach oben"
+  },
+  "footer": {
+    "label": "Fußzeile"
+  },
+  "waffle_chart": {
+    "share": "Anteil"
+  },
+  "questionnaire_card": {
+    "from_assistant": "Von deinem Assistenten gefragt",
+    "progress": "Frage {current} von {total}",
+    "back": "Zurück",
+    "next": "Weiter",
+    "skip": "Überspringen",
+    "review": "Antworten prüfen",
+    "submit": "Antworten senden",
+    "summary": "Deine Antworten",
+    "edit": "Bearbeiten",
+    "edit_answer": "Antwort bearbeiten: {question}",
+    "other": "Sonstiges",
+    "other_label": "Deine Antwort",
+    "skipped": "Übersprungen"
+  },
+  "model_picker": {
+    "label": "Modell",
+    "placeholder": "Modell wählen",
+    "context": "{size} Kontext",
+    "new": "Neu",
+    "beta": "Beta",
+    "unavailable": "Nicht verfügbar"
+  },
+  "voice_input": {
+    "start": "Aufnahme starten",
+    "stop": "Aufnahme beenden",
+    "idle": "Zum Sprechen auf das Mikrofon tippen",
+    "requesting": "Warte auf Mikrofonzugriff…",
+    "listening": "Hört zu…",
+    "cancel_hint": "Esc zum Abbrechen",
+    "processing": "Wird verarbeitet…",
+    "denied": "Der Mikrofonzugriff ist blockiert. Erlaube ihn in den Einstellungen und versuche es erneut.",
+    "error": "Aufnahme fehlgeschlagen. Versuche es erneut.",
+    "cancelled": "Aufnahme abgebrochen"
+  },
+  "popconfirm": {
+    "confirm": "Bestätigen",
+    "cancel": "Abbrechen"
+  },
+  "menubar": {
+    "label": "Anwendungsmenü"
+  },
+  "floating_panel": {
+    "move": "Bereich verschieben",
+    "move_hint": "Mit den Pfeiltasten verschieben; mit Umschalt in größeren Schritten.",
+    "resize": "Größe des Bereichs ändern",
+    "resize_hint": "Mit den Pfeiltasten die Größe ändern; mit Umschalt in größeren Schritten.",
+    "minimise": "Minimieren",
+    "restore": "Wiederherstellen",
+    "close": "Schließen"
+  },
+  "cascader": {
+    "placeholder": "Auswählen",
+    "back": "Zurück",
+    "loading": "Wird geladen…",
+    "empty": "Nichts vorhanden"
+  },
+  "transfer_list": {
+    "available": "Verfügbar",
+    "chosen": "Ausgewählt",
+    "filter": "{list} filtern",
+    "add": "Markierte hinzufügen",
+    "remove": "Markierte entfernen",
+    "add_all": "Alle hinzufügen",
+    "remove_all": "Alle entfernen",
+    "empty": "Nichts vorhanden",
+    "moved": "{count, plural, one {# Eintrag verschoben} other {# Einträge verschoben}}"
+  },
+  "media_player": {
+    "play": "Abspielen",
+    "pause": "Pause",
+    "mute": "Stummschalten",
+    "unmute": "Ton einschalten",
+    "volume": "Lautstärke",
+    "seek": "Suchen",
+    "time_of": "{elapsed} von {duration}",
+    "speed": "Wiedergabegeschwindigkeit",
+    "normal_speed": "Normal",
+    "captions": "Untertitel",
+    "fullscreen": "Vollbild",
+    "exit_fullscreen": "Vollbild beenden"
+  },
+  "conversation_list": {
+    "label": "Unterhaltungen",
+    "pinned": "Angeheftet",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "previous_7_days": "Letzte 7 Tage",
+    "older": "Älter",
+    "actions": "Aktionen für {title}",
+    "pin": "Anheften",
+    "unpin": "Lösen",
+    "rename": "Umbenennen",
+    "delete": "Löschen",
+    "empty_title": "Noch keine Unterhaltungen",
+    "empty_description": "Deine Chats mit dem Assistenten erscheinen hier."
+  },
+  "message_actions": {
+    "label": "Nachrichtenaktionen",
+    "copy": "Nachricht kopieren",
+    "retry": "Erneut versuchen",
+    "edit": "Bearbeiten",
+    "good": "Gute Antwort",
+    "bad": "Schlechte Antwort"
+  },
+  "message_scroller": {
+    "label": "Unterhaltung",
+    "new_messages": "Neue Nachrichten",
+    "new_messages_count": "{count, plural, one {# neue Nachricht} other {# neue Nachrichten}}"
+  },
+  "prompt_suggestions": {
+    "label": "Vorgeschlagene Fragen"
+  },
+  "shimmer": {
+    "thinking": "Denkt nach…"
   }
 }

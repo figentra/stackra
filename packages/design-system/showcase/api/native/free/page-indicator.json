@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "a405f61b1c3112c9",
+    "propsFiles": ["ui/src/native/page-indicator/page-indicator.props.ts"]
+  },
+  "importLine": "import { PageIndicator } from \"@stackra/ui/native\";",
+  "key": "free/page-indicator",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with a page's index when its dot is pressed; left out, the dots are display only.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(index: number) => void"
+        }
+      ],
+      "name": "PageIndicator",
+      "props": [
+        {
+          "description": "How many pages there are.",
+          "name": "count",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The current page, from 0.",
+          "name": "index",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The group's name. Defaults to the catalogue's \"Pages\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Names a page's dot from its 1-based number and the count. Defaults to the catalogue's \"Page 2 of 5\".",
+          "name": "getPageLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "(page: number, count: number) => string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

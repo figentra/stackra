@@ -21,6 +21,8 @@ import { brandThemeCss, readActiveBrand } from "#src/components/studio-brands";
 import { PLAYGROUND_PAGES, routePath } from "#src/components/playground-pages";
 import { Components } from "#src/routes/components/components";
 import { ComponentsRoute } from "#src/routes/components/components.route";
+import { Docs } from "#src/routes/docs/docs";
+import { DocsRoute } from "#src/routes/docs/docs.route";
 import { Home } from "#src/routes/home/home";
 import { HomeRoute } from "#src/routes/home/home.route";
 import { ThemeStudio } from "#src/routes/theme-studio/theme-studio";
@@ -36,6 +38,7 @@ const router = createBrowserRouter([
     children: [
       { path: routePath(HomeRoute), element: <Home /> },
       { path: routePath(ComponentsRoute), element: <Components />, handle: ComponentsRoute.handle },
+      { path: routePath(DocsRoute), element: <Docs />, handle: DocsRoute.handle },
       {
         path: routePath(ThemeStudioRoute),
         element: <ThemeStudio />,

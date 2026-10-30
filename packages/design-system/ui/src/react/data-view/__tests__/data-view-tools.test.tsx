@@ -171,7 +171,8 @@ describe("DataView tools (web)", () => {
     press(screen.getByRole("button", { name: "More tools" }));
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByRole("region", { name: "Sort" })).toBeTruthy();
-    expect(within(dialog).getByRole("region", { name: "Arrange columns" })).toBeTruthy();
+    // A table this narrow reads as cards, which have no columns to arrange.
+    expect(within(dialog).queryByRole("region", { name: "Arrange columns" })).toBeNull();
     press(within(dialog).getByRole("radio", { name: "Cards" }));
     expect(state()).toBe("-|normal|cards");
   });

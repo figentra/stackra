@@ -1,12 +1,21 @@
 {
   "generatedFrom": {
-    "hash": "0e731a893b3dbc56",
+    "hash": "82d59f20817c5088",
     "propsFiles": ["ui/src/react/split-view/split-view.props.ts"]
   },
   "importLine": "import { SplitView } from \"@stackra/ui/react\";",
   "key": "free/split-view",
   "parts": [
     {
+      "events": [
+        {
+          "description": "Called with the list pane's new width in pixels after each resize.",
+          "name": "onPrimaryWidthChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(width: number) => void"
+        }
+      ],
       "name": "SplitView",
       "props": [
         {
@@ -50,6 +59,34 @@
           "required": false,
           "source": "stackra",
           "type": "number"
+        },
+        {
+          "description": "True to draw a resize strip between the panes when they sit side by side (pointer and keyboard).",
+          "name": "isResizable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The narrowest list pane a resize reaches, in pixels. Defaults to 240.",
+          "name": "minPrimaryWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The widest list pane a resize reaches, in pixels. Defaults to 560.",
+          "name": "maxPrimaryWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "A local-storage key the resized width is kept under, so it survives a reload.",
+          "name": "storageKey",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "",

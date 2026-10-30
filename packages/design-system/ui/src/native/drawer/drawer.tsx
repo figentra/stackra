@@ -5,7 +5,8 @@
  *          edge, with the contract's names: `isDefaultOpen` is `defaultOpen`, and the overlay's `isCloseOnPress` and
  *          the sheet's `enablePanDownToClose` are both `isDismissable`. Every other HeroUI Native sheet-content prop
  *          (`index`, `detached` and so on) passes through. `snapPoints` are the contract's heights (points or
- *          `"50%"`): a drag moves between them and a drag down past the first dismisses, all `@gorhom/bottom-sheet`'s.
+ *          `"50%"`): a drag moves between them and a drag down past the first dismisses, all `@gorhom/bottom-sheet`'s;
+ *          with two or more the grab bar is `DrawerHandle`, which screen readers adjust one snap point at a time.
  * Boundary: built on HeroUI Native's free BottomSheet and Dialog. On a phone every drawer is the sheet; on a tablet
  *           (768 points wide and up) a `start` or `end` drawer is a floating side panel instead (owner request
  *           2026-10-29): HeroUI Native's Dialog laid against that edge (Yoga mirrors it in right-to-left), `size`
@@ -24,7 +25,15 @@
 /* oxlint-disable react/only-export-components -- the compound is Object.assign(Root, parts), so the export is the
    root function, which React Refresh takes as a component; the boundary holds (rule-gap B-6). */
 import { BottomSheet, Dialog } from "heroui-native";
-import { use, useEffect, useMemo, type ReactElement } from "react";
+import {
+  use,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentRef,
+  type ReactElement,
+} from "react";
 import { useWindowDimensions } from "react-native";
 import { SlideInLeft, SlideInRight, SlideOutLeft, SlideOutRight } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -37,8 +46,11 @@ import { DrawerBack } from "#native/drawer/drawer-back";
 import { DrawerClose } from "#native/drawer/drawer-close";
 import { DrawerDescription } from "#native/drawer/drawer-description";
 import { DrawerHeader } from "#native/drawer/drawer-header";
+import { DrawerHandle } from "#native/drawer/drawer-handle";
 import { DrawerLayerContext } from "#native/drawer/drawer-layer-context";
 import type { DrawerLayer } from "#native/drawer/drawer-layer.type";
+import { DrawerSnapContext } from "#native/drawer/drawer-snap-context";
+import type { DrawerSnap } from "#native/drawer/drawer-snap.type";
 import { DrawerSubHeader } from "#native/drawer/drawer-sub-header";
 import { DrawerTitle } from "#native/drawer/drawer-title";
 import { BackButtonBlock } from "#native/modal/back-button-block";
@@ -76,8 +88,24 @@ function DrawerRoot({
   inset = true,
   snapPoints,
   label,
+  onChange,
   ...rest
 }: DrawerProps): ReactElement {
+  const sheet = useRef<ComponentRef<typeof BottomSheet.Content>>(null);
+  const [snapIndex, setSnapIndex] = useState(0);
+  const snapCount = snapPoints?.length ?? 0;
+  const snap = useMemo<DrawerSnap | null>(
+    () =>
+      snapCount > 1
+        ? {
+            index: snapIndex,
+            count: snapCount,
+            snapTo: (index) =>
+              sheet.current?.snapToIndex(Math.min(Math.max(index, 0), snapCount - 1)),
+          }
+        : null,
+    [snapIndex, snapCount],
+  );
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isRtl = use(DesignSystemContext)?.direction === "rtl";
@@ -143,19 +171,28 @@ function DrawerRoot({
     <BottomSheet {...open}>
       {trigger ? <BottomSheet.Trigger asChild>{trigger}</BottomSheet.Trigger> : null}
       <BottomSheet.Portal unstable_accessibilityContainerViewIsModal>
-        <BottomSheet.Overlay isCloseOnPress={isDismissable} />
-        <BottomSheet.Content
-          detached={inset}
-          bottomInset={inset ? insets.bottom + 12 : 0}
-          className={inset ? "mx-4" : ""}
-          backgroundClassName={inset ? "rounded-[var(--radius-container)]" : "rounded-b-none"}
-          {...(snapPoints ? { snapPoints: [...snapPoints] } : {})}
-          {...rest}
-          enablePanDownToClose={isDismissable}
-          {...(label ? { accessibilityLabel: label } : {})}
-        >
-          {parts}
-        </BottomSheet.Content>
+        {/* Inside the portal, which moves its children away from this tree and its contexts. */}
+        <DrawerSnapContext value={snap}>
+          <BottomSheet.Overlay isCloseOnPress={isDismissable} />
+          <BottomSheet.Content
+            ref={sheet}
+            detached={inset}
+            bottomInset={inset ? insets.bottom + 12 : 0}
+            className={inset ? "mx-4" : ""}
+            backgroundClassName={inset ? "rounded-[var(--radius-container)]" : "rounded-b-none"}
+            {...(snapPoints ? { snapPoints: [...snapPoints] } : {})}
+            {...rest}
+            {...(snapCount > 1 ? { handleComponent: DrawerHandle } : {})}
+            onChange={(index, position, type) => {
+              if (index >= 0) setSnapIndex(index);
+              onChange?.(index, position, type);
+            }}
+            enablePanDownToClose={isDismissable}
+            {...(label ? { accessibilityLabel: label } : {})}
+          >
+            {parts}
+          </BottomSheet.Content>
+        </DrawerSnapContext>
       </BottomSheet.Portal>
     </BottomSheet>
   );

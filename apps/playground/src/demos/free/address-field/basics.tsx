@@ -18,7 +18,7 @@ const K = ADDRESS_FIELD_KEYS.address_field.basics;
 export default function Basics() {
   const t = useCatalogueText(MESSAGES.en);
   return (
-    <div className="grid gap-4">
+    <div className="grid w-full gap-4">
       <AddressField label={t(K.label)} description={t(K.hint)} />
     </div>
   );

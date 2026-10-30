@@ -255,7 +255,7 @@ describe("DataTable (web)", () => {
       expect(document.activeElement).toBe(container.firstElementChild);
     });
 
-    it("offers select all N for a fully selected page and goes back to the rows shown when a row changes", () => {
+    it("offers select all N for a fully selected page and keeps it, less the row, when a row is unticked", () => {
       const onAllMatchingSelectedChange = vi.fn();
       const { rerender } = draw(
         <DataTable
@@ -285,7 +285,9 @@ describe("DataTable (web)", () => {
       press(
         within(screen.getByRole("row", { name: /#1001/ })).getByRole("checkbox", { hidden: true }),
       );
-      expect(onAllMatchingSelectedChange).toHaveBeenLastCalledWith(false);
+      // Every match but the unticked row stays chosen: the exception is remembered, the choice kept.
+      expect(onAllMatchingSelectedChange).toHaveBeenLastCalledWith(true);
+      expect(screen.getByText("244 selected", { selector: "p" })).toBeTruthy();
     });
 
     it("offers no select all N for a page that is only partly selected, or without a total", () => {

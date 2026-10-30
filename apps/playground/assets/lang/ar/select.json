@@ -35,6 +35,17 @@
     "scale": "التوسع",
     "for_a_company_with_audit": "لشركة، مع التدقيق والدعم.",
     "legacy": "قديمة",
-    "no_longer_sold": "لم تعد تُباع."
-  }
+    "no_longer_sold": "لم تعد تُباع.",
+    "africa": "أفريقيا",
+    "europe": "أوروبا",
+    "middle_east": "الشرق الأوسط",
+    "cairo": "القاهرة",
+    "lagos": "لاغوس",
+    "paris": "باريس",
+    "berlin": "برلين",
+    "riyadh": "الرياض",
+    "dubai": "دبي"
+  },
+  "sections_label": "المكتب",
+  "sections_placeholder": "اختر مكتبًا"
 }

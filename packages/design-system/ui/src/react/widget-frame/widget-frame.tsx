@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the web `WidgetFrame`: the card a dashboard widget or chart draws in, a region named by its title. Its
  *          header carries the description, "Updated 2 min ago", a refresh button that spins while it works, a sort
- *          menu, the caller's actions and an overflow menu (download CSV or PNG, view as table, full screen, copy
+ *          menu, the caller's actions and an overflow menu (download CSV, PNG or SVG, view as table, full screen, copy
  *          link); a controls row holds a range picker and the compare switch; the body is the content, a table of its
  *          data, a skeleton, an EmptyState or an ErrorState with retry; then a footer; and it spans its share of a
  *          12-column grid.
@@ -19,7 +19,6 @@ import { useLocale } from "react-aria-components";
 
 import type { ChartSort } from "#contracts/enums/chart-sort.enum";
 import type { WidgetMenuAction } from "#contracts/enums/widget-menu-action.enum";
-import type { WidgetSize } from "#contracts/enums/widget-size.enum";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { chartCsvOf } from "#core/functions/chart-csv-of.function";
@@ -41,16 +40,10 @@ import { Switch } from "#react/switch/switch";
 import { Text } from "#react/text/text";
 import { downloadFile } from "#react/widget-frame/download-file.function";
 import { svgPngOf } from "#react/widget-frame/svg-png-of.function";
+import { svgSourceOf } from "#react/widget-frame/svg-source-of.function";
 import type { WidgetFrameProps } from "#react/widget-frame/widget-frame.props";
+import { WIDGET_SPAN } from "#react/widget-frame/widget-span.constant";
 import { WIDGET_MENU_ICON } from "#core/constants/widget-menu-icon.constant";
-
-/** The grid span of each size: full width on a phone, its share of 12 columns from `md`. */
-const SPAN: Readonly<Record<WidgetSize, string>> = {
-  small: "col-span-12 md:col-span-3",
-  medium: "col-span-12 md:col-span-6",
-  large: "col-span-12 md:col-span-9",
-  full: "col-span-12",
-};
 
 /** The orders the sort menu offers, in order. */
 const SORTS: readonly ChartSort[] = ["value-desc", "value-asc", "label"];
@@ -126,6 +119,14 @@ export function WidgetFrame({
         if (blob) downloadFile(blob, `${name}.png`);
       });
     },
+    svg: () => {
+      const svg = body.current?.querySelector("svg.recharts-surface, svg[data-chart]");
+      if (svg instanceof SVGSVGElement)
+        downloadFile(
+          new Blob([svgSourceOf(svg)], { type: "image/svg+xml;charset=utf-8" }),
+          `${name}.svg`,
+        );
+    },
     table: () => setTable((shown) => !shown),
     fullscreen: () => setFull(true),
     link: () => {
@@ -136,6 +137,7 @@ export function WidgetFrame({
   const menuItem: Record<WidgetMenuAction, Omit<MenuLeafItem, "id">> = {
     csv: { label: t(K.csv), icon: WIDGET_MENU_ICON.csv, isDisabled: !data },
     png: { label: t(K.png), icon: WIDGET_MENU_ICON.png },
+    svg: { label: t(K.svg), icon: WIDGET_MENU_ICON.svg },
     table: {
       label: isTable ? t(K.chart) : t(K.table),
       icon: isTable ? WIDGET_MENU_ICON.chart : WIDGET_MENU_ICON.table,
@@ -174,7 +176,7 @@ export function WidgetFrame({
       id={anchor}
       aria-labelledby={titleId}
       aria-busy={state === "loading" || isRefreshing}
-      className={cn(SPAN[size], className)}
+      className={cn(WIDGET_SPAN[size], className)}
     >
       <Card className="h-full">
         <div className="flex flex-wrap items-start gap-x-3 gap-y-1">

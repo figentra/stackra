@@ -1,0 +1,40 @@
+{
+  "offer_brief": {
+    "title": "A few questions before I draft the Eid offer",
+    "description": "Answer what you can and skip the rest.",
+    "goal": "What should the offer achieve?",
+    "goal_clear": "Clear the winter stock",
+    "goal_return": "Bring back past customers",
+    "goal_launch": "Launch the new abaya line",
+    "branches": "Which branches should run it?",
+    "branches_hint": "Pick every branch that takes part.",
+    "olaya": "Olaya, Riyadh",
+    "tahlia": "Tahlia, Jeddah",
+    "online": "Online store",
+    "discount": "How deep should the discount go?",
+    "up_to_10": "Up to 10%",
+    "up_to_20": "Up to 20%",
+    "up_to_30": "Up to 30%",
+    "avoid": "Anything I should leave out?",
+    "avoid_placeholder": "For example: no discounts on perfumes",
+    "sent": "Sent {count, plural, one {# answer} other {# answers}} to the assistant."
+  },
+  "edit_answers": {
+    "title": "Update the weekly sales report",
+    "description": "Last week's answers are filled in. Change what you need.",
+    "period": "Which period?",
+    "this_week": "This week",
+    "last_week": "Last week",
+    "this_month": "This month",
+    "metrics": "What should the report show?",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "returns": "Returns",
+    "basket": "Average basket",
+    "format": "Which format?",
+    "pdf": "PDF",
+    "excel": "Excel",
+    "submit": "Build the report",
+    "built": "Building the report for {period}."
+  }
+}

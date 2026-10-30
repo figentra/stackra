@@ -18,6 +18,7 @@ import type { ReactElement } from "react";
 import type { UploadStatus } from "#contracts/enums/upload-status.enum";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { formatFileSize } from "#core/functions/format-file-size.function";
+import { isolatedFileNameOf } from "#core/functions/isolated-file-name-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
 import { haptics } from "#native/haptics/haptics";
@@ -87,7 +88,7 @@ export function UploadList({
               >
                 <Thumbnail size="sm" fallback="file" {...(preview ? { src: preview } : {})} />
                 <View className="min-w-0 flex-1">
-                  <Text isTruncated>{item.name}</Text>
+                  <Text isTruncated>{isolatedFileNameOf(item.name)}</Text>
                   <Text type="small" tone={item.status === "error" ? "danger" : "muted"}>
                     {status}
                   </Text>

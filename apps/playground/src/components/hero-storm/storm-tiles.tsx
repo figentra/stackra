@@ -68,7 +68,7 @@ export function StormTiles({ isStill }: StormTilesProps) {
           {BARS.map((height, index) => (
             <motion.span
               key={height}
-              className={`flex-1 origin-bottom hero-bar ${index === BARS.length - 1 ? "bg-accent" : "bg-[color-mix(in_oklab,var(--accent)_35%,var(--surface))]"}`}
+              className={`flex-1 origin-bottom hero-bar ${index === BARS.length - 1 ? "bg-accent" : "hero-bar-context"}`}
               style={{ height: `${height}%` }}
               initial={isStill ? false : { scaleY: 0 }}
               animate={{ scaleY: 1 }}

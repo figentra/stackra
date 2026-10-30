@@ -1,12 +1,21 @@
 {
   "generatedFrom": {
-    "hash": "0ccd24fe15c6ba41",
+    "hash": "b8c43d102d18bd10",
     "propsFiles": ["ui/src/react/turnstile/turnstile.props.ts"]
   },
   "importLine": "import { Turnstile } from \"@stackra/ui/react\";",
   "key": "free/turnstile",
   "parts": [
     {
+      "events": [
+        {
+          "description": "Called with Cloudflare's error code when the challenge fails (a refused visitor, a network error); the form then\nhas no token, so the server refuses the post.",
+          "name": "onError",
+          "required": false,
+          "source": "stackra",
+          "type": "(code: string) => void"
+        }
+      ],
       "name": "Turnstile",
       "props": [
         {

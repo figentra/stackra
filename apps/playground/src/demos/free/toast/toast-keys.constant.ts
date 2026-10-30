@@ -27,6 +27,8 @@ export const TOAST_KEYS = keys({
     tone_messages: ["default", "accent", "success", "warning", "danger"],
     looks: ["alert", "bar", "flip_bar", "bubble"],
     aligns: ["start", "center", "end", "full"],
+    promise: ["save", "fail", "loading", "success", "error"],
+    undo: ["delete", "deleted", "undone", "committed", "waiting"],
     message: [
       "saved",
       "profile",

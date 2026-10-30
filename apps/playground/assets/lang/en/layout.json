@@ -1,0 +1,31 @@
+{
+  "stack": {
+    "label": "Order timeline",
+    "placed": "Order placed",
+    "packed": "Packed",
+    "shipped": "Shipped"
+  },
+  "cluster": {
+    "label": "Order tags",
+    "new": "New",
+    "delivery": "Free delivery",
+    "gift": "Gift wrap",
+    "city": "Riyadh",
+    "mada": "Paid with Mada",
+    "express": "Express"
+  },
+  "grid": {
+    "label": "Products",
+    "shirt": "Linen shirt",
+    "perfume": "Oud perfume",
+    "dates": "Dates box",
+    "abaya": "Abaya",
+    "coffee": "Coffee beans",
+    "mat": "Prayer mat"
+  },
+  "center": {
+    "title": "Your store is ready",
+    "body": "Add your first product, and customers can order from today.",
+    "action": "Add a product"
+  }
+}

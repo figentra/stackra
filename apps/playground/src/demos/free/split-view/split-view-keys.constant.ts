@@ -9,5 +9,15 @@ import { keys } from "@stackra/i18n";
 
 /** The split_view namespace's keys. */
 export const SPLIT_VIEW_KEYS = keys({
-  split_view: ["orders", "details", "order", "ready", "pick", "back"],
+  split_view: [
+    "orders",
+    "details",
+    "orders_resizable",
+    "details_resizable",
+    "order",
+    "ready",
+    "pick",
+    "back",
+    "width",
+  ],
 });

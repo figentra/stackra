@@ -1,0 +1,81 @@
+{
+  "generatedFrom": {
+    "hash": "6548b2cae57b0f56",
+    "propsFiles": ["ui/src/react/model-picker/model-picker.props.ts"]
+  },
+  "importLine": "import { ModelPicker } from \"@stackra/ui/react\";",
+  "key": "free/model-picker",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the id of the model the person picks.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
+        }
+      ],
+      "name": "ModelPicker",
+      "props": [
+        {
+          "description": "The models offered, grouped by provider in the list.",
+          "name": "models",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly AiModel[]"
+        },
+        {
+          "description": "The picked model's id, for a controlled picker; `null` means none is picked.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string | null"
+        },
+        {
+          "description": "The model picked at first, for an uncontrolled picker.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string | null"
+        },
+        {
+          "description": "The field's name. Defaults to the catalogue's \"Model\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "False to hide the label (it still names the field), for a compact picker in a composer. Defaults to true.",
+          "name": "isLabelVisible",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show the picker but refuse changes.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to fill the parent's width instead of the content's.",
+          "name": "isFullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the field.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

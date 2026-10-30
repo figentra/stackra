@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the web `PropertyList`: the label and value rows of a detail page as a description list (`dl`, with a `dt`
- *          and a `dd` for each row), in one or two columns, an empty value shown as the list's `emptyValue`, and a copy
+ *          and a `dd` for each row), in one or two columns or as many as its own width fits (`auto`), an empty value shown as the list's `emptyValue`, and a copy
  *          button on a row that has a `copyLabel` and text to copy. The list writes the clipboard itself, then draws the
  *          button's icon as a check for two seconds and says the `copiedLabel` ("Copied" by default) once in a polite
  *          live region, so a copy is never silent (WCAG 4.1.3).
@@ -24,11 +24,15 @@ import { Text } from "#react/text/text";
 import type { TextProps } from "#react/text/text.props";
 import type { PropertyListProps } from "#react/property-list/property-list.props";
 
-/** The grid of each column count; two columns stack into one below the small breakpoint. */
+/**
+ * The grid of each column count; two columns stack into one below the small breakpoint, and `auto` counts by the
+ * list's own width (a container query on its wrapper), so a detail row or a side panel fits its own space.
+ */
 const COLUMNS_CLASS_NAME = Object.freeze({
   1: "grid grid-cols-1 gap-4",
   2: "grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2",
-} as const satisfies Record<1 | 2, string>);
+  auto: "grid grid-cols-1 gap-x-8 gap-y-3 @md:grid-cols-2 @3xl:grid-cols-3",
+} as const satisfies Record<1 | 2 | "auto", string>);
 
 /** How long the check stays on a copy button after a copy, in milliseconds. */
 const COPIED_MILLISECONDS = 2000;
@@ -71,44 +75,49 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
     onCopy?.(item, text);
   };
 
+  const list = (
+    <dl className={[COLUMNS_CLASS_NAME[columns], className].filter(Boolean).join(" ")} {...rest}>
+      {items.map((item) => {
+        const text = copyTextOf(item);
+        return (
+          <div key={item.id} data-slot="property-list-row" className="grid min-w-0 gap-1">
+            <dt>
+              <Text type="small" tone="muted" render={renderSpan}>
+                {item.label}
+              </Text>
+            </dt>
+            <dd className="flex min-w-0 items-center gap-1">
+              <span className="min-w-0 break-words">
+                {isEmpty(item.value) ? (
+                  <Text tone="muted" render={renderSpan}>
+                    {emptyValue}
+                  </Text>
+                ) : typeof item.value === "string" || typeof item.value === "number" ? (
+                  <Text render={renderSpan}>{item.value}</Text>
+                ) : (
+                  item.value
+                )}
+              </span>
+              {text === undefined || item.copyLabel === undefined ? null : (
+                <IconButton
+                  icon={copiedId === item.id ? "check" : "copy"}
+                  label={item.copyLabel}
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => void copy(item, text)}
+                />
+              )}
+            </dd>
+          </div>
+        );
+      })}
+    </dl>
+  );
+
   return (
     <>
-      <dl className={[COLUMNS_CLASS_NAME[columns], className].filter(Boolean).join(" ")} {...rest}>
-        {items.map((item) => {
-          const text = copyTextOf(item);
-          return (
-            <div key={item.id} data-slot="property-list-row" className="grid min-w-0 gap-1">
-              <dt>
-                <Text type="small" tone="muted" render={renderSpan}>
-                  {item.label}
-                </Text>
-              </dt>
-              <dd className="flex min-w-0 items-center gap-1">
-                <span className="min-w-0 break-words">
-                  {isEmpty(item.value) ? (
-                    <Text tone="muted" render={renderSpan}>
-                      {emptyValue}
-                    </Text>
-                  ) : typeof item.value === "string" || typeof item.value === "number" ? (
-                    <Text render={renderSpan}>{item.value}</Text>
-                  ) : (
-                    item.value
-                  )}
-                </span>
-                {text === undefined || item.copyLabel === undefined ? null : (
-                  <IconButton
-                    icon={copiedId === item.id ? "check" : "copy"}
-                    label={item.copyLabel}
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => void copy(item, text)}
-                  />
-                )}
-              </dd>
-            </div>
-          );
-        })}
-      </dl>
+      {/* The container a counted-by-width list measures; any other count needs no wrapper. */}
+      {columns === "auto" ? <div className="@container min-w-0">{list}</div> : list}
       <span role="status" className="sr-only">
         {copiedId === undefined ? "" : copiedLabel}
       </span>
