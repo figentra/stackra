@@ -73,6 +73,9 @@ const PLAN: RuntimePlan = {
       tags: STAGING,
     },
   ],
+  databases: [],
+  workloads: [],
+  cost: { items: [], monthlyUsd: 0 },
 };
 
 let runtime: AwsRuntime;
