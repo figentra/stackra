@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ResourceFormField`, one recorded form element bound into the surrounding schema form: a value field drawn
- *          by its input type (switch, number, select of the enum's codes, text, an object's keys as a titled group, a
+ *          by its input type (switch, number, select of the enum's codes by their labels, text, an object's keys as a titled group, a
  *          list as rows to add and remove), a picker over an options query, a grid of fields, and the steps of a set as
  *          titled sections.
  * Boundary: internal to the form page and the action modal; draws `@stackra/ui`'s `Field.*` parts, which read the
@@ -25,6 +25,7 @@ import { inputKind } from "#core/functions/input-kind.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
 import { valueAt } from "#core/functions/value-at.function";
 import type { FieldNode } from "#core/types/field-node.type";
+import { useEnumLabel } from "#react/resource-pages/use-enum-label";
 
 /** The grid class of each column count; written out so the style scanner keeps them. */
 const GRID: Readonly<Record<number, string>> = Object.freeze({
@@ -41,6 +42,8 @@ interface ResourceFormFieldProps {
   readonly schema: ZodType;
   /** The element. */
   readonly node: FieldNode;
+  /** Another `<module>.<model>` whose enum labels a select tries after the resource's (the modal's action model). */
+  readonly enumOwner?: string | undefined;
 }
 
 /** A picker of ids from an options query's rows, labelled by `labelPath`. */
@@ -78,12 +81,14 @@ const fieldLabelPath = (key: string): string => key.replaceAll(/\.\d+(?=\.|$)/g,
 function ListField({
   resourceKey,
   schema,
+  enumOwner,
   name,
   label,
   item,
 }: {
   readonly resourceKey: string;
   readonly schema: ZodType;
+  readonly enumOwner: string | undefined;
   readonly name: string;
   readonly label: string;
   readonly item: "object" | "value";
@@ -104,6 +109,7 @@ function ListField({
             <ResourceFormField
               resourceKey={resourceKey}
               schema={schema}
+              enumOwner={enumOwner}
               node={{ kind: "value", key: `${name}.${index}` }}
             />
           </div>
@@ -135,12 +141,15 @@ export function ResourceFormField({
   resourceKey,
   schema,
   node,
+  enumOwner,
 }: ResourceFormFieldProps): ReactElement | null {
   const { t } = useTranslation();
+  const enumLabel = useEnumLabel();
+  const shared = { resourceKey, schema, enumOwner };
   const children = (fields: readonly FieldNode[]) =>
     fields.map((child, index) => (
       // oxlint-disable-next-line react/no-array-index-key -- reason: the items have no identity but their place in the list
-      <ResourceFormField key={index} resourceKey={resourceKey} schema={schema} node={child} />
+      <ResourceFormField key={index} {...shared} node={child} />
     ));
   if (node.kind === "grid")
     return <div className={`grid gap-4 ${GRID[node.columns] ?? ""}`}>{children(node.fields)}</div>;
@@ -177,6 +186,7 @@ export function ResourceFormField({
       <ListField
         resourceKey={resourceKey}
         schema={schema}
+        enumOwner={enumOwner}
         name={node.key}
         label={label}
         item={kind.item}
@@ -193,7 +203,15 @@ export function ResourceFormField({
       <Field.Select
         name={node.key}
         label={label}
-        options={codes.map((code) => ({ value: code, label: code }))}
+        options={codes.map((code) => ({
+          value: code,
+          label:
+            enumLabel(resourceKey, fieldLabelPath(node.key), code) ??
+            (enumOwner === undefined
+              ? undefined
+              : enumLabel(enumOwner, fieldLabelPath(node.key), code)) ??
+            code,
+        }))}
       />
     );
   if (kind.kind === "boolean") return <Field.Switch name={node.key} label={label} />;

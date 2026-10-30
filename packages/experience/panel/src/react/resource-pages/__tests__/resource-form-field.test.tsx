@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `ResourceFormField`'s objects and lists: an object input draws its keys as a titled group; a
  *          list of objects draws a group per row bound by index, labelled without the index, with remove and add; a list
- *          of values adds an empty row.
+ *          of values adds an empty row; a select's options take their enum labels.
  * Boundary: unit tier, jsdom; the web kit and the list binding are stand-ins, translation returns the key.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0307 (form keys are input paths).
@@ -24,8 +24,11 @@ const spies = vi.hoisted(() => ({
 vi.mock("@stackra/clients/react", () => ({ useQuery: vi.fn() }));
 vi.mock("@stackra/i18n/react", () => ({
   useTranslation: () => ({
-    t: (key: string, values?: Record<string, unknown>) =>
-      values === undefined ? key : `${key} ${JSON.stringify(values)}`,
+    t: (key: string, values?: Record<string, unknown>) => {
+      // The catalogue has the action model's enum labels and no resource-model or field ones.
+      if (key.includes("::enums.") && !key.includes(".label_service.")) throw new RangeError(key);
+      return values === undefined ? key : `${key} ${JSON.stringify(values)}`;
+    },
   }),
 }));
 vi.mock("@stackra/ui/form", () => ({
@@ -45,7 +48,12 @@ vi.mock("@stackra/ui/react", async () => {
       Text: field("text"),
       Number: field("number"),
       Switch: field("switch"),
-      Select: field("select"),
+      Select: (props: FieldProps & { readonly options: readonly { readonly label: string }[] }) =>
+        createElement(
+          "label",
+          null,
+          `select:${props.name}:${props.options.map((option) => option.label).join("|")}`,
+        ),
       ComboBox: field("combo"),
     },
     FormSection: (props: { readonly title: string; readonly children?: ReactNode }) =>
@@ -60,14 +68,17 @@ const BuyLabelInput = z.object({
   address: z.object({ city: z.string(), zip: z.string() }),
   parcels: z.array(z.object({ weight: z.number() })).min(1),
   tags: z.array(z.string()).optional(),
+  service: z.enum(["standard", "express"]),
+  mode: z.enum(["live", "test"]),
 });
 
-/** Draws the field of `key`. */
+/** Draws the field of `key`, as the buy-label action's modal does. */
 function draw(key: string): void {
   render(
     <ResourceFormField
       resourceKey="shipping.shipment"
       schema={BuyLabelInput}
+      enumOwner="shipping.label"
       node={{ kind: "value", key }}
     />,
   );
@@ -109,5 +120,17 @@ describe("ResourceFormField objects and lists", () => {
     draw("tags");
     fireEvent.click(screen.getByText("panel::resources.add_item"));
     expect(spies.onChange).toHaveBeenLastCalledWith("tags", [undefined]);
+  });
+
+  it("labels a select's options from the action model's enum, else shows the code", () => {
+    draw("service");
+    expect(
+      screen.getByText(
+        "select:service:shipping::enums.label_service.standard|shipping::enums.label_service.express",
+      ),
+    ).toBeTruthy();
+    cleanup();
+    draw("mode");
+    expect(screen.getByText("select:mode:live|test")).toBeTruthy();
   });
 });

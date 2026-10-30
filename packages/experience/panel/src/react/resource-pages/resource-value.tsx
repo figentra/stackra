@@ -4,8 +4,7 @@
  *          (`count`), a principal by its name, a flag as a localised yes or no, an enum code by its label, a date, or
  *          the value as typed.
  * Boundary: internal to the resource pages; reads the value and, for money, the currency beside it. An enum code takes
- *           the label its column or entry names (`labels`), else the first derived key the catalogue has
- *           (`enumLabelKeys`), else shows as its code.
+ *           its label (`useEnumLabel`), else shows as its code.
  * Runtime: browser
  * Governing contract: ADR 0307 (rule 1: wire paths); ADR 0164; ADR 0294 decision 22 (derived enum labels).
  */
@@ -14,7 +13,7 @@ import { useMoney, useTranslation } from "@stackra/i18n/react";
 import type { ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
-import { enumLabelKeys } from "#core/functions/enum-label-keys.function";
+import { useEnumLabel } from "#react/resource-pages/use-enum-label";
 
 /** Plain text of `value`. */
 function text(value: unknown): string {
@@ -25,18 +24,6 @@ function text(value: unknown): string {
     return typeof named === "string" ? named : JSON.stringify(value);
   }
   return String(value as string | number | bigint);
-}
-
-/** The text of the first of `keys` the catalogue has; `t` throws on a key it lacks. */
-function firstLabel(t: (key: I18nKey) => string, keys: readonly I18nKey[]): string | undefined {
-  for (const key of keys) {
-    try {
-      return t(key);
-    } catch {
-      // Not in the catalogue: try the next derived key.
-    }
-  }
-  return undefined;
 }
 
 /**
@@ -63,16 +50,12 @@ export function ResourceValue({
 }): ReactElement {
   const money = useMoney();
   const { t } = useTranslation();
+  const enumLabel = useEnumLabel();
   if (kind === "money" && typeof value === "number" && typeof currency === "string")
     return <>{money(value, currency)}</>;
   if (kind === "count") return <>{Array.isArray(value) ? value.length : text(value)}</>;
   if (typeof value === "boolean")
     return <>{t(value ? PANEL_KEYS.panel.resources.yes : PANEL_KEYS.panel.resources.no)}</>;
-  if (typeof value === "string") {
-    const named = labels?.[value];
-    if (named !== undefined) return <>{t(named)}</>;
-    const label = firstLabel(t, enumLabelKeys(resourceKey, path, value));
-    if (label !== undefined) return <>{label}</>;
-  }
-  return <>{text(value)}</>;
+  const label = typeof value === "string" ? enumLabel(resourceKey, path, value, labels) : undefined;
+  return <>{label ?? text(value)}</>;
 }
