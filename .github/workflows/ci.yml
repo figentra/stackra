@@ -14,16 +14,9 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-    # ready_for_review re-runs the gate when a draft PR is marked ready, so the Tasked rule applies.
-    types: [opened, synchronize, reopened, ready_for_review]
-  # ADR 0166 CI3 (STA-233): the merge queue runs the full gate on the group commit (PR on top of main), so a PR need
-  # not be up to date with main before it is queued.
-  merge_group:
-    types: [checks_requested]
+  # Owner decision 2026-10-31: the ci-box gate is the gate (runner minutes saved), so the Quality Gate runs only when
+  # started by hand (Actions > CI > Run workflow) until self-hosted runners on the boxes take it back.
+  workflow_dispatch:
 
 # ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job alone holds an OIDC token,
 # for the Infisical step (ADR 0310).
