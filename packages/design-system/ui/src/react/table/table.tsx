@@ -118,10 +118,17 @@ const VIRTUAL_ALIGN_CLASS = Object.freeze({
 const LOADER_PX = 48;
 
 /**
- * The row height of each density in pixels. The header is one row too, and a sticky table's height is rounded down to
- * whole rows, so a sticky total row covers a whole row and never half of one (axe: a partly covered cell).
+ * The row height of each density in pixels. A sticky table's height is its header plus whole rows, so a sticky total
+ * row covers a whole row and never part of one (axe target-size: a partly covered cell).
  */
 const ROW_PX = Object.freeze({ compact: 32, normal: 44, roomy: 56 } as const);
+
+/** The header row's height of each density, as DENSITY_CLASS sets it (normal is the theme's, 36 px in Stackra). */
+const HEADER_HEIGHT = Object.freeze({
+  compact: "32px",
+  normal: "var(--size-table-header)",
+  roomy: "56px",
+} as const);
 
 /** The header label: it truncates only when its column is too narrow, and shows in full on hover or keyboard focus. */
 const LABEL_CLASS =
@@ -770,7 +777,14 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
     ...(scroll.end ? { "data-scroll-end": "" } : {}),
     onScroll,
     ...(isStickyHeader || isVirtualized
-      ? { style: { maxHeight: `round(down, ${maxHeight}, ${ROW_PX[density]}px)` } }
+      ? {
+          style: {
+            // A virtualised header is one row high (headingHeight); a laid-out one is the density's header height.
+            maxHeight: isVirtualized
+              ? `round(down, ${maxHeight}, ${ROW_PX[density]}px)`
+              : `calc(${HEADER_HEIGHT[density]} + round(down, ${maxHeight} - ${HEADER_HEIGHT[density]}, ${ROW_PX[density]}px))`,
+          },
+        }
       : {}),
   };
 
