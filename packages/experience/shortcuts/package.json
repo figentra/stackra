@@ -1,6 +1,6 @@
 {
   "name": "@stackra/shortcuts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra shortcuts: the Shortcut({ keys, group }) kind, key parsing with chord sequences, the conflict detector, the open ShortcutContext, the palette list, key hints, the keyboard bindings and runShortcut",
   "keywords": [

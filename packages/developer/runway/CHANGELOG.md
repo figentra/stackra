@@ -1,5 +1,36 @@
 # @stackra/runway
 
+## 0.2.0
+
+### Minor Changes
+
+- 3e4c408: `capabilityConfig` now always lists `com.google.android.gms.permission.AD_ID` in `blockedPermissions`, so a build does
+  not declare the advertising id that Play Services merges in. An app keeps it only by enabling a template capability
+  (an ads or attribution flag) whose `android.permissions` lists it (STA-1577).
+- a4b8844: Add mobile onboarding (STA-1623, ADR 0482). `@stackra/runway`: `onboardMobile` runs thirteen idempotent steps that take
+  a product's mobile app from nothing to store-ready (store ids from the product key, EAS project, Apple bundle id and
+  capabilities, Google Cloud project, Firebase apps and config files, Analytics link, Sentry project, EAS-managed signing,
+  the FCM v1 key written blind to Infisical and handed to EAS, store key names, the Play app and its manual first upload),
+  behind the new `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects` and
+  `VaultWriter` ports with real and memory drivers; `mobileIdsOf`, `easJsonOf`, `toolVersionOf`; the root runway's
+  `mobile.<app>` gains `eas.owner`, `google` and `sentry`. The mobile job writes `eas.json` with the exact toolchain pins
+  and copies the Firebase config files; `EasProviderDriver` gains `submit` and `platformOf`; `deployProduct` gains
+  `mobileOnly` and holds an Android build back while Play has no release. `@stackra/cli`: `stackra mobile onboard
+  [--app] [--check|--live]` and `stackra deploy --product --mobile-only`.
+- d37c08f: Add `mobile.<app>.signIn.social`, the app's social sign-in providers. A non-empty list without `apple` is refused (App
+  Store guideline 4.8), and with `apple` `expoConfigOf` sets `usesAppleSignIn` and the
+  `com.apple.developer.applesignin` entitlement.
+
+### Patch Changes
+
+- Updated dependencies [20eea53]
+- Updated dependencies [9085c41]
+  - @stackra/app@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

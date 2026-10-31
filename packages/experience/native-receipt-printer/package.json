@@ -1,6 +1,6 @@
 {
   "name": "@stackra/native-receipt-printer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra native receipt printer: the Expo module that drives Epson, Star, Sunmi and PAX receipt printers from an Expo app behind the ReceiptPrinter port of @stackra/peripherals, with its config plugin that links only the vendor families an app lists",
   "keywords": [

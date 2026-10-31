@@ -1,5 +1,28 @@
 # @stackra/infra-identity
 
+## 0.2.0
+
+### Minor Changes
+
+- d37c08f: Add the Apple identity provider. The seed's optional `appleSignIn` block (team id, services id, key id, and the name of
+  the `.p8` key's stack config secret) puts it on `IdentityPlan.appleSignIn`; `identityStack` then creates it through
+  ZITADEL's admin API, allows it on the default login policy and exports its id as `appleIdp`. Off without the block.
+- 7487ba8: `identityStack` sets the instance's `DefaultLockoutPolicy`: an account locks after five failed password checks
+  (STA-1580). The pinned `@pulumiverse/zitadel` 0.2.0 has no `maxOtpAttempts`, so OTP attempts keep ZITADEL's default
+  until the provider is upgraded.
+
+### Patch Changes
+
+- Updated dependencies [9085c41]
+- Updated dependencies [3e4c408]
+- Updated dependencies [a4b8844]
+- Updated dependencies [d37c08f]
+  - @stackra/contracts@0.2.0
+  - @stackra/runway@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

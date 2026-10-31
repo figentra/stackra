@@ -1,6 +1,6 @@
 {
   "name": "@stackra/content",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra content: the built-in ContentEntryType, and bounded custom fields that are data only: CustomFieldType, strict field definitions, checkCustomFieldDefinition and checkCustomFields with their refusals, the CustomField and CustomFieldValueSet models with their migration, CustomFieldService, the HasCustomFields trait and the custom field limit entitlement, and the HasRevisions trait with its Revision model, migration and RevisionService, a subtype per custom field target for types defined at runtime, and ContentModule exporting both services",
   "keywords": [

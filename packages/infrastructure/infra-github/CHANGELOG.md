@@ -1,5 +1,19 @@
 # @stackra/infra-github
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies [9085c41]
+- Updated dependencies [3e4c408]
+- Updated dependencies [a4b8844]
+- Updated dependencies [d37c08f]
+  - @stackra/contracts@0.2.0
+  - @stackra/runway@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

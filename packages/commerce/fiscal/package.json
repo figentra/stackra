@@ -1,6 +1,6 @@
 {
   "name": "@stackra/fiscal",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra fiscal: e-invoicing and till fiscal drivers chosen by market-pack data behind one FiscalDriver port (ZATCA Phase 2 with a CSID per till, Egypt ETA with item codes and a cloud seal, Peppol for the EU and the UAE through an ASP, Factur-X and ZUGFeRD hybrid PDFs, and the German TSE, French NF525, Belgian FDM, Italian RT, Austrian RKSV and Spanish Verifactu till drivers), the FiscalService that seals offline on a hash chain, submits later and exports the journal, till onboarding per mandate (ZATCA CSIDs, ETA POS client credentials, fiscal-device registration) picked by driver key, receipt QR codes, a production pack source over @stackra/market-packs, the pack, journal, signer, transport, device, credential, cipher and PDF ports, a memory journal, and fakes and a document fixture for tests",
   "keywords": [

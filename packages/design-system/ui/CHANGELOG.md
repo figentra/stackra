@@ -1,5 +1,19 @@
 # @stackra/ui
 
+## 0.2.0
+
+### Patch Changes
+
+- c4f295e: The `./native` entry exports `useGlassMaterial()` and its `GlassMaterial` type, so an app's own glass (the mobile showcase's hero tiles) makes the same Liquid Glass or solid decision as the quiet buttons.
+- Updated dependencies [9085c41]
+  - @stackra/contracts@0.2.0
+  - @stackra/tokens@0.2.0
+  - @stackra/icons@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/i18n@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

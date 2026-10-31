@@ -1,6 +1,6 @@
 {
   "name": "@stackra/filesystem",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra server disks: the FileSystem port with memory, local, Encore bucket, S3/R2 and Google Cloud Storage drivers, the Electron main-process driver, the Expo phone driver, and FilesystemConfig with its shipped schema",
   "keywords": [

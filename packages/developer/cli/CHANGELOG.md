@@ -1,5 +1,50 @@
 # @stackra/cli
 
+## 0.2.0
+
+### Minor Changes
+
+- 5fa1a15: Add `stackra ops bootstrap-operator --email <email> [--role] [--env] [--api] [--dry-run]` (STA-1586): calls the
+  environment's own `identity.operator.bootstrap@1` on the API origin from the root `runway.yaml` (or `--api`) with the
+  bootstrap token in `STACKRA_OPS_TOKEN`, prints granted, already holds or would grant, and exits 1 when no user has the
+  email. No database shell or connection.
+- a4b8844: Add mobile onboarding (STA-1623, ADR 0482). `@stackra/runway`: `onboardMobile` runs thirteen idempotent steps that take
+  a product's mobile app from nothing to store-ready (store ids from the product key, EAS project, Apple bundle id and
+  capabilities, Google Cloud project, Firebase apps and config files, Analytics link, Sentry project, EAS-managed signing,
+  the FCM v1 key written blind to Infisical and handed to EAS, store key names, the Play app and its manual first upload),
+  behind the new `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects` and
+  `VaultWriter` ports with real and memory drivers; `mobileIdsOf`, `easJsonOf`, `toolVersionOf`; the root runway's
+  `mobile.<app>` gains `eas.owner`, `google` and `sentry`. The mobile job writes `eas.json` with the exact toolchain pins
+  and copies the Firebase config files; `EasProviderDriver` gains `submit` and `platformOf`; `deployProduct` gains
+  `mobileOnly` and holds an Android build back while Play has no release. `@stackra/cli`: `stackra mobile onboard
+  [--app] [--check|--live]` and `stackra deploy --product --mobile-only`.
+
+### Patch Changes
+
+- ef51e46: `stackra build` in a service says there is nothing to build (Encore builds it at deploy) and exits 0, so a product's
+  root `pnpm build` passes.
+  
+  `stackra build` in a package runs plain `tsdown` from the member root, which loads the generated config through the root
+  shim gen writes, instead of `tsdown --config .stackra/tsdown.config.ts`.
+- Updated dependencies [2f56702]
+- Updated dependencies [9a2a6b0]
+- Updated dependencies [bab9fe1]
+- Updated dependencies [9085c41]
+- Updated dependencies [32bec80]
+- Updated dependencies [c4f295e]
+- Updated dependencies [dcde851]
+- Updated dependencies [3e4c408]
+- Updated dependencies [a4b8844]
+- Updated dependencies [d37c08f]
+  - @stackra/repo-checks@0.2.0
+  - @stackra/gen@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/runway@0.2.0
+  - @stackra/mcp@0.2.0
+  - @stackra/skills@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/support@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

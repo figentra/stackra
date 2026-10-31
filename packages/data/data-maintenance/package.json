@@ -1,6 +1,6 @@
 {
   "name": "@stackra/data-maintenance",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra data maintenance: the add-on that holds the system jobs over the data layer, with their system-held permissions: partition upkeep and record retention (@stackra/database), the full-text and semantic search reindex with the search:reindex runner (@stackra/search), and change log upkeep and the outbox prune (@stackra/outbox)",
   "keywords": [

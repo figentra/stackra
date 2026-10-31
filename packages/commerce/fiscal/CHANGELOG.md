@@ -1,5 +1,23 @@
 # @stackra/fiscal
 
+## 0.2.0
+
+### Patch Changes
+
+- 1a9259b: The integration tier runs (STA-1570). `@stackra/vitest-config/int` adds `intTier(config)` and `INT_TESTS`
+  (`src/**/__tests__/**/*.int.test.{ts,tsx}` and gen's `.stackra/tests/**/*.int.test.ts`); `servicePreset`'s `int`
+  project uses the same globs. The members with `.int.test.ts` files gain `vitest.int.config.ts` and a `test:int` script,
+  which the new turbo task `test:int` and the Quality Gate run on a Testcontainers Postgres.
+- Updated dependencies [2d5a888]
+- Updated dependencies [9085c41]
+  - @stackra/errors@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/market-packs@0.2.0
+  - @stackra/money@0.2.0
+  - @stackra/testing@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

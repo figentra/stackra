@@ -1,5 +1,20 @@
 # @stackra/theming
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies [9085c41]
+- Updated dependencies [c4f295e]
+  - @stackra/contracts@0.2.0
+  - @stackra/ui@0.2.0
+  - @stackra/assets@0.2.0
+  - @stackra/tokens@0.2.0
+  - @stackra/storage@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

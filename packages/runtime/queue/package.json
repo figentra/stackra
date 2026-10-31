@@ -1,6 +1,6 @@
 {
   "name": "@stackra/queue",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra queue: the runtime of an action's job option. QueueService pushes jobs (unique per scope, the caller's scope and actor kept), QueueWorkerService runs them through the action pipeline with a timeout, retries with backoff and jitter, a dead-letter queue with redrive and the onDeadLetter hook, the QueueDriver port with the memory and Postgres (SKIP LOCKED) drivers, the JobDispatcher driver behind ctx.dispatch, Backoff, queues(), QueueConfig, and the drainQueue and runJob test helpers, and the BrokerPublisher port with its memory, generated-topic and Valkey-stream drivers",
   "keywords": [

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/seo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra SEO: the SEO chain of a route (app defaults, static seo, meta(), tenant record), hreflang alternates and locale paths callable from client code, the JSON-LD escaper, canonical redirects, robots groups per crawler, paged sitemaps within the protocol limits, the SeoConfig configuration, and the Open Graph image renderer for servers and Workers",
   "keywords": [

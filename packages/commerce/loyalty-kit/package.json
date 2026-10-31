@@ -1,6 +1,6 @@
 {
   "name": "@stackra/loyalty-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra loyalty kit, the golden capability kit: points accounts, tiers, earning and redemption maths behind the LoyaltyLedger and LoyaltyMembers ports, memory and Postgres ledger drivers (the Postgres one on @stackra/ledger's journal, floored at zero), the loyalty account permissions and policy, the enroll, freeze, expire, redeem and confirm actions, the redemption workflow and its signal, the balance and points-issued queries, versioned events, an extension point with the tier multiplier, settings, the panel resource, overview document and two widgets, web and native renderers, and the members fake, points fixture and balance matcher",
   "keywords": [

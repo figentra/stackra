@@ -1,5 +1,15 @@
 # @stackra/sandbox
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies [2d5a888]
+- Updated dependencies [9085c41]
+  - @stackra/errors@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/container@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

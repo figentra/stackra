@@ -1,5 +1,11 @@
 # @stackra/coding-standard
 
+## 0.2.0
+
+### Patch Changes
+
+- 36701cb: `stackra/no-tenant-vocabulary` exempts a product's tenancy service (`services/tenancy/`), which implements tenancy as `@stackra/tenancy` does.
+
 ## 0.1.0
 
 ### Minor Changes

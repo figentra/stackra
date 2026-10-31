@@ -1,6 +1,6 @@
 {
   "name": "@stackra/mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "The local developer MCP of ADR 0282: the .mcp.yaml contract rendered into .mcp.json, the secret-injecting launcher behind `stackra mcp exec`, and the stdio server behind `stackra mcp` that reads manifests, runs the CLI's gates and proxies the local Encore tools; and the hosted server core: the tool table from manifests, the per-tenant filter and the OAuth protected-resource metadata",
   "keywords": [

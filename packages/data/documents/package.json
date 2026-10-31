@@ -1,6 +1,6 @@
 {
   "name": "@stackra/documents",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra documents: one print-document template model rendered to HTML, PDF (through the PdfEngine port) and DOCX, with bilingual layouts, bidi isolation, Arabic shaping for devices that cannot shape, QR codes, amounts in words, signed form PDFs with a content hash, the ESignatureProvider port and its Documenso connector",
   "keywords": [

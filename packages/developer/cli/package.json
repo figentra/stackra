@@ -1,6 +1,6 @@
 {
   "name": "@stackra/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "The stackra binary: new (v3 packages, services and product seed packs), seed-pack (check and seed a product's defaults without touching tenant values), gen and gen --check, the member tool commands (dev, build, start, typecheck, test, lint) that run gen and then the tool with its generated config, check (the quality gate) with its validate, verify, code:check and code:fix aliases, ls over the committed manifests, and the local MCP and agent-file commands",
   "keywords": [

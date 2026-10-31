@@ -1,6 +1,6 @@
 {
   "name": "@stackra/registry",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra module catalogue validation for a registry service: the CatalogueManifest shape of a published stackra.manifest.json and validateCatalogue, which checks a set of manifests for structure, duplicate members, identity collisions, foreign namespaces, unknown modules and dependencies, and dependency cycles, returning deterministic diagnostics; plus the app market records the registry carries (AppReview with ReviewState and canTransitionReview, DeveloperSandbox, FeeSchedule, PartnerPayout with computePartnerPayout) and the edition install plan (EditionBundle, planEditionInstall)",
   "keywords": [

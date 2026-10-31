@@ -1,5 +1,20 @@
 # @stackra/errors
 
+## 0.2.0
+
+### Patch Changes
+
+- 2d5a888: Mask secret shapes in the error message `sentryEnvelope` sends (STA-1588): the message passes `@stackra/logger`'s
+  `redact` first, so a bearer token, JWT, API key or URL credentials in it never reach Sentry. `@stackra/errors` now
+  depends on `@stackra/logger` (no cycle: the logger depends on neither this package nor anything that does).
+- Updated dependencies [9085c41]
+  - @stackra/contracts@0.2.0
+  - @stackra/logger@0.2.0
+  - @stackra/testing@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

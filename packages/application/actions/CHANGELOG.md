@@ -1,5 +1,27 @@
 # @stackra/actions
 
+## 0.2.0
+
+### Minor Changes
+
+- 2d5a888: Add `RateLimitConfig.actionDefault` (STA-1588): an action or query with no `rateLimit` of its own now takes from a
+  default bucket per scope (`perScope`, 1200 calls a minute) and, when the call carries a client, per hashed client
+  address (`perAddress`, 300 a minute). An action's own `rateLimit` replaces both. The store is handed the address's
+  SHA-256, never the address.
+
+### Patch Changes
+
+- Updated dependencies [2d5a888]
+- Updated dependencies [9085c41]
+  - @stackra/errors@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/testing@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/events@0.2.0
+  - @stackra/validation@0.2.0
+  - @stackra/cache@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

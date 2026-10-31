@@ -1,5 +1,40 @@
 # @stackra/access-log
 
+## 0.2.0
+
+### Minor Changes
+
+- f7ae148: Add the audit export (STA-1579): `ExportAuditAction` (`access_log.audit_log_entry.export@1`, permission
+  `AuditLogEntryPermissions.export`, L2) pages the tenant's write audit through `AuditQuery` and pushes each page as one
+  NDJSON batch to the new `AuditExportSink` port; `HttpsAuditExportSinkDriver` POSTs it to `AccessLogConfig.exportUrl`
+  (HTTPS only) with the `ACCESS_LOG_EXPORT_TOKEN` secret; `AuditExportFailedError` is its retryable refusal. Add
+  `AccessLogConfig.auditRetentionDays`, the stated retention of the write audit, unset until the owner states it.
+
+### Patch Changes
+
+- Updated dependencies [2d5a888]
+- Updated dependencies [cfdcdf8]
+- Updated dependencies [2d5a888]
+- Updated dependencies [1a9259b]
+- Updated dependencies [5fa1a15]
+- Updated dependencies [9085c41]
+  - @stackra/actions@0.2.0
+  - @stackra/database@0.2.0
+  - @stackra/errors@0.2.0
+  - @stackra/iam@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/outbox@0.2.0
+  - @stackra/queue@0.2.0
+  - @stackra/scheduler@0.2.0
+  - @stackra/tenancy@0.2.0
+  - @stackra/model@0.2.0
+  - @stackra/testing@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/events@0.2.0
+  - @stackra/support@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes
