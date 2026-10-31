@@ -6271,6 +6271,7 @@
         "align": "The horizontal alignment; `start` and `end` follow the text direction, `justify` is iOS-only on native. Defaults to `start`.",
         "children": "The text to show; it may hold inline elements and nested Text.",
         "className": "Additional CSS classes",
+        "elementType": "The element drawn: `p` (the default) for a paragraph, `span` inside a sentence or a row, `div` for a block.",
         "id": "Used to reference react managed views from native code.",
         "isTruncated": "True to cut the text to one line with an ellipsis; assistive technology still reads all of it.",
         "lang": "The BCP 47 language of this text when it differs from the screen's, for example `ar` inside an English page.",

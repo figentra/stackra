@@ -154,6 +154,31 @@ describe("Text (web)", () => {
     expect(span?.classList.contains("typography--body")).toBe(true);
   });
 
+  it.each(["span", "div"] as const)(
+    "draws a %s through `elementType`, keeping the classes, without React Aria's element warning",
+    (elementType) => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const error = vi.spyOn(console, "error").mockImplementation(() => {});
+      const text = element(
+        render(
+          <Text type="small" elementType={elementType}>
+            Hello
+          </Text>,
+        ).container,
+      );
+      expect(text.localName).toBe(elementType);
+      expect(text.classList.contains("typography--body-sm")).toBe(true);
+      expect([...warn.mock.calls, ...error.mock.calls].flat().join(" ")).not.toMatch(/Expected/);
+      warn.mockRestore();
+      error.mockRestore();
+    },
+  );
+
+  it("refuses an `elementType` outside paragraph, span and div", () => {
+    // @ts-expect-error a heading is `Heading`
+    void (<Text elementType="h2" />);
+  });
+
   it("extends its contract and refuses the HeroUI names the contract replaces", () => {
     expectTypeOf<TextProps>().toExtend<TextContractProps>();
     // @ts-expect-error the colour is `tone`
