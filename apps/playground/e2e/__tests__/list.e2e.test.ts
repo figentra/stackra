@@ -159,14 +159,16 @@ test("scrolling the box to its end loads five more rows, up to fifteen, naming o
   const box = live.getByTestId("list-scroll");
   const count = live.getByTestId("list-count");
   await expect(count).toHaveText("5 rows");
-  // The end marker is watched against the window, so the box must be on screen, as it is when a reader scrolls it.
-  await box.scrollIntoViewIfNeeded();
-
   for (const next of [10, 15]) {
-    await box.evaluate((element) => {
-      element.scrollTop = element.scrollHeight;
-    });
-    await expect(count).toHaveText(`${next} rows`);
+    // The end marker is watched against the window, so the box must be on screen, as it is when a reader scrolls it.
+    // Demos above it still mounting can push it off screen again on a slow runner, so bring it back and retry.
+    await expect(async () => {
+      await box.scrollIntoViewIfNeeded();
+      await box.evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await expect(count).toHaveText(`${next} rows`, { timeout: 2000 });
+    }).toPass({ timeout: 20_000 });
   }
   await expect(box.getByRole("listitem")).toHaveCount(15);
   await expect(box.getByRole("status")).toHaveCount(0);
