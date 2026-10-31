@@ -77,6 +77,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /(^|\/)([\w-]+\.)?stackra\.manifest\.json$/,
     "stackra gen writes the committed manifest as strict JSON (ADR 0294 R10); test fixtures copy it",
   ],
+  [
+    /(^|\/)openapi\.json$/,
+    "stackra gen writes each member's committed OpenAPI contract as strict JSON (ADR 0294 R10)",
+  ],
   [/(^|\/)(app|eas)\.json$/, "Expo/EAS: fixed names, rewritten by the expo/eas CLIs"],
   [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
   [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],

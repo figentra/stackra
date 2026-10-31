@@ -376,6 +376,8 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "packages/tooling/typescript/src/node.json",
       "apps/mobile/app.json",
       "apps/mobile/eas.json",
+      "services/orders/openapi.json",
+      "openapi.json",
       "apps/docs/src/docs.json",
       ".claude/settings.json",
       ".changeset/config.json",
