@@ -48,8 +48,9 @@ to the owner.
 
 ## How to work
 
-1. **Number.** The next number is the highest `NNNN-*.mdx` in `apps/docs/src/docs/adr/` or claimed by an open pull request
-   (`pnpm bot:gh -- pr list` and `pnpm bot:gh -- pr diff <n> --name-only`), plus one. Never rely on memory. Numbers are never reused or renumbered, and Stackra ADRs are cited by
+1. **Number.** Reserve it first: `pnpm adr:reserve <slug> --issue STA-n` lands the entry in
+   `apps/docs/src/docs/adr/numbers.yaml` on main, and the first reservation to land wins (a conflicting one is closed
+   and run again). Never take the highest on a branch plus one, and never rely on memory. Numbers are never reused or renumbered, and Stackra ADRs are cited by
    path, never by a number from another repository.
 2. **Write.** Copy `apps/docs/src/docs/adr/template.mdx`. Frontmatter: `title: "NNNN — Title"`,
    `description: "<Status> · YYYY-MM-DD"`. Include Context, Decision, Consequences, and Enforcement — the

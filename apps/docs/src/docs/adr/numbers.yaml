@@ -1,0 +1,1485 @@
+# Stackra file contract:
+# Purpose: the ADR number register (STA-1732): every ADR number, its slug, its status and, for a reservation, who
+#          holds it and its Linear key. A number is taken by landing its entry here on main first, with
+#          `pnpm adr:reserve <slug> --issue STA-n`; the first pull request to land wins and a loser reserves again.
+# Boundary: data only. `stackra check` (config phase, `adr-numbers`) refuses an ADR file whose number is missing here
+#           or whose slug differs, and a number used twice. Status: reserved, proposed, accepted, superseded, deferred.
+# Runtime: repository data
+# Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); STA-1732.
+
+"0001":
+  slug: monorepo-layout
+  status: accepted
+"0002":
+  slug: docs-on-mintlify
+  status: accepted
+"0003":
+  slug: tier-dependency-direction
+  status: accepted
+"0004":
+  slug: package-archetypes-and-layers
+  status: superseded
+"0005":
+  slug: di-container-and-legacy-decorators
+  status: accepted
+"0006":
+  slug: naming-exports-and-imports
+  status: accepted
+"0007":
+  slug: source-documentation-standard
+  status: accepted
+"0008":
+  slug: test-placement
+  status: superseded
+"0009":
+  slug: secrets-two-mechanisms
+  status: superseded
+"0010":
+  slug: services-are-independent-workspace-members
+  status: accepted
+"0011":
+  slug: rejected-and-deferred-technologies
+  status: superseded
+"0012":
+  slug: code-host-and-ci
+  status: accepted
+"0013":
+  slug: versioning-and-release
+  status: superseded
+"0014":
+  slug: data-ownership-and-orm
+  status: accepted
+"0015":
+  slug: contract-packages
+  status: superseded
+"0016":
+  slug: agents-source-of-truth
+  status: accepted
+"0017":
+  slug: agent-roster-and-models
+  status: superseded
+"0018":
+  slug: framework-design-record
+  status: superseded
+"0019":
+  slug: supply-chain-hardening
+  status: superseded
+"0020":
+  slug: observability-and-crash-reporting
+  status: superseded
+"0021":
+  slug: ai-engine-and-agent-write-safety
+  status: proposed
+"0022":
+  slug: tests-live-in-tests-folders
+  status: accepted
+"0023":
+  slug: stackra-is-a-framework
+  status: accepted
+"0024":
+  slug: mit-license-with-exclusions
+  status: accepted
+"0025":
+  slug: packages-publish-to-private-registry
+  status: superseded
+"0026":
+  slug: turborepo-remote-cache-on-r2
+  status: accepted
+"0027":
+  slug: cli-tools-pinned-in-mise
+  status: accepted
+"0028":
+  slug: package-categories-appear-with-first-package
+  status: accepted
+"0029":
+  slug: encore-ts-one-app
+  status: superseded
+"0030":
+  slug: encore-cloud-on-owner-aws
+  status: superseded
+"0031":
+  slug: coarse-services-split-on-evidence
+  status: superseded
+"0032":
+  slug: rest-api-generated-client-uuidv7-ids
+  status: superseded
+"0033":
+  slug: pubsub-cron-transactional-outbox
+  status: superseded
+"0034":
+  slug: object-storage-malware-scan-limits
+  status: superseded
+"0035":
+  slug: resend-email-with-spf-dkim-dmarc
+  status: superseded
+"0036":
+  slug: idempotency-cache-and-postgres
+  status: superseded
+"0037":
+  slug: api-versioning-by-date-header
+  status: superseded
+"0038":
+  slug: rate-limits-app-buckets-and-waf
+  status: superseded
+"0039":
+  slug: openapi-mintlify-and-oauth-guide
+  status: proposed
+"0040":
+  slug: ddd-feature-modules-in-services
+  status: superseded
+"0041":
+  slug: decorated-controllers-and-build-time-generator
+  status: superseded
+"0042":
+  slug: di-first-with-one-container-per-service
+  status: accepted
+"0043":
+  slug: workflow-package-medusa-style
+  status: superseded
+"0044":
+  slug: laravel-style-package-config
+  status: superseded
+"0045":
+  slug: tenancy-package-pool-default-silo-on-demand
+  status: superseded
+"0046":
+  slug: global-data-invariants-and-per-model-opt-ins
+  status: superseded
+"0047":
+  slug: audit-service-via-events
+  status: superseded
+"0048":
+  slug: point-in-time-recovery-and-quarterly-restore-drill
+  status: superseded
+"0049":
+  slug: search-driver-interface
+  status: superseded
+"0050":
+  slug: ai-package-on-ai-sdk-bedrock-default
+  status: superseded
+"0051":
+  slug: better-auth-identity-service
+  status: superseded
+"0052":
+  slug: console-is-a-vite-react-spa
+  status: superseded
+"0053":
+  slug: decorator-route-classes-compiled-to-router-adapters
+  status: accepted
+"0054":
+  slug: tanstack-query-and-zustand-for-client-state
+  status: superseded
+"0055":
+  slug: forms-react-hook-form-zod-heroui-adapters
+  status: accepted
+"0056":
+  slug: heroui-v3-pro-on-web-share-everything-but-components
+  status: superseded
+"0057":
+  slug: landing-is-react-router-framework-mode-on-workers
+  status: superseded
+"0058":
+  slug: desktop-is-electron
+  status: superseded
+"0059":
+  slug: offline-encrypted-query-cache-and-mutation-queue
+  status: accepted
+"0060":
+  slug: i18n-logical-css-light-and-dark
+  status: superseded
+"0061":
+  slug: mobile-keeps-react-navigation-and-native-tabs
+  status: proposed
+"0062":
+  slug: mobile-release-push-and-crash-reporting
+  status: superseded
+"0063":
+  slug: cloudflare-hosts-web-surfaces
+  status: superseded
+"0065":
+  slug: linear-gate-is-checked-offline
+  status: accepted
+"0066":
+  slug: delegation-to-opencode-by-routing-matrix
+  status: accepted
+"0067":
+  slug: spec-kit-is-the-sdlc
+  status: accepted
+"0068":
+  slug: runway-cicd-built-inside-stackra
+  status: superseded
+"0069":
+  slug: testing-strategy-and-coverage
+  status: superseded
+"0070":
+  slug: quality-budgets
+  status: superseded
+"0071":
+  slug: privacy-obligations
+  status: superseded
+"0072":
+  slug: soc2-groundwork
+  status: superseded
+"0073":
+  slug: observability-better-stack-sentry-encore
+  status: superseded
+"0074":
+  slug: open-core-licensing
+  status: superseded
+"0075":
+  slug: stackra-ships-packages-figentra-os-ships-services
+  status: accepted
+"0076":
+  slug: every-package-runs-saas-on-prem-and-air-gapped
+  status: proposed
+"0077":
+  slug: open-core-free-and-pro-lists
+  status: superseded
+"0078":
+  slug: messaging-layer-eight-packages
+  status: accepted
+"0079":
+  slug: client-state-is-stackra-state
+  status: accepted
+"0080":
+  slug: i18n-is-the-figentra-i18n-port
+  status: accepted
+"0081":
+  slug: gate-chain-configurable-per-app
+  status: superseded
+"0082":
+  slug: public-ids-and-api-areas
+  status: accepted
+"0083":
+  slug: npm-scopes-and-cli-names
+  status: accepted
+"0084":
+  slug: figentra-os-package-port-plan
+  status: accepted
+"0085":
+  slug: logger-reporters
+  status: superseded
+"0086":
+  slug: notifications-full-engine-all-channels-free
+  status: proposed
+"0087":
+  slug: identity-and-iam-are-driver-packages
+  status: superseded
+"0088":
+  slug: tenancy-free-pool-pro-silo-and-scope
+  status: superseded
+"0089":
+  slug: search-fresh-with-pro-engine-drivers
+  status: superseded
+"0090":
+  slug: codegen-discovery-by-root-module
+  status: accepted
+"0091":
+  slug: generated-encore-app-in-stackra-folder
+  status: accepted
+"0092":
+  slug: ir-ported-definition-package-dropped
+  status: accepted
+"0093":
+  slug: better-auth-integration
+  status: superseded
+"0094":
+  slug: decorators-only-authoring
+  status: accepted
+"0095":
+  slug: zod-inside-field-decorators
+  status: accepted
+"0096":
+  slug: trait-naming-grammar
+  status: accepted
+"0097":
+  slug: model-and-database-packages
+  status: accepted
+"0098":
+  slug: actions-are-the-unit
+  status: accepted
+"0099":
+  slug: risk-scale-l0-to-l4
+  status: accepted
+"0100":
+  slug: ai-model-and-ownership
+  status: accepted
+"0101":
+  slug: action-first-workflow-behind-when-needed
+  status: accepted
+"0102":
+  slug: workflow-engine-in-process-journal
+  status: accepted
+"0103":
+  slug: locking-package
+  status: accepted
+"0104":
+  slug: links-and-query-graph
+  status: accepted
+"0105":
+  slug: crud-generates-service-methods
+  status: accepted
+"0106":
+  slug: infisical-agent-vault-per-environment
+  status: superseded
+"0107":
+  slug: connections-store-and-three-key-homes
+  status: accepted
+"0108":
+  slug: scoped-settings
+  status: accepted
+"0109":
+  slug: registry-manifests-published-by-ci
+  status: accepted
+"0110":
+  slug: experience-is-the-sdui-service-at-l2
+  status: accepted
+"0111":
+  slug: module-is-the-unit-of-contribution
+  status: accepted
+"0112":
+  slug: experience-packages-and-renderer-kit
+  status: accepted
+"0113":
+  slug: heroui-pro-distribution
+  status: superseded
+"0114":
+  slug: page-builder-for-every-page
+  status: accepted
+"0115":
+  slug: form-builder
+  status: accepted
+"0116":
+  slug: content-types-and-custom-fields
+  status: accepted
+"0117":
+  slug: contracts-placement-and-decorator-ownership
+  status: accepted
+"0118":
+  slug: api-versioning-dormant-package
+  status: accepted
+"0119":
+  slug: merge-policy-and-release-authority
+  status: accepted
+"0120":
+  slug: sdlc-spec-location-lanes-and-change-risk
+  status: accepted
+"0121":
+  slug: sdlc-tooling-roles-and-linear
+  status: accepted
+"0122":
+  slug: workflow-studio-three-layers
+  status: accepted
+"0123":
+  slug: delivery-order-follows-the-dependency-graph
+  status: accepted
+"0124":
+  slug: encore-is-the-generated-runtime-target
+  status: accepted
+"0125":
+  slug: constitution-amended-to-match-accepted-adrs
+  status: accepted
+"0126":
+  slug: member-shapes-and-scaffold-templates
+  status: accepted
+"0127":
+  slug: package-categories-including-infrastructure
+  status: accepted
+"0128":
+  slug: code-conventions-enums-classes-components-and-kind-folders
+  status: accepted
+"0129":
+  slug: house-lint-plugin-and-coding-standard
+  status: accepted
+"0130":
+  slug: module-layout-by-semantic-kind
+  status: accepted
+"0131":
+  slug: module-key-version-and-deprecation
+  status: accepted
+"0132":
+  slug: permissions-catalogue-and-policy-providers
+  status: accepted
+"0133":
+  slug: field-semantics-model-keys-rename-safe-fields-and-lifecycle-events
+  status: accepted
+"0134":
+  slug: data-invariants-classification-and-delete-lifecycle
+  status: accepted
+"0135":
+  slug: public-id-format
+  status: accepted
+"0136":
+  slug: action-runtime-contract
+  status: accepted
+"0137":
+  slug: declared-action-options-and-refusal-codes
+  status: accepted
+"0138":
+  slug: pipeline-order-is-fixed
+  status: accepted
+"0139":
+  slug: actions-declare-their-user-experience
+  status: accepted
+"0140":
+  slug: error-envelope-and-error-kinds
+  status: accepted
+"0141":
+  slug: integration-event-names-and-envelope
+  status: accepted
+"0142":
+  slug: cross-service-transport-through-drivers
+  status: accepted
+"0143":
+  slug: container-scopes-registration-lifecycle-and-testing
+  status: accepted
+"0144":
+  slug: metadata-registry-and-explorers
+  status: accepted
+"0145":
+  slug: tokens-are-define-token-values-and-global-helpers-are-banned
+  status: accepted
+"0146":
+  slug: package-configuration-typescript-layers-and-secret-references
+  status: accepted
+"0147":
+  slug: logger-and-runtime-telemetry-defaults
+  status: accepted
+"0148":
+  slug: queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules
+  status: accepted
+"0149":
+  slug: locking-fencing-tokens-auto-renew-and-with-lock
+  status: accepted
+"0150":
+  slug: cache-package
+  status: accepted
+"0151":
+  slug: workflow-engine-is-a-port-with-native-and-temporal-drivers
+  status: accepted
+"0152":
+  slug: workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format
+  status: accepted
+"0153":
+  slug: automations-run-as-principals-and-every-package-exposes-building-blocks
+  status: accepted
+"0154":
+  slug: tenant-code-runs-only-in-a-sandboxed-code-step
+  status: accepted
+"0155":
+  slug: queries-are-mcp-tools-and-all-ai-code-is-free
+  status: accepted
+"0156":
+  slug: ai-runtime-provider-drivers-memory-and-guardrails
+  status: accepted
+"0157":
+  slug: stackra-inspect-and-stackra-diff
+  status: accepted
+"0158":
+  slug: gen-artefacts-openapi-manifest-and-client
+  status: accepted
+"0159":
+  slug: migrations-gen-ordered-sql-and-safety-rules
+  status: accepted
+"0160":
+  slug: raw-sql-at-runtime-and-the-approved-postgres-extensions
+  status: accepted
+"0161":
+  slug: state-machine-package
+  status: accepted
+"0162":
+  slug: validation-translatable-fields-and-entityschema-placement
+  status: accepted
+"0163":
+  slug: reports-exports-imports-and-declared-read-models
+  status: accepted
+"0164":
+  slug: console-panels-are-resources-rendered-by-the-panel-package
+  status: accepted
+"0165":
+  slug: web-client-stack-ui-contract-form-adapters-and-no-nextjs
+  status: accepted
+"0166":
+  slug: ci-policy-runners-budgets-concurrency-and-check-matrix
+  status: accepted
+"0167":
+  slug: workflow-hardening-outside-contributors-and-bot-credentials
+  status: accepted
+"0168":
+  slug: runway-public-reusable-workflows-build-order-and-runway-yaml
+  status: accepted
+"0169":
+  slug: topology-runway-yaml-packs-logical-services-into-deployables
+  status: accepted
+"0170":
+  slug: deployment-what-deploys-where-and-how-a-release-is-promoted
+  status: accepted
+"0171":
+  slug: infrastructure-as-code-pulumi-typescript-owned-by-stackra
+  status: accepted
+"0172":
+  slug: aws-accounts-primary-region-and-cloud-cost-controls
+  status: accepted
+"0173":
+  slug: secrets-infisical-is-the-source-of-production-secrets
+  status: accepted
+"0174":
+  slug: supply-chain-images-signing-sbom-dependency-policy-and-rotation
+  status: accepted
+"0175":
+  slug: edge-domains-and-tls
+  status: accepted
+"0176":
+  slug: marketing-site-placeholder-then-prerendered-from-the-experience-service
+  status: accepted
+"0177":
+  slug: package-distribution-npmjs-and-keygen
+  status: accepted
+"0178":
+  slug: licensing-keygen-licences-and-the-stackra-licensing-verifier
+  status: accepted
+"0179":
+  slug: on-prem-and-air-gapped-delivery
+  status: accepted
+"0180":
+  slug: mobile-apps-and-release-trains
+  status: accepted
+"0181":
+  slug: the-desktop-app-pipeline
+  status: accepted
+"0182":
+  slug: testing-strategy-v2-tiers-coverage-infrastructure-and-policies
+  status: accepted
+"0183":
+  slug: quality-budgets-with-numbers
+  status: accepted
+"0184":
+  slug: telemetry-opentelemetry-otlp-slis-heartbeats-and-log-retention
+  status: accepted
+"0185":
+  slug: incident-response-on-call-status-page-and-support-tiers
+  status: accepted
+"0186":
+  slug: backups-and-disaster-recovery
+  status: accepted
+"0187":
+  slug: security-and-compliance-programme
+  status: accepted
+"0188":
+  slug: operator-access-and-the-encryption-key-hierarchy
+  status: accepted
+"0189":
+  slug: privacy-operations-and-data-retention
+  status: accepted
+"0190":
+  slug: seed-profiles-and-product-analytics
+  status: accepted
+"0191":
+  slug: email-deliverability
+  status: accepted
+"0192":
+  slug: translation-workflow-and-arabic-defaults
+  status: accepted
+"0193":
+  slug: agents-and-model-policy
+  status: accepted
+"0194":
+  slug: developer-and-agent-compute
+  status: accepted
+"0195":
+  slug: organisation-legal-and-release-communication
+  status: accepted
+"0196":
+  slug: repository-config-is-yaml-wherever-the-reader-supports-it
+  status: accepted
+"0197":
+  slug: heroui-pro-is-used-only-in-our-own-apps
+  status: superseded
+"0198":
+  slug: sdlc-spec-location-states-traceability-and-roadmap
+  status: accepted
+"0199":
+  slug: developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs
+  status: accepted
+"0200":
+  slug: stackra-and-figentra-os-horizontal-services-private-os-repo
+  status: accepted
+"0201":
+  slug: the-app-split-framework-platform-core-and-first-party-apps
+  status: accepted
+"0202":
+  slug: stackra-pro-is-developer-side-os-capability-is-free-code
+  status: accepted
+"0203":
+  slug: the-commercial-model-billing-provider-and-tier-names
+  status: accepted
+"0204":
+  slug: reference-services-identity-notes-and-registry
+  status: accepted
+"0205":
+  slug: the-figentra-os-build-order-and-the-first-slice
+  status: accepted
+"0206":
+  slug: zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral
+  status: accepted
+"0207":
+  slug: authentication-assurance-and-machine-identities
+  status: accepted
+"0208":
+  slug: iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names
+  status: accepted
+"0209":
+  slug: iam-enforcement-pipeline-gate-sql-predicate-embedded-pdp-and-service-calls
+  status: accepted
+"0210":
+  slug: tenancy-recursive-tenant-tree-lifecycle-one-context-and-region
+  status: accepted
+"0211":
+  slug: memberships-and-support-access
+  status: accepted
+"0212":
+  slug: audit-evidence-access-logs-hash-chain-and-retention
+  status: accepted
+"0213":
+  slug: settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions
+  status: accepted
+"0214":
+  slug: registry-v2-and-the-module-install-lifecycle
+  status: accepted
+"0215":
+  slug: entitlements
+  status: accepted
+"0216":
+  slug: meters-and-usage-events
+  status: accepted
+"0217":
+  slug: api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits
+  status: accepted
+"0218":
+  slug: integrations-the-connector-sdk-and-connections-per-chain-level
+  status: accepted
+"0219":
+  slug: the-merchant-account-chain-and-registered-price-models
+  status: accepted
+"0220":
+  slug: stackra-money-and-the-ledger-package
+  status: accepted
+"0221":
+  slug: search-postgres-hybrid-elasticsuite-parity-arabic-and-operations
+  status: accepted
+"0222":
+  slug: files-and-media-storage-drivers-uploads-scanning-and-public-assets
+  status: accepted
+"0223":
+  slug: notifications-channels-cascading-templates-manual-sends-and-preferences
+  status: accepted
+"0224":
+  slug: stackra-webhooks
+  status: accepted
+"0225":
+  slug: realtime-drivers-co-editing-and-the-commentable-trait
+  status: accepted
+"0226":
+  slug: content-tenant-defined-types-at-runtime-and-headless-delivery
+  status: accepted
+"0227":
+  slug: rejected-and-deferred-technologies-refreshed
+  status: accepted
+"0228":
+  slug: proposed-adrs-settled
+  status: accepted
+"0229":
+  slug: constitution-amended-for-the-2026-10-20-decisions
+  status: accepted
+"0230":
+  slug: reviewer-identity-separate-from-builder
+  status: accepted
+"0231":
+  slug: naming-and-casing-standard
+  status: accepted
+"0232":
+  slug: stackra-errors-package
+  status: accepted
+"0233":
+  slug: imports-use-subpath-aliases-only
+  status: accepted
+"0234":
+  slug: module-assets-and-storage
+  status: accepted
+"0235":
+  slug: devices-and-iot-minimal-now-full-later
+  status: accepted
+"0236":
+  slug: translation-providers-as-connectors
+  status: accepted
+"0237":
+  slug: generated-api-gateway-in-four-layers
+  status: accepted
+"0238":
+  slug: database-and-connection-model
+  status: accepted
+"0239":
+  slug: rls-shape-equality-on-tenant-id-with-read-models-for-org-views
+  status: accepted
+"0240":
+  slug: scope-tree-is-free-code-with-depth-by-plan
+  status: accepted
+"0241":
+  slug: identity-first-slice-central-login-app-bff-and-reference-service
+  status: accepted
+"0242":
+  slug: commercial-model-plan-ladder-add-ons-metric-and-trial
+  status: accepted
+"0243":
+  slug: organisations-on-the-tenant-tree-consolidated-billing-guardrails-and-standalone-exit
+  status: accepted
+"0244":
+  slug: markets-owned-by-pricing
+  status: accepted
+"0245":
+  slug: ai-intelligence-plane-skills-prompts-context-providers-plans-and-intents
+  status: accepted
+"0246":
+  slug: devtools-dev-only-for-apps-and-services
+  status: accepted
+"0247":
+  slug: declaration-rule-decorators-annotate-define-creates-values
+  status: accepted
+"0248":
+  slug: delivery-scope-saas-first-on-prem-kept-green
+  status: accepted
+"0249":
+  slug: one-app-three-targets-web-pwa-and-electron
+  status: accepted
+"0250":
+  slug: stackra-platform-capability-ports-drivers-and-gate
+  status: accepted
+"0251":
+  slug: desktop-bridge-generated-from-desktop-action-and-electron-hardening
+  status: accepted
+"0252":
+  slug: offline-on-every-client-completing-the-mutation-queue
+  status: accepted
+"0253":
+  slug: peripherals-web-api-first-and-device-presets
+  status: accepted
+"0254":
+  slug: desktop-release-signing-update-feed-channels-and-version-policy
+  status: accepted
+"0255":
+  slug: pwa-service-worker-scope-and-push-per-platform
+  status: accepted
+"0256":
+  slug: client-storage-one-stackra-storage-package
+  status: accepted
+"0257":
+  slug: secret-manager-agent-and-the-secrets-inbox
+  status: proposed
+"0258":
+  slug: agent-roster-v2-and-skill-fencing
+  status: accepted
+"0259":
+  slug: module-placement-three-homes
+  status: accepted
+"0260":
+  slug: cross-service-calls-through-injected-clients-and-events
+  status: accepted
+"0261":
+  slug: generated-stackra-modules-in-stackra-gen
+  status: accepted
+"0262":
+  slug: module-catalogue-and-module-generator
+  status: accepted
+"0263":
+  slug: di-stays-and-gen-writes-the-wiring
+  status: accepted
+"0264":
+  slug: declaration-vocabulary-module-keys-define-family-and-kind-folders
+  status: accepted
+"0265":
+  slug: hook-points-transform-and-verify
+  status: accepted
+"0266":
+  slug: capabilities-phase-in-one-option-one-driver-memory-first
+  status: accepted
+"0267":
+  slug: infisical-agent-vault-deferred
+  status: deferred
+"0268":
+  slug: register-answers-thin-items-r1-to-r18
+  status: accepted
+"0269":
+  slug: stackra-testing-package-entries-and-helper-placement
+  status: accepted
+"0270":
+  slug: builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels
+  status: accepted
+"0271":
+  slug: saved-views
+  status: accepted
+"0272":
+  slug: account-model-personal-workspace-and-opt-in-organisations
+  status: accepted
+"0273":
+  slug: active-role-within-a-tenant
+  status: accepted
+"0274":
+  slug: app-grants-and-the-connect-app-page
+  status: accepted
+"0275":
+  slug: tenant-handles
+  status: accepted
+"0276":
+  slug: tenant-custom-domains
+  status: accepted
+"0277":
+  slug: cli-and-desktop-sign-in
+  status: accepted
+"0278":
+  slug: api-key-lifecycle
+  status: accepted
+"0279":
+  slug: signup-and-first-run-onboarding
+  status: accepted
+"0280":
+  slug: sandbox-to-live-promotion-and-environment-banner
+  status: accepted
+"0281":
+  slug: desktop-surfaces-targets-desktop-modes-and-overlay-styles
+  status: accepted
+"0282":
+  slug: developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc
+  status: accepted
+"0283":
+  slug: browser-extension-agent-connector-deferred
+  status: deferred
+"0284":
+  slug: hosted-static-files-one-cloudflare-static-assets-worker
+  status: accepted
+"0285":
+  slug: review-verdict-binds-to-the-patch-id
+  status: accepted
+"0286":
+  slug: vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution
+  status: accepted
+"0287":
+  slug: agent-sandboxes-and-the-remote-runner
+  status: accepted
+"0288":
+  slug: merging-the-queue-fallback-and-the-sta-302-order
+  status: accepted
+"0289":
+  slug: runway-and-environments-workers-one-encore-app-previews-and-publishing
+  status: accepted
+"0290":
+  slug: dev-environment-and-cloudflare-services
+  status: accepted
+"0291":
+  slug: porting-provenance-and-the-third-party-reading-rule
+  status: accepted
+"0292":
+  slug: workflow-engine-drivers-a-postgres-journal-default-temporal-and-trigger-dev-to-evaluate
+  status: accepted
+"0293":
+  slug: agent-permission-tiers-and-executor-pushes
+  status: accepted
+"0294":
+  slug: programming-model-v3-grammar-folders-identities-and-naming
+  status: accepted
+"0295":
+  slug: build-and-entry-stackra-config-generated-tool-configs-and-entries
+  status: accepted
+"0296":
+  slug: runway-v3-member-requires-and-root-topology-groups
+  status: accepted
+"0297":
+  slug: web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding
+  status: accepted
+"0298":
+  slug: consent-and-analytics
+  status: accepted
+"0299":
+  slug: docs-runway
+  status: accepted
+"0300":
+  slug: published-tooling-presets-and-enforced-spell-checking
+  status: accepted
+"0301":
+  slug: stackra-seo-package
+  status: accepted
+"0302":
+  slug: stackra-design-system-tokens-ui-and-the-playground
+  status: accepted
+"0303":
+  slug: stackra-ui-component-catalogue-decisions
+  status: accepted
+"0304":
+  slug: stackra-ui-wave-2-props-vocabulary
+  status: accepted
+"0305":
+  slug: programming-model-v3-1-names-partners-files-and-class-components
+  status: accepted
+"0306":
+  slug: overrides-one-tree-under-src-overrides-and-five-placement-layers
+  status: accepted
+"0307":
+  slug: panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards
+  status: accepted
+"0308":
+  slug: integrations-v3-1-provider-descriptions-connection-stores-and-webhooks
+  status: accepted
+"0309":
+  slug: icons-declarations-name-an-icon-and-the-platform-resolves-it
+  status: accepted
+"0310":
+  slug: stackra-ui-pro-private-heroui-pro-wrappers
+  status: accepted
+"0311":
+  slug: stackra-ui-wave-3-fields-props-vocabulary
+  status: accepted
+"0312":
+  slug: stackra-ui-wave-4-overlays-and-feedback-props-vocabulary
+  status: accepted
+"0313":
+  slug: stackra-ui-wave-5-data-primitives-props-vocabulary
+  status: accepted
+"0314":
+  slug: postgis-approved-geospatial-field-and-macros
+  status: accepted
+"0315":
+  slug: realtime-live-queries-and-streams
+  status: accepted
+"0316":
+  slug: open-core-distribution
+  status: accepted
+"0317":
+  slug: stackra-ui-wave-6-shell-and-routing-props-vocabulary
+  status: accepted
+"0318":
+  slug: stackra-ui-wave-7-resource-index-props-vocabulary
+  status: accepted
+"0319":
+  slug: stackra-brand-steel-blue-accent-and-glass-buttons
+  status: accepted
+"0320":
+  slug: stackra-brand-glass-material-and-the-showcase-stage
+  status: accepted
+"0321":
+  slug: the-trait-inventory-owning-packages-and-schedulable
+  status: accepted
+"0322":
+  slug: generated-constants-instead-of-string-literals
+  status: accepted
+"0323":
+  slug: tenant-vocabulary-lives-only-in-tenancy-and-scopes-use-the-scoperef-port
+  status: accepted
+"0324":
+  slug: error-boundaries-nearest-error-tsx-ancestor-wins
+  status: accepted
+"0325":
+  slug: launch-readiness-release-rules-edge-caching-and-update-strategy
+  status: accepted
+"0326":
+  slug: app-identity-desktop-section-pwa-config-shortcuts-and-native-widgets
+  status: accepted
+"0327":
+  slug: scope-package-owns-the-scope-tree-tenancy-is-a-consumer
+  status: accepted
+"0328":
+  slug: value-classes-are-built-with-create-and-containers-are-never-constructed
+  status: accepted
+"0329":
+  slug: motion-layer-tokens-reveal-and-animation-on-by-default
+  status: accepted
+"0330":
+  slug: shortcut-chords-on-a-tanstack-hotkeys-driver
+  status: accepted
+"0331":
+  slug: stackra-rules-one-condition-engine-for-every-rule-consumer
+  status: accepted
+"0332":
+  slug: stackra-segments-audiences-defined-by-rules
+  status: accepted
+"0333":
+  slug: record-visibility-rules-who-can-see-which-records
+  status: accepted
+"0334":
+  slug: final-structure-review-round-up-decided-rules-without-an-adr
+  status: accepted
+"0335":
+  slug: editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle
+  status: accepted
+"0336":
+  slug: edition-additions-typed-fields-on-another-products-models-and-screens-in-its-panel-slots
+  status: accepted
+"0337":
+  slug: client-rule-code-a-module-ships-pure-rules-that-run-on-the-till-and-on-the-server
+  status: accepted
+"0338":
+  slug: offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps
+  status: accepted
+"0339":
+  slug: point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver
+  status: accepted
+"0340":
+  slug: one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling
+  status: accepted
+"0341":
+  slug: product-defined-data-classes-and-the-privileged-class
+  status: accepted
+"0342":
+  slug: gapless-sequences-allocated-at-commit-per-tenant-and-series
+  status: accepted
+"0343":
+  slug: cross-tenant-record-sharing-consented-copies-fed-by-events
+  status: accepted
+"0344":
+  slug: platform-targets-form-factors-native-surfaces-and-the-tier-matrix
+  status: accepted
+"0345":
+  slug: native-code-generation-and-the-native-shared-layer
+  status: accepted
+"0346":
+  slug: collaboration-rooms-a-two-way-payload-channel-derived-from-a-documents-collaboration-level
+  status: accepted
+"0347":
+  slug: row-level-security-layering-one-permissive-tenant-policy-and-generated-restrictive-policies
+  status: accepted
+"0348":
+  slug: integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes
+  status: accepted
+"0349":
+  slug: product-scopes-package-names-and-the-module-key-registry-across-products
+  status: accepted
+"0350":
+  slug: additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules
+  status: accepted
+"0351":
+  slug: iam-conditions-on-a-dimension-another-service-owns-declared-dimensions-and-projections
+  status: accepted
+"0352":
+  slug: runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step
+  status: accepted
+"0353":
+  slug: data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction
+  status: accepted
+"0354":
+  slug: two-clouds-aws-and-gcp-and-one-aws-account-per-product-region
+  status: accepted
+"0355":
+  slug: marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer
+  status: accepted
+"0356":
+  slug: choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default
+  status: accepted
+"0357":
+  slug: payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet
+  status: accepted
+"0358":
+  slug: the-stackra-licence-and-one-billing-engine-with-the-seller-as-a-parameter
+  status: accepted
+"0359":
+  slug: modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records
+  status: accepted
+"0360":
+  slug: the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor
+  status: accepted
+"0361":
+  slug: principals-and-parties
+  status: accepted
+"0362":
+  slug: no-code-without-an-answered-questionnaire-and-a-plan
+  status: accepted
+"0363":
+  slug: configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios
+  status: proposed
+"0364":
+  slug: fiscal-e-invoicing-and-till-fiscal-drivers-chosen-by-market-pack-data
+  status: proposed
+"0365":
+  slug: documents-one-print-template-model-three-renderers-and-the-e-signature-port
+  status: proposed
+"0366":
+  slug: stackra-calendar-umm-al-qura-business-days-recurrence-and-slots-over-market-pack-data
+  status: proposed
+"0367":
+  slug: data-transfer-streaming-tabular-files-mapping-and-resumable-imports-with-a-batch-ledger
+  status: proposed
+"0368":
+  slug: achievements-award-kinds-as-data-criteria-grants-revoke-and-a-cross-scope-verify-token
+  status: proposed
+"0369":
+  slug: stackra-shipping-carrier-ports-tracking-states-label-documents-and-dimensional-weight
+  status: proposed
+"0370":
+  slug: market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors
+  status: proposed
+"0371":
+  slug: secret-store-drivers-which-deploy-mode-binds-which-and-how-the-bootstrap-credential-arrives
+  status: proposed
+"0372":
+  slug: national-digital-id-sign-in-as-zitadel-external-identity-providers
+  status: proposed
+"0373":
+  slug: the-feature-flags-no-plan-targeting-lint-rule
+  status: proposed
+"0374":
+  slug: seed-packs-the-stackra-seed-pack-command-and-the-stackra-new-template-set
+  status: proposed
+"0375":
+  slug: rule-fact-sources-and-outcome-kinds-as-kinds-modeladdition-options-and-the-edition-bundle-gen-writes
+  status: proposed
+"0376":
+  slug: provider-resolution-ports-credential-references-managed-or-own-accounts-and-the-telephony-ports
+  status: proposed
+"0377":
+  slug: card-terminals-semi-integrated-over-a-local-link-geidea-network-international-paymob-and-neoleap
+  status: proposed
+"0378":
+  slug: card-terminals-server-driven-and-tap-to-pay-stripe-terminal-square-and-adyen
+  status: proposed
+"0379":
+  slug: the-tax-provider-port-lives-in-stackra-pricing-contracts-and-providers-are-connections
+  status: proposed
+"0380":
+  slug: data-class-effects-for-the-built-in-classes-seeded-as-data-over-a-code-floor
+  status: proposed
+"0381":
+  slug: refusal-codes-live-read-only-and-approval-required-and-the-live-configuration-option-names
+  status: proposed
+"0382":
+  slug: the-action-pipeline-gains-an-approval-step-a-rate-limit-step-and-a-reserve-then-commit-hook
+  status: proposed
+"0383":
+  slug: naming-and-locking-version-pinned-workflow-classes
+  status: proposed
+"0384":
+  slug: wave-10-owner-questions-answered-or-routed
+  status: proposed
+"0385":
+  slug: market-packs-a-pack-per-rule-subject-for-records-that-touch-two-markets-nested-overlays-and-storage-by-content-hash
+  status: proposed
+"0386":
+  slug: market-pack-signing-the-platform-release-service-holds-the-key-reviewers-sign-off-per-key
+  status: proposed
+"0387":
+  slug: calendar-remainder-every-rrule-part-supported-or-refused-a-kept-count-mode-and-calendar-data-from-packs
+  status: proposed
+"0388":
+  slug: payments-tax-and-shipping-lines-on-a-checkout-and-refunds-counted-when-confirmed
+  status: proposed
+"0389":
+  slug: payments-sandbox-providers-are-their-own-codes-only-where-the-vendor-has-its-own-host
+  status: proposed
+"0390":
+  slug: payments-connection-modes-and-the-stripe-connect-account-type-default
+  status: proposed
+"0391":
+  slug: plan-catalogue-admin-dated-versions-apply-at-renewal-and-a-second-approver-for-discounts
+  status: proposed
+"0392":
+  slug: billing-terms-per-pack-price-and-collection-currency-contracting-entity-and-invoice-series
+  status: proposed
+"0393":
+  slug: perks-and-offers-perk-listings-offer-benefits-startup-eligibility-and-offer-stacking
+  status: proposed
+"0394":
+  slug: a-yearly-sequence-reads-its-year-in-its-owners-time-zone-setting-and-no-postgres-sequence
+  status: accepted
+"0395":
+  slug: one-live-read-only-code-promotion-rollback-a-minimum-release-and-one-floor-aware-reader
+  status: proposed
+"0396":
+  slug: database-owns-the-seed-ledger-and-the-postgres-action-stores
+  status: accepted
+"0397":
+  slug: actions-remainder-effect-codes-tool-default-reserve-then-commit-audit-in-the-unit-of-work-and-approval-fails-closed
+  status: proposed
+"0398":
+  slug: ai-action-permission-matrix-record-scope-pack-floor-propose-mode-and-the-approver-rule
+  status: proposed
+"0399":
+  slug: ai-runtime-storage-lives-in-the-ai-package-node-entry-with-tenant-key-sealed-conversations
+  status: proposed
+"0400":
+  slug: runway-deploy-providers-promote-rollback-environment-cloud-and-dedicated-tenants
+  status: proposed
+"0401":
+  slug: gcp-spend-stop-cloud-sql-recovery-and-deploy-roles-narrower-than-owner
+  status: proposed
+"0402":
+  slug: infra-backups-in-jurisdiction-static-egress-status-page-runtime-stack-health-and-storefront-edge
+  status: proposed
+"0403":
+  slug: seven-languages-locales-formats-analysers-catalogues-and-a-completeness-gate
+  status: proposed
+"0404":
+  slug: search-facets-under-record-visibility-one-arabic-normaliser-and-the-embedder-token-from-the-secret-store
+  status: proposed
+"0405":
+  slug: us-formats-ein-ssn-last-four-zip-plus-four-state-codes-and-phone-as-pack-data
+  status: proposed
+"0406":
+  slug: step-up-is-an-action-option-checked-after-the-permission-and-the-call-carries-its-assurance
+  status: proposed
+"0407":
+  slug: iam-policy-snapshots-stored-per-tenant-in-postgres-and-permission-selectors-by-kind-and-risk
+  status: proposed
+"0408":
+  slug: entitlements-a-numeric-value-kind-and-the-limit-reservation-driver
+  status: proposed
+"0409":
+  slug: access-log-fails-closed-for-configured-classes-and-privileged-surfaces-and-an-outbox-sink
+  status: proposed
+"0410":
+  slug: identity-an-idp-admin-port-with-zitadel-and-memory-drivers-and-api-key-verification-by-hash
+  status: proposed
+"0411":
+  slug: scope-subtree-move-re-paths-the-node-table-and-each-service-re-paths-its-own-rows-on-scope-moved
+  status: proposed
+"0412":
+  slug: inherited-row-policy-rows-on-the-path-above-the-session-are-read-only-to-it
+  status: proposed
+"0413":
+  slug: streamed-file-writes-multipart-on-s3-and-r2-buffered-elsewhere-never-a-partial-object
+  status: proposed
+"0414":
+  slug: notification-inputs-the-whole-verified-principal-and-prayer-times-computed-from-a-pack-method
+  status: proposed
+"0415":
+  slug: tenant-data-keys-wrapped-by-aws-kms-and-a-key-per-data-subject
+  status: proposed
+"0416":
+  slug: one-canonical-json-es256-signatures-through-a-signer-port-and-stackra-audit-verify
+  status: proposed
+"0417":
+  slug: market-pack-section-schema-registry-and-the-overlay-floor-check
+  status: proposed
+"0418":
+  slug: an-injectable-resolved-pack-source-for-a-deployment
+  status: proposed
+"0419":
+  slug: settings-the-tenant-level-stays-tenancy-data-a-system-author-for-seed-writes-and-the-runner-takes-the-holders-market
+  status: proposed
+"0420":
+  slug: entitlement-gated-settings-a-key-or-a-value-names-the-entitlement-that-unlocks-it
+  status: proposed
+"0421":
+  slug: house-oxlint-js-plugins-load-from-their-source-file
+  status: proposed
+"0422":
+  slug: communication-gaps-a-notifier-target-in-app-product-provider-failover-lists-s3-webhooks-gated-subscriptions-and-the-payroll-connector
+  status: proposed
+"0423":
+  slug: automation-principals-are-bounded-by-the-publisher-pause-on-lost-access-and-the-seed-principal
+  status: proposed
+"0424":
+  slug: checklists-are-workflow-template-documents-with-locked-steps-scope-and-user-progress-and-industry-profiles
+  status: proposed
+"0425":
+  slug: rules-declared-outcome-kinds-money-floors-save-time-refusal-and-untrusted-condition-schemas
+  status: proposed
+"0426":
+  slug: the-form-document-kind-and-the-structured-document-editor-for-automations-and-forms
+  status: proposed
+"0427":
+  slug: workflow-service-acked-contract-signal-retention-version-pin-names-and-the-document-run-test-helper
+  status: proposed
+"0428":
+  slug: kiosk-surface-mode-and-kiosk-lock-on-launch
+  status: proposed
+"0429":
+  slug: exit-gates-on-signed-receipt-tokens-and-continuous-scale-weights
+  status: proposed
+"0430":
+  slug: device-catalogue-base-kinds-and-native-customer-displays
+  status: proposed
+"0431":
+  slug: data-transfer-multi-sheet-imports-json-lines-the-durable-ledger-contract-and-payroll-exports
+  status: proposed
+"0432":
+  slug: achievements-a-public-verify-query-a-short-typed-code-one-live-award-per-period-and-certificates-through-documents
+  status: proposed
+"0433":
+  slug: comments-threads-and-mentions-live-in-the-collaboration-package
+  status: proposed
+"0434":
+  slug: sandbox-process-pool-typescript-steps-and-the-python-engine-waiting-on-its-dependency
+  status: proposed
+"0435":
+  slug: encore-cloud-roles-on-gcp-and-one-apply-per-environment
+  status: proposed
+"0436":
+  slug: products-ship-packages-and-figentra-os-ships-the-shells
+  status: proposed
+"0437":
+  slug: the-edge-worker-its-kv-copy-and-the-server-checks
+  status: proposed
+"0438":
+  slug: the-extension-model-slots-for-shells-shadows-for-own-code-rules-and-events-toward-the-os
+  status: proposed
+"0439":
+  slug: mobile-apps-from-one-os-template-with-capability-flags
+  status: proposed
+"0440":
+  slug: landing-sites-are-experience-documents-rendered-at-the-edge
+  status: proposed
+"0441":
+  slug: product-repository-layout-assets-tree-and-root-runway-surfaces
+  status: proposed
+"0442":
+  slug: native-android-till-for-pos-terminals-from-the-commerce-till-template
+  status: proposed
+"0443":
+  slug: integration-architecture-connectors-apps-and-extensions-in-one-marketplace-and-vendor-drivers-in-os-integrations
+  status: accepted
+"0444":
+  slug: one-self-hosted-tools-stack-per-region-from-the-root-runway
+  status: proposed
+"0445":
+  slug: restricted-tenders-ebt-and-meal-vouchers-and-the-terminal-pin-step
+  status: proposed
+"0446":
+  slug: agent-payments-confirmed-in-the-shoppers-wallet-and-the-softpos-tap-to-pay-driver-family
+  status: proposed
+"0447":
+  slug: connectors-by-capability-the-connector-gateway-and-the-edi-fraud-and-document-store-kinds
+  status: proposed
+"0448":
+  slug: inbound-whatsapp-port-and-provider-signature-recipes-for-meta-and-chatwoot
+  status: proposed
+"0449":
+  slug: kitchen-ticket-printers-bump-bars-scale-presets-a-shared-used-receipt-store-and-the-kiosk-window
+  status: proposed
+"0450":
+  slug: ai-page-reader-port-readable-text-product-hints-and-an-egress-bounded-http-driver
+  status: proposed
+"0451":
+  slug: the-login-directory-an-identity-format-and-writer-and-a-cloudflare-worker-of-its-own
+  status: proposed
+"0452":
+  slug: the-system-graph-a-member-graph-per-gen-run-a-repo-graph-and-one-merge-step
+  status: proposed
+"0453":
+  slug: the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine
+  status: accepted
+"0454":
+  slug: loyalty-programme-as-scoped-settings-a-tier-policy-port-public-balance-events-and-consent-evidence
+  status: proposed
+"0455":
+  slug: rules-pack-defaults-without-a-scope-registered-fact-sources-list-floors-and-sections-without-a-base-pack
+  status: proposed
+"0456":
+  slug: actions-request-origin-integration-events-without-a-model-and-cascading-replica-changes
+  status: proposed
+"0457":
+  slug: multi-binding-extension-points-request-guards-and-the-session-on-route-services
+  status: proposed
+"0458":
+  slug: sunmi-terminals-the-built-in-printer-drawer-and-scanner-through-the-sunmi-sdk
+  status: proposed
+"0459":
+  slug: pax-terminals-the-built-in-printer-drawer-and-scanner-through-the-neptunelite-sdk
+  status: proposed
+"0460":
+  slug: imin-terminals-the-built-in-printer-drawer-and-scanner-through-the-imin-sdk
+  status: proposed
+"0461":
+  slug: the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers
+  status: accepted
+"0462":
+  slug: iam-knows-no-segments-segments-is-an-add-on-and-one-layering-exemption-table
+  status: accepted
+"0463":
+  slug: stackra-brand-neutral-steel-accent
+  status: accepted
+"0464":
+  slug: typescript-7-everywhere-typescript-6-only-as-the-js-api
+  status: accepted
+"0465":
+  slug: one-store-per-job-storage-vectors-and-sentry-merged-audit-and-column-encryption-kept-apart
+  status: accepted
+"0466":
+  slug: the-document-editor-is-tiptap-v3-core-and-packages-extend-it-through-editor-contributions
+  status: accepted
+"0467":
+  slug: content-analysis-for-search-and-answer-engines-in-stackra-seo
+  status: accepted
+"0469":
+  slug: stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only
+  status: accepted
+"0470":
+  slug: reports-v2-a-report-kind-server-grouping-and-pivots-and-report-definitions-as-data
+  status: accepted
+"0471":
+  slug: read-side-one-indexer-kind-no-materialised-views-over-scoped-data-and-no-event-sourcing-by-default
+  status: accepted
+"0472":
+  slug: server-side-consent-a-signed-short-lived-consent-snapshot-travels-with-server-calls
+  status: accepted
+"0473":
+  slug: connection-pooling-a-managed-proxy-per-cloud-a-pool-budget-per-service-and-a-direct-url-for-session-tools
+  status: accepted
+"0476":
+  slug: one-column-encryption-path-encrypted-fields-bind-the-owning-scope-and-scopekeycast-is-retired
+  status: accepted
+"0478":
+  slug: native-code-lives-only-in-expo-module-packages-one-per-capability-behind-a-port
+  status: accepted
+"0479":
+  slug: stripe-terminal-the-first-card-terminal-acquirer-sdk-in-native-card-terminal
+  status: proposed
+"0481":
+  slug: template-lines-release-as-registry-packages-and-runway-checks-them-out
+  status: proposed
+"0482":
+  slug: mobile-onboarding-is-a-runway-step-and-eas-owns-signing
+  status: proposed
+"0484":
+  slug: the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical
+  status: accepted
+"0490":
+  slug: ai-everywhere-client-tools-from-frontend-declarations-page-context-personalisation-as-actions-and-tours-as-data
+  status: accepted
+"0491":
+  slug: shopping-assistant-shared-cards-on-every-surface-and-the-payer-approves-their-own-payment
+  status: accepted
+"0492":
+  slug: one-ai-runtime-and-mcp-gateway-behind-the-edge-hybrid-retrieval-with-a-reranker-and-python-only-as-tools-stack-workers
+  status: accepted
+"0493":
+  slug: runway-resources-and-workloads-one-runway-provisions-the-product-runtime
+  status: accepted
+"0494":
+  slug: credential-data-class-for-provider-secrets
+  status: accepted
+"0500":
+  slug: four-clis-stackra-runway-vellum-and-figentra
+  status: accepted
+"0501":
+  slug: tokens-v2-one-theme-schema-drives-every-visual-value-on-web-and-native
+  status: accepted
+  owner: c6 design system (feat/c6-adr-accept)
+"0502":
+  slug: spec-tiers-and-approval-stops
+  status: accepted
+  owner: spec tiers (figentra/sta-1721-spec-tiers)
+  issue: STA-1721
+"0503":
+  slug: vellum-runs-the-development-workflow
+  status: proposed
+  owner: Figentra Flow (figentra/sta-1729-vellum-workflow-adr)
+  issue: STA-1729
+"0504":
+  slug: module-ui-kits-domain-blocks-live-in-their-module-and-gen-aggregates-them-into-the-showcase
+  status: accepted
+  owner: c6 design system (feat/c6-kits-land)
+"0505":
+  slug: one-data-family-nine-components-one-engine
+  status: accepted
+  owner: c6 design system (feat/c6-data-family)
+"0506":
+  slug: console-command-kind
+  status: reserved
+  owner: stackra-console (figentra/sta-1730-console-port)
+  issue: STA-1730

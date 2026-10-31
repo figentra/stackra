@@ -27,7 +27,7 @@ async function main() {
     );
   if (has("adr", "decision", "architecture decision", "supersede"))
     hints.push(
-      "Decisions are ADRs: `apps/docs/src/docs/adr/NNNN-slug.mdx` from `template.mdx` (next number = highest on disk + 1), index row in `adr/index.mdx` (the adr folder entry in `src/config/docs.config.ts` lists it in the nav), same-commit supersession. Route the writing to docs-adr-steward; ADR 0011 lists rejected/deferred tech.",
+      "Decisions are ADRs: `apps/docs/src/docs/adr/NNNN-slug.mdx` from `template.mdx` (number reserved first with `pnpm adr:reserve <slug> --issue STA-n` in `adr/numbers.yaml` on main), index row in `adr/index.mdx` (the adr folder entry in `src/config/docs.config.ts` lists it in the nav), same-commit supersession. Route the writing to docs-adr-steward; ADR 0011 lists rejected/deferred tech.",
     );
   if (has("changeset", "changelog", "version bump", "release"))
     hints.push(

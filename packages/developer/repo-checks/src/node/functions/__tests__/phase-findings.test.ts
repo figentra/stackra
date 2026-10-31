@@ -41,16 +41,19 @@ function repo(files: Record<string, string>): { root: string; files: string[] } 
 }
 
 describe("phase runners", () => {
-  it("configFindings reports JSON configs, flow maps and the .gitignore line", () => {
+  it("configFindings reports JSON configs, flow maps, the .gitignore line and the ADR register", () => {
     const context = repo({
       ".gitignore": "node_modules\n",
       "tools/x.json": "{}",
       "lefthook.yml": "a: { b: c }\n",
+      "apps/docs/src/docs/adr/0001-first.mdx": "",
+      "apps/docs/src/docs/adr/numbers.yaml": '"0002":\n  slug: second\n',
     });
     expect(configFindings(context).map((f) => f.rule)).toEqual([
       "json-configs",
       "yaml-flow-maps",
       "gitignore-stackra",
+      "adr-numbers",
     ]);
   });
 

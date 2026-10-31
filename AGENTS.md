@@ -34,6 +34,9 @@ class, each file sits in its kind's one home group, identities are derived and l
 nobody writes `main.ts` or a tool config. No member is converted yet (STA-344) and its checks are planned (STA-338,
 STA-339, STA-340), so today's code and `validate-repository.mjs` still show the older shapes.
 
+Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue STA-n` lands it in
+`apps/docs/src/docs/adr/numbers.yaml` on main first (STA-1732); never take "the highest on disk plus one" from a branch.
+
 Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
 
 Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.

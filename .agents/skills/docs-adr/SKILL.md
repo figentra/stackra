@@ -1,12 +1,12 @@
 ---
 name: docs-adr
-description: Write or supersede an Architecture Decision Record in the house format and keep the ADR index consistent. Use whenever a rule, boundary, technology, or process decision changes. Next number = highest in apps/docs/src/docs/adr + 1.
+description: Write or supersede an Architecture Decision Record in the house format and keep the ADR index consistent. Use whenever a rule, boundary, technology, or process decision changes. Reserve the number first with pnpm adr:reserve (numbers.yaml on main).
 ---
 # ADR
 
 The format is `apps/docs/src/docs/adr/template.mdx`; this skill only restates it.
 
-1. Next number: the highest in `apps/docs/src/docs/adr/` + 1, after checking open pull requests for a number already claimed.
+1. Number: reserve it first with `pnpm adr:reserve <slug> --issue STA-n`, which lands it in `apps/docs/src/docs/adr/numbers.yaml` on main; the first reservation to land wins, so a conflicting reservation PR is closed and run again. Never take the highest on a branch plus one.
    File: `apps/docs/src/docs/adr/NNNN-<kebab-slug>.mdx`, copied from the template.
 2. Frontmatter: `title: "NNNN — Title"` and `description: "<Status> · YYYY-MM-DD"`. Status is one of Proposed, Accepted,
    Deferred, Rejected or `Superseded by NNNN` (the template's status table). Nothing may rely on a Proposed ADR.

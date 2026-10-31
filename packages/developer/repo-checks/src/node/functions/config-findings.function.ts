@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `configFindings(context)`, the `config` phase of `stackra check`: JSON versus JSONC versus YAML, YAML flow
- *          mappings (each file must also parse), and `.stackra/` in `.gitignore`.
+ *          mappings (each file must also parse), `.stackra/` in `.gitignore`, and the ADR number register (STA-1732).
  * Boundary: reads the listed files; returns findings and never prints.
  * Runtime: node
- * Governing contract: the YAML standard (STA-299); ADR 0295 (decision 5).
+ * Governing contract: the YAML standard (STA-299); ADR 0295 (decision 5); STA-1732.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { checkAdrNumbers } from "#node/functions/check-adr-numbers.function";
 import { checkGitignore } from "#node/functions/check-gitignore.function";
 import { checkJsonConfigs } from "#node/functions/check-json-configs.function";
 import { checkYamlFlowMaps } from "#node/functions/check-yaml-flow-maps.function";
@@ -31,6 +32,7 @@ const of = (rule: string, texts: readonly string[]): RawFinding[] =>
 export function configFindings(context: RepoContext): RawFinding[] {
   const { root, files } = context;
   const gitignore = join(root, ".gitignore");
+  const numbers = join(root, "apps/docs/src/docs/adr/numbers.yaml");
   return [
     ...of("json-configs", checkJsonConfigs(files)),
     ...files
@@ -44,6 +46,10 @@ export function configFindings(context: RepoContext): RawFinding[] {
     ...of(
       "gitignore-stackra",
       checkGitignore(existsSync(gitignore) ? readFileSync(gitignore, "utf8") : undefined),
+    ),
+    ...of(
+      "adr-numbers",
+      checkAdrNumbers(files, existsSync(numbers) ? readFileSync(numbers, "utf8") : undefined),
     ),
   ];
 }
