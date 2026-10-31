@@ -1,5 +1,7 @@
 {
-  "label": "Clinic bookings",
+  "label": "Clinic bookings, week",
+  "month_label": "Clinic bookings, month",
+  "agenda_label": "Clinic bookings, agenda",
   "checkup": "Check-up, Sara",
   "cleaning": "Cleaning, Omar",
   "consult": "Consultation, Lina",

@@ -35,7 +35,7 @@ export function SchedulerEventChip({
         {event.title}
       </NativeText>
       {isCompact ? null : (
-        <NativeText numberOfLines={1} className={`text-xs opacity-80 ${ink}`}>
+        <NativeText numberOfLines={1} className={`text-xs ${ink}`}>
           {state.timeOf(event)}
         </NativeText>
       )}

@@ -36,5 +36,5 @@ export default function Agenda() {
       tone: "danger",
     },
   ];
-  return <Scheduler label={t(K.label)} events={events} defaultView="agenda" />;
+  return <Scheduler label={t(K.agenda_label)} events={events} defaultView="agenda" />;
 }
