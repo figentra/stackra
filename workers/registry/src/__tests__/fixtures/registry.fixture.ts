@@ -36,6 +36,8 @@ export const NOW = new Date("2026-10-27T12:00:00.000Z");
 /** The settings of the tests, the wrangler.jsonc defaults. */
 export const SETTINGS: RegistrySettings = {
   host: HOST,
+  oidcAudiences: [`npm:${HOST}`],
+  readOnly: false,
   maxTarballBytes: 52_428_800,
   maxUnpackedBytes: 104_857_600,
   publishTokenSeconds: 900,
@@ -172,7 +174,7 @@ export async function publishBody(
 }
 
 /** The registry over fakes. */
-export async function createTestRegistry() {
+export async function createTestRegistry(settings: Partial<RegistrySettings> = {}) {
   const { db, sqlite } = sqliteD1();
   const tarballs = new MemoryR2();
   const cache = new MemoryKv();
@@ -211,7 +213,7 @@ export async function createTestRegistry() {
     licences,
     signer,
     oidcKeys: jwksSource(cache, fakeFetch, ISSUER, SETTINGS.oidcKeysSeconds),
-    settings: SETTINGS,
+    settings: { ...SETTINGS, ...settings },
     now: () => NOW,
     defer: (task) => {
       deferred.push(task);

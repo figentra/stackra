@@ -42,13 +42,15 @@ interface BrowsePageInput {
   readonly path: string;
   readonly status: number;
   readonly headers: Readonly<Record<string, string>>;
+  /** The registry's public host, shown in the footer (REGISTRY_HOST). */
+  readonly host: string;
 }
 
 /**
  * One page of the registry browser.
  *
  * @example
- * await browsePage({ locale: "en", title: "Stackra registry", body: "<h1>…</h1>", query: "", path: "/", status: 200, headers: {} });
+ * await browsePage({ locale: "en", title: "Stackra registry", body: "<h1>…</h1>", query: "", path: "/", status: 200, headers: {}, host: "npm.stackra.figentra.com" });
  */
 export async function browsePage(input: BrowsePageInput): Promise<Response> {
   const { locale } = input;
@@ -84,7 +86,7 @@ export async function browsePage(input: BrowsePageInput): Promise<Response> {
 <main id="main">
 ${input.body}
 </main>
-<footer><div><span>© Fulers Technologies L.L.C.</span><span dir="ltr">npm.stackra.figentra.com</span></div></footer>
+<footer><div><span>© Fulers Technologies L.L.C.</span><span dir="ltr">${escapeHtml(input.host)}</span></div></footer>
 </body>
 </html>
 `;

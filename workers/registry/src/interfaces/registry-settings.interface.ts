@@ -9,8 +9,12 @@ import type { RetiredKey } from "#src/interfaces/retired-key.interface";
 
 /** The registry's settings. */
 export interface RegistrySettings {
-  /** The public host, also the OIDC audience `npm:<host>`. */
+  /** The public host: tarball URLs, the realm and the default OIDC audience `npm:<host>`. */
   readonly host: string;
+  /** The OIDC audiences a publish token exchange accepts; `npm:<host>` unless REGISTRY_OIDC_AUDIENCES lists more. */
+  readonly oidcAudiences: readonly string[];
+  /** While true, every request but a read answers 503 (REGISTRY_READ_ONLY, a data move). */
+  readonly readOnly: boolean;
   /** The largest tarball, in bytes, a publish may upload (registry.maxTarballBytes). */
   readonly maxTarballBytes: number;
   /** The unpacked size a tarball may reach while it is checked. */

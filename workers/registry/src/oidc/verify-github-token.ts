@@ -31,13 +31,13 @@ const segment = <T>(part: string | undefined): T => {
  * @param options - the expected issuer and audience, the clock and the key source.
  * @throws OidcError when the signature, issuer, audience or time is wrong.
  * @example
- * const claims = await verifyGithubToken(jwt, { issuer, audience: "npm:npm.stackra.figentra.com", now, keys });
+ * const claims = await verifyGithubToken(jwt, { issuer, audiences: ["npm:npm.stackra.figentra.com"], now, keys });
  */
 export async function verifyGithubToken(
   token: string,
   options: {
     readonly issuer: string;
-    readonly audience: string;
+    readonly audiences: readonly string[];
     readonly now: Date;
     readonly keys: KeySource;
   },
@@ -62,7 +62,7 @@ export async function verifyGithubToken(
   const seconds = Math.floor(options.now.getTime() / 1000);
   if (claims.iss !== options.issuer) throw new OidcError("token issuer is wrong");
   const audiences = typeof claims.aud === "string" ? [claims.aud] : claims.aud;
-  if (!Array.isArray(audiences) || !audiences.includes(options.audience))
+  if (!Array.isArray(audiences) || !audiences.some((a) => options.audiences.includes(a)))
     throw new OidcError("token audience is wrong");
   if (typeof claims.exp !== "number" || claims.exp + SKEW <= seconds)
     throw new OidcError("token has expired");
