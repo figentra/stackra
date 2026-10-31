@@ -19,7 +19,7 @@ import type { CliCommand } from "#node/types/cli-command.type";
 const flag = (value: string | boolean | undefined): string | undefined =>
   typeof value === "string" ? value : undefined;
 
-/** `stackra testbed`. */
+/** The `stackra testbed` command: runs work on the test boxes and manages them. */
 export const TESTBED_COMMAND: CliCommand = {
   name: "testbed",
   summary:

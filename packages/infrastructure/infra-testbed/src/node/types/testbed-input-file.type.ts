@@ -6,4 +6,10 @@
  * Governing contract: ADR 0484 (decision 2).
  */
 
-export type TestbedInputFile = { readonly key: string; readonly path: string };
+/** One file the image build reads from the build bucket. */
+export type TestbedInputFile = {
+  /** The object key in the build bucket, `build/<name>`. */
+  readonly key: string;
+  /** The local file uploaded under that key. */
+  readonly path: string;
+};

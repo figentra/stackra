@@ -19,6 +19,14 @@ const COMPONENTS = [
   { name: "testbed-agent", file: "03-agent.yml" },
 ] as const;
 
+/**
+ * Lists the image build inputs (the files uploaded to the build bucket and the component documents) and derives the
+ * image version from their hash.
+ *
+ * @param lockfilePath - the core `pnpm-lock.yaml`.
+ * @param pins - the toolchain pins, part of the hash.
+ * @returns the files, the components and the version.
+ */
 export function testbedInputs(
   lockfilePath: string,
   pins: Readonly<Record<string, string>>,

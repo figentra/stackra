@@ -9,4 +9,5 @@ import type { z } from "zod";
 
 import type { TESTBED_PLAN_SCHEMA } from "#core/constants/testbed-plan-schema.constant";
 
+/** The complete testbed plan that `testbedPlan` returns, with every default filled in. */
 export type TestbedPlan = z.infer<typeof TESTBED_PLAN_SCHEMA>;

@@ -11,6 +11,12 @@
  */
 import type { TestbedPlan } from "#core/types/testbed-plan.type";
 
+/**
+ * Writes the box user data: the region, the identity id and the grants, ids only and no secret.
+ *
+ * @param plan - the testbed plan.
+ * @returns the user data shell script.
+ */
 export function testbedUserData(plan: TestbedPlan): string {
   const { identityId, projects } = plan.secretGrants;
   return [

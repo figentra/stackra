@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0484 (decisions 3, 4, 6, 8, 9); the box agent contract of STA-1626.
  */
+/** The fixed names, paths and numbers of the testbed that the plan, the program and the box agent share. */
 export const TESTBED_DEFAULTS = {
   region: "eu-west-1",
   awsProfile: "academorix",

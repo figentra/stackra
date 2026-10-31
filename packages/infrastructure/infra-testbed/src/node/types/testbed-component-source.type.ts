@@ -6,4 +6,10 @@
  * Governing contract: ADR 0484 (decision 2).
  */
 
-export type TestbedComponentSource = { readonly name: string; readonly document: string };
+/** One Image Builder component of the host image, before its placeholders are filled. */
+export type TestbedComponentSource = {
+  /** The component name, for example `testbed-base`. */
+  readonly name: string;
+  /** The component's YAML document from `images/host/components`. */
+  readonly document: string;
+};

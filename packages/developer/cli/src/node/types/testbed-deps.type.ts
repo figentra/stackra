@@ -15,7 +15,7 @@ export type TestbedDeps = {
   /** Runs a program without a shell with its output on the command's io; resolves with its exit code. */
   readonly stream: (command: string, args: readonly string[]) => Promise<number>;
 
-  /** Waits. */
+  /** Waits the given number of milliseconds. */
   readonly sleep: (milliseconds: number) => Promise<void>;
 
   /** Milliseconds since the epoch. */

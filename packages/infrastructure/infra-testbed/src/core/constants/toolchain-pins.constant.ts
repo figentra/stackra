@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0484 (decision 2); ADR 0019 (exact pins); ADR 0174 (supply chain).
  */
+/** The tool versions the image installs, kept equal to `mise.toml` and the catalogue. */
 export const TOOLCHAIN_PINS = {
   /** `mise.toml` `node`. */
   node: "24.22.0",
@@ -18,6 +19,7 @@ export const TOOLCHAIN_PINS = {
   /** The `@playwright/test` catalogue entry in `pnpm-workspace.yaml`. */
   playwright: "1.64.1",
   // shortcut: not verified against the mise releases from this workstation; confirm on the first image build.
+  /** The mise release the image installs the other tools with. */
   mise: "v2026.10.0",
   /** Postgres for the per-job container and the health check; the tools stack's pinned tag. */
   postgresImage: "postgres:17.6-alpine",

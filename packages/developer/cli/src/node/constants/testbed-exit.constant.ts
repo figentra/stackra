@@ -7,4 +7,9 @@
  */
 
 /** 73: the slot is busy (retry the claim); 75: the box is unhealthy (pick another box). */
-export const TESTBED_EXIT = { busy: 73, unhealthy: 75 } as const;
+export const TESTBED_EXIT = {
+  /** The slot is busy. */
+  busy: 73,
+  /** The box is unhealthy. */
+  unhealthy: 75,
+} as const;
