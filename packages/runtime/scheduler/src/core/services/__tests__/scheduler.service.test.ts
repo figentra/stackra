@@ -246,6 +246,22 @@ describe(SchedulerService, () => {
     expect(await scheduler.schedules(globex)).toEqual([]);
   });
 
+  it("stamps a scoped run's job with the scheduler as its origin in that scope, and a platform run with none", async () => {
+    const { scheduler, jobs, clock } = setup();
+    clock.at = at("11:00:00").getTime();
+    await scheduler.schedule(SendDigestAction, {
+      scope: acme,
+      cron: "0 16 * * *",
+      timeZone: "Asia/Dubai",
+    });
+    await scheduler.tick(at("12:00:30"));
+    const all = await stored(jobs);
+    const digest = all.find((job) => job.key === "digests.digest.send@1");
+    expect(digest?.origin).toEqual({ kind: "system", id: "sys_scheduler", scopeId: "scp_acme" });
+    const platform = all.find((job) => job.scope === undefined);
+    expect(platform?.origin).toBeUndefined();
+  });
+
   it("pushes a schedule's runs in its scope and time zone", async () => {
     const { scheduler, jobs, clock } = setup();
     clock.at = at("11:00:00").getTime();

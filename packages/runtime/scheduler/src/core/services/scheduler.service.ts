@@ -20,8 +20,8 @@
 import type { Action, ActionOptions, CallInput } from "@stackra/actions";
 import { kindOf, Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { Duration } from "@stackra/contracts";
-import type { Clock, Logger, PublicId, ScopeRef } from "@stackra/contracts";
+import { ActorKind, Duration } from "@stackra/contracts";
+import type { Actor, Clock, Logger, PublicId, ScopeRef } from "@stackra/contracts";
 import type { Locks } from "@stackra/locking";
 import type { QueueService } from "@stackra/queue";
 
@@ -83,6 +83,18 @@ function pause(milliseconds: number, signal: AbortSignal): Promise<void> {
     signal.addEventListener("abort", done, { once: true });
   });
 }
+
+/** The scheduler's actor id: a job it pushes runs on its behalf. */
+const SCHEDULER_ACTOR_ID = "sys_scheduler";
+
+/**
+ * The actor a scheduled run of `scope` is stamped with as the job's origin: the scheduler, acting in the scope the
+ * schedule was created for, so the queue worker runs the job through `CallIsolation` bound to that scope (ADR 0495). A
+ * schedule is created in the scope its work belongs to (the tenant's own scope); a scope that is not a tenant's matches
+ * no tenant row, so it fails closed.
+ */
+const schedulerActor = (scope: ScopeRef): Actor =>
+  Object.freeze({ kind: ActorKind.System, id: SCHEDULER_ACTOR_ID, scopeId: scope.id });
 
 /**
  * Dispatches crons and per-scope schedules.
@@ -310,7 +322,7 @@ export class SchedulerService extends Service {
         const id = await this.queue.push(
           type,
           input as never,
-          scope === undefined ? {} : { scope },
+          scope === undefined ? {} : { scope, origin: schedulerActor(scope) },
         );
         if (id !== undefined) pushed += 1;
       }

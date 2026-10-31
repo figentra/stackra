@@ -46,6 +46,12 @@ export class ExpireUnpaidOrdersAction extends Action({
 - A scheduler handler only dispatches: the action does the work, run by the queue worker with the job's retries,
   timeout and dead letter. A `unique` job of a scope that still waits or runs is not pushed again.
 
+- A job pushed in a scope carries the scheduler's actor (`sys_scheduler`, `ActorKind.System`) as its `origin`, acting in
+  that scope, so the queue worker runs it through `CallIsolation` bound to it (ADR 0495); create a schedule in the scope
+  its work belongs to (a tenant's own scope), since a scope that is not a tenant's matches no tenant row. A platform
+  cron (no `perScope`) runs with no actor scope, and a platform cron that works across tenants lists them in
+  `CronScopes`, so each tenant's run is its own job in its own isolation, never one cross-tenant transaction.
+
 ## Per-scope schedules are data
 
 ```ts
