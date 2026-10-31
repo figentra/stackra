@@ -138,12 +138,15 @@ function connect(automations: Automation[], revisions: Revision[] = []) {
 /** The grants every test starts from: the publisher and the seed principal may send an SMS. */
 let access = new MemoryPublisherAccessDriver();
 
-/** A resolver that binds only `bound`. */
-const resolverOf = (bound: readonly object[] = []) => ({
-  has: (token: unknown) => bound.some((instance) => instance.constructor === token),
-  get: <T extends object>(token: unknown) =>
-    bound.find((instance) => instance.constructor === token) as T,
-});
+/** A resolver that binds only `bound`, each under its port too, as the container binds a driver. */
+const resolverOf = (bound: readonly object[] = []) => {
+  const find = (token: unknown) =>
+    bound.find((instance) => typeof token === "function" && instance instanceof token);
+  return {
+    has: (token: unknown) => find(token) !== undefined,
+    get: <T extends object>(token: unknown) => find(token) as T,
+  };
+};
 
 /** A connected service that binds no `ScopeOwnership`, as a member without tenancy is. */
 const serviceOf = () => {
