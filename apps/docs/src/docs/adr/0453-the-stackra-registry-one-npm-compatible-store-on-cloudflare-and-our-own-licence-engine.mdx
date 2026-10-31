@@ -317,6 +317,22 @@ carries both, in one checked shape, and that decision 11's `stackra` field is wh
 **Consequences.** Agents and the catalogue read a member's tier, category, runtimes and purpose from `package.json`
 alone, and `turbo run --filter` can select by category or runtime tag. Each new member needs a `--summary` sentence.
 
+## Amendment 2026-10-31 (owner decision): the `@figentra-oss` scope
+
+Figentra Flow is MIT, so it cannot publish to `@figentra`, which is `internal` with a `commercial` licence rule. The owner
+added an open scope for Figentra's open products (migration `0005_figentra_oss.sql`); this amendment is the ADR decision
+10 asks for before another scope is added. The scope rows are now:
+
+| Scope           | Read rule  | Licence rule  | Trusted publishers (environment)                                     |
+| --------------- | ---------- | ------------- | -------------------------------------------------------------------- |
+| `@stackra`      | `open`     | `open-source` | `figentra/stackra` (`release`)                                       |
+| `@stackra-pro`  | `licensed` | `commercial`  | `figentra/stackra-pro` (`release`)                                   |
+| `@figentra`     | `internal` | `commercial`  | `figentra/brand` (`brand-registry`), `figentra/commerce` (`release`) |
+| `@figentra-oss` | `open`     | `open-source` | `figentra/flow` (`release`)                                          |
+
+Every publisher uses `.github/workflows/release.yml` on `refs/heads/main` and is matched on its numeric repository and
+owner ids (decision 6).
+
 ## Supersedes and sources
 
 Supersedes: [0177](/adr/0177-package-distribution-npmjs-and-keygen) decisions 1 to 3 and decisions 1 to 3 of its

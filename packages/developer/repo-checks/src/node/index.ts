@@ -44,6 +44,7 @@ export { TEST_TIERS } from "#node/constants/test-tiers.constant";
 export { TOOLING } from "#node/constants/tooling.constant";
 export { catalogueFindings } from "#node/functions/catalogue-findings.function";
 export { categoryOf } from "#node/functions/category-of.function";
+export { checkAdrNumbers } from "#node/functions/check-adr-numbers.function";
 export { checkCatalogues } from "#node/functions/check-catalogues.function";
 export { checkDocFile } from "#node/functions/check-doc-file.function";
 export { checkExports } from "#node/functions/check-exports.function";
