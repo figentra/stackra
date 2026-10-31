@@ -14,10 +14,12 @@
  *          as cards without changing the engine's layout.
  * Boundary: it keeps no data state: every tool changes the engine (persisted by its collection key). The filter and sort
  *           editors sit in popovers on wide containers and in bottom drawers on narrow ones. The result count is a
- *           polite status. Full screen is the browser's own, on the DataView's root, and follows Escape. Words come from
+ *           polite status. The one pager (`CollectionPager`) is drawn here under every view, so the table and grid inside
+ *           draw none. Full screen is the browser's own, on the DataView's root, and follows Escape. Words come from
  *           the `ui` catalogue in the active locale; icons from `COLLECTION_ICONS`.
  * Runtime: browser
- * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3); ADR 0165 (React Aria on web);
+ * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3); ADR 0505 (one data family: the
+ *          grid and inline-edit columns are the engine's, one pager, one SavedViews); ADR 0165 (React Aria on web);
  *          WCAG 2.2 SC 1.3.1, 1.4.10, 2.1.1, 2.4.3, 4.1.2, 4.1.3.
  */
 import { cn } from "@heroui/react";
@@ -26,12 +28,14 @@ import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "
 
 import type { CollectionDensity } from "#contracts/enums/collection-density.enum";
 import type { CollectionLayout } from "#contracts/enums/collection-layout.enum";
+import type { CollectionController } from "#contracts/types/collection-controller.type";
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { DataGridRow } from "#contracts/types/data-grid-row.type";
 import type { RuleCondition } from "#contracts/types/rule-condition.type";
 import { COLLECTION_KEYS } from "#core/constants/collection-keys.constant";
 import { cellTextOf } from "#core/functions/cell-text-of.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { conditionChipTextOf } from "#core/functions/condition-chip-text-of.function";
 import { filterConditionCountOf } from "#core/functions/filter-condition-count-of.function";
 import { Button } from "#react/button/button";
 import { Chip } from "#react/chip/chip";
@@ -40,6 +44,8 @@ import { ColumnEditor } from "#react/column-chooser/column-editor";
 import { ColumnEditorPanel } from "#react/column-chooser/column-editor-panel";
 import { DataGrid } from "#react/data-grid/data-grid";
 import { COLLECTION_ICONS } from "#react/data-table/collection-icons.constant";
+import { CollectionPager } from "#react/data-table/collection-pager";
+import { CollectionPagerContext } from "#react/data-table/collection-pager-context";
 import { CollectionRowPanel } from "#react/data-table/collection-row-panel";
 import { DataTable } from "#react/data-table/data-table";
 import { CollectionFilterEditor } from "#react/data-view/collection-filter-editor";
@@ -55,7 +61,7 @@ import { IconButton } from "#react/icon-button/icon-button";
 import { ImportDialog } from "#react/import-dialog/import-dialog";
 import { Menu } from "#react/menu/menu";
 import { Popover } from "#react/popover/popover";
-import { SavedViewsMenu } from "#react/saved-views/saved-views-menu";
+import { SavedViews } from "#react/saved-views/saved-views";
 import { SearchField } from "#react/search-field/search-field";
 import { SegmentedControl } from "#react/segmented-control/segmented-control";
 
@@ -81,7 +87,6 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
   rowActions,
   bulkActions,
   selectionMode,
-  gridColumns,
   onGridSave,
   exportOptions,
   importOptions,
@@ -99,7 +104,6 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
   onExpandedChange,
   onRowOpen,
   renderRowPanel,
-  editableColumns,
   onCellEdit,
   isVirtualized = false,
   cardsBelow = NARROW,
@@ -114,7 +118,7 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
   const { state } = collection;
   const layouts: readonly CollectionLayout[] = givenLayouts ?? [
     "table" as const,
-    ...(gridColumns ? (["grid"] as const) : []),
+    ...(onGridSave ? (["grid"] as const) : []),
     "list" as const,
     "cards" as const,
     ...(board ? (["board"] as const) : []),
@@ -163,20 +167,10 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
   const filterCount = filterConditionCountOf(state.filter);
   const fieldLabel = (id: string) =>
     collection.columns.find((column) => column.id === id)?.label ?? id;
-  const valueLabel = (condition: RuleCondition) => {
-    const options = collection.columns.find((column) => column.id === condition.field)?.options;
-    return options?.find((option) => option.id === condition.value)?.label ?? condition.value;
-  };
   const chipText = (condition: RuleCondition) =>
-    [
-      fieldLabel(condition.field),
-      t(UI_KEYS.ui.rule_operator[condition.operator]),
-      condition.operator === "is_empty" || condition.operator === "is_not_empty"
-        ? ""
-        : valueLabel(condition),
-    ]
-      .filter(Boolean)
-      .join(" ");
+    conditionChipTextOf(condition, collection.columns, (operator) =>
+      t(UI_KEYS.ui.rule_operator[operator]),
+    );
   const groupable = collection.columns.filter((column) => column.isGroupable);
   const refresh = onRefresh ?? (collection.mode === "server" ? collection.refresh : undefined);
   const selected = state.selection.length;
@@ -347,7 +341,7 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         </Drawer.Header>
         <Drawer.Body>
           <div className="grid gap-5">
-            <SavedViewsMenu collection={collection} onShareView={onShareView} />
+            <SavedViews collection={collection} onShareView={onShareView} />
             {switcher}
             <section className="grid gap-2" aria-label={t(K.sort)}>
               <h3 className="m-0 text-sm font-medium">{t(K.sort)}</h3>
@@ -375,7 +369,7 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
     </div>
   ) : (
     <div className="flex flex-wrap items-center gap-2">
-      <SavedViewsMenu collection={collection} onShareView={onShareView} />
+      <SavedViews collection={collection} onShareView={onShareView} />
       <div className="min-w-48 flex-1">{search}</div>
       <Popover
         title={t(K.filter_title, { label })}
@@ -463,14 +457,11 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         isVirtualized={isVirtualized}
       />
     ) : null) ??
-    (layout === "grid" && gridColumns ? (
+    (layout === "grid" ? (
       <DataGrid
         label={label}
-        columns={gridColumns}
-        // A cast: the grid view is offered only when the app's rows are grid rows (`gridColumns` given).
-        rows={collection.rows as unknown as readonly DataGridRow[]}
-        collection={collection as never}
-        density={state.density}
+        // A cast: the app offers the grid (`onGridSave`) over rows whose cells are grid values.
+        collection={collection as unknown as CollectionController<DataGridRow>}
         hasColumnTools
         onSave={onGridSave}
       />
@@ -487,8 +478,6 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
     ) : (
       <DataTable
         label={label}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         hasColumnTools
         isStickyHeader
@@ -498,9 +487,6 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         rowActions={rowActions}
         bulkActions={bulkActions}
         selectionMode={tableSelection}
-        isLoading={collection.isLoading}
-        error={collection.error}
-        onRetry={collection.refresh}
         emptyState={emptyState}
         onReorder={onReorder}
         hasHoverActions={hasHoverActions}
@@ -509,15 +495,8 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
         expandedKeys={expandedKeys}
         defaultExpandedKeys={defaultExpandedKeys}
         onExpandedChange={onExpandedChange}
-        editableColumns={editableColumns}
         onCellEdit={onCellEdit}
         {...(renderRowPanel || onRowOpen ? { onRowOpen: openRow } : {})}
-        query={{
-          search: state.search,
-          filterValues: {},
-          sort: state.sort[0] ?? null,
-        }}
-        onQueryChange={(next) => collection.setSort(next.sort ? [next.sort] : [])}
         onFilterColumn={(id) =>
           collection.setFilter({
             ...state.filter,
@@ -531,90 +510,65 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
     ));
 
   return (
-    <IconRegistryProvider registry={COLLECTION_ICONS}>
-      <div
-        {...rest}
-        ref={root}
-        data-slot="data-view"
-        data-layout={layout}
-        role="region"
-        aria-label={label}
-        className={
-          cn(
-            "grid w-full min-w-0 content-start gap-3",
-            isFullscreen && "overflow-auto bg-background p-4",
-            className,
-          ) ?? ""
-        }
-        style={{ minInlineSize: "min(36rem, calc(100vw - 6rem))", ...rest.style }}
-      >
-        <div role="toolbar" aria-label={t(K.toolbar, { label })} className="grid gap-2">
-          {toolbar}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {chips ?? <span />}
-            <span role="status" className="text-sm text-muted">
-              {t(K.results, { count: collection.totalCount })}
-            </span>
+    <CollectionPagerContext.Provider value>
+      <IconRegistryProvider registry={COLLECTION_ICONS}>
+        <div
+          {...rest}
+          ref={root}
+          data-slot="data-view"
+          data-layout={layout}
+          role="region"
+          aria-label={label}
+          className={
+            cn(
+              "grid w-full min-w-0 content-start gap-3",
+              isFullscreen && "overflow-auto bg-background p-4",
+              className,
+            ) ?? ""
+          }
+          style={{ minInlineSize: "min(36rem, calc(100vw - 6rem))", ...rest.style }}
+        >
+          <div role="toolbar" aria-label={t(K.toolbar, { label })} className="grid gap-2">
+            {toolbar}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {chips ?? <span />}
+              <span role="status" className="text-sm text-muted">
+                {t(K.results, { count: collection.totalCount })}
+              </span>
+            </div>
           </div>
+          {renderRowPanel ? (
+            <CollectionRowPanel
+              label={label}
+              item={openItem}
+              title={openItem ? cellTextOf(openItem, rowHeaderId) || openItem.id : ""}
+              renderPanel={renderRowPanel}
+              onClose={() => setOpenId(null)}
+            >
+              {body}
+            </CollectionRowPanel>
+          ) : (
+            body
+          )}
+          <CollectionPager collection={collection} label={label} />
+          {/* Virtualised views load the next page as their end comes into view; the others offer a button. */}
+          {collection.paging === "infinite" &&
+          (layout !== "table" || isTableAsCards) &&
+          !isVirtualized &&
+          collection.hasMore ? (
+            <div className="flex justify-center">
+              <Button
+                size="sm"
+                variant="secondary"
+                isLoading={collection.isLoading}
+                onPress={collection.loadMore}
+              >
+                {t(K.load_more)}
+              </Button>
+            </div>
+          ) : null}
         </div>
-        {renderRowPanel ? (
-          <CollectionRowPanel
-            label={label}
-            item={openItem}
-            title={openItem ? cellTextOf(openItem, rowHeaderId) || openItem.id : ""}
-            renderPanel={renderRowPanel}
-            onClose={() => setOpenId(null)}
-          >
-            {body}
-          </CollectionRowPanel>
-        ) : (
-          body
-        )}
-        {collection.paging === "page" &&
-        (layout !== "table" || isTableAsCards) &&
-        collection.pageCount > 1 ? (
-          <nav
-            className="flex items-center justify-end gap-2"
-            aria-label={t(K.page_of, { page: state.page + 1, count: collection.pageCount })}
-          >
-            <Button
-              size="sm"
-              variant="secondary"
-              isDisabled={state.page === 0}
-              onPress={() => collection.setPage(state.page - 1)}
-            >
-              {t(K.previous_page)}
-            </Button>
-            <span className="text-sm text-muted">
-              {t(K.page_of, { page: state.page + 1, count: collection.pageCount })}
-            </span>
-            <Button
-              size="sm"
-              variant="secondary"
-              isDisabled={!collection.hasMore}
-              onPress={() => collection.setPage(state.page + 1)}
-            >
-              {t(K.next_page)}
-            </Button>
-          </nav>
-        ) : null}
-        {/* Virtualised views load the next page as their end comes into view; the others offer a button. */}
-        {collection.paging === "infinite" &&
-        (layout !== "table" || isTableAsCards) &&
-        !isVirtualized &&
-        collection.hasMore ? (
-          <div className="flex justify-center">
-            <Button
-              size="sm"
-              variant="secondary"
-              isLoading={collection.isLoading}
-              onPress={collection.loadMore}
-            >
-              {t(K.load_more)}
-            </Button>
-          </div>
-        ) : null}
-      </div>
-    </IconRegistryProvider>
+      </IconRegistryProvider>
+    </CollectionPagerContext.Provider>
   );
 }

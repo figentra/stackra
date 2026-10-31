@@ -8,8 +8,7 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); data-collection plan (owner,
  *          2026-10-29); STA-1371.
  */
-import { collectionColumnOfGrid } from "@stackra/ui";
-import type { DataGridColumn, DataGridRow } from "@stackra/ui/contracts";
+import type { CollectionColumn, DataGridRow } from "@stackra/ui/contracts";
 import { ColumnEditor, DataGrid, useCatalogueText, useCollection } from "@stackra/ui/native";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
@@ -23,14 +22,14 @@ const K = DATA_GRID_DEMO_KEYS.demo_free.data_grid;
 /** A price list whose columns the user arranges. */
 export default function ColumnEditorDemo() {
   const t = useCatalogueText(MESSAGES.en);
-  const columns: readonly DataGridColumn[] = useMemo(
+  const columns: readonly CollectionColumn[] = useMemo(
     () => [
       { id: "item", label: t(K.item), isRequired: true },
       { id: "price", label: t(K.price), type: "number", min: 0, max: 50 },
       {
         id: "size",
         label: t(K.size),
-        type: "select",
+        type: "choice",
         options: [
           { id: "small", label: t(K.small) },
           { id: "large", label: t(K.large) },
@@ -49,9 +48,9 @@ export default function ColumnEditorDemo() {
       in_stock: index !== 3,
     })),
   );
-  const definitions = useMemo(() => columns.map(collectionColumnOfGrid), [columns]);
+  // The grid's columns are the engine's: one column type for both.
   const collection = useCollection({
-    columns: definitions,
+    columns,
     items: rows,
     initialState: { columns: [{ id: "item", pin: "start" }] },
   });
@@ -62,8 +61,6 @@ export default function ColumnEditorDemo() {
       </View>
       <DataGrid
         label={t(K.sheet_label)}
-        columns={columns}
-        rows={rows}
         collection={collection}
         onSave={(changes) =>
           setRows((current) => current.map((row) => ({ ...row, ...changes[row.id] })))

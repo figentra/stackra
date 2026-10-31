@@ -7,16 +7,13 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); product audit 2026-10-28
  *          (group-by and aggregates); ADR 0060 (light, dark, RTL).
  */
-import type { ResourceQuery, TableColumn } from "@stackra/ui/contracts";
-import { DataTable, useCatalogueText } from "@stackra/ui/react";
+import type { TableColumn } from "@stackra/ui/contracts";
+import { DataTable, useCatalogueText, useCollection } from "@stackra/ui/react";
 import { MESSAGES } from "#src/constants/messages.constant";
 import { DATA_TABLE_KEYS } from "#src/demos/free/data-table/data-table-keys.constant";
 
 /** The demo's keys. */
 const K = DATA_TABLE_KEYS.data_table;
-
-/** The query with nothing set. */
-const NO_QUERY: ResourceQuery = Object.freeze({ search: "", filterValues: {}, sort: null });
 
 /** Eight orders in three statuses. */
 const ORDERS = Array.from({ length: 8 }, (_, index) => ({
@@ -34,16 +31,10 @@ export default function Grouped() {
     { id: "status", label: t(K.column_status) },
     { id: "total", label: t(K.column_total), align: "end" },
   ];
-  return (
-    <DataTable
-      label={t(K.grouped_label)}
-      items={ORDERS}
-      columns={columns}
-      query={NO_QUERY}
-      onQueryChange={() => undefined}
-      groupBy="status"
-      aggregates={{ total: "sum" }}
-      headingLevel={4}
-    />
-  );
+  const collection = useCollection({
+    columns,
+    items: ORDERS,
+    initialState: { groupBy: "status", aggregates: { total: "sum" } },
+  });
+  return <DataTable label={t(K.grouped_label)} collection={collection} headingLevel={4} />;
 }

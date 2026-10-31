@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid typed cells).
  */
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridValue } from "#contracts/types/data-grid-value.type";
 import { latinDigitsOf } from "#core/functions/latin-digits-of.function";
 
@@ -22,7 +22,7 @@ const FALSE_WORDS = new Set(["false", "no", "n", "0", "لا"]);
  * @param column - the column the cell is in
  * @returns the typed value, null for empty text, or the text itself when it does not parse
  */
-export function parseGridValue(text: string, column: DataGridColumn): DataGridValue {
+export function parseGridValue(text: string, column: CollectionColumn): DataGridValue {
   const trimmed = text.trim();
   if (trimmed === "") return column.type === "boolean" ? false : null;
   switch (column.type ?? "text") {
@@ -37,7 +37,7 @@ export function parseGridValue(text: string, column: DataGridColumn): DataGridVa
       if (FALSE_WORDS.has(word)) return false;
       return trimmed;
     }
-    case "select": {
+    case "choice": {
       const word = trimmed.toLowerCase();
       const option = column.options?.find(
         (choice) => choice.id.toLowerCase() === word || choice.label.toLowerCase() === word,

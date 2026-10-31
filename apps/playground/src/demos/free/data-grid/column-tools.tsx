@@ -6,7 +6,7 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); data-collection plan (owner,
  *          2026-10-29); ADR 0060 (light, dark, RTL).
  */
-import type { DataGridColumn } from "@stackra/ui/contracts";
+import type { CollectionColumn } from "@stackra/ui/contracts";
 import { DataGrid } from "@stackra/ui/react";
 
 import { useGulfOrders } from "#src/demos/free/data-view/use-gulf-orders";
@@ -14,8 +14,8 @@ import { useGulfOrders } from "#src/demos/free/data-view/use-gulf-orders";
 /** Data grid: Column tools. */
 export default function ColumnTools() {
   const { t, K } = useGulfOrders(0);
-  const columns: readonly DataGridColumn[] = [
-    { id: "product", label: t(K.column_product), isReadOnly: true, width: 180 },
+  const columns: readonly CollectionColumn[] = [
+    { id: "product", label: t(K.column_product), isReadOnly: true, pin: "start", width: 180 },
     { id: "price", label: t(K.price), type: "number", min: 0 },
     { id: "riyadh", label: t(K.branch_riyadh), type: "number", min: 0, width: 140 },
     { id: "jeddah", label: t(K.branch_jeddah), type: "number", min: 0, width: 140 },
@@ -30,6 +30,12 @@ export default function ColumnTools() {
     dammam: (index * 5) % 20,
   }));
   return (
-    <DataGrid label={t(K.grid_label)} columns={columns} rows={rows} hasColumnTools height="20rem" />
+    <DataGrid
+      label={t(K.grid_label)}
+      columns={columns}
+      items={rows}
+      hasColumnTools
+      maxHeight="20rem"
+    />
   );
 }

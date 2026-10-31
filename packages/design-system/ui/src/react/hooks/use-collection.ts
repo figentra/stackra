@@ -9,7 +9,8 @@
  * Boundary: plain React (no DOM, no React Native), so both runtimes' components share it; the pure steps live in
  *           `core/functions` and are tested there. A slice in `options.state` is controlled. Persistence keeps the
  *           columns, sort, filter, search, group, totals, density, layout, page size and views, never the selection or
- *           the page. A server fetch a newer query replaces is aborted, and its late answer ignored.
+ *           the page. A server fetch a newer query replaces is aborted, and its late answer ignored. A new search,
+ *           filter or sort goes back to the first page and clears the selection (ADR 0505).
  * Runtime: isomorphic
  * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3); ADR 0313 (decisions 3 and 4);
  *          STA-1371.
@@ -44,6 +45,14 @@ const NO_ITEMS: readonly never[] = Object.freeze([]);
 
 /** The slices a reset to the first page follows. */
 const FIRST_PAGE = { page: 0, cursor: null } as const;
+
+/** What a new query resets: the first page and the selection, whose rows the new query may no longer hold. */
+const NEW_QUERY = {
+  ...FIRST_PAGE,
+  selection: [],
+  isAllMatchingSelected: false,
+  excludedKeys: [],
+} as const;
 
 /** A snapshot answered at once, or `undefined` for a promise or no store. */
 function syncSnapshotOf(value: unknown): CollectionSnapshot | null | undefined {
@@ -84,6 +93,7 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
     source,
     totalCount: givenTotal,
     isLoading: givenLoading = false,
+    nextCursor: givenNextCursor,
     locale = "en",
   } = options;
   const fetch = options.fetch ?? source?.fetch;
@@ -134,6 +144,8 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
   );
   const latest = useRef(state);
   latest.current = state;
+  // The cursor of each page shown so far (`cursor` paging), so Previous goes back to the cursor it came from.
+  const cursors = useRef<(string | null)[]>([null]);
 
   const commit = (next: CollectionState) => {
     latest.current = next;
@@ -200,6 +212,7 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
     [mode, items, state, columns, paging, locale],
   );
   const rows = applied ? applied.rows : (fetched?.items ?? items);
+  const nextCursor = fetched ? fetched.nextCursor : givenNextCursor;
   const matched = applied ? applied.matched : rows;
   const totalCount = applied
     ? applied.matched.length
@@ -211,9 +224,11 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
     ? applied.hasMore
     : paging === "page"
       ? state.page < pageCount - 1
-      : fetched?.nextCursor
+      : nextCursor
         ? true
-        : rows.length < totalCount;
+        : nextCursor === null
+          ? false
+          : rows.length < totalCount;
   const aggregates = useMemo(
     () => fetched?.aggregates ?? collectionAggregatesOf(matched, state.aggregates),
     [fetched, matched, state.aggregates],
@@ -249,13 +264,13 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
     views,
     defaultViewId,
     update,
-    setSearch: (search) => update({ search, ...FIRST_PAGE }),
-    setFilter: (filter) => update({ filter, ...FIRST_PAGE }),
-    setSort: (sort) => update({ sort, ...FIRST_PAGE }),
+    setSearch: (search) => update({ search, ...NEW_QUERY }),
+    setFilter: (filter) => update({ filter, ...NEW_QUERY }),
+    setSort: (sort) => update({ sort, ...NEW_QUERY }),
     toggleSort: (columnId, isAdditive) =>
       update({
         sort: nextCollectionSort(latest.current.sort, columnId, isAdditive),
-        ...FIRST_PAGE,
+        ...NEW_QUERY,
       }),
     setGroupBy: (groupBy) => update({ groupBy }),
     setAggregate: (columnId, kind) => {
@@ -291,13 +306,21 @@ export function useCollection<TItem extends CollectionItem = CollectionItem>(
     setAllMatchingSelected: (isAllMatchingSelected) =>
       update({ isAllMatchingSelected, excludedKeys: [] }),
     setExcludedKeys: (excludedKeys) => update({ excludedKeys }),
-    setPage: (page) => update({ page: Math.max(0, page) }),
+    setPage: (page) => {
+      const next = Math.max(0, page);
+      update(
+        paging === "cursor"
+          ? { page: next, cursor: cursors.current[next] ?? null }
+          : { page: next },
+      );
+    },
     setPageSize: (pageSize) => update({ pageSize, ...FIRST_PAGE }),
-    loadMore: () =>
-      update({
-        page: latest.current.page + 1,
-        cursor: fetched?.nextCursor ?? latest.current.cursor,
-      }),
+    loadMore: () => {
+      const page = latest.current.page + 1;
+      const cursor = nextCursor ?? latest.current.cursor;
+      cursors.current[page] = cursor;
+      update({ page, cursor });
+    },
     applyView: (viewId) => {
       const view = views.find((candidate) => candidate.id === viewId);
       if (!view) return;

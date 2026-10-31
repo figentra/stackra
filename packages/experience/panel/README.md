@@ -129,8 +129,10 @@ list query still gates every row. `ViewStore` is a port (`list`, `save`, `remove
 `DatabaseViewStoreDriver`, over `panel.stored_views` (tenant policy, `version` column): it lists the viewer's own views,
 the scope's and its roles' copies; on save it refuses undeclared keys with `view_key_unknown` (`unknownViewKeys` against
 the registered table), sharing without `panel.view.share` (`ViewPermissions.share`), someone else's view, and a stale
-version (`StaleVersionError`). `ResourceListPage` takes a `views` store and draws the views as tabs over the table; the
-native `SavedViewTabs` does the same for a native list. `groupRows(rows, view)` groups what is on screen in first-met
+version (`StaleVersionError`). `ResourceListPage` takes a `views` store and draws the views as tabs over the table: the
+table's `useCollection` engine reads them through a `CollectionStore` adapter as `CollectionView`s (filters as
+quick-filter conditions, sort, columns, group as `groupBy`, totals as `aggregates`, gallery as cards), and
+`SavedViewTabs` (web and native) is `@stackra/ui`'s `SavedViews variant="tabs"` over that engine (ADR 0505). `groupRows(rows, view)` groups what is on screen in first-met
 order and is for a fully loaded relation table only (ADR 0470 decision 4); a paged list waits for the server group-by.
 
 A resource's preset views (`views(v)`) draw as tabs too, after the all-rows tab and before the saved views. A preset can
@@ -213,7 +215,8 @@ Every `toResource(Resources.Order)` route renders a generic page, Filament-style
 
 - **List** (`ResourceListPage`): the title, the header actions, and `DataTable` with the recorded columns (hidden ones
   left out, money in its currency, a list as its count), sort on sortable columns, `FilterBar` with search and the
-  declared filters (an enum filter as a select, the trashed filter), cursor pagination (`nextCursor`, `hasMore`),
+  declared filters (an enum filter as a choice, the trashed filter), cursor pagination (`nextCursor`, `hasMore`),
+  all held by `@stackra/ui`'s `useCollection` engine in server mode (ADR 0505),
   row actions and the bulk bar. The read is the closed input `{ limit, cursor?, sort?, filter?, search? }`
   (`CrudService.table`); only declared sorts and filters are sent. `pageSize` defaults to 25. When the page carries a
   count (`CrudService.table`'s `TableCount`, from the table's `Count` mode), it shows beside the filter bar, capped as

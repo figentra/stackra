@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "5facb34ad2212168",
+    "hash": "cf6a084ee69ff81c",
     "propsFiles": [
       "ui/src/react/data-view/collection-filter-editor.props.ts",
       "ui/src/react/data-view/collection-sort-editor.props.ts",
@@ -22,7 +22,7 @@
           "type": "(item: TItem) => void"
         },
         {
-          "description": "Web: saves the grid view's edited cells.",
+          "description": "Web: saves the grid view's edited cells; given, the grid is offered. Its columns are the engine's.",
           "name": "onGridSave",
           "required": false,
           "source": "stackra",
@@ -64,7 +64,7 @@
           "type": "(item: TItem) => void"
         },
         {
-          "description": "Called with a valid edited value; the app writes the row (a promise is awaited by nobody: report failures yourself).",
+          "description": "Called with a valid edited value of a column marked `isEditable` (its `type` picks the DataGrid editor, its rules\nvalidate the value); the app writes the row. A returned promise is awaited: a rejection is shown on the cell.",
           "name": "onCellEdit",
           "required": false,
           "source": "stackra",
@@ -138,7 +138,7 @@
           "type": "DataViewFields<TItem>"
         },
         {
-          "description": "The views offered by the switcher, in order. Defaults to table, list and cards, with grid when `gridColumns` is\ngiven (web); native offers list and cards.",
+          "description": "The views offered by the switcher, in order. Defaults to table, list and cards, with grid when `onGridSave` is\ngiven (web) and board when `board` is (web); native offers list and cards.",
           "name": "layouts",
           "required": false,
           "source": "stackra",
@@ -150,13 +150,6 @@
           "required": false,
           "source": "stackra",
           "type": "\"list\" | \"cards\""
-        },
-        {
-          "description": "Web: the typed columns of the grid view; given, the grid is offered.",
-          "name": "gridColumns",
-          "required": false,
-          "source": "stackra",
-          "type": "readonly DataGridColumn[]"
         },
         {
           "description": "The export dialog's options; given, the toolbar has Export. The counts default to the engine's.",
@@ -229,13 +222,6 @@
           "type": "(item: TItem) => ReactNode"
         },
         {
-          "description": "The typed columns edited in place, matched to the table's columns by id: their kind picks the DataGrid editor and\ntheir rules (required, range, the app's own) validate the value. A read-only one is not edited.",
-          "name": "editableColumns",
-          "required": false,
-          "source": "stackra",
-          "type": "readonly DataGridColumn[]"
-        },
-        {
           "description": "True to draw only the rows, cards or board cards in view (React Aria's Virtualizer), for 10,000 rows and more.",
           "name": "isVirtualized",
           "required": false,
@@ -301,6 +287,10 @@
       ]
     },
     {
+      "name": "SavedViews",
+      "props": []
+    },
+    {
       "name": "CollectionFilterEditor",
       "props": [
         {
@@ -337,18 +327,6 @@
           "type": "string"
         }
       ]
-    },
-    {
-      "name": "DataViewCards",
-      "props": []
-    },
-    {
-      "name": "DataViewBoard",
-      "props": []
-    },
-    {
-      "name": "SavedViewsMenu",
-      "props": []
     },
     {
       "events": [

@@ -1,13 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: `useOrderFilters`, the translated filters of the native FilterBar demos (one of each kind) and `readout`,
- *          the query as the two lines a demo reads out.
+ * Purpose: `useOrderFilters`, the translated columns of the native FilterBar demos (one of each type, each a filter of
+ *          the bar) and `readout`, the engine's search and filter as the two lines a demo reads out.
  * Boundary: a hook over the active catalogue, in a `.ts` file so the demo tooling never takes it for a demo.
  * Runtime: react-native
- * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract).
+ * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0505 (one filter model).
  */
-import { getLocalTimeZone, today } from "@internationalized/date";
-import type { FilterDefinition, FilterValue, ResourceQuery } from "@stackra/ui/contracts";
+import type { CollectionColumn, CollectionState, RuleCondition } from "@stackra/ui/contracts";
 import { useCatalogueText } from "@stackra/ui/native";
 
 import { MESSAGES } from "#src/constants/messages.constant";
@@ -16,48 +15,31 @@ import { FILTER_BAR_DEMO_KEYS } from "#src/demos/free/filter-bar/filter-bar-demo
 /** The keys of the filters and the readout. */
 const K = FILTER_BAR_DEMO_KEYS.demo_free.filter_bar;
 
-/** The filters (text, number, select, multi-select, date range, boolean) and the query's readout lines. */
+/** The columns (text, number, choice, another choice, date, boolean) and the readout lines of the engine's state. */
 export function useOrderFilters(): {
-  readonly filters: readonly FilterDefinition[];
-  readonly readout: (query: ResourceQuery) => { readonly search: string; readonly filters: string };
+  readonly columns: readonly CollectionColumn[];
+  readonly readout: (state: CollectionState) => {
+    readonly search: string;
+    readonly filters: string;
+  };
 } {
   const t = useCatalogueText(MESSAGES.en);
-  const describe = (value: FilterValue): string => {
+  const describe = ({ operator, value }: RuleCondition): string => {
+    if (operator === "is_true" || operator === "is_false")
+      return t(operator === "is_true" ? K.readout.yes : K.readout.no);
     if (typeof value === "string") return value;
-    if (typeof value === "boolean") return t(value ? K.readout.yes : K.readout.no);
-    if ("min" in value)
-      return t(K.readout.range, {
-        from: value.min?.toString() ?? "…",
-        to: value.max?.toString() ?? "…",
-      });
-    if ("start" in value)
-      return t(K.readout.range, {
-        from: value.start?.toString() ?? "…",
-        to: value.end?.toString() ?? "…",
-      });
+    if (operator === "between")
+      return t(K.readout.range, { from: value[0] || "…", to: value[1] || "…" });
     return value.join(", ");
   };
   return {
-    filters: [
-      {
-        id: "customer",
-        kind: "text",
-        label: t(K.filters.customer),
-        placeholder: t(K.filters.customer_hint),
-      },
-      {
-        id: "total",
-        kind: "number",
-        label: t(K.filters.total),
-        minValue: 0,
-        maxValue: 1000,
-        step: 10,
-        formatOptions: { style: "currency", currency: "USD" },
-      },
+    columns: [
+      { id: "customer", label: t(K.filters.customer) },
+      { id: "total", label: t(K.filters.total), type: "number", min: 0, max: 1000 },
       {
         id: "status",
-        kind: "select",
         label: t(K.filters.status),
+        type: "choice",
         options: [
           { id: "paid", label: t(K.filters.paid) },
           { id: "pending", label: t(K.filters.pending) },
@@ -66,37 +48,23 @@ export function useOrderFilters(): {
       },
       {
         id: "channels",
-        kind: "multi-select",
         label: t(K.filters.channels),
+        type: "choice",
         options: [
           { id: "web", label: t(K.filters.web) },
           { id: "store", label: t(K.filters.store) },
           { id: "phone", label: t(K.filters.phone) },
         ],
       },
-      {
-        id: "placed",
-        kind: "date-range",
-        label: t(K.filters.placed),
-        maxValue: today(getLocalTimeZone()),
-      },
-      {
-        id: "gift",
-        kind: "boolean",
-        label: t(K.filters.gift),
-        trueLabel: t(K.filters.gift_yes),
-        falseLabel: t(K.filters.gift_no),
-      },
+      { id: "placed", label: t(K.filters.placed), type: "date" },
+      { id: "gift", label: t(K.filters.gift), type: "boolean" },
     ],
-    readout: (query) => {
-      const filters = Object.entries(query.filterValues)
-        .map(([id, value]) => `${id}: ${describe(value)}`)
+    readout: ({ search, filter }) => {
+      const filters = filter.conditions
+        .map((condition) => `${condition.field}: ${describe(condition)}`)
         .join("; ");
       return {
-        search:
-          query.search === ""
-            ? t(K.readout.no_search)
-            : t(K.readout.search, { text: query.search }),
+        search: search === "" ? t(K.readout.no_search) : t(K.readout.search, { text: search }),
         filters: filters === "" ? t(K.readout.no_filters) : t(K.readout.filters, { filters }),
       };
     },

@@ -110,7 +110,7 @@ describe("Table (web)", () => {
     const { rerender } = render(
       <Table
         {...baseProps}
-        sortDescriptor={{ column: "total", direction: "ascending" }}
+        sort={[{ column: "total", direction: "ascending" }]}
         onSortChange={onSortChange}
       />,
     );
@@ -128,7 +128,7 @@ describe("Table (web)", () => {
     rerender(
       <Table
         {...baseProps}
-        sortDescriptor={{ column: "total", direction: "descending" }}
+        sort={[{ column: "total", direction: "descending" }]}
         onSortChange={onSortChange}
       />,
     );

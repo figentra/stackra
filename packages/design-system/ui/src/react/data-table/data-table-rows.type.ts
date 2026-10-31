@@ -2,16 +2,15 @@
  * Stackra file contract:
  * Purpose: `DataTableRows`, the web DataTable's row tools (wave 3 of the collection family): drag to reorder, hover
  *          row actions and the row context menu, expandable rows, opening a row in the side panel and inline edit of
- *          marked columns with the DataGrid's editors.
+ *          the columns marked `isEditable` with the DataGrid's editors.
  * Boundary: types only; web only, so the native DataTable's contract is unchanged. The table writes nothing: each tool
  *           calls the app, which passes the new rows back.
  * Runtime: browser
- * Governing contract: ADR 0305 (rules 10 and 12); data-collection plan (owner, 2026-10-29), wave 3 (rows); STA-1371.
+ * Governing contract: ADR 0305 (rules 10 and 12); data-collection plan (owner, 2026-10-29), wave 3 (rows); ADR 0505 (the editable columns are the engine's); STA-1371.
  */
 import type { ReactNode } from "react";
 
 import type { CollectionItem } from "#contracts/types/collection-item.type";
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
 import type { DataGridValue } from "#contracts/types/data-grid-value.type";
 
 /** The web DataTable's row tools. */
@@ -42,11 +41,9 @@ export interface DataTableRows<TItem extends CollectionItem = CollectionItem> {
   /** Given, an opened row shows this in a resizable side panel beside the table (a drawer on a small screen). */
   readonly renderRowPanel?: ((item: TItem) => ReactNode) | undefined;
   /**
-   * The typed columns edited in place, matched to the table's columns by id: their kind picks the DataGrid editor and
-   * their rules (required, range, the app's own) validate the value. A read-only one is not edited.
+   * Called with a valid edited value of a column marked `isEditable` (its `type` picks the DataGrid editor, its rules
+   * validate the value); the app writes the row. A returned promise is awaited: a rejection is shown on the cell.
    */
-  readonly editableColumns?: readonly DataGridColumn[] | undefined;
-  /** Called with a valid edited value; the app writes the row (a promise is awaited by nobody: report failures yourself). */
   readonly onCellEdit?:
     | ((item: TItem, columnId: string, value: DataGridValue) => void | Promise<void>)
     | undefined;

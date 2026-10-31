@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: the native `RuleBuilder`: "all / any of these" over cards of field, operator and value (a text field, or a
- *          select for a choice field; none for "is empty"), each removable, and a button that adds one.
+ * Purpose: the native `RuleBuilder`: "all / any of these" over cards of field, operator and value (a text or number
+ *          field, a select for one choice, tags for several, a date field for a day, two of them for a "between" range;
+ *          none for "is empty" or a yes or no), each removable, and a button that adds one.
  * Boundary: controlled; every edit reports a whole new rule; operators follow the field's type.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3: one API on web and native); STA-1371.
+ * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0505 (one filter model); STA-1371.
  */
 import type { ReactElement } from "react";
 import { View } from "react-native";
@@ -13,9 +14,11 @@ import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useRuleBuilderState } from "#react/hooks/use-rule-builder-state";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Button } from "#native/button/button";
+import { DateField } from "#native/date-field/date-field";
 import { IconButton } from "#native/icon-button/icon-button";
 import type { RuleBuilderProps } from "#native/rule-builder/rule-builder.props";
 import { Select } from "#native/select/select";
+import { TagGroup } from "#native/tag-group/tag-group";
 import { Text } from "#native/text/text";
 import { TextField } from "#native/text-field/text-field";
 
@@ -53,8 +56,26 @@ export function RuleBuilder({
         </Text>
       ) : null}
       {value.conditions.map((condition) => {
-        const { field, needsValue, operatorItems, setField, setOperator, setValue } =
-          rowOf(condition);
+        const row = rowOf(condition);
+        const { field, operatorItems, setField, setOperator } = row;
+        // One value input, or the `at` end of a range.
+        const inputAt = (at: 0 | 1, name: string) =>
+          row.input === "date" ? (
+            <DateField
+              label={name}
+              value={row.dayAt(at)}
+              isDisabled={isDisabled}
+              onChange={(day) => row.setDayAt(at, day)}
+            />
+          ) : (
+            <TextField
+              label={name}
+              value={row.textAt(at)}
+              isDisabled={isDisabled}
+              {...(row.input === "number" ? { keyboardType: "decimal-pad" as const } : {})}
+              onChange={(next) => row.setTextAt(at, next)}
+            />
+          );
         return (
           <View
             key={condition.id}
@@ -88,23 +109,30 @@ export function RuleBuilder({
               isFullWidth
               onChange={setOperator}
             />
-            {!needsValue ? null : field?.type === "choice" ? (
+            {row.input === "none" ? null : row.input === "choices" ? (
+              <TagGroup
+                label={t(K.value)}
+                selectionMode="multiple"
+                items={field?.options ?? []}
+                value={row.list}
+                onChange={row.setList}
+              />
+            ) : row.input === "choice" ? (
               <Select
                 label={t(K.value)}
-                items={field.options ?? []}
-                value={condition.value || null}
+                items={field?.options ?? []}
+                value={row.textAt(0) || null}
                 isDisabled={isDisabled}
                 isFullWidth
-                onChange={setValue}
+                onChange={row.setValue}
               />
+            ) : row.isRange ? (
+              <View className="gap-2">
+                {inputAt(0, t(UI_KEYS.ui.filter_bar.from))}
+                {inputAt(1, t(UI_KEYS.ui.filter_bar.until))}
+              </View>
             ) : (
-              <TextField
-                label={t(K.value)}
-                value={condition.value}
-                isDisabled={isDisabled}
-                {...(field?.type === "number" ? { keyboardType: "decimal-pad" as const } : {})}
-                onChange={setValue}
-              />
+              inputAt(0, t(K.value))
             )}
           </View>
         );

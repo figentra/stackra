@@ -26,9 +26,11 @@ const SCHEMES = ["light", "dark"] as const;
 const LOCALES = ["en", "ar"] as const;
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
-const open = async (page: Page, scheme: string, locale: string) => {
+const open = async (page: Page, scheme: string, locale: string, material?: "solid") => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
-  await page.goto(`/filter-bar?scheme=${scheme}&locale=${locale}`);
+  await page.goto(
+    `/filter-bar?scheme=${scheme}&locale=${locale}${material === undefined ? "" : `&material=${material}`}`,
+  );
   await expect(
     page.getByRole("heading", { level: 1, name: pageTitle("Filter bar", locale) }),
   ).toBeVisible();
@@ -88,6 +90,8 @@ const addFilter = async (page: Page, bar: Locator, label: string) => {
 };
 
 const axeFindsNothing = async (page: Page) => {
+  // Every lazy demo mounted first: one arriving mid-scan leaves heading-order unable to place its headings.
+  await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
   const { violations, incomplete } = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
   expect(
     violations.map((finding) => finding.id),
@@ -111,7 +115,8 @@ for (const [scheme, locale] of [
   ["dark", "ar"],
 ] as const)
   test(`axe finds nothing in an open filter editor in ${scheme}, ${locale}`, async ({ page }) => {
-    await open(page, scheme, locale);
+    // Scanned solid (the product default): axe cannot see through glass; ADR 0501 decision 4's thick fill and the tokens contrast test cover glass.
+    await open(page, scheme, locale, "solid");
     await addFilter(page, liveBar(page), "Status");
     // Scoped to the dialog: it sits in a portal outside the page's landmarks, which the region rule would flag.
     // Only violations are asserted: a surface that is still fading in leaves a colour check for review.
@@ -130,7 +135,7 @@ test("each bar is a named search landmark with a named search box", async ({ pag
   const live = liveBar(page);
   await expect(live).toBeVisible();
   await expect(live.getByRole("searchbox", { name: "Search the live orders" })).toBeVisible();
-  await expect(page.getByRole("search")).toHaveCount(5);
+  await expect(page.getByRole("search")).toHaveCount(6);
 });
 
 test("the add-filter menu opens from the keyboard and lists only the filters not applied", async ({
@@ -163,7 +168,7 @@ test("a disabled filter is listed and refused", async ({ page }) => {
   await expect(total).toHaveAttribute("aria-disabled", "true");
   await total.click({ force: true });
   await expect(page.getByRole("menu")).toBeVisible();
-  // The menu's own popover is a dialog; the refused filter opens no editor of its own.
+  // The menu's own popover is a dialog; the refused filter (the column's `filter.isDisabled`) opens no editor.
   await expect(page.getByRole("dialog", { name: "Total" })).toHaveCount(0);
 });
 
@@ -185,11 +190,11 @@ test("a chosen filter opens a named dialog that takes focus, and a choice is app
   await expect(dialog.getByRole("heading", { level: 2, name: "Status" })).toBeVisible();
   await expect(page.locator('[role="dialog"]:focus, [role="dialog"] :focus')).toHaveCount(1);
 
-  await page.keyboard.press("Tab");
-  await expect(dialog.getByRole("radio", { name: "Paid" })).toBeFocused();
+  // A choice column filters as "is any of": its options are ticked, and each tick is applied at once.
+  // From the keyboard: the input is visually hidden under the drawn box, so a pointer lands on the box instead.
+  await dialog.getByRole("checkbox", { name: "Shipped" }).focus();
   await page.keyboard.press("Space");
-  await page.keyboard.press("ArrowDown");
-  await expect(dialog.getByRole("radio", { name: "Shipped" })).toBeChecked();
+  await expect(dialog.getByRole("checkbox", { name: "Shipped" })).toBeChecked();
   await expect(live.getByTestId("filter-bar-live-query")).toHaveText("Query: status=shipped");
   await expect(matching(page)).toHaveText("4 orders match.");
 
@@ -211,7 +216,7 @@ test("a chip opens its editor with its value, and Escape gives focus back to the
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: "Status" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("radio", { name: "Paid" })).toBeChecked();
+  await expect(dialog.getByRole("checkbox", { name: "Paid" })).toBeChecked();
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(chip).toBeFocused();

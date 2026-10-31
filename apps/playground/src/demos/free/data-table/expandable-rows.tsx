@@ -33,12 +33,8 @@ export default function ExpandableRows() {
   return (
     <DataTable
       label={t(K.expand_label)}
-      items={collection.rows}
-      columns={collection.columns}
       collection={collection}
       renderCell={renderCell}
-      query={{ search: "", filterValues: {}, sort: null }}
-      onQueryChange={() => {}}
       defaultExpandedKeys={[orders[0]?.id ?? ""]}
       renderRowDetail={(order) => (
         <PropertyList

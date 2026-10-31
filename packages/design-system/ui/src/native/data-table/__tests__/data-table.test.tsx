@@ -1,30 +1,34 @@
 /**
  * Stackra file contract:
- * Purpose: proves the native DataTable, the adapted form, hands the native Table its rows, columns and label with the
- *          sort read from `query.sort` and every sort the table asks for written back as the whole next query, adds an
- *          actions column only when `rowActions` is given and draws an `ActionMenu` named for the row in it (running an
- *          action once, with a pending action refused and marked), draws the `filterBar` slot above the list with a
- *          string wrapped in `Text`, hands the bottom bar the selection's count and "select all N" for a fully selected
- *          page, goes back to the rows shown when the selection changes while all matching is chosen, clears the
- *          selection from the bar, chooses the `no-results` empty state when the query narrows and the `no-data` one
- *          otherwise (its button clears filters but keeps the sort), shows a named skeleton for a first load, an error
- *          state with a retry in place of the list, cursor paging only when the app gave a handler, and passes the
- *          root's other props through.
+ * Purpose: proves the native DataTable, the adapted form, draws from a `useCollection` engine: the shorthand `items` and
+ *          `columns` run a client-mode engine of its own (its rows, visible columns and sort reach the native Table, and
+ *          a sort the table asks for sorts the rows), an app's `collection` wins, hidden columns are left out, an
+ *          actions column comes only with `rowActions` and draws an `ActionMenu` named for the row (running an action
+ *          once, with a pending action refused and marked), the `filterBar` slot sits above the list with a string
+ *          wrapped in `Text`, the bottom bar gets the engine's selection count, page-selected flag and "select all N",
+ *          a selection change while all matching is chosen goes back to the rows shown, the bar clears the selection,
+ *          the `no-results` empty state shows when the search or filter narrows (its button clears them but keeps the
+ *          sort) and `no-data` otherwise, a named skeleton for a first load, an error state with a retry in place of
+ *          the list, the engine's error and refresh by default, the pager only for `page` and `cursor` paging, `infinite`
+ *          paging handed to the Table, and the root's other props passed through.
  * Boundary: React Native does not render in vitest, so react-native and the sibling native components are replaced by
- *           recording stand-ins that render plain DOM; what reaches them is checked, not their rendering.
+ *           recording stand-ins that render plain DOM; the engine is the real `useCollection`.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313; ADR 0318 (decisions 2, 4 to 6 and 10); ADR
- *          0022 (test placement).
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313; ADR 0505 (one data family); ADR 0022
+ *          (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-188 sta-350:FR-191 sta-350:FR-192
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
-import type { ResourceQuery } from "#contracts/types/resource-query.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
+import type { CollectionController } from "#contracts/types/collection-controller.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
 import { DataTable } from "#native/data-table/data-table";
 import type { DataTableProps } from "#native/data-table/data-table.props";
+import { useCollection } from "#react/hooks/use-collection";
+import type { UseCollectionOptions } from "#react/hooks/use-collection-options.type";
 
 /** The props each stand-in was last handed, by name. */
 const received = vi.hoisted(() => ({
@@ -180,6 +184,16 @@ vi.mock("#native/cursor-pagination/cursor-pagination", async () => {
   };
 });
 
+vi.mock("#native/column-chooser/column-editor", async () => {
+  const { createElement } = await import("react");
+  return {
+    ColumnEditor: (props: Record<string, unknown>) => {
+      received.props["columnEditor"] = props;
+      return createElement("div", { "data-testid": "column-editor" });
+    },
+  };
+});
+
 interface Order {
   readonly id: string;
   readonly number: string;
@@ -191,40 +205,76 @@ const ORDERS: readonly Order[] = [
   { id: "o2", number: "#1002", customer: "Grace" },
 ];
 
-const COLUMNS: readonly TableColumn[] = [
+const COLUMNS: readonly CollectionColumn[] = [
   { id: "number", label: "Order", isSortable: true },
   { id: "customer", label: "Customer" },
 ];
-
-const QUERY: ResourceQuery = { search: "", filterValues: {}, sort: null };
 
 const baseProps = {
   label: "Orders",
   items: ORDERS,
   columns: COLUMNS,
-  query: QUERY,
-  onQueryChange: () => undefined,
 } satisfies DataTableProps<Order>;
+
+/** The last engine the harness built. */
+const seen: { engine?: CollectionController<Order> | undefined } = {};
+
+/** A DataTable over an app's own seen.engine. */
+function WithEngine({
+  options,
+  ...props
+}: Omit<DataTableProps<Order>, "label"> & {
+  readonly options?: Partial<UseCollectionOptions<Order>>;
+}) {
+  const collection = useCollection<Order>({ columns: COLUMNS, items: ORDERS, ...options });
+  useEffect(() => {
+    seen.engine = collection;
+  });
+  return <DataTable label="Orders" collection={collection} {...props} />;
+}
 
 const click = (element: HTMLElement) => act(() => void fireEvent.click(element));
 const propsOf = (name: string) => received.props[name] ?? {};
+const labelsOf = (name: string) =>
+  (propsOf(name)["columns"] as readonly TableColumn[]).map((column) => column.label);
+const idsOf = (name: string) =>
+  (propsOf(name)["items"] as readonly { readonly id: string }[]).map((item) => item.id);
 const archiveOf = (name: string) =>
   screen.getByRole("group", { name }).querySelector("button") as HTMLElement;
 
 describe("DataTable (native)", () => {
   beforeEach(() => {
     received.props = {};
+    seen.engine = undefined;
   });
 
-  it("hands the native Table its rows, columns and label, with the sort read from the query", () => {
-    const sort = { column: "number", direction: "ascending" } as const;
-    render(<DataTable {...baseProps} query={{ ...QUERY, sort }} />);
-    expect(propsOf("table")["items"]).toBe(ORDERS);
-    expect(propsOf("table")["columns"]).toBe(COLUMNS);
-    expect(propsOf("table")["label"]).toBe("Orders");
-    expect(propsOf("table")["sortDescriptor"]).toEqual(sort);
+  it("runs its own engine over the shorthand and sorts the rows the table asks for", () => {
     render(<DataTable {...baseProps} />);
-    expect(propsOf("table")["sortDescriptor"]).toBeUndefined();
+    expect(idsOf("table")).toEqual(["o1", "o2"]);
+    expect(labelsOf("table")).toEqual(["Order", "Customer"]);
+    expect(propsOf("table")["label"]).toBe("Orders");
+    expect(propsOf("table")["sort"]).toEqual([]);
+    act(() =>
+      (propsOf("table")["onSortChange"] as (sort: unknown) => void)({
+        column: "number",
+        direction: "descending",
+      }),
+    );
+    expect(propsOf("table")["sort"]).toEqual([{ column: "number", direction: "descending" }]);
+    expect(idsOf("table")).toEqual(["o2", "o1"]);
+  });
+
+  it("draws the app's engine, leaving out its hidden columns", () => {
+    render(
+      <WithEngine
+        options={{
+          initialState: { columns: [{ id: "number" }, { id: "customer", isHidden: true }] },
+        }}
+      />,
+    );
+    expect(labelsOf("table")).toEqual(["Order"]);
+    act(() => seen.engine?.setSort([{ column: "number", direction: "descending" }]));
+    expect(idsOf("table")).toEqual(["o2", "o1"]);
   });
 
   // STA-486 item 8: inside a page's ScrollView the rows must not scroll, or React Native warns about nested lists.
@@ -236,33 +286,12 @@ describe("DataTable (native)", () => {
     expect(propsOf("table")).not.toHaveProperty("scrollEnabled");
   });
 
-  it("writes the sort the table asks for into the whole next query", () => {
-    const onQueryChange = vi.fn();
-    render(
-      <DataTable
-        {...baseProps}
-        query={{ search: "ada", filterValues: { status: "paid" }, sort: null }}
-        onQueryChange={onQueryChange}
-      />,
-    );
-    (propsOf("table")["onSortChange"] as (sort: unknown) => void)({
-      column: "number",
-      direction: "descending",
-    });
-    expect(onQueryChange).toHaveBeenCalledWith({
-      search: "ada",
-      filterValues: { status: "paid" },
-      sort: { column: "number", direction: "descending" },
-    });
-  });
-
   describe("row actions", () => {
     it("adds an actions column and a menu named for the row only when rowActions is given", () => {
       const { rerender } = render(<DataTable {...baseProps} />);
-      expect(propsOf("table")["columns"]).toBe(COLUMNS);
+      expect(labelsOf("table")).toEqual(["Order", "Customer"]);
       rerender(<DataTable {...baseProps} rowActions={() => [{ id: "open", label: "Open" }]} />);
-      const columns = propsOf("table")["columns"] as readonly TableColumn[];
-      expect(columns.map((column) => column.label)).toEqual(["Order", "Customer", "Actions"]);
+      expect(labelsOf("table")).toEqual(["Order", "Customer", "Actions"]);
       expect(screen.getByRole("group", { name: "Actions for #1002" })).toBeTruthy();
     });
 
@@ -306,6 +335,17 @@ describe("DataTable (native)", () => {
     });
   });
 
+  it("gives the phone's column tools, a ColumnEditor on the table's engine, only with hasColumnTools", () => {
+    const { rerender } = render(<DataTable {...baseProps} />);
+    expect(screen.queryByTestId("column-editor")).toBeNull();
+    rerender(<DataTable {...baseProps} hasColumnTools />);
+    expect(screen.getByTestId("column-editor")).toBeTruthy();
+    expect(propsOf("columnEditor")["isIconOnly"]).toBe(true);
+    expect(propsOf("columnEditor")["collection"]).toMatchObject({
+      visibleColumns: expect.any(Array),
+    });
+  });
+
   it("draws the filterBar slot above the list, wrapping a string in Text", () => {
     const { rerender } = render(
       <DataTable {...baseProps} filterBar={<i data-testid="filters" />} />,
@@ -317,89 +357,46 @@ describe("DataTable (native)", () => {
   });
 
   describe("selection and the bottom bar", () => {
-    it("draws the bar only for several selected, with the count the selection holds", () => {
-      const { rerender } = render(<DataTable {...baseProps} selectionMode="single" />);
+    it("draws the bar only for several selected, with the engine's count", () => {
+      const { unmount } = render(<DataTable {...baseProps} selectionMode="single" />);
       expect(screen.queryByTestId("bar")).toBeNull();
-      rerender(<DataTable {...baseProps} selectionMode="multiple" selectedKeys={["o1"]} />);
-      expect(propsOf("bar")["selectedCount"]).toBe(1);
-      expect(propsOf("bar")["label"]).toBe("Orders actions");
-    });
-
-    it("reports a change as ids and keeps its own copy only when the app does not control the selection", () => {
-      const onSelectionChange = vi.fn();
+      unmount();
       render(
-        <DataTable
-          {...baseProps}
-          selectionMode="multiple"
-          defaultSelectedKeys={["o1"]}
-          onSelectionChange={onSelectionChange}
-        />,
+        <WithEngine selectionMode="multiple" options={{ initialState: { selection: ["o1"] } }} />,
       );
       expect(propsOf("bar")["selectedCount"]).toBe(1);
+      expect(propsOf("bar")["label"]).toBe("Orders actions");
+      expect(propsOf("bar")["isPageSelected"]).toBe(false);
+    });
+
+    it("writes a change to the engine and clears it from the bar", () => {
+      render(<WithEngine selectionMode="multiple" />);
       act(() =>
         (propsOf("table")["onSelectionChange"] as (keys: readonly string[]) => void)(["o1", "o2"]),
       );
-      expect(onSelectionChange).toHaveBeenCalledWith(["o1", "o2"]);
+      expect(seen.engine?.state.selection).toEqual(["o1", "o2"]);
       expect(propsOf("bar")["selectedCount"]).toBe(2);
-      expect(propsOf("table")["selectedKeys"]).toEqual(["o1", "o2"]);
-    });
-
-    it("clears the selection from the bar", () => {
-      const onSelectionChange = vi.fn();
-      render(
-        <DataTable
-          {...baseProps}
-          selectionMode="multiple"
-          defaultSelectedKeys={["o1", "o2"]}
-          onSelectionChange={onSelectionChange}
-        />,
-      );
-      click(screen.getByTestId("bar"));
-      expect(onSelectionChange).toHaveBeenCalledWith([]);
-    });
-
-    it("tells the bar a page is fully selected and passes select all N through", () => {
-      const onAllMatchingSelectedChange = vi.fn();
-      const { rerender } = render(
-        <DataTable
-          {...baseProps}
-          selectionMode="multiple"
-          selectedKeys={["o1"]}
-          totalCount={245}
-          onAllMatchingSelectedChange={onAllMatchingSelectedChange}
-        />,
-      );
-      expect(propsOf("bar")["isPageSelected"]).toBe(false);
-      rerender(
-        <DataTable
-          {...baseProps}
-          selectionMode="multiple"
-          selectedKeys={["o1", "o2"]}
-          totalCount={245}
-          onAllMatchingSelectedChange={onAllMatchingSelectedChange}
-        />,
-      );
       expect(propsOf("bar")["isPageSelected"]).toBe(true);
-      expect(propsOf("bar")["totalCount"]).toBe(245);
-      expect(propsOf("bar")["onAllMatchingSelectedChange"]).toBe(onAllMatchingSelectedChange);
+      expect(propsOf("table")["selectedKeys"]).toEqual(["o1", "o2"]);
+      click(screen.getByTestId("bar"));
+      expect(seen.engine?.state.selection).toEqual([]);
     });
 
-    it("goes back to the rows shown when the selection changes while all matching is chosen", () => {
-      const onAllMatchingSelectedChange = vi.fn();
+    it("offers select all N from the engine and goes back to the rows shown on a change", () => {
       render(
-        <DataTable
-          {...baseProps}
+        <WithEngine
           selectionMode="multiple"
-          selectedKeys={["o1", "o2"]}
-          totalCount={245}
-          isAllMatchingSelected
-          onAllMatchingSelectedChange={onAllMatchingSelectedChange}
+          options={{ mode: "server", totalCount: 245, initialState: { selection: ["o1", "o2"] } }}
         />,
       );
+      expect(propsOf("bar")["totalCount"]).toBe(245);
+      act(() => (propsOf("bar")["onAllMatchingSelectedChange"] as (is: boolean) => void)(true));
+      expect(seen.engine?.state.isAllMatchingSelected).toBe(true);
+      expect(propsOf("bar")["isAllMatchingSelected"]).toBe(true);
       act(() =>
         (propsOf("table")["onSelectionChange"] as (keys: readonly string[]) => void)(["o1"]),
       );
-      expect(onAllMatchingSelectedChange).toHaveBeenCalledWith(false);
+      expect(seen.engine?.state.isAllMatchingSelected).toBe(false);
     });
   });
 
@@ -410,39 +407,25 @@ describe("DataTable (native)", () => {
       expect(propsOf("empty")["headingLevel"]).toBe(3);
     });
 
-    it("shows the no-results state when the query narrows, and its button clears filters but keeps the sort", () => {
-      const onQueryChange = vi.fn();
-      render(
-        <DataTable
-          {...baseProps}
-          items={[]}
-          query={{
-            search: "zzz",
-            filterValues: { status: "paid" },
-            sort: { column: "number", direction: "descending" },
-          }}
-          onQueryChange={onQueryChange}
-        />,
-      );
+    it("shows the no-results state when the search narrows, and its button clears it but keeps the sort", () => {
+      const sort = [{ column: "number", direction: "descending" }] as const;
+      render(<WithEngine options={{ initialState: { search: "zzz", sort } }} />);
       expect(propsOf("empty")["reason"]).toBe("no-results");
       click(screen.getByRole("button", { name: "Clear filters" }));
-      expect(onQueryChange).toHaveBeenCalledWith({
-        search: "",
-        filterValues: {},
-        sort: { column: "number", direction: "descending" },
-      });
+      expect(seen.engine?.state.search).toBe("");
+      expect(seen.engine?.state.filter.conditions).toEqual([]);
+      expect(seen.engine?.state.sort).toEqual(sort);
     });
 
     it("takes the app's own empty states", () => {
-      const { rerender } = render(
+      const { unmount } = render(
         <DataTable {...baseProps} items={[]} emptyState={<i data-testid="mine" />} />,
       );
       expect(screen.getByTestId("mine")).toBeTruthy();
-      rerender(
-        <DataTable
-          {...baseProps}
-          items={[]}
-          query={{ ...QUERY, search: "x" }}
+      unmount();
+      render(
+        <WithEngine
+          options={{ initialState: { search: "x" } }}
           filteredEmptyState={<i data-testid="theirs" />}
         />,
       );
@@ -461,7 +444,7 @@ describe("DataTable (native)", () => {
       expect(propsOf("table")["isLoading"]).toBe(true);
     });
 
-    it("shows an error state in place of the list, with a retry only when the app can retry", () => {
+    it("shows an error state in place of the list, with a retry only when one is known", () => {
       const onRetry = vi.fn();
       const error = new Error("boom");
       const { rerender } = render(
@@ -480,22 +463,47 @@ describe("DataTable (native)", () => {
       rerender(<DataTable {...baseProps} error="failed" />);
       expect(propsOf("error")["retry"]).toBeUndefined();
     });
+
+    it("retries a server engine with its own refresh", () => {
+      render(<WithEngine options={{ mode: "server" }} error="failed" />);
+      expect(propsOf("error")["retry"]).toEqual({
+        label: "Try again",
+        onPress: seen.engine?.refresh,
+      });
+    });
   });
 
-  describe("cursor paging", () => {
-    it("draws no pager unless the app gave a handler", () => {
-      render(<DataTable {...baseProps} hasMore />);
+  describe("paging", () => {
+    it("draws no pager without engine pages", () => {
+      render(<DataTable {...baseProps} />);
       expect(screen.queryByTestId("pager")).toBeNull();
     });
 
-    it("names the pager after the table and hands it the page's own flags and handlers", () => {
-      const onNext = vi.fn();
-      render(<DataTable {...baseProps} hasMore hasPrevious onNext={onNext} />);
+    it("pages the engine: next and previous move its page", () => {
+      render(<WithEngine options={{ paging: "page", initialState: { pageSize: 1 } }} />);
       expect(propsOf("pager")["label"]).toBe("Orders pagination");
       expect(propsOf("pager")["hasMore"]).toBe(true);
+      expect(propsOf("pager")["hasPrevious"]).toBe(false);
+      expect(propsOf("pager")["count"]).toBe(1);
+      act(() => (propsOf("pager")["onNext"] as () => void)());
+      expect(seen.engine?.state.page).toBe(1);
+      expect(idsOf("table")).toEqual(["o2"]);
       expect(propsOf("pager")["hasPrevious"]).toBe(true);
-      expect(propsOf("pager")["onNext"]).toBe(onNext);
-      expect(propsOf("pager")["count"]).toBe(2);
+      act(() => (propsOf("pager")["onPrevious"] as () => void)());
+      expect(seen.engine?.state.page).toBe(0);
+    });
+
+    it("loads the next cursor page with the engine", () => {
+      render(<WithEngine options={{ mode: "server", paging: "cursor", nextCursor: "c2" }} />);
+      act(() => (propsOf("pager")["onNext"] as () => void)());
+      expect(seen.engine?.state.cursor).toBe("c2");
+    });
+
+    it("hands an infinite engine's end to the Table", () => {
+      render(<WithEngine options={{ mode: "server", paging: "infinite", totalCount: 10 }} />);
+      expect(screen.queryByTestId("pager")).toBeNull();
+      expect(propsOf("table")["hasMore"]).toBe(true);
+      expect(propsOf("table")["onLoadMore"]).toBe(seen.engine?.loadMore);
     });
   });
 
@@ -506,10 +514,12 @@ describe("DataTable (native)", () => {
   });
 
   it("refuses the names the contract replaces", () => {
-    // @ts-expect-error -- the sort is the query's, not a separate prop
+    // @ts-expect-error -- the sort is the engine's, not a prop
     const withSort: DataTableProps<Order> = { ...baseProps, sortDescriptor: undefined };
+    // @ts-expect-error -- the resource query was replaced by the engine (ADR 0505)
+    const withQuery: DataTableProps<Order> = { ...baseProps, query: {} };
     // @ts-expect-error -- `commands` is a raw name; the contract's word is `rowActions`
     const raw: DataTableProps<Order> = { ...baseProps, commands: [] };
-    expect([withSort, raw]).toHaveLength(2);
+    expect([withSort, withQuery, raw]).toHaveLength(3);
   });
 });

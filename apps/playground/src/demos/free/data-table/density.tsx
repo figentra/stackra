@@ -41,15 +41,7 @@ export default function Density() {
         }}
         items={DENSITIES.map((density) => ({ id: density, label: t(K[`density_${density}`]) }))}
       />
-      <DataTable
-        label={t(K.density_label)}
-        items={collection.rows}
-        columns={collection.columns}
-        collection={collection}
-        renderCell={renderCell}
-        query={{ search: "", filterValues: {}, sort: null }}
-        onQueryChange={() => {}}
-      />
+      <DataTable label={t(K.density_label)} collection={collection} renderCell={renderCell} />
     </div>
   );
 }

@@ -15,14 +15,7 @@ export const FREE_DATA_VIEW: ComponentEntry = {
   platforms: ["react", "native"],
   packageName: "@stackra/ui",
   exportName: "DataView",
-  parts: [
-    "DataView",
-    "CollectionFilterEditor",
-    "CollectionSortEditor",
-    "DataViewCards",
-    "DataViewBoard",
-    "SavedViewsMenu",
-  ],
+  parts: ["DataView", "SavedViews"],
   hero: {},
   examples: [
     { id: "basics", card: true, platforms: ["react"] },

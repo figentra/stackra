@@ -1,13 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: the "refused" demo of the native FilterBar: `isDisabled` lists a filter but refuses adding it.
+ * Purpose: the "refused" demo of the native FilterBar: a column with `isFilterable: false` is left out of the add-filter list.
  * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.
  * Runtime: react-native
- * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).
+ * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6); ADR 0505.
  */
-import type { FilterDefinition, ResourceQuery } from "@stackra/ui/contracts";
-import { FilterBar, Text, useCatalogueText } from "@stackra/ui/native";
-import { useState } from "react";
+import type { CollectionColumn } from "@stackra/ui/contracts";
+import { FilterBar, Text, useCatalogueText, useCollection } from "@stackra/ui/native";
 import { View } from "react-native";
 
 import { MESSAGES } from "#src/constants/messages.constant";
@@ -19,28 +18,20 @@ import { useOrderFilters } from "#src/demos/free/filter-bar/use-order-filters";
 const K = FILTER_BAR_DEMO_KEYS.demo_free.filter_bar.bar;
 const F = FILTER_BAR_DEMO_KEYS.demo_free.filter_bar.filters;
 
-/** Region is listed while its options load, and cannot be added. */
+/** Region is a column of the orders but not a filter: the bar offers the first three columns only. */
 export default function Refused() {
-  const [query, setQuery] = useState<ResourceQuery>({ search: "", filterValues: {}, sort: null });
   const t = useCatalogueText(MESSAGES.en);
-  const { filters, readout } = useOrderFilters();
-  const withRefused: readonly FilterDefinition[] = [
-    ...filters.slice(0, 3),
-    {
-      id: "region",
-      kind: "select",
-      label: t(F.region),
-      isDisabled: true,
-      options: [{ id: "emea", label: "EMEA" }],
-    },
+  const { columns, readout } = useOrderFilters();
+  const withRegion: readonly CollectionColumn[] = [
+    ...columns.slice(0, 3),
+    { id: "region", label: t(F.region), isFilterable: false },
   ];
-  const lines = readout(query);
+  const collection = useCollection({ columns: withRegion });
+  const lines = readout(collection.state);
   return (
     <View className="gap-3">
       <FilterBar
-        filters={withRefused}
-        query={query}
-        onQueryChange={setQuery}
+        collection={collection}
         searchLabel={t(K.search_label)}
         searchPlaceholder={t(K.search_placeholder)}
       />

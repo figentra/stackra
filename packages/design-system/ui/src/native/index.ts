@@ -575,8 +575,6 @@ export type { ToggleButtonProps } from "#native/toggle-button/toggle-button.prop
 export { ToggleButtonGroup } from "#native/toggle-button-group/toggle-button-group";
 export type { ToggleButtonGroupProps } from "#native/toggle-button-group/toggle-button-group.props";
 // Wave 3d: DataGrid, DataTable tools.
-export { ColumnChooser } from "#native/column-chooser/column-chooser";
-export type { ColumnChooserProps } from "#native/column-chooser/column-chooser.props";
 export { ColumnEditor } from "#native/column-chooser/column-editor";
 export type { ColumnEditorProps } from "#native/column-chooser/column-editor.props";
 export type { SortableRowAction } from "#native/sortable-list/sortable-row-action.type";

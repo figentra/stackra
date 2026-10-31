@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "331fd0ae443b9503",
+    "hash": "90bdb25557f33965",
     "propsFiles": ["ui/src/native/swipeable-tabs/swipeable-tabs.props.ts"]
   },
   "importLine": "import { SwipeableTabs } from \"@stackra/ui/native\";",
@@ -76,13 +76,6 @@
           "type": "string"
         },
         {
-          "description": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
-          "name": "emptyState",
-          "required": false,
-          "source": "stackra",
-          "type": "ReactNode"
-        },
-        {
           "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",
           "name": "selectedKeys",
           "required": false,
@@ -95,6 +88,13 @@
           "required": false,
           "source": "stackra",
           "type": "readonly string[]"
+        },
+        {
+          "description": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
+          "name": "emptyState",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
         },
         {
           "default": "horizontal",

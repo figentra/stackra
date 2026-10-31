@@ -2,17 +2,16 @@
  * Stackra file contract:
  * Purpose: proves the web DataTable's column tools on the collection engine: a header menu per column whose items move,
  *          pin, hide, group and sort the column; a pinned column sticks at its offset; the keyboard resize ("Resize
- *          column", then the arrows and Enter) reports the new width; density reaches the table; and the legacy props
- *          (`hiddenColumns`, `query.sort`) still drive it.
+ *          column", then the arrows and Enter) reports the new width; and the engine's hidden columns, sort and density
+ *          are what the table draws.
  * Boundary: the DataTable over a real `useCollection`; widths are read from the engine.
  * Runtime: node
- * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0022 (test placement); STA-1371.
+ * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0505; ADR 0022 (test placement); STA-1371.
  */
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import type { CollectionColumn } from "#contracts/types/collection-column.type";
-import type { ResourceQuery } from "#contracts/types/resource-query.type";
 import { DataTable } from "#react/data-table/data-table";
 import { useCollection } from "#react/hooks/use-collection";
 
@@ -26,22 +25,13 @@ const ROWS = [
   { id: "2", order: "#1002", city: "Jeddah", total: 10 },
   { id: "3", order: "#1003", city: "Riyadh", total: 25 },
 ];
-const QUERY: ResourceQuery = { search: "", filterValues: {}, sort: null };
 
 /** A DataTable on an engine, with a readout of the engine's state. */
 function Harness() {
   const collection = useCollection({ columns: COLUMNS, items: ROWS });
   return (
     <>
-      <DataTable
-        label="Orders"
-        items={collection.rows}
-        columns={COLUMNS}
-        collection={collection}
-        hasColumnTools
-        query={QUERY}
-        onQueryChange={() => {}}
-      />
+      <DataTable label="Orders" collection={collection} hasColumnTools />
       <output data-testid="state">
         {JSON.stringify({
           order: collection.columns.map(
@@ -64,6 +54,19 @@ const state = () =>
 function choose(column: string, item: string) {
   fireEvent.click(screen.getByRole("button", { name: `${column} options` }));
   fireEvent.click(screen.getByRole("menuitem", { name: item }));
+}
+
+function Arranged() {
+  const collection = useCollection({
+    columns: COLUMNS,
+    items: ROWS,
+    initialState: {
+      columns: [{ id: "order" }, { id: "city", isHidden: true }, { id: "total" }],
+      sort: [{ column: "total", direction: "ascending" }],
+      density: "compact",
+    },
+  });
+  return <DataTable label="Orders" collection={collection} />;
 }
 
 describe("DataTable column tools (web)", () => {
@@ -120,19 +123,8 @@ describe("DataTable column tools (web)", () => {
     expect(state()["width"]).toBeGreaterThan(120);
   });
 
-  it("still takes the app's hidden columns and sort without an engine of its own", () => {
-    const onQueryChange = vi.fn();
-    render(
-      <DataTable
-        label="Orders"
-        items={ROWS}
-        columns={COLUMNS}
-        hiddenColumns={["city"]}
-        query={{ ...QUERY, sort: { column: "total", direction: "ascending" } }}
-        onQueryChange={onQueryChange}
-        density="compact"
-      />,
-    );
+  it("draws the engine's hidden columns, sort and density", () => {
+    render(<Arranged />);
     const grid = screen.getByRole("grid", { name: "Orders" });
     expect(
       within(grid)
@@ -142,10 +134,6 @@ describe("DataTable column tools (web)", () => {
     expect(
       within(grid).getByRole("columnheader", { name: /Total/ }).getAttribute("aria-sort"),
     ).toBe("ascending");
-    fireEvent.click(within(grid).getByRole("columnheader", { name: /Order/ }));
-    expect(onQueryChange).toHaveBeenCalledWith({
-      ...QUERY,
-      sort: { column: "order", direction: "ascending" },
-    });
+    expect(within(grid).getAllByRole("rowheader")[0]?.textContent).toContain("#1002");
   });
 });

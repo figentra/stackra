@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "92d780dc53e40d4d",
+    "hash": "eb6938f98bc85aa6",
     "propsFiles": ["ui/src/native/heading/heading.props.ts"]
   },
   "importLine": "import { Heading } from \"@stackra/ui/native\";",
@@ -95,7 +95,7 @@
           "name": "weight",
           "required": false,
           "source": "heroui",
-          "type": "\"bold\" | \"normal\" | \"medium\" | \"semibold\""
+          "type": "\"bold\" | \"medium\" | \"normal\" | \"semibold\""
         },
         {
           "description": "",

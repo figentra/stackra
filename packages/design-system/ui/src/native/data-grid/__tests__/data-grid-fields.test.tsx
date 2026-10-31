@@ -8,12 +8,13 @@
  * Boundary: `react-native` and the kit's parts are stand-ins that render plain DOM form controls; `useUiText` writes
  *           the key with its values.
  * Runtime: node
- * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid on a phone); ADR 0022.
+ * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid on a phone); ADR 0505; ADR 0022.
  */
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import { DataGrid } from "#native/data-grid/data-grid";
 
 type Props = Record<string, unknown> & { readonly children?: ReactNode };
@@ -142,11 +143,11 @@ vi.mock("#react/hooks/use-ui-text", () => ({
 }));
 
 const K = "ui::data_grid.";
-const COLUMNS = [
+const COLUMNS: readonly CollectionColumn[] = [
   { id: "name", label: "Name", isRequired: true },
   { id: "qty", label: "Qty", type: "number" as const, min: 1, max: 9 },
   { id: "on", label: "On", type: "boolean" as const },
-  { id: "size", label: "Size", type: "select" as const, options: [{ id: "s", label: "Small" }] },
+  { id: "size", label: "Size", type: "choice" as const, options: [{ id: "s", label: "Small" }] },
   { id: "day", label: "Day", type: "date" as const, validate: () => "Not a weekday" },
 ];
 const ROWS = [
@@ -166,7 +167,7 @@ beforeEach(() => {
 
 describe("DataGrid fields (native)", () => {
   it("draws each column's field from the row and says why a draft is wrong", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} />);
     openRow("Latte");
     expect(field("Name").value).toBe("Latte");
     expect(field("Qty")).toMatchObject({ value: "1", inputMode: "decimal", dir: "ltr" });
@@ -190,7 +191,7 @@ describe("DataGrid fields (native)", () => {
   });
 
   it("starts empty drafts for empty cells and drops the draft on cancel or dismiss", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} />);
     openRow("Mocha");
     expect(field("Qty").value).toBe("");
     expect(field("On").checked).toBe(false);
@@ -208,7 +209,7 @@ describe("DataGrid fields (native)", () => {
   });
 
   it("toggles rows in and out of the selection and cancels it", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} />);
     fireEvent.click(screen.getByText(`${K}select`));
     const latte = screen.getByRole("button", { name: "Latte" });
     expect(latte.dataset["role"]).toBe("checkbox");
@@ -222,7 +223,7 @@ describe("DataGrid fields (native)", () => {
   });
 
   it("switches the bulk column, fills it and cancels without writing", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} />);
     fireEvent.click(screen.getByText(`${K}select`));
     fireEvent.click(screen.getByRole("button", { name: "Latte" }));
     fireEvent.click(screen.getByText(`${K}bulk_edit(1)`));
@@ -246,7 +247,7 @@ describe("DataGrid fields (native)", () => {
           { id: "mon", label: "Mon", type: "number" },
           { id: "tue", label: "Tue", type: "number" },
         ]}
-        rows={[
+        items={[
           { id: "a", who: "Ada", mon: 2, tue: 3 },
           { id: "b", who: "Bob", mon: 4, tue: null },
         ]}
@@ -262,7 +263,7 @@ describe("DataGrid fields (native)", () => {
   });
 
   it("offers no selection and no row editor when read-only", () => {
-    render(<DataGrid label="Menu" columns={[]} rows={[{ id: "r1" }]} isReadOnly className="x" />);
+    render(<DataGrid label="Menu" columns={[]} items={[{ id: "r1" }]} isReadOnly className="x" />);
     expect(screen.queryByText(`${K}select`)).toBeNull();
     expect(screen.queryByRole("button", { name: `${K}edit_row(r1)` })).toBeNull();
     expect(screen.queryByRole("dialog")).toBeNull();

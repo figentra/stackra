@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the "kinds" demo of the web Filter bar: Each kind has one editor and holds one value. An editor that is
- *          left empty drops its chip and its key, but a yes or no never counts as empty, because no is an answer.
+ * Purpose: the "kinds" demo of the web Filter bar: each column type gives one filter editor and one condition. An editor
+ *          left empty drops its chip and its condition, but a yes or no never counts as empty, because no is an answer.
  * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.
  * Runtime: browser
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0302 (decisions 3 and 5);
@@ -14,8 +14,8 @@ import { FILTER_BAR_KEYS } from "#src/demos/free/filter-bar/filter-bar-keys.cons
 /** The demo's keys. */
 const K = FILTER_BAR_KEYS.filter_bar;
 
-/** The filter kinds, in the order the list shows them. */
-const KINDS = ["select", "multi_select", "text", "number", "date_range", "boolean"] as const;
+/** The column types a filter is derived from, in the order the list shows them. */
+const KINDS = ["choice", "text", "number", "date", "boolean"] as const;
 
 /** Filter bar: Kinds of filter. */
 export default function Kinds() {

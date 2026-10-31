@@ -3,8 +3,10 @@
  * Purpose: the web `DataGrid`, an Excel-like editor of typed cells: a cell range picked with the pointer or Shift and
  *          the arrows, copy, cut and paste of tab-separated text with Excel, Numbers and Google Sheets, a fill handle
  *          (and Ctrl+D) that repeats the range down or across, typed editors (text, number, select, date, boolean),
- *          validation of edited cells, undo and redo, a `SaveBar` of the pending changes, frozen leading columns and
- *          virtualised rows. The `matrix` variant is a quantity matrix (colour by size) with a total per row and per
+ *          validation of edited cells, undo and redo, a `SaveBar` of the pending changes, pinned columns and virtualised
+ *          rows, drawn from a `useCollection` engine (the app's, or its own over the shorthand `items` and `columns`, its
+ *          first column pinned) so the engine's sort, filter, columns and density apply; the engine's pager under it
+ *          when standalone. The `matrix` variant is a quantity matrix (colour by size) with a total per row and per
  *          column.
  * Boundary: the grid keeps the pending changes (`useDataGridModel`) and never writes the rows. Focus stays on the
  *           grid element and the active cell is its `aria-activedescendant`, so virtualised rows can come and go
@@ -13,12 +15,14 @@
  *           boolean, Delete to clear, Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z, Ctrl+D, Ctrl+A, Escape. The active cell's error is
  *           shown under the grid and announced politely. Fill repeats the pattern only (no series).
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid); ADR 0060 (RTL);
+ * Governing contract: ADR 0302 (decision 3); ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid); ADR 0505 (one data
+ *          family); ADR 0060 (RTL);
  *          WCAG 2.2 SC 1.3.1, 2.1.1, 2.4.7, 3.3.1, 4.1.2 and 4.1.3.
  */
 import { cn } from "@heroui/react";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import {
+  useContext,
   useMemo,
   useEffect,
   useId,
@@ -33,11 +37,10 @@ import {
 } from "react";
 import { useLocale } from "react-aria-components";
 
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridRow } from "#contracts/types/data-grid-row.type";
 import { COLLECTION_KEYS } from "#core/constants/collection-keys.constant";
 import { DATA_GRID_KEYS } from "#core/constants/data-grid-keys.constant";
-import { collectionColumnOfGrid } from "#core/functions/collection-column-of-grid.function";
 import { dataGridColumnWidth as widthOf } from "#core/functions/data-grid-column-width.function";
 import { fillPatternOf } from "#core/functions/fill-pattern-of.function";
 import { parseGridValue } from "#core/functions/parse-grid-value.function";
@@ -50,6 +53,8 @@ import type { DataGridWrite } from "#react/data-grid/data-grid-write.type";
 import type { GridCell } from "#react/data-grid/grid-cell.type";
 import { useDataGridModel } from "#react/data-grid/use-data-grid-model";
 import { COLLECTION_ICONS } from "#react/data-table/collection-icons.constant";
+import { CollectionPager } from "#react/data-table/collection-pager";
+import { CollectionPagerContext } from "#react/data-table/collection-pager-context";
 import { ColumnMenu } from "#react/data-table/column-menu";
 import { useCollection } from "#react/hooks/use-collection";
 import { useResizeHandle } from "#react/hooks/use-resize-handle";
@@ -63,6 +68,10 @@ const K = DATA_GRID_KEYS.ui.data_grid;
 
 /** Rows drawn above and below the ones in view. */
 const OVERSCAN = 6;
+
+/** No columns or rows, one array for every render. */
+const NO_COLUMNS: readonly never[] = Object.freeze([]);
+const NO_ROWS: readonly never[] = NO_COLUMNS;
 
 /** The row height of each density, in CSS pixels. */
 const ROW_HEIGHT = Object.freeze({ compact: 30, normal: 36, roomy: 48 } as const);
@@ -107,7 +116,7 @@ function ResizeStrip({
 }
 
 /** The text alignment class of a column. */
-function alignOf(column: DataGridColumn): string {
+function alignOf(column: CollectionColumn): string {
   const align = column.align ?? (column.type === "number" ? "end" : "start");
   return align === "end" ? "justify-end text-end" : align === "center" ? "justify-center" : "";
 }
@@ -134,54 +143,55 @@ function cellAt(event: PointerEvent): GridCell | null {
 /** The spreadsheet-like editor of typed cells. */
 export function DataGrid<TRow extends DataGridRow = DataGridRow>({
   label,
+  collection: givenCollection,
+  items,
   columns: given,
-  rows,
+  collectionKey,
   onSave,
   onChangesChange,
   isReadOnly,
   variant = "sheet",
-  frozenColumns = 1,
   rowHeight: givenRowHeight,
-  height = "24rem",
-  collection: givenCollection,
-  collectionKey,
-  density = "normal",
+  maxHeight = "24rem",
   hasColumnTools = false,
   className,
   ...rest
 }: DataGridProps<TRow>): ReactElement {
   const t = useUiText();
   const { locale, direction } = useLocale();
+  const isPagerOwned = useContext(CollectionPagerContext);
   const isMatrix = variant === "matrix";
-  const rowHeight = givenRowHeight ?? ROW_HEIGHT[density];
-  // The columns as the engine arranges them (the app's, or the grid's own with the first `frozenColumns` pinned).
-  const definitions = useMemo(() => given.map(collectionColumnOfGrid), [given]);
+  const definitions = given ?? NO_COLUMNS;
+  // The grid's own engine (shorthand), its first column pinned to the start unless a column names its own pin.
   const own = useCollection<TRow>({
     columns: definitions,
-    items: rows,
-    mode: "server",
+    items: items ?? NO_ROWS,
     locale,
     collectionKey,
-    initialState: {
-      columns: given.map((column, index) => ({
-        id: column.id,
-        ...(index < frozenColumns ? { pin: "start" as const } : {}),
-      })),
-    },
+    initialState: definitions.some((column) => column.pin)
+      ? {}
+      : {
+          columns: definitions.map((column, index) => ({
+            id: column.id,
+            ...(index === 0 ? { pin: "start" as const } : {}),
+          })),
+        },
   });
   const engine = givenCollection ?? own;
-  // A matrix keeps its defined order: its first column names the rows and its totals follow it.
-  const arranged: readonly DataGridColumn[] = isMatrix
-    ? given
-    : engine.visibleColumns.flatMap((resolved) => {
-        const column = given.find((candidate) => candidate.id === resolved.id);
-        return column
-          ? [{ ...column, label: resolved.label, width: resolved.width ?? widthOf(column) }]
-          : [];
-      });
+  const rows = engine.rows;
+  const rowHeight = givenRowHeight ?? ROW_HEIGHT[engine.state.density];
+  // The columns as the engine arranges them: order, names, widths, pins and visibility.
+  const arranged: readonly CollectionColumn[] = useMemo(
+    () =>
+      engine.visibleColumns.map((column) => ({
+        ...column,
+        width: column.width ?? widthOf(column),
+      })),
+    [engine.visibleColumns],
+  );
   const pinOf = (id: string, index: number) =>
     isMatrix
-      ? index < frozenColumns
+      ? index === 0
         ? "start"
         : undefined
       : engine.columns.find((column) => column.id === id)?.pin;
@@ -225,7 +235,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
   if (rows.length > 0) drawn.add(active.row);
 
   const rowOf = (index: number) => rows[index] as DataGridRow;
-  const columnOf = (index: number) => columns[index] as DataGridColumn;
+  const columnOf = (index: number) => columns[index] as CollectionColumn;
 
   const scrollIntoView = (cell: GridCell) => {
     const element = grid.current;
@@ -294,7 +304,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
     }
     const value = model.valueOf(rowOf(active.row), column);
     setDraft(
-      text ?? (column.type === "select" ? String(value ?? "") : model.copyTextOf(value, column)),
+      text ?? (column.type === "choice" ? String(value ?? "") : model.copyTextOf(value, column)),
     );
   };
   const commit = (move: DataGridEditorMove, chosen?: string) => {
@@ -567,7 +577,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
           aria-activedescendant={draft === null && rows.length > 0 ? cellId(active) : undefined}
           tabIndex={0}
           className="relative overflow-auto rounded-[var(--radius-control)] border border-separator bg-background outline-none select-none focus-visible:ring-2 focus-visible:ring-focus"
-          style={{ maxHeight: height }}
+          style={{ maxHeight }}
           onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
           onKeyDown={onKeyDown}
           onCopy={onCopy}
@@ -759,6 +769,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
         <p role="status" aria-live="polite" className="min-h-5 text-sm text-danger">
           {activeError ?? ""}
         </p>
+        {isPagerOwned ? null : <CollectionPager collection={engine} label={label} />}
         {isReadOnly ? null : (
           <SaveBar
             isDirty={model.changeCount > 0}

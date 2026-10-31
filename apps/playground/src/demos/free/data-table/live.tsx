@@ -1,15 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: the "live" demo of the web Data table: A fake server with 24 orders in pages of five. Search, sort, page,
- *          select rows and run an action; every change of the query returns to the first page and clears the
- *          selection.
+ *          select rows and run an action; a new search or sort returns to the first page and clears the selection, and
+ *          a page change keeps it (the engine's selection spans pages).
  * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.
  * Runtime: browser
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0302 (decisions 3 and 5);
- *          ADR 0303 (decision 7); ADR 0313; ADR 0318 (decisions 2 and 4 to 6); ADR 0060 (light, dark, RTL).
+ *          ADR 0303 (decision 7); ADR 0313; ADR 0505 (one engine); ADR 0060 (light, dark, RTL).
  */
 import type { Tone } from "@stackra/contracts";
-import type { ResourceAction, ResourceQuery, TableColumn } from "@stackra/ui/contracts";
+import type { CollectionQuery, ResourceAction, TableColumn } from "@stackra/ui/contracts";
 import {
   Button,
   Chip,
@@ -17,6 +17,7 @@ import {
   SearchField,
   Text,
   useCatalogueText,
+  useCollection,
 } from "@stackra/ui/react";
 import { useState } from "react";
 import { MESSAGES } from "#src/constants/messages.constant";
@@ -57,9 +58,6 @@ const STATUS_TONE: Readonly<Record<Order["status"], Tone>> = Object.freeze({
 /** Fixed to US dollars in English, so the total reads the same in both reading directions. */
 const MONEY = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
-/** The query with nothing set. */
-const NO_QUERY: ResourceQuery = Object.freeze({ search: "", filterValues: {}, sort: null });
-
 /** How many rows a page of the live table holds. */
 const PAGE_SIZE = 5;
 
@@ -86,7 +84,7 @@ function renderOrderCell(order: Order, column: TableColumn) {
  * The server: the orders that match the search, sorted as asked. A table is handed the result and never filters or
  * sorts, so this is the page's job. Ties keep the list's own order, which is stable.
  */
-function ordersFor(query: ResourceQuery): readonly Order[] {
+function ordersFor(query: CollectionQuery): readonly Order[] {
   const needle = query.search.trim().toLowerCase();
   const found = ORDERS.filter(
     (order) =>
@@ -94,9 +92,10 @@ function ordersFor(query: ResourceQuery): readonly Order[] {
       order.order.toLowerCase().includes(needle) ||
       order.customer.toLowerCase().includes(needle),
   );
-  if (!query.sort) return found;
-  const key = query.sort.column as keyof Order;
-  const factor = query.sort.direction === "ascending" ? 1 : -1;
+  const [sort] = query.sort;
+  if (!sort) return found;
+  const key = sort.column as keyof Order;
+  const factor = sort.direction === "ascending" ? 1 : -1;
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   return [...found].sort((first, second) => {
     const a = first[key];
@@ -108,6 +107,14 @@ function ordersFor(query: ResourceQuery): readonly Order[] {
     );
   });
 }
+
+/** The fake server: a page of the matching orders, after a moment so the loading state is seen. */
+const fetchOrders = async (query: CollectionQuery) => {
+  await delay(DELAY);
+  const found = ordersFor(query);
+  const start = query.page * query.pageSize;
+  return { items: found.slice(start, start + query.pageSize), totalCount: found.length };
+};
 
 /** The row actions of the samples: one that works, one that takes a moment, one that fails, one refused. */
 function rowActionsOf(t: ReturnType<typeof useCatalogueText>, report: (text: string) => void) {
@@ -181,82 +188,46 @@ function LiveExample() {
     { id: "status", label: t(K.column_status) },
     { id: "total", label: t(K.column_total), isSortable: true, align: "end" },
   ];
-  const [query, setQuery] = useState<ResourceQuery>(NO_QUERY);
-  const [cursor, setCursor] = useState(0);
-  const [history, setHistory] = useState<readonly number[]>([]);
-  const [selected, setSelected] = useState<readonly string[]>([]);
-  const [isAll, setIsAll] = useState(false);
+  // The engine asks the fake server for each page; a new search or sort starts again on the first one.
+  const collection = useCollection({
+    columns: COLUMNS,
+    mode: "server",
+    paging: "page",
+    fetch: fetchOrders,
+    initialState: { pageSize: PAGE_SIZE },
+  });
+  const { search, selection: selected } = collection.state;
+  const [sort] = collection.state.sort;
   const [isFailing, setIsFailing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [last, setLast] = useState<string>(t(K.none));
-
-  const found = ordersFor(query);
-  const rows = found.slice(cursor, cursor + PAGE_SIZE);
-  const next = cursor + PAGE_SIZE;
-
-  /** Any new query starts again from the first page with nothing selected. */
-  const change = (to: ResourceQuery) => {
-    setQuery(to);
-    setCursor(0);
-    setHistory([]);
-    setSelected([]);
-    setIsAll(false);
-  };
-
-  /** A page that takes a moment, so its loading state is seen. */
-  const go = async (to: number, kept: readonly number[]) => {
-    setIsLoading(true);
-    await delay(DELAY);
-    setCursor(to);
-    setHistory(kept);
-    setSelected([]);
-    setIsAll(false);
-    setIsLoading(false);
-  };
 
   return (
     <>
       <UiDataTable
         label={t(K.live_label)}
-        items={rows}
-        columns={COLUMNS}
+        collection={collection}
         renderCell={renderOrderCell}
-        query={query}
-        onQueryChange={change}
         headingLevel={3}
         selectionMode="multiple"
-        selectedKeys={selected}
-        onSelectionChange={setSelected}
         rowActions={rowActionsOf(t, setLast)}
-        bulkActions={bulkActionsOf(t, setLast, () => {
-          setSelected([]);
-          setIsAll(false);
-        })}
-        totalCount={found.length}
-        isAllMatchingSelected={isAll}
-        onAllMatchingSelectedChange={setIsAll}
-        isLoading={isLoading}
+        bulkActions={bulkActionsOf(t, setLast, () => collection.setSelection([]))}
         loadingLabel={t(K.loading_text)}
-        hasMore={next < found.length}
-        hasPrevious={history.length > 0}
-        onNext={() => void go(next, [...history, cursor])}
-        onPrevious={() => void go(history.at(-1) ?? 0, history.slice(0, -1))}
         error={isFailing ? new Error(t(K.failure)) : undefined}
         isMessageShown
         onRetry={() => setIsFailing(false)}
         filterBar={
           <SearchField
             aria-label={t(K.live_search)}
-            value={query.search}
-            onChange={(search) => change({ ...query, search })}
+            value={search}
+            onChange={collection.setSearch}
           />
         }
       />
       <Text role="status" data-testid="data-table-live-query" tone="muted">
-        {t(K.query, { search: query.search || "none" })} ·{" "}
+        {t(K.query, { search: search || "none" })} ·{" "}
         {t(K.sorted, {
-          column: query.sort?.column ?? "none",
-          direction: query.sort?.direction ?? "",
+          column: sort?.column ?? "none",
+          direction: sort?.direction ?? "",
         })}
       </Text>
       <Text role="status" data-testid="data-table-live-selected" tone="muted">
@@ -266,7 +237,7 @@ function LiveExample() {
         {t(K.last_action, { text: last })}
       </Text>
       <Text data-testid="data-table-live-matching" tone="muted">
-        {t(K.matching, { count: found.length })}
+        {t(K.matching, { count: collection.totalCount })}
       </Text>
       <div>
         <Button variant="secondary" onPress={() => setIsFailing((current) => !current)}>

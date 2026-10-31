@@ -6,11 +6,11 @@
  * Boundary: it never writes the rows; `onChangesChange` hears every change after the first render. Errors are
  *           checked on edited cells only, so saved data the app already holds is never flagged.
  * Runtime: isomorphic
- * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid); WCAG 2.2 SC 3.3.1.
+ * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid); ADR 0505 (one column type); WCAG 2.2 SC 3.3.1.
  */
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridContractProps } from "#contracts/types/data-grid-contract-props.type";
 import type { DataGridRow } from "#contracts/types/data-grid-row.type";
 import type { DataGridValue } from "#contracts/types/data-grid-value.type";
@@ -29,7 +29,7 @@ import { useUiText } from "#react/hooks/use-ui-text";
 const K = DATA_GRID_KEYS.ui.data_grid;
 
 /** The columns a matrix draws: the first names the row and is read-only, the rest are quantities. */
-function matrixColumnsOf(columns: readonly DataGridColumn[]): DataGridColumn[] {
+function matrixColumnsOf(columns: readonly CollectionColumn[]): CollectionColumn[] {
   return columns.map((column, index) =>
     index === 0
       ? { ...column, isReadOnly: true }
@@ -38,10 +38,10 @@ function matrixColumnsOf(columns: readonly DataGridColumn[]): DataGridColumn[] {
 }
 
 /** A cell's copied text: booleans as TRUE or FALSE, a select as its option's label. */
-const copyTextOf = (value: DataGridValue, column: DataGridColumn): string => {
+const copyTextOf = (value: DataGridValue, column: CollectionColumn): string => {
   if (value === null) return "";
   if (typeof value === "boolean") return value ? "TRUE" : "FALSE";
-  if (column.type === "select")
+  if (column.type === "choice")
     return column.options?.find((option) => option.id === value)?.label ?? String(value);
   return String(value);
 };
@@ -62,10 +62,12 @@ export function useDataGridModel(
     isReadOnly = false,
     onSave,
     onChangesChange,
-  }: Pick<
-    DataGridContractProps,
-    "rows" | "columns" | "variant" | "isReadOnly" | "onSave" | "onChangesChange"
-  >,
+  }: Pick<DataGridContractProps, "variant" | "isReadOnly" | "onSave" | "onChangesChange"> & {
+    /** The rows drawn (the engine's). */
+    readonly rows: readonly DataGridRow[];
+    /** The columns drawn, in display order. */
+    readonly columns: readonly CollectionColumn[];
+  },
   locale: string,
 ): DataGridModel {
   const t = useUiText();
@@ -84,14 +86,14 @@ export function useDataGridModel(
   }, [changes, onChangesChange]);
 
   const valueOf = useCallback(
-    (row: DataGridRow, column: DataGridColumn): DataGridValue => {
+    (row: DataGridRow, column: CollectionColumn): DataGridValue => {
       const changed = changes[row.id];
       if (changed && column.id in changed) return changed[column.id] ?? null;
       return row[column.id] ?? null;
     },
     [changes],
   );
-  const isChanged = (row: DataGridRow, column: DataGridColumn) =>
+  const isChanged = (row: DataGridRow, column: CollectionColumn) =>
     column.id in (changes[row.id] ?? {});
 
   const numbers = useMemo(() => new Intl.NumberFormat(locale), [locale]);
@@ -99,11 +101,11 @@ export function useDataGridModel(
     () => new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }),
     [locale],
   );
-  const textOf = (value: DataGridValue, column: DataGridColumn): string => {
+  const textOf = (value: DataGridValue, column: CollectionColumn): string => {
     if (value === null) return "";
     if (typeof value === "number") return numbers.format(value);
     if (typeof value === "boolean") return t(value ? K.yes : K.no);
-    if (column.type === "select")
+    if (column.type === "choice")
       return column.options?.find((option) => option.id === value)?.label ?? value;
     if (column.type === "date" && /^\d{4}-\d{2}-\d{2}$/.test(value))
       return days.format(new Date(`${value}T00:00:00Z`));
@@ -126,12 +128,12 @@ export function useDataGridModel(
     }
     return found;
   }, [changes, columns, rowById]);
-  const errorOf = (row: DataGridRow, column: DataGridColumn) => {
+  const errorOf = (row: DataGridRow, column: CollectionColumn) => {
     const error = errors.get(`${row.id}\u0000${column.id}`);
     return error ? wordsOf(error) : undefined;
   };
 
-  const isEditable = (column: DataGridColumn) => !isReadOnly && !column.isReadOnly;
+  const isEditable = (column: CollectionColumn) => !isReadOnly && !column.isReadOnly;
   const write = (writes: readonly DataGridWrite[]) =>
     dispatch({
       type: "edit",
@@ -152,7 +154,7 @@ export function useDataGridModel(
 
   const rowTotalOf = (row: DataGridRow) =>
     columns.slice(1).reduce((total, column) => total + quantity(valueOf(row, column)), 0);
-  const columnTotalOf = (column: DataGridColumn) =>
+  const columnTotalOf = (column: CollectionColumn) =>
     rows.reduce((total, row) => total + quantity(valueOf(row, column)), 0);
 
   const changeCount = changedCellCountOf(changes);

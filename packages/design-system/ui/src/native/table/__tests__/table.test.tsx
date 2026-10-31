@@ -245,7 +245,7 @@ describe("Table (native)", () => {
     rerender(
       <Table
         {...baseProps}
-        sortDescriptor={{ column: "total", direction: "ascending" }}
+        sort={[{ column: "total", direction: "ascending" }]}
         onSortChange={onSortChange}
       />,
     );
@@ -254,9 +254,7 @@ describe("Table (native)", () => {
   });
 
   it("marks the sorted column's button and shows its direction", () => {
-    render(
-      <Table {...baseProps} sortDescriptor={{ column: "customer", direction: "descending" }} />,
-    );
+    render(<Table {...baseProps} sort={[{ column: "customer", direction: "descending" }]} />);
     const sorted = received.buttons.find(
       (button) => button["label"] === "Sort by Customer, descending",
     );

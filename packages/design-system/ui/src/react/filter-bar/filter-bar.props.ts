@@ -8,11 +8,13 @@
  *          WCAG 2.2 SC 1.3.1, 2.1.1, 2.4.3, 2.5.8, 4.1.2, 4.1.3.
  */
 import type { ComponentPropsWithRef } from "react";
+import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { FilterBarContractProps } from "#contracts/types/filter-bar-contract-props.type";
 
 /**
  * Props of the web FilterBar: the shared contract plus the props of a `div`, passed through to the root. The bar draws
  * its own content, so children are refused.
  */
-export type FilterBarProps = FilterBarContractProps &
-  Omit<ComponentPropsWithRef<"div">, keyof FilterBarContractProps | "children">;
+export type FilterBarProps<TItem extends CollectionItem = CollectionItem> =
+  FilterBarContractProps<TItem> &
+    Omit<ComponentPropsWithRef<"div">, keyof FilterBarContractProps | "children">;

@@ -32,15 +32,11 @@ export default function Pinned() {
       <Text tone="muted">{t(K.pinned_hint)}</Text>
       <DataTable
         label={t(K.pinned_label)}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
         hasColumnTools
         isStickyHeader
         maxHeight="22rem"
-        query={{ search: "", filterValues: {}, sort: collection.state.sort[0] ?? null }}
-        onQueryChange={() => {}}
       />
     </div>
   );

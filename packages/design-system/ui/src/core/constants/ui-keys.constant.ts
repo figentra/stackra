@@ -15,6 +15,7 @@ export const UI_KEYS = keys({
   ui: {
     filter_bar: [
       "filters",
+      "advanced",
       "add",
       "done",
       "clear_all",
@@ -29,6 +30,7 @@ export const UI_KEYS = keys({
       "until",
       "minimum",
       "maximum",
+      "unapplied",
     ],
     date_field: ["empty", "done", "cancel", "unavailable"],
     date_picker: ["calendar"],
@@ -230,6 +232,13 @@ export const UI_KEYS = keys({
       "less",
       "is_empty",
       "is_not_empty",
+      "in",
+      "not_in",
+      "between",
+      "before",
+      "after",
+      "is_true",
+      "is_false",
     ],
     comment_thread: ["reply", "send", "resolve", "reopen", "resolved", "people"],
     diff_review: [

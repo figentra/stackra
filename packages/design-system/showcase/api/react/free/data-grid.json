@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "a51b70db24f631d0",
+    "hash": "06f68a9f14db406d",
     "propsFiles": [
       "ui/src/react/data-grid/data-grid-editor.props.ts",
       "ui/src/react/data-grid/data-grid.props.ts"
@@ -36,18 +36,32 @@
           "type": "string"
         },
         {
-          "description": "The columns in reading order; the first names each row.",
-          "name": "columns",
-          "required": true,
+          "description": "The engine to draw from (`useCollection`): its rows, sort, filter, density and columns as arranged.",
+          "name": "collection",
+          "required": false,
           "source": "stackra",
-          "type": "readonly DataGridColumn[]"
+          "type": "CollectionController<TRow>"
         },
         {
-          "description": "The saved rows.",
-          "name": "rows",
-          "required": true,
+          "description": "Shorthand without `collection`: the saved rows of a client-mode engine the grid runs itself.",
+          "name": "items",
+          "required": false,
           "source": "stackra",
           "type": "readonly TRow[]"
+        },
+        {
+          "description": "Shorthand without `collection`: the columns in reading order; the first names each row.",
+          "name": "columns",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly CollectionColumn[]"
+        },
+        {
+          "description": "The key the grid's own engine keeps the user's column layout under; left out, nothing persists.",
+          "name": "collectionKey",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "True to show the values without letting them be edited.",
@@ -64,14 +78,7 @@
           "type": "\"sheet\" | \"matrix\""
         },
         {
-          "description": "Web: how many leading columns stay in view while the grid scrolls sideways. Defaults to 1.",
-          "name": "frozenColumns",
-          "required": false,
-          "source": "stackra",
-          "type": "number"
-        },
-        {
-          "description": "Web: the height of a row in CSS pixels; rows are virtualised at this height. Defaults to 36.",
+          "description": "Web: the height of a row in CSS pixels; rows are virtualised at this height. Defaults to the engine's density.",
           "name": "rowHeight",
           "required": false,
           "source": "stackra",
@@ -80,31 +87,10 @@
         {
           "default": "24rem",
           "description": "Web: the height the rows scroll inside, as a CSS length. Defaults to `24rem`.",
-          "name": "height",
+          "name": "maxHeight",
           "required": false,
           "source": "stackra",
           "type": "string"
-        },
-        {
-          "description": "The collection engine to arrange the columns from (`useCollection`), as DataView passes it: their order, names,\nwidths, pins and visibility. Left out, the grid runs its own engine over `columns`, the first `frozenColumns`\npinned to the start.",
-          "name": "collection",
-          "required": false,
-          "source": "stackra",
-          "type": "CollectionController<TRow>"
-        },
-        {
-          "description": "The key the grid's own engine keeps the user's column layout under; left out, nothing persists.",
-          "name": "collectionKey",
-          "required": false,
-          "source": "stackra",
-          "type": "string"
-        },
-        {
-          "description": "Web: how tall the rows are when `rowHeight` is not given: `compact` 30, `normal` 36, `roomy` 48.",
-          "name": "density",
-          "required": false,
-          "source": "stackra",
-          "type": "\"compact\" | \"normal\" | \"roomy\""
         },
         {
           "description": "Web: true to give each header a resize handle (drag it, or focus it and use the arrows, Home and End), drag to\nreorder, and the column menu. Defaults to false.",
@@ -188,7 +174,7 @@
           "name": "column",
           "required": true,
           "source": "stackra",
-          "type": "DataGridColumn"
+          "type": "CollectionColumn"
         },
         {
           "description": "The text being edited.",

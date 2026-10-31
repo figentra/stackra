@@ -68,8 +68,6 @@ export type { CursorPaginationProps } from "#react/cursor-pagination/cursor-pagi
 export { DataTable } from "#react/data-table/data-table";
 export type { DataTableProps } from "#react/data-table/data-table.props";
 export type { DataTableRows } from "#react/data-table/data-table-rows.type";
-export { CollectionRowPanel } from "#react/data-table/collection-row-panel";
-export type { CollectionRowPanelProps } from "#react/data-table/collection-row-panel.props";
 export { DateField } from "#react/date-field/date-field";
 export type { DateFieldProps } from "#react/date-field/date-field.props";
 export { DateLabel } from "#react/date-label/date-label";
@@ -594,8 +592,6 @@ export type { SwipeableTabsProps } from "#react/swipeable-tabs/swipeable-tabs.pr
 // Wave 3d: DataGrid.
 export { DataGrid } from "#react/data-grid/data-grid";
 export type { DataGridProps } from "#react/data-grid/data-grid.props";
-export { ColumnChooser } from "#react/column-chooser/column-chooser";
-export type { ColumnChooserProps } from "#react/column-chooser/column-chooser.props";
 export { SavedViews } from "#react/saved-views/saved-views";
 export type { SavedViewsProps } from "#react/saved-views/saved-views.props";
 // Data collection (useCollection, DataView).
@@ -603,19 +599,9 @@ export { useCollection } from "#react/hooks/use-collection";
 export type { UseCollectionOptions } from "#react/hooks/use-collection-options.type";
 export { ColumnEditor } from "#react/column-chooser/column-editor";
 export type { ColumnEditorProps } from "#react/column-chooser/column-editor.props";
-export { ColumnMenu } from "#react/data-table/column-menu";
-export type { ColumnMenuProps } from "#react/data-table/column-menu.props";
-export { ColumnEditorPanel } from "#react/column-chooser/column-editor-panel";
 export { DataView } from "#react/data-view/data-view";
 export type { DataViewProps } from "#react/data-view/data-view.props";
-export { CollectionFilterEditor } from "#react/data-view/collection-filter-editor";
-export { CollectionSortEditor } from "#react/data-view/collection-sort-editor";
-export { DataViewCards } from "#react/data-view/data-view-cards";
-export { DataViewBoard } from "#react/data-view/data-view-board";
-export type { DataViewBoardProps } from "#react/data-view/data-view-board.props";
 export type { DataViewScale } from "#react/data-view/data-view-scale.type";
-export { SavedViewsMenu } from "#react/saved-views/saved-views-menu";
-export type { SavedViewsMenuProps } from "#react/saved-views/saved-views-menu.props";
 
 // Wave B: charts (annotations, dual axis, log scale, sync, tracker strip).
 export { TrackerStrip } from "#react/tracker-strip/tracker-strip";

@@ -6,25 +6,26 @@
  *          that cell in a sheet and a press on the row's name edits the whole row; Select mode picks rows for a bulk
  *          edit that sets one column on every picked row; the `SaveBar` saves, discards, undoes and redoes. A `matrix`
  *          row shows its total, and a total row closes the grid.
- * Boundary: the columns, sort, selection and density live in the `useCollection` engine (the app's `collection`, or
- *           the grid's own in client mode, the first `frozenColumns` pinned to the start), so a `ColumnEditor` on the
- *           same engine rearranges the grid. The sort orders the saved rows, not the pending edits. Edits are the
+ * Boundary: the rows, columns, sort, selection and density live in the `useCollection` engine (the app's
+ *           `collection`, or the grid's own in client mode over the shorthand `items` and `columns`, its first column
+ *           pinned to the start unless a column has a pin), so a `ColumnEditor` on the same engine rearranges the grid
+ *           and the grid draws the engine's rows, sorted and filtered as the web one does. The sort orders the saved
+ *           rows, not the pending edits. Edits are the
  *           web's pending changes (`useDataGridModel`): parsed by `parseGridValue`, checked by `gridCellErrorOf` with
  *           the shared error words, one undo step per Done or Apply, nothing reaching the rows until Save. Pinned
  *           columns sit outside the sideways scroll; the header's middle scroll follows the body's by `scrollTo`, so
  *           it mirrors whatever offsets the platform reports in right-to-left. No cell range, clipboard or fill handle.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid on a phone);
- *          data-collection plan (owner, 2026-10-29); ADR 0060 (RTL); WCAG 2.2 SC 1.3.1, 2.5.8, 3.3.1 and 4.1.2.
+ *          data-collection plan (owner, 2026-10-29); ADR 0505 (one column type, the grid on the engine); ADR 0060 (RTL); WCAG 2.2 SC 1.3.1, 2.5.8, 3.3.1 and 4.1.2.
  */
-import { useContext, useMemo, useRef, useState, type ReactElement } from "react";
+import { useContext, useRef, useState, type ReactElement } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridRow } from "#contracts/types/data-grid-row.type";
 import { DATA_GRID_KEYS } from "#core/constants/data-grid-keys.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
-import { collectionColumnOfGrid } from "#core/functions/collection-column-of-grid.function";
 import { dataGridColumnWidth } from "#core/functions/data-grid-column-width.function";
 import { gridCellErrorOf } from "#core/functions/grid-cell-error-of.function";
 import { parseGridValue } from "#core/functions/parse-grid-value.function";
@@ -47,8 +48,12 @@ import { Text } from "#native/text/text";
 /** The grid's words. */
 const K = DATA_GRID_KEYS.ui.data_grid;
 
+/** No columns or rows, one array for every render. */
+const NO_COLUMNS: readonly CollectionColumn[] = Object.freeze([]);
+const NO_ROWS: readonly never[] = Object.freeze([]);
+
 /** The number column a total is formatted as. */
-const TOTAL: DataGridColumn = { id: "total", label: "", type: "number" };
+const TOTAL: CollectionColumn = { id: "total", label: "", type: "number" };
 
 /** The row height of each density, at least the 40-point touch target. */
 const ROW_CLASS = Object.freeze({
@@ -58,20 +63,20 @@ const ROW_CLASS = Object.freeze({
 } as const);
 
 /** The tallest the grid grows before its rows scroll under the sticky header, in points. */
-// shortcut: a fixed height, because the contract's `height` is a CSS length; add a native height prop when an app needs another.
+// shortcut: a fixed height, because the contract's `maxHeight` is a CSS length; add a native height prop when an app needs another.
 const MAX_HEIGHT = 420;
 
 /** The checkbox column's width in Select mode, in points. */
 const PICK_WIDTH = 44;
 
 /** The draft a field starts from. */
-function draftOf(value: DataGridRow[string], column: DataGridColumn): string | boolean {
+function draftOf(value: DataGridRow[string], column: CollectionColumn): string | boolean {
   if (column.type === "boolean") return value === true;
   return value === null || value === undefined ? "" : String(value);
 }
 
 /** The value a draft stands for. */
-function valueOfDraft(draft: string | boolean, column: DataGridColumn) {
+function valueOfDraft(draft: string | boolean, column: CollectionColumn) {
   return typeof draft === "boolean" ? draft : parseGridValue(draft, column);
 }
 
@@ -84,18 +89,16 @@ interface Editing {
 /** The phone form of the DataGrid. */
 export function DataGrid<TRow extends DataGridRow = DataGridRow>({
   label,
-  columns: given,
-  rows,
+  columns: given = NO_COLUMNS,
+  items = NO_ROWS,
   onSave,
   onChangesChange,
   isReadOnly,
   variant = "sheet",
-  frozenColumns = 1,
   rowHeight: _rowHeight,
-  height: _height,
+  maxHeight: _maxHeight,
   collection: givenCollection,
   collectionKey,
-  density = "normal",
   hasColumnTools: _hasColumnTools,
   className,
   ...rest
@@ -103,31 +106,27 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
   const t = useUiText();
   const locale = useContext(DesignSystemContext)?.locale ?? "en";
   const isMatrix = variant === "matrix";
-  const definitions = useMemo(() => given.map(collectionColumnOfGrid), [given]);
+  // The grid's own engine over the shorthand (the first column frozen unless a column has a pin); the app's wins.
+  const hasPins = given.some((column) => column.pin !== undefined);
   const own = useCollection<TRow>({
-    columns: definitions,
-    items: rows,
+    columns: given,
+    items,
     locale,
     collectionKey,
     initialState: {
-      density,
       columns: given.map((column, index) => ({
         id: column.id,
-        ...(index < frozenColumns ? { pin: "start" as const } : {}),
+        ...(!hasPins && index === 0 ? { pin: "start" as const } : {}),
       })),
     },
   });
   const engine = givenCollection ?? own;
-  // A matrix keeps its defined order: its first column names the rows and its totals follow it.
-  const arranged: readonly DataGridColumn[] = isMatrix
-    ? given
-    : engine.visibleColumns.flatMap((resolved) => {
-        const column = given.find((candidate) => candidate.id === resolved.id);
-        return column ? [{ ...column, label: resolved.label }] : [];
-      });
+  const rows = engine.rows;
+  // A matrix freezes its first column, which names the rows; its totals follow it.
+  const arranged: readonly CollectionColumn[] = engine.visibleColumns;
   const pinOf = (id: string, index: number) =>
     isMatrix
-      ? index < frozenColumns
+      ? index === 0
         ? "start"
         : undefined
       : engine.columns.find((column) => column.id === id)?.pin;
@@ -137,7 +136,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
   );
   const { columns } = model;
   const head = columns[0];
-  const shown = engine.rows as readonly TRow[];
+  const shown = rows;
   const selected = engine.state.selection;
   const rowClass = ROW_CLASS[engine.state.density];
   const startColumns = columns.filter((column, index) => pinOf(column.id, index) === "start");
@@ -208,7 +207,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
     );
 
   /** A header cell: a press sorts by its column. */
-  const headerCell = (column: DataGridColumn) => {
+  const headerCell = (column: CollectionColumn) => {
     const direction = engine.state.sort.find((key) => key.column === column.id)?.direction;
     const isEnd = (column.align ?? (column.type === "number" ? "end" : "start")) === "end";
     return (
@@ -236,7 +235,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
   };
 
   /** A body cell: a press edits it (the name cell edits the row, or picks it in Select mode). */
-  const bodyCell = (row: TRow, column: DataGridColumn) => {
+  const bodyCell = (row: TRow, column: CollectionColumn) => {
     const value = model.valueOf(row, column);
     const text = model.textOf(value, column);
     const error = model.errorOf(row, column);

@@ -21,15 +21,11 @@ export default function ColumnEditorDemo() {
       </div>
       <DataTable
         label={t(K.editor_label)}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
         hasColumnTools
         isStickyHeader
         maxHeight="22rem"
-        query={{ search: "", filterValues: {}, sort: collection.state.sort[0] ?? null }}
-        onQueryChange={() => {}}
       />
     </div>
   );

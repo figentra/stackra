@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "19e55d4a0b03c864",
+    "hash": "05b35ae6a4879560",
     "propsFiles": ["ui/src/native/saved-views/saved-views.props.ts"]
   },
   "importLine": "import { SavedViews } from \"@stackra/ui/native\";",
@@ -9,63 +9,35 @@
     {
       "events": [
         {
-          "description": "Saves the current query as a view; left out, there is no Save view button.",
-          "name": "onSaveView",
+          "description": "Called by \"Share view\" with the view; left out, there is no such item. The app decides what sharing means.",
+          "name": "onShareView",
           "required": false,
           "source": "stackra",
-          "type": "() => void"
-        },
-        {
-          "description": "Called with the whole next query each time the user changes any part of it.",
-          "name": "onQueryChange",
-          "required": true,
-          "source": "stackra",
-          "type": "(query: ResourceQuery) => void"
+          "type": "(view: CollectionView) => void"
         }
       ],
       "name": "SavedViews",
       "props": [
         {
-          "description": "The group's spoken name, for example \"Order views\".",
+          "description": "The engine whose views are listed and changed.",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The component's name, for example \"Order views\". Defaults to the `ui` catalogue's \"Views\".",
           "name": "label",
-          "required": true,
-          "source": "stackra",
-          "type": "string"
-        },
-        {
-          "description": "The saved views, in order.",
-          "name": "views",
-          "required": true,
-          "source": "stackra",
-          "type": "readonly SavedView[]"
-        },
-        {
-          "description": "The id of the multi-select filter the facet chips toggle.",
-          "name": "facetFilterId",
           "required": false,
           "source": "stackra",
           "type": "string"
         },
         {
-          "description": "The facet chips.",
-          "name": "facets",
+          "description": "`menu` (the default: apply, save and manage), `tabs` or `chips` (apply only).",
+          "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "readonly FacetOption[]"
-        },
-        {
-          "description": "The facet group's spoken name, for example \"Status\".",
-          "name": "facetLabel",
-          "required": false,
-          "source": "stackra",
-          "type": "string"
-        },
-        {
-          "description": "The query in force: the search text, the applied filters and the sort.",
-          "name": "query",
-          "required": true,
-          "source": "stackra",
-          "type": "ResourceQuery"
+          "type": "\"menu\" | \"tabs\" | \"chips\""
         },
         {
           "description": "Used to reference react managed views from native code.",

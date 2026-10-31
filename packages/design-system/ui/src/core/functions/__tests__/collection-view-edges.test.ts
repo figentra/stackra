@@ -1,7 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: proves the collection and navigation helpers' edges: the data view's slots chosen or defaulted, the saved
- *          view that matches a query whatever its filter order or empty filters, the rule fields of the filterable
+ * Purpose: proves the collection and navigation helpers' edges: the data view's slots chosen or defaulted, the rule fields of the filterable
  *          columns, the fitted column width within its limits, the current navigation entry for roots, slashes,
  *          queries and absolute URLs, highlight parts around Arabic marks, the stepper's statuses and pressable
  *          steps, the social marks, the filter chip words and wrong-shaped filter values, and the stored values with
@@ -12,8 +11,6 @@
  */
 import type { FilterDefinition } from "#contracts/types/filter-definition.type";
 import type { ResolvedCollectionColumn } from "#contracts/types/resolved-collection-column.type";
-import type { ResourceQuery } from "#contracts/types/resource-query.type";
-import { activeViewIdOf } from "#core/functions/active-view-id-of.function";
 import { collectionRuleFieldsOf } from "#core/functions/collection-rule-fields-of.function";
 import { dataViewFieldsOf } from "#core/functions/data-view-fields-of.function";
 import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
@@ -76,36 +73,10 @@ describe("dataViewFieldsOf", () => {
   });
 });
 
-/** A query with `filterValues`, `search` and no sort. */
-const query = (filterValues: ResourceQuery["filterValues"], search = ""): ResourceQuery => ({
-  search,
-  filterValues,
-  sort: null,
-});
-
 /** A storage call that is refused. */
 const fail = () => {
   throw new Error("denied");
 };
-
-describe("activeViewIdOf", () => {
-  const views = [
-    { id: "all", label: "All", query: query({}) },
-    { id: "paid", label: "Paid", query: query({ status: "paid", city: ["riyadh"] }) },
-  ];
-
-  it("matches whatever the filter order, ignoring empty filters", () => {
-    expect(activeViewIdOf(views, query({ city: ["riyadh"], status: "paid", tags: [] }))).toBe(
-      "paid",
-    );
-    expect(activeViewIdOf(views, query({ tags: [], note: undefined as never }))).toBe("all");
-  });
-
-  it("matches nothing for another search", () => {
-    expect(activeViewIdOf(views, query({}, "ada"))).toBeUndefined();
-    expect(activeViewIdOf([], query({}))).toBeUndefined();
-  });
-});
 
 describe("collectionRuleFieldsOf", () => {
   it("offers the filterable columns, typed text by default, with their options", () => {

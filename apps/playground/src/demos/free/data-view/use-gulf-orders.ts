@@ -112,7 +112,7 @@ export function useGulfOrders(count = 60) {
       aggregate: "sum",
       width: 150,
     },
-    { id: "date", label: t(K.column_date), isSortable: true, width: 150 },
+    { id: "date", label: t(K.column_date), type: "date", isSortable: true, width: 150 },
   ];
 
   const renderCell = (item: GulfOrder, column: TableColumn): ReactNode => {

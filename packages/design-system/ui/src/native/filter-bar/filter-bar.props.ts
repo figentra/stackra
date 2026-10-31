@@ -8,11 +8,12 @@
  *          2.2 SC 1.3.1, 2.5.8, 4.1.2; owner decision 6 of STA-350 (thin wrappers).
  */
 import type { ViewProps } from "react-native";
+import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { FilterBarContractProps } from "#contracts/types/filter-bar-contract-props.type";
 
 /**
  * Props of the native FilterBar: the shared contract plus the props of a `View`, passed through to the root. The bar
  * draws its own content, so children are refused.
  */
-export type FilterBarProps = FilterBarContractProps &
-  Omit<ViewProps, keyof FilterBarContractProps | "children">;
+export type FilterBarProps<TItem extends CollectionItem = CollectionItem> =
+  FilterBarContractProps<TItem> & Omit<ViewProps, keyof FilterBarContractProps | "children">;

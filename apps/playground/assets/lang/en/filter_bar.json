@@ -9,6 +9,9 @@
   "disabled_note": "Total is listed in the menu but cannot be added.",
   "all_applied": "Every filter applied",
   "all_applied_search": "Search the orders with every filter applied",
+  "unapplied": "A filter the server cannot apply",
+  "unapplied_search": "Search the orders with a filter the server cannot apply",
+  "unapplied_note": "“Customer does not contain ada” came from Advanced, and the data source cannot read it, so its chip is a warning: the rows are not narrowed by it.",
   "live_search": "Search the live orders",
   "live_placeholder": "Try ada, grace or an order number",
   "results": "Matching orders",
@@ -17,12 +20,11 @@
   "query": "Query: {text}",
   "nothing": "none",
   "kind_rows": {
-    "select": "Select: one choice from a short list; holds the key of the choice.",
-    "multi_select": "Multi-select: any of a short list, ticked; holds the keys, in the order of the list.",
-    "text": "Text: a text field; holds the text.",
-    "number": "Number: a minimum and a maximum; holds a range with either bound empty.",
-    "date_range": "Date range: a first and a last day; holds a range with either day empty.",
-    "boolean": "Boolean: yes or no; holds true or false."
+    "choice": "Choice column: any of its options, ticked; written as an “is any of” condition.",
+    "text": "Text column: a text field; written as a “contains” condition.",
+    "number": "Number column: a minimum and a maximum, either may be empty; written as “is between”.",
+    "date": "Date column: a first and a last day, either may be empty; written as “is between”.",
+    "boolean": "Boolean column: yes or no; written as “is yes” or “is no”."
   },
   "sample": {
     "status": "Status",
@@ -34,7 +36,6 @@
     "united_states": "United States",
     "asia_pacific": "Asia Pacific",
     "customer": "Customer",
-    "name_contains": "Name contains",
     "total": "Total",
     "placed": "Placed",
     "gift_order": "Gift order"

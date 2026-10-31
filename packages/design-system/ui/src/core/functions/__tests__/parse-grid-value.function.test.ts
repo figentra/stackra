@@ -7,18 +7,18 @@
  * Runtime: node
  * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid); ADR 0022 (test placement); STA-1371.
  */
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import { parseGridValue } from "#core/functions/parse-grid-value.function";
 
-const column = (type?: DataGridColumn["type"]): DataGridColumn => ({
+const column = (type?: CollectionColumn["type"]): CollectionColumn => ({
   id: "c",
   label: "C",
   ...(type ? { type } : {}),
 });
-const SELECT: DataGridColumn = {
+const SELECT: CollectionColumn = {
   id: "size",
   label: "Size",
-  type: "select",
+  type: "choice",
   options: [
     { id: "s", label: "Small" },
     { id: "L", label: "Large" },
@@ -63,7 +63,7 @@ describe("parseGridValue", () => {
     expect(parseGridValue("l", SELECT)).toBe("L");
     expect(parseGridValue("SMALL", SELECT)).toBe("s");
     expect(parseGridValue("medium", SELECT)).toBe("medium");
-    expect(parseGridValue("s", { id: "x", label: "X", type: "select" })).toBe("s");
+    expect(parseGridValue("s", { id: "x", label: "X", type: "choice" })).toBe("s");
   });
 
   it.each([

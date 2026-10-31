@@ -1,55 +1,48 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of the react `SavedViewTabs`: the all-rows tab comes first and is selected, then one tab per view by
- *          name, and each tab draws the list under its own view.
- * Boundary: unit tier, jsdom; the kit's `Tabs` is a DOM stand-in that draws every tab's content.
+ * Purpose: unit tests of the web `SavedViewTabs`: it draws `@stackra/ui`'s `SavedViews` as tabs over the
+ *          engine it is given, under its spoken name.
+ * Boundary: unit tier, jsdom; the kit's `SavedViews` is a DOM stand-in.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0271 (decisions 1 and 7).
+ * Governing contract: ADR 0022 (test placement); ADR 0271 (decision 7); ADR 0505.
  */
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "@stackra/testing";
+import type { CollectionController } from "@stackra/ui/contracts";
 import { cleanup, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { vi } from "vitest";
 
-import type { SavedView } from "#core/schemas/saved-view.schema";
 import { SavedViewTabs } from "#react/saved-view-tabs/saved-view-tabs";
 
 vi.mock("@stackra/ui/react", async () => {
   const { createElement } = await import("react");
   return {
-    Tabs: (props: {
+    SavedViews: (props: {
       readonly label: string;
-      readonly defaultSelectedKeys: readonly string[];
-      readonly items: readonly { id: string; label: string; content: ReactNode }[];
+      readonly variant: string;
+      readonly collection: { readonly views: readonly { id: string; label: string }[] };
     }) =>
       createElement(
         "section",
-        { "aria-label": props.label, "data-selected": props.defaultSelectedKeys.join(",") },
-        props.items.map((item) =>
-          createElement("div", { key: item.id, title: item.label }, item.content),
-        ),
+        { "aria-label": props.label, "data-variant": props.variant },
+        props.collection.views.map((view) => createElement("span", { key: view.id }, view.label)),
       ),
   };
 });
 
 afterEach(cleanup);
 
-const views = [{ id: "view_1", name: "Open" }] as SavedView[];
-
 describe("SavedViewTabs", () => {
-  it("draws the all-rows tab first, then each view under its own state", () => {
-    render(
-      <SavedViewTabs
-        label="Saved views"
-        allLabel="All"
-        views={views}
-        render={(view) => <p>{view?.id ?? "none"}</p>}
-      />,
-    );
-    const tabs = screen.getByLabelText("Saved views");
-    expect(tabs.getAttribute("data-selected")).toBe("all");
-    expect(screen.getByTitle("All").textContent).toBe("none");
-    expect(screen.getByTitle("Open").textContent).toBe("view_1");
+  it("draws the engine's views as tabs", () => {
+    const collection = {
+      views: [
+        { id: "all", label: "All", state: {} },
+        { id: "view_1", label: "Open", state: {} },
+      ],
+    } as unknown as CollectionController;
+    render(<SavedViewTabs collection={collection} label="Saved views" />);
+    expect(screen.getByLabelText("Saved views").getAttribute("data-variant")).toBe("tabs");
+    expect(screen.getByText("All")).toBeTruthy();
+    expect(screen.getByText("Open")).toBeTruthy();
   });
 });

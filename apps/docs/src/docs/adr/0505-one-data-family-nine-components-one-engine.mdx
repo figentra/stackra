@@ -1,0 +1,114 @@
+---
+title: "0505 — One data family: nine components on one engine, one column type, one filter model, one saved-views model"
+description: "Accepted · 2026-10-31"
+---
+
+{/* Stackra file contract: Purpose: the decision record that consolidates the @stackra/ui data family from eighteen public components to nine on the useCollection engine, with one column type, one filter model and one saved-views model, and the old-to-new mapping. Boundary: decision text only. Runtime: docs. Governing contract: ADR template; ADR 0302, 0313, 0317, 0318; data-collection plan (owner, 2026-10-29); STA-1371. */}
+
+<Note>
+  Accepted 2026-10-31 by the owner: on consolidating the data components "=> yes", and the same day
+  "all accepted merege and proceed", and the ADR itself "all confirmed" (design-system session c6, STA-1371). It supersedes the
+  resource-query part of [0318](/adr/0318-stackra-ui-wave-7-resource-index-props-vocabulary)
+  (`ResourceQuery`, `ResourceQueryContractProps`, `FilterState` and the `query` and
+  `onQueryChange` props of DataTable and FilterBar), amends
+  [0313](/adr/0313-stackra-ui-wave-5-data-primitives-props-vocabulary) (Table's `sortDescriptor`
+  gives way to `sort[]`) and the 2026-10-28 DataGrid amendment of
+  [0317](/adr/0317-stackra-ui-wave-6-shell-and-routing-props-vocabulary) (`DataGridColumn`,
+  `rows`, `height`, `frozenColumns`), and reverses the data-collection plan's rule (owner,
+  2026-10-29) that DataTable and DataGrid "keep their APIs".
+</Note>
+
+## Context
+
+The owner asked why the data components seemed duplicated. A research audit (2026-10-31,
+`stackra-notes/design-system-research-2026-10-31/data-family-audit.md`) found that Table, DataTable, DataGrid and List
+were mostly proper layers, but the duplication sat around them: two engines (the app-held `ResourceQuery` of 0318 and
+the `useCollection` engine of the data-collection plan), three column types (`TableColumn`, `CollectionColumn`,
+`DataGridColumn`), two filter models with three filter UIs, three saved-view models with four UIs, two column
+visibility UIs and two pagers. It came from one day: the product-audit wave of 2026-10-28 built hidden columns, saved
+views, group-by and facets on `ResourceQuery`; seven hours later the data-collection plan built them again on the
+engine and, to keep the earlier work, said the old components "keep their APIs". DataView had to hand DataTable a fake
+query, the same columns were declared up to three times, and the panel's resource table kept a third copy of the state
+by hand.
+
+## Decision
+
+### 1. Nine public components and one hook
+
+| Public          | Role                                                                                                                                                                          |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useCollection` | The only data state: columns, `sort[]`, `CollectionFilter`, search, group, totals, selection, paging, density, layout and views; client mode, or server mode with `fetch`.    |
+| `Table`         | A semantic table renderer only: controlled `items`, `columns` and `sort[]`, plus the presentational column tools. No state.                                                   |
+| `DataTable`     | Table plus the engine: column menu, bulk bar, row tools, inline edit, empty, error and loading states, one pager. Takes `collection`, or the shorthand `items` and `columns`. |
+| `DataGrid`      | A separate spreadsheet (grid keyboard, ranges, clipboard, fill, pending changes with Save). Takes `collection` or the same shorthand and draws the engine's rows.             |
+| `List`          | A presentational list of `ListItemData`. No state.                                                                                                                            |
+| `DataView`      | The switcher and toolbar over one engine: table, grid, list, cards and board, with `renderLayout` for others.                                                                 |
+| `ColumnEditor`  | The one column editor (hide, move, rename, pin, width, wrap).                                                                                                                 |
+| `FilterBar`     | Quick filter chips for the top-level conditions of the engine's `CollectionFilter`, the filters derived from the columns; "Advanced" opens the whole and/or tree.             |
+| `FilterPanel`   | Faceted filters with counts on the same `CollectionFilter`.                                                                                                                   |
+| `SavedViews`    | The one saved-views component, `variant="menu" \| "tabs" \| "chips"`, over the engine's `CollectionView`s, persisted through a `CollectionStore`.                             |
+
+### 2. One column type
+
+`CollectionColumn` is the only column a data component takes. Its `type` is one enum, `RuleFieldType`: `text`,
+`number`, `choice`, `date` and `boolean` (it replaces `DataGridCellType`; `select` is now `choice`). It gains the
+editor's fields: `isEditable` (DataTable edits it in place with `onCellEdit`), `isReadOnly` (DataGrid edits every
+column but these), `isRequired`, `min`, `max` and `validate`. `TableColumn` stays as the presentational subset Table
+reads; `DataGridColumn`, `DataGridOption` (now `SelectItem`), `gridColumns` and `editableColumns` are removed.
+
+### 3. One filter model
+
+`CollectionFilter` is the only filter. `RuleOperator` gains `in`, `not_in`, `between`, `before`, `after`, `is_true`
+and `is_false`; a condition's value is a `RuleValue`, text or a list of text (`[from, to]` for `between`, an empty end
+open). A quick filter (a FilterBar chip, a FilterPanel facet) is one top-level condition with the id
+`filter:<column>` (`quickFilterIdOf`), so the bar, the panel and DataView on one engine show the same filter. The
+filter kind comes from the column: text `contains`, number and date `between`, choice `in`, boolean `is_true` or
+`is_false`. `ruleMatches` evaluates the new operators the same way on the client and the server.
+
+### 4. One saved-views model
+
+A saved view is a `CollectionView` of the engine. `SavedViews` draws it as a menu (apply, save, save as, rename, share,
+make default, delete), as tabs or as chips. A product's database view store is a `CollectionStore` adapter.
+
+### 5. One pager
+
+The pager reads the engine's paging (`page`, `cursor` with the cursors kept for Previous, or `infinite`). DataView
+owns it; DataTable and DataGrid draw it when they stand alone. Server mode without `fetch` takes the app's
+`nextCursor`.
+
+### 6. Old to new
+
+| Old                                                                                                       | New                                                                                    |
+| --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `DataTable query / onQueryChange`                                                                         | `collection` (or `items` + `columns`); the sort and search are the engine's            |
+| `DataTable hiddenColumns`, `groupBy`, `aggregates`, `density`                                             | engine state (`initialState`, `ColumnEditor`, the column menu)                         |
+| `DataTable selectedKeys`, `totalCount`, `isAllMatchingSelected`                                           | engine selection; `useCollection({ totalCount })` in server mode                       |
+| `DataTable onNext / onPrevious / hasPrevious / mode`                                                      | engine paging (`paging: "page" \| "cursor" \| "infinite"`)                             |
+| `DataTable editableColumns: DataGridColumn[]`                                                             | column `isEditable` (+ `isRequired`, `min`, `max`, `validate`) and `onCellEdit`        |
+| `DataGrid rows / height / frozenColumns / columns: DataGridColumn[]`                                      | `items` / `maxHeight` / column `pin: "start"` / `CollectionColumn[]` (or `collection`) |
+| `DataView gridColumns / editableColumns`                                                                  | the engine's columns; the grid view is offered with `onGridSave`                       |
+| `Table sortDescriptor`                                                                                    | `sort={[descriptor]}`                                                                  |
+| `FilterBar query / onQueryChange / filters`                                                               | `collection`; filters derive from the columns' `type` and `options`                    |
+| `FilterPanel query / filters / views / sortOptions`                                                       | `collection`; views are `SavedViews variant="tabs"`, sort is the toolbar's             |
+| `SavedViews` (ResourceQuery, facets) and `SavedViewsMenu`                                                 | `SavedViews` with `variant`                                                            |
+| `ColumnChooser`                                                                                           | `ColumnEditor`                                                                         |
+| `ResourceQuery`, `ResourceQueryContractProps`, `FilterState`, ui `SavedView`, `SortOption`, `FacetOption` | removed; `CollectionQuery`, `CollectionFilter`, `CollectionView`                       |
+
+These are no longer exported (internal parts): `ColumnEditorPanel`, `ColumnMenu`, `CollectionFilterEditor`,
+`CollectionSortEditor`, `DataViewCards`, `DataViewBoard`, `CollectionRowPanel`, `DataTableCellEditor` and
+`DataGridEditor`.
+
+## Consequences
+
+- One declaration of a dataset's columns feeds the table, the grid, inline edit, the filters and the facets.
+- The breaking prop changes land at once, with every caller in the repository (playground, mobile, panel, docs,
+  showcase registry) moved in the same change; there are no deprecated aliases.
+- A filter can no longer carry a menu icon, a disabled state, a placeholder, a number step or format, or custom yes
+  and no words, because filters derive from columns; a column that should not be filtered sets `isFilterable: false`.
+- The panel's resource table runs on `useCollection` in server mode and gains the board, cards, column editor and
+  multi-sort it did not draw.
+
+## Enforcement
+
+- `stackra gen --check` and the showcase gen keep the generated API pages in step with the props.
+- The ui package's tests cover the filter model (`quick-filter.function.test.ts`) and each component on the engine.

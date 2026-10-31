@@ -5,13 +5,12 @@
  *          the changes through `onSave`.
  * Boundary: `react-native` and the kit's parts are stand-ins that render plain DOM; `useUiText` writes the key.
  * Runtime: node
- * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid on a phone); ADR 0022.
+ * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid on a phone); ADR 0505; ADR 0022.
  */
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import { collectionColumnOfGrid } from "#core/functions/collection-column-of-grid.function";
 import { DataGrid } from "#native/data-grid/data-grid";
 import { useCollection } from "#react/hooks/use-collection";
 
@@ -115,7 +114,7 @@ const names = () =>
 /** A grid on a collection whose Qty column is hidden. */
 function Harness() {
   const collection = useCollection({
-    columns: COLUMNS.map(collectionColumnOfGrid),
+    columns: COLUMNS,
     items: ROWS,
     initialState: {
       columns: [
@@ -124,13 +123,13 @@ function Harness() {
       ],
     },
   });
-  return <DataGrid label="Menu" columns={COLUMNS} rows={ROWS} collection={collection} />;
+  return <DataGrid label="Menu" collection={collection} />;
 }
 
 describe("DataGrid (native)", () => {
   it("quick-edits a row, bulk-edits selected rows and saves", async () => {
     const onSave = vi.fn();
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} onSave={onSave} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} onSave={onSave} />);
     fireEvent.click(screen.getByRole("button", { name: "ui::data_grid.edit_row(Latte)" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Qty" }), { target: { value: "5" } });
     fireEvent.click(screen.getByText("ui::data_grid.done"));
@@ -150,7 +149,7 @@ describe("DataGrid (native)", () => {
 
   it("sorts by a header press, edits one cell from its own press, and errors with the shared words", () => {
     const columns = [...COLUMNS, { id: "note", label: "Note" }];
-    render(<DataGrid label="Menu" columns={columns} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={columns} items={ROWS} />);
     expect(names()).toEqual(["ui::data_grid.edit_row(Latte)", "ui::data_grid.edit_row(Mocha)"]);
     fireEvent.click(screen.getByRole("button", { name: "ui::table.sort_by Qty" }));
     fireEvent.click(

@@ -4,7 +4,7 @@
  * Boundary: types only; the component and the `./native` entry import it from here.
  * Runtime: react-native
  * Governing contract: ADR 0305 (rules 10 and 12: one declaration per file); ADR 0302 (decision 3); ADR 0165 (HeroUI
- *          Native on native); ADR 0303 (decision 7); ADR 0313; ADR 0318 (decisions 2, 4 to 6 and 10); ADR 0139 (action
+ *          Native on native); ADR 0303 (decision 7); ADR 0313; ADR 0505 (one data family); ADR 0139 (action
  *          UX); ADR 0060 (right-to-left); WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2; owner decision 6 of STA-350 (thin wrappers).
  */
 import type { ViewProps } from "react-native";

@@ -29,15 +29,11 @@ export default function Aggregates() {
     <div className="grid gap-3">
       <DataTable
         label={t(K.aggregates_label)}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
         hasColumnTools
         isStickyHeader
         maxHeight="22rem"
-        query={{ search: "", filterValues: {}, sort: collection.state.sort[0] ?? null }}
-        onQueryChange={() => {}}
       />
     </div>
   );

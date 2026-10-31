@@ -114,7 +114,7 @@ export default function Live() {
         items={liveRows}
         columns={COLUMNS}
         renderCell={renderOrderCell}
-        sortDescriptor={liveSort}
+        sort={liveSort ? [liveSort] : []}
         onSortChange={(next) => {
           // A new sort is a new query: it starts again from the first page.
           setLiveSort(next);

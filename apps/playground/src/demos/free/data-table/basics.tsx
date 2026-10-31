@@ -5,10 +5,10 @@
  * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.
  * Runtime: browser
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0302 (decisions 3 and 5);
- *          ADR 0303 (decision 7); ADR 0313; ADR 0318 (decisions 2 and 4 to 6); ADR 0060 (light, dark, RTL).
+ *          ADR 0303 (decision 7); ADR 0313; ADR 0505 (one engine); ADR 0060 (light, dark, RTL).
  */
 import type { Tone } from "@stackra/contracts";
-import type { ResourceQuery, TableColumn } from "@stackra/ui/contracts";
+import type { TableColumn } from "@stackra/ui/contracts";
 import type { DataTableProps } from "@stackra/ui/react";
 import { Chip, DataTable as UiDataTable, useCatalogueText } from "@stackra/ui/react";
 import { MESSAGES } from "#src/constants/messages.constant";
@@ -49,12 +49,6 @@ const STATUS_TONE: Readonly<Record<Order["status"], Tone>> = Object.freeze({
 /** Fixed to US dollars in English, so the total reads the same in both reading directions. */
 const MONEY = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
-/** The query with nothing set. */
-const NO_QUERY: ResourceQuery = Object.freeze({ search: "", filterValues: {}, sort: null });
-
-/** Does nothing: a sample whose query never changes. */
-const ignore = () => undefined;
-
 /** The cell of a sample: the status as a chip and the total as money, the rest as the table's own text. */
 function renderOrderCell(order: Order, column: TableColumn) {
   if (column.id === "status") return <Chip tone={STATUS_TONE[order.status]}>{order.status}</Chip>;
@@ -89,8 +83,6 @@ function Static(props: Partial<DataTableProps<Order>> & { readonly label: string
       items={FEW}
       columns={PLAIN_COLUMNS}
       renderCell={renderOrderCell}
-      query={NO_QUERY}
-      onQueryChange={ignore}
       headingLevel={4}
       {...props}
     />

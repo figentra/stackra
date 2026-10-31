@@ -28,11 +28,13 @@ vi.mock("@stackra/i18n/react", () => ({
   }),
   useMoney: () => (minor: number, currency: string) => `${currency} ${minor}`,
 }));
-vi.mock("@stackra/ui/react", async () => {
+vi.mock("@stackra/ui/react", async (importOriginal) => {
   const { createElement } = await import("react");
+  const { useCollection } = await importOriginal<{ readonly useCollection: unknown }>();
   // oxlint-disable-next-line typescript/no-explicit-any -- reason: the DOM stand-ins read the kit's props loosely
   type Props = Record<string, any>;
   return {
+    useCollection,
     Section: (props: Props) => createElement("section", null, props.title, props.children),
     EmptyState: (props: Props) => createElement("p", null, props.title),
     FilterBar: () => null,
@@ -40,7 +42,7 @@ vi.mock("@stackra/ui/react", async () => {
       createElement(
         "table",
         null,
-        props.items.map((item: Props) => createElement("tr", { key: item.id }, item.id)),
+        props.collection.rows.map((item: Props) => createElement("tr", { key: item.id }, item.id)),
       ),
   };
 });

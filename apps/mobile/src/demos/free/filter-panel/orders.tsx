@@ -1,14 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: the "orders" demo of the native FilterPanel: a commerce order index on a phone: saved views, a sort menu, a drawer of facets with live counts from the sample orders, chips and a rolling result count.
+ * Purpose: the "orders" demo of the native FilterPanel: a commerce order index: saved views as tabs (`SavedViews`) and
+ *          the facets with live counts from the sample orders, clearable chips and a result count that rolls, all on
+ *          one engine.
  * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.
  * Runtime: react-native
- * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6);
- *          design-system gap inventory (2026-10-28).
+ * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0302 (decisions 3 and 5);
+ *          ADR 0505 (one filter model, one SavedViews); ADR 0310 (decision 6).
  */
-import type { FilterDefinition, ResourceQuery, SavedView } from "@stackra/ui/contracts";
-import { FilterPanel, useCatalogueText } from "@stackra/ui/native";
-import { useState } from "react";
+import type { CollectionColumn, CollectionView } from "@stackra/ui/contracts";
+import { FilterPanel, SavedViews, useCatalogueText, useCollection } from "@stackra/ui/native";
+import { View } from "react-native";
 
 import { MESSAGES } from "#src/constants/messages.constant";
 import { FILTER_PANEL_DEMO_KEYS } from "#src/demos/free/filter-panel/filter-panel-demo-keys.constant";
@@ -16,86 +18,76 @@ import { FILTER_PANEL_DEMO_KEYS } from "#src/demos/free/filter-panel/filter-pane
 /** The demo's keys. */
 const K = FILTER_PANEL_DEMO_KEYS.demo_free.filter_panel.orders;
 
-/** Sample orders: payment status and channel. */
-const ORDERS = [
-  ["paid", "online"],
-  ["paid", "in_store"],
-  ["unpaid", "online"],
-  ["refunded", "online"],
-  ["paid", "online"],
-  ["unpaid", "in_store"],
-  ["paid", "in_store"],
-] as const;
+/** Sample orders: payment status, channel and total. */
+const ORDERS = (
+  [
+    ["paid", "online", 240],
+    ["paid", "in_store", 85],
+    ["unpaid", "online", 410],
+    ["refunded", "online", 60],
+    ["paid", "online", 1290],
+    ["unpaid", "in_store", 35],
+    ["paid", "in_store", 150],
+  ] as const
+).map(([status, channel, total], index) => ({ id: `o${index}`, status, channel, total }));
 
-/** Nothing filtered, newest first. */
-const ALL: ResourceQuery = {
-  search: "",
-  filterValues: {},
-  sort: { column: "date", direction: "descending" },
-};
+/** How many orders hold each value of a column, for the facet counts. */
+const countBy = (key: "status" | "channel") =>
+  Object.fromEntries(
+    [...new Set(ORDERS.map((order) => order[key]))].map((value) => [
+      value,
+      ORDERS.filter((order) => order[key] === value).length,
+    ]),
+  );
 
-/** The panel over the sample orders. */
+/** A view that keeps only one status. */
+const statusView = (id: string, label: string, status: string): CollectionView => ({
+  id,
+  label,
+  state: {
+    filter: {
+      match: "all",
+      conditions: [{ id: "filter:status", field: "status", operator: "in", value: [status] }],
+    },
+  },
+});
+
+/** Filter panel: Orders. */
 export default function Orders() {
   const t = useCatalogueText(MESSAGES.en);
-  const [query, setQuery] = useState(ALL);
-  const [view, setView] = useState("all");
-  const filters: readonly FilterDefinition[] = [
+  const columns: readonly CollectionColumn[] = [
     {
       id: "status",
       label: t(K.status),
-      kind: "multi-select",
+      type: "choice",
       options: (["paid", "unpaid", "refunded"] as const).map((id) => ({ id, label: t(K[id]) })),
     },
     {
       id: "channel",
       label: t(K.channel),
-      kind: "select",
+      type: "choice",
       options: (["online", "in_store"] as const).map((id) => ({ id, label: t(K[id]) })),
     },
+    { id: "total", label: t(K.total), type: "number" },
   ];
-  const views: readonly SavedView[] = [
-    { id: "all", label: t(K.all), query: ALL },
-    {
-      id: "unpaid",
-      label: t(K.view_unpaid),
-      query: { ...ALL, filterValues: { status: ["unpaid"] } },
-    },
-    {
-      id: "refunds",
-      label: t(K.view_refunds),
-      query: { ...ALL, filterValues: { status: ["refunded"] } },
-    },
-  ];
-  const status = query.filterValues["status"];
-  const channel = query.filterValues["channel"];
-  const matches = ORDERS.filter(
-    ([s, c]) =>
-      (!Array.isArray(status) || status.length === 0 || status.includes(s)) &&
-      (typeof channel !== "string" || channel === c),
-  );
-  const countBy = (index: 0 | 1) =>
-    Object.fromEntries(
-      [...new Set(ORDERS.map((order) => order[index]))].map((key) => [
-        key,
-        ORDERS.filter((order) => order[index] === key).length,
-      ]),
-    );
+  const collection = useCollection({
+    columns,
+    items: ORDERS,
+    views: [
+      { id: "all", label: t(K.all), state: { filter: { match: "all", conditions: [] } } },
+      statusView("unpaid", t(K.view_unpaid), "unpaid"),
+      statusView("refunds", t(K.view_refunds), "refunded"),
+    ],
+    defaultViewId: "all",
+  });
   return (
-    <FilterPanel
-      label={t(K.label)}
-      query={query}
-      onQueryChange={setQuery}
-      filters={filters}
-      counts={{ status: countBy(0), channel: countBy(1) }}
-      resultCount={matches.length}
-      views={views}
-      activeViewId={view}
-      onViewChange={setView}
-      sortOptions={[
-        { column: "date", label: t(K.date) },
-        { column: "total", label: t(K.total) },
-        { column: "customer", label: t(K.customer) },
-      ]}
-    />
+    <View className="gap-3">
+      <SavedViews collection={collection} variant="tabs" label={t(K.label)} />
+      <FilterPanel
+        label={t(K.label)}
+        collection={collection}
+        counts={{ status: countBy("status"), channel: countBy("channel") }}
+      />
+    </View>
   );
 }

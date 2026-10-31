@@ -14,7 +14,9 @@
     "from": "Van",
     "until": "Tot",
     "minimum": "Minimum",
-    "maximum": "Maximum"
+    "maximum": "Maximum",
+    "advanced": "Geavanceerd",
+    "unapplied": "Niet toegepast op de server"
   },
   "date_field": {
     "empty": "Kies een datum",
@@ -553,6 +555,7 @@
     "collapse_all": "Alle details verbergen",
     "row_detail": "Details van {name}",
     "edit_cell": "{column} van {name} bewerken",
+    "edit_failed": "{column} is niet opgeslagen",
     "open_row": "{name} openen",
     "row_panel": "{label}: details",
     "board_column": "{label}: {column}",
@@ -694,7 +697,14 @@
     "greater": "is groter dan",
     "less": "is kleiner dan",
     "is_empty": "is leeg",
-    "is_not_empty": "is niet leeg"
+    "is_not_empty": "is niet leeg",
+    "in": "is een van",
+    "not_in": "is geen van",
+    "between": "ligt tussen",
+    "before": "is voor",
+    "after": "is na",
+    "is_true": "is ja",
+    "is_false": "is nee"
   },
   "comment_thread": {
     "reply": "Reageren",

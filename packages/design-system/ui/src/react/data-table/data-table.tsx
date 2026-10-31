@@ -7,34 +7,34 @@
  *          drag to reorder. It lists a row's `rowActions` in an `ActionMenu` in a last column, draws the `filterBar`
  *          slot above the rows and a `BulkActionBar` while rows are selected, shows an `EmptyState` with the
  *          `no-results` reason when the query narrows the records and the `no-data` reason otherwise, a `PageSkeleton`
- *          for a first load, an `ErrorState` for a failed one and `CursorPagination` under the rows (or the engine's
- *          pages), and passes every other `div` prop to its root. The row tools of wave 3 (`DataTableRows`): drag to
+ *          for a first load, an `ErrorState` for a failed one and the engine's pager under the rows, and passes every other `div` prop to its root. The row tools of wave 3 (`DataTableRows`): drag to
  *          reorder (React Aria drag and drop, a handle per row), the row actions as hover buttons and as a right-click
  *          or Shift+F10 menu, expandable rows with "expand all", a row opened in the shared side panel, inline edit of
- *          marked columns with the DataGrid's own editor and rules, and with "select all N" the boxes of every page
+ *          the columns marked `isEditable` with the DataGrid's own editor and rules, and with "select all N" the boxes of every page
  *          shown ticked. With `isVirtualized` (wave 4) only the rows in view are drawn, through the Table's virtual
  *          scrolling.
- * Boundary: given a `collection` (DataView's), every change goes to it. Without one the table runs its own engine in
- *           server mode over the rows it is given, so it never sorts or filters them: `query.sort`, `selectedKeys`,
- *           `isAllMatchingSelected`, `groupBy`, `aggregates` and `density` stay controlled when given, and a header press
- *           calls `onQueryChange` with the next query, as before. `hiddenColumns` hides columns over the engine's own
- *           (the row header is always drawn). Group heading and total rows are drawn in the rows, kept out of the
+ * Boundary: it holds no data state: given a `collection` (DataView's, or the app's `useCollection` in client or server
+ *           mode) every change goes to it; given the shorthand `items` and `columns` it runs a client-mode engine of its
+ *           own, so a header press sorts the rows it was given. The pager is the engine's (`CollectionPager`), drawn
+ *           here unless a DataView owns it. Group heading and total rows are drawn in the rows, kept out of the
  *           selection and given no row actions; the total row sticks to the bottom of a sticky-header table. When the
  *           selection empties while the bar had focus the browser drops focus on the page, so focus moves to the table's
  *           container instead (WCAG 2.4.3). Detail rows, like group and total rows, are synthetic: never selected,
  *           dragged, reordered, actioned or edited. The edit box is a portal over the cell, so the grid's keys never
- *           act on what is typed; the chevron, the drag handle and the menus follow the logical direction, and the
- *           hover reveal stops under prefers-reduced-motion. A row action is pending while its promise is, shown as a
- *           disabled item that says so, and refuses a second run. It never imports `FilterBar`, which is built beside it.
+ *           act on what is typed; a write `onCellEdit` refuses is marked on its cell and announced. The chevron, the
+ *           drag handle and the menus follow the logical direction, and the hover reveal stops under
+ *           prefers-reduced-motion. A row action is pending while its promise is, shown as a disabled item that says
+ *           so, and refuses a second run. It never imports `FilterBar`, which is built beside it.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); product audit 2026-10-28 (group-by, aggregates, hidden columns);
  *          data-collection plan (owner, 2026-10-29); ADR 0165 (UI contract); ADR 0303 (decision 7); ADR 0313; ADR 0318
- *          (decisions 2 and 4 to 6); ADR 0139 (action UX); WCAG 2.2 SC 1.3.1, 2.4.3, 4.1.2, 4.1.3; owner decision 6 of
+ *          (decisions 2 and 4 to 6); ADR 0505 (one data family: the engine only, one pager); ADR 0139 (action UX); WCAG 2.2 SC 1.3.1, 2.4.3, 4.1.2, 4.1.3; owner decision 6 of
  *          STA-350 (thin wrappers).
  */
 import { cn } from "@heroui/react";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import {
+  useContext,
   useEffect,
   useRef,
   useState,
@@ -43,17 +43,14 @@ import {
   type ReactElement,
 } from "react";
 import { Button as AriaButton, useLocale } from "react-aria-components";
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridRow } from "#contracts/types/data-grid-row.type";
 
 import type { CollectionItem } from "#contracts/types/collection-item.type";
-import type { CollectionState } from "#contracts/types/collection-state.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
 import { COLLECTION_KEYS } from "#core/constants/collection-keys.constant";
 import { cellTextOf } from "#core/functions/cell-text-of.function";
-import { clearResourceQueryFilters } from "#core/functions/clear-resource-query-filters.function";
-import { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useCollection } from "#react/hooks/use-collection";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -62,8 +59,9 @@ import { ActionMenu } from "#react/action-menu/action-menu";
 import { BulkActionBar } from "#react/bulk-action-bar/bulk-action-bar";
 import { usePendingActions } from "#react/hooks/use-pending-actions";
 import { Button } from "#react/button/button";
-import { CursorPagination } from "#react/cursor-pagination/cursor-pagination";
 import { COLLECTION_ICONS } from "#react/data-table/collection-icons.constant";
+import { CollectionPager } from "#react/data-table/collection-pager";
+import { CollectionPagerContext } from "#react/data-table/collection-pager-context";
 import { CollectionRowPanel } from "#react/data-table/collection-row-panel";
 import { ColumnMenu } from "#react/data-table/column-menu";
 import { DataTableCellEditor } from "#react/data-table/data-table-cell-editor";
@@ -88,6 +86,10 @@ const DETAIL_PREFIX = "data-table-detail:";
 /** True for an expanded row's detail row. */
 const isDetail = (id: string) => id.startsWith(DETAIL_PREFIX);
 
+/** No columns or rows, one array for every render. */
+const NO_COLUMNS: readonly never[] = Object.freeze([]);
+const NO_ITEMS: readonly never[] = NO_COLUMNS;
+
 /** The words of the row tools. */
 const K = COLLECTION_KEYS.ui.collection;
 
@@ -101,45 +103,28 @@ const TOTAL_ROW_CLASS =
  */
 export function DataTable<TItem extends CollectionItem = CollectionItem>({
   label,
-  items,
-  columns,
+  items: givenItems,
+  columns: givenColumns,
   renderCell,
   variant,
   isStickyHeader,
   maxHeight,
   selectionMode = "none",
-  selectedKeys,
-  defaultSelectedKeys,
-  onSelectionChange,
   emptyState,
-  isLoading = false,
+  isLoading: givenLoading,
   loadingLabel,
-  hasMore = false,
-  hasPrevious,
-  onNext,
-  onPrevious,
-  mode,
-  query,
-  onQueryChange,
   rowActions,
   bulkActions,
   filterBar,
   filteredEmptyState,
-  error,
+  error: givenError,
   errorKind,
   isMessageShown,
-  onRetry,
+  onRetry: givenRetry,
   retryLabel: retryLabelProp,
   headingLevel = 3,
   paginationLabel: paginationLabelProp,
   bulkActionsLabel: bulkActionsLabelProp,
-  totalCount,
-  isAllMatchingSelected,
-  onAllMatchingSelectedChange,
-  groupBy,
-  aggregates,
-  hiddenColumns,
-  density,
   isColumnResizable,
   onColumnResize,
   onColumnMove,
@@ -156,7 +141,6 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   onExpandedChange,
   onRowOpen,
   renderRowPanel,
-  editableColumns,
   onCellEdit,
   isVirtualized = false,
   className,
@@ -165,47 +149,30 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   const t = useUiText();
   const { locale } = useLocale();
 
-  // The table's own engine, in server mode: the app's query and props stay in control of what they name.
-  const controlled: Partial<CollectionState> = {
-    sort: query.sort ? [query.sort] : [],
-    isAllMatchingSelected: isAllMatchingSelected ?? false,
-    ...(selectedKeys ? { selection: selectedKeys } : {}),
-    ...(groupBy === undefined ? {} : { groupBy }),
-    ...(aggregates === undefined ? {} : { aggregates }),
-    ...(density === undefined ? {} : { density }),
-  };
+  const isPagerOwned = useContext(CollectionPagerContext);
+  // The table's own client-mode engine (the shorthand), always run so the hooks keep their order.
   const own = useCollection<TItem>({
-    columns,
-    items,
-    mode: "server",
+    columns: givenColumns ?? NO_COLUMNS,
+    items: givenItems ?? NO_ITEMS,
     locale,
     collectionKey,
-    initialState: { selection: defaultSelectedKeys ?? [] },
-    state: controlled,
-    onStateChange: (next) => {
-      const before = own.state;
-      if (next.sort[0] !== before.sort[0]) onQueryChange({ ...query, sort: next.sort[0] ?? null });
-      if (next.selection !== before.selection) onSelectionChange?.(next.selection);
-      if (next.isAllMatchingSelected !== before.isAllMatchingSelected)
-        onAllMatchingSelectedChange?.(next.isAllMatchingSelected);
-    },
   });
   const collection = given ?? own;
   const { state } = collection;
+  const items = collection.rows;
+  const columns = collection.columns;
+  const isLoading = givenLoading ?? collection.isLoading;
+  const shownError = givenError ?? collection.error;
+  const onRetry = givenRetry ?? (collection.mode === "server" ? collection.refresh : undefined);
 
-  // The columns drawn: the engine's, with the app's `hiddenColumns` over them when given.
-  const shownColumns = collection.columns.filter((column) =>
-    hiddenColumns ? !column.canHide || !hiddenColumns.includes(column.id) : !column.isHidden,
-  );
   const layout = useDataTableLayout({
     items,
-    columns: shownColumns,
+    columns: collection.visibleColumns,
     groupBy: state.groupBy ?? undefined,
     aggregates: state.aggregates,
     locale,
   });
   const retryLabel = retryLabelProp ?? t(UI_KEYS.ui.data_table.retry);
-  const paginationLabel = paginationLabelProp ?? t(UI_KEYS.ui.data_table.pagination, { label });
   const bulkActionsLabel = bulkActionsLabelProp ?? t(UI_KEYS.ui.data_table.bulk_actions, { label });
   // The tool columns have their size, so the app's last column is the one that fills the row.
   const firstItem = items[0];
@@ -239,8 +206,8 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
       container.current?.focus({ preventScroll: true });
     previousCount.current = selected.length;
   }, [selected.length]);
-  const hasError = error !== undefined && error !== null;
-  const isFiltered = given ? given.isFiltered : isResourceQueryFiltered(query);
+  const hasError = shownError !== undefined && shownError !== null;
+  const isFiltered = collection.isFiltered;
   const hasRows = items.length > 0;
   const rowHeaderId = (columns.find((column) => column.isRowHeader) ?? columns[0])?.id ?? "";
   const nameOf = (item: TItem) => cellTextOf(item, rowHeaderId) || item.id;
@@ -272,12 +239,18 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   const isOpenable = onRowOpen !== undefined || renderRowPanel !== undefined;
   const [editing, setEditing] = useState<{
     readonly item: TItem;
-    readonly column: DataGridColumn;
+    readonly column: CollectionColumn;
     readonly anchor: HTMLElement;
     readonly trigger: HTMLElement;
   } | null>(null);
+  // The last failed write, shown on its cell until the cell is edited again.
+  const [editError, setEditError] = useState<{
+    readonly itemId: string;
+    readonly columnId: string;
+    readonly message: string;
+  } | null>(null);
   const editColumnOf = (id: string) =>
-    editableColumns?.find((column) => column.id === id && !column.isReadOnly);
+    columns.find((column) => column.id === id && column.isEditable && !column.isReadOnly);
   // The row a right-click or Shift+F10 is over; a press outside a record row leaves the browser's own menu.
   const [contextId, setContextId] = useState<string | null>(null);
 
@@ -397,6 +370,8 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
     const content = renderCell ? renderCell(item, column) : cellTextOf(item, column.id);
     const editColumn = onCellEdit ? editColumnOf(column.id) : undefined;
     if (!editColumn) return content;
+    const cellError =
+      editError?.itemId === item.id && editError.columnId === column.id ? editError.message : null;
     // A button over the value: a press (Enter from the keyboard) lays the DataGrid's editor over the cell. Its text
     // lines up with the header; the cell, a focus target of its own (grid navigation), keeps a 24px strip at the
     // other side (SC 2.5.8).
@@ -426,6 +401,14 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
         <span className="sr-only">
           {t(K.edit_cell, { column: column.label, name: nameOf(item) })}
         </span>
+        {cellError === null ? null : (
+          <>
+            <Icon name="circle-alert" size="sm" className="shrink-0 text-danger" />
+            <span role="alert" className="sr-only">
+              {cellError}
+            </span>
+          </>
+        )}
       </AriaButton>
     );
   };
@@ -463,9 +446,12 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   };
 
   const clearFilters = () =>
-    given
-      ? given.update({ search: "", filter: { match: "all", conditions: [] }, page: 0 })
-      : onQueryChange(clearResourceQueryFilters(query));
+    collection.update({
+      search: "",
+      filter: { match: "all", conditions: [] },
+      page: 0,
+      cursor: null,
+    });
   const empty = isFiltered
     ? (filteredEmptyState ?? (
         <EmptyState
@@ -489,11 +475,8 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
         />
       ));
 
-  // The engine's pages when it pages (DataView), the app's cursor buttons otherwise.
-  const isEnginePaged = given !== undefined && given.paging === "page";
-  const hasPager = isEnginePaged || onNext !== undefined || onPrevious !== undefined;
-  const isEngineInfinite = given !== undefined && given.paging === "infinite";
-  const total = totalCount ?? (given ? given.totalCount : undefined);
+  const isEngineInfinite = collection.paging === "infinite";
+  const total = collection.totalCount;
   const isResizable = isColumnResizable ?? hasColumnTools;
   const isContextMenu = rowActions !== undefined && hasContextMenu;
 
@@ -524,9 +507,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
                     ? Math.max(0, total - state.excludedKeys.length)
                     : total,
                 })}
-            {...(onAllMatchingSelectedChange || given
-              ? { onAllMatchingSelectedChange: collection.setAllMatchingSelected }
-              : {})}
+            onAllMatchingSelectedChange={collection.setAllMatchingSelected}
           />
         ) : null}
         {hasError ? (
@@ -534,7 +515,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
             title={t(UI_KEYS.ui.data_table.error_title)}
             headingLevel={headingLevel}
             kind={errorKind}
-            error={error}
+            error={shownError}
             isMessageShown={isMessageShown}
             retry={onRetry ? { label: retryLabel, onPress: onRetry } : undefined}
           />
@@ -645,7 +626,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
                   )
                 }
                 {...(isEngineInfinite
-                  ? { hasMore: given.hasMore, onLoadMore: given.loadMore }
+                  ? { hasMore: collection.hasMore, onLoadMore: collection.loadMore }
                   : {})}
                 {...(isResizable
                   ? {
@@ -692,30 +673,13 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
             </ContextMenu>
           </div>
         )}
-        {hasPager && !hasError ? (
-          isEnginePaged ? (
-            <CursorPagination
-              label={paginationLabel}
-              hasMore={given.hasMore}
-              hasPrevious={state.page > 0}
-              onNext={() => given.setPage(state.page + 1)}
-              onPrevious={() => given.setPage(state.page - 1)}
-              count={items.length}
-              isLoading={isLoading && hasRows}
-            />
-          ) : (
-            <CursorPagination
-              label={paginationLabel}
-              hasMore={hasMore}
-              hasPrevious={hasPrevious}
-              onNext={onNext}
-              onPrevious={onPrevious}
-              mode={mode}
-              count={items.length}
-              isLoading={isLoading && hasRows}
-            />
-          )
-        ) : null}
+        {hasError || isPagerOwned ? null : (
+          <CollectionPager
+            collection={collection}
+            label={label}
+            paginationLabel={paginationLabelProp}
+          />
+        )}
         {/* The column menu's moves are said here, politely. */}
         {hasColumnTools ? (
           <div data-collection-announcer="" aria-live="polite" className="sr-only" />
@@ -730,8 +694,19 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
             onCommit={(value) => {
               const { item, column, trigger } = editing;
               setEditing(null);
+              setEditError(null);
               trigger.focus();
-              void onCellEdit?.(item, column.id, value);
+              // A refused write is shown on its cell (and announced), so the user knows the value did not stick.
+              void Promise.resolve(onCellEdit?.(item, column.id, value)).catch((error: unknown) =>
+                setEditError({
+                  itemId: item.id,
+                  columnId: column.id,
+                  message:
+                    error instanceof Error && error.message !== ""
+                      ? error.message
+                      : t(K.edit_failed, { column: column.label }),
+                }),
+              );
             }}
             onCancel={() => {
               setEditing(null);

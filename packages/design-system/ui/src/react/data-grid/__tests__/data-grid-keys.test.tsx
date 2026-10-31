@@ -14,17 +14,17 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { I18nProvider } from "react-aria-components";
 
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import { DataGrid } from "#react/data-grid/data-grid";
 
-const COLUMNS: DataGridColumn[] = [
+const COLUMNS: CollectionColumn[] = [
   { id: "name", label: "Name" },
   { id: "qty", label: "Qty", type: "number" },
   { id: "on", label: "On", type: "boolean" },
   {
     id: "size",
     label: "Size",
-    type: "select",
+    type: "choice",
     options: [
       { id: "s", label: "Small" },
       { id: "l", label: "Large" },
@@ -65,7 +65,7 @@ const clipboard = () => {
 
 describe("DataGrid keys (web)", () => {
   it("moves the active cell with the arrows, Home, End, Page and Tab", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} />);
     expect(active()).toBe("0:0");
     key({ key: "ArrowRight" });
     key({ key: "ArrowDown" });
@@ -105,7 +105,7 @@ describe("DataGrid keys (web)", () => {
   it("mirrors the arrows in RTL", () => {
     render(
       <I18nProvider locale="ar-SA">
-        <DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />
+        <DataGrid label="Menu" columns={COLUMNS} items={ROWS} />
       </I18nProvider>,
     );
     key({ key: "ArrowLeft" });
@@ -117,7 +117,7 @@ describe("DataGrid keys (web)", () => {
   it("extends, collapses and selects all, fills down, clears and toggles booleans", () => {
     const onChangesChange = vi.fn();
     render(
-      <DataGrid label="Menu" columns={COLUMNS} rows={ROWS} onChangesChange={onChangesChange} />,
+      <DataGrid label="Menu" columns={COLUMNS} items={ROWS} onChangesChange={onChangesChange} />,
     );
     key({ key: "ArrowDown", shiftKey: true });
     expect(selected()).toEqual(["0:0", "1:0"]);
@@ -157,7 +157,7 @@ describe("DataGrid keys (web)", () => {
   });
 
   it("edits with F2 and a double click, commits by Enter, Shift+Enter, Tab and blur, and cancels by Escape", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} />);
     key({ key: "F2" });
     let input = screen.getByRole("textbox") as HTMLInputElement;
     expect(input.value).toBe("Latte");
@@ -192,7 +192,7 @@ describe("DataGrid keys (web)", () => {
   });
 
   it("edits a select cell by its choice and a boolean by Enter", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} />);
     key({ key: "End" });
     key({ key: "Enter" });
     const select = screen.getByRole("combobox") as HTMLSelectElement;
@@ -205,7 +205,7 @@ describe("DataGrid keys (web)", () => {
   });
 
   it("copies and cuts the range as tab-separated text", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} />);
     key({ key: "ArrowRight", shiftKey: true });
     key({ key: "ArrowDown", shiftKey: true });
     const copy = clipboard();
@@ -218,7 +218,7 @@ describe("DataGrid keys (web)", () => {
   });
 
   it("selects a range by pointer drag and fills it down and across from the handle", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} />);
     fireEvent.pointerDown(cell("0:1"), { button: 0 });
     over(cell("0:1"));
     fireEvent.pointerMove(gridOf());
@@ -250,7 +250,7 @@ describe("DataGrid keys (web)", () => {
   });
 
   it("does nothing on keys or the clipboard without rows", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={[]} />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={[]} />);
     key({ key: "ArrowDown" });
     fireEvent.paste(gridOf(), { clipboardData: { getData: () => "x" } });
     fireEvent.copy(gridOf(), { clipboardData: clipboard().data });
@@ -258,7 +258,7 @@ describe("DataGrid keys (web)", () => {
   });
 
   it("keeps a read-only grid from editing", () => {
-    render(<DataGrid label="Menu" columns={COLUMNS} rows={ROWS} isReadOnly />);
+    render(<DataGrid label="Menu" columns={COLUMNS} items={ROWS} isReadOnly />);
     key({ key: "Enter" });
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(gridOf().getAttribute("aria-readonly")).toBe("true");

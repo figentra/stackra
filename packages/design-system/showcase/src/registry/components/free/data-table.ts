@@ -15,14 +15,7 @@ export const FREE_DATA_TABLE: ComponentEntry = {
   platforms: ["react", "native"],
   packageName: "@stackra/ui",
   exportName: "DataTable",
-  parts: [
-    "DataTable",
-    "ColumnEditor",
-    "ColumnMenu",
-    "SavedViews",
-    "SavedViewsMenu",
-    "ColumnChooser",
-  ],
+  parts: ["DataTable", "ColumnEditor", "SavedViews"],
   hero: {},
   examples: [
     { id: "basics", card: true },

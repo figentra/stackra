@@ -4,8 +4,9 @@
  *          page size, the next page's cursor), the header create link, row actions (view, edit, a placed record action
  *          run with the record id, delete) and the bulk bar fanning out per record; a resource with no registered tree
  *          shows the row's own keys; a page's row count shows, capped past the limit; a view store's saved views draw
- *          as tabs, a view's columns and sort reach the table; the preset views draw as tabs without a store, and a
- *          preset's filter values and fixed input reach the list query (STA-1688).
+ *          as tabs on the table's engine, an applied view's columns and sort reach the table; the preset views draw
+ *          as tabs without a store, and an applied preset's filter values and fixed input reach the list query
+ *          (STA-1688, ADR 0505).
  * Boundary: unit tier, jsdom; `useQuery`, the action runner and navigation are spies, the web kit is DOM stand-ins,
  *           translation returns the key.
  * Runtime: node (vitest)
@@ -47,8 +48,9 @@ vi.mock("@stackra/i18n/react", () => ({
   useMoney: () => (minor: number, currency: string) => `${currency} ${minor}`,
 }));
 
-vi.mock("@stackra/ui/react", async () => {
+vi.mock("@stackra/ui/react", async (importOriginal) => {
   const { createElement } = await import("react");
+  const { useCollection } = await importOriginal<{ readonly useCollection: unknown }>();
   // oxlint-disable-next-line typescript/no-explicit-any -- reason: the DOM stand-ins read the kit's props loosely
   type Props = Record<string, any>;
   const buttons = (actions: { id: string; label: string; onPress?: () => void }[] = []) =>
@@ -60,18 +62,31 @@ vi.mock("@stackra/ui/react", async () => {
       ),
     );
   return {
+    useCollection,
     Button: (props: Props) =>
       createElement("button", { type: "button", onClick: props.onPress }, props.children),
     EmptyState: (props: Props) => createElement("div", null, props.title, props.actions),
     Text: (props: Props) => createElement("small", null, props.children),
     FilterBar: (props: Props) =>
-      createElement("p", null, props.filters.map((filter: Props) => filter.label).join(",")),
-    Tabs: (props: Props) =>
+      createElement(
+        "p",
+        null,
+        props.collection.columns
+          .filter((column: Props) => column.isFilterable !== false)
+          .map((column: Props) => column.label)
+          .join(","),
+      ),
+    SavedViews: (props: Props) =>
       createElement(
         "div",
-        { "aria-label": props.label },
-        props.items.map((item: Props) => createElement("span", { key: item.id }, item.label)),
-        props.items.at(-1)?.content,
+        { "aria-label": props.label, "data-variant": props.variant },
+        props.collection.views.map((view: Props) =>
+          createElement(
+            "button",
+            { type: "button", key: view.id, onClick: () => props.collection.applyView(view.id) },
+            view.label,
+          ),
+        ),
       ),
     PageHeader: (props: Props) =>
       createElement("header", null, props.title, buttons(props.actions)),
@@ -80,23 +95,27 @@ vi.mock("@stackra/ui/react", async () => {
         "section",
         null,
         props.filterBar,
-        createElement("h2", null, props.columns.map((column: Props) => column.label).join("|")),
-        props.items.length === 0
+        createElement(
+          "h2",
+          null,
+          props.collection.visibleColumns.map((column: Props) => column.label).join("|"),
+        ),
+        props.collection.rows.length === 0
           ? props.emptyState
-          : props.items.map((item: Props) =>
+          : props.collection.rows.map((item: Props) =>
               createElement(
                 "div",
                 { key: item.id, role: "row" },
-                props.columns.map((column: Props) =>
+                props.collection.visibleColumns.map((column: Props) =>
                   createElement("span", { key: column.id }, props.renderCell(item, column)),
                 ),
                 buttons(props.rowActions?.(item)),
               ),
             ),
-        createElement("button", { type: "button", onClick: props.onNext }, "next"),
+        createElement("button", { type: "button", onClick: props.collection.loadMore }, "next"),
         createElement(
           "button",
-          { type: "button", onClick: () => props.onSelectionChange?.(["ord_1", "ord_2"]) },
+          { type: "button", onClick: () => props.collection.setSelection(["ord_1", "ord_2"]) },
           "select",
         ),
         createElement("nav", null, buttons(props.bulkActions)),
@@ -338,6 +357,7 @@ describe("ResourceListPage", () => {
     render(<ResourceListPage resource={Orders} views={views} />);
     await vi.waitFor(() => expect(screen.getByText("Paid")).toBeTruthy());
     expect(screen.getByText("panel::resources.all_views")).toBeTruthy();
+    fireEvent.click(screen.getByText("Paid"));
     expect(screen.getByText("orders::resources.order.columns.status")).toBeTruthy();
     expect(spies.useQuery.mock.calls.at(-1)?.[1]).toMatchObject({
       sort: { key: "status", direction: SortDirection.Asc },
@@ -369,7 +389,7 @@ describe("ResourceListPage", () => {
     render(<ResourceListPage resource={Orders} />);
     expect(screen.getByText("panel::resources.all_views")).toBeTruthy();
     expect(screen.getByText("orders::resources.order.views.paid")).toBeTruthy();
-    expect(screen.getByText("orders::resources.order.views.merged")).toBeTruthy();
+    fireEvent.click(screen.getByText("orders::resources.order.views.merged"));
     expect(spies.useQuery.mock.calls.at(-1)?.[1]).toEqual({
       includeMerged: true,
       limit: 25,

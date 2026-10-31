@@ -1,22 +1,22 @@
 /**
  * Stackra file contract:
  * Purpose: the "filter-slot" demo of the web Data table: The table draws any node above its rows. Here it is a search
- *          field that writes to the same query; the FilterBar component goes in the same place.
+ *          field that writes to the same engine; the FilterBar component goes in the same place.
  * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.
  * Runtime: browser
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0302 (decisions 3 and 5);
- *          ADR 0303 (decision 7); ADR 0313; ADR 0318 (decisions 2 and 4 to 6); ADR 0060 (light, dark, RTL).
+ *          ADR 0303 (decision 7); ADR 0313; ADR 0505 (one engine); ADR 0060 (light, dark, RTL).
  */
 import type { Tone } from "@stackra/contracts";
-import type { ResourceQuery, TableColumn } from "@stackra/ui/contracts";
+import type { TableColumn } from "@stackra/ui/contracts";
 import {
   Chip,
   DataTable as UiDataTable,
   SearchField,
   Text,
   useCatalogueText,
+  useCollection,
 } from "@stackra/ui/react";
-import { useState } from "react";
 import { MESSAGES } from "#src/constants/messages.constant";
 import { DATA_TABLE_KEYS } from "#src/demos/free/data-table/data-table-keys.constant";
 
@@ -55,9 +55,6 @@ const STATUS_TONE: Readonly<Record<Order["status"], Tone>> = Object.freeze({
 /** Fixed to US dollars in English, so the total reads the same in both reading directions. */
 const MONEY = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
-/** The query with nothing set. */
-const NO_QUERY: ResourceQuery = Object.freeze({ search: "", filterValues: {}, sort: null });
-
 /** The cell of a sample: the status as a chip and the total as money, the rest as the table's own text. */
 function renderOrderCell(order: Order, column: TableColumn) {
   if (column.id === "status") return <Chip tone={STATUS_TONE[order.status]}>{order.status}</Chip>;
@@ -65,34 +62,7 @@ function renderOrderCell(order: Order, column: TableColumn) {
   return <bdi>{String(order[column.id as keyof Order])}</bdi>;
 }
 
-/**
- * The server: the orders that match the search, sorted as asked. A table is handed the result and never filters or
- * sorts, so this is the page's job. Ties keep the list's own order, which is stable.
- */
-function ordersFor(query: ResourceQuery): readonly Order[] {
-  const needle = query.search.trim().toLowerCase();
-  const found = ORDERS.filter(
-    (order) =>
-      needle === "" ||
-      order.order.toLowerCase().includes(needle) ||
-      order.customer.toLowerCase().includes(needle),
-  );
-  if (!query.sort) return found;
-  const key = query.sort.column as keyof Order;
-  const factor = query.sort.direction === "ascending" ? 1 : -1;
-  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-  return [...found].sort((first, second) => {
-    const a = first[key];
-    const b = second[key];
-    return (
-      (typeof a === "number" && typeof b === "number"
-        ? a - b
-        : String(a).localeCompare(String(b))) * factor
-    );
-  });
-}
-
-/** A table with a search field in the filter bar slot, writing to the same query. */
+/** A table with a search field in the filter bar slot, writing to the same engine. */
 function FilterSlotExample() {
   const t = useCatalogueText(MESSAGES.en);
   /** The columns: every one sortable but the status. */
@@ -108,27 +78,31 @@ function FilterSlotExample() {
     label: column.label,
     ...(column.align ? { align: column.align } : {}),
   }));
-  const [query, setQuery] = useState<ResourceQuery>(NO_QUERY);
+  // The engine searches the rows itself; the slot's field writes its search.
+  const collection = useCollection({
+    columns: PLAIN_COLUMNS,
+    items: ORDERS,
+    paging: "page",
+    initialState: { pageSize: 5 },
+  });
+  const { search } = collection.state;
   return (
     <>
       <UiDataTable
         label={t(K.filter_slot_label)}
-        items={ordersFor(query).slice(0, 5)}
-        columns={PLAIN_COLUMNS}
+        collection={collection}
         renderCell={renderOrderCell}
-        query={query}
-        onQueryChange={setQuery}
         headingLevel={3}
         filterBar={
           <SearchField
             aria-label={t(K.search_label)}
-            value={query.search}
-            onChange={(search) => setQuery({ ...query, search })}
+            value={search}
+            onChange={collection.setSearch}
           />
         }
       />
       <Text role="status" data-testid="data-table-slot-query" tone="muted">
-        {t(K.query, { search: query.search || "none" })}
+        {t(K.query, { search: search || "none" })}
       </Text>
     </>
   );

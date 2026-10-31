@@ -38,10 +38,10 @@
   "column_status": "Status",
   "column_total": "Total",
   "grouped_label": "Orders grouped by status, with totals",
-  "tools_label": "Orders with views and a column chooser",
+  "tools_label": "Orders with saved views and a column editor",
   "views_label": "Order views",
   "view_all": "All orders",
   "view_unpaid": "Unpaid",
-  "facet_label": "Status",
-  "saved_view_name": "My view"
+  "views_tabs_label": "Order views as tabs",
+  "views_chips_label": "Order views as chips"
 }
