@@ -44,6 +44,17 @@ describe(TenantIsolationService, () => {
     expect(setUp().service).toBeInstanceOf(Service);
   });
 
+  it("reads the running transaction's tenant, '' when it has none", async () => {
+    const { execute, service } = setUp();
+    execute.mockResolvedValueOnce([{ tenant: TENANT }] as never);
+    await expect(service.currentTenant()).resolves.toBe(TENANT);
+    expect(execute).toHaveBeenCalledWith("select current_setting(?, true) as tenant", [
+      "app.tenant_id",
+    ]);
+    execute.mockResolvedValueOnce([{ tenant: null }] as never);
+    await expect(service.currentTenant()).resolves.toBe("");
+  });
+
   it("sets app.tenant_id to the actor's tenant inside a transaction, and new rows take it", async () => {
     const { execute, transaction, service } = setUp();
     const ticket = await service.withTenant(jobIn(TENANT), async () => new Ticket());

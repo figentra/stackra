@@ -42,6 +42,19 @@ export class TenantIsolationService extends Service {
   }
 
   /**
+   * The tenant the running transaction is set to: `''` when none is, or when it is not in a tenant.
+   */
+  async currentTenant(): Promise<string> {
+    // raw-sql: the tenant setting is transaction state, which only SQL reads
+    const [row] = (await this.database
+      .em()
+      .execute("select current_setting(?, true) as tenant", [TENANT_ID_SETTING])) as {
+      tenant: string | null;
+    }[];
+    return row?.tenant ?? "";
+  }
+
+  /**
    * Runs `work` in a transaction (a savepoint inside one) with `app.tenant_id` set to `actor.scopeId`, `''` when the
    * actor acts in no tenant.
    *

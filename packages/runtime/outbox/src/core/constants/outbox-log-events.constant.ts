@@ -15,4 +15,6 @@ export const OUTBOX_LOG_EVENTS = Object.freeze({
   consumerStalled: "outbox.consumer_stalled",
   /** A relay tick failed to read or record messages and paused. */
   relayFailed: "outbox.relay_failed",
+  /** The inbox ran a receipt as a platform call because the envelope's actor did not belong to its scope (ADR 0495). */
+  actorDowngraded: "outbox.actor_downgraded",
 });

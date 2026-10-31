@@ -2659,4 +2659,22 @@ describe("ActionPipeline call isolation (ADR 0495)", () => {
     await expect(read()).rejects.toBeInstanceOf(RateLimitedError);
     expect(log.slice(-2)).toEqual(["isolation:rollback", "outbox"]);
   });
+
+  it("writes a refused action's usage event after the isolation rolled back, so the rollback cannot undo it", async () => {
+    const outbox = new Outbox();
+    const { pipeline } = setup([
+      [EventOutbox, outbox],
+      [CallIsolation, new LoggingIsolation()],
+    ]);
+    await pipeline.execute(SendMessageAction, { text: "hi" }, { actor: customer });
+    log.length = 0;
+    await expect(
+      pipeline.execute(SendMessageAction, { text: "again" }, { actor: customer }),
+    ).rejects.toBeInstanceOf(RateLimitedError);
+    expect(log.slice(-2)).toEqual(["isolation:rollback", "outbox"]);
+    expect(outbox.written.at(-1)?.event).toMatchObject({
+      meter: "actions.rate_limited",
+      key: "message.send",
+    });
+  });
 });

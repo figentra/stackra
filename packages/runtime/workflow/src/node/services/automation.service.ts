@@ -22,6 +22,7 @@
  *                     versioned seed documents; a new seed version never overwrites tenant values); ADR 0423
  *                     (decisions 1 to 4).
  */
+import type { ScopeOwnership } from "@stackra/actions/contracts";
 import type { Revision } from "@stackra/content/node";
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
 import { CrudService, type Repository, UniqueViolation } from "@stackra/database";
@@ -33,6 +34,7 @@ import { AutomationChangedError } from "#core/errors/automation-changed.error";
 import { AutomationExceedsPublisherError } from "#core/errors/automation-exceeds-publisher.error";
 import { AutomationInvalidError } from "#core/errors/automation-invalid.error";
 import { AutomationNotDryRunError } from "#core/errors/automation-not-dry-run.error";
+import { AutomationPrincipalMismatchError } from "#core/errors/automation-principal-mismatch.error";
 import { AutomationPaused } from "#core/events/automation-paused.event";
 import { checkAutomation } from "#core/functions/check-automation.function";
 import { dryRun } from "#core/functions/dry-run.function";
@@ -75,14 +77,23 @@ export class AutomationService extends CrudService<Automation> {
   /** What each publisher may call. */
   private readonly access: PublisherAccess;
 
+  /** Whether a principal's scope owns an automation's, when a service binds the check (`@stackra/tenancy` does). */
+  private readonly ownership: ScopeOwnership | undefined;
+
   /**
    * @param revisions - the revisions of every `HasRevisions` model, one row per revision.
    * @param access - which action blocks a publisher may call; @stackra/iam binds it.
+   * @param ownership - refuses a principal from another scope when bound; none trusts the caller's choice.
    */
-  constructor(revisions: Repository<Revision>, access: PublisherAccess) {
+  constructor(
+    revisions: Repository<Revision>,
+    access: PublisherAccess,
+    ownership?: ScopeOwnership,
+  ) {
     super();
     this.revisions = revisions;
     this.access = access;
+    this.ownership = ownership;
   }
 
   /** A new automation keyed `key` at `scope`, with no revision yet. */
@@ -132,6 +143,7 @@ export class AutomationService extends CrudService<Automation> {
    * @throws NotFoundError when the automation or the revision is not visible.
    * @throws AutomationNotDryRunError when the last dry run was not of this revision.
    * @throws AutomationExceedsPublisherError when `publisher` may not call an action block the revision calls.
+   * @throws AutomationPrincipalMismatchError when a bound `ScopeOwnership` says `principal`'s scope does not own the automation's.
    */
   async publish(
     automationId: PublicId<"wfa">,
@@ -354,6 +366,15 @@ export class AutomationService extends CrudService<Automation> {
     principal: Actor,
     publisher: Actor,
   ): Promise<void> {
+    // a run acts as the principal in the automation's isolation, so its scope must own the automation's (ADR 0495)
+    if (
+      this.ownership !== undefined &&
+      !(await this.ownership.holds(principal, {
+        id: automation.scopeId,
+        path: automation.scopePath,
+      }))
+    )
+      throw AutomationPrincipalMismatchError.create({ automationId: automation.id });
     const row = await this.revisions.findOneOrFail({
       model: MODEL,
       recordId: automation.id,

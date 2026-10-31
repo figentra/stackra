@@ -22,16 +22,17 @@
  *                     ADR 0260 (decision 4: the relay);
  *                     ADR 0327 (decision 9: the scope session).
  */
-import { CallIsolation } from "@stackra/actions/contracts";
+import { CallIsolation, ScopeOwnership } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { ActorKind } from "@stackra/contracts";
+import { ActorKind, Logger } from "@stackra/contracts";
 import type { Actor, Clock } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import type { Event, EventBus, Listener, ListenerContext } from "@stackra/events";
 import { upgrade } from "@stackra/versioning";
 
 import type { EventEnvelope, InboxDriver } from "#contracts/index";
+import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
 import { RELAYS } from "#core/constants/relays.constant";
 import { UnknownEventError } from "#core/errors/unknown-event.error";
 import { wireVersionOf } from "#core/functions/wire-version-of.function";
@@ -65,6 +66,12 @@ export class InboxService extends Service {
   /** The isolation `connect` found bound, if any; each receipt runs in it as the envelope's actor. */
   private isolation: CallIsolation | undefined;
 
+  /** The ownership check `connect` found bound, if any; an actor that fails it is not trusted. */
+  private ownership: ScopeOwnership | undefined;
+
+  /** The logger `connect` found bound, if any. */
+  private logger: Logger | undefined;
+
   /**
    * @param driver - the store of received ids.
    * @param bus - the in-process bus that runs the listeners.
@@ -89,6 +96,8 @@ export class InboxService extends Service {
     get: <T extends object>(type: AnyClass<T>) => T;
   }): void {
     this.isolation = container.has(CallIsolation) ? container.get(CallIsolation) : undefined;
+    this.ownership = container.has(ScopeOwnership) ? container.get(ScopeOwnership) : undefined;
+    this.logger = container.has(Logger) ? container.get(Logger) : undefined;
     for (const type of RELAYS)
       if (container.has(type)) {
         const relay = container.get(type);
@@ -100,6 +109,8 @@ export class InboxService extends Service {
   disconnect(): void {
     this.relays.splice(0);
     this.isolation = undefined;
+    this.ownership = undefined;
+    this.logger = undefined;
   }
 
   /**
@@ -138,13 +149,41 @@ export class InboxService extends Service {
     };
     return this.isolation === undefined
       ? this.database.withScope(envelope.scope ?? [], receive)
-      : this.isolation.run(envelope.meta.actor ?? PLATFORM_ACTOR, envelope.scope, receive, {
-          readOnly: false,
-        });
+      : this.receiveIsolated(this.isolation, await this.actorOf(envelope), envelope, receive);
   }
 
   /** Forgets the ids received before `before`; the retention purge a scheduled job runs. */
   prune(before: Date): Promise<void> {
     return this.driver.prune(before);
+  }
+
+  /** Runs `receive` in the isolation, in a transaction of its own so the in-process relay's tick never carries one actor's tenant into the next receipt. */
+  private receiveIsolated(
+    isolation: CallIsolation,
+    actor: Actor,
+    envelope: EventEnvelope,
+    receive: () => Promise<boolean>,
+  ): Promise<boolean> {
+    return this.database.transaction(
+      () => isolation.run(actor, envelope.scope, receive, { readOnly: false }),
+      { requiresNew: true },
+    );
+  }
+
+  /**
+   * The actor a receipt runs as: the envelope's, trusted (the event bus is trusted for actor identity, ADR 0142) unless a
+   * bound `ScopeOwnership` says its scope does not own the envelope's, when it is downgraded to the platform actor and
+   * logged by event id and type only.
+   */
+  private async actorOf(envelope: EventEnvelope): Promise<Actor> {
+    const stored = envelope.meta.actor;
+    if (stored === undefined) return PLATFORM_ACTOR;
+    if (this.ownership === undefined || (await this.ownership.holds(stored, envelope.scope)))
+      return stored;
+    this.logger?.warn(OUTBOX_LOG_EVENTS.actorDowngraded, {
+      eventId: envelope.id,
+      type: envelope.type,
+    });
+    return PLATFORM_ACTOR;
   }
 }

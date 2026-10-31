@@ -106,6 +106,13 @@
       "class": "AutomationNotDryRunError"
     },
     {
+      "code": "automation_principal_mismatch",
+      "kind": "permission_denied",
+      "category": "forbidden",
+      "module": "workflow",
+      "class": "AutomationPrincipalMismatchError"
+    },
+    {
       "code": "checklist_invalid",
       "kind": "validation",
       "category": "validation",

@@ -349,8 +349,9 @@ export class OutboxRelayService extends Service {
   }
 
   /**
-   * Runs `work` through the bound `CallIsolation` as the stored actor in the stored scope (ADR 0495), else in the
-   * scope session alone, as before.
+   * Runs `work` through the bound `CallIsolation` as the stored actor in the stored scope (ADR 0495), in a transaction
+   * of its own (`requiresNew`), so a tick's transaction never carries one actor's tenant into the next delivery and the
+   * isolation can refuse a switch; else in the scope session alone, as before.
    */
   private isolated<T>(
     resolver: Resolver,
@@ -359,7 +360,10 @@ export class OutboxRelayService extends Service {
     work: () => Promise<T>,
   ): Promise<T> {
     return resolver.has(CallIsolation)
-      ? resolver.get(CallIsolation).run(actor, scope, work, { readOnly: false })
+      ? this.database.transaction(
+          () => resolver.get(CallIsolation).run(actor, scope, work, { readOnly: false }),
+          { requiresNew: true },
+        )
       : this.database.withScope(scope ?? [], work);
   }
 

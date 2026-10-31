@@ -51,6 +51,13 @@
       "class": "TenantRequiredError"
     },
     {
+      "code": "tenant_switch_refused",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "tenancy",
+      "class": "TenantSwitchRefusedError"
+    },
+    {
       "code": "transfer_refused",
       "kind": "forbidden",
       "category": "forbidden",
@@ -203,6 +210,25 @@
       "classes": {
         "tenant": {
           "class": "TenantScopeResolverDriver",
+          "from": "@stackra/tenancy",
+          "deps": [
+            {
+              "class": {
+                "name": "ScopeTree",
+                "from": "@stackra/scope/contracts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "ScopeOwnership",
+      "key": "actions.ScopeOwnership",
+      "candidates": ["tenant_scope_ownership"],
+      "classes": {
+        "tenant_scope_ownership": {
+          "class": "TenantScopeOwnershipDriver",
           "from": "@stackra/tenancy",
           "deps": [
             {

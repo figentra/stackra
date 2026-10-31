@@ -30,6 +30,7 @@ describe("@stackra/workflow", () => {
       "AutomationExceedsPublisherError",
       "AutomationInvalidError",
       "AutomationNotDryRunError",
+      "AutomationPrincipalMismatchError",
       "AutomationPaused",
       "BlockKind",
       "ChecklistAudience",

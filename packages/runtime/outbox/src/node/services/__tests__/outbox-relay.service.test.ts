@@ -175,6 +175,7 @@ function relayOf(
   const batch = new BatchConsumer();
   const scopes: (ScopeRef | readonly ScopeRef[])[] = [];
   const database = {
+    transaction: async <T>(work: () => Promise<T>) => work(),
     withScope: async <T>(scope: ScopeRef | readonly ScopeRef[], work: () => Promise<T>) => {
       scopes.push(scope);
       return work();

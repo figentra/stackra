@@ -14,9 +14,9 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0078 (decisions 2 to 4); ADR 0327 (decision 9); ADR 0260 (decision 4).
  */
-import { CallIsolation } from "@stackra/actions/contracts";
+import { CallIsolation, ScopeOwnership } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
-import { ActorKind } from "@stackra/contracts";
+import { ActorKind, Logger } from "@stackra/contracts";
 import type { Actor, Clock, ScopeRef } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { EventBus, IntegrationEvent, Listener, type ListenerContext } from "@stackra/events";
@@ -71,6 +71,7 @@ function inboxWithListener() {
   bus.subscribe(OrderPaid, listener);
   const scopes: (ScopeRef | readonly ScopeRef[])[] = [];
   const database = {
+    transaction: async <T>(work: () => Promise<T>) => work(),
     withScope: async <T>(scope: ScopeRef | readonly ScopeRef[], work: () => Promise<T>) => {
       scopes.push(scope);
       return work();
@@ -154,6 +155,51 @@ describe(InboxService, () => {
     inbox.disconnect();
     await inbox.receive(envelope({ id: "evt_C" }));
     expect(scopes).toEqual([[]]);
+  });
+
+  it("downgrades an actor whose scope does not own the envelope's to the platform actor, and logs it without values", async () => {
+    const { inbox } = inboxWithListener();
+    const runs: Actor[] = [];
+    class Recording extends Driver(CallIsolation) {
+      run<T>(actor: Actor, _scope: unknown, work: () => Promise<T>): Promise<T> {
+        runs.push(actor);
+        return work();
+      }
+    }
+    class OwnsAcme extends Driver(ScopeOwnership) {
+      async holds(actor: Actor): Promise<boolean> {
+        return actor.scopeId === SCOPE.id;
+      }
+    }
+    const warnings: [string, Readonly<Record<string, unknown>> | undefined][] = [];
+    class Lines extends Logger {
+      debug(): void {}
+
+      info(): void {}
+
+      error(): void {}
+
+      warn(event: string, fields?: Readonly<Record<string, unknown>>): void {
+        warnings.push([event, fields]);
+      }
+    }
+    const bound = new Map<unknown, object>([
+      [CallIsolation, new Recording()],
+      [ScopeOwnership, new OwnsAcme()],
+      [Logger, new Lines()],
+    ]);
+    inbox.connect({
+      has: (type) => bound.has(type),
+      get: <T extends object>(type: unknown) => bound.get(type) as T,
+    });
+    const own: Actor = { kind: ActorKind.Service, id: "svc_orders", scopeId: SCOPE.id };
+    const other: Actor = { kind: ActorKind.Service, id: "svc_orders", scopeId: "scp_other" };
+    await inbox.receive(envelope({ scope: SCOPE, meta: { actor: own } }));
+    await inbox.receive(envelope({ id: "evt_B", scope: SCOPE, meta: { actor: other } }));
+    expect(runs).toEqual([own, { kind: ActorKind.System, id: "sys_inbox" }]);
+    expect(warnings).toEqual([
+      ["outbox.actor_downgraded", { eventId: "evt_B", type: "orders.order.paid.v1" }],
+    ]);
   });
 
   it("refuses an unknown wire name before claiming the id", async () => {

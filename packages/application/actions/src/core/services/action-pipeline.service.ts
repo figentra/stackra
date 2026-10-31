@@ -205,7 +205,7 @@ interface CallState {
   audited: boolean;
   /** Set once the call's analytics event was written inside the unit of work, so the outer step does not write it. */
   tracked: boolean;
-  /** Set when a refused query's `rate_limited` usage event is still to be written, after its read-only transaction. */
+  /** Set when a refused call's `rate_limited` usage event is still to be written, after its isolation transaction ends. */
   unmetered: boolean;
   /** When the call started, by `performance.now()`, for the generic analytics event's duration. */
   readonly startedMs: number;
@@ -425,7 +425,7 @@ export class ActionPipeline {
     } catch (error) {
       if (taken.claim !== undefined && "held" in taken.claim)
         await this.required(IdempotencyStore, "").release(taken.claim.held);
-      // a refused query's usage event is a write, so it waits for the read-only transaction to end
+      // a refused call's usage event is a write its rollback would undo, so it waits for the transaction to end
       if (call.state.unmetered)
         await this.metered(call, { name: RATE_LIMITED_METER, kind: MeterKind.Count }, undefined);
       throw error;
@@ -693,11 +693,9 @@ export class ActionPipeline {
     for (const [key, bucket] of takes) {
       const decision = await store.take(key, bucket, at);
       if (decision.allowed) continue;
-      if (this.optional(EventOutbox) !== undefined) {
-        if (call.kind === "query") call.state.unmetered = true;
-        else
-          await this.metered(call, { name: RATE_LIMITED_METER, kind: MeterKind.Count }, undefined);
-      }
+      // the usage event is a write the refusal's rollback would undo (and a query's transaction is read-only), so it is
+      // written after the isolation transaction ends, in `steps`
+      if (this.optional(EventOutbox) !== undefined) call.state.unmetered = true;
       throw RateLimitedError.create({
         // A bucket that never refills (`Infinity`) has no hint: JSON would carry it as null.
         ...(Number.isFinite(decision.retryAfterMs) ? { retryAfterMs: decision.retryAfterMs } : {}),

@@ -14,6 +14,8 @@
  *                     config-model sections 5 and 6.
  */
 import { Action } from "@stackra/actions";
+import { ScopeOwnership } from "@stackra/actions/contracts";
+import { Driver } from "@stackra/container";
 import { Revision } from "@stackra/content/node";
 import { ActorKind, Realm } from "@stackra/contracts";
 import type { Actor, ScopeRef } from "@stackra/contracts";
@@ -27,6 +29,7 @@ import {
   AutomationExceedsPublisherError,
   AutomationInvalidError,
   AutomationNotDryRunError,
+  AutomationPrincipalMismatchError,
   BlockKind,
   DryRunOutcome,
   MemoryPublisherAccessDriver,
@@ -203,6 +206,28 @@ describe(AutomationService, () => {
     expect(isRefusal(refused, AutomationExceedsPublisherError)).toBe(true);
     expect((refused as AutomationExceedsPublisherError).blocks).toEqual(["sms.send"]);
     expect(automation.publishedRevision).toBeNull();
+  });
+
+  it("refuses a principal whose scope does not own the automation's, when the check is bound", async () => {
+    class OwnsAcme extends Driver(ScopeOwnership) {
+      async holds(actor: Actor): Promise<boolean> {
+        return actor.scopeId === undefined || actor.scopeId === SCOPE.id;
+      }
+    }
+    const automation = storedAutomation({ dryRunRevision: 1 });
+    connect(
+      [automation],
+      [storedRevision(automation, 1, { document: { ...DOCUMENT, version: 1 } })],
+    );
+    const service = new AutomationService(new RevisionRepository(), access, new OwnsAcme());
+    const stranger: Actor = { ...PRINCIPAL, scopeId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w9" };
+    const refused = await service
+      .publish(automation.id, 1, stranger, PUBLISHER)
+      .catch((error: unknown) => error);
+    expect(isRefusal(refused, AutomationPrincipalMismatchError)).toBe(true);
+    expect(automation.publishedRevision).toBeNull();
+    await service.publish(automation.id, 1, { ...PRINCIPAL, scopeId: SCOPE.id }, PUBLISHER);
+    expect(automation.publishedRevision).toBe(1);
   });
 
   it("pauses an automation whose publisher lost access instead of starting it, and recheck does too", async () => {

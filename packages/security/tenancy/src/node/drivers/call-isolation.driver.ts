@@ -10,7 +10,9 @@
  *           runs with no granted path. A read-only unit opens one read-only transaction first and the two settings run
  *           inside it (a write there fails with `25006`); a writable one lets `withScope` open the transaction and
  *           `withTenant` run in a savepoint of it, so a unit of work inside the work is a savepoint too and the whole
- *           unit commits once. It is the one place, with `TenantIsolationService` and the database drivers'
+ *           unit commits once.
+ *           Inside a transaction that already runs for another tenant it refuses (`TenantSwitchRefusedError`) rather
+ *           than replace the tenant: the relay and the inbox give each unit a transaction of its own. It is the one place, with `TenantIsolationService` and the database drivers'
  *           `withScope`, that writes an `app.*` setting (ADR 0495 decision 3; `pnpm validate` refuses the rest).
  * Runtime: node
  * Governing contract: ADR 0495 (decisions 1 to 3); ADR 0239 (decision 1); ADR 0210 (decisions 3 and 7); ADR 0327
@@ -21,6 +23,7 @@ import { Driver } from "@stackra/container";
 import type { Actor, ScopeRef } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 
+import { TenantSwitchRefusedError } from "#core/errors/tenant-switch-refused.error";
 import type { TenantIsolationService } from "#node/services/tenant-isolation.service";
 
 /**
@@ -51,8 +54,9 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
    * Implements `CallIsolation.run`, documented there.
    *
    * @throws TypeError when `actor.scopeId` is not a tenant id or a scope path is not an `ltree` path.
+   * @throws TenantSwitchRefusedError when a transaction is already running for another tenant than the actor's.
    */
-  run<T>(
+  async run<T>(
     actor: Actor,
     scope: ScopeRef | readonly ScopeRef[] | undefined,
     work: () => Promise<T>,
@@ -60,10 +64,16 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
   ): Promise<T> {
     const isolated = () =>
       this.database.withScope(scope ?? [], () => this.isolation.withTenant(actor, work));
-    // shortcut: a read-only call inside a running transaction (a query an action calls) joins it and stays as writable
-    // as that transaction, because a running transaction cannot become read-only. A nested call under another actor
-    // re-sets the settings until the outer transaction ends (as `withTenant` always did); upgrade by restoring them.
-    if (!options.readOnly || this.database.em().isInTransaction()) return isolated();
-    return this.database.transaction(isolated, { readOnly: true });
+    if (!this.database.em().isInTransaction()) {
+      return options.readOnly
+        ? this.database.transaction(isolated, { readOnly: true })
+        : isolated();
+    }
+    // A running transaction keeps its tenant: another actor's tenant must not replace it, so the caller (the relay, the
+    // inbox) gives each actor's unit a transaction of its own. A read-only call joins the running transaction, which
+    // cannot become read-only.
+    const held = await this.isolation.currentTenant();
+    if (held !== "" && held !== (actor.scopeId ?? "")) throw TenantSwitchRefusedError.create();
+    return isolated();
   }
 }

@@ -63,6 +63,7 @@ describe("@stackra/actions/contracts", () => {
       "ReplicaReads",
       "ReviewItemSink",
       "ReviewReason",
+      "ScopeOwnership",
       "StepUpCheck",
       "TenancyCheck",
       "UnitOfWork",

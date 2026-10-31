@@ -17,6 +17,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { CallIsolationDriver } from "#node/drivers/call-isolation.driver";
+import { TenantSwitchRefusedError } from "#core/errors/tenant-switch-refused.error";
 import type { TenantIsolationService } from "#node/services/tenant-isolation.service";
 
 const actor: Actor = {
@@ -27,7 +28,7 @@ const actor: Actor = {
 const scope: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2wa", path: "platform.acme" };
 
 /** A recording database and tenant service; `running` says whether a transaction is already open. */
-function setUp(running = false) {
+function setUp(running = false, held = "") {
   const steps: string[] = [];
   const withScope = vi.fn(async (scopes: unknown, work: () => Promise<unknown>) => {
     steps.push("scope");
@@ -46,7 +47,10 @@ function setUp(running = false) {
     withScope,
     transaction,
   } as unknown as Database;
-  const isolation = { withTenant } as unknown as TenantIsolationService;
+  const isolation = {
+    withTenant,
+    currentTenant: async () => held,
+  } as unknown as TenantIsolationService;
   return {
     steps,
     withScope,
@@ -86,6 +90,28 @@ describe(CallIsolationDriver, () => {
     const { steps, driver } = setUp(true);
     await driver.run(actor, scope, async () => 1, { readOnly: true });
     expect(steps).toEqual(["scope", "tenant"]);
+  });
+
+  it("refuses a running transaction that is set to another tenant, and runs one set to the same or to none", async () => {
+    await expect(
+      setUp(true, "scp_01j9z3k4m5n6p7q8r9s0t1v2wb").driver.run(actor, scope, async () => 1, {
+        readOnly: false,
+      }),
+    ).rejects.toBeInstanceOf(TenantSwitchRefusedError);
+    await expect(
+      setUp(true, "scp_01j9z3k4m5n6p7q8r9s0t1v2wb").driver.run(
+        { kind: ActorKind.Job, id: actor.id },
+        scope,
+        async () => 1,
+        { readOnly: false },
+      ),
+    ).rejects.toBeInstanceOf(TenantSwitchRefusedError);
+    await expect(
+      setUp(true, actor.scopeId).driver.run(actor, scope, async () => 1, { readOnly: false }),
+    ).resolves.toBe(1);
+    await expect(
+      setUp(true, "").driver.run(actor, scope, async () => 1, { readOnly: false }),
+    ).resolves.toBe(1);
   });
 
   it("passes the work's refusal through", async () => {

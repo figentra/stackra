@@ -34,6 +34,7 @@ export { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 export { ReplicaLog } from "#contracts/ports/replica-log.port";
 export { ReplicaReads } from "#contracts/ports/replica-reads.port";
 export { ReviewItemSink } from "#contracts/ports/review-item-sink.port";
+export { ScopeOwnership } from "#contracts/ports/scope-ownership.port";
 export { StepUpCheck } from "#contracts/ports/step-up-check.port";
 export { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 export { UnitOfWork } from "#contracts/ports/unit-of-work.port";

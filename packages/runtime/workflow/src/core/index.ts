@@ -38,6 +38,7 @@ export { AutomationChangedError } from "#core/errors/automation-changed.error";
 export { AutomationExceedsPublisherError } from "#core/errors/automation-exceeds-publisher.error";
 export { AutomationInvalidError } from "#core/errors/automation-invalid.error";
 export { AutomationNotDryRunError } from "#core/errors/automation-not-dry-run.error";
+export { AutomationPrincipalMismatchError } from "#core/errors/automation-principal-mismatch.error";
 export { ForEachItemsInvalidError } from "#core/errors/for-each-items-invalid.error";
 export { ChecklistInvalidError } from "#core/errors/checklist-invalid.error";
 export { AutomationPaused } from "#core/events/automation-paused.event";

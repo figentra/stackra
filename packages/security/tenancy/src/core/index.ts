@@ -19,6 +19,7 @@ export { MemoryTenantPlacementDriver } from "#core/drivers/memory-tenant-placeme
 export { MemoryTenantSharesDriver } from "#core/drivers/memory-tenant-shares.driver";
 export { MemoryTenantTokensDriver } from "#core/drivers/memory-tenant-tokens.driver";
 export { RegionGuardDriver } from "#core/drivers/region-guard.driver";
+export { TenantScopeOwnershipDriver } from "#core/drivers/tenant-scope-ownership.driver";
 export { TenancyCronScopesDriver } from "#core/drivers/tenancy-cron-scopes.driver";
 export { TenantPlacementConnectionResolverDriver } from "#core/drivers/tenant-placement-connection-resolver.driver";
 export { TenantScopeResolverDriver } from "#core/drivers/tenant-scope-resolver.driver";
@@ -31,6 +32,7 @@ export { SandboxNotFoundError } from "#core/errors/sandbox-not-found.error";
 export { ShareTransitionInvalidError } from "#core/errors/share-transition-invalid.error";
 export { TenantMembershipMissingError } from "#core/errors/tenant-membership-missing.error";
 export { TenantRequiredError } from "#core/errors/tenant-required.error";
+export { TenantSwitchRefusedError } from "#core/errors/tenant-switch-refused.error";
 export { TransferRefusedError } from "#core/errors/transfer-refused.error";
 export { isTenantId } from "#core/functions/is-tenant-id.function";
 export { revocationPlan } from "#core/functions/revocation-plan.function";
