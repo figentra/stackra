@@ -4,25 +4,18 @@
  *          or where one binding is the start of the other's chord, on Apple devices or elsewhere.
  * Boundary: pure; gen calls it over a member and its dependencies, `registerShortcuts` over what is registered. `mod`
  *           is resolved per platform first, so `mod+k` clashes with `meta+k` (Apple) and with `ctrl+k` (elsewhere).
- *           A pair is reported once, as `same` when it is the same keys on either platform.
+ *           A pair is reported once, as `same` when it is the same keys on either platform. With `{ reserved: true }`
+ *           a binding that equals a browser or system key (`RESERVED_SHORTCUTS`) is also reported, as `reserved`,
+ *           paired with the reserved binding's own key `"reserved"`.
  * Runtime: isomorphic
- * Governing contract: registry v3.1 final review H (gen conflict checks); ADR 0281 (decision 6: conflicts are checked).
+ * Governing contract: registry v3.1 final review H (gen conflict checks); ADR 0281 (decision 6: conflicts are checked);
+ *                     ADR 0508 (reserved keys are refused).
  */
-import { MODIFIERS } from "#core/constants/modifiers.constant";
+import { RESERVED_SHORTCUTS } from "#core/constants/reserved-shortcuts.constant";
 import { ShortcutConflictKind } from "#core/enums/shortcut-conflict-kind.enum";
 import { normalizeShortcutKeys } from "#core/functions/normalize-shortcut-keys.function";
+import { resolveShortcutStep as resolveStep } from "#core/functions/resolve-shortcut-step.function";
 import type { ShortcutConflict } from "#core/types/shortcut-conflict.type";
-
-/** A normal-form step with `mod` replaced by what it is on the platform. */
-function resolveStep(step: string, apple: boolean): string {
-  const parts = step.split("+");
-  const modifiers = new Set(
-    parts
-      .slice(0, -1)
-      .map((modifier) => (modifier === "mod" ? (apple ? "meta" : "ctrl") : modifier)),
-  );
-  return [...MODIFIERS.filter((modifier) => modifiers.has(modifier)), parts.at(-1)].join("+");
-}
 
 /** How two resolved step lists clash, if they do. */
 function clash(
@@ -47,6 +40,7 @@ function clash(
  */
 export function findShortcutConflicts(
   shortcuts: readonly { readonly key: string; readonly keys: string }[],
+  options: { readonly reserved?: boolean } = {},
 ): ShortcutConflict[] {
   const read = shortcuts.map((shortcut) => ({
     key: shortcut.key,
@@ -69,6 +63,21 @@ export function findShortcutConflicts(
           kind,
           shortcuts: [first.key, second.key],
           keys: [first.steps.join(" "), second.steps.join(" ")],
+        });
+    }
+  if (options.reserved)
+    for (const shortcut of read) {
+      const resolved = [true, false].map((apple) =>
+        shortcut.steps.map((step) => resolveStep(step, apple)).join(" "),
+      );
+      const taken = RESERVED_SHORTCUTS.find((reserved) =>
+        [true, false].some((apple) => resolved[apple ? 0 : 1] === resolveStep(reserved, apple)),
+      );
+      if (taken !== undefined)
+        conflicts.push({
+          kind: ShortcutConflictKind.Reserved,
+          shortcuts: [shortcut.key, "reserved"],
+          keys: [shortcut.steps.join(" "), taken],
         });
     }
   return conflicts;

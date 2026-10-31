@@ -29,4 +29,6 @@ export interface FilterBarContractProps<TItem extends CollectionItem = Collectio
    * with the `ui` catalogue's "not applied" words as a tooltip on a warning button beside them.
    */
   readonly unappliedIds?: readonly string[] | undefined;
+  /** False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507). */
+  readonly ai?: boolean | undefined;
 }

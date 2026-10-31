@@ -175,6 +175,8 @@ vi.mock("#native/icon-button/icon-button", async () => {
   };
 });
 
+vi.mock("#native/tamo-button/tamo-button", () => ({ TamoButton: () => null }));
+vi.mock("#native/tamo-ask-box/tamo-ask-box", () => ({ TamoAskBox: () => null }));
 vi.mock("#native/rule-builder/rule-builder", async () => {
   const { createElement } = await import("react");
   return {

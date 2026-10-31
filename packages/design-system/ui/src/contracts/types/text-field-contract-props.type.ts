@@ -6,7 +6,7 @@
  * Boundary: types only.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303 (decision 7, props vocabulary);
- *          ADR 0055 (forms: one field contract).
+ *          ADR 0055 (forms: one field contract); ADR 0507 (the `ai` slot).
  */
 import type { TextFieldType } from "#contracts/enums/text-field-type.enum";
 import type { TextFieldVariant } from "#contracts/enums/text-field-variant.enum";
@@ -22,4 +22,9 @@ export interface TextFieldContractProps extends FieldContractProps<string> {
   readonly type?: TextFieldType | undefined;
   /** True to fill the parent's width, false to size to the content. Defaults to true. */
   readonly isFullWidth?: boolean | undefined;
+  /**
+   * False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with
+   * the AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.
+   */
+  readonly ai?: boolean | undefined;
 }

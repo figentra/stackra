@@ -1,0 +1,73 @@
+/**
+ * Stackra file contract:
+ * Purpose: `SHEET_KEYS`, the typed keys of the web Sheet demos' words in `assets/lang/<locale>/sheet.json`.
+ * Boundary: keys only; the words live in the catalogues. A stand-in for the `#stackra/i18n` keys gen writes (STA-339).
+ * Runtime: browser
+ * Governing contract: ADR 0080 (typed i18n keys); ADR 0231 (`<module>::<path>`); ADR 0305 (catalogue layout).
+ */
+import { keys } from "@stackra/i18n";
+
+/** The sheet namespace's keys. */
+export const SHEET_KEYS = keys({
+  sheet: [
+    "open",
+    "close",
+    "done",
+    "cancel",
+    "apply",
+    "filters_title",
+    "filters_body",
+    "in_stock",
+    "on_sale",
+    "placement_title",
+    "placement_body",
+    "edge_bottom",
+    "edge_top",
+    "edge_start",
+    "edge_end",
+    "open_bottom",
+    "open_top",
+    "open_start",
+    "open_end",
+    "snap_open",
+    "snap_title",
+    "snap_body",
+    "sequential_open",
+    "sequential_title",
+    "sequential_body",
+    "backdrop_opaque",
+    "backdrop_blur",
+    "backdrop_transparent",
+    "backdrop_title",
+    "backdrop_body",
+    "locked_open",
+    "locked_title",
+    "locked_body",
+    "accept",
+    "scroll_open",
+    "scroll_title",
+    "scroll_body",
+    "activity_item",
+    "detached_open",
+    "detached_title",
+    "detached_body",
+    "controlled_open",
+    "controlled_title",
+    "controlled_body",
+    "state_open",
+    "state_closed",
+    "handle_open",
+    "handle_title",
+    "handle_body",
+    "nested_open",
+    "nested_title",
+    "nested_body",
+    "nested_child_open",
+    "nested_child_title",
+    "nested_child_body",
+    "nested_deeper_open",
+    "nested_deeper_title",
+    "nested_deeper_body",
+    "back",
+  ],
+});

@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0165 (UI contract).
  */
+import type { ShortcutSettings } from "@stackra/shortcuts";
 import type { ReactNode } from "react";
 
 import type { ColorScheme } from "#contracts/enums/color-scheme.enum";
@@ -93,4 +94,15 @@ export interface DesignSystemProviderProps {
    * own zoom and text size.
    */
   readonly maxFontScale?: number | null | undefined;
+  /**
+   * The shortcut settings in force (`resolveShortcutSettings` of the platform, tenant and person layers): on or off,
+   * the hint mode, single-key shortcuts and remaps. Left out, the provider holds the platform default. Web only today.
+   */
+  readonly shortcuts?: ShortcutSettings | undefined;
+  /** Called when the person changes a shortcut setting (the settings panel); persist the person's layer here. */
+  readonly onShortcutsChange?: ((settings: ShortcutSettings) => void) | undefined;
+  /** Whether the person holds a permission; an action whose `permission` it refuses never registers. */
+  readonly canRunShortcut?: ((permission: string) => boolean) | undefined;
+  /** False leaves out the built-in shortcuts cheat sheet (`?`). Defaults to true. */
+  readonly hasShortcutCheatSheet?: boolean | undefined;
 }

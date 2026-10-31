@@ -16,6 +16,7 @@ import type { ReactElement } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { reactAriaPlacementOf } from "#core/functions/react-aria-placement-of.function";
+import { ShortcutHint } from "#react/shortcut-hint/shortcut-hint";
 import type { TooltipProps } from "#react/tooltip/tooltip.props";
 
 /**
@@ -31,6 +32,7 @@ export function Tooltip({
   isOpen,
   defaultOpen,
   onOpenChange,
+  shortcut,
   ...rest
 }: TooltipProps): ReactElement {
   return (
@@ -41,7 +43,14 @@ export function Tooltip({
         {...omitUndefined({ showArrow: hasArrow })}
       >
         {hasArrow ? <HeroTooltip.Arrow /> : null}
-        {content}
+        {shortcut === undefined ? (
+          content
+        ) : (
+          <span className="inline-flex items-center gap-2">
+            {content}
+            <ShortcutHint keys={shortcut} isDecorative />
+          </span>
+        )}
       </HeroTooltip.Content>
     </HeroTooltip>
   );

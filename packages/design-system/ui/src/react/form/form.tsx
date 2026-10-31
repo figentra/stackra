@@ -14,9 +14,16 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI v3 on web); ADR 0055 (forms); ADR 0303; WCAG 2.2 SC 2.1.1.
  */
 import { Form as HeroForm } from "@heroui/react";
-import type { KeyboardEvent, ReactElement } from "react";
+import { STANDARD_SHORTCUTS } from "@stackra/shortcuts";
+import { useShortcutActions } from "@stackra/shortcuts/react";
+import { type KeyboardEvent, type ReactElement, useRef, useState } from "react";
 import { type FieldValues, FormProvider, type UseFormReturn } from "react-hook-form";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import type { FormProps } from "#react/form/form.props";
+import { useUiText } from "#react/hooks/use-ui-text";
+import { TamoReviewContext } from "#react/hooks/tamo-review-context";
+import { useTamo } from "#react/hooks/use-tamo";
+import { TamoFormFill } from "#react/form/tamo-form-fill";
 
 /** The input types whose Enter key does something of its own (press, choose, open), so Enter must reach them. */
 const ENTER_ACTS_ON_ITS_OWN = new Set([
@@ -42,11 +49,34 @@ function isTextBox(target: EventTarget): boolean {
  */
 export function Form<T extends FieldValues = FieldValues>({
   isSubmitOnModEnter = false,
+  submitShortcut,
   onKeyDown,
   form,
   submit,
+  ai,
+  aiFields,
   ...rest
 }: FormProps<T>): ReactElement {
+  const t = useUiText();
+  const ref = useRef<HTMLFormElement>(null);
+  const binding =
+    submitShortcut ?? (isSubmitOnModEnter ? STANDARD_SHORTCUTS["form.submit"] : undefined);
+  // Through the registry, the key is listed and remappable; it runs first and prevents the handler below.
+  useShortcutActions(
+    binding === undefined || binding === false
+      ? []
+      : [
+          {
+            id: "form.submit",
+            label: t(UI_KEYS.ui.shortcuts.submit),
+            shortcut: binding,
+            run: () => ref.current?.requestSubmit(),
+          },
+        ],
+    { within: ref },
+  );
+  const tamo = useTamo({}, ai !== false && form !== undefined);
+  const [pending, setPending] = useState<readonly string[]>([]);
   const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
     onKeyDown?.(event);
     if (!isSubmitOnModEnter || event.defaultPrevented) return;
@@ -60,18 +90,31 @@ export function Form<T extends FieldValues = FieldValues>({
   };
   // A spread, not an attribute: HeroUI's form type does not list `onKeyDown`, but React Aria spreads every DOM prop onto
   // the `form` element, so the handler arrives.
-  const keyProps = { onKeyDown: handleKeyDown };
+  const keyProps = { onKeyDown: handleKeyDown, ref };
   if (form === undefined) return <HeroForm {...rest} {...keyProps} />;
   const onSubmit = rest.onSubmit ?? (submit === undefined ? undefined : form.handleSubmit(submit));
   return (
     // The handle is react-hook-form's form with two members widened; the provider passes `control` and the rest on.
     <FormProvider {...(form as unknown as UseFormReturn<FieldValues>)}>
-      <HeroForm
-        validationBehavior="aria"
-        {...rest}
-        {...keyProps}
-        {...(onSubmit === undefined ? {} : { onSubmit })}
-      />
+      <TamoReviewContext.Provider value={new Set(pending)}>
+        <HeroForm
+          validationBehavior="aria"
+          {...rest}
+          {...keyProps}
+          {...(onSubmit === undefined ? {} : { onSubmit })}
+        >
+          {tamo ? (
+            <TamoFormFill
+              slot={tamo}
+              form={form}
+              fields={aiFields}
+              pending={pending}
+              onReview={setPending}
+            />
+          ) : null}
+          {rest.children}
+        </HeroForm>
+      </TamoReviewContext.Provider>
     </FormProvider>
   );
 }

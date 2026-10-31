@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "0e00b91ce7ceeb03",
+    "hash": "2e42891146b1e5a2",
     "heroDoc": "vendor/heroui/native/dialog.json",
     "propsFiles": [
       "ui/src/native/modal/modal-close.props.ts",
@@ -14,6 +14,13 @@
   "parts": [
     {
       "events": [
+        {
+          "description": "The modal's primary action, run by `confirmShortcut` (Mod+Enter by default) while this is the topmost overlay, so\na person confirms without reaching for the mouse. Page shortcuts pause while any modal is open (ADR 0508).",
+          "name": "onConfirm",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
         {
           "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
           "name": "onOpenChange",
@@ -65,6 +72,14 @@
           "description": "The accessible name for a modal that has no `Modal.Title`; with a title, the title names it.",
           "name": "label",
           "replaces": "accessibilityLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "mod+enter",
+          "description": "The binding of `onConfirm`. Defaults to `mod+enter`.",
+          "name": "confirmShortcut",
           "required": false,
           "source": "stackra",
           "type": "string"

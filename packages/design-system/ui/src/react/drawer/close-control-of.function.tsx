@@ -8,11 +8,11 @@
  * Runtime: browser
  * Governing contract: STA-1371 (owner, 2026-10-29); WCAG 2.2 SC 2.5.8 (target size).
  */
-import { Kbd } from "@heroui/react";
 
 import type { CloseControl } from "#contracts/types/close-control.type";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 import type { CloseControlParts } from "#react/drawer/close-control-parts.type";
+import { ShortcutHint } from "#react/shortcut-hint/shortcut-hint";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 
 /** The content and classes of a close trigger drawn as `control` (`"none"` is the caller's to skip). */
@@ -24,9 +24,7 @@ export function closeControlOf(
   if (control !== "esc" && control !== "both")
     return { children: mark, className: undefined, isEsc: false };
   const cap = (
-    <Kbd aria-hidden className="hidden pointer-fine:inline-flex">
-      <Kbd.Content>{"esc"}</Kbd.Content>
-    </Kbd>
+    <ShortcutHint keys="escape" isDecorative className="hidden pointer-fine:inline-flex" />
   );
   const cross = <SlotIcon icon={icon ?? "x"} />;
   return {

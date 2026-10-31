@@ -347,4 +347,15 @@ describe("renderWebCss", () => {
     );
     expect(css).not.toContain("--accent-soft-foreground: color-mix(");
   });
+
+  it("never places the switch thumb with a physical side, so right to left mirrors it (ADR 0060)", () => {
+    // HeroUI moves the thumb with logical properties; a theme rule with left, right or translateX would pin it to one
+    // side and draw an Arabic switch backwards.
+    const rules = [...css.matchAll(/[^{}]*\.switch[^{}]*\{[^}]*\}/g)].map(([rule]) => rule);
+    expect(rules.length).toBeGreaterThan(0);
+    for (const rule of rules)
+      expect(rule).not.toMatch(
+        /(?:^|[\s;{])(?:left|right|margin-left|margin-right|translate|transform)\s*:/,
+      );
+  });
 });

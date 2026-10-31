@@ -25,7 +25,7 @@ export const FREE_DATE_RANGE_PICKER: ComponentEntry = {
         "https://github.com/heroui-inc/heroui/tree/v3/packages/react/src/components/date-range-picker",
     },
   },
-  examples: [{ id: "basics", card: true }, { id: "hijri" }],
+  examples: [{ id: "basics", card: true }, { id: "hijri" }, { id: "tamo", platforms: ["react"] }],
   related: ["free/range-calendar", "free/date-picker"],
   tokens: ["radius.field", "color.overlay"],
   keywords: ["date range", "presets", "period", "report"],

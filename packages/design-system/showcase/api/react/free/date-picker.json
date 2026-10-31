@@ -1,8 +1,11 @@
 {
   "generatedFrom": {
-    "hash": "f13577b43057c8ec",
+    "hash": "d253640c283d449e",
     "heroDoc": "vendor/heroui/react/date-picker.json",
-    "propsFiles": ["ui/src/react/date-picker/date-picker.props.ts"]
+    "propsFiles": [
+      "ui/src/react/date-picker/date-picker.props.ts",
+      "ui/src/react/date-picker/tamo-date-ask.props.ts"
+    ]
   },
   "importLine": "import { DatePicker } from \"@stackra/ui/react\";",
   "key": "free/date-picker",
@@ -89,6 +92,13 @@
           "required": false,
           "source": "stackra",
           "type": "CalendarDate"
+        },
+        {
+          "description": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
+          "name": "ai",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "default": "primary",
@@ -389,6 +399,41 @@
           "required": false,
           "source": "react-aria",
           "type": "GlobalDOMEvents"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with the day, or the range's ends, once applied.",
+          "name": "onPick",
+          "required": true,
+          "source": "stackra",
+          "type": "(start: CalendarDate, end: CalendarDate | undefined) => void"
+        }
+      ],
+      "name": "TamoDateAsk",
+      "props": [
+        {
+          "description": "",
+          "name": "slot",
+          "required": true,
+          "source": "stackra",
+          "type": "TamoSlot"
+        },
+        {
+          "description": "True for a range (\"last month\").",
+          "name": "isRange",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The day words count from.",
+          "name": "today",
+          "required": true,
+          "source": "stackra",
+          "type": "CalendarDate"
         }
       ]
     }

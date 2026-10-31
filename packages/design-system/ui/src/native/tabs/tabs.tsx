@@ -69,6 +69,8 @@ export function Tabs({
   // Native tabs always scroll.
   overflow: _overflow,
   onClose,
+  // Mod+number tabs need a hardware keyboard: a later step on native (ADR 0508).
+  hasNumberShortcuts: _hasNumberShortcuts,
   ...rest
 }: TabsProps): ReactElement {
   const motion = useMotion();

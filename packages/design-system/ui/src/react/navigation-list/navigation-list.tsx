@@ -17,7 +17,8 @@
  *          (HeroUI v3 on web); WCAG 2.2 SC 1.3.1, 1.4.1, 2.4.7, 2.5.8 and 4.1.2.
  */
 import { buttonVariants, cn } from "@heroui/react";
-import { useId, type ReactElement } from "react";
+import { useShortcutActions } from "@stackra/shortcuts/react";
+import { useId, useRef, type ReactElement } from "react";
 import { Link as AriaLink } from "react-aria-components";
 
 import type { NavigationItem } from "#contracts/types/navigation-item.type";
@@ -40,12 +41,6 @@ function isLink(item: NavigationItem): boolean {
   return item.href !== undefined || item.onPress !== undefined;
 }
 
-/** What the entry's tooltip says: the label as well in the rail, where the label is not on screen. */
-function tooltipOf(item: NavigationItem, isCompact: boolean): string | undefined {
-  if (isCompact) return item.shortcut ? `${item.label} (${item.shortcut})` : item.label;
-  return item.shortcut;
-}
-
 /** Props of {@link Entry}. */
 interface EntryProps {
   /** The place to draw. */
@@ -64,8 +59,24 @@ function Entry({ item, isCompact }: EntryProps): ReactElement {
     : state === "ancestor"
       ? "true"
       : undefined;
+  // The key presses the link itself, so `href` follows the app's router and `onPress` runs, as a click would (ADR 0508).
+  const ref = useRef<HTMLAnchorElement>(null);
+  useShortcutActions(
+    item.shortcut === undefined
+      ? []
+      : [
+          {
+            id: `navigation:${item.id}`,
+            label: item.label,
+            shortcut: item.shortcut,
+            isDisabled: item.isDisabled,
+            run: () => ref.current?.click(),
+          },
+        ],
+  );
   const link = (
     <AriaLink
+      ref={ref}
       {...omitUndefined({
         // A disabled link is a span, which React Aria still hands the `href` attribute, so it is left off here.
         href: item.isDisabled ? undefined : item.href,
@@ -114,13 +125,13 @@ function Entry({ item, isCompact }: EntryProps): ReactElement {
       ) : null}
     </AriaLink>
   );
-  const hint = tooltipOf(item, isCompact);
-  return hint === undefined ? (
-    link
-  ) : (
-    <Tooltip content={hint} placement="end">
+  // The label as well in the rail, where it is not on screen; the keys in the platform's form.
+  return isCompact || item.shortcut !== undefined ? (
+    <Tooltip content={item.label} shortcut={item.shortcut} placement="end">
       {link}
     </Tooltip>
+  ) : (
+    link
   );
 }
 

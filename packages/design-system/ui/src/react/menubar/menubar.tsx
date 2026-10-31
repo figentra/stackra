@@ -23,6 +23,7 @@ import { useUiText } from "#react/hooks/use-ui-text";
 import { MenuBody } from "#react/menu/menu-body";
 import { MenubarTrigger } from "#react/menubar/menubar-trigger";
 import type { MenubarProps } from "#react/menubar/menubar.props";
+import { useMenuShortcuts } from "#react/menu/use-menu-shortcuts";
 
 /** Nothing checked yet. */
 const NONE: readonly string[] = [];
@@ -40,6 +41,11 @@ export function Menubar({
   const t = useUiText();
   const { direction } = useLocale();
   const [openId, setOpenId] = useState<string | null>(null);
+  // Every menu's bound actions answer their keys while the bar is mounted (ADR 0508).
+  useMenuShortcuts(
+    menus.flatMap((menu) => menu.sections),
+    onAction,
+  );
   const [tabStop, setTabStop] = useState(menus[0]?.id ?? "");
   // True when the open menu was reached with Left or Right, so it opens on its first action.
   const [isKeyed, setKeyed] = useState(false);

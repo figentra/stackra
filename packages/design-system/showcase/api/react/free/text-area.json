@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "2c638ad8c9397f64",
+    "hash": "e23954a17f3e5955",
     "heroDoc": "vendor/heroui/react/text-area.json",
     "propsFiles": ["ui/src/react/text-area/text-area.props.ts"]
   },
@@ -214,6 +214,13 @@
         {
           "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
           "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
+          "name": "ai",
           "required": false,
           "source": "stackra",
           "type": "boolean"

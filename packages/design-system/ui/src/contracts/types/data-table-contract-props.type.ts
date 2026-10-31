@@ -85,4 +85,6 @@ export interface DataTableContractProps<TItem extends CollectionItem = Collectio
   readonly hasColumnTools?: boolean | undefined;
   /** Called by a column menu's "Filter by this column"; left out, the menu has no such item. */
   readonly onFilterColumn?: ((columnId: string) => void) | undefined;
+  /** False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507). */
+  readonly ai?: boolean | undefined;
 }

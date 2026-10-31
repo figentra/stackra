@@ -74,6 +74,7 @@ const HEROUI_ROLES: readonly (readonly [string, MaterialRole])[] = [
   [".toast", "toast"],
   [".modal__dialog", "modal"],
   [".drawer__dialog", "sheet"],
+  [".sheet__dialog", "sheet"],
 ];
 
 /** The role variables of `role` drawn at `level`. */

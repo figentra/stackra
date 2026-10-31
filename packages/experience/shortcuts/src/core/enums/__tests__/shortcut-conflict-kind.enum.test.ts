@@ -11,9 +11,9 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { ShortcutConflictKind } from "#core/enums/shortcut-conflict-kind.enum";
 
 describe("ShortcutConflictKind", () => {
-  it("holds the two kinds", () => {
-    expect(Enum.values(ShortcutConflictKind)).toEqual(["same", "prefix"]);
+  it("holds the three kinds", () => {
+    expect(Enum.values(ShortcutConflictKind)).toEqual(["same", "prefix", "reserved"]);
     expect(ShortcutConflictKind.Prefix).toBe("prefix");
-    expectTypeOf<ShortcutConflictKind>().toEqualTypeOf<"same" | "prefix">();
+    expectTypeOf<ShortcutConflictKind>().toEqualTypeOf<"same" | "prefix" | "reserved">();
   });
 });

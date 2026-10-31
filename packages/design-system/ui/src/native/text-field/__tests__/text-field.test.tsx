@@ -17,7 +17,9 @@ import { createElement, type ReactNode } from "react";
 
 import { TextFieldType } from "#contracts/enums/text-field-type.enum";
 import type { TextFieldContractProps } from "#contracts/types/text-field-contract-props.type";
+import type { TamoSlot } from "#contracts/types/tamo-slot.type";
 import { TextField } from "#native/text-field/text-field";
+import { TamoContext } from "#react/hooks/tamo-context";
 import { TEXT_INPUT_TYPE_PROPS } from "#native/text-field/text-input-type-props.constant";
 import type { TextFieldProps } from "#native/text-field/text-field.props";
 
@@ -49,6 +51,23 @@ vi.mock("heroui-native", async () => {
 });
 
 const propsOf = (name: string) => received.props[name] ?? {};
+
+vi.mock("#native/tamo-field-assist/tamo-field-assist", async () => {
+  const { createElement: h } = await import("react");
+  return {
+    TamoFieldAssist: (props: Record<string, unknown>) => {
+      received.props["assist"] = props;
+      return h("div", { "data-testid": "assist" }, props["children"] as ReactNode);
+    },
+  };
+});
+
+/** A Tamo slot that is on everywhere, as the AI module would provide it. */
+const SLOT: TamoSlot = {
+  isEnabled: () => true,
+  run: () => Promise.reject(new Error("not run")),
+  panel: { isOpen: false, question: undefined, open: () => {}, close: () => {} },
+};
 
 describe("TextField (native)", () => {
   beforeEach(() => {
@@ -156,5 +175,25 @@ describe("TextField (native)", () => {
     createElement(TextField, { onChangeText: () => undefined });
     // @ts-expect-error a kind of text is one of the contract's
     createElement(TextField, { type: "number" });
+  });
+  it("puts Tamo round a plain text field once the slot is on, keyed by the field's name, and keeps its text", () => {
+    render(
+      <TamoContext value={SLOT}>
+        <TextField label="Title" name="title" defaultValue="Hi" />
+      </TamoContext>,
+    );
+    expect(screen.getByTestId("assist")).toBeTruthy();
+    expect(propsOf("assist")).toMatchObject({ field: "title", text: "Hi", isShown: false });
+    expect(propsOf("input")["value"]).toBe("Hi");
+  });
+
+  it("never puts Tamo on a password, or when the field opts out", () => {
+    render(
+      <TamoContext value={SLOT}>
+        <TextField label="Password" type="password" />
+        <TextField label="Code" ai={false} />
+      </TamoContext>,
+    );
+    expect(screen.queryByTestId("assist")).toBeNull();
   });
 });

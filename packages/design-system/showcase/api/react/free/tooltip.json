@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "6535ffe7b5189677",
+    "hash": "14d8cd7d335f7b20",
     "heroDoc": "vendor/heroui/react/tooltip.json",
     "propsFiles": ["ui/src/react/tooltip/tooltip.props.ts"]
   },
@@ -40,6 +40,13 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "A key binding (`mod+s`) drawn after the words as a key hint, so a tooltip shows how to run the action. Web only.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",

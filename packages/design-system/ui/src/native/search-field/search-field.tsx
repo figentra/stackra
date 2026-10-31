@@ -44,6 +44,8 @@ export function SearchField({
   onClear,
   // `name` is the form adapter's key; native has no submission, so it is taken out of what reaches the view.
   name: _name,
+  // Shortcut hints on native are a later step (ADR 0508).
+  shortcut: _shortcut,
   accessibilityLabel,
   className,
   ...rest

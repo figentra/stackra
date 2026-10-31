@@ -43,5 +43,8 @@
   "view_all": "All orders",
   "view_unpaid": "Unpaid",
   "views_tabs_label": "Order views as tabs",
-  "views_chips_label": "Order views as chips"
+  "views_chips_label": "Order views as chips",
+  "tamo_label": "Orders",
+  "tamo_screen": "Orders",
+  "tamo_hint": "Select rows, then press Ask Tamo."
 }

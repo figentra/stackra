@@ -1,0 +1,32 @@
+{
+  "generatedFrom": {
+    "hash": "318707367a2667e7",
+    "propsFiles": ["ui/src/react/shortcut-settings-panel/shortcut-settings-panel.props.ts"]
+  },
+  "importLine": "import { ShortcutSettingsPanel } from \"@stackra/ui/react\";",
+  "key": "free/shortcut-settings-panel",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the whole new settings when the person changes one; persist it here.",
+          "name": "onChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(settings: ShortcutSettings) => void"
+        }
+      ],
+      "name": "ShortcutSettingsPanel",
+      "props": [
+        {
+          "description": "The settings in force, controlled. Defaults to the nearest provider's.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "ShortcutSettings"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

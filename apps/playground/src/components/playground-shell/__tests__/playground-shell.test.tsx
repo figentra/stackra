@@ -241,7 +241,7 @@ describe("PlaygroundShell", () => {
       fireEvent(dialog() as HTMLDialogElement, new Event("close"));
     });
     expect(dialog()?.open).toBe(false);
-    fireEvent.keyDown(document, { key: "k", metaKey: true });
+    fireEvent.keyDown(document, { key: "k", code: "KeyK", ctrlKey: true });
     expect(dialog()?.open).toBe(true);
   });
 

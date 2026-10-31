@@ -1,9 +1,10 @@
 {
   "generatedFrom": {
-    "hash": "109ce00f67d9f1c2",
+    "hash": "79d991409ec7d91b",
     "propsFiles": [
       "ui/src/react/filter-bar/filter-bar.props.ts",
-      "ui/src/react/filter-bar/filter-editor.props.ts"
+      "ui/src/react/filter-bar/filter-editor.props.ts",
+      "ui/src/react/filter-bar/tamo-filter-ask.props.ts"
     ]
   },
   "importLine": "import { FilterBar } from \"@stackra/ui/react\";",
@@ -39,6 +40,13 @@
           "required": false,
           "source": "stackra",
           "type": "readonly string[]"
+        },
+        {
+          "description": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
+          "name": "ai",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "description": "",
@@ -116,6 +124,34 @@
           "required": true,
           "source": "stackra",
           "type": "FilterValue | undefined"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called once the proposal is applied or discarded (a popover closes).",
+          "name": "onDone",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "TamoFilterAsk",
+      "props": [
+        {
+          "description": "",
+          "name": "slot",
+          "required": true,
+          "source": "stackra",
+          "type": "TamoSlot"
+        },
+        {
+          "description": "",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
         }
       ]
     }

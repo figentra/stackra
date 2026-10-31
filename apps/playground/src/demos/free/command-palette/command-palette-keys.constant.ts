@@ -20,5 +20,7 @@ export const COMMAND_PALETTE_KEYS = keys({
     "discount",
     "sales_words",
     "ran",
+    "tamo_open",
+    "tamo_screen",
   ],
 });

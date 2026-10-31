@@ -53,6 +53,7 @@ import { DrawerSnapContext } from "#native/drawer/drawer-snap-context";
 import type { DrawerSnap } from "#native/drawer/drawer-snap.type";
 import { DrawerSubHeader } from "#native/drawer/drawer-sub-header";
 import { DrawerTitle } from "#native/drawer/drawer-title";
+import { SheetBackdropContext } from "#native/sheet/sheet-backdrop-context";
 import { BackButtonBlock } from "#native/modal/back-button-block";
 import { ModalBody } from "#native/modal/modal-body";
 import { ModalFooter } from "#native/modal/modal-footer";
@@ -89,6 +90,9 @@ function DrawerRoot({
   snapPoints,
   label,
   onChange,
+  // A confirm key needs a hardware keyboard: a later step on native (ADR 0508).
+  onConfirm: _onConfirm,
+  confirmShortcut: _confirmShortcut,
   ...rest
 }: DrawerProps): ReactElement {
   const sheet = useRef<ComponentRef<typeof BottomSheet.Content>>(null);
@@ -110,6 +114,13 @@ function DrawerRoot({
   const { width } = useWindowDimensions();
   const isRtl = use(DesignSystemContext)?.direction === "rtl";
   const under = use(DrawerLayerContext);
+  // A Sheet drawn by this drawer asks for its backdrop; read here, outside the portal that drops contexts.
+  const backdrop = use(SheetBackdropContext);
+  const overlay = {
+    isCloseOnPress: isDismissable,
+    ...(backdrop === "blur" ? { variant: "blur" as const } : {}),
+    ...(backdrop === "transparent" ? { className: "bg-transparent" } : {}),
+  };
   const isPanel = width >= TABLET_WIDTH && (placement === "start" || placement === "end");
   const layer = useMemo<DrawerLayer>(
     () => ({ depth: (under?.depth ?? 0) + 1, isPanel }),
@@ -143,7 +154,7 @@ function DrawerRoot({
           className={`justify-start p-0 ${placement === "end" ? "items-end" : "items-start"}`}
           unstable_accessibilityContainerViewIsModal
         >
-          <Dialog.Overlay isCloseOnPress={isDismissable} />
+          <Dialog.Overlay {...overlay} />
           <Dialog.Content
             animation={
               fromRight
@@ -173,7 +184,7 @@ function DrawerRoot({
       <BottomSheet.Portal unstable_accessibilityContainerViewIsModal>
         {/* Inside the portal, which moves its children away from this tree and its contexts. */}
         <DrawerSnapContext value={snap}>
-          <BottomSheet.Overlay isCloseOnPress={isDismissable} />
+          <BottomSheet.Overlay {...overlay} />
           <BottomSheet.Content
             ref={sheet}
             detached={inset}

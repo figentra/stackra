@@ -18,7 +18,6 @@ import { toGregorian } from "#core/functions/to-gregorian.function";
 import { ariaRangeOf } from "#react/range-calendar/aria-range-of.function";
 import { CalendarLocale } from "#react/date-picker/calendar-locale";
 import { MONTH_BUTTON_CLASS } from "#react/date-picker/month-button-class.constant";
-import { renderAsDiv } from "#react/date-picker/render-as-div.function";
 import type { RangeCalendarProps } from "#react/range-calendar/range-calendar.props";
 
 /** A month grid for a range of days. */
@@ -55,7 +54,7 @@ export function RangeCalendar({
           })
         }
       >
-        <HeroRangeCalendar.Header render={renderAsDiv}>
+        <HeroRangeCalendar.Header>
           <HeroRangeCalendar.Heading />
           <HeroRangeCalendar.NavButton slot="previous" className={MONTH_BUTTON_CLASS} />
           <HeroRangeCalendar.NavButton slot="next" className={MONTH_BUTTON_CLASS} />

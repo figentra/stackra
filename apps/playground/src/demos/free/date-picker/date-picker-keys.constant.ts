@@ -32,5 +32,8 @@ export const DATE_PICKER_KEYS = keys({
     "live_open",
     "live_closed",
     "open_from_outside",
+    "tamo_label",
+    "tamo_hint",
+    "tamo_screen",
   ],
 });

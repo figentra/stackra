@@ -17,6 +17,13 @@ export interface CommandPaletteContractProps extends OpenStateContractProps {
   readonly onAction: (id: string) => void;
   /** The search field's hint; "Search commands" by default. */
   readonly placeholder?: string | undefined;
-  /** The key that opens it with Cmd or Ctrl (web); `k` by default, `false` for none. */
+  /**
+   * The key that opens it: one letter means Cmd or Ctrl with it (`k`, the default), or a whole binding (`mod+shift+p`);
+   * `false` for none. On web it is registered with the shortcut registry (ADR 0508), so a person can remap it.
+   */
   readonly hotkey?: string | false | undefined;
+  /** False leaves out the "Actions" section, which lists every action the shortcut registry holds. Defaults to true. */
+  readonly hasRegisteredActions?: boolean | undefined;
+  /** False to leave out the "Ask Tamo" entry (shown with the AI module installed and on for the screen, ADR 0507). */
+  readonly ai?: boolean | undefined;
 }

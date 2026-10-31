@@ -1,0 +1,5 @@
+{
+  "label": "When should it arrive?",
+  "placeholder": "Next Friday",
+  "picked": "Picked: {date}"
+}

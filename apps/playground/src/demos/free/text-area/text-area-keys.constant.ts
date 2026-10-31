@@ -31,5 +31,10 @@ export const TEXT_AREA_KEYS = keys({
     "live_description",
     "live_error",
     "live_count",
+    "tamo_reply_label",
+    "tamo_reply",
+    "tamo_empty_label",
+    "tamo_empty_hint",
+    "tamo_screen",
   ],
 });

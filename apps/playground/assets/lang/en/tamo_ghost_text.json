@@ -1,0 +1,7 @@
+{
+  "label": "Note to the customer",
+  "text": "Your order is on its way",
+  "suggestion": " and will arrive on Thursday.",
+  "again": "Suggest again",
+  "kept": "In the field: {text}"
+}

@@ -8,5 +8,7 @@
   "product": "New product",
   "discount": "New discount",
   "sales_words": "sales, invoices",
-  "ran": "Ran: {command}"
+  "ran": "Ran: {command}",
+  "tamo_open": "Open the palette and type a question",
+  "tamo_screen": "Dashboard"
 }

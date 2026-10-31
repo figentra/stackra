@@ -1,8 +1,8 @@
 {
   "generatedFrom": {
-    "hash": "f441dfd618f58fa5",
+    "hash": "3e214984f1dd9f93",
     "heroDoc": "vendor/heroui/react/form.json",
-    "propsFiles": ["ui/src/react/form/form.props.ts"]
+    "propsFiles": ["ui/src/react/form/form.props.ts", "ui/src/react/form/tamo-form-fill.props.ts"]
   },
   "importLine": "import { Form } from \"@stackra/ui/react\";",
   "key": "free/form",
@@ -56,6 +56,14 @@
           "type": "boolean"
         },
         {
+          "default": "mod+enter",
+          "description": "The binding that submits the form while focus is inside it, registered with the shortcut registry so the cheat\nsheet lists it and a person can remap it (ADR 0508). Defaults to `mod+enter` when `isSubmitOnModEnter`, else none;\n`false` registers none.",
+          "name": "submitShortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string | false"
+        },
+        {
           "description": "The schema form from `useSchemaForm`, provided to the `Field.*` parts inside.",
           "name": "form",
           "required": false,
@@ -68,6 +76,20 @@
           "required": false,
           "source": "stackra",
           "type": "(values: Readonly<Record<string, unknown>>) => Promise<void>"
+        },
+        {
+          "description": "False to leave out Tamo's \"Fill from text\" (offered with `form`, the AI module installed and Tamo on for the\nscreen, ADR 0507).",
+          "name": "ai",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The fields Tamo may fill from text; left out, the form's plain text inputs and areas.",
+          "name": "aiFields",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly TamoFieldHint[]"
         },
         {
           "description": "The URL to submit the form data to.",
@@ -210,6 +232,48 @@
           "required": false,
           "source": "react-aria",
           "type": "GlobalDOMEvents"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called with the names Tamo filled, or an empty list once the person kept or undid them.",
+          "name": "onReview",
+          "required": true,
+          "source": "stackra",
+          "type": "(names: readonly string[]) => void"
+        }
+      ],
+      "name": "TamoFormFill",
+      "props": [
+        {
+          "description": "",
+          "name": "slot",
+          "required": true,
+          "source": "stackra",
+          "type": "TamoSlot"
+        },
+        {
+          "description": "",
+          "name": "form",
+          "required": true,
+          "source": "stackra",
+          "type": "SchemaFormHandle<T>"
+        },
+        {
+          "description": "The fields Tamo may fill; left out, the form's plain text inputs and areas, named by their labels.",
+          "name": "fields",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly TamoFieldHint[]"
+        },
+        {
+          "description": "The names awaiting the person's check.",
+          "name": "pending",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly string[]"
         }
       ]
     }

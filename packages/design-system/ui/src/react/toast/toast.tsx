@@ -14,6 +14,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312 (decisions 1 to 3); WCAG 2.2 SC 4.1.3 and
  *          2.2.1.
  */
+import { STANDARD_SHORTCUTS } from "@stackra/shortcuts";
 import { toast as heroToast } from "@heroui/react";
 
 import type { ToastContractProps } from "#contracts/types/toast-contract-props.type";
@@ -62,6 +63,8 @@ function show(message: string, options: ToastContractProps = {}): string {
                 action.onPress();
                 heroToast.close(id);
               },
+              // Read and removed by ToastItem, which registers the key (ADR 0508).
+              ...(action.shortcut === undefined ? {} : { "data-shortcut": action.shortcut }),
             },
     }),
   );
@@ -125,7 +128,8 @@ export const toast = Object.assign(show, {
    * @returns the toast's id
    */
   undo: (message: string, options: ToastUndoOptions): string => {
-    const { onUndo, onCommit, undoLabel, description } = options;
+    const { onUndo, onCommit, undoLabel, description, undoShortcut } = options;
+    const shortcut = undoShortcut ?? STANDARD_SHORTCUTS["toast.undo"];
     const timeout = options.timeout ?? TOAST_ACTION_TIMEOUT;
     let isUndone = false;
     const id: string = heroToast(
@@ -144,6 +148,7 @@ export const toast = Object.assign(show, {
             onUndo();
             heroToast.close(id);
           },
+          ...(shortcut === false || shortcut === undefined ? {} : { "data-shortcut": shortcut }),
         },
       }),
     );

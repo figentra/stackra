@@ -3,7 +3,8 @@
  * Purpose: the web `Button` on HeroUI v3: maps the shared contract onto HeroUI's button (`isLoading` to `isPending`
  *          with a hidden current-colour spinner in the start slot, `isFullWidth` to `fullWidth`, `label` to
  *          `aria-label`) and passes every other HeroUI prop through unchanged.
- * Boundary: no styling of its own; the look is HeroUI's, themed by `@stackra/tokens`. An icon-only button is built
+ * Boundary: `shortcut` or `action` register the key with the nearest ShortcutProvider and draw the hint (ADR 0508);
+ *          no styling of its own; the look is HeroUI's, themed by `@stackra/tokens`. An icon-only button is built
  *          through `IconButton`, whose type requires the accessible name, so `isIconOnly` is not a prop here.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0165 (UI contract, HeroUI v3 on web); owner
@@ -13,6 +14,8 @@ import type { ReactElement } from "react";
 import { Button as HeroButton, Spinner, cn } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { plainTextOf } from "#react/hooks/plain-text-of.function";
+import { useActionShortcut } from "#react/hooks/use-action-shortcut";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 import type { ButtonProps } from "#react/button/button.props";
 
@@ -35,18 +38,37 @@ export function Button({
   endIcon,
   label,
   children,
+  shortcut,
+  shortcutId,
+  action,
   ...rest
 }: ButtonProps): ReactElement {
-  return (
+  const press = onPress ?? action?.run;
+  const text = children ?? action?.label;
+  const keys = useActionShortcut({
+    shortcut,
+    shortcutId,
+    action,
+    label: label ?? plainTextOf(text),
+    run: press,
+    isDisabled: (isDisabled ?? false) || (isLoading ?? false),
+    canInline: (rest as { isIconOnly?: boolean }).isIconOnly !== true,
+  });
+  return keys.wrap(
     <HeroButton
       {...rest}
+      ref={keys.attach(rest.ref)}
       // A glass button is HeroUI's ghost drawn in the glass level by the material layer (`.button--glass`).
       {...omitUndefined({
         variant: variant === "glass" ? "ghost" : variant,
         size,
         isDisabled,
-        onPress,
-        className: variant === "glass" ? cn("button--glass", className) : className,
+        onPress: press,
+        className: cn(
+          variant === "glass" && "button--glass",
+          keys.badge !== null && "relative overflow-visible",
+          className,
+        ),
       })}
       isPending={isLoading ?? false}
       fullWidth={isFullWidth ?? false}
@@ -55,10 +77,12 @@ export function Button({
       {isLoading ? (
         <Spinner color="current" size="sm" aria-hidden="true" />
       ) : (
-        <SlotIcon icon={startIcon} />
+        <SlotIcon icon={startIcon ?? action?.icon} />
       )}
-      {children}
+      {text}
       <SlotIcon icon={endIcon} />
-    </HeroButton>
+      {keys.hint}
+      {keys.badge}
+    </HeroButton>,
   );
 }

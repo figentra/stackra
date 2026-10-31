@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "266a0825c4a22653",
+    "hash": "3e9fa02bca2cbdda",
     "propsFiles": [
       "ui/src/native/file-trigger/file-trigger.props.ts",
       "ui/src/native/file-trigger/upload-list.props.ts"
@@ -81,6 +81,13 @@
           "type": "\"sm\" | \"md\" | \"lg\""
         },
         {
+          "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
+          "name": "action",
+          "required": false,
+          "source": "stackra",
+          "type": "ShortcutAction"
+        },
+        {
           "description": "True to stretch the button to the full width of its container.",
           "name": "isFullWidth",
           "required": false,
@@ -100,6 +107,21 @@
           "required": false,
           "source": "stackra",
           "type": "IconSlot"
+        },
+        {
+          "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "keys:<binding>",
+          "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
+          "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "Animation configuration for scale and highlight feedback",

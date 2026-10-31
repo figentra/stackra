@@ -1,0 +1,310 @@
+{
+  "slug": "sheet",
+  "platform": "react",
+  "source": "apps/docs/content/docs/en/react/components/(overlays)/sheet.mdx",
+  "parts": [
+    {
+      "name": "Sheet / Sheet.Root / Sheet.NestedRoot",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "default": "—",
+          "description": "Compound parts."
+        },
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "default": "—",
+          "description": "Controlled visibility."
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "description": "Initial uncontrolled visibility."
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": "—",
+          "description": "Called when a visibility change is requested."
+        },
+        {
+          "name": "onClose",
+          "type": "() => void",
+          "default": "—",
+          "description": "Called when closing is requested."
+        },
+        {
+          "name": "onAnimationEnd",
+          "type": "(open: boolean) => void",
+          "default": "—",
+          "description": "Called after entering or exiting finishes."
+        },
+        {
+          "name": "placement",
+          "type": "\"bottom\" | \"top\" | \"left\" | \"right\"",
+          "default": "\"bottom\"",
+          "description": "Physical screen edge."
+        },
+        {
+          "name": "isDismissable",
+          "type": "boolean",
+          "default": "true",
+          "description": "Allow outside, Escape, and swipe dismissal."
+        },
+        {
+          "name": "isDetached",
+          "type": "boolean",
+          "default": "false",
+          "description": "Inset the sheet from the screen edges."
+        },
+        {
+          "name": "snapPoints",
+          "type": "(number | string)[]",
+          "default": "—",
+          "description": "Partial resting positions; full expansion is implicit."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Trigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactElement",
+          "default": "—",
+          "description": "One pressable child, such as Button. Place directly inside Sheet."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Close",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactElement",
+          "default": "—",
+          "description": "One pressable child; its onPress handler is composed with closing."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Backdrop",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "default": "—",
+          "description": "Content to render."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "—",
+          "description": "CSS classes."
+        },
+        {
+          "name": "variant",
+          "type": "\"opaque\" | \"blur\" | \"transparent\"",
+          "default": "\"opaque\"",
+          "description": "Backdrop appearance."
+        },
+        {
+          "name": "isExiting",
+          "type": "boolean",
+          "default": "—",
+          "description": "Retain content after closing until this flag is cleared."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Content",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode | ((values: SheetRenderProps) => ReactNode)",
+          "default": "—",
+          "description": "Content or a function receiving React Aria sheet state."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "—",
+          "description": "CSS classes."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Dialog",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "default": "—",
+          "description": "Content to render."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "—",
+          "description": "CSS classes."
+        },
+        {
+          "name": "role",
+          "type": "\"dialog\" | \"alertdialog\"",
+          "default": "\"dialog\"",
+          "description": "Accessible dialog role."
+        },
+        {
+          "name": "aria-label",
+          "type": "string",
+          "default": "—",
+          "description": "Accessible name when no visible heading is provided."
+        },
+        {
+          "name": "aria-labelledby",
+          "type": "string",
+          "default": "—",
+          "description": "ID of the element that labels the dialog."
+        },
+        {
+          "name": "aria-describedby",
+          "type": "string",
+          "default": "—",
+          "description": "ID of the element describing the dialog."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Header",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "default": "—",
+          "description": "Header content."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "—",
+          "description": "CSS classes."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Heading",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "default": "—",
+          "description": "Dialog title."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "—",
+          "description": "CSS classes."
+        },
+        {
+          "name": "slot",
+          "type": "string",
+          "default": "\"title\"",
+          "description": "Associates the heading with the dialog."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Body",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "default": "—",
+          "description": "Scrollable body content."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "—",
+          "description": "CSS classes."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Footer",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "default": "—",
+          "description": "Footer actions."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "—",
+          "description": "CSS classes."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Handle",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "default": "—",
+          "description": "Custom grip; renders the default bar when omitted."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "—",
+          "description": "CSS classes."
+        }
+      ]
+    },
+    {
+      "name": "Sheet.CloseTrigger",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode | ((values: ButtonRenderProps) => ReactNode)",
+          "default": "—",
+          "description": "Custom content; defaults to the close icon."
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "default": "—",
+          "description": "CSS classes."
+        },
+        {
+          "name": "isDisabled",
+          "type": "boolean",
+          "default": "false",
+          "description": "Disable the close button."
+        },
+        {
+          "name": "aria-label",
+          "type": "string",
+          "default": "\"Close\"",
+          "description": "Accessible name; provide localized text when needed."
+        },
+        {
+          "name": "onPress",
+          "type": "(event: PressEvent) => void",
+          "default": "—",
+          "description": "Called together with the sheet close action."
+        }
+      ]
+    }
+  ],
+  "hooks": [],
+  "slots": [],
+  "a11y": "- **Accessible name**: Label the dialog with `Sheet.Heading`, `aria-label`, or `aria-labelledby`.\n- **Focus management**: Opening moves focus into the sheet and contains it within the active modal. Closing restores focus to the trigger; closing a nested sheet restores focus within its parent.\n- **Keyboard**: Use `Tab` and `Shift+Tab` to move between controls. `Escape` closes the sheet when dismissal is enabled.\n- **Close controls**: `Sheet.Close` and `Sheet.CloseTrigger` support keyboard activation, including when `isDismissable={false}`.\n- **Scroll locking**: Page scrolling is locked while the modal is open. `Sheet.Body` scrolls after full expansion. Retained closed content does not keep the page locked.\n- **Drag handle**: The handle is hidden from assistive technology and does not support keyboard dragging. Provide accessible close controls instead of relying solely on swipe gestures."
+}

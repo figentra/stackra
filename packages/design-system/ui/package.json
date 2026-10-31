@@ -148,6 +148,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/icons": "workspace:*",
+    "@stackra/shortcuts": "workspace:*",
     "@stackra/tokens": "workspace:*",
     "@stackra/validation": "workspace:*",
     "uqr": "catalog:",

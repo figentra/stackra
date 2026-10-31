@@ -30,6 +30,7 @@ import {
   useState,
 } from "react";
 import { Tabs as HeroTabs } from "@heroui/react";
+import { useShortcutActions } from "@stackra/shortcuts/react";
 
 import { NAVIGATION_KEYS } from "#core/constants/navigation-keys.constant";
 import { fitTabs } from "#core/functions/fit-tabs.function";
@@ -82,6 +83,7 @@ export function Tabs({
   isDisabled,
   overflow = "scroll",
   onClose,
+  hasNumberShortcuts = false,
   ...rest
 }: TabsProps): ReactElement {
   const motion = useMotion();
@@ -96,6 +98,20 @@ export function Tabs({
     setOwn(id);
     onSelectionChange?.([id]);
   };
+  useShortcutActions(
+    hasNumberShortcuts && !isDisabled
+      ? items
+          .filter((item) => !item.isDisabled)
+          .slice(0, 9)
+          .map((item, index) => ({
+            id: `tabs:${baseId}:${index + 1}`,
+            label: item.label,
+            group: label,
+            shortcut: `mod+${index + 1}`,
+            run: () => select(item.id),
+          }))
+      : [],
+  );
 
   // State, not a ref: React Aria draws the real row a render after the first, and the measuring waits for it.
   const [row, setRow] = useState<HTMLDivElement | null>(null);

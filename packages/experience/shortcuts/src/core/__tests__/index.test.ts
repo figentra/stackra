@@ -14,11 +14,27 @@ import type { RunnableShortcut, ShortcutContext, ShortcutOptions } from "#core/i
 describe("@stackra/shortcuts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "DEFAULT_SHORTCUT_SETTINGS",
+      "RESERVED_SHORTCUTS",
+      "STANDARD_SHORTCUTS",
       "Shortcut",
       "ShortcutConflictKind",
+      "ShortcutHintMode",
+      "ShortcutScope",
       "contributeShortcutContext",
+      "effectiveShortcutKeys",
       "findShortcutConflicts",
+      "flipShortcutKeys",
+      "formatShortcutKeys",
+      "isApplePlatform",
+      "isCharacterShortcutStep",
+      "isPlainShortcutStep",
+      "normalizeShortcutKeys",
       "registerShortcuts",
+      "resolveShortcutSettings",
+      "resolveShortcutStep",
+      "shortcutStepOf",
+      "toAriaKeyShortcuts",
     ]);
   });
 
