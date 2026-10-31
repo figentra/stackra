@@ -105,12 +105,18 @@ describe("Report", () => {
   });
 
   it("keeps the actors as written, and refuses an empty or unknown list (STA-1690)", () => {
-    class Tool extends Report<Order>({ ...BASE, actors: [ActorKind.User, ActorKind.Agent] }) {}
+    class Tool extends Report<Order>({
+      ...BASE,
+      actors: [ActorKind.User, ActorKind.Agent],
+    }) {}
     expect(new Tool().declaration.actors).toEqual([ActorKind.User, ActorKind.Agent]);
     class Default extends Report<Order>({ ...BASE }) {}
     expect(new Default().declaration.actors).toBeUndefined();
     expect(() => {
-      class Empty extends Report<Order>({ ...BASE, actors: [] }) {}
+      class Empty extends Report<Order>({
+        ...BASE,
+        actors: [],
+      }) {}
       return new Empty().declaration;
     }).toThrow(/actors is a non-empty list of ActorKind values/);
   });
