@@ -26,7 +26,14 @@ must exist first. Reasoning: `apps/docs/src/docs/constitution/tenancy.mdx`.
    headers; when the scope tree is in use, the one client header read, `X-Scope-Path`, is validated against granted paths and dropped otherwise.
 5. **Cross-tenant access** exists only in an audited, privileged endpoint named by an ADR. Backfill migrations use the
    policy's dedicated bypass clause, decided in the migration template.
-6. **Tests.** Every service with tenant-owned tables ships `isolation.test.ts` proving tenant B gets zero rows or 404
+6. **One isolation transaction per unit of work.** Every action and query call, and every queue job, outbox
+   delivery, inbox receipt, workflow step and scheduled run, runs inside `CallIsolation.run(actor, scope, work)`
+   (`@stackra/tenancy`'s driver), which sets `app.scope_*` and `app.tenant_id` with
+   `select set_config(name, value, true)` for that transaction only; nothing sets an `app.*` setting for the session.
+   `pnpm validate` refuses `set_config(` with a third argument other than `true`, `SET app.` and `SET LOCAL app.`
+   outside the isolation driver, `TenantIsolationService` and the database drivers (ADR 0495,
+   `tools/scripts/session-settings.mjs`).
+7. **Tests.** Every service with tenant-owned tables ships `isolation.test.ts` proving tenant B gets zero rows or 404
    on tenant A's data for list/get/update/delete, and that a handler without `withTenant()` returns zero rows.
 
 Enforcement: planned (scoped-table generator, handler lint, per-service isolation test); active from the first table.

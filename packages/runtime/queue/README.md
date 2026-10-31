@@ -108,8 +108,10 @@ driver keeps batches but applies neither priority nor the cap: the broker delive
 `QueueService.push(Action, input, { origin, scope, idempotencyKey, causedBy })` is the one way in. A transport that
 receives a queued call (`Prefer: respond-async`, sent by `client.x.y.queue(input)` of @stackra/clients) pushes it with
 the verified caller as `origin`, the resolved `ScopeRef` and the Idempotency-Key, and answers at once; an action without
-a `job` option then runs as its caller. A job with a `scope` runs each attempt inside `Database.withScope(scope, ...)`
-and with that scope as the call's, so the handler reads `ctx.scope`. `ctx.dispatch` queues the job in the calling
+a `job` option then runs as its caller. With a `CallIsolation` bound (ADR 0495) the pipeline runs each attempt in it as the job's actor (the caller that queued it,
+else a `job` or `system` actor with no tenant) in the job's scope, and so does the action's `onDeadLetter` hook; with none
+bound a job with a `scope` runs each attempt inside `Database.withScope(scope, ...)`. The attempt is called with that scope
+as the call's, so the handler reads `ctx.scope`. `ctx.dispatch` queues the job in the calling
 action's scope. The scheduler pushes a cron job once per scope with that scope.
 
 ## Running jobs

@@ -12,6 +12,7 @@ import * as testing from "#testing/index";
 describe("@stackra/tenancy/testing", () => {
   it("exports exactly its helpers", () => {
     expect(Object.keys(testing).sort()).toEqual([
+      "asTenant",
       "fakeTenantId",
       "runAsTenant",
       "tenantActor",

@@ -40,6 +40,10 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   `WHERE` filter (ADR 0327 d9).
 - The tenant comes from the verified `Actor`, never from input. `X-Scope-Path` is the one client header; there is no
   tenant header.
+- `CallIsolationDriver` (`./node`, the pipeline's and every background unit's `CallIsolation`, ADR 0495) composes
+  `Database.withScope` and `withTenant` and writes no SQL of its own; a read-only call opens one read-only
+  transaction around both, unless one is already running. `pnpm validate` refuses a session-level `app.*` setting
+  anywhere else (`tools/scripts/session-settings.mjs`).
 - Raw SQL lives only in `TenantIsolationService.withTenant` (one parameterised `set_config`), with a `// raw-sql:`
   comment (ADR 0160).
 - A sandbox or a share is never a grant and never a tree position. Transfer rules, sandbox allowances and the terms of
@@ -53,6 +57,9 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   registry's row); the deployment's region only from `DatabaseConfig.region` (runway data). Never hard-code a region
   key or a cell, and never let the region guard or the placement resolver pass or fall back when a placement is
   missing: both fail closed.
+- `asTenant(tenantId, work)` (`./testing`) runs the real isolation on the current database; `runAsTenant` stays the
+  database-free fill. Isolation is proven on real Postgres in `*.int.test.ts` (`pnpm --filter @stackra/tenancy test:int`,
+  Docker), as a role that is neither the owner nor `BYPASSRLS`.
 - `tenantIsolationOptions()` (`./testing`, stackra-258) is data for `@stackra/database/testing`'s
   `assertRowSecurity`; this entry never imports another package's `./testing`, so the generated test joins them.
 

@@ -3,8 +3,8 @@
  * Purpose: `runAsTenant(tenantId, work)`, runs `work` as `tenantId` without a database, so a model factory or
  *          `new Model()` fills `BelongsToTenant` (and `BelongsToTenantOrPlatform`) with that tenant in a unit test.
  * Boundary: test helper over the internal tenant storage, the application half of `withTenant` only: no transaction
- *           and no `app.tenant_id`, so it proves nothing about row isolation (an isolation test runs `withTenant` on a
- *           database). `undefined` runs `work` as a platform call.
+ *           and no `app.tenant_id`, so it proves nothing about row isolation (an isolation test calls `asTenant`, which runs the real isolation on a
+ *           database, ADR 0495). `undefined` runs `work` as a platform call.
  * Runtime: node
  * Governing contract: ADR 0269 (testing entries); ADR 0239; OS audit SPEC gap 11.
  */

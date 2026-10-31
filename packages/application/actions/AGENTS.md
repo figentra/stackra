@@ -43,6 +43,12 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   (STA-813, STA-814). Never make every pipeline bind a gate again: the iam, entitlements, queue and workflow
   pipelines bind none. The `LimitReservation`
   wraps the unit of work (reserve, then commit) and a successful call's audit entry is written inside it.
+- Everything after the tenancy step runs inside `CallIsolation.run(actor, scope, work, { readOnly })` when one is
+  bound (ADR 0495): an action writable, a query read-only, a proposal writable. The unit of work is a savepoint of
+  that transaction, so anything that must wait for the real commit (`afterCommit` work, the idempotency
+  `complete`, the offline cap record, the read-your-writes mark) runs after `isolated(...)` returns, never inside it. A
+  write a query's refusal needs (the rate-limit usage event) waits for the read-only transaction to end. Name no
+  tenant here; the port takes the `Actor` and a `ScopeRef`.
   `propose` runs the steps up to validation and meters a draft; it never reaches approval or `handle`.
 - Approval, the live-configuration guard and meters decide nothing in code: the gate's rules, the environment and the
   usage quotas are data the drivers read. A `structural` action or a `meter` without its port bound is an error.

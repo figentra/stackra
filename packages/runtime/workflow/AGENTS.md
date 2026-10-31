@@ -49,6 +49,8 @@ journals, the boot explorer and the in-process test driver (ADR 0101, 0102, 0151
   `W`, or `Run<this>` stops resolving inside a class (STA-335 spike).
 - `@Step` records only (`createDecorator`); `planOf` reads it with `Step.members` and checks every option once per
   class. The explorer plans every built workflow at boot, so a bad plan fails there.
+- A step's and an undo's work runs in the bound `CallIsolation` as the run's stored `origin.actor` in its scope, inside the
+  journal's transaction (ADR 0495); with none bound it runs in the journal's scope session alone.
 - The engine writes the journal only inside `WorkflowJournal.transaction` (a new transaction in the run's scope), so a
   run's progress commits whatever the calling action does; `hold` and `currentScope` join the caller's transaction.
 - One runner per run (`Locks`, key `workflow.run:<id>`). A tick takes over a running or compensating run only when its

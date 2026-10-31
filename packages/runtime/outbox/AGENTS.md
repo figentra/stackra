@@ -57,8 +57,9 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   older than the snapshot's `xmin` (a cursor must never pass a change that commits late). A failing consumer stalls itself only; it never dead-letters a change.
 - Change values are opt-in (`CapturesChanges({ values: true })`) and go through `changeCaptureOf`, which drops
   encrypted, `@Classified` and excluded fields. Never put a value in a change any other way.
-- One relay runs a tick at a time (`Locks.tryWith`), so `due` reserves nothing. Every delivery that opens a scope runs
-  in `withScope(scope ?? [])`: with the Postgres lock driver a tick is one transaction, and a scope set for one message
+- One relay runs a tick at a time (`Locks.tryWith`), so `due` reserves nothing. Every delivery runs in the bound
+  `CallIsolation` as the actor stored with it (none stored: a platform actor, no tenant row; ADR 0495), else in
+  `withScope(scope ?? [])`; the inbox takes the port from `connect`, and a run of changes splits where the actor changes: with the Postgres lock driver a tick is one transaction, and a scope set for one message
   must not reach the next.
 - Raw SQL only in the Postgres drivers, `insertMessages` and `insertChanges`, every value bound, every row read through zod, each
   statement with a `// raw-sql:` reason (ADR 0160). A released migration is frozen; a change is a new migration.

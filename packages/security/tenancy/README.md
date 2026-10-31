@@ -13,32 +13,33 @@ A tenant is the scope node at the tenant level, and its tenant id is that node's
 
 ## What is here
 
-| Entry       | Symbol                                                                 | Use                                                                                                           |
-| ----------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `.`         | `TenantSwitcher`                                                       | the client's memberships, active tenant and switch                                                            |
-| `.`         | `TenancyScopes`, `TENANT_SCOPE_LEVEL`                                  | the tenant level's code and the level a deployment adds to `ScopeConfig`                                      |
-| `.`         | `TENANT_SCOPE_ALIAS`                                                   | the level's lang key (`tenancy::levels.tenant`)                                                               |
-| `.`         | `TenantScopeResolverDriver`                                            | the tenancy step of the scope resolver chain                                                                  |
-| `.`         | `TenancyCronScopesDriver`                                              | the scheduler's `CronScopes`: a per-scope cron runs for every tenant                                          |
-| `.`         | `isTenantId`                                                           | whether a string is a tenant id                                                                               |
-| `.`         | `TenantRequiredError`, `TenantMembershipMissingError`                  | refusals                                                                                                      |
-| `.`         | `TenantEnvironment`, `SandboxTenantService`                            | live or sandbox; register, list, retire a live tenant's sandboxes                                             |
-| `.`         | `SandboxTenants`, `MemorySandboxTenantsDriver`                         | the sandbox store port and its memory driver                                                                  |
-| `.`         | `TenantShareService`, `ShareStatus`, `RevokedCopy`                     | consented cross-tenant shares: propose, accept, revoke, flow, release                                         |
-| `.`         | `TenantShares`, `TransferCheck`, `MemoryTenantSharesDriver`            | the share store, the cross-region transfer rules, the memory store                                            |
-| `.`         | `revocationPlan`                                                       | keep (severed) or delete each received copy on revocation                                                     |
-| `.`         | `TenantTokenService`, `TenantTokens`, `MemoryTenantTokensDriver`       | anonymous tenant resolution by token (an iCal feed, a public link)                                            |
-| `.`         | `TenantBillingContacts`, `MemoryTenantBillingContactsDriver`           | who a tenant's billing messages go to                                                                         |
-| `.`         | `TenantPlacement`, `Placement`, `MemoryTenantPlacementDriver`          | the placement map: a tenant's `region` and `cell`                                                             |
-| `.`         | `RegionGuardDriver`, `RegionMismatchError`, `tenantOf`                 | refuse a call whose tenant lives in another region; a scope's tenant                                          |
-| `.`         | `TenantPlacementConnectionResolverDriver`                              | `@stackra/database`'s `ConnectionResolver` from the tenant's cell                                             |
-| `./node`    | `BelongsToTenant`                                                      | the trait of a tenant-owned model (`tenantId`)                                                                |
-| `./node`    | `BelongsToTenantOrPlatform`                                            | the nullable form: `tenantId` or `null` for a platform row                                                    |
-| `./node`    | `BelongsToTenantMacro`                                                 | `t.belongsToTenant()`: the column and the equality policy                                                     |
-| `./node`    | `TenantIsolationService`                                               | `withTenant(actor, work)`: `app.tenant_id` for one unit of work                                               |
-| `./react`   | `useTenant`, `useTenantSwitcher`                                       | the active membership; the memberships and the switch                                                         |
-| `./react`   | `TenantMembership`                                                     | one membership: tenant id, path, name, roles                                                                  |
-| `./testing` | `fakeTenantId`, `tenantActor`, `runAsTenant`, `tenantIsolationOptions` | a fresh tenant id, a tenant user, a tenant call without a database, the tenant options of `assertRowSecurity` |
+| Entry       | Symbol                                                                             | Use                                                                                                                                                     |
+| ----------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`         | `TenantSwitcher`                                                                   | the client's memberships, active tenant and switch                                                                                                      |
+| `.`         | `TenancyScopes`, `TENANT_SCOPE_LEVEL`                                              | the tenant level's code and the level a deployment adds to `ScopeConfig`                                                                                |
+| `.`         | `TENANT_SCOPE_ALIAS`                                                               | the level's lang key (`tenancy::levels.tenant`)                                                                                                         |
+| `.`         | `TenantScopeResolverDriver`                                                        | the tenancy step of the scope resolver chain                                                                                                            |
+| `.`         | `TenancyCronScopesDriver`                                                          | the scheduler's `CronScopes`: a per-scope cron runs for every tenant                                                                                    |
+| `.`         | `isTenantId`                                                                       | whether a string is a tenant id                                                                                                                         |
+| `.`         | `TenantRequiredError`, `TenantMembershipMissingError`                              | refusals                                                                                                                                                |
+| `.`         | `TenantEnvironment`, `SandboxTenantService`                                        | live or sandbox; register, list, retire a live tenant's sandboxes                                                                                       |
+| `.`         | `SandboxTenants`, `MemorySandboxTenantsDriver`                                     | the sandbox store port and its memory driver                                                                                                            |
+| `.`         | `TenantShareService`, `ShareStatus`, `RevokedCopy`                                 | consented cross-tenant shares: propose, accept, revoke, flow, release                                                                                   |
+| `.`         | `TenantShares`, `TransferCheck`, `MemoryTenantSharesDriver`                        | the share store, the cross-region transfer rules, the memory store                                                                                      |
+| `.`         | `revocationPlan`                                                                   | keep (severed) or delete each received copy on revocation                                                                                               |
+| `.`         | `TenantTokenService`, `TenantTokens`, `MemoryTenantTokensDriver`                   | anonymous tenant resolution by token (an iCal feed, a public link)                                                                                      |
+| `.`         | `TenantBillingContacts`, `MemoryTenantBillingContactsDriver`                       | who a tenant's billing messages go to                                                                                                                   |
+| `.`         | `TenantPlacement`, `Placement`, `MemoryTenantPlacementDriver`                      | the placement map: a tenant's `region` and `cell`                                                                                                       |
+| `.`         | `RegionGuardDriver`, `RegionMismatchError`, `tenantOf`                             | refuse a call whose tenant lives in another region; a scope's tenant                                                                                    |
+| `.`         | `TenantPlacementConnectionResolverDriver`                                          | `@stackra/database`'s `ConnectionResolver` from the tenant's cell                                                                                       |
+| `./node`    | `BelongsToTenant`                                                                  | the trait of a tenant-owned model (`tenantId`)                                                                                                          |
+| `./node`    | `BelongsToTenantOrPlatform`                                                        | the nullable form: `tenantId` or `null` for a platform row                                                                                              |
+| `./node`    | `BelongsToTenantMacro`                                                             | `t.belongsToTenant()`: the column and the equality policy                                                                                               |
+| `./node`    | `TenantIsolationService`                                                           | `withTenant(actor, work)`: `app.tenant_id` for one unit of work                                                                                         |
+| `./node`    | `CallIsolationDriver`                                                              | `CallIsolation` (`@stackra/actions`): scope and tenant settings, one transaction, for every call and background unit                                    |
+| `./react`   | `useTenant`, `useTenantSwitcher`                                                   | the active membership; the memberships and the switch                                                                                                   |
+| `./react`   | `TenantMembership`                                                                 | one membership: tenant id, path, name, roles                                                                                                            |
+| `./testing` | `fakeTenantId`, `tenantActor`, `runAsTenant`, `asTenant`, `tenantIsolationOptions` | a fresh tenant id, a tenant user, a tenant call without a database, a tenant call through the real isolation, the tenant options of `assertRowSecurity` |
 
 ## Sandbox tenants
 
@@ -80,6 +81,12 @@ await database.withScope(scope, () =>
   tenancy.withTenant(actor, () => pipeline.execute(type, input, { actor })),
 );
 ```
+
+You do not call it yourself for an action or a query: the pipeline runs every call, and the queue worker, outbox relay,
+inbox and workflow runner every unit, through `CallIsolation` (ADR 0495), whose `CallIsolationDriver` here does
+`database.withScope(scope, () => tenancy.withTenant(actor, work))` in one transaction, read-only for a query. A unit stored
+with no actor runs as a platform call (`''`, no tenant row). Every `app.*` setting is `set_config(..., true)`, so it ends
+with the transaction; `pnpm validate` refuses a session-level one.
 
 `withTenant` opens a transaction (a savepoint inside one) and sets `app.tenant_id` to `actor.scopeId`, or `''` for a
 platform call. A model with `BelongsToTenant` takes that tenant when a row is created; outside a tenant call the field
@@ -217,5 +224,33 @@ const ticket = runAsTenant(tenantId, () => new Ticket()); // ticket.tenantId ===
 await tenancy.withTenant(tenantActor(tenantId), work);
 ```
 
-`runAsTenant` sets no `app.tenant_id`, so it proves nothing about isolation; an isolation test runs `withTenant` on a
-database.
+`runAsTenant` sets no `app.tenant_id`, so it proves nothing about isolation; an isolation test calls `asTenant`, which
+runs the real isolation on the current database.
+
+### Booting a module on real Postgres
+
+An integration test (`*.int.test.ts`, `pnpm --filter <package> test:int`, Docker) boots the module on a Testcontainers
+Postgres and runs as a tenant without writing `set_config` itself:
+
+```ts
+import { compileMigration } from "@stackra/database";
+import { usePostgres } from "@stackra/database/testing";
+import { BelongsToTenantMacro } from "@stackra/tenancy/node";
+import { asTenant, fakeTenantId } from "@stackra/tenancy/testing";
+
+const postgres = usePostgres({
+  entities: [],
+  migrations: [
+    compileMigration(CreateOrdersMigration, { schema: "orders", macros: [BelongsToTenantMacro] }),
+  ],
+});
+
+const tenantId = fakeTenantId();
+// createTestingModule(OrdersModule).compile() boots the services on postgres.database; then:
+const orders = await asTenant(tenantId, () => service.list()); // only this tenant's rows
+```
+
+The container's user is a superuser, which row-level security never restricts, so a test that proves a policy starts
+its unit of work with `set local role <role>` for a role with `NOLOGIN NOBYPASSRLS` that does not own the table, as
+`assertRowSecurity` does; `src/node/drivers/__tests__/call-isolation.driver.int.test.ts` is the worked example,
+through `asTenant` and through the action pipeline.

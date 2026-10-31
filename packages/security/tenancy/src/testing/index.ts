@@ -7,6 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decision 3); the STA-347 stand-in barrel decision.
  */
+export { asTenant } from "#testing/functions/as-tenant.function";
 export { fakeTenantId } from "#testing/functions/fake-tenant-id.function";
 export { runAsTenant } from "#testing/functions/run-as-tenant.function";
 export { tenantActor } from "#testing/functions/tenant-actor.function";

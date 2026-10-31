@@ -32,7 +32,7 @@ Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 s
 - `src/{core,contracts,node,testing}/index.ts` are stand-in barrels until gen writes the entry barrels (STA-339); add
   every new public file to its barrel and to that entry's `index.test.ts`.
 - `src/contracts/` is the leaf; `core` imports it, `node` imports `core`, `testing` imports all three. Nothing in `.`
-  touches a database: the worker (it opens a job's scope session) and the Postgres driver are `./node`'s.
+  touches a database: the worker (it runs a job in its `CallIsolation`, else its scope session) and the Postgres driver are `./node`'s.
 - `QueueConfig$` mirrors `QueueOptions` by hand until gen compiles this package's schemas; change both together.
 - `QUEUE_DRIVERS` names each driver by its file prefix; a new driver adds its name there.
 - `./testing` registers the plugin and the matcher when imported; `sideEffects` stays `false`.

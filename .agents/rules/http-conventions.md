@@ -135,7 +135,7 @@ Use prefixed ids externally (`usr_01H2J3K4L5M6N7P8Q9R0`, typed `PublicId<"usr">`
 
 Non-GET operations support the `Idempotency-Key` header. The action pipeline has an idempotency step (ADR 0098, 0138),
 so an action declares `idempotency:` in its options and the pipeline deduplicates; do not hand-roll key storage in a
-handler. The pipeline order is tenancy, permission, precondition, entitlement, flag, idempotency, interceptors, then
+handler. The pipeline order is tenancy, then (inside the `CallIsolation` transaction, ADR 0495) permission, precondition, entitlement, flag, idempotency, interceptors, then
 `handle` (ADR 0138 as amended).
 
 ## Versioning

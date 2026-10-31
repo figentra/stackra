@@ -274,6 +274,9 @@ Onboarding (and exit or fix-list) checklists are `checklist-template` seed recor
 
 ## Running it
 
+With a `CallIsolation` bound (ADR 0495), each step and each undo runs as the actor stored in the run's `origin`, in the
+run's scope, inside the transaction its journal row commits in.
+
 ```ts
 runner.connect(container); // WorkflowExplorer does this at boot
 await runner.work({ signal: shutdown.signal }); // one worker loop per service: resumes, timeouts, take-overs
