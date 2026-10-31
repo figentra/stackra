@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-31
 
-**Status**: Clarified <!-- design approved by the leader 2026-11-01; L-08 waits on the security-tenancy reviewer; nothing is built -->
+**Status**: Clarified <!-- design approved by the leader 2026-11-01; security-tenancy re-review PASS WITH CHANGES applied; nothing is built -->
 
 **Linear**: STA-1724
 
@@ -143,15 +143,18 @@ coupon changes, as the requester, without the requester coming back.
   a duration string (`"72h"`), default `"72h"`, at most 30 days (`"720h"`) (L-03). `Action()` refuses any other shape, and an
   `expiresAfter` above the maximum, at definition time (boot); gen refuses the same.
 - **FR-002** `ApprovalCondition` is a new kind base: `extends ApprovalCondition` with `needed(input, ctx):
-Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-condition.ts`. It reads data (a setting, a
-  plan value) through its constructor dependencies; the threshold is data, the comparison is code. No condition means
-  every call needs approval. A condition that throws fails the call (it is not read as "not needed"). A setting a
-  condition reads is itself a key marked `approval` (S9), so a threshold cannot be lowered without a second person: the
-  condition lists the keys it reads in a static `reads` array, and gen refuses one that is not marked `approval`.
-- **FR-003** Gen refuses an `expiresAfter` above 30 days, as `Action()` does at boot (L-03). A declared action needs effect tags and a permission like any action; gen refuses `approval` on a query,
-  on an action whose `actors` include neither a user nor an agent (no one could request it), on an action whose
-  `actors` include `Job`, `Service` or `Webhook` (S8: no human stands at the root of their requests), and on an action
-  whose input schema has a field of the `credential` data class (ADR 0494).
+Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-condition.ts`. The threshold is data, the
+  comparison is code. No condition means every call needs approval. A condition that throws fails the call (it is not
+  read as "not needed"). A condition lists the settings keys it reads in a static `reads` array, and each must itself
+  be a key marked `approval` (S9), so a threshold cannot be lowered without a second person. It receives a settings
+  reader limited to that list, which throws on any key not listed (N2). Its only other dependencies may be the
+  platform's plan and entitlement values; gen refuses any other constructor dependency and any `reads` key not marked
+  `approval`.
+- **FR-003** Gen refuses an `expiresAfter` above 30 days, as `Action()` does at boot (L-03). A declared action needs
+  effect tags and a permission like any action. Gen refuses `approval` on a query, on an action whose input schema has
+  a field of the `credential` data class (ADR 0494), and unless every entry of `actors` is `User`, `Agent` or
+  `ExternalAgent` (N3: an allow-list, so a new actor kind is refused until it is reviewed). The runtime check that the
+  chain's root is a user stays (FR-006).
 
 ### The stage
 
@@ -169,17 +172,24 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
   event on the 0495 branch). With no `CallIsolation` bound, park runs after the refusal is decided, outside the unit of
   work. The refusal carries `approvalId`, `approvalsRequired` and `expiresAt`; never input. Before it parks, the
   runtime refuses (`forbidden`) a call whose `onBehalfOf` chain does not end at a `User` (S8), and the park takes a
-  token from the action's rate-limit bucket (S10); the store refuses a park beyond its cap of pending requests per
+  token from the action's rate-limit bucket before the binding is inserted (S10, N8), so a refused token writes
+  nothing; the store refuses a park beyond its cap of pending requests per
   requester per action with `approval_pending_limit`. A park that fails is logged by approval id, key and error code
   only, never the draft or its input (C3).
 - **FR-007** Two records, written in the park's fresh `CallIsolation.run` (B1):
   - The **binding**, in the owning service, through `ApprovalBindingStore` (the table in the Impact): approval id
     (`apr_`), tenant and scope, the requester `Actor` with its whole `onBehalfOf` chain, the action key with version,
     `inputHash = fingerprintOf(key, validated input)`, the requester's assurance (level and `authTime`), `requestedAt`
-    and `expiresAt` by the owning service's clock, the required approvals and approver permission, any `confirm`
-    requirement and the execution mode. It is the only source of who, where, what and when for an execution.
+    and `expiresAt` by the owning service's clock, the required approvals, approver permission and approver assurance
+    level (N6), any `confirm` requirement and the execution mode. It is the only source of who, where, what and when
+    for an execution. It is insert-only (N7): the pipeline inserts it, and only `PruneApprovalBindingsAction`
+    (`approval_binding.prune`, a daily job in `@stackra/tenancy`) deletes it, a binding after its request's final state
+    plus the audit retention window (ADR 0212) and an orphan after its `expiresAt`. Nothing updates it, and nothing but
+    the pipeline, the executor and that job reads or writes it. The actor chain and the input hash are listed in the
+    owning service's PII table and in the model's docs.
   - The **draft**, in the store, through `gate.park`: the same approval id, key, tenant, scope and requester for
-    display and voting, the input snapshot, the requirements, `expiresAt`, and `execute: on_grant` for a declared
+    display and voting, the input snapshot, the requirements with the approver assurance level (N6), `expiresAt`, and
+    `execute: on_grant` for a declared
     stage or `on_resubmit` for a rules-only park. Nothing the store holds decides the identity, scope or input of an
     execution.
     The binding is written first; if the park then fails, the binding is left unused and expires.
@@ -209,22 +219,31 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
   re-checks every recorded voter is active, still holds the permission and passes `approverRefusal` and the person
   check again, and drops those who fail; the request becomes `granted` only if the count still holds (S6). Approve,
   reject and withdraw are `tool: false` with a `// reason:` (a person decides, never a model; S7), and a vote from an
-  operator-access session (ADR 0188) is refused `forbidden`. Reject and withdraw act only on a `pending` request (S3).
+  operator-access session (ADR 0188) is refused `forbidden`. A vote from a user of the customer realm is refused
+  `forbidden`, and every vote records the voter's realm (N4). The store refuses a vote whose session is below the
+  request's approver assurance level with `step_up_required` (N6). Reject and withdraw act only on a `pending` request
+  (S3).
 - **FR-011** Execute on grant: for `execute: on_grant`, the grant publishes `actions.approval.granted.v1` (approval id,
   action key, owning service, tenant; nothing else) through the store's outbox in the grant's transaction. In the
   owning service, `@stackra/actions` ships `ApprovalExecutor`, a listener that acts only on an envelope from the
-  store's service and never lets the inbox's actor reach a call context (S5). It loads the **binding** and builds the
-  call only from it (actor and chain, scope, key, assurance); it takes status, votes and the input snapshot from the
-  store and refuses `approval_mismatch` when the snapshot does not hash to the binding's `inputHash` (B1). It checks
-  `ScopeOwnership` for the stored actor and scope (S5), moves the store `granted → executing` by compare-and-set (S3),
-  opens its own `CallIsolation.run` from the binding, and runs `ActionPipeline.execute` with `approvalId` set. It
-  never runs with the approver's actor or grants (0360 decision 9).
+  store's service and never lets the inbox's actor reach a call context (S5). It runs in two isolation runs (N1):
+  - **Read.** It reads the binding inside a `CallIsolation.run` for the event's tenant, as the system actor in that
+    scope (the scheduler pattern of ADR 0495 decision 2). That read is never a platform read and never uses
+    `BYPASSRLS`; a binding outside that tenant is invisible, and the event is dropped.
+  - **Run.** It builds the call only from the binding (actor and chain, scope, key, assurance), takes status, votes
+    and the input snapshot from the store, refuses `approval_mismatch` when the snapshot does not hash to the
+    binding's `inputHash` (B1), checks `ScopeOwnership` for the stored actor and scope (S5), moves the store
+    `granted → executing` by compare-and-set (S3), then opens a separate, fresh `CallIsolation.run` as the binding's
+    actor and runs `ActionPipeline.execute` with `approvalId` set.
+    It never runs with the approver's actor or grants (0360 decision 9).
 - **FR-012** Exactly once: the execution's Idempotency-Key is `approval:<approvalId>` whatever the caller sent (callers
   may not use the `approval:` prefix, C1). `gate.settle(approvalId, outcome)` is a compare-and-set from `executing` to
   `executed` or `failed` (S1). A duplicate or concurrent delivery replays through the idempotency store; an
   `idempotency_key_reused` or `approval_consumed` answer to the executor means "in flight" and never settles `failed`
   (S1, S2). A refused execution ends `failed` with its code (final: a new request is needed); an error that is not a
-  refusal leaves it `executing` for the listener's retry with the same key. A request still `executing` 24h after its
+  refusal leaves it `executing` for the listener's retry with the same key. An identity outage at execution, in the
+  person, active, delegation or FR-016 (e) check, is such a retryable error: the request stays `executing` and never
+  ends `failed` on it (N5). A request still `executing` 24h after its
   grant moves to `unknown`, which the store shows to operators and never retries (S2).
 - **FR-013** Resubmission: an `on_resubmit` request (a rules-only park, as today) runs when its requester resubmits
   with the id. A resubmission of an `on_grant` request is refused `approval_consumed`; `AgentRuntime.resume` takes the
@@ -251,11 +270,13 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
   - (b) `StepUpCheck` at execution is evaluated against the binding's `requestedAt` and applies to that one call
     only, never to calls it makes (`ctx.dispatch`, `ctx.run`) or to a resumed agent run;
   - (c) for an action that declares `stepUp`, and for every L3 or L4 action, each approver steps up at vote time,
-    whatever the tenant's `ApproverRule.stepUp` says;
+    whatever the tenant's `ApproverRule.stepUp` says; the required approver assurance level is in the draft and the
+    binding (FR-007), and the store enforces it on each vote (N6);
   - (d) this amends ADR 0207 decision 1 for approved calls only: the 10-minute step-up window of an L3 or L4 action is
     measured at the request, and the approvers' fresh step-up stands for the rest;
   - (e) the execution is refused `step_up_required` when the requester's sessions were revoked or their factors reset
-    after `requestedAt`.
+    after `requestedAt`, read through an identity query "sessions revoked or factors reset since T" (N5; a dependency
+    on identity).
 - **FR-017** Audit: the request is the call's `refused` entry (`approval_required`) with fields `approvalId` and
   `inputHash`; each vote, rejection and withdrawal is the audit entry of that store action; the execution is the
   action's own entry as the requester, with fields `approvalId` and the voters' ids. Lifecycle events carry ids, key
@@ -293,7 +314,7 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
 
 - **SC-001**: billing's coupon actions declare the stage and hold no approval code of their own (a grep of the billing
   coupon module finds no pending status, approver comparison or expiry).
-- **SC-002**: every acceptance scenario of US1 to US3 and EC-001 to EC-007 has a test in `@stackra/actions` against the
+- **SC-002**: every acceptance scenario of US1 to US3 and EC-001 to EC-009 has a test in `@stackra/actions` against the
   memory driver, and the OS driver passes the same port conformance suite.
 - **SC-003**: with `OpenApprovalGateDriver` or a driver that always answers "no approval", a declared call still
   refuses (`approval_required`) or fails closed.
@@ -343,8 +364,11 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
   snapshot that does not hash to the binding is refused. A writer of the store's table can no longer run an action as
   someone else, elsewhere, or on other input. The hash is also in the `refused` audit entry (hash-chained, ADR 0212),
   never on a cross-service event (S11).
-- **One person, two ids (C4).** The person check of FR-022 refuses a vote by the requester's other id; it fails
-  closed when identity cannot answer.
+- **One person, two ids (C4, N4).** The person check of FR-022 refuses a vote by the requester's other id and fails
+  closed when identity cannot answer. The interim rule (equal verified email or phone) catches the accidental case,
+  not a deliberate second account with other contact details. Until the person link (STA-1741) exists, the control
+  is provisioning: a staff account comes only from an audited admin invitation. A customer-realm user can never vote,
+  and each vote records the voter's realm.
 - **Replay.** An approval id is bound to tenant, scope, requester, key and hash; consumed once (FR-012); refused after
   its window (FR-015).
 - **Tenant isolation.** The store rows are tenant-owned with FORCE RLS; the approve and list actions run in the
@@ -357,11 +381,12 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
 
 ## Dependencies
 
-| Dependency                 | Needed for                                               | Route             |
-| -------------------------- | -------------------------------------------------------- | ----------------- |
-| identity: person link      | `IdentityResolver.personOf(usr)` and its driver (FR-022) | routed via leader |
-| ADR 0495 (`CallIsolation`) | park and execution isolation (FR-006, FR-011)            | STA-1699          |
-| OS tasks-approvals store   | the store driver, actions and sweep (FR-010, FR-021)     | OS repository     |
+| Dependency                           | Needed for                                                                   | Route             |
+| ------------------------------------ | ---------------------------------------------------------------------------- | ----------------- |
+| identity: person link                | `IdentityResolver.personOf(usr)` and its driver (FR-022, STA-1741)           | routed via leader |
+| identity: session and factor history | "sessions revoked or factors reset since T" for a `usr_` id (FR-016 (e), N5) | routed via leader |
+| ADR 0495 (`CallIsolation`)           | park and execution isolation (FR-006, FR-011)                                | STA-1699          |
+| OS tasks-approvals store             | the store driver, actions and sweep (FR-010, FR-021)                         | OS repository     |
 
 ## Not built here
 
@@ -377,3 +402,5 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
 - 2026-11-01 · Clarified (unchanged) · Claude (spec-writer) · the security-tenancy review of 5c5a3c75 (BLOCK) folded
   in with the leader's decisions: the owning-service binding (B1), the step-up conditions (B2), S1 to S11, C1 to C3,
   and the person check (C4, FR-022)
+- 2026-11-01 · Clarified (unchanged) · Claude (spec-writer) · the re-review of a154625b (PASS WITH CHANGES) applied:
+  N1 to N8 and the stale text; C5 left to ADR 0495 (STA-1699)

@@ -109,7 +109,7 @@ and PR 1's 0495 test lands with the rebase.
 ## Correctness properties
 
 - **P-001**: `Action()` accepts `true` or a well-formed `ActionApproval` and refuses any other shape, a zero or fractional `approvals`, an unparsable `expiresAfter` or one above 30 days, and a `when` that is not an `ApprovalCondition` — Validates: FR-001, FR-002
-- **P-002**: gen refuses `approval` on a query, on an action no user or agent may call, on an action whose actors include `Job`, `Service` or `Webhook`, on an input with a `credential` field, and on a condition whose `reads` names a key not marked `approval` — Validates: FR-002, FR-003
+- **P-002**: gen refuses `approval` on a query, on an action with any actor kind other than `User`, `Agent` or `ExternalAgent`, on an input with a `credential` field, on a condition whose `reads` names a key not marked `approval`, and on a condition with a constructor dependency other than its limited settings reader and plan and entitlement values; the limited reader throws on a key not in `reads` — Validates: FR-002, FR-003
 - **P-003**: the approval step runs after validation and before the idempotency claim, inside the isolation callback, and only for actions — Validates: FR-004
 - **P-004**: with a declared requirement, a gate answering "none" (including the open gate) still yields a park or refusal; a gate answering more raises the requirement — Validates: FR-005, FR-018
 - **P-005**: under a `CallIsolation` that rolls back on refusal, the binding and the parked request exist after the call and the refusal carries its id, count and expiry and no input; a chain whose root is not a user is refused before parking; a park takes a rate-limit token and the store's cap refuses `approval_pending_limit`; a failed park logs no input — Validates: FR-006, FR-009
@@ -127,9 +127,11 @@ and PR 1's 0495 test lands with the rebase.
 - **P-016**: `SettingsResolver.approve` refuses an agent acting for the author, the author's other `usr_` id, and any vote when identity cannot answer, and still refuses the author — Validates: FR-019
 - **P-017**: billing's coupon case (a threshold condition reading a setting, one approver, `financial`) passes the US1 scenarios against the memory driver in core's tests — Validates: FR-020
 
-- **P-019**: a store row whose actor, tenant, scope, key or input snapshot was changed after park is refused `approval_mismatch` by verify and by the executor, which builds the call only from the binding, acts only on envelopes from the store's service and checks `ScopeOwnership` — Validates: FR-007, FR-008, FR-011
+- **P-019**: a store row whose actor, tenant, scope, key or input snapshot was changed after park is refused `approval_mismatch` by verify and by the executor, which reads the binding in a `CallIsolation.run` for the event's tenant as that scope's system actor (never a platform or `BYPASSRLS` read), builds the call only from it, runs it in a separate fresh run as the binding's actor, acts only on envelopes from the store's service and checks `ScopeOwnership`; the binding is never updated and is deleted only by `approval_binding.prune` — Validates: FR-007, FR-008, FR-011
 - **P-020**: `actorsSharePerson` is true for overlapping chains and for two `usr_` ids with the same `personOf` key or, without `personOf`, the same verified email or phone; it refuses (throws) when identity cannot answer; two ids of one person count as one vote — Validates: FR-022, FR-008, FR-010
 - **P-021**: the store moves only along FR-021's table: reject and withdraw only from `pending`, `granted → executing` by compare-and-set, `executing` accepted by verify only for its own key — Validates: FR-021
+
+- **P-022**: a vote from a customer-realm user is refused `forbidden` and every recorded vote carries the voter's realm; a vote below the request's approver assurance level is refused `step_up_required`; an identity outage at execution leaves the request `executing` and never `failed`; the rate-limit token is taken before the binding insert — Validates: FR-010, FR-012, FR-016, FR-006
 
 ## Risks
 
