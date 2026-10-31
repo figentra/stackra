@@ -743,6 +743,46 @@ describe("createSourceReader on an enum of a package with neither its entry nor 
   });
 });
 
+/** A default naming the cases of a consumed service's enum, imported from its client before gen writes it (STA-1697). */
+const CLIENT_ENUM_CASE_SOURCES: Readonly<Record<string, string>> = {
+  "src/core/schemas/loyalty-settings-view.schema.ts": [
+    'import { ChannelKind } from "#stackra/clients/sales";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class LoyaltySettingsView extends Schema {",
+    "  earnChannels: ChannelKind[] = [ChannelKind.Till, ChannelKind.Online];",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a default naming a consumed service's enum cases", async () => {
+  const root = writeFixtureMember("customers", CLIENT_ENUM_CASE_SOURCES);
+  mkdirSync(join(dirname(root), "sales"), { recursive: true });
+  writeFileSync(
+    join(dirname(root), "sales", "stackra.manifest.json"),
+    JSON.stringify({
+      member: "sales",
+      package: "@fixture/sales",
+      version: "1.0.0",
+      schemas: {
+        "orders.ChannelKind": { type: "string", enum: ["till", "online", "marketplace"] },
+      },
+    }),
+  );
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads each case's code from the service's committed manifest", () => {
+    const field = shapes.find((shape) => shape.name === "LoyaltySettingsView")?.fields[0];
+    expect(field?.default?.value).toEqual(["till", "online"]);
+    expect(codes).not.toContain("shape_default_not_constant");
+  });
+});
+
 /** A driver over another package's abstract base, whose port that package imports by its own `#contracts` path. */
 const PACKAGE_BASE_DRIVER_SOURCES: Readonly<Record<string, string>> = {
   "node_modules/@stackra/printer-fixture/package.json": JSON.stringify({

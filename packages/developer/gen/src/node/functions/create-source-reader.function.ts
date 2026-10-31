@@ -380,6 +380,13 @@ export function createSourceReader(
 
   // Imports per file: local name to module specifier.
   const importCache = new Map<string, Map<string, string>>();
+  /** A consumed service's committed manifest, read once per run (the source of its client, STA-1663). */
+  const serviceManifests = new Map<string, StackraManifest | undefined>();
+  const serviceManifestOf = (service: string): StackraManifest | undefined => {
+    if (!serviceManifests.has(service))
+      serviceManifests.set(service, readServiceManifests(facts.root, [service])[0]?.manifest);
+    return serviceManifests.get(service);
+  };
   const importsOf = (path: string): Map<string, string> => {
     const cached = importCache.get(path);
     if (cached !== undefined) return cached;
@@ -626,6 +633,25 @@ export function createSourceReader(
           member: nameOf(node.name),
           ...(kind ? { kind } : {}),
         } satisfies ClassValue;
+      }
+    }
+    // A case of an enum a consumed service exports through its client (`ChannelKind.Till` from `#stackra/clients/sales`):
+    // its code from the service's committed manifest, where the client names each case by its code (STA-1697).
+    if (
+      kindOf(node) === "PropertyAccessExpression" &&
+      node.expression !== undefined &&
+      node.name !== undefined
+    ) {
+      const owner = nameOf(node.expression);
+      const specifier = importsOf(host.fileName(node)).get(owner);
+      if (specifier?.startsWith(CLIENTS_SPECIFIER) === true) {
+        const type = enumIn(serviceManifestOf(specifier.slice(CLIENTS_SPECIFIER.length)), owner);
+        const member = nameOf(node.name);
+        const code =
+          type?.kind === "enum"
+            ? type.values.find((value) => pascalCase(value) === member)
+            : undefined;
+        if (code !== undefined) return code;
       }
     }
     const value = host.literal(host.typeAt(node));
@@ -1234,19 +1260,13 @@ export function createSourceReader(
   // An enum of a consumed service, by its `#stackra/clients/<service>` import: its codes from the service's committed
   // manifest, the client's own source, whether or not this member's gen has written that client yet (ADR 0260
   // decision 3; STA-1663). Reading the client would be circular: only this member's clean gen writes it.
-  const serviceManifests = new Map<
-    string,
-    ReturnType<typeof readServiceManifests>[number] | undefined
-  >();
   const clientEnum = (node: TsNode): TypeDesc | undefined => {
     if (node.typeName === undefined) return undefined;
     const name = nameOf(node.typeName);
     const specifier = importsOf(host.fileName(node)).get(name);
     if (specifier?.startsWith(CLIENTS_SPECIFIER) !== true) return undefined;
     const service = specifier.slice(CLIENTS_SPECIFIER.length);
-    if (!serviceManifests.has(service))
-      serviceManifests.set(service, readServiceManifests(facts.root, [service])[0]);
-    return enumIn(serviceManifests.get(service)?.manifest, name);
+    return enumIn(serviceManifestOf(service), name);
   };
 
   // An enum a declared package exports from an entry that does not resolve yet (a workspace package whose `.` is its
