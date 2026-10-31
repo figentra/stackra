@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `specCheckStage(folder, text, context)`, the stage rules for a spec at its declared `**Status**`: a status
- *          may lag its artifacts, never lead them.
+ *          may lag its artifacts, never lead them. A `small` spec keeps its plan and tasks in spec.md (`## Plan`,
+ *          `## Tasks`); a `feature` or `big` spec passes its approval stops (ADR 0502).
  * Boundary: pure.
  * Runtime: node
  * Governing contract: ADR 0120 (SDLC spec location, lanes and change risk); ADR 0198; ADR 0282 (decision 3). Loaded by
@@ -10,6 +11,7 @@
  */
 import { SPEC_STATUSES } from "../constants/spec-statuses.constant.ts";
 import { specAtLeast } from "./spec-at-least.function.ts";
+import { specCheckApproval } from "./spec-check-approval.function.ts";
 import { specCheckClarified } from "./spec-check-clarified.function.ts";
 import { specCheckPlan } from "./spec-check-plan.function.ts";
 import { specCheckTasks } from "./spec-check-tasks.function.ts";
@@ -18,6 +20,7 @@ import { specFolderShape } from "./spec-folder-shape.function.ts";
 import { specParseTasks } from "./spec-parse-tasks.function.ts";
 import { specStatusOf } from "./spec-status-of.function.ts";
 import { specStrip } from "./spec-strip.function.ts";
+import { specTierOf } from "./spec-tier-of.function.ts";
 
 /**
  * Problems for a spec at its declared status.
@@ -64,6 +67,15 @@ export function specCheckStage(
     problems.push(
       `\`## Status history\` has no "→ ${status.charAt(0).toUpperCase()}${status.slice(1)}" line`,
     );
+  problems.push(...specCheckApproval(text));
+  // ADR 0502: a small spec's plan and tasks are sections of spec.md, not files.
+  if (specTierOf(text) === "small") {
+    if (specAtLeast(status, "planned") && !/^## Plan\b/m.test(body))
+      problems.push(`status ${status} needs a \`## Plan\` section in a small spec`);
+    if (specAtLeast(status, "tasked") && !/^## Tasks\b/m.test(body))
+      problems.push(`status ${status} needs a \`## Tasks\` section in a small spec`);
+    return problems;
+  }
   if (specAtLeast(status, "planned")) {
     if (!files.includes("plan.md")) problems.push(`status ${status} needs plan.md`);
     else problems.push(...specCheckPlan(plan, text));

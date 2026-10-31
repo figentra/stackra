@@ -1,0 +1,65 @@
+---
+title: "0502 — Spec tiers and approval stops"
+description: "Accepted · 2026-10-31"
+---
+
+{/* Stackra file contract: Purpose: the decision record that every change takes one of four spec tiers (trivial, small, feature, big), that the lane check computes a minimum tier from the diff and refuses a lower declared one, and that feature and big specs stop for an approval recorded in their Status. Boundary: decision text only; the code is @stackra/repo-checks' spec checks, core's plan-gate hook and Vellum's gate (STA-1721). Runtime: docs. Governing contract: ADR template; ADR 0120, 0362, 0282, 0421. */}
+
+<Note>
+  Accepted (STA-1721); the owner approved it on 2026-10-31. Amends
+  [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk) (lanes) and
+  [0362](/adr/0362-no-code-without-an-answered-questionnaire-and-a-plan) (the plan gate).
+</Note>
+
+## Context
+
+ADR 0120 gave specs lanes (full, lite, bug, chore) and change risk, and ADR 0362's plan gate refuses code on a branch
+until its spec is answered and planned. Every change paid the same toll: a typo fix still needed a spec folder, and
+nothing told a money or permission change apart from a one-package bug fix. Approvals were agreed in chat and recorded
+nowhere a gate could read.
+
+## Decision
+
+1. **Four tiers.** A spec declares `**Tier**:` in its header.
+
+   | Tier    | What                                                                                                        | Artifacts                                                                          | Stops                               |
+   | ------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------- |
+   | trivial | typo, format, lint, docs wording, test-only fix, approved version bump, obvious one-line bug                | none: the commit message and the Linear issue                                      | none                                |
+   | small   | a bug or small change in one package, with no contract, data or permission change                           | a lite spec: 5 to 10 answered questions, `## Plan` and `## Tasks` in the same file | none                                |
+   | feature | new behaviour, a contract or API, a migration, permissions, money, security or personal data, cross-package | full spec, then plan.md, then tasks.md                                             | one, after the spec and plan        |
+   | big     | a new service, module or product, a new ADR, brand or pricing                                               | full questionnaire, the ADR, spec, plan, tasks                                     | two: after the spec, after the plan |
+
+2. **The diff sets a floor.** The lane check computes a minimum tier from the changed paths: a migration, a public
+   contract (`src/contracts/`, `stackra.manifest.json`, `openapi.json`), a permission (`*.permissions.ts`, `access/`),
+   payment or money code (`packages/commerce/`, paths naming payment, money, ledger, billing, payout or refund) or a new
+   app or Worker member forces at least feature; a new service or package forces big. A branch with no spec declares
+   trivial. A declared tier below the computed one fails the lane check.
+3. **Approval is recorded where the gate reads it.** An approval is `Approved by <who> <YYYY-MM-DD>` on the stage it
+   approves: on the `**Status**` line while the spec sits there, and on that stage's `## Status history` line after.
+   A feature spec needs its Planned approval before Tasked; a big spec needs its Clarified approval before Planned and
+   its Planned approval before Tasked. The stage gate and the plan-gate hook check them before tasks or code.
+4. **Who approves.** `**Approver**:` names it: the owner for product, money, legal, security, brand and pricing; the
+   leader session for technical-only stops, under the owner's delegation. Feature and big specs carry the field.
+5. **How an agent asks.** At a stop the agent asks with the question tool (Approve, Revise with notes, Reject). Revise
+   loops back to the stage with the notes; Reject sets the spec Abandoned.
+6. **Trivial is never blocked.** The plan-gate hook lets a branch with no spec folder write code; the lane check is
+   what refuses a diff that needed more. A spec without `**Tier**` keeps the ADR 0362 rule (answered spec and plan.md).
+
+## Consequences
+
+- Most fixes need no spec. A money, permission, migration or contract change cannot slip in as trivial: the lane check
+  names the paths that raised the floor.
+- Approvals are auditable in the spec itself; a missing one fails the gate, not a review.
+- Lanes stay as the Impact answer for older specs; the tier is the field the gates read.
+
+## Enforcement
+
+- `@stackra/repo-checks` (`specTierOf`, `specComputedTier`, `specCheckTier`, `specApprovedAt`, `specCheckApproval`,
+  `specCheckStage`, `specFindings`), run by `stackra check`'s spec phase and core's `spec-gate.mjs`.
+- `.agents/hooks/_rules.mjs` `decidePlanGate` (ADR 0362), with its tests.
+- Vellum's `gate` carries the same rules for repositories that run Vellum.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0120 (lanes) and 0362 (the plan gate). Sources: STA-1721; owner approval 2026-10-31, relayed
+by the leader session.

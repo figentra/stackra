@@ -12,7 +12,8 @@
  *   plan <spec.md>              exit 1 unless the spec may be planned (run by setup-plan.sh)
  *   check <dir>                 the stage rules for the spec's declared `**Status**`
  *   tasks <tasks.md>            tasks lint: ids, covers, routes, deps, coverage, waves
- *   lane [--base=ref]           feat commits need a lite or full spec reached through the branch or `Refs:` keys
+ *   lane [--base=ref]           feat commits need a lite or full spec reached through the branch or `Refs:` keys,
+ *                               and the diff's tier floor is not above the branch spec's `**Tier**` (ADR 0502)
  *   branch                      warn, never fail, unless the branch (STACKRA_BRANCH, else git) is Linear-named or
  *                               allow-listed: a `chore-lane` PR may use any branch, and only `linear check-pr`
  *                               sees the PR labels, so check-pr is the enforcing check
@@ -102,6 +103,15 @@ export const isOwnSpec = (folder, branch) => checks.specIsOwn(folder, branch, PR
 
 /** The spec's `**Status**:` line, trimmed ("" when absent). */
 export const statusLine = checks.specStatusLine;
+
+/** The spec's declared `**Tier**` (ADR 0502), or undefined. */
+export const tierOf = checks.specTierOf;
+
+/** The lowest tier a `git diff --name-status` allows, with its reasons (ADR 0502). */
+export const computedTier = checks.specComputedTier;
+
+/** The approval recorded for a stage, or undefined (ADR 0502). */
+export const approvedAt = checks.specApprovedAt;
 
 /** STA numbers named on the `Refs:` trailers of the commit messages. */
 export const refsKeys = (commits) =>
@@ -339,7 +349,25 @@ const prCommits = (base) =>
     .filter(Boolean);
 
 function laneGate(base) {
-  return checkLane({ commits: prCommits(base), branch: currentBranch(), ...specIndex() });
+  const branch = currentBranch();
+  const lane = checkLane({ commits: prCommits(base), branch, ...specIndex() });
+  // ADR 0502: the diff's floor against the branch's own spec; none is trivial, a spec without a tier is exempt.
+  const dir = join(ROOT, SPECS_DIR);
+  const own = (existsSync(dir) ? readdirSync(dir) : []).find((f) => isOwnSpec(f, branch));
+  const declared = own === undefined ? undefined : tierOf(readIf(join(dir, own, "spec.md")));
+  if (own !== undefined && declared === undefined) return lane;
+  const changes = git("diff", "--name-status", `${base}...HEAD`)
+    .split("\n")
+    .filter(Boolean)
+    .map((row) => {
+      const [status = "", ...paths] = row.split("\t");
+      return { status, path: paths.at(-1) ?? "" };
+    });
+  const computed = computedTier(changes);
+  return [
+    ...lane,
+    ...checks.specCheckTier({ declared, computed: computed.tier, reasons: computed.reasons }),
+  ];
 }
 
 /** checkForeignStatus for every changed spec folder, against its spec.md at the merge base. */

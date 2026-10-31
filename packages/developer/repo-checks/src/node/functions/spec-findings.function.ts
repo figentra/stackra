@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `specFindings(options)`, the read-only spec checks of a repository that keeps spec-kit specs in
  *          `.agents/specs`: stage gate for every spec folder changed since the base, legacy `specs/` paths,
- *          foreign-status and bug-lane gates, the lane gate, then the trace rules (drift while Implementing, drift and
- *          test coverage at Done).
+ *          foreign-status and bug-lane gates, the lane gate, the tier floor of the diff against the branch's own spec
+ *          (none declares trivial; ADR 0502), then the trace rules (drift while Implementing, drift and test coverage
+ *          at Done).
  * Boundary: no console, no process exit, no issue tracker, no package manager; git, file reads and existence are
  *           injected, so the check is testable and the CLI and core's wrapper pass real ones.
  * Runtime: node
@@ -19,6 +20,8 @@ import { specCheckBug } from "./spec-check-bug.function.ts";
 import { specCheckForeignStatus } from "./spec-check-foreign-status.function.ts";
 import { specCheckLane } from "./spec-check-lane.function.ts";
 import { specCheckStage } from "./spec-check-stage.function.ts";
+import { specCheckTier } from "./spec-check-tier.function.ts";
+import { specComputedTier } from "./spec-computed-tier.function.ts";
 import { specDrift } from "./spec-drift.function.ts";
 import { specFolderOf } from "./spec-folder-of.function.ts";
 import { specImpactOf } from "./spec-impact-of.function.ts";
@@ -28,6 +31,7 @@ import { specParseTasks } from "./spec-parse-tasks.function.ts";
 import { specPrefixesOf } from "./spec-prefixes-of.function.ts";
 import { specRoutes } from "./spec-routes.function.ts";
 import { specStatusOf } from "./spec-status-of.function.ts";
+import { specTierOf } from "./spec-tier-of.function.ts";
 import { specTraceProblems } from "./spec-trace-problems.function.ts";
 import { specTrace } from "./spec-trace.function.ts";
 
@@ -142,6 +146,23 @@ export function specFindings(options: SpecFindingsOptions): Finding[] {
     );
     for (const p of specCheckLane({ commits, branch, specKeys, taskKeys, prefixes }))
       add("spec-gate", ".", p);
+  }
+
+  // ADR 0502: the diff sets a floor; the branch's own spec declares the tier, and a branch with none is trivial.
+  const changes = (git(["diff", "--name-status", `${base}...HEAD`]) ?? "")
+    .split("\n")
+    .filter(Boolean)
+    .map((row) => {
+      const [status = "", ...paths] = row.split("\t");
+      return { status, path: paths.at(-1) ?? "" };
+    });
+  const own = folders.find((f) => specIsOwn(f, branch, prefixes));
+  const declared = own === undefined ? undefined : specTierOf(text(`${SPECS_DIR}/${own}/spec.md`));
+  // A spec written before tiers declares none and keeps the ADR 0120 lane rules.
+  if (own === undefined || declared !== undefined) {
+    const computed = specComputedTier(changes);
+    for (const p of specCheckTier({ declared, computed: computed.tier, reasons: computed.reasons }))
+      add("spec-gate", own === undefined ? "." : `${SPECS_DIR}/${own}`, p);
   }
 
   const specs = dirs
