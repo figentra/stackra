@@ -1200,8 +1200,9 @@
       "rules": { "react/rules-of-hooks": "off" },
     },
     {
-      // STA-1655: a hook file and a test keep the source rule inside the component homes.
-      "files": ["**/use-*.tsx", "**/__tests__/**"],
+      // STA-1655: a hook file and a test keep the source rule inside the component homes. Test files only, never a
+      // whole `__tests__/` folder: a lint fixture under it is a component home of its own.
+      "files": ["**/use-*.tsx", "**/__tests__/*.test.tsx"],
       "plugins": ["react"],
       "rules": { "react/rules-of-hooks": "error" },
     },
