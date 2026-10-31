@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ConnectionPaymentGatewaysDriver`: the tenant's own Connection wins when it has every
  *          capability, the Market's platform Connection serves otherwise, a provider without the capability or
- *          without a driver is skipped, and a stored connection is reloaded by id.
+ *          without a driver is skipped, a terminal routes by its Connection (refused unnamed when two serve), and a
+ *          stored connection is reloaded by id.
  * Boundary: test only; a minimal `ConnectionStore` and two test connection classes stand in for the store and the
  *           host's vendor map (the vendor Connections live in the OS integrations service).
  * Runtime: node (vitest)
@@ -26,6 +27,7 @@ import { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import { ConnectionPaymentGatewaysDriver } from "#core/drivers/connection-payment-gateways.driver";
 import { NoPaymentProviderError } from "#core/errors/no-payment-provider.error";
+import { TerminalConnectionRequiredError } from "#core/errors/terminal-connection-required.error";
 import { MarketPaymentDefaultsFake } from "#testing/market-payment-defaults.fake";
 
 /** A gateway connection that only declares its capabilities; the vendor ones live in OS integrations. */
@@ -49,16 +51,36 @@ class VoucherConnection extends Gateway {
   }
 }
 
+/** A terminal provider. */
+class TillConnection extends Gateway {
+  get capabilities(): readonly PaymentCapability[] {
+    return [PaymentCapability.Terminal];
+  }
+}
+/** Another terminal provider in the same Market. */
+class PadConnection extends Gateway {
+  get capabilities(): readonly PaymentCapability[] {
+    return [PaymentCapability.Terminal];
+  }
+}
+
 /** The host's map, as the OS integrations service passes it. */
 const DRIVERS = {
   card: CardConnection,
   voucher: VoucherConnection,
+  till: TillConnection,
+  pad: PadConnection,
 } as unknown as ProviderDrivers<PaymentGateway>;
 
 /** A bare instance of `type`; the driver reads only its class and capabilities. */
 const instance = <C extends Gateway>(type: { readonly prototype: C }): C =>
   Object.create(type.prototype) as C;
 const cardOwn = instance(CardConnection);
+/** A bare instance of `type` with connection id `id`. */
+const withId = <C extends Gateway>(type: { readonly prototype: C }, id: string): C =>
+  Object.defineProperty(instance(type), "id", { value: id });
+const tillOwn = withId(TillConnection, "conn_till");
+const padOwn = withId(PadConnection, "conn_pad");
 const cardPlatform = instance(CardConnection);
 const voucherPlatform = instance(VoucherConnection);
 const PLATFORM = new Map<string, Connection>([
@@ -166,6 +188,22 @@ describe("ConnectionPaymentGatewaysDriver", () => {
     await expect(none.forMarket("m3", [PaymentCapability.Checkout])).rejects.toRefuseWith(
       refusal(NoPaymentProviderError, { market: "m3", needs: "checkout" }),
     );
+  });
+
+  it("routes a terminal by its Connection and refuses a terminal that names none when two serve (STA-1718)", async () => {
+    const terminals = MarketPaymentDefaultsFake.with({
+      m5: [{ provider: "till" }, { provider: "pad" }],
+    });
+    const two = new TestPaymentGatewaysDriver(new TestStore([tillOwn, padOwn]), terminals);
+    await expect(two.forMarket("m5", [PaymentCapability.Terminal])).rejects.toRefuseWith(
+      refusal(TerminalConnectionRequiredError, { market: "m5", connections: "conn_till,conn_pad" }),
+    );
+    expect(await two.forMarket("m5", [PaymentCapability.Terminal], "conn_pad")).toBe(padOwn);
+    await expect(
+      two.forMarket("m5", [PaymentCapability.Terminal], "conn_other"),
+    ).rejects.toRefuseWith(refusal(NoPaymentProviderError, { market: "m5", needs: "terminal" }));
+    const one = new TestPaymentGatewaysDriver(new TestStore([tillOwn]), terminals);
+    expect(await one.forMarket("m5", [PaymentCapability.Terminal])).toBe(tillOwn);
   });
 
   it("reloads the connection that served a payment", async () => {

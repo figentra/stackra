@@ -47,6 +47,7 @@ describe("@stackra/payments", () => {
       "RestrictedTenderUnavailableError",
       "SoftPosUnavailableError",
       "StripeTapToPaySoftPosDriver",
+      "TerminalConnectionRequiredError",
       "hasPaymentCapability",
       "modeOf",
       "splitTender",

@@ -25,11 +25,12 @@ import type {
   ProviderDrivers,
 } from "@stackra/integrations";
 
-import type { PaymentCapability } from "#contracts/enums/payment-capability.enum";
+import { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 import type { MarketPaymentDefaults } from "#contracts/ports/market-payment-defaults.port";
 import { PaymentGateways } from "#contracts/ports/payment-gateways.port";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import { NoPaymentProviderError } from "#core/errors/no-payment-provider.error";
+import { TerminalConnectionRequiredError } from "#core/errors/terminal-connection-required.error";
 
 /** A payments connection class. */
 type GatewayClass = ConnectionClass<Connection & PaymentGateway>;
@@ -70,22 +71,35 @@ export class ConnectionPaymentGatewaysDriver extends Driver(PaymentGateways) {
     this.defaults = defaults;
   }
 
-  /** The own Connection that serves `needs` first, else the Market's platform one. */
-  async forMarket(market: string, needs: readonly PaymentCapability[]): Promise<PaymentGateway> {
-    const offered = (await this.defaults.providers(market)).flatMap((choice) => {
-      const type = this.classOf(choice.provider);
-      return type === undefined ? [] : [{ choice, type }];
-    });
-    for (const { type } of offered) {
-      const own = await this.store.find(type);
-      if (own !== null && serves(own, needs)) return own;
-    }
-    for (const { choice, type } of offered) {
-      if (choice.connectionId === undefined) continue;
-      const platform = await this.store.byId(type, choice.connectionId);
-      if (serves(platform, needs)) return platform;
-    }
-    throw NoPaymentProviderError.create({ market, needs: needs.join(",") });
+  /**
+   * Connection `connectionId` when given, else the own Connection that serves `needs` first, else the Market's
+   * platform one. A terminal call with no `connectionId` is refused when more than one Connection serves it, since a
+   * terminal id belongs to one provider (STA-1718).
+   */
+  async forMarket(
+    market: string,
+    needs: readonly PaymentCapability[],
+    connectionId?: string,
+  ): Promise<PaymentGateway> {
+    // Only a named Connection or a terminal needs every serving Connection; any other call takes the first.
+    const all = connectionId !== undefined || needs.includes(PaymentCapability.Terminal);
+    const serving = await this.serving(market, needs, all);
+    const found =
+      connectionId === undefined
+        ? serving[0]
+        : serving.find((gateway) => gateway.id === connectionId);
+    if (found === undefined)
+      throw NoPaymentProviderError.create({ market, needs: needs.join(",") });
+    if (
+      connectionId === undefined &&
+      needs.includes(PaymentCapability.Terminal) &&
+      serving.length > 1
+    )
+      throw TerminalConnectionRequiredError.create({
+        market,
+        connections: serving.map((gateway) => gateway.id).join(","),
+      });
+    return found;
   }
 
   /** The gateway of Connection `connectionId` of `provider`. */
@@ -93,6 +107,37 @@ export class ConnectionPaymentGatewaysDriver extends Driver(PaymentGateways) {
     const type = this.classOf(provider);
     if (type === undefined) throw NoPaymentProviderError.create({ provider });
     return this.store.byId(type, connectionId);
+  }
+
+  /**
+   * The Connections of the Market that serve `needs`, the tenant's own first, then the platform's, in Market order:
+   * every one when `all`, else the first only.
+   */
+  private async serving(
+    market: string,
+    needs: readonly PaymentCapability[],
+    all: boolean,
+  ): Promise<PaymentGateway[]> {
+    const offered = (await this.defaults.providers(market)).flatMap((choice) => {
+      const type = this.classOf(choice.provider);
+      return type === undefined ? [] : [{ choice, type }];
+    });
+    const found: PaymentGateway[] = [];
+    for (const { type } of offered) {
+      // oxlint-disable-next-line no-await-in-loop -- one lookup per offered provider, in the Market's order
+      const own = await this.store.find(type);
+      if (own !== null && serves(own, needs)) found.push(own);
+      if (!all && found.length > 0) return found;
+    }
+    for (const { choice, type } of offered) {
+      if (choice.connectionId === undefined) continue;
+      // oxlint-disable-next-line no-await-in-loop -- one lookup per offered provider, in the Market's order
+      const platform = await this.store.byId(type, choice.connectionId);
+      if (serves(platform, needs) && !found.some((gateway) => gateway.id === platform.id))
+        found.push(platform);
+      if (!all && found.length > 0) return found;
+    }
+    return found;
   }
 
   /** The connection class of `provider`, or undefined for a code the host has no driver for. */
