@@ -9,6 +9,7 @@
 import { describe, expect, it } from "@stackra/testing";
 
 import type { TabularRow } from "#contracts/types/tabular-row.type";
+import { XLSX_CEILINGS } from "#node/constants/xlsx-ceilings.constant";
 import { XlsxReaderDriver } from "#node/drivers/xlsx-reader.driver";
 import { readZip } from "#node/functions/read-zip.function";
 import { XlsxWriterDriver } from "#node/drivers/xlsx-writer.driver";
@@ -37,7 +38,7 @@ describe("XlsxWriterDriver", () => {
       chunks.push(chunk);
     const bytes = Buffer.concat(chunks);
 
-    const file = readZip(bytes);
+    const file = readZip(bytes, XLSX_CEILINGS);
     const text = (name: string) => new TextDecoder().decode(file(name));
     expect(text("xl/workbook.xml")).toContain('<sheet name="المنتجات" sheetId="1" r:id="rId1"/>');
     expect(text("xl/worksheets/sheet1.xml")).toContain('<c r="B2"><v>5</v></c>');
