@@ -10,7 +10,9 @@
  *           publisher. An unknown wire name is refused before the claim, so the event stays unreceived for a later
  *           release. A failing listener is recorded on its delivery (the bus's rule) and the event still counts as
  *           received; a claim whose transaction rolls back is released. Every receipt runs inside `withScope`, the
- *           event's scope or none, so a scope never leaks into the next receipt of the same transaction. `drain` runs
+ *           event's scope or none, so a scope never leaks into the next receipt of the same transaction; with a
+ *           `CallIsolation` bound when `connect` ran (ADR 0495) it runs there instead, as the envelope's actor (none:
+ *           a platform call, which matches no tenant row) in the event's scope. `drain` runs
  *           everything the bus has queued, as @stackra/events' bus does. Relays (listeners taking an `EventEnvelope`,
  *           resolved by `connect`, dropped by `disconnect` on shutdown) get every claimed envelope, a wire name with no class included, so a service with
  *           a relay claims an unknown event for its relay instead of refusing it. A relay that throws rolls the receipt
@@ -20,9 +22,11 @@
  *                     ADR 0260 (decision 4: the relay);
  *                     ADR 0327 (decision 9: the scope session).
  */
+import { CallIsolation } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
+import { ActorKind } from "@stackra/contracts";
+import type { Actor, Clock } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import type { Event, EventBus, Listener, ListenerContext } from "@stackra/events";
 import { upgrade } from "@stackra/versioning";
@@ -31,6 +35,9 @@ import type { EventEnvelope, InboxDriver } from "#contracts/index";
 import { RELAYS } from "#core/constants/relays.constant";
 import { UnknownEventError } from "#core/errors/unknown-event.error";
 import { wireVersionOf } from "#core/functions/wire-version-of.function";
+
+/** The platform actor of an envelope that carries none: no scope, so it matches no tenant row (ADR 0495). */
+const PLATFORM_ACTOR: Actor = Object.freeze({ kind: ActorKind.System, id: "sys_inbox" });
 
 /**
  * Receives integration events once each.
@@ -55,6 +62,9 @@ export class InboxService extends Service {
   /** The relays `connect` resolved, in registration order. */
   private readonly relays: Listener[] = [];
 
+  /** The isolation `connect` found bound, if any; each receipt runs in it as the envelope's actor. */
+  private isolation: CallIsolation | undefined;
+
   /**
    * @param driver - the store of received ids.
    * @param bus - the in-process bus that runs the listeners.
@@ -78,6 +88,7 @@ export class InboxService extends Service {
     has: (type: AnyClass) => boolean;
     get: <T extends object>(type: AnyClass<T>) => T;
   }): void {
+    this.isolation = container.has(CallIsolation) ? container.get(CallIsolation) : undefined;
     for (const type of RELAYS)
       if (container.has(type)) {
         const relay = container.get(type);
@@ -88,6 +99,7 @@ export class InboxService extends Service {
   /** Drops the connected relays (the boot calls it on shutdown); a later receipt sees none. */
   disconnect(): void {
     this.relays.splice(0);
+    this.isolation = undefined;
   }
 
   /**
@@ -113,7 +125,7 @@ export class InboxService extends Service {
           ? wire.type.create(envelope.data as never)
           : upgrade(wire.type, envelope.data, wire.version);
     const meta = { ...envelope.meta, id: envelope.id, occurredAt: new Date(envelope.occurredAt) };
-    return this.database.withScope(envelope.scope ?? [], async () => {
+    const receive = async () => {
       if (!(await this.driver.claim(envelope.id, this.clock.now()))) return false;
       const { id, ...rest } = meta;
       const context: ListenerContext = { ...rest, eventId: id, now: () => this.clock.now() };
@@ -123,7 +135,12 @@ export class InboxService extends Service {
         await this.bus.drain();
       }
       return true;
-    });
+    };
+    return this.isolation === undefined
+      ? this.database.withScope(envelope.scope ?? [], receive)
+      : this.isolation.run(envelope.meta.actor ?? PLATFORM_ACTOR, envelope.scope, receive, {
+          readOnly: false,
+        });
   }
 
   /** Forgets the ids received before `before`; the retention purge a scheduled job runs. */

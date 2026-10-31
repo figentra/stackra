@@ -14,7 +14,10 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0078 (decisions 2 to 4); ADR 0327 (decision 9); ADR 0260 (decision 4).
  */
-import type { Clock, ScopeRef } from "@stackra/contracts";
+import { CallIsolation } from "@stackra/actions/contracts";
+import { Driver } from "@stackra/container";
+import { ActorKind } from "@stackra/contracts";
+import type { Actor, Clock, ScopeRef } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { EventBus, IntegrationEvent, Listener, type ListenerContext } from "@stackra/events";
 import { describe, expect, it } from "@stackra/testing";
@@ -118,6 +121,39 @@ describe(InboxService, () => {
     await inbox.receive(envelope({ scope: SCOPE }));
     await inbox.receive(envelope({ id: "evt_B" }));
     expect(scopes).toEqual([SCOPE, []]);
+  });
+
+  it("runs each receipt through a bound CallIsolation as the envelope's actor, or a platform actor", async () => {
+    const { inbox, scopes, listener } = inboxWithListener();
+    const runs: [Actor, ScopeRef | readonly ScopeRef[] | undefined, boolean][] = [];
+    class Recording extends Driver(CallIsolation) {
+      run<T>(
+        actor: Actor,
+        scope: ScopeRef | readonly ScopeRef[] | undefined,
+        work: () => Promise<T>,
+        options: { readonly readOnly: boolean },
+      ): Promise<T> {
+        runs.push([actor, scope, options.readOnly]);
+        return work();
+      }
+    }
+    const isolation = new Recording();
+    inbox.connect({
+      has: (type) => type === CallIsolation,
+      get: <T extends object>() => isolation as unknown as T,
+    });
+    const actor: Actor = { kind: ActorKind.Service, id: "svc_orders", scopeId: SCOPE.id };
+    await inbox.receive(envelope({ scope: SCOPE, meta: { actor } }));
+    await inbox.receive(envelope({ id: "evt_B" }));
+    expect(runs).toEqual([
+      [actor, SCOPE, false],
+      [{ kind: ActorKind.System, id: "sys_inbox" }, undefined, false],
+    ]);
+    expect(scopes).toEqual([]);
+    expect(listener.seen).toHaveLength(2);
+    inbox.disconnect();
+    await inbox.receive(envelope({ id: "evt_C" }));
+    expect(scopes).toEqual([[]]);
   });
 
   it("refuses an unknown wire name before claiming the id", async () => {

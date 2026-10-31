@@ -16,6 +16,7 @@ export { ReviewReason } from "#contracts/enums/review-reason.enum";
 export { AccessControl } from "#contracts/ports/access-control.port";
 export { ApprovalGate } from "#contracts/ports/approval-gate.port";
 export { AuditTrail } from "#contracts/ports/audit-trail.port";
+export { CallIsolation } from "#contracts/ports/call-isolation.port";
 export { ConsentCheck } from "#contracts/ports/consent-check.port";
 export { ContextStorage } from "#contracts/ports/context-storage.port";
 export { DeviceSequenceStore } from "#contracts/ports/device-sequence-store.port";

@@ -76,6 +76,7 @@ import {
   AccessControl,
   ApprovalGate,
   AuditTrail,
+  CallIsolation,
   ConsentCheck,
   ContextStorage,
   DeviceSequenceStore,
@@ -2546,5 +2547,116 @@ describe("ActionPipeline query budget and request memo (STA-1400)", () => {
     const { pipeline } = setup([[BudgetedQuery, query]]);
     await expect(pipeline.execute(BudgetedQuery, {}, { actor: customer })).resolves.toEqual([1, 1]);
     await expect(pipeline.execute(BudgetedQuery, {}, { actor: customer })).resolves.toEqual([2, 2]);
+  });
+});
+
+class LoggingIsolation extends Driver(CallIsolation) {
+  readonly runs: [string, ScopeRef | readonly ScopeRef[] | undefined, boolean][] = [];
+
+  async run<T>(
+    actor: Actor,
+    scope: ScopeRef | readonly ScopeRef[] | undefined,
+    work: () => Promise<T>,
+    options: { readonly readOnly: boolean },
+  ): Promise<T> {
+    this.runs.push([actor.id, scope, options.readOnly]);
+    log.push(`isolation:${options.readOnly ? "read-only" : "write"}`);
+    try {
+      const output = await work();
+      log.push("isolation:commit");
+      return output;
+    } catch (error) {
+      log.push("isolation:rollback");
+      throw error;
+    }
+  }
+}
+
+describe("ActionPipeline call isolation (ADR 0495)", () => {
+  it("runs everything after the tenancy check in the isolation, the unit of work inside it, after-commit work after it", async () => {
+    const isolation = new LoggingIsolation();
+    const { pipeline } = setup([[CallIsolation, isolation]]);
+    await pipeline.execute(
+      CreateOrderAction,
+      { quantity: 2 },
+      { actor: customer, idempotencyKey: "k1" },
+    );
+    expect(log).toEqual([
+      "tenancy",
+      "isolation:write",
+      "permission",
+      "precondition",
+      "entitlement",
+      "flag",
+      "interceptor:before",
+      "begin",
+      "handle",
+      "commit",
+      "interceptor:after",
+      "isolation:commit",
+      "after-commit:1",
+      "after-commit:2",
+    ]);
+    expect(isolation.runs).toEqual([["usr_1", undefined, false]]);
+  });
+
+  it("runs a query read-only, with the call's scope", async () => {
+    const isolation = new LoggingIsolation();
+    const { pipeline } = setup([[CallIsolation, isolation]]);
+    const scope: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.acme" };
+    await pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer, scope });
+    expect(isolation.runs).toEqual([["usr_1", scope, true]]);
+  });
+
+  it("does not run the isolation for a call the tenancy check refuses", async () => {
+    class Suspended extends Driver(TenancyCheck) {
+      async check(): Promise<void> {
+        throw ForbiddenError.create();
+      }
+    }
+    const isolation = new LoggingIsolation();
+    const { pipeline } = setup([
+      [TenancyCheck, new Suspended()],
+      [CallIsolation, isolation],
+    ]);
+    await expect(
+      pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect(isolation.runs).toEqual([]);
+  });
+
+  it("rolls the isolation back and runs no after-commit work when permission refuses", async () => {
+    const { pipeline, access } = setup([[CallIsolation, new LoggingIsolation()]]);
+    access.denied = true;
+    await expect(
+      pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k2" },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect(log).toEqual(["tenancy", "isolation:write", "permission", "isolation:rollback"]);
+  });
+
+  it("writes a refused query's usage event after its read-only transaction ends", async () => {
+    const config = Object.assign(new RateLimitConfig(), {
+      areas: { app: { requests: 1, per: Duration.minutes(1), burst: 1 } },
+    });
+    const outbox = new Outbox();
+    const { pipeline } = setup([
+      [RateLimitConfig, config],
+      [EventOutbox, outbox],
+      [CallIsolation, new LoggingIsolation()],
+    ]);
+    const read = () =>
+      pipeline.execute(
+        GetOrderQuery,
+        { orderId: "ord_1" },
+        { actor: customer, origin: { kind: CallOriginKind.ApiKey, id: "key_1" } },
+      );
+    await read();
+    log.length = 0;
+    await expect(read()).rejects.toBeInstanceOf(RateLimitedError);
+    expect(log.slice(-2)).toEqual(["isolation:rollback", "outbox"]);
   });
 });

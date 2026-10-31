@@ -214,6 +214,31 @@
           ]
         }
       }
+    },
+    {
+      "port": "CallIsolation",
+      "key": "actions.CallIsolation",
+      "candidates": ["call_isolation"],
+      "classes": {
+        "call_isolation": {
+          "class": "CallIsolationDriver",
+          "from": "@stackra/tenancy/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "TenantIsolationService",
+                "from": "@stackra/tenancy/node"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "integrations": [],

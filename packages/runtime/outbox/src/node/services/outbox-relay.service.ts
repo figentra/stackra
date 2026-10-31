@@ -17,8 +17,10 @@
  *           a relay that dies after publishing and before recording publishes again, so every consumer is idempotent
  *           (the inbox deduplicates events by id), and a consumer's cursor is saved after its runs, so a run is
  *           delivered again after a failure. With the Postgres lock driver a tick runs in one transaction, so
- *           each consumer runs in its own `withScope` (a savepoint), its scope or none, and a scope never leaks into
- *           the next delivery. A consumer class the container does not bind is skipped, as unbooted listeners are.
+ *           each consumer runs in its own isolation (a savepoint), its scope or none, and a scope never leaks into
+ *           the next delivery. With a `CallIsolation` bound (ADR 0495) that isolation is the stored actor's (a message
+ *           stored with no actor runs as a platform call, which matches no tenant row) in the stored scope, and a
+ *           run of changes splits where the actor changes; with none bound it is `Database.withScope` alone. A consumer class the container does not bind is skipped, as unbooted listeners are.
  * Runtime: node
  * Governing contract: ADR 0078 (decision 4: the relay); ADR 0221 (decision 5: under five seconds of lag); ADR 0142
  *                     (decision 1); ADR 0149 (one runner under a lock); ADR 0327 (decision 9: the scope session);
@@ -26,10 +28,11 @@
  *                     per-consumer cursors on the retained change log); data-layer gap se3 (batches and coalescing).
  */
 import type { Resolver } from "@stackra/actions";
+import { CallIsolation } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import { backoffDelay, Duration, Logger } from "@stackra/contracts";
-import type { Clock, ScopeRef } from "@stackra/contracts";
+import { ActorKind, backoffDelay, Duration, Logger } from "@stackra/contracts";
+import type { Actor, Clock, ScopeRef } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
 import type { Locks } from "@stackra/locking";
@@ -55,14 +58,28 @@ import { olderEnvelopes } from "#core/functions/older-envelopes.function";
 import { OUTBOX_DEFAULTS } from "#core/constants/outbox-defaults.constant";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
 
-/** A run of one model's changes in one scope, consecutive in the log. */
+/** A run of one model's changes in one scope by one actor, consecutive in the log. */
 interface Run {
   readonly scope: ScopeRef | undefined;
+  readonly actor: Actor;
   readonly changes: RowChange[];
   position: string;
 }
 
-/** The consecutive runs of `records` that share a model and a scope. */
+/** The platform actor of a message or change stored with no actor: no scope, so it matches no tenant row. */
+const PLATFORM_ACTOR: Actor = Object.freeze({ kind: ActorKind.System, id: "sys_outbox_relay" });
+
+/** The actor a stored message or change runs as: the one stored with it, else the platform actor. */
+function actorOf(meta: OutboxMessage["meta"]): Actor {
+  return meta.actor ?? PLATFORM_ACTOR;
+}
+
+/** Whether two actors would set the same isolation: the same principal in the same tenant. */
+function sameActor(a: Actor, b: Actor): boolean {
+  return a.id === b.id && a.scopeId === b.scopeId;
+}
+
+/** The consecutive runs of `records` that share a model, a scope and an actor. */
 function runsOf(records: readonly ChangeRecord[]): readonly Run[] {
   const runs: Run[] = [];
   for (const record of records) {
@@ -71,11 +88,18 @@ function runsOf(records: readonly ChangeRecord[]): readonly Run[] {
       last !== undefined &&
       last.changes[0]?.model === record.change.model &&
       last.scope?.id === record.scope?.id &&
-      last.scope?.path === record.scope?.path
+      last.scope?.path === record.scope?.path &&
+      sameActor(last.actor, actorOf(record.meta))
     ) {
       last.changes.push(record.change);
       last.position = record.position;
-    } else runs.push({ scope: record.scope, changes: [record.change], position: record.position });
+    } else
+      runs.push({
+        scope: record.scope,
+        actor: actorOf(record.meta),
+        changes: [record.change],
+        position: record.position,
+      });
   }
   return runs;
 }
@@ -175,8 +199,7 @@ export class OutboxRelayService extends Service {
           handled += 1;
         }
       for (const [type, models] of consumersOf())
-        if (resolver.has(type))
-          handled += await this.deliverChanges(type, models, now, resolver.get(type));
+        if (resolver.has(type)) handled += await this.deliverChanges(type, models, now, resolver);
     });
     return handled;
   }
@@ -245,8 +268,9 @@ export class OutboxRelayService extends Service {
     type: AnyClass<ChangeConsumer>,
     models: readonly string[],
     now: Date,
-    consumer: ChangeConsumer,
+    resolver: Resolver,
   ): Promise<number> {
+    const consumer = resolver.get(type);
     const cursor: ChangeCursor = (await this.feed.cursor(type.name)) ?? {
       consumer: type.name,
       attempts: 0,
@@ -259,7 +283,7 @@ export class OutboxRelayService extends Service {
     let handled = 0;
     try {
       for (const run of runsOf(records)) {
-        await this.database.withScope(run.scope ?? [], async () => {
+        await this.isolated(resolver, run.actor, run.scope, async () => {
           if (consumer.consumeMany !== undefined)
             await consumer.consumeMany(coalesceChanges(run.changes));
           else for (const change of run.changes) await consumer.consume(change);
@@ -318,8 +342,25 @@ export class OutboxRelayService extends Service {
     for (const type of CHANGE_CONSUMERS.get(change.model)?.consumers ?? []) {
       if (!resolver.has(type)) continue;
       const consumer = resolver.get(type);
-      await this.database.withScope(message.scope ?? [], () => consumer.consume(change));
+      await this.isolated(resolver, actorOf(message.meta), message.scope, () =>
+        consumer.consume(change),
+      );
     }
+  }
+
+  /**
+   * Runs `work` through the bound `CallIsolation` as the stored actor in the stored scope (ADR 0495), else in the
+   * scope session alone, as before.
+   */
+  private isolated<T>(
+    resolver: Resolver,
+    actor: Actor,
+    scope: ScopeRef | undefined,
+    work: () => Promise<T>,
+  ): Promise<T> {
+    return resolver.has(CallIsolation)
+      ? resolver.get(CallIsolation).run(actor, scope, work, { readOnly: false })
+      : this.database.withScope(scope ?? [], work);
   }
 
   /** Publishes `envelope`, then each older version still published on `now` under the same id (ADR 0141). */

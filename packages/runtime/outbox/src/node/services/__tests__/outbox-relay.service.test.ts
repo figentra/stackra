@@ -15,9 +15,19 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0078 (decision 4); ADR 0221 (decision 5); ADR 0327 (decision 9).
  */
 import type { Resolver } from "@stackra/actions";
+import { CallIsolation } from "@stackra/actions/contracts";
 import { buildConfig } from "@stackra/config";
 import { type AnyClass, Driver } from "@stackra/container";
-import { type Clock, Duration, Logger, type PublicId, type ScopeRef } from "@stackra/contracts";
+import {
+  type Actor,
+  ActorKind,
+  type Clock,
+  Duration,
+  Logger,
+  type PublicId,
+  Realm,
+  type ScopeRef,
+} from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { IntegrationEvent } from "@stackra/events";
@@ -152,7 +162,11 @@ function eventMessage(fields: Partial<OutboxMessage> = {}): OutboxMessage {
 }
 
 /** A relay over memory stores, connected to a resolver that binds the logger and the index consumer. */
-function relayOf(lockDriver = new MemoryLockDriver(clock), batchWindowSeconds = 0) {
+function relayOf(
+  lockDriver = new MemoryLockDriver(clock),
+  batchWindowSeconds = 0,
+  extra: readonly (readonly [AnyClass, object])[] = [],
+) {
   const store = new MemoryOutboxDriver();
   const feed = new MemoryChangeFeedDriver();
   const publisher = new RecordingPublisher();
@@ -170,6 +184,7 @@ function relayOf(lockDriver = new MemoryLockDriver(clock), batchWindowSeconds = 
     [Logger, logger],
     [IndexConsumer, consumer],
     [BatchConsumer, batch],
+    ...extra,
   ]);
   const resolver: Resolver = {
     has: (type) => bound.has(type),
@@ -254,6 +269,63 @@ describe(OutboxRelayService, () => {
     expect(consumer.seen).toEqual([change, change]);
     expect(scopes).toEqual([SCOPE, []]);
     expect(store.stored()).toEqual([]);
+  });
+
+  it("runs each consumer delivery through a bound CallIsolation as the stored actor, or a platform actor, in the stored scope", async () => {
+    const runs: [Actor, ScopeRef | readonly ScopeRef[] | undefined, boolean][] = [];
+    class Recording extends Driver(CallIsolation) {
+      run<T>(
+        actor: Actor,
+        scope: ScopeRef | readonly ScopeRef[] | undefined,
+        work: () => Promise<T>,
+        options: { readonly readOnly: boolean },
+      ): Promise<T> {
+        runs.push([actor, scope, options.readOnly]);
+        return work();
+      }
+    }
+    const { relay, feed, store, consumer, batch, scopes } = relayOf(
+      new MemoryLockDriver(clock),
+      0,
+      [[CallIsolation, new Recording()]],
+    );
+    const actor: Actor = {
+      kind: ActorKind.User,
+      id: "usr_1",
+      realm: Realm.Staff,
+      scopeId: SCOPE.id,
+    };
+    const change: RowChange = {
+      model: "Product",
+      id: "prd_1",
+      kind: RowChangeKind.Updated,
+      fields: ["name"],
+    };
+    await store.write([
+      eventMessage({
+        kind: MessageKind.Change,
+        type: "Product",
+        data: change,
+        scope: SCOPE,
+        meta: { actor },
+      }),
+    ]);
+    await feed.append([
+      { change: order("ord_1", "total"), meta: { actor }, occurredAt: NOON, scope: SCOPE },
+      { change: order("ord_2", "total"), meta: { actor }, occurredAt: NOON, scope: SCOPE },
+      { change: order("ord_3", "total"), meta: {}, occurredAt: NOON, scope: SCOPE },
+    ]);
+    await relay.relay();
+    expect(consumer.seen).toEqual([change]);
+    // a run of changes splits where the actor changes
+    expect(batch.batches).toHaveLength(2);
+    const platform = { kind: ActorKind.System, id: "sys_outbox_relay" };
+    expect(runs).toEqual([
+      [actor, SCOPE, false],
+      [actor, SCOPE, false],
+      [platform, SCOPE, false],
+    ]);
+    expect(scopes).toEqual([]);
   });
 
   it("retries a failed delivery after its backoff, then dead-letters it at the last attempt", async () => {

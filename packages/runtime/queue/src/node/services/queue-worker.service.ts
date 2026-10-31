@@ -15,6 +15,9 @@
  *           twice. The timeout aborts the attempt's signal; code that ignores the signal keeps running unobserved.
  *           A throttle counts in the bound `RateLimitStore` (bucket `queue.throttle:<key>`); a throttled job with no
  *           store bound fails its attempt rather than run unthrottled.
+ *           With a `CallIsolation` bound (ADR 0495) the pipeline isolates each attempt as the job's actor in its scope,
+ *           and the `onDeadLetter` hook runs in it too (a job stored with no actor runs as a platform call); with none
+ *           bound a job runs in `Database.withScope` as before.
  * Runtime: node
  * Governing contract: ADR 0148 (decisions 1, 2 and 3); ADR 0305 (rules 28 and 30); ADR 0138 (as amended: the pipeline);
  *                     ADR 0136 (decision 3: jobs derive their Idempotency-Keys); ADR 0260 (decision 4); ADR 0327
@@ -22,7 +25,12 @@
  */
 import { ActionPipeline } from "@stackra/actions";
 import type { Action, Resolver } from "@stackra/actions";
-import { IdempotencyStore, RateLimitStore, UnitOfWork } from "@stackra/actions/contracts";
+import {
+  CallIsolation,
+  IdempotencyStore,
+  RateLimitStore,
+  UnitOfWork,
+} from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { backoffDelay, Duration, Logger } from "@stackra/contracts";
@@ -177,7 +185,11 @@ export class QueueWorkerService extends Service {
         await this.driver.release(job.id, retryAt);
         return Object.freeze({ job, outcome: JobOutcome.Throttled, retryAt });
       }
-      output = await this.inScope(job, () => this.attempt(type, plan, job));
+      // With a `CallIsolation` bound the pipeline isolates the attempt itself (the job's actor and scope), and commits
+      // once, so no outer scope session wraps it: one would hold the commit past the call's after-commit work.
+      output = this.connected().resolver.has(CallIsolation)
+        ? await this.attempt(type, plan, job)
+        : await this.inScope(job, () => this.attempt(type, plan, job));
       await this.driver.remove(job.id);
     } catch (error) {
       return this.failed(type, plan, job, now, error);
@@ -343,7 +355,12 @@ export class QueueWorkerService extends Service {
         await instance[name]?.(job.input);
       };
       const unit = resolver.has(UnitOfWork) ? resolver.get(UnitOfWork) : undefined;
-      await this.inScope(job, () => (unit === undefined ? hook() : unit.transaction(hook)));
+      const work = () => (unit === undefined ? hook() : unit.transaction(hook));
+      await (resolver.has(CallIsolation)
+        ? resolver
+            .get(CallIsolation)
+            .run(this.actorOf(plan, job), job.scope, work, { readOnly: false })
+        : this.inScope(job, work));
     } catch (error) {
       this.logger()?.error(QUEUE_LOG_EVENTS.deadLetterHookFailed, {
         jobId: job.id,

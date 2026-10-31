@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `NativeWorkflowRunnerDriver`, the native workflow engine and the `WorkflowRunner` behind `ctx.run` and
  *          `ctx.signal`: it runs a workflow's steps in process, each in a transaction of its own that also writes the
- *          step's journal row; parks a run before a step that waits for a signal and resumes it when the signal or the
+ *          step's journal row, as the run's stored actor in its scope when a `CallIsolation` is bound (ADR 0495); parks a run before a step that waits for a signal and resumes it when the signal or the
  *          timeout comes; retries a step with backoff; times out steps and runs; and on a failure undoes the completed
  *          steps last first. `startDocument` runs an automation document or an agent's plan the same way, each step an
  *          action call through the pipeline as the run's principal (a for-each step one call per item); `chained`
@@ -41,7 +41,7 @@
  */
 import { ActionPipeline } from "@stackra/actions";
 import type { ExtensionContext, Resolver } from "@stackra/actions";
-import { ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
+import { CallIsolation, ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
 import { Driver, kindOf } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
@@ -768,41 +768,52 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       const current = run;
       try {
         // oxlint-disable-next-line no-await-in-loop, no-loop-func -- one attempt at a time; the callback runs inside this attempt
-        const done = await this.journal.transaction(current.scope, async () => {
-          if (wait !== undefined && step.waitFor !== undefined) {
-            const held = await this.journal.take(
-              wait.signal,
-              wait.correlation,
-              current.scope,
-              wait.before,
+        const done = await this.journal.transaction(current.scope, () =>
+          this.isolated(current, async () => {
+            if (wait !== undefined && step.waitFor !== undefined) {
+              const held = await this.journal.take(
+                wait.signal,
+                wait.correlation,
+                current.scope,
+                wait.before,
+              );
+              // a store without rollback lost the signal to a failed attempt; that attempt's signal stands
+              if (held !== undefined) signal = signalOf(step.waitFor, held.payload);
+              if (signal === undefined) return undefined;
+            }
+            const ctx = this.contextOf(
+              current,
+              step,
+              step.name,
+              attempt,
+              at,
+              events,
+              guard,
+              latest,
             );
-            // a store without rollback lost the signal to a failed attempt; that attempt's signal stands
-            if (held !== undefined) signal = signalOf(step.waitFor, held.payload);
-            if (signal === undefined) return undefined;
-          }
-          const ctx = this.contextOf(current, step, step.name, attempt, at, events, guard, latest);
-          const result = toJson(
-            await this.within(ctx, () =>
-              invoke(instance, step.name, [viewOf(current), ctx, signal]),
-            ),
-          );
-          const progress = latest.record?.progress;
-          const next: WorkflowRun = {
-            ...withStep(current, {
-              name: step.name,
-              status: StepStatus.Done,
-              attempts: attempt,
-              ...(result === undefined ? {} : { result }),
-              ...(progress === undefined ? {} : { progress }),
-              startedAt: latest.record?.startedAt ?? at,
-              endedAt: this.clock.now(),
-            }),
-            status: WorkflowRunStatus.Running,
-          };
-          await this.outbox(events, current, at);
-          await this.journal.save(next);
-          return next;
-        });
+            const result = toJson(
+              await this.within(ctx, () =>
+                invoke(instance, step.name, [viewOf(current), ctx, signal]),
+              ),
+            );
+            const progress = latest.record?.progress;
+            const next: WorkflowRun = {
+              ...withStep(current, {
+                name: step.name,
+                status: StepStatus.Done,
+                attempts: attempt,
+                ...(result === undefined ? {} : { result }),
+                ...(progress === undefined ? {} : { progress }),
+                startedAt: latest.record?.startedAt ?? at,
+                endedAt: this.clock.now(),
+              }),
+              status: WorkflowRunStatus.Running,
+            };
+            await this.outbox(events, current, at);
+            await this.journal.save(next);
+            return next;
+          }),
+        );
         if (done === undefined) return { kind: "parked" };
         // oxlint-disable-next-line no-await-in-loop -- see above
         await this.publish(events, current, at);
@@ -898,18 +909,20 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       const current = run;
       try {
         // oxlint-disable-next-line no-await-in-loop -- undos run one after another, last step first
-        run = await this.journal.transaction(current.scope, async () => {
-          const ctx = this.contextOf(current, step, undo, 1, now, events, IDLE, { record });
-          await this.within(ctx, () => invoke(instance, undo, [viewOf(current), ctx]));
-          const next = withStep(current, {
-            ...record,
-            status: StepStatus.Compensated,
-            endedAt: this.clock.now(),
-          });
-          await this.outbox(events, current, now);
-          await this.journal.save(next);
-          return next;
-        });
+        run = await this.journal.transaction(current.scope, () =>
+          this.isolated(current, async () => {
+            const ctx = this.contextOf(current, step, undo, 1, now, events, IDLE, { record });
+            await this.within(ctx, () => invoke(instance, undo, [viewOf(current), ctx]));
+            const next = withStep(current, {
+              ...record,
+              status: StepStatus.Compensated,
+              endedAt: this.clock.now(),
+            });
+            await this.outbox(events, current, now);
+            await this.journal.save(next);
+            return next;
+          }),
+        );
         // oxlint-disable-next-line no-await-in-loop -- see above
         await this.publish(events, current, now);
       } catch (causeError) {
@@ -1035,6 +1048,18 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
       currency: current?.currency ?? defaults.currency,
       market: current?.market ?? defaults.market,
     });
+  }
+
+  /**
+   * Runs `work`, a step's or an undo's, in the bound `CallIsolation` as the run's stored actor in its scope (ADR 0495),
+   * inside the transaction the journal opened (so the settings end with the step's commit); with none bound it runs as
+   * it is, in the journal's scope session alone. A run stores its starting call's actor in `origin.actor`.
+   */
+  private isolated<T>(run: WorkflowRun, work: () => Promise<T>): Promise<T> {
+    const isolation = this.optional(CallIsolation);
+    return isolation === undefined
+      ? work()
+      : isolation.run(run.origin.actor, run.scope, work, { readOnly: false });
   }
 
   /** Runs `work` as the running call of `ctx`, so `RequestContext.current()` inside a step reads it. */

@@ -25,9 +25,9 @@
  */
 import { Action, ActionPipeline } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
-import { ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
+import { CallIsolation, ContextStorage, WorkflowRunner } from "@stackra/actions/contracts";
 import type { CallDescriptor } from "@stackra/actions/contracts";
-import type { AnyClass } from "@stackra/container";
+import { type AnyClass, Driver } from "@stackra/container";
 import { ActorKind, ApiArea } from "@stackra/contracts";
 import type { Actor, Clock, ScopeRef } from "@stackra/contracts";
 import { ErrorKind, Refusal } from "@stackra/errors";
@@ -515,6 +515,37 @@ describe(NativeWorkflowRunnerDriver, () => {
     expect(run?.scope).toEqual(SCOPE);
     expect(run?.origin.scope).toEqual(SCOPE);
     expect(written[0]?.meta.scopeId).toBe(SCOPE.id);
+  });
+
+  it("runs each step through a bound CallIsolation as the run's stored actor in its scope", async () => {
+    const runs: [Actor, ScopeRef | readonly ScopeRef[] | undefined, boolean][] = [];
+    class Recording extends Driver(CallIsolation) {
+      run<T>(
+        actor: Actor,
+        scope: ScopeRef | readonly ScopeRef[] | undefined,
+        work: () => Promise<T>,
+        options: { readonly readOnly: boolean },
+      ): Promise<T> {
+        runs.push([actor, scope, options.readOnly]);
+        return work();
+      }
+    }
+    const outbox = { write: async (_records: readonly RecordedEvent[]) => undefined };
+    const order = Object.assign(new OrderWorkflow(), { recording: true });
+    const { runner } = engineWith([
+      [OrderWorkflow, order],
+      [EventOutbox, outbox],
+      [CallIsolation, new Recording()],
+    ]);
+
+    await runner.start(OrderWorkflow, { sku: "sku_1", quantity: 1 }, { ...ORIGIN, scope: SCOPE });
+
+    expect(runs.length).toBeGreaterThan(0);
+    for (const [actor, scope, readOnly] of runs) {
+      expect(actor).toEqual(ORIGIN.actor);
+      expect(scope).toEqual(SCOPE);
+      expect(readOnly).toBe(false);
+    }
   });
 
   it("refuses an integration event when no outbox is bound, failing the step", async () => {

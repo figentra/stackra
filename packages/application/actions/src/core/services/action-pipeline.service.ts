@@ -19,7 +19,15 @@
  *          (`analytics.tracked`, through the outbox when its consent grants `analytics`). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
  *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output). `handle` runs inside
  *          `QueryBudget` when one is bound (the call's statements counted against its `queryBudget`), and `ctx.memo`
- *          keeps one answer per key for the call.
+ *          keeps one answer per key for the call. Order (ADR 0138 as amended by ADR 0495): the tenancy check and the
+ *          live-configuration guard run first; then, when a `CallIsolation` is bound, everything after them (permission,
+ *          approval, idempotency, rate limit, interceptors, the unit of work and `handle`) runs inside it, in one
+ *          transaction whose scope and tenant settings are transaction-local and from the verified actor (an action
+ *          writable, a query read-only). The action's unit of work is then a savepoint of that transaction (the default
+ *          propagation: its `timeout` and its rollback hold, and it is not `requiresNew`), so a call commits once, when
+ *          the isolation transaction ends. What waits for that commit runs after it: the idempotency `complete`, the
+ *          offline cap record, the read-your-writes mark and `ctx.afterCommit` work. The audit's refusal entries and a
+ *          query's analytics event are written outside it, and with none bound a call runs as before.
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
@@ -87,6 +95,7 @@ import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
+import { CallIsolation } from "#contracts/ports/call-isolation.port";
 import { ConsentCheck } from "#contracts/ports/consent-check.port";
 import { ContextStorage } from "#contracts/ports/context-storage.port";
 import { DeviceSequenceStore } from "#contracts/ports/device-sequence-store.port";
@@ -196,6 +205,8 @@ interface CallState {
   audited: boolean;
   /** Set once the call's analytics event was written inside the unit of work, so the outer step does not write it. */
   tracked: boolean;
+  /** Set when a refused query's `rate_limited` usage event is still to be written, after its read-only transaction. */
+  unmetered: boolean;
   /** When the call started, by `performance.now()`, for the generic analytics event's duration. */
   readonly startedMs: number;
   /** `ctx.memo`'s answers by key, kept for the call only. */
@@ -285,8 +296,13 @@ export class ActionPipeline {
     if (call.kind !== "action")
       throw new TypeError(`${type.name} is a query: only an action is proposed`);
     const draft = async (): Promise<ActionDraft> => {
-      const checked = await this.checked(call, input);
-      await this.metered(call, { name: PROPOSAL_METER, kind: MeterKind.Count }, checked);
+      await this.checkedTenancy(call);
+      // writable: the proposal's usage event is a write
+      const checked = await this.isolated(call, async () => {
+        const validated = await this.checked(call, input);
+        await this.metered(call, { name: PROPOSAL_METER, kind: MeterKind.Count }, validated);
+        return validated;
+      });
       return Object.freeze({
         key: call.descriptor.key,
         callId: call.descriptor.callId,
@@ -372,6 +388,7 @@ export class ActionPipeline {
       audit: {},
       audited: false,
       tracked: false,
+      unmetered: false,
       startedMs: globalThis.performance.now(),
       memo: new Map(),
     };
@@ -379,19 +396,43 @@ export class ActionPipeline {
     return { type, kind: record.kind, options, registration, descriptor, request, at, state, ctx };
   }
 
-  /** The steps, in the fixed order. */
+  /**
+   * The steps, in the fixed order: the tenancy check, then (inside `CallIsolation` when bound) permission to `handle`,
+   * then what waits for the isolation transaction's commit.
+   */
   private async steps(call: Call, raw: unknown): Promise<unknown> {
     const { descriptor, kind } = call;
-    const input = await this.checked(call, raw);
-    if (kind === "action") await this.approved(call, input);
-    const claim = kind === "action" ? await this.claim(call, input) : undefined;
-    if (claim !== undefined && "replay" in claim) return claim.replay;
+    await this.checkedTenancy(call);
+    type Claim = Awaited<ReturnType<ActionPipeline["claim"]>>;
+    // set inside the isolated work, read after it: a holder, so the closure's writes are not narrowed away
+    const taken: { claim: Claim; amount: number | undefined } = {
+      claim: undefined,
+      amount: undefined,
+    };
+    let output: unknown;
     try {
-      if (call.state.replayOnly !== undefined)
-        throw DeviceSequenceOutOfOrderError.create({ acknowledged: call.state.replayOnly });
-      const amount = await this.capped(call, input);
-      await this.limit(call);
-      const output = await this.intercepted(call, input);
+      output = await this.isolated(call, async () => {
+        const input = await this.checked(call, raw);
+        if (kind === "action") await this.approved(call, input);
+        taken.claim = kind === "action" ? await this.claim(call, input) : undefined;
+        if (taken.claim !== undefined && "replay" in taken.claim) return taken.claim.replay;
+        if (call.state.replayOnly !== undefined)
+          throw DeviceSequenceOutOfOrderError.create({ acknowledged: call.state.replayOnly });
+        taken.amount = await this.capped(call, input);
+        await this.limit(call);
+        return this.intercepted(call, input);
+      });
+    } catch (error) {
+      if (taken.claim !== undefined && "held" in taken.claim)
+        await this.required(IdempotencyStore, "").release(taken.claim.held);
+      // a refused query's usage event is a write, so it waits for the read-only transaction to end
+      if (call.state.unmetered)
+        await this.metered(call, { name: RATE_LIMITED_METER, kind: MeterKind.Count }, undefined);
+      throw error;
+    }
+    const { claim, amount } = taken;
+    if (claim !== undefined && "replay" in claim) return output;
+    try {
       if (kind === "action")
         await this.optional(ReplicaReads)?.wrote(this.writerOf(descriptor), call.at);
       if (claim !== undefined)
@@ -411,6 +452,28 @@ export class ActionPipeline {
     }
   }
 
+  /** The tenancy step: the `TenancyCheck`, then the live-configuration guard of a structural action. */
+  private async checkedTenancy(call: Call): Promise<void> {
+    const { descriptor, options, kind } = call;
+    await this.optional(TenancyCheck)?.check(descriptor);
+    if (kind === "action" && options.structural === true)
+      await this.required(
+        LiveConfigurationGuard,
+        `${descriptor.key} changes structural configuration; bind a guard (@stackra/tenancy)`,
+      ).check(descriptor);
+  }
+
+  /**
+   * Runs `work` in the call's `CallIsolation` transaction, built from the verified actor and the call's scope (a
+   * query read-only, an action and a proposal writable); with none bound it runs as it is.
+   */
+  private isolated<T>(call: Call, work: () => Promise<T>): Promise<T> {
+    const isolation = this.optional(CallIsolation);
+    if (isolation === undefined) return work();
+    const { actor, scope } = call.descriptor;
+    return isolation.run(actor, scope, work, { readOnly: call.kind === "query" });
+  }
+
   /**
    * The approval step of an action: a bound `ApprovalGate` decides every call; with none bound the step does not run,
    * except for an action that declares `approval: true`, which fails closed.
@@ -423,17 +486,10 @@ export class ActionPipeline {
   }
 
   /**
-   * The steps before approval, in order: tenancy (with the live-configuration guard of a structural action), the actor
-   * kind and permission (with an action's step-up), preconditions, entitlement, flag; resolves to the validated input.
+   * The steps before approval, in order (tenancy ran before, in `checkedTenancy`): the actor kind and permission (with an action's step-up), preconditions, entitlement, flag; resolves to the validated input.
    */
   private async checked(call: Call, raw: unknown): Promise<unknown> {
     const { descriptor, options, kind, ctx } = call;
-    await this.optional(TenancyCheck)?.check(descriptor);
-    if (kind === "action" && options.structural === true)
-      await this.required(
-        LiveConfigurationGuard,
-        `${descriptor.key} changes structural configuration; bind a guard (@stackra/tenancy)`,
-      ).check(descriptor);
     if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
     await this.required(AccessControl, IAM).require(descriptor);
     const level = kind === "action" ? options.stepUp : undefined;
@@ -637,8 +693,11 @@ export class ActionPipeline {
     for (const [key, bucket] of takes) {
       const decision = await store.take(key, bucket, at);
       if (decision.allowed) continue;
-      if (this.optional(EventOutbox) !== undefined)
-        await this.metered(call, { name: RATE_LIMITED_METER, kind: MeterKind.Count }, undefined);
+      if (this.optional(EventOutbox) !== undefined) {
+        if (call.kind === "query") call.state.unmetered = true;
+        else
+          await this.metered(call, { name: RATE_LIMITED_METER, kind: MeterKind.Count }, undefined);
+      }
       throw RateLimitedError.create({
         // A bucket that never refills (`Infinity`) has no hint: JSON would carry it as null.
         ...(Number.isFinite(decision.retryAfterMs) ? { retryAfterMs: decision.retryAfterMs } : {}),

@@ -41,6 +41,7 @@ describe("@stackra/actions/contracts", () => {
       "ApproverRefusal",
       "AuditTrail",
       "CALL_HEADERS",
+      "CallIsolation",
       "CallOriginKind",
       "ConsentCheck",
       "ConsentRefusal",

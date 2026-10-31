@@ -10,20 +10,23 @@ import { describe, expect, it } from "@stackra/testing";
 
 import * as node from "#node/index";
 import { BelongsToTenantMacro } from "#node/database/macros/belongs-to-tenant.macro";
+import { CallIsolationDriver } from "#node/drivers/call-isolation.driver";
 import { TenantIsolationService } from "#node/services/tenant-isolation.service";
 import { BelongsToTenantOrPlatform } from "#node/traits/belongs-to-tenant-or-platform.trait";
 import { BelongsToTenant } from "#node/traits/belongs-to-tenant.trait";
 
 describe("@stackra/tenancy/node", () => {
-  it("exports exactly the traits, the macro and the service", () => {
+  it("exports exactly the traits, the macro, the service and the isolation driver", () => {
     expect(Object.keys(node).sort()).toEqual([
       "BelongsToTenant",
       "BelongsToTenantMacro",
       "BelongsToTenantOrPlatform",
+      "CallIsolationDriver",
       "TenantIsolationService",
     ]);
     expect(node.BelongsToTenant).toBe(BelongsToTenant);
     expect(node.BelongsToTenantMacro).toBe(BelongsToTenantMacro);
+    expect(node.CallIsolationDriver).toBe(CallIsolationDriver);
     expect(node.BelongsToTenantOrPlatform).toBe(BelongsToTenantOrPlatform);
     expect(node.TenantIsolationService).toBe(TenantIsolationService);
   });

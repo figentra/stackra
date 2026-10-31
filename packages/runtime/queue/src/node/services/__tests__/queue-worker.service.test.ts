@@ -22,7 +22,12 @@ import {
   MemoryRateLimitStoreDriver,
   type Resolver,
 } from "@stackra/actions";
-import { AccessControl, IdempotencyStore, RateLimitStore } from "@stackra/actions/contracts";
+import {
+  AccessControl,
+  CallIsolation,
+  IdempotencyStore,
+  RateLimitStore,
+} from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
 import { type Actor, ActorKind, Backoff, Clock, Duration, Logger, Realm } from "@stackra/contracts";
 import { Database } from "@stackra/database";
@@ -235,6 +240,46 @@ describe(QueueWorkerService, () => {
     const [run] = await worker.drain();
     expect(run).toMatchObject({ outcome: JobOutcome.DeadLettered, job: { attempts: 1 } });
     expect(isRefusal(run?.error, MessageGoneError)).toBe(true);
+  });
+
+  it("runs the attempt and the dead-letter hook through a bound CallIsolation as the job's actor and scope, with no scope session of its own", async () => {
+    const runs: [Actor, unknown, boolean][] = [];
+    class Recording extends Driver(CallIsolation) {
+      run<T>(
+        actor: Actor,
+        scope: unknown,
+        work: () => Promise<T>,
+        options: { readonly readOnly: boolean },
+      ): Promise<T> {
+        runs.push([actor, scope, options.readOnly]);
+        return work();
+      }
+    }
+    const withScope = vi.fn(async (_scope: unknown, work: () => Promise<unknown>) => work());
+    const current = vi
+      .spyOn(Database, "current")
+      .mockReturnValue({ withScope } as unknown as Database);
+    try {
+      const { queue, worker, deliver } = setup([[CallIsolation, new Recording()]]);
+      deliver.outcome = "gone";
+      const scope = { id: "scp_1", path: "platform.acme" } as const;
+      const id = await queue.push(
+        DeliverMessageAction,
+        { messageId: "msg_1" },
+        { origin: caller, scope },
+      );
+      await worker.drain();
+      const expected = { kind: ActorKind.System, id, scopeId: "org_1", onBehalfOf: caller };
+      // the first run is the pipeline's own isolation of the attempt, the second the worker's of the hook
+      expect(runs).toEqual([
+        [expected, scope, false],
+        [expected, scope, false],
+      ]);
+      expect(deliver.failed).toEqual([{ messageId: "msg_1" }]);
+      expect(withScope).not.toHaveBeenCalled();
+    } finally {
+      current.mockRestore();
+    }
   });
 
   it("drops a failed job without a dead letter and logs it, running it as the job actor it lists", async () => {
