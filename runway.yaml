@@ -158,7 +158,6 @@ secrets:
   ci:
     - CLOUDFLARE_API_TOKEN
     - MINTLIFY_ADMIN_KEY
-    - HEROUI_AUTH_TOKEN
     - UNIWIND_AUTH_TOKEN
 
 # ── Release policy (ADR 0170) ────────────────────────────────────────────────────────────────────────

@@ -149,8 +149,7 @@ catalogs:
     jsdom: 30.1.0
     # Code-based routing for the console and every Vite app (no file routing anywhere).
     react-router: 7.18.4
-    # Animation for @stackra/ui and the playground. The HeroUI Pro set (@heroui-pro/react and its optional peers)
-    # left core with @stackra-pro/ui (ADR 0461 decision 3, stackra-189); figentra/stackra-pro pins it.
+    # Animation for @stackra/ui and the playground.
     motion: 12.43.0
     # Free charts of @stackra/ui/react (a dev dependency there, a peer for apps) and the playground. MIT.
     recharts: 3.10.1
@@ -273,7 +272,7 @@ catalogs:
     "@types/react": 19.3.0
   # Uniwind Pro (ADR 0310 decision 11): our own apps install it under the `uniwind` name, so every `uniwind` import in
   # the app, the workspace packages' included, runs on the Pro engine; free packages keep their free `uniwind` peer.
-  # A shell like HeroUI Pro: its postinstall downloads the licensed build (a `uniwind-pro` login locally,
+  # A shell package: its postinstall downloads the licensed build (a `uniwind-pro` login locally,
   # UNIWIND_AUTH_TOKEN in CI). 1.9.0 supports React Native 0.83-0.88 and Expo SDK 55-58.
   uniwind-pro:
     uniwind: npm:uniwind-pro@1.9.0
@@ -366,8 +365,7 @@ overrides:
   "uuid@<11.1.1": "11.1.1"
   "zod@>=4.0.0 <4.6.6": "4.6.6"
 
-# Dependencies a published package uses without declaring. The HeroUI Pro peer copies left core with @stackra-pro/ui
-# (ADR 0461 decision 3, stackra-189); figentra/stackra-pro keeps them.
+# Dependencies a published package uses without declaring.
 packageExtensions:
   # react-native-worklets 0.10.1's Babel plugin requires @babel/generator and @babel/traverse without declaring them,
   # so it resolves pnpm's hidden-hoisted copies: the Babel 8 ones that @babel/core of catalog:build brings. Babel 8's
@@ -403,8 +401,7 @@ allowBuilds:
   cpu-features: false
   # Pulled in by @testcontainers/postgresql too: protobufjs wants a postinstall only for its CLI.
   protobufjs: false
-  # OS-keychain binding of a Pro CLI login (HeroUI Pro brought it; kept off until the relinked lockfile shows
-  # nothing pulls it in, then it goes too).
+  # OS-keychain binding of the Uniwind Pro CLI login (uniwind-pro depends on it); a CI install never needs it.
   "@zowe/secrets-for-zowe-sdk": false
   # Uniwind Pro, installed under the `uniwind` alias: both names, as Uniwind's docs say for pnpm.
   uniwind: true

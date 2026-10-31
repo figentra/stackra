@@ -58,16 +58,16 @@ This repository has no runtime secret (`runway.yaml`: "core has no runtime secre
 
 ### Infisical
 
-| Path           | Environment | Names                                                                                                                                                                                 |
-| -------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/agents`      | `dev`       | `HEROUI_PERSONAL_TOKEN`, `GITHUB_PERSONAL_ACCESS_TOKEN`, `CONTEXT7_API_KEY`, `STRIPE_SECRET_KEY` (restricted test key, optional), `RESEND_API_KEY` (optional)                         |
-| `/ci`          | `prod`      | `CLOUDFLARE_API_TOKEN` (Worker deploys), `MINTLIFY_ADMIN_KEY` (docs deploy), `HEROUI_AUTH_TOKEN`, `UNIWIND_AUTH_TOKEN` (Quality Gate install): the `secrets.ci` list of `runway.yaml` |
-| `/ci/turbo`    | `prod`      | `TURBO_TOKEN` (remote cache; `deploy-turbo-cache.yml` sets it on the Worker as `TURBO_CACHE_TOKEN`)                                                                                   |
-| `/ci/registry` | `prod`      | `REGISTRY_SIGNING_KEY` (set on the registry Worker by `deploy-registry.yml`), `REGISTRY_ISSUER_TOKEN` (read by the Figentra OS billing caller, not by a workflow here)                |
+| Path           | Environment | Names                                                                                                                                                                  |
+| -------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/agents`      | `dev`       | `HEROUI_PERSONAL_TOKEN`, `GITHUB_PERSONAL_ACCESS_TOKEN`, `CONTEXT7_API_KEY`, `STRIPE_SECRET_KEY` (restricted test key, optional), `RESEND_API_KEY` (optional)          |
+| `/ci`          | `prod`      | `CLOUDFLARE_API_TOKEN` (Worker deploys), `MINTLIFY_ADMIN_KEY` (docs deploy), `UNIWIND_AUTH_TOKEN` (Quality Gate install): the `secrets.ci` list of `runway.yaml`       |
+| `/ci/turbo`    | `prod`      | `TURBO_TOKEN` (remote cache; `deploy-turbo-cache.yml` sets it on the Worker as `TURBO_CACHE_TOKEN`)                                                                    |
+| `/ci/registry` | `prod`      | `REGISTRY_SIGNING_KEY` (set on the registry Worker by `deploy-registry.yml`), `REGISTRY_ISSUER_TOKEN` (read by the Figentra OS billing caller, not by a workflow here) |
 
 Checked against the workflows on 2026-10-29. Every workflow here reads `prod`; `runway.yaml` maps `dev` and `production` to `dev` and `prod`. `NPM_FIGENTRA_TOKEN` is retired with `npm.figentra.com` ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine) decision 17); package publishing needs no token at all (OIDC, [Release](/runbooks/release)). `EXPO_TOKEN`, `ENCORE_API_KEY` and `SENTRY_AUTH_TOKEN` are read by no workflow in this repository; a product repository that deploys keeps them in its own `/ci`. CI logs in with OIDC through three machine identities, whose ids are the repository variables below.
 
-The Quality Gate reads `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` from `/ci` in `prod` ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers)).
+The Quality Gate reads `UNIWIND_AUTH_TOKEN` from `/ci` in `prod` ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers) decision 11). Stackra installs no HeroUI Pro ([0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only)), so no workflow reads a HeroUI token.
 `HEROUI_PERSONAL_TOKEN` in `/agents` is for the HeroUI MCP servers only.
 
 ### EAS environment variables (mobile)
@@ -75,7 +75,7 @@ The Quality Gate reads `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` from `/ci` i
 | Visibility | Names                                                                                                                             |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Plain      | `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_APP_ENV`, `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_POSTHOG_KEY`, `SENTRY_ORG`, `SENTRY_PROJECT` |
-| Secret     | `HEROUI_AUTH_TOKEN`, `UNIWIND_AUTH_TOKEN`, `SENTRY_AUTH_TOKEN`                                                                    |
+| Secret     | `UNIWIND_AUTH_TOKEN`, `SENTRY_AUTH_TOKEN`                                                                                         |
 | File       | `GOOGLE_SERVICES_JSON`, `GOOGLE_SERVICE_INFO_PLIST`                                                                               |
 
 Apple and Google store credentials live in EAS credentials, not in Infisical.

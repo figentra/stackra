@@ -42,10 +42,10 @@ variables).
   </Step>
   <Step title="Revoke or roll at the vendor">
     The owner creates the new value and revokes the old one where it is issued (the self-hosted
-    Turborepo cache for `TURBO_TOKEN`, Uniwind for `UNIWIND_AUTH_TOKEN`, HeroUI for
-    `HEROUI_AUTH_TOKEN`, the GitHub App for a bot key). Where the vendor holds two values, follow
-    the overlap in [Rotation](/runbooks/secrets#rotation); a token printed into a transcript is
-    already public, so keep the overlap short.
+    Turborepo cache for `TURBO_TOKEN`, Uniwind for `UNIWIND_AUTH_TOKEN`, the GitHub App for a bot
+    key). Where the vendor holds two values, follow the overlap in
+    [Rotation](/runbooks/secrets#rotation); a token printed into a transcript is already public, so
+    keep the overlap short.
   </Step>
   <Step title="Set the new value in Infisical">
     The owner writes it to `/ci` or `/agents`, or drops it in the secrets inbox for `pnpm

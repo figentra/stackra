@@ -13,27 +13,8 @@
       "project": ["tools/scripts/*.mjs"],
       // @changesets/config: .changeset/config.json reads its schema from pnpm's hidden hoist
       // (a transitive of @changesets/cli) so VS Code needs no download; it is never imported.
-      // The rest are the HeroUI Pro peers that `packageExtensions` in pnpm-workspace.yaml restores on the Pro shells
-      // (ADR 0310); knip reads them as the root's own dependencies.
       // jscpd: tools/scripts/duplication.mjs spawns its binary by path (node_modules/.bin/jscpd), which knip does not trace.
-      "ignoreDependencies": [
-        "@changesets/config",
-        "jscpd",
-        "@heroui/react",
-        "@heroui/styles",
-        "@react-aria/utils",
-        "heroui-native",
-        "motion",
-        "react",
-        "react-aria",
-        "react-aria-components",
-        "react-dom",
-        "react-resizable-panels",
-        "react-stately",
-        "tailwind-merge",
-        "tailwind-variants",
-        "tailwindcss",
-      ],
+      "ignoreDependencies": ["@changesets/config", "jscpd"],
       // Developer-machine CLIs the root scripts shell out to (pinned outside pnpm). wrangler: the reusable
       // runway-cloudflare-workers workflow runs `pnpm exec wrangler` in the Worker member's folder, and the member
       // (workers/static) declares it; knip attributes workflow commands to the root. playwright and stackra: the

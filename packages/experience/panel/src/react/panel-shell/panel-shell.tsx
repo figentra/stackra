@@ -4,7 +4,7 @@
  *          trail (navigation's `BreadcrumbsProvider`, which pages publish to with `useBreadcrumb`), and provides the
  *          confirmation dialog the action runner asks with.
  * Boundary: draws no chrome of its own: the app's layout (sidebar, top bar, outlet) is its child, so an app keeps its own
- *           shell and HeroUI Pro layout. Navigation items and the trail come from navigation, never from here.
+ *           shell and layout. Navigation items and the trail come from navigation, never from here.
  * Runtime: browser
  * Governing contract: ADR 0164 (panel shell); ADR 0139 (declared confirmation); ADR 0303 (decision 1).
  */
