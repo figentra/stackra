@@ -3,6 +3,6 @@
 // `decorators`: the memory drivers carry `@Driver` from @stackra/container, a decorator made by `createDecorator`
 // (ADR 0005, ADR 0294 R6). The fetch and Web Crypto globals come from @types/node. The source keeps to
 // erasable syntax (no parameter properties), because apps typecheck it under erasableSyntaxOnly.
-// `-react`: the ./react module UI kit (ADR 0503) and its tests are TSX.
+// `-react`: the ./react module UI kit (ADR 0504) and its tests are TSX.
 // Owner: release-operations · Secrets: forbidden
 { "extends": "@stackra/typescript-config/decorators-react" }

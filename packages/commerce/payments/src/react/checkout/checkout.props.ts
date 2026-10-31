@@ -6,7 +6,7 @@
  *           a market pack or the tenant's settings decide (an address has the fields its country needs); the block
  *           hard-codes none of them.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0305 (`<name>.props.ts`).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0305 (`<name>.props.ts`).
  */
 import type { OrderTotalsProps } from "#react/order-totals/order-totals.props";
 

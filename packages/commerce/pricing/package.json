@@ -2,7 +2,7 @@
   "name": "@stackra/pricing",
   "version": "0.2.0",
   "private": false,
-  "description": "Pricing on @stackra/money: price points, graduated tiers, the pure price evaluation over price lists by currency, Market, sales channel and date with fixed, graduated and formula prices, the tax rate-table engine and the TaxProvider port; and in ./react the module UI kit (ADR 0503): PricingTable, the plan comparison block with a period switch on @stackra/ui",
+  "description": "Pricing on @stackra/money: price points, graduated tiers, the pure price evaluation over price lists by currency, Market, sales channel and date with fixed, graduated and formula prices, the tax rate-table engine and the TaxProvider port; and in ./react the module UI kit (ADR 0504): PricingTable, the plan comparison block with a period switch on @stackra/ui",
   "keywords": [
     "commerce",
     "markets",

@@ -5,7 +5,7 @@
  * Boundary: composition of @stackra/ui only, in a native form: the browser checks required fields before `onSubmit`.
  *           No payment is taken here; the host passes the values to its payments gateway (`@stackra/payments`).
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
  */
 import { Button, Card, Heading, MoneyValue, RadioGroup, Text, TextField } from "@stackra/ui/react";
 import { type FormEvent, type ReactElement, useState } from "react";

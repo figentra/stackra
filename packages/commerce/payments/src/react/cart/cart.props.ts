@@ -4,7 +4,7 @@
  * Boundary: an interface in its own file beside the component (ADR 0305). Lines, prices, totals and copy are the host's
  *           data; the block multiplies a unit price by its quantity for the line and computes nothing else.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0305 (`<name>.props.ts`).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0305 (`<name>.props.ts`).
  */
 import type { OrderTotalsProps } from "#react/order-totals/order-totals.props";
 

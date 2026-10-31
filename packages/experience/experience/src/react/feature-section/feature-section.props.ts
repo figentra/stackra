@@ -4,7 +4,7 @@
  * Boundary: an interface in its own file beside the component (ADR 0305). Copy and icons are page content (a document
  *           node's props or the tenant's settings); the block hard-codes none of them.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0305 (`<name>.props.ts`).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0305 (`<name>.props.ts`).
  */
 import type { IconSlot } from "@stackra/ui/contracts";
 

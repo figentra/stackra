@@ -5,7 +5,7 @@
  * Boundary: unit tier, jsdom, the real @stackra/ui components, except ChatMessage, PromptInput, Reasoning and Sources,
  *           which are DOM stand-ins shaped by their feat/c6-gap-ui contracts until that branch lands in this one.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0503.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0504.
  */
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "@stackra/testing";

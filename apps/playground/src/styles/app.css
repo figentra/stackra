@@ -8,7 +8,7 @@
    `node_modules` symlink the dev server never watches it, so a class added to a ui component stayed ungenerated
    until a restart. */
 @source "../../../../packages/design-system/ui/src";
-/* The module UI kits the showcase lists (ADR 0503) carry their own utility classes the same way. */
+/* The module UI kits the showcase lists (ADR 0504) carry their own utility classes the same way. */
 @source "../../../../packages/application/ai/src/react";
 @source "../../../../packages/commerce/payments/src/react";
 @source "../../../../packages/commerce/pricing/src/react";

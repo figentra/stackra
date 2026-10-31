@@ -5,7 +5,7 @@
  *           every price and option as demo data. The same file is the preview and the code shown.
  * Runtime: browser
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0060 (light, dark, RTL);
- *          ADR 0503 (module UI kits).
+ *          ADR 0504 (module UI kits).
  */
 import { Checkout } from "@stackra/payments/react";
 import { Text, useCatalogueText } from "@stackra/ui/react";

@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./react` entry of @stackra/identity (`useSession` and the two shapes it returns, and
  *          `useAppApprovalWait`, the web's app approval waiting screen, and `useAccountDeletion`, the settings section that
- *          deletes one's own account, and `SignIn`, the sign-in block of the identity module UI kit, ADR 0503) until
+ *          deletes one's own account, and `SignIn`, the sign-in block of the identity module UI kit, ADR 0504) until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` only. `useSession` serves React DOM and React
  *           Native alike; the app's approve sheet hook is `./native`'s.

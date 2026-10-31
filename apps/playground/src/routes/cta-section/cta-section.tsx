@@ -3,7 +3,7 @@
  * Purpose: the page of the call to action route: the generic component page of the module kit entry `free/cta-section`.
  * Boundary: one line; the sections, demos and API come from `components/component-page` and `demos/`.
  * Runtime: browser
- * Governing contract: showcase redesign spec (2026-10-27) section 4; ADR 0302 (decision 5); ADR 0503.
+ * Governing contract: showcase redesign spec (2026-10-27) section 4; ADR 0302 (decision 5); ADR 0504.
  */
 import { ComponentPage } from "#src/components/component-page";
 

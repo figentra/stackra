@@ -5,7 +5,7 @@
  * Boundary: composition of @stackra/ui only; the form hands the address to `onSubscribe` and shows `thanks`; it sends
  *           nothing itself. Every word comes in props.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
  */
 import { Button, Heading, Link, Surface, Text, TextField } from "@stackra/ui/react";
 import { type FormEvent, type ReactElement, useId, useState } from "react";

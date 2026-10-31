@@ -4,7 +4,7 @@
  *          it has no glob: imports sorted by constant, `COMPONENTS` in listing order, module kit entries inlined.
  * Boundary: a pure function over the loaded entries (`loadEntries`); gen.ts writes what it returns.
  * Runtime: node
- * Governing contract: showcase redesign spec (2026-10-27) section 2; ADR 0503.
+ * Governing contract: showcase redesign spec (2026-10-27) section 2; ADR 0504.
  */
 import type { ComponentEntry } from "../src/types/component-entry.type.ts";
 import type { LoadedEntry } from "./loaded-entry.type.ts";
@@ -19,7 +19,7 @@ export function genBarrel(
     .flatMap(({ constant, module }) =>
       module ? [`import { ${constant} } from "${module}";`] : [],
     );
-  // a kit entry is inlined: the showcase never imports a module package (ADR 0503)
+  // a kit entry is inlined: the showcase never imports a module package (ADR 0504)
   const listed = loaded
     .toSorted((a, b) => compare(a.entry, b.entry))
     .map(({ constant, module, entry }) =>
@@ -33,7 +33,7 @@ export function genBarrel(
     " * Purpose: `COMPONENTS`, every registry entry in listing order (category, tier, slug). Metro has no glob, so",
     " *          the entry files are imported one by one.",
     " * Boundary: GENERATED from `src/registry/components/<tier>/<slug>.ts` and the module kits'",
-    " *           `packages/<category>/<name>/showcase/<slug>.json` (gen-barrel, ADR 0503); do not edit by hand.",
+    " *           `packages/<category>/<name>/showcase/<slug>.json` (gen-barrel, ADR 0504); do not edit by hand.",
     " * Runtime: isomorphic",
     " * Governing contract: showcase redesign spec (2026-10-27) section 2.",
     " */",

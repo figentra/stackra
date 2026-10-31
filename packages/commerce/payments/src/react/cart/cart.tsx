@@ -5,7 +5,7 @@
  * Boundary: composition of @stackra/ui only; the host owns the cart state and the pricing (the totals arrive in props).
  *           Every word comes in `labels`.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
  */
 import {
   Button,

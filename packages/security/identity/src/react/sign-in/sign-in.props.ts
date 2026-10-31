@@ -5,7 +5,7 @@
  *           form shows and all copy are the tenant's login configuration (a market pack adds national providers); the
  *           block hard-codes none of them.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0206 (identity, provider-neutral); ADR 0305.
+ * Governing contract: ADR 0504 (module UI kits); ADR 0206 (identity, provider-neutral); ADR 0305.
  */
 import type { SocialProvider } from "@stackra/ui/contracts";
 

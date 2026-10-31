@@ -5,7 +5,7 @@
  * Boundary: composition of @stackra/ui only (Card, SegmentedControl, MoneyValue, Grid, Stack); no price maths: the host
  *           passes each plan's price per period, as the pricing engine evaluated it. Every word comes in props.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
  */
 import {
   Button,

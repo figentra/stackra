@@ -5,7 +5,7 @@
  * Boundary: reads JSON only and imports no kit code, so the showcase never depends on a module package (ADR 0003); the
  *           shape is checked by the registry gate (`checkRegistry`), the owning package here.
  * Runtime: node
- * Governing contract: ADR 0503 (module UI kits: gen aggregates them into the showcase).
+ * Governing contract: ADR 0504 (module UI kits: gen aggregates them into the showcase).
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
