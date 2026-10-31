@@ -41,6 +41,7 @@ describe("HomeRoute", () => {
     Element.prototype.scrollIntoView = () => undefined;
   });
 
+  // Renders every built card: about 6 s on a ci-box, 33 s on a shared GitHub runner, so the budget is 120 s.
   it("renders its page at / with a group card per non-empty category that keeps the search params", async () => {
     renderHome("/?scheme=dark&locale=ar");
     // The hero loads on demand.
@@ -58,7 +59,7 @@ describe("HomeRoute", () => {
     expect(categories.getByRole("link", { name: /Inputs and forms/ }).getAttribute("href")).toBe(
       "/components/inputs-and-forms?scheme=dark&locale=ar",
     );
-  });
+  }, 120_000);
 
   it("counts the built components, not the planned ones", async () => {
     renderHome();
