@@ -59,7 +59,7 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   encrypted, `@Classified` and excluded fields. Never put a value in a change any other way.
 - One relay runs a tick at a time (`Locks.tryWith`), so `due` reserves nothing. Every delivery runs in the bound
   `CallIsolation` as the actor stored with it (none stored: a platform actor, no tenant row; ADR 0495), else in
-  `withScope(scope ?? [])`; the inbox takes the port from `connect`, and a run of changes splits where the actor changes: with the Postgres lock driver a tick is one transaction, and a scope set for one message
+  `withScope(scope ?? [])`, each in a transaction of its own (`requiresNew`); the inbox takes the port, a `ScopeOwnership` and the logger from `connect` and downgrades an actor its scope does not own, and a run of changes splits where the actor changes: with the Postgres lock driver a tick is one transaction, and a scope set for one message
   must not reach the next.
 - Raw SQL only in the Postgres drivers, `insertMessages` and `insertChanges`, every value bound, every row read through zod, each
   statement with a `// raw-sql:` reason (ADR 0160). A released migration is frozen; a change is a new migration.

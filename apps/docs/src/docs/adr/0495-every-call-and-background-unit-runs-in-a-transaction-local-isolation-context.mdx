@@ -31,11 +31,27 @@ themselves, where a session-level setting would survive into another tenant's tr
 2. **Background units use the stored actor.** The queue worker, outbox relay and inbox, workflow runner and
    scheduler run each job, delivery, step or run through the same port, with the actor and scope stored when the
    work was enqueued. A unit stored without an actor runs as a platform call (`app.tenant_id` = `''`), which matches
-   no tenant row. The scheduler only dispatches onto the queue, so its jobs run through the queue worker; it stores no
-   actor with a pushed job yet, so a scheduled job runs as a platform call until a follow-up stamps one (STA-1699 report).
+   no tenant row. The event bus is trusted for actor identity (ADR 0142), but not blindly: where `@stackra/tenancy`
+   binds `ScopeOwnership`, the inbox downgrades an envelope whose actor's tenant does not own the envelope's scope to
+   the platform actor and logs it by event id and type only, and an automation refuses a principal from another scope.
+   The relay and the inbox give each unit a transaction of its own, and the isolation driver refuses
+   (`tenant_switch_refused`) to replace the tenant of a transaction that already runs for another, so a transaction
+   never carries one actor's tenant into another's unit.
+   The scheduler only dispatches onto the queue. A job it pushes in a scope carries the scheduler's system actor
+   acting in that scope as its `origin`, so the queue worker runs it through the port bound to that scope; a schedule
+   is created in the scope its work belongs to (a tenant's own scope), and a scope that is not a tenant's matches no
+   tenant row. A platform run carries no actor scope. A platform schedule that works across tenants lists them
+   (`CronScopes`), so each tenant's run is its own job in its own isolation context, never one cross-tenant
+   transaction.
 3. **Transaction-local only.** Every `app.*` setting is written with `select set_config(name, value, true)` inside the
-   unit's transaction, and nowhere else. `set_config(..., false)`, `SET app.*` and `SET LOCAL app.*` are forbidden
-   outside the isolation driver and `Database.withScope`, and `pnpm validate` refuses them (decision 5).
+   unit's transaction, and nowhere else. `pnpm validate` (`tools/scripts/session-settings.mjs`) enforces two rules over
+   `.ts`, `.tsx`, `.js`, `.cjs`, `.mjs`, `.mts`, `.cts` and `.sql` files under `packages/`, `services/`, `apps/` and
+   `workers/`. (a) The session form is refused everywhere, with no exemption of any kind: `set_config(` with a third
+   argument other than the literal `true`, `SET app.`, `SET LOCAL app.` and `SET SESSION app.` (also with `"app"`
+   quoted), and a startup option `-c app.`. (b) Any `set_config(` of an `app.*` name, or of a name that is not a literal,
+   is refused whatever its third argument, outside an explicit allow list: the isolation driver,
+   `TenantIsolationService`, the database drivers' `withScope` and `onReplica` (and the memory twin), the iam policy
+   snapshot store (it sets its own tenant in its own transaction), `src/testing/` helpers and test files.
 4. **RDS Proxy (0473).** AWS documents that for PostgreSQL a `SET` statement, `SET LOCAL` included, pins the client
    connection for the rest of the session, as does using `set_config` to assign default values. It also documents
    that function calls are not inspected for session state. So `select set_config(name, value, true)` is the form
@@ -49,17 +65,32 @@ themselves, where a session-level setting would survive into another tenant's tr
    `BelongsToTenant`, and its docblock points to `asTenant` for isolation. Isolation is proven on real Postgres
    (`usePostgres`) under a role without `BYPASSRLS`.
 
+6. **A `requiresNew` path keeps its tenant.** A `requiresNew` transaction runs on another connection and inherits
+   no `app.*` setting, so one that touches a tenant-policy table must re-apply the tenant transaction-locally in its
+   own transaction. The paths that exist today, classified:
+
+   | Path                            | Touches a tenant-policy table? | Classification                              |
+   | ------------------------------- | ------------------------------ | ------------------------------------------- |
+   | idempotency keys                | no (no RLS)                    | needs nothing                               |
+   | rate-limit buckets              | no (no RLS)                    | needs nothing                               |
+   | workflow journal (`workflow.*`) | no (no RLS)                    | needs nothing; steps re-enter the isolation |
+   | `webhook_deliveries`            | no (no RLS)                    | needs nothing                               |
+   | access-log sink                 | yes                            | sets its tenant transaction-locally, itself |
+   | iam policy snapshot store       | yes                            | sets its tenant transaction-locally, itself |
+
+   A new `requiresNew` path states its row in this table in the change that adds it.
+
 ## Consequences
 
 - Services stop writing `set_config`; a hand-rolled one fails `pnpm validate`.
 - Every query now runs in a short read-only transaction, which costs one round trip per call.
+- Every call and unit holds a connection for the length of its transaction, so pools are sized for isolation: STA-1716.
 - A queued unit must carry its actor; producers that enqueue without one get platform isolation, so their tenant
   rows are invisible to the job until they pass the actor.
 
 ## Enforcement
 
-- `tools/scripts` repo check (STA-1699): refuses `set_config(` with a `false` third argument, and `SET [LOCAL] app.` in
-  any source outside the isolation driver and the database drivers' `withScope`.
+- `tools/scripts/session-settings.mjs` repo check (STA-1699): the two rules of decision 3.
 - `@stackra/tenancy` real-Postgres isolation tests (STA-1699): tenant A sees only its rows through the pipeline, a
   platform call sees none, settings do not survive the transaction.
 - planned — RDS Proxy pinning under load measured by `DatabaseConnectionsCurrentlySessionPinned` on the first

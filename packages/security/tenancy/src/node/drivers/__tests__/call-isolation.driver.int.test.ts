@@ -5,7 +5,9 @@
  *          `BYPASSRLS`, tenant A sees and writes only its own rows through `asTenant` and through the action pipeline
  *          (a query and an action); tenant B's rows are invisible, a row cannot be written into another tenant, a
  *          platform call sees none, a read-only call cannot write, a failed action leaves no row, and once the
- *          transaction ends the `app.tenant_id` setting is empty on the connection it used (ADR 0495).
+ *          transaction ends the `app.tenant_id` setting is empty on the connection it used, also after a read-only
+ *          pipeline query; and on the nullable form (`t.belongsToTenant({ nullable: true })`) a platform call sees only
+ *          the NULL rows and a tenant never sees one (ADR 0495).
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers. The container's user is a superuser, which row
  *           security never restricts, so each unit of work starts with `set local role stackra_probe`, as
  *           `assertRowSecurity` does; the role is created once with only table rights. The rows are seeded through
@@ -40,6 +42,11 @@ class CreateTicketsMigration extends Migration {
       t.hasPublicId("tkt");
       t.belongsToTenant();
       t.string("title", 63).notNull().comment("What the ticket is about.");
+    });
+    schema.create("notices", (t: Blueprint) => {
+      t.hasPublicId("ntc");
+      t.belongsToTenant({ nullable: true });
+      t.string("title", 63).notNull().comment("What the notice says.");
     });
   }
 }
@@ -83,6 +90,21 @@ const insert = (id: string, tenant: string, title = "t") =>
     title,
   ]);
 
+const N_PLATFORM = "ntc_01j9z3k4m5n6p7q8r9s0t1v2p1";
+const N_A = "ntc_01j9z3k4m5n6p7q8r9s0t1v2a1";
+
+/** Inserts one notice owned by `tenant`, or by the platform (NULL), as the probe role. */
+const notice = (id: string, tenant: string | undefined) =>
+  probe('insert into "support"."notices" (id, tenant_id, title) values (?, ?, ?)', [
+    id,
+    tenant ?? null,
+    "n",
+  ]);
+
+/** The ids of every notice the probe role can see. */
+const visibleNotices = async (): Promise<string[]> =>
+  (await probe('select id from "support"."notices" order by id')).map((row) => String(row.id));
+
 /** The ids of every ticket the probe role can see. */
 const visible = async (): Promise<string[]> =>
   (await probe('select id from "support"."tickets" order by id')).map((row) => String(row.id));
@@ -99,6 +121,8 @@ beforeAll(async () => {
     await insert(A2, TENANT_A, "a two");
   });
   await asTenant(TENANT_B, () => insert(B1, TENANT_B, "b one"));
+  await asTenant(undefined, () => notice(N_PLATFORM, undefined));
+  await asTenant(TENANT_A, () => notice(N_A, TENANT_A));
 });
 
 describe("asTenant on Postgres", () => {
@@ -131,26 +155,20 @@ describe("asTenant on Postgres", () => {
   });
 
   it("leaves no tenant setting on the connection it used once the transaction ends", async () => {
-    const used = await asTenant(TENANT_A, async () => {
-      const [row] = (await postgres.database.em().execute("select pg_backend_pid() as pid")) as {
-        pid: number;
-      }[];
-      return row?.pid;
-    });
-    // the pool hands the freed connection out again within a few statements, so look until the same backend answers
-    let sameBackend = false;
-    for (let attempt = 0; attempt < 100 && !sameBackend; attempt += 1) {
-      const [row] = (await postgres.database
-        .em()
-        .execute(
-          "select pg_backend_pid() as pid, current_setting('app.tenant_id', true) as tenant, " +
-            "current_setting('app.scope_id', true) as scope",
-        )) as { pid: number; tenant: string | null; scope: string | null }[];
-      expect(row?.tenant ?? "").toBe("");
-      expect(row?.scope ?? "").toBe("");
-      sameBackend = row?.pid === used;
-    }
-    expect(sameBackend).toBe(true);
+    const used = await asTenant(TENANT_A, backendPid);
+    await expectCleanBackend(used);
+  });
+
+  it("sees the nullable form's NULL rows only as a platform call, and never as a tenant", async () => {
+    expect(await asTenant(undefined, visibleNotices)).toEqual([N_PLATFORM]);
+    expect(await asTenant(TENANT_A, visibleNotices)).toEqual([N_A]);
+    expect(await asTenant(TENANT_B, visibleNotices)).toEqual([]);
+    await expect(
+      asTenant(TENANT_B, () => notice("ntc_01j9z3k4m5n6p7q8r9s0t1v2p2", TENANT_A)),
+    ).rejects.toThrow(/row-level security/i);
+    await expect(
+      asTenant(TENANT_A, () => notice("ntc_01j9z3k4m5n6p7q8r9s0t1v2p3", undefined)),
+    ).rejects.toThrow(/row-level security/i);
   });
 
   it("starts a read-only call read-only: a write inside it fails", async () => {
@@ -162,6 +180,32 @@ describe("asTenant on Postgres", () => {
     expect(await asTenant(TENANT_A, visible)).toEqual([A1, A2]);
   });
 });
+
+/** The backend process of the running transaction. */
+async function backendPid(): Promise<number | undefined> {
+  const [row] = (await postgres.database.em().execute("select pg_backend_pid() as pid")) as {
+    pid: number;
+  }[];
+  return row?.pid;
+}
+
+/** Reads the settings outside any transaction until the backend `used` answers, and expects them empty each time. */
+async function expectCleanBackend(used: number | undefined): Promise<void> {
+  // the pool hands the freed connection out again within a few statements, so look until the same backend answers
+  let sameBackend = false;
+  for (let attempt = 0; attempt < 100 && !sameBackend; attempt += 1) {
+    const [row] = (await postgres.database
+      .em()
+      .execute(
+        "select pg_backend_pid() as pid, current_setting('app.tenant_id', true) as tenant, " +
+          "current_setting('app.scope_id', true) as scope",
+      )) as { pid: number; tenant: string | null; scope: string | null }[];
+    expect(row?.tenant ?? "").toBe("");
+    expect(row?.scope ?? "").toBe("");
+    sameBackend = row?.pid === used;
+  }
+  expect(sameBackend).toBe(true);
+}
 
 /** Allows every call: the permission step is not what these tests prove. */
 class AllowAll extends Driver(AccessControl) {
@@ -177,6 +221,17 @@ class ListTicketsQuery extends Query({
 }) {
   async handle(): Promise<string[]> {
     return visible();
+  }
+}
+
+/** Answers with the backend process its read-only transaction runs on. */
+class BackendQuery extends Query({
+  key: "ticket.backend",
+  actors: [ActorKind.User],
+}) {
+  async handle(): Promise<number | undefined> {
+    await visible();
+    return backendPid();
   }
 }
 
@@ -211,6 +266,7 @@ function pipelineOf(): ActionPipeline {
     [CallIsolation, new CallIsolationDriver(database, new TenantIsolationService(database))],
     [ListTicketsQuery, new ListTicketsQuery()],
     [WriteFromQueryQuery, new WriteFromQueryQuery()],
+    [BackendQuery, new BackendQuery()],
     [CreateTicketAction, new CreateTicketAction()],
   ]);
   const resolver: Resolver = {
@@ -231,6 +287,11 @@ describe("the action pipeline on Postgres", () => {
     expect(await listAs(tenantActor(TENANT_A))).toEqual([A1, A2]);
     expect(await listAs(tenantActor(TENANT_B))).toEqual([B1]);
     expect(await listAs(platform)).toEqual([]);
+  });
+
+  it("leaves no setting on the connection a read-only query used", async () => {
+    const used = await pipelineOf().execute(BackendQuery, {}, { actor: tenantActor(TENANT_A) });
+    await expectCleanBackend(used);
   });
 
   it("runs a query read-only", async () => {
