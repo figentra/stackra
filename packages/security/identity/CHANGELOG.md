@@ -1,5 +1,84 @@
 # @stackra/identity
 
+## 0.2.0
+
+### Minor Changes
+
+- a167045: Let a user delete their own account from inside the app (App Store Review Guideline 5.1.1(v), Google Play, STA-1567).
+  `@stackra/identity/node` adds `DeleteMyAccountAction` (`identity.account_deletion.request@1`, step-up `aal2`, the
+  caller's own account only), `CancelAccountDeletionAction`, `ShowAccountDeletionQuery`, the hourly system job
+  `EraseDueAccountsAction` and `AccountDeletionPermissions`. A deletion waits `IdentityConfig.accountDeletionGraceDays`
+  (30 by default) in the new `AccountDeletions` store (`PostgresAccountDeletionsDriver` over `identity.account_deletions`,
+  migration `identity.0001`; `MemoryAccountDeletionsDriver`), then the per-scope job queues privacy's `EraseSubjectAction`
+  unless a legal hold names the subject (a held one is pushed back a day); `SubjectErased` then ends the provider sessions and removes
+  the provider user. Events `identity.account_deletion.{scheduled,cancelled,started}.v1`. Client halves:
+  `useAccountDeletion` (`./react`) and `useAccountDeletionSheet` (`./native`, with the device check), with the
+  `identity.ui.account_deletion` lang keys in seven locales (`./assets/*`). `@stackra/privacy/contracts` adds the
+  `SubjectHolds` port and `./node` adds its `PostgresSubjectHoldsDriver`. New dependency of identity: `@stackra/database`.
+- 48be198: Serve the BFF's sign-in from `./node`: `BffService` answers `GET login` (OIDC authorization code with PKCE, state,
+  nonce and verifier sealed in a short-lived `__Host-` cookie), `GET callback` (state, code exchange and ID token checks,
+  then the `HttpOnly; Secure; SameSite=Lax; Path=/` session cookie), `GET session` and `POST logout`, which ends the
+  provider session server-side through `IdpAdmin.endSession`, clears the cookie and answers the provider's end-session
+  URL. Return URLs are limited to `BffConfig.returnOrigins`. New `BffConfig` (key `bff`, with `BffOptions` and
+  `BffConfig$`) holding the callback URL, return origins, cookie name and lifetimes, and the `IDENTITY_BFF_CLIENT_SECRET`
+  and `IDENTITY_BFF_COOKIE_KEY` secrets by name (STA-1566). `BffService.sessionOf(request)` reads the session cookie for a
+  host's raw endpoint that turns it into the call's actor, and `BffSessionStoreDriver.signOut` now leaves for the
+  `redirectTo` the logout answers, so the provider's browser session ends too.
+- 7487ba8: Add the session list and "sign out everywhere" (STA-1580). `IdpAdmin.listSessions(userId)` answers a user's live
+  provider sessions as the new `IdpSession` (id, `createdAt`, `lastActiveAt`, the device's `userAgent`), through the v2
+  session search in `ZitadelIdpAdminDriver` and in `MemoryIdpAdminDriver` (`openSession(userId, userAgent?)`).
+  `@stackra/identity/node` adds `ListMySessionsQuery`, `EndMySessionAction` (refuses a session that is not the caller's
+  as `NotFoundError`), `EndAllMySessionsAction` and the audited admin `EndUserSessionsAction`, with `SessionPermissions`
+  (ADR 0462) and their schemas. A driver of `IdpAdmin` outside this package must add `listSessions`.
+- d37c08f: Add Sign in with Apple (App Store guideline 4.8). `SocialProvider.Apple` is offered by `signInProvidersOf` in every
+  market once `externalProviders.apple` names ZITADEL's Apple provider, and `externalSignIn("apple", …)` sends the hosted
+  sign-in there. `./contracts` adds the `AppleSignIn` port with `AppleSignInRefusal`, `AppleCredential` and
+  `AppleSignInResult`; `./native` adds `ExpoAppleSignInDriver`, which requires `expo-apple-authentication` (a new optional peer, `catalog:mobile`) on use and
+  throws an error naming it when the app has not installed it. Labels ship in `assets/lang` in seven locales.
+- f7ae148: Add `ZitadelAuthEventsService` (STA-1579): the receiver of a ZITADEL Actions v2 event target that verifies the
+  `ZITADEL-Signature` HMAC over the raw body and writes sign-in, failed sign-in, second-factor, lockout and sign-out
+  events into the audit hash chain through the `AuditTrail` port, mapped by the new `IdpAuthEvent` enum. Add
+  `IdpAdminConfig.eventsSigningKey` (the `IDENTITY_IDP_EVENTS_SIGNING_KEY` secret).
+- 5fa1a15: Add the operator bootstrap (STA-1586): `BootstrapOperatorAction` (`identity.operator.bootstrap@1`,
+  `POST /platform/operators/bootstrap`) gives the user with an email a role (`owner` by default) at the platform node
+  once, through `@stackra/iam/contracts`' `RoleGrants`, with `dryRun` and the `OperatorBootstrapOutcome` codes
+  (`granted`, `already_granted`, `would_grant`, `not_found`). `OperatorPermissions.bootstrap` is L4 and system-held, so
+  only a service principal acting for no one can call it. `IdpAdmin` gains the abstract `findStackraUserId(email)`
+  (ZITADEL: a v2 user search on the email, then the `stackra_user_id` metadata; the memory driver keeps each user's
+  email): a custom `IdpAdmin` driver must implement it.
+
+### Patch Changes
+
+- Updated dependencies [2d5a888]
+- Updated dependencies [b5141fe]
+- Updated dependencies [cfdcdf8]
+- Updated dependencies [2d5a888]
+- Updated dependencies [a167045]
+- Updated dependencies [1a9259b]
+- Updated dependencies [5fa1a15]
+- Updated dependencies [9085c41]
+  - @stackra/actions@0.2.0
+  - @stackra/privacy@0.2.0
+  - @stackra/database@0.2.0
+  - @stackra/errors@0.2.0
+  - @stackra/iam@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/transport@0.2.0
+  - @stackra/clients@0.2.0
+  - @stackra/outbox@0.2.0
+  - @stackra/queue@0.2.0
+  - @stackra/scheduler@0.2.0
+  - @stackra/scope@0.2.0
+  - @stackra/tenancy@0.2.0
+  - @stackra/query@0.2.0
+  - @stackra/market-packs@0.2.0
+  - @stackra/storage@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/events@0.2.0
+  - @stackra/support@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

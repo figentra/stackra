@@ -1,6 +1,6 @@
 {
   "name": "@stackra/devtools-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "The devtools kit of ADR 0246: the tab and RPC registry each package's devtools entry fills, the event stream fed from the in-process bus, and the one host session a devtools panel or dev console attaches through",
   "keywords": [

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/state",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra client state: the Store({ persist }) kind base whose fields are the state and whose set is the only writer, persisted through client storage under a derived key, signals, useStore and useSignal, StateConfig with its shipped schema, and the createStore and mountStore test helpers",
   "keywords": [

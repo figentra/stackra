@@ -1,5 +1,27 @@
 # @stackra/gen
 
+## 0.2.0
+
+### Patch Changes
+
+- 9a2a6b0: `stackra gen` now compiles the migrations of packages installed from the registry. They ship as TypeScript source under
+  `node_modules`, where Node refuses to strip types, so gen failed with `migration_load_failed` in every product service
+  that depends on a package with migrations. `loadSourceModule` strips such a file into `.stackra/cache/sources/` and loads
+  that copy, which resolves `@stackra/database` from the member root.
+- bab9fe1: A package gets a gitignored root `tsdown.config.ts` shim re-exporting the generated config, so plain `tsdown` runs from
+  the member root, where `.stackra/entry/*` resolves (with `--config .stackra/…` tsdown took `.stackra/` as its cwd). The
+  generated Vitest config passes with no tests only for a member with no source (fresh from `stackra new`); a member with
+  source and no tests still fails.
+  
+  A package's entry barrels skip files directly in `src/`: those are hand-written entries a package.json export names (an
+  OS shell's `register`), and two of them re-exported from `.` collided.
+- Updated dependencies [2d5a888]
+- Updated dependencies [9085c41]
+  - @stackra/errors@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/money@0.2.0
+  - @stackra/support@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

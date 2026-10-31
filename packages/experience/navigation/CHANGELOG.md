@@ -1,5 +1,32 @@
 # @stackra/navigation
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies [2d5a888]
+- Updated dependencies [1a9259b]
+- Updated dependencies [5fa1a15]
+- Updated dependencies [9085c41]
+- Updated dependencies [3d18ae6]
+- Updated dependencies [6f67da8]
+- Updated dependencies [c4f295e]
+  - @stackra/errors@0.2.0
+  - @stackra/iam@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/platform@0.2.0
+  - @stackra/ui@0.2.0
+  - @stackra/clients@0.2.0
+  - @stackra/settings@0.2.0
+  - @stackra/seo@0.2.0
+  - @stackra/icons@0.2.0
+  - @stackra/testing@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/i18n@0.2.0
+  - @stackra/validation@0.2.0
+  - @stackra/feature-flags@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

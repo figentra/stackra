@@ -1,6 +1,6 @@
 {
   "name": "@stackra/infra-aws",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Pulumi programs for the free AWS foundation read from the root runway: per environment the data key, the files bucket (media CORS, versioning, replication to the backup account), Postgres point-in-time recovery and snapshot copies, the GitHub OIDC deploy role, the Encore Cloud access role and the budgets that stop non-production accounts; plus the Pulumi state backend and the backup account",
   "keywords": [

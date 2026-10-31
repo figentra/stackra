@@ -1,6 +1,6 @@
 {
   "name": "@stackra/coordinator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra tab coordination: leader election between the tabs and windows of one device through Web Locks, with a BroadcastChannel heartbeat fallback and an in-memory fallback, the leader flag as a @stackra/state signal, and withTabLock for one task at a time",
   "keywords": [

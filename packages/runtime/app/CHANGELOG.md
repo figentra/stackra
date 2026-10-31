@@ -1,5 +1,48 @@
 # @stackra/app
 
+## 0.2.0
+
+### Minor Changes
+
+- 20eea53: Verify ZITADEL access tokens by JWKS (ADR 0206 decision 8): `BearerTokenGuard` (`./server`, order -50) accepts an
+  `Authorization: Bearer` JWT only when `verifyBearerToken` (`.`, Web Crypto, RS256 and ES256, never `none` or HS*)
+  checks its signature against the issuer's key set and its `iss`, `aud`, `exp` and `nbf` under `BearerConfig`
+  (`app.bearer`, from `STACKRA_BEARER_ISSUER` and `STACKRA_BEARER_AUDIENCE`), refuses with `BearerTokenInvalidError`, and
+  puts the claims on the request's `VerifiedToken`. The `JsonWebKeys` port (`./contracts`) ships `oidc` (discovery, cached
+  key set, refetch on an unknown kid, `jwksKeySource` in `.`) and `memory` drivers. The new `workers/edge` Worker shares
+  the verifier and signs the edge headers `EdgeHeaderGuard` checks.
+- 9085c41: OTLP for all three signals (ADR 0184 decision 1, STA-1572). `@stackra/contracts`: `Tracer` gains
+  `continueTrace(carrier, work)` and `traceparent()` (implementers of `Tracer` must add both; `NoopTracerDriver` runs the
+  work and names no parent), the `TraceCarrier` type, and a new `Metrics` port (counter, histogram, gauge) with
+  `NoopMetricsDriver`. `@stackra/logger`: `OtlpTracerDriver` (spans to `/v1/traces`, nesting through
+  `AsyncLocalStorage`, W3C trace continuation, the edge request id on every span, `traceSampleRatio` sampling) and
+  `OtlpMetricsDriver` (cumulative sums, gauges and explicit-bucket histograms to `/v1/metrics` every
+  `metricIntervalMs`), `parseTraceparent` and `formatTraceparent`; `OtlpConfig` adds `traceSampleRatio` and
+  `metricIntervalMs`; the log reporter shares the batching sender, counts what it drops (`dropped`) and flushes on
+  shutdown. `@stackra/transport`: the `traceContext(tracer)` middleware and `TRANSPORT_HEADERS.traceparent`.
+  `@stackra/app`: the server `createApp` continues each request's trace (its `traceparent` and `x-figentra-request-id`,
+  taken once the guards pass) when a `Tracer` is bound.
+
+### Patch Changes
+
+- Updated dependencies [2d5a888]
+- Updated dependencies [a167045]
+- Updated dependencies [48be198]
+- Updated dependencies [7487ba8]
+- Updated dependencies [d37c08f]
+- Updated dependencies [f7ae148]
+- Updated dependencies [5fa1a15]
+- Updated dependencies [9085c41]
+  - @stackra/errors@0.2.0
+  - @stackra/identity@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/navigation@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/i18n@0.2.0
+  - @stackra/validation@0.2.0
+  - @stackra/csp@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

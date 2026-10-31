@@ -1,5 +1,24 @@
 # @stackra/integrations
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies [2d5a888]
+- Updated dependencies [2d5a888]
+- Updated dependencies [9085c41]
+  - @stackra/actions@0.2.0
+  - @stackra/errors@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/clients@0.2.0
+  - @stackra/data-transfer@0.2.0
+  - @stackra/market-packs@0.2.0
+  - @stackra/money@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/events@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

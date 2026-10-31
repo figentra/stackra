@@ -1,5 +1,26 @@
 # @stackra/repo-checks
 
+## 0.2.0
+
+### Minor Changes
+
+- 32bec80: `checkDocFile` now also requires a TSDoc block on symbols exported through a local `export { … }` list or
+  `export default name`, on `export default <expr>`, and on each member of an `enum` or const-object enum (`Enum.of({ … })`
+  or a literal-valued `{ … } as const`; a one-word label is enough there). `isDocScoped` now covers `.mts` and `.cts`
+  sources.
+- c4f295e: <!-- Purpose: release note for the HeroUI Pro removal: no member may depend on HeroUI Pro. Boundary: changelog text only. Runtime: none. Governing contract: ADR 0469. -->
+  
+  `checkMember` refuses HeroUI Pro (`PRO_DEPENDENCIES`: `@heroui-pro/react`, `heroui-native-pro`) in every member, apps
+  included: Stackra ships free HeroUI and its own components only (ADR 0469).
+
+### Patch Changes
+
+- 2f56702: `stackra validate` accepts a product root's `brand.json`: the brand CLI (`figentra-brand pull`) reads and writes it as
+  strict JSON, so it joins `MUST_STAY_JSON` instead of failing the config check in every product.
+- dcde851: In a product repository, validate no longer applies the Stackra repository's own member rules: the package names by
+  placement, the MIT licence, `sideEffects: false`, the stackra `repository` and `publishConfig`, and the brand NOTICE.
+  A v3 service needs `stackra.config.ts` but no root module file, which v3.1 R12 writes only when it says something.
+
 ## 0.1.0
 
 ### Minor Changes

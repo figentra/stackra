@@ -1,6 +1,6 @@
 {
   "name": "@stackra/search",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra search: the SearchDriver port, the Search reader over a model's @Searchable index (ranked find and cursor pages, indexing, removal, reindex), the memory driver, the Postgres hybrid driver (full-text and trigram, fused by reciprocal rank), the t.searchable(...) migration macro, the text-function migration and SearchConfig with its shipped schema, and the SearchDriver conformance suite (./testing) every driver passes",
   "keywords": [

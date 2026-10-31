@@ -1,6 +1,6 @@
 {
   "name": "@stackra/infra-aws-runtime",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Pulumi programs for the AWS runtime resources members declare in runway.yaml: per environment, the SQS queues (with dead-letter queues and, on the sns-sqs provider, an SNS topic each), the Valkey caches (the shared one and each dedicated one) and the S3 buckets, derived from the root and service runways",
   "keywords": [

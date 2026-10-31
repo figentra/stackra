@@ -1,6 +1,6 @@
 {
   "name": "@stackra/analytics",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra product analytics delivery: AnalyticsEvent instances sent through the AnalyticsDriver port only once the visitor's consent category is granted, a bounded ordered queue for events fired before the decision that is sent on acceptance and dropped on refusal (ADR 0298), the AnalyticsConfig configuration with its shipped schema, the none, memory and PostHog drivers (and a native PostHog driver that flushes when the app goes to the background), the React useAnalytics hook, the fakeAnalytics test helper, and in ./node the relay that sends the action pipeline's server-side analytics.tracked events to the destinations",
   "keywords": [

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/support",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Dependency-free pure helpers for Stackra packages and services, grown on demand: time and calendar-month shifts, exact quantities with units, canonical JSON and its hash, GS1 restricted-circulation GTINs, a Code 128 encoder, base64url, Base64 and CRC-32, HTML and XML escaping and HTML to text, a record guard, case conversion and age on a date",
   "keywords": [

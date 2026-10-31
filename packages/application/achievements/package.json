@@ -1,6 +1,6 @@
 {
   "name": "@stackra/achievements",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra achievements: award kinds kept as scope data, awards granted by hand or automatically when a kind's @stackra/rules criteria match a recipient's facts, revoke, an opaque verify token and a short typed code resolved across scopes by a public verify query, a QR code, one live award per kind, recipient and period, certificates rendered through @stackra/documents, and award-granted and award-revoked integration events",
   "keywords": [

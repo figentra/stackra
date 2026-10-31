@@ -1,5 +1,57 @@
 # @stackra/privacy
 
+## 0.2.0
+
+### Minor Changes
+
+- a167045: Let a user delete their own account from inside the app (App Store Review Guideline 5.1.1(v), Google Play, STA-1567).
+  `@stackra/identity/node` adds `DeleteMyAccountAction` (`identity.account_deletion.request@1`, step-up `aal2`, the
+  caller's own account only), `CancelAccountDeletionAction`, `ShowAccountDeletionQuery`, the hourly system job
+  `EraseDueAccountsAction` and `AccountDeletionPermissions`. A deletion waits `IdentityConfig.accountDeletionGraceDays`
+  (30 by default) in the new `AccountDeletions` store (`PostgresAccountDeletionsDriver` over `identity.account_deletions`,
+  migration `identity.0001`; `MemoryAccountDeletionsDriver`), then the per-scope job queues privacy's `EraseSubjectAction`
+  unless a legal hold names the subject (a held one is pushed back a day); `SubjectErased` then ends the provider sessions and removes
+  the provider user. Events `identity.account_deletion.{scheduled,cancelled,started}.v1`. Client halves:
+  `useAccountDeletion` (`./react`) and `useAccountDeletionSheet` (`./native`, with the device check), with the
+  `identity.ui.account_deletion` lang keys in seven locales (`./assets/*`). `@stackra/privacy/contracts` adds the
+  `SubjectHolds` port and `./node` adds its `PostgresSubjectHoldsDriver`. New dependency of identity: `@stackra/database`.
+
+### Patch Changes
+
+- b5141fe: Erasure reaches the analytics vendor (STA-1582). `AnalyticsDriver.erasePerson(subject)` deletes the subject's person
+  and its events at the vendor: the `posthog` driver finds it by distinct id through the private API and deletes it with
+  `delete_events` and `delete_recordings`, `none` deletes nothing and `memory` records the subject; any other driver
+  rejects by default. `EraseAnalyticsPersonListener` (`./node`) calls it after `SubjectErased` and logs
+  `analytics.erasure.erased`. New config `posthogApiHost`, `posthogProjectId` and the
+  `ANALYTICS_POSTHOG_PERSONAL_API_KEY` secret (`posthogPersonalApiKey`); without them the erasure rejects instead of
+  succeeding silently. The privacy README lists the analytics listener among the erasure fan-out.
+- 1a9259b: The integration tier runs (STA-1570). `@stackra/vitest-config/int` adds `intTier(config)` and `INT_TESTS`
+  (`src/**/__tests__/**/*.int.test.{ts,tsx}` and gen's `.stackra/tests/**/*.int.test.ts`); `servicePreset`'s `int`
+  project uses the same globs. The members with `.int.test.ts` files gain `vitest.int.config.ts` and a `test:int` script,
+  which the new turbo task `test:int` and the Quality Gate run on a Testcontainers Postgres.
+- Updated dependencies [2d5a888]
+- Updated dependencies [cfdcdf8]
+- Updated dependencies [1a9259b]
+- Updated dependencies [5fa1a15]
+- Updated dependencies [9085c41]
+  - @stackra/actions@0.2.0
+  - @stackra/database@0.2.0
+  - @stackra/iam@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/search@0.2.0
+  - @stackra/outbox@0.2.0
+  - @stackra/queue@0.2.0
+  - @stackra/scheduler@0.2.0
+  - @stackra/workflow@0.2.0
+  - @stackra/data-transfer@0.2.0
+  - @stackra/filesystem@0.2.0
+  - @stackra/model@0.2.0
+  - @stackra/testing@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/events@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

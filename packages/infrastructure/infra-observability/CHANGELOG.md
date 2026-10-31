@@ -1,5 +1,27 @@
 # @stackra/infra-observability
 
+## 0.2.0
+
+### Minor Changes
+
+- fb3f110: Monitor public URLs from outside (STA-1573): the root runway's `observability.uptime` lists each URL, its environment,
+  interval and the status codes that mean up; `observabilityPlan` checks it and `./node` adds `uptimeMonitors`, one
+  Better Stack uptime monitor per entry that pages whoever is on call. The status page lists each uptime monitor of its
+  environments, and `./node` now exports `statusPage`. A `pulumi/` project applies core's own stack (the registry,
+  static and turbo-cache Workers) from `apply-observability.yml`.
+
+### Patch Changes
+
+- Updated dependencies [9085c41]
+- Updated dependencies [3e4c408]
+- Updated dependencies [a4b8844]
+- Updated dependencies [d37c08f]
+  - @stackra/contracts@0.2.0
+  - @stackra/runway@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/coding-standard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "The Stackra house lint rules as one oxlint JS plugin: the code conventions and v3.1 grammar checks oxlint lacks",
   "keywords": [

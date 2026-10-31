@@ -1,5 +1,13 @@
 # @stackra/icons
 
+## 0.2.0
+
+### Patch Changes
+
+- @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

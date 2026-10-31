@@ -1,6 +1,6 @@
 {
   "name": "@stackra/reports",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra reports: the Report<Source>({ key, dimensions, measures, defaultFilter, permission }) kind base over a model or projection, with typed dimensions (time grains, Link paths) and a closed set of measures (count, countDistinct, sum, avg, min, max and formulas over other measures), the ReportRequest and ReportResult contract of the generated report query, the ReportRunner port, in ./contracts the ReportEngine port an engine package implements and the ProductAnalytics port (funnels, retention, cohorts), and in ./node the engine report runner, the PostHog product analytics driver and the Postgres report engine (one parameterised statement with grouping sets for grand totals, record visibility and row-level security, the mixed-currency guard, the read replica, a statement timeout and a row cap)",
   "keywords": [

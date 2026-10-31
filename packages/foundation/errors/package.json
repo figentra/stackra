@@ -1,6 +1,6 @@
 {
   "name": "@stackra/errors",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra refusals: the Refusal({ kind }) kind base, ErrorKind, the core refusals, the ADR 0140 error envelope, the ErrorReporter port, useErrorReporter and the toRefuseWith matcher, the Sentry ErrorReporter driver with SentryConfig, and LiveReadOnlyError",
   "keywords": [

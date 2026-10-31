@@ -1,6 +1,6 @@
 {
   "name": "@stackra/infra-cloudflare",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Pulumi programs for the Cloudflare core stack: the zones and DNS, Worker custom domains, R2 buckets (the Turborepo cache), the dev tunnels, Access, and the edge (TLS, managed WAF, bots, the per-IP rate limit and the API cache bypass) read from the root runway",
   "keywords": [

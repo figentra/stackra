@@ -1,6 +1,6 @@
 {
   "name": "@stackra/testing",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "The generic Stackra test kit: vitest re-exports, a frozen clock and ids, the Fake base, typed matchers, plain fixture factories, thin React and React Native render helpers with the route helpers, and the Playwright end-to-end kit",
   "keywords": [

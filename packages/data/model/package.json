@@ -1,6 +1,6 @@
 {
   "name": "@stackra/model",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra models: the Model kind base with Model.with(...traits), the model traits, relations (Ref, Collection, Link across modules), the @Index and @Searchable facets, and the ORM column types and Money embeddable that generated entity metadata imports",
   "keywords": [

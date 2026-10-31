@@ -1,5 +1,28 @@
 # @stackra/platform
 
+## 0.2.0
+
+### Minor Changes
+
+- 6f67da8: Add `killSwitchServiceWorker()` to `@stackra/platform/sw`: the source of a self-retiring `sw.js` (ADR 0325 rule 18).
+  Published at the installed worker's URL, it activates at once, deletes every cache, unregisters itself and reloads the
+  open tabs (runbook: deploys, "Retire a service worker").
+
+### Patch Changes
+
+- 3d18ae6: Fix a launch crash on iOS: `ExpoSystemSettingsDriver.tracking()` called expo-tracking-transparency's status read,
+  which is fatal (`RCTFatal`) in an app without `NSUserTrackingUsageDescription`. Tracking now reads `denied` without
+  calling the library unless the host sets `asksForTracking` (a driver subclass, added with the plugin and its usage
+  string); `requestTracking()` then never prompts.
+- Updated dependencies [9085c41]
+  - @stackra/contracts@0.2.0
+  - @stackra/filesystem@0.2.0
+  - @stackra/storage@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+  - @stackra/state@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

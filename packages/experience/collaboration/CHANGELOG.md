@@ -1,5 +1,38 @@
 # @stackra/collaboration
 
+## 0.2.0
+
+### Patch Changes
+
+- 7b8a004: Fixes two bugs that broke consumers of 0.1.0 outside this repository:
+  
+  - `@stackra/oxlint-config` loaded its JS plugins by monorepo-relative source paths, so `oxlint` failed with "Failed to
+    load JS plugin" in every other repository. `base.jsonc` now loads them through two shipped loaders
+    (`src/plugins/*.mjs`). Each one imports the plugin's source inside this repository and the published package
+    (`@stackra/coding-standard`, `@stackra/feature-flags/lint`) everywhere else. Both packages are peers.
+  - `@stackra/builder/react` and `@stackra/collaboration/react` import `yjs`, but declared it as an optional peer, so a
+    consumer without it failed with "Cannot find package 'yjs'". `yjs` is now a required peer.
+- Updated dependencies [2d5a888]
+- Updated dependencies [cfdcdf8]
+- Updated dependencies [2d5a888]
+- Updated dependencies [1a9259b]
+- Updated dependencies [5fa1a15]
+- Updated dependencies [9085c41]
+  - @stackra/actions@0.2.0
+  - @stackra/database@0.2.0
+  - @stackra/errors@0.2.0
+  - @stackra/iam@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/transport@0.2.0
+  - @stackra/outbox@0.2.0
+  - @stackra/entitlements@0.2.0
+  - @stackra/realtime@0.2.0
+  - @stackra/model@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/events@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

@@ -1,5 +1,30 @@
 # @stackra/database
 
+## 0.2.0
+
+### Patch Changes
+
+- cfdcdf8: The package's own migrations (`0001`–`0004`) import `Migration`, `Extension` and their types from `@stackra/database`
+  instead of the internal `#core/*` aliases. A service that installs `@stackra/database` from the registry compiles them
+  from a copy in its own `.stackra/cache`, where `#core` does not resolve, so gen refused them with
+  `migration_load_failed`. The compiled SQL is unchanged.
+- 1a9259b: The integration tier runs (STA-1570). `@stackra/vitest-config/int` adds `intTier(config)` and `INT_TESTS`
+  (`src/**/__tests__/**/*.int.test.{ts,tsx}` and gen's `.stackra/tests/**/*.int.test.ts`); `servicePreset`'s `int`
+  project uses the same globs. The members with `.int.test.ts` files gain `vitest.int.config.ts` and a `test:int` script,
+  which the new turbo task `test:int` and the Quality Gate run on a Testcontainers Postgres.
+- Updated dependencies [2d5a888]
+- Updated dependencies [2d5a888]
+- Updated dependencies [9085c41]
+  - @stackra/actions@0.2.0
+  - @stackra/errors@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/model@0.2.0
+  - @stackra/testing@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+  - @stackra/cache@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

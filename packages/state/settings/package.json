@@ -1,6 +1,6 @@
 {
   "name": "@stackra/settings",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra settings: the Settings({ scopes, navigation }) kind and the @Setting field decorator, SettingsReader resolving a module's group through the scope cascade with locks, the SettingValueStore port with its memory and Postgres drivers and the stored-settings table, the generated-key helpers settingKeys and settingsPage, SettingsResolver with market-pack legal floors, provenance, live and sandbox keys, revisions, four-eyes approval and schedules, YAML settings packs with diff and apply, the Promotable port with its settings driver, the native SettingsForm and fakeSettings",
   "keywords": [

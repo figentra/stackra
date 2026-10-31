@@ -1,6 +1,6 @@
 {
   "name": "@stackra/native-card-terminal",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra native card terminal: the StackraCardTerminal Expo module over Stripe Terminal's iOS and Android SDKs, the stripe_terminal CardTerminal driver for Bluetooth readers, the native StripeTerminalBridge driver for Tap to Pay, connection tokens from the server through the StripeTerminalServer port, and the config plugin that adds the Bluetooth, location and NFC permissions",
   "keywords": [

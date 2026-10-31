@@ -1,5 +1,29 @@
 # @stackra/achievements
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies [2d5a888]
+- Updated dependencies [cfdcdf8]
+- Updated dependencies [2d5a888]
+- Updated dependencies [1a9259b]
+- Updated dependencies [5fa1a15]
+- Updated dependencies [9085c41]
+  - @stackra/actions@0.2.0
+  - @stackra/database@0.2.0
+  - @stackra/errors@0.2.0
+  - @stackra/iam@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/rules@0.2.0
+  - @stackra/integrations@0.2.0
+  - @stackra/content@0.2.0
+  - @stackra/documents@0.2.0
+  - @stackra/outbox@0.2.0
+  - @stackra/model@0.2.0
+  - @stackra/events@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

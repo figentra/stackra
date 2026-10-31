@@ -1,6 +1,6 @@
 {
   "name": "@stackra/native-customer-display",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra native customer display: the Expo module that draws the till's customer display view on the display plugged into a tablet (an Android Presentation, an iPad external-display scene) behind the CustomerDisplay port of @stackra/peripherals",
   "keywords": [

@@ -1,5 +1,56 @@
 # @stackra/panel
 
+## 0.2.0
+
+### Minor Changes
+
+- 6f3536e: A record or bulk action whose input needs more than the record id now opens a modal form generated from its input
+  schema (ADR 0307 rule 3): the record id pre-filled, the declared confirm copy shown, one run per selected record, and
+  the server's field errors kept on the form with only the refused records left to retry.
+- 9558710: Resource tables and View pages show an enum code by its localised label (`<module>::enums.<model>_<field>.<code>`,
+  then `<module>::enums.<field>.<code>`, or the keys a column or entry names with the new `.labels(...)`), and a flag
+  as a localised yes or no instead of a bare tick or cross.
+- eb69aa6: A View page's list entry formats its cells like any value: a `…Minor` cell is money in the item's own `currency`, else
+  in the record's currency named by the new `e.list(key, columns, { currency })` option, instead of raw minor units.
+- eb37de7: The generic Create and Edit pages each keep only the recorded form fields their own action's input takes, so one
+  declared form serves both modes when the create and update inputs differ (an `active` switch only Edit takes).
+
+### Patch Changes
+
+- Updated dependencies [f7ae148]
+- Updated dependencies [2d5a888]
+- Updated dependencies [cfdcdf8]
+- Updated dependencies [2d5a888]
+- Updated dependencies [1a9259b]
+- Updated dependencies [5fa1a15]
+- Updated dependencies [9085c41]
+- Updated dependencies [c4f295e]
+  - @stackra/access-log@0.2.0
+  - @stackra/actions@0.2.0
+  - @stackra/database@0.2.0
+  - @stackra/errors@0.2.0
+  - @stackra/iam@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/ui@0.2.0
+  - @stackra/clients@0.2.0
+  - @stackra/documents@0.2.0
+  - @stackra/entitlements@0.2.0
+  - @stackra/tenancy@0.2.0
+  - @stackra/query@0.2.0
+  - @stackra/data-transfer@0.2.0
+  - @stackra/filesystem@0.2.0
+  - @stackra/experience@0.2.0
+  - @stackra/navigation@0.2.0
+  - @stackra/money@0.2.0
+  - @stackra/pricing@0.2.0
+  - @stackra/model@0.2.0
+  - @stackra/icons@0.2.0
+  - @stackra/config@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/i18n@0.2.0
+  - @stackra/support@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

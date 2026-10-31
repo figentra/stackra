@@ -1,6 +1,6 @@
 {
   "name": "@stackra/state-machine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra state machines: the StateMachine<Model>({ field, history }) kind base and the @Transition method decorator; a transition checks its from states, runs the body in the caller's unit of work, writes the to state and records the history; no XState",
   "keywords": [

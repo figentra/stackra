@@ -1,5 +1,35 @@
 # @stackra/iam
 
+## 0.2.0
+
+### Minor Changes
+
+- 5fa1a15: Add the `RoleGrants` port to `@stackra/iam/contracts` (STA-1586): `grant(principal, grant)` gives a principal one role
+  at one scope node unless already held and answers whether it wrote. The IAM service that owns grants binds it; it is
+  the write half of the operator bootstrap. No driver ships here.
+
+### Patch Changes
+
+- 1a9259b: The integration tier runs (STA-1570). `@stackra/vitest-config/int` adds `intTier(config)` and `INT_TESTS`
+  (`src/**/__tests__/**/*.int.test.{ts,tsx}` and gen's `.stackra/tests/**/*.int.test.ts`); `servicePreset`'s `int`
+  project uses the same globs. The members with `.int.test.ts` files gain `vitest.int.config.ts` and a `test:int` script,
+  which the new turbo task `test:int` and the Quality Gate run on a Testcontainers Postgres.
+- Updated dependencies [2d5a888]
+- Updated dependencies [cfdcdf8]
+- Updated dependencies [2d5a888]
+- Updated dependencies [1a9259b]
+- Updated dependencies [9085c41]
+  - @stackra/actions@0.2.0
+  - @stackra/database@0.2.0
+  - @stackra/errors@0.2.0
+  - @stackra/contracts@0.2.0
+  - @stackra/rules@0.2.0
+  - @stackra/scope@0.2.0
+  - @stackra/model@0.2.0
+  - @stackra/testing@0.2.0
+  - @stackra/container@0.2.0
+  - @stackra/validation@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

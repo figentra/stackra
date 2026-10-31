@@ -1,6 +1,6 @@
 {
   "name": "@stackra/runway",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Runway v3: the member (WHAT) and root (WHERE) runway schemas with their JSON Schema files, the topology placement check, and the readers of the resolved dev ports and release facts that generated configs call",
   "keywords": [

@@ -1,6 +1,6 @@
 {
   "name": "@stackra/storage",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Stackra client storage: the Storage port with the named areas of ADR 0256 (prefs, session, cache, outbox, secrets, files), values checked by their generated schemas, a time-to-live per write, the memory, web and native drivers, usePrefs and fakeStorage",
   "keywords": [

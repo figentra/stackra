@@ -1,6 +1,6 @@
 {
   "name": "@stackra/infra-tools",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "description": "Pulumi program for the self-hosted tools stack each region runs (owner decision R3-5): Documenso, the OCR server, Nominatim and Photon on a regional OpenStreetMap extract, LibreTranslate and Chatwoot, planned from the root runway's providers.tools block, with the endpoints OS integrations turns into managed Connections",
   "keywords": [
