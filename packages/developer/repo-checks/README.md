@@ -60,14 +60,6 @@ root `specs/`, then the foreign-status, bug-lane and lane gates, then the trace 
 `specCheckTasks`, `specCheckLane`, `specCheckForeignStatus`, `specCheckBug`, `specTrace`, `specTraceProblems`, `specDrift`
 and the parsers (`specParseTasks`, `specDefinedIds`, `specCoversTags`, …).
 
-Tiers (ADR 0502): `specTierOf` reads a spec's `**Tier**` (`trivial`, `small`, `feature`, `big`), `specComputedTier` the floor a
-`git diff --name-status` sets (a migration, contract, permission, money code or new app or Worker forces `feature`; a new
-service or package `big`), and `specCheckTier` refuses a declared tier below it (a branch with no spec is `trivial`; a spec
-without a tier is exempt). `specApprovedAt` and `specCheckApproval` read and require the approval stops: `feature` before
-Tasked, `big` before Planned and before Tasked. `specCheckCriteria` requires EARS acceptance criteria (`- **AC-###**: WHEN … THE …
-SHALL …`), `specCheckDesign` plan.md's nine design sections, and `specCheckTraceTasks` tasks that each cover an AC and name a
-file. `specCheckStage` runs them, and takes a small spec's short design and tasks from spec.md.
-
 A spec folder is `<prefix>-<n>-<slug>` and its issue key is `<PREFIX>-<n>` (`os-12-billing` is `OS-12`). A key in a branch, a
 `Refs:` trailer, a `[KEY-n]` task tag or an `@covers <prefix>-<n>:ID` tag counts only for the prefixes the repository's
 existing spec folders use (`specPrefixesOf`); a lone `word-123` is never a key. With no spec folder yet, the lane gate waits.

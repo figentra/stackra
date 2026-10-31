@@ -50,10 +50,5 @@ export function specTrace(context: {
     id,
     method: /verified by:\s*([a-z0-9/ -]+)/i.exec(scLines.get(id) ?? "")?.[1]?.trim(),
   }));
-  const acs = [...specDefinedIds(spec, "AC").live].map((id) => ({
-    id,
-    tasks: tasksFor(id),
-    tested: covered.has(id),
-  }));
-  return { key: parsed?.number, frs, ps, scs, acs };
+  return { key: parsed?.number, frs, ps, scs };
 }

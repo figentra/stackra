@@ -28,9 +28,6 @@ export function specTraceProblems(trace: SpecTrace, prefix: string): string[] {
       );
   for (const p of trace.ps)
     if (!p.tested) problems.push(`${p.id} has no test carrying \`@covers ${tag}:${p.id}\``);
-  for (const ac of trace.acs ?? [])
-    if (!ac.tested)
-      problems.push(`${ac.id} has no test carrying \`@covers ${tag}:${ac.id}\` (ADR 0502)`);
   for (const sc of trace.scs)
     if (!sc.method)
       problems.push(`${sc.id} names no verification method ("— verified by: unit|e2e|k6|manual")`);

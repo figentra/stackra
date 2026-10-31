@@ -71,10 +71,10 @@ nowhere a gate could read.
 
 ## Enforcement
 
-- `@stackra/repo-checks` (`specTierOf`, `specComputedTier`, `specCheckTier`, `specApprovedAt`, `specCheckApproval`,
-  `specCheckCriteria`, `specCheckDesign`, `specCheckTraceTasks`, `specCheckStage`, `specFindings`), run by `stackra check`'s spec phase and core's `spec-gate.mjs`.
-- `.agents/hooks/_rules.mjs` `decidePlanGate` (ADR 0362), with its tests.
-- Vellum's `gate` carries the same rules for repositories that run Vellum.
+- Vellum's `gate` (`@stackra/vellum/gate`: `checkStage`, `checkPlan`, `checkDesign`, `checkCriteria`,
+  `checkTraceTasks`, the tier, the diff floor and the approval stops) is the only home of these rules; `stackra check`'s
+  spec phase calls `vellum gate ci` and `vellum trace ci`. `@stackra/repo-checks` holds no copy.
+- `.agents/hooks/_rules.mjs` `decidePlanGate` (ADR 0362), with its tests, imports `@stackra/vellum/gate`.
 
 ## Supersedes and sources
 

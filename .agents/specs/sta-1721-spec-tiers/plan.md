@@ -2,6 +2,11 @@
 
 **Spec**: `.agents/specs/sta-1721-spec-tiers/spec.md`
 
+> **Revised 2026-10-31 (leader, decision D7 of the Vellum final plan).** Vellum is the only home of these rules. The
+> `@stackra/repo-checks` copy below was removed before landing; core keeps the ADR, the preset and template text, the
+> docs and the plan-gate hook, which imports `@stackra/vellum/gate`. `stackra check`'s spec phase reaches the rules by
+> calling `vellum gate ci` and `vellum trace ci` (`chore/cli-vellum`). The repo-checks steps below are historical.
+
 ## Architecture overview
 
 The rules live once, as pure functions in `@stackra/repo-checks` (erasable TypeScript, loaded by plain Node), and run

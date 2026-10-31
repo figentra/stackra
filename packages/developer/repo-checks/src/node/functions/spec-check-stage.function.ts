@@ -1,9 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `specCheckStage(folder, text, context)`, the stage rules for a spec at its declared `**Status**`: a status
- *          may lag its artifacts, never lead them. A tiered spec has EARS acceptance criteria; a `small` spec keeps a
- *          short design and its tasks in spec.md (`## Design`, `## Tasks`); a `feature` or `big` spec's plan.md is the
- *          design, its tasks trace to criteria and files, and it passes its approval stops (ADR 0502).
+ *          may lag its artifacts, never lead them.
  * Boundary: pure.
  * Runtime: node
  * Governing contract: ADR 0120 (SDLC spec location, lanes and change risk); ADR 0198; ADR 0282 (decision 3). Loaded by
@@ -12,19 +10,14 @@
  */
 import { SPEC_STATUSES } from "../constants/spec-statuses.constant.ts";
 import { specAtLeast } from "./spec-at-least.function.ts";
-import { specCheckApproval } from "./spec-check-approval.function.ts";
 import { specCheckClarified } from "./spec-check-clarified.function.ts";
-import { specCheckCriteria } from "./spec-check-criteria.function.ts";
-import { specCheckDesign } from "./spec-check-design.function.ts";
 import { specCheckPlan } from "./spec-check-plan.function.ts";
 import { specCheckTasks } from "./spec-check-tasks.function.ts";
-import { specCheckTraceTasks } from "./spec-check-trace-tasks.function.ts";
 import { specFolderOf } from "./spec-folder-of.function.ts";
 import { specFolderShape } from "./spec-folder-shape.function.ts";
 import { specParseTasks } from "./spec-parse-tasks.function.ts";
 import { specStatusOf } from "./spec-status-of.function.ts";
 import { specStrip } from "./spec-strip.function.ts";
-import { specTierOf } from "./spec-tier-of.function.ts";
 
 /**
  * Problems for a spec at its declared status.
@@ -71,32 +64,6 @@ export function specCheckStage(
     problems.push(
       `\`## Status history\` has no "→ ${status.charAt(0).toUpperCase()}${status.slice(1)}" line`,
     );
-  problems.push(...specCheckApproval(text));
-  const tier = specTierOf(text);
-  if (tier !== undefined && tier !== "trivial") problems.push(...specCheckCriteria(text));
-  // ADR 0502: a small spec's design and tasks are sections of spec.md, not files.
-  if (tier === "small") {
-    const part = (name: string): string | undefined =>
-      new RegExp(`^## ${name}\\b[^\\n]*\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m").exec(body)?.[1];
-    const design = part("Design");
-    const steps = part("Tasks");
-    if (specAtLeast(status, "planned")) {
-      if (design === undefined)
-        problems.push(`status ${status} needs a \`## Design\` section in a small spec`);
-      else problems.push(...specCheckDesign(design, "spec.md ## Design", "###"));
-    }
-    if (specAtLeast(status, "tasked")) {
-      if (steps === undefined)
-        problems.push(`status ${status} needs a \`## Tasks\` section in a small spec`);
-      else problems.push(...specCheckTraceTasks(steps, text, "spec.md ## Tasks", prefixes));
-    }
-    return problems;
-  }
-  const tiered = tier === "feature" || tier === "big";
-  if (tiered && specAtLeast(status, "planned") && files.includes("plan.md"))
-    problems.push(...specCheckDesign(plan, "plan.md", "##"));
-  if (tiered && specAtLeast(status, "tasked") && files.includes("tasks.md"))
-    problems.push(...specCheckTraceTasks(tasks, text, "tasks.md", prefixes));
   if (specAtLeast(status, "planned")) {
     if (!files.includes("plan.md")) problems.push(`status ${status} needs plan.md`);
     else problems.push(...specCheckPlan(plan, text));

@@ -30,11 +30,4 @@ export type SpecTrace = {
 
   /** Each live SC with the method after `verified by:`. */
   readonly scs: readonly { readonly id: string; readonly method: string | undefined }[];
-
-  /** Each acceptance criterion (AC-###, ADR 0502) with its tasks and whether a test `@covers` it. */
-  readonly acs: readonly {
-    readonly id: string;
-    readonly tasks: readonly string[];
-    readonly tested: boolean;
-  }[];
 };

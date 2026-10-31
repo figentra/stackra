@@ -78,3 +78,4 @@ Build it in core's spec checks (STA-1669's repo-checks and the CLI) and in Vellu
 
 - 2026-10-31: Draft → Clarified — Approved by owner 2026-10-31 (the rules as relayed by the leader)
 - 2026-10-31: Clarified → Planned — Approved by owner 2026-10-31 (build approved with the rules: "goooo")
+- 2026-10-31: Planned (revised) — Approved by leader 2026-10-31 (D7: the rules live only in Vellum's `gate`; the `@stackra/repo-checks` copy is removed)

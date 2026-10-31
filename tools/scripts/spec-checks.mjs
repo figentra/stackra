@@ -12,21 +12,14 @@ const SOURCE = "../../packages/developer/repo-checks/src/node";
 
 /** The spec functions, by file stem (`spec-check-stage` exports `specCheckStage`). */
 const FUNCTIONS = [
-  "spec-approved-at",
   "spec-at-least",
-  "spec-check-approval",
   "spec-check-bug",
   "spec-check-clarified",
-  "spec-check-criteria",
-  "spec-check-design",
   "spec-check-foreign-status",
   "spec-check-lane",
   "spec-check-plan",
   "spec-check-stage",
   "spec-check-tasks",
-  "spec-check-tier",
-  "spec-check-trace-tasks",
-  "spec-computed-tier",
   "spec-covers-tags",
   "spec-defined-ids",
   "spec-defined-lines",
@@ -45,21 +38,12 @@ const FUNCTIONS = [
   "spec-status-line",
   "spec-status-of",
   "spec-strip",
-  "spec-tier-of",
   "spec-trace-problems",
   "spec-trace",
 ];
 
 /** The spec constants, by file stem. */
-const CONSTANTS = [
-  "spec-design-sections",
-  "spec-dir",
-  "spec-folder",
-  "spec-impact-fields",
-  "spec-stages",
-  "spec-statuses",
-  "spec-tiers",
-];
+const CONSTANTS = ["spec-dir", "spec-folder", "spec-impact-fields", "spec-stages", "spec-statuses"];
 
 const load = (kind) => (stem) =>
   import(new URL(`${SOURCE}/${kind}s/${stem}.${kind}.ts`, import.meta.url).href);

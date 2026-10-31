@@ -33,7 +33,7 @@ export function specCheckTasks(
   const problems: string[] = [];
   const tasks = specParseTasks(tasksText, prefixes);
   if (!tasks.length) return ["tasks.md: no `- [ ] T###` task lines"];
-  const ids = new Set(specDefinedIds(spec, "(?:FR|SC|EC|AC)").live);
+  const ids = new Set(specDefinedIds(spec, "(?:FR|SC|EC)").live);
   for (const p of specProperties(plan).keys()) ids.add(p);
   const seen = new Map<string, number>();
   for (const t of tasks) {
