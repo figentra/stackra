@@ -1483,3 +1483,11 @@
   status: reserved
   owner: stackra-console (figentra/sta-1730-console-port)
   issue: STA-1730
+"0507":
+  slug: ask-tamo-ai-slots-in-the-design-system
+  status: proposed
+  owner: c6 design system (feat/c6-tamo-ai)
+"0508":
+  slug: every-action-is-shortcut-aware
+  status: proposed
+  owner: c6 design system (feat/c6-shortcuts)
