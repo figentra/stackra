@@ -4,7 +4,7 @@
  *          featured plan and reports the chosen plan with the period.
  * Boundary: unit tier, jsdom, the real @stackra/ui components.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0503.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0504.
  */
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "@stackra/testing";

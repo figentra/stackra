@@ -5,7 +5,7 @@
  * Boundary: composition of @stackra/ui only. It authenticates nothing: providers redirect through the host (the BFF and
  *           `SignInBrowser` drivers of this package) and the form hands its values to `onSubmit`.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0206 (identity); ADR 0165 (UI through @stackra/ui).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0206 (identity); ADR 0165 (UI through @stackra/ui).
  */
 import {
   Alert,

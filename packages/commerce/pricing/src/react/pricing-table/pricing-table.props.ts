@@ -4,7 +4,7 @@
  * Boundary: an interface in its own file beside the component (ADR 0305). Plans, prices, periods and copy are data
  *           the host reads from its catalogue or settings; the block hard-codes none of them (configuration, not code).
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0305 (`<name>.props.ts`).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0305 (`<name>.props.ts`).
  */
 
 /** One billing period: "monthly", "yearly" or any the host sells. */

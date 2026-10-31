@@ -4,7 +4,7 @@
  * Boundary: an interface in its own file beside the component (ADR 0305). Copy, links and the newsletter's words are
  *           page content; the block hard-codes none of them.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0305 (`<name>.props.ts`).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0305 (`<name>.props.ts`).
  */
 
 /**

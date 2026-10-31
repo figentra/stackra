@@ -4,7 +4,7 @@
  *          as the host's pricing evaluated them.
  * Boundary: an interface in its own file (ADR 0305); the blocks compute no tax, shipping or discount.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits).
+ * Governing contract: ADR 0504 (module UI kits).
  */
 
 /**

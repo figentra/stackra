@@ -4,7 +4,7 @@
  *          grid of features, each with an icon, a title and a line.
  * Boundary: composition of @stackra/ui only; every word and icon comes in props.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
  */
 import { Heading, Icon, Text } from "@stackra/ui/react";
 import { isValidElement, type ReactElement, useId } from "react";

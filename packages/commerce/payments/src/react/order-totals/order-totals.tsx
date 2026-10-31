@@ -3,7 +3,7 @@
  * Purpose: `OrderTotals`, the description list of an order's totals the Cart and Checkout blocks end with.
  * Boundary: a function component on @stackra/ui; internal to the kit (the barrel does not export it).
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0165 (UI through @stackra/ui).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui).
  */
 import { MoneyValue, Separator, Text } from "@stackra/ui/react";
 import { Fragment, type ReactElement } from "react";

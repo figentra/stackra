@@ -3,7 +3,7 @@
  * Purpose: `COMPONENTS`, every registry entry in listing order (category, tier, slug). Metro has no glob, so
  *          the entry files are imported one by one.
  * Boundary: GENERATED from `src/registry/components/<tier>/<slug>.ts` and the module kits'
- *           `packages/<category>/<name>/showcase/<slug>.json` (gen-barrel, ADR 0503); do not edit by hand.
+ *           `packages/<category>/<name>/showcase/<slug>.json` (gen-barrel, ADR 0504); do not edit by hand.
  * Runtime: isomorphic
  * Governing contract: showcase redesign spec (2026-10-27) section 2.
  */

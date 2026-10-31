@@ -6,7 +6,7 @@
  *           ConversationStore (this package's core); starters and copy are the module's or tenant's data. The step and
  *           source shapes are @stackra/ui's own (`ReasoningStep`, `SourceItem`), so a turn passes straight through.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0305 (`<name>.props.ts`).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0305 (`<name>.props.ts`).
  */
 import type { PromptSuggestion, ReasoningStep, SourceItem } from "@stackra/ui/contracts";
 

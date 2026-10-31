@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `LoadedEntry`, a registry entry with the constant that exports it and its `#src` module path, or a module
- *          kit's entry (no module: the barrel inlines it, ADR 0503).
+ *          kit's entry (no module: the barrel inlines it, ADR 0504).
  * Boundary: a type only, in its own file (ADR 0305).
  * Runtime: node
  * Governing contract: showcase redesign spec (2026-10-27) section 7.2.

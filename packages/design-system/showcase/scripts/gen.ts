@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `pnpm -F @stackra/showcase gen [--check]`: regenerate the registry barrel (with the module kits' entries,
- *          ADR 0503), `api/**` (+ index and the en `api::` seed), `search/index.json` and the mobile demo `.code.ts`
+ *          ADR 0504), `api/**` (+ index and the en `api::` seed), `search/index.json` and the mobile demo `.code.ts`
  *          files; with `--check`, write nothing and exit 1 on any drift (CI). Warnings (props folder without entry, missing part) print but do not fail.
  * Boundary: the only writer of those generated files; runs the TS sources with node's type stripping, resolving the
  *           package's `#src/*` imports through a module hook.

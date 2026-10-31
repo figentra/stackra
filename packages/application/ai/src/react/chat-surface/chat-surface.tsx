@@ -7,7 +7,7 @@
  *           MessageActions, PromptSuggestions, AiMark). It runs no model: the host streams turns from the agent runtime
  *           and passes them in.
  * Runtime: browser
- * Governing contract: ADR 0503 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
+ * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
  */
 import {
   AiMark,
