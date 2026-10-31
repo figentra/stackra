@@ -17,6 +17,7 @@ export { Role } from "#core/bases/role.base";
 export { IamAccessControlDriver } from "#core/drivers/iam-access-control.driver";
 export { IamGrantedScopesDriver } from "#core/drivers/iam-granted-scopes.driver";
 export { IamRolesAtNodeDriver } from "#core/drivers/iam-roles-at-node.driver";
+export { MemoryDimensionValuesDriver } from "#core/drivers/memory-dimension-values.driver";
 export { MemoryPolicySnapshotStoreDriver } from "#core/drivers/memory-policy-snapshot-store.driver";
 export { MemoryPolicySourceDriver } from "#core/drivers/memory-policy-source.driver";
 export { StorePolicySourceDriver } from "#core/drivers/store-policy-source.driver";
