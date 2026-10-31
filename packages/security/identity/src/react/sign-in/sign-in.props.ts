@@ -7,7 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0504 (module UI kits); ADR 0206 (identity, provider-neutral); ADR 0305.
  */
-import type { SocialProvider } from "@stackra/ui/contracts";
+import type { HeadingLevel, SocialProvider } from "@stackra/ui/contracts";
 
 /**
  * The sign-in card's providers, form and words.
@@ -34,6 +34,8 @@ export interface SignInProps {
   readonly pending?: string | undefined;
   /** The last attempt's error, shown above the form. */
   readonly error?: string | undefined;
+  /** The title's level in the page outline: 2 by default, below the page's h1; 1 when the card is the whole page. */
+  readonly headingLevel?: HeadingLevel | undefined;
   readonly labels: {
     readonly title: string;
     readonly description?: string | undefined;
