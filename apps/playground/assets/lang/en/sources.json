@@ -1,0 +1,13 @@
+{
+  "answer": {
+    "text": "Saudi VAT is 15% on most goods and services, and invoices must show the seller's VAT number.",
+    "zatca": "ZATCA: VAT guide",
+    "zatca_note": "The tax authority's guide to VAT rates, invoices and returns.",
+    "gazette": "VAT implementing regulations",
+    "handbook": "finance-handbook.pdf"
+  },
+  "chips": {
+    "before": "Delivery fees were cut in March",
+    "after": "and the new zones went live in April"
+  }
+}

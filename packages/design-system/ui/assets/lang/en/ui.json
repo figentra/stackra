@@ -216,6 +216,22 @@
     "show": "Show tasks",
     "hide": "Hide tasks"
   },
+  "scheduler": {
+    "previous": "Previous",
+    "next": "Next",
+    "today": "Today",
+    "view": "View",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "agenda": "Agenda",
+    "all_day": "All day",
+    "more": "{count, plural, other {# more}}",
+    "no_events": "No events",
+    "event": "{title}, {time}",
+    "slot": "New event, {day}, {time}",
+    "now": "Now"
+  },
   "recurrence_editor": {
     "label": "Repeat",
     "every": "Repeat every",
@@ -393,7 +409,12 @@
     "end": "End",
     "today": "Today",
     "region": "Region",
-    "no_data": "No data"
+    "no_data": "No data",
+    "download": "Download chart",
+    "share": "Share chart",
+    "share_png": "Share as image",
+    "share_csv": "Share as CSV",
+    "word": "Word"
   },
   "data_grid": {
     "changes": "{count, plural, one {# unsaved change} other {# unsaved changes}}",
@@ -1066,5 +1087,29 @@
   },
   "shimmer": {
     "thinking": "Thinking…"
+  },
+  "chat_message": {
+    "user": "You",
+    "assistant": "Assistant"
+  },
+  "prompt_input": {
+    "label": "Message input",
+    "placeholder": "Ask anything…",
+    "send": "Send message",
+    "stop": "Stop generating"
+  },
+  "reasoning": {
+    "summary": "Reasoning",
+    "steps": "Reasoning steps"
+  },
+  "sources": {
+    "label": "Sources",
+    "count": "{count, plural, one {# source} other {# sources}}",
+    "document": "Document"
+  },
+  "rating": {
+    "label": "Rating",
+    "star": "{count, plural, one {# star} other {# stars}}",
+    "value": "{value} out of {max} stars"
   }
 }

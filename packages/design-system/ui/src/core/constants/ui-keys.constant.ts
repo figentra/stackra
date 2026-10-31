@@ -153,6 +153,11 @@ export const UI_KEYS = keys({
       "today",
       "region",
       "no_data",
+      "download",
+      "share",
+      "share_png",
+      "share_csv",
+      "word",
     ],
     drawer: ["resize", "back", "expand", "close_escape"],
     widget_frame: [

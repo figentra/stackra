@@ -1,0 +1,72 @@
+{
+  "generatedFrom": {
+    "hash": "6921c71667fad6bf",
+    "propsFiles": ["ui/src/react/chat-message/chat-message.props.ts"]
+  },
+  "importLine": "import { ChatMessage } from \"@stackra/ui/react\";",
+  "key": "free/chat-message",
+  "parts": [
+    {
+      "name": "ChatMessage",
+      "props": [
+        {
+          "description": "Who wrote it: `user` draws a bubble at the reading end, `assistant` an unboxed body beside the avatar.",
+          "name": "from",
+          "required": true,
+          "source": "stackra",
+          "type": "\"user\" | \"assistant\""
+        },
+        {
+          "description": "The message: text, or rendered Markdown, media or a `Reasoning` block.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The assistant's avatar, usually an `Avatar`; drawn for the assistant only.",
+          "name": "avatar",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Files sent with the message, usually `AttachmentCard`s.",
+          "name": "attachments",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The row under the message, usually `MessageActions`.",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "True while the assistant has not written yet: a \"Thinking…\" shimmer stands in for the text.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The author's name read before the message. Defaults to the catalogue's \"You\" or \"Assistant\".",
+          "name": "authorLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

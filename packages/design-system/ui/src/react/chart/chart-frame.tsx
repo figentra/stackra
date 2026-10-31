@@ -53,7 +53,7 @@ export function ChartFrame({
         </thead>
         <tbody>
           {table.rows.map((row) => (
-            <tr key={String(row[0])}>
+            <tr key={row.join("\u001F")}>
               {row.map((cell, column) =>
                 column === 0 ? (
                   <th key={table.head[column]} scope="row">

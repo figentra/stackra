@@ -1,0 +1,19 @@
+{
+  "review": {
+    "label": "Your visit to Al Olaya branch",
+    "description": "Press the chosen star again to clear it.",
+    "thanks": "{count, plural, =0 {No rating yet} one {You gave # star} other {You gave # stars}}"
+  },
+  "read_only": {
+    "branch": "Al Olaya branch",
+    "reviews": "4.5 from 128 reviews"
+  },
+  "sizes": {
+    "sm": "Small",
+    "md": "Medium",
+    "lg": "Large"
+  },
+  "arabic": {
+    "label": "تقييم الخدمة"
+  }
+}

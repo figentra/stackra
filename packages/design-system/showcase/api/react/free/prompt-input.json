@@ -1,0 +1,123 @@
+{
+  "generatedFrom": {
+    "hash": "c465a3d219b5b203",
+    "propsFiles": ["ui/src/react/prompt-input/prompt-input.props.ts"]
+  },
+  "importLine": "import { PromptInput } from \"@stackra/ui/react\";",
+  "key": "free/prompt-input",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the text on each change.",
+          "name": "onValueChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        },
+        {
+          "description": "Called with the trimmed text on send (the button, or Enter on web); an uncontrolled composer then clears.",
+          "name": "onSubmit",
+          "required": true,
+          "source": "stackra",
+          "type": "(value: string) => void"
+        },
+        {
+          "description": "Called by the button while `streaming`, to stop the reply.",
+          "name": "onStop",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called with the files dropped on the composer; set it to accept drops (the border turns dashed while dragging).",
+          "name": "onFilesDrop",
+          "required": false,
+          "source": "stackra",
+          "type": "(files: readonly File[]) => void"
+        }
+      ],
+      "name": "PromptInput",
+      "props": [
+        {
+          "description": "The text, for a controlled composer; pair it with `onValueChange`.",
+          "name": "value",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The starting text of an uncontrolled composer.",
+          "name": "defaultValue",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The run state: `ready` (the default), `submitted`, `streaming` or `error`. The text is locked while it runs.",
+          "name": "status",
+          "required": false,
+          "source": "stackra",
+          "type": "\"error\" | \"ready\" | \"submitted\" | \"streaming\""
+        },
+        {
+          "description": "The hint in the empty box. Defaults to the catalogue's \"Ask anything…\".",
+          "name": "placeholder",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The box's accessible name. Defaults to the catalogue's \"Message input\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to refuse typing and sending.",
+          "name": "isDisabled",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The files attached so far, usually `AttachmentCard`s, drawn above the text.",
+          "name": "attachments",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The toolbar's start group, such as an attach button and a `ModelPicker`.",
+          "name": "startActions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The toolbar's end group, before the send button, such as a `VoiceInput`.",
+          "name": "endActions",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "A muted line under the composer, such as \"Answers can be wrong; check important facts.\"",
+          "name": "footer",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

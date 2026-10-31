@@ -1,0 +1,30 @@
+{
+  "generatedFrom": {
+    "hash": "23dcd4ed9a00ca4f",
+    "propsFiles": ["ui/src/native/code/code.props.ts"]
+  },
+  "importLine": "import { Code } from \"@stackra/ui/native\";",
+  "key": "free/code",
+  "parts": [
+    {
+      "name": "Code",
+      "props": [
+        {
+          "description": "The code, as text.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the element.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

@@ -216,6 +216,22 @@
     "show": "Mostra attività",
     "hide": "Nascondi attività"
   },
+  "scheduler": {
+    "previous": "Precedente",
+    "next": "Successivo",
+    "today": "Oggi",
+    "view": "Vista",
+    "day": "Giorno",
+    "week": "Settimana",
+    "month": "Mese",
+    "agenda": "Agenda",
+    "all_day": "Tutto il giorno",
+    "more": "{count, plural, other {altri #}}",
+    "no_events": "Nessun evento",
+    "event": "{title}, {time}",
+    "slot": "Nuovo evento, {day}, {time}",
+    "now": "Adesso"
+  },
   "recurrence_editor": {
     "label": "Ripeti",
     "every": "Ripeti ogni",
@@ -393,7 +409,12 @@
     "end": "Fine",
     "today": "Oggi",
     "region": "Regione",
-    "no_data": "Nessun dato"
+    "no_data": "Nessun dato",
+    "download": "Scarica grafico",
+    "share": "Condividi grafico",
+    "share_png": "Condividi come immagine",
+    "share_csv": "Condividi come CSV",
+    "word": "Parola"
   },
   "data_grid": {
     "changes": "{count, plural, one {# modifica non salvata} other {# modifiche non salvate}}",
@@ -1066,5 +1087,29 @@
   },
   "shimmer": {
     "thinking": "Sto pensando…"
+  },
+  "chat_message": {
+    "user": "Tu",
+    "assistant": "Assistente"
+  },
+  "prompt_input": {
+    "label": "Campo messaggio",
+    "placeholder": "Chiedi qualsiasi cosa…",
+    "send": "Invia messaggio",
+    "stop": "Interrompi risposta"
+  },
+  "reasoning": {
+    "summary": "Ragionamento",
+    "steps": "Passaggi del ragionamento"
+  },
+  "sources": {
+    "label": "Fonti",
+    "count": "{count, plural, one {# fonte} other {# fonti}}",
+    "document": "Documento"
+  },
+  "rating": {
+    "label": "Valutazione",
+    "star": "{count, plural, one {# stella} other {# stelle}}",
+    "value": "{value} su {max} stelle"
   }
 }

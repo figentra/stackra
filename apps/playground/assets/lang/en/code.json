@@ -1,0 +1,11 @@
+{
+  "inline": {
+    "before": "Run",
+    "between": "first, then open",
+    "after": "to name your app."
+  },
+  "arabic": {
+    "before": "شغّل الأمر",
+    "after": "قبل أن ترسل التغييرات."
+  }
+}

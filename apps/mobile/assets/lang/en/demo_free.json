@@ -4730,5 +4730,190 @@
       "dubai": "Dubai hub",
       "kuwait": "Kuwait City"
     }
+  },
+  "chart_export": {
+    "sales": {
+      "label": "Monthly sales, Riyadh branch",
+      "month": "Month",
+      "sales": "Sales",
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun"
+    },
+    "csv_only": {
+      "label": "Monthly sales, Riyadh branch",
+      "month": "Month",
+      "sales": "Sales",
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun"
+    }
+  },
+  "chord_diagram": {
+    "plans": {
+      "label": "Moves between plans, October",
+      "basic": "Basic",
+      "standard": "Standard",
+      "premium": "Premium",
+      "cancelled": "Cancelled"
+    }
+  },
+  "code": {
+    "inline": {
+      "before": "Run",
+      "between": "first, then open",
+      "after": "to name your app."
+    },
+    "arabic": {
+      "before": "شغّل الأمر",
+      "after": "قبل أن ترسل التغييرات."
+    }
+  },
+  "image": {
+    "photo": {
+      "alt": "Red sand dunes at dusk, with the sun low in the sky",
+      "caption": "The Empty Quarter, an hour before sunset."
+    },
+    "zoom": {
+      "alt": "Red sand dunes at dusk",
+      "caption": "Press the picture to see it full size."
+    },
+    "fallback": {
+      "missing": "No picture yet",
+      "broken": "A broken link"
+    }
+  },
+  "network_graph": {
+    "team": {
+      "label": "Who works with whom, product team",
+      "sara": "Sara",
+      "omar": "Omar",
+      "lina": "Lina",
+      "khalid": "Khalid",
+      "noura": "Noura",
+      "faisal": "Faisal",
+      "huda": "Huda",
+      "yousef": "Yousef",
+      "reem": "Reem",
+      "majed": "Majed"
+    }
+  },
+  "rating": {
+    "review": {
+      "label": "Your visit to Al Olaya branch",
+      "description": "Press the chosen star again to clear it.",
+      "thanks": "{count, plural, =0 {No rating yet} one {You gave # star} other {You gave # stars}}"
+    },
+    "read_only": {
+      "branch": "Al Olaya branch",
+      "reviews": "4.5 from 128 reviews"
+    },
+    "sizes": {
+      "sm": "Small",
+      "md": "Medium",
+      "lg": "Large"
+    }
+  },
+  "scheduler": {
+    "label": "Clinic bookings",
+    "checkup": "Check-up, Sara",
+    "cleaning": "Cleaning, Omar",
+    "consult": "Consultation, Lina",
+    "staff": "Staff meeting",
+    "xray": "X-ray, Khalid",
+    "holiday": "National Day"
+  },
+  "tree_diagram": {
+    "org": {
+      "label": "Headcount by team",
+      "company": "Company",
+      "operations": "Operations",
+      "riyadh": "Riyadh",
+      "jeddah": "Jeddah",
+      "technology": "Technology",
+      "platform": "Platform",
+      "mobile": "Mobile",
+      "data": "Data",
+      "sales": "Sales",
+      "retail": "Retail",
+      "wholesale": "Wholesale"
+    }
+  },
+  "word_cloud": {
+    "reviews": {
+      "label": "What customer reviews mention",
+      "delivery": "delivery",
+      "fresh": "fresh",
+      "price": "price",
+      "friendly": "friendly",
+      "fast": "fast",
+      "late": "late",
+      "coffee": "coffee",
+      "clean": "clean",
+      "app": "app",
+      "parking": "parking",
+      "cold": "cold",
+      "coupon": "coupon",
+      "staff": "staff",
+      "quality": "quality",
+      "queue": "queue",
+      "music": "music",
+      "breakfast": "breakfast",
+      "portion": "portion"
+    }
+  },
+  "chat_message": {
+    "conversation": {
+      "question": "Which branch had the most orders last week?",
+      "answer": "Al Olaya had the most orders last week: 1,284, up 12% on the week before. Al Malqa came second with 1,067.",
+      "file": "orders-week-43.csv"
+    },
+    "loading": {
+      "question": "Draft a reply to the late delivery complaint."
+    }
+  },
+  "prompt_input": {
+    "composer": {
+      "attach": "Attach a file",
+      "footer": "Answers can be wrong. Check important facts.",
+      "sent": "Sent: {text}",
+      "file": "menu-autumn.pdf"
+    },
+    "streaming": {
+      "value": "Summarise today's sales by branch",
+      "hint": "Press send to start the answer, then Stop."
+    }
+  },
+  "reasoning": {
+    "trace": {
+      "summary": "Thought for 4s",
+      "search_label": "Searched orders",
+      "search": "Read 3,912 orders from last week across 6 branches.",
+      "compare_label": "Compared branches",
+      "compare": "Al Olaya is up 12%; Al Malqa is down 3%.",
+      "check": "Checked for refunds that change the totals: none."
+    },
+    "streaming": {
+      "step": "Reading this month's stock counts…"
+    }
+  },
+  "sources": {
+    "answer": {
+      "text": "Saudi VAT is 15% on most goods and services, and invoices must show the seller's VAT number.",
+      "zatca": "ZATCA: VAT guide",
+      "zatca_note": "The tax authority's guide to VAT rates, invoices and returns.",
+      "gazette": "VAT implementing regulations",
+      "handbook": "finance-handbook.pdf"
+    },
+    "chips": {
+      "before": "Delivery fees were cut in March",
+      "after": "and the new zones went live in April"
+    }
   }
 }

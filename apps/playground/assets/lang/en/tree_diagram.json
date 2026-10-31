@@ -1,0 +1,14 @@
+{
+  "label": "Headcount by team",
+  "company": "Company",
+  "operations": "Operations",
+  "riyadh": "Riyadh",
+  "jeddah": "Jeddah",
+  "technology": "Technology",
+  "platform": "Platform",
+  "mobile": "Mobile",
+  "data": "Data",
+  "sales": "Sales",
+  "retail": "Retail",
+  "wholesale": "Wholesale"
+}

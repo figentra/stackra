@@ -15,6 +15,7 @@ import { markdownBlocksOf } from "#core/functions/markdown-blocks-of.function";
 import type { MarkdownBlock } from "#core/types/markdown-block.type";
 import { markdownInlineOf } from "#core/functions/markdown-inline-of.function";
 import type { MarkdownInline } from "#core/types/markdown-inline.type";
+import { Code } from "#react/code/code";
 import { CodeBlock } from "#react/code-block/code-block";
 import type { MarkdownViewerProps } from "#react/code-block/markdown-viewer.props";
 
@@ -28,14 +29,7 @@ function runOf(run: MarkdownInline): ReactElement {
       return <em>{run.text}</em>;
     }
     case "code": {
-      return (
-        <code
-          dir="ltr"
-          className="rounded-[var(--radius-control-inner)] bg-default/60 px-1 font-mono text-[0.9em]"
-        >
-          {run.text}
-        </code>
-      );
+      return <Code>{run.text}</Code>;
     }
     case "link": {
       return (

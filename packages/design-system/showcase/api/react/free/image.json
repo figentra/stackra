@@ -1,0 +1,80 @@
+{
+  "generatedFrom": {
+    "hash": "bbb99e0071abb77c",
+    "propsFiles": ["ui/src/react/image/image.props.ts"]
+  },
+  "importLine": "import { Image } from \"@stackra/ui/react\";",
+  "key": "free/image",
+  "parts": [
+    {
+      "name": "Image",
+      "props": [
+        {
+          "description": "Width over height; defaults to 16 / 9.",
+          "name": "aspectRatio",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "A line under the picture.",
+          "name": "caption",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to open the picture full size in the Lightbox on a press; needs `src` and `alt`.",
+          "name": "isZoomable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The image URL; the fallback icon shows while it is missing or after it fails to load.",
+          "name": "src",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The icon drawn with no image or a broken one. Defaults to the image icon, or the broken-image icon after an error.",
+          "name": "fallback",
+          "required": false,
+          "source": "stackra",
+          "type": "IconSlot"
+        },
+        {
+          "description": "The accessible name; without it the thumbnail is decorative and hidden from assistive technology.",
+          "name": "alt",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A tiny image (a few pixels wide) drawn blurred until `src` loads, then faded out.",
+          "name": "placeholderSrc",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "cover",
+          "description": "`cover` crops to fill the box, `contain` letterboxes the whole image. Defaults to `cover`.",
+          "name": "fit",
+          "required": false,
+          "source": "stackra",
+          "type": "\"cover\" | \"contain\""
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

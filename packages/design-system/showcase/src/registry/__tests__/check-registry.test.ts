@@ -134,8 +134,12 @@ describe("checkRegistry", () => {
       new Set([
         "free/box-plot-chart",
         "free/choropleth-map",
+        "free/chord-diagram",
+        "free/network-graph",
         "free/sankey-chart",
         "free/sunburst-chart",
+        "free/tree-diagram",
+        "free/word-cloud",
       ]),
     );
     const button = must(

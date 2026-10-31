@@ -1,0 +1,168 @@
+{
+  "generatedFrom": {
+    "hash": "a000469218795a89",
+    "propsFiles": [
+      "ui/src/native/scheduler/scheduler-event-chip.props.ts",
+      "ui/src/native/scheduler/scheduler.props.ts"
+    ]
+  },
+  "importLine": "import { Scheduler } from \"@stackra/ui/native\";",
+  "key": "free/scheduler",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with each view chosen.",
+          "name": "onViewChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(view: \"month\" | \"day\" | \"week\" | \"agenda\") => void"
+        },
+        {
+          "description": "Called with the day the view holds after previous, next, Today or a press on a date.",
+          "name": "onDateChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(date: CalendarDate) => void"
+        },
+        {
+          "description": "Called when an event is pressed.",
+          "name": "onEventPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(event: SchedulerEvent) => void"
+        },
+        {
+          "description": "Makes each empty hour of the day and week views a button; called with the start of the hour pressed.",
+          "name": "onSlotPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(start: Date) => void"
+        }
+      ],
+      "name": "Scheduler",
+      "props": [
+        {
+          "description": "The events to place.",
+          "name": "events",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SchedulerEvent[]"
+        },
+        {
+          "description": "The view, for a controlled scheduler.",
+          "name": "view",
+          "required": false,
+          "source": "stackra",
+          "type": "\"month\" | \"day\" | \"week\" | \"agenda\""
+        },
+        {
+          "description": "The starting view, for an uncontrolled one; `week` by default.",
+          "name": "defaultView",
+          "required": false,
+          "source": "stackra",
+          "type": "\"month\" | \"day\" | \"week\" | \"agenda\""
+        },
+        {
+          "description": "The day the view holds, for a controlled scheduler.",
+          "name": "date",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The starting day, for an uncontrolled one; today by default.",
+          "name": "defaultDate",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The first hour of the time grid, 0 to 23; 0 by default.",
+          "name": "startHour",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The hour the time grid ends at, 1 to 24; 24 by default.",
+          "name": "endHour",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The IANA time zone the events are read in; the device's by default.",
+          "name": "timeZone",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The moment taken as now, for the current-time line and Today; the clock at mount by default.",
+          "name": "now",
+          "required": false,
+          "source": "stackra",
+          "type": "Date"
+        },
+        {
+          "description": "The spoken name of the scheduler, for example \"Clinic bookings\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called on a press; without it the chip is not a button.",
+          "name": "onPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(event: SchedulerEvent) => void"
+        }
+      ],
+      "name": "Scheduler.EventChip",
+      "props": [
+        {
+          "description": "The event.",
+          "name": "event",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulerEvent"
+        },
+        {
+          "description": "The shared state, for the event's time and name.",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "{ readonly view: \"month\" | \"day\" | \"week\" | \"agenda\"; readonly setView: (view: \"month\" | \"day\" | \"week\" | \"agenda\") => void; readonly date: CalendarDate; readonly setDate: (date: CalendarDate) => void; readonly move: (direction: 1 | -1) => void; readonly goToday: () => void; readonly days: readonly CalendarDate[]; readonly timeZone: string; readonly now: Date; readonly today: CalendarDate; readonly startHour: number; readonly endHour: number; readonly heading: string; readonly isToday: (day: CalendarDate) => boolean; readonly weekdayOf: (day: CalendarDate) => string; readonly dayNumberOf: (day: CalendarDate) => string; readonly fullDateOf: (day: CalendarDate) => string; readonly hourLabelOf: (hour: number) => string; readonly timeOf: (event: SchedulerEvent) => string; readonly nameOf: (event: SchedulerEvent) => string; readonly slotNameOf: (day: CalendarDate, hour: number) => string; readonly startOf: (day: CalendarDate, hour?: number | undefined) => Date; }"
+        },
+        {
+          "description": "True for a one-line chip (month, all-day and agenda rows).",
+          "name": "isCompact",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Places a timed chip in its day column.",
+          "name": "style",
+          "required": false,
+          "source": "stackra",
+          "type": "ViewStyle"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

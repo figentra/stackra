@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "4f3d2836a368eb12",
+    "propsFiles": ["ui/src/react/network-graph/network-graph.props.ts"]
+  },
+  "importLine": "import { NetworkGraph } from \"@stackra/ui/react\";",
+  "key": "free/network-graph",
+  "parts": [
+    {
+      "name": "NetworkGraph",
+      "props": [
+        {
+          "description": "The nodes.",
+          "name": "nodes",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly NetworkNode[]"
+        },
+        {
+          "description": "The links; links to unknown nodes are left out.",
+          "name": "links",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly NetworkLink[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Who works with whom\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How values are written; plain numbers in the locale by default.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "`accent` steps (the default) or the `categorical` set, by group or node position.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "The plot's height in pixels; 320 by default.",
+          "name": "height",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

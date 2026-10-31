@@ -1,0 +1,21 @@
+{
+  "label": "What customer reviews mention",
+  "delivery": "delivery",
+  "fresh": "fresh",
+  "price": "price",
+  "friendly": "friendly",
+  "fast": "fast",
+  "late": "late",
+  "coffee": "coffee",
+  "clean": "clean",
+  "app": "app",
+  "parking": "parking",
+  "cold": "cold",
+  "coupon": "coupon",
+  "staff": "staff",
+  "quality": "quality",
+  "queue": "queue",
+  "music": "music",
+  "breakfast": "breakfast",
+  "portion": "portion"
+}

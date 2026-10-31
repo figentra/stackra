@@ -216,6 +216,22 @@
     "show": "Taken tonen",
     "hide": "Taken verbergen"
   },
+  "scheduler": {
+    "previous": "Vorige",
+    "next": "Volgende",
+    "today": "Vandaag",
+    "view": "Weergave",
+    "day": "Dag",
+    "week": "Week",
+    "month": "Maand",
+    "agenda": "Agenda",
+    "all_day": "Hele dag",
+    "more": "{count, plural, other {nog #}}",
+    "no_events": "Geen afspraken",
+    "event": "{title}, {time}",
+    "slot": "Nieuwe afspraak, {day}, {time}",
+    "now": "Nu"
+  },
   "recurrence_editor": {
     "label": "Herhalen",
     "every": "Herhalen elke",
@@ -393,7 +409,12 @@
     "end": "Einde",
     "today": "Vandaag",
     "region": "Regio",
-    "no_data": "Geen gegevens"
+    "no_data": "Geen gegevens",
+    "download": "Grafiek downloaden",
+    "share": "Grafiek delen",
+    "share_png": "Delen als afbeelding",
+    "share_csv": "Delen als CSV",
+    "word": "Woord"
   },
   "data_grid": {
     "changes": "{count, plural, one {# niet-opgeslagen wijziging} other {# niet-opgeslagen wijzigingen}}",
@@ -1066,5 +1087,29 @@
   },
   "shimmer": {
     "thinking": "Denkt na…"
+  },
+  "chat_message": {
+    "user": "Jij",
+    "assistant": "Assistent"
+  },
+  "prompt_input": {
+    "label": "Berichtinvoer",
+    "placeholder": "Vraag maar raak…",
+    "send": "Bericht versturen",
+    "stop": "Antwoord stoppen"
+  },
+  "reasoning": {
+    "summary": "Redenering",
+    "steps": "Denkstappen"
+  },
+  "sources": {
+    "label": "Bronnen",
+    "count": "{count, plural, one {# bron} other {# bronnen}}",
+    "document": "Document"
+  },
+  "rating": {
+    "label": "Beoordeling",
+    "star": "{count, plural, one {# ster} other {# sterren}}",
+    "value": "{value} van {max} sterren"
   }
 }

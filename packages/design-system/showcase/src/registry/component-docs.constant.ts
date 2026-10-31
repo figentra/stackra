@@ -84,6 +84,16 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     playground: {},
     rules: TWO,
   },
+  "free/rating": {
+    keyboard: [
+      { keys: ["Tab"], action: "focus_selected" },
+      { keys: ["→", "←"], action: "move_next" },
+      { keys: ["Delete"], action: "clear" },
+    ],
+    anatomy: ["label", "icon", "fill", "description"],
+    alternatives: ["free/radio-group", "free/reaction-button"],
+    rules: TWO,
+  },
   "free/radio-group": {
     keyboard: [
       { keys: ["Tab"], action: "focus_selected" },
@@ -239,6 +249,15 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     ],
     anatomy: ["label", "input", "trigger", "item", "option_label", "description"],
     alternatives: ["free/date-picker", "free/calendar"],
+    rules: TWO,
+  },
+  "free/scheduler": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "activate" },
+    ],
+    anatomy: ["header", "actions", "list", "item"],
+    alternatives: ["free/calendar", "free/timeline-chart"],
     rules: TWO,
   },
   "free/alert": {
@@ -632,6 +651,36 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     ],
     anatomy: ["container", "item", "icon", "title", "description"],
     alternatives: ["free/chip", "free/button"],
+    rules: TWO,
+  },
+  "free/chat-message": {
+    keyboard: [{ keys: ["Tab"], action: "move_focus" }],
+    anatomy: ["container", "bubble", "body", "actions"],
+    alternatives: ["free/comment-thread", "free/message-scroller"],
+    rules: TWO,
+  },
+  "free/prompt-input": {
+    keyboard: [
+      { keys: ["Enter"], action: "submit" },
+      { keys: ["Tab"], action: "move_focus" },
+    ],
+    anatomy: ["container", "input", "toolbar", "action", "footer"],
+    alternatives: ["free/text-area", "free/mention-input"],
+    rules: TWO,
+  },
+  "free/reasoning": {
+    keyboard: [{ keys: ["Space", "Enter"], action: "expand_collapse" }],
+    anatomy: ["trigger", "panel", "list", "dot"],
+    alternatives: ["free/disclosure", "free/timeline"],
+    rules: TWO,
+  },
+  "free/sources": {
+    keyboard: [
+      { keys: ["Space", "Enter"], action: "expand_collapse" },
+      { keys: ["Enter"], action: "follow" },
+    ],
+    anatomy: ["trigger", "list", "item", "icon", "title"],
+    alternatives: ["free/link", "free/hover-card"],
     rules: TWO,
   },
   "free/shimmer": {

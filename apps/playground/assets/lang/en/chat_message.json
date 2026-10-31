@@ -1,0 +1,10 @@
+{
+  "conversation": {
+    "question": "Which branch had the most orders last week?",
+    "answer": "Al Olaya had the most orders last week: 1,284, up 12% on the week before. Al Malqa came second with 1,067.",
+    "file": "orders-week-43.csv"
+  },
+  "loading": {
+    "question": "Draft a reply to the late delivery complaint."
+  }
+}

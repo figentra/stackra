@@ -1,0 +1,16 @@
+{
+  "label": "Clinic bookings",
+  "checkup": "Check-up, Sara",
+  "cleaning": "Cleaning, Omar",
+  "consult": "Consultation, Lina",
+  "staff": "Staff meeting",
+  "xray": "X-ray, Khalid",
+  "holiday": "National Day",
+  "picked": "Picked: {title}",
+  "rtl": {
+    "label": "حجوزات العيادة",
+    "checkup": "فحص، سارة",
+    "consult": "استشارة، لينا",
+    "staff": "اجتماع الفريق"
+  }
+}

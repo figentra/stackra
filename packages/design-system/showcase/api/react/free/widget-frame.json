@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "060ee1e56097b35f",
+    "hash": "6caab7fe7369452b",
     "propsFiles": ["ui/src/react/widget-frame/widget-frame.props.ts"]
   },
   "importLine": "import { WidgetFrame } from \"@stackra/ui/react\";",
@@ -128,7 +128,7 @@
           "name": "menu",
           "required": false,
           "source": "stackra",
-          "type": "readonly (\"link\" | \"table\" | \"svg\" | \"fullscreen\" | \"csv\" | \"png\")[]"
+          "type": "readonly (\"link\" | \"table\" | \"svg\" | \"fullscreen\" | \"png\" | \"csv\")[]"
         },
         {
           "description": "The numbers behind the body: the \"View as table\" view, the accessible alternative, and the CSV download.",

@@ -1,0 +1,14 @@
+{
+  "photo": {
+    "alt": "Red sand dunes at dusk, with the sun low in the sky",
+    "caption": "The Empty Quarter, an hour before sunset."
+  },
+  "zoom": {
+    "alt": "Red sand dunes at dusk",
+    "caption": "Press the picture to see it full size."
+  },
+  "fallback": {
+    "missing": "No picture yet",
+    "broken": "A broken link"
+  }
+}
