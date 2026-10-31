@@ -30,6 +30,13 @@ export abstract class IdempotencyStore extends Port {
   declare readonly "~key": "actions.IdempotencyStore";
 
   /**
+   * Whether claim, complete and release join a database transaction already running, so they commit or roll back
+   * with it. A store that cannot (Valkey, memory) is refused for a call that joined one (ADR 0495, note of
+   * 2026-11-01).
+   */
+  readonly joinsTransaction: boolean = false;
+
+  /**
    * Claims `key` for a call with `fingerprint`, for `ttl`: resolves to `undefined` when the key was free (it is now
    * held, not done), or to the record already held under it, untouched.
    */

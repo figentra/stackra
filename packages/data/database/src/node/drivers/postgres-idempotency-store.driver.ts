@@ -39,6 +39,9 @@ const SWEEP = 100;
  * const earlier = await store.claim(key, fingerprint, Duration.hours(24));
  */
 export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
+  /** It joins the running transaction. */
+  override readonly joinsTransaction = true;
+
   /** The connected database whose running transaction each call joins. */
   private readonly database: Database;
 

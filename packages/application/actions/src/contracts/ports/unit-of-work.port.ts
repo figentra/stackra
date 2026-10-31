@@ -31,4 +31,9 @@ export abstract class UnitOfWork extends Port {
     work: () => Promise<T>,
     options?: { readonly timeout?: Duration },
   ): Promise<T>;
+
+  /** Whether a transaction is already running in this context; `false` when the driver has none to report. */
+  inTransaction(): boolean {
+    return false;
+  }
 }

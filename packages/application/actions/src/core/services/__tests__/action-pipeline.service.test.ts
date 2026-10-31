@@ -132,6 +132,7 @@ import { ApprovalRequiredError } from "#core/errors/approval-required.error";
 import { DeviceRevokedError } from "#core/errors/device-revoked.error";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
+import { IdempotencyStoreNotTransactionalError } from "#core/errors/idempotency-store-not-transactional.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
@@ -755,6 +756,46 @@ describe(ActionPipeline, () => {
     await expect(
       pipeline.execute(SendMessageAction, { text: "again" }, { actor: customer }),
     ).rejects.toBeInstanceOf(RateLimitedError);
+  });
+
+  it("refuses a keyed call that joined a running transaction when the store cannot join it", async () => {
+    class Joined extends Transactions {
+      override inTransaction(): boolean {
+        return true;
+      }
+    }
+    const memory = new MemoryIdempotencyStoreDriver(new FixedClock());
+    const refused = setup([
+      [UnitOfWork, new Joined()],
+      [IdempotencyStore, memory],
+    ]);
+    await expect(
+      refused.pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k-joined" },
+      ),
+    ).rejects.toBeInstanceOf(IdempotencyStoreNotTransactionalError);
+    expect(refused.shop.placed).toBe(0);
+    // nothing was claimed: the same key runs once the store can join
+    class Joining extends MemoryIdempotencyStoreDriver {
+      override readonly joinsTransaction = true;
+    }
+    const joining = setup([
+      [UnitOfWork, new Joined()],
+      [IdempotencyStore, new Joining(new FixedClock())],
+    ]);
+    expect(
+      await joining.pipeline.execute(
+        CreateOrderAction,
+        { quantity: 1 },
+        { actor: customer, idempotencyKey: "k-joined" },
+      ),
+    ).toEqual({ orderId: "ord_1", key: "k-joined" });
+    // a call without a key never needs the store, joined or not
+    await expect(
+      refused.pipeline.execute(CreateOrderAction, { quantity: 1 }, { actor: customer }),
+    ).resolves.toBeDefined();
   });
 
   it("applies the area's bucket from RateLimitConfig, and needs a store for a declared limit", async () => {

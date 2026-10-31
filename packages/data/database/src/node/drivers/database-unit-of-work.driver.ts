@@ -35,4 +35,9 @@ export class DatabaseUnitOfWorkDriver extends Driver(UnitOfWork) {
       throw translateDbError(error);
     }
   }
+
+  /** Whether the connected database already runs a transaction in this context. */
+  override inTransaction(): boolean {
+    return Database.current().em().isInTransaction();
+  }
 }

@@ -141,6 +141,7 @@ import { Idempotency } from "#core/enums/idempotency.enum";
 import { DeviceRevokedError } from "#core/errors/device-revoked.error";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
+import { IdempotencyStoreNotTransactionalError } from "#core/errors/idempotency-store-not-transactional.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
@@ -195,6 +196,8 @@ interface Recorded {
 /** What one call accumulates while it runs. */
 interface CallState {
   idempotencyKey: string | undefined;
+  /** Set when the call started inside a transaction already running, so it does not own its commit. */
+  joined: boolean;
   /** Set when a device resends a sequence at or below its last settled one: only a replay may answer; that last one. */
   replayOnly: number | undefined;
   /** A replica query's change cursor: the validated input's `cursor`. */
@@ -382,6 +385,7 @@ export class ActionPipeline {
     });
     const state: CallState = {
       idempotencyKey: undefined,
+      joined: false,
       replayOnly: undefined,
       replicaCursor: undefined,
       afterCommit: [],
@@ -403,6 +407,8 @@ export class ActionPipeline {
   private async steps(call: Call, raw: unknown): Promise<unknown> {
     const { descriptor, kind } = call;
     await this.checkedTenancy(call);
+    // read before the isolation opens its own: a call that joined a running transaction does not own the commit
+    call.state.joined = kind === "action" && (this.optional(UnitOfWork)?.inTransaction() ?? false);
     type Claim = Awaited<ReturnType<ActionPipeline["claim"]>>;
     // set inside the isolated work, read after it: a holder, so the closure's writes are not narrowed away
     const taken: { claim: Claim; amount: number | undefined } = {
@@ -628,6 +634,9 @@ export class ActionPipeline {
       IdempotencyStore,
       `${descriptor.key} has an Idempotency-Key; bind a store (the memory driver ships with @stackra/actions)`,
     );
+    // a store outside the transaction would mark the key done before the outer commit, which may still fail
+    if (call.state.joined && !store.joinsTransaction)
+      throw IdempotencyStoreNotTransactionalError.create();
     const earlier = await store.claim(scoped, fingerprint, IDEMPOTENCY_TTL);
     if (earlier === undefined) return { held: scoped };
     if (!earlier.done || earlier.fingerprint !== fingerprint)

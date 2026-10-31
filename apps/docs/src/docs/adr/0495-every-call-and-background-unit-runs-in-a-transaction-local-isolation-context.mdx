@@ -102,8 +102,9 @@ an outer transaction (a listener in the inbox's unit, a workflow step), its `com
 the outer transaction did; if that commit then failed, the retry replayed a success that never committed. Every claim,
 completion and release now joins the running transaction (a savepoint of it), or opens its own when none runs: a key
 completed inside a failed outer commit is gone and the retry runs again. A concurrent claim of the same key waits for
-the transaction that inserted it. The Valkey store cannot join a transaction, so a deployment whose calls join outer
-transactions uses the Postgres store. Test: `postgres-idempotency-store.driver.int.test.ts` forces the outer commit
+the transaction that inserted it. The Valkey and memory stores cannot join a transaction, so the pipeline refuses a keyed call that started inside a
+running transaction with such a store bound (`idempotency_store_not_transactional`), before anything is claimed or
+run; a deployment whose calls join outer transactions binds the Postgres store. Test: `postgres-idempotency-store.driver.int.test.ts` forces the outer commit
 to fail with a deferred constraint and claims the key again.
 
 ## Supersedes and sources

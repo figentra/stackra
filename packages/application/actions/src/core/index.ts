@@ -39,6 +39,7 @@ export { ApprovalRequiredError } from "#core/errors/approval-required.error";
 export { DeviceRevokedError } from "#core/errors/device-revoked.error";
 export { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 export { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
+export { IdempotencyStoreNotTransactionalError } from "#core/errors/idempotency-store-not-transactional.error";
 export { InputInvalidError } from "#core/errors/input-invalid.error";
 export { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 export { AuditEntryRecorded } from "#core/events/audit-entry-recorded.event";
