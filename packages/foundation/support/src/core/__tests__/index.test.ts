@@ -14,6 +14,7 @@ describe("@stackra/support", () => {
   it("exports exactly the public runtime symbols", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "Quantity",
+      "addCalendarMonths",
       "ageOn",
       "base64url",
       "camelCase",

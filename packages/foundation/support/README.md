@@ -19,9 +19,9 @@ workers and React Native. The one exception is Web Crypto, needed by `canonicalH
 
 ## Entry points
 
-| Import             | Holds                        | Exports today                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/support` | `src/core/`: isomorphic code | `time`, `Quantity`, `canonicalJson`, `canonicalHash`, `signedToken`, `oneTimeCode`, `restrictedGtin`, `code128`, `base64url`, `decodeBase64`, `crc32`, `escapeHtml`, `escapeXml`, `htmlToText`, `isRecord`, `snakeCase`, `kebabCase`, `camelCase`, `pascalCase`, `ageOn`; types `QuantityUnit`, `QuantityRounding`, `Rational`, `SigningKeySource`, `SignedTokenCheck`, `KeyedOneTimeCodeRecord`, `OneTimeCodeCheck`, `Code128Symbol` |
+| Import             | Holds                        | Exports today                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------ | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra/support` | `src/core/`: isomorphic code | `time`, `addCalendarMonths`, `Quantity`, `canonicalJson`, `canonicalHash`, `signedToken`, `oneTimeCode`, `restrictedGtin`, `code128`, `base64url`, `decodeBase64`, `crc32`, `escapeHtml`, `escapeXml`, `htmlToText`, `isRecord`, `snakeCase`, `kebabCase`, `camelCase`, `pascalCase`, `ageOn`; types `QuantityUnit`, `QuantityRounding`, `Rational`, `SigningKeySource`, `SignedTokenCheck`, `KeyedOneTimeCodeRecord`, `OneTimeCodeCheck`, `Code128Symbol` |
 
 The package has the one entry `.` (ADR 0127, 2026-10-24 note). Entry barrels are generated, never authored
 (ADR 0294 decision 15); until `stackra gen` writes them (STA-339) `src/core/index.ts` is a stand-in barrel.
@@ -56,6 +56,21 @@ const expiresAt = time.addDays(issuedAt, 30);
   each billing period from its fixed anchor (`addMonths(anchor, n)`), never from the previous result, or the day
   drifts (31 Jan, 28 Feb, 28 Mar). A period that starts on a local wall-clock date passes it as UTC midnight. Years
   are `addMonths(date, 12 * years)`.
+
+### `addCalendarMonths`
+
+`addCalendarMonths(instant, months, timeZone, anchorDay?)` moves an instant by whole calendar months on the wall clock
+of an IANA zone (the tenant's or Market's), keeping the time of day and clamping the day to the target month's end:
+31 January plus one month is 28 (or 29) February. Pass `anchorDay` (1 to 31) to keep the original day when a chain is
+built from the previous result (31 Jan, 28 Feb, 31 Mar, not 28 Mar). A wall time that a spring-forward change skips
+moves forward to the first valid instant after the gap; an ambiguous fall-back time takes the earlier offset. An
+unknown zone, an invalid date or a non-integer `months` or `anchorDay` throws a `RangeError`.
+
+```ts
+import { addCalendarMonths } from "@stackra/support";
+
+const renewsAt = addCalendarMonths(startedAt, 1, tenant.timeZone, startedAt.getUTCDate());
+```
 
 ## Canonical JSON and its hash
 
