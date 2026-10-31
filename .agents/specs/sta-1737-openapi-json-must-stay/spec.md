@@ -32,7 +32,9 @@
 ## Requirements
 
 - **FR-001** `MUST_STAY_JSON` holds `(^|/)openapi.json`, with gen as its reason.
-- **FR-002** The `checkJsonConfigs` test passes a member-root and a repo-root `openapi.json` without a finding.
+- **FR-002** The lang row also allows one flat `assets/lang/<locale>.json` per locale (the pay and juristra repos).
+- **FR-003** The `checkJsonConfigs` test passes a member-root and a repo-root `openapi.json`, a flat and a namespaced
+  lang file without a finding.
 
 ## Status history
 

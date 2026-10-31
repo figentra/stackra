@@ -89,8 +89,8 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     "market packs: readPackAssets loads them with AssetLibrary.json and the pack hash is over the JSON document",
   ],
   [
-    /(^|\/)assets\/lang\/[\w-]+\/[\w-]+\.json$/,
-    "lang catalogues are assets/lang/<locale>/<namespace>.json by ADR 0305 (rule 1); @stackra/i18n reads JSON",
+    /(^|\/)assets\/lang\/(?:[\w-]+\/)?[\w-]+\.json$/,
+    "lang catalogues are assets/lang/<locale>/<namespace>.json by ADR 0305 (rule 1), or one assets/lang/<locale>.json per locale in a product repo; @stackra/i18n reads JSON",
   ],
   [
     /(^|\/)assets\/landing\/[\w-]+\.json$/,
