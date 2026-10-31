@@ -25,6 +25,7 @@ import { kebabCase } from "@stackra/support";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { driverName } from "#core/functions/driver-name.function";
 import { folderKey } from "#core/functions/folder-key.function";
+import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
@@ -173,7 +174,7 @@ export async function discoverMember(
     const folders =
       facts.layout === "service" && existsSync(modulesFolder)
         ? readdirSync(modulesFolder, { withFileTypes: true })
-            .filter((entry) => entry.isDirectory())
+            .filter((entry) => entry.isDirectory() && isModuleFolder(entry.name))
             .map((entry) => folderKey(entry.name))
             // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
             .sort()

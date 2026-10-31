@@ -16,6 +16,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
 import { folderKey } from "#core/functions/folder-key.function";
+import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
 /** A table a migration creates or alters: `schema.create("products"`, `schema.table('products'`. */
@@ -82,7 +83,7 @@ export function readSearchableColumns(
           ? readdirSync(join(root, "src/modules"), { withFileTypes: true })
           : []
         )
-          .filter((entry) => entry.isDirectory())
+          .filter((entry) => entry.isDirectory() && isModuleFolder(entry.name))
           .map((entry) => ({
             module: folderKey(entry.name),
             dir: join(root, "src/modules", entry.name, "database/migrations"),

@@ -25,6 +25,7 @@ import { pathToFileURL } from "node:url";
 import { checkAppendOnly } from "#core/functions/check-append-only.function";
 import { emitMigrations } from "#core/functions/emit-migrations.function";
 import { folderKey } from "#core/functions/folder-key.function";
+import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import { migrationId } from "#core/functions/migration-id.function";
 import { orderMigrations } from "#core/functions/order-migrations.function";
 import type { GenError } from "#core/types/gen-error.type";
@@ -83,10 +84,12 @@ function filesOf(directory: string, suffix: string): string[] {
 
 /** The module folders of a service, each with its key. */
 const modulesOf = (root: string): { readonly key: string; readonly dir: string }[] =>
-  filesOf(join(root, "src/modules"), "").map((folder) => ({
-    key: folderKey(folder),
-    dir: join(root, "src/modules", folder),
-  }));
+  filesOf(join(root, "src/modules"), "")
+    .filter((folder) => isModuleFolder(folder))
+    .map((folder) => ({
+      key: folderKey(folder),
+      dir: join(root, "src/modules", folder),
+    }));
 
 /** Imports a file by its real path, so a workspace package linked under node_modules loads from its folder. */
 const load = async (path: string): Promise<Record<string, unknown>> =>
