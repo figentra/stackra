@@ -11,6 +11,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); ADR 0446; ADR 0377; STA-1024; the STA-347 stand-in barrel decision.
  */
+export { PaymentsConfig } from "#config/payments.config";
+export { PAYMENTS_CONFIG_SCHEMA as PaymentsConfig$ } from "#core/constants/payments-config-schema.constant";
 export { ConnectionPaymentGatewaysDriver } from "#core/drivers/connection-payment-gateways.driver";
 export { EcrTerminalGateway } from "#core/gateways/ecr-terminal.gateway";
 export { MemoryAgentCommerceProtocolsDriver } from "#core/drivers/memory-agent-commerce-protocols.driver";
@@ -40,6 +42,7 @@ export { hasPaymentCapability } from "#core/functions/has-payment-capability.fun
 export { modeOf } from "#core/functions/mode-of.function";
 export { splitTender } from "#core/functions/split-tender.function";
 export { totalOf } from "#core/functions/total-of.function";
+export { PaymentsOptions } from "#core/schemas/payments-options.schema";
 export { PaymentBalanceService } from "#core/services/payment-balance.service";
 export { PaymentService } from "#core/services/payment.service";
 export { RestrictedTenderService } from "#core/services/restricted-tender.service";
