@@ -14,12 +14,17 @@ import "#src/__tests__/stub-browser-apis";
 import { CATEGORIES, COMPONENTS } from "@stackra/showcase";
 import { act, render, screen, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
+import { vi } from "vitest";
 
 import { HERO_VISIT } from "#src/components/landing-hero/hero-visit.constant";
 import { rememberRecent } from "#src/components/recent-chips";
 import { routePath } from "#src/components/playground-pages/route-path.function";
 import { Home } from "#src/routes/home/home";
 import { HomeRoute } from "#src/routes/home/home.route";
+
+// The page's cards and links are the subject, not the live previews: each thumbnail lazy-loads its demo, which took the
+// page test past 110 s on a shared runner and left imports the after-each hook could not settle in time.
+vi.mock("#src/components/component-thumbnail", () => ({ ComponentThumbnail: () => null }));
 
 function renderHome(url = "/") {
   const router = createMemoryRouter([{ path: routePath(HomeRoute), element: <Home /> }], {
@@ -36,7 +41,6 @@ describe("HomeRoute", () => {
     Element.prototype.scrollIntoView = () => undefined;
   });
 
-  // shortcut: renders every built card; on the shared CI runner this took up to 57 s, so the budget is 120 s. Render fewer cards once it grows.
   it("renders its page at / with a group card per non-empty category that keeps the search params", async () => {
     renderHome("/?scheme=dark&locale=ar");
     // The hero loads on demand.
@@ -54,7 +58,7 @@ describe("HomeRoute", () => {
     expect(categories.getByRole("link", { name: /Inputs and forms/ }).getAttribute("href")).toBe(
       "/components/inputs-and-forms?scheme=dark&locale=ar",
     );
-  }, 120_000);
+  });
 
   it("counts the built components, not the planned ones", async () => {
     renderHome();
