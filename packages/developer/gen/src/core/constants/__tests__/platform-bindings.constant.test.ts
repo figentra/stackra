@@ -34,6 +34,8 @@ describe("PLATFORM_BINDINGS", () => {
       "@stackra/settings#SettingsReader",
       "@stackra/settings#SettingsResolver",
       "@stackra/webhooks#WebhookReceiver",
+      "@stackra/workflow#AutomationService",
+      "@stackra/workflow#ChecklistService",
       "@stackra/workflow#ServiceAckService",
     ]);
     expect(PLATFORM_BINDINGS["@stackra/locking#Locks"]?.map(nameOf)).toEqual([

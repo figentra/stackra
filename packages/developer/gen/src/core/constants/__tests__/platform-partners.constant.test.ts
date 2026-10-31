@@ -15,6 +15,11 @@ describe("PLATFORM_PARTNERS", () => {
   it("names the model of each platform CrudService gen binds", () => {
     expect(PLATFORM_PARTNERS).toEqual({
       "@stackra/rules#RuleSetService": { name: "RuleSet", from: "@stackra/rules/node" },
+      "@stackra/workflow#AutomationService": {
+        name: "Automation",
+        from: "@stackra/workflow/node",
+      },
+      "@stackra/workflow#ChecklistService": { name: "Checklist", from: "@stackra/workflow/node" },
       "@stackra/workflow#ServiceAckService": {
         name: "ServiceAckSet",
         from: "@stackra/workflow/node",
