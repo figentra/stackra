@@ -177,13 +177,16 @@ order), takes the tenant's own Connection of the first provider that has every c
 otherwise the Market's platform Connection. A stored payment always goes back to the connection that served it.
 Sandboxes use the `-sandbox` providers (their own Integrations and hosts), chosen by the same data.
 
-The connection class per provider code is the host's: the OS integrations service owns the vendor Connections and
-subclasses the abstract driver, declaring its map as `drivers` (the constructor takes class tokens only, ADR 0294
-rule 17).
+The connection class per provider code is every registered Connection of the `payments` category
+(`connectionsOf(IntegrationCategory.Payments)`, the registry gen fills from every installed package), so a payments
+service binds the `connection` driver as it is (STA-1703). The vendor Integrations and Connections ship in an OS
+package both the integrations and payments services depend on; credentials resolve through the bound
+`ConnectionStore`, whose `hosted` driver keeps them in the integrations service. A host that wants its own map still
+subclasses the driver:
 
 ```ts
 export class OsPaymentGatewaysDriver extends ConnectionPaymentGatewaysDriver {
-  protected override readonly drivers = PAYMENT_CONNECTIONS; // provider code to the OS's vendor connection class
+  protected override readonly drivers = PAYMENT_CONNECTIONS; // provider code to a connection class
 }
 ```
 

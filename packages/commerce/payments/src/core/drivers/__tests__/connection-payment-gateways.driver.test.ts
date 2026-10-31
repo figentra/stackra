@@ -9,7 +9,16 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decisions 2 and 3).
  */
 import { refusal } from "@stackra/errors/testing";
-import { ConnectedAccount, Connection, ConnectionStore } from "@stackra/integrations";
+import {
+  AuthType,
+  ConnectedAccount,
+  Connection,
+  ConnectionLevel,
+  ConnectionStore,
+  Integration,
+  IntegrationCategory,
+  registerConnections,
+} from "@stackra/integrations";
 import type { ConnectionClass, ProviderDrivers } from "@stackra/integrations";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -100,7 +109,37 @@ class TestPaymentGatewaysDriver extends ConnectionPaymentGatewaysDriver {
   protected override readonly drivers = DRIVERS;
 }
 
+/** A payments Integration a package registers, as the OS vendor ones are (STA-1703). */
+class WalletIntegration extends Integration({
+  provider: "wallet",
+  category: IntegrationCategory.Payments,
+  levels: [ConnectionLevel.Scope],
+  auth: { type: AuthType.None },
+}) {}
+/** Its Connection, with checkout. */
+class WalletConnection extends Connection<WalletIntegration> {
+  get capabilities(): readonly PaymentCapability[] {
+    return [PaymentCapability.Checkout];
+  }
+
+  async check(): Promise<ConnectedAccount> {
+    return ConnectedAccount.create({ id: "wallet" });
+  }
+}
+
 describe("ConnectionPaymentGatewaysDriver", () => {
+  it("serves the registered payments Connections with no host subclass (STA-1703)", async () => {
+    registerConnections([
+      { connection: WalletConnection, integration: WalletIntegration, key: "payments.wallet" },
+    ]);
+    const own = Object.create(WalletConnection.prototype) as WalletConnection;
+    const gateways = new ConnectionPaymentGatewaysDriver(
+      new TestStore([own]),
+      MarketPaymentDefaultsFake.with({ m4: [{ provider: "wallet" }] }),
+    );
+    expect(await gateways.forMarket("m4", [PaymentCapability.Checkout])).toBe(own);
+  });
+
   it("takes the tenant's own Connection when it serves the call", async () => {
     const gateways = new TestPaymentGatewaysDriver(new TestStore([cardOwn]), defaults);
     expect(await gateways.forMarket("m1", [PaymentCapability.Capture])).toBe(cardOwn);

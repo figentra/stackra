@@ -7,14 +7,17 @@
  *          payment it reloads the exact connection that served it.
  * Boundary: the driver named `connection`. It reads Connections only through `ConnectionStore` (the store applies the
  *           tenant scope and decrypts credentials) and never names a Market or a provider: both come from
- *           `MarketPaymentDefaults`. The connection class per provider code is the host's (`drivers`): the vendor
- *           Integrations live in the OS integrations service (owner decision R3-8), so the host subclasses this abstract
- *           driver and declares its map as `drivers`; the constructor takes class tokens only (ADR 0294 rule 17). A provider code with no class in the map is skipped.
+ *           `MarketPaymentDefaults`. The connection class per provider code (`drivers`) is every registered
+ *           Connection of the `payments` category, from whichever installed package ships it (the OS vendor
+ *           Connections, owner decision R3-8), so a payments service binds this driver as it is (STA-1703); a host may
+ *           still subclass it with its own map. Credentials resolve through the bound `ConnectionStore` (its `hosted`
+ *           driver keeps them in the integrations service). The constructor takes class tokens only (ADR 0294 rule 17). A provider code with no class in the map is skipped.
  * Runtime: isomorphic
  * Governing contract: ADR 0356 (decisions 2 to 5); ADR 0357 (decision 2); ADR 0308 (rule 9); owner decision R3-8
  *                     (vendor drivers in OS integrations, STA-1281).
  */
 import { Driver } from "@stackra/container";
+import { connectionsOf, IntegrationCategory } from "@stackra/integrations";
 import type {
   Connection,
   ConnectionClass,
@@ -45,9 +48,11 @@ const serves = (gateway: PaymentGateway, needs: readonly PaymentCapability[]): b
  * }
  * const gateway = await gateways.forMarket(market, [PaymentCapability.Checkout]);
  */
-export abstract class ConnectionPaymentGatewaysDriver extends Driver(PaymentGateways) {
+export class ConnectionPaymentGatewaysDriver extends Driver(PaymentGateways) {
   /** The host's connection class per provider code (each key its Integration's `provider`), declared by its subclass. */
-  protected abstract readonly drivers: ProviderDrivers<PaymentGateway>;
+  protected readonly drivers: ProviderDrivers<PaymentGateway> = connectionsOf<PaymentGateway>(
+    IntegrationCategory.Payments,
+  );
 
   /** Where Connections are found. */
   private readonly store: ConnectionStore;
