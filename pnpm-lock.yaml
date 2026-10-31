@@ -2030,6 +2030,9 @@ importers:
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/database':
+        specifier: workspace:*
+        version: link:../../data/database
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
