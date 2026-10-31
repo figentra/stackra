@@ -181,6 +181,48 @@ describe("emitSchemas", () => {
     );
   });
 
+  it("keeps an array default's codes literal, with a fresh array per parse (STA-1695)", () => {
+    const settings: ShapeIR = {
+      name: "SdksSettings",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/sdks-settings.schema.ts",
+      importPath: "#modules/orders/schemas/sdks-settings.schema",
+      fields: [
+        {
+          name: "languages",
+          optional: false,
+          nullable: false,
+          type: {
+            kind: "array",
+            element: { kind: "enum", name: "SdkLanguage", values: ["typescript", "python", "php"] },
+          },
+          rules: [],
+          default: {
+            value: ["typescript", "python"],
+            code: '["typescript","python"]',
+            imports: [],
+          },
+        },
+        {
+          name: "limits",
+          optional: false,
+          nullable: false,
+          type: { kind: "record", value: { kind: "number" } },
+          rules: [],
+          default: { value: {}, code: "{}", imports: [] },
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [settings], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain('.default(() => [...(["typescript","python"] as const)])');
+    expect(content).toContain(".default(() => ({}))");
+  });
+
   it("links each change to its subject beside the schemas", () => {
     const billing = emitSchemas(BILLING_IR, "billing");
     expect(billing).toContain('import { registerChanges } from "@stackra/versioning";');

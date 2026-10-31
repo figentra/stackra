@@ -210,11 +210,16 @@ function fieldOf(context: Context, field: FieldIR): string {
     for (const [name, from] of field.default.imports) use(context.imports, from, name);
     const value = field.default.value;
     // A literal object or array default gets a factory, so two parses never share one instance; a platform
-    // constructor's value (Money) is immutable.
-    expression +=
-      typeof value === "object" && value !== null && field.default.imports.length === 0
-        ? `.default(() => (${field.default.code}))`
-        : `.default(${field.default.code})`;
+    // constructor's value (Money) is immutable. An array spreads its `as const` literal, so its codes keep their literal
+    // type through zod's overloads instead of widening to `string[]` (TS2769, STA-1695).
+    // shortcut: an object default's nested codes still widen, add a typed factory when a shape needs one.
+    const literal =
+      typeof value === "object" && value !== null && field.default.imports.length === 0;
+    expression += !literal
+      ? `.default(${field.default.code})`
+      : Array.isArray(value)
+        ? `.default(() => [...(${field.default.code} as const)])`
+        : `.default(() => (${field.default.code}))`;
   } else if (field.optional) expression += ".exactOptional()";
   return expression;
 }
