@@ -64,7 +64,7 @@ v1.9.0, Nominatim 4.5, LibreTranslate v1.6.2, Chatwoot v4.1.0) were far behind a
 | `photon`         | `ghcr.io/figentra/tools-photon:1.3.0`        | built from `images/photon` (Photon 1.3.0 jar), not yet pushed |
 | `libretranslate` | `libretranslate/libretranslate:v1.9.6`       |                                                               |
 | `chatwoot`       | `chatwoot/chatwoot:v4.18.0`                  | needs `pg_trgm`, `pgcrypto`, `pg_stat_statements`, `vector`   |
-| database task    | `postgres:17.6-alpine`                       | psql only                                                     |
+| database task    | `postgres:18.6-alpine`                       | psql only                                                     |
 
 ## The images Figentra builds
 

@@ -132,6 +132,16 @@ A service member names what it uses in its own runway (`uses: [main-db]`). The p
 estimate; dev ($150) and staging ($500) refuse a plan over their cap, production only warns until it has a `limits`.
 Kafka, OpenSearch and SES are reserved kinds. `pulumi preview` shows the change; only the owner applies it.
 
+Postgres runs major 18 (ADR 0238, amendment of 2026-10-31). Before the first apply in each region the environment
+deploys to, confirm AWS offers it there:
+
+```bash
+aws rds describe-db-engine-versions --engine postgres --engine-version 18 --region me-central-1
+```
+
+An empty answer means the region lacks 18: set that environment's resource `version: "17"` for that region only, and
+tell the owner.
+
 ## What is not built yet
 
 | Item                                                                               | Waits for                                          |

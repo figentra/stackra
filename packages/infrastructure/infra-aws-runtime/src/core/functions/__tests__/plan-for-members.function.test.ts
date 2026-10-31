@@ -31,7 +31,7 @@ const PLAN: RuntimePlan = {
       resource: "main-db",
       name: "d1",
       engine: "rds",
-      version: "17",
+      version: "18",
       instanceClass: "db.t4g.micro",
       multiAz: false,
       storageGb: 20,
