@@ -74,6 +74,24 @@ const sectionsOnly = resolvePack(commercePacks, "eu-de", {
 });
 ```
 
+### A typed section in a service
+
+Inject `ResolvedPackSource` and read a whole section as a `Schema` class. Its `static readonly packPrefix` names the
+section, and each field reads `<packPrefix>.<snake_case(field)>`, overlay over parent; a key no layer has that day takes
+the field's default (STA-1726).
+
+```ts
+export class DunningDefaults extends Schema {
+  static readonly packPrefix = "billing.dunning";
+
+  graceDays = 3; // billing.dunning.grace_days
+
+  retryDays: number[] = []; // billing.dunning.retry_days
+}
+
+const dunning = await packs.sectionFor(tenant.market, DunningDefaults, { pins: tenant.packPins });
+```
+
 ## Draft seed packs
 
 `assets/data/packs/` holds the `us` base pack and the seven state overlays of the first launch list (`us-ny`, `us-nj`,
