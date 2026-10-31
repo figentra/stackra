@@ -13,8 +13,13 @@ import { type Blueprint, Migration, type SchemaBuilder } from "@stackra/database
 
 /** Adds the publisher and the pause. */
 export class AddAutomationPublisherMigration extends Migration {
-  /** Three nullable columns and the index of running automations. */
+  /** Three nullable columns, and the index of running automations in place of 0003's index of published ones. */
   up(schema: SchemaBuilder): void {
+    // 0003's index on `trigger` has the name this one derives, so it goes first, and a down puts it back (STA-1689).
+    schema.sql('drop index concurrently if exists "workflow"."idx_automations_trigger"', {
+      inverse:
+        'create index concurrently if not exists "idx_automations_trigger" on "workflow"."automations" ("trigger") where published_revision is not null',
+    });
     schema.table("automations", (t: Blueprint) => {
       t.jsonb("publisher")
         .nullable()
