@@ -6,7 +6,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 26).
  */
-import type { PublicId } from "@stackra/contracts";
+import type { Json, PublicId } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import type { Same } from "#core/types/same.type";
@@ -27,6 +27,12 @@ describe("Same", () => {
     expectTypeOf<Same<{ a: readonly string[] }, { a: number[] }>>().toEqualTypeOf<false>();
     expectTypeOf<Same<{ a?: readonly string[] }, { a: string[] }>>().toEqualTypeOf<false>();
     expectTypeOf<Same<{ at: Date }, { at: string }>>().toEqualTypeOf<false>();
+  });
+
+  it("compares a recursive type without going infinitely deep (STA-1682)", () => {
+    type Node = { readonly value: Json; readonly groups?: readonly Node[] };
+    type Wire = { value: Json; groups?: Wire[] };
+    expectTypeOf<Same<Node, Wire>>().toEqualTypeOf<true>();
   });
 
   it("is false for a wider, a narrower or a different type", () => {

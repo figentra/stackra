@@ -22,13 +22,21 @@ export type Same<A, B> = [Loose<A>] extends [Loose<B>]
     : false
   : false;
 
-/** `T` with `readonly` dropped from every array in it, for the comparison only. */
-type Loose<T> = T extends (...args: never[]) => unknown
+/**
+ * `T` with `readonly` dropped from its arrays, for the comparison only, down to `MaxDepth` levels: a recursive type
+ * (`Json`, a shape that holds itself) never ends, which is TS2589 in its `X$Check` (STA-1682).
+ */
+type Loose<T, D extends readonly unknown[] = []> = D["length"] extends MaxDepth
   ? T
-  : T extends Date
+  : T extends (...args: never[]) => unknown
     ? T
-    : T extends readonly (infer E)[]
-      ? Loose<E>[]
-      : T extends object
-        ? { [K in keyof T]: Loose<T[K]> }
-        : T;
+    : T extends Date
+      ? T
+      : T extends readonly (infer E)[]
+        ? Loose<E, [...D, unknown]>[]
+        : T extends object
+          ? { [K in keyof T]: Loose<T[K], [...D, unknown]> }
+          : T;
+
+/** How deep `Loose` looks: far past any shape's nesting of readonly arrays. */
+type MaxDepth = 5;
