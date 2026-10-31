@@ -6,7 +6,7 @@
  *          manifest yet gets its manifest alone (with `pass: "manifests"`, or as what a refused run still writes); the root `vitest.config.ts` shim is written,
  *          an authored one that merges `./.stackra/vitest.config` is kept (STA-1297), and any other is refused as
  *          `shim_authored` (STA-1296); a check fails `manifest_unshipped` when a package's `files` leaves the manifest
- *          out, and reports a missing manifest as stale (STA-1308); an authored root tsdown.config.ts that does not
+ *          out, and reports a missing manifest as stale (STA-1308), but not missing gitignored output (STA-1742); an authored root tsdown.config.ts that does not
  *          merge the generated one is `shim_authored`, and a `*.extend.ts` hatch outside the closed set or without its
  *          `Reason:` header is `tool_reason_missing` (STA-1306); an `encore.app` at the member root is
  *          `encore_app_stray` (STA-1322); an authored `app.json` or root `app.config.ts` beside an iOS app's Expo
@@ -306,5 +306,16 @@ describe("generate's shipped manifest check (STA-1308)", () => {
     expect((await generate(root)).errors).toEqual([]);
     rmSync(join(root, "stackra.manifest.json"));
     expect((await generate(root, { check: true })).changed).toEqual(["stackra.manifest.json"]);
+  });
+
+  it("passes a clean clone, which has no gitignored output yet (STA-1742)", async () => {
+    const root = writeFixtureMember("shop", SHOP_SOURCES);
+    expect((await generate(root)).errors).toEqual([]);
+    rmSync(join(root, ".stackra"), { recursive: true, force: true });
+    rmSync(join(root, "vitest.config.ts"), { force: true });
+    const check = await generate(root, { check: true });
+    expect(check.errors).toEqual([]);
+    expect(check.changed).toEqual([]);
+    expect(existsSync(join(root, ".stackra"))).toBe(false);
   });
 });

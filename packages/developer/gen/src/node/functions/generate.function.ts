@@ -112,13 +112,20 @@ function hatchErrors(root: string): GenError[] {
   return errors;
 }
 
-/** The paths of `files` that differ from disk under `root`, written unless `check`. */
+/** The files a member commits (ADR 0294 R10); every other generated file is gitignored output. */
+const COMMITTED = new Set([MANIFEST_FILE, "openapi.json"]);
+
+/**
+ * The paths of `files` that differ from disk under `root`, written unless `check`. A check passes a missing file that
+ * is not committed: a clean clone has no gitignored output until gen runs (STA-1742).
+ */
 function write(root: string, files: readonly GeneratedFile[], check: boolean): string[] {
   const changed: string[] = [];
   for (const file of files) {
     const path = join(root, file.path);
     const current = existsSync(path) ? readFileSync(path, "utf8") : undefined;
     if (current === file.content) continue;
+    if (check && current === undefined && !COMMITTED.has(file.path)) continue;
     changed.push(file.path);
     if (check) continue;
     mkdirSync(dirname(path), { recursive: true });
