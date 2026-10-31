@@ -36,7 +36,8 @@ lazy `require` of their optional expo peers in the native entry.
 
 - **FR-001** ui keeps react and react-dom external (react-dom an optional peer).
 - **FR-002** `library()` fails a chunk that calls `__require("x")`, for every package.
-- **FR-003** `library({ optionalRequires })` turns the require polyfill off, so a native entry's lazy `require("x")`
+- **FR-003** `library({ optionalRequires })` rewrites rolldown's `__require("x")` back to a literal `require` for a listed
+  name (`polyfillRequire: false` does not stop the shim, f4 gate 2026-11-01), so a native entry's lazy `require("x")`
   of a listed optional peer stays a literal call that Metro sees and bundles; a literal `require` of any other name
   still fails the build.
 - **FR-004** ui lists expo-clipboard, expo-document-picker, expo-haptics, expo-image-picker and expo-video; identity

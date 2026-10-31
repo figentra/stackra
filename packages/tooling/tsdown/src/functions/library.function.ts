@@ -45,8 +45,8 @@ const withDecorators: InputOptionsFn = (input) => ({
 /** A call through rolldown's `__require` shim, which throws in ESM: `__require("react")`. */
 const REQUIRE_SHIM = /__require\(\s*["']([^"']+)["']\s*\)/g;
 
-/** A literal `require("x")` call, left in place when the polyfill is off (`optionalRequires`). */
-const REQUIRE_CALL = /(?<![\w$.])require\(\s*["']([^"']+)["']\s*\)/g;
+/** A literal `require("x")` call (`require  ("x")` once the guard has rewritten a listed shim). */
+const REQUIRE_CALL = /(?<![\w$.])require\s*\(\s*["']([^"']+)["']\s*\)/g;
 
 /** The distinct module names `pattern` captures in `code`. */
 const namesIn = (code: string, pattern: RegExp): string[] => [
@@ -54,10 +54,10 @@ const namesIn = (code: string, pattern: RegExp): string[] => [
 ];
 
 /**
- * Fails the build when a chunk calls `__require(...)`: a CommonJS dependency was bundled instead of kept external, and
- * its `require` throws for every ESM consumer (STA-1722). Declare the required package as a dependency or peer. A
- * literal `require("x")` passes only for a name in `optionalRequires`: a native entry's lazy optional peer, which
- * Metro bundles only when it sees the literal call.
+ * Guards every chunk against rolldown's `__require` shim (STA-1722). A shimmed call to a name in `optionalRequires`
+ * (a native entry's lazy optional peer) is rewritten to the literal `require  ("x")`, the same length so the sourcemap
+ * holds, which Metro sees and bundles; any other shimmed call fails the build, since a CommonJS dependency was bundled
+ * and its `require` throws for every ESM consumer. A literal `require` of an unlisted name fails too.
  */
 const noRequireShim = (optionalRequires: readonly string[]) => ({
   name: "stackra:no-require-shim",
@@ -66,20 +66,25 @@ const noRequireShim = (optionalRequires: readonly string[]) => ({
     code: string,
     chunk: { fileName: string },
   ) {
-    const shimmed = namesIn(code, REQUIRE_SHIM);
+    const rewritten = code.replaceAll(REQUIRE_SHIM, (call: string, name: string) =>
+      optionalRequires.includes(name) ? call.replace("__require", "require  ") : call,
+    );
+    const shimmed = namesIn(rewritten, REQUIRE_SHIM);
     if (shimmed.length > 0)
       this.error(
         `${chunk.fileName} calls require(${shimmed.map((name) => JSON.stringify(name)).join(", ")}) through rolldown's ` +
           "__require shim, which throws under ESM: a CommonJS dependency was bundled. Declare the package that " +
           "imports it as a dependency or peer so it stays external.",
       );
-    const unlisted = namesIn(code, REQUIRE_CALL).filter((name) => !optionalRequires.includes(name));
+    const unlisted = namesIn(rewritten, REQUIRE_CALL).filter(
+      (name) => !optionalRequires.includes(name),
+    );
     if (unlisted.length > 0)
       this.error(
         `${chunk.fileName} calls require(${unlisted.map((name) => JSON.stringify(name)).join(", ")}), which throws ` +
           "under ESM: a CommonJS dependency was bundled, or a lazy optional peer is missing from optionalRequires.",
       );
-    return null;
+    return rewritten === code ? null : { code: rewritten, map: null };
   },
 });
 
@@ -114,8 +119,6 @@ export function library(
     clean: true,
     treeshake: true,
     plugins: [noRequireShim(options.optionalRequires ?? [])],
-    // Keep the literal `require("x")` of a lazy optional peer, so Metro sees and bundles it (STA-1722).
-    ...(options.optionalRequires ? { outputOptions: { polyfillRequire: false } } : {}),
     ...(options.external ? { external: options.external } : {}),
     ...(options.decorators ? { inputOptions: withDecorators } : {}),
   });

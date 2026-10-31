@@ -25,8 +25,9 @@ export interface LibraryOptions {
   external?: (string | RegExp)[];
   /**
    * Optional peers a native entry loads lazily with `require("x")` inside a try, so an app without the peer still runs
-   * (`expo-haptics`). The require polyfill is turned off so the literal call reaches Metro, which bundles the peer only
-   * when it sees that call; any other `require` in a chunk still fails the build (STA-1722).
+   * (`expo-haptics`). rolldown turns each into its `__require` shim, which Metro never resolves, so the guard rewrites a
+   * listed name's shimmed call back to a literal `require`, which Metro sees and bundles; any other shimmed or literal
+   * `require` in a chunk still fails the build (STA-1722).
    */
   optionalRequires?: readonly string[];
 }

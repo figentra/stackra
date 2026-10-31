@@ -25,7 +25,7 @@ type Resolved = {
       this: { error: (message: string) => never },
       code: string,
       chunk: { fileName: string },
-    ) => null;
+    ) => { code: string; map: null } | null;
   }[];
 };
 
@@ -60,15 +60,10 @@ describe("@stackra/tsdown-config library()", () => {
     expect(guard.renderChunk.call(context, 'import { useState } from "react";', chunk)).toBeNull();
   });
 
-  it("keeps a listed optional peer's literal require for Metro and fails any other (STA-1722)", () => {
-    const cfg = library(undefined, {
-      optionalRequires: ["expo-haptics"],
-    }) as unknown as Resolved & {
-      outputOptions?: { polyfillRequire?: boolean };
-    };
-    expect(cfg.outputOptions).toEqual({ polyfillRequire: false });
-    expect((library() as unknown as { outputOptions?: unknown }).outputOptions).toBeUndefined();
-    const [guard] = cfg.plugins;
+  it("rewrites a listed optional peer's shimmed require for Metro and fails any other (STA-1722)", () => {
+    const [guard] = (
+      library(undefined, { optionalRequires: ["expo-haptics"] }) as unknown as Resolved
+    ).plugins;
     if (guard === undefined) throw new Error("no guard plugin");
     const context = {
       error: (message: string): never => {
@@ -76,6 +71,10 @@ describe("@stackra/tsdown-config library()", () => {
       },
     };
     const chunk = { fileName: "native.mjs" };
+    const shimmed = 'try { e = __require("expo-haptics"); } catch {}';
+    const out = guard.renderChunk.call(context, shimmed, chunk);
+    expect(out?.code).toBe('try { e = require  ("expo-haptics"); } catch {}');
+    expect(out?.code.length).toBe(shimmed.length);
     expect(
       guard.renderChunk.call(context, 'try { e = require("expo-haptics"); } catch {}', chunk),
     ).toBeNull();
@@ -85,9 +84,9 @@ describe("@stackra/tsdown-config library()", () => {
     expect(() => guard.renderChunk.call(context, 'var r = require("react");', chunk)).toThrow(
       /native\.mjs calls require\("react"\), which throws/,
     );
-    expect(() => guard.renderChunk.call(context, '__require("expo-haptics");', chunk)).toThrow(
-      /__require shim/,
-    );
+    expect(() =>
+      guard.renderChunk.call(context, '__require("expo-haptics"); __require("react");', chunk),
+    ).toThrow(/calls require\("react"\) through rolldown's __require shim/);
   });
 
   it("decorators: true adds the legacy transform (no metadata) and filters the duplicate-flag log", () => {
