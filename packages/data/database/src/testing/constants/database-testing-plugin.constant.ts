@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `DATABASE_TESTING_PLUGIN`, the testing-module plugin of @stackra/database: every compile connects a fresh
  *          `MemoryDatabaseDriver` (PGlite) unless another database is connected, `.seed(...seeders)` runs each seeder
- *          in its own transaction once the module compiles, `app.transaction(work)` runs work in a transaction of the
+ *          in its own transaction once the module compiles (taken from the container, so its injected services are
+ *          there), `app.transaction(work)` runs work in a transaction of the
  *          connected database, and `app.repository(Model)` hands out the model's repository. All are declared on the
  *          testing module here and registered when this module loads.
  * Boundary: the memory database is the unit tier's default, so `useDrivers("memory")` tests reach a database whether
@@ -10,7 +11,7 @@
  *           (connected before the module compiles) or a driver the container built for this module. A memory database
  *           this plugin or an earlier module connected is replaced and closed, so each testing module starts empty.
  *           `app.repository` reads the container's `repositoryOf(Model)` binding when the wiring has one, else builds
- *           the token, which has no dependencies.
+ *           the token, which has no dependencies; `.seed` does the same with each seeder class (STA-1698).
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0190 (seed profiles); ADR 0263 (decision 12); ADR 0266 (memory
  *                     first); ADR 0145 and ADR 0294 (classes are the only tokens).
@@ -29,7 +30,7 @@ import { MemoryDatabaseDriver } from "#testing/drivers/memory-database.driver";
 declare module "@stackra/container/testing" {
   interface TestingModuleBuilder {
     /** Runs each seeder, in order and each in its own transaction, once the module compiles. */
-    seed: (...seeders: readonly (new () => Seeder)[]) => this;
+    seed: (...seeders: readonly AnyClass<Seeder>[]) => this;
   }
 
   interface TestingApp {
@@ -66,10 +67,15 @@ function connectDatabase(): void {
 export const DATABASE_TESTING_PLUGIN: TestingPlugin = {
   name: "@stackra/database",
   builder: {
-    seed(this: TestingModuleBuilder, ...seeders: readonly (new () => Seeder)[]) {
-      return this.onCompile(async () => {
-        for (const SeederClass of seeders)
-          await Database.current().transaction(() => new SeederClass().run());
+    seed(this: TestingModuleBuilder, ...seeders: readonly AnyClass<Seeder>[]) {
+      return this.onCompile(async (app) => {
+        for (const SeederClass of seeders) {
+          // a wired seeder gets its constructor's services; an unwired one has none to get
+          const seeder = app.has(SeederClass)
+            ? app.get(SeederClass)
+            : (Reflect.construct(SeederClass, []) as Seeder);
+          await Database.current().transaction(() => seeder.run());
+        }
       });
     },
   },
