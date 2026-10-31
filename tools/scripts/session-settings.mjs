@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: the session-setting check of `pnpm validate` (STA-1699, ADR 0495 decision 3): fails when a source file sets
- *          a Postgres setting for the session instead of the transaction: `set_config(` whose third argument is not the
- *          literal `true`, and the statements `SET app.` and `SET LOCAL app.` (case-insensitive). A session setting
- *          outlives the transaction on a pooled connection and would reach the next caller, so every `app.*` setting
- *          is written by `select set_config(name, value, true)` in the isolation driver, `TenantIsolationService` and
- *          the database drivers' `withScope` and `onReplica`, and nowhere else.
- * Boundary: reads every `.ts`, `.tsx` and `.mjs` file under `packages/`, `services/`, `apps/` and `workers/`
- *           (`node_modules`, `dist`, `.stackra`, `.turbo`, `coverage` skipped); writes nothing. A file in a
- *           `__tests__` folder, or named `*.test.*`, is exempt, and so is each path of `ALLOWED`, an explicit list
- *           with its reason. The scan reads comments and strings alike, so a doc that names the forbidden form is a
- *           finding too: write "a session-level setting" instead. Run directly it prints the findings and exits 1.
+ * Purpose: the session-setting check of `pnpm validate` (STA-1699, ADR 0495 decision 3). Two rules. (1) The session
+ *          form is forbidden everywhere, with no exemption of any kind (an allow-listed file, a test and a testing
+ *          helper included): `set_config(` whose third argument is not the literal `true`; the statements `SET app.`,
+ *          `SET LOCAL app.` and `SET SESSION app.` (also with `"app"` quoted); and a startup option `-c app.`. A session
+ *          setting outlives the transaction on a pooled connection and would reach the next caller. (2) Every `app.*`
+ *          setting is written only where `ALLOWED` says: any `set_config(` whose name is an `app.*` literal or not a
+ *          literal at all (a parameter, so it cannot be read) is a finding outside it, whatever its third argument.
+ * Boundary: reads every `.ts`, `.tsx`, `.js`, `.cjs`, `.mjs`, `.mts`, `.cts` and `.sql` file under `packages/`,
+ *           `services/`, `apps/` and `workers/` (`node_modules`, `dist`, `.stackra`, `.turbo`, `coverage` skipped);
+ *           writes nothing. Rule 2 exempts each path of `ALLOWED` (an explicit list with its reason), a file under a
+ *           `src/testing/` folder (test infrastructure) and a test file (a `__tests__` folder, or named `*.test.*`).
+ *           The scan reads comments and strings alike, so a doc that names a forbidden form is a finding too: write
+ *           "a session-level setting" instead. Run directly it prints the findings and exits 1.
  * Runtime: node
  * Governing contract: ADR 0495 (decision 3); ADR 0239 (decision 1); ADR 0473 (RDS Proxy); `.agents/rules/tenancy.md`.
  * Scope: `packages/`, `services/`, `apps/` and `workers/` source files.
@@ -27,7 +29,7 @@ import { fileURLToPath } from "node:url";
 export const SCANNED = Object.freeze(["packages", "services", "apps", "workers"]);
 
 /** The source extensions scanned. */
-const SOURCE = /\.(?:ts|tsx|mjs)$/;
+const SOURCE = /\.(?:ts|tsx|js|cjs|mjs|mts|cts|sql)$/;
 
 /** Folders never entered. */
 const SKIPPED = new Set(["node_modules", "dist", ".stackra", ".turbo", "coverage", ".git"]);
@@ -44,7 +46,14 @@ export const ALLOWED = Object.freeze({
     "withScope and onReplica: the app.scope_* settings and their replay on a replica, transaction-local",
   "packages/data/database/src/testing/drivers/memory-database.driver.ts":
     "the in-memory twin of withScope, which records the same settings",
+  // its tenant is a `PLATFORM` partition string and its argument is a scope id, not an actor, so it cannot call
+  // `withTenant`, and iam must not depend on tenancy; it sets the tenant transaction-locally in a transaction of its own
+  "packages/security/iam/src/node/drivers/postgres-policy-snapshot-store.driver.ts":
+    "the snapshot store sets its own tenant transaction-locally in its requiresNew transaction (ADR 0495)",
 });
+
+/** Whether `path` is test infrastructure: under a `src/testing/` folder. */
+const isTestingHelper = (path) => path.includes("/src/testing/");
 
 /** Whether `path` (repository-relative, `/`-separated) is a test file: in a `__tests__` folder or named `*.test.*`. */
 const isTest = (path) => path.split("/").includes("__tests__") || /\.test\.[^/]+$/.test(path);
@@ -95,7 +104,7 @@ function argumentsAt(text, open) {
  * @example
  * settingProblems("select set_config('app.tenant_id', ?, false)"); // [{ line: 1, text: "set_config with ..." }]
  */
-export function settingProblems(text) {
+export function settingProblems(text, { outsideAllowed = true } = {}) {
   const problems = [];
   const lineOf = (at) => text.slice(0, at).split("\n").length;
   for (const match of text.matchAll(/set_config\s*\(/gi)) {
@@ -105,11 +114,23 @@ export function settingProblems(text) {
         line: lineOf(match.index),
         text: "set_config with a third argument other than the literal true sets a session-level setting",
       });
+    const name = (args[0] ?? "").trim();
+    const literal = /^(['"`])([^'"`]*)\1$/.exec(name);
+    if (outsideAllowed && (literal === null || literal[2].toLowerCase().startsWith("app.")))
+      problems.push({
+        line: lineOf(match.index),
+        text: "set_config of an app.* setting (or of a name that is not a literal) outside the isolation driver; use CallIsolation",
+      });
   }
-  for (const match of text.matchAll(/\bSET\s+(?:LOCAL\s+)?app\./gi))
+  for (const match of text.matchAll(/\bSET\s+(?:LOCAL\s+|SESSION\s+)?"?app"?\./gi))
     problems.push({
       line: lineOf(match.index),
       text: `\`${match[0]}\` sets an app.* setting by statement; use select set_config(name, value, true) in the isolation driver`,
+    });
+  for (const match of text.matchAll(/-c\s*app\./gi))
+    problems.push({
+      line: lineOf(match.index),
+      text: "a startup option -c app.* sets an app.* setting for every session of the pool",
     });
   return problems;
 }
@@ -144,8 +165,14 @@ export function sessionSettingFindings(root, allowed = ALLOWED) {
   const findings = [];
   for (const area of SCANNED)
     for (const path of sources(root, area)) {
-      if (isTest(path) || Object.hasOwn(allowed, path)) continue;
-      for (const { line, text } of settingProblems(readFileSync(join(root, path), "utf8")))
+      const outsideAllowed = !(
+        isTest(path) ||
+        isTestingHelper(path) ||
+        Object.hasOwn(allowed, path)
+      );
+      for (const { line, text } of settingProblems(readFileSync(join(root, path), "utf8"), {
+        outsideAllowed,
+      }))
         findings.push({ dir: `${path}:${line}`, text });
     }
   return findings;
