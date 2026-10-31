@@ -12,7 +12,7 @@
  *          (component gaps, owner approval 2026-10-31).
  */
 import { cn, Link as HeroLink } from "@heroui/react";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { AI_PARTS_KEYS } from "#core/constants/ai-parts-keys.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -30,12 +30,15 @@ const PILL =
 export function SourceChip({ source, className }: SourceChipProps): ReactElement {
   const t = useUiText();
   const { href, title } = sourceLinkOf(source);
-  const content = (
+  // The name comes from the content, never an aria-label: a label would have to repeat the mark's letter, which is
+  // visible text (label-content-name-mismatch). `suffix` is said, not shown.
+  const content = (suffix?: ReactNode) => (
     <>
       <SourceMark source={source} />
       <span dir="auto" className="truncate">
         {title}
       </span>
+      {suffix}
     </>
   );
   const chip =
@@ -43,27 +46,31 @@ export function SourceChip({ source, className }: SourceChipProps): ReactElement
       source.description ? (
         <button
           type="button"
-          aria-label={`${title}, ${t(AI_PARTS_KEYS.ui.sources.document)}`}
           className={cn(
             PILL,
             "hover:text-foreground focus-visible:outline focus-visible:outline-focus",
             className,
           )}
         >
-          {content}
+          {content(<span className="sr-only">{`, ${t(AI_PARTS_KEYS.ui.sources.document)}`}</span>)}
         </button>
       ) : (
-        <span className={cn(PILL, className)}>{content}</span>
+        <span className={cn(PILL, className)}>{content()}</span>
       )
     ) : (
       <HeroLink
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={`${title} (${t(UI_KEYS.ui.link.opens_in_new_tab)})`}
         className={cn(PILL, "hover:text-foreground", className) ?? ""}
       >
-        {content}
+        {content(
+          // A space text node, not one inside the span: inline spans join without a separator in a name (as Link).
+          <>
+            {" "}
+            <span className="sr-only">({t(UI_KEYS.ui.link.opens_in_new_tab)})</span>
+          </>,
+        )}
       </HeroLink>
     );
   if (!source.description) return chip;
