@@ -1324,12 +1324,12 @@ const botLabelMutation = (c) =>
     segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && LABEL_MUTATION.test(s)),
   );
 /**
- * A `pnpm bot:gh` release, delete or deploy: `release create|edit|delete|upload`, `<noun> delete` (`repo`,
- * `variable`, `secret`, `issue`, `label`, `run`, `cache`), `workflow run` of a deploy workflow, and `api` with a
- * `DELETE` method in any spelling (`-X DELETE`, `-X=DELETE`, `-vX DELETE`, `--method=DELETE`) or a `dispatches` path.
+ * A `pnpm bot:gh` release or delete: `release create|edit|delete|upload`, `<noun> delete` (`repo`, `variable`,
+ * `secret`, `issue`, `label`, `run`, `cache`), and `api` with a `DELETE` method in any spelling (`-X DELETE`,
+ * `-X=DELETE`, `-vX DELETE`, `--method=DELETE`). Workflow dispatches are the deploy rules' (`deployTarget`).
  */
 const BOT_GH_RELEASE_DELETE =
-  /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:release\s+(?:create|edit|delete|upload)\b|[\w-]+\s+delete\b|workflow\s+run\s+[^|;&\n]*deploy|api\b[^|;&\n]*(?:\s-[a-zA-Z]*X(?:=|\s*)DELETE\b|\s--method(?:=|\s+)DELETE\b|\/dispatches\b))/i;
+  /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:release\s+(?:create|edit|delete|upload)\b|[\w-]+\s+delete\b|api\b[^|;&\n]*(?:\s-[a-zA-Z]*X(?:=|\s*)DELETE\b|\s--method(?:=|\s+)DELETE\b))/i;
 /** A GraphQL `delete…` mutation through `pnpm bot:gh` (the query is a quoted value, so the raw text is read). */
 const botGraphqlDelete = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
@@ -1482,7 +1482,7 @@ export const HUMAN_ASKS = new Set([
   "wrangler-deploy",
   "wrangler-d1-remote-delete",
   "eas-deploy",
-  "runway-deploy",
+  "production-deploy",
   "publish",
   "rm-delete",
   "git-clean",
@@ -1556,6 +1556,79 @@ const SECRETS_IMPORT_FORBIDDEN = new RegExp(
   String.raw`${SECRETS_IMPORT}[^|;&\n]*\s(?:--confirm\b|--env(?:=|\s+)prod(?:uction)?\b|--path(?:=|\s+)/ci/(?:gate|registry)(?:/|(?![\w-])))`,
   "i",
 );
+/** `stackra deploy …` (a product deploy, `--env <environment>`) without `--dry-run`. */
+const STACKRA_DEPLOY = /\bstackra\s+(?:--\s+)?deploy\b(?![^|;&\n]*--dry-run)/;
+/**
+ * `gh` or `pnpm bot:gh` dispatching a workflow: `workflow run <file>` or `api … /dispatches` (raw text: the fields are
+ * quoted values).
+ */
+const WORKFLOW_DISPATCH =
+  /(?:\bbot:gh\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:workflow\s+run\b|api\b[^|;&\n]*\/dispatches\b)/;
+/** The only role that may start a deploy (owner decision 2026-10-31); its session's settings set `STACKRA_ROLE`. */
+export const DEPLOY_ROLE = "qa-release";
+/** Environments a deploy reaches without asking the owner (owner decision 2026-10-31); any other one is production. */
+export const NONPRODUCTION_ENVIRONMENTS = new Set(["dev", "development", "preview", "staging"]);
+/** A field or flag that names the environment: `-f environment=x`, `--field env=x`, `--env x`, `--env=x`. */
+const ENVIRONMENT_FIELD =
+  /(?:(?:-f|-F|--field|--raw-field)\s+['"]?(?:environment|env)=|--env(?:=|\s+))['"]?([\w.-]+)/;
+/**
+ * The deploy one segment of a command starts, or null: what it runs (`runway promote`, `stackra deploy`, the workflow
+ * file, or the dispatches API), its ref or sha and its environment, and whether that is production. A workflow run is
+ * a deploy when its file names deploy, promote, release or apply, or when it carries an environment or `sha` field.
+ * Production: a promote, the registry deploy, a `sha` field, the dispatches API (its body is not read), an environment
+ * outside `NONPRODUCTION_ENVIRONMENTS`, or none at all.
+ * @param {string} segment one command of a pipeline or list, quotes kept
+ * @returns {{ what: string, ref: string, environment: string, production: boolean } | null}
+ */
+export function deployTarget(segment) {
+  const environment = ENVIRONMENT_FIELD.exec(segment)?.[1] ?? "";
+  const sha = /(?:-f|-F|--field|--raw-field)\s+['"]?sha=['"]?([\w.-]+)/.exec(segment)?.[1] ?? "";
+  const ref = sha || /--ref(?:=|\s+)['"]?([\w./-]+)/.exec(segment)?.[1] || "";
+  const nonproduction = NONPRODUCTION_ENVIRONMENTS.has(environment.toLowerCase());
+  if (RUNWAY_DEPLOY.test(segment) || STACKRA_DEPLOY.test(segment)) {
+    const promote = /\bpromote\b/.test(segment);
+    const what = promote
+      ? "runway promote"
+      : /\bstackra\s/.test(segment)
+        ? "stackra deploy"
+        : "runway deploy";
+    return { what, ref, environment, production: promote || !nonproduction };
+  }
+  if (!WORKFLOW_DISPATCH.test(segment)) return null;
+  if (/\/dispatches\b/.test(segment))
+    return { what: "the dispatches API", ref, environment, production: true };
+  const file = /workflow\s+run\s+['"]?([\w./-]+)/.exec(segment)?.[1] ?? "";
+  if (!/deploy|promote|release|apply/i.test(file) && !environment && !sha) return null;
+  const production = /promote|deploy-registry/i.test(file) || Boolean(sha) || !nonproduction;
+  return { what: file, ref, environment, production };
+}
+/** Every deploy the command starts, read per segment with quotes kept (messages and heredoc prose dropped). */
+const deploys = (c) =>
+  [dropMessages(c), ...runnable(c)]
+    .flatMap((t) => segments(t))
+    .map(deployTarget)
+    .filter(Boolean);
+/** The owner's view of a production deploy: what runs, its ref or sha, its environment. */
+const describeDeploy = (d) =>
+  `${d.what}, ref ${d.ref || "(default branch)"}, environment ${d.environment || "production"}`;
+/**
+ * Never, whoever asks and whatever the owner approves in a prompt (owner decision 2026-10-31): deleting production
+ * data (an R2 bucket or object, a D1 database, a KV namespace or key on the remote, SQL `DROP`, `DELETE` or
+ * `TRUNCATE` against a remote D1), reading or rotating a production secret (`wrangler secret`, `gh secret set|delete`)
+ * and changing DNS (Cloudflare `dns_records`, `flarectl dns`).
+ */
+const PRODUCTION_FORBIDDEN = [
+  atName(
+    CLI("wrangler") +
+      String.raw`(?:r2\s+bucket\s+delete|d1\s+delete|kv\s+namespace\s+delete|secret\s+(?:put|delete|bulk))\b`,
+  ),
+  // An object or key delete is production data unless it names the local store.
+  atName(
+    CLI("wrangler") + String.raw`(?:r2\s+object|kv\s+(?:key|bulk))\s+delete\b(?![^|;&\n]*--local)`,
+  ),
+  /\bdns_records\b|\bflarectl\s+dns\b/,
+  /(?:\bbot:gh\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?secret\s+(?:set|delete)\b/,
+];
 /**
  * The rules, in order. A rule denies unless it says `decision: "ask"`; any deny wins over any ask. `rx` is a regex
  * or a function of (text, ctx) that returns true, or a string that replaces `why`. `scan: "bare"` rules see the
@@ -1737,6 +1810,13 @@ const RULES = [
   },
   {
     rx: (c) =>
+      PRODUCTION_FORBIDDEN.some((rx) => runsQuoted(c, rx)) ||
+      (WRANGLER_D1_REMOTE.test(c) && /\b(?:DROP|DELETE|TRUNCATE)\b/i.test(c)),
+    id: "production-forbidden",
+    why: "Never, even with the owner's approval in a prompt (owner decision 2026-10-31): deleting production data (R2, D1, KV, or SQL `DROP`, `DELETE`, `TRUNCATE` on a remote D1), reading or rotating a production secret, or changing DNS. The owner does these by hand.",
+  },
+  {
+    rx: (c) =>
       WRANGLER_D1_REMOTE.test(c) &&
       /\b(?:DROP|DELETE|TRUNCATE)\b|migrations\s+apply|--file\b/i.test(c),
     decision: "ask",
@@ -1749,11 +1829,24 @@ const RULES = [
     id: "eas-deploy",
     why: "`eas submit`, `--auto-submit`, `eas deploy`, `eas update` and `eas <x>:delete` ship to the stores or users, or delete, on the owner's Expo login; the owner confirms it.",
   },
+  // Deploys (owner decision 2026-10-31): only the QA/release session (`STACKRA_ROLE=qa-release` in its settings) starts
+  // one. Development, preview and staging run without a prompt; production asks the owner per run; OpenCode passes no
+  // role, so it is denied. `runway plan` and `--dry-run` deploy nothing.
   {
-    rx: (c) => runsQuoted(c, RUNWAY_DEPLOY),
+    rx: (c, ctx) => ctx.role !== DEPLOY_ROLE && deploys(c).length > 0,
+    id: "deploy-role",
+    why: "Only the QA/release session starts a deploy (owner decision 2026-10-31). Hand the deploy to stackra-f4, or ask the owner to run it.",
+  },
+  {
+    rx: (c, ctx) => {
+      const production = deploys(c).filter((d) => d.production);
+      return ctx.role === DEPLOY_ROLE && production.length > 0
+        ? `Production deploy (owner decision 2026-10-31): the owner approves each run. ${production.map(describeDeploy).join("; ")}.`
+        : false;
+    },
     decision: "ask",
-    id: "runway-deploy",
-    why: "`pnpm runway deploy` and `promote` dispatch a production deploy workflow (STA-268); the owner confirms it. `plan` and `--dry-run` deploy nothing.",
+    id: "production-deploy",
+    why: "A production deploy asks the owner on every run (owner decision 2026-10-31).",
   },
   {
     rx: (c) => runsQuoted(c, PUBLISH),
@@ -1867,7 +1960,7 @@ const RULES = [
     rx: (c) => runs(c, BOT_GH_RELEASE_DELETE),
     decision: "ask",
     id: "bot-gh-release-delete",
-    why: "A `pnpm bot:gh` release, delete or deploy (`release create|edit|delete|upload`, `<noun> delete`, `workflow run` of a deploy workflow, `api` with `DELETE` or a `dispatches` path) acts with the bot's write access; the owner confirms it.",
+    why: "A `pnpm bot:gh` release or delete (`release create|edit|delete|upload`, `<noun> delete`, `api` with `DELETE`) acts with the bot's write access; the owner confirms it.",
   },
   {
     rx: botGraphqlDelete,
@@ -2073,7 +2166,7 @@ function substitutionDepth(c) {
  * The evaluation context: the command as written (`raw`, heredoc bodies included), the shell's directory, the
  * agent type, the session's scratchpad (resolved, lazy), the session's own checkout (lazy) and a memo.
  */
-function context(raw, cwd, agentType, scratchpad) {
+function context(raw, cwd, agentType, scratchpad, role) {
   let checkout;
   const cache = new Map();
   const memo = (key, f) => {
@@ -2086,6 +2179,7 @@ function context(raw, cwd, agentType, scratchpad) {
     raw,
     cwd,
     agentType,
+    role,
     memo,
     own,
     scratch: () => (scratch ??= scratchpad && realDir(scratchpad)),
@@ -2101,7 +2195,8 @@ function context(raw, cwd, agentType, scratchpad) {
  * @param {{ cwd?: string, agentType?: string, scratchpad?: string, executor?: boolean }} [options] the shell's
  *   directory, the agent type (`agent_type`, for the reviewer rule), the session's scratchpad directory
  *   (`sessionScratchpad`; none: no scratch `rm -rf`), and whether an OpenCode executor runs it (the `executor`
- *   rules: `npx`, `eas`, `wrangler secret|--remote`, `encore env set|create`, `secrets:import --confirm`)
+ *   rules: `npx`, `eas`, `wrangler secret|--remote`, `encore env set|create`, `secrets:import --confirm`), and the
+ *   session's role (`STACKRA_ROLE`; `qa-release` may deploy, the deploy rules)
  */
 export function decideBash(raw, options = {}) {
   try {
@@ -2115,7 +2210,7 @@ const UNREADABLE =
   "The guard could not read this command, so it is denied. Split it into plain commands";
 function decide(
   raw,
-  { cwd = process.cwd(), agentType = "", scratchpad = "", executor = false } = {},
+  { cwd = process.cwd(), agentType = "", scratchpad = "", executor = false, role = "" } = {},
 ) {
   clearCaches();
   gitRuns = 0;
@@ -2123,7 +2218,7 @@ function decide(
   deadline = performance.now() + DEADLINE_MS;
   if (substitutionDepth(raw) > MAX_DEPTH) return { decision: "deny", reason: TOO_DEEP };
   const cmd = stripHeredocs(raw);
-  const ctx = context(raw, cwd, agentType, scratchpad);
+  const ctx = context(raw, cwd, agentType, scratchpad, role);
   tooDeep = false;
   for (const text of forms(cmd)) {
     runnable(text);
@@ -2413,6 +2508,11 @@ const WRITE_RULES = [
     // ADR 0362: the hotfix marker is the owner's approval; an agent never writes it.
     rx: /(^|\/)\.agents\/specs\/[^/]+\/hotfix\.md$/i,
     why: "hotfix.md is the owner's approval for a production hotfix to go before its questionnaire (ADR 0362). Only the owner writes it; ask the owner.",
+  },
+  {
+    // The deploy role (`STACKRA_ROLE`) and every permission live in these; an agent never grants itself one.
+    rx: /(^|\/)\.claude\/settings(\.local)?\.json$/i,
+    why: "Claude Code settings (permissions, hooks, `env` such as `STACKRA_ROLE`) are the owner's. Ask the owner to change them.",
   },
   {
     rx: /(^|\/)\.mcp\.json$/i,

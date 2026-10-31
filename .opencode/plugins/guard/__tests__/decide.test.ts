@@ -1071,3 +1071,13 @@ test("round 4: substitutions, secret globs and one-string wrappers decide as the
     assert.equal(kind(c), "deny", c);
   assert.equal(kind("git config user.name x"), "allow"); // STA-400: categorical asks are allowed
 });
+
+// Deploys (owner decision 2026-10-31): OpenCode carries no role and cannot ask, so every deploy is a deny.
+test("deploys are denied in OpenCode, production and staging alike", () => {
+  for (const c of [
+    "pnpm runway promote 0123abc",
+    "pnpm runway deploy cloudflare-workers --env staging",
+    "pnpm bot:gh -- workflow run deploy-static.yml -f environment=staging",
+  ])
+    expect(decideCommand(c).decision).toBe("deny");
+});

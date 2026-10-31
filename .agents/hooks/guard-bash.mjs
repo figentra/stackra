@@ -22,6 +22,9 @@ async function main() {
   const { decision, reason } = decideBash(raw, {
     cwd,
     agentType: String(input.agent_type ?? ""),
+    // The QA/release session's settings set STACKRA_ROLE=qa-release (owner decision 2026-10-31); an agent cannot set
+    // it, because the hook's environment is the session's, not the command's.
+    role: String(process.env.STACKRA_ROLE ?? ""),
     scratchpad: sessionScratchpad({
       scratchpadDir: typeof input.scratchpad_dir === "string" ? input.scratchpad_dir : "",
       sessionIds: [input.session_id, process.env.CLAUDE_CODE_SESSION_ID],

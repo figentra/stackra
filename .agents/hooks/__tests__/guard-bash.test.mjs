@@ -26,6 +26,7 @@ const run = (payload, extra = {}) => {
   const env = { ...process.env };
   delete env.CLAUDE_CODE_SESSION_ID;
   delete env.CLAUDE_PROJECT_DIR;
+  delete env.STACKRA_ROLE;
   Object.assign(env, extra);
   const r = spawnSync("node", [hook], {
     input: JSON.stringify({ tool_name: "Bash", ...payload }),
@@ -1371,7 +1372,6 @@ for (const c of [
   "wrangler deploy",
   "pnpm exec wrangler deploy",
   "wrangler rollback",
-  "wrangler kv key delete k --remote",
   "eas submit --platform ios",
   "eas build --platform ios --auto-submit",
 ])
@@ -2743,12 +2743,9 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
     "encore-db-reset": ["encore db reset identity", worktree],
     "encore-env-delete": ["encore env delete preview", worktree],
     "wrangler-deploy": ["wrangler deploy", worktree],
-    "wrangler-d1-remote-delete": [
-      "wrangler d1 execute db --remote --command 'DROP TABLE x'",
-      worktree,
-    ],
+    "wrangler-d1-remote-delete": ["wrangler d1 migrations apply db --remote", worktree],
     "eas-deploy": ["eas submit --platform ios", worktree],
-    "runway-deploy": ["pnpm runway deploy cloudflare-workers", worktree],
+    "production-deploy": ["pnpm runway promote 0123abc", worktree],
     "secrets-import-write": ["pnpm secrets:import STACKRA_X", worktree],
     publish: ["npm publish", worktree],
     "rm-delete": ["rm -rf src", worktree],
@@ -2764,9 +2761,15 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
     ],
   };
   assert.deepEqual([...HUMAN_ASKS].sort(), Object.keys(human).sort());
+  // The QA/release role changes only the deploy rules, so every ask is read in that session.
+  const asQa = (c, cwd, agentType, agentId) =>
+    run(
+      { tool_input: { command: c }, cwd, agent_type: agentType, agent_id: agentId },
+      { STACKRA_ROLE: "qa-release" },
+    ).permissionDecision;
   for (const [c, cwd] of Object.values(human)) {
-    assert.equal(decision(c, cwd), "ask", c);
-    assert.equal(decision(c, cwd, "Explore", "a1"), "ask", c);
+    assert.equal(asQa(c, cwd), "ask", c);
+    assert.equal(asQa(c, cwd, "Explore", "a1"), "ask", c);
   }
   for (const c of ["wrangler deploy; cat x | sh", "eas submit; $CMD x"]) {
     assert.equal(decision(c, worktree), "deny", c);
@@ -2775,16 +2778,21 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
   done();
 });
 
-test("STA-268: runway deploy and promote ask the owner in every spelling; plan and --dry-run run", () => {
+test("STA-268: runway deploy and promote are the QA/release role's, in every spelling; plan and --dry-run run", () => {
   const { worktree, done } = repoWithWorktree();
+  const asQa = (c) =>
+    run({ tool_input: { command: c }, cwd: worktree }, { STACKRA_ROLE: "qa-release" })
+      .permissionDecision;
   for (const c of [
     "pnpm runway deploy cloudflare-workers",
     "pnpm runway -- promote 0123abc",
     "node packages/developer/runway/dist/runway.mjs promote 0123abc",
     "runway promote 0123abc",
     "pnpm --silent runway deploy mintlify",
-  ])
-    assert.equal(decision(c, worktree), "ask", c);
+  ]) {
+    assert.equal(decision(c, worktree), "deny", c);
+    assert.equal(asQa(c), "ask", c);
+  }
   for (const c of [
     "pnpm runway plan production",
     "pnpm runway deploy cloudflare-workers --dry-run",
@@ -2875,11 +2883,7 @@ test("STA-400 review: the other deletes and deploys ask too", () => {
     "pnpm bot:gh -- api -vX DELETE repos/figentra/stackra/issues/comments/1",
     "pnpm bot:gh -- api -iX DELETE repos/figentra/stackra/issues/comments/1",
     "pnpm bot:gh -- api --method=DELETE repos/figentra/stackra/issues/comments/1",
-    "pnpm bot:gh -- workflow run deploy-static.yml",
-    "pnpm bot:gh -- api -X POST repos/figentra/stackra/actions/workflows/deploy-static.yml/dispatches -f ref=main",
     "pnpm bot:gh -- api graphql -f query='mutation { deleteIssue(input: {issueId: \"x\"}) { clientMutationId } }'",
-    "pnpm exec wrangler d1 execute db --remote --command 'DROP TABLE x'",
-    "wrangler d1 execute db --remote --command 'DELETE FROM x'",
     "wrangler d1 migrations apply db --remote",
     "eas env:delete",
     "pnpm exec eas update:delete x",
@@ -2938,8 +2942,6 @@ test("STA-400 review: settings ask before deletes and allow the CLIs without rm 
     "Bash(git branch --delete --force*)",
     "Bash(pnpm *bot:gh *variable delete*)",
     "Bash(pnpm *bot:gh *secret delete*)",
-    "Bash(pnpm *bot:gh *workflow run*deploy*)",
-    "Bash(pnpm *bot:gh *dispatches*)",
     "Bash(eas *:delete*)",
     "Bash(eas deploy*)",
     "Bash(eas update *)",
@@ -3318,4 +3320,104 @@ test("STA-351 follow-up: a linear comment body and create title or description a
     assert.equal(decision(c, root), "allow", c);
   for (const c of ["cat .env", 'pnpm linear comment STA-351 "$(cat .env)"'])
     assert.equal(decision(c, root), "deny", c);
+});
+
+// ---- Deploys (owner decision 2026-10-31): the QA/release role, production asks, some things never -------------
+
+test("deploys: only the QA/release session starts one; every other session and subagent is denied", () => {
+  const { worktree, done } = repoWithWorktree();
+  for (const c of [
+    "pnpm runway deploy cloudflare-workers --env staging",
+    "pnpm runway promote 0123abc",
+    "stackra deploy --product --env preview",
+    "pnpm bot:gh -- workflow run deploy-static.yml -f environment=staging",
+    "pnpm bot:gh -- workflow run promote.yml -f sha=0123abc",
+    "pnpm bot:gh -- api -X POST repos/figentra/stackra/actions/workflows/deploy-registry.yml/dispatches -f ref=main",
+  ]) {
+    const out = run({ tool_input: { command: c }, cwd: worktree });
+    assert.equal(out.permissionDecision, "deny", c);
+    assert.match(out.permissionDecisionReason, /QA\/release/, c);
+    assert.equal(decision(c, worktree, "Explore", "a1"), "deny", c);
+    // A role typed on the command line is the command's environment, not the hook's.
+    assert.equal(decision(`STACKRA_ROLE=qa-release ${c}`, worktree), "deny", c);
+  }
+  done();
+});
+
+test("deploys: the QA/release role runs development, preview and staging without a prompt", () => {
+  const { worktree, done } = repoWithWorktree();
+  for (const c of [
+    "pnpm runway deploy cloudflare-workers --env staging",
+    "pnpm runway deploy mintlify --env=preview",
+    "stackra deploy --product --env dev",
+    "pnpm bot:gh -- workflow run deploy-static.yml -f environment=staging",
+    "pnpm bot:gh -- workflow run apply-testbed.yml --ref main -f environment=development",
+  ])
+    assert.equal(
+      run({ tool_input: { command: c }, cwd: worktree }, { STACKRA_ROLE: "qa-release" })
+        .permissionDecision,
+      "allow",
+      c,
+    );
+  done();
+});
+
+test("deploys: production asks the owner on each run, naming the workflow, ref or sha and environment", () => {
+  const { worktree, done } = repoWithWorktree();
+  for (const [c, shown] of [
+    ["pnpm runway promote 0123abc", /runway promote/],
+    ["pnpm runway deploy cloudflare-workers", /environment production/],
+    ["stackra deploy --product --env production --approved", /environment production/],
+    [
+      "pnpm bot:gh -- workflow run deploy-registry.yml --ref main",
+      /deploy-registry\.yml, ref main/,
+    ],
+    ["pnpm bot:gh -- workflow run promote.yml -f sha=0123abc", /promote\.yml, ref 0123abc/],
+    ["pnpm bot:gh -- workflow run deploy.yml -f environment=registry", /environment registry/],
+    ["pnpm bot:gh -- workflow run ci.yml -f sha=0123abc", /ci\.yml, ref 0123abc/],
+    [
+      "pnpm bot:gh -- api -X POST repos/figentra/stackra/actions/workflows/deploy.yml/dispatches -f ref=main",
+      /the dispatches API/,
+    ],
+  ]) {
+    const out = run({ tool_input: { command: c }, cwd: worktree }, { STACKRA_ROLE: "qa-release" });
+    assert.equal(out.permissionDecision, "ask", c);
+    assert.match(out.permissionDecisionReason, shown, c);
+  }
+  // A workflow that deploys nothing stays a plain dispatch.
+  for (const c of [
+    "pnpm bot:gh -- workflow run ci.yml",
+    "pnpm bot:gh -- workflow run linear-sync.yml",
+  ])
+    assert.equal(decision(c, worktree), "allow", c);
+  done();
+});
+
+test("deploys: deleting production data, touching a production secret and DNS are denied for every role", () => {
+  const { worktree, done } = repoWithWorktree();
+  for (const c of [
+    "wrangler r2 bucket delete stackra-registry",
+    "wrangler r2 object delete stackra-registry/tarballs/x.tgz",
+    "pnpm exec wrangler kv key delete k --namespace-id 0",
+    "wrangler kv namespace delete --namespace-id 0",
+    "wrangler d1 delete stackra-registry",
+    "wrangler d1 execute db --remote --command 'DROP TABLE x'",
+    "wrangler d1 execute db --remote --command 'DELETE FROM versions'",
+    "wrangler secret put REGISTRY_SIGNING_KEY",
+    "pnpm bot:gh -- secret set CLOUDFLARE_API_TOKEN",
+    "gh secret delete STACKRA_REGISTRY_TOKEN",
+    "curl -X POST https://api.cloudflare.com/client/v4/zones/z/dns_records",
+    "flarectl dns create --zone figentra.com",
+  ]) {
+    assert.equal(decision(c, worktree), "deny", c);
+    assert.equal(
+      run({ tool_input: { command: c }, cwd: worktree }, { STACKRA_ROLE: "qa-release" })
+        .permissionDecision,
+      "deny",
+      c,
+    );
+  }
+  for (const c of ["wrangler kv key delete k --local", "wrangler d1 migrations list db --remote"])
+    assert.notEqual(decision(c, worktree), "deny", c);
+  done();
 });

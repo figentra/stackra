@@ -116,8 +116,6 @@
       "Bash(git branch --delete --force*)",
       "Bash(pnpm *bot:gh *variable delete*)",
       "Bash(pnpm *bot:gh *secret delete*)",
-      "Bash(pnpm *bot:gh *workflow run*deploy*)",
-      "Bash(pnpm *bot:gh *dispatches*)",
       "Bash(eas *:delete*)",
       "Bash(eas deploy*)",
       "Bash(eas update)",
