@@ -1,6 +1,6 @@
 # Implementation Plan: `@stackra/console`
 
-**Spec**: [spec.md](./spec.md) · **Linear**: STA-1730 · **Status**: Draft (design stop)
+**Spec**: [spec.md](./spec.md) · **Linear**: STA-1730 · **Status**: Planned (approved 2026-10-31)
 
 ## Summary
 
@@ -13,10 +13,10 @@ ship a `stackra-console create` scaffolder, and verify a generated app on stackr
 
 | basalt (spec 030)                                                    | core                                                                                        |
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `defineConsoleCommand({ name, inject, handle: (deps) => fn })`       | `class X extends Command({ name, ... })`, deps by constructor (gen wiring), `handle`        |
-| `console.command:<name>` value providers, walked from a module graph | `kindOf(X).options`; `container.getAll(Command)` or an explicit class list                  |
+| `defineConsoleCommand({ name, inject, handle: (deps) => fn })`       | `class X extends Command({ name })` with `@Argument`/`@Option` fields, deps by constructor  |
+| `console.command:<name>` value providers, walked from a module graph | a registry: `createConsole({ commands })` or gen's `#stackra/commands` (STA-1731)           |
 | `ApplicationLike` start, resolve, close                              | `boot: () => Promise<Container>`, `container.get(X)`, `container.close()`                   |
-| `@clack/prompts` prompter                                            | `ReadlinePrompter` of our own (no dependency; Q2)                                           |
+| `@clack/prompts` prompter                                            | `ReadlinePrompter` of our own (no dependency)                                               |
 | `styler.ts` (named `styleText` colours), `render-table.ts`           | `core/presentation/`: depth, gradient, width, box, table, components                        |
 | parse, suggestions, help, list, run bracket, exit codes, signals     | kept, with tests written for them (basalt had only 5 meta tests, which `validate` replaces) |
 | `./testing` run harness, scripted prompter, memory streams           | kept, plus `json` in the result and a `tty` switch                                          |
@@ -25,19 +25,20 @@ ship a `stackra-console create` scaffolder, and verify a generated app on stackr
 
 `packages/developer/console`, `@stackra/console`, `tier:lib`, `category:developer`, runtimes `node`; files of
 `pnpm new package console --category developer`. Entries (ADR 0294 decision 15): `.` (core), `./contracts`, `./node`,
-`./testing`; bin `stackra-console`. Dependencies: `@stackra/container` and `@stackra/contracts` (`workspace:*`); dev
+`./testing`; bin `stackra-console`. Dependencies: `@stackra/container`, `@stackra/contracts` and `@stackra/validation` (`workspace:*`; never `@stackra/gen`); dev
 from existing catalogs. Every file carries the four-field contract and TSDoc on every export.
 
 ```
 src/contracts/  types/ (CommandOptions, ArgumentDeclaration, OptionDeclaration, InputOf, ConsoleTheme, PromptSpec,
                 ConsolePorts, ExitCode) · ports/ (Prompter, Terminal)
-src/core/       bases/command.base.ts (createKind "command") · errors/ (UsageError, ConsoleDeclarationError,
+src/core/       bases/command.base.ts (createKind "command") · decorators/ (argument, option) · functions/read-command
+                (kind options + field decorators + initialiser defaults → CommandStructure) · errors/ (UsageError, ConsoleDeclarationError,
                 DuplicateCommandError, PromptCancelledError, NonInteractivePromptError) · functions/ (parse-invocation,
                 suggest-names, render-help, render-list, run-console, run-bracket, decide-mode, color-depth,
                 gradient, display-width, isolate-bidi, render-box, render-table) · services/ (ConsoleOutput,
                 Spinner, Progress) · constants/ (STACKRA_THEME, GLOBAL_OPTIONS, SYMBOLS)
                 · functions/theme-from-brand-tokens
-src/node/       run-node-console, readline-prompter (raw-mode keys), node-terminal, process-signals,
+src/node/       create-console, readline-prompter (raw-mode keys), node-terminal, process-signals,
                 stackra-console.ts (the bin) · commands/create.command.ts · functions/write-app,
                 functions/install-app · templates/ (the generated app's files as typed string functions)
 src/testing/    run-command-for-test, scripted-prompter, memory-terminal, manual-signals
@@ -45,26 +46,47 @@ src/testing/    run-command-for-test, scripted-prompter, memory-terminal, manual
 
 ## Key designs
 
-**Command kind.** `Command(options)` is `createKind("command", CommandBase)`; the called form returns an abstract
-class with `declare readonly input: InputOf<A, O>` so an author writes `async handle(input: this["input"], io:
-CommandIo)`. `io` is `{ output, prompt, signal, verbose, json, interactive }`. Return `number | void | JsonData`.
+**Command kind.** `Command(options)` is `createKind("command", CommandBase)` with `{ name, description, hidden?,
+aliases? }`. `@Argument(options?)` and `@Option(options?)` are `createDecorator` field decorators that may mark the
+`command` kind only; the value kind is read from `Str.members`, `Int.members`, `Num.members` and `List.members` of
+`@stackra/validation`. `readCommand(X)` builds the serialisable structure once (cached per class): kind options, fields
+in declaration order, defaults from an instance built with no arguments. The kernel assigns parsed values to the
+instance's fields, then calls `handle(io)`. `io` is `{ output, prompt, signal, verbose, json, interactive }`; `handle`
+returns `number | void | object` (an object is the `--json` data).
 
 ```typescript
 // src/commands/greet.command.ts
-export class GreetCommand extends Command({
-  name: "greet",
-  description: "Greet someone",
-  arguments: [{ name: "who", type: "string", required: false }],
-  options: [{ name: "shout", short: "s", type: "boolean", description: "Upper-case it" }],
-}) {
-  async handle(input: this["input"], io: CommandIo) {
+export class GreetCommand extends Command({ name: "greet", description: "Greet someone" }) {
+  /** Who to greet; asked for when missing. */
+  @Argument({ optional: true })
+  who?: string;
+
+  /** Upper-case the greeting. */
+  @Option({ short: "s" })
+  shout = false;
+
+  /** How many times to greet. */
+  @Option({ short: "t" })
+  @Int({ min: 1, max: 10 })
+  times = 1;
+
+  /** Greets, and returns the name for `--json`. */
+  async handle(io: CommandIo) {
     const who =
-      input.who ?? (await io.prompt.text({ message: "Who?", default: "world", option: "who" }));
-    io.output.success(input.shout ? `HELLO ${who.toUpperCase()}` : `Hello ${who}`);
+      this.who ?? (await io.prompt.text({ message: "Who?", default: "world", option: "who" }));
+    for (let i = 0; i < this.times; i++)
+      io.output.success(this.shout ? `HELLO ${who.toUpperCase()}` : `Hello ${who}`);
     return { who };
   }
 }
 ```
+
+**Registry and entry.** `createConsole({ name, version, theme, commands, container? })` returns
+`{ run(argv, ports?) }`; the node binding wires process streams, TTY, env and signals. `container` is a factory
+(`() => Container.create(wirings)`), called only to dispatch; without it a command is built with `new X()`. Phase 2
+(STA-1731) adds gen's emitter `emit-commands` (beside `emit-webhooks`, a `command` row in `kind-files.constant.ts`):
+`.stackra/gen/commands.ts` with one static import per discovered class, duplicates refused, and
+`.stackra/entry/console.ts` calling `createConsole` with it. Nothing in this package imports gen.
 
 **Mode, decided once** (`decideMode(ports, globals)` → `{ depth: 0|16|256|24, interactive, json, quiet, unicode }`):
 `json` forces depth 0 and non-interactive; `CI` or no TTY makes it non-interactive; `NO_COLOR`/`--no-ansi`/no TTY/
@@ -112,18 +134,20 @@ packed tarballs. Install runs `pnpm install` (or `npm install`) with inherited s
    `... greet Ada --json | node -e 'JSON.parse(...)'`, and `CI=1 ... greet` (no prompt, default used).
 3. Report the transcript to the leader. The Mac runs only oxfmt and oxlint.
 
-## Tasks (high level; `tasks.md` after approval)
+## Tasks
 
 1. ADR 0501 (docs-adr-steward) and the 0294 amendment note.
-2. Scaffold the member; port declaration, parse, kernel, exit codes, signals with tests (FR-001 to FR-009).
-3. Presentation: mode, depth, gradient, width and bidi, components, themes, JSON (FR-010 to FR-015, FR-018).
-4. Prompts and the testing harness (FR-016, FR-017, FR-019).
-5. `create` and the templates (FR-020, FR-021).
-6. `adoption.md` and `flow-visual-spec.md` (FR-022, FR-023).
-7. f4 verification, then the PR (stackra-f4 gates and lands).
+2. Scaffold the member; the kind, decorators, `readCommand`, refusals (FR-001 to FR-005).
+3. Registry, parse, suggestions, help and list, exit codes, lifecycle, signals (FR-006 to FR-015).
+4. Presentation: mode, depth, gradient, width and bidi, components, themes, error screen, JSON (FR-016 to FR-022,
+   FR-026).
+5. Prompts and the testing harness (FR-023 to FR-025, FR-027, FR-028).
+6. `create` and the templates (FR-029 to FR-031).
+7. `adoption.md` and `flow-visual-spec.md` (FR-032, FR-033).
+8. f4 verification, the PR (stackra-f4 gates and lands), then STA-1731's spec.
 
 ## Constitution check
 
 Boundaries: a `tier:lib` package importing only foundation packages; no app, service or `encore.dev`. Versions: no new
-catalog entry. Not-built-yet: none touched. Naming: `Command` is the word 0294 reserves for a CLI command. Secrets: no
+catalog entry. Not-built-yet: none touched; no reflect-metadata (types come from decorators, ADR 0227). Naming: `Command` is the word 0294 reserves for a CLI command. Secrets: no
 value is read or printed; the scaffolder writes no token.

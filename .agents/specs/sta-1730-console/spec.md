@@ -2,15 +2,16 @@
 
 **Created**: 2026-10-31
 
-**Status**: Draft <!-- spec and design stop: waiting for the leader's approval before any build -->
+**Status**: Clarified
 
-**Linear**: STA-1730
+**Linear**: STA-1730 (phase 1); STA-1731 (phase 2, its own folder and design stop)
 
-**Clarifications status**: pending <!-- the open questions at the end go to the leader and the owner -->
+**Clarifications status**: complete
 
 **Input**: the owner approved on 2026-10-31 porting `@stackra/console` (basalt `packages/os/console`, Academorix spec 030) into core and giving every Stackra CLI a Symfony Console and Laravel installer experience: a gradient logo,
 robust prompts, one layout, and a colour, logo and glyph per product. `stackra`, `runway` and the `figentra` CLI
-(ADR 0500) are hand-built today with plain output and no shared framework.
+(ADR 0500) are hand-built today with plain output and no shared framework. On 2026-10-31 the owner approved the spec
+stop ("handle all, all approved") and added STA-1731: every package exposes its own commands, and gen collects them.
 
 ## Impact
 
@@ -20,132 +21,193 @@ robust prompts, one layout, and a colour, logo and glyph per product. `stackra`,
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Secrets**: none (the scaffolder writes registry scope lines only; a password prompt never echoes and never logs)
-- **ADR needed**: yes. ADR 0501 adds the `Command` kind (row in the 0294 kind table, a `commands/` group for modules
-  and apps, `.command.ts`) and names `@stackra/console` as the CLI framework and presentation standard of 0500's CLIs
-- **New dependencies**: none (`node:util` `parseArgs` and `styleText`, `node:readline`, `Intl.Segmenter`; the basalt
-  port used `@clack/prompts`, which is replaced by a prompter of our own, see Q2)
+- **ADR needed**: yes. ADR 0501 adds the `Command` kind (a row in the 0294 kind table; a `commands/` group in a
+  module, a package's `src/node/` and an app; `.command.ts`), the `@Argument` and `@Option` field decorators, the
+  generated `#stackra/commands` registry, and names `@stackra/console` the framework and look of 0500's CLIs
+- **New dependencies**: none (`node:util` `parseArgs` and `styleText`, `node:readline`, `Intl.Segmenter`; basalt's
+  `@clack/prompts` is replaced by a prompter of our own)
 - **Deploy modes**: same everywhere (a library and a bin; nothing deployed)
 - **Licence tier**: free (`@stackra/console`)
-- **Docs to update**: ADR 0501; ADR 0294 kind and group tables (by amendment note); `packages/developer/README.md`;
+- **Docs to update**: ADR 0501; an amendment note on ADR 0294 (kind table, groups); `packages/developer/README.md`;
   the package README and AGENTS.md; a docs page `apps/docs/src/docs/packages/console.mdx`
 - **Lane**: full
 - **Change risk**: R2 (a new member and a new kind; no runtime of any service or app changes)
 
+## Decisions taken at the spec stop (2026-10-31)
+
+1. **Class style.** A command is a class with decorated fields, like an Action with its Schema, never
+   `defineConsoleCommand`. Its name and description are written once in the kind's options,
+   `extends Command({ name, description })`, the way `Action({ key })` writes its key (ADR 0294 decision 16; `kindOf`
+   reads them without constructing). Arguments and options are fields with `@Argument` and `@Option`; their value
+   kind comes from `@Str`, `@Int`, `@Num` or `@List` of `@stackra/validation`, and a field with none of them is a
+   boolean option or a string argument (the decorator test: nothing restates a type). Collaborators are constructor
+   parameters, wired by gen or by the caller (ADR 0294 decision 17); `handle(io)` reads the fields.
+2. **gen is optional.** `@stackra/console` and the packages that ship commands never depend on `@stackra/gen`. A
+   member that runs gen gets `#stackra/commands`; a standalone app passes `createConsole({ commands: [...] })` and has
+   no `.stackra/`. The `create` scaffolder makes the standalone kind.
+3. **`@stackra/console` holds no module's commands.** It is the framework only: the `Command` base, the decorators,
+   the kernel, IO, prompts, themes, the testing harness and `createConsole`. Database, cache, queue, tenancy and the
+   rest ship their commands from their own packages (phase 2).
+4. **Prompts are our own** (`node:readline`, no new dependency). **The scaffolder** is a `create` command of the
+   package's own `stackra-console` bin. **Themes:** the package ships `STACKRA_THEME` only; `runway` and `figentra`
+   build theirs from their brand tokens.
+
 ## Users
 
-- **Command author**: writes `class SeedCommand extends Command({ name, description, arguments, options })` with a
-  typed `handle(input, io)`, and gets parsing, help, prompts, output and tests for free.
-- **CLI owner** (stackra, runway, figentra, a customer): one `runNodeConsole({ name, version, theme, commands })` call.
-- **Operator**: a person at a terminal, or a CI job, or a script reading `--json`.
-- **Test author**: runs a command in-process with scripted answers and reads exit code, stdout and stderr.
+- **Command author**: writes `class SeedTenantCommand extends Command({ name: "tenant:seed", description })` with
+  decorated fields and `handle(io)`, and gets parsing, help, prompts, output and tests from the framework.
+- **CLI owner** (stackra, runway, figentra, a customer): one `createConsole({ name, version, theme, commands })`.
+- **Operator**: a person at a terminal, a CI job, or a script reading `--json`.
+- **Test author**: runs a command in-process with scripted answers and reads exit code, stdout, stderr and JSON.
 
 ## Requirements
 
-### Declaring and running commands (ported from spec 030, adapted to v3)
+### Declaring commands
 
-- **FR-001** A command is a class that extends `Command({ name, description, arguments?, options?, hidden?, aliases? })`.
-  The options are inert and serialisable; reading them (`kindOf`) never constructs the class.
-- **FR-002** `handle(input, io)` gets its input type from the declaration: a `number` option is a `number`, an
-  optional argument with no default is `T | undefined`, an unknown name is a type error (type tests).
-- **FR-003** Declaration errors are refused at declaration time with a named error: bad command name (`[a-z0-9-]+`
-  joined by `:`), a required argument after an optional one, a duplicate name, an option that reuses a global option.
-- **FR-004** The kernel builds its command list from the classes it is given or from a container
-  (`container.getAll(Command)`); two commands with one name are refused with both class names.
-- **FR-005** Parsing (`node:util.parseArgs`): positionals in order, `--name value`, `--name=value`, `-n value`,
-  `--no-<flag>`, `--`, defaults, `number` conversion, repeated options as arrays. A usage error exits 2, names the
-  argument or option, and never constructs or boots anything.
-- **FR-006** An unknown command lists up to 3 names within edit distance 2 ("Did you mean ...?"); a unique prefix of a
-  namespace runs the command (`t:s` for `tenant:seed`, as Symfony does).
-- **FR-007** Exit codes: 0 success, the handler's integer 0 to 255, 1 on a thrown error, 2 on usage, 130 on SIGINT or a
-  cancelled prompt, 143 on SIGTERM. The kernel returns the code; only the node binding sets `process.exitCode`.
-- **FR-008** Lifecycle: a container is created only to dispatch (never for list, help or version) and is closed after
-  the handler, after a throw and after a signal; a close failure after success exits 1 with its message.
-- **FR-009** Global options on every command: `-h/--help`, `-V/--version`, `-v/--verbose`, `-q/--quiet`,
-  `-n/--no-interaction`, `--json`, `--ansi`/`--no-ansi`.
+- **FR-001** THE Console Package SHALL declare a command as a class that extends `Command({ name, description,
+hidden?, aliases? })`, and SHALL read a command's name, description, arguments and options without constructing it
+  or its collaborators.
+- **FR-002** THE Console Package SHALL bind each `@Argument` field to the next positional token in field order, and
+  each `@Option({ short?, description? })` field to `--<kebab-name>` (and `-<short>`).
+- **FR-003** THE Console Package SHALL take a field's value kind from its `@Str`, `@Int`, `@Num` or `@List`
+  decorator; WHERE a field has none of them, THE Console Package SHALL treat an option as a boolean and an argument
+  as a string.
+- **FR-004** THE Console Package SHALL take a field's default from its initialiser (read from an instance built with
+  no arguments, since a command's constructor only stores its collaborators), SHALL treat an `@Argument` with no
+  initialiser as required unless it is `@Argument({ optional: true })` (the runtime cannot see `?` without gen), and
+  SHALL treat every option as optional.
+- **FR-005** IF a command's name does not match `[a-z0-9-]+` segments joined by `:`, a required argument follows an
+  optional one, two fields share a long or short name, or an option reuses a global option's name, THEN THE Console
+  Package SHALL refuse the command with a `ConsoleDeclarationError` that names the command and the field.
 
-### Presentation (the Laravel installer and Laravel Prompts feel)
+### Registering and running
 
-- **FR-010** A banner: the theme's ASCII logo coloured by a horizontal gradient across the theme's stops, then the
-  product name, version and glyph line. Shown on the command list and by `io.output.banner()`; never under `--json`,
-  `--quiet` or a non-TTY stdout.
-- **FR-011** A theme is a small object: `name`, `logo` (lines), `gradient` (2 to 5 hex stops), `accent` (hex), `glyph`
-  (one grapheme, with an ASCII fallback). `themeFromBrandTokens(colorJson, overrides)` builds one from a brand's DTCG
-  `tokens/color.json`. Layout, spacing, symbols and copy are the same for every theme; only colour, logo and glyph
-  change.
-- **FR-012** Output components: `info`, `success`, `warn`, `error`, `line`, `title`, `keyValue`, `list`, `table`,
-  `note` (a boxed note: info, warning, alert), `task(label, fn)` (the Laravel "label ....... DONE" line), `spinner`,
-  `progress`, `json`, and an error screen for a thrown error (title, message, a hint when the error has one, the stack
-  and cause chain under `--verbose`). Warnings and errors go to stderr.
-- **FR-013** Colour depth is decided once per run: none under `NO_COLOR` (non-empty), `--no-ansi`, a non-TTY stdout
-  (unless `FORCE_COLOR` or `--ansi`) or `TERM=dumb`; 24-bit with `COLORTERM=truecolor|24bit`; else 256; else 16. The
-  gradient degrades to the nearest colour of the depth, and to plain text at none.
-- **FR-014** Plain mode (no colour or no TTY): no escape sequence at all, no cursor movement, a spinner prints one line
-  when it starts and one when it ends, progress prints at most every 10 %, boxes use ASCII (`+-|`).
-- **FR-015** `--json`: no banner, no colour, no spinner; the run writes exactly one JSON document to stdout,
-  `{ "ok": true, "data": <value> }` from `io.output.json(value)` or the handler's return data, or
-  `{ "ok": false, "error": { "code", "message" } }` with the same exit code as without `--json`. Prompts behave as
-  non-interactive.
-- **FR-016** Interaction: prompts run only when stdin and stdout are TTYs, `CI` is unset or empty, and neither
-  `--no-interaction` nor `--json` is given. Otherwise a prompt with a default answers with it, and one without fails
-  the run with exit 2 naming the prompt and the option that would answer it.
-- **FR-017** Prompts: `text` (placeholder, default, validate), `password` (echoes nothing; never logged), `confirm`,
-  `select`, `multiselect`, `search` (filter as you type), in a framed Laravel Prompts style coloured by the theme;
-  Ctrl-C or Escape cancels with exit 130; a validation message keeps the prompt open.
-- **FR-018** Right-to-left text: widths come from grapheme clusters (`Intl.Segmenter`) with wide East Asian and
-  zero-width characters counted correctly, so Arabic and Hebrew align in tables, boxes and task lines; an RTL run inside
-  an LTR layout is wrapped in Unicode isolates (FSI U+2068 ... PDI U+2069) and is never reversed by us. Tests use Arabic.
+- **FR-006** THE Console Kernel SHALL take its commands from a registry: the classes passed to `createConsole`, or the
+  generated `#stackra/commands` of a member that runs gen.
+- **FR-007** IF two commands in one registry share a name or an alias, THEN THE Console Kernel SHALL refuse to start
+  with a `DuplicateCommandError` that names the name and both classes.
+- **FR-008** WHEN a command runs, THE Console Kernel SHALL obtain its instance from the container when one is given
+  (`container.get(X)`), else by constructing the class with no arguments.
+- **FR-009** WHEN an Invocation supplies `--name value`, `--name=value`, `-s value`, `--no-<flag>`, a repeated `@List`
+  option or tokens after `--`, THE Console Kernel SHALL bind them as `node:util.parseArgs` does, converting `@Int` and
+  `@Num` values to numbers.
+- **FR-010** IF an Invocation misses a required argument, supplies an unknown option, a non-finite number, a value
+  outside an `@Int`/`@Num` bound or a surplus positional, THEN THE Console Kernel SHALL return exit code 2 with a
+  usage error naming the field, without creating a container.
+- **FR-011** IF an Invocation names no registered command, THEN THE Console Kernel SHALL report up to 3 names within
+  edit distance 2; WHEN a name is a unique abbreviation by segment (`t:s` for `tenant:seed`), THE Console Kernel
+  SHALL run that command.
+- **FR-012** THE Console Kernel SHALL return exit code 0 on success, the integer 0 to 255 the handler returns, 1 when
+  the handler throws, 2 on a usage error, 130 on SIGINT or a cancelled prompt and 143 on SIGTERM, and SHALL leave
+  `process.exitCode` to the node binding.
+- **FR-013** WHEN the Console Kernel dispatches a command, THE Console Kernel SHALL create the container (when the
+  caller gives a factory) before resolving the command and SHALL close it after the handler returns, throws or is
+  interrupted; IF closing fails after a success, THEN THE Console Kernel SHALL return exit code 1 with its message.
+- **FR-014** WHEN an Invocation has no command name, carries `--help` or carries `--version`, THE Console Kernel SHALL
+  write the command list (by namespace, then name), that command's help, or the name and version, and return exit
+  code 0 without creating a container.
+- **FR-015** THE Console Kernel SHALL accept the global options `-h/--help`, `-V/--version`, `-v/--verbose`,
+  `-q/--quiet`, `-n/--no-interaction`, `--json` and `--ansi`/`--no-ansi` on every command.
+
+### Presentation
+
+- **FR-016** WHEN the Console Kernel writes the command list or a handler calls `io.output.banner()`, THE Console
+  Output SHALL write the theme's ASCII logo with a horizontal gradient across the theme's stops, then a line with the
+  glyph, the name and the version; WHILE `--json`, `--quiet` or a non-TTY stdout is in effect, THE Console Output SHALL
+  write no banner.
+- **FR-017** THE Console Package SHALL define a theme as `{ name, logo, gradient, accent, glyph, asciiGlyph }`, and
+  `themeFromBrandTokens(colorJson, overrides)` SHALL build one from a brand's DTCG `tokens/color.json`; every theme
+  SHALL share one layout, spacing, symbol set and copy.
+- **FR-018** THE Console Output SHALL provide `info`, `success`, `warn`, `error`, `line`, `title`, `keyValue`, `list`,
+  `table`, `note` (info, warning, alert boxes), `task(label, fn)`, `spinner`, `progress`, `json` and `banner`, and
+  SHALL write warnings and errors to standard error.
+- **FR-019** WHEN a handler throws, THE Console Output SHALL write an error screen with the error's title, message and
+  hint; WHERE `--verbose` is given, THE Console Output SHALL add the stack and the `cause` chain.
+- **FR-020** THE Console Package SHALL decide the colour depth once per run: none WHILE `NO_COLOR` is non-empty,
+  `--no-ansi` is given, stdout is not a TTY or `TERM=dumb` (unless `--ansi` or `FORCE_COLOR`); 24-bit WHILE `COLORTERM`
+  is `truecolor` or `24bit`; else 256; and SHALL quantise the gradient to that depth.
+- **FR-021** WHILE the colour depth is none or stdout is not a TTY, THE Console Output SHALL write no escape sequence
+  and no cursor movement, SHALL write a spinner as one start line and one end line, SHALL write progress at most every
+  10 percent, and SHALL draw boxes in ASCII.
+- **FR-022** WHILE `--json` is given, THE Console Kernel SHALL write exactly one JSON document to stdout,
+  `{ "ok": true, "data": ... }` from `io.output.json(value)` or the handler's returned object, or
+  `{ "ok": false, "error": { "code", "message" } }`, with the exit code of FR-012.
+- **FR-023** WHILE stdin or stdout is not a TTY, `CI` is non-empty, or `--no-interaction` or `--json` is given, THE
+  Console Package SHALL answer a prompt with its default; IF that prompt has no default, THEN THE Console Package SHALL
+  fail the run with exit code 2 naming the prompt and the option that answers it.
+- **FR-024** WHILE the run is interactive, THE Console Package SHALL offer `text`, `password`, `confirm`, `select`,
+  `multiselect` and `search` prompts in one framed style coloured by the theme, SHALL keep a prompt open while its
+  `validate` fails, SHALL echo no character of a `password` answer, and SHALL restore the terminal on every exit.
+- **FR-025** WHEN the Operator presses Ctrl-C or Escape in a prompt, THE Console Kernel SHALL close the container and
+  return exit code 130.
+- **FR-026** THE Console Output SHALL measure text by grapheme cluster (`Intl.Segmenter`), counting wide East Asian
+  and emoji graphemes as 2 and combining and isolate marks as 0, SHALL wrap each right-to-left run inside a
+  left-to-right layout in FSI U+2068 and PDI U+2069, and SHALL never reorder characters.
 
 ### Testing harness
 
-- **FR-019** `runCommandForTest(commands | container, argv, { answers, env, tty })` runs in-process and returns
-  `{ exitCode, stdout, stderr, json }`; answers are used in order; a prompt after the last answer fails naming the
-  prompt; output is plain unless the test asks for colour.
+- **FR-027** WHEN a test calls `runCommandForTest(registry, argv, { answers, env, tty, container })`, THE Console
+  Package SHALL run the invocation in the test's process and return `{ exitCode, stdout, stderr, json }`, answering
+  prompts with `answers` in order, with plain output unless `tty` asks for colour.
+- **FR-028** IF a handler asks a prompt after the scripted answers are exhausted, THEN THE Console Package SHALL fail
+  the run with an error naming the prompt.
 
-### The `create` scaffolder (like `laravel new`)
+### The `create` scaffolder
 
-- **FR-020** `stackra-console create <dir>` (the package's own bin, built on the framework itself) shows the banner,
-  asks for the app name, the binary name and the theme accent when interactive (flags answer them otherwise:
-  `--name`, `--bin`, `--accent`, `--no-install`, `--pm pnpm|npm`, `--package-spec <spec>`), refuses a non-empty
-  folder, writes the app, and installs.
-- **FR-021** The generated app is plain TypeScript with no Stackra monorepo assumptions: `package.json` (bin, `build`,
-  `typecheck`, `test`, `start`), `tsconfig.json`, `.npmrc` with the `@stackra` registry scope line only (no token),
-  `src/main.ts`, `src/theme.ts`, `src/commands/greet.command.ts` (an argument, an option, a prompt, a table and
-  `--json` data) and `src/commands/__tests__/greet.command.test.ts` (help, run, a scripted prompt, `NO_COLOR`,
-  `--json`). It builds with `tsc` and tests with `vitest`.
+- **FR-029** WHEN the Operator runs `stackra-console create <dir>`, THE Console Package SHALL ask for the app name, the
+  binary name and the accent colour WHILE interactive (else take `--name`, `--bin`, `--accent`), SHALL write the app,
+  and SHALL install it unless `--no-install` is given, with `--pm pnpm|npm` and `--package-spec <spec>` honoured.
+- **FR-030** IF `<dir>` exists and is not empty, THEN THE Console Package SHALL refuse with exit code 1 and write
+  nothing.
+- **FR-031** THE generated app SHALL be standalone TypeScript with no `.stackra/`: `package.json` (bin, `build`,
+  `typecheck`, `test`, `start`), `tsconfig.json`, `.npmrc` with the `@stackra` registry scope line and no token,
+  `src/main.ts` calling `createConsole`, `src/theme.ts`, `src/commands/greet.command.ts` (an argument, an option, a
+  prompt, a table and JSON data) and `src/commands/__tests__/greet.command.test.ts` (help, a run, a scripted prompt,
+  `NO_COLOR`, `--json`).
 
-### Adoption and the Flow visual spec (documents only)
+### Documents
 
-- **FR-022** `adoption.md` in this folder says how `stackra`, `runway` and `figentra` move onto the framework, in an
-  order that keeps ADR 0500 decision 7 (a move keeps output; restyling is its own later commit). No CLI migrates in
-  this issue.
-- **FR-023** `flow-visual-spec.md` in this folder is a one-page visual spec Figentra Flow can follow without depending
-  on `@stackra/console`: banner, symbols, spacing, colours by role, plain and JSON rules.
+- **FR-032** `adoption.md` SHALL say how `stackra` (including its `COMMANDS` array in
+  `packages/developer/cli/src/node/constants/commands.constant.ts`), `runway` and `figentra` move onto the framework,
+  keeping ADR 0500 decision 7 (a move keeps output; restyling is a later commit). No CLI migrates in STA-1730.
+- **FR-033** `flow-visual-spec.md` SHALL be a one-page visual spec that Figentra Flow follows without depending on
+  `@stackra/console`.
+
+## Phase 2: STA-1731, commands from every package (own spec folder and design stop)
+
+Builds on phase 1; its spec goes in `.agents/specs/sta-1731-<slug>/` and to the leader before code.
+
+1. **gen collector.** gen discovers every `extends Command` class in the `commands/` group of the member's own
+   modules and of each package it depends on (`src/node/commands/`, published under the package's `./node` entry), and
+   writes `.stackra/gen/commands.ts` with one explicit static import per class and an exported `commands` array,
+   imported as `#stackra/commands`. Duplicate names or aliases fail gen, naming both classes (the STA-1712 pattern for
+   integrations). No runtime scanning or globbing. The classes are also wiring bindings, so the container builds them
+   with their collaborators.
+2. **One console entry per member.** gen writes `.stackra/entry/console.ts`, `createConsole({ commands, container:
+() => Container.create(wirings) })`, and the member's `console` script runs it (ADR 0295).
+3. **Inventory.** A table of the commands each package should expose (database, cache, queue, scheduler, outbox,
+   tenancy, registry, search, AI), and those `stackra`'s `COMMANDS` already has, for owner review.
+4. **First commands**, each in its own package: database (`db:migrate`, `db:rollback`, `db:status`, `db:seed`), cache
+   (`cache:clear`), queue (`queue:work`, `queue:failed`, `queue:retry`), tenancy (`tenant:list`, `tenant:create`).
 
 ## Success criteria
 
-- **SC-001** On stackra-f4: the generated demo app installs, builds, typechecks and passes its tests; `--help`, the
-  example command, a scripted prompt through the harness, `NO_COLOR=1` and `--json` all behave as FR-013 to FR-016 say.
-- **SC-002** `pnpm verify` is green with the new member; the package's own tests cover every refusal of FR-003 to FR-007
-  and FR-016, and the type tests cover FR-002.
-- **SC-003** Under `NO_COLOR=1`, without a TTY and with `CI=1`, captured output contains no byte `\x1b`.
-- **SC-004** A table with Arabic and English cells has every row the same display width.
+- **SC-001** On stackra-f4, the generated demo app installs, builds, typechecks and passes its tests, and `--help`, the
+  example command, a scripted prompt through the harness, `NO_COLOR=1` and `--json` behave as FR-016 to FR-023 say.
+- **SC-002** `pnpm verify` is green with the new member, and its tests cover every refusal of FR-005, FR-007, FR-010,
+  FR-023, FR-028 and FR-030.
+- **SC-003** Under `NO_COLOR=1`, without a TTY and with `CI=1`, captured output contains no byte `0x1b`.
+- **SC-004** A table with Arabic and English cells renders every row at the same display width.
 - **SC-005** The command list of 50 commands renders in under 150 ms (p95) on the CI runner.
 
 ## Out of scope
 
-- Migrating `stackra`, `runway` or `figentra` (FR-022 is the plan only).
-- Shell completion scripts, a REPL, command events and middleware; gen emitting the command wiring (gen discovers
-  `commands/` once the kind lands in the kind table; a customer app without gen passes its classes).
+- Migrating `stackra`, `runway` or `figentra` (FR-032 is the plan only); phase 2 (STA-1731).
+- Shell completion scripts, a REPL, command events and middleware.
 - Anything in figentra/flow.
 
-## Open questions (for the leader and the owner)
+## Status history
 
-- **Q1** ADR 0501 for the `Command` kind and the `commands/` group (0294 has "Command: a CLI command only" in its
-  vocabulary, but no kind row). Approve the number and scope?
-- **Q2** Prompts: our own `node:readline` prompter (no new dependency, full theme control; recommended) or
-  `@clack/prompts` from a new catalog entry (the basalt port's choice; needs the owner)?
-- **Q3** The scaffolder's home: a `stackra-console` bin inside `@stackra/console` (recommended; `pnpm dlx
-@stackra/console create my-cli`), or `stackra new console-app` in `@stackra/cli`, or a separate
-  `@stackra/create-console` for `pnpm create`?
-- **Q4** Themes shipped in the package: `STACKRA_THEME` only (recommended; runway and figentra build theirs from their
-  brand tokens in their own package), or all three?
+- 2026-10-31 · — → Draft · Claude (builder) · spec and design sent to the leader with Q1 to Q4
+- 2026-10-31 · Draft → Clarified · Claude (builder) · owner "handle all, all approved"; the leader's class-style and
+  optional-gen decisions folded in; STA-1731 added as phase 2
