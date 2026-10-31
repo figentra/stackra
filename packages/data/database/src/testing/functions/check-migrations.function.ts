@@ -52,6 +52,7 @@ export async function checkMigrations(directory: string, target?: MigrationTarge
     );
     for (const file of files) await run(file, file.sql, "up");
     const reverted: MigrationFile[] = [];
+    // oxlint-disable-next-line unicorn/no-array-reverse -- reverses a copy built here; toReversed is ES2023 and the base lib is ES2022
     for (const file of [...files].reverse()) {
       if (file.inverse === undefined) break;
       await run(file, file.inverse, "down");

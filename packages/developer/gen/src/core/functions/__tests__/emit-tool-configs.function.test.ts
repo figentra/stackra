@@ -19,6 +19,15 @@ import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
+/** The generated vitest config of `ir`. */
+function vitestConfigOf(ir: typeof LOYALTY_KIT_IR): string {
+  return (
+    emitToolConfigs(ir, { entries: [], registrations: false }).find(
+      (file) => file.path === ".stackra/vitest.config.ts",
+    )?.content ?? ""
+  );
+}
+
 describe("emitToolConfigs", () => {
   const files = emitToolConfigs(BILLING_IR, {
     entries: [
@@ -84,12 +93,8 @@ describe("emitToolConfigs", () => {
   });
 
   it("runs a package's generated migration check in its unit tier, never a service's (STA-1689)", () => {
-    const configOf = (ir: typeof LOYALTY_KIT_IR) =>
-      emitToolConfigs(ir, { entries: [], registrations: false }).find(
-        (file) => file.path === ".stackra/vitest.config.ts",
-      )?.content ?? "";
-    expect(configOf(LOYALTY_KIT_IR)).toContain('".stackra/tests/**/*.test.{ts,tsx}"');
-    expect(configOf(BILLING_IR)).not.toContain(".stackra/tests");
+    expect(vitestConfigOf(LOYALTY_KIT_IR)).toContain('".stackra/tests/**/*.test.{ts,tsx}"');
+    expect(vitestConfigOf(BILLING_IR)).not.toContain(".stackra/tests");
   });
 
   it("loads the registrations, the wiring and the factory partners in the setup", () => {

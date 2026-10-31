@@ -10,5 +10,5 @@
 /** A database that runs a SQL text. */
 export interface MigrationTarget {
   /** Runs `sql`, which may hold several statements. */
-  exec(sql: string): Promise<unknown>;
+  readonly exec: (sql: string) => Promise<unknown>;
 }

@@ -21,39 +21,54 @@ function folder(files: Readonly<Record<string, string>>): string {
   return directory;
 }
 
+/** PGlite's start and extensions alone take seconds; the 5 s default is too short. */
+const TIMEOUT_MS = 60_000;
+
 describe("checkMigrations", () => {
-  it("applies, reverts and re-applies a sound folder", async () => {
-    await expect(
-      checkMigrations(
-        folder({
-          "0001_shop_0001_create_items.up.sql":
-            "create schema shop;\ncreate table shop.items (id int);\n",
-          "0001_shop_0001_create_items.down.sql": "drop table shop.items;\ndrop schema shop;\n",
-          "0002_shop_0002_add_name.up.sql": "alter table shop.items add column name text;\n",
-          "0002_shop_0002_add_name.down.sql": "alter table shop.items drop column name;\n",
-        }),
-      ),
-    ).resolves.toBeUndefined();
-  });
+  it(
+    "applies, reverts and re-applies a sound folder",
+    async () => {
+      await expect(
+        checkMigrations(
+          folder({
+            "0001_shop_0001_create_items.up.sql":
+              "create schema shop;\ncreate table shop.items (id int);\n",
+            "0001_shop_0001_create_items.down.sql": "drop table shop.items;\ndrop schema shop;\n",
+            "0002_shop_0002_add_name.up.sql": "alter table shop.items add column name text;\n",
+            "0002_shop_0002_add_name.down.sql": "alter table shop.items drop column name;\n",
+          }),
+        ),
+      ).resolves.toBeUndefined();
+    },
+    TIMEOUT_MS,
+  );
 
-  it("names an up that fails", async () => {
-    await expect(
-      checkMigrations(
-        folder({
-          "0001_shop_0001_bad.up.sql": "comment on schema public is 'the model's';\n",
-        }),
-      ),
-    ).rejects.toThrow("0001_shop_0001_bad (up) failed");
-  });
+  it(
+    "names an up that fails",
+    async () => {
+      await expect(
+        checkMigrations(
+          folder({
+            "0001_shop_0001_bad.up.sql": "comment on schema public is 'the model's';\n",
+          }),
+        ),
+      ).rejects.toThrow("0001_shop_0001_bad (up) failed");
+    },
+    TIMEOUT_MS,
+  );
 
-  it("names an up that cannot run again after its down", async () => {
-    await expect(
-      checkMigrations(
-        folder({
-          "0001_shop_0001_create_items.up.sql": "create table items (id int);\n",
-          "0001_shop_0001_create_items.down.sql": "select 1;\n",
-        }),
-      ),
-    ).rejects.toThrow("0001_shop_0001_create_items (up after down) failed");
-  });
+  it(
+    "names an up that cannot run again after its down",
+    async () => {
+      await expect(
+        checkMigrations(
+          folder({
+            "0001_shop_0001_create_items.up.sql": "create table items (id int);\n",
+            "0001_shop_0001_create_items.down.sql": "select 1;\n",
+          }),
+        ),
+      ).rejects.toThrow("0001_shop_0001_create_items (up after down) failed");
+    },
+    TIMEOUT_MS,
+  );
 });

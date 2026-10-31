@@ -28,6 +28,7 @@ import type { SchemaBuilder } from "#core/types/schema-builder.type";
 type Operation =
   | { readonly blueprint: BlueprintRecord }
   | { readonly collation: string; readonly locale: string }
+  | { readonly extension: Extension }
   | { readonly statement: string; readonly inverse: string | false };
 
 /** A statement that cannot run inside a transaction. */
@@ -106,10 +107,7 @@ export class SchemaRecord implements SchemaBuilder {
       throw new TypeError(
         `"${extension}" is not an approved extension (${Enum.values(Extension).join(", ")}); a new one needs an ADR`,
       );
-    this.operations.push({
-      statement: `create extension if not exists ${quoteIdentifier(extension)}`,
-      inverse: `drop extension if exists ${quoteIdentifier(extension)}`,
-    });
+    this.operations.push({ extension });
   }
 
   /**
@@ -144,6 +142,14 @@ export class SchemaRecord implements SchemaBuilder {
         transactional.push({
           sql: `create collation if not exists ${collation} (provider = icu, locale = ${sqlLiteral(operation.locale)})`,
           inverse: [`drop collation if exists ${collation}`],
+        });
+        continue;
+      }
+      // An extension is the database's, shared by every module that needs it: a down never drops it (STA-1689).
+      if ("extension" in operation) {
+        transactional.push({
+          sql: `create extension if not exists ${quoteIdentifier(operation.extension)}`,
+          inverse: [],
         });
         continue;
       }

@@ -28,6 +28,8 @@ describe("emitMigrationsCheck", () => {
     expect(content(".stackra/tests/migrations.test.ts")).toContain(
       'await checkMigrations(fileURLToPath(new URL("./migrations", import.meta.url)));',
     );
+    // PGlite and every migration three ways take far longer than vitest's 5 s default.
+    expect(content(".stackra/tests/migrations.test.ts")).toContain("  }, 120000);");
   });
 
   it("checks it on an empty Postgres in the integration tier", () => {

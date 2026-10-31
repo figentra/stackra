@@ -435,10 +435,8 @@ describe(compileMigration, () => {
     expect(step?.sql).toContain(
       'create unique index "idx_accounts_member_id" on "loyalty"."accounts" ("member_id") where deleted_at is null',
     );
-    expect(step?.inverse).toEqual([
-      'drop table if exists "loyalty"."accounts"',
-      'drop extension if exists "pg_trgm"',
-    ]);
+    // The extension is shared by every module, so the down keeps it (STA-1689).
+    expect(step?.inverse).toEqual(['drop table if exists "loyalty"."accounts"']);
   });
 
   it("revokes update on an append-only table, created or existing (stackra-256)", () => {

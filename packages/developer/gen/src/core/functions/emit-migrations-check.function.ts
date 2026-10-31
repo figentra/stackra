@@ -13,6 +13,9 @@ import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
+/** The generated tests' timeout, in milliseconds. */
+const TIMEOUT_MS = 120_000;
+
 /**
  * The migration check files of the package `ir`.
  *
@@ -43,7 +46,8 @@ export function emitMigrationsCheck(ir: MemberIR): GeneratedFile[] {
         'describe("migrations", () => {',
         '  it("apply, revert and apply again on PGlite", async () => {',
         `    await checkMigrations(${folder});`,
-        "  });",
+        // PGlite starts, loads the extensions and runs every migration three ways: far past the 5 s default.
+        `  }, ${TIMEOUT_MS});`,
         "});",
         "",
       ].join("\n"),
@@ -63,7 +67,7 @@ export function emitMigrationsCheck(ir: MemberIR): GeneratedFile[] {
         '  it("apply, revert and apply again", async () => {',
         "    const connection = postgres.database.em().getConnection();",
         `    await checkMigrations(${folder}, { exec: (sql) => connection.execute(sql) });`,
-        "  });",
+        `  }, ${TIMEOUT_MS});`,
         "});",
         "",
       ].join("\n"),
