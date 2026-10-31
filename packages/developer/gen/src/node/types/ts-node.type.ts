@@ -88,6 +88,9 @@ export interface TsNode {
   /** The name of a type reference. */
   readonly typeName?: TsNode;
 
+  /** The name an import type reads from its module (`import("x").ConfigClass`). */
+  readonly qualifier?: TsNode;
+
   /** The element type of an array type. */
   readonly elementType?: TsNode;
 

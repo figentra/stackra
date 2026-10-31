@@ -35,7 +35,8 @@
  *          one; a driver extending its port has no tokens only in `@stackra/contracts`; `I18nKey` is the `i18n_key` brand.
  *          A driver over another package's base takes its port from that package's entry, never the base's `#` path.
  *          A typed defaulted constructor parameter is a token (the default serves hand construction only), and an
- *          inferred one is `token_not_a_class` (STA-1536).
+ *          inferred one is `token_not_a_class` (STA-1536). A `.d.mts` base typed `import("@stackra/config").ConfigClass`
+ *          keeps its kind (STA-1738).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -1783,5 +1784,36 @@ describe("createSourceReader on a defaulted constructor parameter (STA-1536)", a
     expect(reader.errors.map((error) => `${error.code} ${error.subject}`)).toContain(
       "token_not_a_class InferredDefaultService.constructor",
     );
+  });
+});
+
+/** A shipped Config base whose `_base` tsc wrote as an import type, as in a built `.d.mts` (STA-1738). */
+const IMPORT_TYPE_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/flags-fixture/package.json": JSON.stringify({
+    name: "@stackra/flags-fixture",
+    types: "./index.d.mts",
+  }),
+  "node_modules/@stackra/flags-fixture/index.d.mts": [
+    'declare const FlagsConfig_base: import("@stackra/config").ConfigClass<{ enabled: boolean }>;',
+    "export declare class FlagsConfig extends FlagsConfig_base {}",
+    "",
+  ].join("\n"),
+  "src/config/till.config.ts": [
+    'import { FlagsConfig } from "@stackra/flags-fixture";',
+    "",
+    "export class TillConfig extends FlagsConfig {}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a .d.mts base typed by an import type (STA-1738)", async () => {
+  const root = writeFixtureMember("till", IMPORT_TYPE_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  it('reads the kind from `import("@stackra/config").ConfigClass`', () => {
+    expect(classes.find((declared) => declared.name === "TillConfig")?.kind).toBe("config");
   });
 });

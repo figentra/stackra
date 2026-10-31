@@ -735,16 +735,13 @@ export function createSourceReader(
         base: { ...refOf(heritage.target, symbol), own: isOwn(path) },
       };
     }
-    // A declaration file's `declare const X_base: ConfigClass<...>`: the class type names the kind.
+    // A declaration file's `declare const X_base: ConfigClass<...>`: the class type names the kind. tsc writes an
+    // unimported one as `import("@stackra/config").ConfigClass<...>`, an ImportType named by its qualifier (STA-1738).
     for (const candidate of declarations) {
       const type = candidate.type;
-      if (
-        host.kind(candidate) !== "VariableDeclaration" ||
-        type === undefined ||
-        type.typeName === undefined
-      )
-        continue;
-      const base = KIND_BASES[host.text(type.typeName).replace(/(Class|Kind)$/, "")];
+      const typeName = type?.typeName ?? type?.qualifier;
+      if (host.kind(candidate) !== "VariableDeclaration" || typeName === undefined) continue;
+      const base = KIND_BASES[host.text(typeName).replace(/(Class|Kind)$/, "")];
       if (base !== undefined) return { kind: base, chain: [node] };
     }
     return undefined;
