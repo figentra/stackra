@@ -7,7 +7,8 @@
  *          groups use EC2 health checks and an instance refresh that waits for protected instances at 100% healthy;
  *          the instance policy limits Auto Scaling calls to groups by tag; the Image Builder recipe version is derived
  *          from the inputs, no component keeps a placeholder, the distribution writes the AMI parameter and the
- *          pipeline is weekly; the job Dockerfile's defaults equal the pins.
+ *          pipeline is weekly; the job Dockerfile's defaults equal the pins; a given VPC and subnets are used and
+ *          `groups: false` declares no Auto Scaling group; a plan without a project writes an empty identity.
  * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`). Reads the repository's
  *           `pnpm-lock.yaml` as the lockfile input.
  * Runtime: node (vitest)
@@ -231,5 +232,43 @@ describe("awsTestbed", () => {
     expect(dockerfile).toContain(`ARG PNPM_VERSION=${TOOLCHAIN_PINS.pnpm}`);
     expect(dockerfile).toContain(`ARG INFISICAL_VERSION=${TOOLCHAIN_PINS.infisical}`);
     expect(dockerfile).toContain(`ARG PLAYWRIGHT_VERSION=${TOOLCHAIN_PINS.playwright}`);
+  });
+});
+
+describe("awsTestbed with a given network and no groups", () => {
+  let start = 0;
+  let bare: AwsTestbed;
+
+  beforeAll(async () => {
+    start = registered.length;
+    bare = awsTestbed(PLAN, {
+      allowedCidrs: ["203.0.113.7/32"],
+      lockfilePath: LOCKFILE,
+      vpcId: "vpc-9",
+      subnetIds: ["subnet-9", "subnet-10"],
+      groups: false,
+    });
+    await new Promise((resolve) => {
+      bare.imagePipelineArn.apply(resolve);
+    });
+    await settle();
+  });
+
+  const later = (kind: string): Registered[] =>
+    registered.slice(start).filter((entry) => entry.type.endsWith(`:${kind}`));
+
+  it("uses the given VPC and first subnet, and declares no Auto Scaling group", () => {
+    expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.vpcId).toBe("vpc-9");
+    expect(
+      later("imagebuilder/infrastructureConfiguration:InfrastructureConfiguration")[0]?.inputs,
+    ).toMatchObject({ subnetId: "subnet-9" });
+    expect(later("autoscaling/group:Group")).toEqual([]);
+    expect(bare.groups).toBeUndefined();
+  });
+
+  it("writes an empty identity and no grants for a plan without a project", () => {
+    const userData = testbedUserData(testbedPlan());
+    expect(userData).toContain("printf '%s\\n' '' > /etc/testbed/identity");
+    expect(userData).toContain("{}");
   });
 });
