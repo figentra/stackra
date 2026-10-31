@@ -7,7 +7,7 @@
  *          `partner_mismatch`, `event_base_abstract` and `token_not_a_class` (never for a `#stackra/clients/*`
  *          client, which is a class token before its file exists), each with a position and a fix; a
  *          derived shape (`PickType`) and a discriminated union read correctly; and each model's entity facts
- *          (`[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
+ *          (a trait's public id fields stay public ids, STA-1720; `[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
  *          getters) with `relation_decorator_missing` for a relation gen cannot read; `Translated`,
  *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218);
  *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338); a
@@ -331,6 +331,11 @@ const MODEL_STAND_IN: Readonly<Record<string, string>> = {
     "  with<T extends readonly Trait<object>[]>(...traits: T): abstract new () => ModelBase & Fields<T>;",
     "};",
     "export declare function HasPublicId<P extends string>(prefix: P): Trait<{ id: string }>;",
+    "// The real traits' public ids (STA-1720): read through `Fields<T>`, they must stay public ids, never unknown.",
+    "export type PublicId<P extends string = string> = `${P}_${string}`;",
+    "export declare function HasTypedId<const P extends string>(prefix: P): Trait<{ id: PublicId<P> }>;",
+    'export declare const BelongsToTenant: Trait<{ tenantId: PublicId<"scp"> }>;',
+    'export declare const BelongsToTenantOrPlatform: Trait<{ ownerId: PublicId<"scp"> | null }>;',
     "export declare const OptionalProps: unique symbol;",
     "// A symbol-keyed trait member: the checker names it `__@OptionalProps@<id>`, which must never become a field.",
     'export declare const Timestamps: Trait<{ createdAt: Date; updatedAt: Date; [OptionalProps]?: "createdAt" }>;',
@@ -381,6 +386,12 @@ const MODEL_SOURCES: Readonly<Record<string, string>> = {
     "}",
     "",
   ].join("\n"),
+  "src/node/models/terminal.model.ts": [
+    'import { BelongsToTenant, BelongsToTenantOrPlatform, HasTypedId, Model } from "@stackra/model";',
+    "",
+    'export class Terminal extends Model.with(HasTypedId("trm"), BelongsToTenant, BelongsToTenantOrPlatform) {}',
+    "",
+  ].join("\n"),
   "src/node/models/customer.model.ts": [
     'import { HasPublicId, Model } from "@stackra/model";',
     "",
@@ -396,6 +407,17 @@ describe("createSourceReader on models", async () => {
   const shapes = reader.sources.flatMap((file) => reader.shapes(file));
   host.close();
   const entity = (name: string) => shapes.find((shape) => shape.name === name)?.entity;
+
+  it("reads a trait's public id fields as public ids with their prefix, never unknown (STA-1720)", () => {
+    const fields = shapes.find((shape) => shape.name === "Terminal")?.fields ?? [];
+    const typeOf = (name: string) => fields.find((field) => field.name === name);
+    expect(typeOf("id")?.type).toEqual({ kind: "public_id", prefix: "trm" });
+    expect(typeOf("tenantId")?.type).toEqual({ kind: "public_id", prefix: "scp" });
+    expect(typeOf("ownerId")).toMatchObject({
+      nullable: true,
+      type: { kind: "public_id", prefix: "scp" },
+    });
+  });
 
   it("reads the keys a create may leave out and the getters", () => {
     expect(entity("Order")?.optional).toEqual(["createdAt", "id", "lines", "status", "updatedAt"]);

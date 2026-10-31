@@ -231,6 +231,9 @@ function hasNonConstant(value: unknown): boolean {
   return typeof value === "object" && value !== null && Object.values(value).some(hasNonConstant);
 }
 
+/** A `PublicId<"trm">` as the checker prints it once the alias is gone: `` `trm_${string}` ``. */
+const PUBLIC_ID_TEXT = /^`([a-z]{2,6})_\$\{string\}`$/;
+
 /** The `public_id` kind of the prefixes a `PublicId<…>` names: one prefix, a union of them, or any (none). */
 function publicIdType(prefixes: readonly string[]): TypeDesc {
   return prefixes.length === 1
@@ -1350,6 +1353,17 @@ export function createSourceReader(
         : [];
       return { type: publicIdType(prefixes), nullable };
     }
+    // A trait's `PublicId<P>` field reaches here as its bare template literal once `Model.with` infers it (STA-1720).
+    const textPrefixes = rest.map((member) =>
+      host.typeHas(member, "TemplateLiteral")
+        ? PUBLIC_ID_TEXT.exec(host.typeText(member))?.[1]
+        : undefined,
+    );
+    if (
+      textPrefixes.length > 0 &&
+      textPrefixes.every((prefix): prefix is string => prefix !== undefined)
+    )
+      return { type: publicIdType(textPrefixes), nullable };
     if (rest.length === 2 && rest.every((member) => host.typeHas(member, "BooleanLiteral")))
       return { type: { kind: "boolean" }, nullable };
     const [only] = rest;
