@@ -18,7 +18,12 @@ vi.mock("@stackra/ui/react", () => ({ Skeleton: () => null }));
 
 describe("@stackra/experience/react", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(react).sort()).toEqual(["DocumentRenderer", "ReactRendererDriver"]);
+    expect(Object.keys(react).sort()).toEqual([
+      "CtaSection",
+      "DocumentRenderer",
+      "FeatureSection",
+      "ReactRendererDriver",
+    ]);
   });
 
   it("types the renderer's props", () => {

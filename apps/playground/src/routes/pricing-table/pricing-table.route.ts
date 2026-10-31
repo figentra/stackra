@@ -1,0 +1,12 @@
+/**
+ * Stackra file contract:
+ * Purpose: the pricing table route of @figentra/playground: its path. The page it renders is
+ *          `pricing-table.tsx` beside it (ADR 0294 decision 14).
+ * Boundary: route declaration only; no data loading.
+ * Runtime: browser
+ * Governing contract: ADR 0294 (decisions 14 and 16, rule R7); ADR 0302 (decision 5); ADR 0503 (module UI kits).
+ */
+import { Route } from "@stackra/navigation";
+
+/** The PricingTable page, at `/pricing-table`. */
+export class PricingTableRoute extends Route({ path: "/pricing-table" }) {}

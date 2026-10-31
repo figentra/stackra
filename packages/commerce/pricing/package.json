@@ -2,7 +2,7 @@
   "name": "@stackra/pricing",
   "version": "0.2.0",
   "private": false,
-  "description": "Pricing on @stackra/money: price points, graduated tiers, the pure price evaluation over price lists by currency, Market, sales channel and date with fixed, graduated and formula prices, the tax rate-table engine and the TaxProvider port",
+  "description": "Pricing on @stackra/money: price points, graduated tiers, the pure price evaluation over price lists by currency, Market, sales channel and date with fixed, graduated and formula prices, the tax rate-table engine and the TaxProvider port; and in ./react the module UI kit (ADR 0503): PricingTable, the plan comparison block with a period switch on @stackra/ui",
   "keywords": [
     "commerce",
     "markets",
@@ -45,6 +45,12 @@
       "./src/core/*.ts",
       "./src/core/*/index.ts"
     ],
+    "#react/*": [
+      "./src/react/*",
+      "./src/react/*.ts",
+      "./src/react/*.tsx",
+      "./src/react/*/index.ts"
+    ],
     "#stackra/*": [
       "./.stackra/gen/*",
       "./.stackra/gen/*.ts",
@@ -62,6 +68,11 @@
       "@stackra/source": "./src/contracts/index.ts",
       "types": "./dist/contracts.d.mts",
       "default": "./dist/contracts.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
     }
   },
   "publishConfig": {
@@ -83,6 +94,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/integrations": "workspace:*",
     "@stackra/money": "workspace:*",
+    "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*"
   },
   "devDependencies": {
@@ -90,13 +102,28 @@
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
     "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "jsdom": "catalog:frontend",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "react": "catalog:frontend"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=24.0.0"

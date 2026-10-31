@@ -105,4 +105,8 @@ export const Icons = Object.freeze({
   Users: "users",
   Wallet: "wallet",
   Zap: "zap",
+  ChartBar: "chart-bar",
+  Headphones: "headphones",
+  Languages: "languages",
+  ShieldCheck: "shield-check",
 } as const satisfies Readonly<Record<string, IconName>>);

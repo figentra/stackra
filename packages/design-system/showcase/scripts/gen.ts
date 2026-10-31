@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `pnpm -F @stackra/showcase gen [--check]`: regenerate the registry barrel, `api/**` (+ index and the en
- *          `api::` seed), `search/index.json` and the mobile demo `.code.ts` files; with `--check`, write nothing and
- *          exit 1 on any drift (CI). Warnings (props folder without entry, missing part) print but do not fail.
+ * Purpose: `pnpm -F @stackra/showcase gen [--check]`: regenerate the registry barrel (with the module kits' entries,
+ *          ADR 0503), `api/**` (+ index and the en `api::` seed), `search/index.json` and the mobile demo `.code.ts`
+ *          files; with `--check`, write nothing and exit 1 on any drift (CI). Warnings (props folder without entry, missing part) print but do not fail.
  * Boundary: the only writer of those generated files; runs the TS sources with node's type stripping, resolving the
  *           package's `#src/*` imports through a module hook.
  * Runtime: node
@@ -41,6 +41,7 @@ registerHooks({
 });
 
 const { loadEntries } = await import("./load-entries.function.ts");
+const { loadKitEntries } = await import("./load-kit-entries.function.ts");
 const { genBarrel } = await import("./gen-barrel.ts");
 const { genApi } = await import("./gen-api.ts");
 const { genSearch } = await import("./gen-search.ts");
@@ -49,7 +50,7 @@ const { genNativeDemos } = await import("./gen-native-demos.ts");
 const { stableJson } = await import("./stable-json.function.ts");
 const { compareEntries } = await import("../src/registry/compare-entries.function.ts");
 
-const loaded = await loadEntries(showcase);
+const loaded = [...(await loadEntries(showcase)), ...loadKitEntries(root)];
 const entries = loaded.map(({ entry }) => entry).toSorted(compareEntries);
 const api = genApi(showcase, entries);
 const catalogue = (lang: string) =>

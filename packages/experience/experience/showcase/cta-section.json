@@ -1,0 +1,21 @@
+{
+  "slug": "cta-section",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "CtaSection",
+  "parts": ["CtaSection"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 360
+    }
+  ],
+  "related": ["free/feature-section", "free/surface", "free/text-field"],
+  "tokens": ["color.surface", "color.accent"],
+  "keywords": ["call to action", "cta", "newsletter", "subscribe", "marketing", "kit"],
+  "status": "new"
+}

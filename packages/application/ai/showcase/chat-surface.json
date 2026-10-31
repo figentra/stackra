@@ -1,0 +1,21 @@
+{
+  "slug": "chat-surface",
+  "tier": "free",
+  "category": "ai",
+  "platforms": ["react"],
+  "packageName": "@stackra/ai",
+  "exportName": "ChatSurface",
+  "parts": ["ChatSurface"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 560
+    }
+  ],
+  "related": ["free/message-scroller", "free/prompt-suggestions", "free/message-actions"],
+  "tokens": ["color.surface", "color.accent-soft"],
+  "keywords": ["ai", "chat", "assistant", "conversation", "copilot", "kit"],
+  "status": "new"
+}

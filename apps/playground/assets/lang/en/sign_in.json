@@ -1,0 +1,16 @@
+{
+  "basics": {
+    "title": "Sign in",
+    "description": "Welcome back. Sign in to manage your shop.",
+    "email": "Email",
+    "password": "Password",
+    "remember": "Remember me",
+    "submit": "Sign in",
+    "forgot": "Forgot password?",
+    "divider": "or",
+    "prompt": "New here?",
+    "sign_up": "Create an account",
+    "with_email": "Email link",
+    "error": "That email and password don't match. Try again or reset your password."
+  }
+}

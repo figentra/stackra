@@ -1,0 +1,19 @@
+{
+  "basics": {
+    "eyebrow": "Why shops choose us",
+    "title": "Everything a shop needs, from the first order",
+    "description": "Sell, get paid and deliver from one place, in Arabic and English.",
+    "payments": "Local payments",
+    "payments_line": "Mada, cards, wallets and cash on delivery, settled to your bank.",
+    "shipping": "Every carrier",
+    "shipping_line": "Compare rates and print labels for the carriers you use.",
+    "languages": "Two languages",
+    "languages_line": "A full Arabic shop beside the English one, right to left done right.",
+    "insights": "Clear numbers",
+    "insights_line": "Sales, returns and best sellers in reports you can read at a glance.",
+    "security": "Safe by default",
+    "security_line": "Passkeys, two-step sign-in and fraud checks on every order.",
+    "support": "Help when you need it",
+    "support_line": "A team that answers in your language."
+  }
+}

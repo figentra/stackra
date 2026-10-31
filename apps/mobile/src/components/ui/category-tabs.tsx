@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the category tabs of the showcase home: "All" then the twelve categories as one scrolling row of
+ * Purpose: the category tabs of the showcase home: "All" then the thirteen categories as one scrolling row of
  *          @stackra/ui `Tabs` (the Tabs play the selection haptic and mirror in RTL).
  * Boundary: the tab row only; the home owns the selected page and `CategoryPager` draws it. The titles are
  *           `showcase::category.<id>.title` keys.

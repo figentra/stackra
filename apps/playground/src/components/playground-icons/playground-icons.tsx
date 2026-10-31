@@ -119,6 +119,9 @@ import {
   Store,
   Truck,
   User,
+  ChartBar,
+  Headphones,
+  ShieldCheck,
 } from "@stackra/icons/react/lucide-icons";
 import type { PlaygroundIconsProps } from "./playground-icons.props";
 
@@ -233,6 +236,9 @@ const PLAYGROUND_ICONS = defineIconRegistry({
   store: Store,
   truck: Truck,
   user: User,
+  "chart-bar": ChartBar,
+  headphones: Headphones,
+  "shield-check": ShieldCheck,
 });
 
 /** Provides the playground's icon registry to everything below it. */

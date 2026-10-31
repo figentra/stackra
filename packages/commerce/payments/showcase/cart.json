@@ -1,0 +1,21 @@
+{
+  "slug": "cart",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/payments",
+  "exportName": "Cart",
+  "parts": ["Cart"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 480
+    }
+  ],
+  "related": ["free/quantity-stepper", "free/thumbnail", "free/checkout"],
+  "tokens": ["color.surface", "color.separator"],
+  "keywords": ["cart", "basket", "bag", "shopping", "order", "kit"],
+  "status": "new"
+}

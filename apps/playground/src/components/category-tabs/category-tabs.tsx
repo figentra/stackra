@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the category rail of the components index: a row of pills (All, then the twelve categories in
+ * Purpose: the category rail of the components index: a row of pills (All, then the thirteen categories in
  *          `CATEGORIES` order), each with its glyph and its count, sticky under the top bar (`.category-rail`, with a
  *          background and a hairline once stuck) and scrolling sideways with faded edges when it overflows. On a
  *          category's page its pill is the current page and the pills are links (`/components[/:category]`). On All

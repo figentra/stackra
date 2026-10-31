@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { ComponentCategory } from "#src/enums/component-category.enum";
 import { checkRegistry } from "#src/registry/check-registry.function";
 import { COMPONENTS } from "#src/registry/components.generated";
 import { ComponentEntrySchema } from "#src/schemas/component-entry.schema";
@@ -87,7 +88,7 @@ describe("checkRegistry", () => {
 
   it("lists every category's entries and no planned gaps left", () => {
     // Free only (ADR 0461): every category has an entry, charts included since Stackra drew its own (STA-1371).
-    expect(new Set(COMPONENTS.map((entry) => entry.category)).size).toBe(12);
+    expect(new Set(COMPONENTS.map((entry) => entry.category)).size).toBe(ComponentCategory.length);
     expect(COMPONENTS.filter((entry) => entry.status === "planned")).toHaveLength(0);
   });
 

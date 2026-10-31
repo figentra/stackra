@@ -188,6 +188,10 @@
       "title": "Layout",
       "description": "Frames, columns and surfaces that arrange a screen."
     },
+    "blocks": {
+      "title": "Blocks",
+      "description": "Ready-made sections from the modules: sign-in, pricing, cart, checkout and marketing."
+    },
     "ai": {
       "title": "AI",
       "description": "Chat, prompts and approvals for working with assistants."
@@ -504,11 +508,6 @@
         "title": "Recurrence editor",
         "description": "Builds a repeating rule (RRULE) from plain controls and says it in one sentence, in the Gregorian or Hijri calendar.",
         "keywords": "recurrence, repeat, rrule, schedule, recurring, hijri"
-      },
-      "scheduler": {
-        "title": "Scheduler",
-        "description": "An event calendar in day, week, month and agenda views, with events placed by time and overlaps side by side.",
-        "keywords": "scheduler, event calendar, agenda, bookings, appointments, week view"
       },
       "breadcrumbs": {
         "title": "Breadcrumbs",
@@ -1240,31 +1239,6 @@
         "description": "Follow every visitor from where they came in to where they ended up.",
         "keywords": "sankey, flow, journey"
       },
-      "chart_export": {
-        "title": "Chart export",
-        "description": "Save any chart as a picture, a drawing or its numbers, or share it from a phone.",
-        "keywords": "export, download, csv, png"
-      },
-      "network_graph": {
-        "title": "Network graph",
-        "description": "See who or what is connected, and which nodes hold the network together.",
-        "keywords": "network, graph, relationships"
-      },
-      "tree_diagram": {
-        "title": "Tree diagram",
-        "description": "Show a hierarchy as branches, from the top down to every leaf.",
-        "keywords": "tree, hierarchy, org chart"
-      },
-      "word_cloud": {
-        "title": "Word cloud",
-        "description": "Spot the words people use most, sized by how often they come up.",
-        "keywords": "word cloud, tag cloud, mentions"
-      },
-      "chord_diagram": {
-        "title": "Chord diagram",
-        "description": "Show how much moves between groups, both ways, round one circle.",
-        "keywords": "chord, flows, between groups"
-      },
       "sunburst_chart": {
         "title": "Sunburst chart",
         "description": "Show a whole and its parts on one ring after another.",
@@ -1534,6 +1508,71 @@
         "title": "Transfer list",
         "description": "Two lists, available and chosen, with filters and counts, and buttons to move items between them.",
         "keywords": "transfer list, dual list, shuttle, move items, pick list"
+      },
+      "chat_surface": {
+        "title": "Chat surface",
+        "description": "An assistant chat: the conversation, starters and the composer.",
+        "keywords": "ai, chat, assistant, conversation, copilot"
+      },
+      "pricing_table": {
+        "title": "Pricing table",
+        "description": "Plan cards with a monthly and yearly switch and a call to action each.",
+        "keywords": "pricing, plans, subscription, billing, monthly, yearly"
+      },
+      "cart": {
+        "title": "Cart",
+        "description": "Line items with quantity, the totals and the checkout button.",
+        "keywords": "cart, basket, bag, shopping, order"
+      },
+      "checkout": {
+        "title": "Checkout",
+        "description": "A one-page checkout: details, shipping, payment and the order summary.",
+        "keywords": "checkout, payment, shipping, order, purchase"
+      },
+      "sign_in": {
+        "title": "Sign in",
+        "description": "A sign-in card with external providers, email and password.",
+        "keywords": "login, sign in, log in, authentication, password"
+      },
+      "feature_section": {
+        "title": "Feature section",
+        "description": "A titled grid of features with icons for a marketing page.",
+        "keywords": "features, marketing, landing, section, benefits"
+      },
+      "cta_section": {
+        "title": "Call to action",
+        "description": "A headline with buttons or a newsletter sign-up.",
+        "keywords": "call to action, cta, newsletter, subscribe, marketing"
+      },
+      "scheduler": {
+        "title": "Scheduler",
+        "description": "An event calendar in day, week, month and agenda views, with events placed by time and overlaps side by side.",
+        "keywords": "scheduler, event calendar, agenda, bookings, appointments, week view"
+      },
+      "chart_export": {
+        "title": "Chart export",
+        "description": "Save any chart as a picture, a drawing or its numbers, or share it from a phone.",
+        "keywords": "export, download, csv, png"
+      },
+      "network_graph": {
+        "title": "Network graph",
+        "description": "See who or what is connected, and which nodes hold the network together.",
+        "keywords": "network, graph, relationships"
+      },
+      "tree_diagram": {
+        "title": "Tree diagram",
+        "description": "Show a hierarchy as branches, from the top down to every leaf.",
+        "keywords": "tree, hierarchy, org chart"
+      },
+      "word_cloud": {
+        "title": "Word cloud",
+        "description": "Spot the words people use most, sized by how often they come up.",
+        "keywords": "word cloud, tag cloud, mentions"
+      },
+      "chord_diagram": {
+        "title": "Chord diagram",
+        "description": "Show how much moves between groups, both ways, round one circle.",
+        "keywords": "chord, flows, between groups"
       },
       "rating": {
         "title": "Rating",
@@ -2554,20 +2593,6 @@
         },
         "hijri": {
           "title": "Hijri calendar"
-        },
-        "rtl": {
-          "title": "Right to left"
-        }
-      },
-      "scheduler": {
-        "week": {
-          "title": "Clinic week"
-        },
-        "month": {
-          "title": "Month"
-        },
-        "agenda": {
-          "title": "Agenda"
         },
         "rtl": {
           "title": "Right to left"
@@ -4361,34 +4386,6 @@
           "title": "Where visitors went"
         }
       },
-      "chart_export": {
-        "sales": {
-          "title": "Monthly sales"
-        },
-        "csv_only": {
-          "title": "Numbers only"
-        }
-      },
-      "network_graph": {
-        "team": {
-          "title": "Who works with whom"
-        }
-      },
-      "tree_diagram": {
-        "org": {
-          "title": "Teams and their size"
-        }
-      },
-      "word_cloud": {
-        "reviews": {
-          "title": "What reviews mention"
-        }
-      },
-      "chord_diagram": {
-        "plans": {
-          "title": "Moves between plans"
-        }
-      },
       "sunburst_chart": {
         "categories": {
           "title": "Revenue by category and product"
@@ -4881,6 +4878,83 @@
           "title": "Export columns"
         }
       },
+      "chat_surface": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "pricing_table": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "cart": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "checkout": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "sign_in": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "feature_section": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "cta_section": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "scheduler": {
+        "week": {
+          "title": "Clinic week"
+        },
+        "month": {
+          "title": "Month"
+        },
+        "agenda": {
+          "title": "Agenda"
+        },
+        "rtl": {
+          "title": "Right to left"
+        }
+      },
+      "chart_export": {
+        "sales": {
+          "title": "Monthly sales"
+        },
+        "csv_only": {
+          "title": "Numbers only"
+        }
+      },
+      "network_graph": {
+        "team": {
+          "title": "Who works with whom"
+        }
+      },
+      "tree_diagram": {
+        "org": {
+          "title": "Teams and their size"
+        }
+      },
+      "word_cloud": {
+        "reviews": {
+          "title": "What reviews mention"
+        }
+      },
+      "chord_diagram": {
+        "plans": {
+          "title": "Moves between plans"
+        }
+      },
       "rating": {
         "review": {
           "title": "Rate your visit"
@@ -5201,6 +5275,15 @@
         "what": "Frames, columns and surfaces that arrange a screen.",
         "when": "Use them as the skeleton of every page.",
         "how": "Logical properties everywhere, safe areas on mobile and one breakpoint hook for web and native."
+      },
+      "blocks": {
+        "eyebrow": "Blocks",
+        "headline": "Whole sections, ready to drop in.",
+        "intro": "Each block lives in the module that owns its domain and is built only from the design system, so a shop's checkout and a landing page look like the rest of the product.",
+        "tags": "Module kits · Configurable · Composed",
+        "what": "Domain sections assembled from Stackra components, shipped by the module they belong to.",
+        "when": "Use them for a whole screen part (signing in, choosing a plan, paying, a landing page section) instead of assembling it yourself.",
+        "how": "Every word, price and option comes in props from the tenant's settings or a market pack; nothing is written into the block."
       },
       "ai": {
         "eyebrow": "AI",
@@ -6978,23 +7061,6 @@
             "calendar": "To see dates on a month grid."
           }
         },
-        "scheduler": {
-          "headline": "See the week at a glance.",
-          "intro": "People see bookings, shifts and meetings where they fall in the day, spot clashes side by side, and jump between day, week, month and a plain list.",
-          "tags": "Day · Week · Month · Agenda",
-          "what": "An event calendar with a time grid, a month grid and an agenda list.",
-          "when": "For appointments, bookings, rosters and team calendars.",
-          "rtl": "The week starts on the locale's first day and runs from the right in Arabic; times and dates use the customer's digits.",
-          "when_not": "To pick one date; use a date picker or a calendar.",
-          "do_1": "Pass the time zone the events belong to.",
-          "do_2": "Limit the hours to the working day when nights are empty.",
-          "dont_1": "Do not use colour alone to say what an event is; name it in the title.",
-          "dont_2": "Do not put long notes in the title; open the event for details.",
-          "alternative": {
-            "calendar": "To pick a date.",
-            "timeline_chart": "For tasks across weeks on one bar each."
-          }
-        },
         "toc_rail": {
           "headline": "Always know where you are.",
           "intro": "Long pages stay easy to scan, and any section is one click away.",
@@ -7424,46 +7490,6 @@
           "what": "A chart of stages joined by bands sized by how much passes between them.",
           "when": "Use it for traffic sources to outcomes, budgets to spending, and other many-to-many flows.",
           "rtl": "Stages run from the right in Arabic."
-        },
-        "chart_export": {
-          "headline": "Take the chart with you.",
-          "intro": "People save the chart for a report or a message, as it looks on screen or as numbers for a spreadsheet.",
-          "tags": "PNG · SVG · CSV",
-          "what": "A download menu around any chart.",
-          "when": "Use it on reports and dashboards people share.",
-          "rtl": "The button sits at the reading end, on the left in Arabic."
-        },
-        "network_graph": {
-          "headline": "See the connections.",
-          "intro": "Linked nodes pull together and the busiest grow larger, so clusters and hubs stand out.",
-          "tags": "Nodes · Links · Groups",
-          "what": "A chart of nodes joined by lines, placed by a force layout.",
-          "when": "Use it for teams, service dependencies, referrals and other relationships.",
-          "rtl": "The picture is mirrored in Arabic."
-        },
-        "tree_diagram": {
-          "headline": "Every level, one branch at a time.",
-          "intro": "Each level is a column and each branch keeps its colour, so people follow a path from the top to the detail.",
-          "tags": "Hierarchy · Branches · Levels",
-          "what": "A chart of nodes joined parent to child, level by level.",
-          "when": "Use it for org charts, category trees and decision paths.",
-          "rtl": "Levels run from the right in Arabic."
-        },
-        "word_cloud": {
-          "headline": "The loudest words, at a glance.",
-          "intro": "The heaviest words sit large in the middle, so the themes in reviews or searches read in one look.",
-          "tags": "Words · Weight · Themes",
-          "what": "Words set flat, each sized by its weight.",
-          "when": "Use it for review themes, search terms and survey answers.",
-          "rtl": "Arabic words are shaped by the platform and the cloud mirrors."
-        },
-        "chord_diagram": {
-          "headline": "Who moves where, round one ring.",
-          "intro": "Each group's arc is as long as all that leaves and reaches it, and ribbons show every flow between two groups.",
-          "tags": "Groups · Flows · Ring",
-          "what": "A ring of groups with ribbons between them sized by flow.",
-          "when": "Use it for plan changes, transfers between branches and trade between regions.",
-          "rtl": "Like a pie, the ring reads clockwise from the top in every language."
         },
         "sunburst_chart": {
           "headline": "Every level of the whole, at once.",
@@ -8173,6 +8199,119 @@
             "multi_select": "For several choices in a compact field.",
             "checkbox_group": "For a short list of options to tick."
           }
+        },
+        "chat_surface": {
+          "headline": "A whole assistant, in one block.",
+          "intro": "The conversation scrolls with the newest answer, each answer shows its steps, sources and actions, and starters help people begin.",
+          "tags": "AI kit · Streaming · Sources",
+          "what": "The assistant chat of the AI module, built from the chat parts.",
+          "when": "Wherever people talk to an assistant: a help panel, a shopping assistant or a back-office copilot.",
+          "rtl": "Turns, bubbles and actions mirror in Arabic, and Arabic answers keep their shaping."
+        },
+        "pricing_table": {
+          "headline": "Plans side by side, priced for the period.",
+          "intro": "People switch the period and compare plans, the featured plan stands out, and each card ends with its own button.",
+          "tags": "Commerce kit · Periods · Featured plan",
+          "what": "The plan comparison block of the pricing module.",
+          "when": "On a pricing page, or before a subscription checkout.",
+          "rtl": "Cards run from the right in Arabic and prices format for the locale."
+        },
+        "cart": {
+          "headline": "Everything in the bag, at a glance.",
+          "intro": "Each line shows its image, variant, quantity and amount, the totals come from pricing, and checkout is one press away.",
+          "tags": "Commerce kit · Quantity · Totals",
+          "what": "The shopping cart block of the payments module.",
+          "when": "In a cart page or drawer before checkout.",
+          "rtl": "Lines and the stepper mirror in Arabic; amounts keep their digits and currency."
+        },
+        "checkout": {
+          "headline": "From details to paid, on one page.",
+          "intro": "The fields come from the market's address format, shipping options and payment methods are data, and the summary stays beside the form.",
+          "tags": "Commerce kit · Market fields · Summary",
+          "what": "The checkout block of the payments module.",
+          "when": "The last step of a purchase, after the cart.",
+          "rtl": "The form and summary swap sides in Arabic and labels sit at the right."
+        },
+        "sign_in": {
+          "headline": "A familiar door, configured per tenant.",
+          "intro": "The tenant chooses its providers and whether a password form shows; the block handles the layout, the waiting state and errors.",
+          "tags": "Identity kit · Providers · Password",
+          "what": "The sign-in block of the identity module.",
+          "when": "On a sign-in page or in a sign-in dialog.",
+          "rtl": "The card mirrors in Arabic; email and password fields keep left-to-right input."
+        },
+        "feature_section": {
+          "headline": "Say what it does, in a grid.",
+          "intro": "An eyebrow, a title and an intro over a responsive grid of features, each with an icon, a title and a line.",
+          "tags": "Marketing kit · Grid · Icons",
+          "what": "The feature section block of the experience module.",
+          "when": "On a landing or product page, under the hero.",
+          "rtl": "The grid starts at the right in Arabic and icons keep their meaning."
+        },
+        "cta_section": {
+          "headline": "One clear next step.",
+          "intro": "A raised section with a headline and its buttons, or a newsletter form that thanks people once they subscribe.",
+          "tags": "Marketing kit · Buttons · Newsletter",
+          "what": "The call-to-action block of the experience module.",
+          "when": "At the end of a landing page or between sections.",
+          "rtl": "Text is centred in both directions and the form mirrors in Arabic."
+        },
+        "scheduler": {
+          "headline": "See the week at a glance.",
+          "intro": "People see bookings, shifts and meetings where they fall in the day, spot clashes side by side, and jump between day, week, month and a plain list.",
+          "tags": "Day · Week · Month · Agenda",
+          "what": "An event calendar with a time grid, a month grid and an agenda list.",
+          "when": "For appointments, bookings, rosters and team calendars.",
+          "rtl": "The week starts on the locale's first day and runs from the right in Arabic; times and dates use the customer's digits.",
+          "when_not": "To pick one date; use a date picker or a calendar.",
+          "do_1": "Pass the time zone the events belong to.",
+          "do_2": "Limit the hours to the working day when nights are empty.",
+          "dont_1": "Do not use colour alone to say what an event is; name it in the title.",
+          "dont_2": "Do not put long notes in the title; open the event for details.",
+          "alternative": {
+            "calendar": "To pick a date.",
+            "timeline_chart": "For tasks across weeks on one bar each."
+          }
+        },
+        "chart_export": {
+          "headline": "Take the chart with you.",
+          "intro": "People save the chart for a report or a message, as it looks on screen or as numbers for a spreadsheet.",
+          "tags": "PNG · SVG · CSV",
+          "what": "A download menu around any chart.",
+          "when": "Use it on reports and dashboards people share.",
+          "rtl": "The button sits at the reading end, on the left in Arabic."
+        },
+        "network_graph": {
+          "headline": "See the connections.",
+          "intro": "Linked nodes pull together and the busiest grow larger, so clusters and hubs stand out.",
+          "tags": "Nodes · Links · Groups",
+          "what": "A chart of nodes joined by lines, placed by a force layout.",
+          "when": "Use it for teams, service dependencies, referrals and other relationships.",
+          "rtl": "The picture is mirrored in Arabic."
+        },
+        "tree_diagram": {
+          "headline": "Every level, one branch at a time.",
+          "intro": "Each level is a column and each branch keeps its colour, so people follow a path from the top to the detail.",
+          "tags": "Hierarchy · Branches · Levels",
+          "what": "A chart of nodes joined parent to child, level by level.",
+          "when": "Use it for org charts, category trees and decision paths.",
+          "rtl": "Levels run from the right in Arabic."
+        },
+        "word_cloud": {
+          "headline": "The loudest words, at a glance.",
+          "intro": "The heaviest words sit large in the middle, so the themes in reviews or searches read in one look.",
+          "tags": "Words · Weight · Themes",
+          "what": "Words set flat, each sized by its weight.",
+          "when": "Use it for review themes, search terms and survey answers.",
+          "rtl": "Arabic words are shaped by the platform and the cloud mirrors."
+        },
+        "chord_diagram": {
+          "headline": "Who moves where, round one ring.",
+          "intro": "Each group's arc is as long as all that leaves and reaches it, and ribbons show every flow between two groups.",
+          "tags": "Groups · Flows · Ring",
+          "what": "A ring of groups with ribbons between them sized by flow.",
+          "when": "Use it for plan changes, transfers between branches and trade between regions.",
+          "rtl": "Like a pie, the ring reads clockwise from the top in every language."
         },
         "rating": {
           "headline": "How was it, in one tap.",

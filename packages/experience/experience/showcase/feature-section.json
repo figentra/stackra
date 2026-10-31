@@ -1,0 +1,21 @@
+{
+  "slug": "feature-section",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "FeatureSection",
+  "parts": ["FeatureSection"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 420
+    }
+  ],
+  "related": ["free/section", "free/icon", "free/cta-section"],
+  "tokens": ["color.accent-soft", "color.foreground"],
+  "keywords": ["features", "marketing", "landing", "section", "benefits", "kit"],
+  "status": "new"
+}

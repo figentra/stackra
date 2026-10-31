@@ -2,6 +2,7 @@
 // (pnpm validate checks the preset). tsc reads tsconfig.json as JSONC, so the name stays .json.
 // `decorators`: value classes, types, an enum, pure functions, a port and its memory driver, and the source applies no
 // decorators; it typechecks the source of @stackra/integrations, which reads @stackra/config, @stackra/actions,
-// @stackra/rules and @stackra/validation, whose schema and event fields carry legacy decorators (ADR 0005). No TSX.
+// @stackra/rules and @stackra/validation, whose schema and event fields carry legacy decorators (ADR 0005).
+// `-react`: the ./react module UI kit (ADR 0503) and its tests are TSX.
 // Owner: release-operations · Secrets: forbidden
-{ "extends": "@stackra/typescript-config/decorators" }
+{ "extends": "@stackra/typescript-config/decorators-react" }

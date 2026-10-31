@@ -1,0 +1,21 @@
+{
+  "slug": "sign-in",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/identity",
+  "exportName": "SignIn",
+  "parts": ["SignIn"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 560
+    }
+  ],
+  "related": ["free/social-sign-in-buttons", "free/password-field", "free/text-field"],
+  "tokens": ["color.surface", "color.field"],
+  "keywords": ["login", "sign in", "log in", "authentication", "password", "kit"],
+  "status": "new"
+}

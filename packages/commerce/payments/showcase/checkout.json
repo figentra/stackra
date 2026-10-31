@@ -1,0 +1,21 @@
+{
+  "slug": "checkout",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/payments",
+  "exportName": "Checkout",
+  "parts": ["Checkout"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 760
+    }
+  ],
+  "related": ["free/cart", "free/radio-group", "free/address-field"],
+  "tokens": ["color.surface", "color.field"],
+  "keywords": ["checkout", "payment", "shipping", "order", "purchase", "kit"],
+  "status": "new"
+}

@@ -2,7 +2,7 @@
   "name": "@stackra/ai",
   "version": "0.2.0",
   "private": false,
-  "description": "Stackra AI kinds for a module's ai/ group: the Prompt, Skill and Facts<M> kind bases, the ToolSource and Approval vocabulary of the generated MCP tool table with approvalFor, retrieve(), the retrieval helper for Facts over the @stackra/search ports, and decide(), a typed choice, score or yes/no answer from a model on AI SDK core; plus the approval-mode resolver (resolveApproval, ApprovalMode) with the AI action permission matrix (ActionPermission, record scope, pack floor), the model router by task, region and data class (routeModel, resolveModel), the context field allow-list and redaction, token budgets, layered guardrails, eval runs and the intent router; the agent runtime (Agent, Promptable, AgentRuntime: prompt, stream, queue, resume) over the ConversationStore and RunStore ports, and in ./node the ADR 0100 tables (conversations, messages, runs, steps, tool calls, approvals, embeddings, A2A tasks) with the Postgres stores and the tenant-key encryption cast; and the PageReader port (readable text and schema.org product hints from one URL) with a memory driver and an egress-bounded HTTP driver",
+  "description": "Stackra AI kinds for a module's ai/ group: the Prompt, Skill and Facts<M> kind bases, the ToolSource and Approval vocabulary of the generated MCP tool table with approvalFor, retrieve(), the retrieval helper for Facts over the @stackra/search ports, and decide(), a typed choice, score or yes/no answer from a model on AI SDK core; plus the approval-mode resolver (resolveApproval, ApprovalMode) with the AI action permission matrix (ActionPermission, record scope, pack floor), the model router by task, region and data class (routeModel, resolveModel), the context field allow-list and redaction, token budgets, layered guardrails, eval runs and the intent router; the agent runtime (Agent, Promptable, AgentRuntime: prompt, stream, queue, resume) over the ConversationStore and RunStore ports, and in ./node the ADR 0100 tables (conversations, messages, runs, steps, tool calls, approvals, embeddings, A2A tasks) with the Postgres stores and the tenant-key encryption cast; and the PageReader port (readable text and schema.org product hints from one URL) with a memory driver and an egress-bounded HTTP driver; and in ./react the module UI kit (ADR 0503): ChatSurface, the assistant chat block on @stackra/ui",
   "keywords": [
     "ai",
     "ai-sdk",
@@ -52,6 +52,12 @@
       "./src/node/*.ts",
       "./src/node/*/index.ts"
     ],
+    "#react/*": [
+      "./src/react/*",
+      "./src/react/*.ts",
+      "./src/react/*.tsx",
+      "./src/react/*/index.ts"
+    ],
     "#stackra/*": [
       "./.stackra/gen/*",
       "./.stackra/gen/*.ts",
@@ -74,6 +80,11 @@
       "@stackra/source": "./src/node/index.ts",
       "types": "./dist/node.d.mts",
       "default": "./dist/node.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
     }
   },
   "publishConfig": {
@@ -101,6 +112,7 @@
     "@stackra/outbox": "workspace:*",
     "@stackra/search": "workspace:*",
     "@stackra/tenancy": "workspace:*",
+    "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "ai": "catalog:",
     "zod": "catalog:"
@@ -110,13 +122,28 @@
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
+    "@testing-library/dom": "catalog:frontend",
+    "@testing-library/react": "catalog:frontend",
     "@types/node": "catalog:",
+    "@types/react": "catalog:frontend",
+    "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "jsdom": "catalog:frontend",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"
+  },
+  "peerDependencies": {
+    "react": "catalog:frontend"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=24.0.0"

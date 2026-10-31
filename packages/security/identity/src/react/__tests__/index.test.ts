@@ -15,6 +15,7 @@ import type { SessionValue, SignedInSession } from "#react/index";
 describe("@stackra/identity/react", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(react).sort()).toEqual([
+      "SignIn",
       "useAccountDeletion",
       "useAppApprovalWait",
       "useSession",
