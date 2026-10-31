@@ -90,6 +90,9 @@ import type { RegexValue } from "#core/types/regex-value.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
 import type { TokenRef } from "#core/types/token-ref.type";
 
+/** A written Integration key: two snake_case parts joined by a dot (STA-1739). */
+const INTEGRATION_KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+
 /** A manifest entry under construction. */
 type Entry = { [key: string]: Json };
 
@@ -548,7 +551,17 @@ export function buildManifest(ir: MemberIR): {
   // Integrations: the key, the connection typed against each, and the webhook path (ADR 0308 rules 16 and 19).
   const integrations: Entry[] = [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "integration")) {
-    const key = integrationKey(declared.module, declared.name);
+    // A written key (`connectors.stripe`) wins: stored connection rows name it (STA-1739).
+    const written = declared.options["key"];
+    if (written !== undefined && (typeof written !== "string" || !INTEGRATION_KEY.test(written)))
+      fail(
+        declared,
+        "integration_key_invalid",
+        `the written key ${JSON.stringify(written)} is not two snake_case parts joined by a dot`,
+        "write it as `<group>.<name>` in snake_case, such as `connectors.stripe`, or leave it out to derive it",
+      );
+    const key =
+      typeof written === "string" ? written : integrationKey(declared.module, declared.name);
     claim(`integration:${key}`, declared);
     const connection = ir.classes.find(
       (candidate) => candidate.kind === "connection" && candidate.partner?.name === declared.name,

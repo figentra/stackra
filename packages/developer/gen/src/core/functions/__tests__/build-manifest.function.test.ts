@@ -47,6 +47,22 @@ function withBase(baseUrl: string): MemberIR {
   };
 }
 
+/** The billing service with one Stripe Integration per written key, the second and later renamed. */
+function keyed(...keys: unknown[]): MemberIR {
+  return {
+    ...BILLING_IR,
+    classes: BILLING_IR.classes.flatMap((candidate) =>
+      candidate.name === "StripeIntegration"
+        ? keys.map((key, index) => ({
+            ...candidate,
+            name: index === 0 ? candidate.name : `Stripe${index}Integration`,
+            options: { ...candidate.options, key },
+          }))
+        : [candidate],
+    ),
+  };
+}
+
 /** BILLING_IR with its Invoice numbered by `sequence`. */
 const billingNumberedBy = (sequence: string): MemberIR => ({
   ...BILLING_IR,
@@ -559,6 +575,22 @@ describe("buildManifest", () => {
     expect(unkeyed.errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
       "identity_missing BarePass",
     ]);
+  });
+
+  it("takes an Integration's written key, refuses a malformed one and a collision (STA-1739)", () => {
+    expect(buildManifest(keyed("connectors.stripe")).manifest["integrations"]).toEqual([
+      expect.objectContaining({ key: "connectors.stripe", class: "StripeIntegration" }),
+    ]);
+    expect(
+      buildManifest(keyed("Connectors.Stripe")).errors.map(
+        (error) => `${error.code} ${error.subject}`,
+      ),
+    ).toEqual(["integration_key_invalid StripeIntegration"]);
+    expect(
+      buildManifest(keyed("connectors.stripe", "connectors.stripe")).errors.map(
+        (error) => error.code,
+      ),
+    ).toContain("identity_collision");
   });
 
   it("locks an Integration's egress entry, a {field} host kept as data, and refuses a base URL it cannot call", () => {
