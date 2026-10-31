@@ -6,5 +6,5 @@
  * Governing contract: ADR 0269 (decision 3); STA-1685.
  */
 
-/** 60 s. */
+/** How long a setup or teardown hook may run before vitest fails it: 60 s, enough for a PGlite boot on a loaded box. */
 export const HOOK_TIMEOUT_MS = 60_000;

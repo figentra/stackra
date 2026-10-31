@@ -6,5 +6,5 @@
  * Governing contract: ADR 0269 (decision 3); STA-1685.
  */
 
-/** 30 s. */
+/** How long one test may run before vitest fails it: 30 s, enough for a PGlite-backed service test on a loaded box. */
 export const TEST_TIMEOUT_MS = 30_000;
