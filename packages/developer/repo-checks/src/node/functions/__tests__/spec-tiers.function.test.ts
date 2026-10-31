@@ -4,7 +4,9 @@
  *          for migrations, contracts, permissions, money, new apps and Workers (feature) and new services and packages
  *          (big), and nothing for specs, docs and tests; `specCheckTier` refuses a declared tier below the floor (no spec:
  *          trivial); `specApprovedAt` and `specCheckApproval` read and require the stops; `specCheckStage` takes a small
- *          spec's plan and tasks from spec.md; `specFindings` checks the floor against the branch's own spec.
+ *          spec's short design and tasks from spec.md; `specCheckCriteria`, `specCheckDesign` and `specCheckTraceTasks`
+ *          hold the Kiro depth (EARS criteria, the nine design sections, tasks traced to criteria and files);
+ *          `specFindings` checks the floor against the branch's own spec.
  * Boundary: test only; in-memory texts and repository.
  * Runtime: node (vitest)
  * Governing contract: ADR 0502; ADR 0022 (test placement).
@@ -13,11 +15,26 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { specApprovedAt } from "#node/functions/spec-approved-at.function";
 import { specCheckApproval } from "#node/functions/spec-check-approval.function";
+import { specCheckCriteria } from "#node/functions/spec-check-criteria.function";
+import { specCheckDesign } from "#node/functions/spec-check-design.function";
 import { specCheckStage } from "#node/functions/spec-check-stage.function";
 import { specCheckTier } from "#node/functions/spec-check-tier.function";
+import { specCheckTraceTasks } from "#node/functions/spec-check-trace-tasks.function";
 import { specComputedTier } from "#node/functions/spec-computed-tier.function";
 import { specFindings } from "#node/functions/spec-findings.function";
 import { specTierOf } from "#node/functions/spec-tier-of.function";
+import { SPEC_DESIGN_SECTIONS } from "#node/constants/spec-design-sections.constant";
+
+/** One EARS criterion. */
+const CRITERIA =
+  "## Acceptance criteria\n\n- **AC-001**: WHEN a pass is issued THE wallet SHALL show it\n";
+
+/** A task covering AC-001 in one file. */
+const TASK = "- [ ] T001 Show the pass in `src/wallet.ts` — covers: AC-001 — route: spec-task";
+
+/** A design whose nine sections each say "none", as `level` headings. */
+const DESIGN = (level: "##" | "###"): string =>
+  `${level === "###" ? "## Design\n\n" : ""}${SPEC_DESIGN_SECTIONS.map((name) => `${level} ${name}\n\nnone\n`).join("\n")}`;
 
 /** A spec at `status` of `tier`, with optional extra header and body lines. */
 const spec = (status: string, tier: string, extra = ""): string =>
@@ -54,6 +71,12 @@ const findings = (tier: string | undefined, branch = "os-901-x") =>
         : undefined,
     list: (path) => (path === ".agents/specs" ? ["os-901-widget"] : []),
   }).filter((f) => f.message.startsWith("tier:"));
+
+/** The design, tasks and criteria problems of a small spec text. */
+const stage = (text: string): string[] =>
+  specCheckStage("os-901-widget", text, { files: ["spec.md"], prefixes: ["os"] }).filter((p) =>
+    /Design|Tasks|AC-|task/.test(p),
+  );
 
 describe("spec tiers (ADR 0502)", () => {
   it("reads the declared tier, and none from an older spec", () => {
@@ -147,19 +170,69 @@ describe("spec tiers (ADR 0502)", () => {
     expect(specCheckApproval(spec("Tasked", "small"))).toEqual([]);
   });
 
-  it("takes a small spec's plan and tasks from spec.md", () => {
+  it("takes a small spec's short design and tasks from spec.md", () => {
     const history =
-      "\n## Status history\n\n- 2026-10-31: Draft → Clarified\n- 2026-10-31: Clarified → Planned\n";
-    const small = spec("Planned", "small", `## Impact\n\n${history}`);
+      "\n## Status history\n\n- 2026-10-31: Draft → Clarified\n- 2026-10-31: Clarified → Tasked\n";
+    const small = spec("Tasked", "small", `${CRITERIA}${history}`);
+    expect(stage(small)).toEqual([
+      "status tasked needs a `## Design` section in a small spec",
+      "status tasked needs a `## Tasks` section in a small spec",
+    ]);
+    expect(stage(`${small}\n${DESIGN("###")}\n## Tasks\n\n${TASK}\n`)).toEqual([]);
     expect(
-      specCheckStage("os-901-widget", small, { files: ["spec.md"], prefixes: ["os"] }),
-    ).toContain("status planned needs a `## Plan` section in a small spec");
+      stage(`${small}\n## Design\n\n### Architecture overview\n\nnone\n\n## Tasks\n\n${TASK}\n`),
+    ).toHaveLength(8);
+  });
+
+  it("requires EARS criteria with ids from a tiered spec past Draft", () => {
+    expect(specCheckCriteria(CRITERIA)).toEqual([]);
+    expect(specCheckCriteria("## Impact\n")[0]).toContain("`## Acceptance criteria`");
+    expect(specCheckCriteria("## Acceptance criteria\n\nnone\n")[0]).toContain(
+      "no `- **AC-###**:`",
+    );
+    for (const ok of [
+      "IF the card is declined THEN THE checkout SHALL show the reason",
+      "WHILE the device is offline THE queue SHALL keep the call",
+      "WHERE loyalty is enabled THE receipt SHALL show the points",
+      "THE ledger SHALL never change a posted line",
+    ])
+      expect(specCheckCriteria(`## Acceptance criteria\n\n- **AC-001**: ${ok}\n`)).toEqual([]);
     expect(
-      specCheckStage("os-901-widget", `${small}\n## Plan\n\nOne step.\n`, {
-        files: ["spec.md"],
-        prefixes: ["os"],
-      }).filter((p) => /plan/i.test(p)),
-    ).toEqual([]);
+      specCheckCriteria("## Acceptance criteria\n\n- **AC-001**: the wallet shows the pass\n")[0],
+    ).toContain("AC-001 is not EARS");
+  });
+
+  it("requires the design's nine sections, each with something under it", () => {
+    expect(specCheckDesign(DESIGN("##"), "plan.md", "##")).toEqual([]);
+    const missing = specCheckDesign(
+      DESIGN("##").replace("## Rollout\n\nnone\n", ""),
+      "plan.md",
+      "##",
+    );
+    expect(missing).toEqual(["plan.md: the design has no `## Rollout` section (ADR 0502)"]);
+    expect(
+      specCheckDesign(
+        DESIGN("##").replace("## Contracts\n\nnone\n", "## Contracts\n\n"),
+        "plan.md",
+        "##",
+      )[0],
+    ).toContain("`## Contracts` is empty");
+  });
+
+  it("traces each task to a criterion and a file, and every criterion to a task", () => {
+    expect(specCheckTraceTasks(TASK, CRITERIA, "tasks.md", ["os"])).toEqual([]);
+    expect(
+      specCheckTraceTasks(
+        "- [ ] T001 Write it — covers: FR-001 — route: spec-task",
+        CRITERIA,
+        "tasks.md",
+        ["os"],
+      ),
+    ).toEqual([
+      "tasks.md:1: T001 covers no acceptance criterion (AC-###) of spec.md (ADR 0502)",
+      "tasks.md:1: T001 names no file in backticks (ADR 0502)",
+      "tasks.md: AC-001 is covered by no task",
+    ]);
   });
 
   it("checks the diff's floor against the branch's own spec in specFindings", () => {

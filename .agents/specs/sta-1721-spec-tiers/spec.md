@@ -57,6 +57,22 @@ Build it in core's spec checks (STA-1669's repo-checks and the CLI) and in Vellu
 - **FR-7** The agent asks for an approval with the question tool: Approve, Revise with notes, Reject; Revise loops.
 - **FR-8** Trivial work is never blocked: the plan-gate hook lets a branch with no spec folder write code.
 - **FR-9** Vellum's `gate` carries the same rules.
+- **FR-10** Kiro depth (the owner, 2026-10-31): EARS acceptance criteria with ids in spec.md; plan.md is the design
+  with its required sections; each task names the criteria and files it covers; the small tier keeps a short form of
+  the same sections in spec.md.
+
+## Acceptance criteria
+
+- **AC-001**: WHEN a branch with no spec folder changes only paths that raise no floor THE lane check SHALL pass it as trivial
+- **AC-002**: WHEN a diff adds a migration, a contract, a permission, money code or a new app or Worker THE lane check SHALL refuse a declared tier below feature, naming the paths
+- **AC-003**: WHEN a diff adds a service or a package THE lane check SHALL refuse a declared tier below big
+- **AC-004**: IF a feature spec reaches Tasked without "Approved by <who> <date>" on its Planned stage THEN THE stage gate SHALL refuse it
+- **AC-005**: IF a big spec reaches Planned without its Clarified approval, or Tasked without its Planned approval, THEN THE stage gate SHALL refuse it
+- **AC-006**: WHEN a tiered spec is past Draft THE stage gate SHALL require EARS acceptance criteria with AC ids
+- **AC-007**: WHEN a feature or big spec is Planned THE stage gate SHALL require plan.md's design sections (architecture overview to rollout)
+- **AC-008**: WHEN a feature or big spec is Tasked THE stage gate SHALL require each task to cover an AC id and name a file, and every AC to be covered
+- **AC-009**: WHILE a spec is small THE stage gate SHALL read a short design and the tasks from spec.md instead of plan.md and tasks.md
+- **AC-010**: WHERE a repository runs Vellum THE vellum gate SHALL apply the same rules
 
 ## Status history
 

@@ -78,7 +78,7 @@ function main([mode, ...args]) {
   if (mode === "trace" && dir) {
     const t = trace({ ...load(resolve(dir)), tests: testsText() });
     if (args.includes("--json")) return (console.log(JSON.stringify(t, null, 2)), 0);
-    for (const r of [...t.frs, ...t.ps])
+    for (const r of [...t.frs, ...t.ps, ...(t.acs ?? [])])
       console.log(
         `${r.id.padEnd(7)} tasks: ${r.tasks.join(", ") || "—"}  tests: ${r.tested ? "yes" : r.via?.length ? `via ${r.via.join(", ")}` : "no"}`,
       );

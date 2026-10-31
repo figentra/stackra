@@ -12,7 +12,7 @@ import { specKeyPattern } from "./spec-key-pattern.function.ts";
 import { specStrip } from "./spec-strip.function.ts";
 
 const list = (s: string | undefined): string[] =>
-  s === undefined ? [] : [...s.matchAll(/\b(?:FR|SC|EC|P)-\d+\b|\bT\d{3}\b/g)].map((m) => m[0]);
+  s === undefined ? [] : [...s.matchAll(/\b(?:FR|SC|EC|AC|P)-\d+\b|\bT\d{3}\b/g)].map((m) => m[0]);
 
 /**
  * The tasks of a tasks.md.

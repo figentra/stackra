@@ -22,12 +22,12 @@ nowhere a gate could read.
 
 1. **Four tiers.** A spec declares `**Tier**:` in its header.
 
-   | Tier    | What                                                                                                        | Artifacts                                                                          | Stops                               |
-   | ------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------- |
-   | trivial | typo, format, lint, docs wording, test-only fix, approved version bump, obvious one-line bug                | none: the commit message and the Linear issue                                      | none                                |
-   | small   | a bug or small change in one package, with no contract, data or permission change                           | a lite spec: 5 to 10 answered questions, `## Plan` and `## Tasks` in the same file | none                                |
-   | feature | new behaviour, a contract or API, a migration, permissions, money, security or personal data, cross-package | full spec, then plan.md, then tasks.md                                             | one, after the spec and plan        |
-   | big     | a new service, module or product, a new ADR, brand or pricing                                               | full questionnaire, the ADR, spec, plan, tasks                                     | two: after the spec, after the plan |
+   | Tier    | What                                                                                                        | Artifacts                                                                                    | Stops                               |
+   | ------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------- |
+   | trivial | typo, format, lint, docs wording, test-only fix, approved version bump, obvious one-line bug                | none: the commit message and the Linear issue                                                | none                                |
+   | small   | a bug or small change in one package, with no contract, data or permission change                           | a lite spec: 5 to 10 answered questions, a short `## Design` and `## Tasks` in the same file | none                                |
+   | feature | new behaviour, a contract or API, a migration, permissions, money, security or personal data, cross-package | full spec, then plan.md, then tasks.md                                                       | one, after the spec and plan        |
+   | big     | a new service, module or product, a new ADR, brand or pricing                                               | full questionnaire, the ADR, spec, plan, tasks                                               | two: after the spec, after the plan |
 
 2. **The diff sets a floor.** The lane check computes a minimum tier from the changed paths: a migration, a public
    contract (`src/contracts/`, `stackra.manifest.json`, `openapi.json`), a permission (`*.permissions.ts`, `access/`),
@@ -45,6 +45,23 @@ nowhere a gate could read.
 6. **Trivial is never blocked.** The plan-gate hook lets a branch with no spec folder write code; the lane check is
    what refuses a diff that needed more. A spec without `**Tier**` keeps the ADR 0362 rule (answered spec and plan.md).
 
+7. **Kiro depth in spec-kit's three files.** The owner compared the flow with Kiro and kept spec-kit's spec.md,
+   plan.md and tasks.md at the same depth:
+   - spec.md carries `## Acceptance criteria`, one EARS line per criterion with an id tasks and tests trace to:
+     `- **AC-001**: WHEN <event> THE <system> SHALL <response>`, or the `IF <condition> THEN THE …`, `WHILE <state> THE …`,
+     `WHERE <feature> THE …` and `THE <system> SHALL …` forms.
+   - plan.md is the design. It has nine sections in order: architecture overview, components and responsibilities,
+     files and folders (the exact paths), data models and migrations, contracts (actions, queries, events, API), error
+     handling, security and tenancy, testing strategy, and rollout; "none" fills one that does not apply. At the
+     approval stop the agent calls it "the design" when it asks the owner.
+   - tasks.md stays a checklist; each task covers at least one `AC-###` and names at least one file, and every
+     criterion is covered by a task.
+   - A small spec keeps a short form in spec.md: the criteria, `## Design` with the nine sections as `###` headings
+     (a line each), and `## Tasks`.
+
+   The stage gate checks each part for a spec with a `**Tier**` (`specCheckCriteria`, `specCheckDesign`,
+   `specCheckTraceTasks`).
+
 ## Consequences
 
 - Most fixes need no spec. A money, permission, migration or contract change cannot slip in as trivial: the lane check
@@ -55,7 +72,7 @@ nowhere a gate could read.
 ## Enforcement
 
 - `@stackra/repo-checks` (`specTierOf`, `specComputedTier`, `specCheckTier`, `specApprovedAt`, `specCheckApproval`,
-  `specCheckStage`, `specFindings`), run by `stackra check`'s spec phase and core's `spec-gate.mjs`.
+  `specCheckCriteria`, `specCheckDesign`, `specCheckTraceTasks`, `specCheckStage`, `specFindings`), run by `stackra check`'s spec phase and core's `spec-gate.mjs`.
 - `.agents/hooks/_rules.mjs` `decidePlanGate` (ADR 0362), with its tests.
 - Vellum's `gate` carries the same rules for repositories that run Vellum.
 

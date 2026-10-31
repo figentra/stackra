@@ -17,12 +17,15 @@ const FUNCTIONS = [
   "spec-check-approval",
   "spec-check-bug",
   "spec-check-clarified",
+  "spec-check-criteria",
+  "spec-check-design",
   "spec-check-foreign-status",
   "spec-check-lane",
   "spec-check-plan",
   "spec-check-stage",
   "spec-check-tasks",
   "spec-check-tier",
+  "spec-check-trace-tasks",
   "spec-computed-tier",
   "spec-covers-tags",
   "spec-defined-ids",
@@ -49,6 +52,7 @@ const FUNCTIONS = [
 
 /** The spec constants, by file stem. */
 const CONSTANTS = [
+  "spec-design-sections",
   "spec-dir",
   "spec-folder",
   "spec-impact-fields",
