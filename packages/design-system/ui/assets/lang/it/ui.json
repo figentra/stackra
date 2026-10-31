@@ -1121,5 +1121,26 @@
     "label": "Valutazione",
     "star": "{count, plural, one {# stella} other {# stelle}}",
     "value": "{value} su {max} stelle"
+  },
+  "rich_text_editor": {
+    "toolbar": "Formattazione",
+    "bold": "Grassetto",
+    "italic": "Corsivo",
+    "underline": "Sottolineato",
+    "strike": "Barrato",
+    "heading": "Titolo {level, number}",
+    "bullet_list": "Elenco puntato",
+    "ordered_list": "Elenco numerato",
+    "blockquote": "Citazione",
+    "code": "Codice",
+    "link": "Link",
+    "link_address": "Indirizzo del link",
+    "link_apply": "Applica",
+    "link_remove": "Rimuovi link",
+    "undo": "Annulla",
+    "redo": "Ripeti",
+    "count": "{count, plural, one {# carattere} other {# caratteri}}",
+    "count_limit": "{count, number} / {limit, number}",
+    "unsupported": "Questo documento ha una formattazione che l'editor mobile non può modificare. Modificalo dal web."
   }
 }

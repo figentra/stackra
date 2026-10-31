@@ -192,6 +192,8 @@ export { MaskedField } from "#native/masked-field/masked-field";
 export type { MaskedFieldProps } from "#native/masked-field/masked-field.props";
 export { MentionInput } from "#native/mention-input/mention-input";
 export type { MentionInputProps } from "#native/mention-input/mention-input.props";
+export { RichTextEditor } from "#native/rich-text-editor/rich-text-editor";
+export type { RichTextEditorProps } from "#native/rich-text-editor/rich-text-editor.props";
 export { useBreakpoint } from "#native/use-breakpoint/use-breakpoint";
 export { VisuallyHidden } from "#native/visually-hidden/visually-hidden";
 export type { VisuallyHiddenProps } from "#native/visually-hidden/visually-hidden.props";

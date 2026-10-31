@@ -1121,5 +1121,26 @@
     "label": "Valoración",
     "star": "{count, plural, one {# estrella} other {# estrellas}}",
     "value": "{value} de {max} estrellas"
+  },
+  "rich_text_editor": {
+    "toolbar": "Formato",
+    "bold": "Negrita",
+    "italic": "Cursiva",
+    "underline": "Subrayado",
+    "strike": "Tachado",
+    "heading": "Encabezado {level, number}",
+    "bullet_list": "Lista con viñetas",
+    "ordered_list": "Lista numerada",
+    "blockquote": "Cita",
+    "code": "Código",
+    "link": "Enlace",
+    "link_address": "Dirección del enlace",
+    "link_apply": "Aplicar",
+    "link_remove": "Quitar enlace",
+    "undo": "Deshacer",
+    "redo": "Rehacer",
+    "count": "{count, plural, one {# carácter} other {# caracteres}}",
+    "count_limit": "{count, number} / {limit, number}",
+    "unsupported": "Este documento tiene un formato que el editor móvil no puede cambiar. Edítalo en la web."
   }
 }

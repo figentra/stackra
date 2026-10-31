@@ -1121,5 +1121,26 @@
     "label": "Bewertung",
     "star": "{count, plural, one {# Stern} other {# Sterne}}",
     "value": "{value} von {max} Sternen"
+  },
+  "rich_text_editor": {
+    "toolbar": "Formatierung",
+    "bold": "Fett",
+    "italic": "Kursiv",
+    "underline": "Unterstrichen",
+    "strike": "Durchgestrichen",
+    "heading": "Überschrift {level, number}",
+    "bullet_list": "Aufzählung",
+    "ordered_list": "Nummerierte Liste",
+    "blockquote": "Zitat",
+    "code": "Code",
+    "link": "Link",
+    "link_address": "Linkadresse",
+    "link_apply": "Übernehmen",
+    "link_remove": "Link entfernen",
+    "undo": "Rückgängig",
+    "redo": "Wiederholen",
+    "count": "{count, plural, one {# Zeichen} other {# Zeichen}}",
+    "count_limit": "{count, number} / {limit, number}",
+    "unsupported": "Dieses Dokument enthält Formatierungen, die der mobile Editor nicht ändern kann. Bearbeite es im Web."
   }
 }

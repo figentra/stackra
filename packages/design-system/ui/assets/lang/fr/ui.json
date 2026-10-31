@@ -1121,5 +1121,26 @@
     "label": "Note",
     "star": "{count, plural, one {# étoile} other {# étoiles}}",
     "value": "{value} sur {max} étoiles"
+  },
+  "rich_text_editor": {
+    "toolbar": "Mise en forme",
+    "bold": "Gras",
+    "italic": "Italique",
+    "underline": "Souligné",
+    "strike": "Barré",
+    "heading": "Titre {level, number}",
+    "bullet_list": "Liste à puces",
+    "ordered_list": "Liste numérotée",
+    "blockquote": "Citation",
+    "code": "Code",
+    "link": "Lien",
+    "link_address": "Adresse du lien",
+    "link_apply": "Appliquer",
+    "link_remove": "Supprimer le lien",
+    "undo": "Annuler",
+    "redo": "Rétablir",
+    "count": "{count, plural, one {# caractère} other {# caractères}}",
+    "count_limit": "{count, number} / {limit, number}",
+    "unsupported": "Ce document contient une mise en forme que l'éditeur mobile ne peut pas modifier. Modifiez-le sur le web."
   }
 }

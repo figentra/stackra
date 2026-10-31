@@ -154,6 +154,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@10play/tentap-editor": "catalog:mobile",
     "@expo/ui": "catalog:mobile",
     "@heroui/react": "catalog:frontend",
     "@internationalized/date": "catalog:frontend",
@@ -164,6 +165,11 @@
     "@stackra/vitest-config": "workspace:*",
     "@testing-library/dom": "catalog:frontend",
     "@testing-library/react": "catalog:frontend",
+    "@tiptap/core": "catalog:frontend",
+    "@tiptap/extensions": "catalog:frontend",
+    "@tiptap/pm": "catalog:frontend",
+    "@tiptap/react": "catalog:frontend",
+    "@tiptap/starter-kit": "catalog:frontend",
     "@types/node": "catalog:",
     "@types/react": "catalog:frontend",
     "@types/react-dom": "catalog:frontend",
@@ -191,6 +197,7 @@
     "react-native-reanimated": "catalog:mobile",
     "react-native-safe-area-context": "catalog:mobile",
     "react-native-svg": "catalog:mobile",
+    "react-native-webview": "catalog:mobile",
     "recharts": "catalog:frontend",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
@@ -199,11 +206,17 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@10play/tentap-editor": "^1.0.1",
     "@expo/ui": "^57.0.25",
     "@heroui/react": "^3.2.6",
     "@internationalized/date": "^3.12.4",
     "@internationalized/number": "^3.6.9",
     "@shopify/react-native-skia": "^2.6.2",
+    "@tiptap/core": "^3.32.0",
+    "@tiptap/extensions": "^3.32.0",
+    "@tiptap/pm": "^3.32.0",
+    "@tiptap/react": "^3.32.0",
+    "@tiptap/starter-kit": "^3.32.0",
     "expo-blur": "^57.0.3",
     "expo-clipboard": ">=57.0.0",
     "expo-document-picker": ">=57.0.0",
@@ -223,11 +236,15 @@
     "react-native-reanimated": "^4.5.1",
     "react-native-safe-area-context": "^5.7.0",
     "react-native-svg": "^15.15.4",
+    "react-native-webview": "^13.16.1",
     "recharts": "^3.10.1",
     "uniwind": "^1.12.1",
     "victory-native": "^41.26.0"
   },
   "peerDependenciesMeta": {
+    "@10play/tentap-editor": {
+      "optional": true
+    },
     "@expo/ui": {
       "optional": true
     },
@@ -238,6 +255,21 @@
       "optional": true
     },
     "@shopify/react-native-skia": {
+      "optional": true
+    },
+    "@tiptap/core": {
+      "optional": true
+    },
+    "@tiptap/extensions": {
+      "optional": true
+    },
+    "@tiptap/pm": {
+      "optional": true
+    },
+    "@tiptap/react": {
+      "optional": true
+    },
+    "@tiptap/starter-kit": {
       "optional": true
     },
     "expo-blur": {
@@ -289,6 +321,9 @@
       "optional": true
     },
     "react-native-svg": {
+      "optional": true
+    },
+    "react-native-webview": {
       "optional": true
     },
     "recharts": {

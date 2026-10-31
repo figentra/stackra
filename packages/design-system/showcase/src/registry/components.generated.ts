@@ -199,6 +199,7 @@ import { FREE_REASONING } from "#src/registry/components/free/reasoning";
 import { FREE_RECURRENCE_EDITOR } from "#src/registry/components/free/recurrence-editor";
 import { FREE_RESULT } from "#src/registry/components/free/result";
 import { FREE_REVEAL } from "#src/registry/components/free/reveal";
+import { FREE_RICH_TEXT_EDITOR } from "#src/registry/components/free/rich-text-editor";
 import { FREE_ROUTE_OVERLAY } from "#src/registry/components/free/route-overlay";
 import { FREE_ROUTE_PROGRESS } from "#src/registry/components/free/route-progress";
 import { FREE_RULE_BUILDER } from "#src/registry/components/free/rule-builder";
@@ -336,6 +337,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_QUANTITY_STEPPER,
   FREE_RANGE_SLIDER,
   FREE_RATING,
+  FREE_RICH_TEXT_EDITOR,
   FREE_RULE_BUILDER,
   FREE_SEARCH_FIELD,
   FREE_SETTING_ROW,

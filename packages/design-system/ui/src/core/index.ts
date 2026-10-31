@@ -19,6 +19,8 @@ export { tickerValueOf } from "#core/functions/ticker-value-of.function";
 export { revealWordsOf } from "#core/functions/reveal-words-of.function";
 export { moveTreeNodes } from "#core/functions/move-tree-nodes.function";
 export { maskValueOf } from "#core/functions/mask-value-of.function";
+export { richTextPlainOf } from "#core/functions/rich-text-plain-of.function";
+export { richTextDocumentOf } from "#core/functions/rich-text-document-of.function";
 export { fileNamePartsOf } from "#core/functions/file-name-parts-of.function";
 export { isolatedFileNameOf } from "#core/functions/isolated-file-name-of.function";
 export type { FileNameParts } from "#core/types/file-name-parts.type";

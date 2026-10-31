@@ -366,6 +366,16 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     alternatives: ["free/text-area", "free/tag-input"],
     rules: TWO,
   },
+  "free/rich-text-editor": {
+    keyboard: [
+      { keys: ["←", "→"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "toggle" },
+      DISMISS,
+    ],
+    anatomy: ["label", "toolbar", "content", "panel", "description"],
+    alternatives: ["free/text-area", "free/code-block"],
+    rules: TWO,
+  },
   "free/tree-select": {
     keyboard: [
       { keys: ["Space", "Enter"], action: "open" },

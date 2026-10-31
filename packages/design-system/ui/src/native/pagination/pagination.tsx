@@ -62,8 +62,13 @@ export function Pagination(props: PaginationProps): ReactElement {
         />
         {pageItemsOf(current, pageCount, siblings).map((item, index) =>
           item === "ellipsis" ? (
-            // oxlint-disable-next-line react/no-array-index-key -- the list can hold two ellipses; an ellipsis has no identity but its place among the pages
-            <Text key={index} tone="muted" importantForAccessibility="no" className="px-1">
+            <Text
+              // oxlint-disable-next-line react/no-array-index-key -- two ellipses are told apart only by place; the prefix keeps an ellipsis at index 5 off page 5's key
+              key={`ellipsis-${index}`}
+              tone="muted"
+              importantForAccessibility="no"
+              className="px-1"
+            >
               …
             </Text>
           ) : (

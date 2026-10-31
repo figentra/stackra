@@ -1121,5 +1121,26 @@
     "label": "Beoordeling",
     "star": "{count, plural, one {# ster} other {# sterren}}",
     "value": "{value} van {max} sterren"
+  },
+  "rich_text_editor": {
+    "toolbar": "Opmaak",
+    "bold": "Vet",
+    "italic": "Cursief",
+    "underline": "Onderstreept",
+    "strike": "Doorgehaald",
+    "heading": "Kop {level, number}",
+    "bullet_list": "Opsomming",
+    "ordered_list": "Genummerde lijst",
+    "blockquote": "Citaat",
+    "code": "Code",
+    "link": "Link",
+    "link_address": "Linkadres",
+    "link_apply": "Toepassen",
+    "link_remove": "Link verwijderen",
+    "undo": "Ongedaan maken",
+    "redo": "Opnieuw",
+    "count": "{count, plural, one {# teken} other {# tekens}}",
+    "count_limit": "{count, number} / {limit, number}",
+    "unsupported": "Dit document heeft opmaak die de mobiele editor niet kan wijzigen. Bewerk het op het web."
   }
 }

@@ -56,6 +56,7 @@
     "clean": "rm -rf dist .expo ios android .turbo"
   },
   "dependencies": {
+    "@10play/tentap-editor": "catalog:mobile",
     "@bottom-tabs/react-navigation": "catalog:mobile",
     "@expo/ui": "catalog:mobile",
     "@gorhom/bottom-sheet": "catalog:mobile",
@@ -126,6 +127,7 @@
     "react-native-safe-area-context": "catalog:mobile",
     "react-native-screens": "catalog:mobile",
     "react-native-svg": "catalog:mobile",
+    "react-native-webview": "catalog:mobile",
     "react-native-worklets": "catalog:mobile",
     "tailwind-merge": "catalog:mobile",
     "tailwind-variants": "catalog:mobile",

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: proves the native Pagination names its toolbar, writes the summary, selects the current page, moves by
- *          number, next and previous, draws an ellipsis for skipped pages, changes the page size and jumps to a page.
+ *          number, next and previous, draws an ellipsis for skipped pages (keyed apart from page numbers), changes the
+ *          page size and jumps to a page.
  * Boundary: react-native and heroui-native are the DOM stand-ins of `#testing/fakes/native-dom`; the Button,
  *           IconButton, Select and NumberField are stand-ins.
  * Runtime: node
@@ -75,6 +76,14 @@ describe("Pagination (native)", () => {
     expect(screen.getAllByText("…").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
     expect(pages).toEqual([9]);
+  });
+
+  it("keys an ellipsis apart from the page whose number is its index", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    // Pages 1 … 4 5 6 … 20: the second ellipsis sits at index 5, beside page 5.
+    render(<Pagination total={200} defaultPage={5} hasSummary={false} />);
+    expect(errors.mock.calls.some(([message]) => String(message).includes("same key"))).toBe(false);
+    errors.mockRestore();
   });
 
   it("changes the page size from the size select, ignoring an empty choice", () => {
