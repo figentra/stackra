@@ -37,6 +37,14 @@ export function themeFromBrandTokens(
     logo: Object.freeze([...choice.logo]),
     gradient: Object.freeze(choice.gradient.map(colour)),
     accent: colour(choice.accent),
+    ...(choice.dark === undefined
+      ? {}
+      : {
+          dark: Object.freeze({
+            gradient: Object.freeze(choice.dark.gradient.map(colour)),
+            accent: colour(choice.dark.accent),
+          }),
+        }),
     glyph: choice.glyph,
     asciiGlyph: choice.asciiGlyph,
   });

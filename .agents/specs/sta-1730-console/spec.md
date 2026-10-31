@@ -117,7 +117,9 @@ hidden?, aliases? })`, and SHALL read a command's name, description, arguments a
   write no banner.
 - **FR-017** THE Console Package SHALL define a theme as `{ name, logo, gradient, accent, glyph, asciiGlyph }`, and
   `themeFromBrandTokens(colorJson, overrides)` SHALL build one from a brand's DTCG `tokens/color.json`; every theme
-  SHALL share one layout, spacing, symbol set and copy.
+  SHALL share one layout, spacing, symbol set and copy. WHERE a theme has `dark: { gradient, accent }` and the
+  terminal ground is dark (`STACKRA_GROUND`, else `COLORFGBG`, else dark), THE Console Output SHALL use those colours;
+  `STACKRA_THEME`'s are the brand's dark-ground steel, #A7B6C7 to #E2E9F0 (owner, 2026-11-01).
 - **FR-018** THE Console Output SHALL provide `info`, `success`, `warn`, `error`, `line`, `title`, `keyValue`, `list`,
   `table`, `note` (info, warning, alert boxes), `task(label, fn)`, `spinner`, `progress`, `json` and `banner`, and
   SHALL write warnings and errors to standard error.

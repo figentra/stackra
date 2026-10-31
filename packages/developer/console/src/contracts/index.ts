@@ -10,6 +10,7 @@ export type { ArgumentOptions } from "#contracts/types/argument-options.type";
 export type { CommandOptions } from "#contracts/types/command-options.type";
 export type { ConsoleSignal } from "#contracts/types/console-signal.type";
 export type { ConsoleTheme } from "#contracts/types/console-theme.type";
+export type { ThemeColours } from "#contracts/types/theme-colours.type";
 export type { OptionOptions } from "#contracts/types/option-options.type";
 export type { PromptAnswer } from "#contracts/types/prompt-answer.type";
 export type { PromptChoice } from "#contracts/types/prompt-choice.type";

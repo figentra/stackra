@@ -17,6 +17,7 @@ import { buildRegistry } from "#core/functions/build-registry.function";
 import { createOutput } from "#core/functions/create-output.function";
 import { createPainter } from "#core/functions/create-painter.function";
 import { createPrompt } from "#core/functions/create-prompt.function";
+import { decideGround } from "#core/functions/decide-ground.function";
 import { decideMode } from "#core/functions/decide-mode.function";
 import { defaultsPrompter } from "#core/functions/defaults-prompter.function";
 import { errorCode } from "#core/functions/error-code.function";
@@ -52,7 +53,7 @@ const codeOf = (error: unknown) =>
  */
 export function createConsole(config: ConsoleConfig): ConsoleApp {
   const registry = buildRegistry(config.commands);
-  const theme = config.theme ?? STACKRA_THEME;
+  const baseTheme = config.theme ?? STACKRA_THEME;
 
   const run = async (argv: readonly string[], ports: ConsolePorts): Promise<number> => {
     const { name: typed, rest } = splitInvocation(argv);
@@ -66,6 +67,10 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       parsed = { ...parseInvocation(rest), error };
     }
     const mode = decideMode(ports, parsed.globals);
+    const theme =
+      baseTheme.dark !== undefined && decideGround(ports.env) === "dark"
+        ? { ...baseTheme, ...baseTheme.dark }
+        : baseTheme;
     let data: unknown;
     const output = createOutput({
       mode,

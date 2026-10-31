@@ -2,7 +2,7 @@
 
 The Stackra command framework, with the look of a Symfony Console and the Laravel installer. A command is a class with
 decorated fields, `createConsole` runs a list of them, and `runCommandForTest` tests one in-process. Every product's CLI
-shares one layout; only its theme (name, ASCII logo, gradient, accent, glyph) changes.
+shares one layout; only its theme (name, ASCII logo, gradient, accent, optional dark-ground colours, glyph) changes. The ground comes from `STACKRA_GROUND=dark|light`, then `COLORFGBG`, and is dark otherwise.
 
 **Tier:** `tier:lib` (`packages/developer/console`). Decision: ADR 0506. Spec: `.agents/specs/sta-1730-console`.
 
