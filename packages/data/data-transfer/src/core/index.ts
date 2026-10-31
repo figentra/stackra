@@ -26,6 +26,7 @@ export { ImportRunNotFoundError } from "#core/errors/import-run-not-found.error"
 export { ImportUndoExpiredError } from "#core/errors/import-undo-expired.error";
 export { TransferLimitExceededError } from "#core/errors/transfer-limit-exceeded.error";
 export { UnreadableEncodingError } from "#core/errors/unreadable-encoding.error";
+export { UnreadableWorkbookError } from "#core/errors/unreadable-workbook.error";
 export { compileMapping } from "#core/functions/compile-mapping.function";
 export { datevWriteOptionsOf } from "#core/functions/datev-write-options-of.function";
 export { detectEncoding } from "#core/functions/detect-encoding.function";

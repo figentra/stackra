@@ -64,6 +64,7 @@ describe("@stackra/data-transfer", () => {
       "ParquetWriterDriver",
       "TransferLimitExceededError",
       "UnreadableEncodingError",
+      "UnreadableWorkbookError",
       "WarehouseChangeSink",
       "compileMapping",
       "datevWriteOptionsOf",

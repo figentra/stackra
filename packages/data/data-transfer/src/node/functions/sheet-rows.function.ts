@@ -5,10 +5,12 @@
  *          ISO date cell as ISO 8601, and a formula as its cached result.
  * Boundary: pure; internal to the XLSX reader. A row with no cell value is not yielded, so row numbers can skip; a
  *           cell's column comes from its `r` reference, and a gap before it is `""`. A formula with no cached result
- *           is `""`: the reader never evaluates.
+ *           is `""`: the reader never evaluates. A cell past the last column is `UnreadableWorkbookError`
+ *           (`too_many_columns`), refused before any gap is filled. A value that is not a number or a date is its text.
  * Runtime: node
  * Governing contract: ADR 0367 (decisions 2 and 4); ECMA-376 part 1, 18.3.1 (sheet data).
  */
+import { UnreadableWorkbookError } from "#core/errors/unreadable-workbook.error";
 import { runText } from "#node/functions/run-text.function";
 import { xmlAttribute } from "#node/functions/xml-attribute.function";
 import { xmlText } from "#node/functions/xml-text.function";
@@ -48,10 +50,12 @@ function cellText(attributes: string, inner: string, book: XlsxWorkbook): string
       return value;
     }
     case "d": {
-      return new Date(value).toISOString();
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? value : date.toISOString();
     }
     default: {
       const number = Number(value);
+      if (!Number.isFinite(number)) return value;
       if (!book.dateStyles.has(Number(xmlAttribute(attributes, "s") ?? 0))) return String(number);
       const epoch = book.date1904 ? EPOCH_1904 : EPOCH_1900;
       return new Date(Math.round((number - epoch) * DAY_MS)).toISOString();
@@ -60,15 +64,16 @@ function cellText(attributes: string, inner: string, book: XlsxWorkbook): string
 }
 
 /**
- * The rows of `xml`, a sheet part of `book`.
+ * The rows of `xml`, a sheet part of `book`, with at most `columns` columns.
  *
  * @yields The row number and its cells.
  * @example
- * for (const row of sheetRows(xml, book)) console.log(row.row, row.cells);
+ * for (const row of sheetRows(xml, book, 16_384)) console.log(row.row, row.cells);
  */
 export function* sheetRows(
   xml: string,
   book: XlsxWorkbook,
+  columns: number,
 ): Generator<{ readonly row: number; readonly cells: string[] }> {
   let previous = 0;
   for (const match of xml.matchAll(
@@ -82,6 +87,8 @@ export function* sheetRows(
     )) {
       const attributes = cell[1] ?? "";
       const column = columnOf(xmlAttribute(attributes, "r")) ?? cells.length;
+      // Checked before the gap is filled, so a reference like `ZZZZZZ1` never allocates its columns.
+      if (column >= columns) throw UnreadableWorkbookError.create({ reason: "too_many_columns" });
       const text = cellText(attributes, cell[2] ?? "", book);
       if (text === "") continue;
       while (cells.length < column) cells.push("");

@@ -3,10 +3,11 @@
  * Purpose: `readWorkbook`, the sheet list, shared strings, date styles and date system of an unzipped XLSX package,
  *          found through its relationships (`_rels/.rels`, then the workbook's own rels), never by fixed paths.
  * Boundary: pure over the `part` reader; internal to the XLSX reader. A package without a workbook part is refused
- *           as `TypeError`, which the driver surfaces as a read failure.
+ *           as `UnreadableWorkbookError` (`not_a_workbook`).
  * Runtime: node
  * Governing contract: ADR 0367 (decision 2); ECMA-376 part 1 (SpreadsheetML), part 2 (relationships).
  */
+import { UnreadableWorkbookError } from "#core/errors/unreadable-workbook.error";
 import { isDateFormat } from "#node/functions/is-date-format.function";
 import { runText } from "#node/functions/run-text.function";
 import { xmlAttribute } from "#node/functions/xml-attribute.function";
@@ -39,7 +40,7 @@ function relationships(xml: string | undefined, base: string) {
  * The workbook of the package whose parts `part` reads.
  *
  * @param part - the text of a zip path, or `undefined` when the package has no such part.
- * @throws TypeError when the package has no workbook part.
+ * @throws UnreadableWorkbookError (`not_a_workbook`) when the package has no workbook part.
  * @example
  * const book = readWorkbook((path) => texts.get(path));
  */
@@ -48,7 +49,7 @@ export function readWorkbook(part: (path: string) => string | undefined): XlsxWo
   const workbookPath = root.find((rel) => rel.type.endsWith("/officeDocument"))?.path;
   const workbook = workbookPath === undefined ? undefined : part(workbookPath);
   if (workbookPath === undefined || workbook === undefined)
-    throw new TypeError("The file is not an XLSX workbook: it has no workbook part");
+    throw UnreadableWorkbookError.create({ reason: "not_a_workbook" });
   const folder = workbookPath.slice(0, workbookPath.lastIndexOf("/") + 1);
   const rels = relationships(
     part(`${folder}_rels/${workbookPath.slice(folder.length)}.rels`),

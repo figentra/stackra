@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `TransferLimitExceededError` (`transfer_limit_exceeded`), the refusal of a file past a row or byte limit the
- *          caller set from its settings.
+ * Purpose: `TransferLimitExceededError` (`transfer_limit_exceeded`), the refusal of a file past a row, byte, column or
+ *          cell-length limit the caller set from its settings.
  * Boundary: thrown by a reader while it streams, so rows before the limit may already have been yielded; a validation
  *           refusal (400), never retryable. Its details are which limit and its value.
  * Runtime: isomorphic
@@ -14,8 +14,8 @@ export class TransferLimitExceededError extends Refusal({
   kind: ErrorKind.Validation,
   retryable: false,
 }) {
-  /** Which limit (`rows` or `bytes`). */
-  limit!: "rows" | "bytes";
+  /** Which limit (`rows`, `bytes`, `columns` or `cell_length`). */
+  limit!: "rows" | "bytes" | "columns" | "cell_length";
 
   /** The limit's value. */
   max!: number;

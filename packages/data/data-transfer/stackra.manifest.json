@@ -49,6 +49,13 @@
       "category": "validation",
       "module": "data_transfer",
       "class": "UnreadableEncodingError"
+    },
+    {
+      "code": "unreadable_workbook",
+      "kind": "validation",
+      "category": "validation",
+      "module": "data_transfer",
+      "class": "UnreadableWorkbookError"
     }
   ],
   "models": [],
