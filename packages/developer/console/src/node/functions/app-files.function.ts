@@ -37,7 +37,8 @@ export function appFiles(spec: AppSpec): Readonly<Record<string, string>> {
     },
     devDependencies: { ...APP_VERSIONS },
     engines: { node: ">=24.0.0" },
-    ...(spec.override ? { pnpm: { overrides: spec.stackra }, overrides: spec.stackra } : {}),
+    // npm reads overrides here; pnpm 12 reads them only from pnpm-workspace.yaml (written below).
+    ...(spec.override ? { overrides: spec.stackra } : {}),
   };
   const compilerOptions = {
     target: "ES2023",
@@ -55,6 +56,13 @@ export function appFiles(spec: AppSpec): Readonly<Record<string, string>> {
   };
   return {
     "package.json": json(pkg),
+    ...(spec.override
+      ? {
+          "pnpm-workspace.yaml": `overrides:\n${Object.entries(spec.stackra)
+            .map(([name, source]) => `  ${JSON.stringify(name)}: ${JSON.stringify(source)}`)
+            .join("\n")}\n`,
+        }
+      : {}),
     "tsconfig.json": json({
       compilerOptions: { ...compilerOptions, noEmit: true },
       include: ["src", "vitest.config.ts"],

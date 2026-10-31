@@ -51,7 +51,7 @@ describe("appFiles", () => {
     expect(pkg["bin"]).toEqual({ acme: "./dist/main.js" });
     expect(pkg["devDependencies"]).toEqual(APP_VERSIONS);
     expect(pkg["dependencies"]?.["@stackra/console"]).toBe("0.1.0");
-    expect(pkg["pnpm"]).toBeUndefined();
+    expect(pkg["overrides"]).toBeUndefined();
     const tarball = appFiles({
       name: "x",
       bin: "x",
@@ -59,9 +59,13 @@ describe("appFiles", () => {
       stackra: { "@stackra/console": "file:/t.tgz" },
       override: true,
     });
-    expect(JSON.parse(tarball["package.json"] ?? "{}").pnpm.overrides).toEqual({
+    expect(JSON.parse(tarball["package.json"] ?? "{}").overrides).toEqual({
       "@stackra/console": "file:/t.tgz",
     });
+    expect(tarball["pnpm-workspace.yaml"]).toBe(
+      'overrides:\n  "@stackra/console": "file:/t.tgz"\n',
+    );
+    expect(files["pnpm-workspace.yaml"]).toBeUndefined();
   });
 
   it("tests help, a run, a prompt, NO_COLOR and --json", () => {
