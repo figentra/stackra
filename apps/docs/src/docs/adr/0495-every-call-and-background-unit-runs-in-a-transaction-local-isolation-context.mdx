@@ -1,0 +1,69 @@
+---
+title: "0495 — Every call and background unit runs in a transaction-local isolation context; session-level settings are forbidden"
+description: "Proposed · 2026-10-31"
+---
+
+{/* Stackra file contract: Purpose: the decision record that every action and query call, and every background unit (queue job, outbox relay and inbox delivery, workflow step, scheduled run), runs inside a transaction whose app.scope_* and app.tenant_id settings are set transaction-locally from the verified actor through the CallIsolation port, that session-level settings of app.* are forbidden, and what RDS Proxy does with transaction-local set_config. Boundary: decision text only; the code is STA-1699. Runtime: docs. Governing contract: ADR template; ADR 0239, 0347, 0210, 0327, 0473, 0098, 0138. */}
+
+<Note>
+  Proposed (STA-1699). Amends [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views)
+  (who sets `app.tenant_id`) and [0138](/adr/0138-pipeline-order-is-fixed) (the tenancy step). Builds on
+  [0473](/adr/0473-connection-pooling-a-managed-proxy-per-cloud-a-pool-budget-per-service-and-a-direct-url-for-session-tools).
+</Note>
+
+## Context
+
+Every tenant-owned table carries the forced equality policy of 0239 on `tenant_id = current_setting('app.tenant_id')`.
+Until now only `TenantIsolationService.withTenant` set that setting, and only a few drivers called it. The action
+pipeline's unit of work, its queries, the queue worker, the outbox relay and inbox, the workflow journal and the
+scheduler set at most the `app.scope_*` settings of `Database.withScope`. So a tenant-scoped query outside those
+drivers was refused (isolation failed closed, nothing leaked), and services worked around it by writing `set_config`
+themselves, where a session-level setting would survive into another tenant's transaction on a pooled connection.
+
+## Decision
+
+1. **One isolation context per unit of work.** `@stackra/actions` declares a `CallIsolation` port:
+   `run(actor, scope, work, { readOnly })`. The pipeline runs every call inside it, actions in their unit of work and
+   queries in a read-only transaction, after the tenancy check and before permission. `@stackra/tenancy` binds the
+   driver, which composes `Database.withScope` and `TenantIsolationService.withTenant` in one transaction. With no
+   driver bound, a call to a model with a tenant policy fails closed, as before.
+2. **Background units use the stored actor.** The queue worker, outbox relay and inbox, workflow runner and
+   scheduler run each job, delivery, step or run through the same port, with the actor and scope stored when the
+   work was enqueued. A unit stored without an actor runs as a platform call (`app.tenant_id` = `''`), which matches
+   no tenant row.
+3. **Transaction-local only.** Every `app.*` setting is written with `select set_config(name, value, true)` inside the
+   unit's transaction, and nowhere else. `set_config(..., false)`, `SET app.*` and `SET LOCAL app.*` are forbidden
+   outside the isolation driver and `Database.withScope`, and `pnpm validate` refuses them (decision 5).
+4. **RDS Proxy (0473).** AWS documents that for PostgreSQL a `SET` statement, `SET LOCAL` included, pins the client
+   connection for the rest of the session, as does using `set_config` to assign default values. It also documents
+   that function calls are not inspected for session state. So `select set_config(name, value, true)` is the form
+   to use. Its state ends with the transaction, so correctness never depends on pinning. A session-level
+   `set_config(..., false)` would not be detected and would leak to the next client of the backend, which is why
+   decision 3 forbids it. The pinning behaviour is confirmed on the first real proxy by the CloudWatch metric
+   `DatabaseConnectionsCurrentlySessionPinned` under load (planned check, below). Until then this paragraph is from
+   the AWS documentation (Avoiding pinning an RDS Proxy, 2026-10-31), not a measurement.
+5. **Testing.** `@stackra/tenancy/testing` ships `asTenant(tenantId, work)`, which runs `work` through the real
+   `CallIsolation` driver on the current database. `runAsTenant` stays the database-free helper for filling
+   `BelongsToTenant`, and its docblock points to `asTenant` for isolation. Isolation is proven on real Postgres
+   (`usePostgres`) under a role without `BYPASSRLS`.
+
+## Consequences
+
+- Services stop writing `set_config`; a hand-rolled one fails `pnpm validate`.
+- Every query now runs in a short read-only transaction, which costs one round trip per call.
+- A queued unit must carry its actor; producers that enqueue without one get platform isolation, so their tenant
+  rows are invisible to the job until they pass the actor.
+
+## Enforcement
+
+- `tools/scripts` repo check (STA-1699): refuses `set_config(` with a `false` third argument, and `SET [LOCAL] app.` in
+  any source outside the isolation driver and the database drivers' `withScope`.
+- `@stackra/tenancy` real-Postgres isolation tests (STA-1699): tenant A sees only its rows through the pipeline, a
+  platform call sees none, settings do not survive the transaction.
+- planned — RDS Proxy pinning under load measured by `DatabaseConnectionsCurrentlySessionPinned` on the first
+  deployed proxy (infra follow-up of STA-1699).
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0239 and 0138. Sources: the core trace of 2026-10-31 (STA-1699); AWS, "Avoiding pinning
+an RDS Proxy" (docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy-pinning.html).

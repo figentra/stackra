@@ -1453,6 +1453,11 @@
 "0494":
   slug: credential-data-class-for-provider-secrets
   status: accepted
+"0495":
+  slug: every-call-and-background-unit-runs-in-a-transaction-local-isolation-context
+  status: proposed
+  owner: call isolation (figentra/sta-1699-call-isolation)
+  issue: STA-1699
 "0496":
   slug: settings-is-a-foundation-package-each-module-declares-its-group-a-device-level-and-ui-config-is-dynamic
   status: accepted
