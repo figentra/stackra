@@ -1,53 +1,116 @@
 # @stackra/console
 
-The Stackra command framework: the Command kind with @Argument and @Option fields, the kernel, themed terminal output, prompts, the testing harness and createConsole
+The Stackra command framework, with the look of a Symfony Console and the Laravel installer. A command is a class with
+decorated fields, `createConsole` runs a list of them, and `runCommandForTest` tests one in-process. Every product's CLI
+shares one layout; only its theme (name, ASCII logo, gradient, accent, glyph) changes.
 
-**Tier:** `tier:lib` (`packages/developer/console`). Laid out in the programming model v3 (ADR 0294, 0295).
+**Tier:** `tier:lib` (`packages/developer/console`). Decision: ADR 0506. Spec: `.agents/specs/sta-1730-console`.
+
+## A command
+
+```typescript
+import { Argument, Command, Option } from "@stackra/console";
+import type { CommandIo } from "@stackra/console";
+import { Int } from "@stackra/validation";
+
+export class SeedAccountCommand extends Command({
+  name: "account:seed",
+  description: "Seed an account",
+}) {
+  @Argument({ description: "The account's slug" })
+  account!: string;
+
+  @Option({ short: "c", description: "Rows per table" })
+  @Int({ min: 1 })
+  count = 10;
+
+  @Option({ description: "Print, do not write" })
+  dryRun = false;
+
+  constructor(accounts: AccountService) {
+    super();
+    this.accounts = accounts;
+  }
+
+  async handle(io: CommandIo) {
+    const rows = await io.output.task("Seeding", () =>
+      this.accounts.seed(this.account, this.count),
+    );
+    io.output.success(`Seeded ${rows} rows`);
+    return { rows }; // the --json data
+  }
+}
+```
+
+The value kind of a field comes from `@Str`, `@Int`, `@Num` or `@List`; an `@Option` with none is a flag
+(`--dry-run`, `--no-dry-run`), an `@Argument` with none a string. Initialisers are the defaults. An argument without an
+initialiser is required unless it is `@Argument({ optional: true })`.
+
+## A console
+
+```typescript
+import { createConsole } from "@stackra/console";
+import { nodePorts } from "@stackra/console/node";
+
+process.exitCode = await createConsole({
+  name: "acme",
+  version: "1.0.0",
+  commands: [SeedAccountCommand],
+}).run(process.argv.slice(2), nodePorts());
+```
+
+Pass `container: () => Container.create(wirings)` to build commands with their collaborators; it is called only to run
+a command, never for the list, help or version. A member that runs gen gets its registry from `#stackra/commands`
+(STA-1731); a standalone app lists its classes.
+
+Global options on every command: `-h/--help`, `-V/--version`, `-v/--verbose`, `-q/--quiet`, `-n/--no-interaction`,
+`--json`, `--ansi`/`--no-ansi`. Exit codes: 0, the handler's own 0 to 255, 1 (error), 2 (usage), 130 (SIGINT or a
+cancelled prompt), 143 (SIGTERM).
+
+## Output, prompts, modes
+
+- `io.output`: `line`, `info`, `success`, `warn`, `error`, `title`, `keyValue`, `list`, `table`, `note`, `task`,
+  `spinner`, `progress`, `json`, `banner`.
+- `io.prompt`: `text`, `password`, `confirm`, `select`, `multiselect`, `search`.
+- Plain text (no escape byte, no cursor movement) under `NO_COLOR`, `--no-ansi`, `TERM=dumb` or without a TTY. No
+  prompts without a TTY, in CI, with `-n` or with `--json`: a prompt takes its default, or the run exits 2 naming the
+  option that answers it. `--json` writes exactly one document, `{ ok, data }` or `{ ok: false, error: { code, message } }`.
+- Right-to-left text is measured by grapheme and wrapped in Unicode isolates; nothing is reordered.
+
+## Themes
+
+`STACKRA_THEME` is the default. Another product builds its own from its brand kit's colour tokens:
+`themeFromBrandTokens(colorJson, { name, logo, glyph, asciiGlyph, gradient: ["sky-500", "sky-200"], accent: "sky-500" })`.
+
+## Testing
+
+```typescript
+import { runCommandForTest } from "@stackra/console/testing";
+
+const result = await runCommandForTest([SeedAccountCommand], ["account:seed", "acme", "--json"], {
+  answers: ["yes"],
+});
+expect(result.json).toEqual({ ok: true, data: { rows: 10 } });
+```
+
+## A new console app
+
+```sh
+pnpm dlx @stackra/console create my-cli
+```
+
+`stackra-console create <dir>` asks for the name, the binary and the accent (or takes `--name`, `--bin`, `--accent`),
+writes a standalone TypeScript app with a `greet` command, its theme and its tests, and installs it (`--no-install`,
+`--pm pnpm|npm`; `--tarballs <dir>` installs `@stackra/*` from packed tarballs for verification).
 
 ## Entry points
 
-| Import                       | Holds                                                                             | Exports today                         |
-| ---------------------------- | --------------------------------------------------------------------------------- | ------------------------------------- |
-| `@stackra/console`           | `src/config/`: the config classes a host subclasses; `src/core/`: isomorphic code | `src/config/console.config.ts`        |
-| `@stackra/console/node`      | `src/node/`: the root module and the module groups                                | `src/node/console.module.ts`          |
-| `@stackra/console/contracts` | `src/contracts/`: the leaf (`ports/`, `enums/`, `types/`)                         | not yet: exported with its first file |
-| `@stackra/console/testing`   | `src/testing/`: `fakes/` and `matchers/`                                          | not yet: exported with its first file |
-| `@stackra/console/assets/*`  | `assets/`: static files (`public/`, `lang/`, …) at the package root (ADR 0234)    | the folder                            |
+| Import                       | Holds                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| `@stackra/console`           | the Command kind, `@Argument`, `@Option`, `createConsole`, themes, errors  |
+| `@stackra/console/contracts` | leaf types: options, theme, prompt request and answer, `Prompter`, streams |
+| `@stackra/console/node`      | `nodePorts()`, `terminalPrompter()`                                        |
+| `@stackra/console/testing`   | `runCommandForTest`, `scriptedPrompter`, `memoryText`, `manualSignals`     |
+| bin `stackra-console`        | `create`                                                                   |
 
-`./react` and `./native` (renderers in `react/<name>/` and `native/<name>/`) are added with `--entries react,native`
-when the package is created, or by hand with their first file. `exports` point at source through the
-`@stackra/source` condition; `tsdown` builds `dist/` for publishing (ADR 0025).
-
-**Entry barrels are generated, never authored** (ADR 0294 decision 15). Until `stackra gen` writes them (STA-339),
-each export names its entry's one public file directly, as the table shows.
-
-## Structure
-
-```text
-stackra.config.ts          the member definition: static data (ADR 0295)
-assets/                    static files: public/, lang/ (templates/, stubs/, data/ with their first file)
-src/
-├── config/console.config.ts   ConsoleConfig, the deploy-time configuration
-├── contracts/             the leaf: ports/, enums/, types/
-├── core/                  isomorphic code: services, drivers, errors, functions, schemas, blocks
-├── node/                  the module: console.module.ts and its groups (models/, actions/, queries/, …)
-└── testing/               fakes/ and matchers/ for consumers' tests
-```
-
-The module groups, and the one home of every kind suffix, are on the docs page `standards/structure` (`pnpm docs`),
-generated from `tools/scripts/structure.mjs`. A group folder appears with its first file. `stackra gen` writes `stackra.manifest.json` here on its first run.
-
-## Tasks
-
-| Task            | Command                                         |
-| --------------- | ----------------------------------------------- |
-| `build`         | `tsdown`                                        |
-| `typecheck`     | `tsc --noEmit`                                  |
-| `lint`          | `oxlint .`                                      |
-| `test`          | `vitest run`                                    |
-| `test:coverage` | `vitest run --coverage` (shared gate: 80/80/70) |
-| `format`        | `oxfmt --write .`                               |
-| `format:check`  | `oxfmt --check .`                               |
-| `clean`         | `rm -rf dist coverage .turbo`                   |
-
-Run one with `pnpm turbo run <task> --filter=@stackra/console`.
+No module's commands live here: every package exposes its own in its `commands/` group (ADR 0506).

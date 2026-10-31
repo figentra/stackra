@@ -29,7 +29,7 @@ stop ("handle all, all approved") and added STA-1731: every package exposes its 
 - **Deploy modes**: same everywhere (a library and a bin; nothing deployed)
 - **Licence tier**: free (`@stackra/console`)
 - **Docs to update**: ADR 0506; an amendment note on ADR 0294 (kind table, groups); `packages/developer/README.md`;
-  the package README and AGENTS.md; a docs page `apps/docs/src/docs/packages/console.mdx`
+  the package README and AGENTS.md; a guide `apps/docs/src/docs/guides/console.mdx`
 - **Lane**: full
 - **Change risk**: R2 (a new member and a new kind; no runtime of any service or app changes)
 
@@ -123,7 +123,7 @@ hidden?, aliases? })`, and SHALL read a command's name, description, arguments a
   SHALL write warnings and errors to standard error.
 - **FR-019** WHEN a handler throws, THE Console Output SHALL write an error screen with the error's title, message and
   hint; WHERE `--verbose` is given, THE Console Output SHALL add the stack and the `cause` chain.
-- **FR-020** THE Console Package SHALL decide the colour depth once per run: none WHILE `NO_COLOR` is non-empty,
+- **FR-020** THE Console Package SHALL decide the colour depth once per run: none WHILE `NO_COLOR` or `CI` is non-empty,
   `--no-ansi` is given, stdout is not a TTY or `TERM=dumb` (unless `--ansi` or `FORCE_COLOR`); 24-bit WHILE `COLORTERM`
   is `truecolor` or `24bit`; else 256; and SHALL quantise the gradient to that depth.
 - **FR-021** WHILE the colour depth is none or stdout is not a TTY, THE Console Output SHALL write no escape sequence
@@ -146,9 +146,9 @@ hidden?, aliases? })`, and SHALL read a command's name, description, arguments a
 
 ### Testing harness
 
-- **FR-027** WHEN a test calls `runCommandForTest(registry, argv, { answers, env, tty, container })`, THE Console
+- **FR-027** WHEN a test calls `runCommandForTest(registry, argv, { answers, env, colour, columns, container, signal })`, THE Console
   Package SHALL run the invocation in the test's process and return `{ exitCode, stdout, stderr, json }`, answering
-  prompts with `answers` in order, with plain output unless `tty` asks for colour.
+  prompts with `answers` in order, with plain output unless `colour` asks for it.
 - **FR-028** IF a handler asks a prompt after the scripted answers are exhausted, THEN THE Console Package SHALL fail
   the run with an error naming the prompt.
 

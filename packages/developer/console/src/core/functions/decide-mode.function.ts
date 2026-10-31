@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `decideMode(ports, globals)`, the one decision of what a run may do: colour depth from `NO_COLOR`,
+ * Purpose: `decideMode(ports, globals)`, the one decision of what a run may do: colour depth from `NO_COLOR`, `CI`,
  *          `FORCE_COLOR`, `COLORTERM`, `TERM`, `--ansi` and the TTY; prompts only on a terminal outside CI without
  *          `--no-interaction` or `--json`; ASCII on `TERM=linux` or a non-UTF-8 locale.
  * Boundary: pure.
@@ -30,7 +30,8 @@ export function decideMode(ports: ConsolePorts, globals: GlobalFlags): ConsoleMo
   const colour =
     !globals.json &&
     (globals.ansi ??
-      (forced || (!set(env["NO_COLOR"]) && ports.stdoutIsTTY && env["TERM"] !== "dumb")));
+      (forced ||
+        (!set(env["NO_COLOR"]) && !set(env["CI"]) && ports.stdoutIsTTY && env["TERM"] !== "dumb")));
   const locale = env["LC_ALL"] ?? env["LC_CTYPE"] ?? env["LANG"];
   const unicode = env["TERM"] !== "linux" && (!set(locale) || /utf-?8/i.test(locale ?? ""));
   return {

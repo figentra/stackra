@@ -1,0 +1,154 @@
+---
+title: "0506 — The Command kind, the console framework and the commands group"
+description: "Accepted · 2026-10-31"
+---
+
+<Note>
+  Accepted 2026-10-31: the owner approved the spec stop of `@stackra/console` ("handle all, all
+  approved", Linear STA-1730), and the leader approved the class style and the optional gen. Number:
+  0506, reserved under the slug `console-command-kind` in `numbers.yaml` (STA-1732). Amends
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (the module and app
+  group tables, decisions 13 and 14, and the kind table, decision 16) and
+  [0127](/adr/0127-package-categories-including-infrastructure) (its 2026-10-24 note, which folded
+  `console` into `cli`).
+</Note>
+
+## Context
+
+The three CLIs of [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) (`stackra`, `runway`, `figentra`) are
+hand-built: each parses its own arguments, prints its own help and errors, and styles its output its own way. There is
+no shared command framework, and no declared shape for a command that a package could expose. ADR 0294 decision 23 says
+"Command means a CLI command only", but the kind table has no row for one. ADR 0127's 2026-10-24 note folded a `console`
+package into `cli` on that reading, which put every command inside one CLI package. The basalt port of
+`@stackra/console` (Academorix spec 030) used a provider API (`defineConsoleCommand`, string tokens) that v3 retires
+([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned), [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)
+decision 17). Commands need the v3 shape: a class, decorated fields, constructor collaborators, and a folder of their own.
+
+## Decision
+
+### The kind
+
+1. **`Command` is a kind.** A CLI command is a class that extends `Command({ name, description, hidden?, aliases? })`
+   from `@stackra/console`. Its name and aliases are written once, each made of `[a-z0-9]` segments joined by `-`, and
+   the segments joined by `:` (`tenant:seed`). The kind options are read without constructing the class, as every kind's
+   are. `hidden` keeps a command out of the list; it still runs by name.
+
+   ```typescript
+   export class SeedTenantCommand extends Command({
+     name: "tenant:seed",
+     description: "Seed a tenant",
+   }) {
+     constructor(private readonly tenants: TenantService) {
+       super();
+     }
+
+     async handle(io: CommandIo) {
+       io.output.success("Seeded");
+       return 0;
+     }
+   }
+   ```
+
+2. **A command is a binding.** Its collaborators come in through its constructor, and gen (or the caller's container)
+   builds it ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 17). `handle(io)`
+   runs it and returns an exit code from 0 to 255, nothing, or an object or array that becomes the `--json` data.
+
+3. **Fields carry the arguments and options.** `@Argument(options?)` binds a field to the next positional token, in field
+   order. `@Option(options?)` binds a field to `--<kebab-name>`, and to `-<short>` when `short` is given. Both are field
+   decorators made with `createDecorator` that target the `command` kind only
+   ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 6). The value kind comes from
+   `@Str`, `@Int`, `@Num` or `@List` of `@stackra/validation`, whose `SHAPE_KINDS` already includes `command`. A field
+   with none of them is a boolean option, or a string argument. A field's default is its initialiser. An argument with
+   no default is required unless it is `@Argument({ optional: true })`, because the runtime cannot see a `?` without
+   gen. A `@List` argument comes last and takes the rest.
+
+4. **The `commands/` group.** A command file sits in `commands/`: in a module (a service's `src/modules/<key>/commands/`),
+   in a package's `src/node/commands/`, and in an app's `src/commands/`. The file is `<name>.command.ts`, its class is
+   `PascalCase(stem) + Command` (`greet.command.ts` declares `GreetCommand`), one class per file, and its test sits
+   beside it in `__tests__/` ([0022](/adr/0022-tests-live-in-tests-folders)).
+
+### The framework and its look
+
+5. **`@stackra/console` is the framework.** Its package is `packages/developer/console` (`@stackra/console`, `tier:lib`,
+   category `developer`, runtimes `isomorphic` and `node`). It holds the `Command` kind, its two decorators, the kernel
+   (`createConsole`), the output, the prompts, the testing harness and the themes. It is the framework and the terminal
+   look of the three CLIs of 0500. It holds no module's commands: each package exposes its own, from its own `commands/`
+   group (phase 2, STA-1731). It depends on `@stackra/container`, `@stackra/contracts` and `@stackra/validation`, and never
+   on `@stackra/gen`. Its own bin, `stackra-console`, has one command, `create`, which writes a standalone console app.
+
+6. **Registries.** A standalone app passes its commands to the kernel: `createConsole({ name, version, commands: [...] })`.
+   A member that runs gen gets `#stackra/commands`, an explicit list of static imports that gen writes from the
+   `commands/` groups it uses, with duplicate names and aliases refused at gen time, naming both classes. Nothing scans
+   at runtime. gen is never a runtime or peer dependency of `@stackra/console` or of a package that ships commands.
+
+7. **One presentation.** Every product shares one layout (the gutter, the symbol column, dotted task lines, rounded
+   boxes, one error screen). A product changes only its theme: the name, the ASCII logo, the gradient, the accent, the
+   glyph and the ASCII glyph. The rules below hold for every CLI:
+   - Colour is off under `NO_COLOR`, `CI`, `--no-ansi`, a non-terminal stdout and `TERM=dumb`; `--ansi` and `FORCE_COLOR`
+     turn it on against those. With colour off, nothing is written but text, and boxes are drawn in ASCII.
+   - Prompts are asked only when stdin and stdout are terminals, `CI` is empty, and neither `--no-interaction` nor
+     `--json` is given. Otherwise a prompt takes its default, and a prompt with no default fails the run with exit code 2
+     and names the option that answers it.
+   - `--json` writes exactly one document to stdout: `{ "ok": true, "data": ... }`, or
+     `{ "ok": false, "error": { "code", "message" } }` where the code is the error's class name in snake case without
+     `Error`.
+   - Widths are measured by grapheme cluster. A right-to-left run inside a left-to-right layout is wrapped in FSI and PDI,
+     and characters are never reordered.
+
+8. **Prompts are ours.** The prompter runs on `node:readline` in raw mode, and colours come from `node:util`
+   `styleText` with two escape helpers for 256 and true colour. No new dependency is added. Basalt's `@clack/prompts`
+   is not carried over.
+
+9. **Themes.** `ConsoleTheme` is `{ name, logo, gradient, accent, glyph, asciiGlyph }`. `@stackra/console` ships
+   `STACKRA_THEME` only. `themeFromBrandTokens(tokens, choice)` builds a theme from a brand kit's colour tokens, so
+   `runway` and `figentra` build theirs from brand tokens they already pull. The package depends on no brand package.
+
+## Consequences
+
+- A command lives in the package that owns its capability, and the framework adds no domain dependency.
+- Two command shapes exist for a while. `@stackra/cli` keeps its `CliCommand` data shape until it moves onto
+  `@stackra/console`, which `.agents/specs/sta-1730-console/adoption.md` plans. STA-1730 migrates no CLI, so
+  [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decision 7 (output is kept) holds.
+- A command's constructor must only store its collaborators. The kernel builds a throwaway instance with no arguments to
+  read the field defaults; if the constructor throws, the reader catches it and reads no defaults, so the options keep
+  their `undefined` values silently.
+- A standalone app has no `.stackra/` and passes its registry. A gen member gets its registry from gen. Both paths
+  reach one kernel.
+- `@stackra/console` is a new free package on the Stackra registry (ADR 0453).
+
+## Enforcement
+
+- `packages/developer/console/src/core/functions/read-command.function.ts` refuses a bad declaration (a name outside the
+  form above, a required argument after an optional one, two fields with one flag, a global option's name) with
+  `ConsoleDeclarationError`, when `createConsole` runs and before any command runs.
+- `packages/developer/console/src/core/functions/build-registry.function.ts` refuses two commands that claim one name or
+  alias, with `DuplicateCommandError`.
+- planned — the unit tests of those refusals, under `packages/developer/console/src/core/**/__tests__/` (spec SC-002).
+- planned — STA-1731: the gen collector `emit-commands` refuses duplicate names at gen time and writes
+  `.stackra/gen/commands.ts`.
+- planned — STA-338: the validator's `kind-path` check for `commands/` and `.command.ts`, and `base-matches-suffix`
+  for the `Command` base.
+- planned — oxlint `unicorn/filename-case`, for kebab-case command files.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends:
+
+- [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): decision 13 (the module table gains
+  `commands/`), decision 14 (the app table gains `commands/`) and decision 16 (the kind table gains `Command`), by a dated
+  note on that page. Decision 23 stands: `Command` means a CLI command only.
+- [0127](/adr/0127-package-categories-including-infrastructure): its 2026-10-24 (STA-348) note folded `console` into
+  `cli`. This reverses that fold for the command framework: `@stackra/console` is its own `developer` package. The reason
+  of that note, that a Command is a CLI command only, stands. A dated note on that page says so.
+
+Related: [0005](/adr/0005-di-container-and-legacy-decorators), [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries),
+[0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components),
+[0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine),
+[0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra).
+
+Sources: the owner's decision of 2026-10-31 on the `@stackra/console` spec (`.agents/specs/sta-1730-console/spec.md`, the
+decisions taken at the spec stop) and its design (`plan.md`); the leader's approval of the class style and the optional
+gen; Linear STA-1730 (phase 1), STA-1731 (phase 2) and STA-1732 (the number reservation); the basalt port, Academorix
+spec 030.

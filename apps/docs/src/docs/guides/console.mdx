@@ -1,0 +1,263 @@
+---
+title: "Console"
+description: "Write a CLI command with @stackra/console: the Command class, its arguments and options, output, prompts, --json, themes and tests."
+icon: "terminal"
+---
+
+A CLI command is a class. It extends `Command({ name, description })`, declares its arguments and options as decorated fields, takes its collaborators through its constructor, and runs in `handle(io)`. The framework does the parsing, the help, the prompts, the output and the exit codes. Its design is [ADR 0506](/adr/0506-console-command-kind). The package is `@stackra/console`, and its scaffolder is the `stackra-console` bin.
+
+## Write a command
+
+Put the command in `commands/` (a package's `src/node/commands/`, an app's `src/commands/`, a module's `commands/`) and name the file `<name>.command.ts`. The class is the file's stem in PascalCase with `Command` appended.
+
+```typescript
+// src/commands/greet.command.ts, the class is GreetCommand
+import { Argument, Command, Option, type CommandIo } from "@stackra/console";
+import { Int } from "@stackra/validation";
+
+export class GreetCommand extends Command({ name: "greet", description: "Greet someone" }) {
+  /** Who to greet; asked for when missing. */
+  @Argument({ optional: true })
+  who?: string;
+
+  /** Upper-case the greeting. */
+  @Option({ short: "s" })
+  shout = false;
+
+  /** How many times to greet. */
+  @Option({ short: "t" })
+  @Int({ min: 1, max: 10 })
+  times = 1;
+
+  constructor(private readonly greetings: GreetingService) {
+    super();
+  }
+
+  /** Greets, and returns the name for `--json`. */
+  async handle(io: CommandIo) {
+    const who =
+      this.who ?? (await io.prompt.text({ message: "Who?", default: "world", option: "who" }));
+    for (let i = 0; i < this.times; i++)
+      io.output.success(this.shout ? `HELLO ${who.toUpperCase()}` : `Hello ${who}`);
+    return { who };
+  }
+}
+```
+
+The rules that follow from the declarations:
+
+- **Name.** `name` and each alias are lower-case segments joined by `-`, with `:` between segments (`tenant:seed`). A bad name, a required argument after an optional one, two fields with one flag, or an option that reuses a global option is refused with `ConsoleDeclarationError`, before any command runs.
+- **Arguments** bind in field order to the positional tokens. A field with no initialiser is required, unless it is `@Argument({ optional: true })`. The runtime cannot see a `?`, so write `optional: true` for an optional argument with no default. A `@List` argument comes last and takes the rest.
+- **Options** bind to `--<kebab-name>`, and to `-<short>` when `short` is given (one letter). Every option is optional. A `-n`, `-h`, `-V`, `-v` or `-q` is a global option and cannot be used.
+- **Value kind** comes from `@Str`, `@Int`, `@Num` or `@List` on the field (`@stackra/validation`). `@Int` and `@Num` take `min` and `max`, and an out-of-range value is a usage error. A field with none of them is a boolean option or a string argument.
+- **Defaults** are the field initialisers. A boolean option starts at its initialiser, `false` in the example.
+- **The constructor only stores collaborators.** The kernel builds a throwaway instance with no arguments to read the defaults. If the constructor throws, the defaults are lost silently.
+- **`handle(io)`** returns an exit code from 0 to 255, nothing (exit 0), or an object or array, which becomes the `--json` data. Any other return value, or a throw, exits 1.
+
+The package compiles field decorators in the legacy form (`(target, property)`), so the tsconfig needs `experimentalDecorators: true`, as the scaffolder writes it.
+
+## Register the commands: createConsole and nodePorts
+
+A standalone program passes its commands to `createConsole` and runs them with the process's ports:
+
+```typescript
+#!/usr/bin/env node
+// src/main.ts
+import { createConsole } from "@stackra/console";
+import { nodePorts } from "@stackra/console/node";
+
+import { GreetCommand } from "./commands/greet.command.ts";
+
+process.exitCode = await createConsole({
+  name: "acme",
+  version: "1.0.0",
+  commands: [GreetCommand],
+}).run(process.argv.slice(2), nodePorts());
+```
+
+- `createConsole` checks the registry when it is called: a duplicate name or alias throws `DuplicateCommandError`, and a bad declaration throws `ConsoleDeclarationError`. Both name the command.
+- `container` is an optional factory that returns an object with `get(Type)` and `close()`. It is called only to run a command, never for the list, `--help` or `--version`. The command is resolved with `container.get(GreetCommand)`, which builds its constructor collaborators, and the container is closed after the handler returns, throws or is interrupted. Without a factory the command is built with `new GreetCommand()`, so a command with required collaborators needs one.
+- `nodePorts()` from `@stackra/console/node` binds the run to `process`: its streams, its terminal state, its environment, and SIGINT and SIGTERM. `run` resolves with the exit code, and you assign it to `process.exitCode`.
+- `createConsole({ ... })` also takes `theme`, which defaults to `STACKRA_THEME`.
+
+Running with no command lists the commands by namespace, `--help` after a command shows its arguments and options, and `--version` prints the name and version. A misspelt name suggests up to three close names. A name that is a unique abbreviation by segment runs the command, so `t:s` runs `tenant:seed`.
+
+## Output
+
+`io.output` writes in the one layout every product shares. Messages go to stdout, except warnings and errors, which go to stderr.
+
+| Call                                         | Writes                                                                         |
+| -------------------------------------------- | ------------------------------------------------------------------------------ |
+| `line(text?)`, `info(text)`, `success(text)` | A plain line, and an information or success line with its symbol               |
+| `warn(text)`, `error(text)`                  | The same, on stderr                                                            |
+| `title(text)`                                | A section title in the accent colour                                           |
+| `keyValue({ key: value })`                   | Dotted `key ..... value` lines                                                 |
+| `list(items)`                                | A bulleted list                                                                |
+| `table(headers, rows)`                       | A table whose columns are measured by display width                            |
+| `note(text, tone?, title?)`                  | A boxed note: tone `info` (stdout), `warning` or `alert` (stderr)              |
+| `task(label, work)`                          | `label ..... DONE` when `work` resolves, `FAIL` (and a rethrow) when it throws |
+| `spinner(message)`                           | `update(message)` and `stop(message?, ok?)`                                    |
+| `progress(total, label?)`                    | `advance(steps?)` and `finish()`, one line per 10 percent without a terminal   |
+| `json(value)`                                | The `--json` data; without `--json`, it prints the value pretty-printed        |
+| `banner()`                                   | The theme's logo and the name with the version, on a terminal only             |
+
+```typescript
+io.output.title("Tenants");
+io.output.table(
+  ["Slug", "Plan"],
+  [
+    ["acme", "pro"],
+    ["zoo", "free"],
+  ],
+);
+await io.output.task("Seeding", () => seed());
+const bar = io.output.progress(rows.length, "Importing");
+bar.advance();
+bar.finish();
+```
+
+Text is measured by grapheme cluster, so Arabic and emoji columns line up, and a right-to-left run is isolated inside the left-to-right layout. Use `displayWidth(text)` and `isolateBidi(text)` from `@stackra/console` when you lay out text of your own.
+
+## Prompts and non-interactive runs
+
+`io.prompt` asks one question at a time. Each method takes `message`, and may take `default`, `placeholder`, `validate` and `option`:
+
+| Method                 | Answer                                                            |
+| ---------------------- | ----------------------------------------------------------------- |
+| `text(request)`        | `string`                                                          |
+| `password(request)`    | `string`; no character is echoed, and the answer is never printed |
+| `confirm(request)`     | `boolean`                                                         |
+| `select(request)`      | `string`, one of `choices`                                        |
+| `multiselect(request)` | `string[]`, any of `choices`                                      |
+| `search(request)`      | `string`, one of `choices`, filtered as the operator types        |
+
+```typescript
+const plan = await io.prompt.select({
+  message: "Which plan?",
+  choices: [
+    { value: "free", label: "Free" },
+    { value: "pro", label: "Pro", hint: "Paid" },
+  ],
+  default: "free",
+  option: "plan",
+});
+const ok = await io.prompt.confirm({ message: "Continue?", default: false, option: "yes" });
+```
+
+`validate(answer)` returns a message to refuse a text answer, or `undefined` to accept it; the prompt stays open until the answer passes. Ctrl-C or Escape in a prompt closes the container and exits 130.
+
+A prompt is asked only on a terminal. It is answered by its default instead when any of these holds: stdin or stdout is not a terminal, `CI` is set, `--no-interaction` (or `-n`) is given, or `--json` is given. A prompt with no default then fails the run with exit code 2, and the message names the `option` that answers it, so a CI job knows which flag to pass. Give every prompt an `option` and a default that is safe to use in CI.
+
+## Exit codes
+
+| Code | When                                                                                                                                |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | The handler finished, returned 0, or returned an object or array (the data)                                                         |
+| 1    | The handler threw, returned a value outside 0 to 255, or closing the container failed                                               |
+| 2    | A usage error: a missing or unknown argument or option, a value out of bounds, or a prompt with no default in a non-interactive run |
+| 130  | SIGINT, or a cancelled prompt                                                                                                       |
+| 143  | SIGTERM                                                                                                                             |
+
+## JSON output
+
+`--json` writes exactly one JSON document to stdout. Nothing else reaches stdout: no banner, no text, no prompt, and no colour. Errors are written as the document too, not on stderr.
+
+```bash
+acme greet Ada --json
+# {"ok":true,"data":{"who":"Ada"}}
+acme greet --json --times 99
+# {"ok":false,"error":{"code":"usage","message":"..."}}
+```
+
+The `data` is the object or array the handler returned, or the value of `io.output.json(value)`. A handler that returns a number or nothing has `data: null`. The error code is the error's class name in snake case without `Error`, so `NonInteractivePromptError` becomes `non_interactive_prompt`. `io.json` tells the handler whether `--json` was given.
+
+## Global options
+
+Every command accepts these:
+
+| Option                   | Effect                                             |
+| ------------------------ | -------------------------------------------------- |
+| `-h`, `--help`           | The command's help, with its arguments and options |
+| `-V`, `--version`        | The name and version                               |
+| `-v`, `--verbose`        | On an error, the stack and the `cause` chain       |
+| `-q`, `--quiet`          | Errors only                                        |
+| `-n`, `--no-interaction` | No question; prompts take their defaults           |
+| `--json`                 | One JSON document                                  |
+| `--ansi`, `--no-ansi`    | Force colour on, or off                            |
+
+## Colour and terminals
+
+Colour depth is decided once per run. It is off when `NO_COLOR` or `CI` is set to anything non-empty, when `--no-ansi` is given, when stdout is not a terminal, or when `TERM=dumb`. `--ansi` and `FORCE_COLOR` turn it on against those. It is 24-bit when `COLORTERM` is `truecolor` or `24bit`, and 256 colours otherwise. With colour off, the output has no escape sequence and no cursor movement, a spinner is one start line and one end line, and boxes are drawn in ASCII. `TERM=linux` and a non-UTF-8 locale also draw ASCII symbols.
+
+## Themes
+
+A theme is `{ name, logo, gradient, accent, glyph, asciiGlyph }`. The logo is printed with a horizontal gradient across the gradient stops. The layout, the spacing, the symbols and the copy are the same for every theme, so a product changes only these six fields. `STACKRA_THEME` is the default, and the package ships no other.
+
+A product builds its theme from its brand kit's colour tokens with `themeFromBrandTokens(tokens, choice)`. `tokens` is the parsed DTCG colour file, with its colours under `palette`. `choice` gives the name, logo, glyphs and the palette token names of the gradient and the accent. A missing token, or one that is not `#rrggbb`, throws a `RangeError`.
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import { themeFromBrandTokens, type BrandColourTokens } from "@stackra/console";
+
+const tokens = JSON.parse(readFileSync("brand/tokens/color.json", "utf8")) as BrandColourTokens;
+
+export const ACME_THEME = themeFromBrandTokens(tokens, {
+  name: "Acme",
+  logo: ["  ___", " / _ \\", "| (_) |", " \\___/"],
+  glyph: "◆",
+  asciiGlyph: "*",
+  gradient: ["brand-500", "brand-200"], // palette token names, placeholders here
+  accent: "brand-500",
+});
+```
+
+Pass the theme to `createConsole({ ..., theme: ACME_THEME })`.
+
+## Test a command
+
+`runCommandForTest` from `@stackra/console/testing` runs one invocation in the test's process, with memory streams, and returns what it wrote:
+
+```typescript
+// src/commands/__tests__/greet.command.test.ts
+import { runCommandForTest } from "@stackra/console/testing";
+import { describe, expect, it } from "vitest";
+
+import { GreetCommand } from "../greet.command.ts";
+
+describe("greet", () => {
+  it("greets as JSON", async () => {
+    const result = await runCommandForTest([GreetCommand], ["greet", "Ada", "--json"]);
+    expect(result.exitCode).toBe(0);
+    expect(result.json).toEqual({ ok: true, data: { who: "Ada" } });
+  });
+
+  it("asks the question the argument leaves out", async () => {
+    const result = await runCommandForTest([GreetCommand], ["greet"], { answers: ["Grace"] });
+    expect(result.asked).toEqual(["Who?"]);
+    expect(result.stdout).toContain("Hello Grace");
+  });
+});
+```
+
+- The second argument is the argv after the program name. The first is a list of command classes, or a whole `ConsoleConfig` (the same object you pass to `createConsole`).
+- `answers` are the scripted answers, in order. Giving them makes the run interactive. A text answer goes through the prompt's `validate`, and a run that asks more prompts than there are answers fails naming the prompt.
+- `env` adds environment variables. `NO_COLOR=1` is set unless `colour: true`, so the output is plain by default. `colour: true` renders as a true-colour terminal would.
+- `columns` sets the width (80 by default). `container` is the factory of [createConsole](#register-the-commands-createconsole-and-nodeports), for fakes. `signal` (`"SIGINT"` or `"SIGTERM"`) is sent after the command starts, to test an interruption.
+- The result is `{ exitCode, stdout, stderr, json, asked }`. `json` is set when all of stdout is one JSON document.
+
+## Scaffold a new console app
+
+`stackra-console create <directory>` writes a standalone console app, with no `.stackra/` and no gen. Once `@stackra/console` is on the Stackra registry:
+
+```bash
+pnpm dlx @stackra/console create my-cli
+```
+
+The scaffolder asks for the app name, the binary name and the accent colour when it is interactive. Otherwise it takes `--name`, `--bin` and `--accent` (`#rrggbb`), with defaults from the folder name. Its other options:
+
+- `--no-install` writes the files and does not install them.
+- `--pm pnpm|npm` picks the package manager (pnpm by default).
+- `--tarballs <dir>` installs `@stackra/*` from packed tarballs in that folder, for checking a release before it is published.
+
+It refuses a folder that exists and is not empty, with exit code 1, and writes nothing. The app it writes has `package.json` (with the `bin` and the `build`, `typecheck`, `test` and `start` scripts), `tsconfig.json`, `tsconfig.build.json`, `vitest.config.ts`, `.npmrc` (the `@stackra` registry scope line and no token), `.gitignore`, `README.md`, `src/main.ts`, `src/theme.ts`, `src/commands/greet.command.ts` and its test in `src/commands/__tests__/`. Its `greet` command has an argument, an option, a prompt, a table and JSON data, and its test covers help, a run, a scripted prompt, `NO_COLOR` and `--json`.

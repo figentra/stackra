@@ -38,6 +38,8 @@ describe("decideMode", () => {
     [{ COLORTERM: "truecolor" }, true, undefined, 24],
     [{ NO_COLOR: "1" }, true, undefined, 0],
     [{ TERM: "dumb" }, true, undefined, 0],
+    [{ CI: "1" }, true, undefined, 0],
+    [{ CI: "1" }, true, true, 8],
     [{}, false, undefined, 0],
     [{}, true, false, 0],
     [{}, false, true, 8],
