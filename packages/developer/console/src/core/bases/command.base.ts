@@ -15,15 +15,17 @@ import { COMMAND_NAME } from "#core/constants/command-name.constant";
 import { ConsoleDeclarationError } from "#core/errors/console-declaration.error";
 import type { CommandClass } from "#core/types/command-class.type";
 import type { CommandIo } from "#core/types/command-io.type";
-import type { CommandResult } from "#core/types/command-result.type";
 
 /** The instance side every command shares. */
 abstract class CommandBase {
   /** Type-only kind brand, so a class of another kind cannot stand in for a command. */
   declare readonly "~kind": "command";
 
-  /** Runs the command with its fields filled; returns an exit code, nothing, or the `--json` data. */
-  abstract handle(io: CommandIo): Promise<CommandResult> | CommandResult;
+  /**
+   * Runs the command with its fields filled. Returns a `CommandResult` (an exit code, nothing, or the `--json` data);
+   * typed `unknown` here so a subclass may return `Promise<void>`, and the kernel checks what comes back.
+   */
+  abstract handle(io: CommandIo): unknown;
 }
 
 /** A command instance. */
