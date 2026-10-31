@@ -43,6 +43,7 @@ export function SignIn({
   onSignUp,
   pending,
   error,
+  headingLevel = 2,
   labels,
   className,
 }: SignInProps): ReactElement {
@@ -60,7 +61,7 @@ export function SignIn({
   return (
     <Card className={`w-full max-w-sm ${className ?? ""}`}>
       <Card.Header>
-        <Card.Title level={1}>{labels.title}</Card.Title>
+        <Card.Title level={headingLevel}>{labels.title}</Card.Title>
         {labels.description && <Card.Description>{labels.description}</Card.Description>}
       </Card.Header>
       <Card.Content className="flex flex-col gap-4">

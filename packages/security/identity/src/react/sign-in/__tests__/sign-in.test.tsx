@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: proves the SignIn block shows the tenant's providers and form, reports a provider press and the submitted
- *          email, password and remember choice, shows an error, and drops the form when no `onSubmit` is given.
+ *          email, password and remember choice, shows an error, drops the form when no `onSubmit` is given, and titles
+ *          itself at h2 unless the host gives a level.
  * Boundary: unit tier, jsdom, the real @stackra/ui components.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0504.
@@ -51,6 +52,13 @@ describe("SignIn", () => {
       password: "secret",
       remember: true,
     });
+  });
+
+  it("titles itself at h2 below the page's h1, or at the level the host gives", () => {
+    const { rerender } = render(<SignIn labels={LABELS} />);
+    expect(screen.getByRole("heading", { level: 2, name: "Sign in" })).toBeTruthy();
+    rerender(<SignIn labels={LABELS} headingLevel={1} />);
+    expect(screen.getByRole("heading", { level: 1, name: "Sign in" })).toBeTruthy();
   });
 
   it("is provider-only without onSubmit", () => {
