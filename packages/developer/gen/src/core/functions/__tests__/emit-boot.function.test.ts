@@ -89,6 +89,25 @@ describe("emitBoot", () => {
     expect(boot).not.toContain("EventBus");
   });
 
+  it("connects the automation service, after segments and before the bus, for a service that runs workflow", () => {
+    const boot = emitBoot({ ...COMMERCE_IR, packages: ["@stackra/workflow"] }) ?? "";
+    expect(boot).toContain('import { AutomationService } from "@stackra/workflow/node";');
+    expect(boot).toContain("  container.get(AutomationService).connect(container);");
+    expect(boot).not.toContain("EventBus");
+    const withBus =
+      emitBoot({
+        ...COMMERCE_IR,
+        packages: ["@stackra/segments", "@stackra/workflow", "@stackra/events"],
+      }) ?? "";
+    expect(withBus.indexOf("container.get(SegmentService)")).toBeLessThan(
+      withBus.indexOf("container.get(AutomationService)"),
+    );
+    expect(withBus.indexOf("container.get(AutomationService)")).toBeLessThan(
+      withBus.indexOf("bus.connect(container)"),
+    );
+    expect(emitBoot(COMMERCE_IR)).not.toContain("AutomationService");
+  });
+
   it("connects the bus without an inbox for a service that runs events but no outbox", () => {
     const boot = emitBoot({ ...COMMERCE_IR, packages: ["@stackra/events"] }) ?? "";
     expect(boot).toContain('import { EventBus } from "@stackra/events";');

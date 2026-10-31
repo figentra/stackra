@@ -13,6 +13,7 @@ import type { TestingApp } from "@stackra/container/testing";
 import { Clock } from "@stackra/contracts";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import {
   MemoryWorkflowJournalDriver,
@@ -22,6 +23,7 @@ import {
   Workflow,
   WorkflowRunStatus,
 } from "#core/index";
+import { AutomationService } from "#node/services/automation.service";
 import { CURRENT_WORKFLOWS } from "#testing/constants/current-workflows.constant";
 import { WORKFLOW_TESTING_PLUGIN } from "#testing/constants/workflow-testing-plugin.constant";
 
@@ -67,6 +69,16 @@ function compile(app: TestingApp) {
 describe("WORKFLOW_TESTING_PLUGIN", () => {
   it("is the @stackra/workflow plugin", () => {
     expect(WORKFLOW_TESTING_PLUGIN.name).toBe("@stackra/workflow");
+  });
+
+  it("connects the app's AutomationService to the app when it binds one", () => {
+    const connect = vi.fn();
+    const automations = Object.assign(Object.create(AutomationService.prototype) as object, {
+      connect,
+    });
+    const app = appOf([automations]);
+    compile(app);
+    expect(connect).toHaveBeenCalledWith(app);
   });
 
   it("uses the app's native engine when bound", () => {

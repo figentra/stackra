@@ -3,7 +3,8 @@
  * Purpose: `WORKFLOW_TESTING_PLUGIN`, the testing-module plugin of @stackra/workflow: on every `compile()` it connects
  *          the app's native engine (or an in-process one on the memory journal) to the app, makes it the one
  *          `runWorkflow` and `signal` act on, and adds `app.workflows.last(W)` and `app.workflows.advanceClock(d)`.
- *          Declared on `TestingApp` here and registered when this module loads.
+ *          It also connects the app's `AutomationService` to the app, so a test's publish checks the principal's
+ *          scope (ADR 0495). Declared on `TestingApp` here and registered when this module loads.
  * Boundary: uses the app's own `WorkflowRunner` when it is the native engine (so a run `ctx.run` started is the one
  *           inspected), else an engine over the app's `WorkflowJournal` and `Locks` when it binds them, else memory
  *           ones, on the app's clock. Each compile replaces the current engine.
@@ -24,6 +25,7 @@ import {
   WorkflowJournal,
 } from "#core/index";
 import type { Workflow, WorkflowRun } from "#core/index";
+import { AutomationService } from "#node/services/automation.service";
 import { CURRENT_WORKFLOWS } from "#testing/constants/current-workflows.constant";
 import { advanceWorkflows } from "#testing/functions/advance-workflows.function";
 
@@ -66,6 +68,7 @@ export const WORKFLOW_TESTING_PLUGIN: TestingPlugin = {
             clock,
           );
     runner.connect(app);
+    if (app.has(AutomationService)) app.get(AutomationService).connect(app);
     CURRENT_WORKFLOWS.value = { runner, clock, offset: 0 };
     return {
       workflows: {
