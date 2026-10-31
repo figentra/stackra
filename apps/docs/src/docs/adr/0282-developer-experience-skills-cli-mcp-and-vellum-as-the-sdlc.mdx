@@ -1,7 +1,15 @@
 ---
 title: "0282 — Developer experience: @stackra/skills, @stackra/cli, @stackra/mcp and Vellum as the SDLC"
-description: "Accepted, amended by 0286, 0334 · 2026-10-22"
+description: "Accepted, amended by 0286, 0334, 0500 · 2026-10-22"
 ---
+
+<Note>
+  Amended 2026-10-31 (owner decision) by
+  [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra): Vellum becomes the spec workflow
+  with no spike gate, rebuilt fresh, and the Figentra-internal operations move into the private
+  `figentra` CLI. Decisions 4, 11, 13, 14, 15 and 16 are read with the amendment of 2026-10-31
+  below.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428) by
@@ -136,6 +144,34 @@ The owner did not give these; the conservative default below applies until an AD
 1. **This repository's `.agents/`.** It stays the working source until `@stackra/skills` exists. Stackra content then moves into
    `packages/developer/skills`, and Figentra-internal agents and rules stay in `.agents/`.
 2. **Offline layer 2.** A signed-out or offline session gets layer 1 only. Nothing from layer 2 is cached on disk.
+
+## Amendment 2026-10-31 (owner decision): Vellum is the spec workflow, with no spike gate
+
+The owner decided on 2026-10-31 that Vellum becomes the spec workflow now, without waiting for the Phase T spike
+(STA-298), and that every operation moves into one of four CLIs
+([0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra)). The following replace the matching decisions above:
+
+1. **Decision 4.** Figentra-internal operations (Linear, the bot identities, the merge gate, the secrets inbox,
+   delegation, the spend meter) leave `tools/scripts` for the private `figentra` CLI, `@figentra/cli` in
+   figentra/figentra `packages/cli`. They stay out of `@stackra/cli`.
+2. **Decisions 11 and 14.** There is no spike gate: Vellum is the spec workflow by owner decision. Decision 14 (the
+   fallback if the spike fails) no longer applies.
+3. **Decision 16.** Vellum is rebuilt, not continued. The current `figentra/vellum` `main` is tagged
+   `legacy-2026-10-30`, which keeps the old packages (`@vellum/*` protocol, engine, storage, renderers, method,
+   plugins, CLI, MCP) readable at that tag; `main` is replaced by one package, `@stackra/vellum`, with one binary, `vellum`. The legacy
+   content is not developed further.
+4. **Decisions 13 and 15.** The spec gate, trace, parse and Linear link go to `vellum`, not to `@stackra/cli`; the
+   speckit skills and the Stackra preset move into Vellum, and core runs `vellum sync`. `stackra spec` calls `vellum`.
+5. **spec-kit stays underneath for now.** Vellum keeps the `.specify/` folder and wraps spec-kit, so
+   [0067](/adr/0067-spec-kit-is-the-sdlc), D15 of [0121](/adr/0121-sdlc-tooling-roles-and-linear) and the
+   `specify-cli` pin stay in force until a later `vellum migrate` moves repositories to `.vellum/` and an ADR retires
+   spec-kit.
+6. **Channel.** Vellum publishes to the Stackra registry only
+   ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)), never
+   npmjs; this replaces "from npmjs" in decision 2 and the npm channel of decision 1 for the developer packages.
+
+The other decisions stand. The Enforcement line "If STA-298 passes, `vellum verify` runs in the Quality Gate" now reads:
+planned — `vellum gate` runs in the Quality Gate once core switches to `vellum sync`.
 
 ## Supersedes and sources
 

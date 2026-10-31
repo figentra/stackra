@@ -1,0 +1,184 @@
+---
+title: "0500 — Four CLIs: stackra, runway, vellum, figentra"
+description: "Accepted · 2026-10-31"
+---
+
+{/* Stackra file contract. Purpose: ADR 0500, the four CLIs (`stackra`, `runway`, `vellum`, `figentra`): each CLI's scope, visibility, home repository and registry, the map of all 33 `tools/scripts` commands, the alias rule for `package.json` scripts, the move rules (behaviour kept, secret guards in the same commit), Vellum's `.specify/` folder, no Claude Code plugin, and the rollout order. Boundary: decision text only; the moves are built per CLI on their own branches after Stackra 0.1.1 publishes. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0282, 0453, 0461; plan notes/plans/clis-and-vellum.md. */}
+
+<Note>
+  Accepted 2026-10-31: the owner decided the four CLIs and the script map on 2026-10-31 ("all 33+
+  commands ... and test"; "figentra repo and start all"). Amends
+  [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) (decisions 4, 11, 13
+  to 16; see its amendment of 2026-10-31). Adds no registry scope: all three public CLIs are
+  `@stackra/*`
+  ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+  decision 10). Number: 0500, chosen clear of 0494 (used on two open branches) and of the gap 0495
+  to 0499.
+</Note>
+
+## Context
+
+Core holds 33 hand-written scripts in `tools/scripts/*.mjs`, and every product repository copies them, so the copies
+drift. CI and the product repositories run them through per-member loops. [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc)
+put the open operations into `@stackra/cli` but left Figentra-internal operations in `tools/scripts` and made Vellum the
+SDLC only if a spike (STA-298) passed. The old `figentra/vellum` is a large multi-package product that the spike never
+reached. [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine) made
+the Stackra registry the only channel, and [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)
+set what is free and what is Pro. On 2026-10-31 the owner decided that every command lives in exactly one of four CLIs,
+installed like any dependency, with `package.json` scripts as aliases and Turborepo tasks calling the CLIs.
+
+## Decision
+
+### The four CLIs
+
+1. **Four CLIs, one home each.**
+
+   | CLI        | Package           | Visibility | Home repository                                       | Registry read rule (0453 decision 10) |
+   | ---------- | ----------------- | ---------- | ----------------------------------------------------- | ------------------------------------- |
+   | `stackra`  | `@stackra/cli`    | public     | figentra/stackra `packages/developer/cli` (exists)    | `@stackra`, `open`                    |
+   | `runway`   | `@stackra/runway` | public     | figentra/stackra `packages/developer/runway` (exists) | `@stackra`, `open`                    |
+   | `vellum`   | `@stackra/vellum` | public     | figentra/vellum, a fresh `main` (decision 9)          | `@stackra`, `open`                    |
+   | `figentra` | `@figentra/cli`   | private    | figentra/figentra `packages/cli`                      | `@figentra`, `internal`               |
+
+2. **Stackra registry only.** All four publish to `https://npm.stackra.figentra.com/` from their repository's release
+   workflow through GitHub OIDC (0453 decision 6), never to npmjs and never to `npm.figentra.com`. The figentra/vellum
+   release workflow becomes a trusted publisher of the `@stackra` scope for `@stackra/vellum` only. The
+   `@figentra` `internal` row of 0453 decision 10 gains the figentra/figentra release workflow as a trusted publisher;
+   only Figentra's internal tokens read it, so `@figentra/cli` never reaches a customer.
+3. **Scope of each CLI.**
+   - `stackra`: the open developer operations of a Stackra project (scaffold, gen, validate, structure, checks and
+     ratchets). Its existing commands (`gen`, `new`, `check`, `verify`, `validate`, `structure`, `spec`, `docs`,
+     `code:fix`) stay.
+   - `runway`: deploy, promote and status for a Runway project.
+   - `vellum`: the spec workflow (decision 9): `init`, `sync`, `gate`, `trace`, `parse`, `linear`, later `migrate`.
+   - `figentra`: Figentra-internal operations: Linear, the bot identities, the merge gate, the secrets inbox,
+     delegation, the spend meter, the agent projection of this repository, brand pull and the guard port. Nothing in
+     it ships to a customer, and `@stackra/cli` never imports it.
+
+### The script map
+
+4. **All 33 scripts move.** Each script in `tools/scripts` maps to exactly one command:
+
+   | CLI      | Script (`tools/scripts/*.mjs`) | Command                                               |
+   | -------- | ------------------------------ | ----------------------------------------------------- |
+   | stackra  | `any-ratchet`                  | `stackra any-ratchet`                                 |
+   | stackra  | `app-native-deps`              | `stackra app-native-deps`                             |
+   | stackra  | `architecture-map`             | `stackra architecture-map`                            |
+   | stackra  | `catalogue-completeness`       | `stackra catalogue-completeness`                      |
+   | stackra  | `doc-standard`                 | `stackra doc-standard`                                |
+   | stackra  | `doctor`                       | `stackra doctor`                                      |
+   | stackra  | `duplicate-exports`            | `stackra duplicate-exports`                           |
+   | stackra  | `duplication`                  | `stackra duplication`                                 |
+   | stackra  | `eas-preflight`                | `stackra eas-preflight`                               |
+   | stackra  | `jsonc`                        | a module of `stackra validate`                        |
+   | stackra  | `package-cycles`               | `stackra cycles`                                      |
+   | stackra  | `repo-checks`                  | a module of `stackra validate`                        |
+   | stackra  | `scaffold`                     | merged into `stackra new`                             |
+   | stackra  | `skill-licences`               | `stackra skill-licences`                              |
+   | stackra  | `structure`                    | `stackra structure`                                   |
+   | stackra  | `validate-repository`          | `stackra validate`                                    |
+   | vellum   | `spec-gate`                    | `vellum gate`                                         |
+   | vellum   | `spec-linear`                  | `vellum linear`                                       |
+   | vellum   | `spec-parse`                   | `vellum parse`                                        |
+   | vellum   | `spec-trace`                   | `vellum trace`                                        |
+   | vellum   | `speckit-sync`                 | `vellum sync`                                         |
+   | runway   | `runway`                       | `runway deploy`, `runway promote`, `runway status`    |
+   | figentra | `agents-sync`                  | `figentra agents sync`                                |
+   | figentra | `ai-spend`                     | `figentra ai spend`                                   |
+   | figentra | `bot-gh`                       | `figentra bot gh` (with its `git` and `review` modes) |
+   | figentra | `bot-token`                    | `figentra bot token`                                  |
+   | figentra | `brand-pull`                   | `figentra brand pull`                                 |
+   | figentra | `delegate`                     | `figentra delegate`                                   |
+   | figentra | `guard-port`                   | `figentra guard-port`                                 |
+   | figentra | `linear`                       | `figentra linear`                                     |
+   | figentra | `linear-reconcile`             | `figentra linear-reconcile`                           |
+   | figentra | `pr-merge`                     | `figentra pr merge`                                   |
+   | figentra | `secrets-import`               | `figentra secrets import`                             |
+
+   That is 16 for `stackra`, 5 for `vellum`, 1 for `runway` and 11 for `figentra`. The data files beside the scripts
+   (`any-ratchet.baseline.yaml`, `duplication-baseline.yaml`) stay in each repository and the command reads them from
+   there. New stackra commands also include those the plan names for Turborepo (`stackra check` tasks per member).
+
+5. **What stays in each repository.** Its specs (`.agents/specs/`), its installed `.specify/` folder, its constitution,
+   its baselines, and its repository facts the validator reads. A repository keeps no copy of a moved script.
+
+### How a command moves
+
+6. **`package.json` scripts stay as one-line aliases.** Every moved command keeps its root script name, and the script
+   becomes one call of the CLI, with the same wrapper it had: `"runway": "runway"`,
+   `"linear": "infisical run --env=dev --path=/agents --silent -- figentra linear"`. Turborepo tasks call the CLIs
+   directly. No alias holds logic, a pipe or a loop.
+7. **A moved command keeps its behaviour, tests and output.** The script body becomes the command; flags, exit codes,
+   stdout and stderr do not change in the move, and its `__tests__` move with it into the CLI package. Behaviour changes
+   come after, in their own commits. Before a move lands, the command runs once on the ci-box against the old script's
+   output, and the full core gate passes.
+8. **Secret guards change in the same commit.** `bot-token`, `secrets-import`, `linear` and the `infisical run`
+   wrappers are matched by `.agents/hooks/_rules.mjs` and by the OpenCode guard (`.opencode/plugins/guard/decide.ts`).
+   A commit that moves any of them, or changes its alias, updates both guards and their tests in that same commit, and
+   `pnpm test:hooks` passes. No agent reads a secret value at any point of the move.
+
+### Vellum
+
+9. **Vellum is the spec workflow, fresh.** The current `figentra/vellum` `main` is tagged `legacy-2026-10-30`, then
+   `main` is replaced by one package with one binary. The Stackra preset (`.specify/presets/stackra`), the spec scripts
+   of decision 4, the `speckit-*` skills and `notes/sdd-sdlc-plan.md` move into it. Core then runs `vellum sync`
+   instead of `speckit-sync.mjs`.
+10. **`.specify/` stays for now.** spec-kit's `specify` CLI and the ten speckit skills expect it, so Vellum reads and
+    writes `.specify/` while it wraps spec-kit. When Vellum replaces spec-kit, one `vellum migrate` command moves a
+    repository from `.specify/` to `.vellum/`; until then nothing writes `.vellum/`.
+11. **No Claude Code plugin for now.** `vellum sync` writes skills and commands into `.agents/`, and the repository's
+    agent projection (`figentra agents sync` here, `stackra agents sync` in a customer project) renders them into
+    `.claude/` and `.opencode/`, so both agents work. A plugin can come later, for outside users, through its own ADR.
+12. **`stackra spec` stays a thin alias** that calls `vellum` with the same arguments, until the owner decides to keep
+    or remove it.
+
+### Rollout
+
+13. **Order.** The four CLI builds run in parallel, one helper per CLI, each on its own worktree and branch, each gated
+    on a ci-box, and they start after Stackra 0.1.1 publishes:
+    1. this ADR and the amendment of 0282;
+    2. `stackra`: the new commands, with Turborepo tasks calling them (on the `chore/turbo-tasks` gen work);
+    3. `vellum`: the legacy tag, the fresh skeleton, then the preset, scripts and skills; core switches to `vellum sync`;
+    4. `runway`: a binary in the existing package; `pnpm runway` becomes an alias;
+    5. `figentra`: the package in figentra/figentra, with the guards updated in the same change (decision 8).
+
+    Then the repositories switch to the published CLIs, in this order: stackra-template, os, commerce, stackra-pro, then
+    the nine `.next` repositories (academorix, juristra, organza, velora, mezzora, jute, figentra, pay, tamo), each
+    together with the turbo `gen` recipe. A repository deletes its copied scripts in the commit that adds the aliases.
+
+## Consequences
+
+- One fix to a command reaches every repository through a version bump; the copies stop drifting.
+- Four packages carry release checks and changesets, and two more repositories (figentra/vellum, figentra/figentra)
+  need release workflows trusted by the registry.
+- The secret guards depend on command names; every rename is a guard change, which decision 8 makes explicit.
+- Customer projects lose nothing: everything they ran is in `stackra`, `runway` or `vellum`; only Figentra-internal
+  operations move to the private CLI.
+- Vellum wraps spec-kit until `vellum migrate`, so [0067](/adr/0067-spec-kit-is-the-sdlc) and the `specify-cli` pin
+  stay in force for now.
+- Chore: the owner tags `legacy-2026-10-30` in figentra/vellum before `main` is replaced.
+
+## Enforcement
+
+- `pnpm test:hooks` (`.agents/hooks/__tests__/*.test.mjs`, `.opencode/plugins/guard/__tests__/*.test.ts`) runs the
+  guard tests that decision 8 updates with each move.
+- The registry refuses a publish from a workflow that is not the scope's trusted publisher, and refuses unknown scopes
+  (0453 decisions 6 and 10).
+- planned — a validator check in `stackra validate` that fails when a root `package.json` script for a moved command is
+  more than one CLI call (decision 6), or when `tools/scripts/` holds a script decision 4 has moved.
+- planned — a packed-tarball test of `@stackra/cli`, `@stackra/runway` and `@stackra/vellum` that fails if a `figentra`
+  command (decision 3) is present.
+- planned — a check that every package of decision 1 has `publishConfig.registry` set to
+  `https://npm.stackra.figentra.com/`.
+- planned — the parity run of decision 7 as a ci-box job per moved command; until it exists, the run is a manual gate
+  step recorded in the PR.
+- Nothing checks the `legacy-2026-10-30` tag or the rollout order; they are owner and lane steps tracked in Linear.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) decisions 4,
+11, 13, 14, 15 and 16. Related: [0067](/adr/0067-spec-kit-is-the-sdlc), [0083](/adr/0083-npm-scopes-and-cli-names),
+[0121](/adr/0121-sdlc-tooling-roles-and-linear),
+[0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine),
+[0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers). Sources:
+owner decisions in chat, 2026-10-31; plan `notes/plans/clis-and-vellum.md` (decisions and the full script map).
