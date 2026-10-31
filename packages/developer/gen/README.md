@@ -460,6 +460,11 @@ in `.stackra/encore` (what `stackra dev` starts) finds its app (ADR 0091 decisio
 `encore_app_missing` rather than invent one. Any run refuses an `encore.app` at the member root or the repository root
 (`encore_app_stray`, ADR 0029): gen writes the only one (STA-1322).
 
+A service's full run also refuses `queue_unprovisioned` when an environment under `environments` in its `runway.yaml`
+has no `queues.<name>` entry for a queue its job actions run on (`default` aside, the shared pool), so a job never runs
+on a queue without its visibility timeout and dead-letter queue. A member with no runway file or no environment is not
+deployed, so nothing is refused (STA-1727).
+
 For a service, gen writes the first parts of the Encore app (ADR 0148): `.stackra/encore/<member>/cron.ts` holds one
 `CronJob` per action whose `job` has a `cron` (its endpoint calls `SchedulerService.fire(<locked key>)`; ids by
 `cronJobId`, which `encoreCronJobs()` also calls) and the stored schedules' minute tick; `.stackra/encore/<member>/queues.ts`

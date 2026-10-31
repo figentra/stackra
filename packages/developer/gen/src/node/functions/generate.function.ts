@@ -22,6 +22,8 @@
  *           `.stackra/site/`, and its manifest pass writes nothing. A service's full run also writes
  *           `.stackra/encore/encore.app` from the root runway's `providers.encore.app` (`encore_app_missing` without
  *           it), and any run refuses an `encore.app` at the member or repository root (`encore_app_stray`, STA-1322).
+ *           A service's full run also refuses a job queue its `runway.yaml` leaves out of an environment
+ *           (`queue_unprovisioned`, STA-1727).
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
  *           stackra-248) and removes any `.sql` file there it did not produce; `--check` reports a stale, missing or
  *           leftover one.
@@ -47,6 +49,7 @@ import { compileMigrations } from "#node/functions/compile-migrations.function";
 import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
+import { runwayQueues } from "#node/functions/runway-queues.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
 
 /** The committed manifest at the member root. */
@@ -237,7 +240,12 @@ export async function generate(
     ir.layout === "service" && options.pass === undefined
       ? await compileMigrations(root, ir)
       : { files: [], errors: [] };
-  const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors];
+  // Every job queue but `default` is provisioned in each environment of the service's runway (STA-1727).
+  const queues =
+    ir.layout === "service" && options.pass === undefined
+      ? runwayQueues(root, result.manifest)
+      : [];
+  const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];
   let files = [...result.files, ...encore.files, ...migrations.files];
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
