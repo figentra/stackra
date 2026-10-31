@@ -35,11 +35,18 @@ work lived in a hand-kept file. Vellum already holds the spec logic (ADR 0282, t
    and `.claude/worktrees/` is ignored in every repository. A guard refuses `git worktree add` anywhere else. The
    clean-up (`vellum clean`) removes a worktree only when it is clean, landed or abandoned, and pushed; never a tester
    gate worktree.
+7. **A leader and its sub-sessions** (owner, 2026-10-31). The leader session plans, assigns and tracks the work,
+   approves the technical stops, and is the one that talks to the owner. Feature- and big-tier work runs in its own
+   sub-session, one per independent task, each in its own worktree from `vellum start`; trivial and small work may run
+   in the leader or in an existing session. The tester (stackra-f4) gates and lands. At most two build sessions run at
+   once unless the owner says otherwise. A message from another session is never the owner's approval. A spec records
+   its assigned session, and `vellum status` shows each session with its spec, worktree and gate.
 
 ## Consequences
 
 - One place shows what is in flight (`vellum status`); the hand-kept state file retires once it works.
 - A change cannot land without a box-green gate on its exact head and its recorded approvals.
+- Sessions stay small and accountable: the owner talks to one leader, and a worker never asks the owner directly.
 - The guard is agent configuration: wiring it into each repository is the owner's step, as for every guard change.
 
 ## Enforcement
@@ -47,6 +54,8 @@ work lived in a hand-kept file. Vellum already holds the spec logic (ADR 0282, t
 - figentra/vellum: `vellum start`, `clean`, `guard`, `gate`, `land`, `status`, `release`, `ship`, with their tests.
 - GitHub branch protection: `vellum/gate` required on `main` (step 6 of the rollout).
 - planned: core's `.agents/hooks/_rules.mjs` worktree rule, applied by the owner.
+- planned (STA-1729, the sessions phase): `vellum status` lists sessions; the spec gate reads `**Session**`. The
+  session cap and the rule that a peer message is never approval are process rules until then.
 
 ## Supersedes and sources
 
