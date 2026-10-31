@@ -22,7 +22,7 @@ export type StartupRecord = {
   readonly preset?: string;
   /** The default and enabled locales. */
   readonly locales: { readonly default: string; readonly enabled: readonly string[] };
-  /** Public flags. */
+  /** Public flags the shell reads, such as `canary` for a page on a canary release. */
   readonly flags?: Readonly<Record<string, boolean>>;
   /** The shell line's major and the version serving the page. */
   readonly shell: { readonly major: number; readonly version: string };

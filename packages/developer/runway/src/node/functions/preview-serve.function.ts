@@ -65,10 +65,11 @@ function sendFile(response: ServerResponse, folder: string, name: string): void 
 }
 
 /** The whole request body. */
-async function bodyOf(request: IncomingMessage): Promise<Buffer> {
+async function bodyOf(request: IncomingMessage): Promise<Uint8Array> {
   const chunks: Buffer[] = [];
   for await (const chunk of request) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks);
+  // A plain Uint8Array view: fetch's BodyInit types take it, not Node's Buffer.
+  return new Uint8Array(Buffer.concat(chunks));
 }
 
 /**
