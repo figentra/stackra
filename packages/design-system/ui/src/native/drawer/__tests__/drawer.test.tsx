@@ -26,6 +26,7 @@ import type { DrawerProps } from "#native/drawer/drawer.props";
 import type { DrawerTitleProps } from "#native/drawer/drawer-title.props";
 import { ModalBody } from "#native/modal/modal-body";
 import { ModalFooter } from "#native/modal/modal-footer";
+import { SheetBackdropContext } from "#native/sheet/sheet-backdrop-context";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));
@@ -324,5 +325,22 @@ describe("Drawer (native)", () => {
     expect(onChange).toHaveBeenCalledWith(1, 200, 0);
     rerender(<Drawer snapPoints={["50%"]}>x</Drawer>);
     expect(propsOf("content")["handleComponent"]).toBeUndefined();
+  });
+
+  it("draws the backdrop a Sheet asks for: the blur overlay, a clear one, or the scrim by default", () => {
+    render(<Drawer placement="bottom">x</Drawer>);
+    expect(propsOf("overlay")["variant"]).toBeUndefined();
+    render(
+      <SheetBackdropContext value="blur">
+        <Drawer placement="bottom">x</Drawer>
+      </SheetBackdropContext>,
+    );
+    expect(propsOf("overlay")["variant"]).toBe("blur");
+    render(
+      <SheetBackdropContext value="transparent">
+        <Drawer placement="bottom">x</Drawer>
+      </SheetBackdropContext>,
+    );
+    expect(propsOf("overlay")["className"]).toBe("bg-transparent");
   });
 });

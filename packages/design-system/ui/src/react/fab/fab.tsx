@@ -52,6 +52,8 @@ export function Fab({
   defaultOpen,
   onOpenChange,
   className,
+  shortcut,
+  shortcutId,
   ...rest
 }: FabProps): ReactElement {
   const hasDial = actions !== undefined && actions.length > 0;
@@ -86,7 +88,7 @@ export function Fab({
     onPress: press,
     className: "pointer-events-auto rounded-[var(--radius-pill)] shadow-overlay",
     ...(hasDial ? { "aria-expanded": open, "aria-controls": dialId } : {}),
-    ...omitUndefined({ isDisabled }),
+    ...omitUndefined({ isDisabled, shortcut, shortcutId }),
   };
   const isStart = placement === "bottom-start";
 

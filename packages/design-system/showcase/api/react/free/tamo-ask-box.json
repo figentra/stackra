@@ -1,0 +1,81 @@
+{
+  "generatedFrom": {
+    "hash": "e056fb6f657ecbbc",
+    "propsFiles": ["ui/src/react/tamo-ask-box/tamo-ask-box.props.ts"]
+  },
+  "importLine": "import { TamoAskBox } from \"@stackra/ui/react\";",
+  "key": "free/tamo-ask-box",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Sends the words; resolves with the proposal, or `null` when there is nothing to propose.",
+          "name": "onAsk",
+          "required": true,
+          "source": "stackra",
+          "type": "(text: string, signal: AbortSignal) => Promise<TProposal | null>"
+        },
+        {
+          "description": "Called with the proposal when the person applies it.",
+          "name": "onApply",
+          "required": true,
+          "source": "stackra",
+          "type": "(proposal: TProposal) => void"
+        },
+        {
+          "description": "Called when the person discards the proposal.",
+          "name": "onDiscard",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "TamoAskBox",
+      "props": [
+        {
+          "description": "Draws the proposal under the box.",
+          "name": "renderProposal",
+          "required": true,
+          "source": "stackra",
+          "type": "(proposal: TProposal) => ReactNode"
+        },
+        {
+          "description": "The box's name. Defaults to \"Ask Tamo\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The hint inside the empty box. Defaults to \"Ask in your own words\".",
+          "name": "placeholder",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True for a multi-line box (pasted text).",
+          "name": "isMultiline",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to put the focus in the box when it mounts (it opened in a popover the person asked for).",
+          "name": "isAutoFocus",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Classes added to the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

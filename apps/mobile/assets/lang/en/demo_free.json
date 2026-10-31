@@ -4945,5 +4945,28 @@
       "body": "كتان خفيف يناسب أيام الصيف، بقصّة واسعة وأكمام مريحة. Machine wash at 30°C.",
       "item": "متوفرة بستة ألوان"
     }
+  },
+  "sheet": {
+    "basic": {
+      "open": "Open sheet",
+      "heading": "Filters",
+      "body": "Narrow the list down. Drag the sheet down to close it.",
+      "close": "Close",
+      "apply": "Apply"
+    },
+    "snap": {
+      "open": "Open at a peek",
+      "heading": "Order 1042",
+      "body": "It opens at a 240-point peek. Drag it up to the full height, or down past the peek to close it.",
+      "close": "Close"
+    },
+    "backdrop": {
+      "opaque": "Opaque",
+      "blur": "Blur",
+      "transparent": "Transparent",
+      "heading": "Backdrop",
+      "body": "The screen behind stays blocked whatever the backdrop looks like.",
+      "close": "Close"
+    }
   }
 }

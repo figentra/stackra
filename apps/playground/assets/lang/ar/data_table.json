@@ -43,5 +43,8 @@
   "view_all": "كل الطلبات",
   "view_unpaid": "غير المدفوعة",
   "views_tabs_label": "طرق عرض الطلبات كتبويبات",
-  "views_chips_label": "طرق عرض الطلبات كشرائح"
+  "views_chips_label": "طرق عرض الطلبات كشرائح",
+  "tamo_label": "الطلبات",
+  "tamo_screen": "الطلبات",
+  "tamo_hint": "حدّد صفوفًا، ثم اضغط «اسأل تامو»."
 }

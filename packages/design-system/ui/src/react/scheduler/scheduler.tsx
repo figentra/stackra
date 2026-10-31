@@ -10,6 +10,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0060 (right-to-left); WCAG 2.2 SC 1.3.1, 2.4.6 and 4.1.2; STA-1371
  *          (gap build, owner approval 2026-10-31).
  */
+import { STANDARD_SHORTCUTS } from "@stackra/shortcuts";
 import { cn } from "@heroui/react";
 import { useNumerals } from "@stackra/i18n/react";
 import { use, type ReactElement } from "react";
@@ -51,7 +52,14 @@ export function Scheduler({ className, ...props }: SchedulerProps): ReactElement
         <Heading level={2} type="h4" className="me-auto" aria-live="polite">
           {state.heading}
         </Heading>
-        <Button variant="outline" size="sm" onPress={state.goToday}>
+        {/* Shortcuts (ADR 0508): T today, Mod+Left and Right the period, mirrored right to left. */}
+        <Button
+          variant="outline"
+          size="sm"
+          onPress={state.goToday}
+          shortcut={STANDARD_SHORTCUTS["calendar.today"]}
+          shortcutId="calendar.today"
+        >
           {t(K.today)}
         </Button>
         <IconButton
@@ -59,14 +67,26 @@ export function Scheduler({ className, ...props }: SchedulerProps): ReactElement
           label={t(K.previous)}
           variant="ghost"
           size="sm"
-          onPress={() => state.move(-1)}
+          action={{
+            id: "calendar.previous",
+            label: t(K.previous),
+            shortcut: STANDARD_SHORTCUTS["calendar.previous"],
+            isDirectional: true,
+            run: () => state.move(-1),
+          }}
         />
         <IconButton
           icon="chevron-right"
           label={t(K.next)}
           variant="ghost"
           size="sm"
-          onPress={() => state.move(1)}
+          action={{
+            id: "calendar.next",
+            label: t(K.next),
+            shortcut: STANDARD_SHORTCUTS["calendar.next"],
+            isDirectional: true,
+            run: () => state.move(1),
+          }}
         />
         <SegmentedControl
           size="sm"

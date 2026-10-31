@@ -19,5 +19,13 @@
   "mod_enter": "Submit with Cmd or Ctrl plus Enter",
   "not_sent": "Nothing sent yet.",
   "refused": "Not sent: the email is not valid.",
-  "sent": "{count, plural, one {Sent # time, to {email}.} other {Sent # times, to {email}.}}"
+  "sent": "{count, plural, one {Sent # time, to {email}.} other {Sent # times, to {email}.}}",
+  "tamo_form": "New customer",
+  "tamo_name": "Full name",
+  "tamo_company": "Company",
+  "tamo_city": "City",
+  "tamo_notes": "Notes",
+  "tamo_paste": "Press Fill from text and paste:",
+  "tamo_sample": "Sara Al-Harbi\nCompany: Nakheel Trading\nCity: Riyadh",
+  "tamo_screen": "Customers"
 }

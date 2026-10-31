@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "9a3af91bd09a72c2",
+    "hash": "cb2c220009e82f72",
     "heroDoc": "vendor/heroui/native/text-field.json",
     "propsFiles": ["ui/src/native/text-field/text-field.props.ts"]
   },
@@ -47,6 +47,13 @@
         {
           "description": "True to fill the parent's width, false to size to the content. Defaults to true.",
           "name": "isFullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
+          "name": "ai",
           "required": false,
           "source": "stackra",
           "type": "boolean"

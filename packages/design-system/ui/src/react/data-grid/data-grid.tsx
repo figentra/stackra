@@ -57,6 +57,7 @@ import { CollectionPager } from "#react/data-table/collection-pager";
 import { CollectionPagerContext } from "#react/data-table/collection-pager-context";
 import { ColumnMenu } from "#react/data-table/column-menu";
 import { useCollection } from "#react/hooks/use-collection";
+import { useColumnDrag } from "#react/hooks/use-column-drag";
 import { useResizeHandle } from "#react/hooks/use-resize-handle";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Icon } from "#react/icon/icon";
@@ -474,7 +475,13 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
       return { position: "sticky", insetInlineEnd: endOffsets[index], zIndex: "var(--z-pinned)" };
     return {};
   };
-  const [dragged, setDragged] = useState<string | null>(null);
+  // A header dragged to another place: its copy follows the pointer and the columns slide to make room.
+  const columnDrag = useColumnDrag({
+    order: columns.map((column) => column.id),
+    isMovable: (columnId) => engine.columns.some((entry) => entry.id === columnId),
+    direction,
+    onMove: (columnId, index) => engine.moveColumn(columnId, index),
+  });
   const fillBounds = fill
     ? boundsOf(
         { row: range.top, column: range.start },
@@ -503,34 +510,15 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
               cellClass,
               alignOf(column),
               "relative gap-1 bg-surface-secondary",
-              dragged === column.id && "opacity-(--opacity-dimmed)",
+              columnDrag.dragged === column.id && "opacity-(--opacity-dimmed)",
             )}
             style={sticky(index)}
+            data-key={column.id}
             {...(hasTools
               ? {
                   draggable: true,
-                  onDragStart: (event: DragEvent<HTMLDivElement>) => {
-                    // oxlint-disable-next-line no-param-reassign -- the drag-and-drop contract is to set effectAllowed on the event
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData("text/plain", column.label);
-                    setDragged(column.id);
-                  },
-                  onDragEnd: () => setDragged(null),
-                  onDragOver: (event: DragEvent<HTMLDivElement>) => {
-                    if (dragged !== null && dragged !== column.id) event.preventDefault();
-                  },
-                  onDrop: (event: DragEvent<HTMLDivElement>) => {
-                    event.preventDefault();
-                    if (dragged === null || dragged === column.id) return;
-                    const box = event.currentTarget.getBoundingClientRect();
-                    const isStartHalf =
-                      event.clientX < box.left + box.width / 2 === (direction !== "rtl");
-                    const order = engine.columns
-                      .map((entry) => entry.id)
-                      .filter((entryId) => entryId !== dragged);
-                    engine.moveColumn(dragged, order.indexOf(column.id) + (isStartHalf ? 0 : 1));
-                    setDragged(null);
-                  },
+                  onDragStart: (event: DragEvent<HTMLDivElement>) =>
+                    columnDrag.beginNative(event, column.id, column.label),
                 }
               : {})}
           >
@@ -796,6 +784,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
             />
           </SaveBar>
         )}
+        {columnDrag.follower}
       </div>
     </IconRegistryProvider>
   );

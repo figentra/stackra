@@ -1,8 +1,11 @@
 {
   "generatedFrom": {
-    "hash": "cd86d96593e05c67",
+    "hash": "fbd8f7b64c29f3ff",
     "heroDoc": "vendor/heroui/react/text-field.json",
-    "propsFiles": ["ui/src/react/text-field/text-field.props.ts"]
+    "propsFiles": [
+      "ui/src/react/text-field/tamo-field-assist.props.ts",
+      "ui/src/react/text-field/text-field.props.ts"
+    ]
   },
   "importLine": "import { TextField } from \"@stackra/ui/react\";",
   "key": "free/text-field",
@@ -145,6 +148,13 @@
           "description": "True to fill the parent's width, false to size to the content. Defaults to true.",
           "name": "isFullWidth",
           "replaces": "fullWidth",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
+          "name": "ai",
           "required": false,
           "source": "stackra",
           "type": "boolean"
@@ -430,6 +440,55 @@
           "required": false,
           "source": "react-aria",
           "type": "GlobalDOMEvents"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Puts new text in the field.",
+          "name": "onChange",
+          "required": true,
+          "source": "stackra",
+          "type": "(next: string) => void"
+        }
+      ],
+      "name": "TamoFieldAssist",
+      "props": [
+        {
+          "description": "The slot, already known to be on for this field.",
+          "name": "slot",
+          "required": true,
+          "source": "stackra",
+          "type": "TamoSlot"
+        },
+        {
+          "description": "The field's name, for the per-field setting and the task.",
+          "name": "field",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The field's text.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True for a text area: the button sits at the top end, and \"Continue writing\" is offered.",
+          "name": "isMultiline",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The input or text area.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
         }
       ]
     }

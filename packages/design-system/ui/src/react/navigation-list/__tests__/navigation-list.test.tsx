@@ -23,7 +23,7 @@ import { RouterProvider } from "#react/index";
 
 const ITEMS: readonly NavigationItem[] = [
   { id: "home", label: "Home", href: "/", icon: "house" },
-  { id: "orders", label: "Orders", href: "/orders", badge: 12, shortcut: "G then O" },
+  { id: "orders", label: "Orders", href: "/orders", badge: 12, shortcut: "g o" },
   {
     id: "settings",
     label: "Settings",
@@ -177,7 +177,8 @@ describe("NavigationList (web)", () => {
     render(<NavigationList items={ITEMS} />);
     expect(screen.queryByRole("tooltip")).toBeNull();
     focusByKeyboard(screen.getByRole("link", { name: /^Orders/ }));
-    expect(screen.getByRole("tooltip").textContent).toBe("G then O");
+    // The label, then the keys in HeroUI's Kbd (ADR 0508).
+    expect(screen.getByRole("tooltip").textContent).toBe("OrdersGO");
   });
 
   it("keeps the label as the name in the compact rail and shows it, with the shortcut, in a tooltip", () => {
@@ -185,7 +186,7 @@ describe("NavigationList (web)", () => {
     const link = screen.getByRole("link", { name: /^Orders/ });
     expect(link.querySelector(".sr-only")?.textContent).toBe("Orders");
     focusByKeyboard(link);
-    expect(screen.getByRole("tooltip").textContent).toBe("Orders (G then O)");
+    expect(screen.getByRole("tooltip").textContent).toBe("OrdersGO");
   });
 
   it("draws an entry with no icon as its first letter in the compact rail, hidden from screen readers", () => {

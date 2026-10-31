@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "0186c7bf948740e5",
+    "hash": "58a51dbf34128007",
     "propsFiles": ["ui/src/native/data-view/data-view.props.ts"]
   },
   "importLine": "import { DataView } from \"@stackra/ui/native\";",
@@ -144,6 +144,13 @@
           "required": false,
           "source": "stackra",
           "type": "ReactNode"
+        },
+        {
+          "description": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
+          "name": "ai",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "description": "Used to reference react managed views from native code.",

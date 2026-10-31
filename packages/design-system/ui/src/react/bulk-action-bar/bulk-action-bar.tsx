@@ -151,7 +151,10 @@ export function BulkActionBar({
                   isDisabled: action.isDisabled,
                   startIcon: action.icon,
                   label: name,
+                  // Registered while the bar is shown (ADR 0508).
+                  shortcut: action.shortcut,
                 })}
+                shortcutId={`bulk.${action.id}`}
               >
                 {action.label}
               </Button>

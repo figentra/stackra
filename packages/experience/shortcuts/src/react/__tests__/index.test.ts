@@ -17,8 +17,14 @@ describe("@stackra/shortcuts/react", () => {
     expect(Object.keys(react).sort()).toEqual([
       "ShortcutBindings",
       "ShortcutKeys",
+      "ShortcutOverlayScope",
+      "ShortcutProvider",
       "useRunShortcut",
       "useShortcut",
+      "useShortcutAction",
+      "useShortcutActions",
+      "useShortcutHint",
+      "useShortcutRegistry",
       "useShortcuts",
     ]);
   });

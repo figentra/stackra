@@ -72,7 +72,7 @@ describe("Drawer (web): slots", () => {
     // One close control: the Escape key cap is the close button itself.
     expect(kids).toHaveLength(3);
     expect(kids[2]?.getAttribute("aria-label")).toBe("Close, Esc");
-    expect(kids[2]?.textContent).toContain("esc");
+    expect(kids[2]?.textContent).toContain("Esc");
     const order = [...(screen.getByRole("dialog").children ?? [])].map((el) =>
       el.getAttribute("data-slot"),
     );
@@ -88,7 +88,7 @@ describe("Drawer (web): slots", () => {
         </Drawer.Header>
       </Drawer>,
     );
-    expect(screen.getByRole("button", { name: "Close" }).textContent).not.toContain("esc");
+    expect(screen.getByRole("button", { name: "Close" }).textContent).not.toContain("Esc");
     unmount();
     const second = render(
       <Drawer defaultOpen>
@@ -98,7 +98,7 @@ describe("Drawer (web): slots", () => {
         </Drawer.Header>
       </Drawer>,
     );
-    expect(screen.getByRole("button", { name: "Close, Esc" }).textContent).toContain("esc");
+    expect(screen.getByRole("button", { name: "Close, Esc" }).textContent).toContain("Esc");
     second.unmount();
     render(
       <Drawer defaultOpen>
@@ -109,12 +109,12 @@ describe("Drawer (web): slots", () => {
       </Drawer>,
     );
     expect(screen.queryByRole("button", { name: /Close/u })).toBeNull();
-    expect(screen.getByRole("dialog").textContent).not.toContain("esc");
+    expect(screen.getByRole("dialog").textContent).not.toContain("Esc");
   });
 
   it("hides the Esc hint when Escape does not close the drawer, and draws no back button on one layer", () => {
     render(<Layer title="Order" defaultOpen isKeyboardDismissDisabled />);
-    expect(screen.getByRole("dialog").textContent).not.toContain("esc");
+    expect(screen.getByRole("dialog").textContent).not.toContain("Esc");
     expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
   });
 

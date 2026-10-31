@@ -10,7 +10,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0060 (right-to-left); owner request 2026-10-29 (STA-1371).
  */
-import { Drawer as HeroDrawer, Kbd } from "@heroui/react";
+import { Drawer as HeroDrawer } from "@heroui/react";
 import {
   Children,
   cloneElement,
@@ -28,6 +28,7 @@ import { DrawerClose } from "#react/drawer/drawer-close";
 import type { DrawerCloseProps } from "#react/drawer/drawer-close.props";
 import { DrawerLayerContext } from "#react/drawer/drawer-layer-context";
 import type { DrawerHeaderProps } from "#react/drawer/drawer-header.props";
+import { ShortcutHint } from "#react/shortcut-hint/shortcut-hint";
 import { ViewStackContext } from "#react/view-stack/view-stack-context";
 
 /** Whether `child` is an element of `type`. */
@@ -82,9 +83,7 @@ export function DrawerHeader({
       ) : null}
       {/* No Close: the Escape hint alone, unless asked for none. */}
       {closes.length === 0 && layer?.isKeyboardDismissable && closeButton !== "none" ? (
-        <Kbd aria-hidden className="hidden pointer-fine:inline-flex">
-          <Kbd.Content>{"esc"}</Kbd.Content>
-        </Kbd>
+        <ShortcutHint keys="escape" isDecorative className="hidden pointer-fine:inline-flex" />
       ) : null}
       {closes}
     </HeroDrawer.Header>

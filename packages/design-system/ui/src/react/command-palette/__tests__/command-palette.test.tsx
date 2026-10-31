@@ -3,13 +3,15 @@
  * Purpose: proves the web CommandPalette: the hotkey (meta or ctrl with the key) opens and closes it, it lists the
  *          sections and their commands with descriptions and shortcuts, typing filters them and shows the empty
  *          state, choosing a command closes the palette and reports its id; `isOpen` controls it and `hotkey={false}`
- *          turns the shortcut off.
+ *          turns the shortcut off. The key runs through the shortcut registry of a `ShortcutProvider` (ADR 0508).
  * Boundary: jsdom with real HeroUI and React Aria; the theme CSS is not loaded, so roles and text are checked.
  * Runtime: browser
  * Governing contract: ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { ShortcutProvider } from "@stackra/shortcuts/react";
+import { act, fireEvent, render as renderBare, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 
 import type { CommandSection } from "#contracts/types/command-section.type";
 import { CommandPalette } from "#react/command-palette/command-palette";
@@ -25,9 +27,25 @@ const SECTIONS: readonly CommandSection[] = [
   },
 ];
 
-const hotkey = (key: string, init: KeyboardEventInit = { metaKey: true }) =>
+// The palette's key is registered with the shortcut registry, which the DesignSystemProvider mounts (ADR 0508).
+const render = (ui: ReactElement) => {
+  const view = renderBare(<ShortcutProvider>{ui}</ShortcutProvider>);
+  return {
+    ...view,
+    rerender: (next: ReactElement) => view.rerender(<ShortcutProvider>{next}</ShortcutProvider>),
+  };
+};
+
+const hotkey = (key: string, init: KeyboardEventInit = { ctrlKey: true }) =>
   act(() => {
-    window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...init }));
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key,
+        code: `Key${key.toUpperCase()}`,
+        bubbles: true,
+        ...init,
+      }),
+    );
   });
 
 describe("CommandPalette (web)", () => {
@@ -42,7 +60,7 @@ describe("CommandPalette (web)", () => {
     expect(screen.getByRole("dialog")).toBeTruthy();
     expect(screen.getByText("Go to")).toBeTruthy();
     expect(screen.getByText("All orders")).toBeTruthy();
-    expect(screen.getByText("G O")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "G, then O" })).toBeTruthy();
     expect(screen.getByRole("searchbox").getAttribute("placeholder")).toBe("Search commands");
     hotkey("k");
     expect(onOpenChange).toHaveBeenLastCalledWith(false);

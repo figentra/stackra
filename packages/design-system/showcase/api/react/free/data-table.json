@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "c40dbb1076c24882",
+    "hash": "669dc524258bc165",
     "propsFiles": [
       "ui/src/react/data-table/collection-row-panel.props.ts",
       "ui/src/react/data-table/column-menu.props.ts",
@@ -181,6 +181,13 @@
         {
           "description": "True to give each header the column tools: a menu (sort, add to sort, filter, pin, hide, group, summary, resize,\nmove), a resize handle and drag to reorder.",
           "name": "hasColumnTools",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
+          "name": "ai",
           "required": false,
           "source": "stackra",
           "type": "boolean"

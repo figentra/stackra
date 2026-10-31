@@ -39,5 +39,11 @@
     "total": "Total",
     "placed": "Placed",
     "gift_order": "Gift order"
+  },
+  "tamo": {
+    "label": "Orders",
+    "search": "Search orders",
+    "hint": "Press Ask Tamo and write: paid orders over 500, newest first",
+    "screen": "Orders"
   }
 }

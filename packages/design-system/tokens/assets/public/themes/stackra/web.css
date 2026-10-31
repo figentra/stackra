@@ -229,6 +229,8 @@
   --ease-toast-in: cubic-bezier(0.32, 0.72, 0, 1);
   --duration-toast-out: 300ms;
   --ease-toast-out: cubic-bezier(0.4, 0, 1, 1);
+  --duration-tamo-shimmer: 1600ms;
+  --ease-tamo-shimmer: linear;
   --default-transition-duration: var(--duration-fast);
   --default-transition-timing-function: var(--ease-fast);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
@@ -365,6 +367,13 @@
   --chart-3: oklch(0.4 0.15 300);
   --chart-4: oklch(0.65 0.15 55);
   --chart-5: oklch(0.54 0.18 355);
+  --tamo-glow-start: oklch(0.915 0.04 188.7);
+  --tamo-glow-mid: oklch(0.661 0.114 191.8);
+  --tamo-glow-end: oklch(0.423 0.073 192.1);
+  --tamo-shimmer: oklch(0.986 0.008 186.9);
+  --tamo-mark: oklch(0.661 0.114 191.8);
+  --tamo-mark-eyes: oklch(0.229 0.03 191.6);
+  --tamo-name: oklch(0.423 0.073 192.1);
   --floating-shadow: 0px 8px 24px -6px oklch(0.158 0.005 248 / 0.14), 0px 2px 6px -2px oklch(0.158 0.005 248 / 0.08);
   --material-ultra-thin-share: 0.4;
   --material-ultra-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-ultra-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
@@ -533,6 +542,13 @@
   --chart-3: oklch(0.6 0.17 300);
   --chart-4: oklch(0.8 0.14 60);
   --chart-5: oklch(0.68 0.17 355);
+  --tamo-glow-start: oklch(0.423 0.073 192.1);
+  --tamo-glow-mid: oklch(0.661 0.114 191.8);
+  --tamo-glow-end: oklch(0.756 0.116 191.4);
+  --tamo-shimmer: oklch(0.756 0.116 191.4);
+  --tamo-mark: oklch(0.661 0.114 191.8);
+  --tamo-mark-eyes: oklch(0.229 0.03 191.6);
+  --tamo-name: oklch(0.756 0.116 191.4);
   --floating-shadow: 0px 10px 30px -8px oklch(0 0 0 / 0.55);
   --material-ultra-thin-share: 0.45;
   --material-ultra-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-ultra-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
@@ -1145,6 +1161,7 @@
     --duration-overlay-out: 0ms;
     --duration-toast-in: 0ms;
     --duration-toast-out: 0ms;
+    --duration-tamo-shimmer: 0ms;
     --spring-gentle-duration: 0ms;
     --spring-snappy-duration: 0ms;
     --spring-bouncy-duration: 0ms;
@@ -1186,6 +1203,7 @@ html[data-motion="none"] {
   --duration-overlay-out: 0ms;
   --duration-toast-in: 0ms;
   --duration-toast-out: 0ms;
+  --duration-tamo-shimmer: 0ms;
   --spring-gentle-duration: 0ms;
   --spring-snappy-duration: 0ms;
   --spring-bouncy-duration: 0ms;
@@ -1518,6 +1536,12 @@ html[data-motion="none"] *::after {
     box-shadow: inset 0 0 0 1px var(--material-role-modal-edge), inset 0 1px 0 0 var(--material-role-modal-rim), var(--material-role-modal-specular), var(--material-role-modal-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-modal-elevation);
   }
   :root:is([data-material="frosted"], [data-material="glass"], [data-material="liquid"]) .drawer__dialog {
+    background-color: var(--material-role-sheet-fill);
+    -webkit-backdrop-filter: var(--material-role-sheet-filter);
+    backdrop-filter: var(--material-role-sheet-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-sheet-edge), inset 0 1px 0 0 var(--material-role-sheet-rim), var(--material-role-sheet-specular), var(--material-role-sheet-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-sheet-elevation);
+  }
+  :root:is([data-material="frosted"], [data-material="glass"], [data-material="liquid"]) .sheet__dialog {
     background-color: var(--material-role-sheet-fill);
     -webkit-backdrop-filter: var(--material-role-sheet-filter);
     backdrop-filter: var(--material-role-sheet-filter);

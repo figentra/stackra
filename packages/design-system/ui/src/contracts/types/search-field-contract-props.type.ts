@@ -28,4 +28,6 @@ export interface SearchFieldContractProps extends FieldContractProps<string> {
   readonly onSubmit?: ((value: string) => void) | undefined;
   /** Called after the user clears the text with the clear button. */
   readonly onClear?: (() => void) | undefined;
+  /** A key binding that moves focus to the field from anywhere on the page (`/`), shown as a key hint. Web only (ADR 0508). */
+  readonly shortcut?: string | undefined;
 }

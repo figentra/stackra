@@ -24,6 +24,7 @@ export const FREE_FILTER_BAR: ComponentEntry = {
     { id: "live", platforms: ["react"] },
     { id: "applied", platforms: ["native"] },
     { id: "refused", platforms: ["native"] },
+    { id: "tamo", platforms: ["react"] },
   ],
   related: ["free/data-table", "free/chip", "free/list"],
   tokens: ["color.surface", "radius.base", "color.border"],

@@ -19,5 +19,9 @@
   "live_description": "We use it to send the invoice.",
   "live_error": "Enter an email address with an at sign.",
   "live_empty": "Nothing typed yet.",
-  "live_typed": "{count, plural, one {You typed # character: {text}} other {You typed # characters: {text}}}"
+  "live_typed": "{count, plural, one {You typed # character: {text}} other {You typed # characters: {text}}}",
+  "tamo_label": "Message to the customer",
+  "tamo_text": "Your order has shipped and will arrive on Thursday.",
+  "tamo_hint": "Hover over or focus the field to see Ask Tamo.",
+  "tamo_screen": "Order 2048"
 }

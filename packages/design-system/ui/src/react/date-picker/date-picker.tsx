@@ -33,7 +33,7 @@ import {
   Label,
 } from "@heroui/react";
 import { getLocalTimeZone, today as todayIn, type CalendarDate } from "@internationalized/date";
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { composeRenderProps, type DateValue } from "react-aria-components";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -44,6 +44,8 @@ import { DateCalendar } from "#react/date-picker/date-calendar";
 import { DatePresets } from "#react/date-picker/date-presets";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { DatePickerProps } from "#react/date-picker/date-picker.props";
+import { TamoDateAsk } from "#react/date-picker/tamo-date-ask";
+import { useTamo } from "#react/hooks/use-tamo";
 
 /**
  * A segment and the calendar button are at least 24 CSS pixels each way: HeroUI's segment is about 20 pixels high and,
@@ -86,9 +88,26 @@ export function DatePicker({
   onChange,
   presets,
   today,
+  ai,
+  value,
+  defaultValue,
   ...rest
 }: DatePickerProps): ReactElement {
   const t = useUiText();
+  const tamo = useTamo({ field: rest.name }, ai !== false && !isReadOnly);
+  // The picker holds its own day and open state, so a day Tamo proposes can be applied and the popover closed.
+  const [ownValue, setOwnValue] = useState<CalendarDate | null>(defaultValue ?? null);
+  const [ownOpen, setOwnOpen] = useState(defaultOpen ?? false);
+  const day = value === undefined ? ownValue : value;
+  const setOpen = (next: boolean) => {
+    if (isOpen === undefined) setOwnOpen(next);
+    onOpenChange?.(next);
+  };
+  const pick = (date: CalendarDate | null) => {
+    if (value === undefined) setOwnValue(date);
+    onChange?.(date);
+  };
+  const from = today ?? todayIn(getLocalTimeZone());
   const calendarButtonLabel = calendarButtonLabelProp ?? t(UI_KEYS.ui.date_picker.calendar);
   // The picker hands its bounds to the calendar through context, but HeroUI's calendar always passes bounds of its own
   // (1900 to 2099) as props, and props win over context, so the calendar must be given the bounds itself.
@@ -98,18 +117,16 @@ export function DatePicker({
       <HeroDatePicker
         {...omitUndefined(rest)}
         // Shown in the Hijri calendar, React Aria hands out Hijri dates; the contract's value stays Gregorian.
-        {...(onChange
-          ? { onChange: (date: CalendarDate | null) => onChange(toGregorian(date)) }
-          : {})}
+        value={day}
+        onChange={(date: CalendarDate | null) => pick(toGregorian(date))}
         {...bounds}
         {...omitUndefined({
           isDateUnavailable: asDateValueCallback(isDateUnavailable),
           isReadOnly,
-          isOpen,
-          defaultOpen,
-          // A read-only picker never opens, so nothing is reported either.
-          onOpenChange: isReadOnly ? undefined : onOpenChange,
         })}
+        isOpen={isOpen ?? ownOpen}
+        // A read-only picker never opens, so nothing is reported either.
+        {...(isReadOnly ? {} : { onOpenChange: setOpen })}
         // The button is off when read-only, but React Aria's Alt+Arrow shortcut would still open a calendar that refuses
         // every day.
         {...(isReadOnly ? { isOpen: false } : {})}
@@ -133,14 +150,27 @@ export function DatePicker({
         {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
         {/* A popover with no dialog inside is the dialog itself, and a dialog needs a name. */}
         <HeroDatePicker.Popover aria-label={calendarButtonLabel}>
-          {presets?.length ? (
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <DatePresets presets={presets} today={today ?? todayIn(getLocalTimeZone())} />
+          <div className="grid gap-3">
+            {tamo ? (
+              <TamoDateAsk
+                slot={tamo}
+                isRange={false}
+                today={from}
+                onPick={(date) => {
+                  pick(date);
+                  setOpen(false);
+                }}
+              />
+            ) : null}
+            {presets?.length ? (
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <DatePresets presets={presets} today={from} />
+                <DateCalendar {...bounds} />
+              </div>
+            ) : (
               <DateCalendar {...bounds} />
-            </div>
-          ) : (
-            <DateCalendar {...bounds} />
-          )}
+            )}
+          </div>
         </HeroDatePicker.Popover>
       </HeroDatePicker>
     </CalendarLocale>

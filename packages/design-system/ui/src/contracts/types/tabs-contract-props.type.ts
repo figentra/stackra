@@ -34,4 +34,10 @@ export interface TabsContractProps
   readonly overflow?: "scroll" | "menu" | undefined;
   /** Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web. */
   readonly onClose?: ((id: string) => void) | undefined;
+  /**
+   * True binds Mod+1 to Mod+9 to the first nine usable tabs while the page has no overlay open (ADR 0508). Off by
+   * default: browsers use Mod+1 to Mod+9 to switch their own tabs, and a page with several tab rows would bind them
+   * all; turn it on for the one main tab row of a page. Native ignores it.
+   */
+  readonly hasNumberShortcuts?: boolean | undefined;
 }

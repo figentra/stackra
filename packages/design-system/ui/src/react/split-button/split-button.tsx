@@ -43,6 +43,8 @@ export function SplitButton({
   isOpen,
   defaultOpen,
   onOpenChange,
+  shortcut,
+  shortcutId,
   ...rest
 }: SplitButtonProps): ReactElement {
   const [ownOpen, setOwnOpen] = useState(defaultOpen ?? false);
@@ -52,7 +54,15 @@ export function SplitButton({
     <ButtonGroup {...rest} data-slot="split-button">
       <Button
         variant={variant}
-        {...omitUndefined({ size, isDisabled, isLoading, onPress, startIcon })}
+        {...omitUndefined({
+          size,
+          isDisabled,
+          isLoading,
+          onPress,
+          startIcon,
+          shortcut,
+          shortcutId,
+        })}
       >
         {children}
       </Button>

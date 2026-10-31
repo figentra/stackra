@@ -15,6 +15,8 @@
  *          Motion animation below it drops its movement at `reduced` and `none`. The accessibility modes the user
  *          turned on (`accessibility`: more contrast, reduced transparency, a text scale, the safe chart palette) go
  *          on `<html>` as `data-contrast`, `data-transparency`, `data-text-scale` and `data-chart-palette`.
+ *          It mounts the `ShortcutProvider` of @stackra/shortcuts (the shortcut settings, the page direction, the
+ *          permission check) and the `?` cheat sheet, so every shortcut-aware component below it binds its keys (ADR 0508).
  * Boundary: applies the scheme and direction; the theme's and the brands' CSS are the app's (`@stackra/tokens/themes/*`,
  *           brand layers keyed on `data-brand`), and so is playing the transition (`useDesignSystem().transition`).
  * Runtime: browser
@@ -22,6 +24,7 @@
  */
 import { intlLocale, NumberingSystem } from "@stackra/i18n";
 import { useNumerals } from "@stackra/i18n/react";
+import { ShortcutProvider } from "@stackra/shortcuts/react";
 import { MotionConfig } from "motion/react";
 import { I18nProvider } from "react-aria-components";
 import { useLayoutEffect, useSyncExternalStore, type ReactElement } from "react";
@@ -31,6 +34,7 @@ import type { AccessibilityPreferences } from "#contracts/types/accessibility-pr
 import type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
 import { directionOf } from "#core/functions/direction-of.function";
 import { useDesignSystemState } from "#react/hooks/use-design-system-state";
+import { ShortcutCheatSheet } from "#react/shortcut-cheat-sheet/shortcut-cheat-sheet";
 
 import { DesignSystemContext } from "./design-system-context";
 
@@ -83,6 +87,10 @@ const ariaLocaleOf = (locale: string, direction: Direction) => {
 export function DesignSystemProvider({
   children,
   accessibility,
+  shortcuts,
+  onShortcutsChange,
+  canRunShortcut,
+  hasShortcutCheatSheet = true,
   ...props
 }: DesignSystemProviderProps): ReactElement {
   const systemReduced = useSyncExternalStore(subscribeToSystemMotion, isSystemReduced, () => false);
@@ -166,7 +174,15 @@ export function DesignSystemProvider({
         locale={numerals === NumberingSystem.User ? ariaLocale : intlLocale(ariaLocale, numerals)}
       >
         <MotionConfig reducedMotion={resolvedMotion === "full" ? "never" : "always"}>
-          {children}
+          <ShortcutProvider
+            settings={shortcuts}
+            onSettingsChange={onShortcutsChange}
+            direction={currentDirection}
+            can={canRunShortcut}
+          >
+            {children}
+            {hasShortcutCheatSheet ? <ShortcutCheatSheet /> : null}
+          </ShortcutProvider>
         </MotionConfig>
       </I18nProvider>
     </DesignSystemContext>

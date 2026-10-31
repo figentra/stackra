@@ -12,6 +12,7 @@
 // @vitest-environment jsdom
 // @covers sta-350:FR-082 sta-350:FR-083 sta-350:FR-086 sta-350:FR-087
 import { fireEvent, render, screen } from "@testing-library/react";
+import { I18nProvider } from "react-aria-components";
 
 import { Switch } from "#react/switch/switch";
 import type { SwitchProps } from "#react/switch/switch.props";
@@ -92,5 +93,21 @@ describe("Switch (web)", () => {
     const children: SwitchProps = { children: "x" };
     expectTypeOf<SwitchProps["value"]>().toEqualTypeOf<boolean | undefined>();
     expect([selected, children]).toHaveLength(2);
+  });
+
+  it("marks its root selected right to left too, the attribute the theme's on and off looks key on", () => {
+    const { container, rerender } = render(
+      <I18nProvider locale="ar">
+        <Switch label="مفعّل" value />
+      </I18nProvider>,
+    );
+    const root = container.querySelector(".switch");
+    expect(root?.getAttribute("data-selected")).toBe("true");
+    rerender(
+      <I18nProvider locale="ar">
+        <Switch label="مفعّل" value={false} />
+      </I18nProvider>,
+    );
+    expect(root?.hasAttribute("data-selected")).toBe(false);
   });
 });

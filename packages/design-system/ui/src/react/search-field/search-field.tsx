@@ -12,11 +12,13 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0055; ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers).
  */
-import type { ReactElement } from "react";
+import { type ReactElement, useRef } from "react";
 import { Description, FieldError, Label, SearchField as HeroSearchField } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { plainTextOf } from "#react/hooks/plain-text-of.function";
+import { useActionShortcut } from "#react/hooks/use-action-shortcut";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Spinner } from "#react/spinner/spinner";
 import type { SearchFieldProps } from "#react/search-field/search-field.props";
@@ -44,9 +46,18 @@ export function SearchField({
   onSubmit,
   onClear,
   name,
+  shortcut,
   ...rest
 }: SearchFieldProps): ReactElement {
   const t = useUiText();
+  const input = useRef<HTMLInputElement>(null);
+  const keys = useActionShortcut({
+    shortcut,
+    shortcutId: "search.focus",
+    label: plainTextOf(label) ?? placeholder ?? t(UI_KEYS.ui.shortcuts.focus_search),
+    run: () => input.current?.focus(),
+    isDisabled,
+  });
   const clearLabel = clearLabelProp ?? t(UI_KEYS.ui.search_field.clear);
   return (
     <HeroSearchField
@@ -67,7 +78,7 @@ export function SearchField({
       })}
     >
       {label ? <Label>{label}</Label> : null}
-      <HeroSearchField.Group>
+      <HeroSearchField.Group {...(keys.badge === null ? {} : { className: "relative" })}>
         {isLoading ? (
           <HeroSearchField.SearchIcon>
             <Spinner size="sm" tone="muted" />
@@ -76,11 +87,14 @@ export function SearchField({
           <HeroSearchField.SearchIcon />
         )}
         <HeroSearchField.Input
+          ref={keys.attach(input)}
           {...omitUndefined({ placeholder })}
           // On the input: React Aria's root forwards no `aria-*`, and the input is what a screen reader is on.
           {...(isLoading ? { "aria-busy": true } : {})}
         />
         {/* `size-6`: HeroUI's `size-5` is 20px, under the 24px minimum target of WCAG 2.2 SC 2.5.8. */}
+        {keys.hint}
+        {keys.badge}
         <HeroSearchField.ClearButton aria-label={clearLabel} className="size-6" />
       </HeroSearchField.Group>
       {description ? <Description>{description}</Description> : null}

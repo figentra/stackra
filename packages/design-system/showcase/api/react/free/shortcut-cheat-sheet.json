@@ -1,0 +1,40 @@
+{
+  "generatedFrom": {
+    "hash": "5a456f21eb30ce11",
+    "propsFiles": ["ui/src/react/shortcut-cheat-sheet/shortcut-cheat-sheet.props.ts"]
+  },
+  "importLine": "import { ShortcutCheatSheet } from \"@stackra/ui/react\";",
+  "key": "free/shortcut-cheat-sheet",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the sheet opens or closes.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "ShortcutCheatSheet",
+      "props": [
+        {
+          "description": "Whether the sheet is open, controlled.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "shift+/",
+          "description": "The binding that opens it; `false` registers none. Defaults to `shift+/` (the `?` key).",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string | false"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

@@ -31,5 +31,9 @@ export const TEXT_FIELD_KEYS = keys({
     "live_error",
     "live_empty",
     "live_typed",
+    "tamo_label",
+    "tamo_text",
+    "tamo_hint",
+    "tamo_screen",
   ],
 });

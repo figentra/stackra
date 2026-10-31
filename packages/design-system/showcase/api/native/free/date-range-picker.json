@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "c5d548aed731aabc",
+    "hash": "a70ddf0ed6862455",
     "propsFiles": ["ui/src/native/date-range-picker/date-range-picker.props.ts"]
   },
   "importLine": "import { DateRangePicker } from \"@stackra/ui/native\";",
@@ -74,6 +74,13 @@
           "required": false,
           "source": "stackra",
           "type": "string"
+        },
+        {
+          "description": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
+          "name": "ai",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "description": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",

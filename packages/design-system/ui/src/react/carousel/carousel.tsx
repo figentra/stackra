@@ -9,6 +9,8 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0060 (right-to-left); WCAG 2.2 SC 1.3.1, 2.1.1 and 2.2.2; STA-1371.
  */
 import { cn } from "@heroui/react";
+import { STANDARD_SHORTCUTS } from "@stackra/shortcuts";
+import { useShortcutActions } from "@stackra/shortcuts/react";
 import { useReducedMotion } from "motion/react";
 import { Children, type ReactElement, useRef, useState } from "react";
 
@@ -44,6 +46,29 @@ export function Carousel({
       block: "nearest",
     });
   };
+  const root = useRef<HTMLElement>(null);
+  // While focus is in the carousel (ADR 0508): Left and Right move a slide, mirrored right to left.
+  useShortcutActions(
+    count < 2
+      ? []
+      : [
+          {
+            id: "media.previous",
+            label: t(K.previous),
+            shortcut: STANDARD_SHORTCUTS["media.previous"],
+            isDirectional: true,
+            run: () => goTo(index - 1),
+          },
+          {
+            id: "media.next",
+            label: t(K.next),
+            shortcut: STANDARD_SHORTCUTS["media.next"],
+            isDirectional: true,
+            run: () => goTo(index + 1),
+          },
+        ],
+    { within: root },
+  );
   const onScroll = () => {
     const element = viewport.current;
     if (!element || element.clientWidth === 0) return;
@@ -56,6 +81,7 @@ export function Carousel({
   };
   return (
     <section
+      ref={root}
       aria-roledescription="carousel"
       aria-label={label}
       data-slot="carousel"

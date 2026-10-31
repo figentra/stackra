@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "ddc273b471086572",
+    "hash": "91cd92038e14b6bd",
     "propsFiles": [
       "ui/src/native/filter-bar/filter-bar.props.ts",
       "ui/src/native/filter-bar/filter-editor.props.ts"
@@ -39,6 +39,13 @@
           "required": false,
           "source": "stackra",
           "type": "readonly string[]"
+        },
+        {
+          "description": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
+          "name": "ai",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "description": "Used to reference react managed views from native code.",

@@ -1,0 +1,23 @@
+{
+  "generatedFrom": {
+    "hash": "012e53979e04b3b7",
+    "propsFiles": ["ui/src/react/tamo-panel/tamo-panel.props.ts"]
+  },
+  "importLine": "import { TamoPanel } from \"@stackra/ui/react\";",
+  "key": "free/tamo-panel",
+  "parts": [
+    {
+      "name": "TamoPanel",
+      "props": [
+        {
+          "description": "Classes added to the panel's log.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

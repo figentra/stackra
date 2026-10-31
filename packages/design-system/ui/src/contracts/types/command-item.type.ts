@@ -18,7 +18,7 @@ export interface CommandItem {
   readonly description?: string | undefined;
   /** The icon drawn before the label. */
   readonly icon?: IconName | undefined;
-  /** A shortcut hint, as text ("⌘N"); web only. */
+  /** The command's key binding (`mod+n`), drawn in the platform's form; older ready-made text ("⌘N") is drawn as given. Web only. */
   readonly shortcut?: string | undefined;
   /** More words that find it, in any language: "invoice, bill". */
   readonly keywords?: string | undefined;

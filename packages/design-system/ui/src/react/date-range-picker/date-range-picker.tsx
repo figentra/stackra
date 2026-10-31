@@ -10,6 +10,8 @@
  * Governing contract: wave 3a forms and pickers (owner approval 2026-10-28); ADR 0302 (decision 3); ADR 0312; WCAG 2.2
  *          SC 2.1.1, 2.5.8, 4.1.2.
  */
+import { TamoDateAsk } from "#react/date-picker/tamo-date-ask";
+import { useTamo } from "#react/hooks/use-tamo";
 import {
   DateField,
   DateRangePicker as HeroDateRangePicker,
@@ -30,7 +32,6 @@ import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { toGregorian } from "#core/functions/to-gregorian.function";
 import { CalendarLocale } from "#react/date-picker/calendar-locale";
 import { MONTH_BUTTON_CLASS } from "#react/date-picker/month-button-class.constant";
-import { renderAsDiv } from "#react/date-picker/render-as-div.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { ariaRangeOf } from "#react/range-calendar/aria-range-of.function";
 import type { DateRangePickerProps } from "#react/date-range-picker/date-range-picker.props";
@@ -57,9 +58,11 @@ export function DateRangePicker({
   today,
   className,
   name: _name,
+  ai,
   ...rest
 }: DateRangePickerProps): ReactElement {
   const t = useUiText();
+  const tamo = useTamo({ field: _name }, ai !== false && !isReadOnly);
   const K = FORMS_KEYS.ui.date_range_picker;
   const buttonName = calendarButtonLabel ?? t(K.calendar);
   const [ownRange, setOwnRange] = useState<DateRangeValue | null>(defaultValue ?? null);
@@ -121,6 +124,19 @@ export function DateRangePicker({
         {description ? <Description>{description}</Description> : null}
         {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
         <HeroDateRangePicker.Popover aria-label={buttonName}>
+          {tamo ? (
+            <div className="mb-3">
+              <TamoDateAsk
+                slot={tamo}
+                isRange
+                today={from}
+                onPick={(start, end) => {
+                  change({ start, end: end ?? start });
+                  setOpen(false);
+                }}
+              />
+            </div>
+          ) : null}
           <div className="flex flex-col gap-3 sm:flex-row">
             {presets.length > 0 ? (
               <div
@@ -150,7 +166,7 @@ export function DateRangePicker({
               </div>
             ) : null}
             <HeroRangeCalendar {...bounds}>
-              <HeroRangeCalendar.Header render={renderAsDiv}>
+              <HeroRangeCalendar.Header>
                 <HeroRangeCalendar.Heading />
                 <HeroRangeCalendar.NavButton slot="previous" className={MONTH_BUTTON_CLASS} />
                 <HeroRangeCalendar.NavButton slot="next" className={MONTH_BUTTON_CLASS} />

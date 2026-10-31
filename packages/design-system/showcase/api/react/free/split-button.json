@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "0ea26a58162712db",
+    "hash": "71091ff0d8b405b7",
     "heroDoc": "vendor/heroui/react/button-group.json",
     "propsFiles": ["ui/src/react/split-button/split-button.props.ts"]
   },
@@ -141,6 +141,21 @@
           "required": false,
           "source": "stackra",
           "type": "\"center\" | \"start\" | \"end\""
+        },
+        {
+          "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "keys:<binding>",
+          "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
+          "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "default": "'react-aria-Group'",

@@ -41,6 +41,7 @@ export const FREE_DATA_TABLE: ComponentEntry = {
     { id: "inline-edit", platforms: ["react"] },
     { id: "select-all-pages", platforms: ["react"] },
     { id: "virtual", platforms: ["react"] },
+    { id: "tamo", platforms: ["react"] },
   ],
   related: ["free/data-view", "free/collection-engine", "free/data-grid"],
   tokens: ["color.surface", "radius.base", "color.border"],

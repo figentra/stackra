@@ -1065,6 +1065,12 @@ import FreeShareButtonBasics from "#src/demos/free/share-button/basics";
 import FreeShareButtonBasicsCode from "#src/demos/free/share-button/basics.code";
 import FreeShareButtonIconOnly from "#src/demos/free/share-button/icon-only";
 import FreeShareButtonIconOnlyCode from "#src/demos/free/share-button/icon-only.code";
+import FreeSheetBasic from "#src/demos/free/sheet/basic";
+import FreeSheetBasicCode from "#src/demos/free/sheet/basic.code";
+import FreeSheetSnap from "#src/demos/free/sheet/snap";
+import FreeSheetSnapCode from "#src/demos/free/sheet/snap.code";
+import FreeSheetBackdrop from "#src/demos/free/sheet/backdrop";
+import FreeSheetBackdropCode from "#src/demos/free/sheet/backdrop.code";
 import FreeShimmerThinking from "#src/demos/free/shimmer/thinking";
 import FreeShimmerThinkingCode from "#src/demos/free/shimmer/thinking.code";
 import FreeShimmerBlock from "#src/demos/free/shimmer/block";
@@ -3108,6 +3114,15 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/share-button.json") as ApiDoc,
+  },
+  "free/sheet": {
+    examples: {
+      basic: { Demo: FreeSheetBasic, code: FreeSheetBasicCode },
+      snap: { Demo: FreeSheetSnap, code: FreeSheetSnapCode },
+      backdrop: { Demo: FreeSheetBackdrop, code: FreeSheetBackdropCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/sheet.json") as ApiDoc,
   },
   "free/shimmer": {
     examples: {

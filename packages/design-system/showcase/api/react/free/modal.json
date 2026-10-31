@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "a2b9f5f87862afb3",
+    "hash": "6834090d77237418",
     "heroDoc": "vendor/heroui/react/modal.json",
     "propsFiles": [
       "ui/src/react/modal/modal-close.props.ts",
@@ -13,6 +13,13 @@
   "parts": [
     {
       "events": [
+        {
+          "description": "The modal's primary action, run by `confirmShortcut` (Mod+Enter by default) while this is the topmost overlay, so\na person confirms without reaching for the mouse. Page shortcuts pause while any modal is open (ADR 0508).",
+          "name": "onConfirm",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
         {
           "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
           "name": "onOpenChange",
@@ -64,6 +71,14 @@
           "description": "The accessible name for a modal that has no `Modal.Title`; with a title, the title names it.",
           "name": "label",
           "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "mod+enter",
+          "description": "The binding of `onConfirm`. Defaults to `mod+enter`.",
+          "name": "confirmShortcut",
           "required": false,
           "source": "stackra",
           "type": "string"

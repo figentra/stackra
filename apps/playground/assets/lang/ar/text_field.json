@@ -19,5 +19,9 @@
   "live_description": "نستخدمه لإرسال الفاتورة.",
   "live_error": "أدخل عنوان بريد إلكتروني يحتوي على @.",
   "live_empty": "لم يُكتب شيء بعد.",
-  "live_typed": "{count, plural, zero {لم تكتب أي حرف: {text}} one {كتبت حرفًا واحدًا: {text}} two {كتبت حرفين: {text}} few {كتبت # أحرف: {text}} many {كتبت # حرفًا: {text}} other {كتبت # حرف: {text}}}"
+  "live_typed": "{count, plural, zero {لم تكتب أي حرف: {text}} one {كتبت حرفًا واحدًا: {text}} two {كتبت حرفين: {text}} few {كتبت # أحرف: {text}} many {كتبت # حرفًا: {text}} other {كتبت # حرف: {text}}}",
+  "tamo_label": "رسالة إلى العميل",
+  "tamo_text": "تم شحن طلبك وسيصل يوم الخميس.",
+  "tamo_hint": "مرّر المؤشر فوق الحقل أو انتقل إليه لتظهر «اسأل تامو».",
+  "tamo_screen": "الطلب 2048"
 }
