@@ -60,7 +60,9 @@ export function PromptInput({
       <View
         className={`rounded-[var(--radius-container)] border border-border bg-surface shadow-field ${isDisabled ? "opacity-50" : ""}`}
       >
-        {attachments ? <View className="flex-row flex-wrap gap-2 px-3 pt-3">{attachments}</View> : null}
+        {attachments ? (
+          <View className="flex-row flex-wrap gap-2 px-3 pt-3">{attachments}</View>
+        ) : null}
         <TextInput
           accessibilityLabel={label ?? t(K.label)}
           placeholder={placeholder ?? t(K.placeholder)}

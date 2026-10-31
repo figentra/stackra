@@ -44,8 +44,7 @@ export function networkLayoutOf(
   const { width, height, padding = 32, isRtl = false } = box;
   const position = new Map(nodes.map((node, index) => [node.key, index]));
   const kept = links.filter(
-    (link) =>
-      position.has(link.source) && position.has(link.target) && link.source !== link.target,
+    (link) => position.has(link.source) && position.has(link.target) && link.source !== link.target,
   );
   const ends = kept.map((link) => [position.get(link.source) ?? 0, position.get(link.target) ?? 0]);
   const count = nodes.length;
@@ -106,7 +105,8 @@ export function networkLayoutOf(
       colorIndex: groups.length > 0 ? Math.max(0, groups.indexOf(node.group ?? "")) : index,
       x: isRtl ? width - x : x,
       y: fit(ys[index] ?? 0, y0, y1, height),
-      radius: RADIUS[0] + (RADIUS[1] - RADIUS[0]) * Math.sqrt(Math.max(0, size[index] ?? 0) / largest),
+      radius:
+        RADIUS[0] + (RADIUS[1] - RADIUS[0]) * Math.sqrt(Math.max(0, size[index] ?? 0) / largest),
       degree: degree[index] ?? 0,
     };
   });

@@ -31,7 +31,8 @@ const MOVES = [
 export default function Plans() {
   const t = useCatalogueText(MESSAGES.en);
   return (
-    <ChordDiagram className="w-full"
+    <ChordDiagram
+      className="w-full"
       label={t(K.label)}
       nodes={PLANS.map((key) => ({ key, label: t(K[key]) }))}
       links={MOVES}

@@ -29,7 +29,8 @@ import { svgSourceOf } from "#react/widget-frame/svg-source-of.function";
 const CHART_SVG = "svg.recharts-surface, svg[data-chart]";
 
 /** One table row's cells as text. */
-const cellsOf = (row: Element) => [...row.querySelectorAll("th, td")].map((cell) => cell.textContent ?? "");
+const cellsOf = (row: Element) =>
+  [...row.querySelectorAll("th, td")].map((cell) => cell.textContent ?? "");
 
 /** The chart's data table read back as rows of text. */
 function tableDataOf(table: HTMLTableElement): WidgetData {
@@ -86,7 +87,11 @@ export function ChartExport({
   };
   const words = UI_KEYS.ui.widget_frame;
   return (
-    <div ref={root} data-slot="chart-export" className={cn("flex w-full min-w-0 flex-col gap-1", className)}>
+    <div
+      ref={root}
+      data-slot="chart-export"
+      className={cn("flex w-full min-w-0 flex-col gap-1", className)}
+    >
       <div className="flex justify-end">
         <ActionMenu
           size="sm"

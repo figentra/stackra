@@ -35,7 +35,11 @@ describe("ChatMessage (web)", () => {
   });
 
   it("shimmers while loading", () => {
-    render(<ChatMessage from="assistant" isLoading>ignored</ChatMessage>);
+    render(
+      <ChatMessage from="assistant" isLoading>
+        ignored
+      </ChatMessage>,
+    );
     expect(screen.getByRole("status").textContent).toBe("Thinking…");
     expect(screen.queryByText("ignored")).toBeNull();
   });

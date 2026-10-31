@@ -22,7 +22,9 @@ export default function Loading() {
       <ChatMessage
         from="assistant"
         isLoading
-        avatar={<Avatar size="sm" variant="soft" tone="accent" fallback={<Icon name="sparkles" />} />}
+        avatar={
+          <Avatar size="sm" variant="soft" tone="accent" fallback={<Icon name="sparkles" />} />
+        }
       />
     </div>
   );

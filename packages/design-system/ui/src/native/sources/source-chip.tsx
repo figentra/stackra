@@ -20,7 +20,8 @@ import type { SourceChipProps } from "#native/sources/source-chip.props";
 import { Text } from "#native/text/text";
 
 /** The chip's look: a 20 px pill. */
-const PILL = "h-5 max-w-60 flex-row items-center gap-1 self-start rounded-[var(--radius-pill)] bg-default ps-0.5 pe-2";
+const PILL =
+  "h-5 max-w-60 flex-row items-center gap-1 self-start rounded-[var(--radius-pill)] bg-default ps-0.5 pe-2";
 
 /** One citation. */
 export function SourceChip({ source, className }: SourceChipProps): ReactElement {

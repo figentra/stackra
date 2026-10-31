@@ -57,7 +57,14 @@ export function chordLayoutOf(
     const start = angle;
     const end = start + (value[index] ?? 0) * scale;
     angle = (value[index] ?? 0) > 0 ? end + gap : end;
-    return { node, index, start, end, value: value[index] ?? 0, path: arcPathOf(cx, cy, inner, outer, start, end) };
+    return {
+      node,
+      index,
+      start,
+      end,
+      value: value[index] ?? 0,
+      path: arcPathOf(cx, cy, inner, outer, start, end),
+    };
   });
   // Each group's next free angle: its flows out first, then its flows in, in the caller's order.
   const cursor = groups.map((group) => group.start);

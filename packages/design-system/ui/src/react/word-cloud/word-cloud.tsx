@@ -39,7 +39,9 @@ export function WordCloud({
   const table = {
     head: [t(UI_KEYS.ui.chart.word), heads.value],
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts a copy built here; toSorted is ES2023 and the base lib is ES2022
-    rows: [...words].sort((a, b) => b.value - a.value).map((word) => [word.text, value(word.value)]),
+    rows: [...words]
+      .sort((a, b) => b.value - a.value)
+      .map((word) => [word.text, value(word.value)]),
   };
   return (
     <ChartFrame label={label} table={table} legend={[]} className={className}>

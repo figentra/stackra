@@ -11,7 +11,19 @@ import { keys } from "@stackra/i18n";
 export const NETWORK_GRAPH_DEMO_KEYS = keys({
   demo_free: {
     network_graph: {
-      team: ["label", "sara", "omar", "lina", "khalid", "noura", "faisal", "huda", "yousef", "reem", "majed"],
+      team: [
+        "label",
+        "sara",
+        "omar",
+        "lina",
+        "khalid",
+        "noura",
+        "faisal",
+        "huda",
+        "yousef",
+        "reem",
+        "majed",
+      ],
     },
   },
 });

@@ -74,7 +74,9 @@ vi.mock("@shopify/react-native-skia", async () => {
 /** Renders in a provider of the given locale and direction. */
 const inLocale = (locale: string, direction: "ltr" | "rtl", node: ReactNode) =>
   render(
-    <DesignSystemContext value={{ locale, direction } as DesignSystemState}>{node}</DesignSystemContext>,
+    <DesignSystemContext value={{ locale, direction } as DesignSystemState}>
+      {node}
+    </DesignSystemContext>,
   );
 
 /** How many marks of `kind` were handed to Skia. */
@@ -97,7 +99,11 @@ describe("native NetworkGraph", () => {
     inLocale(
       "en",
       "ltr",
-      <NetworkGraph label="Team" nodes={NODES} links={[{ source: "a", target: "b", value: 1200 }]} />,
+      <NetworkGraph
+        label="Team"
+        nodes={NODES}
+        links={[{ source: "a", target: "b", value: 1200 }]}
+      />,
     );
     expect(state.images[0]).toMatchObject({
       accessibilityLabel: "Team",
@@ -157,7 +163,9 @@ describe("native ChordDiagram", () => {
         ]}
       />,
     );
-    expect(state.images[0]?.["accessibilityValue"]).toEqual({ text: "Sara → Omar 5, Lina → Sara 2" });
+    expect(state.images[0]?.["accessibilityValue"]).toEqual({
+      text: "Sara → Omar 5, Lina → Sara 2",
+    });
     expect(count("path")).toBe(5);
     expect(state.texts).toEqual(["Sara", "Omar", "Lina"]);
   });

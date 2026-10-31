@@ -45,7 +45,11 @@ export function ChordDiagram({
   const nameOf = (key: string) => nodes.find((node) => node.key === key)?.label ?? key;
   const table = {
     head: [t(UI_KEYS.ui.chart.from), t(UI_KEYS.ui.chart.to), words.value],
-    rows: layout.ribbons.map(({ link }) => [nameOf(link.source), nameOf(link.target), value(link.value)]),
+    rows: layout.ribbons.map(({ link }) => [
+      nameOf(link.source),
+      nameOf(link.target),
+      value(link.value),
+    ]),
   };
   return (
     <ChartFrame label={label} table={table} legend={[]} className={className}>
@@ -80,7 +84,8 @@ export function ChordDiagram({
             const lean = Math.sin(middle);
             // A name runs away from the ring; in right-to-left SVG text "start" is the right edge, so the anchors swap.
             const outward = lean > 0.1 ? "start" : lean < -0.1 ? "end" : "middle";
-            const anchor = isRtl && outward !== "middle" ? (outward === "start" ? "end" : "start") : outward;
+            const anchor =
+              isRtl && outward !== "middle" ? (outward === "start" ? "end" : "start") : outward;
             const x = centre + (outer + 8) * Math.sin(middle);
             const y = centre - (outer + 8) * Math.cos(middle);
             return (

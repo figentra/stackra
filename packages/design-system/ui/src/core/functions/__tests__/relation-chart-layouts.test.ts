@@ -66,7 +66,14 @@ describe("treeLayoutOf", () => {
       key: "r",
       label: "Root",
       children: [
-        { key: "a", label: "A", children: [{ key: "a1", label: "A1", value: 2 }, { key: "a2", label: "A2", value: 3 }] },
+        {
+          key: "a",
+          label: "A",
+          children: [
+            { key: "a1", label: "A1", value: 2 },
+            { key: "a2", label: "A2", value: 3 },
+          ],
+        },
         { key: "b", label: "B", value: 4 },
       ],
     },
@@ -86,7 +93,13 @@ describe("treeLayoutOf", () => {
   });
 
   it("runs from the right in Arabic", () => {
-    const layout = treeLayoutOf(items, { width: 300, height: 90, padding: 0, labelRoom: 0, isRtl: true });
+    const layout = treeLayoutOf(items, {
+      width: 300,
+      height: 90,
+      padding: 0,
+      labelRoom: 0,
+      isRtl: true,
+    });
     expect(layout.nodes[0]?.x).toBe(300);
   });
 });
@@ -117,7 +130,10 @@ describe("wordCloudLayoutOf", () => {
   });
 
   it("drops what does not fit and leaves out non-positive words", () => {
-    const layout = wordCloudLayoutOf([...words, { text: "none", value: 0 }], { width: 120, height: 40 });
+    const layout = wordCloudLayoutOf([...words, { text: "none", value: 0 }], {
+      width: 120,
+      height: 40,
+    });
     expect(layout.words.length + layout.dropped).toBe(8);
     expect(layout.dropped).toBeGreaterThan(0);
   });
@@ -144,6 +160,8 @@ describe("chordLayoutOf", () => {
       Math.PI - 0.04,
     );
     expect(layout.ribbons).toHaveLength(2);
-    expect(layout.ribbons[0]?.path).toMatch(/^M 50\.00 14\.00 A 36 36 0 0 1 .* Q 50\.00 50\.00 .* Z$/);
+    expect(layout.ribbons[0]?.path).toMatch(
+      /^M 50\.00 14\.00 A 36 36 0 0 1 .* Q 50\.00 50\.00 .* Z$/,
+    );
   });
 });

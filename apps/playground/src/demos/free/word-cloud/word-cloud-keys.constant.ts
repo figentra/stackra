@@ -9,5 +9,25 @@ import { keys } from "@stackra/i18n";
 
 /** The word_cloud namespace's keys. */
 export const WORD_CLOUD_KEYS = keys({
-  word_cloud: ["label", "delivery", "fresh", "price", "friendly", "fast", "late", "coffee", "clean", "app", "parking", "cold", "coupon", "staff", "quality", "queue", "music", "breakfast", "portion"],
+  word_cloud: [
+    "label",
+    "delivery",
+    "fresh",
+    "price",
+    "friendly",
+    "fast",
+    "late",
+    "coffee",
+    "clean",
+    "app",
+    "parking",
+    "cold",
+    "coupon",
+    "staff",
+    "quality",
+    "queue",
+    "music",
+    "breakfast",
+    "portion",
+  ],
 });

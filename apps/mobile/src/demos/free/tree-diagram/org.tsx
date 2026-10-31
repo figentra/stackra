@@ -18,9 +18,28 @@ const K = TREE_DIAGRAM_DEMO_KEYS.demo_free.tree_diagram.org;
 const TREE = {
   key: "company",
   children: [
-    { key: "operations", children: [{ key: "riyadh", value: 24 }, { key: "jeddah", value: 18 }] },
-    { key: "technology", children: [{ key: "platform", value: 12 }, { key: "mobile", value: 9 }, { key: "data", value: 6 }] },
-    { key: "sales", children: [{ key: "retail", value: 15 }, { key: "wholesale", value: 7 }] },
+    {
+      key: "operations",
+      children: [
+        { key: "riyadh", value: 24 },
+        { key: "jeddah", value: 18 },
+      ],
+    },
+    {
+      key: "technology",
+      children: [
+        { key: "platform", value: 12 },
+        { key: "mobile", value: 9 },
+        { key: "data", value: 6 },
+      ],
+    },
+    {
+      key: "sales",
+      children: [
+        { key: "retail", value: 15 },
+        { key: "wholesale", value: 7 },
+      ],
+    },
   ],
 } as const;
 

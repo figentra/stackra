@@ -25,7 +25,11 @@ export interface TreeLayout {
     readonly isLeaf: boolean;
   }[];
   /** One curve from each parent to each child. */
-  readonly links: readonly { readonly key: string; readonly branch: number; readonly path: string }[];
+  readonly links: readonly {
+    readonly key: string;
+    readonly branch: number;
+    readonly path: string;
+  }[];
   /** How many levels deep the tree goes, counting the top. */
   readonly depth: number;
 }

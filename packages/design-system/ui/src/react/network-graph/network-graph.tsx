@@ -80,7 +80,11 @@ export function NetworkGraph({
               stroke={paintOf("muted")}
               strokeWidth={line.width}
               strokeOpacity={
-                active === null ? 0.4 : line.sourceIndex === active || line.targetIndex === active ? 0.8 : 0.1
+                active === null
+                  ? 0.4
+                  : line.sourceIndex === active || line.targetIndex === active
+                    ? 0.8
+                    : 0.1
               }
             />
           ))}

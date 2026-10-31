@@ -44,7 +44,11 @@ export function SourceChip({ source, className }: SourceChipProps): ReactElement
         <button
           type="button"
           aria-label={`${title}, ${t(AI_PARTS_KEYS.ui.sources.document)}`}
-          className={cn(PILL, "hover:text-foreground focus-visible:outline focus-visible:outline-focus", className)}
+          className={cn(
+            PILL,
+            "hover:text-foreground focus-visible:outline focus-visible:outline-focus",
+            className,
+          )}
         >
           {content}
         </button>
