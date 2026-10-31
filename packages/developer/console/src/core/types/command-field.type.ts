@@ -45,4 +45,7 @@ export interface CommandField {
 
   /** The source of the pattern a string must match (`@Str({ pattern })`). */
   readonly pattern?: string;
+
+  /** The value is never kept in an audit entry. */
+  readonly secret?: boolean;
 }

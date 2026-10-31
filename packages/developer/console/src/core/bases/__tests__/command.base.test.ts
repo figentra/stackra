@@ -24,7 +24,14 @@ describe("Command", () => {
     }
     expect(kindOf(SeedCommand)).toEqual({
       kind: "command",
-      options: { name: "tenant:seed", description: "Seed a tenant", hidden: false, aliases: [] },
+      options: {
+        name: "tenant:seed",
+        description: "Seed a tenant",
+        hidden: false,
+        aliases: [],
+        audit: false,
+        bin: false,
+      },
     });
   });
 

@@ -12,6 +12,9 @@ export interface ConsoleContainer {
   /** The instance of a command class, built with its collaborators. */
   readonly get: <T extends object>(type: abstract new (...args: never[]) => T) => T;
 
+  /** Whether `type` is bound; the kernel asks it for `CommandAudit` before an audited run. */
+  readonly has?: (type: abstract new (...args: never[]) => object) => boolean;
+
   /** Shuts the container down. */
   readonly close: () => Promise<void>;
 }

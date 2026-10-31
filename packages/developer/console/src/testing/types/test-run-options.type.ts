@@ -6,6 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-027.
  */
+import type { CommandAudit } from "#contracts/ports/command-audit.port";
 import type { ConsoleSignal } from "#contracts/types/console-signal.type";
 import type { PromptAnswer } from "#contracts/types/prompt-answer.type";
 import type { ConsoleConfig } from "#core/types/console-config.type";
@@ -26,6 +27,9 @@ export interface TestRunOptions {
 
   /** The container factory, for collaborators and fakes. */
   readonly container?: ConsoleConfig["container"];
+
+  /** The `CommandAudit` an audited command records to; served beside `container`, or by a stand-in without one. */
+  readonly audit?: CommandAudit;
 
   /** Sent on the next tick after the run starts, to test interruption. */
   readonly signal?: ConsoleSignal;

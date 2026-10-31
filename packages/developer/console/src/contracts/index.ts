@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/console, the leaf types a command author and a CLI
  *          owner name, until `stackra gen` writes the entry barrels (STA-339).
- * Boundary: names each re-export and declares nothing; types only.
+ * Boundary: names each re-export and declares nothing; types and the `CommandAudit` port.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export type { ArgumentOptions } from "#contracts/types/argument-options.type";
+export { CommandAudit } from "#contracts/ports/command-audit.port";
+export type { CommandAuditEntry } from "#contracts/types/command-audit-entry.type";
 export type { CommandOptions } from "#contracts/types/command-options.type";
 export type { ConsoleSignal } from "#contracts/types/console-signal.type";
 export type { ConsoleTheme } from "#contracts/types/console-theme.type";

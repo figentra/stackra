@@ -37,6 +37,7 @@ const validName = (value: string) =>
 export class CreateCommand extends Command({
   name: "create",
   description: "Create a new console app",
+  bin: true,
 }) {
   /** Where to create it. */
   @Argument({ description: "The folder to create the app in" })

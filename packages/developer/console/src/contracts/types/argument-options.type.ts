@@ -13,4 +13,7 @@ export interface ArgumentOptions {
 
   /** The argument may be left out; needed only when the field has no initialiser, since the runtime cannot see `?`. */
   readonly optional?: boolean;
+
+  /** The value is never kept: an audit entry writes `[redacted]` (STA-1731 FR-016). */
+  readonly secret?: boolean;
 }

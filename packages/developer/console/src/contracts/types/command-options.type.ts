@@ -20,4 +20,10 @@ export interface CommandOptions {
 
   /** Other names that run the command, of the same form as `name`. */
   readonly aliases?: readonly string[];
+
+  /** Each run is recorded through the `CommandAudit` port, and refused when none is bound (STA-1731 FR-015). */
+  readonly audit?: boolean;
+
+  /** The package's own bin command: gen never contributes it to a host (STA-1731 FR-004). */
+  readonly bin?: boolean;
 }

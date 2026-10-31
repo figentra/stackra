@@ -124,6 +124,7 @@ export function readCommand(type: CommandClass): CommandStructure {
         required,
         ...(initial === undefined ? {} : { default: initial }),
         ...(given.description === undefined ? {} : { description: given.description }),
+        ...(given.secret === true ? { secret: true } : {}),
       }),
     );
   }
@@ -160,6 +161,7 @@ export function readCommand(type: CommandClass): CommandStructure {
         ...(initial === undefined ? {} : { default: initial }),
         ...(given.short === undefined ? {} : { short: given.short }),
         ...(given.description === undefined ? {} : { description: given.description }),
+        ...(given.secret === true ? { secret: true } : {}),
       }),
     );
   }
@@ -169,6 +171,8 @@ export function readCommand(type: CommandClass): CommandStructure {
     description: options.description,
     hidden: options.hidden,
     aliases: options.aliases,
+    audit: options.audit,
+    bin: options.bin,
     arguments: Object.freeze(argumentFields),
     options: Object.freeze(optionFields),
   });

@@ -22,6 +22,12 @@ export interface CommandStructure {
   /** Its other names. */
   readonly aliases: readonly string[];
 
+  /** Each run is audited. */
+  readonly audit: boolean;
+
+  /** A package's own bin command, never contributed to a host. */
+  readonly bin: boolean;
+
   /** Its positional fields, in order. */
   readonly arguments: readonly CommandField[];
 

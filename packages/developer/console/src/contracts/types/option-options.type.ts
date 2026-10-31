@@ -13,4 +13,7 @@ export interface OptionOptions {
 
   /** Shown in the command's help. */
   readonly description?: string;
+
+  /** The value is never kept: an audit entry writes `[redacted]` (STA-1731 FR-016). */
+  readonly secret?: boolean;
 }

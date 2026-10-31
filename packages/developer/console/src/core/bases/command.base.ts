@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `Command({ name, description, hidden?, aliases? })`, the kind base of a console command: its fields carry
+ * Purpose: `Command({ name, description, hidden?, aliases?, audit?, bin? })`, the kind base of a console command: its fields carry
  *          `@Argument` and `@Option`, its constructor takes its collaborators, and `handle(io)` runs it.
  * Boundary: called only. The options are checked here (name and aliases); the fields are checked by `readCommand`,
  *           once the class is defined. A command's constructor only stores its collaborators, so the kernel may build
@@ -47,6 +47,8 @@ function read(options: CommandOptions): Readonly<Required<CommandOptions>> {
     description: options.description,
     hidden: options.hidden ?? false,
     aliases: Object.freeze([...(options.aliases ?? [])]),
+    audit: options.audit ?? false,
+    bin: options.bin ?? false,
   });
 }
 

@@ -35,6 +35,12 @@ import type { ConsoleConfig } from "#core/types/console-config.type";
 import type { ConsolePorts } from "#core/types/console-ports.type";
 import type { ParsedInvocation } from "#core/types/parsed-invocation.type";
 
+/** Who runs the command, for an audit entry: `STACKRA_OPERATOR`, else the login the environment names. */
+const operatorOf = (env: ConsolePorts["env"]) =>
+  [env["STACKRA_OPERATOR"], env["USER"], env["LOGNAME"], env["USERNAME"]].find(
+    (name) => name !== undefined && name !== "",
+  ) ?? "unknown";
+
 /** The exit code of a failure. */
 const codeOf = (error: unknown) =>
   error instanceof PromptCancelledError
@@ -149,6 +155,7 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
         animate: mode.animate,
       }),
       codeOf,
+      operatorOf(ports.env),
     );
     if (outcome.data !== undefined && data === undefined) data = outcome.data;
     return finish(outcome.code, outcome.error);

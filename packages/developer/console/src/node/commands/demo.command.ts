@@ -15,6 +15,7 @@ import type { CommandIo } from "#core/types/command-io.type";
 export class DemoCommand extends Command({
   name: "demo",
   description: "Show every console component",
+  bin: true,
 }) {
   /** Runs the tour and returns the answers it collected. */
   async handle(io: CommandIo): Promise<Readonly<Record<string, unknown>>> {
