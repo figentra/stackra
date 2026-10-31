@@ -20,6 +20,7 @@ import { VOICE_INPUT_KEYS } from "#src/demos/free/voice-input/voice-input-keys.c
 const K = VOICE_INPUT_KEYS.voice_input.dictation;
 
 /** How long the pretend transcription takes. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake transcription delay, not motion
 const TRANSCRIBE_MS = 1200;
 
 /** Dictation that adds a transcript to the reply field after a short wait. */

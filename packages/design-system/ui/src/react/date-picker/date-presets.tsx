@@ -52,7 +52,7 @@ export function DatePresets({
             }}
             className={
               cn(
-                "min-h-8 rounded-[var(--radius-control)] px-3 text-start text-sm outline-none hover:bg-default focus-visible:outline-2 focus-visible:outline-focus",
+                "min-h-8 rounded-[var(--radius-control)] px-3 text-start text-sm outline-none hover:bg-default focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus",
                 isChosen && "bg-accent-soft text-accent-soft-foreground",
               ) ?? ""
             }

@@ -14,6 +14,8 @@
  * Runtime: browser
  * Governing contract: ADR 0320 (the Theme Studio); WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2.
  */
+import { HEROUI_DERIVED_COLOURS } from "@stackra/tokens";
+import type { ReactNode } from "react";
 import type { ThemeKnobs } from "@stackra/tokens/contracts";
 import { MaterialLevel } from "@stackra/tokens/contracts";
 import { Select, Switch, Text, TextField, useCatalogueText } from "@stackra/ui/react";
@@ -27,6 +29,7 @@ import { pxOf } from "./px-of.function";
 import type { StudioControlsProps } from "./studio-controls.props";
 import { STUDIO_FACES } from "./studio-faces.constant";
 import { STUDIO_PRESETS } from "./studio-presets.constant";
+import { StudioLock } from "./studio-lock";
 import { StudioRange } from "./studio-range";
 
 /** The controls' keys. */
@@ -49,9 +52,22 @@ export function StudioControls({
   fonts,
   scheme,
   onChange,
+  locks,
+  onLockChange,
 }: StudioControlsProps) {
   const t = useCatalogueText(MESSAGES.en);
   const set = (change: Partial<typeof knobs>) => onChange({ ...knobs, ...change });
+  /** A control with its lock beside it; `name` is the knob Randomize keeps when locked. */
+  const locked = (name: string, label: string, control: ReactNode) => (
+    <div className="flex items-end gap-1">
+      <div className="min-w-0 flex-1">{control}</div>
+      <StudioLock
+        label={label}
+        isLocked={locks.includes(name)}
+        onChange={(isLocked) => onLockChange(name, isLocked)}
+      />
+    </div>
+  );
 
   if (section === "brand") {
     return (
@@ -99,11 +115,15 @@ export function StudioControls({
               });
           }}
         />
-        <Switch
-          label={t(K.accent)}
-          value={accent !== null}
-          onChange={(isOn) => set({ accent: isOn ? startAccent : null })}
-        />
+        {locked(
+          "accent",
+          t(K.accent),
+          <Switch
+            label={t(K.accent)}
+            value={accent !== null}
+            onChange={(isOn) => set({ accent: isOn ? startAccent : null })}
+          />,
+        )}
         <StudioRange
           label={t(K.accent_hue)}
           value={accent?.hue ?? startAccent.hue}
@@ -142,6 +162,23 @@ export function StudioControls({
           max={0.03}
           step={0.001}
           onChange={(neutralChroma) => set({ neutralChroma })}
+        />
+        {locked(
+          "neutralTint",
+          t(K.neutral_tint),
+          <StudioRange
+            label={t(K.neutral_tint)}
+            value={knobs.neutralTint ?? 0}
+            min={0}
+            max={1}
+            step={0.05}
+            onChange={(neutralTint) => set({ neutralTint })}
+          />,
+        )}
+        <Switch
+          label={t(K.vibrant)}
+          value={knobs.vibrant ?? base.layout.vibrant}
+          onChange={(vibrant) => set({ vibrant })}
         />
       </div>
     );
@@ -195,6 +232,41 @@ export function StudioControls({
             set({ fontArabic: STUDIO_FACES.arabic.find((face) => face.id === id)?.stack })
           }
         />
+        {locked(
+          "fontScale",
+          t(K.font_scale),
+          <StudioRange
+            label={t(K.font_scale)}
+            value={knobs.fontScale ?? 1}
+            min={0.6}
+            max={1.4}
+            step={0.05}
+            unit="×"
+            onChange={(fontScale) => set({ fontScale })}
+          />,
+        )}
+        {locked(
+          "lineHeight",
+          t(K.line_height),
+          <StudioRange
+            label={t(K.line_height)}
+            value={knobs.lineHeight ?? 1}
+            min={0.8}
+            max={1.5}
+            step={0.05}
+            unit="×"
+            onChange={(lineHeight) => set({ lineHeight })}
+          />,
+        )}
+        <StudioRange
+          label={t(K.letter_spacing)}
+          value={knobs.letterSpacing ?? 0}
+          min={-0.05}
+          max={0.1}
+          step={0.005}
+          unit="em"
+          onChange={(letterSpacing) => set({ letterSpacing })}
+        />
       </div>
     );
   }
@@ -203,14 +275,82 @@ export function StudioControls({
     const steps = Object.entries(base.radius.steps).filter(([, value]) => value !== "9999px");
     return (
       <div className="grid gap-4">
+        {locked(
+          "radius",
+          t(K.radius),
+          <StudioRange
+            label={t(K.radius)}
+            value={knobs.radius ?? pxOf(base.radius.base) ?? 4}
+            min={0}
+            max={24}
+            step={1}
+            unit="px"
+            onChange={(radius) => set({ radius })}
+          />,
+        )}
+        {locked(
+          "formsRadius",
+          t(K.forms_radius),
+          <StudioRange
+            label={t(K.forms_radius)}
+            value={knobs.formsRadius ?? 1}
+            min={0}
+            max={3}
+            step={0.25}
+            unit="×"
+            onChange={(formsRadius) => set({ formsRadius })}
+          />,
+        )}
+        {locked(
+          "spacing",
+          t(K.density),
+          <StudioRange
+            label={t(K.density)}
+            value={knobs.spacing ?? pxOf(base.layout.spacing) ?? 4}
+            min={2.4}
+            max={5.6}
+            step={0.1}
+            unit="px"
+            onChange={(spacing) => set({ spacing })}
+          />,
+        )}
+        {locked(
+          "pillControls",
+          t(K.pill_controls),
+          <Switch
+            label={t(K.pill_controls)}
+            value={knobs.pillControls ?? base.radius.steps["control"] === "var(--radius-pill)"}
+            onChange={(pillControls) => set({ pillControls })}
+          />,
+        )}
         <StudioRange
-          label={t(K.radius)}
-          value={knobs.radius ?? pxOf(base.radius.base) ?? 4}
+          label={t(K.field_border_width)}
+          value={knobs.fieldBorderWidth ?? pxOf(base.layout.fieldBorderWidth) ?? 1}
           min={0}
-          max={24}
-          step={1}
+          max={3}
+          step={0.25}
           unit="px"
-          onChange={(radius) => set({ radius })}
+          onChange={(fieldBorderWidth) => set({ fieldBorderWidth })}
+        />
+        <Select
+          label={t(K.field_style)}
+          items={(["bordered", "lifted"] as const).map((id) => ({
+            id,
+            label: t(K.field_styles[id]),
+          }))}
+          value={
+            knobs.fieldStyle ?? (pxOf(base.layout.fieldBorderWidth) === 0 ? "lifted" : "bordered")
+          }
+          onChange={(id) => set({ fieldStyle: id === "lifted" ? "lifted" : "bordered" })}
+        />
+        <Select
+          label={t(K.corner_shape)}
+          items={(["round", "squircle"] as const).map((id) => ({
+            id,
+            label: t(K.corner_shapes[id]),
+          }))}
+          value={knobs.cornerShape ?? base.layout.cornerShape}
+          onChange={(id) => set({ cornerShape: id === "squircle" ? "squircle" : "round" })}
         />
         <div className="grid gap-2">
           <p className="text-sm font-medium">{t(K.radius_steps)}</p>
@@ -229,6 +369,39 @@ export function StudioControls({
             ))}
           </ul>
         </div>
+      </div>
+    );
+  }
+
+  if (section === "recipes") {
+    return (
+      <div className="grid gap-3">
+        <Text tone="muted" type="small">
+          <bdi>{t(K.recipes_note)}</bdi>
+        </Text>
+        <ul className="grid gap-2">
+          {Object.entries(HEROUI_DERIVED_COLOURS).map(([name, recipes]) => {
+            const recipe = recipes[scheme];
+            const other = recipe.withShare ?? 100 - recipe.share;
+            return (
+              <li key={name} className="flex items-center gap-2 text-xs">
+                <span
+                  aria-hidden="true"
+                  className="size-6 shrink-0 border border-separator"
+                  style={{ background: `var(--${name})`, borderRadius: "var(--radius-control)" }}
+                />
+                <span className="grid min-w-0" dir="ltr">
+                  <span className="font-mono font-medium">{name}</span>
+                  <span className="font-mono text-muted">
+                    {name in base.palette
+                      ? t(K.recipe_theme)
+                      : `${recipe.from} ${recipe.share}% + ${recipe.with} ${other}%`}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     );
   }
@@ -291,9 +464,65 @@ export function StudioControls({
           }
         />
       ))}
+      {locked(
+        "shadows",
+        t(K.shadow_strength),
+        <div className="grid gap-2">
+          <p className="text-sm font-medium">{t(K.shadow_strength)}</p>
+          {(["surface", "overlay", "field"] as const).map((role) => (
+            <Select
+              key={role}
+              label={t(K.shadow_names[role])}
+              items={(["none", "subtle", "medium", "strong"] as const).map((id) => ({
+                id,
+                label: t(K.strengths[id]),
+              }))}
+              value={knobs.shadows?.[role] ?? ""}
+              placeholder={t(K.custom)}
+              onChange={(id) =>
+                set({
+                  shadows: {
+                    ...knobs.shadows,
+                    [role]: (["none", "subtle", "medium", "strong"] as const).find((s) => s === id),
+                  },
+                })
+              }
+            />
+          ))}
+        </div>,
+      )}
+      <StudioRange
+        label={t(K.disabled_opacity)}
+        value={knobs.disabledOpacity ?? Number(base.layout.opacity["disabled"] ?? 0.5)}
+        min={0.2}
+        max={0.8}
+        step={0.05}
+        onChange={(disabledOpacity) => set({ disabledOpacity })}
+      />
+      <Switch
+        label={t(K.cursor_pointer)}
+        value={knobs.cursorPointer ?? base.layout.cursor === "pointer"}
+        onChange={(cursorPointer) => set({ cursorPointer })}
+      />
+      <Select
+        label={t(K.skeleton)}
+        items={(["shimmer", "pulse", "none"] as const).map((id) => ({
+          id,
+          label: t(K.skeletons[id]),
+        }))}
+        value={knobs.skeleton ?? base.layout.skeleton}
+        onChange={(id) =>
+          set({ skeleton: (["shimmer", "pulse", "none"] as const).find((value) => value === id) })
+        }
+      />
+      <Switch
+        label={t(K.animations)}
+        value={knobs.animations ?? base.layout.animations}
+        onChange={(animations) => set({ animations })}
+      />
       <p className="pt-1 text-sm font-medium">{t(K.shadows)}</p>
       <ul className="grid grid-cols-3 gap-3">
-        {(["surface", "overlay", "field"] as const).map((name) => (
+        {(["surface", "overlay", "field", "raised", "pressed"] as const).map((name) => (
           <li key={name} className="grid justify-items-center gap-2 text-xs">
             <span
               aria-hidden="true"

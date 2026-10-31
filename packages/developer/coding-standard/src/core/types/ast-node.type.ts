@@ -101,6 +101,9 @@ export interface AstNode {
   /** An assignment pattern's target. */
   readonly left?: AstNode;
 
+  /** An assignment pattern's default value. */
+  readonly right?: AstNode;
+
   /** A rest element's or spread's argument. */
   readonly argument?: AstNode;
 

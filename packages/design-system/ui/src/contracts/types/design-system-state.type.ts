@@ -27,6 +27,13 @@ export interface DesignSystemState {
   readonly brand: string | undefined;
   /** The transition preset a display change plays (`none` plays none). */
   readonly transition: string;
+  /**
+   * The theme family the provider was given (`front` or `studio`), or `undefined` to follow the theme (ADR 0320 as
+   * amended 2026-10-31). Native glass reads it to choose each role's material.
+   */
+  readonly family: string | undefined;
+  /** The material mode the provider was given, or `undefined` to follow the theme's default mode. */
+  readonly material: string | undefined;
   /** The motion level the user picked. */
   readonly motion: MotionLevel;
   /** The motion level in force: the picked one, lowered to `reduced` by the system's reduce-motion setting. */

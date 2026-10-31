@@ -26,6 +26,14 @@
       "from": "@stackra/app"
     },
     {
+      "code": "bearer_token_invalid",
+      "kind": "unauthenticated",
+      "category": "unauthenticated",
+      "module": "app",
+      "class": "BearerTokenInvalidError",
+      "from": "@stackra/app"
+    },
+    {
       "code": "csrf_token_invalid",
       "kind": "forbidden",
       "category": "forbidden",
@@ -85,6 +93,66 @@
       "from": "@stackra/app"
     },
     {
+      "port": "JsonWebKeys",
+      "key": "app.JsonWebKeys",
+      "candidates": ["memory", "oidc"],
+      "classes": {
+        "memory": {
+          "class": "MemoryJsonWebKeysDriver",
+          "from": "@stackra/app/server"
+        },
+        "oidc": {
+          "class": "OidcJsonWebKeysDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "BearerConfig",
+                "from": "@stackra/app"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/app"
+    },
+    {
+      "port": "SecretStore",
+      "key": "config.SecretStore",
+      "candidates": ["infisical", "memory", "aws_secrets_manager"],
+      "classes": {
+        "infisical": {
+          "class": "InfisicalSecretStoreDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "InfisicalConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        },
+        "memory": {
+          "class": "MemorySecretStoreDriver",
+          "from": "@stackra/config"
+        },
+        "aws_secrets_manager": {
+          "class": "AwsSecretsManagerSecretStoreDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "AwsSecretsManagerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/config"
+    },
+    {
       "port": "Clock",
       "key": "contracts.Clock",
       "candidates": ["system"],
@@ -111,9 +179,19 @@
       "file": "src/routes/accordion/accordion.route.ts"
     },
     {
+      "key": "account_connection",
+      "class": "AccountConnectionRoute",
+      "file": "src/routes/account-connection/account-connection.route.ts"
+    },
+    {
       "key": "action_menu",
       "class": "ActionMenuRoute",
       "file": "src/routes/action-menu/action-menu.route.ts"
+    },
+    {
+      "key": "address_field",
+      "class": "AddressFieldRoute",
+      "file": "src/routes/address-field/address-field.route.ts"
     },
     {
       "key": "ai_mark",
@@ -131,6 +209,11 @@
       "file": "src/routes/alert/alert.route.ts"
     },
     {
+      "key": "angle_slider",
+      "class": "AngleSliderRoute",
+      "file": "src/routes/angle-slider/angle-slider.route.ts"
+    },
+    {
       "key": "app_header",
       "class": "AppHeaderRoute",
       "file": "src/routes/app-header/app-header.route.ts"
@@ -141,14 +224,64 @@
       "file": "src/routes/app-shell/app-shell.route.ts"
     },
     {
+      "key": "area_chart",
+      "class": "AreaChartRoute",
+      "file": "src/routes/area-chart/area-chart.route.ts"
+    },
+    {
+      "key": "aspect_ratio",
+      "class": "AspectRatioRoute",
+      "file": "src/routes/aspect-ratio/aspect-ratio.route.ts"
+    },
+    {
+      "key": "attachment_card",
+      "class": "AttachmentCardRoute",
+      "file": "src/routes/attachment-card/attachment-card.route.ts"
+    },
+    {
+      "key": "avatar_group",
+      "class": "AvatarGroupRoute",
+      "file": "src/routes/avatar-group/avatar-group.route.ts"
+    },
+    {
       "key": "avatar",
       "class": "AvatarRoute",
       "file": "src/routes/avatar/avatar.route.ts"
     },
     {
+      "key": "back_to_top",
+      "class": "BackToTopRoute",
+      "file": "src/routes/back-to-top/back-to-top.route.ts"
+    },
+    {
       "key": "badge",
       "class": "BadgeRoute",
       "file": "src/routes/badge/badge.route.ts"
+    },
+    {
+      "key": "bar_chart",
+      "class": "BarChartRoute",
+      "file": "src/routes/bar-chart/bar-chart.route.ts"
+    },
+    {
+      "key": "bar_list",
+      "class": "BarListRoute",
+      "file": "src/routes/bar-list/bar-list.route.ts"
+    },
+    {
+      "key": "barcode",
+      "class": "BarcodeRoute",
+      "file": "src/routes/barcode/barcode.route.ts"
+    },
+    {
+      "key": "bidi",
+      "class": "BidiRoute",
+      "file": "src/routes/bidi/bidi.route.ts"
+    },
+    {
+      "key": "box_plot_chart",
+      "class": "BoxPlotChartRoute",
+      "file": "src/routes/box-plot-chart/box-plot-chart.route.ts"
     },
     {
       "key": "breadcrumbs",
@@ -161,14 +294,69 @@
       "file": "src/routes/bulk-action-bar/bulk-action-bar.route.ts"
     },
     {
+      "key": "bullet_chart",
+      "class": "BulletChartRoute",
+      "file": "src/routes/bullet-chart/bullet-chart.route.ts"
+    },
+    {
+      "key": "button_group",
+      "class": "ButtonGroupRoute",
+      "file": "src/routes/button-group/button-group.route.ts"
+    },
+    {
       "key": "button",
       "class": "ButtonRoute",
       "file": "src/routes/button/button.route.ts"
     },
     {
+      "key": "calendar_heatmap",
+      "class": "CalendarHeatmapRoute",
+      "file": "src/routes/calendar-heatmap/calendar-heatmap.route.ts"
+    },
+    {
+      "key": "calendar",
+      "class": "CalendarRoute",
+      "file": "src/routes/calendar/calendar.route.ts"
+    },
+    {
+      "key": "candlestick_chart",
+      "class": "CandlestickChartRoute",
+      "file": "src/routes/candlestick-chart/candlestick-chart.route.ts"
+    },
+    {
       "key": "card",
       "class": "CardRoute",
       "file": "src/routes/card/card.route.ts"
+    },
+    {
+      "key": "carousel",
+      "class": "CarouselRoute",
+      "file": "src/routes/carousel/carousel.route.ts"
+    },
+    {
+      "key": "cascader",
+      "class": "CascaderRoute",
+      "file": "src/routes/cascader/cascader.route.ts"
+    },
+    {
+      "key": "chart_legend",
+      "class": "ChartLegendRoute",
+      "file": "src/routes/chart-legend/chart-legend.route.ts"
+    },
+    {
+      "key": "chart_tooltip",
+      "class": "ChartTooltipRoute",
+      "file": "src/routes/chart-tooltip/chart-tooltip.route.ts"
+    },
+    {
+      "key": "checkbox_button_group",
+      "class": "CheckboxButtonGroupRoute",
+      "file": "src/routes/checkbox-button-group/checkbox-button-group.route.ts"
+    },
+    {
+      "key": "checkbox_field",
+      "class": "CheckboxFieldRoute",
+      "file": "src/routes/checkbox-field/checkbox-field.route.ts"
     },
     {
       "key": "checkbox_group",
@@ -186,9 +374,34 @@
       "file": "src/routes/chip/chip.route.ts"
     },
     {
+      "key": "choropleth_map",
+      "class": "ChoroplethMapRoute",
+      "file": "src/routes/choropleth-map/choropleth-map.route.ts"
+    },
+    {
       "key": "close_button",
       "class": "CloseButtonRoute",
       "file": "src/routes/close-button/close-button.route.ts"
+    },
+    {
+      "key": "coach_mark",
+      "class": "CoachMarkRoute",
+      "file": "src/routes/coach-mark/coach-mark.route.ts"
+    },
+    {
+      "key": "code_block",
+      "class": "CodeBlockRoute",
+      "file": "src/routes/code-block/code-block.route.ts"
+    },
+    {
+      "key": "collection_engine",
+      "class": "CollectionEngineRoute",
+      "file": "src/routes/collection-engine/collection-engine.route.ts"
+    },
+    {
+      "key": "color_picker",
+      "class": "ColorPickerRoute",
+      "file": "src/routes/color-picker/color-picker.route.ts"
     },
     {
       "key": "combo_box",
@@ -196,9 +409,69 @@
       "file": "src/routes/combo-box/combo-box.route.ts"
     },
     {
+      "key": "command_palette",
+      "class": "CommandPaletteRoute",
+      "file": "src/routes/command-palette/command-palette.route.ts"
+    },
+    {
+      "key": "comment_thread",
+      "class": "CommentThreadRoute",
+      "file": "src/routes/comment-thread/comment-thread.route.ts"
+    },
+    {
+      "key": "components",
+      "class": "ComponentsRoute",
+      "file": "src/routes/components/components.route.ts"
+    },
+    {
+      "key": "composed_chart",
+      "class": "ComposedChartRoute",
+      "file": "src/routes/composed-chart/composed-chart.route.ts"
+    },
+    {
+      "key": "context_menu",
+      "class": "ContextMenuRoute",
+      "file": "src/routes/context-menu/context-menu.route.ts"
+    },
+    {
+      "key": "contextual_help",
+      "class": "ContextualHelpRoute",
+      "file": "src/routes/contextual-help/contextual-help.route.ts"
+    },
+    {
+      "key": "conversation_list",
+      "class": "ConversationListRoute",
+      "file": "src/routes/conversation-list/conversation-list.route.ts"
+    },
+    {
+      "key": "copy_button",
+      "class": "CopyButtonRoute",
+      "file": "src/routes/copy-button/copy-button.route.ts"
+    },
+    {
+      "key": "countdown",
+      "class": "CountdownRoute",
+      "file": "src/routes/countdown/countdown.route.ts"
+    },
+    {
+      "key": "country_select",
+      "class": "CountrySelectRoute",
+      "file": "src/routes/country-select/country-select.route.ts"
+    },
+    {
       "key": "cursor_pagination",
       "class": "CursorPaginationRoute",
       "file": "src/routes/cursor-pagination/cursor-pagination.route.ts"
+    },
+    {
+      "key": "dashboard_grid",
+      "class": "DashboardGridRoute",
+      "file": "src/routes/dashboard-grid/dashboard-grid.route.ts"
+    },
+    {
+      "key": "data_grid",
+      "class": "DataGridRoute",
+      "file": "src/routes/data-grid/data-grid.route.ts"
     },
     {
       "key": "data_table",
@@ -206,9 +479,19 @@
       "file": "src/routes/data-table/data-table.route.ts"
     },
     {
+      "key": "data_view",
+      "class": "DataViewRoute",
+      "file": "src/routes/data-view/data-view.route.ts"
+    },
+    {
       "key": "date_field",
       "class": "DateFieldRoute",
       "file": "src/routes/date-field/date-field.route.ts"
+    },
+    {
+      "key": "date_label",
+      "class": "DateLabelRoute",
+      "file": "src/routes/date-label/date-label.route.ts"
     },
     {
       "key": "date_picker",
@@ -216,9 +499,54 @@
       "file": "src/routes/date-picker/date-picker.route.ts"
     },
     {
+      "key": "date_range_picker",
+      "class": "DateRangePickerRoute",
+      "file": "src/routes/date-range-picker/date-range-picker.route.ts"
+    },
+    {
+      "key": "date_time_picker",
+      "class": "DateTimePickerRoute",
+      "file": "src/routes/date-time-picker/date-time-picker.route.ts"
+    },
+    {
+      "key": "diff_review",
+      "class": "DiffReviewRoute",
+      "file": "src/routes/diff-review/diff-review.route.ts"
+    },
+    {
+      "key": "disclosure",
+      "class": "DisclosureRoute",
+      "file": "src/routes/disclosure/disclosure.route.ts"
+    },
+    {
+      "key": "docs",
+      "class": "DocsRoute",
+      "file": "src/routes/docs/docs.route.ts"
+    },
+    {
+      "key": "donut_chart",
+      "class": "DonutChartRoute",
+      "file": "src/routes/donut-chart/donut-chart.route.ts"
+    },
+    {
       "key": "drawer",
       "class": "DrawerRoute",
       "file": "src/routes/drawer/drawer.route.ts"
+    },
+    {
+      "key": "drop_zone",
+      "class": "DropZoneRoute",
+      "file": "src/routes/drop-zone/drop-zone.route.ts"
+    },
+    {
+      "key": "dropdown",
+      "class": "DropdownRoute",
+      "file": "src/routes/dropdown/dropdown.route.ts"
+    },
+    {
+      "key": "emoji_picker",
+      "class": "EmojiPickerRoute",
+      "file": "src/routes/emoji-picker/emoji-picker.route.ts"
     },
     {
       "key": "empty_state",
@@ -236,14 +564,59 @@
       "file": "src/routes/environment-banner/environment-banner.route.ts"
     },
     {
+      "key": "error_page",
+      "class": "ErrorPageRoute",
+      "file": "src/routes/error-page/error-page.route.ts"
+    },
+    {
       "key": "error_state",
       "class": "ErrorStateRoute",
       "file": "src/routes/error-state/error-state.route.ts"
     },
     {
+      "key": "export_dialog",
+      "class": "ExportDialogRoute",
+      "file": "src/routes/export-dialog/export-dialog.route.ts"
+    },
+    {
+      "key": "fab",
+      "class": "FabRoute",
+      "file": "src/routes/fab/fab.route.ts"
+    },
+    {
+      "key": "file_trigger",
+      "class": "FileTriggerRoute",
+      "file": "src/routes/file-trigger/file-trigger.route.ts"
+    },
+    {
       "key": "filter_bar",
       "class": "FilterBarRoute",
       "file": "src/routes/filter-bar/filter-bar.route.ts"
+    },
+    {
+      "key": "filter_panel",
+      "class": "FilterPanelRoute",
+      "file": "src/routes/filter-panel/filter-panel.route.ts"
+    },
+    {
+      "key": "flip_card",
+      "class": "FlipCardRoute",
+      "file": "src/routes/flip-card/flip-card.route.ts"
+    },
+    {
+      "key": "floating_panel",
+      "class": "FloatingPanelRoute",
+      "file": "src/routes/floating-panel/floating-panel.route.ts"
+    },
+    {
+      "key": "footer",
+      "class": "FooterRoute",
+      "file": "src/routes/footer/footer.route.ts"
+    },
+    {
+      "key": "form_error_summary",
+      "class": "FormErrorSummaryRoute",
+      "file": "src/routes/form-error-summary/form-error-summary.route.ts"
     },
     {
       "key": "form_field",
@@ -266,9 +639,59 @@
       "file": "src/routes/foundations/foundations.route.ts"
     },
     {
+      "key": "fullscreen_bar",
+      "class": "FullscreenBarRoute",
+      "file": "src/routes/fullscreen-bar/fullscreen-bar.route.ts"
+    },
+    {
+      "key": "funnel_chart",
+      "class": "FunnelChartRoute",
+      "file": "src/routes/funnel-chart/funnel-chart.route.ts"
+    },
+    {
+      "key": "gallery",
+      "class": "GalleryRoute",
+      "file": "src/routes/gallery/gallery.route.ts"
+    },
+    {
+      "key": "gauge_chart",
+      "class": "GaugeChartRoute",
+      "file": "src/routes/gauge-chart/gauge-chart.route.ts"
+    },
+    {
+      "key": "heading",
+      "class": "HeadingRoute",
+      "file": "src/routes/heading/heading.route.ts"
+    },
+    {
+      "key": "heatmap_chart",
+      "class": "HeatmapChartRoute",
+      "file": "src/routes/heatmap-chart/heatmap-chart.route.ts"
+    },
+    {
+      "key": "highlight",
+      "class": "HighlightRoute",
+      "file": "src/routes/highlight/highlight.route.ts"
+    },
+    {
+      "key": "histogram_chart",
+      "class": "HistogramChartRoute",
+      "file": "src/routes/histogram-chart/histogram-chart.route.ts"
+    },
+    {
+      "key": "holo_card",
+      "class": "HoloCardRoute",
+      "file": "src/routes/holo-card/holo-card.route.ts"
+    },
+    {
       "key": "home",
       "class": "HomeRoute",
       "file": "src/routes/home/home.route.ts"
+    },
+    {
+      "key": "hover_card",
+      "class": "HoverCardRoute",
+      "file": "src/routes/hover-card/hover-card.route.ts"
     },
     {
       "key": "icon_button",
@@ -281,14 +704,74 @@
       "file": "src/routes/icon/icon.route.ts"
     },
     {
+      "key": "image_cropper",
+      "class": "ImageCropperRoute",
+      "file": "src/routes/image-cropper/image-cropper.route.ts"
+    },
+    {
+      "key": "import_dialog",
+      "class": "ImportDialogRoute",
+      "file": "src/routes/import-dialog/import-dialog.route.ts"
+    },
+    {
+      "key": "import_flow",
+      "class": "ImportFlowRoute",
+      "file": "src/routes/import-flow/import-flow.route.ts"
+    },
+    {
+      "key": "inline_edit",
+      "class": "InlineEditRoute",
+      "file": "src/routes/inline-edit/inline-edit.route.ts"
+    },
+    {
+      "key": "inline_loading",
+      "class": "InlineLoadingRoute",
+      "file": "src/routes/inline-loading/inline-loading.route.ts"
+    },
+    {
+      "key": "inline_select",
+      "class": "InlineSelectRoute",
+      "file": "src/routes/inline-select/inline-select.route.ts"
+    },
+    {
       "key": "input_group",
       "class": "InputGroupRoute",
       "file": "src/routes/input-group/input-group.route.ts"
     },
     {
+      "key": "item_card",
+      "class": "ItemCardRoute",
+      "file": "src/routes/item-card/item-card.route.ts"
+    },
+    {
+      "key": "kiosk_surface",
+      "class": "KioskSurfaceRoute",
+      "file": "src/routes/kiosk-surface/kiosk-surface.route.ts"
+    },
+    {
+      "key": "kpi",
+      "class": "KpiRoute",
+      "file": "src/routes/kpi/kpi.route.ts"
+    },
+    {
+      "key": "layout",
+      "class": "LayoutRoute",
+      "file": "src/routes/layout/layout.route.ts"
+    },
+    {
       "key": "leave_confirmation",
       "class": "LeaveConfirmationRoute",
       "file": "src/routes/leave-confirmation/leave-confirmation.route.ts"
+    },
+    {
+      "key": "lightbox",
+      "class": "LightboxRoute",
+      "file": "src/routes/lightbox/lightbox.route.ts"
+    },
+    {
+      "key": "line_chart",
+      "class": "LineChartRoute",
+      "file": "src/routes/line-chart/line-chart.route.ts"
     },
     {
       "key": "link",
@@ -301,9 +784,64 @@
       "file": "src/routes/list/list.route.ts"
     },
     {
+      "key": "listbox",
+      "class": "ListboxRoute",
+      "file": "src/routes/listbox/listbox.route.ts"
+    },
+    {
+      "key": "loading_overlay",
+      "class": "LoadingOverlayRoute",
+      "file": "src/routes/loading-overlay/loading-overlay.route.ts"
+    },
+    {
+      "key": "locale_switcher",
+      "class": "LocaleSwitcherRoute",
+      "file": "src/routes/locale-switcher/locale-switcher.route.ts"
+    },
+    {
+      "key": "marquee",
+      "class": "MarqueeRoute",
+      "file": "src/routes/marquee/marquee.route.ts"
+    },
+    {
+      "key": "masked_field",
+      "class": "MaskedFieldRoute",
+      "file": "src/routes/masked-field/masked-field.route.ts"
+    },
+    {
+      "key": "media_player",
+      "class": "MediaPlayerRoute",
+      "file": "src/routes/media-player/media-player.route.ts"
+    },
+    {
+      "key": "mention_input",
+      "class": "MentionInputRoute",
+      "file": "src/routes/mention-input/mention-input.route.ts"
+    },
+    {
       "key": "menu",
       "class": "MenuRoute",
       "file": "src/routes/menu/menu.route.ts"
+    },
+    {
+      "key": "menubar",
+      "class": "MenubarRoute",
+      "file": "src/routes/menubar/menubar.route.ts"
+    },
+    {
+      "key": "message_actions",
+      "class": "MessageActionsRoute",
+      "file": "src/routes/message-actions/message-actions.route.ts"
+    },
+    {
+      "key": "message_scroller",
+      "class": "MessageScrollerRoute",
+      "file": "src/routes/message-scroller/message-scroller.route.ts"
+    },
+    {
+      "key": "meter",
+      "class": "MeterRoute",
+      "file": "src/routes/meter/meter.route.ts"
     },
     {
       "key": "modal",
@@ -316,6 +854,36 @@
       "file": "src/routes/mode-switch/mode-switch.route.ts"
     },
     {
+      "key": "model_picker",
+      "class": "ModelPickerRoute",
+      "file": "src/routes/model-picker/model-picker.route.ts"
+    },
+    {
+      "key": "money_field",
+      "class": "MoneyFieldRoute",
+      "file": "src/routes/money-field/money-field.route.ts"
+    },
+    {
+      "key": "morph_button",
+      "class": "MorphButtonRoute",
+      "file": "src/routes/morph-button/morph-button.route.ts"
+    },
+    {
+      "key": "morph_tabs",
+      "class": "MorphTabsRoute",
+      "file": "src/routes/morph-tabs/morph-tabs.route.ts"
+    },
+    {
+      "key": "multi_select",
+      "class": "MultiSelectRoute",
+      "file": "src/routes/multi-select/multi-select.route.ts"
+    },
+    {
+      "key": "native_select",
+      "class": "NativeSelectRoute",
+      "file": "src/routes/native-select/native-select.route.ts"
+    },
+    {
       "key": "navigation_header",
       "class": "NavigationHeaderRoute",
       "file": "src/routes/navigation-header/navigation-header.route.ts"
@@ -326,9 +894,49 @@
       "file": "src/routes/navigation-list/navigation-list.route.ts"
     },
     {
+      "key": "navigation_menu",
+      "class": "NavigationMenuRoute",
+      "file": "src/routes/navigation-menu/navigation-menu.route.ts"
+    },
+    {
+      "key": "notifications_panel",
+      "class": "NotificationsPanelRoute",
+      "file": "src/routes/notifications-panel/notifications-panel.route.ts"
+    },
+    {
       "key": "number_field",
       "class": "NumberFieldRoute",
       "file": "src/routes/number-field/number-field.route.ts"
+    },
+    {
+      "key": "number_pad",
+      "class": "NumberPadRoute",
+      "file": "src/routes/number-pad/number-pad.route.ts"
+    },
+    {
+      "key": "number_ticker",
+      "class": "NumberTickerRoute",
+      "file": "src/routes/number-ticker/number-ticker.route.ts"
+    },
+    {
+      "key": "number_value",
+      "class": "NumberValueRoute",
+      "file": "src/routes/number-value/number-value.route.ts"
+    },
+    {
+      "key": "otp_input",
+      "class": "OtpInputRoute",
+      "file": "src/routes/otp-input/otp-input.route.ts"
+    },
+    {
+      "key": "overflow_list",
+      "class": "OverflowListRoute",
+      "file": "src/routes/overflow-list/overflow-list.route.ts"
+    },
+    {
+      "key": "overflow_toolbar",
+      "class": "OverflowToolbarRoute",
+      "file": "src/routes/overflow-toolbar/overflow-toolbar.route.ts"
     },
     {
       "key": "page_header",
@@ -336,9 +944,54 @@
       "file": "src/routes/page-header/page-header.route.ts"
     },
     {
+      "key": "page_indicator",
+      "class": "PageIndicatorRoute",
+      "file": "src/routes/page-indicator/page-indicator.route.ts"
+    },
+    {
       "key": "page_skeleton",
       "class": "PageSkeletonRoute",
       "file": "src/routes/page-skeleton/page-skeleton.route.ts"
+    },
+    {
+      "key": "pagination",
+      "class": "PaginationRoute",
+      "file": "src/routes/pagination/pagination.route.ts"
+    },
+    {
+      "key": "password_field",
+      "class": "PasswordFieldRoute",
+      "file": "src/routes/password-field/password-field.route.ts"
+    },
+    {
+      "key": "period_picker",
+      "class": "PeriodPickerRoute",
+      "file": "src/routes/period-picker/period-picker.route.ts"
+    },
+    {
+      "key": "permissions_matrix",
+      "class": "PermissionsMatrixRoute",
+      "file": "src/routes/permissions-matrix/permissions-matrix.route.ts"
+    },
+    {
+      "key": "phone_field",
+      "class": "PhoneFieldRoute",
+      "file": "src/routes/phone-field/phone-field.route.ts"
+    },
+    {
+      "key": "pie_chart",
+      "class": "PieChartRoute",
+      "file": "src/routes/pie-chart/pie-chart.route.ts"
+    },
+    {
+      "key": "polar_chart",
+      "class": "PolarChartRoute",
+      "file": "src/routes/polar-chart/polar-chart.route.ts"
+    },
+    {
+      "key": "popconfirm",
+      "class": "PopconfirmRoute",
+      "file": "src/routes/popconfirm/popconfirm.route.ts"
     },
     {
       "key": "popover",
@@ -346,9 +999,19 @@
       "file": "src/routes/popover/popover.route.ts"
     },
     {
+      "key": "press_feedback",
+      "class": "PressFeedbackRoute",
+      "file": "src/routes/press-feedback/press-feedback.route.ts"
+    },
+    {
       "key": "progress_bar",
       "class": "ProgressBarRoute",
       "file": "src/routes/progress-bar/progress-bar.route.ts"
+    },
+    {
+      "key": "progress_button",
+      "class": "ProgressButtonRoute",
+      "file": "src/routes/progress-button/progress-button.route.ts"
     },
     {
       "key": "progress_circle",
@@ -356,9 +1019,44 @@
       "file": "src/routes/progress-circle/progress-circle.route.ts"
     },
     {
+      "key": "prompt_suggestions",
+      "class": "PromptSuggestionsRoute",
+      "file": "src/routes/prompt-suggestions/prompt-suggestions.route.ts"
+    },
+    {
       "key": "property_list",
       "class": "PropertyListRoute",
       "file": "src/routes/property-list/property-list.route.ts"
+    },
+    {
+      "key": "qr_code",
+      "class": "QrCodeRoute",
+      "file": "src/routes/qr-code/qr-code.route.ts"
+    },
+    {
+      "key": "quantity_stepper",
+      "class": "QuantityStepperRoute",
+      "file": "src/routes/quantity-stepper/quantity-stepper.route.ts"
+    },
+    {
+      "key": "questionnaire_card",
+      "class": "QuestionnaireCardRoute",
+      "file": "src/routes/questionnaire-card/questionnaire-card.route.ts"
+    },
+    {
+      "key": "radar_chart",
+      "class": "RadarChartRoute",
+      "file": "src/routes/radar-chart/radar-chart.route.ts"
+    },
+    {
+      "key": "radial_bar_chart",
+      "class": "RadialBarChartRoute",
+      "file": "src/routes/radial-bar-chart/radial-bar-chart.route.ts"
+    },
+    {
+      "key": "radio_button_group",
+      "class": "RadioButtonGroupRoute",
+      "file": "src/routes/radio-button-group/radio-button-group.route.ts"
     },
     {
       "key": "radio_group",
@@ -366,14 +1064,74 @@
       "file": "src/routes/radio-group/radio-group.route.ts"
     },
     {
+      "key": "range_bar_chart",
+      "class": "RangeBarChartRoute",
+      "file": "src/routes/range-bar-chart/range-bar-chart.route.ts"
+    },
+    {
+      "key": "range_calendar",
+      "class": "RangeCalendarRoute",
+      "file": "src/routes/range-calendar/range-calendar.route.ts"
+    },
+    {
+      "key": "range_slider",
+      "class": "RangeSliderRoute",
+      "file": "src/routes/range-slider/range-slider.route.ts"
+    },
+    {
+      "key": "reaction_button",
+      "class": "ReactionButtonRoute",
+      "file": "src/routes/reaction-button/reaction-button.route.ts"
+    },
+    {
+      "key": "recurrence_editor",
+      "class": "RecurrenceEditorRoute",
+      "file": "src/routes/recurrence-editor/recurrence-editor.route.ts"
+    },
+    {
+      "key": "result",
+      "class": "ResultRoute",
+      "file": "src/routes/result/result.route.ts"
+    },
+    {
       "key": "route_overlay",
       "class": "RouteOverlayRoute",
       "file": "src/routes/route-overlay/route-overlay.route.ts"
     },
     {
+      "key": "route_progress",
+      "class": "RouteProgressRoute",
+      "file": "src/routes/route-progress/route-progress.route.ts"
+    },
+    {
+      "key": "rule_builder",
+      "class": "RuleBuilderRoute",
+      "file": "src/routes/rule-builder/rule-builder.route.ts"
+    },
+    {
+      "key": "sankey_chart",
+      "class": "SankeyChartRoute",
+      "file": "src/routes/sankey-chart/sankey-chart.route.ts"
+    },
+    {
+      "key": "save_bar",
+      "class": "SaveBarRoute",
+      "file": "src/routes/save-bar/save-bar.route.ts"
+    },
+    {
+      "key": "scatter_chart",
+      "class": "ScatterChartRoute",
+      "file": "src/routes/scatter-chart/scatter-chart.route.ts"
+    },
+    {
       "key": "screen",
       "class": "ScreenRoute",
       "file": "src/routes/screen/screen.route.ts"
+    },
+    {
+      "key": "scroll_area",
+      "class": "ScrollAreaRoute",
+      "file": "src/routes/scroll-area/scroll-area.route.ts"
     },
     {
       "key": "search_field",
@@ -386,6 +1144,11 @@
       "file": "src/routes/section/section.route.ts"
     },
     {
+      "key": "segmented_control",
+      "class": "SegmentedControlRoute",
+      "file": "src/routes/segmented-control/segmented-control.route.ts"
+    },
+    {
       "key": "select",
       "class": "SelectRoute",
       "file": "src/routes/select/select.route.ts"
@@ -394,6 +1157,36 @@
       "key": "separator",
       "class": "SeparatorRoute",
       "file": "src/routes/separator/separator.route.ts"
+    },
+    {
+      "key": "setting_row",
+      "class": "SettingRowRoute",
+      "file": "src/routes/setting-row/setting-row.route.ts"
+    },
+    {
+      "key": "settings_cell",
+      "class": "SettingsCellRoute",
+      "file": "src/routes/settings-cell/settings-cell.route.ts"
+    },
+    {
+      "key": "setup_guide",
+      "class": "SetupGuideRoute",
+      "file": "src/routes/setup-guide/setup-guide.route.ts"
+    },
+    {
+      "key": "share_button",
+      "class": "ShareButtonRoute",
+      "file": "src/routes/share-button/share-button.route.ts"
+    },
+    {
+      "key": "shimmer",
+      "class": "ShimmerRoute",
+      "file": "src/routes/shimmer/shimmer.route.ts"
+    },
+    {
+      "key": "side_panel",
+      "class": "SidePanelRoute",
+      "file": "src/routes/side-panel/side-panel.route.ts"
     },
     {
       "key": "sidebar",
@@ -411,9 +1204,49 @@
       "file": "src/routes/skeleton/skeleton.route.ts"
     },
     {
+      "key": "slide_to_confirm",
+      "class": "SlideToConfirmRoute",
+      "file": "src/routes/slide-to-confirm/slide-to-confirm.route.ts"
+    },
+    {
+      "key": "slider",
+      "class": "SliderRoute",
+      "file": "src/routes/slider/slider.route.ts"
+    },
+    {
+      "key": "social_sign_in_buttons",
+      "class": "SocialSignInButtonsRoute",
+      "file": "src/routes/social-sign-in-buttons/social-sign-in-buttons.route.ts"
+    },
+    {
+      "key": "sortable_list",
+      "class": "SortableListRoute",
+      "file": "src/routes/sortable-list/sortable-list.route.ts"
+    },
+    {
+      "key": "sparkline",
+      "class": "SparklineRoute",
+      "file": "src/routes/sparkline/sparkline.route.ts"
+    },
+    {
       "key": "spinner",
       "class": "SpinnerRoute",
       "file": "src/routes/spinner/spinner.route.ts"
+    },
+    {
+      "key": "split_button",
+      "class": "SplitButtonRoute",
+      "file": "src/routes/split-button/split-button.route.ts"
+    },
+    {
+      "key": "split_view",
+      "class": "SplitViewRoute",
+      "file": "src/routes/split-view/split-view.route.ts"
+    },
+    {
+      "key": "stacked_meter",
+      "class": "StackedMeterRoute",
+      "file": "src/routes/stacked-meter/stacked-meter.route.ts"
     },
     {
       "key": "status_badge",
@@ -421,14 +1254,44 @@
       "file": "src/routes/status-badge/status-badge.route.ts"
     },
     {
+      "key": "status_indicator",
+      "class": "StatusIndicatorRoute",
+      "file": "src/routes/status-indicator/status-indicator.route.ts"
+    },
+    {
+      "key": "stepper",
+      "class": "StepperRoute",
+      "file": "src/routes/stepper/stepper.route.ts"
+    },
+    {
+      "key": "sunburst_chart",
+      "class": "SunburstChartRoute",
+      "file": "src/routes/sunburst-chart/sunburst-chart.route.ts"
+    },
+    {
       "key": "surface",
       "class": "SurfaceRoute",
       "file": "src/routes/surface/surface.route.ts"
     },
     {
+      "key": "swipeable_tabs",
+      "class": "SwipeableTabsRoute",
+      "file": "src/routes/swipeable-tabs/swipeable-tabs.route.ts"
+    },
+    {
       "key": "switch",
       "class": "SwitchRoute",
       "file": "src/routes/switch/switch.route.ts"
+    },
+    {
+      "key": "system_banner",
+      "class": "SystemBannerRoute",
+      "file": "src/routes/system-banner/system-banner.route.ts"
+    },
+    {
+      "key": "tab_bar",
+      "class": "TabBarRoute",
+      "file": "src/routes/tab-bar/tab-bar.route.ts"
     },
     {
       "key": "table",
@@ -446,6 +1309,21 @@
       "file": "src/routes/tag-group/tag-group.route.ts"
     },
     {
+      "key": "tag_input",
+      "class": "TagInputRoute",
+      "file": "src/routes/tag-input/tag-input.route.ts"
+    },
+    {
+      "key": "task_tray",
+      "class": "TaskTrayRoute",
+      "file": "src/routes/task-tray/task-tray.route.ts"
+    },
+    {
+      "key": "text_area_field",
+      "class": "TextAreaFieldRoute",
+      "file": "src/routes/text-area-field/text-area-field.route.ts"
+    },
+    {
       "key": "text_area",
       "class": "TextAreaRoute",
       "file": "src/routes/text-area/text-area.route.ts"
@@ -456,9 +1334,44 @@
       "file": "src/routes/text-field/text-field.route.ts"
     },
     {
+      "key": "text_reveal",
+      "class": "TextRevealRoute",
+      "file": "src/routes/text-reveal/text-reveal.route.ts"
+    },
+    {
       "key": "theme_studio",
       "class": "ThemeStudioRoute",
       "file": "src/routes/theme-studio/theme-studio.route.ts"
+    },
+    {
+      "key": "thumbnail",
+      "class": "ThumbnailRoute",
+      "file": "src/routes/thumbnail/thumbnail.route.ts"
+    },
+    {
+      "key": "time_clock",
+      "class": "TimeClockRoute",
+      "file": "src/routes/time-clock/time-clock.route.ts"
+    },
+    {
+      "key": "time_field",
+      "class": "TimeFieldRoute",
+      "file": "src/routes/time-field/time-field.route.ts"
+    },
+    {
+      "key": "time_picker",
+      "class": "TimePickerRoute",
+      "file": "src/routes/time-picker/time-picker.route.ts"
+    },
+    {
+      "key": "timeline_chart",
+      "class": "TimelineChartRoute",
+      "file": "src/routes/timeline-chart/timeline-chart.route.ts"
+    },
+    {
+      "key": "timeline",
+      "class": "TimelineRoute",
+      "file": "src/routes/timeline/timeline.route.ts"
     },
     {
       "key": "toast",
@@ -466,9 +1379,54 @@
       "file": "src/routes/toast/toast.route.ts"
     },
     {
+      "key": "toc_rail",
+      "class": "TocRailRoute",
+      "file": "src/routes/toc-rail/toc-rail.route.ts"
+    },
+    {
+      "key": "toggle_button",
+      "class": "ToggleButtonRoute",
+      "file": "src/routes/toggle-button/toggle-button.route.ts"
+    },
+    {
       "key": "tooltip",
       "class": "TooltipRoute",
       "file": "src/routes/tooltip/tooltip.route.ts"
+    },
+    {
+      "key": "tracker_strip",
+      "class": "TrackerStripRoute",
+      "file": "src/routes/tracker-strip/tracker-strip.route.ts"
+    },
+    {
+      "key": "transfer_list",
+      "class": "TransferListRoute",
+      "file": "src/routes/transfer-list/transfer-list.route.ts"
+    },
+    {
+      "key": "tree_select",
+      "class": "TreeSelectRoute",
+      "file": "src/routes/tree-select/tree-select.route.ts"
+    },
+    {
+      "key": "tree_view",
+      "class": "TreeViewRoute",
+      "file": "src/routes/tree-view/tree-view.route.ts"
+    },
+    {
+      "key": "treemap_chart",
+      "class": "TreemapChartRoute",
+      "file": "src/routes/treemap-chart/treemap-chart.route.ts"
+    },
+    {
+      "key": "truncate",
+      "class": "TruncateRoute",
+      "file": "src/routes/truncate/truncate.route.ts"
+    },
+    {
+      "key": "turnstile",
+      "class": "TurnstileRoute",
+      "file": "src/routes/turnstile/turnstile.route.ts"
     },
     {
       "key": "two_column_layout",
@@ -481,9 +1439,54 @@
       "file": "src/routes/typography/typography.route.ts"
     },
     {
+      "key": "use_breakpoint",
+      "class": "UseBreakpointRoute",
+      "file": "src/routes/use-breakpoint/use-breakpoint.route.ts"
+    },
+    {
       "key": "use_confirmation",
       "class": "UseConfirmationRoute",
       "file": "src/routes/use-confirmation/use-confirmation.route.ts"
+    },
+    {
+      "key": "view_stack",
+      "class": "ViewStackRoute",
+      "file": "src/routes/view-stack/view-stack.route.ts"
+    },
+    {
+      "key": "visually_hidden",
+      "class": "VisuallyHiddenRoute",
+      "file": "src/routes/visually-hidden/visually-hidden.route.ts"
+    },
+    {
+      "key": "voice_input",
+      "class": "VoiceInputRoute",
+      "file": "src/routes/voice-input/voice-input.route.ts"
+    },
+    {
+      "key": "waffle_chart",
+      "class": "WaffleChartRoute",
+      "file": "src/routes/waffle-chart/waffle-chart.route.ts"
+    },
+    {
+      "key": "waterfall_chart",
+      "class": "WaterfallChartRoute",
+      "file": "src/routes/waterfall-chart/waterfall-chart.route.ts"
+    },
+    {
+      "key": "wheel_picker",
+      "class": "WheelPickerRoute",
+      "file": "src/routes/wheel-picker/wheel-picker.route.ts"
+    },
+    {
+      "key": "widget_frame",
+      "class": "WidgetFrameRoute",
+      "file": "src/routes/widget-frame/widget-frame.route.ts"
+    },
+    {
+      "key": "year_picker",
+      "class": "YearPickerRoute",
+      "file": "src/routes/year-picker/year-picker.route.ts"
     }
   ],
   "schemas": {}

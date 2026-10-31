@@ -2,27 +2,35 @@
  * Stackra file contract:
  * Purpose: `haptics`, the one place a native control plays touch feedback: a light impact for a press, a selection
  *          tick for a changed choice, a rigid stop at a bound and a notification for an outcome, through
- *          `expo-haptics`. On by default; the app turns it off for everyone with `haptics.setEnabled(false)`, and
+ *          `expo-haptics`, each kind as the pattern the theme's haptic token names (ADR 0501). On by default; the app turns it off for everyone with `haptics.setEnabled(false)`, and
  *          `useHaptic()` re-renders on the change.
  * Boundary: plays and remembers the switch; never throws. `expo-haptics` is an optional peer, loaded on the first
  *           play: in an app (or a test) without it, or on a device with no haptic engine, nothing plays.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3); ADR 0320 (the showcase stage).
+ * Governing contract: ADR 0302 (decision 3); ADR 0320 (the showcase stage); ADR 0501 (haptic tokens).
  */
+import { STACKRA_THEME } from "@stackra/tokens";
+import type { HapticPattern } from "@stackra/tokens/contracts";
 import type * as ExpoHaptics from "expo-haptics";
 
 import type { HapticKind } from "#native/haptics/haptic-kind.type";
 
-/** How each kind is played. */
-const PLAY: Readonly<Record<HapticKind, (engine: typeof ExpoHaptics) => Promise<void>>> = {
-  impact: (engine) => engine.impactAsync(engine.ImpactFeedbackStyle.Light),
-  light: (engine) => engine.impactAsync(engine.ImpactFeedbackStyle.Light),
-  medium: (engine) => engine.impactAsync(engine.ImpactFeedbackStyle.Medium),
-  rigid: (engine) => engine.impactAsync(engine.ImpactFeedbackStyle.Rigid),
+/** How each `expo-haptics` pattern of the theme's haptic tokens is played. */
+const PLAY: Readonly<
+  Record<HapticPattern, (engine: typeof ExpoHaptics) => Promise<void> | undefined>
+> = {
   selection: (engine) => engine.selectionAsync(),
-  success: (engine) => engine.notificationAsync(engine.NotificationFeedbackType.Success),
-  warning: (engine) => engine.notificationAsync(engine.NotificationFeedbackType.Warning),
-  error: (engine) => engine.notificationAsync(engine.NotificationFeedbackType.Error),
+  "impact-light": (engine) => engine.impactAsync(engine.ImpactFeedbackStyle.Light),
+  "impact-medium": (engine) => engine.impactAsync(engine.ImpactFeedbackStyle.Medium),
+  "impact-heavy": (engine) => engine.impactAsync(engine.ImpactFeedbackStyle.Heavy),
+  "impact-rigid": (engine) => engine.impactAsync(engine.ImpactFeedbackStyle.Rigid),
+  "impact-soft": (engine) => engine.impactAsync(engine.ImpactFeedbackStyle.Soft),
+  "notification-success": (engine) =>
+    engine.notificationAsync(engine.NotificationFeedbackType.Success),
+  "notification-warning": (engine) =>
+    engine.notificationAsync(engine.NotificationFeedbackType.Warning),
+  "notification-error": (engine) => engine.notificationAsync(engine.NotificationFeedbackType.Error),
+  none: () => undefined,
 };
 
 const listeners = new Set<() => void>();
@@ -51,7 +59,9 @@ export const haptics = Object.freeze({
     const loaded = loadEngine();
     if (loaded === null) return;
     try {
-      PLAY[kind](loaded).catch(() => undefined);
+      // shortcut: the stackra theme's haptic tokens; a brand's own reach native when the theme store carries them.
+      const pattern = STACKRA_THEME.haptics[kind] ?? "none";
+      PLAY[pattern](loaded)?.catch(() => undefined);
     } catch {
       // A native module that is not linked throws before it returns a promise.
     }

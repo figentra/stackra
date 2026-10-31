@@ -72,7 +72,7 @@ export function SidebarGroup({
                 cn(
                   heading,
                   "-ms-2 flex min-h-6 flex-1 items-center gap-1 rounded-[var(--radius-control)] px-2 text-start outline-none",
-                  "hover:text-foreground focus-visible:outline-2 focus-visible:outline-focus",
+                  "hover:text-foreground focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus",
                 ) ?? ""
               }
             >

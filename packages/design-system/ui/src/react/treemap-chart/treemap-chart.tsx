@@ -76,7 +76,7 @@ export function TreemapChart({
               key={tile.item.key}
               aria-hidden
               // The pointed tile stands while the others dim.
-              className="absolute overflow-hidden rounded-[var(--radius-control)] border-2 border-surface p-1.5 transition-opacity duration-200 group-hover/treemap:opacity-45 hover:opacity-100 motion-reduce:transition-none"
+              className="absolute overflow-hidden rounded-[var(--radius-control)] border-2 border-surface p-1.5 transition-opacity duration-(--duration-moderate) group-hover/treemap:opacity-45 hover:opacity-100 motion-reduce:transition-none"
               style={{
                 insetInlineStart: `${tile.x}%`,
                 top: `${tile.y}%`,

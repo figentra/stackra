@@ -116,7 +116,7 @@ export function DropZone({
           "grid place-items-center gap-2 rounded-[var(--radius-container)] border-2 border-dashed p-8 text-center transition-colors motion-reduce:transition-none",
           isDropTarget ? "border-accent bg-accent-soft" : "border-border bg-surface",
           isFocusVisible && "outline-2 outline-offset-2 outline-focus",
-          isDisabled && "opacity-50",
+          isDisabled && "opacity-(--disabled-opacity)",
           showPreviews ? undefined : className,
         ) ?? ""
       }

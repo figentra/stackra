@@ -77,7 +77,8 @@ export function Gallery({
                 className={cn(
                   "block w-full object-cover",
                   isMasonry ? "h-auto" : "aspect-square",
-                  motion === "full" && "transition-transform duration-300 group-hover:scale-105",
+                  motion === "full" &&
+                    "transition-transform duration-(--duration-slow) group-hover:scale-105",
                 )}
               />
             </button>

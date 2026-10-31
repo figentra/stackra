@@ -15,6 +15,7 @@ import { FILE_TRIGGER_KEYS } from "#src/demos/free/file-trigger/file-trigger-key
 const K = FILE_TRIGGER_KEYS.file_trigger;
 
 /** How often the pretend upload moves on, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's simulated upload tick, not motion
 const TICK_MS = 300;
 
 /** FileTrigger: Try it. */

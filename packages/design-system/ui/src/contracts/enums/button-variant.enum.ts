@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: the button variants: the three shared emphasis levels plus the four HeroUI adds for buttons (outline,
- *          ghost, danger, danger-soft). The list is the same on HeroUI v3 and HeroUI Native, so a variant reaches
- *          both renderers unchanged.
+ *          ghost, danger, danger-soft), and Stackra's `glass` for a button on media or glass chrome (ADR 0320 as
+ *          amended 2026-10-31): the glass level's fill and rim, lifting and brightening under the press. HeroUI's
+ *          variants reach both renderers unchanged; `glass` draws on HeroUI's ghost (web) or tertiary (native).
  * Boundary: the values only; each Button renders them.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3: one API); ADR 0303 (decision 7); ADR 0165 (UI contract).
@@ -20,6 +21,7 @@ export const ButtonVariant = Object.freeze([
   "ghost",
   "danger",
   "danger-soft",
+  "glass",
 ] as const);
 
 /** One button variant. */

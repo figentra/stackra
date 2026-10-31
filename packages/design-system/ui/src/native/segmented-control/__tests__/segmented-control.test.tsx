@@ -4,7 +4,7 @@
  *          checked; a press on another segment chooses it with a selection haptic and reports it, a press on the
  *          current one does nothing; disabled segments and a disabled control refuse; it can be controlled; sizes
  *          and full width set the classes; the thumb jumps under the chosen segment once it is measured, then
- *          springs to each new choice, and only jumps under reduced motion.
+ *          slides to each new choice over the indicator step, and only jumps under reduced motion.
  * Boundary: React Native, heroui-native, lucide and Reanimated do not run in vitest, so they and the house Text and
  *           SlotIcon are recording stand-ins that render plain DOM; the thumb's shared values record each set.
  * Runtime: node
@@ -62,7 +62,8 @@ vi.mock("react-native-reanimated", async () => {
     }),
     useAnimatedStyle: (worklet: () => unknown) => worklet(),
     useReducedMotion: () => state.reduced,
-    withSpring: (to: number) => ({ spring: to }),
+    Easing: { bezier: () => "indicator-curve" },
+    withTiming: (to: number) => ({ slide: to }),
   };
 });
 vi.mock("heroui-native", () => ({
@@ -162,14 +163,14 @@ describe("SegmentedControl (native)", () => {
     expect(screen.getByText("Day").getAttribute("data-type")).toBe("body");
   });
 
-  it("jumps the thumb under the chosen segment once measured, then springs to each choice", () => {
+  it("jumps the thumb under the chosen segment once measured, then slides to each choice", () => {
     draw({ defaultSelectedKey: "week", size: "sm" });
     layout("Day", 0, 60);
     expect(state.sets).toEqual([]);
     layout("Week", 60, 70);
     expect(state.sets).toEqual([60, 70]);
     fireEvent.click(screen.getByLabelText("Day"));
-    expect(state.sets.slice(2)).toEqual([{ spring: 0 }, { spring: 60 }]);
+    expect(state.sets.slice(2)).toEqual([{ slide: 0 }, { slide: 60 }]);
     expect(state.thumb["style"]).toContainEqual({ width: 0, transform: [{ translateX: 0 }] });
   });
 

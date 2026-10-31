@@ -9,6 +9,7 @@
 import type { ReactElement } from "react";
 import { View } from "react-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { DISPLAY_KEYS } from "#core/constants/display-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { LoadingOverlayProps } from "#native/loading-overlay/loading-overlay.props";
@@ -32,7 +33,10 @@ export function LoadingOverlay({
         {children}
       </View>
       {isLoading ? (
-        <View className="absolute inset-0 z-10 items-center justify-center gap-2 bg-background/75 p-4">
+        <View
+          style={{ zIndex: THEME_PX.zIndex["raised"] }}
+          className="absolute inset-0 items-center justify-center gap-2 bg-background/75 p-4"
+        >
           <Spinner />
           <Text className="font-medium" accessibilityLiveRegion="polite">
             {message ?? t(DISPLAY_KEYS.ui.loading_overlay.loading)}

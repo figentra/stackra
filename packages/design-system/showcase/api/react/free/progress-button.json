@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "1f6e907d541f4ccc",
+    "hash": "8341311a3f602221",
     "propsFiles": ["ui/src/react/progress-button/progress-button.props.ts"]
   },
   "importLine": "import { ProgressButton } from \"@stackra/ui/react\";",
@@ -129,7 +129,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",

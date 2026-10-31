@@ -31,6 +31,7 @@ const FAILURE = Object.assign(
 );
 
 /** How long the live sample takes to recover, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake recovery delay, not motion
 const RETRY_MS = 600;
 
 /** The card an error state sits in, as a page or panel would hold it. */

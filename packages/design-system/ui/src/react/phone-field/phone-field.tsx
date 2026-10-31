@@ -78,9 +78,9 @@ export function PhoneField({
         className={
           cn(
             "flex h-10 min-w-0 items-stretch overflow-hidden rounded-[var(--radius-control)] border border-field-border bg-field text-field-foreground",
-            "focus-within:border-field-border-focus has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-focus",
+            "focus-within:border-field-border-focus has-[input:focus-visible]:[outline-style:var(--focus-ring-style)] focus-visible]:outline-(length:--focus-ring-width) has-[input:focus-visible]:outline-focus",
             isInvalid && "border-danger",
-            isDisabled && "opacity-60",
+            isDisabled && "opacity-(--opacity-muted)",
           ) ?? ""
         }
       >

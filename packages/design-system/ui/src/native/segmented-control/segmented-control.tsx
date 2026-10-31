@@ -67,7 +67,7 @@ export function SegmentedControl({
       <Animated.View
         pointerEvents="none"
         style={[{ position: "absolute", top: 4, bottom: 4, left: 0 }, thumbStyle]}
-        className="rounded-[var(--radius-pill)] bg-surface shadow-sm"
+        className="rounded-[var(--radius-pill)] bg-segment shadow-surface"
       />
       {items.map((item) => {
         const isSelected = item.id === selected;

@@ -1,6 +1,6 @@
 ---
 title: "0320 — Stackra brand: the glass material and the showcase stage"
-description: "Accepted · 2026-10-24"
+description: "Accepted · 2026-10-24 · amended 2026-10-31 (STA-1371)"
 ---
 
 <Note>
@@ -25,7 +25,7 @@ limits, so the material does not drift into product screens or into the componen
    edge, with a light top edge allowed. It is built from the theme's roles only, with no colour of its own. Glass is
    for **showcase and marketing surfaces**: the playground, the docs landing, marketing pages and the static host.
    Product UI (console, mobile, panel resources) and the `@stackra/ui` components keep the opaque layers. A future ADR
-   decides whether glass reaches them.
+   decides whether glass reaches them. _Amended 2026-10-31: glass reaches product UI by family (decision 8)._
 2. **Glass never sits under a component's reference samples.** The components' soft and translucent variants are tuned
    against the theme's `background`, so a page that documents a component (its variants, sizes and states) places them
    on a solid sheet of that colour; glass frames that sheet and never sits behind it. Composed scenes that show the
@@ -81,7 +81,8 @@ limits, so the material does not drift into product screens or into the componen
    - **Where each default comes from.** `glass` is the stylesheet's `:root` default, so a page with no
      `data-material` (a static showcase page, the docs landing) gets the theme as written. `DesignSystemProvider`
      sets `solid` unless it is given another mode (`material`), so product UI is opaque without asking, and a
-     showcase asks for glass. Solid also comes from the fallbacks of decision 4.
+     showcase asks for glass. _Amended 2026-10-31: the provider applies the theme's `materials.defaultMode` (the Stackra
+     theme's is `solid`) when it is given no mode._ Solid also comes from the fallbacks of decision 4.
    - **The sheen is the rim light spread down.** Its white is the mode's `sheen` times the colour scheme's rim-light
      share (`materials.highlight`): about 22% on the stackra light scheme and under 3% on its dark one, where more
      white would wash out light text.
@@ -99,7 +100,7 @@ limits, so the material does not drift into product screens or into the componen
      - the fallbacks come after the modes;
      - the classes go in the one components layer.
    - **Native** uses the platform's own material: Liquid Glass on iOS 26 and later, solid everywhere else (older iOS
-     and Android). It reads `Theme.materials` and `MATERIAL_MODES` only to choose between the two; the web's CSS
+     and Android). _Amended 2026-10-31: the front family blurs where Liquid Glass is missing (decision 9)._ It reads `Theme.materials` and `MATERIAL_MODES` only to choose between the two; the web's CSS
      material is not drawn on native.
 
 ## Consequences
@@ -128,5 +129,50 @@ limits, so the material does not drift into product screens or into the componen
   glass solid under more contrast and under reduced transparency (emulated through the DevTools protocol); an edge in
   forced colours.
 - `apps/playground/src/styles/__tests__/app.test.ts`: the playground never loads HeroUI Pro's glass theme.
-- Planned: a design-brand review rule that refuses `backdrop-filter`, or a gradient fill, outside the surfaces of
-  decision 1. Until then, review applies it.
+- `stackra/no-backdrop-filter` (`packages/developer/coding-standard`, on in `packages/tooling/oxlint/src/base.jsonc`):
+  decision 11.
+- `render-material-css.function.test.ts` and `stackra-theme.constant.test.ts` in `@stackra/tokens`: the role maps,
+  the family blocks, the thick fill under muted text, the `glass-clear` dim floors and the fallbacks (decision 10).
+- `@stackra/ui`'s native glass tests: the rendering per platform and family (decision 9).
+- Planned: a review rule that refuses a gradient fill outside the surfaces of decision 1. Until then, review applies
+  it.
+
+## Amendment 2026-10-31: glass in product UI, by family
+
+<Note>
+  Owner decisions of 2026-10-31 (design-system session c6, STA-1371) on the five open questions of
+  the material research note. The schema they need is
+  [0501](/adr/0501-tokens-v2-one-theme-schema-drives-every-visual-value-on-web-and-native) section
+  9.
+</Note>
+
+8. **Glass reaches product UI by family** (amends decision 1). A theme names a family, `front` (storefront,
+   marketing, the consumer mobile app) or `studio` (console, panel, admin), and each family maps every material role
+   to a level or to `solid`. Front-facing surfaces use the full role map; Studio gets glass only on overlays and
+   chrome (popover, menu, toast, tab bar, action bar, and the nav bar once content scrolls under it) and keeps its
+   content solid. Cards are solid in both. Decision 2 still holds: a component's reference samples sit on solid.
+   The Stackra theme stays `studio` and `solid`, so nothing changes until a theme or app opts in.
+9. **Android blurs in the front family** (option B). This **reverses the owner's decision of 2026-10-24**
+   ("Liquid Glass or solid, no blur fallback").
+   - iOS 26 and later: Liquid Glass through `expo-glass-effect`, as before.
+   - Front family on iOS before 26 and on Android 12 and later (API 31, `RenderEffect`): `expo-blur` 57.0.3, a
+     `catalog:mobile` entry and an optional peer of `@stackra/ui`. On Android the blurred content sits inside
+     `MaterialBackdrop` (the library's blur target).
+   - Studio, Android 11 and earlier, and reduced transparency: a tonal solid (the surface lifted toward the accent by
+     elevation), as Material 3 draws it.
+   - Budget: at most two blurred layers on screen, never over a scrolling list on a low-end device.
+10. **`glass-clear` dim floors.** Clear glass over media never dims below **0.50 under glyphs and 0.55 under
+    labels**, whatever a theme asks (Apple's 0.35 is refused); more contrast raises the plate to 0.70. The contrast
+    test proves the floors. Overlays that carry muted text (popover, menu, sheet, command, modal) keep their role's
+    look but draw the `thick` fill, so decision 4 still holds for muted text.
+11. **Rule 4: blur lives only in the material layer.** `backdrop-filter` (and its Tailwind `backdrop-*` utilities),
+    `expo-blur` and `expo-glass-effect` are allowed only in the material classes and roles of `@stackra/tokens` and
+    the native glass components of `@stackra/ui`. A component asks for a material role and never authors a blur.
+    The lint rule `stackra/no-backdrop-filter` enforces it, replacing the planned design-brand review rule for
+    blur.
+12. **visionOS and watchOS are planned future native targets.** Each needs its own ADR (a new runtime, and an entry
+    in [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) until then); neither is built now. Until
+    they are, the token schema must keep them unblocked: depth levels beyond today's four elevations, ornaments as a
+    material role, and a small-screen type scale must stay expressible, and no change to `materials`, `shadows` or
+    `typeScale` may make them unrepresentable. Today visionOS informs the design language only (comfort, hover
+    highlights, one weight heavier on glass).

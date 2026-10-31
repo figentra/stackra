@@ -33,6 +33,7 @@ import { IconButton } from "#native/icon-button/icon-button";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
 import type { NavigationHeaderProps } from "#native/navigation-header/navigation-header.props";
+import { GlassSurface } from "#native/glass/glass-surface";
 
 /** The back chevron, mirrored in right-to-left because it points the reading way back. */
 const BACK_ICON = <Icon name="chevron-left" />;
@@ -87,10 +88,12 @@ export function NavigationHeader({
       title
     );
   return (
-    <View
+    // The nav-bar role (ADR 0320 as amended 2026-10-31).
+    <GlassSurface
+      material="nav-bar"
       {...rest}
       {...(label ? { accessibilityLabel: label } : {})}
-      className={["border-b border-separator bg-background", className].filter(Boolean).join(" ")}
+      className={["border-b border-separator", className].filter(Boolean).join(" ")}
       style={[hasTopInset ? { paddingTop: insets.top } : null, style]}
     >
       <View className="min-h-14 flex-row items-center gap-2 px-2 py-2">
@@ -106,6 +109,6 @@ export function NavigationHeader({
         )}
       </View>
       {hasLargeTitle ? heading : null}
-    </View>
+    </GlassSurface>
   );
 }

@@ -96,7 +96,7 @@ export default function HeaderFooter() {
   const here = `${pathname}${search}#sidebar-header-footer`;
 
   return (
-    <div className="h-[28rem] w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
+    <div className="h-112 w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
       <Sidebar keyboardShortcut={false}>
         <Sidebar.Header>
           <Switcher />

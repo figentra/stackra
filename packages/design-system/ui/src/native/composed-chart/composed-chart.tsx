@@ -11,6 +11,7 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303; ADR 0060 (right-to-left); chart style
  *          spec (2026-10-28) section 6; WCAG 2.2 SC 1.1.1, 1.4.11 and 2.3.3; STA-1371.
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import {
   DashPathEffect,
   Group,
@@ -34,6 +35,7 @@ import {
   useChartPressState,
 } from "victory-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { chartAnnotationTextOf } from "#core/functions/chart-annotation-text-of.function";
 import { chartColorOf } from "#core/functions/chart-color-of.function";
 import { composedSeriesOf } from "#core/functions/composed-series-of.function";
@@ -48,6 +50,9 @@ import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { ComposedChartProps } from "#native/composed-chart/composed-chart.props";
 import { haptics } from "#native/haptics/haptics";
 import { Text } from "#native/text/text";
+
+/** The series drawing in: the theme's slow step. */
+const SLOW = motionTiming(STACKRA_THEME, "slow");
 
 /** A loose Victory row. */
 type Row = Record<string, string | number | null>;
@@ -96,13 +101,16 @@ export function ComposedChart(props: ComposedChartProps): ReactElement {
     () =>
       createParagraphLabelRenderer({
         paragraphStyle: { maxLines: 1, textAlign: TextAlign.Center },
-        // oxlint-disable-next-line react/capitalized-calls -- Skia.Color is Skia's colour parser, a namespace method, not a component
-        textStyle: { fontSize: 10, color: Skia.Color(paint.muted) },
+        textStyle: {
+          fontSize: THEME_PX.typeScale["3xs"]?.fontSize ?? 0,
+          // oxlint-disable-next-line react/capitalized-calls -- Skia.Color is Skia's colour parser, a namespace method, not a component
+          color: Skia.Color(paint.muted),
+        },
         maxWidth: ({ text }) => text.length * 6.5 + 8,
       }),
     [paint.muted],
   );
-  const animate = isReduced ? undefined : ({ type: "timing", duration: 300 } as const);
+  const animate = isReduced ? undefined : ({ type: "timing", duration: SLOW.durationMs } as const);
   const category = (value: unknown) => formatChartCategory(value, locale, xFormat);
   const value = (figure: number) => formatChartNumber(figure, locale, valueFormat);
   const table = chartTableOf({

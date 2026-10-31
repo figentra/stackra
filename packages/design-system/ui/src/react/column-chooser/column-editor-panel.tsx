@@ -16,6 +16,7 @@
  */
 import { Checkbox as HeroCheckbox, cn } from "@heroui/react";
 import { IconRegistryProvider } from "@stackra/icons/react";
+import { motionSpring, STACKRA_THEME } from "@stackra/tokens";
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactElement } from "react";
 import {
@@ -46,7 +47,7 @@ import { TextField } from "#react/text-field/text-field";
 const K = COLLECTION_KEYS.ui.collection;
 
 /** The spring a row settles with after a drop. */
-const SETTLE = { type: "spring", stiffness: 500, damping: 38 } as const;
+const SETTLE = { type: "spring", ...motionSpring(STACKRA_THEME, "snappy") } as const;
 
 /** The column editor's content (the list and the opened column's settings), for a popover or a drawer. */
 export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>({
@@ -107,8 +108,8 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
               className={
                 cn(
                   "border-b border-separator bg-surface text-foreground outline-none last:border-b-0",
-                  "data-[focus-visible]:outline-2 data-[focus-visible]:-outline-offset-2 data-[focus-visible]:outline-focus",
-                  "data-[dragging]:opacity-40",
+                  "data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:-outline-offset-2 data-[focus-visible]:outline-focus",
+                  "data-[dragging]:opacity-(--opacity-subtle)",
                   openId === column.id && "bg-accent-soft",
                 ) ?? ""
               }

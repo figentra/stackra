@@ -69,9 +69,10 @@ export function SegmentedControl({
       style={{ borderRadius: "var(--radius-control)" }}
       className={
         cn(
-          "relative flex bg-default p-1",
+          // The segmented-track role: the default fill in studio, an ultra-thin capsule in front (ADR 0320 as amended).
+          "material-role-segmented-track relative flex p-1",
           isFullWidth ? "w-full" : "w-fit",
-          isDisabled && "opacity-50",
+          isDisabled && "opacity-(--disabled-opacity)",
           className,
         ) ?? ""
       }
@@ -79,7 +80,7 @@ export function SegmentedControl({
       {thumb === null ? null : (
         <span
           aria-hidden="true"
-          className="absolute inset-y-1 left-0 bg-surface shadow-sm transition-[transform,width] duration-[var(--duration-base)] ease-out motion-reduce:transition-none"
+          className="absolute inset-y-1 left-0 bg-segment shadow-(--raised-shadow) transition-[transform,width] duration-(--duration-indicator) ease-(--ease-indicator) motion-reduce:transition-none"
           style={{
             width: thumb.width,
             transform: `translateX(${thumb.left}px)`,
@@ -101,7 +102,7 @@ export function SegmentedControl({
               isFullWidth && "flex-1",
               isSelected ? "text-foreground" : "text-muted",
               isFocusVisible && "ring-2 ring-focus",
-              item.isDisabled && "cursor-not-allowed opacity-50",
+              item.isDisabled && "cursor-not-allowed opacity-(--disabled-opacity)",
             ) ?? ""
           }
         >

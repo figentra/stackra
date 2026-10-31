@@ -46,7 +46,7 @@ export function BackToTop({
         icon={<ArrowUp size={18} />}
         label={label ?? t(K.label)}
         variant="secondary"
-        className="shadow-md"
+        className="shadow-overlay"
         onPress={goTop}
       />
     </Animated.View>

@@ -8,6 +8,7 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303; WCAG 2.2 SC 1.1.1, 1.4.11 and 2.3.3; STA-1371.
  */
 import { LinearGradient, Skia, vec } from "@shopify/react-native-skia";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import type { ReactElement } from "react";
 import { View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
@@ -18,6 +19,9 @@ import { isArabic } from "#core/functions/is-arabic.function";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { SparklineProps } from "#native/sparkline/sparkline.props";
+
+/** The line drawing in: the theme's slow step. */
+const SLOW = motionTiming(STACKRA_THEME, "slow");
 
 /** A tiny trend. */
 export function Sparkline({
@@ -40,7 +44,9 @@ export function Sparkline({
     ? // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
       ordered.map((row, index) => ({ ...row, index: data.length - 1 - index })).reverse()
     : ordered;
-  const animate = isReduced ? {} : { animate: { type: "timing", duration: 300 } as const };
+  const animate = isReduced
+    ? {}
+    : { animate: { type: "timing", duration: SLOW.durationMs } as const };
   // oxlint-disable-next-line react/capitalized-calls -- Skia.Color is Skia's colour parser, a namespace method, not a component
   const [red = 0, green = 0, blue = 0] = paint ? Skia.Color(paint) : [];
   return (

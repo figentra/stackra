@@ -11,6 +11,7 @@
  * Governing contract: gap inventory row 3 (owner decision 2026-10-28, "P1 + P2 core"); ADR 0302 (decision 3); ADR 0055
  *          (forms: one field contract); ADR 0165 (HeroUI Native on native); WCAG 2.2 SC 3.3.8, 4.1.2.
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import {
   Description,
   FieldError,
@@ -32,8 +33,8 @@ import { IconButton } from "#native/icon-button/icon-button";
 import type { PasswordFieldProps } from "#native/password-field/password-field.props";
 import { useShake } from "#native/shake/use-shake";
 
-/** The eye's morph: it grows in from small, or simply appears under reduced motion. */
-const MORPH = ZoomIn.duration(150)
+/** The eye's morph: it grows in from small over the theme's fast step, or simply appears under reduced motion. */
+const MORPH = ZoomIn.duration(motionTiming(STACKRA_THEME, "fast").durationMs)
   .withInitialValues({ transform: [{ scale: 0.6 }] })
   .reduceMotion(ReduceMotion.System);
 

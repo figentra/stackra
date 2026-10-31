@@ -17,6 +17,7 @@ import { MESSAGE_SCROLLER_KEYS } from "#src/demos/free/message-scroller/message-
 const K = MESSAGE_SCROLLER_KEYS.message_scroller.streaming;
 
 /** How often the next word arrives, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's simulated word stream, not motion
 const WORD_MS = 90;
 
 /** A message bubble: the person's at the end, the assistant's at the start. */

@@ -48,7 +48,7 @@ export function TopBar({
     // The bar material: the theme's own background as a tinted glass with foreground text, so whatever scrolls under it
     // shows only as a blurred tint and the words keep their contrast in every brand and scheme (solid in the solid
     // mode, under reduced transparency and more contrast). Its words are foreground, never muted, for the same reason.
-    <header className="material-bar sticky top-0 z-20 border-b border-separator">
+    <header className="material-bar sticky top-0 z-(--z-sticky) border-b border-separator">
       <div className={`mx-auto flex h-14 ${width} items-center gap-1 sm:gap-2`}>
         <IconButton
           icon="list"
@@ -112,7 +112,7 @@ export function TopBar({
           title={t(K.display)}
           placement="bottom"
           align="end"
-          className="w-[25rem] max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-5rem)] overflow-y-auto"
+          className="w-100 max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-5rem)] overflow-y-auto"
           trigger={
             <Button
               variant="ghost"

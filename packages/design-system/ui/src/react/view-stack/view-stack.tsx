@@ -114,7 +114,7 @@ function ViewStackRoot({
           });
           const fill = backdropOf(element);
           // Going back, the leaving view slides off over the one it uncovers, so it is drawn on top.
-          const leavingLayer = way === "back" ? { zIndex: 1 } : {};
+          const leavingLayer = way === "back" ? { zIndex: "var(--z-pinned)" } : {};
           root.animate(
             solid(frames.leaving as Keyframe[], fill).map((frame) => ({
               ...frame,

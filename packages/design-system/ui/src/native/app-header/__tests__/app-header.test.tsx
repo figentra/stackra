@@ -18,6 +18,18 @@ import type { ReactNode } from "react";
 import { AppHeader } from "#native/app-header/app-header";
 import type { AppHeaderProps } from "#native/app-header/app-header.props";
 
+// The material layer draws natively (expo-glass-effect, expo-blur); here it is the View it wraps, its role kept.
+vi.mock("#native/glass/glass-surface", async () => {
+  const { createElement } = await import("react");
+  const { View } = (await import("react-native")) as unknown as {
+    View: (props: Record<string, unknown>) => unknown;
+  };
+  return {
+    GlassSurface: ({ material, ...props }: Record<string, unknown>) =>
+      createElement(View as never, { ...props, "data-material": material }),
+  };
+});
+
 vi.mock("react-native", () => ({
   View: ({
     children,

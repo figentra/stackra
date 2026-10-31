@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "aba91525f01ee635",
+    "hash": "65f55b482088193f",
     "propsFiles": ["ui/src/react/icon-button/icon-button.props.ts"]
   },
   "importLine": "import { IconButton } from \"@stackra/ui/react\";",
@@ -129,7 +129,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",

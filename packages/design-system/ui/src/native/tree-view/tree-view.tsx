@@ -15,6 +15,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0329 (motion layer); design-system gap
  *          inventory (2026-10-28) row 22.
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useEffect, useState, type ReactElement } from "react";
 import { Pressable, View } from "react-native";
 import Animated, {
@@ -39,10 +40,10 @@ import { useUiText } from "#react/hooks/use-ui-text";
 import type { TreeViewProps } from "#native/tree-view/tree-view.props";
 
 /** The delay between two children fading in, in milliseconds. */
-const STAGGER_MS = 30;
+const STAGGER_MS = motionTiming(STACKRA_THEME, "stagger").durationMs;
 
 /** How long the chevron takes to turn, in milliseconds. */
-const TURN_MS = 200;
+const TURN_MS = motionTiming(STACKRA_THEME, "moderate").durationMs;
 
 /** The indent of each level, in points. */
 const INDENT = 20;

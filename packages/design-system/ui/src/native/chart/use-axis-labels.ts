@@ -10,6 +10,8 @@ import { Skia, TextAlign } from "@shopify/react-native-skia";
 import { useMemo } from "react";
 import { createParagraphLabelRenderer } from "victory-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
+
 /** The width allowed per character of an axis label at 10 points. */
 const LABEL_CHAR_WIDTH = 6.5;
 
@@ -28,7 +30,7 @@ export function useAxisLabels(
       createParagraphLabelRenderer({
         paragraphStyle: { maxLines: 1, ellipsis: "…", textAlign: TextAlign.Center },
         // oxlint-disable-next-line react/capitalized-calls -- Skia.Color is Skia's colour parser, a namespace method, not a component
-        textStyle: { fontSize: 10, color: Skia.Color(color) },
+        textStyle: { fontSize: THEME_PX.typeScale["3xs"]?.fontSize ?? 0, color: Skia.Color(color) },
         maxWidth: ({ text }) =>
           Math.min(text.length * LABEL_CHAR_WIDTH + 8, slotWidth ?? Number.POSITIVE_INFINITY),
       }),

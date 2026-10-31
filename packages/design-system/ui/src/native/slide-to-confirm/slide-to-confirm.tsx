@@ -11,6 +11,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0329 (motion layer); wave 3c mobile interactions (owner approval
  *          2026-10-28); WCAG 2.2 SC 2.5.7.
  */
+import { motionSpring, STACKRA_THEME } from "@stackra/tokens";
 import { cn, useThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
@@ -28,6 +29,9 @@ import { haptics } from "#native/haptics/haptics";
 import { Icon } from "#native/icon/icon";
 import type { SlideToConfirmProps } from "#native/slide-to-confirm/slide-to-confirm.props";
 import { Text } from "#native/text/text";
+
+/** The theme's snappy spring, for a control or a drag settling. */
+const SNAPPY = motionSpring(STACKRA_THEME, "snappy");
 
 /** The thumb's size and the track's inner padding, in points. */
 const THUMB = 48;
@@ -59,7 +63,7 @@ export function SlideToConfirm({
 
   useEffect(() => {
     const to = confirmed ? travel.get() : 0;
-    offset.set(isReduced ? to : withSpring(to));
+    offset.set(isReduced ? to : withSpring(to, SNAPPY));
   }, [confirmed, isReduced, offset, travel]);
 
   const confirm = () => {
@@ -72,7 +76,7 @@ export function SlideToConfirm({
   const responder = useMemo(() => {
     const isLocked = isDisabled || confirmed;
     const settle = () => {
-      offset.set(isReduced ? 0 : withSpring(0));
+      offset.set(isReduced ? 0 : withSpring(0, SNAPPY));
     };
     return PanResponder.create({
       onStartShouldSetPanResponder: () => !isLocked,

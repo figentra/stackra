@@ -21,20 +21,20 @@ export function ItemCardGroup({
 }: ItemCardGroupProps): ReactElement {
   const id = useId();
   return (
-    <section aria-labelledby={title ? id : undefined} className={cn("grid gap-2", className) ?? ""}>
+    <section aria-labelledby={title ? id : undefined} className={cn("tray grid", className) ?? ""}>
       {title ? (
-        <h3 id={id} className="px-4 text-xs font-medium text-muted uppercase">
+        <h3 id={id} className="tray__header m-0 text-xs font-medium text-muted">
           {title}
         </h3>
       ) : null}
       <ItemCardGroupContext value>
-        <ul className="divide-y divide-separator overflow-hidden rounded-[var(--radius-container)] border border-border bg-surface">
+        <ul className="tray__body divide-y divide-separator overflow-hidden">
           {Children.map(Children.toArray(children), (child) => (
             <li>{child}</li>
           ))}
         </ul>
       </ItemCardGroupContext>
-      {description ? <p className="px-4 text-xs text-muted">{description}</p> : null}
+      {description ? <p className="px-3 pt-2 pb-1 text-xs text-muted">{description}</p> : null}
     </section>
   );
 }

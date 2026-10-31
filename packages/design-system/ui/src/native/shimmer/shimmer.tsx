@@ -9,6 +9,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); WCAG 2.2 SC 2.3.3, 4.1.3; STA-1371 (wave D, owner approval 2026-10-30).
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useEffect, useState, type ReactElement } from "react";
 import { View } from "react-native";
 import Animated, {
@@ -30,7 +31,7 @@ import { SkeletonGroup } from "#native/skeleton-group/skeleton-group";
 import { Text } from "#native/text/text";
 
 /** One sweep across the text, in milliseconds. */
-const SWEEP_MS = 2000;
+const SWEEP_MS = motionTiming(STACKRA_THEME, "blink").durationMs * 2;
 
 /** The band's width as a share of the text's width. */
 const BAND = 0.4;

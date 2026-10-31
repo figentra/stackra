@@ -34,13 +34,14 @@ import type { MorphButtonProps } from "#native/morph-button/morph-button.props";
 
 const BASE = motionTiming(STACKRA_THEME, "base");
 /** One leg of the error shake, in ms. */
-const LEG = { duration: 50 } as const;
+const LEG = { duration: motionTiming(STACKRA_THEME, "instant").durationMs / 2 } as const;
 
 /** A button that narrows to a spinner, then to a check, or shakes into its error words. */
 export function MorphButton({
   state = "idle",
   labels,
   onPress,
+  // oxlint-disable-next-line stackra/no-literal-duration -- how long the success state dwells before settling back, not motion
   successDuration = 1500,
   onSuccessEnd,
   variant = "primary",

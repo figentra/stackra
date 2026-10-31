@@ -65,7 +65,7 @@ export default function Wide() {
             tabIndex={0}
             data-sample="wide-scroller"
           >
-            <Text className="w-max min-w-[80rem]">{t(K.items_row)}</Text>
+            <Text className="w-max min-w-320">{t(K.items_row)}</Text>
           </div>
         </Section>
       </UiSingleColumnLayout>

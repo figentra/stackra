@@ -3,6 +3,15 @@ title: "0329 — Motion layer: motion tokens, Reveal, and animation on by defaul
 description: "Accepted · 2026-10-24"
 ---
 
+<Note>
+  Proposed amendment 2026-10-31 (STA-1371) by
+  [0501](/adr/0501-tokens-v2-one-theme-schema-drives-every-visual-value-on-web-and-native), which
+  stands as written here until that ADR is accepted: the motion steps (`Theme.motion`) become a
+  placeholder family that the motion work extends with springs, haptics and accessibility modes; the
+  steps `instant`, `moderate`, `slow`, `indicator`, `count` and `pulse` join `fast`, `base`,
+  `reveal`, `stagger` and `blink`.
+</Note>
+
 ## Context
 
 The design system had motion tokens for a few steps (`--duration-*` and `--ease-*` in `@stackra/tokens`), but no shared

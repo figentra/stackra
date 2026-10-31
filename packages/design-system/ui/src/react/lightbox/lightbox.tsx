@@ -30,7 +30,7 @@ const K = MEDIA_KEYS.ui.lightbox;
 const ON_DARK = "text-white hover:bg-white/15";
 
 /** The dark scrim behind the stage. */
-const SCRIM = "fixed inset-0 z-50 bg-black/95";
+const SCRIM = "fixed inset-0 z-(--z-overlay) bg-black/95";
 
 /** The distance in pixels a swipe must travel to change the picture. */
 const SWIPE = 48;
@@ -87,7 +87,7 @@ export function Lightbox({
       {...omitUndefined({ isOpen, defaultOpen, onOpenChange })}
       className={
         motion === "full"
-          ? `${SCRIM} data-[entering]:animate-in data-[entering]:fade-in data-[exiting]:animate-out data-[exiting]:fade-out data-[entering]:duration-200`
+          ? `${SCRIM} data-[entering]:animate-in data-[entering]:fade-in data-[exiting]:animate-out data-[exiting]:fade-out data-[entering]:duration-(--duration-moderate)`
           : SCRIM
       }
     >

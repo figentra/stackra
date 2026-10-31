@@ -1,0 +1,142 @@
+{
+  "generatedFrom": {
+    "hash": "a77e9f0b6d82cd6e",
+    "propsFiles": ["ui/src/native/glass/glass-surface.props.ts"]
+  },
+  "importLine": "import { GlassSurface } from \"@stackra/ui/native\";",
+  "key": "free/glass",
+  "parts": [
+    {
+      "name": "GlassSurface",
+      "props": [
+        {
+          "description": "The material role this surface plays; the family decides its level. (`role` stays the View's accessibility role.)",
+          "name": "material",
+          "required": true,
+          "source": "stackra",
+          "type": "\"menu\" | \"popover\" | \"command\" | \"sheet\" | \"sidebar\" | \"toolbar\" | \"tooltip\" | \"card\" | \"nav-bar\" | \"tab-bar\" | \"modal\" | \"toast\" | \"action-bar\" | \"fab\" | \"segmented-track\" | \"search-in-bar\" | \"media-controls\""
+        },
+        {
+          "description": "Clear glass only: the surface holds a label, so its dim is at least 0.55 (0.50 for glyphs alone).",
+          "name": "holdsLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Liquid Glass lights and lifts under a press; only for a surface a person presses.",
+          "name": "isInteractive",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Tints the glass with the accent, for a prominent control (a FAB, a glass button on media).",
+          "name": "isProminent",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The surface's content.",
+          "name": "children",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Used to reference react managed views from native code.",
+          "name": "id",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleProp<ViewStyle>"
+        },
+        {
+          "description": "Used to locate this view in end-to-end tests.",
+          "name": "testID",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...GestureResponderHandlers",
+          "required": false,
+          "source": "heroui",
+          "type": "GestureResponderHandlers"
+        },
+        {
+          "description": "",
+          "name": "...PointerEvents",
+          "required": false,
+          "source": "heroui",
+          "type": "PointerEvents"
+        },
+        {
+          "description": "",
+          "name": "...Touchable",
+          "required": false,
+          "source": "heroui",
+          "type": "Touchable"
+        },
+        {
+          "description": "",
+          "name": "...TVViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "TVViewPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...ViewProps",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewProps"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...ViewPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "ViewPropsIOS"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

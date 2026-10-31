@@ -55,7 +55,11 @@
     "type": "Type",
     "shape": "Shape",
     "motion": "Motion",
-    "effects": "Effects"
+    "effects": "Effects",
+    "recipes": "Colour recipes",
+    "randomize": "Randomize",
+    "inspect": "Inspect",
+    "inspect_hint": "Pick a part of the preview to open its controls"
   },
   "brands": {
     "title": "Brand"
@@ -92,15 +96,58 @@
     "motion_note": "The theme's motion steps, as components use them. Hover a row to play it.",
     "blur": "Glass blur",
     "levels": {
+      "ultra-thin": "Ultra-thin glass blur",
       "thin": "Thin glass blur",
       "regular": "Regular glass blur",
-      "thick": "Thick glass blur"
+      "thick": "Thick glass blur",
+      "glass": "Liquid glass blur",
+      "glass-clear": "Clear glass blur"
     },
     "shadows": "Shadows",
     "shadow_names": {
       "surface": "Surface",
       "overlay": "Overlay",
-      "field": "Field"
+      "field": "Field",
+      "raised": "Raised",
+      "pressed": "Pressed"
+    },
+    "density": "Density",
+    "pill_controls": "Pill controls",
+    "field_style": "Fields",
+    "corner_shape": "Corners",
+    "field_styles": {
+      "bordered": "Bordered",
+      "lifted": "Lifted, no line"
+    },
+    "corner_shapes": {
+      "round": "Round",
+      "squircle": "Squircle"
+    },
+    "lock": "Lock {name}",
+    "neutral_tint": "Tint toward the accent",
+    "vibrant": "Vibrant soft colours",
+    "font_scale": "Font size",
+    "line_height": "Line height",
+    "letter_spacing": "Letter spacing",
+    "forms_radius": "Forms radius",
+    "field_border_width": "Field edge",
+    "shadow_strength": "Shadow strength",
+    "disabled_opacity": "Disabled opacity",
+    "cursor_pointer": "Pointer cursor",
+    "skeleton": "Loading skeleton",
+    "animations": "Animations",
+    "recipes_note": "How each derived colour is mixed from the theme's roles.",
+    "recipe_theme": "set by the theme",
+    "strengths": {
+      "none": "None",
+      "subtle": "Subtle",
+      "medium": "Medium",
+      "strong": "Strong"
+    },
+    "skeletons": {
+      "shimmer": "Shimmer",
+      "pulse": "Pulse",
+      "none": "None"
     }
   },
   "canvas": {

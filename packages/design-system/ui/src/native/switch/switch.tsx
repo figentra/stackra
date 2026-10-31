@@ -24,6 +24,7 @@ import {
 import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { haptics } from "#native/haptics/haptics";
 import type { SwitchProps } from "#native/switch/switch.props";
@@ -96,7 +97,7 @@ export function Switch({
         >
           <HeroSwitch
             animation={{ backgroundColor: { value: [track, accent] } }}
-            style={{ borderWidth: 1, borderColor: isSelected ? accent : edge }}
+            style={{ borderWidth: THEME_PX.borderWidth, borderColor: isSelected ? accent : edge }}
           >
             <HeroSwitch.Thumb animation={{ backgroundColor: { value: [thumbOff, thumbOn] } }} />
           </HeroSwitch>

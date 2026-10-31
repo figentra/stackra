@@ -65,7 +65,7 @@ export function FormErrorSummary({
       tabIndex={-1}
       data-slot="form-error-summary"
       className={cn(
-        "rounded-[var(--radius-container)] outline-none focus-visible:outline-2 focus-visible:outline-focus",
+        "rounded-[var(--radius-container)] outline-none focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus",
         className,
       )}
     >
@@ -79,7 +79,7 @@ export function FormErrorSummary({
                 <a
                   href={`#${item.field}`}
                   onClick={follow(item.field)}
-                  className="text-sm text-danger underline underline-offset-2 outline-none hover:no-underline focus-visible:rounded-[var(--radius-control-inner)] focus-visible:outline-2 focus-visible:outline-focus"
+                  className="text-sm text-danger underline underline-offset-2 outline-none hover:no-underline focus-visible:rounded-[var(--radius-control-inner)] focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus"
                 >
                   {item.label ? `${item.label}: ${item.message}` : item.message}
                 </a>

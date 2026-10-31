@@ -36,7 +36,7 @@ export function MorphTabs({
     <div
       {...rest}
       data-slot="morph-tabs"
-      className={cn("w-fit", isDisabled && "opacity-50", className) ?? ""}
+      className={cn("w-fit", isDisabled && "opacity-(--disabled-opacity)", className) ?? ""}
     >
       <RadioGroup
         aria-label={label}
@@ -60,7 +60,7 @@ export function MorphTabs({
                 "flex h-10 cursor-pointer items-center rounded-[var(--radius-pill)] px-3 outline-none transition-colors duration-[var(--duration-base)] motion-reduce:transition-none",
                 isSelected ? "bg-accent-soft text-accent-soft-foreground" : "text-muted",
                 isFocusVisible && "ring-2 ring-focus",
-                item.isDisabled && "cursor-not-allowed opacity-50",
+                item.isDisabled && "cursor-not-allowed opacity-(--disabled-opacity)",
               ) ?? ""
             }
           >

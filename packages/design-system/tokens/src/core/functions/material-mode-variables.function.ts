@@ -20,5 +20,7 @@ export function materialModeVariables(mode: MaterialMode): Readonly<Record<strin
     "--material-saturate-scale": String(factors.saturationScale),
     "--material-brightness": String(factors.brightness),
     "--material-sheen": String(factors.sheen),
+    "--material-specular-scale": String(factors.specularScale),
+    "--material-clear-floor": String(factors.clearFloor),
   };
 }

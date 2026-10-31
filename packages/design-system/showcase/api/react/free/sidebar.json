@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "6bbbbaa6b2b92773",
+    "hash": "4146998cbbc9942e",
     "propsFiles": [
       "ui/src/react/sidebar/sidebar-content.props.ts",
       "ui/src/react/sidebar/sidebar-footer.props.ts",
@@ -1712,7 +1712,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",

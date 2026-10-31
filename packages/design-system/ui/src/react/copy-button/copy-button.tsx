@@ -65,7 +65,7 @@ export function CopyButton({
         initial={isReduced ? false : { scale: 0.4, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={isReduced ? { opacity: 0, transition: { duration: 0 } } : { scale: 0.4, opacity: 0 }}
-        transition={{ duration: FAST.durationMs / 1000, ease: "easeOut" }}
+        transition={{ duration: FAST.durationMs / 1000, ease: FAST.bezier ?? "easeOut" }}
       >
         <Icon
           name={isCopied ? "check" : "copy"}

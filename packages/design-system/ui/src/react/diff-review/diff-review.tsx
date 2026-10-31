@@ -67,7 +67,7 @@ export function DiffReview({
               key={change.id}
               className={cn(
                 "flex flex-col gap-2 p-3 @lg:flex-row @lg:items-center",
-                answer === "rejected" && "opacity-60",
+                answer === "rejected" && "opacity-(--opacity-muted)",
               )}
             >
               <div className="flex min-w-0 flex-1 flex-col gap-1">

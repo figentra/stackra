@@ -66,9 +66,9 @@ const EDGE = { start: "left", end: "right", top: "top", bottom: "bottom" } as co
 
 /** A side drawer's width by `size`. */
 const WIDTH: Readonly<Record<DrawerSize, string>> = {
-  sm: "w-[400px]",
-  md: "w-[560px]",
-  lg: "w-[720px]",
+  sm: "w-(--size-drawer-sm)",
+  md: "w-(--size-drawer-md)",
+  lg: "w-(--size-drawer-lg)",
   full: "w-full",
 };
 
@@ -85,7 +85,8 @@ const MIN_WIDTH = 320;
 /** The panel's frame: its padding moves into the parts, which are ruled off, and the body alone scrolls. */
 const FRAME = [
   "relative overflow-hidden p-0 [--drawer-dir:1] rtl:[--drawer-dir:-1]",
-  "transition-[translate,scale,filter,width] duration-[var(--drawer-enter-duration)] ease-[var(--drawer-enter-ease)] data-[resizing]:transition-none",
+  "transition-[translate,scale,filter,width,opacity] duration-(--duration-overlay-in) ease-(--ease-overlay-in) data-[resizing]:transition-none",
+  "in-data-[exiting=true]:duration-(--duration-overlay-out) in-data-[exiting=true]:ease-(--ease-overlay-out)",
   "[&_[data-slot=drawer-handle]]:pt-2",
   "[&_[data-slot=drawer-body]]:m-0 [&_[data-slot=drawer-body]]:px-6 [&_[data-slot=drawer-body]]:py-5",
   "[&_[data-slot=drawer-footer]]:mt-0 [&_[data-slot=drawer-footer]]:shrink-0 [&_[data-slot=drawer-footer]]:border-t",
@@ -106,15 +107,23 @@ const SHAPE = {
   flush: { side: "h-full max-w-full rounded-none", across: "" },
 } as const;
 
-/** Where the panel waits off screen before it slides in, past the inset; `--drawer-dir` mirrors it in right-to-left. */
+/**
+ * Where the panel waits off screen, past the inset; `--drawer-dir` mirrors it in right-to-left. The slide in starts
+ * from `@starting-style` (`starting:`): React Aria's entering state ends before a frame is painted when only a
+ * transition (no keyframe animation) runs, so a style keyed on it never reached the screen and the panel appeared in
+ * place. The slide out keeps the exiting state, which React Aria holds until the transition ends.
+ */
 const OFF_SCREEN = {
   right:
-    "in-data-[entering=true]:translate-x-[calc((100%+1rem)*var(--drawer-dir))] in-data-[exiting=true]:translate-x-[calc((100%+1rem)*var(--drawer-dir))]",
-  left: "in-data-[entering=true]:translate-x-[calc((-100%-1rem)*var(--drawer-dir))] in-data-[exiting=true]:translate-x-[calc((-100%-1rem)*var(--drawer-dir))]",
-  top: "in-data-[entering=true]:translate-y-[calc(-100%-1rem)] in-data-[exiting=true]:translate-y-[calc(-100%-1rem)]",
+    "starting:translate-x-[calc((100%+1rem)*var(--drawer-dir))] in-data-[exiting=true]:translate-x-[calc((100%+1rem)*var(--drawer-dir))]",
+  left: "starting:translate-x-[calc((-100%-1rem)*var(--drawer-dir))] in-data-[exiting=true]:translate-x-[calc((-100%-1rem)*var(--drawer-dir))]",
+  top: "starting:translate-y-[calc(-100%-1rem)] in-data-[exiting=true]:translate-y-[calc(-100%-1rem)]",
   bottom:
-    "in-data-[entering=true]:translate-y-[calc(100%+1rem)] in-data-[exiting=true]:translate-y-[calc(100%+1rem)]",
+    "starting:translate-y-[calc(100%+1rem)] in-data-[exiting=true]:translate-y-[calc(100%+1rem)]",
 } as const;
+
+/** Below the `full` motion level the panel fades in and out in place instead of sliding (ADR 0501). */
+const FADE = "starting:opacity-0 in-data-[exiting=true]:opacity-0";
 
 /** How a covered layer recesses: towards its open side, a little smaller. */
 const RECESS = {
@@ -214,7 +223,7 @@ function DrawerRoot({
     FRAME,
     isSide ? WIDTH[isExpandedSide ? "full" : size] : "",
     SHAPE[inset ? "inset" : "flush"][isSide ? "side" : "across"],
-    OFF_SCREEN[edge],
+    motion === "full" ? OFF_SCREEN[edge] : FADE,
     isCovered ? "brightness-[.9]" : "",
     isCovered && motion === "full" ? RECESS[edge] : "",
     typeof className === "string" ? className : "",
@@ -246,7 +255,7 @@ function DrawerRoot({
                     height: heightOf(point),
                     maxHeight: inset ? "calc(100dvh - 1rem)" : "100dvh",
                     transition:
-                      motion === "full" ? "height 320ms cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+                      motion === "full" ? "height var(--duration-slow) var(--ease-enter)" : "none",
                   },
                 })}
             {...(label ? { "aria-label": label } : {})}
@@ -263,13 +272,13 @@ function DrawerRoot({
                 aria-valuemin={MIN_WIDTH}
                 aria-valuemax={widest}
                 data-slot="drawer-resize-handle"
-                className={`absolute inset-y-0 ${edge === "right" ? "start-0" : "end-0"} z-20 w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:start-1/2 after:w-px after:bg-transparent hover:after:w-0.5 hover:after:bg-accent focus-visible:after:w-0.5 focus-visible:after:bg-focus`}
+                className={`absolute inset-y-0 ${edge === "right" ? "start-0" : "end-0"} z-(--z-sticky) w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:start-1/2 after:w-px after:bg-transparent hover:after:w-0.5 hover:after:bg-accent focus-visible:after:w-0.5 focus-visible:after:bg-focus`}
               />
             ) : null}
             {edge === "bottom" && snapPoints && snapPoints.length > 1 ? (
               <button
                 type="button"
-                className="mx-auto flex h-6 w-16 items-center justify-center rounded-[var(--radius-pill)] focus-visible:outline-2 focus-visible:outline-focus"
+                className="mx-auto flex h-6 w-16 items-center justify-center rounded-[var(--radius-pill)] focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus"
                 aria-label={t(UI_KEYS.ui.drawer.resize)}
                 onClick={() => setSnap((current) => (current + 1) % snapPoints.length)}
               >

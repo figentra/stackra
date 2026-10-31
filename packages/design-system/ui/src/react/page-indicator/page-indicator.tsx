@@ -22,7 +22,7 @@ const K = LONG_TAIL_KEYS.ui.page_indicator;
 /** One dot: long when current. */
 const dotClass = (isCurrent: boolean) =>
   cn(
-    "block h-2 rounded-[var(--radius-pill)] transition-[width,background-color] duration-200 motion-reduce:transition-none",
+    "block h-2 rounded-[var(--radius-pill)] transition-[width,background-color] duration-(--duration-moderate) motion-reduce:transition-none",
     isCurrent ? "w-5 bg-foreground" : "w-2 bg-default",
   );
 

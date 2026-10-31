@@ -1,0 +1,345 @@
+---
+title: "0501 — Tokens v2: one theme schema drives every visual value on web and native"
+description: "Proposed · 2026-10-31"
+---
+
+{/* Stackra file contract: Purpose: the decision record for tokens v2: every token family and name, the theme schema, presets and nested themes, the DTCG export and the lint rules that keep components on tokens. Boundary: decision text only. Runtime: docs. Governing contract: ADR template; ADR 0302, 0329, 0340, 0469. */}
+
+<Note>
+  Proposed 2026-10-31 (design-system session c6, STA-1371). The owner approved the plan, not yet
+  this text: "we need to create our own theme styles … I need just to make sure that we are 100%
+  setting variables, all control from a single thing", then "yes go ahead with the full list, and
+  all recommendations". Once accepted it amends
+  [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (the token schema),
+  [0329](/adr/0329-motion-layer-tokens-reveal-and-animation-on-by-default) (motion steps become a
+  placeholder family owned by the motion work) and
+  [0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling)
+  (decision 7: the DTCG export covers every family).
+</Note>
+
+## Context
+
+A conformance study against HeroUI (2026-10-31, `stackra-notes/design-system-research-2026-10-31/`) found that a
+theme could not reach every visual value: components drew Tailwind `shadow-sm`, `duration-300`, `z-50`, `text-[10px]`
+and numeric native styles; HeroUI's own radius ladder leaked 10px and 12px corners past our roles; a field stood 38px
+beside a 36px button; there was no density, control-height, elevation, z-index or type-scale token; and the segment
+colour reached no component. A preset could only fix that with a CSS layer of overrides (the Medusa and Linear
+presets carry one), which is code, not configuration. The owner asked for one schema that sets every value, a
+HeroUI-style preset beside the Stackra look, and checks that keep it so.
+
+## Decision
+
+### 1. One schema
+
+1. `Theme` (`@stackra/tokens/contracts`) is the only source of visual values. `defineTheme` validates it; three
+   generators read it: `renderWebCss` (CSS custom properties, HeroUI's names where HeroUI has one), `renderNativeCss`
+   plus `nativeTokens(theme)` (Uniwind variables and px numbers for React Native), and `themeToDtcg` (W3C DTCG).
+2. The schema's blocks, each a kebab-case-keyed record unless typed:
+
+| Block           | Holds                                                                                                                                                                 | Owner                |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `colors`        | the semantic roles (`ColorRole`), light and dark                                                                                                                      | tokens v2 (this ADR) |
+| `palette`       | brand steps outside the roles, the chart palettes, the state and selection colours                                                                                    | tokens v2            |
+| `fontFamily`    | `sans`, `mono`, `arabic`, optional `display`, `displayArabic`                                                                                                         | tokens v2            |
+| `typography`    | named text styles (`display`, `h1`–`h6`, `body`, `small`, `caption`, `label`, `metric`) and `-ar` twins                                                               | tokens v2            |
+| `typeScale`     | the utility scale: `sizes` (size, line height, optional weight and tracking per step), `weights`, `tracking`, `leading`, `arabic` adjustment, optional `fluid` bounds | tokens v2            |
+| `layout`        | density, control heights, edges, focus ring, state layer, opacity, sizes, icons, touch target, page, breakpoints, z-index, regions, corner shape                      | tokens v2            |
+| `radius`        | `base`, `field`, `steps` (roles and per-component overrides)                                                                                                          | tokens v2            |
+| `shadows`       | `surface`, `overlay`, `field`, `raised`, `pressed`                                                                                                                    | tokens v2            |
+| `spacing`       | the legacy `--space-<n>` steps (kept for existing readers)                                                                                                            | tokens v2            |
+| `motion`        | the duration steps (section 8)                                                                                                                                        | motion work          |
+| `animation`     | the named easings, the spring presets, the press scale and the entrance distance (section 8)                                                                          | motion work          |
+| `haptics`       | the native touch feedback by kind, each an `expo-haptics` pattern (section 8)                                                                                         | motion work          |
+| `accessibility` | the more-contrast roles, the web text scales and the colour-blind-safe chart palette (section 8)                                                                      | motion work          |
+| `materials`     | the six levels, the two families and their role maps, the default mode (section 9; ADR 0320 as amended 2026-10-31)                                                    | material work        |
+| `locale`        | icon mirroring and digits                                                                                                                                             | tokens v2            |
+
+3. Every block left out of a stored layer keeps the base theme's value (`mergeTheme`), so a v1 layer still loads.
+   `TOKEN_SET_VERSION` moves only when a path is renamed or removed, never for an addition.
+
+### 2. Families and names
+
+Web names are CSS custom properties on `:root` (mode-independent) or in the light and dark blocks (anything that
+depends on a colour). Native keys are paths in `nativeTokens(theme)`, numbers in px or ms; colours reach native as
+the Uniwind variables of the same web name.
+
+| Family                     | Web variables                                                                                                                                                                                                                                                                                                                | Native key                                                                | Stackra default                                                                                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Colour roles               | `--<role>` (`--background`, `--surface`, `--accent`, `--focus`, `--link`, `--backdrop`…)                                                                                                                                                                                                                                     | Uniwind `--<role>`                                                        | brand kit 0.1.0 (ADR 0463)                                                                                                                                                                           |
+| Surface levels             | `--level-0` … `--level-4` (background, surface, surface-secondary, surface-tertiary, overlay)                                                                                                                                                                                                                                | `regions.level-<n>`                                                       | aliases                                                                                                                                                                                              |
+| Regions                    | `--sidebar`, `--sidebar-foreground`, `--tray`, `--tray-body`, `--scrim`                                                                                                                                                                                                                                                      | `regions.<name>`                                                          | surface, surface-foreground, surface-secondary, surface, backdrop                                                                                                                                    |
+| Selection                  | `--selection`, `--selection-foreground`                                                                                                                                                                                                                                                                                      | Uniwind                                                                   | accent-soft, accent-soft-foreground                                                                                                                                                                  |
+| Chart: categorical         | `--chart-1` … `--chart-5`                                                                                                                                                                                                                                                                                                    | Uniwind `--chart-<n>`                                                     | ADR 0340 decision 9                                                                                                                                                                                  |
+| Chart: sequential          | `--chart-ramp-1` … `--chart-ramp-5` (relative to `--accent`; `--chart-ramp-3` is the accent itself, the others step ±0.12 L, shrinking to half the room left to the scheme's bound, never under 0.06); series take 3, 1, 5, 2, 4, so series 1 is the accent                                                                  | `chartRampOf`                                                             | accent ramp                                                                                                                                                                                          |
+| Chart: diverging           | `--chart-diverging-1` … `--chart-diverging-5` (danger ← muted → accent)                                                                                                                                                                                                                                                      | computed                                                                  | relative colours                                                                                                                                                                                     |
+| Chart: single series       | `--chart-single`                                                                                                                                                                                                                                                                                                             | Uniwind                                                                   | `var(--accent)`                                                                                                                                                                                      |
+| Radius roles               | `--radius-control`, `--radius-control-inner`, `--radius-container`, `--radius-container-inner`, `--radius-pill`                                                                                                                                                                                                              | `radius.<role>`                                                           | field radius, −0.25rem with a 2px floor, ×2 capped at 1.5rem, pill                                                                                                                                   |
+| Radius per component       | `--radius-<component>` for `button`, `card`, `chip`, `badge`, `avatar`, `tooltip`, `modal`, `toast`, `table` (fields keep HeroUI's `--field-radius`, `radius.field`)                                                                                                                                                         | `radius.<component>`                                                      | the matching role                                                                                                                                                                                    |
+| Corner shape               | `--corner-shape` (`round` or `squircle`, CSS `corner-shape`)                                                                                                                                                                                                                                                                 | `layout.cornerShape` → iOS `borderCurve: "continuous"`                    | `round`                                                                                                                                                                                              |
+| Borders                    | `--border-width`, `--field-border-width`                                                                                                                                                                                                                                                                                     | `layout.borderWidth`, `layout.fieldBorderWidth`                           | 1px, 1px                                                                                                                                                                                             |
+| Density                    | `--spacing` (Tailwind's unit)                                                                                                                                                                                                                                                                                                | `layout.spacing`                                                          | 0.25rem (4px)                                                                                                                                                                                        |
+| Control heights            | `--control-height-sm`, `-md`, `-lg`                                                                                                                                                                                                                                                                                          | `layout.controlHeight.<size>`                                             | 32, 36, 40 on `--spacing`                                                                                                                                                                            |
+| Icon sizes                 | `--icon-size-sm`, `-md`, `-lg`                                                                                                                                                                                                                                                                                               | `layout.iconSize.<size>`                                                  | 16, 20, 24                                                                                                                                                                                           |
+| Touch target               | `--touch-target`                                                                                                                                                                                                                                                                                                             | `layout.touchTarget`                                                      | 24px web (WCAG 2.5.8), 44pt native                                                                                                                                                                   |
+| Page                       | `--page-padding`, `--gutter`, `--content-max-width`                                                                                                                                                                                                                                                                          | `layout.page.<name>`                                                      | 24px, 16px, 80rem                                                                                                                                                                                    |
+| Breakpoints                | `--breakpoint-sm` … `--breakpoint-2xl` (also Tailwind's `@theme` at build time)                                                                                                                                                                                                                                              | `layout.breakpoints.<name>`                                               | Tailwind's                                                                                                                                                                                           |
+| Safe area                  | `--safe-area-top`, `-end`, `-bottom`, `-start` = `env(safe-area-inset-*)`                                                                                                                                                                                                                                                    | from `react-native-safe-area-context`                                     | env                                                                                                                                                                                                  |
+| Component sizes            | `--size-<name>` (`table-header`, `app-header`, `icon-tile`, `step-indicator`, `timeline-marker`, `action-bar`, `readout`, `drawer-*`, `dialog-*`, `panel`)                                                                                                                                                                   | `layout.sizes.<name>`                                                     | see the Stackra theme                                                                                                                                                                                |
+| Type scale                 | `--text-<step>`, `--text-<step>--line-height`, `--text-<step>--font-weight`, `--text-<step>--letter-spacing`                                                                                                                                                                                                                 | `typeScale.sizes.<step>`                                                  | Tailwind v4's scale plus `3xs`, `2xs`, `code`                                                                                                                                                        |
+| Weights, tracking, leading | `--font-weight-<name>`, `--tracking-<name>`, `--leading-<name>`                                                                                                                                                                                                                                                              | `typeScale.*`                                                             | Tailwind v4's                                                                                                                                                                                        |
+| Text styles                | `--<style>` (the `font` shorthand), `--<style>-letter-spacing`, `--<style>-ar`                                                                                                                                                                                                                                               | `typography.<style>`                                                      | ADR 0302, 0303                                                                                                                                                                                       |
+| Tabular numbers            | `--numeric-figures`                                                                                                                                                                                                                                                                                                          | `typeScale.numeric`                                                       | `tabular-nums`                                                                                                                                                                                       |
+| Arabic adjustment          | `:lang(ar)` rewrites `--text-<step>` by `typeScale.arabic.scale` and adds `typeScale.arabic.leading`                                                                                                                                                                                                                         | same                                                                      | ×1, +0 (Stackra's Arabic sizes live in the `-ar` text styles; a brand may scale the utilities)                                                                                                       |
+| Fluid sizes                | a step with `fluidMin` renders `clamp(fluidMin, …vw, size)`                                                                                                                                                                                                                                                                  | the step `size`                                                           | none                                                                                                                                                                                                 |
+| Dynamic Type               | native text scales with the OS, capped by `ThemingConfig.maxFontScale` (ADR 0302 note of 2026-10-29)                                                                                                                                                                                                                         | —                                                                         | on                                                                                                                                                                                                   |
+| Elevation                  | `--surface-shadow`, `--overlay-shadow`, `--field-shadow`, `--raised-shadow`, `--pressed-shadow` (Tailwind v4 inlines its `shadow-sm` … values at build time, so they cannot be themed and the lint rule refuses them)                                                                                                        | `shadows.<name>` as RN shadow props                                       | Stackra's; dark depth comes from surface lightness (rule 3.4)                                                                                                                                        |
+| State layer                | `--state-hover`, `--state-press`, `--state-focus`, `--state-selected`, `--state-drag` (shares of the foreground mixed over a fill)                                                                                                                                                                                           | `layout.state.<name>`                                                     | 0.08, 0.12, 0.12, 0.16, 0.16                                                                                                                                                                         |
+| Focus ring                 | `--focus-ring-width`, `--ring-offset-width`, `--focus-ring-style`, colour `--focus`                                                                                                                                                                                                                                          | `layout.focusRing.*`                                                      | 2px, 2px, solid                                                                                                                                                                                      |
+| Opacity                    | `--disabled-opacity`, `--opacity-dimmed`, `--opacity-muted`, `--opacity-subtle`                                                                                                                                                                                                                                              | `layout.opacity.<name>`                                                   | 0.5, 0.5, 0.6, 0.4                                                                                                                                                                                   |
+| Behaviour                  | `--cursor-interactive`, `--skeleton-animation`; `layout.vibrant` writes the soft foregrounds as a stronger mix; `layout.animations: false` ends every transition and animation                                                                                                                                               | `layout.cursor`, `layout.skeleton`, `layout.vibrant`, `layout.animations` | pointer, shimmer, false, true                                                                                                                                                                        |
+| Shadow strengths           | the Theme Studio sets each role's shadow to `none`, `subtle`, `medium` or `strong` from `SHADOW_STRENGTHS` (fresh Stackra values)                                                                                                                                                                                            | the role's shadow                                                         | the theme's own                                                                                                                                                                                      |
+| Studio knobs               | `ThemeKnobs`: accent, neutral hue and chroma, tint toward the accent, vibrant, fonts, font-size and line-height multipliers, letter spacing, base and forms radius, pill controls, density, field style and edge width, corner shape, shadow strengths, disabled opacity, pointer cursor, skeleton, animations, glass levels | `deriveTheme(base, knobs)`                                                | none                                                                                                                                                                                                 |
+| Layers                     | `--z-behind`, `--z-pinned` (the base of a component's own order), `--z-raised`, `--z-sticky`, `--z-dock`, `--z-float`, `--z-overlay`, `--z-toast`, `--z-tooltip`                                                                                                                                                             | `layout.zIndex.<name>`                                                    | -1, 2, 10, 20, 30, 40, 50, 60, 70                                                                                                                                                                    |
+| Direction                  | `.rtl-mirror` flips a directional icon under `:dir(rtl)`; `--mirror` is `1` or `-1`                                                                                                                                                                                                                                          | `locale.mirrorIcons`                                                      | true                                                                                                                                                                                                 |
+| Digits                     | the numbering system a formatter uses (`latn`, `arab`)                                                                                                                                                                                                                                                                       | `locale.digits`                                                           | `latn`                                                                                                                                                                                               |
+| Motion durations           | `--duration-<step>`, `--ease-<step>`; `--default-transition-duration` and `-timing-function` follow `fast`                                                                                                                                                                                                                   | `motionTiming(theme, step)`                                               | `instant` 100, `fast` 150, `moderate` 200, `base` 250, `indicator` 250 on `cubic-bezier(0.32, 0.72, 0, 1)`, `slow` 300, `reveal` 400, `count` 900, `pulse` 1200, `slower` 450, `stagger` 40, `blink` |
+| Easings                    | `--ease-<name>`; Tailwind's `ease-in`, `ease-out`, `ease-in-out`                                                                                                                                                                                                                                                             | `motionEasing(theme, name)`                                               | `standard`, `emphasized`, `enter`, `exit` (section 8)                                                                                                                                                |
+| Springs                    | `--spring-<name>` (a `linear()` curve), `--spring-<name>-duration`                                                                                                                                                                                                                                                           | `motionSpring(theme, name)`                                               | `gentle`, `snappy`, `bouncy` (section 8)                                                                                                                                                             |
+| Press and entrance         | `--press-scale`, `--enter-distance`                                                                                                                                                                                                                                                                                          | `theme.animation.pressScale`, `enterDistance`                             | 0.97, 8px                                                                                                                                                                                            |
+| Haptics                    | —                                                                                                                                                                                                                                                                                                                            | `theme.haptics.<kind>` → `expo-haptics`                                   | section 8                                                                                                                                                                                            |
+| Accessibility modes        | `data-contrast`, `data-transparency`, `data-text-scale`, `data-chart-palette` on `<html>`                                                                                                                                                                                                                                    | Dynamic Type, system settings                                             | section 8                                                                                                                                                                                            |
+| Material                   | `--material-<level>-*`, `--material-role-<role>-*`, `.material-<level>` and `.material-role-<role>` classes, `data-family`, `data-material` (section 9)                                                                                                                                                                      | `materials.*`                                                             | ADR 0320                                                                                                                                                                                             |
+
+### 3. Rules every component and preset follow
+
+1. A component reads a family's variable (or, on native, its `nativeTokens` key), never a literal of that family.
+   Data colours (social marks, swatches, a picker's default) and lengths relative to the font (`1em`) are not
+   theme values.
+2. A HeroUI class whose radius, height or shadow Stackra does not own is mapped onto a role in `renderWebCss`, so no
+   HeroUI-derived value reaches the page unmapped.
+3. A preset is a theme layer (`stackra.theme-diff/2`) and needs no CSS: if a preset cannot be said in tokens, the
+   schema grows. Existing CSS layers (Medusa, Linear) are allowed until their values move into tokens.
+4. In dark mode depth comes from the surface lightness ladder; a dark shadow is subtle or none.
+5. The stock Stackra theme's look is the default; a preset is chosen, never implied.
+
+### 4. Presets, nested themes and switching
+
+1. Presets ship as layers: Stackra (`STACKRA_THEME`, in `@stackra/tokens`), the brands (ADR 0340: layers above
+   Stackra, outside `@stackra/tokens`), the inspired-by presets (Medusa, Linear) and Stackra's own style presets
+   (HeroUI-style, tactile, glass, brutal; tokens only, no CSS layer) in the playground and the mobile app. The HeroUI-style preset is written fresh from measurements; no HeroUI Pro code or CSS is
+   copied (ADR 0469); free HeroUI (MIT) values may be referenced.
+2. A nested theme is `renderWebCss(theme, { scope: "<selector>" })`: every block is written under the scope, so one
+   section wears another theme. Colour-derived values sit in the mode blocks, so they recompute inside the scope.
+3. Switching replaces the theme stylesheet's text (`applyBrandTheme`) or the native theme store's variables; no
+   reload.
+4. `checkTheme` runs the contrast pairs on every preset in its test, and a preset that fails a minimum does not ship.
+
+### 5. A theme is data
+
+1. A theme a person builds is a `ThemeDocument` (`@stackra/tokens/contracts`): `format`
+   (`stackra.theme-document/1`), a kebab-case `id`, a `label`, the `base` theme's name, the `tokenSet`, a `status`
+   (`draft` or `published`) and the `changes` over the base (the `stackra.theme-diff/2` changes). The built-in presets
+   (Stackra, HeroUI-style, the brands) are seed documents of the same shape.
+2. `parseThemeDocument(input, base)` validates a document and builds its theme; `createThemeDocument(base, theme,
+frame)` writes one. A document is saved, named, previewed, published and applied at runtime with no rebuild.
+3. Applying is a function on each platform, which the appearance settings call: on the web
+   `applyThemeDocument(document, { base?, scope? })` (`@stackra/ui/react`) validates the document and replaces one
+   stylesheet's text; on native `applyNativeTheme(document, base?)` (`@stackra/ui/native`) validates it, pushes the
+   theme's variables to Uniwind and returns the theme with `nativeTokens(theme)`.
+4. Storage, selection, the allowed presets and the tenant lock are appearance settings
+   (`feat/settings-foundation`); `@stackra/tokens` and `@stackra/ui` take no settings dependency.
+5. The Theme Studio (the theme builder) edits a document; each value carries a lock that Randomize respects,
+   Randomize draws within each knob's range and the contrast pairs, Inspect opens the controls of a pressed part of
+   the preview, undo and redo step the history, the device frames preview native, and a colour-recipes section
+   shows how each derived colour is mixed. It exposes every family as a control: colour roles and
+   surfaces, radius, borders, density and sizes, typography and the text scale, elevation, the state layer, layers,
+   and the motion and material families once their owners fill them. Its output is a document (and the DTCG export);
+   it imports a document or a DTCG tree (`dtcgToThemeDiff`).
+
+### 6. DTCG export
+
+`themeToDtcg` writes every family it can express: colours (by mode), dimensions (px, rem; `calc(var(--spacing) * n)`
+resolved against `layout.spacing`), durations, numbers (opacity, z-index, state shares), `cubicBezier` easings,
+`shadow` composites and `typography` composites. A value with no DTCG form (`var()`, a percentage, `em`) is left out,
+as before.
+
+### 7. Lint rules
+
+The oxlint `stackra` plugin (`@stackra/coding-standard`) fails the build on a literal of a token family in
+`apps/**` and `packages/design-system/**` (tests exempt), each in the style of `stackra/no-literal-radius`:
+
+| Rule                                 | Refuses                                                                                                                                                                                                                                                                                                                                                                       | Passes                                                                                                                                  |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `stackra/no-literal-radius` (exists) | `rounded-*` literals, numeric `border*Radius`                                                                                                                                                                                                                                                                                                                                 | `rounded-[var(--radius-*)]`, `rounded-none`, `rounded-[inherit]`                                                                        |
+| `stackra/no-literal-shadow`          | `shadow`, `shadow-xs` … `shadow-2xl`, `shadow-inner`, `shadow-[<literal>]`, numeric `shadowRadius`, `shadowOpacity`, `elevation`                                                                                                                                                                                                                                              | `shadow-surface`, `shadow-overlay`, `shadow-field`, `shadow-none`, `shadow-(--*)`, `shadow-[var(--*)]`                                  |
+| `stackra/no-literal-duration`        | `duration-<n>`, `delay-<n>`, `duration-[<literal>]`, `ease-[<literal>]`, a `cubic-bezier(` in text, a number above 0 in a timing name (`duration`, `delay`, `*Duration`, `*Delay`, `*Ms`, `*_MS`) as a property, a default or a `.duration(n)` call, a numeric `stiffness`, `damping` or `mass`, a string or number-list `easing`/`ease` property, `Easing.bezier(<numbers>)` | `duration-0`, `duration-(--*)`, `ease-(--*)`, Tailwind's keyword easings, `motionTiming(...)`, `motionSpring(...)`, `motionEasing(...)` |
+| `stackra/no-literal-z-index`         | `z-<n>`, numeric `zIndex`                                                                                                                                                                                                                                                                                                                                                     | `z-(--z-*)`, `z-auto`                                                                                                                   |
+| `stackra/no-literal-length`          | arbitrary `[<n>px                                                                                                                                                                                                                                                                                                                                                             | rem]`utilities, numeric`fontSize`, `lineHeight`, `letterSpacing`, `borderWidth`                                                         | `-(--*)`, `[var(--*)]`, Tailwind's scale steps (they read `--spacing`), `em` |
+
+### 8. Motion, haptics and accessibility modes
+
+<Note>
+  Proposed 2026-10-31 (motion work, STA-1371). This section fills the `motion` placeholder; the
+  values are the Stackra theme's defaults, and every one is a theme value a preset or Theme Studio
+  can change.
+</Note>
+
+1. **Duration scale.** `Theme.motion` keeps its record of steps, each a CSS duration and easing, rendered as
+   `--duration-<step>` and `--ease-<step>` and read in script with `motionTiming(theme, step)`. The scale is
+   `instant` 100ms, `fast` 150ms, `base` 250ms, `slow` 300ms and `slower` 450ms. Named roles sit beside it: `moderate`
+   200ms (a small move), `indicator` 250ms (a selection sliding), `reveal` 400ms (an entrance), `count` 900ms (a
+   number rolling), `pulse` 1200ms (a looping cue), `blink` (a caret) and `stagger` 40ms (the delay between items).
+   Overlays get their own pair, measured on HeroUI (2026-10-31): `overlay-in` 250ms and `overlay-out` 200ms
+   (drawer, sheet, modal) and `toast-in` 350ms and `toast-out` 300ms, on the fluid curve
+   `cubic-bezier(0.32, 0.72, 0, 1)`. A sliding selection indicator plays `indicator`.
+2. **Easings.** `Theme.animation.easings`, each a CSS named easing or `cubic-bezier()`, so Motion and Reanimated play
+   the curve CSS plays: `standard` `cubic-bezier(0.2, 0, 0, 1)` (a move within the screen), `emphasized`
+   `cubic-bezier(0.32, 0.72, 0, 1)` (a sheet, a large surface), `enter` `cubic-bezier(0.22, 1, 0.36, 1)` (arriving,
+   decelerating) and `exit` `cubic-bezier(0.4, 0, 1, 1)` (leaving, accelerating). Web: `--ease-<name>`, and Tailwind's
+   `ease-in`, `ease-out` and `ease-in-out` read `exit`, `enter` and `standard`. Script: `motionEasing(theme, name)`
+   gives the control points (`Easing.bezier(...points)` in Reanimated, `ease: points` in Motion).
+3. **Springs.** `Theme.animation.springs`, each `{ stiffness, damping, mass }`: `gentle` 120, 20, 1 (a large surface
+   settling), `snappy` 260, 22, 0.8 (a control, a thumb, a drag letting go) and `bouncy` 220, 16, 1 (a playful
+   indicator). The HeroUI Pro study adds measured presets: `follow` 180, 28, 1 (a pointer-following tilt),
+   `settle` 120, 22, 1 (a return to rest with no overshoot, flat to the eye at about 550ms), `flip` 60, 12, 1.2 (a heavy
+   card turn with a small rebound) and `morph` 300, 25, 0.8 (a FAB or morph button). The material work adds Apple's two (ADR 0320 as
+   amended 2026-10-31): `default` 322, 36, 1 (damping ratio 1.0, response 0.35s: popovers, menus, toasts, tab content)
+   and `sheet` 439, 35.6, 1 (0.85, 0.3s: sheets and drawers). `motionSpring(theme, name)` is the config both libraries take: `withSpring(to, spring)` in Reanimated,
+   `{ type: "spring", ...spring }` in Motion. The web stylesheet samples each into a CSS `linear()` easing,
+   `--spring-<name>`, with the time it takes to settle, `--spring-<name>-duration` (`springCurve`), so a CSS
+   transition plays the same physics.
+4. **Stagger and press.** Items revealed in a row wait `stagger` each. A pressed control shrinks to
+   `animation.pressScale` (0.97; `--press-scale`) on the `fast` step and springs back on `snappy`.
+5. **Patterns.** Enter: fade in and rise `animation.enterDistance` (8px; `--enter-distance`) on `reveal` or `base`
+   with `enter`. Exit: fade out on `fast` with `exit`; an exit is shorter than its entrance. Layout: a moving or
+   resizing element springs on `snappy` (web: Motion `layout` with the spring; native: Reanimated layout transitions
+   with the spring). Lists reveal as one block (ADR 0329 decision 4).
+6. **Page and view transitions.** Web: `ViewStack` plays its moves through the View Transitions API
+   (`document.startViewTransition`), falling back to animating the entering view; a push slides from the reading end
+   on `reveal` with `enter`. Native: `ViewStack` and the navigators map the same transitions to Reanimated entering
+   and exiting animations and to the native stack animation (`nativeStackAnimationOf`).
+7. **Theme switch.** A scheme, brand or material switch plays the provider's `transition` preset (`circle-origin`,
+   `fade`, `none`) through the View Transitions API on `slower` with `standard`; under reduced motion the preset becomes a fade
+   on the same step, and with no View Transitions API or `none` the change is instant.
+8. **One intensity knob.** `DesignSystemProvider`'s `motion` is `full`, `reduced` or `none` (off). `full` is lowered
+   to `reduced` by `prefers-reduced-motion` on the web and iOS Reduce Motion (Android remove animations) on native.
+   `reduced` keeps fades and drops movement: `--press-scale` becomes 1 and `--enter-distance` 0px, Motion's
+   `MotionConfig` drops transforms, Reanimated's `ReducedMotionConfig` drops layout movement and components swap a
+   slide for a fade. `none` sets every duration, spring duration and transition to 0, so end events still fire. The
+   system setting alone drops the CSS durations to 0ms (the conservative reading of the media query).
+9. **Haptics (native).** `Theme.haptics` maps each kind a control plays to an `expo-haptics` pattern: `selection`
+   (a changed choice) to `selection`, `light` and `impact` (a press) to `impact-light`, `medium` to `impact-medium`,
+   `rigid` (a bound) to `impact-rigid`, and `success`, `warning`, `error` to the notification patterns; `none`
+   silences a kind. `expo-haptics` is an optional peer of `@stackra/ui`. The on/off preference is the provider's
+   `haptics` prop and `useHaptic().setEnabled`, for an app's settings screen.
+10. **Accessibility modes** are theme modes the web stylesheet generates; each follows its system setting and the
+    provider forces it with `accessibility` (an attribute on `<html>`):
+
+| Mode                     | System setting                                                          | Forced by                                         | What changes                                                                                                                                                                               |
+| ------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| More contrast            | `prefers-contrast: more`                                                | `data-contrast="more"`                            | the roles in `accessibility.contrast` (Stackra: `muted`, `field-placeholder`, `field-border`, `border`, `separator` at 4.5:1 or more, `focus` on the foreground); the material turns solid |
+| Reduced transparency     | `prefers-reduced-transparency: reduce`                                  | `data-transparency="reduce"`                      | the material's solid mode (ADR 0320); the material work reads it for its families                                                                                                          |
+| Larger text              | the browser's text size; native Dynamic Type (capped by `maxFontScale`) | `data-text-scale="<name>"`                        | the root font size by `accessibility.textScales` (`large` 1.125, `larger` 1.25, `largest` 1.5)                                                                                             |
+| Forced colours           | `forced-colors: active`                                                 | —                                                 | `--focus` is `Highlight`, `--link` is `LinkText`, edges are `CanvasText`, charts keep their colours                                                                                        |
+| Colour-blind-safe charts | —                                                                       | `data-chart-palette="safe"` (also on any element) | `--chart-1` … `--chart-5` become `accessibility.chartSafe` (Okabe and Ito's hues, 3:1 or more on the surface)                                                                              |
+
+### 9. Materials
+
+<Note>
+  Proposed 2026-10-31 (material work, STA-1371). This section fills the `materials` placeholder. The
+  owner's five decisions on glass, Android and visionOS are recorded in
+  [0320](/adr/0320-stackra-brand-glass-material-and-the-showcase-stage) as amended 2026-10-31; this
+  section is the schema they need.
+</Note>
+
+1. **Levels.** `MaterialLevel` is `ultra-thin`, `thin`, `regular`, `thick`, `glass` and `glass-clear`, thinnest
+   first and then the two glass variants. Each `MaterialLevelToken` keeps `fill`, `blur` and `saturation` and gains
+   optional fields, so a theme written before them still validates: `tintSource` (`surface`, `accent`, `overlay`,
+   `none`) and `tint` (0 to 0.24), `brightness`, `edge` and `rim` (overriding the theme-wide `edge` and `highlight`),
+   `specular` (a share of the rim), `innerDepth`, `elevation` (`none`, `raised`, `floating`, `overlay`), `dim`
+   (`glass-clear` only) and `vibrancy` (the label roles the level allows). Web: `--material-<level>-*` and
+   `.material-<level>`.
+2. **Roles and families.** `MaterialRole` names where a material is used: `nav-bar`, `tab-bar`, `sidebar`,
+   `toolbar`, `sheet`, `modal`, `popover`, `menu`, `tooltip`, `toast`, `command`, `card`, `action-bar`, `fab`,
+   `segmented-track`, `search-in-bar` and `media-controls`. `materials.family` (`front` or `studio`) picks one of the
+   two maps in `MATERIAL_FAMILY_ROLES`, and `materials.roles` overrides single roles per theme. Each role is a level
+   or `solid`, and a component asks for its role, never a level: web `.material-role-<role>` reading
+   `--material-role-<role>-*`, native `useMaterialRole(role)` and `GlassSurface`. `<html data-family>` switches the
+   map at runtime; its blocks come after `:root` so the attribute wins.
+
+| Role            | front       | studio                       |
+| --------------- | ----------- | ---------------------------- |
+| nav-bar         | glass       | solid (glass once scrolled)  |
+| tab-bar         | glass       | glass                        |
+| sidebar         | glass       | solid                        |
+| toolbar         | glass       | solid                        |
+| sheet           | glass       | thick                        |
+| modal           | thick       | thick                        |
+| popover, menu   | glass       | glass                        |
+| tooltip         | thin        | solid                        |
+| toast           | glass       | glass                        |
+| command         | thick       | thick                        |
+| card            | solid       | solid                        |
+| action-bar      | glass       | glass                        |
+| fab             | glass       | solid                        |
+| segmented-track | ultra-thin  | solid                        |
+| search-in-bar   | ultra-thin  | solid (a fill, never a blur) |
+| media-controls  | glass-clear | glass-clear                  |
+
+3. **Default mode.** `materials.defaultMode` is what `DesignSystemProvider` applies when it is given no `material`;
+   the provider no longer hard-codes `solid`. The Stackra theme is `studio` and `solid`, so product UI changes only
+   when a theme or an app opts in.
+4. **Legibility.** Overlays that carry muted text (popover, menu, sheet, command, modal) keep their role's glass
+   look but draw the `thick` fill, the only level where muted text holds 4.5:1 (ADR 0320 decision 4).
+   `glass-clear` never dims below 0.50 under glyphs and 0.55 under labels; the web renderer clamps to those floors
+   (`GLASS_CLEAR_DIM_FLOORS`, also in `nativeTokens`), and the contrast test proves them.
+5. **Fallbacks.** Reduced transparency drops the rim and specular on top of the solid mode; more contrast drops the
+   tint, raises every edge to 0.45 and puts a 0.70 plate under `glass-clear`. Each follows its system setting and
+   the provider's `data-transparency` and `data-contrast` (section 8). Without a backdrop filter `glass-clear`
+   dims 0.15 more; forced colours draw a `CanvasText` edge on every material class and role.
+6. **Other families.** `shadows.floating` joins the elevations; `iconStroke` maps a font weight (100 to 900) to an
+   icon stroke, so icons match the text beside them. `nativeTokens` carries the families, the role maps and the dim
+   floors.
+7. **Presets.** Stackra Glass (`front`, `glass`), Stackra Studio (`studio`, `frosted`), HeroUI-style (`studio`,
+   `solid`) and Apple-style (`front`, `liquid`) ship as tokens only, with no CSS layer.
+8. **Future native targets.** visionOS and watchOS are planned targets, each with its own ADR (ADR 0320 decision
+   12). The schema keeps what they need expressible: depth levels beyond the four elevations, ornaments as a role,
+   and a small-screen type scale as a `typeScale` variant. No change here may make any of them unrepresentable.
+
+## Consequences
+
+- One edit to a theme (or a layer) reaches every component on web and native; Theme Studio's controls are the schema.
+- The HeroUI-style preset proves the schema: it needs no CSS layer.
+- Components get longer class names (`z-(--z-overlay)`), and a new component must pick a family's token or add one.
+- The motion and material agents extend `motion` and `materials` on this schema; neither renames a family here.
+- A component that wants glass asks for a material role. `stackra/no-backdrop-filter` refuses a backdrop filter,
+  `expo-blur` or `expo-glass-effect` anywhere else (ADR 0320 decision 11).
+- A component's motion is retimed from the theme: changing `snappy` or `base` moves every control that plays it,
+  on both platforms, and a component that needs a timing the scale lacks adds a step rather than a literal.
+- Tailwind breakpoints are build-time: `--breakpoint-*` change JS and native reads at runtime, and media queries only
+  when a build regenerates its `@theme`.
+
+## Enforcement
+
+- `packages/design-system/tokens/src/core/functions/define-theme.function.ts` validates every family (grammars,
+  ranges, duplicate property names); its tests and the `render-web-css` / `render-native-css` file snapshots hold the
+  output.
+- `packages/developer/coding-standard/src/core/constants/no-literal-*-rule.constant.ts`, on in
+  `packages/tooling/oxlint/src/base.jsonc` for `apps/**` and `packages/design-system/**`.
+- `motionEasing`, `motionSpring`, `springCurve` and the modes stylesheet: `motion-family.function.test.ts` and
+  `render-modes-css.function.test.ts` in `@stackra/tokens`; the haptic patterns in `@stackra/ui`'s haptics test;
+  the accessibility attributes in the web `DesignSystemProvider` test.
+- The material: `render-material-css.function.test.ts` (levels, roles, family blocks after `:root`, fallbacks under
+  the system settings and the attributes) and `stackra-theme.constant.test.ts` (the dim floors and the thick fill
+  under muted text); `no-backdrop-filter-rule.constant.ts` in `@stackra/coding-standard`, on in `base.jsonc`.
+- `checkTheme` contrast pairs per preset: the presets' test in `apps/playground/src/constants/brand-themes/__tests__`.
+- Visual regression: planned — a Playwright screenshot per preset and mode in `apps/playground/e2e`.
+- Generated tokens docs page: planned — a playground route that lists `themeVariables(theme)` for the picked preset.
+
+## Supersedes and sources
+
+Supersedes: none. Amends 0302 (schema), 0329 (motion becomes a placeholder family), 0340 decision 7 (DTCG coverage).
+
+- `stackra-notes/design-system-research-2026-10-31/heroui-design-language.md` and `heroui-conformance-gaps.md`.
+- `stackra-notes/design-system-research-2026-10-31/token-audit.md` (the hard-coded values this ADR retires).
+- Free HeroUI v3 (MIT) `@heroui/styles` variables, for reference values only.

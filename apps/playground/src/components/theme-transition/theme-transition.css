@@ -6,6 +6,13 @@
 :root[data-uniwind-transition] {
   view-transition-name: root;
 
+  /* Every preset, fade and blur included, plays the theme's step (set by `runThemeTransition`) on its standard curve. */
+  &::view-transition-old(root),
+  &::view-transition-new(root) {
+    animation-duration: var(--uniwind-transition-duration);
+    animation-timing-function: var(--ease-standard);
+  }
+
   & *,
   & *::before,
   & *::after {

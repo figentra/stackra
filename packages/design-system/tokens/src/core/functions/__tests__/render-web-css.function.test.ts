@@ -16,6 +16,7 @@ import { MaterialMode } from "#contracts/enums/material-mode.enum";
 import type { Theme } from "#contracts/types/theme.type";
 import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
+import { motionDurationNames } from "#core/functions/motion-duration-names.function";
 import { renderWebCss } from "#core/functions/render-web-css.function";
 
 const css = renderWebCss(STACKRA_THEME);
@@ -60,8 +61,11 @@ describe("renderWebCss", () => {
   });
 
   it("stops motion under prefers-reduced-motion and sets the Arabic stack for lang(ar)", () => {
+    const zeroed = motionDurationNames(STACKRA_THEME)
+      .map((name) => `    ${name}: 0ms;\n`)
+      .join("");
     expect(css).toContain(
-      "@media (prefers-reduced-motion: reduce) {\n  :root {\n    --duration-fast: 0ms;\n    --duration-base: 0ms;\n    --duration-blink: 0ms;\n    --duration-reveal: 0ms;\n    --duration-stagger: 0ms;\n  }\n",
+      `@media (prefers-reduced-motion: reduce) {\n  :root {\n${zeroed}    --press-scale: 1;\n    --enter-distance: 0px;\n  }\n`,
     );
     expect(css).toContain(":root:lang(ar) {\n  font-family: var(--font-arabic);\n}");
   });
@@ -83,9 +87,10 @@ describe("renderWebCss", () => {
   });
 
   it("ends every transition and animation at once under data-motion none", () => {
-    expect(css).toContain(
-      'html[data-motion="none"] {\n  --duration-fast: 0ms;\n  --duration-base: 0ms;\n  --duration-blink: 0ms;\n  --duration-reveal: 0ms;\n  --duration-stagger: 0ms;\n  scroll-behavior: auto;\n}',
-    );
+    const zeroed = motionDurationNames(STACKRA_THEME)
+      .map((name) => `  ${name}: 0ms;\n`)
+      .join("");
+    expect(css).toContain(`html[data-motion="none"] {\n${zeroed}  scroll-behavior: auto;\n}`);
     const all = css.split('html[data-motion="none"] *::after {\n')[1]?.split("\n}")[0] ?? "";
     expect(all).toContain("animation-duration: 0s !important;");
     expect(all).toContain("transition-duration: 0s !important;");
@@ -137,7 +142,12 @@ describe("renderWebCss", () => {
   it("writes each material level's share, fill and filter in both colour blocks, and its blur and saturation once", () => {
     const light = blockOf(':root,\n[data-theme="light"]');
     const dark = blockOf('.dark,\n[data-theme="dark"]');
-    for (const level of MaterialLevel) {
+    // The untinted standard levels; glass (tinted) and glass-clear (a dim) have their own test.
+    for (const level of MaterialLevel.filter(
+      (name) =>
+        !STACKRA_THEME.materials.levels[name].tint &&
+        STACKRA_THEME.materials.levels[name].tintSource !== "none",
+    )) {
       const token = STACKRA_THEME.materials.levels[level];
       expect(light).toContain(`  --material-${level}-share: ${token.fill.light};`);
       expect(dark).toContain(`  --material-${level}-share: ${token.fill.dark};`);
@@ -166,7 +176,7 @@ describe("renderWebCss", () => {
       );
   });
 
-  it("writes every mode's factors on [data-material], glass also on :root as the default", () => {
+  it("writes every mode's factors on [data-material], the theme's default mode also on :root", () => {
     for (const mode of MaterialMode) {
       const factors = MATERIAL_MODES[mode];
       const block = blockOf(`[data-material="${mode}"]`);
@@ -174,8 +184,15 @@ describe("renderWebCss", () => {
       expect(block, mode).toContain(`  --material-thick-floor: ${factors.thickFloor};`);
       expect(block, mode).toContain(`  --material-sheen: ${factors.sheen};`);
     }
-    expect(blockOf(":root")).toContain("  --material-fill-floor: 0;");
-    expect(blockOf(":root")).toContain("  --material-thick-floor: 0;");
+    // The stackra theme is product UI: solid unless a page asks for glass (ADR 0320 as amended 2026-10-31).
+    expect(STACKRA_THEME.materials.defaultMode).toBe("solid");
+    expect(blockOf(":root")).toContain("  --material-fill-floor: 1;");
+    expect(blockOf(":root")).toContain("  --material-thick-floor: 1;");
+    // A theme with no default mode is drawn as written, glass.
+    const { defaultMode: _, ...asWritten } = STACKRA_THEME.materials;
+    expect(renderWebCss({ ...STACKRA_THEME, materials: asWritten })).toContain(
+      "  --material-fill-floor: 0;",
+    );
     expect(MATERIAL_MODES.solid).toMatchObject({ fillFloor: 1, thickFloor: 1, blurScale: 0 });
   });
 
@@ -227,9 +244,14 @@ describe("renderWebCss", () => {
   });
 
   // @covers sta-425:FR-002 sta-425:P-002
-  it("puts the quiet button variants and the close button on the control fill with no backdrop filter (ADR 0319)", () => {
+  it("puts the secondary button and the close button on the control fill with no backdrop filter (ADR 0319), and keeps tertiary and outline distinct", () => {
     expect(layer).toContain(
-      "  .button--secondary,\n  .button--tertiary,\n  .button--outline {\n    --button-bg: var(--material-control-fill);",
+      "  .button--secondary {\n    --button-bg: var(--material-control-fill);",
+    );
+    // ADR 0501: tertiary is the neutral `default` fill, outline a transparent button inside the border role.
+    expect(layer).toContain("  .button--tertiary {\n    --button-bg: var(--default);");
+    expect(layer).toContain(
+      "  .button--outline {\n    --button-bg: transparent;\n    --button-bg-hover: color-mix(in oklch, transparent, var(--foreground) calc(var(--state-hover) * 100%));",
     );
     expect(layer).toContain('  .button--ghost:hover,\n  .button--ghost[data-hovered="true"],');
     expect(layer).toContain(
@@ -238,7 +260,10 @@ describe("renderWebCss", () => {
     expect(layer).not.toContain(".button--primary");
     // One box for every variant: the solid ones keep a transparent border the width of the outlined ones' edge.
     expect(layer).toContain("  .button {\n    border: 1px solid transparent;\n  }");
-    const buttons = layer.slice(layer.indexOf(".button--secondary"));
+    const buttons = layer.slice(
+      layer.indexOf(".button--secondary"),
+      layer.indexOf("  .radio .radio__control"),
+    );
     // Decision 2: a control carries the fill and a hairline edge, never a backdrop filter.
     expect(buttons).not.toContain("backdrop-filter");
     // HeroUI's focus ring is a box-shadow: the glass buttons must not set one.
@@ -277,5 +302,49 @@ describe("renderWebCss", () => {
         `  --material-control-fill: color-mix(in oklch, var(--surface) calc(clamp(max(var(--material-fill-floor), ${MATERIAL_MODES.frosted.fillFloor}), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);`,
       );
     expect(css).toContain("    --material-control-fill: var(--surface);");
+  });
+
+  // ADR 0501: HeroUI's derived radii reach no component unmapped, a field matches a button, and a section can wear
+  // another theme.
+  it("maps every HeroUI radius consumer to a role and sizes controls from the control heights", () => {
+    for (const rule of [
+      "  .alert,\n  .accordion--surface,\n  .toolbar--attached {\n    border-radius: var(--radius-container);",
+      "  .table-root {\n    border-radius: var(--radius-table);",
+      "  .toast {\n    border-radius: var(--radius-toast);",
+      "  .button {\n    height: var(--control-height-md);",
+      "    padding-block: calc(var(--spacing) * 2 - var(--field-border-width));",
+      "  .table__column {\n    height: var(--size-table-header);",
+      "  .tray__body {\n    background-color: var(--tray-body);",
+    ])
+      expect(layer).toContain(rule);
+    expect(css).toContain(
+      "--radius-control-inner: max(2px, calc(var(--radius-control) - 0.25rem));",
+    );
+    // The roles come before the steps, so a theme's `radius.steps.control` wins.
+    expect(css.indexOf("--radius-control: var(--field-radius);")).toBeLessThan(
+      css.indexOf("--radius-sm: 2px;"),
+    );
+  });
+
+  it("writes only the variable blocks under a scope for a nested theme", () => {
+    const scoped = renderWebCss(STACKRA_THEME, { scope: '[data-preset="x"]' });
+    expect(scoped).toContain('[data-preset="x"] {\n  --radius: 0.25rem;');
+    expect(scoped).toContain('.dark [data-preset="x"],');
+    expect(scoped).not.toContain("@layer components");
+    expect(scoped).not.toContain(":root");
+  });
+
+  it("writes the vibrant soft foregrounds and stills every animation when the theme turns them on and off", () => {
+    const flipped = renderWebCss({
+      ...STACKRA_THEME,
+      layout: { ...STACKRA_THEME.layout, vibrant: true, animations: false },
+    });
+    expect(flipped).toContain(
+      "  --accent-soft-foreground: color-mix(in oklch, var(--accent) 88%, var(--foreground));",
+    );
+    expect(flipped).toContain(
+      ":root *,\n:root *::before,\n:root *::after {\n  animation-duration: 0s !important;",
+    );
+    expect(css).not.toContain("--accent-soft-foreground: color-mix(");
   });
 });

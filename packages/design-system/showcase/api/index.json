@@ -603,6 +603,11 @@
     "propsCount": 10,
     "react": true
   },
+  "free/glass": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 18
+  },
   "free/heading": {
     "native": true,
     "partsCount": 1,
@@ -1634,7 +1639,7 @@
   "free/widget-frame": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 22,
+    "propsCount": 23,
     "react": true
   },
   "free/year-picker": {

@@ -13,7 +13,7 @@
  */
 import type { ReactElement } from "react";
 import { Popover as HeroPopover } from "@heroui/react";
-import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { motion, useReducedMotion } from "motion/react";
 import { useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -31,6 +31,8 @@ const K = COACH_MARK_KEYS.ui.coach_mark;
 
 /** The cutout's glide between targets. */
 const GLIDE = motionTiming(STACKRA_THEME, "base");
+const PULSE = motionTiming(STACKRA_THEME, "pulse");
+const ENTER_EASE = motionEasing(STACKRA_THEME, "enter");
 
 /** The room left around the target inside the cutout, in px. */
 const PAD = 6;
@@ -108,7 +110,7 @@ export function CoachMark({
             <div
               aria-hidden
               data-slot="coach-mark-spotlight"
-              className="pointer-events-none fixed inset-0 z-40"
+              className="pointer-events-none fixed inset-0 z-(--z-float)"
             >
               <div
                 data-slot="coach-mark-cutout"
@@ -135,7 +137,11 @@ export function CoachMark({
                     style={DOT}
                     initial={{ scale: 1, opacity: 0.6 }}
                     animate={{ scale: 2.4, opacity: 0 }}
-                    transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
+                    transition={{
+                      duration: (PULSE.durationMs * 1.5) / 1000,
+                      repeat: Infinity,
+                      ease: ENTER_EASE,
+                    }}
                   />
                 )}
                 <span className="absolute inset-0 bg-accent" style={DOT} />

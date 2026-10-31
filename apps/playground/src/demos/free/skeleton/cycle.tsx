@@ -23,6 +23,7 @@ import { SKELETON_KEYS } from "#src/demos/free/skeleton/skeleton-keys.constant";
 const K = SKELETON_KEYS.skeleton;
 
 /** How long the profile card stays a placeholder after a reload, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake reload delay, not motion
 const RELOAD_MS = 1500;
 
 /** The list that lays samples out in a wrapping row. */

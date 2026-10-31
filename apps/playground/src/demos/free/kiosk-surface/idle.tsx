@@ -16,6 +16,7 @@ import { KIOSK_SURFACE_KEYS } from "#src/demos/free/kiosk-surface/kiosk-surface-
 const K = KIOSK_SURFACE_KEYS.kiosk_surface;
 
 /** The idle timeout of the sample, in milliseconds; a real kiosk reads it from the device settings. */
+// oxlint-disable-next-line stackra/no-literal-duration -- an idle timeout, not motion
 const IDLE_MS = 8000;
 
 /** Kiosk surface: Idle reset. */

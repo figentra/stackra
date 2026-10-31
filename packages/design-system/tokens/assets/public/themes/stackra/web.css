@@ -4,6 +4,12 @@
   --radius: 0.25rem;
   --field-radius: var(--radius);
   --field-border-width: 1px;
+  --spacing: 0.25rem;
+  --border-width: 1px;
+  --ring-offset-width: 2px;
+  --disabled-opacity: 0.5;
+  --cursor-interactive: pointer;
+  --skeleton-animation: shimmer;
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
   --font-arabic: "IBM Plex Sans Arabic", "Geist", system-ui, "Segoe UI", "Tahoma", sans-serif;
@@ -53,6 +59,53 @@
   --small-ar-letter-spacing: 0em;
   --caption-ar: 500 13px/1.6 var(--font-arabic);
   --caption-ar-letter-spacing: 0em;
+  --text-3xs: 0.625rem;
+  --text-3xs--line-height: 1.4;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.4;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.3333;
+  --text-code: 0.8125rem;
+  --text-code--line-height: 1.5;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.4286;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5556;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.3333;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 1.2;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 1.1111;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1;
+  --text-6xl: 3.75rem;
+  --text-6xl--line-height: 1;
+  --text-metric: 1.875rem;
+  --text-metric--line-height: 1.2;
+  --text-metric--font-weight: 600;
+  --text-metric--letter-spacing: -0.02em;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+  --numeric-figures: tabular-nums;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -65,37 +118,178 @@
   --space-16: 64px;
   --space-18: 72px;
   --space-20: 80px;
+  --control-height-sm: calc(var(--spacing) * 8);
+  --control-height-md: calc(var(--spacing) * 9);
+  --control-height-lg: calc(var(--spacing) * 10);
+  --icon-size-sm: 1rem;
+  --icon-size-md: 1.25rem;
+  --icon-size-lg: 1.5rem;
+  --touch-target: 24px;
+  --page-padding: 1.5rem;
+  --gutter: 1rem;
+  --content-max-width: 80rem;
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 96rem;
+  --corner-shape: round;
+  --focus-ring-width: 2px;
+  --focus-ring-style: solid;
+  --state-hover: 0.08;
+  --state-press: 0.12;
+  --state-focus: 0.12;
+  --state-selected: 0.16;
+  --state-drag: 0.16;
+  --opacity-dimmed: 0.5;
+  --opacity-muted: 0.6;
+  --opacity-subtle: 0.4;
+  --size-table-header: calc(var(--spacing) * 9);
+  --size-app-header: calc(var(--spacing) * 14);
+  --size-icon-tile: calc(var(--spacing) * 9);
+  --size-step-indicator: calc(var(--spacing) * 8);
+  --size-timeline-marker: calc(var(--spacing) * 8);
+  --size-action-bar: calc(var(--spacing) * 11);
+  --size-readout: 8.75rem;
+  --size-drawer-sm: 25rem;
+  --size-drawer-md: 35rem;
+  --size-drawer-lg: 45rem;
+  --size-dialog-sm: 20rem;
+  --size-dialog-md: 28rem;
+  --size-dialog-lg: 36rem;
+  --size-dialog-max-height: 30rem;
+  --size-panel: 22rem;
+  --z-behind: -1;
+  --z-pinned: 2;
+  --z-raised: 10;
+  --z-sticky: 20;
+  --z-dock: 30;
+  --z-float: 40;
+  --z-overlay: 50;
+  --z-toast: 60;
+  --z-tooltip: 70;
+  --mirror: 1;
+  --radius-control: var(--field-radius);
+  --radius-control-inner: max(2px, calc(var(--radius-control) - 0.25rem));
+  --radius-container: min(calc(var(--field-radius) * 2), 1.5rem);
+  --radius-container-inner: max(2px, calc(var(--radius-container) - 0.25rem));
+  --radius-pill: 9999px;
+  --radius-button: var(--radius-control);
+  --radius-card: var(--radius-container);
+  --radius-chip: var(--radius-pill);
+  --radius-badge: var(--radius-pill);
+  --radius-avatar: var(--radius-pill);
+  --radius-tooltip: var(--radius-control);
+  --radius-modal: var(--radius-container);
+  --radius-toast: var(--radius-container);
+  --radius-table: var(--radius-container);
   --radius-sm: 2px;
   --radius-lg: 6px;
   --radius-full: 9999px;
   --radius-app-tile: 21.875%;
-  --radius-control: var(--field-radius);
-  --radius-control-inner: max(0px, calc(var(--field-radius) - 0.25rem));
-  --radius-container: min(calc(var(--field-radius) * 2), 1.5rem);
-  --radius-pill: 9999px;
+  --duration-tick: 50ms;
+  --ease-tick: linear;
+  --duration-instant: 100ms;
+  --ease-instant: ease-out;
   --duration-fast: 150ms;
   --ease-fast: ease-out;
+  --duration-moderate: 200ms;
+  --ease-moderate: ease-out;
   --duration-base: 250ms;
   --ease-base: ease-in-out;
+  --duration-slow: 300ms;
+  --ease-slow: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-indicator: 250ms;
+  --ease-indicator: cubic-bezier(0.32, 0.72, 0, 1);
   --duration-blink: 1000ms;
   --ease-blink: steps(1);
+  --duration-pulse: 1200ms;
+  --ease-pulse: ease-in-out;
+  --duration-emphasis: 600ms;
+  --ease-emphasis: ease-in-out;
+  --duration-hold: 1500ms;
+  --ease-hold: linear;
+  --duration-hover-open: 500ms;
+  --ease-hover-open: linear;
+  --duration-hover-close: 200ms;
+  --ease-hover-close: linear;
+  --duration-count: 900ms;
+  --ease-count: ease-out;
   --duration-reveal: 400ms;
   --ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-stagger: 40ms;
   --ease-stagger: linear;
+  --duration-slower: 450ms;
+  --ease-slower: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-overlay-in: 250ms;
+  --ease-overlay-in: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-overlay-out: 200ms;
+  --ease-overlay-out: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-toast-in: 350ms;
+  --ease-toast-in: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-toast-out: 300ms;
+  --ease-toast-out: cubic-bezier(0.4, 0, 1, 1);
+  --default-transition-duration: var(--duration-fast);
+  --default-transition-timing-function: var(--ease-fast);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --spring-gentle: linear(0, 0.013, 0.043, 0.089, 0.144, 0.205, 0.265, 0.329, 0.392, 0.453, 0.507, 0.562, 0.612, 0.655, 0.698, 0.737, 0.771, 0.8, 0.828, 0.852, 0.874, 0.892, 0.908, 0.923, 0.934, 0.945, 0.955, 0.963, 0.969, 0.975, 0.979, 0.983, 0.987, 0.99, 0.992, 0.994, 0.995, 0.997, 0.998, 0.998, 1);
+  --spring-gentle-duration: 589ms;
+  --spring-snappy: linear(0, 0.034, 0.108, 0.214, 0.322, 0.44, 0.544, 0.644, 0.727, 0.802, 0.859, 0.909, 0.947, 0.973, 0.994, 1.007, 1.016, 1.021, 1.023, 1.023, 1.022, 1.02, 1.017, 1.014, 1.012, 1.009, 1.007, 1.005, 1.004, 1.003, 1.002, 1);
+  --spring-snappy-duration: 451ms;
+  --spring-bouncy: linear(0, 0.024, 0.087, 0.176, 0.282, 0.397, 0.514, 0.628, 0.733, 0.828, 0.91, 0.978, 1.032, 1.074, 1.103, 1.121, 1.13, 1.132, 1.127, 1.118, 1.105, 1.091, 1.075, 1.061, 1.046, 1.033, 1.02, 1.01, 1.001, 0.994, 0.989, 0.986, 0.984, 0.983, 0.983, 0.983, 0.985, 0.986, 0.988, 0.99, 0.992, 0.994, 0.996, 0.998, 1);
+  --spring-bouncy-duration: 659ms;
+  --spring-follow: linear(0, 0.019, 0.064, 0.125, 0.193, 0.265, 0.337, 0.405, 0.47, 0.53, 0.585, 0.635, 0.679, 0.719, 0.754, 0.786, 0.813, 0.837, 0.859, 0.877, 0.894, 0.908, 0.92, 0.931, 0.94, 0.948, 0.955, 0.961, 0.966, 0.971, 0.975, 0.978, 0.981, 0.984, 0.986, 0.988, 0.989, 0.991, 0.992, 0.993, 0.994, 0.995, 0.996, 0.996, 0.997, 0.997, 0.998, 0.998, 0.998, 0.998, 0.999, 0.999, 1);
+  --spring-follow-duration: 779ms;
+  --spring-settle: linear(0, 0.013, 0.045, 0.09, 0.144, 0.198, 0.258, 0.318, 0.377, 0.434, 0.487, 0.538, 0.584, 0.625, 0.664, 0.701, 0.734, 0.763, 0.79, 0.814, 0.836, 0.854, 0.871, 0.886, 0.9, 0.912, 0.923, 0.932, 0.94, 0.948, 0.954, 0.96, 0.965, 0.969, 0.973, 0.976, 0.979, 0.982, 0.984, 0.986, 0.988, 0.99, 0.991, 0.992, 0.993, 0.994, 0.995, 0.995, 0.996, 0.997, 0.997, 0.997, 0.998, 0.998, 0.998, 0.998, 0.999, 0.999, 1);
+  --spring-settle-duration: 863ms;
+  --spring-flip: linear(0, 0.008, 0.03, 0.062, 0.1, 0.148, 0.2, 0.255, 0.312, 0.37, 0.425, 0.482, 0.537, 0.59, 0.64, 0.687, 0.729, 0.77, 0.808, 0.842, 0.873, 0.901, 0.924, 0.946, 0.965, 0.981, 0.995, 1.007, 1.016, 1.024, 1.03, 1.035, 1.038, 1.041, 1.042, 1.043, 1.042, 1.042, 1.04, 1.039, 1.037, 1.035, 1.032, 1.03, 1.027, 1.025, 1.023, 1.02, 1.018, 1.016, 1.014, 1.012, 1.01, 1.009, 1.007, 1.006, 1.005, 1.003, 1.003, 1.002, 1);
+  --spring-flip-duration: 1070ms;
+  --spring-morph: linear(0, 0.039, 0.121, 0.234, 0.357, 0.468, 0.579, 0.67, 0.753, 0.822, 0.873, 0.916, 0.949, 0.971, 0.988, 0.999, 1.006, 1.01, 1.012, 1.012, 1.012, 1.011, 1.009, 1.008, 1.006, 1.005, 1.004, 1.003, 1.002, 1.002, 1);
+  --spring-morph-duration: 439ms;
+  --spring-default: linear(0, 0.033, 0.1, 0.192, 0.291, 0.382, 0.473, 0.555, 0.627, 0.686, 0.741, 0.787, 0.823, 0.855, 0.882, 0.903, 0.922, 0.937, 0.949, 0.958, 0.966, 0.973, 0.978, 0.982, 0.986, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.998, 0.998, 0.998, 0.999, 1);
+  --spring-default-duration: 529ms;
+  --spring-sheet: linear(0, 0.044, 0.144, 0.259, 0.387, 0.509, 0.617, 0.709, 0.781, 0.843, 0.89, 0.927, 0.952, 0.971, 0.985, 0.994, 1, 1.003, 1.005, 1.005, 1.005, 1.005, 1.004, 1.004, 1.003, 1.002, 1.002, 1.001, 1);
+  --spring-sheet-duration: 414ms;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.2, 0, 0, 1);
+  --press-scale: 0.97;
+  --enter-distance: 8px;
+  --material-ultra-thin-blur: 8px;
+  --material-ultra-thin-saturate: 1.8;
   --material-thin-blur: 12px;
   --material-thin-saturate: 1.6;
   --material-regular-blur: 20px;
   --material-regular-saturate: 1.6;
   --material-thick-blur: 28px;
   --material-thick-saturate: 1.4;
+  --material-glass-blur: 24px;
+  --material-glass-saturate: 1.8;
+  --material-glass-clear-blur: 6px;
+  --material-glass-clear-saturate: 1.8;
+  --icon-stroke-400: 1.5;
+  --icon-stroke-500: 1.75;
+  --icon-stroke-600: 2;
+  --icon-stroke-700: 2;
   --material-fill-scale: 1;
-  --material-fill-floor: 0;
-  --material-thick-floor: 0;
-  --material-blur-scale: 1;
+  --material-fill-floor: 1;
+  --material-thick-floor: 1;
+  --material-blur-scale: 0;
   --material-saturate-scale: 1;
   --material-brightness: 1;
   --material-sheen: 0;
+  --material-specular-scale: 0;
+  --material-clear-floor: 0.8;
+  --material-tint-scale: 1;
+  --material-rim-scale: 1;
+  --material-edge-floor: 0;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-end: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-start: env(safe-area-inset-left, 0px);
 }
 
 :root,
@@ -135,6 +329,8 @@
   --surface-shadow: 0px 0px 0px 1px oklch(0.158 0.005 248 / 0.06), 0px 1px 2px 0px oklch(0.158 0.005 248 / 0.06);
   --overlay-shadow: 0px 0px 0px 1px oklch(0.158 0.005 248 / 0.08), 0px 8px 24px -4px oklch(0.158 0.005 248 / 0.14);
   --field-shadow: 0px 1px 0px 0px oklch(0.158 0.005 248 / 0.04);
+  --raised-shadow: 0px 1px 3px 0px oklch(0 0 0 / 0.1), 0px 1px 2px -1px oklch(0 0 0 / 0.1);
+  --pressed-shadow: inset 0px 1px 2px 0px oklch(0 0 0 / 0.1);
   --amber: oklch(0.83 0.15 82);
   --ink: oklch(0.158 0.005 248);
   --paper: oklch(0.972 0.004 122);
@@ -169,6 +365,10 @@
   --chart-3: oklch(0.4 0.15 300);
   --chart-4: oklch(0.65 0.15 55);
   --chart-5: oklch(0.54 0.18 355);
+  --floating-shadow: 0px 8px 24px -6px oklch(0.158 0.005 248 / 0.14), 0px 2px 6px -2px oklch(0.158 0.005 248 / 0.08);
+  --material-ultra-thin-share: 0.4;
+  --material-ultra-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-ultra-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-ultra-thin-filter: blur(calc(var(--material-ultra-thin-blur) * var(--material-blur-scale))) saturate(calc(var(--material-ultra-thin-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
   --material-thin-share: 0.6;
   --material-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-thin-filter: blur(calc(var(--material-thin-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thin-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
@@ -178,12 +378,63 @@
   --material-thick-share: 0.9;
   --material-thick-fill: color-mix(in oklch, var(--surface) calc(clamp(max(var(--material-fill-floor), var(--material-thick-floor)), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-thick-filter: blur(calc(var(--material-thick-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thick-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-glass-share: 0.78;
+  --material-glass-fill: color-mix(in oklch, color-mix(in oklch, var(--surface), var(--accent) calc(0.04 * var(--material-tint-scale) * 100%)) calc(clamp(var(--material-fill-floor), var(--material-glass-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-glass-filter: blur(calc(var(--material-glass-blur) * var(--material-blur-scale))) saturate(calc(var(--material-glass-saturate) * var(--material-saturate-scale))) brightness(calc(var(--material-brightness) * 1.04));
+  --material-glass-clear-share: 0;
+  --material-glass-clear-dim: 0.35;
+  --material-glass-clear-fill: color-mix(in oklch, oklch(0 0 0) calc(clamp(max(0.5, var(--material-clear-floor)), var(--material-glass-clear-dim), 1) * 100%), transparent);
+  --material-glass-clear-label-fill: color-mix(in oklch, oklch(0 0 0) calc(clamp(max(0.55, var(--material-clear-floor)), var(--material-glass-clear-dim), 1) * 100%), transparent);
+  --material-glass-clear-filter: blur(calc(var(--material-glass-clear-blur) * var(--material-blur-scale))) saturate(calc(var(--material-glass-clear-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-ultra-thin-edge: color-mix(in oklch, var(--foreground) calc(max(0.08, var(--material-edge-floor)) * 100%), transparent);
+  --material-ultra-thin-rim: color-mix(in oklch, oklch(1 0 0) calc(0.5 * var(--material-rim-scale) * 100%), transparent);
+  --material-ultra-thin-specular: 0 0 #0000;
+  --material-ultra-thin-depth: 0 0 #0000;
+  --material-ultra-thin-elevation: 0 0 #0000;
+  --material-thin-edge: color-mix(in oklch, var(--foreground) calc(max(var(--material-edge-share), var(--material-edge-floor)) * 100%), transparent);
+  --material-thin-rim: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * var(--material-rim-scale) * 100%), transparent);
+  --material-thin-specular: 0 0 #0000;
+  --material-thin-depth: 0 0 #0000;
+  --material-thin-elevation: 0 0 #0000;
+  --material-regular-edge: color-mix(in oklch, var(--foreground) calc(max(var(--material-edge-share), var(--material-edge-floor)) * 100%), transparent);
+  --material-regular-rim: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * var(--material-rim-scale) * 100%), transparent);
+  --material-regular-specular: 0 0 #0000;
+  --material-regular-depth: 0 0 #0000;
+  --material-regular-elevation: var(--raised-shadow, var(--surface-shadow));
+  --material-thick-edge: color-mix(in oklch, var(--foreground) calc(max(var(--material-edge-share), var(--material-edge-floor)) * 100%), transparent);
+  --material-thick-rim: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * var(--material-rim-scale) * 100%), transparent);
+  --material-thick-specular: 0 0 #0000;
+  --material-thick-depth: 0 0 #0000;
+  --material-thick-elevation: var(--raised-shadow, var(--surface-shadow));
+  --material-glass-edge: color-mix(in oklch, var(--foreground) calc(max(0.08, var(--material-edge-floor)) * 100%), transparent);
+  --material-glass-rim: color-mix(in oklch, oklch(1 0 0) calc(0.8 * var(--material-rim-scale) * 100%), transparent);
+  --material-glass-specular: inset 0 -1px 0 0 color-mix(in oklch, oklch(1 0 0) calc(0.35 * 0.8 * var(--material-specular-scale) * var(--material-rim-scale) * 100%), transparent);
+  --material-glass-depth: inset 0 -1px 2px 0 color-mix(in oklch, oklch(0 0 0) calc(0.04 * min(1, var(--material-specular-scale)) * 100%), transparent);
+  --material-glass-elevation: var(--floating-shadow);
+  --material-glass-clear-edge: color-mix(in oklch, oklch(1 0 0) calc(max(0.14, var(--material-edge-floor)) * 100%), transparent);
+  --material-glass-clear-rim: color-mix(in oklch, oklch(1 0 0) calc(0.4 * var(--material-rim-scale) * 100%), transparent);
+  --material-glass-clear-specular: inset 0 -1px 0 0 color-mix(in oklch, oklch(1 0 0) calc(0.35 * 0.4 * var(--material-specular-scale) * var(--material-rim-scale) * 100%), transparent);
+  --material-glass-clear-depth: 0 0 #0000;
+  --material-glass-clear-elevation: 0 0 #0000;
   --material-edge-share: 0.1;
   --material-highlight-share: 0.7;
   --material-edge: color-mix(in oklch, var(--foreground) calc(var(--material-edge-share) * 100%), transparent);
   --material-highlight: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * 100%), transparent);
   --material-control-fill: color-mix(in oklch, var(--surface) calc(clamp(max(var(--material-fill-floor), 0.88), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * var(--material-highlight-share) * 100%), transparent);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--surface-foreground);
+  --tray: var(--surface-secondary);
+  --tray-body: var(--surface);
+  --scrim: var(--backdrop);
+  --level-0: var(--background);
+  --level-1: var(--surface);
+  --level-2: var(--surface-secondary);
+  --level-3: var(--surface-tertiary);
+  --level-4: var(--overlay);
+  --selection: var(--accent-soft);
+  --selection-foreground: var(--accent-soft-foreground);
+  --chart-single: var(--accent);
   --syntax-keyword: #005FBC;
   --syntax-string: #006F2B;
   --syntax-number: #A14400;
@@ -197,11 +448,16 @@
   --syntax-operator: #9B424D;
   --syntax-inserted: #006F19;
   --syntax-deleted: #B02A2D;
-  --chart-ramp-1: oklch(from var(--accent) calc(clamp(0.47, l, 0.47) - 0.17) c h);
-  --chart-ramp-2: oklch(from var(--accent) calc(clamp(0.47, l, 0.47) - 0.085) c h);
-  --chart-ramp-3: oklch(from var(--accent) clamp(0.47, l, 0.47) c h);
-  --chart-ramp-4: oklch(from var(--accent) calc(clamp(0.47, l, 0.47) + 0.085) c h);
-  --chart-ramp-5: oklch(from var(--accent) calc(clamp(0.47, l, 0.47) + 0.17) c h);
+  --chart-ramp-1: oklch(from var(--accent) clamp(0.02, calc(l - clamp(0.06, (l - 0.3) / 2, 0.12) * 2), 0.98) c h);
+  --chart-ramp-2: oklch(from var(--accent) clamp(0.02, calc(l - clamp(0.06, (l - 0.3) / 2, 0.12) * 1), 0.98) c h);
+  --chart-ramp-3: oklch(from var(--accent) l c h);
+  --chart-ramp-4: oklch(from var(--accent) clamp(0.02, calc(l + clamp(0.06, (0.64 - l) / 2, 0.12) * 1), 0.98) c h);
+  --chart-ramp-5: oklch(from var(--accent) clamp(0.02, calc(l + clamp(0.06, (0.64 - l) / 2, 0.12) * 2), 0.98) c h);
+  --chart-diverging-1: var(--danger);
+  --chart-diverging-2: color-mix(in oklch, var(--danger) 55%, var(--surface));
+  --chart-diverging-3: var(--muted);
+  --chart-diverging-4: color-mix(in oklch, var(--accent) 55%, var(--surface));
+  --chart-diverging-5: var(--accent);
 }
 
 .dark,
@@ -241,6 +497,8 @@
   --surface-shadow: 0px 0px 0px 1px oklch(0.27 0.007 250), 0px 1px 0px 0px oklch(1 0 0 / 0.02) inset;
   --overlay-shadow: 0px 0px 0px 1px oklch(0.35 0.008 250), 0px 16px 32px -8px oklch(0 0 0 / 0.55);
   --field-shadow: 0px 1px 0px 0px oklch(0 0 0 / 0.2);
+  --raised-shadow: 0px 1px 3px 0px oklch(0 0 0 / 0.4), 0px 1px 2px -1px oklch(0 0 0 / 0.4);
+  --pressed-shadow: inset 0px 1px 2px 0px oklch(0 0 0 / 0.3);
   --amber: oklch(0.83 0.15 82);
   --ink: oklch(0.158 0.005 248);
   --paper: oklch(0.972 0.004 122);
@@ -275,6 +533,10 @@
   --chart-3: oklch(0.6 0.17 300);
   --chart-4: oklch(0.8 0.14 60);
   --chart-5: oklch(0.68 0.17 355);
+  --floating-shadow: 0px 10px 30px -8px oklch(0 0 0 / 0.55);
+  --material-ultra-thin-share: 0.45;
+  --material-ultra-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-ultra-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-ultra-thin-filter: blur(calc(var(--material-ultra-thin-blur) * var(--material-blur-scale))) saturate(calc(var(--material-ultra-thin-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
   --material-thin-share: 0.62;
   --material-thin-fill: color-mix(in oklch, var(--surface) calc(clamp(var(--material-fill-floor), var(--material-thin-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-thin-filter: blur(calc(var(--material-thin-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thin-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
@@ -284,12 +546,63 @@
   --material-thick-share: 0.92;
   --material-thick-fill: color-mix(in oklch, var(--surface) calc(clamp(max(var(--material-fill-floor), var(--material-thick-floor)), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-thick-filter: blur(calc(var(--material-thick-blur) * var(--material-blur-scale))) saturate(calc(var(--material-thick-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-glass-share: 0.8;
+  --material-glass-fill: color-mix(in oklch, color-mix(in oklch, var(--surface), var(--accent) calc(0.04 * var(--material-tint-scale) * 100%)) calc(clamp(var(--material-fill-floor), var(--material-glass-share) * var(--material-fill-scale), 1) * 100%), transparent);
+  --material-glass-filter: blur(calc(var(--material-glass-blur) * var(--material-blur-scale))) saturate(calc(var(--material-glass-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-glass-clear-share: 0;
+  --material-glass-clear-dim: 0.35;
+  --material-glass-clear-fill: color-mix(in oklch, oklch(0 0 0) calc(clamp(max(0.5, var(--material-clear-floor)), var(--material-glass-clear-dim), 1) * 100%), transparent);
+  --material-glass-clear-label-fill: color-mix(in oklch, oklch(0 0 0) calc(clamp(max(0.55, var(--material-clear-floor)), var(--material-glass-clear-dim), 1) * 100%), transparent);
+  --material-glass-clear-filter: blur(calc(var(--material-glass-clear-blur) * var(--material-blur-scale))) saturate(calc(var(--material-glass-clear-saturate) * var(--material-saturate-scale))) brightness(var(--material-brightness));
+  --material-ultra-thin-edge: color-mix(in oklch, var(--foreground) calc(max(0.1, var(--material-edge-floor)) * 100%), transparent);
+  --material-ultra-thin-rim: color-mix(in oklch, oklch(1 0 0) calc(0.06 * var(--material-rim-scale) * 100%), transparent);
+  --material-ultra-thin-specular: 0 0 #0000;
+  --material-ultra-thin-depth: 0 0 #0000;
+  --material-ultra-thin-elevation: 0 0 #0000;
+  --material-thin-edge: color-mix(in oklch, var(--foreground) calc(max(var(--material-edge-share), var(--material-edge-floor)) * 100%), transparent);
+  --material-thin-rim: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * var(--material-rim-scale) * 100%), transparent);
+  --material-thin-specular: 0 0 #0000;
+  --material-thin-depth: 0 0 #0000;
+  --material-thin-elevation: 0 0 #0000;
+  --material-regular-edge: color-mix(in oklch, var(--foreground) calc(max(var(--material-edge-share), var(--material-edge-floor)) * 100%), transparent);
+  --material-regular-rim: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * var(--material-rim-scale) * 100%), transparent);
+  --material-regular-specular: 0 0 #0000;
+  --material-regular-depth: 0 0 #0000;
+  --material-regular-elevation: var(--raised-shadow, var(--surface-shadow));
+  --material-thick-edge: color-mix(in oklch, var(--foreground) calc(max(var(--material-edge-share), var(--material-edge-floor)) * 100%), transparent);
+  --material-thick-rim: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * var(--material-rim-scale) * 100%), transparent);
+  --material-thick-specular: 0 0 #0000;
+  --material-thick-depth: 0 0 #0000;
+  --material-thick-elevation: var(--raised-shadow, var(--surface-shadow));
+  --material-glass-edge: color-mix(in oklch, var(--foreground) calc(max(0.14, var(--material-edge-floor)) * 100%), transparent);
+  --material-glass-rim: color-mix(in oklch, oklch(1 0 0) calc(0.12 * var(--material-rim-scale) * 100%), transparent);
+  --material-glass-specular: inset 0 -1px 0 0 color-mix(in oklch, oklch(1 0 0) calc(0.35 * 0.12 * var(--material-specular-scale) * var(--material-rim-scale) * 100%), transparent);
+  --material-glass-depth: inset 0 -1px 2px 0 color-mix(in oklch, oklch(0 0 0) calc(0.2 * min(1, var(--material-specular-scale)) * 100%), transparent);
+  --material-glass-elevation: var(--floating-shadow);
+  --material-glass-clear-edge: color-mix(in oklch, oklch(1 0 0) calc(max(0.14, var(--material-edge-floor)) * 100%), transparent);
+  --material-glass-clear-rim: color-mix(in oklch, oklch(1 0 0) calc(0.4 * var(--material-rim-scale) * 100%), transparent);
+  --material-glass-clear-specular: inset 0 -1px 0 0 color-mix(in oklch, oklch(1 0 0) calc(0.35 * 0.4 * var(--material-specular-scale) * var(--material-rim-scale) * 100%), transparent);
+  --material-glass-clear-depth: 0 0 #0000;
+  --material-glass-clear-elevation: 0 0 #0000;
   --material-edge-share: 0.12;
   --material-highlight-share: 0.09;
   --material-edge: color-mix(in oklch, var(--foreground) calc(var(--material-edge-share) * 100%), transparent);
   --material-highlight: color-mix(in oklch, oklch(1 0 0) calc(var(--material-highlight-share) * 100%), transparent);
   --material-control-fill: color-mix(in oklch, var(--surface) calc(clamp(max(var(--material-fill-floor), 0.88), var(--material-thick-share) * var(--material-fill-scale), 1) * 100%), transparent);
   --material-sheen-color: color-mix(in oklch, oklch(1 0 0) calc(var(--material-sheen) * var(--material-highlight-share) * 100%), transparent);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--surface-foreground);
+  --tray: var(--surface-secondary);
+  --tray-body: var(--surface);
+  --scrim: var(--backdrop);
+  --level-0: var(--background);
+  --level-1: var(--surface);
+  --level-2: var(--surface-secondary);
+  --level-3: var(--surface-tertiary);
+  --level-4: var(--overlay);
+  --selection: var(--accent-soft);
+  --selection-foreground: var(--accent-soft-foreground);
+  --chart-single: var(--accent);
   --syntax-keyword: #61C2FF;
   --syntax-string: #7CDD93;
   --syntax-number: #FFA85D;
@@ -303,11 +616,16 @@
   --syntax-operator: #FF9DA5;
   --syntax-inserted: #81DD85;
   --syntax-deleted: #FF877F;
-  --chart-ramp-1: oklch(from var(--accent) calc(clamp(0.75, l, 0.75) - 0.2) c h);
-  --chart-ramp-2: oklch(from var(--accent) calc(clamp(0.75, l, 0.75) - 0.1) c h);
-  --chart-ramp-3: oklch(from var(--accent) clamp(0.75, l, 0.75) c h);
-  --chart-ramp-4: oklch(from var(--accent) calc(clamp(0.75, l, 0.75) + 0.1) c h);
-  --chart-ramp-5: oklch(from var(--accent) calc(clamp(0.75, l, 0.75) + 0.2) c h);
+  --chart-ramp-1: oklch(from var(--accent) clamp(0.02, calc(l - clamp(0.06, (l - 0.55) / 2, 0.12) * 2), 0.98) c h);
+  --chart-ramp-2: oklch(from var(--accent) clamp(0.02, calc(l - clamp(0.06, (l - 0.55) / 2, 0.12) * 1), 0.98) c h);
+  --chart-ramp-3: oklch(from var(--accent) l c h);
+  --chart-ramp-4: oklch(from var(--accent) clamp(0.02, calc(l + clamp(0.06, (0.95 - l) / 2, 0.12) * 1), 0.98) c h);
+  --chart-ramp-5: oklch(from var(--accent) clamp(0.02, calc(l + clamp(0.06, (0.95 - l) / 2, 0.12) * 2), 0.98) c h);
+  --chart-diverging-1: var(--danger);
+  --chart-diverging-2: color-mix(in oklch, var(--danger) 55%, var(--surface));
+  --chart-diverging-3: var(--muted);
+  --chart-diverging-4: color-mix(in oklch, var(--accent) 55%, var(--surface));
+  --chart-diverging-5: var(--accent);
 }
 
 [data-material="solid"] {
@@ -318,6 +636,8 @@
   --material-saturate-scale: 1;
   --material-brightness: 1;
   --material-sheen: 0;
+  --material-specular-scale: 0;
+  --material-clear-floor: 0.8;
 }
 
 [data-material="frosted"] {
@@ -328,6 +648,8 @@
   --material-saturate-scale: 0.85;
   --material-brightness: 1;
   --material-sheen: 0;
+  --material-specular-scale: 0;
+  --material-clear-floor: 0.6;
 }
 
 [data-material="glass"] {
@@ -338,6 +660,8 @@
   --material-saturate-scale: 1;
   --material-brightness: 1;
   --material-sheen: 0;
+  --material-specular-scale: 1;
+  --material-clear-floor: 0;
 }
 
 [data-material="liquid"] {
@@ -348,6 +672,449 @@
   --material-saturate-scale: 1.25;
   --material-brightness: 1.06;
   --material-sheen: 0.31;
+  --material-specular-scale: 1.3;
+  --material-clear-floor: 0;
+}
+
+:root {
+  --material-role-nav-bar-fill: var(--background);
+  --material-role-nav-bar-label-fill: var(--background);
+  --material-role-nav-bar-filter: none;
+  --material-role-nav-bar-edge: transparent;
+  --material-role-nav-bar-rim: transparent;
+  --material-role-nav-bar-specular: 0 0 #0000;
+  --material-role-nav-bar-depth: 0 0 #0000;
+  --material-role-nav-bar-elevation: 0 0 #0000;
+  --material-role-tab-bar-fill: var(--material-glass-fill);
+  --material-role-tab-bar-filter: var(--material-glass-filter);
+  --material-role-tab-bar-edge: var(--material-glass-edge);
+  --material-role-tab-bar-rim: var(--material-glass-rim);
+  --material-role-tab-bar-specular: var(--material-glass-specular);
+  --material-role-tab-bar-depth: var(--material-glass-depth);
+  --material-role-tab-bar-elevation: var(--material-glass-elevation);
+  --material-role-tab-bar-label-fill: var(--material-glass-fill);
+  --material-role-sidebar-fill: var(--surface);
+  --material-role-sidebar-label-fill: var(--surface);
+  --material-role-sidebar-filter: none;
+  --material-role-sidebar-edge: transparent;
+  --material-role-sidebar-rim: transparent;
+  --material-role-sidebar-specular: 0 0 #0000;
+  --material-role-sidebar-depth: 0 0 #0000;
+  --material-role-sidebar-elevation: 0 0 #0000;
+  --material-role-toolbar-fill: var(--surface);
+  --material-role-toolbar-label-fill: var(--surface);
+  --material-role-toolbar-filter: none;
+  --material-role-toolbar-edge: transparent;
+  --material-role-toolbar-rim: transparent;
+  --material-role-toolbar-specular: 0 0 #0000;
+  --material-role-toolbar-depth: 0 0 #0000;
+  --material-role-toolbar-elevation: 0 0 #0000;
+  --material-role-sheet-fill: var(--material-thick-fill);
+  --material-role-sheet-filter: var(--material-thick-filter);
+  --material-role-sheet-edge: var(--material-thick-edge);
+  --material-role-sheet-rim: var(--material-thick-rim);
+  --material-role-sheet-specular: var(--material-thick-specular);
+  --material-role-sheet-depth: var(--material-thick-depth);
+  --material-role-sheet-elevation: var(--material-thick-elevation);
+  --material-role-sheet-label-fill: var(--material-thick-fill);
+  --material-role-modal-fill: var(--material-thick-fill);
+  --material-role-modal-filter: var(--material-thick-filter);
+  --material-role-modal-edge: var(--material-thick-edge);
+  --material-role-modal-rim: var(--material-thick-rim);
+  --material-role-modal-specular: var(--material-thick-specular);
+  --material-role-modal-depth: var(--material-thick-depth);
+  --material-role-modal-elevation: var(--material-thick-elevation);
+  --material-role-modal-label-fill: var(--material-thick-fill);
+  --material-role-popover-fill: var(--material-thick-fill);
+  --material-role-popover-filter: var(--material-glass-filter);
+  --material-role-popover-edge: var(--material-glass-edge);
+  --material-role-popover-rim: var(--material-glass-rim);
+  --material-role-popover-specular: var(--material-glass-specular);
+  --material-role-popover-depth: var(--material-glass-depth);
+  --material-role-popover-elevation: var(--material-glass-elevation);
+  --material-role-popover-label-fill: var(--material-glass-fill);
+  --material-role-menu-fill: var(--material-thick-fill);
+  --material-role-menu-filter: var(--material-glass-filter);
+  --material-role-menu-edge: var(--material-glass-edge);
+  --material-role-menu-rim: var(--material-glass-rim);
+  --material-role-menu-specular: var(--material-glass-specular);
+  --material-role-menu-depth: var(--material-glass-depth);
+  --material-role-menu-elevation: var(--material-glass-elevation);
+  --material-role-menu-label-fill: var(--material-glass-fill);
+  --material-role-tooltip-fill: var(--overlay);
+  --material-role-tooltip-label-fill: var(--overlay);
+  --material-role-tooltip-filter: none;
+  --material-role-tooltip-edge: transparent;
+  --material-role-tooltip-rim: transparent;
+  --material-role-tooltip-specular: 0 0 #0000;
+  --material-role-tooltip-depth: 0 0 #0000;
+  --material-role-tooltip-elevation: var(--overlay-shadow);
+  --material-role-toast-fill: var(--material-glass-fill);
+  --material-role-toast-filter: var(--material-glass-filter);
+  --material-role-toast-edge: var(--material-glass-edge);
+  --material-role-toast-rim: var(--material-glass-rim);
+  --material-role-toast-specular: var(--material-glass-specular);
+  --material-role-toast-depth: var(--material-glass-depth);
+  --material-role-toast-elevation: var(--material-glass-elevation);
+  --material-role-toast-label-fill: var(--material-glass-fill);
+  --material-role-command-fill: var(--material-thick-fill);
+  --material-role-command-filter: var(--material-thick-filter);
+  --material-role-command-edge: var(--material-thick-edge);
+  --material-role-command-rim: var(--material-thick-rim);
+  --material-role-command-specular: var(--material-thick-specular);
+  --material-role-command-depth: var(--material-thick-depth);
+  --material-role-command-elevation: var(--material-thick-elevation);
+  --material-role-command-label-fill: var(--material-thick-fill);
+  --material-role-card-fill: var(--surface);
+  --material-role-card-label-fill: var(--surface);
+  --material-role-card-filter: none;
+  --material-role-card-edge: transparent;
+  --material-role-card-rim: transparent;
+  --material-role-card-specular: 0 0 #0000;
+  --material-role-card-depth: 0 0 #0000;
+  --material-role-card-elevation: 0 0 #0000;
+  --material-role-action-bar-fill: var(--material-glass-fill);
+  --material-role-action-bar-filter: var(--material-glass-filter);
+  --material-role-action-bar-edge: var(--material-glass-edge);
+  --material-role-action-bar-rim: var(--material-glass-rim);
+  --material-role-action-bar-specular: var(--material-glass-specular);
+  --material-role-action-bar-depth: var(--material-glass-depth);
+  --material-role-action-bar-elevation: var(--material-glass-elevation);
+  --material-role-action-bar-label-fill: var(--material-glass-fill);
+  --material-role-fab-fill: var(--surface);
+  --material-role-fab-label-fill: var(--surface);
+  --material-role-fab-filter: none;
+  --material-role-fab-edge: transparent;
+  --material-role-fab-rim: transparent;
+  --material-role-fab-specular: 0 0 #0000;
+  --material-role-fab-depth: 0 0 #0000;
+  --material-role-fab-elevation: var(--floating-shadow);
+  --material-role-segmented-track-fill: var(--default);
+  --material-role-segmented-track-label-fill: var(--default);
+  --material-role-segmented-track-filter: none;
+  --material-role-segmented-track-edge: transparent;
+  --material-role-segmented-track-rim: transparent;
+  --material-role-segmented-track-specular: 0 0 #0000;
+  --material-role-segmented-track-depth: 0 0 #0000;
+  --material-role-segmented-track-elevation: 0 0 #0000;
+  --material-role-search-in-bar-fill: var(--field-background);
+  --material-role-search-in-bar-label-fill: var(--field-background);
+  --material-role-search-in-bar-filter: none;
+  --material-role-search-in-bar-edge: transparent;
+  --material-role-search-in-bar-rim: transparent;
+  --material-role-search-in-bar-specular: 0 0 #0000;
+  --material-role-search-in-bar-depth: 0 0 #0000;
+  --material-role-search-in-bar-elevation: 0 0 #0000;
+  --material-role-media-controls-fill: var(--material-glass-clear-fill);
+  --material-role-media-controls-filter: var(--material-glass-clear-filter);
+  --material-role-media-controls-edge: var(--material-glass-clear-edge);
+  --material-role-media-controls-rim: var(--material-glass-clear-rim);
+  --material-role-media-controls-specular: var(--material-glass-clear-specular);
+  --material-role-media-controls-depth: var(--material-glass-clear-depth);
+  --material-role-media-controls-elevation: var(--material-glass-clear-elevation);
+  --material-role-media-controls-label-fill: var(--material-glass-clear-label-fill);
+  --material-role-nav-bar-scrolled-fill: var(--material-glass-fill);
+  --material-role-nav-bar-scrolled-filter: var(--material-glass-filter);
+  --material-role-nav-bar-scrolled-edge: var(--material-glass-edge);
+  --material-role-nav-bar-scrolled-rim: var(--material-glass-rim);
+  --material-role-nav-bar-scrolled-specular: var(--material-glass-specular);
+  --material-role-nav-bar-scrolled-depth: var(--material-glass-depth);
+  --material-role-nav-bar-scrolled-elevation: var(--material-glass-elevation);
+  --material-role-nav-bar-scrolled-label-fill: var(--material-glass-fill);
+}
+
+[data-family="front"] {
+  --material-role-nav-bar-fill: var(--material-glass-fill);
+  --material-role-nav-bar-filter: var(--material-glass-filter);
+  --material-role-nav-bar-edge: var(--material-glass-edge);
+  --material-role-nav-bar-rim: var(--material-glass-rim);
+  --material-role-nav-bar-specular: var(--material-glass-specular);
+  --material-role-nav-bar-depth: var(--material-glass-depth);
+  --material-role-nav-bar-elevation: var(--material-glass-elevation);
+  --material-role-nav-bar-label-fill: var(--material-glass-fill);
+  --material-role-tab-bar-fill: var(--material-glass-fill);
+  --material-role-tab-bar-filter: var(--material-glass-filter);
+  --material-role-tab-bar-edge: var(--material-glass-edge);
+  --material-role-tab-bar-rim: var(--material-glass-rim);
+  --material-role-tab-bar-specular: var(--material-glass-specular);
+  --material-role-tab-bar-depth: var(--material-glass-depth);
+  --material-role-tab-bar-elevation: var(--material-glass-elevation);
+  --material-role-tab-bar-label-fill: var(--material-glass-fill);
+  --material-role-sidebar-fill: var(--material-glass-fill);
+  --material-role-sidebar-filter: var(--material-glass-filter);
+  --material-role-sidebar-edge: var(--material-glass-edge);
+  --material-role-sidebar-rim: var(--material-glass-rim);
+  --material-role-sidebar-specular: var(--material-glass-specular);
+  --material-role-sidebar-depth: var(--material-glass-depth);
+  --material-role-sidebar-elevation: var(--material-glass-elevation);
+  --material-role-sidebar-label-fill: var(--material-glass-fill);
+  --material-role-toolbar-fill: var(--material-glass-fill);
+  --material-role-toolbar-filter: var(--material-glass-filter);
+  --material-role-toolbar-edge: var(--material-glass-edge);
+  --material-role-toolbar-rim: var(--material-glass-rim);
+  --material-role-toolbar-specular: var(--material-glass-specular);
+  --material-role-toolbar-depth: var(--material-glass-depth);
+  --material-role-toolbar-elevation: var(--material-glass-elevation);
+  --material-role-toolbar-label-fill: var(--material-glass-fill);
+  --material-role-sheet-fill: var(--material-thick-fill);
+  --material-role-sheet-filter: var(--material-glass-filter);
+  --material-role-sheet-edge: var(--material-glass-edge);
+  --material-role-sheet-rim: var(--material-glass-rim);
+  --material-role-sheet-specular: var(--material-glass-specular);
+  --material-role-sheet-depth: var(--material-glass-depth);
+  --material-role-sheet-elevation: var(--material-glass-elevation);
+  --material-role-sheet-label-fill: var(--material-glass-fill);
+  --material-role-modal-fill: var(--material-thick-fill);
+  --material-role-modal-filter: var(--material-thick-filter);
+  --material-role-modal-edge: var(--material-thick-edge);
+  --material-role-modal-rim: var(--material-thick-rim);
+  --material-role-modal-specular: var(--material-thick-specular);
+  --material-role-modal-depth: var(--material-thick-depth);
+  --material-role-modal-elevation: var(--material-thick-elevation);
+  --material-role-modal-label-fill: var(--material-thick-fill);
+  --material-role-popover-fill: var(--material-thick-fill);
+  --material-role-popover-filter: var(--material-glass-filter);
+  --material-role-popover-edge: var(--material-glass-edge);
+  --material-role-popover-rim: var(--material-glass-rim);
+  --material-role-popover-specular: var(--material-glass-specular);
+  --material-role-popover-depth: var(--material-glass-depth);
+  --material-role-popover-elevation: var(--material-glass-elevation);
+  --material-role-popover-label-fill: var(--material-glass-fill);
+  --material-role-menu-fill: var(--material-thick-fill);
+  --material-role-menu-filter: var(--material-glass-filter);
+  --material-role-menu-edge: var(--material-glass-edge);
+  --material-role-menu-rim: var(--material-glass-rim);
+  --material-role-menu-specular: var(--material-glass-specular);
+  --material-role-menu-depth: var(--material-glass-depth);
+  --material-role-menu-elevation: var(--material-glass-elevation);
+  --material-role-menu-label-fill: var(--material-glass-fill);
+  --material-role-tooltip-fill: var(--material-thin-fill);
+  --material-role-tooltip-filter: var(--material-thin-filter);
+  --material-role-tooltip-edge: var(--material-thin-edge);
+  --material-role-tooltip-rim: var(--material-thin-rim);
+  --material-role-tooltip-specular: var(--material-thin-specular);
+  --material-role-tooltip-depth: var(--material-thin-depth);
+  --material-role-tooltip-elevation: var(--material-thin-elevation);
+  --material-role-tooltip-label-fill: var(--material-thin-fill);
+  --material-role-toast-fill: var(--material-glass-fill);
+  --material-role-toast-filter: var(--material-glass-filter);
+  --material-role-toast-edge: var(--material-glass-edge);
+  --material-role-toast-rim: var(--material-glass-rim);
+  --material-role-toast-specular: var(--material-glass-specular);
+  --material-role-toast-depth: var(--material-glass-depth);
+  --material-role-toast-elevation: var(--material-glass-elevation);
+  --material-role-toast-label-fill: var(--material-glass-fill);
+  --material-role-command-fill: var(--material-thick-fill);
+  --material-role-command-filter: var(--material-thick-filter);
+  --material-role-command-edge: var(--material-thick-edge);
+  --material-role-command-rim: var(--material-thick-rim);
+  --material-role-command-specular: var(--material-thick-specular);
+  --material-role-command-depth: var(--material-thick-depth);
+  --material-role-command-elevation: var(--material-thick-elevation);
+  --material-role-command-label-fill: var(--material-thick-fill);
+  --material-role-card-fill: var(--surface);
+  --material-role-card-label-fill: var(--surface);
+  --material-role-card-filter: none;
+  --material-role-card-edge: transparent;
+  --material-role-card-rim: transparent;
+  --material-role-card-specular: 0 0 #0000;
+  --material-role-card-depth: 0 0 #0000;
+  --material-role-card-elevation: 0 0 #0000;
+  --material-role-action-bar-fill: var(--material-glass-fill);
+  --material-role-action-bar-filter: var(--material-glass-filter);
+  --material-role-action-bar-edge: var(--material-glass-edge);
+  --material-role-action-bar-rim: var(--material-glass-rim);
+  --material-role-action-bar-specular: var(--material-glass-specular);
+  --material-role-action-bar-depth: var(--material-glass-depth);
+  --material-role-action-bar-elevation: var(--material-glass-elevation);
+  --material-role-action-bar-label-fill: var(--material-glass-fill);
+  --material-role-fab-fill: var(--material-glass-fill);
+  --material-role-fab-filter: var(--material-glass-filter);
+  --material-role-fab-edge: var(--material-glass-edge);
+  --material-role-fab-rim: var(--material-glass-rim);
+  --material-role-fab-specular: var(--material-glass-specular);
+  --material-role-fab-depth: var(--material-glass-depth);
+  --material-role-fab-elevation: var(--material-glass-elevation);
+  --material-role-fab-label-fill: var(--material-glass-fill);
+  --material-role-segmented-track-fill: var(--material-ultra-thin-fill);
+  --material-role-segmented-track-filter: var(--material-ultra-thin-filter);
+  --material-role-segmented-track-edge: var(--material-ultra-thin-edge);
+  --material-role-segmented-track-rim: var(--material-ultra-thin-rim);
+  --material-role-segmented-track-specular: var(--material-ultra-thin-specular);
+  --material-role-segmented-track-depth: var(--material-ultra-thin-depth);
+  --material-role-segmented-track-elevation: var(--material-ultra-thin-elevation);
+  --material-role-segmented-track-label-fill: var(--material-ultra-thin-fill);
+  --material-role-search-in-bar-fill: var(--material-ultra-thin-fill);
+  --material-role-search-in-bar-filter: var(--material-ultra-thin-filter);
+  --material-role-search-in-bar-edge: var(--material-ultra-thin-edge);
+  --material-role-search-in-bar-rim: var(--material-ultra-thin-rim);
+  --material-role-search-in-bar-specular: var(--material-ultra-thin-specular);
+  --material-role-search-in-bar-depth: var(--material-ultra-thin-depth);
+  --material-role-search-in-bar-elevation: var(--material-ultra-thin-elevation);
+  --material-role-search-in-bar-label-fill: var(--material-ultra-thin-fill);
+  --material-role-media-controls-fill: var(--material-glass-clear-fill);
+  --material-role-media-controls-filter: var(--material-glass-clear-filter);
+  --material-role-media-controls-edge: var(--material-glass-clear-edge);
+  --material-role-media-controls-rim: var(--material-glass-clear-rim);
+  --material-role-media-controls-specular: var(--material-glass-clear-specular);
+  --material-role-media-controls-depth: var(--material-glass-clear-depth);
+  --material-role-media-controls-elevation: var(--material-glass-clear-elevation);
+  --material-role-media-controls-label-fill: var(--material-glass-clear-label-fill);
+  --material-role-nav-bar-scrolled-fill: var(--material-glass-fill);
+  --material-role-nav-bar-scrolled-filter: var(--material-glass-filter);
+  --material-role-nav-bar-scrolled-edge: var(--material-glass-edge);
+  --material-role-nav-bar-scrolled-rim: var(--material-glass-rim);
+  --material-role-nav-bar-scrolled-specular: var(--material-glass-specular);
+  --material-role-nav-bar-scrolled-depth: var(--material-glass-depth);
+  --material-role-nav-bar-scrolled-elevation: var(--material-glass-elevation);
+  --material-role-nav-bar-scrolled-label-fill: var(--material-glass-fill);
+}
+
+[data-family="studio"] {
+  --material-role-nav-bar-fill: var(--background);
+  --material-role-nav-bar-label-fill: var(--background);
+  --material-role-nav-bar-filter: none;
+  --material-role-nav-bar-edge: transparent;
+  --material-role-nav-bar-rim: transparent;
+  --material-role-nav-bar-specular: 0 0 #0000;
+  --material-role-nav-bar-depth: 0 0 #0000;
+  --material-role-nav-bar-elevation: 0 0 #0000;
+  --material-role-tab-bar-fill: var(--material-glass-fill);
+  --material-role-tab-bar-filter: var(--material-glass-filter);
+  --material-role-tab-bar-edge: var(--material-glass-edge);
+  --material-role-tab-bar-rim: var(--material-glass-rim);
+  --material-role-tab-bar-specular: var(--material-glass-specular);
+  --material-role-tab-bar-depth: var(--material-glass-depth);
+  --material-role-tab-bar-elevation: var(--material-glass-elevation);
+  --material-role-tab-bar-label-fill: var(--material-glass-fill);
+  --material-role-sidebar-fill: var(--surface);
+  --material-role-sidebar-label-fill: var(--surface);
+  --material-role-sidebar-filter: none;
+  --material-role-sidebar-edge: transparent;
+  --material-role-sidebar-rim: transparent;
+  --material-role-sidebar-specular: 0 0 #0000;
+  --material-role-sidebar-depth: 0 0 #0000;
+  --material-role-sidebar-elevation: 0 0 #0000;
+  --material-role-toolbar-fill: var(--surface);
+  --material-role-toolbar-label-fill: var(--surface);
+  --material-role-toolbar-filter: none;
+  --material-role-toolbar-edge: transparent;
+  --material-role-toolbar-rim: transparent;
+  --material-role-toolbar-specular: 0 0 #0000;
+  --material-role-toolbar-depth: 0 0 #0000;
+  --material-role-toolbar-elevation: 0 0 #0000;
+  --material-role-sheet-fill: var(--material-thick-fill);
+  --material-role-sheet-filter: var(--material-thick-filter);
+  --material-role-sheet-edge: var(--material-thick-edge);
+  --material-role-sheet-rim: var(--material-thick-rim);
+  --material-role-sheet-specular: var(--material-thick-specular);
+  --material-role-sheet-depth: var(--material-thick-depth);
+  --material-role-sheet-elevation: var(--material-thick-elevation);
+  --material-role-sheet-label-fill: var(--material-thick-fill);
+  --material-role-modal-fill: var(--material-thick-fill);
+  --material-role-modal-filter: var(--material-thick-filter);
+  --material-role-modal-edge: var(--material-thick-edge);
+  --material-role-modal-rim: var(--material-thick-rim);
+  --material-role-modal-specular: var(--material-thick-specular);
+  --material-role-modal-depth: var(--material-thick-depth);
+  --material-role-modal-elevation: var(--material-thick-elevation);
+  --material-role-modal-label-fill: var(--material-thick-fill);
+  --material-role-popover-fill: var(--material-thick-fill);
+  --material-role-popover-filter: var(--material-glass-filter);
+  --material-role-popover-edge: var(--material-glass-edge);
+  --material-role-popover-rim: var(--material-glass-rim);
+  --material-role-popover-specular: var(--material-glass-specular);
+  --material-role-popover-depth: var(--material-glass-depth);
+  --material-role-popover-elevation: var(--material-glass-elevation);
+  --material-role-popover-label-fill: var(--material-glass-fill);
+  --material-role-menu-fill: var(--material-thick-fill);
+  --material-role-menu-filter: var(--material-glass-filter);
+  --material-role-menu-edge: var(--material-glass-edge);
+  --material-role-menu-rim: var(--material-glass-rim);
+  --material-role-menu-specular: var(--material-glass-specular);
+  --material-role-menu-depth: var(--material-glass-depth);
+  --material-role-menu-elevation: var(--material-glass-elevation);
+  --material-role-menu-label-fill: var(--material-glass-fill);
+  --material-role-tooltip-fill: var(--overlay);
+  --material-role-tooltip-label-fill: var(--overlay);
+  --material-role-tooltip-filter: none;
+  --material-role-tooltip-edge: transparent;
+  --material-role-tooltip-rim: transparent;
+  --material-role-tooltip-specular: 0 0 #0000;
+  --material-role-tooltip-depth: 0 0 #0000;
+  --material-role-tooltip-elevation: var(--overlay-shadow);
+  --material-role-toast-fill: var(--material-glass-fill);
+  --material-role-toast-filter: var(--material-glass-filter);
+  --material-role-toast-edge: var(--material-glass-edge);
+  --material-role-toast-rim: var(--material-glass-rim);
+  --material-role-toast-specular: var(--material-glass-specular);
+  --material-role-toast-depth: var(--material-glass-depth);
+  --material-role-toast-elevation: var(--material-glass-elevation);
+  --material-role-toast-label-fill: var(--material-glass-fill);
+  --material-role-command-fill: var(--material-thick-fill);
+  --material-role-command-filter: var(--material-thick-filter);
+  --material-role-command-edge: var(--material-thick-edge);
+  --material-role-command-rim: var(--material-thick-rim);
+  --material-role-command-specular: var(--material-thick-specular);
+  --material-role-command-depth: var(--material-thick-depth);
+  --material-role-command-elevation: var(--material-thick-elevation);
+  --material-role-command-label-fill: var(--material-thick-fill);
+  --material-role-card-fill: var(--surface);
+  --material-role-card-label-fill: var(--surface);
+  --material-role-card-filter: none;
+  --material-role-card-edge: transparent;
+  --material-role-card-rim: transparent;
+  --material-role-card-specular: 0 0 #0000;
+  --material-role-card-depth: 0 0 #0000;
+  --material-role-card-elevation: 0 0 #0000;
+  --material-role-action-bar-fill: var(--material-glass-fill);
+  --material-role-action-bar-filter: var(--material-glass-filter);
+  --material-role-action-bar-edge: var(--material-glass-edge);
+  --material-role-action-bar-rim: var(--material-glass-rim);
+  --material-role-action-bar-specular: var(--material-glass-specular);
+  --material-role-action-bar-depth: var(--material-glass-depth);
+  --material-role-action-bar-elevation: var(--material-glass-elevation);
+  --material-role-action-bar-label-fill: var(--material-glass-fill);
+  --material-role-fab-fill: var(--surface);
+  --material-role-fab-label-fill: var(--surface);
+  --material-role-fab-filter: none;
+  --material-role-fab-edge: transparent;
+  --material-role-fab-rim: transparent;
+  --material-role-fab-specular: 0 0 #0000;
+  --material-role-fab-depth: 0 0 #0000;
+  --material-role-fab-elevation: var(--floating-shadow);
+  --material-role-segmented-track-fill: var(--default);
+  --material-role-segmented-track-label-fill: var(--default);
+  --material-role-segmented-track-filter: none;
+  --material-role-segmented-track-edge: transparent;
+  --material-role-segmented-track-rim: transparent;
+  --material-role-segmented-track-specular: 0 0 #0000;
+  --material-role-segmented-track-depth: 0 0 #0000;
+  --material-role-segmented-track-elevation: 0 0 #0000;
+  --material-role-search-in-bar-fill: var(--field-background);
+  --material-role-search-in-bar-label-fill: var(--field-background);
+  --material-role-search-in-bar-filter: none;
+  --material-role-search-in-bar-edge: transparent;
+  --material-role-search-in-bar-rim: transparent;
+  --material-role-search-in-bar-specular: 0 0 #0000;
+  --material-role-search-in-bar-depth: 0 0 #0000;
+  --material-role-search-in-bar-elevation: 0 0 #0000;
+  --material-role-media-controls-fill: var(--material-glass-clear-fill);
+  --material-role-media-controls-filter: var(--material-glass-clear-filter);
+  --material-role-media-controls-edge: var(--material-glass-clear-edge);
+  --material-role-media-controls-rim: var(--material-glass-clear-rim);
+  --material-role-media-controls-specular: var(--material-glass-clear-specular);
+  --material-role-media-controls-depth: var(--material-glass-clear-depth);
+  --material-role-media-controls-elevation: var(--material-glass-clear-elevation);
+  --material-role-media-controls-label-fill: var(--material-glass-clear-label-fill);
+  --material-role-nav-bar-scrolled-fill: var(--material-glass-fill);
+  --material-role-nav-bar-scrolled-filter: var(--material-glass-filter);
+  --material-role-nav-bar-scrolled-edge: var(--material-glass-edge);
+  --material-role-nav-bar-scrolled-rim: var(--material-glass-rim);
+  --material-role-nav-bar-scrolled-specular: var(--material-glass-specular);
+  --material-role-nav-bar-scrolled-depth: var(--material-glass-depth);
+  --material-role-nav-bar-scrolled-elevation: var(--material-glass-elevation);
+  --material-role-nav-bar-scrolled-label-fill: var(--material-glass-fill);
 }
 
 .skeleton--shimmer:is(:dir(rtl), [dir="rtl"], [dir="rtl"] *)::after,
@@ -357,11 +1124,38 @@
 
 @media (prefers-reduced-motion: reduce) {
   :root {
+    --duration-tick: 0ms;
+    --duration-instant: 0ms;
     --duration-fast: 0ms;
+    --duration-moderate: 0ms;
     --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-indicator: 0ms;
     --duration-blink: 0ms;
+    --duration-pulse: 0ms;
+    --duration-emphasis: 0ms;
+    --duration-hold: 0ms;
+    --duration-hover-open: 0ms;
+    --duration-hover-close: 0ms;
+    --duration-count: 0ms;
     --duration-reveal: 0ms;
     --duration-stagger: 0ms;
+    --duration-slower: 0ms;
+    --duration-overlay-in: 0ms;
+    --duration-overlay-out: 0ms;
+    --duration-toast-in: 0ms;
+    --duration-toast-out: 0ms;
+    --spring-gentle-duration: 0ms;
+    --spring-snappy-duration: 0ms;
+    --spring-bouncy-duration: 0ms;
+    --spring-follow-duration: 0ms;
+    --spring-settle-duration: 0ms;
+    --spring-flip-duration: 0ms;
+    --spring-morph-duration: 0ms;
+    --spring-default-duration: 0ms;
+    --spring-sheet-duration: 0ms;
+    --press-scale: 1;
+    --enter-distance: 0px;
   }
   .skeleton--shimmer::after,
   .skeleton--shimmer::before,
@@ -371,11 +1165,36 @@
 }
 
 html[data-motion="none"] {
+  --duration-tick: 0ms;
+  --duration-instant: 0ms;
   --duration-fast: 0ms;
+  --duration-moderate: 0ms;
   --duration-base: 0ms;
+  --duration-slow: 0ms;
+  --duration-indicator: 0ms;
   --duration-blink: 0ms;
+  --duration-pulse: 0ms;
+  --duration-emphasis: 0ms;
+  --duration-hold: 0ms;
+  --duration-hover-open: 0ms;
+  --duration-hover-close: 0ms;
+  --duration-count: 0ms;
   --duration-reveal: 0ms;
   --duration-stagger: 0ms;
+  --duration-slower: 0ms;
+  --duration-overlay-in: 0ms;
+  --duration-overlay-out: 0ms;
+  --duration-toast-in: 0ms;
+  --duration-toast-out: 0ms;
+  --spring-gentle-duration: 0ms;
+  --spring-snappy-duration: 0ms;
+  --spring-bouncy-duration: 0ms;
+  --spring-follow-duration: 0ms;
+  --spring-settle-duration: 0ms;
+  --spring-flip-duration: 0ms;
+  --spring-morph-duration: 0ms;
+  --spring-default-duration: 0ms;
+  --spring-sheet-duration: 0ms;
   scroll-behavior: auto;
 }
 
@@ -391,6 +1210,11 @@ html[data-motion="none"] *::after {
 
 :root:lang(ar) {
   font-family: var(--font-arabic);
+}
+
+:root:dir(rtl),
+[dir="rtl"] {
+  --mirror: -1;
 }
 
 @layer components {
@@ -511,16 +1335,216 @@ html[data-motion="none"] *::after {
       backdrop-filter: var(--material-thick-filter);
     }
   }
+  .material-ultra-thin {
+    background-color: var(--material-ultra-thin-fill);
+    -webkit-backdrop-filter: var(--material-ultra-thin-filter);
+    backdrop-filter: var(--material-ultra-thin-filter);
+    box-shadow: inset 0 0 0 1px var(--material-ultra-thin-edge), inset 0 1px 0 0 var(--material-ultra-thin-rim), var(--material-ultra-thin-specular), var(--material-ultra-thin-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-ultra-thin-elevation);
+  }
+  .material-glass {
+    background-color: var(--material-glass-fill);
+    -webkit-backdrop-filter: var(--material-glass-filter);
+    backdrop-filter: var(--material-glass-filter);
+    box-shadow: inset 0 0 0 1px var(--material-glass-edge), inset 0 1px 0 0 var(--material-glass-rim), var(--material-glass-specular), var(--material-glass-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-glass-elevation);
+  }
+  .material-glass-clear {
+    background-color: var(--material-glass-clear-fill);
+    -webkit-backdrop-filter: var(--material-glass-clear-filter);
+    backdrop-filter: var(--material-glass-clear-filter);
+    box-shadow: inset 0 0 0 1px var(--material-glass-clear-edge), inset 0 1px 0 0 var(--material-glass-clear-rim), var(--material-glass-clear-specular), var(--material-glass-clear-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-glass-clear-elevation);
+  }
+  .material-glass-clear-label {
+    background-color: var(--material-glass-clear-label-fill);
+    -webkit-backdrop-filter: var(--material-glass-clear-filter);
+    backdrop-filter: var(--material-glass-clear-filter);
+    box-shadow: inset 0 0 0 1px var(--material-glass-clear-edge), inset 0 1px 0 0 var(--material-glass-clear-rim), var(--material-glass-clear-specular), var(--material-glass-clear-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-glass-clear-elevation);
+  }
+  .material-role-nav-bar {
+    background-color: var(--material-role-nav-bar-fill);
+    -webkit-backdrop-filter: var(--material-role-nav-bar-filter);
+    backdrop-filter: var(--material-role-nav-bar-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-nav-bar-edge), inset 0 1px 0 0 var(--material-role-nav-bar-rim), var(--material-role-nav-bar-specular), var(--material-role-nav-bar-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-nav-bar-elevation);
+  }
+  .material-role-tab-bar {
+    background-color: var(--material-role-tab-bar-fill);
+    -webkit-backdrop-filter: var(--material-role-tab-bar-filter);
+    backdrop-filter: var(--material-role-tab-bar-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-tab-bar-edge), inset 0 1px 0 0 var(--material-role-tab-bar-rim), var(--material-role-tab-bar-specular), var(--material-role-tab-bar-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-tab-bar-elevation);
+  }
+  .material-role-sidebar {
+    background-color: var(--material-role-sidebar-fill);
+    -webkit-backdrop-filter: var(--material-role-sidebar-filter);
+    backdrop-filter: var(--material-role-sidebar-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-sidebar-edge), inset 0 1px 0 0 var(--material-role-sidebar-rim), var(--material-role-sidebar-specular), var(--material-role-sidebar-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-sidebar-elevation);
+  }
+  .material-role-toolbar {
+    background-color: var(--material-role-toolbar-fill);
+    -webkit-backdrop-filter: var(--material-role-toolbar-filter);
+    backdrop-filter: var(--material-role-toolbar-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-toolbar-edge), inset 0 1px 0 0 var(--material-role-toolbar-rim), var(--material-role-toolbar-specular), var(--material-role-toolbar-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-toolbar-elevation);
+  }
+  .material-role-sheet {
+    background-color: var(--material-role-sheet-fill);
+    -webkit-backdrop-filter: var(--material-role-sheet-filter);
+    backdrop-filter: var(--material-role-sheet-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-sheet-edge), inset 0 1px 0 0 var(--material-role-sheet-rim), var(--material-role-sheet-specular), var(--material-role-sheet-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-sheet-elevation);
+  }
+  .material-role-modal {
+    background-color: var(--material-role-modal-fill);
+    -webkit-backdrop-filter: var(--material-role-modal-filter);
+    backdrop-filter: var(--material-role-modal-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-modal-edge), inset 0 1px 0 0 var(--material-role-modal-rim), var(--material-role-modal-specular), var(--material-role-modal-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-modal-elevation);
+  }
+  .material-role-popover {
+    background-color: var(--material-role-popover-fill);
+    -webkit-backdrop-filter: var(--material-role-popover-filter);
+    backdrop-filter: var(--material-role-popover-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-popover-edge), inset 0 1px 0 0 var(--material-role-popover-rim), var(--material-role-popover-specular), var(--material-role-popover-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-popover-elevation);
+  }
+  .material-role-menu {
+    background-color: var(--material-role-menu-fill);
+    -webkit-backdrop-filter: var(--material-role-menu-filter);
+    backdrop-filter: var(--material-role-menu-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-menu-edge), inset 0 1px 0 0 var(--material-role-menu-rim), var(--material-role-menu-specular), var(--material-role-menu-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-menu-elevation);
+  }
+  .material-role-tooltip {
+    background-color: var(--material-role-tooltip-fill);
+    -webkit-backdrop-filter: var(--material-role-tooltip-filter);
+    backdrop-filter: var(--material-role-tooltip-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-tooltip-edge), inset 0 1px 0 0 var(--material-role-tooltip-rim), var(--material-role-tooltip-specular), var(--material-role-tooltip-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-tooltip-elevation);
+  }
+  .material-role-toast {
+    background-color: var(--material-role-toast-fill);
+    -webkit-backdrop-filter: var(--material-role-toast-filter);
+    backdrop-filter: var(--material-role-toast-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-toast-edge), inset 0 1px 0 0 var(--material-role-toast-rim), var(--material-role-toast-specular), var(--material-role-toast-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-toast-elevation);
+  }
+  .material-role-command {
+    background-color: var(--material-role-command-fill);
+    -webkit-backdrop-filter: var(--material-role-command-filter);
+    backdrop-filter: var(--material-role-command-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-command-edge), inset 0 1px 0 0 var(--material-role-command-rim), var(--material-role-command-specular), var(--material-role-command-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-command-elevation);
+  }
+  .material-role-card {
+    background-color: var(--material-role-card-fill);
+    -webkit-backdrop-filter: var(--material-role-card-filter);
+    backdrop-filter: var(--material-role-card-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-card-edge), inset 0 1px 0 0 var(--material-role-card-rim), var(--material-role-card-specular), var(--material-role-card-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-card-elevation);
+  }
+  .material-role-action-bar {
+    background-color: var(--material-role-action-bar-fill);
+    -webkit-backdrop-filter: var(--material-role-action-bar-filter);
+    backdrop-filter: var(--material-role-action-bar-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-action-bar-edge), inset 0 1px 0 0 var(--material-role-action-bar-rim), var(--material-role-action-bar-specular), var(--material-role-action-bar-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-action-bar-elevation);
+  }
+  .material-role-fab {
+    background-color: var(--material-role-fab-fill);
+    -webkit-backdrop-filter: var(--material-role-fab-filter);
+    backdrop-filter: var(--material-role-fab-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-fab-edge), inset 0 1px 0 0 var(--material-role-fab-rim), var(--material-role-fab-specular), var(--material-role-fab-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-fab-elevation);
+  }
+  .material-role-segmented-track {
+    background-color: var(--material-role-segmented-track-fill);
+    -webkit-backdrop-filter: var(--material-role-segmented-track-filter);
+    backdrop-filter: var(--material-role-segmented-track-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-segmented-track-edge), inset 0 1px 0 0 var(--material-role-segmented-track-rim), var(--material-role-segmented-track-specular), var(--material-role-segmented-track-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-segmented-track-elevation);
+  }
+  .material-role-search-in-bar {
+    background-color: var(--material-role-search-in-bar-fill);
+    -webkit-backdrop-filter: var(--material-role-search-in-bar-filter);
+    backdrop-filter: var(--material-role-search-in-bar-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-search-in-bar-edge), inset 0 1px 0 0 var(--material-role-search-in-bar-rim), var(--material-role-search-in-bar-specular), var(--material-role-search-in-bar-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-search-in-bar-elevation);
+  }
+  .material-role-media-controls {
+    background-color: var(--material-role-media-controls-fill);
+    -webkit-backdrop-filter: var(--material-role-media-controls-filter);
+    backdrop-filter: var(--material-role-media-controls-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-media-controls-edge), inset 0 1px 0 0 var(--material-role-media-controls-rim), var(--material-role-media-controls-specular), var(--material-role-media-controls-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-media-controls-elevation);
+  }
+  .material-role-nav-bar[data-scrolled] {
+    background-color: var(--material-role-nav-bar-scrolled-fill);
+    -webkit-backdrop-filter: var(--material-role-nav-bar-scrolled-filter);
+    backdrop-filter: var(--material-role-nav-bar-scrolled-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-nav-bar-scrolled-edge), inset 0 1px 0 0 var(--material-role-nav-bar-scrolled-rim), var(--material-role-nav-bar-scrolled-specular), var(--material-role-nav-bar-scrolled-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-nav-bar-scrolled-elevation);
+  }
+  .material-role-media-controls[data-holds="label"] {
+    background-color: var(--material-role-media-controls-label-fill);
+  }
+  :is(.material-glass, .material-role-nav-bar, .material-role-tab-bar, .material-role-sidebar, .material-role-toolbar, .material-role-sheet, .material-role-modal, .material-role-popover, .material-role-menu, .material-role-tooltip, .material-role-toast, .material-role-command, .material-role-card, .material-role-action-bar, .material-role-fab, .material-role-segmented-track, .material-role-search-in-bar, .material-role-media-controls)[data-pressed] {
+    scale: 1.02;
+    filter: brightness(1.06);
+    transition: scale var(--spring-bouncy-duration, 150ms) var(--spring-bouncy, ease-out), filter var(--spring-bouncy-duration, 150ms) var(--spring-bouncy, ease-out);
+  }
+  .button--glass {
+    background-color: var(--material-glass-fill);
+    border: 1px solid var(--material-glass-edge);
+    color: var(--foreground);
+  }
+  .button--glass[data-pressed="true"] {
+    scale: 1.02;
+    filter: brightness(1.06);
+  }
+  .switch[data-pressed="true"] .switch__thumb,
+  .switch:has([data-pressed="true"]) .switch__thumb,
+  .slider__thumb[data-dragging="true"] {
+    background-color: var(--material-glass-fill);
+    scale: 1.08;
+  }
+  :is(.material-role-nav-bar, .material-role-toolbar, .material-role-sidebar) .search-field__group {
+    background-color: var(--material-role-search-in-bar-fill);
+  }
+  :root:is([data-material="frosted"], [data-material="glass"], [data-material="liquid"]) .popover {
+    background-color: var(--material-role-popover-fill);
+    -webkit-backdrop-filter: var(--material-role-popover-filter);
+    backdrop-filter: var(--material-role-popover-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-popover-edge), inset 0 1px 0 0 var(--material-role-popover-rim), var(--material-role-popover-specular), var(--material-role-popover-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-popover-elevation);
+  }
+  :root:is([data-material="frosted"], [data-material="glass"], [data-material="liquid"]) .dropdown__popover {
+    background-color: var(--material-role-menu-fill);
+    -webkit-backdrop-filter: var(--material-role-menu-filter);
+    backdrop-filter: var(--material-role-menu-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-menu-edge), inset 0 1px 0 0 var(--material-role-menu-rim), var(--material-role-menu-specular), var(--material-role-menu-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-menu-elevation);
+  }
+  :root:is([data-material="frosted"], [data-material="glass"], [data-material="liquid"]) .toast {
+    background-color: var(--material-role-toast-fill);
+    -webkit-backdrop-filter: var(--material-role-toast-filter);
+    backdrop-filter: var(--material-role-toast-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-toast-edge), inset 0 1px 0 0 var(--material-role-toast-rim), var(--material-role-toast-specular), var(--material-role-toast-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-toast-elevation);
+  }
+  :root:is([data-material="frosted"], [data-material="glass"], [data-material="liquid"]) .modal__dialog {
+    background-color: var(--material-role-modal-fill);
+    -webkit-backdrop-filter: var(--material-role-modal-filter);
+    backdrop-filter: var(--material-role-modal-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-modal-edge), inset 0 1px 0 0 var(--material-role-modal-rim), var(--material-role-modal-specular), var(--material-role-modal-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-modal-elevation);
+  }
+  :root:is([data-material="frosted"], [data-material="glass"], [data-material="liquid"]) .drawer__dialog {
+    background-color: var(--material-role-sheet-fill);
+    -webkit-backdrop-filter: var(--material-role-sheet-filter);
+    backdrop-filter: var(--material-role-sheet-filter);
+    box-shadow: inset 0 0 0 1px var(--material-role-sheet-edge), inset 0 1px 0 0 var(--material-role-sheet-rim), var(--material-role-sheet-specular), var(--material-role-sheet-depth), inset 0 14px 24px -18px var(--material-sheen-color), var(--material-role-sheet-elevation);
+  }
   .button {
     border: 1px solid transparent;
   }
-  .button--secondary,
-  .button--tertiary,
-  .button--outline {
+  .button--secondary {
     --button-bg: var(--material-control-fill);
     --button-bg-hover: color-mix(in oklch, var(--material-control-fill), var(--foreground) 8%);
     --button-bg-pressed: color-mix(in oklch, var(--material-control-fill), var(--foreground) 12%);
+    --button-fg: var(--accent-soft-foreground);
     border: 1px solid var(--material-edge);
+  }
+  .button--tertiary {
+    --button-bg: var(--default);
+    --button-bg-hover: color-mix(in oklch, var(--default), var(--foreground) calc(var(--state-hover) * 100%));
+    --button-bg-pressed: color-mix(in oklch, var(--default), var(--foreground) calc(var(--state-press) * 100%));
+    --button-fg: var(--default-foreground);
+  }
+  .button--outline {
+    --button-bg: transparent;
+    --button-bg-hover: color-mix(in oklch, transparent, var(--foreground) calc(var(--state-hover) * 100%));
+    --button-bg-pressed: color-mix(in oklch, transparent, var(--foreground) calc(var(--state-press) * 100%));
+    --button-fg: var(--foreground);
+    border: var(--border-width) solid var(--border);
   }
   .button--ghost {
     --button-bg-hover: color-mix(in oklch, var(--material-control-fill), var(--foreground) 8%);
@@ -575,9 +1599,12 @@ html[data-motion="none"] *::after {
     opacity: 1;
     color: var(--foreground);
   }
-  .button,
+  .button {
+    border-radius: var(--radius-button);
+  }
   .toggle-button,
-  .tabs__list-container {
+  .tabs__list-container,
+  .pagination__link {
     border-radius: var(--radius-control);
   }
   .toggle-button-group--horizontal .toggle-button:first-child {
@@ -604,18 +1631,110 @@ html[data-motion="none"] *::after {
   .select__popover,
   .dropdown__popover,
   .combo-box__popover,
-  .card {
+  .alert,
+  .accordion--surface,
+  .toolbar--attached {
     border-radius: var(--radius-container);
+  }
+  .card {
+    border-radius: var(--radius-card);
+  }
+  .modal__dialog {
+    border-radius: var(--radius-modal);
+  }
+  .toast {
+    border-radius: var(--radius-toast);
+  }
+  .table-root {
+    border-radius: var(--radius-table);
+  }
+  .tooltip {
+    border-radius: var(--radius-tooltip);
   }
   .menu-item,
   .list-box-item {
-    border-radius: max(0px, calc(var(--radius-container) - 0.25rem));
+    border-radius: var(--radius-container-inner);
   }
   .chip {
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-chip);
+  }
+  .badge {
+    border-radius: var(--radius-badge);
+  }
+  .avatar {
+    border-radius: var(--radius-avatar);
   }
   .kbd {
     border-radius: max(0px, calc(var(--radius-control) - 0.125rem));
+  }
+  .button {
+    height: var(--control-height-md);
+  }
+  .button--sm {
+    height: var(--control-height-sm);
+  }
+  .button--lg {
+    height: var(--control-height-lg);
+  }
+  .button--icon-only {
+    width: var(--control-height-md);
+  }
+  .button--icon-only.button--sm {
+    width: var(--control-height-sm);
+  }
+  .button--icon-only.button--lg {
+    width: var(--control-height-lg);
+  }
+  .input,
+  .input-group,
+  .select__trigger,
+  .date-input-group,
+  .number-field__group,
+  .search-field__group,
+  .combo-box__input-group {
+    min-height: var(--control-height-md);
+    box-sizing: border-box;
+  }
+  .input,
+  .select__trigger {
+    padding-block: calc(var(--spacing) * 2 - var(--field-border-width));
+  }
+  .input-group .input,
+  .number-field__group .input,
+  .search-field__group .input {
+    min-height: 0;
+  }
+  .table__column {
+    height: var(--size-table-header);
+    padding-block: 0;
+  }
+  .tray {
+    background-color: var(--tray);
+    border-radius: var(--radius-container);
+    padding: 0 var(--spacing) var(--spacing);
+  }
+  .tray:not(:has(> .tray__header)) {
+    padding-top: var(--spacing);
+  }
+  .tray__header {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 2);
+    min-height: var(--size-table-header);
+    padding-inline: calc(var(--spacing) * 3);
+  }
+  .tray__body {
+    background-color: var(--tray-body);
+    border-radius: var(--radius-container-inner);
+    box-shadow: var(--surface-shadow);
+  }
+  .rtl-mirror {
+    transform: scaleX(var(--mirror));
+  }
+  @supports (corner-shape: squircle) {
+    :root {
+      corner-shape: var(--corner-shape);
+    }
   }
 }
 
@@ -629,6 +1748,8 @@ html[data-motion="none"] *::after {
     --material-saturate-scale: 1;
     --material-brightness: 1;
     --material-sheen: 0;
+    --material-specular-scale: 0;
+    --material-clear-floor: 0.8;
   }
 }
 
@@ -650,6 +1771,8 @@ html[data-motion="none"] *::after {
     --material-saturate-scale: 1;
     --material-brightness: 1;
     --material-sheen: 0;
+    --material-specular-scale: 0;
+    --material-clear-floor: 0.8;
   }
 }
 
@@ -657,12 +1780,18 @@ html[data-motion="none"] *::after {
   :root,
   .dark,
   [data-theme] {
+    --material-ultra-thin-fill: var(--surface);
+    --material-ultra-thin-filter: none;
     --material-thin-fill: var(--surface);
     --material-thin-filter: none;
     --material-regular-fill: var(--surface);
     --material-regular-filter: none;
     --material-thick-fill: var(--surface);
     --material-thick-filter: none;
+    --material-glass-fill: var(--surface);
+    --material-glass-filter: none;
+    --material-glass-clear-fill: var(--surface);
+    --material-glass-clear-filter: none;
     --material-control-fill: var(--surface);
     --material-edge: var(--border);
     --material-highlight: transparent;
@@ -680,5 +1809,193 @@ html[data-motion="none"] *::after {
   .button--outline,
   .close-button--default {
     border-color: CanvasText;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  [data-material] {
+    --material-rim-scale: 0;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root,
+  [data-material] {
+    --material-tint-scale: 0;
+    --material-edge-floor: 0.45;
+  }
+}
+
+@media (prefers-contrast: more) and (not (prefers-reduced-transparency: reduce)) {
+  :root,
+  [data-material] {
+    --material-clear-floor: 0.7;
+  }
+}
+
+html[data-transparency="reduce"],
+html[data-transparency="reduce"] [data-material] {
+  --material-rim-scale: 0;
+}
+
+html[data-contrast="more"],
+html[data-contrast="more"] [data-theme],
+html[data-contrast="more"] [data-material] {
+  --material-tint-scale: 0;
+  --material-edge-floor: 0.45;
+  --material-edge-share: 0.45;
+}
+
+html[data-contrast="more"]:not([data-transparency="reduce"]),
+html[data-contrast="more"]:not([data-transparency="reduce"]) [data-material] {
+  --material-clear-floor: 0.7;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  .dark,
+  [data-theme] {
+    --material-glass-clear-dim: 0.5;
+  }
+}
+
+@media (forced-colors: active) {
+  .material-ultra-thin,
+  .material-glass,
+  .material-glass-clear,
+  .material-glass-clear-label,
+  .material-role-nav-bar,
+  .material-role-tab-bar,
+  .material-role-sidebar,
+  .material-role-toolbar,
+  .material-role-sheet,
+  .material-role-modal,
+  .material-role-popover,
+  .material-role-menu,
+  .material-role-tooltip,
+  .material-role-toast,
+  .material-role-command,
+  .material-role-card,
+  .material-role-action-bar,
+  .material-role-fab,
+  .material-role-segmented-track,
+  .material-role-search-in-bar,
+  .material-role-media-controls {
+    border: 1px solid CanvasText;
+  }
+}
+
+:root:is([data-motion="reduced"], [data-motion="none"]) :is(.material-glass, .material-role-nav-bar, .material-role-tab-bar, .material-role-sidebar, .material-role-toolbar, .material-role-sheet, .material-role-modal, .material-role-popover, .material-role-menu, .material-role-tooltip, .material-role-toast, .material-role-command, .material-role-card, .material-role-action-bar, .material-role-fab, .material-role-segmented-track, .material-role-search-in-bar, .material-role-media-controls)[data-pressed],
+:root:is([data-motion="reduced"], [data-motion="none"]) :is(.button--glass[data-pressed="true"], .switch__thumb, .slider__thumb) {
+  scale: none;
+  transition: none;
+}
+
+html[data-motion="reduced"],
+html[data-motion="none"] {
+  --press-scale: 1;
+  --enter-distance: 0px;
+}
+
+@media (prefers-contrast: more) {
+  :root,
+  [data-theme="light"] {
+    --muted: oklch(0.36 0.01 250);
+    --field-placeholder: oklch(0.36 0.01 250);
+    --field-border: oklch(0.3 0.008 250);
+    --border: oklch(0.3 0.008 250);
+    --separator: oklch(0.45 0.008 250);
+    --focus: oklch(0.158 0.005 248);
+  }
+  .dark,
+  [data-theme="dark"] {
+    --muted: oklch(0.86 0.006 250);
+    --field-placeholder: oklch(0.86 0.006 250);
+    --field-border: oklch(0.86 0.006 250);
+    --border: oklch(0.86 0.006 250);
+    --separator: oklch(0.7 0.008 250);
+    --focus: oklch(0.972 0.004 122);
+  }
+}
+
+html[data-contrast="more"],
+html[data-contrast="more"] [data-theme="light"] {
+  --muted: oklch(0.36 0.01 250);
+  --field-placeholder: oklch(0.36 0.01 250);
+  --field-border: oklch(0.3 0.008 250);
+  --border: oklch(0.3 0.008 250);
+  --separator: oklch(0.45 0.008 250);
+  --focus: oklch(0.158 0.005 248);
+}
+
+html[data-contrast="more"].dark,
+html[data-contrast="more"][data-theme="dark"],
+html[data-contrast="more"] [data-theme="dark"] {
+  --muted: oklch(0.86 0.006 250);
+  --field-placeholder: oklch(0.86 0.006 250);
+  --field-border: oklch(0.86 0.006 250);
+  --border: oklch(0.86 0.006 250);
+  --separator: oklch(0.7 0.008 250);
+  --focus: oklch(0.972 0.004 122);
+}
+
+html[data-transparency="reduce"],
+html[data-transparency="reduce"] [data-material],
+html[data-contrast="more"],
+html[data-contrast="more"] [data-material] {
+  --material-fill-scale: 1;
+  --material-fill-floor: 1;
+  --material-thick-floor: 1;
+  --material-blur-scale: 0;
+  --material-saturate-scale: 1;
+  --material-brightness: 1;
+  --material-sheen: 0;
+  --material-specular-scale: 0;
+  --material-clear-floor: 0.8;
+}
+
+html[data-text-scale="large"] {
+  font-size: 112.5%;
+}
+
+html[data-text-scale="larger"] {
+  font-size: 125%;
+}
+
+html[data-text-scale="largest"] {
+  font-size: 150%;
+}
+
+html[data-chart-palette="safe"],
+[data-chart-palette="safe"] {
+  --chart-1: oklch(0.532 0.131 244);
+  --chart-2: oklch(0.6 0.13 70);
+  --chart-3: oklch(0.55 0.115 165.5);
+  --chart-4: oklch(0.56 0.13 346.3);
+  --chart-5: oklch(0.58 0.17 45);
+}
+
+html.dark[data-chart-palette="safe"],
+html[data-theme="dark"][data-chart-palette="safe"],
+.dark [data-chart-palette="safe"],
+[data-theme="dark"] [data-chart-palette="safe"] {
+  --chart-1: oklch(0.735 0.117 236.2);
+  --chart-2: oklch(0.753 0.158 76.8);
+  --chart-3: oklch(0.62 0.13 165.5);
+  --chart-4: oklch(0.679 0.118 346.3);
+  --chart-5: oklch(0.902 0.172 105);
+}
+
+@media (forced-colors: active) {
+  :root,
+  .dark,
+  [data-theme] {
+    --focus: Highlight;
+    --link: LinkText;
+  }
+  .recharts-surface,
+  [data-chart] {
+    forced-color-adjust: none;
   }
 }

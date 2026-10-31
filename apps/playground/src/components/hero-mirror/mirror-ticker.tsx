@@ -9,6 +9,7 @@
  */
 import { formatMessage, type I18nKey } from "@stackra/i18n";
 import { bySlug, componentKeys } from "@stackra/showcase";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { motion } from "motion/react";
 
 import { MESSAGES } from "#src/constants/messages.constant";
@@ -33,6 +34,9 @@ const NAMES = [
   ] as const;
 });
 
+/** One pass of the ribbon, in seconds: twenty-two of the theme's pulses. */
+const PASS_S = (motionTiming(STACKRA_THEME, "pulse").durationMs * 22) / 1000;
+
 /** The sliding ribbon of component names. */
 export function MirrorTicker({ isStill }: MirrorTickerProps) {
   return (
@@ -44,7 +48,8 @@ export function MirrorTicker({ isStill }: MirrorTickerProps) {
       <motion.div
         className="flex w-max whitespace-nowrap"
         animate={isStill ? {} : { x: ["0%", "-50%"] }}
-        transition={{ duration: 26, ease: "linear", repeat: Infinity }}
+        // oxlint-disable-next-line stackra/no-literal-duration -- a marquee slides at constant speed, so it has no easing curve
+        transition={{ duration: PASS_S, ease: "linear", repeat: Infinity }}
       >
         {[0, 1].flatMap((copy) =>
           NAMES.map(({ slug, locale, name }) => (

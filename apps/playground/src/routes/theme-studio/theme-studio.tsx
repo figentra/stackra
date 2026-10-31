@@ -23,6 +23,7 @@ import type { Theme } from "@stackra/tokens/contracts";
 import type { SidePanelState } from "@stackra/ui/contracts";
 import {
   Accordion,
+  Button,
   Heading,
   Icon,
   Separator,
@@ -53,6 +54,7 @@ import { MESSAGES } from "#src/constants/messages.constant";
 
 import { knobsFrom } from "./knobs-from.function";
 import { paramsWith } from "./params-with.function";
+import { randomizeKnobs } from "./randomize-knobs.function";
 import { THEME_STUDIO_KEYS } from "./theme-studio-keys.constant";
 
 /** The page's keys. */
@@ -66,7 +68,21 @@ const SECTIONS = [
   { id: "shape", icon: Icons.Square },
   { id: "motion", icon: Icons.Zap },
   { id: "effects", icon: Icons.Sparkles },
+  { id: "recipes", icon: Icons.FlaskConical },
 ] as const;
+
+/** The rail section a picked part of the preview opens, by what the part is (Inspect). */
+function sectionOf(target: Element): (typeof SECTIONS)[number]["id"] {
+  if (
+    target.closest(
+      ".button, .chip, .input, .input-group, .select__trigger, .tabs, .switch, .checkbox",
+    )
+  )
+    return "shape";
+  if (target.closest(".card, .popover, .modal__dialog, .tray, .table-root")) return "effects";
+  if (target.closest("h1, h2, h3, h4, h5, h6, p, [class*='typography']")) return "type";
+  return "colours";
+}
 
 /** One step of the history: the brand, the base and the knobs on it. */
 interface Step {
@@ -100,6 +116,31 @@ export function ThemeStudio() {
   // Where the inspector was before light and dark went side by side, to put it back after.
   const inspectorBeforeSplit = useRef<SidePanelState>("open");
   const knobs = knobsFrom(params);
+  const locks = (params.get("locks") ?? "").split(",").filter(Boolean);
+  const [isInspecting, setInspecting] = useState(false);
+  const [openSections, setOpenSections] = useState<readonly string[]>(["brand", "colours"]);
+  const setLock = (name: string, isLocked: boolean) =>
+    setParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        const kept = locks.filter((lock) => lock !== name);
+        const all = isLocked ? [...kept, name] : kept;
+        if (all.length > 0) next.set("locks", all.join(","));
+        else next.delete("locks");
+        return next;
+      },
+      { replace: true },
+    );
+  const inspect = (target: Element) => {
+    const section = sectionOf(target);
+    setInspecting(false);
+    setOpenSections((current) => (current.includes(section) ? current : [...current, section]));
+    requestAnimationFrame(() =>
+      document
+        .querySelector(`[data-studio-section="${section}"]`)
+        ?.scrollIntoView({ block: "start" }),
+    );
+  };
   const scheme = schemeChoice ?? resolvedColorScheme;
   const isBrandBase = base === brandThemeOf(brand);
   const direction = params.get("locale") === "ar" ? "rtl" : "ltr";
@@ -207,7 +248,7 @@ export function ThemeStudio() {
       state={inspector}
       onStateChange={setInspector}
       variant="split"
-      className="fixed inset-0 z-30 text-foreground"
+      className="fixed inset-0 z-(--z-dock) text-foreground"
     >
       <SidePanel.Inset className="grid grid-rows-[auto_minmax(0,1fr)]">
         <title>{t(K.page.document_title)}</title>
@@ -270,9 +311,34 @@ export function ThemeStudio() {
             <Heading level={2} className="sr-only">
               {t(K.rail.label)}
             </Heading>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                startIcon={Icons.Shuffle}
+                onPress={() => change({ brand, base, knobs: randomizeKnobs(base, knobs, locks) })}
+              >
+                {t(K.rail.randomize)}
+              </Button>
+              <Button
+                size="sm"
+                variant={isInspecting ? "primary" : "tertiary"}
+                startIcon={Icons.ScanSearch}
+                aria-pressed={isInspecting}
+                onPress={() => setInspecting(!isInspecting)}
+              >
+                {t(K.rail.inspect)}
+              </Button>
+            </div>
+            {isInspecting ? (
+              <p role="status" className="text-xs text-muted">
+                <bdi>{t(K.rail.inspect_hint)}</bdi>
+              </p>
+            ) : null}
             <Accordion
               canExpandMultiple
-              defaultExpandedKeys={["brand", "colours"]}
+              expandedKeys={openSections}
+              onExpandedChange={setOpenSections}
               items={SECTIONS.map(({ id, icon }) => ({
                 id,
                 title: (
@@ -282,7 +348,7 @@ export function ThemeStudio() {
                   </span>
                 ),
                 content: (
-                  <div className="grid gap-4 pb-2">
+                  <div data-studio-section={id} className="grid scroll-mt-3 gap-4 pb-2">
                     {id === "brand" ? <StudioBrands value={brand} onChange={pickBrand} /> : null}
                     <StudioControls
                       section={id}
@@ -294,13 +360,26 @@ export function ThemeStudio() {
                       fonts={fonts}
                       scheme={scheme}
                       onChange={(next) => change({ brand, base, knobs: next })}
+                      locks={locks}
+                      onLockChange={setLock}
                     />
                   </div>
                 ),
               }))}
             />
           </nav>
-          <StudioPreview theme={derived.theme} scheme={scheme} view={view} fonts={fonts} />
+          {/* Inspect: while on, a press in the preview opens the rail section that sets what was pressed. */}
+          <div
+            className={isInspecting ? "contents cursor-crosshair" : "contents"}
+            onClickCapture={(event) => {
+              if (!isInspecting || !(event.target instanceof Element)) return;
+              event.preventDefault();
+              event.stopPropagation();
+              inspect(event.target);
+            }}
+          >
+            <StudioPreview theme={derived.theme} scheme={scheme} view={view} fonts={fonts} />
+          </div>
         </div>
       </SidePanel.Inset>
       <SidePanel.Panel>

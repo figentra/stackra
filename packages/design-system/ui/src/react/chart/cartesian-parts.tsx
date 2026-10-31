@@ -20,6 +20,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import type { CartesianChartContractProps } from "#contracts/types/cartesian-chart-contract-props.type";
 import { formatChartCategory } from "#core/functions/format-chart-category.function";
 import { formatChartNumber } from "#core/functions/format-chart-number.function";
@@ -160,7 +161,7 @@ export function cartesianParts(options: CartesianPartsOptions): ReactElement[] {
               ? ("insideTopLeft" as const)
               : ("insideTopRight" as const),
           fill: color,
-          fontSize: 10,
+          fontSize: THEME_PX.typeScale["3xs"]?.fontSize,
           // An Arabic page sets the SVG's direction to rtl, where "start" is the text's right edge: anchored at the
           // plot's left, the label would run out of it, so it is anchored by its left edge ("end") instead.
           ...(isRtl && !isHorizontal ? { textAnchor: "end" as const } : {}),
@@ -205,7 +206,7 @@ export function cartesianParts(options: CartesianPartsOptions): ReactElement[] {
           value: annotation.label,
           position: isHorizontal ? ("insideTopRight" as const) : ("insideTop" as const),
           fill: color,
-          fontSize: 10,
+          fontSize: THEME_PX.typeScale["3xs"]?.fontSize,
         }}
       />,
     );

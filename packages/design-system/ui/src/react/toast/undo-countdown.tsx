@@ -27,6 +27,7 @@ export function UndoCountdown({ duration }: UndoCountdownProps): ReactElement {
     if (!element || motion === "none" || typeof element.animate !== "function") return undefined;
     const drain = element.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: RING }], {
       duration,
+      // oxlint-disable-next-line stackra/no-literal-duration -- the ring drains in step with the toast timer, so it must stay linear
       easing: "linear",
       fill: "forwards",
     });

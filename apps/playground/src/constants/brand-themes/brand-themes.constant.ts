@@ -4,14 +4,19 @@
  * Boundary: data only. Each `<id>.json` is a copy of the brand repo's `brands/<id>/tokens/theme.json` (figentra/brand
  *           2632b06), taken for every brand whose `brand.json` and `versions.json` default are approved and that
  *           ships a `tokens/theme.json` (Academorix has none yet). Names and display faces are its `brand.json`'s.
- *           Last come two presets inspired by other design systems, Medusa UI and Linear (colours, type, radius and
+ *           Then two presets inspired by other design systems, Medusa UI and Linear (colours, type, radius and
  *           shadows only; no names or marks of theirs beyond the label), each with a CSS layer; README.md says where
- *           each value came from.
+ *           each value came from. Last come Stackra's own style presets (HeroUI-style, tactile, glass, brutal), tokens
+ *           only with no CSS layer (ADR 0501), every value written fresh (ADR 0469).
  * Runtime: browser
  * Governing contract: ADR 0340 (decisions 2, 8 and 11: a brand is a layer above Stackra, never in @stackra/tokens).
  */
+import APPLE from "./apple.json";
 import COMMERCE from "./commerce.json";
+import BRUTAL from "./brutal.json";
 import FIGENTRA from "./figentra.json";
+import GLASS from "./glass.json";
+import HEROUI from "./heroui.json";
 import JURISTRA from "./juristra.json";
 import JUTE from "./jute.json";
 import LINEAR from "./linear.json";
@@ -23,6 +28,9 @@ import ORGANZA from "./organza.json";
 import OS from "./os.json";
 import PAY from "./pay.json";
 import STACKRA from "./stackra.json";
+import STACKRA_GLASS from "./stackra-glass.json";
+import STACKRA_STUDIO from "./stackra-studio.json";
+import TACTILE from "./tactile.json";
 import TAMO from "./tamo.json";
 import VELORA from "./velora.json";
 import type { BrandTheme } from "./brand-theme.type";
@@ -122,5 +130,56 @@ export const BRAND_THEMES: readonly BrandTheme[] = [
     displayArabic: "IBM Plex Sans Arabic",
     layer: LINEAR,
     css: LINEAR_CSS,
+  },
+  // The glass-system presets (ADR 0320 as amended 2026-10-31, ADR 0501): each is tokens only, no CSS layer.
+  {
+    id: "stackra-glass",
+    name: { en: "Stackra Glass", ar: "ستاكرا الزجاجي" },
+    display: "Geist Mono",
+    displayArabic: "IBM Plex Sans Arabic",
+    layer: STACKRA_GLASS,
+  },
+  {
+    id: "stackra-studio",
+    name: { en: "Stackra Studio", ar: "ستاكرا ستوديو" },
+    display: "Geist Mono",
+    displayArabic: "IBM Plex Sans Arabic",
+    layer: STACKRA_STUDIO,
+  },
+  {
+    id: "apple",
+    name: { en: "Apple-style", ar: "على نمط Apple" },
+    display: "Geist",
+    displayArabic: "IBM Plex Sans Arabic",
+    layer: APPLE,
+  },
+  // ADR 0501: Stackra's own style presets, tokens only (no CSS layer), each written fresh for Stackra.
+  {
+    id: "heroui",
+    name: { en: "HeroUI-style", ar: "على طريقة HeroUI" },
+    display: "Geist",
+    displayArabic: "IBM Plex Sans Arabic",
+    layer: HEROUI,
+  },
+  {
+    id: "tactile",
+    name: { en: "Tactile", ar: "ملموس" },
+    display: "Geist",
+    displayArabic: "IBM Plex Sans Arabic",
+    layer: TACTILE,
+  },
+  {
+    id: "glass",
+    name: { en: "Glass", ar: "زجاجي" },
+    display: "Geist",
+    displayArabic: "IBM Plex Sans Arabic",
+    layer: GLASS,
+  },
+  {
+    id: "brutal",
+    name: { en: "Brutal", ar: "حاد" },
+    display: "Bricolage Grotesque",
+    displayArabic: "IBM Plex Sans Arabic",
+    layer: BRUTAL,
   },
 ];

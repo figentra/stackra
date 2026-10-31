@@ -17,7 +17,7 @@ import { Text } from "#native/text/text";
 /** Left to right. */
 const LTR = { writingDirection: "ltr", textAlign: "left" } as const;
 /** The monospaced line style. */
-const LINE = "font-mono text-[13px] leading-6";
+const LINE = "font-mono text-code leading-6";
 
 /** A leaf in its tone. */
 function leafOf(value: unknown): ReactElement {

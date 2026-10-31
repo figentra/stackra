@@ -92,7 +92,7 @@ export function MessageScroller({
         // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- reason: a scrollable log must be focusable to scroll by keyboard
         tabIndex={0}
         onScroll={onScroll}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain outline-none focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:-outline-offset-2 focus-visible:outline-focus"
       >
         <div ref={content}>{children}</div>
       </div>

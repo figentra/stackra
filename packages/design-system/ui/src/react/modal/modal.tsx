@@ -51,11 +51,11 @@ const LAYOUT: Readonly<
 /** The entrance and exit of each motion at the full level: a full slide in place of HeroUI's zoom. */
 const SLIDE: Readonly<Record<OverlayMotion, string>> = {
   "slide-up":
-    "data-[entering=true]:zoom-in-100 data-[entering=true]:slide-in-from-bottom-full data-[exiting=true]:zoom-out-100 data-[exiting=true]:slide-out-to-bottom-full data-[entering=true]:duration-300",
+    "data-[entering=true]:zoom-in-100 data-[entering=true]:slide-in-from-bottom-full data-[exiting=true]:zoom-out-100 data-[exiting=true]:slide-out-to-bottom-full data-[entering=true]:duration-(--duration-slow)",
   "stick-top":
-    "data-[entering=true]:zoom-in-100 data-[entering=true]:slide-in-from-top-full data-[exiting=true]:zoom-out-100 data-[exiting=true]:slide-out-to-top-full data-[entering=true]:duration-300",
+    "data-[entering=true]:zoom-in-100 data-[entering=true]:slide-in-from-top-full data-[exiting=true]:zoom-out-100 data-[exiting=true]:slide-out-to-top-full data-[entering=true]:duration-(--duration-slow)",
   "slide-side":
-    "data-[entering=true]:zoom-in-100 data-[entering=true]:slide-in-from-end data-[exiting=true]:zoom-out-100 data-[exiting=true]:slide-out-to-end data-[entering=true]:duration-300",
+    "data-[entering=true]:zoom-in-100 data-[entering=true]:slide-in-from-end data-[exiting=true]:zoom-out-100 data-[exiting=true]:slide-out-to-end data-[entering=true]:duration-(--duration-slow)",
 };
 
 /** The motion classes of the container at a motion level. */

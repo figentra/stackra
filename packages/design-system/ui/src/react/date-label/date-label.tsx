@@ -79,7 +79,7 @@ export function DateLabel({
       className="inline-flex"
       initial={{ scale: 1 }}
       animate={{ scale: [1, PULSE_SCALE, 1] }}
-      transition={{ duration: (BASE.durationMs * 2) / 1000, ease: "easeInOut" }}
+      transition={{ duration: (BASE.durationMs * 2) / 1000, ease: BASE.bezier ?? "easeInOut" }}
     >
       {chip}
     </motion.span>

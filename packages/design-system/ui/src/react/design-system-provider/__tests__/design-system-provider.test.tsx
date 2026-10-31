@@ -106,22 +106,67 @@ describe("DesignSystemProvider (web)", () => {
     expect(screen.getByTestId("aria").textContent).toBe("en ltr");
   });
 
-  it("runs the document in the solid material unless a showcase asks for another mode", () => {
+  it("leaves the material and family to the theme unless asked, and sets them when asked", () => {
     root.removeAttribute("data-material");
+    root.removeAttribute("data-family");
     const { rerender, unmount } = render(
       <DesignSystemProvider>
         <Probe />
       </DesignSystemProvider>,
     );
-    expect(root.dataset["material"]).toBe("solid");
+    // The theme's stylesheet decides (the stackra theme: studio, solid), so nothing is written.
+    expect(root.hasAttribute("data-material")).toBe(false);
+    expect(root.hasAttribute("data-family")).toBe(false);
     rerender(
-      <DesignSystemProvider material="liquid">
+      <DesignSystemProvider material="liquid" family="front">
         <Probe />
       </DesignSystemProvider>,
     );
     expect(root.dataset["material"]).toBe("liquid");
+    expect(root.dataset["family"]).toBe("front");
     unmount();
     expect(root.hasAttribute("data-material")).toBe(false);
+    expect(root.hasAttribute("data-family")).toBe(false);
+  });
+
+  it("keeps the mode a page set before paint when it is given none", () => {
+    root.dataset["material"] = "glass";
+    const { unmount } = render(
+      <DesignSystemProvider>
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(root.dataset["material"]).toBe("glass");
+    unmount();
+    root.removeAttribute("data-material");
+  });
+
+  it("puts the accessibility modes the user turned on on the document, and takes them off again", () => {
+    const { rerender, unmount } = render(
+      <DesignSystemProvider
+        accessibility={{
+          contrast: "more",
+          transparency: "reduce",
+          textScale: "large",
+          chartPalette: "safe",
+        }}
+      >
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(root.dataset["contrast"]).toBe("more");
+    expect(root.dataset["transparency"]).toBe("reduce");
+    expect(root.dataset["textScale"]).toBe("large");
+    expect(root.dataset["chartPalette"]).toBe("safe");
+    rerender(
+      <DesignSystemProvider accessibility={{ textScale: "larger" }}>
+        <Probe />
+      </DesignSystemProvider>,
+    );
+    expect(root.hasAttribute("data-contrast")).toBe(false);
+    expect(root.dataset["textScale"]).toBe("larger");
+    unmount();
+    expect(root.hasAttribute("data-text-scale")).toBe(false);
   });
 
   it("applies a dark scheme and derives right-to-left from an Arabic locale", () => {
@@ -266,7 +311,7 @@ describe("DesignSystemProvider (web)", () => {
       </DesignSystemProvider>,
     );
     expect(root.dataset["brand"]).toBe("figentra");
-    expect(screen.getByTestId("brand").textContent).toBe("figentra none");
+    expect(screen.getByTestId("brand").textContent).toBe("figentra circle-origin");
     act(() => screen.getByText("organza").click());
     act(() => screen.getByText("fade").click());
     expect(root.dataset["brand"]).toBe("organza");

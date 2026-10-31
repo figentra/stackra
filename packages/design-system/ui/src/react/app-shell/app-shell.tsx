@@ -87,7 +87,7 @@ export function AppShell({
       {isEmbedded ? null : (
         <a
           href={`#${mainId}`}
-          className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded-[var(--radius-control-inner)] focus:bg-surface focus:p-2 focus:outline-2 focus:outline-focus"
+          className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-(--z-overlay) focus:rounded-[var(--radius-control-inner)] focus:bg-surface focus:p-2 focus:[outline-style:var(--focus-ring-style)] focus:outline-(length:--focus-ring-width) focus:outline-focus"
         >
           {skipLabel}
         </a>
@@ -109,7 +109,7 @@ export function AppShell({
           className={cn(
             "flex min-w-0 flex-1 flex-col",
             frame === "inset"
-              ? "m-2 overflow-hidden rounded-[var(--radius-container)] border border-separator bg-surface shadow-sm"
+              ? "m-2 overflow-hidden rounded-[var(--radius-container)] border border-separator bg-surface shadow-surface"
               : "",
           )}
         >

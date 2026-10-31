@@ -10,7 +10,7 @@
  *          2026-10-28); WCAG 2.2 SC 2.5.1.
  */
 import type { ReactElement } from "react";
-import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { motion, useReducedMotion } from "motion/react";
 import { useRef, useState } from "react";
 import { useLocale } from "react-aria-components";
@@ -19,6 +19,7 @@ import type { SwipeableTabsProps } from "#react/swipeable-tabs/swipeable-tabs.pr
 import { Tabs } from "#react/tabs/tabs";
 
 const BASE = motionTiming(STACKRA_THEME, "base");
+const ENTER_EASE = motionEasing(STACKRA_THEME, "enter");
 /** How far a swipe must go, and by how much it must beat the vertical move, in CSS pixels. */
 const SWIPE = 48;
 
@@ -67,7 +68,7 @@ export function SwipeableTabs({
             key={`${item.id}-${from}`}
             initial={isReduced ? false : { opacity: 0, x: 32 * from * sign }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: BASE.durationMs / 1000, ease: "easeOut" }}
+            transition={{ duration: BASE.durationMs / 1000, ease: ENTER_EASE }}
             className="touch-pan-y"
             onPointerDown={(event) => {
               start.current =

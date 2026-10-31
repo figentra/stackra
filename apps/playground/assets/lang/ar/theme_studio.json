@@ -55,7 +55,11 @@
     "type": "الخطوط",
     "shape": "الشكل",
     "motion": "الحركة",
-    "effects": "المؤثرات"
+    "effects": "المؤثرات",
+    "recipes": "وصفات الألوان",
+    "randomize": "عشوائي",
+    "inspect": "فحص",
+    "inspect_hint": "اختر جزءًا من المعاينة لفتح عناصر التحكم الخاصة به"
   },
   "brands": {
     "title": "العلامة"
@@ -92,15 +96,58 @@
     "motion_note": "درجات الحركة في السمة كما تستخدمها المكوّنات. مرّر المؤشر فوق صف لتشغيله.",
     "blur": "ضبابية الزجاج",
     "levels": {
+      "ultra-thin": "ضبابية الزجاج فائق الرقة",
       "thin": "ضبابية الزجاج الرقيق",
       "regular": "ضبابية الزجاج العادي",
-      "thick": "ضبابية الزجاج السميك"
+      "thick": "ضبابية الزجاج السميك",
+      "glass": "ضبابية الزجاج السائل",
+      "glass-clear": "ضبابية الزجاج الشفاف"
     },
     "shadows": "الظلال",
     "shadow_names": {
       "surface": "سطح",
       "overlay": "طبقة علوية",
-      "field": "حقل"
+      "field": "حقل",
+      "raised": "مرفوع",
+      "pressed": "مضغوط"
+    },
+    "density": "الكثافة",
+    "pill_controls": "أزرار بحواف دائرية كاملة",
+    "field_style": "الحقول",
+    "corner_shape": "الزوايا",
+    "field_styles": {
+      "bordered": "بإطار",
+      "lifted": "مرفوعة بلا خط"
+    },
+    "corner_shapes": {
+      "round": "دائرية",
+      "squircle": "منحنية ناعمة"
+    },
+    "lock": "قفل {name}",
+    "neutral_tint": "ميل الألوان المحايدة نحو اللون الأساسي",
+    "vibrant": "ألوان ناعمة أكثر حيوية",
+    "font_scale": "حجم الخط",
+    "line_height": "ارتفاع السطر",
+    "letter_spacing": "تباعد الأحرف",
+    "forms_radius": "استدارة الحقول",
+    "field_border_width": "حافة الحقل",
+    "shadow_strength": "قوة الظل",
+    "disabled_opacity": "شفافية العنصر المعطل",
+    "cursor_pointer": "مؤشر اليد",
+    "skeleton": "هيكل التحميل",
+    "animations": "الحركة",
+    "recipes_note": "كيف يُمزج كل لون مشتق من أدوار السمة.",
+    "recipe_theme": "تحدده السمة",
+    "strengths": {
+      "none": "بلا",
+      "subtle": "خفيف",
+      "medium": "متوسط",
+      "strong": "قوي"
+    },
+    "skeletons": {
+      "shimmer": "لمعان",
+      "pulse": "نبض",
+      "none": "بلا"
     }
   },
   "canvas": {

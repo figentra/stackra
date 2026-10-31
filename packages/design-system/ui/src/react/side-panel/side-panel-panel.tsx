@@ -5,7 +5,7 @@
  *          takes the whole row. Its content keeps the open width while it closes, so nothing reflows on the way out.
  *          Escape inside it closes it. Below the drawer breakpoint the same parts are drawn in the house Drawer on the
  *          end edge (full width while expanded).
- * Boundary: the width eases (300 ms, a gliding ease-out) at the `full` motion level, so the page beside it visibly
+ * Boundary: the width eases (the theme's `slow` step on the `enter` curve) at the `full` motion level, so the page beside it visibly
  *           shrinks and grows; at `reduced` the content fades instead and at `none` it snaps. Never during a drag
  *           (`data-resizing`), where the width follows the pointer. With the `split` look the panel is its own rounded
  *           card, its gap from the page inside the column so a closed panel leaves none. The end edge is logical, so
@@ -24,7 +24,7 @@ import { useSidePanel } from "#react/side-panel/use-side-panel";
 
 /** The width's easing at the full motion level: a gliding ease-out, off during a drag and under reduced motion. */
 const MOVE =
-  "transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none data-[resizing]:transition-none";
+  "transition-[width] duration-(--duration-slow) ease-(--ease-enter) motion-reduce:transition-none data-[resizing]:transition-none";
 
 /** The panel column. */
 export function SidePanelPanel({
@@ -99,9 +99,9 @@ export function SidePanelPanel({
           "absolute inset-y-0 end-0 flex flex-col",
           state === "expanded" ? "w-full" : "w-[var(--side-panel-width)] max-w-full",
           isSplit
-            ? "overflow-hidden rounded-[var(--radius-container)] border border-separator bg-surface shadow-sm"
+            ? "overflow-hidden rounded-[var(--radius-container)] border border-separator bg-surface shadow-surface"
             : "",
-          motion === "reduced" ? "transition-opacity duration-150" : "",
+          motion === "reduced" ? "transition-opacity duration-(--duration-fast)" : "",
           isClosed && motion === "reduced" ? "opacity-0" : "",
         )}
       >

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "bcc54eac33b1077d",
+    "hash": "e4ea9bec3a9f7443",
     "propsFiles": [
       "ui/src/react/dropdown/dropdown-item.props.ts",
       "ui/src/react/dropdown/dropdown-trigger.props.ts"
@@ -378,7 +378,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "description": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",

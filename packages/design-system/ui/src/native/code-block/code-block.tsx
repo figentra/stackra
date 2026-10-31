@@ -101,7 +101,7 @@ function CodeFrame({
             <Text
               selectable={false}
               importantForAccessibility="no"
-              className="me-4 text-end font-mono text-[13px] leading-6 text-syntax-comment"
+              className="me-4 text-end font-mono text-code leading-6 text-syntax-comment"
               style={{ minWidth: numberWidth * 8 }}
             >
               {row.number}
@@ -111,7 +111,7 @@ function CodeFrame({
             <Text
               selectable={false}
               importantForAccessibility="no"
-              className={`me-2 font-mono text-[13px] leading-6 ${row.change ? ROLE_CLASS[row.change] : ""}`}
+              className={`me-2 font-mono text-code leading-6 ${row.change ? ROLE_CLASS[row.change] : ""}`}
             >
               {row.change ? DIFF_MARK[row.change] : " "}
             </Text>
@@ -120,14 +120,14 @@ function CodeFrame({
             <Text
               selectable={false}
               importantForAccessibility="no"
-              className="me-2 font-mono text-[13px] leading-6 text-syntax-comment"
+              className="me-2 font-mono text-code leading-6 text-syntax-comment"
             >
               {prompt}
             </Text>
           ) : null}
           <Text
             selectable
-            className={`font-mono text-[13px] leading-6 ${isWrapped ? "flex-1" : ""}`}
+            className={`font-mono text-code leading-6 ${isWrapped ? "flex-1" : ""}`}
             style={LTR}
           >
             {row.tokens.length === 0

@@ -46,7 +46,7 @@ export function SidePanelHandle({ className, ...rest }: SidePanelHandleProps): R
       aria-valuemax={panel.maxWidth}
       data-slot="side-panel-handle"
       className={cn(
-        "absolute inset-y-0 start-0 z-20 w-2 cursor-col-resize touch-none outline-none",
+        "absolute inset-y-0 start-0 z-(--z-sticky) w-2 cursor-col-resize touch-none outline-none",
         // The visible border: a hairline that thickens on hover, drag and keyboard focus.
         "after:absolute after:inset-y-0 after:start-0 after:w-px after:bg-transparent after:transition-colors",
         "hover:after:w-0.5 hover:after:bg-accent focus-visible:after:w-0.5 focus-visible:after:bg-focus",

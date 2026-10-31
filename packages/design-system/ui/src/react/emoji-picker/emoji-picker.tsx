@@ -48,7 +48,7 @@ function Section({
             type="button"
             aria-label={WORDS.get(each) ?? each}
             onClick={() => onSelect(each)}
-            className="grid size-9 place-items-center rounded-[var(--radius-control)] text-xl outline-none hover:bg-default focus-visible:outline-2 focus-visible:outline-focus"
+            className="grid size-9 place-items-center rounded-[var(--radius-control)] text-xl outline-none hover:bg-default focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus"
           >
             {/* Drawn from an attribute, not text: the name says what it is, and axe cannot match a glyph against a name. */}
             <span

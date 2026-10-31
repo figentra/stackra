@@ -160,7 +160,10 @@ export function ExportDialog({
                     className="inline-flex"
                     initial={isReduced ? false : { scale: 0.4, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: MORPH.durationMs / 1000, ease: "easeOut" }}
+                    transition={{
+                      duration: MORPH.durationMs / 1000,
+                      ease: MORPH.bezier ?? "easeOut",
+                    }}
                     aria-hidden
                   >
                     <Icon name="check" size="sm" />

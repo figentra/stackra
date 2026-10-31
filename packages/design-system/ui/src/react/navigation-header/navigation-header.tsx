@@ -26,6 +26,7 @@ import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
 import { Link } from "#react/link/link";
 import type { NavigationHeaderProps } from "#react/navigation-header/navigation-header.props";
+import { useIsScrolled } from "#react/hooks/use-is-scrolled";
 
 /** The back chevron, mirrored in right-to-left because it points the reading way back. */
 const BACK_ICON = <Icon name="chevron-left" />;
@@ -47,6 +48,7 @@ export function NavigationHeader({
   className,
   ...rest
 }: NavigationHeaderProps): ReactElement {
+  const isScrolled = useIsScrolled();
   const t = useUiText();
   const backLabel = backLabelProp ?? t(UI_KEYS.ui.navigation_header.back);
   const heading = (
@@ -63,8 +65,9 @@ export function NavigationHeader({
   return (
     <header
       {...rest}
+      {...(isScrolled ? { "data-scrolled": "" } : {})}
       {...(label ? { "aria-label": label } : {})}
-      className={cn("border-b border-separator bg-background text-foreground", className)}
+      className={cn("material-role-nav-bar border-b border-separator text-foreground", className)}
     >
       <div className="flex min-h-14 items-center gap-2 px-2 py-2">
         {backHref === undefined ? (

@@ -13,6 +13,7 @@
  *          2026-10-28); WCAG 2.2 SC 2.5.1.
  */
 import type { Tone } from "@stackra/contracts";
+import { motionSpring, STACKRA_THEME } from "@stackra/tokens";
 import { cn, useThemeColor } from "heroui-native";
 import { LucideProvider } from "lucide-react-native";
 import { useMemo, useRef, useState, type ReactElement } from "react";
@@ -24,11 +25,15 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import type { SwipeAction } from "#contracts/types/swipe-action.type";
 import { useDirection } from "#native/bidi/use-direction";
 import { haptics } from "#native/haptics/haptics";
 import { SlotIcon } from "#native/slot-icon/slot-icon";
 import type { SwipeableRowProps } from "#native/swipeable-row/swipeable-row.props";
+
+/** The theme's snappy spring, for a control or a drag settling. */
+const SNAPPY = motionSpring(STACKRA_THEME, "snappy");
 
 /** The width of one action, in points, and how far a drag must go before it is a swipe. */
 const ACTION_WIDTH = 76;
@@ -63,7 +68,10 @@ function ActionButton({
       <LucideProvider color={color} size={20}>
         <SlotIcon icon={action.icon} />
       </LucideProvider>
-      <Animated.Text style={{ color, fontSize: 12, fontWeight: "500" }} numberOfLines={1}>
+      <Animated.Text
+        style={{ color, fontSize: THEME_PX.typeScale["xs"]?.fontSize, fontWeight: "500" }}
+        numberOfLines={1}
+      >
         {action.label}
       </Animated.Text>
     </Pressable>
@@ -97,7 +105,7 @@ export function SwipeableRow({
 
   const snap = (to: number) => {
     resting.current = to;
-    offset.set(isReduced ? to : withSpring(to, { damping: 24, stiffness: 240 }));
+    offset.set(isReduced ? to : withSpring(to, SNAPPY));
     const side = to > 0 ? "start" : to < 0 ? "end" : null;
     if (side !== null && side !== openSide) haptics.play("selection");
     setOpenSide(side);

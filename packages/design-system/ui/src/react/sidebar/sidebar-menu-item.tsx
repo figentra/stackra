@@ -39,11 +39,11 @@ import { Tooltip } from "#react/tooltip/tooltip";
 const ROW = [
   "relative flex w-full min-w-0 items-center gap-3 rounded-[var(--radius-control)] px-3 text-start text-sm text-foreground outline-none",
   "transition-colors motion-reduce:transition-none",
-  "hover:bg-default focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus",
+  "hover:bg-default focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:-outline-offset-2 focus-visible:outline-focus",
   "data-[pressed=true]:bg-default",
   "data-[active=true]:bg-accent-soft data-[active=true]:font-medium data-[active=true]:text-accent-soft-foreground",
   "data-[ancestor=true]:font-medium",
-  "data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50 data-[disabled=true]:hover:bg-transparent",
+  "data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-(--disabled-opacity) data-[disabled=true]:hover:bg-transparent",
 ].join(" ");
 
 /** A zero or empty badge draws nothing. */
@@ -124,13 +124,13 @@ export function SidebarMenuItem({
         // An element, not a ::before: axe cannot measure the contrast of text whose ancestor draws a pseudo-element.
         <span
           aria-hidden="true"
-          className="absolute inset-y-1.5 start-0 w-[3px] rounded-[var(--radius-pill)] bg-current"
+          className="absolute inset-y-1.5 start-0 w-0.75 rounded-[var(--radius-pill)] bg-current"
         />
       ) : null}
       {icon === undefined && (isNested || !isRail) ? null : (
         <span aria-hidden="true" className="relative grid size-5 shrink-0 place-items-center">
           {icon === undefined ? (
-            <span className="grid size-5 place-items-center rounded-[var(--radius-control)] bg-default text-[0.625rem] font-semibold">
+            <span className="grid size-5 place-items-center rounded-[var(--radius-control)] bg-default text-(length:--text-3xs) font-semibold">
               {initialsOf(label)}
             </span>
           ) : (
@@ -238,7 +238,7 @@ export function SidebarMenuItem({
           onClick={() => setOpen(!open)}
           className={cn(
             "absolute end-1 top-1.5 grid size-6 place-items-center rounded-[var(--radius-control)] text-muted outline-none",
-            "hover:bg-default hover:text-foreground focus-visible:outline-2 focus-visible:outline-focus",
+            "hover:bg-default hover:text-foreground focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus",
             action === undefined ? "" : "end-8",
           )}
         >

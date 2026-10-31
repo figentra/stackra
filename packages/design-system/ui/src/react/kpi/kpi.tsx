@@ -26,7 +26,7 @@ export function Kpi({ icon, className, ...stat }: KpiProps): ReactElement {
           {icon ? (
             <span
               aria-hidden
-              className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-accent-soft text-accent"
+              className="flex size-(--size-icon-tile) shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-accent-soft text-accent"
             >
               <Icon name={icon} size="sm" />
             </span>

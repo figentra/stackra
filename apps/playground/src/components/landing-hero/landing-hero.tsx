@@ -22,7 +22,7 @@ export function LandingHero() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-[36rem]">
+        <div className="min-h-144">
           <title>{HomeRoute.title}</title>
         </div>
       }

@@ -171,10 +171,10 @@ export function TreeView({
       className={
         cn(
           "group cursor-default text-foreground outline-none",
-          "data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus",
-          "data-[hovered]:bg-default data-[selected]:bg-accent-soft data-[disabled]:opacity-50",
+          "data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus",
+          "data-[hovered]:bg-default data-[selected]:bg-accent-soft data-[disabled]:opacity-(--disabled-opacity)",
           "data-[drop-target]:bg-accent-soft data-[drop-target]:outline-2 data-[drop-target]:outline-accent",
-          "data-[dragging]:opacity-50",
+          "data-[dragging]:opacity-(--opacity-dimmed)",
         ) ?? ""
       }
     >
@@ -191,7 +191,7 @@ export function TreeView({
             {allowsDragging ? (
               <AriaButton
                 slot="drag"
-                className="inline-flex size-6 cursor-grab items-center justify-center text-muted outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus"
+                className="inline-flex size-6 cursor-grab items-center justify-center text-muted outline-none data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus"
               >
                 <Icon name="grip-vertical" size="sm" />
               </AriaButton>
@@ -211,7 +211,7 @@ export function TreeView({
             {hasChildItems ? (
               <AriaButton slot="chevron" className="inline-flex size-6 items-center justify-center">
                 <span
-                  className="inline-flex transition-[rotate] duration-200 motion-reduce:transition-none"
+                  className="inline-flex transition-[rotate] duration-(--duration-moderate) motion-reduce:transition-none"
                   // The Icon already points it left in right-to-left, so it turns the other way to point down.
                   style={{ rotate: `${isExpanded ? (direction === "rtl" ? -90 : 90) : 0}deg` }}
                 >

@@ -71,7 +71,7 @@ export function Timeline({
                       aria-hidden
                       className={cn(
                         "absolute bottom-0 w-px bg-muted/40",
-                        isCompact ? "start-[0.6875rem] top-6" : "start-[0.9375rem] top-8",
+                        isCompact ? "start-2.75 top-6" : "start-3.75 top-8",
                       )}
                     />
                   )}

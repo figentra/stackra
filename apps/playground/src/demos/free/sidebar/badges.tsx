@@ -75,7 +75,7 @@ export default function Badges() {
   };
 
   return (
-    <div className="h-[28rem] w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
+    <div className="h-112 w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
       <Sidebar keyboardShortcut={false}>
         <Top />
         <Sidebar.Content label={t(K.badges_label)}>

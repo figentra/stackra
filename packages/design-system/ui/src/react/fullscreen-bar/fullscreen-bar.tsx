@@ -74,7 +74,7 @@ export function FullscreenBar({
         <div
           data-slot="fullscreen-bar-reveal"
           aria-hidden
-          className="fixed inset-x-0 top-0 z-50 h-6"
+          className="fixed inset-x-0 top-0 z-(--z-overlay) h-6"
           onPointerDown={startPress}
           onPointerUp={endPress}
           onPointerLeave={endPress}
@@ -96,7 +96,7 @@ export function FullscreenBar({
         style={{ ...style, transitionDuration: `${SLIDE.durationMs}ms` }}
         className={
           cn(
-            "fixed inset-x-0 top-0 z-50 flex items-center gap-3 border-b border-separator bg-surface px-4 py-2 text-foreground transition-transform ease-out motion-reduce:transition-none",
+            "fixed inset-x-0 top-0 z-(--z-overlay) flex items-center gap-3 border-b border-separator bg-surface px-4 py-2 text-foreground transition-transform ease-out motion-reduce:transition-none",
             isVisible ? "translate-y-0" : "-translate-y-full",
             className,
           ) ?? ""

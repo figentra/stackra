@@ -11,7 +11,7 @@
  * Governing contract: owner decision 2026-10-28 (hero concept B); ADR 0340 (decision 2); STA-1371; WCAG 2.2 SC 2.2.2,
  *          2.3.3, 4.1.2.
  */
-import { themeVariables } from "@stackra/tokens";
+import { motionEasing, motionTiming, STACKRA_THEME, themeVariables } from "@stackra/tokens";
 import {
   Button,
   Text,
@@ -39,6 +39,10 @@ const K = BRAND_KEYS.brand.hero.storm;
 
 /** How long each theme stays, in ms. */
 const TURN = 3200;
+
+/** The accent sweep's step and curve, from the theme's motion. */
+const SWEEP = motionTiming(STACKRA_THEME, "count");
+const ENTER = motionEasing(STACKRA_THEME, "enter");
 
 /** The brand layer of each storm theme, with the scheme it is drawn in. */
 const THEMES = STORM_THEMES.flatMap(({ brand, scheme }) => {
@@ -91,10 +95,10 @@ export function HeroStorm() {
         <motion.span
           key={index}
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-y-1/5 -inset-x-3/5 -z-10 bg-accent [mask-image:linear-gradient(100deg,transparent_40%,black_50%,transparent_60%)]"
+          className="pointer-events-none absolute -inset-y-1/5 -inset-x-3/5 z-(--z-behind) bg-accent [mask-image:linear-gradient(100deg,transparent_40%,black_50%,transparent_60%)]"
           initial={{ x: "-60%", opacity: 0.2 }}
           animate={{ x: "60%", opacity: 0 }}
-          transition={{ duration: 0.9, ease: [0.2, 0.8, 0.2, 1] }}
+          transition={{ duration: SWEEP.durationMs / 1000, ease: ENTER }}
         />
       ) : null}
       <div className="@container grid content-start justify-items-start gap-6">
@@ -144,6 +148,7 @@ export function HeroStorm() {
                 className="hero-progress h-full bg-accent"
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
+                // oxlint-disable-next-line stackra/no-literal-duration -- the bar shows a timer's elapsed share, so it runs at constant speed
                 transition={{ duration: TURN / 1000, ease: "linear" }}
               />
             ) : null}

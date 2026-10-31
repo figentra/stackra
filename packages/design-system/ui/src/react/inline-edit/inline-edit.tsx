@@ -30,7 +30,7 @@ const REVEAL = motionTiming(STACKRA_THEME, "reveal");
 
 /** The read row: the field's height and radius, so switching modes moves nothing. */
 const READ_CLASS_NAME =
-  "flex min-h-9 w-full items-center justify-between gap-2 px-3 text-start outline-none [border-radius:var(--field-radius)] hover:bg-default data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus data-[disabled]:opacity-50";
+  "flex min-h-9 w-full items-center justify-between gap-2 px-3 text-start outline-none [border-radius:var(--field-radius)] hover:bg-default data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus data-[disabled]:opacity-(--disabled-opacity)";
 
 /** A value the user edits in place; `onChange` receives the text when it is saved. */
 export function InlineEdit({

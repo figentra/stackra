@@ -98,7 +98,7 @@ export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
       <button
         type="button"
         onClick={() => onItemPress(item)}
-        className="text-start font-medium text-foreground outline-none after:absolute after:inset-0 after:rounded-[inherit] focus-visible:after:outline-2 focus-visible:after:outline-focus"
+        className="text-start font-medium text-foreground outline-none after:absolute after:inset-0 after:rounded-[inherit] focus-visible:after:[outline-style:var(--focus-ring-style)] focus-visible:after:outline-(length:--focus-ring-width) focus-visible:after:outline-focus"
       >
         {title}
       </button>
@@ -192,7 +192,7 @@ export function DataViewCards<TItem extends CollectionItem = CollectionItem>({
               <ListBoxItem
                 id={item.id}
                 textValue={slots.title ? cellTextOf(item, slots.title.id) : item.id}
-                className="grid grid-cols-[minmax(0,1fr)] content-start gap-3 overflow-hidden border border-separator bg-surface p-4 shadow-surface outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus data-[hovered]:bg-surface-secondary"
+                className="grid grid-cols-[minmax(0,1fr)] content-start gap-3 overflow-hidden border border-separator bg-surface p-4 shadow-surface outline-none data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus data-[hovered]:bg-surface-secondary"
                 style={{ borderRadius: "var(--radius-container)" }}
               >
                 {cardBody(item)}

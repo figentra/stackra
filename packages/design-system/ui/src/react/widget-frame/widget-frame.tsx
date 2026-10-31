@@ -77,6 +77,7 @@ export function WidgetFrame({
   onSortChange,
   isComparing = false,
   onCompareChange,
+  variant = "card",
   className,
 }: WidgetFrameProps): ReactElement {
   const t = useUiText();
@@ -170,6 +171,109 @@ export function WidgetFrame({
       children
     );
 
+  // The title row and the body, drawn on one card or split across the tray's header and body (ADR 0501).
+  const headerRow = (
+    <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
+      <div className="flex min-w-40 flex-1 flex-col gap-0.5">
+        <h3 id={titleId} className="m-0 truncate text-sm font-semibold">
+          {title}
+        </h3>
+        {description ? (
+          <Text type="small" tone="muted">
+            {description}
+          </Text>
+        ) : null}
+      </div>
+      <div className="ms-auto flex shrink-0 items-center gap-1">
+        {updatedAt !== undefined ? (
+          <Text type="small" tone="muted" className="whitespace-nowrap">
+            <time dateTime={new Date(updatedAt).toISOString()}>
+              {t(K.updated, { time: updatedAgoOf(updatedAt, now, locale) })}
+            </time>
+          </Text>
+        ) : null}
+        {onRefresh ? (
+          <IconButton
+            size="sm"
+            variant="ghost"
+            label={isRefreshing ? t(K.refreshing) : t(K.refresh)}
+            onPress={onRefresh}
+            icon={
+              <Icon
+                name="refresh-cw"
+                className={isRefreshing && !isReduced ? "animate-spin" : undefined}
+              />
+            }
+          />
+        ) : isRefreshing ? (
+          <Spinner size="sm" label={t(K.refreshing)} />
+        ) : null}
+        {onSortChange ? (
+          <Menu
+            selectionMode="single"
+            align="end"
+            value={sort ? [sort] : []}
+            onChange={(picked) => {
+              const next = SORTS.find((item) => item !== sort && picked.includes(item));
+              if (next) onSortChange(next);
+            }}
+            sections={[
+              {
+                id: "sort",
+                title: t(K.sort),
+                isTitleHidden: true,
+                items: SORTS.map((item) => ({
+                  id: item,
+                  label: t(K[`sort_${item.replace("-", "_")}` as "sort_label"]),
+                })),
+              },
+            ]}
+          >
+            <IconButton size="sm" variant="ghost" icon="arrow-up-down" label={t(K.sort)} />
+          </Menu>
+        ) : null}
+        {actions}
+        {menu && menu.length > 0 ? (
+          <ActionMenu
+            size="sm"
+            label={t(K.more)}
+            sections={[
+              {
+                id: "widget",
+                title: t(K.more),
+                isTitleHidden: true,
+                items: menu.map((action) => ({
+                  id: action,
+                  ...menuItem[action],
+                  onPress: run[action],
+                })),
+              },
+            ]}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+  const bodyParts = (
+    <>
+      {controls || onCompareChange ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {controls}
+          {onCompareChange ? (
+            <Switch size="sm" label={t(K.compare)} value={isComparing} onChange={onCompareChange} />
+          ) : null}
+        </div>
+      ) : null}
+      <Card.Content ref={body} className="min-h-24">
+        {content}
+      </Card.Content>
+      {footer ? <Card.Footer className="text-sm">{footer}</Card.Footer> : null}
+      <span role="status" aria-live="polite" className={notice ? "text-xs text-muted" : "sr-only"}>
+        {notice}
+      </span>
+    </>
+  );
+
   return (
     <section
       ref={root}
@@ -178,112 +282,17 @@ export function WidgetFrame({
       aria-busy={state === "loading" || isRefreshing}
       className={cn(WIDGET_SPAN[size], className)}
     >
-      <Card className="h-full">
-        <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
-          <div className="flex min-w-40 flex-1 flex-col gap-0.5">
-            <h3 id={titleId} className="m-0 truncate text-sm font-semibold">
-              {title}
-            </h3>
-            {description ? (
-              <Text type="small" tone="muted">
-                {description}
-              </Text>
-            ) : null}
-          </div>
-          <div className="ms-auto flex shrink-0 items-center gap-1">
-            {updatedAt !== undefined ? (
-              <Text type="small" tone="muted" className="whitespace-nowrap">
-                <time dateTime={new Date(updatedAt).toISOString()}>
-                  {t(K.updated, { time: updatedAgoOf(updatedAt, now, locale) })}
-                </time>
-              </Text>
-            ) : null}
-            {onRefresh ? (
-              <IconButton
-                size="sm"
-                variant="ghost"
-                label={isRefreshing ? t(K.refreshing) : t(K.refresh)}
-                onPress={onRefresh}
-                icon={
-                  <Icon
-                    name="refresh-cw"
-                    className={isRefreshing && !isReduced ? "animate-spin" : undefined}
-                  />
-                }
-              />
-            ) : isRefreshing ? (
-              <Spinner size="sm" label={t(K.refreshing)} />
-            ) : null}
-            {onSortChange ? (
-              <Menu
-                selectionMode="single"
-                align="end"
-                value={sort ? [sort] : []}
-                onChange={(picked) => {
-                  const next = SORTS.find((item) => item !== sort && picked.includes(item));
-                  if (next) onSortChange(next);
-                }}
-                sections={[
-                  {
-                    id: "sort",
-                    title: t(K.sort),
-                    isTitleHidden: true,
-                    items: SORTS.map((item) => ({
-                      id: item,
-                      label: t(K[`sort_${item.replace("-", "_")}` as "sort_label"]),
-                    })),
-                  },
-                ]}
-              >
-                <IconButton size="sm" variant="ghost" icon="arrow-up-down" label={t(K.sort)} />
-              </Menu>
-            ) : null}
-            {actions}
-            {menu && menu.length > 0 ? (
-              <ActionMenu
-                size="sm"
-                label={t(K.more)}
-                sections={[
-                  {
-                    id: "widget",
-                    title: t(K.more),
-                    isTitleHidden: true,
-                    items: menu.map((action) => ({
-                      id: action,
-                      ...menuItem[action],
-                      onPress: run[action],
-                    })),
-                  },
-                ]}
-              />
-            ) : null}
-          </div>
+      {variant === "tray" ? (
+        <div className="tray flex h-full flex-col">
+          <div className="tray__header py-2">{headerRow}</div>
+          <div className="tray__body flex flex-1 flex-col gap-3 p-4">{bodyParts}</div>
         </div>
-        {controls || onCompareChange ? (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {controls}
-            {onCompareChange ? (
-              <Switch
-                size="sm"
-                label={t(K.compare)}
-                value={isComparing}
-                onChange={onCompareChange}
-              />
-            ) : null}
-          </div>
-        ) : null}
-        <Card.Content ref={body} className="min-h-24">
-          {content}
-        </Card.Content>
-        {footer ? <Card.Footer className="text-sm">{footer}</Card.Footer> : null}
-        <span
-          role="status"
-          aria-live="polite"
-          className={notice ? "text-xs text-muted" : "sr-only"}
-        >
-          {notice}
-        </span>
-      </Card>
+      ) : (
+        <Card className="h-full">
+          {headerRow}
+          {bodyParts}
+        </Card>
+      )}
       {menu?.includes("fullscreen") ? (
         <Modal isOpen={isFull} onOpenChange={setFull} size="full" label={title}>
           <Modal.Header>

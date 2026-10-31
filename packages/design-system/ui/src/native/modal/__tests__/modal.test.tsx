@@ -149,14 +149,14 @@ describe("Modal (native)", () => {
 
   it("is medium and centred by default", () => {
     render(<Modal>x</Modal>);
-    expect(propsOf("content")["className"]).toBe("w-full max-w-[448px] self-center");
+    expect(propsOf("content")["className"]).toBe("w-full max-w-dialog-md self-center");
     expect(propsOf("portal")["className"]).toBe("");
   });
 
   it.each([
-    ["sm", "w-full max-w-[320px] self-center"],
-    ["md", "w-full max-w-[448px] self-center"],
-    ["lg", "w-full max-w-[576px] self-center"],
+    ["sm", "w-full max-w-dialog-sm self-center"],
+    ["md", "w-full max-w-dialog-md self-center"],
+    ["lg", "w-full max-w-dialog-lg self-center"],
     ["full", "flex-1 self-stretch rounded-none"],
   ] as const)("maps the %s size onto the content's classes", (size, expected) => {
     render(<Modal size={size}>x</Modal>);
@@ -176,7 +176,7 @@ describe("Modal (native)", () => {
 
   it("keeps the caller's class after the size's", () => {
     render(<Modal className="bg-red-500">x</Modal>);
-    expect(propsOf("content")["className"]).toBe("w-full max-w-[448px] self-center bg-red-500");
+    expect(propsOf("content")["className"]).toBe("w-full max-w-dialog-md self-center bg-red-500");
   });
 
   it("names the content by `label` and leaves it unnamed without one", () => {

@@ -12,15 +12,7 @@
  */
 import type { MotionTiming } from "#contracts/types/motion-timing.type";
 import type { Theme } from "#contracts/types/theme.type";
-
-/** The control points of the CSS named easings (CSS Easing Functions Level 1). */
-const NAMED: Readonly<Record<string, MotionTiming["bezier"]>> = {
-  linear: [0, 0, 1, 1],
-  ease: [0.25, 0.1, 0.25, 1],
-  "ease-in": [0.42, 0, 1, 1],
-  "ease-out": [0, 0, 0.58, 1],
-  "ease-in-out": [0.42, 0, 0.58, 1],
-};
+import { easingBezier } from "#core/functions/easing-bezier.function";
 
 /**
  * A theme's motion step as numbers.
@@ -37,12 +29,5 @@ export function motionTiming(theme: Theme, name: string): MotionTiming {
   const duration = /^(\d+(?:\.\d*)?|\.\d+)(ms|s)$/.exec(step.duration);
   if (!duration) throw new RangeError(`Not a CSS duration an animation can play: ${step.duration}`);
   const durationMs = Number(duration[1]) * (duration[2] === "s" ? 1000 : 1);
-  const easing = step.easing.trim();
-  if (Object.hasOwn(NAMED, easing)) return { durationMs, bezier: NAMED[easing] };
-  if (/^(steps\(.*\)|step-start|step-end)$/.test(easing)) return { durationMs, bezier: undefined };
-  const curve = /^cubic-bezier\(([^)]*)\)$/.exec(easing);
-  const points = curve?.[1]?.split(",").map((point) => Number(point.trim()));
-  if (!points || points.length !== 4 || points.some((point) => !Number.isFinite(point)))
-    throw new RangeError(`Not an easing an animation library can play: ${step.easing}`);
-  return { durationMs, bezier: points as [number, number, number, number] };
+  return { durationMs, bezier: easingBezier(step.easing) };
 }

@@ -12,6 +12,7 @@ import type { VoiceRecorderPort } from "#contracts/ports/voice-recorder.port";
 import type { VoiceRecording } from "#contracts/types/voice-recording.type";
 
 /** How often the made-up level changes, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a mock level sampling interval, not motion
 const TICK_MS = 80;
 
 /** A recorder that makes up its level and keeps no audio. */

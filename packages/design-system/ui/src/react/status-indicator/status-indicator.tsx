@@ -20,6 +20,7 @@ import {
   TriangleAlert,
 } from "@stackra/icons/react/lucide-icons";
 import type { LucideIcon } from "lucide-react";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { motion, useReducedMotion } from "motion/react";
 
 import { ICON_SIZES } from "#core/constants/icon-sizes.constant";
@@ -38,7 +39,12 @@ const SHAPE: Readonly<Record<Tone, LucideIcon>> = Object.freeze({
 
 /** The attention pulse: a soft fade and swell, once a second and a bit, forever. */
 const PULSE = { opacity: [1, 0.45, 1], scale: [1, 1.15, 1] };
-const PULSE_TRANSITION = { duration: 1.2, repeat: Infinity, ease: "easeInOut" } as const;
+const PULSE_TIMING = motionTiming(STACKRA_THEME, "pulse");
+const PULSE_TRANSITION = {
+  duration: PULSE_TIMING.durationMs / 1000,
+  repeat: Infinity,
+  ease: PULSE_TIMING.bezier ?? "easeInOut",
+} as const;
 
 /** A state as colour, shape and text together, pulsing when it needs attention. */
 export function StatusIndicator({

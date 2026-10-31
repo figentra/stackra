@@ -19,10 +19,14 @@
  */
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
 import { MaterialMode } from "#contracts/enums/material-mode.enum";
+import type { RenderWebCssOptions } from "#contracts/types/render-web-css-options.type";
 import type { Theme } from "#contracts/types/theme.type";
 import { CHART_RAMP } from "#core/constants/chart-ramp.constant";
 import { HEROUI_TYPOGRAPHY_TOKENS } from "#core/constants/heroui-typography-tokens.constant";
 import { materialModeVariables } from "#core/functions/material-mode-variables.function";
+import { motionDurationNames } from "#core/functions/motion-duration-names.function";
+import { renderModesCss } from "#core/functions/render-modes-css.function";
+import { renderMaterialCss } from "#core/functions/render-material-css.function";
 import { themeVariables } from "#core/functions/theme-variables.function";
 
 /** Custom properties as declarations, one per line at the given indent. */
@@ -77,7 +81,7 @@ function componentsLayer(theme: Theme): string {
   const weights = WEIGHT_MODIFIERS.map(([name, weight]) =>
     inRule(`.typography--weight-${name}`, [`    font-weight: ${weight};`]),
   );
-  return `@layer components {\n${[...rules, ...weights, ...materialRules(), ...glassButtonRules(), ...selectionControlRules(), ...radiusRoleRules()].join("\n")}\n}`;
+  return `@layer components {\n${[...rules, ...weights, ...materialRules(), ...renderMaterialCss(theme).components, ...glassButtonRules(), ...selectionControlRules(), ...radiusRoleRules(), ...structureRules()].join("\n")}\n}`;
 }
 
 /** The selectors of every skeleton animation, which HeroUI v3 never stops under reduced motion. */
@@ -157,6 +161,10 @@ const staticMaterial = () =>
  */
 const GLASS_CONTROL = ["    border: 1px solid var(--material-edge);"];
 
+/** A fill with the state layer's share of the foreground mixed in (`--state-hover`, `--state-press`). */
+const stateTint = (fill: string, state: "hover" | "press") =>
+  `color-mix(in oklch, ${fill}, var(--foreground) calc(var(--state-${state}) * 100%))`;
+
 /** The control fill a little darker (light) or lighter (dark) for hover and press, from the page's own foreground. */
 const glassTint = (share: number) =>
   `color-mix(in oklch, var(--material-control-fill), var(--foreground) ${share}%)`;
@@ -171,11 +179,27 @@ const glassButtonRules = () => [
   // Every variant draws a 1px border, transparent on the solid ones, so a solid and an outlined button of one size
   // have the same box (a Cancel beside an Apply), with no box-shadow to clash with the focus ring.
   inRule(".button", ["    border: 1px solid transparent;"]),
-  inRule(".button--secondary,\n  .button--tertiary,\n  .button--outline", [
+  // Three steps, as HeroUI defines them: secondary is the glass control with the accent's soft label, tertiary the
+  // neutral `default` fill with no edge, outline transparent inside a `border` line.
+  inRule(".button--secondary", [
     "    --button-bg: var(--material-control-fill);",
     `    --button-bg-hover: ${glassTint(8)};`,
     `    --button-bg-pressed: ${glassTint(12)};`,
+    "    --button-fg: var(--accent-soft-foreground);",
     ...GLASS_CONTROL,
+  ]),
+  inRule(".button--tertiary", [
+    "    --button-bg: var(--default);",
+    `    --button-bg-hover: ${stateTint("var(--default)", "hover")};`,
+    `    --button-bg-pressed: ${stateTint("var(--default)", "press")};`,
+    "    --button-fg: var(--default-foreground);",
+  ]),
+  inRule(".button--outline", [
+    "    --button-bg: transparent;",
+    `    --button-bg-hover: ${stateTint("transparent", "hover")};`,
+    `    --button-bg-pressed: ${stateTint("transparent", "press")};`,
+    "    --button-fg: var(--foreground);",
+    "    border: var(--border-width) solid var(--border);",
   ]),
   inRule(".button--ghost", [
     `    --button-bg-hover: ${glassTint(8)};`,
@@ -262,7 +286,8 @@ const nested = (role: "control" | "container", inset: string) =>
  * HeroUI's, so they win by order in the same layer.
  */
 const radiusRoleRules = () => [
-  inRule(".button,\n  .toggle-button,\n  .tabs__list-container", [
+  inRule(".button", ["    border-radius: var(--radius-button);"]),
+  inRule(".toggle-button,\n  .tabs__list-container,\n  .pagination__link", [
     "    border-radius: var(--radius-control);",
   ]),
   inRule(".toggle-button-group--horizontal .toggle-button:first-child", [
@@ -283,16 +308,69 @@ const radiusRoleRules = () => [
   ]),
   // The tab list's padding is `p-1`.
   inRule(".tabs__tab,\n  .tabs__indicator", ["    border-radius: var(--radius-control-inner);"]),
-  inRule(".popover,\n  .select__popover,\n  .dropdown__popover,\n  .combo-box__popover,\n  .card", [
-    "    border-radius: var(--radius-container);",
-  ]),
+  // HeroUI derives these from `--radius` (3xl, 2.5x), which leaked 10px and 12px corners past the roles.
+  inRule(
+    ".popover,\n  .select__popover,\n  .dropdown__popover,\n  .combo-box__popover,\n  .alert,\n  .accordion--surface,\n  .toolbar--attached",
+    ["    border-radius: var(--radius-container);"],
+  ),
+  inRule(".card", ["    border-radius: var(--radius-card);"]),
+  inRule(".modal__dialog", ["    border-radius: var(--radius-modal);"]),
+  inRule(".toast", ["    border-radius: var(--radius-toast);"]),
+  inRule(".table-root", ["    border-radius: var(--radius-table);"]),
+  inRule(".tooltip", ["    border-radius: var(--radius-tooltip);"]),
   // A menu and a list box pad their rows by `p-1`.
-  inRule(".menu-item,\n  .list-box-item", [
-    `    border-radius: ${nested("container", "0.25rem")};`,
-  ]),
-  inRule(".chip", ["    border-radius: var(--radius-pill);"]),
+  inRule(".menu-item,\n  .list-box-item", ["    border-radius: var(--radius-container-inner);"]),
+  inRule(".chip", ["    border-radius: var(--radius-chip);"]),
+  inRule(".badge", ["    border-radius: var(--radius-badge);"]),
+  inRule(".avatar", ["    border-radius: var(--radius-avatar);"]),
   // A key cap sits inside a control (the search button), a hair in from its edge.
   inRule(".kbd", [`    border-radius: ${nested("control", "0.125rem")};`]),
+];
+
+/**
+ * The structure every theme sets through its layout tokens: control heights (a field matches a button of its size,
+ * whatever the field's edge), the table's header row, the tray that holds lists, tables and widgets, the corner
+ * shape, and a directional icon's mirror.
+ */
+const structureRules = () => [
+  inRule(".button", ["    height: var(--control-height-md);"]),
+  inRule(".button--sm", ["    height: var(--control-height-sm);"]),
+  inRule(".button--lg", ["    height: var(--control-height-lg);"]),
+  inRule(".button--icon-only", ["    width: var(--control-height-md);"]),
+  inRule(".button--icon-only.button--sm", ["    width: var(--control-height-sm);"]),
+  inRule(".button--icon-only.button--lg", ["    width: var(--control-height-lg);"]),
+  // The edge draws inside the box, so the field's padding gives back what the border takes.
+  inRule(
+    ".input,\n  .input-group,\n  .select__trigger,\n  .date-input-group,\n  .number-field__group,\n  .search-field__group,\n  .combo-box__input-group",
+    ["    min-height: var(--control-height-md);", "    box-sizing: border-box;"],
+  ),
+  inRule(".input,\n  .select__trigger", [
+    "    padding-block: calc(var(--spacing) * 2 - var(--field-border-width));",
+  ]),
+  inRule(".input-group .input,\n  .number-field__group .input,\n  .search-field__group .input", [
+    "    min-height: 0;",
+  ]),
+  inRule(".table__column", ["    height: var(--size-table-header);", "    padding-block: 0;"]),
+  inRule(".tray", [
+    "    background-color: var(--tray);",
+    "    border-radius: var(--radius-container);",
+    "    padding: 0 var(--spacing) var(--spacing);",
+  ]),
+  inRule(".tray:not(:has(> .tray__header))", ["    padding-top: var(--spacing);"]),
+  inRule(".tray__header", [
+    "    display: flex;",
+    "    align-items: center;",
+    "    gap: calc(var(--spacing) * 2);",
+    "    min-height: var(--size-table-header);",
+    "    padding-inline: calc(var(--spacing) * 3);",
+  ]),
+  inRule(".tray__body", [
+    "    background-color: var(--tray-body);",
+    "    border-radius: var(--radius-container-inner);",
+    "    box-shadow: var(--surface-shadow);",
+  ]),
+  inRule(".rtl-mirror", ["    transform: scaleX(var(--mirror));"]),
+  `  @supports (corner-shape: squircle) {\n${inRule(":root", ["    corner-shape: var(--corner-shape);"]).replaceAll(/^/gm, "  ")}\n  }`,
 ];
 
 /** The fallbacks: solid where transparency is unwanted or unsupported, a stronger edge for more contrast. */
@@ -314,63 +392,133 @@ function materialFallbacks(): string {
  * the Arabic font stack.
  */
 /**
- * The default chart palette of one scheme: `--chart-ramp-<n>` as a relative colour of `var(--accent)`, the accent's
- * lightness clamped as the centre so every step fits the scheme's bounds, then stepped (CHART_RAMP), so the ramp follows any accent set later, a brand's or the theme studio's. A step
- * the theme's palette names itself is left to the palette.
+ * The default chart palette of one scheme: `--chart-ramp-<n>` as a relative colour of `var(--accent)`, so the ramp
+ * follows any accent set later, a brand's or the theme studio's. The centre step is the accent itself (ADR 0501): a
+ * single series is drawn in the brand colour. The steps fan out from it by CHART_RAMP's moves, each side shrunk evenly
+ * when the accent sits near the scheme's bound, so no step leaves the readable band or merges with its neighbour. A
+ * step the theme's palette names itself is left to the palette.
  */
 function chartRamp(theme: Theme, mode: "light" | "dark"): Record<string, string> {
   const [low, high] = CHART_RAMP.bounds[mode];
-  const first = CHART_RAMP.steps[0];
-  const last = CHART_RAMP.steps[4];
-  // A band narrower than the steps' reach scales them to fit, spread evenly; the centre is then the band's middle.
-  const scale = Math.min(1, (high - low) / (last - first));
-  const centre = `clamp(${round(low - first * scale)}, l, ${round(high - last * scale)})`;
+  const unit = CHART_RAMP.steps[3];
   return Object.fromEntries(
     CHART_RAMP.steps.flatMap((step, index) => {
       const name = `chart-ramp-${index + 1}`;
       if (name in theme.palette) return [];
-      const move = round(Math.abs(step * scale));
-      const lightness = step === 0 ? centre : `calc(${centre} ${step < 0 ? "-" : "+"} ${move})`;
+      const count = round(Math.abs(step) / unit);
+      // One step on this side: half the room left to the bound, kept between the floor (so steps never merge) and
+      // the full move.
+      const room = step < 0 ? `(l - ${low})` : `(${high} - l)`;
+      const move = `clamp(${CHART_RAMP.minimumStep}, ${room} / 2, ${unit})`;
+      const lightness =
+        step === 0 ? "l" : `clamp(0.02, calc(l ${step < 0 ? "-" : "+"} ${move} * ${count}), 0.98)`;
       return [[`--${name}`, `oklch(from var(--accent) ${lightness} c h)`]];
     }),
   );
 }
 
+/**
+ * The diverging chart palette: danger at one end, the accent at the other, the muted neutral in the middle, so a
+ * negative and a positive value read apart under protan, deutan and tritan vision (red against blue).
+ */
+const CHART_DIVERGING = {
+  "--chart-diverging-1": "var(--danger)",
+  "--chart-diverging-2": "color-mix(in oklch, var(--danger) 55%, var(--surface))",
+  "--chart-diverging-3": "var(--muted)",
+  "--chart-diverging-4": "color-mix(in oklch, var(--accent) 55%, var(--surface))",
+  "--chart-diverging-5": "var(--accent)",
+} as const;
+
+/** The safe-area insets as tokens, logical: a notch or home indicator never covers a control. */
+const SAFE_AREA = {
+  "--safe-area-top": "env(safe-area-inset-top, 0px)",
+  "--safe-area-end": "env(safe-area-inset-right, 0px)",
+  "--safe-area-bottom": "env(safe-area-inset-bottom, 0px)",
+  "--safe-area-start": "env(safe-area-inset-left, 0px)",
+} as const;
+
+/**
+ * The Arabic adjustment of the utility scale: each unitless line height raised and each size multiplied, written
+ * only when the theme sets one (a scale of 1 and a leading of 0 write nothing).
+ */
+function arabicScale(theme: Theme): string[] {
+  const { scale, leading } = theme.typeScale.arabic;
+  if (scale === 1 && leading === 0) return [];
+  return Object.entries(theme.typeScale.sizes).flatMap(([name, step]) => [
+    ...(scale === 1 ? [] : [`  --text-${name}: calc(${step.size} * ${scale});`]),
+    ...(leading === 0 || !/^[\d.]+$/.test(step.lineHeight)
+      ? []
+      : [`  --text-${name}--line-height: ${round(Number(step.lineHeight) + leading)};`]),
+  ]);
+}
+
+/**
+ * The vibrant palette: each soft foreground mixes more of its own colour, so a soft chip or badge reads in its hue; in
+ * the colour blocks' selectors, so it follows a nested scheme.
+ */
+const vibrantBlock = () =>
+  block(
+    ':root,\n[data-theme="light"],\n.dark,\n[data-theme="dark"]',
+    ["accent", "success", "warning", "danger"].map(
+      (role) =>
+        `  --${role}-soft-foreground: color-mix(in oklch, var(--${role}) 88%, var(--foreground));`,
+    ),
+  );
+
 /** A bound as CSS writes it, free of floating-point dust. */
 const round = (value: number) => Number(value.toFixed(3));
 
 /** Renders a theme to the CSS custom properties HeroUI reads on the web. */
-export function renderWebCss(theme: Theme): string {
+export function renderWebCss(theme: Theme, options: RenderWebCssOptions = {}): string {
   const { heroui, stackra } = themeVariables(theme);
-  const motion = Object.keys(theme.motion);
+  const durations = motionDurationNames(theme);
+  const variables = (rootSelector: string, lightSelector: string, darkSelector: string) => [
+    block(rootSelector, declarations(heroui.root, stackra.root, SAFE_AREA)()),
+    block(
+      lightSelector,
+      declarations(heroui.light, stackra.light, chartRamp(theme, "light"), CHART_DIVERGING)(),
+    ),
+    block(
+      darkSelector,
+      declarations(heroui.dark, stackra.dark, chartRamp(theme, "dark"), CHART_DIVERGING)(),
+    ),
+  ];
+  const { scope } = options;
+  if (scope !== undefined)
+    // shortcut: a section marked light inside a dark page loses to the dark block (equal specificity, later); mark
+    // the scope's own element `data-theme` when that case appears.
+    return `${[
+      `/* Generated by @stackra/tokens from the "${theme.name}" theme for ${scope}: change the theme, not this file. */`,
+      ...variables(
+        scope,
+        `${scope},\n${scope}[data-theme="light"],\n${scope} [data-theme="light"]`,
+        `.dark ${scope},\n[data-theme="dark"] ${scope},\n${scope}.dark,\n${scope}[data-theme="dark"],\n${scope} .dark,\n${scope} [data-theme="dark"]`,
+      ),
+    ].join("\n\n")}\n`;
+  const arabic = arabicScale(theme);
 
   return `${[
     `/* Generated by @stackra/tokens from the "${theme.name}" theme: change the theme, not this file. */`,
-    block(":root", declarations(heroui.root, stackra.root)()),
-    block(
-      ':root,\n[data-theme="light"]',
-      declarations(heroui.light, stackra.light, chartRamp(theme, "light"))(),
-    ),
-    block(
-      '.dark,\n[data-theme="dark"]',
-      declarations(heroui.dark, stackra.dark, chartRamp(theme, "dark"))(),
-    ),
+    ...variables(":root", ':root,\n[data-theme="light"]', '.dark,\n[data-theme="dark"]'),
     ...MaterialMode.map((mode) =>
       block(`[data-material="${mode}"]`, declarations(materialModeVariables(mode))()),
     ),
+    ...renderMaterialCss(theme).blocks,
     // Unlayered, so the sweep beats HeroUI's `components` animation; `reverse` plays the keyframe backwards, which
     // starts the light on the inline-start side (HeroUI's start is the physical left, so in a right-to-left layout it
     // is the right), the way HeroUI Native sweeps in a right-to-left layout. The `[dir]` alternatives are there
     // because a build that targets browsers without `:dir()` rewrites it into a `:lang()` list, which misses an
     // English `lang` island inside a right-to-left page.
     block(`${RTL_SHIMMER}::after,\n${RTL_SHIMMER}::before`, ["  animation-direction: reverse;"]),
-    `@media (prefers-reduced-motion: reduce) {\n  :root {\n${motion
-      .map((name) => `    --duration-${name}: 0ms;`)
-      .join("\n")}\n  }\n  ${SKELETON_MOTION} {\n    animation: none;\n  }\n}`,
+    `@media (prefers-reduced-motion: reduce) {\n  :root {\n${durations
+      .map((name) => `    ${name}: 0ms;`)
+      .join(
+        "\n",
+      )}\n    --press-scale: 1;\n    --enter-distance: 0px;\n  }\n  ${SKELETON_MOTION} {\n    animation: none;\n  }\n}`,
     // The provider's `motion="none"` (`<html data-motion="none">`): every transition and animation ends at once, so
     // exit and enter events still fire and nothing is left mid-way.
     block('html[data-motion="none"]', [
-      ...motion.map((name) => `  --duration-${name}: 0ms;`),
+      ...durations.map((name) => `  ${name}: 0ms;`),
       "  scroll-behavior: auto;",
     ]),
     block(
@@ -383,8 +531,26 @@ export function renderWebCss(theme: Theme): string {
         "  transition-delay: 0s !important;",
       ],
     ),
-    block(":root:lang(ar)", ["  font-family: var(--font-arabic);"]),
+    block(":root:lang(ar)", ["  font-family: var(--font-arabic);", ...arabic]),
+    ...(theme.layout.vibrant ? [vibrantBlock()] : []),
+    ...(theme.layout.animations
+      ? []
+      : [
+          block(
+            ":root",
+            durations.map((name) => `  ${name}: 0ms;`),
+          ),
+          block(":root *,\n:root *::before,\n:root *::after", [
+            "  animation-duration: 0s !important;",
+            "  transition-duration: 0s !important;",
+          ]),
+        ]),
+    ...(theme.locale.mirrorIcons
+      ? [block(':root:dir(rtl),\n[dir="rtl"]', ["  --mirror: -1;"])]
+      : []),
     componentsLayer(theme),
     materialFallbacks(),
+    renderMaterialCss(theme).fallbacks,
+    renderModesCss(theme),
   ].join("\n\n")}\n`;
 }

@@ -121,12 +121,12 @@ describe("Drawer (web): slots", () => {
   it("floats inset at the md width by default, and takes `size` and `inset={false}`", () => {
     const { unmount } = render(<Layer title="Order" defaultOpen />);
     expect(screen.getByRole("dialog").className).toMatch(
-      /w-\[560px\].*m-2.*rounded-\[var\(--radius-container\)\]/u,
+      /w-\(--size-drawer-md\).*m-2.*rounded-\[var\(--radius-container\)\]/u,
     );
     unmount();
     render(<Layer title="Order" defaultOpen size="lg" inset={false} />);
     const className = screen.getByRole("dialog").className;
-    expect(className).toContain("w-[720px]");
+    expect(className).toContain("w-(--size-drawer-lg)");
     expect(className).not.toContain("m-2");
   });
 });

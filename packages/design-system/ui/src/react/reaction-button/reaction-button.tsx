@@ -55,7 +55,7 @@ export function ReactionButton({
       aria-label={t(FORMS_KEYS.ui.reaction_button.label, { emoji: label ?? emoji, count: number })}
       className={({ isFocusVisible }) =>
         cn(
-          "inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-pill)] border px-2.5 text-sm transition-colors outline-none motion-reduce:transition-none disabled:opacity-50",
+          "inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-pill)] border px-2.5 text-sm transition-colors outline-none motion-reduce:transition-none disabled:opacity-(--disabled-opacity)",
           isSelected
             ? "border-accent bg-accent-soft text-accent-soft-foreground"
             : "border-border bg-surface hover:bg-default",

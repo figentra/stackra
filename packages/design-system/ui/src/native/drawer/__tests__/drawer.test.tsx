@@ -232,7 +232,7 @@ describe("Drawer (native)", () => {
     );
     expect(propsOf("dialog")["isDefaultOpen"]).toBe(true);
     expect(propsOf("dialog-portal")["className"]).toContain("items-end");
-    expect(propsOf("dialog-content")["className"]).toContain("w-[720px]");
+    expect(propsOf("dialog-content")["className"]).toContain("w-drawer-lg");
     expect(propsOf("dialog-content")["className"]).toContain("rounded-[var(--radius-container)]");
     expect(propsOf("dialog-content")["style"]).toMatchObject({
       marginBottom: 28,

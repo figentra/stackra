@@ -9,6 +9,7 @@
  * Governing contract: STA-1371 (doc pages wave, owner approval 2026-10-28).
  */
 import { suggestUrl } from "@stackra/showcase";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { Chip, Link, Text, useCatalogueText, useHaptic } from "@stackra/ui/native";
 import { View } from "react-native";
 import Animated, { FadeInDown, useReducedMotion } from "react-native-reanimated";
@@ -18,6 +19,9 @@ import { DOC_KEYS } from "#src/components/doc-screen/doc-keys.constant";
 import { MESSAGES } from "#src/constants/messages.constant";
 
 const K = DOC_KEYS.showcase.doc.ui;
+
+/** The hero's rise: the theme's `slow` step. */
+const SLOW = motionTiming(STACKRA_THEME, "slow");
 
 /** The top of a doc screen: chips, headline, intro and tags. */
 export function DocHero({ chips, headline, intro, tags, page, introLines }: DocHeroProps) {
@@ -30,7 +34,7 @@ export function DocHero({ chips, headline, intro, tags, page, introLines }: DocH
     .filter(Boolean);
   return (
     <Animated.View
-      {...(isReducedMotion ? {} : { entering: FadeInDown.duration(280) })}
+      {...(isReducedMotion ? {} : { entering: FadeInDown.duration(SLOW.durationMs) })}
       className="gap-2"
     >
       {chips ? <View className="flex-row flex-wrap items-center gap-2">{chips}</View> : null}

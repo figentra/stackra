@@ -28,6 +28,7 @@ const DOWNLOAD_ONLY = ["download"] as const;
 const K = EXPORT_DIALOG_KEYS.ui.export_dialog;
 
 /** How long the done tick shows before the dialog closes, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- how long the done tick dwells, not motion
 const DONE_MS = 1200;
 
 /** The catalogue key of each scope's label. */

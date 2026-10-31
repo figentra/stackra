@@ -150,7 +150,7 @@ export function StudioTopBar(props: StudioTopBarProps) {
           title={t(K.display)}
           placement="bottom"
           align="end"
-          className="w-[25rem] max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-5rem)] overflow-y-auto"
+          className="w-100 max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-5rem)] overflow-y-auto"
           trigger={
             <Button
               size="sm"

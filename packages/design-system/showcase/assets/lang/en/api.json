@@ -412,7 +412,8 @@
         "selectShownLabel": "Writes the button that goes back to the rows shown, for example \"Select only the 20 shown\". Defaults to English.",
         "selectedCount": "How many records are selected on screen; with `isAllMatchingSelected` the bar reads `totalCount` instead.",
         "testID": "Used to locate this view in end-to-end tests.",
-        "totalCount": "How many records match the query across all pages, when the server says. Left out, \"select all\" is not offered."
+        "totalCount": "How many records match the query across all pages, when the server says. Left out, \"select all\" is not offered.",
+        "variant": "`inline` (the default) sits above the list it acts on; `floating` is a pill fixed to the foot of the content\ncolumn on the overlay surface, taking no room, so nothing shifts as rows are picked (ADR 0501)."
       }
     },
     "bullet_chart": {
@@ -2543,6 +2544,17 @@
         "target": "A mark across the ring where the goal is.",
         "value": "The measure the ring fills to.",
         "valueFormat": "How the value and target are written."
+      }
+    },
+    "glass": {
+      "GlassSurface": {
+        "children": "The surface's content.",
+        "holdsLabel": "Clear glass only: the surface holds a label, so its dim is at least 0.55 (0.50 for glyphs alone).",
+        "id": "Used to reference react managed views from native code.",
+        "isInteractive": "Liquid Glass lights and lifts under a press; only for a surface a person presses.",
+        "isProminent": "Tints the glass with the accent, for a prominent control (a FAB, a glass button on media).",
+        "material": "The material role this surface plays; the family decides its level. (`role` stays the View's accessibility role.)",
+        "testID": "Used to locate this view in end-to-end tests."
       }
     },
     "heading": {
@@ -6510,7 +6522,8 @@
         "sort": "The order the body's categories are in; with `onSortChange`, the header shows a sort menu.",
         "state": "What the body shows; `ready` by default.",
         "title": "The widget's title; it also names the region.",
-        "updatedAt": "When the data was fetched: the header reads \"Updated 2 min ago\" in the locale and keeps it current."
+        "updatedAt": "When the data was fetched: the header reads \"Updated 2 min ago\" in the locale and keeps it current.",
+        "variant": "`card` (the default) draws one surface; `tray` puts the title and meta on the theme's tray (`--tray`) and the\nbody on an inset card, the way lists and tables sit (ADR 0501)."
       }
     },
     "year_picker": {

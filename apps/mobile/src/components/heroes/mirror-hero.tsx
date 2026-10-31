@@ -27,6 +27,7 @@ import {
   useBreakpoint,
   useCatalogueText,
 } from "@stackra/ui/native";
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import Animated, {
@@ -53,6 +54,11 @@ const SIDES = { en: "EN", ar: "عربي" } as const;
 /** How long each side shows, in milliseconds. */
 const DWELL = 4200;
 
+/** The theme's motion the hero plays: the card's turn (`blink`), the words' rise (`count`) and their `enter` easing. */
+const TURN_MS = motionTiming(STACKRA_THEME, "blink").durationMs;
+const RISE_MS = motionTiming(STACKRA_THEME, "count").durationMs;
+const ENTER = motionEasing(STACKRA_THEME, "enter");
+
 /** The orders: who, which SKU, the status and the amount. */
 const ORDERS = [
   { person: K.mirror.person_1, sku: "SKU-104-B", status: "paid", tone: "success", amount: 248 },
@@ -69,7 +75,7 @@ const sideText =
 /** The card turning in: from 70° on the side it comes from, as the mockup's `rotateY(±70deg) scale(.94)`. */
 const turnIn = (from: number) => (values: EntryAnimationsValues) => {
   "worklet";
-  const timing = { duration: 1000, easing: Easing.bezier(0.2, 0.8, 0.2, 1) };
+  const timing = { duration: TURN_MS, easing: Easing.bezier(...ENTER) };
   void values;
   return {
     initialValues: {
@@ -115,7 +121,7 @@ export function MirrorHero({ onBrowse, onTheme }: HeroProps) {
   };
   // Spread, not passed as `entering={undefined}`, which Reanimated's types refuse under exactOptionalPropertyTypes.
   const rise = (delay: number) =>
-    isStill ? {} : { entering: FadeInDown.duration(800).delay(delay) };
+    isStill ? {} : { entering: FadeInDown.duration(RISE_MS).delay(delay) };
   const ticker = CATEGORIES.slice(0, 8).flatMap(({ id }) => {
     const key = categoryKeys(id).title as I18nKey;
     return [
@@ -181,7 +187,7 @@ export function MirrorHero({ onBrowse, onTheme }: HeroProps) {
       importantForAccessibility="no-hide-descendants"
       pointerEvents="none"
     >
-      <Card className="gap-3 p-4 shadow-xl">
+      <Card className="gap-3 p-4 shadow-overlay">
         <View className="flex-row items-center gap-2">
           <Heading level={2} type="h4" lang={lang}>
             {s(K.mirror.orders)}

@@ -17,6 +17,7 @@ import { WHEEL_ROW } from "#react/wheel-picker/wheel-row.constant";
 import { wheelIndexOf } from "#core/functions/wheel-index-of.function";
 
 /** How long the wheel waits after the last scroll event before it settles. */
+// oxlint-disable-next-line stackra/no-literal-duration -- scroll-end debounce, not motion
 const SETTLE_MS = 120;
 
 /** The next enabled row from `from` going `step` rows, or `from` when there is none. */
@@ -105,7 +106,7 @@ export function WheelColumn({
         window.clearTimeout(timer.current);
         timer.current = window.setTimeout(settle, SETTLE_MS);
       }}
-      className="relative min-w-14 flex-auto snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-[var(--radius-container)] outline-none [scrollbar-width:none] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+      className="relative min-w-14 flex-auto snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-[var(--radius-container)] outline-none [scrollbar-width:none] focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:-outline-offset-2 focus-visible:outline-focus"
       style={{
         height: WHEEL_ROW * visibleCount,
         paddingBlock: (WHEEL_ROW * (visibleCount - 1)) / 2,
@@ -124,7 +125,7 @@ export function WheelColumn({
             cn(
               "flex snap-center items-center justify-center px-2 whitespace-nowrap tabular-nums select-none",
               row === index ? "font-semibold text-foreground" : "text-muted",
-              item.isDisabled ? "opacity-40" : "cursor-pointer",
+              item.isDisabled ? "opacity-(--opacity-subtle)" : "cursor-pointer",
             ) ?? ""
           }
           style={{ height: WHEEL_ROW }}

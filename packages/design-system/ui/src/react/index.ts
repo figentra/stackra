@@ -672,3 +672,4 @@ export { Cascader } from "#react/cascader/cascader";
 export type { CascaderProps } from "#react/cascader/cascader.props";
 export { TransferList } from "#react/transfer-list/transfer-list";
 export type { TransferListProps } from "#react/transfer-list/transfer-list.props";
+export { applyThemeDocument } from "#react/theme-document/apply-theme-document.function";

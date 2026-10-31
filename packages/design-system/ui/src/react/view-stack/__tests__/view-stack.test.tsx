@@ -152,7 +152,7 @@ describe("ViewStack (web)", () => {
       .find((call) =>
         String(call[1]?.pseudoElement).startsWith("::view-transition-old("),
       )?.[0] as Keyframe[];
-    expect(leaving[0]).toMatchObject({ zIndex: 1, backgroundImage: "none" });
+    expect(leaving[0]).toMatchObject({ zIndex: "var(--z-pinned)", backgroundImage: "none" });
     await act(async () => {
       finish?.();
       await finished;

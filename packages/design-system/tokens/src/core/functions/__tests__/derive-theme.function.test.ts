@@ -72,4 +72,52 @@ describe("deriveTheme", () => {
       InvalidThemeError,
     );
   });
+
+  // ADR 0501: the shape and size knobs.
+  it("sets density, pill controls, lifted fields and the corner shape from the knobs", () => {
+    const theme = deriveTheme(STACKRA_THEME, {
+      spacing: 3.6,
+      pillControls: true,
+      fieldStyle: "lifted",
+      cornerShape: "squircle",
+    });
+    expect(theme.layout.spacing).toBe("0.225rem");
+    expect(theme.radius.steps["control"]).toBe("var(--radius-pill)");
+    expect(theme.layout.fieldBorderWidth).toBe("0px");
+    expect(theme.layout.cornerShape).toBe("squircle");
+    expect(deriveTheme(theme, { pillControls: false }).radius.steps["control"]).toBeUndefined();
+  });
+
+  it("tints the neutrals toward the accent, scales the type, sets the forms radius and each shadow's strength", () => {
+    const theme = deriveTheme(STACKRA_THEME, {
+      accent: { hue: 40, chroma: 0.15 },
+      neutralTint: 1,
+      fontScale: 1.25,
+      lineHeight: 1.1,
+      letterSpacing: 0.01,
+      radius: 8,
+      formsRadius: 1.5,
+      shadows: { surface: "none", overlay: "strong" },
+      fieldBorderWidth: 2,
+      disabledOpacity: 0.4,
+      cursorPointer: false,
+      skeleton: "pulse",
+      vibrant: true,
+      animations: false,
+    });
+    expect(theme.colors.border.light).toMatch(/ 0\.03 40\)$/);
+    expect(theme.typography["body"]?.size).toBe("20px");
+    expect(theme.typography["body"]?.letterSpacing).toBe("0.01em");
+    expect(theme.typeScale.sizes["sm"]?.lineHeight).toBe("1.571");
+    expect(theme.radius.field).toBe("12px");
+    expect(theme.shadows.surface).toEqual({ light: "none", dark: "none" });
+    expect(theme.layout).toMatchObject({
+      fieldBorderWidth: "2px",
+      cursor: "default",
+      skeleton: "pulse",
+      vibrant: true,
+      animations: false,
+    });
+    expect(theme.layout.opacity["disabled"]).toBe("0.4");
+  });
 });

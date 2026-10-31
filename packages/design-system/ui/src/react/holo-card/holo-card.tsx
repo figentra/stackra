@@ -46,7 +46,7 @@ export function HoloCard({
         onPointerMove={isLive ? onMove : undefined}
         onPointerLeave={isLive ? () => set(0.5, 0.5, false) : undefined}
         className={cn(
-          "relative isolate overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-lg transition-transform duration-200 ease-out [transform-style:preserve-3d] [transform:rotateX(var(--holo-rx,0deg))_rotateY(var(--holo-ry,0deg))] motion-reduce:transition-none",
+          "relative isolate overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-overlay transition-transform duration-(--duration-moderate) ease-out [transform-style:preserve-3d] [transform:rotateX(var(--holo-rx,0deg))_rotateY(var(--holo-ry,0deg))] motion-reduce:transition-none",
           className,
         )}
       >
@@ -55,11 +55,11 @@ export function HoloCard({
           <>
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 opacity-[calc(var(--holo-on,0)*0.55)] mix-blend-color-dodge transition-opacity duration-300 [background:conic-gradient(from_180deg_at_var(--holo-x,50%)_var(--holo-y,50%),#ff7ab6,#7af0ff,#b388ff,#7affb2,#ffe07a,#ff7ab6)]"
+              className="pointer-events-none absolute inset-0 opacity-[calc(var(--holo-on,0)*0.55)] mix-blend-color-dodge transition-opacity duration-(--duration-slow) [background:conic-gradient(from_180deg_at_var(--holo-x,50%)_var(--holo-y,50%),#ff7ab6,#7af0ff,#b388ff,#7affb2,#ffe07a,#ff7ab6)]"
             />
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 opacity-[calc(var(--holo-on,0)*0.7)] transition-opacity duration-300 [background:radial-gradient(circle_at_var(--holo-x,50%)_var(--holo-y,50%),rgb(255_255_255/0.45),transparent_55%)]"
+              className="pointer-events-none absolute inset-0 opacity-[calc(var(--holo-on,0)*0.7)] transition-opacity duration-(--duration-slow) [background:radial-gradient(circle_at_var(--holo-x,50%)_var(--holo-y,50%),rgb(255_255_255/0.45),transparent_55%)]"
             />
           </>
         ) : null}

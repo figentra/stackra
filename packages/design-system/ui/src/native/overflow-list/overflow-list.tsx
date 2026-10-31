@@ -9,6 +9,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0329 (motion layer); design-system gap
  *          inventory (2026-10-28) row 24.
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useState, type ReactElement } from "react";
 import { View } from "react-native";
 import Animated, { FadeIn, LinearTransition, useReducedMotion } from "react-native-reanimated";
@@ -22,7 +23,7 @@ import { useUiText } from "#react/hooks/use-ui-text";
 import type { OverflowListProps } from "#native/overflow-list/overflow-list.props";
 
 /** How long the height takes to follow a fold or an expand, in milliseconds. */
-const EXPAND_MS = 200;
+const EXPAND_MS = motionTiming(STACKRA_THEME, "moderate").durationMs;
 
 /** Chips past `maxVisible` fold into "+N more"; pressing it expands the row. */
 export function OverflowList({

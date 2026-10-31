@@ -34,7 +34,7 @@ export function SidePanelLauncher({
       data-slot="side-panel-launcher"
       data-side-panel-launcher={panelId}
       className={cn(
-        "absolute inset-x-0 bottom-4 z-30 mx-auto flex w-max max-w-[calc(100%-2rem)] items-center gap-2",
+        "absolute inset-x-0 bottom-4 z-(--z-dock) mx-auto flex w-max max-w-[calc(100%-2rem)] items-center gap-2",
         "rounded-[var(--radius-container)] border border-separator bg-overlay p-1.5 shadow-overlay",
         className,
       )}

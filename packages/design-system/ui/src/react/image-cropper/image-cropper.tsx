@@ -152,7 +152,7 @@ export function ImageCropper({
           className={cn(
             "pointer-events-none absolute inset-0 border border-white/70",
             shape === "round"
-              ? "rounded-[var(--radius-pill)] shadow-[0_0_0_9999px_rgb(0_0_0/0.45)]"
+              ? "rounded-[var(--radius-pill)] shadow-[0_0_0_9999px_var(--scrim)]"
               : "rounded-[var(--radius-panel)] bg-[linear-gradient(to_right,transparent_33.2%,rgb(255_255_255/0.35)_33.3%,transparent_33.4%,transparent_66.6%,rgb(255_255_255/0.35)_66.7%,transparent_66.8%),linear-gradient(to_bottom,transparent_33.2%,rgb(255_255_255/0.35)_33.3%,transparent_33.4%,transparent_66.6%,rgb(255_255_255/0.35)_66.7%,transparent_66.8%)]",
           )}
         />

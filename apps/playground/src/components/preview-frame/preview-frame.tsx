@@ -108,7 +108,11 @@ export function PreviewFrame({
       {/* The overlays' layer: inside the frame, so they keep its variables, direction and language, and fixed, so
           the frame's clipping card never cuts a popover or a list short; at the physical top left, the
           origin React Aria places popovers from in either direction. */}
-      <div ref={setLayer} data-slot="preview-frame-layer" className="fixed top-0 left-0 z-50" />
+      <div
+        ref={setLayer}
+        data-slot="preview-frame-layer"
+        className="fixed top-0 left-0 z-(--z-overlay)"
+      />
       {isNear && frame ? (
         <PortalContainer container={layer}>
           {/* React Aria's own locale too, so its popovers, keys and formats follow the frame, not the page. */}

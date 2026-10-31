@@ -6,6 +6,7 @@
  * Runtime: react-native
  * Governing contract: owner decision 2026-10-28 (rotating landing heroes); WCAG 2.2 SC 2.3.3.
  */
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useEffect } from "react";
 import Animated, {
   cancelAnimation,
@@ -19,8 +20,11 @@ import Animated, {
 
 import type { GrowBarProps } from "./grow-bar.props";
 
-/** The heroes' ease-out (CSS `cubic-bezier(.2,.8,.2,1)`). */
-const EASE = Easing.bezier(0.2, 0.8, 0.2, 1);
+/** The heroes' ease-out: the theme's `enter` easing. */
+const EASE = Easing.bezier(...motionEasing(STACKRA_THEME, "enter"));
+
+/** The theme's pulse, in milliseconds: one grow on a replay, two per breath in the loop. */
+const PULSE_MS = motionTiming(STACKRA_THEME, "pulse").durationMs;
 
 /** A chart bar that grows from its base. */
 export function GrowBar({ height, index, replay, className, isStill }: GrowBarProps) {
@@ -35,12 +39,12 @@ export function GrowBar({ height, index, replay, className, isStill }: GrowBarPr
       scale.set(
         withDelay(
           index * 120,
-          withRepeat(withTiming(1, { duration: 2400, easing: EASE }), -1, true),
+          withRepeat(withTiming(1, { duration: PULSE_MS * 2, easing: EASE }), -1, true),
         ),
       );
     } else {
       scale.set(0);
-      scale.set(withDelay(index * 50, withTiming(1, { duration: 1400, easing: EASE })));
+      scale.set(withDelay(index * 50, withTiming(1, { duration: PULSE_MS, easing: EASE })));
     }
     return () => cancelAnimation(scale);
   }, [index, isStill, replay, scale]);

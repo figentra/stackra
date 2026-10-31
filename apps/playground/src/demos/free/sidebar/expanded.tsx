@@ -83,7 +83,7 @@ export default function Expanded() {
   ];
 
   return (
-    <div className="h-[28rem] w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
+    <div className="h-112 w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
       <Sidebar
         keyboardShortcut={false}
         label={t(K.expanded_label)}

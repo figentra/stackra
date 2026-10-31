@@ -50,7 +50,7 @@ describe("SettingsCell (web)", () => {
     expect(document.getElementById(ids?.description ?? "")?.textContent).toBe("B");
     const root = container.firstChild as HTMLElement;
     expect(root.className).not.toContain("border-border");
-    expect(root.className).toContain("opacity-60");
+    expect(root.className).toContain("opacity-(--opacity-muted)");
   });
 
   it("leaves the description id out when there is none", () => {

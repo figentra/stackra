@@ -181,7 +181,7 @@ export function MultiSelect({
           <button
             type="button"
             onClick={() => commit(isAll ? [] : choosable)}
-            className="m-1 min-h-8 rounded-[var(--radius-control)] px-2 text-start text-sm font-medium text-accent-soft-foreground outline-none hover:bg-default focus-visible:outline-2 focus-visible:outline-focus"
+            className="m-1 min-h-8 rounded-[var(--radius-control)] px-2 text-start text-sm font-medium text-accent-soft-foreground outline-none hover:bg-default focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus"
           >
             {t(isAll ? MORE_K.clear_all : MORE_K.select_all)}
           </button>

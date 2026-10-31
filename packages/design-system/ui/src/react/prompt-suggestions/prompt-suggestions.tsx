@@ -47,7 +47,7 @@ export function PromptSuggestions({
             }}
             className={({ isFocusVisible, isHovered, isPressed }) =>
               cn(
-                "flex items-start gap-2 border border-border bg-surface text-start text-foreground outline-none transition-colors motion-reduce:transition-none disabled:opacity-50",
+                "flex items-start gap-2 border border-border bg-surface text-start text-foreground outline-none transition-colors motion-reduce:transition-none disabled:opacity-(--disabled-opacity)",
                 suggestion.description ? "max-w-64 px-3 py-2.5" : "px-3 py-1.5",
                 (isHovered || isPressed) && "bg-default",
                 isFocusVisible && "outline-2 outline-offset-2 outline-focus",

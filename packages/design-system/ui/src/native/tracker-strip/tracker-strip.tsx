@@ -72,7 +72,7 @@ export function TrackerStrip({
         accessibilityRole="image"
         accessibilityLabel={label}
         accessibilityValue={{ text: spoken }}
-        className="flex-row gap-[2px]"
+        className="flex-row gap-0.5"
         style={{ height }}
       >
         {cells.map((item, index) => (

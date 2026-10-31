@@ -107,7 +107,7 @@ export default function Offcanvas() {
   ];
 
   return (
-    <div className="h-[28rem] w-full overflow-hidden rounded-[var(--radius-container)] border border-separator">
+    <div className="h-112 w-full overflow-hidden rounded-[var(--radius-container)] border border-separator">
       <SidebarProvider collapsible="offcanvas" keyboardShortcut={false}>
         <Sidebar
           label={t(K.offcanvas_label)}

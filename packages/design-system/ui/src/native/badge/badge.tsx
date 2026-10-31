@@ -30,7 +30,7 @@ const BADGE_CLASS_NAME: Readonly<Record<Size, { readonly root: string; readonly 
   Object.freeze({
     sm: {
       root: "min-h-4 min-w-4 px-0 py-0 rounded-[var(--radius-container)] border border-background",
-      label: "px-0.5 text-[10px] leading-[1.34]",
+      label: "px-0.5 text-3xs leading-[1.34]",
     },
     md: {
       root: "min-h-7 min-w-7 px-0 py-0 rounded-[var(--radius-container)] border border-background",

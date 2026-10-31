@@ -30,8 +30,9 @@ export function TabBar({ items, label, position = "fixed", className }: TabBarPr
       aria-label={label ?? t(UI_KEYS.ui.tab_bar.label)}
       data-slot="tab-bar"
       className={cn(
-        "border-t border-separator bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur",
-        position === "fixed" && "fixed inset-x-0 bottom-0 z-40 md:hidden",
+        // The tab-bar role (glass in both families); the material layer owns the blur (ADR 0320 as amended).
+        "material-role-tab-bar border-t border-separator pb-[env(safe-area-inset-bottom)]",
+        position === "fixed" && "fixed inset-x-0 bottom-0 z-(--z-float) md:hidden",
         className,
       )}
     >
@@ -50,7 +51,7 @@ export function TabBar({ items, label, position = "fixed", className }: TabBarPr
                 className={
                   cn(
                     "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)] px-1 text-xs outline-none",
-                    "focus-visible:outline-2 focus-visible:outline-focus data-[disabled]:opacity-50",
+                    "focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus data-[disabled]:opacity-(--disabled-opacity)",
                     isCurrent
                       ? "font-medium text-accent-soft-foreground"
                       : "text-muted hover:text-foreground",
@@ -67,7 +68,7 @@ export function TabBar({ items, label, position = "fixed", className }: TabBarPr
                     // matched the name "Orders, 3" (axe label-content-name-mismatch).
                     <span
                       data-count={item.badge}
-                      className="absolute -end-2 -top-1 min-w-4 rounded-[var(--radius-pill)] bg-danger px-1 text-center text-[0.625rem] leading-4 font-semibold text-danger-foreground tabular-nums before:content-[attr(data-count)]"
+                      className="absolute -end-2 -top-1 min-w-4 rounded-[var(--radius-pill)] bg-danger px-1 text-center text-(length:--text-3xs) leading-4 font-semibold text-danger-foreground tabular-nums before:content-[attr(data-count)]"
                     />
                   )}
                 </span>

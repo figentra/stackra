@@ -20,7 +20,7 @@ export default function Resizable() {
   const [width, setWidth] = useState(320);
   return (
     <div className="grid gap-3">
-      <div className="h-[24rem] overflow-hidden rounded-[var(--radius-container)] border border-separator">
+      <div className="h-96 overflow-hidden rounded-[var(--radius-container)] border border-separator">
         <SidePanel
           label={t(K.resizable_label)}
           defaultState="open"

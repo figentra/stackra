@@ -12,6 +12,7 @@
  *          layer); design-system gap inventory (2026-10-28) row 10; WCAG 2.2 SC 2.1.1, 2.5.7, 4.1.2, 4.1.3.
  */
 import { cn } from "@heroui/react";
+import { motionSpring, STACKRA_THEME } from "@stackra/tokens";
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactElement } from "react";
 import {
@@ -30,7 +31,7 @@ import { Icon } from "#react/icon/icon";
 import type { SortableListProps } from "#react/sortable-list/sortable-list.props";
 
 /** The spring a row settles with after a drop. */
-const SETTLE = { type: "spring", stiffness: 500, damping: 38 } as const;
+const SETTLE = { type: "spring", ...motionSpring(STACKRA_THEME, "snappy") } as const;
 
 /** Rows reordered by drag, keyboard or screen reader. */
 export function SortableList<TItem extends SortableListItem>({
@@ -85,8 +86,8 @@ export function SortableList<TItem extends SortableListItem>({
           className={
             cn(
               "bg-surface text-foreground outline-none",
-              "data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus",
-              "data-[dragging]:opacity-40 data-[disabled]:opacity-60",
+              "data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus",
+              "data-[dragging]:opacity-(--opacity-subtle) data-[disabled]:opacity-(--opacity-muted)",
             ) ?? ""
           }
         >

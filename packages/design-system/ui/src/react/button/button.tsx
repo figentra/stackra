@@ -10,7 +10,7 @@
  *          decision 6 of STA-350 (thin wrappers).
  */
 import type { ReactElement } from "react";
-import { Button as HeroButton, Spinner } from "@heroui/react";
+import { Button as HeroButton, Spinner, cn } from "@heroui/react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
@@ -25,6 +25,7 @@ import type { ButtonProps } from "#react/button/button.props";
 // prop arrives with @stackra/i18n, when the announcement can be translated.
 export function Button({
   variant,
+  className,
   size,
   isDisabled,
   onPress,
@@ -39,7 +40,14 @@ export function Button({
   return (
     <HeroButton
       {...rest}
-      {...omitUndefined({ variant, size, isDisabled, onPress })}
+      // A glass button is HeroUI's ghost drawn in the glass level by the material layer (`.button--glass`).
+      {...omitUndefined({
+        variant: variant === "glass" ? "ghost" : variant,
+        size,
+        isDisabled,
+        onPress,
+        className: variant === "glass" ? cn("button--glass", className) : className,
+      })}
       isPending={isLoading ?? false}
       fullWidth={isFullWidth ?? false}
       {...(label ? { "aria-label": label } : {})}

@@ -12,6 +12,9 @@
  * Governing contract: ADR 0302 (tokens own the shape); ADR 0129 (house rules as an oxlint jsPlugin); showcase
  *                     redesign spec section 8 (WP0 lint guard).
  */
+import { stringVisitors } from "../functions/string-visitors.function.ts";
+import { numericStyleProperty } from "../functions/numeric-style-property.function.ts";
+import { isClassNameValue } from "../functions/is-class-name-value.function.ts";
 import type { AstNode } from "#core/types/ast-node.type";
 import type { Rule } from "#core/types/rule.type";
 
@@ -55,36 +58,20 @@ export const NO_LITERAL_RADIUS_RULE: Rule = {
   },
   create(context) {
     const check = (node: AstNode, text: string): void => {
-      const attribute = node.parent;
-      const inClassName =
-        attribute?.type === "JSXAttribute" &&
-        (attribute.name as unknown as AstNode | undefined)?.name === "className";
+      const inClassName = isClassNameValue(node);
       const token = literalRadius(text) ?? (inClassName ? BARE.exec(text)?.[1] : undefined);
       if (token !== undefined) context.report({ node, messageId: "roundedClass", data: { token } });
     };
     return {
-      Literal(node) {
-        if (typeof node.value === "string") check(node, node.value);
-      },
-      TemplateElement(node) {
-        const cooked = (node.value as { cooked?: string | null } | undefined)?.cooked;
-        if (typeof cooked === "string") check(node, cooked);
-      },
+      ...stringVisitors(check),
       Property(node) {
-        const key = node.key?.type === "Identifier" ? node.key.name : node.key?.value;
-        const value = node.value as AstNode | undefined;
-        // `-4` parses as a UnaryExpression around the literal
-        const literal = value?.type === "UnaryExpression" ? value.argument : value;
-        if (
-          typeof key === "string" &&
-          RADIUS_KEY.test(key) &&
-          literal?.type === "Literal" &&
-          typeof literal.value === "number"
-        )
+        // Any radius number is literal, zero and `-4` (a UnaryExpression around the literal) included.
+        const hit = numericStyleProperty(node, (key) => RADIUS_KEY.test(key), true);
+        if (hit !== undefined)
           context.report({
             node,
             messageId: "numericRadius",
-            data: { key, value: String(literal.value) },
+            data: { key: hit.key, value: String(hit.value) },
           });
       },
     };

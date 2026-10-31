@@ -9,6 +9,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0329 (motion layer); ADR 0060 (right-to-left); WCAG 2.2 SC 2.3.3.
  */
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { motion } from "motion/react";
 import type { ReactElement } from "react";
 
@@ -18,6 +19,9 @@ import type { TextRevealProps } from "#react/text-reveal/text-reveal.props";
 
 /** The wait between two words, in seconds. */
 const STAGGER = 0.06;
+
+const SLOWER = motionTiming(STACKRA_THEME, "slower");
+const ENTER_EASE = motionEasing(STACKRA_THEME, "enter");
 
 /** A headline whose words fade in one after another. */
 export function TextReveal({
@@ -40,8 +44,8 @@ export function TextReveal({
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{
               delay: delay / 1000 + index * STAGGER,
-              duration: 0.5,
-              ease: [0.22, 1, 0.36, 1],
+              duration: SLOWER.durationMs / 1000,
+              ease: ENTER_EASE,
             }}
           >
             {index === 0 ? word : ` ${word}`}

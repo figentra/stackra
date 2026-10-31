@@ -10,7 +10,7 @@
  *          SC 2.3.3.
  */
 import { cn } from "@heroui/react";
-import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, type ReactElement } from "react";
 
@@ -22,6 +22,7 @@ import type { SystemBannerProps } from "#react/system-banner/system-banner.props
 
 const ENTER = motionTiming(STACKRA_THEME, "reveal");
 const EXIT = motionTiming(STACKRA_THEME, "base");
+const EXIT_EASE = motionEasing(STACKRA_THEME, "exit");
 
 /** How far the banner drops in from, in px. */
 const DROP = 12;
@@ -50,7 +51,7 @@ export function SystemBanner({
           exit={{
             opacity: 0,
             height: 0,
-            transition: { duration: isReduced ? 0 : EXIT.durationMs / 1000, ease: "easeIn" },
+            transition: { duration: isReduced ? 0 : EXIT.durationMs / 1000, ease: EXIT_EASE },
           }}
           transition={{ duration: ENTER.durationMs / 1000, ease: ENTER.bezier ?? "easeOut" }}
         >

@@ -76,7 +76,7 @@ export function BulletChart({
                 ))}
                 <span
                   className={cn(
-                    "absolute inset-y-[30%] start-0 rounded-e-[var(--radius-sm,4px)] transition-[width] duration-500 motion-reduce:transition-none",
+                    "absolute inset-y-[30%] start-0 rounded-e-[var(--radius-sm,4px)] transition-[width] duration-(--duration-slower) motion-reduce:transition-none",
                   )}
                   style={{
                     width: `${scale.value}%`,
@@ -86,7 +86,7 @@ export function BulletChart({
                 />
                 {scale.target === null ? null : (
                   <span
-                    className="absolute inset-y-[8%] w-[3px] -translate-x-1/2 rounded-[var(--radius-pill)] rtl:translate-x-1/2"
+                    className="absolute inset-y-[8%] w-0.75 -translate-x-1/2 rounded-[var(--radius-pill)] rtl:translate-x-1/2"
                     style={{
                       insetInlineStart: `${scale.target}%`,
                       backgroundColor: paintOf("foreground"),

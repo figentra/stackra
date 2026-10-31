@@ -53,7 +53,9 @@ describe("MorphTabs (web)", () => {
     );
     expect(radio("Search").checked).toBe(true);
     expect(radio("Home").disabled).toBe(true);
-    expect((view.container.firstChild as HTMLElement).className).toContain("opacity-50");
+    expect((view.container.firstChild as HTMLElement).className).toContain(
+      "opacity-(--disabled-opacity)",
+    );
   });
 
   it("renders with no items", () => {

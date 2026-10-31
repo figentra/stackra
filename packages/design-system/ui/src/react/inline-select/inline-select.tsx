@@ -43,7 +43,7 @@ export function InlineSelect({
       <Button
         className={
           cn(
-            "inline-flex items-baseline gap-0.5 rounded-[var(--radius-control)] px-0.5 font-medium text-accent-soft-foreground underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:outline-2 focus-visible:outline-focus disabled:text-muted",
+            "inline-flex items-baseline gap-0.5 rounded-[var(--radius-control)] px-0.5 font-medium text-accent-soft-foreground underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus disabled:text-muted",
             className,
           ) ?? ""
         }
@@ -51,7 +51,7 @@ export function InlineSelect({
         <SelectValue />
         <Icon name="chevron-down" size="sm" className="self-center" />
       </Button>
-      <Popover className="min-w-(--trigger-width) rounded-[var(--radius-container)] bg-overlay p-1 text-overlay-foreground shadow-lg outline-none">
+      <Popover className="min-w-(--trigger-width) rounded-[var(--radius-container)] bg-overlay p-1 text-overlay-foreground shadow-overlay outline-none">
         <ListBox items={items} className="max-h-72 overflow-y-auto outline-none">
           {(item) => (
             <ListBoxItem
@@ -63,7 +63,7 @@ export function InlineSelect({
                   "flex min-h-9 cursor-pointer items-center rounded-[var(--radius-control)] px-3 text-sm outline-none",
                   isFocused && "bg-default",
                   isSelected && "font-semibold text-accent-soft-foreground",
-                  off && "opacity-40",
+                  off && "opacity-(--opacity-subtle)",
                 ) ?? ""
               }
             >

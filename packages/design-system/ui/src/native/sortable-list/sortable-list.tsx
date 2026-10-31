@@ -13,6 +13,7 @@
  */
 // shortcut: PanResponder on the JS thread, because react-native-gesture-handler is not a dependency of this package;
 // move the pan to a Gesture Handler `Gesture.Pan()` on the UI thread once it is added.
+import { motionSpring, STACKRA_THEME } from "@stackra/tokens";
 import { useThemeColor } from "heroui-native";
 import { useMemo, type ReactElement, type ReactNode } from "react";
 import { AccessibilityInfo, PanResponder, View } from "react-native";
@@ -24,6 +25,7 @@ import Animated, {
   type SharedValue,
 } from "react-native-reanimated";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import type { SortableListItem } from "#contracts/types/sortable-list-item.type";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { moveItem } from "#core/functions/move-item.function";
@@ -33,6 +35,9 @@ import { Text } from "#native/text/text";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { SortableListProps } from "#native/sortable-list/sortable-list.props";
 import type { SortableRowAction } from "#native/sortable-list/sortable-row-action.type";
+
+/** The theme's snappy spring, for a control or a drag settling. */
+const SNAPPY = motionSpring(STACKRA_THEME, "snappy");
 
 /** The scale of a picked-up row. */
 const LIFT = 1.02;
@@ -125,14 +130,14 @@ function SortableRow({
           : index < held && index >= over
             ? height
             : 0;
-    const spring = (to: number) => (isReduced || held < 0 ? to : withSpring(to));
+    const spring = (to: number) => (isReduced || held < 0 ? to : withSpring(to, SNAPPY));
     return {
       zIndex: isHeld ? 1 : 0,
       shadowOpacity: isHeld ? 0.18 : 0,
       elevation: isHeld ? 6 : 0,
       transform: [
         { translateY: isHeld ? dragY.get() : spring(shift) },
-        { scale: isReduced ? 1 : withSpring(isHeld ? LIFT : 1) },
+        { scale: isReduced ? 1 : withSpring(isHeld ? LIFT : 1, SNAPPY) },
       ],
     };
   });
@@ -160,7 +165,12 @@ function SortableRow({
       }}
       style={[
         style,
-        { shadowColor: shadow, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+        // The lift's blur and drop on the spacing unit, so a denser theme lifts less.
+        {
+          shadowColor: shadow,
+          shadowRadius: THEME_PX.spacing * 2,
+          shadowOffset: { width: 0, height: THEME_PX.spacing },
+        },
       ]}
       className="flex-row items-center gap-3 bg-surface px-2 py-2"
       accessible

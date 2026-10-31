@@ -148,6 +148,7 @@ export type { DatePickerContractProps } from "#contracts/types/date-picker-contr
 export type { DateRangeValue } from "#contracts/types/date-range-value.type";
 export type { DateValueContractProps } from "#contracts/types/date-value-contract-props.type";
 export type { DescriptionContractProps } from "#contracts/types/description-contract-props.type";
+export type { AccessibilityPreferences } from "#contracts/types/accessibility-preferences.type";
 export type { DesignSystemProviderProps } from "#contracts/types/design-system-provider-props.type";
 export type { DesignSystemState } from "#contracts/types/design-system-state.type";
 export type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";

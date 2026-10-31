@@ -30,4 +30,11 @@ export interface MaterialModeFactors {
    * would wash out light text.
    */
   readonly sheen: number;
+  /** Multiplies every level's specular rim and inner depth: 0 in the solid and frosted modes. */
+  readonly specularScale: number;
+  /**
+   * The least dim of clear glass, the black plate under media controls: 0.80 in the solid mode (so under reduced
+   * transparency too), which still reads as a plate over media.
+   */
+  readonly clearFloor: number;
 }

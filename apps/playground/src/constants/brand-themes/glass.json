@@ -1,0 +1,84 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "glass",
+  "changes": {
+    "name": "glass",
+    "colors": {
+      "surface": {
+        "light": "oklch(1 0 0 / 0.72)",
+        "dark": "oklch(1 0 0 / 0.06)",
+        "hexLight": "#FFFFFFB8",
+        "hexDark": "#FFFFFF0F"
+      },
+      "overlay": {
+        "light": "oklch(1 0 0 / 0.82)",
+        "dark": "oklch(0.25 0.01 250 / 0.82)",
+        "hexLight": "#FFFFFFD1",
+        "hexDark": "#1E2226D1"
+      },
+      "field-background": {
+        "light": "oklch(1 0 0 / 0.6)",
+        "dark": "oklch(1 0 0 / 0.07)",
+        "hexLight": "#FFFFFF99",
+        "hexDark": "#FFFFFF12"
+      },
+      "default": {
+        "light": "oklch(0.2 0.01 250 / 0.07)",
+        "dark": "oklch(1 0 0 / 0.09)",
+        "hexLight": "#13161A12",
+        "hexDark": "#FFFFFF17"
+      }
+    },
+    "radius": {
+      "base": "0.75rem",
+      "field": "0.75rem",
+      "steps": {
+        "container": "1.25rem"
+      }
+    },
+    "materials": {
+      "levels": {
+        "thin": {
+          "fill": {
+            "light": 0.5,
+            "dark": 0.52
+          },
+          "blur": "16px",
+          "saturation": 1.8
+        },
+        "regular": {
+          "fill": {
+            "light": 0.66,
+            "dark": 0.7
+          },
+          "blur": "24px",
+          "saturation": 1.8
+        },
+        "thick": {
+          "fill": {
+            "light": 0.82,
+            "dark": 0.86
+          },
+          "blur": "36px",
+          "saturation": 1.6
+        }
+      }
+    },
+    "shadows": {
+      "surface": {
+        "light": "inset 0px 1px 0px 0px oklch(1 0 0 / 0.6), 0px 8px 24px -12px oklch(0.3 0.04 250 / 0.18)",
+        "dark": "inset 0px 1px 0px 0px oklch(1 0 0 / 0.08)"
+      },
+      "overlay": {
+        "light": "inset 0px 0px 0px 1px oklch(1 0 0 / 0.5), 0px 18px 40px -12px oklch(0.3 0.04 250 / 0.25)",
+        "dark": "inset 0px 0px 0px 1px oklch(1 0 0 / 0.16), 0px 18px 40px -12px oklch(0 0 0 / 0.6)"
+      },
+      "field": {
+        "light": "inset 0px 0px 0px 1px oklch(0.2 0.01 250 / 0.08)",
+        "dark": "inset 0px 0px 0px 1px oklch(1 0 0 / 0.1)"
+      }
+    }
+  }
+}

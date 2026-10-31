@@ -22,7 +22,7 @@ export function SidebarInset({ className, ...rest }: SidebarInsetProps): ReactEl
       className={cn(
         "relative flex min-h-0 min-w-0 flex-1 flex-col bg-background",
         isInset
-          ? "m-2 overflow-hidden rounded-[var(--radius-container)] border border-separator bg-surface shadow-sm"
+          ? "m-2 overflow-hidden rounded-[var(--radius-container)] border border-separator bg-surface shadow-surface"
           : "",
         className,
       )}

@@ -83,7 +83,7 @@ export function BulletChart({
                 />
                 {scale.target === null ? null : (
                   <View
-                    className="absolute w-[3px] rounded-[var(--radius-pill)]"
+                    className="absolute w-0.75 rounded-[var(--radius-pill)]"
                     style={{
                       top: "8%",
                       bottom: "8%",

@@ -24,7 +24,8 @@
  *          STA-350 (thin wrappers).
  */
 import type { ReactElement } from "react";
-import { Toolbar, buttonVariants } from "@heroui/react";
+import { Toolbar } from "@heroui/react";
+import { glassButtonClasses } from "#react/button/glass-button-classes.function";
 import { Link as RouterLink } from "react-aria-components";
 
 import type { ResourceAction } from "#contracts/types/resource-action.type";
@@ -64,6 +65,7 @@ export function BulkActionBar({
   selectShownLabel: selectShownLabelProp,
   // Native only: web draws every action and has no overflow.
   moreActionsLabel: _moreActionsLabel,
+  variant: look = "inline",
   ...rest
 }: BulkActionBarProps): ReactElement {
   const t = useUiText();
@@ -84,8 +86,18 @@ export function BulkActionBar({
     totalCount !== undefined &&
     (isAllMatchingSelected || (isPageSelected && totalCount > selectedCount));
 
+  const isFloating = look === "floating";
   return (
-    <div {...rest}>
+    // Floating, the bar takes no room in the flow: a zero-height sticky anchor at the foot of the content column
+    // holds it, centred on the content rather than the viewport, so nothing shifts when it appears.
+    <div
+      {...rest}
+      className={
+        isFloating
+          ? `pointer-events-none sticky bottom-(--page-padding) z-(--z-float) h-0 ${rest.className ?? ""}`
+          : rest.className
+      }
+    >
       {/* Present before it speaks, so a change of the count, not the bar's arrival, is what is announced. */}
       <div role="status" className="sr-only">
         {isShown ? countLabel(count) : ""}
@@ -93,7 +105,12 @@ export function BulkActionBar({
       {isShown ? (
         <Toolbar
           aria-label={label}
-          className="flex flex-wrap items-center gap-2 rounded-[var(--radius-control)] bg-accent-soft p-2"
+          // Floating, it takes the action-bar role: a glass capsule in both families (ADR 0320 as amended 2026-10-31).
+          className={
+            isFloating
+              ? "material-role-action-bar pointer-events-auto absolute inset-x-0 bottom-0 mx-auto flex h-(--size-action-bar) w-fit max-w-full items-center gap-2 rounded-[var(--radius-pill)] px-3 animate-in fade-in slide-in-from-bottom-2 duration-(--duration-base) ease-(--ease-indicator) motion-reduce:animate-none"
+              : "flex flex-wrap items-center gap-2 rounded-[var(--radius-control)] bg-accent-soft p-2"
+          }
         >
           <Text type="small" className="px-2 font-medium">
             {countLabel(count)}
@@ -116,7 +133,7 @@ export function BulkActionBar({
                   key={action.id}
                   href={action.href}
                   onPress={() => run(action.id, action.onPress)}
-                  className={buttonVariants({ variant, size: "sm" })}
+                  className={glassButtonClasses(variant, "sm")}
                 >
                   <SlotIcon icon={action.icon} />
                   {action.label}

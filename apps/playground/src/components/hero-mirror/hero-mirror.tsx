@@ -20,6 +20,7 @@ import {
   useCatalogueText,
   useDesignSystem,
 } from "@stackra/ui/react";
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 
@@ -39,6 +40,10 @@ const K = BRAND_KEYS.brand.hero.mirror;
 
 /** How long each language stays, in ms. */
 const TURN = 4200;
+
+/** The card's 3D turn: its step and curve, from the theme's motion. */
+const FLIP = motionTiming(STACKRA_THEME, "blink");
+const ENTER = motionEasing(STACKRA_THEME, "enter");
 
 /** Hero C: the mirror. */
 export function HeroMirror() {
@@ -110,7 +115,7 @@ export function HeroMirror() {
           <HeroActions />
         </div>
         <div aria-hidden="true" inert className="relative select-none [perspective:1400px]">
-          <span className="pointer-events-none absolute inset-y-[-10%] start-1/2 -z-10 w-px bg-[var(--stk-ink)] opacity-40 [mask-image:linear-gradient(transparent,black_30%,black_70%,transparent)]" />
+          <span className="pointer-events-none absolute inset-y-[-10%] start-1/2 z-(--z-behind) w-px bg-[var(--stk-ink)] opacity-40 [mask-image:linear-gradient(transparent,black_30%,black_70%,transparent)]" />
           <motion.div
             key={side}
             lang={side}
@@ -121,7 +126,7 @@ export function HeroMirror() {
                 : { opacity: 0, rotateY: isRtl ? 70 : -70, scale: 0.94, filter: "blur(6px)" }
             }
             animate={{ opacity: 1, rotateY: 0, scale: 1, filter: "blur(0px)" }}
-            transition={{ duration: 1, ease: [0.2, 0.8, 0.2, 1] }}
+            transition={{ duration: FLIP.durationMs / 1000, ease: ENTER }}
           >
             <ShowcaseI18n locale={side}>
               <MirrorOrders locale={side} isStill={isStill} />

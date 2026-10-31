@@ -19,6 +19,7 @@ const K = ROUTE_PROGRESS_DEMO_KEYS.demo_free.route_progress;
 
 /** The screens and how long the stand-in router takes to load one, in ms. */
 const PAGES = ["orders", "products", "reports"] as const;
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake page load, not motion
 const LOAD_MS = 1600;
 
 /** Switch screens and watch the bar. */

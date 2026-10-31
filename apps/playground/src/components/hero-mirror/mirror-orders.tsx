@@ -8,6 +8,7 @@
  * Governing contract: owner decision 2026-10-28 (hero concept C); ADR 0060 (RTL); ADR 0080.
  */
 import { useMoney } from "@stackra/i18n/react";
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { Avatar, Button, SearchField, StatusBadge, useCatalogueText } from "@stackra/ui/react";
 import { motion } from "motion/react";
 
@@ -22,6 +23,10 @@ const K = BRAND_KEYS.brand.hero.mirror;
 
 /** The tone of each status. */
 const TONES = { paid: "success", pending: "warning", shipped: "default" } as const;
+
+/** Each row's rise: its step and curve, from the theme's motion. */
+const RISE = motionTiming(STACKRA_THEME, "count");
+const ENTER = motionEasing(STACKRA_THEME, "enter");
 
 /** The orders card in one language. */
 export function MirrorOrders({ locale, isStill }: MirrorOrdersProps) {
@@ -45,7 +50,11 @@ export function MirrorOrders({ locale, isStill }: MirrorOrdersProps) {
             className="flex items-center gap-3 border-t border-separator py-3"
             initial={isStill ? false : { opacity: 0, y: 16, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.7, delay: 0.25 + index * 0.08, ease: [0.2, 0.8, 0.2, 1] }}
+            transition={{
+              duration: RISE.durationMs / 1000,
+              delay: 0.25 + index * 0.08,
+              ease: ENTER,
+            }}
           >
             <Avatar name={t(K[person])} size="sm" />
             <span className="grid min-w-0 flex-1">

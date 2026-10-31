@@ -133,7 +133,7 @@ export function MentionInput({
           id={listId}
           role="listbox"
           aria-label={t(INPUT_KEYS.ui.mention_input.people)}
-          className="absolute inset-x-0 top-full z-50 mt-1 flex max-h-64 flex-col overflow-auto rounded-[var(--radius-control)] border border-separator bg-overlay p-1 shadow-overlay"
+          className="absolute inset-x-0 top-full z-(--z-overlay) mt-1 flex max-h-64 flex-col overflow-auto rounded-[var(--radius-control)] border border-separator bg-overlay p-1 shadow-overlay"
         >
           {matches.map((person, index) => (
             <div

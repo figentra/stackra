@@ -72,7 +72,7 @@ export function TaskTray({
       className={cn(
         "overflow-hidden rounded-[var(--radius-container)] border border-separator bg-overlay text-overlay-foreground shadow-overlay",
         placement === "docked"
-          ? "fixed end-4 bottom-4 z-50 w-[min(24rem,calc(100vw-2rem))]"
+          ? "fixed end-4 bottom-4 z-(--z-overlay) w-[min(24rem,calc(100vw-2rem))]"
           : "w-full max-w-sm",
         className,
       )}

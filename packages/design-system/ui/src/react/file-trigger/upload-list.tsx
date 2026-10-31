@@ -100,7 +100,7 @@ export function UploadList({
                       ? { opacity: 0, transition: { duration: 0 } }
                       : { scale: 0.5, opacity: 0 }
                   }
-                  transition={{ duration: FAST.durationMs / 1000, ease: "easeOut" }}
+                  transition={{ duration: FAST.durationMs / 1000, ease: FAST.bezier ?? "easeOut" }}
                 >
                   {indicator}
                 </motion.span>

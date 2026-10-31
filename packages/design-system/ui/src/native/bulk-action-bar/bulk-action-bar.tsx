@@ -20,7 +20,7 @@
  *          owner decision 6 of STA-350 (thin wrappers).
  */
 import { use, useEffect, useState, type ReactElement } from "react";
-import { AccessibilityInfo, View } from "react-native";
+import { AccessibilityInfo } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -35,6 +35,7 @@ import { followHref } from "#native/router-provider/follow-href.function";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
 import type { BulkActionBarProps } from "#native/bulk-action-bar/bulk-action-bar.props";
+import { GlassSurface } from "#native/glass/glass-surface";
 
 // Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
 const COULD_NOT_OPEN = "Bulk action bar could not open the link of an action";
@@ -120,11 +121,13 @@ export function BulkActionBar({
   );
 
   return (
-    <View
+    // The action-bar role: a floating capsule, glass in both families (ADR 0320 as amended 2026-10-31).
+    <GlassSurface
+      material="action-bar"
       {...rest}
       role="toolbar"
       accessibilityLabel={label}
-      className={`flex-row flex-wrap items-center gap-2 rounded-[var(--radius-container)] bg-accent-soft p-3 ${className ?? ""}`}
+      className={`flex-row flex-wrap items-center gap-2 rounded-[var(--radius-pill)] p-2 ${className ?? ""}`}
     >
       <Text type="small" className="px-1 font-medium">
         {countText}
@@ -182,6 +185,6 @@ export function BulkActionBar({
       <Button size="sm" variant="ghost" onPress={onClearSelection}>
         {clearLabel}
       </Button>
-    </View>
+    </GlassSurface>
   );
 }

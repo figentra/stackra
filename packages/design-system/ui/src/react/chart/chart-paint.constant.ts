@@ -7,11 +7,12 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (web); ADR 0291 (ported code); WCAG 2.2 SC 1.1.1 and 1.4.11; STA-1371.
  */
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { paintOf } from "#react/chart/paint-of.function";
 
 /** The furniture's paints and the tick text size. */
 export const CHART_PAINT = {
-  tick: { fill: paintOf("muted"), fontSize: 10 },
+  tick: { fill: paintOf("muted"), fontSize: THEME_PX.typeScale["3xs"]?.fontSize },
   grid: { stroke: paintOf("muted"), strokeOpacity: 0.15 },
   /** Line and area charts: a 1px muted dashed line through the pointed row. */
   cursorLine: { stroke: paintOf("muted"), strokeWidth: 1, strokeDasharray: "4 4" },

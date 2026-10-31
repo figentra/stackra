@@ -11,6 +11,7 @@
  * Governing contract: gap inventory row 13 (owner approval 2026-10-28); ADR 0302 (decision 3); ADR 0312.
  */
 import { useNumerals } from "@stackra/i18n/react";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { Bell } from "@stackra/icons/native/lucide-icons";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { ScrollView, View } from "react-native";
@@ -38,7 +39,9 @@ import { Text } from "#native/text/text";
 import { useUiText } from "#react/hooks/use-ui-text";
 
 /** One swing of the wiggle, in ms, and its angles in degrees. */
-const SWING_MS = 100;
+const SWING_MS = motionTiming(STACKRA_THEME, "instant").durationMs;
+/** Each half of the bump, in ms: the theme's fast step. */
+const BUMP_MS = motionTiming(STACKRA_THEME, "fast").durationMs;
 const SWINGS = [-14, 12, -8, 4, 0] as const;
 
 /** A bell that opens the viewer's notifications, grouped, with their unread state. */
@@ -83,7 +86,9 @@ export function NotificationsPanel({
     angle.set(
       withSequence(...SWINGS.map((degrees) => withTiming(degrees, { duration: SWING_MS }))),
     );
-    scale.set(withSequence(withTiming(1.15, { duration: 150 }), withTiming(1, { duration: 150 })));
+    scale.set(
+      withSequence(withTiming(1.15, { duration: BUMP_MS }), withTiming(1, { duration: BUMP_MS })),
+    );
   }, [unread, isReduced, play, angle, scale]);
 
   const bellStyle = useAnimatedStyle(() => ({

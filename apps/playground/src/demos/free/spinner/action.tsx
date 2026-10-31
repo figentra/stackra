@@ -16,6 +16,7 @@ import { SPINNER_KEYS } from "#src/demos/free/spinner/spinner-keys.constant";
 const K = SPINNER_KEYS.spinner;
 
 /** How long the start-and-stop example waits, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's simulated wait, not motion
 const WAIT_MS = 1500;
 
 /** The list that lays samples out in a wrapping row. */

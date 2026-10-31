@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "5c452ab98024045c",
+    "hash": "0f8d97c504436b33",
     "propsFiles": ["ui/src/react/morph-button/morph-button.props.ts"]
   },
   "importLine": "import { MorphButton } from \"@stackra/ui/react\";",
@@ -144,7 +144,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "default": "md",

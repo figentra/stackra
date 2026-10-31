@@ -122,7 +122,12 @@
     "stackra/no-enum": "error",
     "stackra/no-hash-private": "error",
     "stackra/no-kind-decorator": "error",
+    "stackra/no-backdrop-filter": "error",
+    "stackra/no-literal-duration": "error",
+    "stackra/no-literal-length": "error",
     "stackra/no-literal-radius": "error",
+    "stackra/no-literal-shadow": "error",
+    "stackra/no-literal-z-index": "error",
     "stackra/no-parameter-decorator": "error",
     "stackra/no-raw-key-literal": "error",
     "stackra/no-tenant-vocabulary": "error",
@@ -201,17 +206,65 @@
       "rules": { "stackra/no-raw-key-literal": "off" },
     },
     {
-      // Radii come from --radius-* tokens through @stackra/ui (ADR 0302); the guard covers the apps and the design
-      // system, the code that draws surfaces. Everywhere else a `rounded-*` string is plain data.
+      // Radii, shadows, timings, layers and lengths come from the theme's tokens (ADR 0302, ADR 0501); the guards
+      // cover the apps and the design system, the code that draws surfaces. Elsewhere such a string is plain data.
       "files": ["**/*"],
       "excludeFiles": ["**/apps/**", "**/packages/design-system/**"],
-      "rules": { "stackra/no-literal-radius": "off" },
+      "rules": {
+        "stackra/no-literal-duration": "off",
+        "stackra/no-literal-length": "off",
+        "stackra/no-literal-radius": "off",
+        "stackra/no-literal-shadow": "off",
+        "stackra/no-literal-z-index": "off",
+      },
+    },
+    {
+      // The showcase heroes are art direction: their loops and entrances run on their own timeline (seconds-long
+      // drifts, staged reveals), not on the theme's interface motion, which the motion work owns (ADR 0501).
+      "files": [
+        "**/apps/playground/src/components/hero-*/**",
+        "**/apps/mobile/src/components/heroes/**",
+      ],
+      "rules": { "stackra/no-literal-duration": "off" },
+    },
+    {
+      // A backdrop blur is the material layer's alone (ADR 0320 as amended 2026-10-31): the guard covers the apps and
+      // the design system; the layer itself (the token renderers that write the material CSS, @stackra/ui's native
+      // glass folder that wraps expo-glass-effect and expo-blur) and tests are where it may be written.
+      "files": ["**/*"],
+      "excludeFiles": ["**/apps/**", "**/packages/design-system/**"],
+      "rules": { "stackra/no-backdrop-filter": "off" },
+    },
+    {
+      "files": [
+        "**/packages/design-system/tokens/**",
+        "**/packages/design-system/ui/src/native/glass/**",
+        "**/__tests__/**",
+      ],
+      "rules": { "stackra/no-backdrop-filter": "off" },
     },
     {
       // A test's class names are fixture data: it passes a caller's `rounded-*` to check that a component merges or
       // keeps it, and asserts the classes a component draws.
       "files": ["**/__tests__/**"],
-      "rules": { "stackra/no-literal-radius": "off" },
+      "rules": {
+        "stackra/no-literal-duration": "off",
+        "stackra/no-literal-length": "off",
+        "stackra/no-literal-radius": "off",
+        "stackra/no-literal-shadow": "off",
+        "stackra/no-literal-z-index": "off",
+      },
+    },
+    {
+      // Motion comes from the theme's motion family (ADR 0501): the guard covers the apps and the design system; the
+      // tokens package defines the values, and a test's timings are fixture data.
+      "files": ["**/*"],
+      "excludeFiles": ["**/apps/**", "**/packages/design-system/**"],
+      "rules": { "stackra/no-literal-duration": "off" },
+    },
+    {
+      "files": ["**/__tests__/**", "**/packages/design-system/tokens/**", "**/e2e/**"],
+      "rules": { "stackra/no-literal-duration": "off" },
     },
     {
       // B-1, B-2: a test sorts or reverses the array it just built, to get the order an assertion compares;

@@ -15,4 +15,10 @@ import type { BulkActionBarContractProps } from "#contracts/types/bulk-action-ba
  * bar's own children are the actions, so the type refuses them.
  */
 export type BulkActionBarProps = BulkActionBarContractProps &
-  Omit<ComponentPropsWithoutRef<"div">, keyof BulkActionBarContractProps | "children">;
+  Omit<ComponentPropsWithoutRef<"div">, keyof BulkActionBarContractProps | "children"> & {
+    /**
+     * `inline` (the default) sits above the list it acts on; `floating` is a pill fixed to the foot of the content
+     * column on the overlay surface, taking no room, so nothing shifts as rows are picked (ADR 0501).
+     */
+    readonly variant?: "inline" | "floating" | undefined;
+  };

@@ -18,7 +18,7 @@ export default function Expandable() {
   const t = useCatalogueText(MESSAGES.en);
   return (
     <div className="grid gap-3">
-      <div className="h-[24rem] overflow-hidden rounded-[var(--radius-container)] border border-separator">
+      <div className="h-96 overflow-hidden rounded-[var(--radius-container)] border border-separator">
         <SidePanel label={t(K.assistant_label)} defaultState="open" defaultWidth={320}>
           <SidePanel.Inset className="gap-2 p-6">
             <Heading level={3}>{t(K.page_title)}</Heading>

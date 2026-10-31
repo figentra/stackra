@@ -68,9 +68,9 @@ const INSET = 8;
 
 /** A side panel's width by `size`, capped to the screen. */
 const PANEL_WIDTH: Readonly<Record<DrawerSize, string>> = {
-  sm: "w-[400px] max-w-full",
-  md: "w-[560px] max-w-full",
-  lg: "w-[720px] max-w-full",
+  sm: "w-drawer-sm max-w-full",
+  md: "w-drawer-md max-w-full",
+  lg: "w-drawer-lg max-w-full",
   full: "self-stretch",
 };
 

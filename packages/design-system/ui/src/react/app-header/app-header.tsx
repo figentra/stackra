@@ -18,6 +18,7 @@
 import { cn } from "@heroui/react";
 import type { ReactElement } from "react";
 import type { AppHeaderProps } from "#react/app-header/app-header.props";
+import { useIsScrolled } from "#react/hooks/use-is-scrolled";
 
 /**
  * The top bar of the console: start slot, title, search, end slot and user menu, in that order from the inline start.
@@ -34,12 +35,15 @@ export function AppHeader({
   className,
   ...rest
 }: AppHeaderProps): ReactElement {
+  const isScrolled = useIsScrolled();
   return (
     <header
       {...rest}
+      {...(isScrolled ? { "data-scrolled": "" } : {})}
       {...(label ? { "aria-label": label } : {})}
       className={cn(
-        "flex min-h-14 items-center gap-3 border-b border-separator bg-background px-4 py-2 text-foreground",
+        // The nav-bar role: solid in studio until the page scrolls under it, glass in front (ADR 0320 as amended).
+        "material-role-nav-bar flex min-h-14 items-center gap-3 border-b border-separator px-4 py-2 text-foreground",
         className,
       )}
     >

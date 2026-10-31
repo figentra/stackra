@@ -38,7 +38,7 @@ export function PressFeedback({
           state.isFocusVisible && "ring-2 ring-focus",
           state.isPressed && feedback === "scale" && "scale-[0.97]",
           state.isPressed && feedback !== "scale" && "brightness-95",
-          isDisabled && "cursor-not-allowed opacity-50",
+          isDisabled && "cursor-not-allowed opacity-(--disabled-opacity)",
           typeof className === "function" ? className(state) : className,
         ) ?? ""
       }

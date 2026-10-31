@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "defb5b58ec49e013",
+    "hash": "d2e1273efbe2cfdb",
     "heroDoc": "vendor/heroui/react/toolbar.json",
     "propsFiles": ["ui/src/react/overflow-toolbar/overflow-toolbar.props.ts"]
   },
@@ -48,7 +48,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "default": "md",

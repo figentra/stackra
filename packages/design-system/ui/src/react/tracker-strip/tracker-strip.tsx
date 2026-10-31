@@ -114,7 +114,7 @@ export function TrackerStrip({
           onKeyDown={onKeyDown}
           onBlur={() => setPointed(null)}
           onMouseLeave={() => setPointed(null)}
-          className="flex w-full gap-[2px] rounded-[var(--radius-control-inner)] outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
+          className="flex w-full gap-0.5 rounded-[var(--radius-control-inner)] outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
           style={{ height }}
         >
           {cells.map((item, index) => (
@@ -125,7 +125,7 @@ export function TrackerStrip({
               className={cn(
                 "min-w-0 flex-1 rounded-[var(--radius-control-inner)] motion-safe:transition-opacity",
                 TRACKER_CELL_CLASS[item.status],
-                pointed !== null && pointed !== index && "opacity-50",
+                pointed !== null && pointed !== index && "opacity-(--opacity-dimmed)",
               )}
             />
           ))}
@@ -134,7 +134,7 @@ export function TrackerStrip({
           id={readoutId}
           role="status"
           className={cn(
-            "pointer-events-none absolute bottom-full z-10 mb-2 grid max-w-64 gap-0.5 rounded-[var(--radius)] border border-separator bg-overlay px-3 py-2 text-xs text-overlay-foreground shadow-overlay",
+            "pointer-events-none absolute bottom-full z-(--z-raised) mb-2 grid max-w-64 gap-0.5 rounded-[var(--radius)] border border-separator bg-overlay px-3 py-2 text-xs text-overlay-foreground shadow-overlay",
             !cell && "sr-only",
             isCentred && "-translate-x-1/2 rtl:translate-x-1/2",
           )}

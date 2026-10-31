@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "c98abc7ca4e48631",
+    "hash": "aafd8c24249db334",
     "propsFiles": ["ui/src/native/icon-button/icon-button.props.ts"]
   },
   "importLine": "import { IconButton } from \"@stackra/ui/native\";",
@@ -38,7 +38,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",

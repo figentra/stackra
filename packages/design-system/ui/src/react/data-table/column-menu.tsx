@@ -9,6 +9,7 @@
  * Runtime: browser
  * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3); WCAG 2.2 SC 2.1.1, 2.5.7, 4.1.3.
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import type { ReactElement } from "react";
 
 import { AggregateKind } from "#contracts/enums/aggregate-kind.enum";
@@ -26,7 +27,7 @@ import { useUiText } from "#react/hooks/use-ui-text";
 const I = COLUMN_MENU_ICONS;
 
 /** How long the menu takes to close and give focus back, before a keyboard resize takes it. */
-const RESIZE_AFTER_CLOSE_MS = 250;
+const RESIZE_AFTER_CLOSE_MS = motionTiming(STACKRA_THEME, "base").durationMs;
 
 /** The words. */
 const K = COLLECTION_KEYS.ui.collection;

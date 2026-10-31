@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "6a3e284a417abb84",
+    "hash": "43606d464b392619",
     "propsFiles": ["ui/src/react/bulk-action-bar/bulk-action-bar.props.ts"]
   },
   "importLine": "import { BulkActionBar } from \"@stackra/ui/react\";",
@@ -101,6 +101,13 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "`inline` (the default) sits above the list it acts on; `floating` is a pill fixed to the foot of the content\ncolumn on the overlay surface, taking no room, so nothing shifts as rows are picked (ADR 0501).",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"inline\" | \"floating\""
         },
         {
           "description": "",

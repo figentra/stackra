@@ -19,6 +19,7 @@ const K = EXPORT_DIALOG_KEYS.export_dialog;
 const COUNTS = { selection: 12, filtered: 248, all: 18_432 } as const;
 
 /** How long the sample export takes, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake export job, not motion
 const EXPORT_MS = 1200;
 
 /** Export dialog: Orders. */

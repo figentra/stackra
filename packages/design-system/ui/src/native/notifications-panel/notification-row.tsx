@@ -11,6 +11,7 @@
  * Governing contract: gap inventory row 13 (owner approval 2026-10-28); ADR 0302 (decision 3); WCAG 2.2 SC 2.5.1
  *          (a single-pointer alternative to the swipe).
  */
+import { motionSpring, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useThemeColor } from "heroui-native";
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { PanResponder, Pressable, View } from "react-native";
@@ -30,8 +31,10 @@ import type { NotificationRowProps } from "#native/notifications-panel/notificat
 /** How far a drag must go before it is a swipe, in points, and the share of the width that dismisses. */
 const SLOP = 12;
 const DISMISS_SHARE = 1 / 3;
-/** How long the row takes to slide out, in ms. */
-const EXIT_MS = 180;
+/** How long the row takes to slide out, in ms: the theme's fast step. */
+const EXIT_MS = motionTiming(STACKRA_THEME, "fast").durationMs;
+/** The spring a released row settles back on. */
+const SNAPPY = motionSpring(STACKRA_THEME, "snappy");
 /** The unread dot, in points. */
 const DOT = 8;
 
@@ -58,7 +61,7 @@ export function NotificationRow({
   const responder = useMemo(() => {
     if (!onDismiss) return undefined;
     const settle = () => {
-      offset.set(isReduced ? 0 : withSpring(0));
+      offset.set(isReduced ? 0 : withSpring(0, SNAPPY));
     };
     return PanResponder.create({
       onMoveShouldSetPanResponder: (_event, gesture) =>

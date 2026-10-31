@@ -21,6 +21,7 @@ import {
   useBreakpoint,
   useCatalogueText,
 } from "@stackra/ui/native";
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useEffect, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import Animated, {
@@ -48,8 +49,14 @@ const K = BRAND_KEYS.brand.hero;
 /** The type layer's glyph samples: a Latin and an Arabic pair, shown as letterforms, not copy. */
 const GLYPHS = { en: "Aa", ar: "أب" } as const;
 
-/** The heroes' ease-out (CSS `cubic-bezier(.2,.8,.2,1)`). */
-const EASE = Easing.bezier(0.2, 0.8, 0.2, 1);
+/** The heroes' ease-out: the theme's `enter` easing. */
+const EASE = Easing.bezier(...motionEasing(STACKRA_THEME, "enter"));
+
+/** The theme's steps, in milliseconds: the pulse the loops and the assemble count in, the words' rise (`count`) and
+ *  their beat (three `stagger` steps). */
+const PULSE_MS = motionTiming(STACKRA_THEME, "pulse").durationMs;
+const RISE_MS = motionTiming(STACKRA_THEME, "count").durationMs;
+const BEAT_MS = motionTiming(STACKRA_THEME, "stagger").durationMs * 3;
 
 /** The product card's bars, as fractions of the chart's height. */
 const BARS = [0.42, 0.64, 0.5, 0.78, 0.58, 0.88, 0.7, 0.96, 0.74, 1] as const;
@@ -108,7 +115,7 @@ function Scan({ width, isStill }: { width: number; isStill: boolean }) {
   const sweep = useSharedValue(0);
   useEffect(() => {
     if (isStill) return;
-    sweep.set(withRepeat(withTiming(1, { duration: 4500, easing: Easing.linear }), -1));
+    sweep.set(withRepeat(withTiming(1, { duration: PULSE_MS * 4, easing: Easing.linear }), -1));
     return () => cancelAnimation(sweep);
   }, [isStill, sweep]);
   const band = useAnimatedStyle(() => ({
@@ -132,7 +139,7 @@ function Blink({ isStill }: { isStill: boolean }) {
   const glow = useSharedValue(1);
   useEffect(() => {
     if (isStill) return;
-    glow.set(withRepeat(withTiming(0.25, { duration: 800 }), -1, true));
+    glow.set(withRepeat(withTiming(0.25, { duration: RISE_MS }), -1, true));
     return () => cancelAnimation(glow);
   }, [glow, isStill]);
   const fade = useAnimatedStyle(() => ({ opacity: glow.value }));
@@ -153,13 +160,17 @@ export function StackHero({ onBrowse }: HeroProps) {
     assembled.set(
       isStill
         ? Number(isAssembled)
-        : withTiming(Number(isAssembled), { duration: 1200, easing: EASE }),
+        : withTiming(Number(isAssembled), { duration: PULSE_MS, easing: EASE }),
     );
   }, [assembled, isAssembled, isStill]);
   useEffect(() => {
     if (isStill) return;
     float.set(
-      withRepeat(withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.sin) }), -1, true),
+      withRepeat(
+        withTiming(1, { duration: PULSE_MS * 2.5, easing: Easing.inOut(Easing.sin) }),
+        -1,
+        true,
+      ),
     );
     return () => cancelAnimation(float);
   }, [float, isStill]);
@@ -248,7 +259,7 @@ export function StackHero({ onBrowse }: HeroProps) {
               </Card>
             </Layer>
             <Layer index={2} size={size} assembled={assembled} float={float}>
-              <Card className="flex-1 gap-3 overflow-hidden p-4 shadow-xl">
+              <Card className="flex-1 gap-3 overflow-hidden p-4 shadow-overlay">
                 <Scan width={size.width} isStill={isStill} />
                 <View className="flex-row items-center gap-2">
                   <Blink isStill={isStill} />
@@ -295,7 +306,7 @@ export function StackHero({ onBrowse }: HeroProps) {
         ) : null}
       </View>
       <View className={`gap-4 ${isWide ? "flex-1" : ""}`}>
-        <Animated.View entering={FadeInDown.duration(900)}>
+        <Animated.View entering={FadeInDown.duration(RISE_MS)}>
           <Text type="small" className="uppercase tracking-widest !text-accent-soft-foreground">
             {t(K.stack.eyebrow)}
           </Text>
@@ -306,7 +317,10 @@ export function StackHero({ onBrowse }: HeroProps) {
           accessibilityLabel={lines.map((line) => t(line)).join(" ")}
         >
           {lines.map((line, index) => (
-            <Animated.View key={line} entering={FadeInDown.duration(900).delay(120 * (index + 1))}>
+            <Animated.View
+              key={line}
+              entering={FadeInDown.duration(RISE_MS).delay(BEAT_MS * (index + 1))}
+            >
               <Heading
                 level={1}
                 type="h1"
@@ -317,7 +331,7 @@ export function StackHero({ onBrowse }: HeroProps) {
             </Animated.View>
           ))}
         </View>
-        <Animated.View entering={FadeInDown.duration(900).delay(360)} className="gap-4">
+        <Animated.View entering={FadeInDown.duration(RISE_MS).delay(BEAT_MS * 3)} className="gap-4">
           <Text tone="muted">{t(K.stack.pitch)}</Text>
           <View className="flex-row flex-wrap gap-3">
             <Button
