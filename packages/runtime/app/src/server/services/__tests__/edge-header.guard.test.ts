@@ -4,7 +4,8 @@
  *          either active key, a platform host's request without a scope, and an unsigned request on a public path
  *          that carries no identity header; it refuses a missing signature off a public path, unsigned identity
  *          headers on a public path, an unknown key, a tampered body or path, a timestamp outside the window either
- *          side, a missing identity header, a replayed request id, and every signature when no key is active.
+ *          side (on a pinned clock, both edges accepted), a missing identity header, a replayed request id, and every
+ *          signature when no key is active.
  * Boundary: test only; real Web Crypto, the memory drivers, and requests built as the edge Worker forwards them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0437 (decisions 4 and 8; Enforcement); ADR 0457.
@@ -13,6 +14,7 @@ import { createHash } from "node:crypto";
 
 import { isRefusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { signEdgeRequest } from "#core/functions/sign-edge-request.function";
@@ -114,12 +116,18 @@ describe("EdgeHeaderGuard", () => {
     expect(await refuses(guard(), moved)).toBe(true);
   });
 
-  it("refuses a timestamp outside the window on either side", async () => {
-    // Ten minutes out, not 61 s: on a slow runner seconds pass between this line and the guard's own clock read, so a
-    // timestamp one second past the 60 s window could fall back inside it.
-    const now = Math.floor(Date.now() / 1000);
-    expect(await refuses(guard(), await forwarded({ timestamp: now - 600 }))).toBe(true);
-    expect(await refuses(guard(), await forwarded({ timestamp: now + 600 }))).toBe(true);
+  it("refuses a timestamp outside the window on either side, and accepts one on its edge", async () => {
+    // Only Date is pinned: the guard reads the clock after signing, so a real second tick could move the edge.
+    vi.useFakeTimers({ now: new Date("2026-10-30T09:00:00.000Z"), toFake: ["Date"] });
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      expect(await refuses(guard(), await forwarded({ timestamp: now - 60 }))).toBe(false);
+      expect(await refuses(guard(), await forwarded({ timestamp: now + 60 }))).toBe(false);
+      expect(await refuses(guard(), await forwarded({ timestamp: now - 61 }))).toBe(true);
+      expect(await refuses(guard(), await forwarded({ timestamp: now + 61 }))).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("refuses a replayed request id", async () => {
