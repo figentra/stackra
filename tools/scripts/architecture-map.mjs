@@ -27,7 +27,7 @@ import { parse, stringify } from "yaml";
 import { stripJsonc } from "./jsonc.mjs";
 import { readWorkspaceMembers } from "./package-cycles.mjs";
 
-// oxlint-disable stackra/one-declaration-per-file -- reason: a plain-node script module run by pnpm validate, not member source (like spec-parse.mjs); its tests import these names
+// oxlint-disable stackra/one-declaration-per-file -- reason: a plain-node script module run by pnpm validate, not member source; its tests import these names
 
 /** The committed candidate, repository-relative: YAML, the repo's config format; archify gets a JSON copy. */
 export const MAP_SOURCE = "apps/docs/scripts/architecture-map/architecture-map.yaml";

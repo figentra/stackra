@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 
 import { parse } from "yaml";
 
-// oxlint-disable stackra/one-declaration-per-file -- reason: a plain-node script module run by pnpm validate, not member source (like spec-parse.mjs); its tests import these names
+// oxlint-disable stackra/one-declaration-per-file -- reason: a plain-node script module run by pnpm validate, not member source; its tests import these names
 
 /** The package.json fields whose workspace names make a graph edge. */
 export const DEPENDENCY_FIELDS = Object.freeze([
