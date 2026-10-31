@@ -78,7 +78,7 @@ export function ExportDialog({
         )}
         <Modal.Close label={t(K.close)} isDisabled={isPending} />
       </Modal.Header>
-      <ScrollView className="max-h-[480px]" contentContainerClassName="gap-6 py-2">
+      <ScrollView className="max-h-dialog-max-height" contentContainerClassName="gap-6 py-2">
         <RadioGroup
           label={t(K.format)}
           options={choices.formats}

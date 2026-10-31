@@ -91,7 +91,7 @@ export function MediaRange({
       </span>
       <span
         aria-hidden="true"
-        className="absolute size-3 -translate-x-1/2 bg-accent shadow-sm"
+        className="absolute size-3 -translate-x-1/2 bg-accent shadow-(--raised-shadow)"
         style={{ ...ROUND, left: percent(value, max) }}
       />
     </div>

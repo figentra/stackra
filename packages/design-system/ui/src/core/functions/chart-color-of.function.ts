@@ -14,6 +14,12 @@ import type { ChartSeries } from "#contracts/types/chart-series.type";
 const SET_SIZE = 5;
 
 /**
+ * The ramp's steps in series order (ADR 0501): the accent (the centre step) first, then each next colour at least two
+ * steps from the one before, so neighbouring series never sit one lightness step apart.
+ */
+const RAMP_ORDER = [3, 1, 5, 2, 4] as const;
+
+/**
  * The colour of the series at `index`.
  * @param series - the series, whose own colour wins
  * @param index - its position in the chart's series
@@ -27,6 +33,9 @@ export function chartColorOf(
 ): ChartColor {
   const step = (index % SET_SIZE) + 1;
   return (
-    series?.color ?? ((palette === "accent" ? `chart-ramp-${step}` : `chart-${step}`) as ChartColor)
+    series?.color ??
+    ((palette === "accent"
+      ? `chart-ramp-${RAMP_ORDER[index % SET_SIZE]}`
+      : `chart-${step}`) as ChartColor)
   );
 }

@@ -10,7 +10,8 @@
  *           a `#core/...` value import would not resolve in Node. Type imports may keep the alias.
  * Runtime: isomorphic
  * Governing contract: ADR 0129 (decisions 1 and 5); ADR 0294 (Enforcement, STA-338 and STA-340); ADR 0305 (rules
- *                     13 and 15); ADR 0127 2026-10-24 note (coding-standard in developer, entry `.`); ADR 0421.
+ *                     13 and 15); ADR 0127 2026-10-24 note (coding-standard in developer, entry `.`); ADR 0421;
+ *                     ADR 0501 (the no-literal-* token rules).
  */
 import { BASE_MATCHES_SUFFIX_RULE } from "./base-matches-suffix-rule.constant.ts";
 import { DISABLE_NEEDS_REASON_RULE } from "./disable-needs-reason-rule.constant.ts";
@@ -25,7 +26,12 @@ import { NO_EMPTY_MODULE_RULE } from "./no-empty-module-rule.constant.ts";
 import { NO_ENUM_RULE } from "./no-enum-rule.constant.ts";
 import { NO_HASH_PRIVATE_RULE } from "./no-hash-private-rule.constant.ts";
 import { NO_KIND_DECORATOR_RULE } from "./no-kind-decorator-rule.constant.ts";
+import { NO_BACKDROP_FILTER_RULE } from "./no-backdrop-filter-rule.constant.ts";
+import { NO_LITERAL_DURATION_RULE } from "./no-literal-duration-rule.constant.ts";
+import { NO_LITERAL_LENGTH_RULE } from "./no-literal-length-rule.constant.ts";
 import { NO_LITERAL_RADIUS_RULE } from "./no-literal-radius-rule.constant.ts";
+import { NO_LITERAL_SHADOW_RULE } from "./no-literal-shadow-rule.constant.ts";
+import { NO_LITERAL_Z_INDEX_RULE } from "./no-literal-z-index-rule.constant.ts";
 import { NO_PARAMETER_DECORATOR_RULE } from "./no-parameter-decorator-rule.constant.ts";
 import { NO_RAW_KEY_LITERAL_RULE } from "./no-raw-key-literal-rule.constant.ts";
 import { NO_TENANT_VOCABULARY_RULE } from "./no-tenant-vocabulary-rule.constant.ts";
@@ -59,7 +65,12 @@ export const STACKRA_PLUGIN: Plugin = {
     "no-enum": NO_ENUM_RULE,
     "no-hash-private": NO_HASH_PRIVATE_RULE,
     "no-kind-decorator": NO_KIND_DECORATOR_RULE,
+    "no-backdrop-filter": NO_BACKDROP_FILTER_RULE,
+    "no-literal-duration": NO_LITERAL_DURATION_RULE,
+    "no-literal-length": NO_LITERAL_LENGTH_RULE,
     "no-literal-radius": NO_LITERAL_RADIUS_RULE,
+    "no-literal-shadow": NO_LITERAL_SHADOW_RULE,
+    "no-literal-z-index": NO_LITERAL_Z_INDEX_RULE,
     "no-parameter-decorator": NO_PARAMETER_DECORATOR_RULE,
     "no-raw-key-literal": NO_RAW_KEY_LITERAL_RULE,
     "no-tenant-vocabulary": NO_TENANT_VOCABULARY_RULE,

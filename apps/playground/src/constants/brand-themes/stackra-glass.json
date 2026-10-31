@@ -1,0 +1,33 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "stackra-glass",
+  "changes": {
+    "name": "stackra-glass",
+    "radius": {
+      "base": "0.5rem",
+      "field": "14px"
+    },
+    "layout": {
+      "controlHeight": {
+        "sm": "calc(var(--spacing) * 9)",
+        "md": "calc(var(--spacing) * 11)",
+        "lg": "calc(var(--spacing) * 13)"
+      }
+    },
+    "typography": {
+      "body": {
+        "weight": 400,
+        "size": "17px",
+        "lineHeight": "22px",
+        "family": "sans",
+        "letterSpacing": "-0.01em"
+      }
+    },
+    "materials": {
+      "family": "front",
+      "defaultMode": "glass"
+    }
+  }
+}

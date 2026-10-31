@@ -10,4 +10,9 @@ import type { WidgetFrameContractProps } from "#contracts/types/widget-frame-con
 /** Props of the web WidgetFrame. */
 export type WidgetFrameProps = WidgetFrameContractProps & {
   readonly className?: string | undefined;
+  /**
+   * `card` (the default) draws one surface; `tray` puts the title and meta on the theme's tray (`--tray`) and the
+   * body on an inset card, the way lists and tables sit (ADR 0501).
+   */
+  readonly variant?: "card" | "tray" | undefined;
 };

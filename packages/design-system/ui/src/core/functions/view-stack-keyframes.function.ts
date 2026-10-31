@@ -14,9 +14,17 @@ import type { Direction } from "#contracts/enums/direction.enum";
 import type { MotionLevel } from "#contracts/enums/motion-level.enum";
 import type { ViewStackTransition } from "#contracts/enums/view-stack-transition.enum";
 import type { ViewStackKeyframes } from "#core/types/view-stack-keyframes.type";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 
-/** The theme's reveal step: quick to start, long to settle. */
-const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+/** A view moving in or out: the theme's reveal step, quick to start, long to settle. */
+const REVEAL_MS = motionTiming(STACKRA_THEME, "reveal").durationMs;
+
+/** The fade's length: the theme's base step. */
+const FADE_MS = motionTiming(STACKRA_THEME, "base").durationMs;
+
+/** The Web Animations API takes a CSS easing string, so the theme's named curves are read as strings. */
+const EASING = STACKRA_THEME.animation.easings.enter ?? "linear";
+const FADE_EASING = STACKRA_THEME.animation.easings.standard ?? "linear";
 
 /** A horizontal offset as a transform. */
 const x = (percent: number): string => `translateX(${percent}%)`;
@@ -41,8 +49,8 @@ export function viewStackKeyframes(
     return {
       leaving: [{ opacity: 1 }, { opacity: 0, offset: 0.5 }, { opacity: 0 }],
       entering: [{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1 }],
-      durationMs: 240,
-      easing: "ease-out",
+      durationMs: FADE_MS,
+      easing: FADE_EASING,
     };
   // From the top: the new view drops over the old one as an opaque sheet, and going back lifts it off the view under.
   if (transition === "from-top") {
@@ -50,8 +58,8 @@ export function viewStackKeyframes(
     const placed = { transform: "translateY(0)" };
     const still = [{ opacity: 1 }, { opacity: 1 }];
     return way === "forward"
-      ? { leaving: still, entering: [above, placed], durationMs: 380, easing: EASING }
-      : { leaving: [placed, above], entering: still, durationMs: 380, easing: EASING };
+      ? { leaving: still, entering: [above, placed], durationMs: REVEAL_MS, easing: EASING }
+      : { leaving: [placed, above], entering: still, durationMs: REVEAL_MS, easing: EASING };
   }
   // The reading end is the right in left-to-right and the left in right-to-left.
   const end = direction === "rtl" ? -100 : 100;
@@ -64,7 +72,7 @@ export function viewStackKeyframes(
           { transform: x(behind), opacity: dim },
         ],
         entering: [{ transform: x(end) }, { transform: x(0) }],
-        durationMs: 420,
+        durationMs: REVEAL_MS,
         easing: EASING,
       }
     : {
@@ -73,7 +81,7 @@ export function viewStackKeyframes(
           { transform: x(behind), opacity: dim },
           { transform: x(0), opacity: 1 },
         ],
-        durationMs: 420,
+        durationMs: REVEAL_MS,
         easing: EASING,
       };
 }

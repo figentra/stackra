@@ -27,7 +27,7 @@ export function ButtonGroup({
     <HeroButtonGroup
       aria-label={label}
       orientation={orientation}
-      variant={variant}
+      variant={variant === "glass" ? "ghost" : variant}
       {...omitUndefined({ size, isDisabled })}
       className={cn("[--radius:var(--radius-control)]", className) ?? ""}
     >

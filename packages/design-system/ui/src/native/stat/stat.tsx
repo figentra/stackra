@@ -56,7 +56,7 @@ export function Stat({
         {label}
       </Text>
       <View className="flex-row flex-wrap items-center gap-2">
-        <Text className="text-3xl font-semibold">
+        <Text className="text-metric font-semibold">
           {typeof value === "number" ? <NumberTicker value={value} /> : value}
         </Text>
         {badge ? <Chip size="sm">{badge}</Chip> : null}

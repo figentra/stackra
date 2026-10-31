@@ -23,7 +23,7 @@ export function ItemCardGroup({
   return (
     <View className={`gap-2 ${className ?? ""}`}>
       {title ? (
-        <Text type="small" tone="muted" accessibilityRole="header" className="px-4 uppercase">
+        <Text type="small" tone="muted" accessibilityRole="header" className="px-4">
           {title}
         </Text>
       ) : null}

@@ -6,6 +6,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); WCAG 2.2 SC 2.3.3; STA-1371 (wave D, owner approval 2026-10-30).
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { type ReactElement, useEffect } from "react";
 import Animated, {
   useAnimatedStyle,
@@ -13,6 +14,9 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+
+/** The dot stretching or shrinking: the theme's moderate step. */
+const MODERATE = motionTiming(STACKRA_THEME, "moderate");
 
 /** Widths in points. */
 const DOT = 8;
@@ -24,7 +28,7 @@ export function PageIndicatorDot({ isCurrent }: { readonly isCurrent: boolean })
   const width = useSharedValue(isCurrent ? CURRENT : DOT);
   useEffect(() => {
     const next = isCurrent ? CURRENT : DOT;
-    width.set(isReduced ? next : withTiming(next, { duration: 200 }));
+    width.set(isReduced ? next : withTiming(next, { duration: MODERATE.durationMs }));
   }, [isCurrent, isReduced, width]);
   const style = useAnimatedStyle(() => ({ width: width.get() }));
   return (

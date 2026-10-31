@@ -42,7 +42,7 @@ const FAST = motionTiming(STACKRA_THEME, "fast");
 /** The gap from the screen edges, in points: Material's 16. */
 const EDGE = 16;
 /** The delay between two actions fading in, in ms. */
-const STAGGER_MS = 30;
+const STAGGER_MS = motionTiming(STACKRA_THEME, "stagger").durationMs;
 
 /** Where the Fab sits in its positioned ancestor; logical sides, so the corners follow the reading direction. */
 const POSITION: Readonly<Record<FabPlacement, ViewStyle>> = Object.freeze({
@@ -107,7 +107,7 @@ export function Fab({
     variant,
     size,
     onPress: press,
-    className: "rounded-[var(--radius-pill)] shadow-lg",
+    className: "rounded-[var(--radius-pill)] shadow-overlay",
     ...(hasDial ? { accessibilityState: { expanded: open } } : {}),
     ...omitUndefined({ isDisabled }),
   };
@@ -155,7 +155,7 @@ export function Fab({
                 <View
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
-                  className="rounded-[var(--radius-pill)] bg-surface px-3 py-1.5 shadow-sm"
+                  className="rounded-[var(--radius-pill)] bg-overlay px-3 py-1.5 shadow-overlay"
                 >
                   <Text type="small">{action.label}</Text>
                 </View>
@@ -163,7 +163,7 @@ export function Fab({
                   label={action.label}
                   icon={action.icon}
                   variant="secondary"
-                  className="rounded-[var(--radius-pill)] shadow-sm"
+                  className="rounded-[var(--radius-pill)] shadow-overlay"
                   onPress={() => choose(action)}
                 />
               </Animated.View>

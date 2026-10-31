@@ -10,6 +10,7 @@
  * Runtime: browser
  * Governing contract: owner decision 2026-10-28 (hero concept A); STA-1371; WCAG 2.2 SC 1.1.1, 2.2.2, 2.3.3.
  */
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { IconButton, Text, useCatalogueText } from "@stackra/ui/react";
 import { motion, useReducedMotion } from "motion/react";
 import { Fragment, useState } from "react";
@@ -25,6 +26,10 @@ import { StackLayers } from "./stack-layers";
 /** The stack hero's keys. */
 const K = BRAND_KEYS.brand.hero.stack;
 
+/** The words' rise step and curve, from the theme's motion. */
+const RISE = motionTiming(STACKRA_THEME, "count");
+const ENTER = motionEasing(STACKRA_THEME, "enter");
+
 /** The words' rise: each line a beat after the last. */
 const rise = (index: number, isStill: boolean) =>
   isStill
@@ -32,7 +37,7 @@ const rise = (index: number, isStill: boolean) =>
     : {
         initial: { opacity: 0, y: 24, filter: "blur(8px)" },
         animate: { opacity: 1, y: 0, filter: "blur(0px)" },
-        transition: { duration: 0.9, delay: index * 0.12, ease: [0.2, 0.8, 0.2, 1] as const },
+        transition: { duration: RISE.durationMs / 1000, delay: index * 0.12, ease: ENTER },
       };
 
 /** Hero A: the stack. */

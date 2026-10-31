@@ -168,6 +168,7 @@
     "@types/react": "catalog:frontend",
     "@types/react-dom": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",
+    "expo-blur": "catalog:mobile",
     "expo-clipboard": "catalog:mobile",
     "expo-document-picker": "catalog:mobile",
     "expo-glass-effect": "catalog:mobile",
@@ -203,6 +204,7 @@
     "@internationalized/date": "^3.12.4",
     "@internationalized/number": "^3.6.9",
     "@shopify/react-native-skia": "^2.6.2",
+    "expo-blur": "^57.0.3",
     "expo-clipboard": ">=57.0.0",
     "expo-document-picker": ">=57.0.0",
     "expo-glass-effect": "^57.0.4",
@@ -236,6 +238,9 @@
       "optional": true
     },
     "@shopify/react-native-skia": {
+      "optional": true
+    },
+    "expo-blur": {
       "optional": true
     },
     "expo-clipboard": {

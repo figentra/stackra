@@ -1,0 +1,113 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "brutal",
+  "changes": {
+    "name": "brutal",
+    "colors": {
+      "accent": {
+        "light": "oklch(0.2 0.01 248)",
+        "dark": "oklch(0.97 0.004 122)",
+        "hexLight": "#13171A",
+        "hexDark": "#F4F5F3"
+      },
+      "focus": {
+        "light": "oklch(0.2 0.01 248)",
+        "dark": "oklch(0.97 0.004 122)",
+        "hexLight": "#13171A",
+        "hexDark": "#F4F5F3"
+      },
+      "border": {
+        "light": "oklch(0.2 0.01 248)",
+        "dark": "oklch(0.92 0.004 122)",
+        "hexLight": "#13171A",
+        "hexDark": "#E4E5E2"
+      },
+      "field-border": {
+        "light": "oklch(0.2 0.01 248)",
+        "dark": "oklch(0.92 0.004 122)",
+        "hexLight": "#13171A",
+        "hexDark": "#E4E5E2"
+      }
+    },
+    "fontFamily": {
+      "sans": "\"Geist Mono\", ui-monospace, monospace",
+      "display": "\"Bricolage Grotesque\", \"Geist\", sans-serif"
+    },
+    "radius": {
+      "base": "0px",
+      "field": "0px",
+      "steps": {
+        "sm": "0px",
+        "lg": "0px",
+        "pill": "0px",
+        "control": "0px",
+        "container": "0px"
+      }
+    },
+    "layout": {
+      "borderWidth": "2px",
+      "fieldBorderWidth": "2px",
+      "focusRing": {
+        "width": "3px",
+        "offset": "2px",
+        "style": "solid"
+      }
+    },
+    "shadows": {
+      "surface": {
+        "light": "4px 4px 0px 0px oklch(0.158 0.005 248)",
+        "dark": "4px 4px 0px 0px oklch(0.97 0.004 122)"
+      },
+      "overlay": {
+        "light": "6px 6px 0px 0px oklch(0.158 0.005 248)",
+        "dark": "6px 6px 0px 0px oklch(0.97 0.004 122)"
+      },
+      "field": {
+        "light": "none",
+        "dark": "none"
+      },
+      "raised": {
+        "light": "2px 2px 0px 0px oklch(0.158 0.005 248)",
+        "dark": "2px 2px 0px 0px oklch(0.97 0.004 122)"
+      },
+      "pressed": {
+        "light": "none",
+        "dark": "none"
+      }
+    },
+    "materials": {
+      "levels": {
+        "thin": {
+          "fill": {
+            "light": 1,
+            "dark": 1
+          },
+          "blur": "0px",
+          "saturation": 1
+        },
+        "regular": {
+          "fill": {
+            "light": 1,
+            "dark": 1
+          },
+          "blur": "0px",
+          "saturation": 1
+        },
+        "thick": {
+          "fill": {
+            "light": 1,
+            "dark": 1
+          },
+          "blur": "0px",
+          "saturation": 1
+        }
+      },
+      "highlight": {
+        "light": 0,
+        "dark": 0
+      }
+    }
+  }
+}

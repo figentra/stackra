@@ -36,7 +36,7 @@ export default function Controlled() {
           { id: "expanded", label: names.expanded },
         ]}
       />
-      <div className="h-[22rem] overflow-hidden rounded-[var(--radius-container)] border border-separator">
+      <div className="h-88 overflow-hidden rounded-[var(--radius-container)] border border-separator">
         <SidePanel
           label={t(K.controlled_label)}
           state={state}

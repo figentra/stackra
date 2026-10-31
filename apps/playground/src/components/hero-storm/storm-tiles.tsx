@@ -18,6 +18,7 @@ import {
   ToggleButtonGroup,
   useCatalogueText,
 } from "@stackra/ui/react";
+import { motionEasing, motionSpring, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { motion } from "motion/react";
 
 import { BRAND_KEYS } from "#src/constants/brand-keys.constant";
@@ -27,6 +28,12 @@ import type { StormTilesProps } from "./storm-tiles.props";
 
 /** The storm hero's keys. */
 const K = BRAND_KEYS.brand.hero.storm;
+
+/** The theme's motion the tiles play: the tiles' pop, the bars' rise and the ring's slow turn (fifteen pulses). */
+const BOUNCY = motionSpring(STACKRA_THEME, "bouncy");
+const PULSE = motionTiming(STACKRA_THEME, "pulse");
+const ENTER = motionEasing(STACKRA_THEME, "enter");
+const SPIN_S = (PULSE.durationMs * 15) / 1000;
 
 /** The revenue bars, in percent of their row; the last is this week's. */
 const BARS = [38, 52, 46, 64, 58, 72, 66, 80, 74, 88, 82, 96];
@@ -45,7 +52,7 @@ export function StormTiles({ isStill }: StormTilesProps) {
       : {
           initial: { opacity: 0, y: 18, scale: 0.96 },
           animate: { opacity: 1, y: 0, scale: 1 },
-          transition: { duration: 0.7, delay: index * 0.08, ease: [0.2, 1.4, 0.4, 1] as const },
+          transition: { type: "spring" as const, ...BOUNCY, delay: index * 0.08 },
         };
 
   return (
@@ -55,9 +62,10 @@ export function StormTiles({ isStill }: StormTilesProps) {
       className="relative grid grid-cols-2 gap-3 self-center select-none sm:grid-cols-6 sm:gap-4"
     >
       <motion.span
-        className="pointer-events-none absolute -end-44 -top-40 -z-10 size-[32rem] hero-round border border-dashed border-border max-sm:hidden"
+        className="pointer-events-none absolute -end-44 -top-40 z-(--z-behind) size-128 hero-round border border-dashed border-border max-sm:hidden"
         animate={isStill ? {} : { rotate: 360 }}
-        transition={{ duration: 18, ease: "linear", repeat: Infinity }}
+        // oxlint-disable-next-line stackra/no-literal-duration -- a constant-speed spin has no easing curve
+        transition={{ duration: SPIN_S, ease: "linear", repeat: Infinity }}
       />
       <motion.div
         className={`${TILE} col-span-2 flex min-h-64 flex-col gap-4 sm:col-span-4 sm:row-span-3`}
@@ -72,7 +80,7 @@ export function StormTiles({ isStill }: StormTilesProps) {
               style={{ height: `${height}%` }}
               initial={isStill ? false : { scaleY: 0 }}
               animate={{ scaleY: 1 }}
-              transition={{ duration: 1.4, delay: index * 0.05, ease: [0.2, 0.8, 0.2, 1] }}
+              transition={{ duration: PULSE.durationMs / 1000, delay: index * 0.05, ease: ENTER }}
             />
           ))}
         </div>

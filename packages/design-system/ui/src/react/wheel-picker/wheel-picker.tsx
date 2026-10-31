@@ -47,7 +47,9 @@ export function WheelPicker({
       role="group"
       aria-label={label}
       aria-disabled={isDisabled || undefined}
-      className={cn("relative flex gap-1", isDisabled && "opacity-60", className) ?? ""}
+      className={
+        cn("relative flex gap-1", isDisabled && "opacity-(--opacity-muted)", className) ?? ""
+      }
     >
       <div
         aria-hidden

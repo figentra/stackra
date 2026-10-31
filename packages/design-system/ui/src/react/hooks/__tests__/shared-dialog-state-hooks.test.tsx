@@ -186,7 +186,7 @@ describe("useDesignSystemState", () => {
       locale: "en",
       direction: "ltr",
       theme: "stackra",
-      transition: "none",
+      transition: "circle-origin",
       motion: "full",
       resolvedMotion: "full",
     });

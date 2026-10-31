@@ -109,7 +109,9 @@ export function Carousel({
                   onClick={() => goTo(position)}
                   className={cn(
                     "size-14 shrink-0 overflow-hidden rounded-[var(--radius-control)] bg-default outline-none focus-visible:ring-2 focus-visible:ring-focus",
-                    position === index ? "ring-2 ring-accent" : "opacity-60 hover:opacity-100",
+                    position === index
+                      ? "ring-2 ring-accent"
+                      : "opacity-(--opacity-muted) hover:opacity-100",
                   )}
                 >
                   {thumbnails[position] ? (

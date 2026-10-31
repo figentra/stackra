@@ -1,0 +1,41 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "stackra-studio",
+  "changes": {
+    "name": "stackra-studio",
+    "typography": {
+      "body": {
+        "weight": 400,
+        "size": "14px",
+        "lineHeight": "20px",
+        "family": "sans",
+        "letterSpacing": "-0.005em"
+      }
+    },
+    "materials": {
+      "family": "studio",
+      "defaultMode": "frosted",
+      "levels": {
+        "glass": {
+          "fill": {
+            "light": 0.88,
+            "dark": 0.9
+          },
+          "blur": "20px",
+          "saturation": 1.4,
+          "tint": 0,
+          "specular": 0.15,
+          "elevation": "overlay"
+        }
+      }
+    },
+    "shadows": {
+      "floating": {
+        "light": "0px 0px 0px 1px oklch(0.158 0.005 248 / 0.08), 0px 8px 24px -4px oklch(0.158 0.005 248 / 0.14)",
+        "dark": "0px 0px 0px 1px oklch(0.35 0.008 250), 0px 16px 32px -8px oklch(0 0 0 / 0.55)"
+      }
+    }
+  }
+}

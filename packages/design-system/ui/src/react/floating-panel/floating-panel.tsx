@@ -178,7 +178,7 @@ export function FloatingPanel({
         close();
       }}
       className={cn(
-        "fixed z-50 flex flex-col overflow-hidden border border-separator bg-overlay text-foreground shadow-overlay",
+        "fixed z-(--z-overlay) flex flex-col overflow-hidden border border-separator bg-overlay text-foreground shadow-overlay",
         className,
       )}
       style={{
@@ -202,7 +202,7 @@ export function FloatingPanel({
           aria-describedby={`${id}-move-hint`}
           onKeyDown={keys("move")}
           style={{ borderRadius: "var(--radius-control)" }}
-          className="flex size-8 shrink-0 cursor-move items-center justify-center text-muted outline-none hover:bg-default focus-visible:outline-2 focus-visible:outline-focus"
+          className="flex size-8 shrink-0 cursor-move items-center justify-center text-muted outline-none hover:bg-default focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus"
         >
           <Icon name="grip-vertical" size="sm" />
         </button>
@@ -233,7 +233,7 @@ export function FloatingPanel({
           aria-label={t(K.resize)}
           aria-describedby={`${id}-resize-hint`}
           onKeyDown={keys("resize")}
-          className="absolute end-0 bottom-0 flex size-5 touch-none items-end justify-end p-1 text-muted outline-none focus-visible:outline-2 focus-visible:outline-focus ltr:cursor-nwse-resize rtl:cursor-nesw-resize"
+          className="absolute end-0 bottom-0 flex size-5 touch-none items-end justify-end p-1 text-muted outline-none focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus ltr:cursor-nwse-resize rtl:cursor-nesw-resize"
         >
           <svg
             aria-hidden

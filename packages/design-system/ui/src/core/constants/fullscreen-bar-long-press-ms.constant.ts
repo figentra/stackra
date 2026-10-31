@@ -8,4 +8,5 @@
  */
 
 /** Long enough that a customer's tap or swipe never reveals the bar; in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a long-press hold threshold, not motion
 export const FULLSCREEN_BAR_LONG_PRESS_MS = 800;

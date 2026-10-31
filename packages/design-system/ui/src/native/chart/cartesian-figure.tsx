@@ -15,6 +15,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303; ADR 0060 (right-to-left); WCAG 2.2 SC 1.1.1, 1.4.11 and 2.3.3; STA-1371.
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import {
   Circle,
   DashPathEffect,
@@ -51,6 +52,7 @@ import {
   useChartPressState,
 } from "victory-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { chartColorOf } from "#core/functions/chart-color-of.function";
 import { emphasisIndexOf } from "#core/functions/emphasis-index-of.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -73,6 +75,9 @@ import { CHART_CONTEXT_SHARE } from "#core/constants/chart-context-share.constan
 import { mixOf } from "#native/chart/mix-of.function";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
+
+/** The series drawing in: the theme's slow step. */
+const SLOW = motionTiming(STACKRA_THEME, "slow");
 
 /** The width allowed per character of an axis label at 11 points. */
 const LABEL_CHAR_WIDTH = 6.5;
@@ -238,13 +243,16 @@ export function CartesianFigure(props: CartesianFigureProps): ReactElement {
         // One centred line in a box a little wider than the text: laid out to its exact intrinsic width, shaped
         // Arabic wraps to two lines; a fixed wide box crowds neighbours out.
         paragraphStyle: { maxLines: 1, textAlign: TextAlign.Center },
-        // oxlint-disable-next-line react/capitalized-calls -- Skia.Color is Skia's colour parser, a namespace method, not a component
-        textStyle: { fontSize: 10, color: Skia.Color(paint.muted) },
+        textStyle: {
+          fontSize: THEME_PX.typeScale["3xs"]?.fontSize ?? 0,
+          // oxlint-disable-next-line react/capitalized-calls -- Skia.Color is Skia's colour parser, a namespace method, not a component
+          color: Skia.Color(paint.muted),
+        },
         maxWidth: ({ text }) => text.length * LABEL_CHAR_WIDTH + 8,
       }),
     [paint.muted],
   );
-  const animate = isReduced ? undefined : ({ type: "timing", duration: 300 } as const);
+  const animate = isReduced ? undefined : ({ type: "timing", duration: SLOW.durationMs } as const);
   const category = (value: unknown) => formatChartCategory(value, locale, xFormat);
   const value = (figure: number) => formatChartNumber(figure, locale, valueFormat);
   const table = chartTableOf({

@@ -59,7 +59,7 @@ export function Truncate({
     return (
       <div data-slot="truncate" className={cn("min-w-0", className)}>
         <Tooltip isDisabled={!isCut}>
-          <Tooltip.Trigger className="rounded-[var(--radius-control)] outline-none focus-visible:outline-2 focus-visible:outline-focus">
+          <Tooltip.Trigger className="rounded-[var(--radius-control)] outline-none focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus">
             {text}
           </Tooltip.Trigger>
           <Tooltip.Content className="max-w-sm">{children}</Tooltip.Content>
@@ -75,7 +75,7 @@ export function Truncate({
           aria-expanded={isOpen}
           aria-controls={id}
           onClick={() => setOpen(!isOpen)}
-          className="min-h-6 rounded-[var(--radius-control)] text-sm font-medium text-accent-soft-foreground underline-offset-2 outline-none hover:underline focus-visible:outline-2 focus-visible:outline-focus"
+          className="min-h-6 rounded-[var(--radius-control)] text-sm font-medium text-accent-soft-foreground underline-offset-2 outline-none hover:underline focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus"
         >
           {t(isOpen ? K.less : K.more)}
         </button>

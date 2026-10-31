@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "8bbc8eec7c21ac4a",
+    "hash": "b731ae46f8462849",
     "propsFiles": ["ui/src/react/action-menu/action-menu.props.ts"]
   },
   "importLine": "import { ActionMenu } from \"@stackra/ui/react\";",
@@ -53,7 +53,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "default": "md",

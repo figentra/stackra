@@ -56,8 +56,9 @@ const RAIL = { sidebar: 64, floating: 80, inset: 80 } as const;
 
 /** The card each look draws the sidebar's content in. */
 const CARD = {
-  sidebar: "border-e border-separator bg-surface",
-  floating: "rounded-[var(--radius-container)] border border-separator bg-surface shadow-sm",
+  // The sidebar role: solid in studio, glass over the ambient field in front (ADR 0320 as amended 2026-10-31).
+  sidebar: "material-role-sidebar border-e border-separator text-(--sidebar-foreground)",
+  floating: "material-role-sidebar rounded-[var(--radius-container)] border border-separator",
   inset: "",
 } as const;
 
@@ -247,7 +248,7 @@ function SidebarRoot({
         className={cn(
           "relative h-full shrink-0",
           moves
-            ? "transition-[width] duration-200 ease-out motion-reduce:transition-none data-[resizing]:transition-none"
+            ? "transition-[width] duration-(--duration-moderate) ease-out motion-reduce:transition-none data-[resizing]:transition-none"
             : "",
           className,
         )}
@@ -260,10 +261,10 @@ function SidebarRoot({
             "absolute inset-y-0 start-0 flex",
             look === "sidebar" ? "" : look === "inset" ? "py-2 ps-2" : "p-2",
             state.isPeeking || isOffcanvas ? "w-[var(--sidebar-width)]" : "w-full",
-            state.isPeeking ? "z-30" : "",
+            state.isPeeking ? "z-(--z-dock)" : "",
             isAway ? "-translate-x-full rtl:translate-x-full" : "translate-x-0",
             moves
-              ? "transition-[translate,width] duration-200 ease-out motion-reduce:transition-none"
+              ? "transition-[translate,width] duration-(--duration-moderate) ease-out motion-reduce:transition-none"
               : "",
           )}
         >
@@ -272,7 +273,7 @@ function SidebarRoot({
             className={cn(
               "flex min-h-0 w-full flex-col overflow-hidden",
               CARD[look],
-              state.isPeeking ? "shadow-xl" : "",
+              state.isPeeking ? "shadow-overlay" : "",
               state.isPeeking && look === "inset"
                 ? "rounded-[var(--radius-container)] bg-surface"
                 : "",

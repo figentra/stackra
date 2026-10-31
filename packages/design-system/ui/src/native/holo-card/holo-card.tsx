@@ -7,6 +7,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3: one API on web and native); WCAG 2.2 SC 2.3.3; STA-1371.
  */
+import { motionSpring, STACKRA_THEME } from "@stackra/tokens";
 import { type ReactElement, useState } from "react";
 import { type GestureResponderEvent, View } from "react-native";
 import Animated, {
@@ -17,6 +18,9 @@ import Animated, {
 } from "react-native-reanimated";
 
 import type { HoloCardProps } from "#native/holo-card/holo-card.props";
+
+/** The theme's bouncy spring: the tilt and its glare play a little. */
+const BOUNCY = motionSpring(STACKRA_THEME, "bouncy");
 
 /** The glare's diameter. */
 const GLARE = 220;
@@ -51,12 +55,12 @@ export function HoloCard({
   const move = (event: GestureResponderEvent) => {
     x.set(Math.min(1, Math.max(0, event.nativeEvent.locationX / size.width)));
     y.set(Math.min(1, Math.max(0, event.nativeEvent.locationY / size.height)));
-    on.set(withSpring(1));
+    on.set(withSpring(1, BOUNCY));
   };
   const release = () => {
-    x.set(withSpring(0.5));
-    y.set(withSpring(0.5));
-    on.set(withSpring(0));
+    x.set(withSpring(0.5, BOUNCY));
+    y.set(withSpring(0.5, BOUNCY));
+    on.set(withSpring(0, BOUNCY));
   };
   return (
     <Animated.View
@@ -70,7 +74,7 @@ export function HoloCard({
         ? { onTouchStart: move, onTouchMove: move, onTouchEnd: release, onTouchCancel: release }
         : {})}
       className={[
-        "overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-lg",
+        "overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-overlay",
         className,
       ]
         .filter(Boolean)

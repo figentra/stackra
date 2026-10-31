@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `runThemeTransition`: applies a change to the page (a scheme, locale, material or brand) inside a View
  *          Transition, drawn by Uniwind Pro's `view-transition.css` presets: `data-uniwind-transition` on <html> and
- *          the origin in `--uniwind-transition-origin-x/y`, the last pointer press or else the focused control.
+ *          the origin in `--uniwind-transition-origin-x/y`, the last pointer press or else the focused control; every
+ *          preset runs for the theme's `slower` step (`--uniwind-transition-duration`) on its standard easing.
  *          Reduced motion plays a fade; no View Transitions API (or `none`) applies the change at once.
  * Boundary: the transition only; what changes is the caller's `update`.
  * Runtime: browser
@@ -10,6 +11,7 @@
  */
 import "./theme-transition.css";
 
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { flushSync } from "react-dom";
 
 import { readThemeTransition } from "./read-theme-transition.function";
@@ -20,6 +22,10 @@ const PRESS_WINDOW = 1000;
 
 /** The longest the page stays frozen waiting for the change to reach the DOM, in milliseconds. */
 const SETTLE_LIMIT = 300;
+
+/** The transition's length: the theme's `slower` step, read in JavaScript so the reduced-motion fade still plays
+ *  (the stylesheet's `--duration-*` drop to 0ms under reduced motion). */
+const SLOWER = motionTiming(STACKRA_THEME, "slower");
 
 let lastPress: { x: number; y: number; time: number } | undefined;
 let running = 0;
@@ -64,6 +70,7 @@ export function runThemeTransition(
   const { x, y } = origin();
   root.style.setProperty("--uniwind-transition-origin-x", `${x}px`);
   root.style.setProperty("--uniwind-transition-origin-y", `${y}px`);
+  root.style.setProperty("--uniwind-transition-duration", `${SLOWER.durationMs}ms`);
   root.dataset["uniwindTransition"] = name;
   const id = ++running;
   // React Router commits its updates in a transition, which flushSync does not flush, so the new snapshot waits for the

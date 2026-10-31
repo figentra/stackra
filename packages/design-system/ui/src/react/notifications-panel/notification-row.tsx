@@ -64,7 +64,7 @@ export function NotificationRow({
           className={
             cn(
               layout,
-              "cursor-pointer outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus",
+              "cursor-pointer outline-none data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus",
             ) ?? ""
           }
           onPress={() => onPress(item.id)}

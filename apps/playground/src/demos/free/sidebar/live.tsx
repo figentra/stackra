@@ -85,7 +85,7 @@ export default function Live() {
 
   return (
     <div className="flex flex-wrap items-start gap-4">
-      <div className="h-[28rem] w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
+      <div className="h-112 w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
         <Sidebar
           label={t(K.live_label)}
           items={items("sidebar-live", "home")}

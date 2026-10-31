@@ -9,6 +9,7 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303; WCAG 2.2 SC 1.1.1, 1.4.11 and 2.3.3; STA-1371.
  */
 import { Canvas, Path, Skia } from "@shopify/react-native-skia";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { type ReactElement, useEffect } from "react";
 import { View } from "react-native";
 import { useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
@@ -24,6 +25,9 @@ import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { RadialBarChartProps } from "#native/radial-bar-chart/radial-bar-chart.props";
 
+/** The bars sweeping in: twice the theme's slow step. */
+const SLOW = motionTiming(STACKRA_THEME, "slow");
+
 /** Rings filled to their values. */
 export function RadialBarChart(props: RadialBarChartProps): ReactElement {
   const { data, series, label, nameKey, valueKey, valueFormat, height = 240 } = props;
@@ -33,7 +37,7 @@ export function RadialBarChart(props: RadialBarChartProps): ReactElement {
   const isReduced = useReducedMotion();
   const progress = useSharedValue(isReduced ? 1 : 0);
   useEffect(() => {
-    progress.set(isReduced ? 1 : withTiming(1, { duration: 600 }));
+    progress.set(isReduced ? 1 : withTiming(1, { duration: SLOW.durationMs * 2 }));
   }, [isReduced, progress]);
   const table = chartTableOf({
     data,

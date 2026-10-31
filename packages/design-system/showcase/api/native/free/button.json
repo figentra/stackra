@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "681a4453716c07b6",
+    "hash": "3add1beb4dfa9e88",
     "heroDoc": "vendor/heroui/native/button.json",
     "propsFiles": ["ui/src/native/button/button.props.ts"]
   },
@@ -56,7 +56,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "default": "md",

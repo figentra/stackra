@@ -7,4 +7,5 @@
  */
 
 /** The check shows for two seconds, long enough to see and short enough to copy again. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a dwell before the icon resets, not motion
 export const COPIED_RESET_MS = 2000;

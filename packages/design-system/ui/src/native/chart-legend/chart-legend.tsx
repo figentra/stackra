@@ -10,6 +10,7 @@
 import type { ReactElement } from "react";
 import { Pressable, View } from "react-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { chartColorOf } from "#core/functions/chart-color-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -51,7 +52,9 @@ export function ChartLegend({
             <View
               className="size-2 rounded-[var(--radius-pill)]"
               style={
-                isHidden ? { borderWidth: 1.5, borderColor: color } : { backgroundColor: color }
+                isHidden
+                  ? { borderWidth: THEME_PX.focusRing.width, borderColor: color }
+                  : { backgroundColor: color }
               }
             />
             <Text

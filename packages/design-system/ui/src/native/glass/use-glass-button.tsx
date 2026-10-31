@@ -21,7 +21,12 @@ import { useGlassMaterial } from "./use-glass-material";
 import type { GlassButtonLook } from "#native/glass/glass-button-look.type";
 
 /** The variants that draw on glass; the web's glass ghost exists only under a pointer. */
-const GLASS_VARIANTS: ReadonlySet<ButtonVariant> = new Set(["secondary", "tertiary", "outline"]);
+const GLASS_VARIANTS: ReadonlySet<ButtonVariant> = new Set([
+  "secondary",
+  "tertiary",
+  "outline",
+  "glass",
+]);
 
 /**
  * The glass look of `variant`, agreed by Button, IconButton and CloseButton.

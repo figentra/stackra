@@ -120,7 +120,11 @@ describe("Button (native)", () => {
           Save
         </Button>,
       );
-      expect(propsOf("button")).toMatchObject({ variant, size, isDisabled: true });
+      expect(propsOf("button")).toMatchObject({
+        variant: variant === "glass" ? "tertiary" : variant,
+        size,
+        isDisabled: true,
+      });
     }
   });
 

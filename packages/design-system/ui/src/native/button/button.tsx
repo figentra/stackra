@@ -38,6 +38,7 @@ const LABEL_COLOR: Readonly<Record<ButtonVariant, ThemeColor>> = Object.freeze({
   ghost: "default-foreground",
   danger: "danger-foreground",
   "danger-soft": "danger-soft-foreground",
+  glass: "default-foreground",
 });
 
 /**
@@ -79,7 +80,8 @@ export function Button({
       // Before the rest, so a caller's own `background` (or `null`) wins.
       {...(glass ? { background: glass.background } : {})}
       {...rest}
-      variant={variant}
+      // A glass button is HeroUI Native's tertiary on Liquid Glass (`useGlassButton`), and tertiary where it is solid.
+      variant={variant === "glass" ? "tertiary" : variant}
       size={size}
       isDisabled={isDisabled}
       {...blocksPress}

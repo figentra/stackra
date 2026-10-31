@@ -100,7 +100,7 @@ export function VoiceInput({
             {BARS.map((bar) => (
               <span
                 key={bar.id}
-                className="w-1 bg-accent transition-[height] duration-75"
+                className="w-1 bg-accent transition-[height] duration-(--duration-instant)"
                 style={{ height: `${Math.max(15, Math.round(level * bar.weight * 100))}%` }}
               />
             ))}

@@ -38,7 +38,7 @@ export function ScrollArea({
             : { maxWidth: maxSize }
       }
       className={cn(
-        "rounded-[var(--radius-container)] outline-none focus-visible:outline-2 focus-visible:outline-focus",
+        "rounded-[var(--radius-container)] outline-none focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus",
         className,
       )}
     >

@@ -11,6 +11,7 @@
  */
 import { formatNumber } from "@stackra/i18n";
 import { useNumerals } from "@stackra/i18n/react";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { type ReactElement, use, useEffect, useRef, useState } from "react";
 
 import { tickerValueOf } from "#core/functions/ticker-value-of.function";
@@ -19,11 +20,13 @@ import { DesignSystemContext } from "#react/design-system-provider/design-system
 import { useMotion } from "#react/design-system-provider/use-motion";
 import type { NumberTickerProps } from "#react/number-ticker/number-ticker.props";
 
+const COUNT = motionTiming(STACKRA_THEME, "count");
+
 /** A number that counts to its value. */
 export function NumberTicker({
   value,
   from = 0,
-  duration = 900,
+  duration = COUNT.durationMs,
   format,
 }: NumberTickerProps): ReactElement {
   const locale =

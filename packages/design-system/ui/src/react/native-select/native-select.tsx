@@ -70,7 +70,7 @@ export function NativeSelect({
           }}
           className={
             cn(
-              "h-10 w-full appearance-none rounded-[var(--radius-control)] border border-field-border bg-field ps-3 pe-9 text-field-foreground outline-none focus-visible:border-field-border-focus focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-60",
+              "h-10 w-full appearance-none rounded-[var(--radius-control)] border border-field-border bg-field ps-3 pe-9 text-field-foreground outline-none focus-visible:border-field-border-focus focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus disabled:opacity-(--opacity-muted)",
               isInvalid && "border-danger",
             ) ?? ""
           }

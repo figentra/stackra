@@ -84,7 +84,7 @@ export function JsonViewer({
       dir="ltr"
       data-slot="json-viewer"
       className={cn(
-        "overflow-x-auto rounded-[var(--radius-container)] border border-separator bg-surface-secondary p-3 text-start font-mono text-[13px] leading-6",
+        "overflow-x-auto rounded-[var(--radius-container)] border border-separator bg-surface-secondary p-3 text-start font-mono text-(length:--text-code) leading-6",
         className,
       )}
     >

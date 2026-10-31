@@ -84,7 +84,7 @@ export function Fab({
     variant,
     size,
     onPress: press,
-    className: "pointer-events-auto rounded-[var(--radius-pill)] shadow-lg",
+    className: "pointer-events-auto rounded-[var(--radius-pill)] shadow-overlay",
     ...(hasDial ? { "aria-expanded": open, "aria-controls": dialId } : {}),
     ...omitUndefined({ isDisabled }),
   };
@@ -101,8 +101,8 @@ export function Fab({
             initial={isReduced ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: isReduced ? 0 : FAST.durationMs / 1000 } }}
-            transition={{ duration: FAST.durationMs / 1000, ease: "easeOut" }}
-            className="absolute inset-0 z-10 bg-backdrop"
+            transition={{ duration: FAST.durationMs / 1000, ease: FAST.bezier ?? "easeOut" }}
+            className="absolute inset-0 z-(--z-raised) bg-backdrop"
             onClick={() => setOpen(false)}
           />
         ) : null}
@@ -117,7 +117,7 @@ export function Fab({
         {...rest}
         ref={root}
         data-slot="fab"
-        className={cn("z-10 flex flex-col gap-3", POSITION[placement], className)}
+        className={cn("z-(--z-raised) flex flex-col gap-3", POSITION[placement], className)}
         onKeyDown={(event) => {
           if (event.key !== "Escape" || !open) return;
           setOpen(false);
@@ -138,7 +138,7 @@ export function Fab({
                   transition={{
                     duration: FAST.durationMs / 1000,
                     delay: isReduced ? 0 : ((actions.length - 1 - index) * 30) / 1000,
-                    ease: "easeOut",
+                    ease: FAST.bezier ?? "easeOut",
                   }}
                   className={cn(
                     "pointer-events-auto flex items-center gap-2",
@@ -147,7 +147,7 @@ export function Fab({
                 >
                   <span
                     aria-hidden="true"
-                    className="rounded-[var(--radius-pill)] bg-surface px-3 py-1.5 text-sm shadow-sm"
+                    className="rounded-[var(--radius-pill)] bg-overlay px-3 py-1.5 text-sm shadow-overlay"
                   >
                     {action.label}
                   </span>
@@ -155,7 +155,7 @@ export function Fab({
                     label={action.label}
                     icon={action.icon}
                     variant="secondary"
-                    className="rounded-[var(--radius-pill)] shadow-sm"
+                    className="rounded-[var(--radius-pill)] shadow-overlay"
                     onPress={() => choose(action)}
                   />
                 </motion.li>

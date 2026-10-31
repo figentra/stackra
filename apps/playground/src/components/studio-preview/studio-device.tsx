@@ -118,7 +118,7 @@ export function StudioDevice({
         {hasStatusBar ? (
           <div
             aria-hidden="true"
-            className={`flex shrink-0 items-center justify-between text-foreground ${device === "tablet" ? "px-6 text-xs" : "px-7 text-[15px]"} font-semibold`}
+            className={`flex shrink-0 items-center justify-between text-foreground ${device === "tablet" ? "px-6 text-xs" : "px-7 text-sm"} font-semibold`}
             style={{ height: frame.top, paddingInline: device === "android" ? 20 : undefined }}
           >
             <span className="tabular-nums">{time}</span>
@@ -146,7 +146,7 @@ export function StudioDevice({
             style={{ height: isLandscape && device === "iphone" ? 21 : frame.bottom }}
           >
             <span
-              className="h-[5px] bg-foreground"
+              className="h-1.25 bg-foreground"
               style={{
                 width: device === "android" ? 108 : device === "tablet" ? 300 : 134,
                 borderRadius: "var(--radius-full)",
@@ -158,7 +158,7 @@ export function StudioDevice({
         {camera ? (
           <span
             aria-hidden="true"
-            className="absolute z-10"
+            className="absolute z-(--z-raised)"
             style={{ ...camera, borderRadius: "var(--radius-full)", background: "oklch(0.08 0 0)" }}
           />
         ) : null}

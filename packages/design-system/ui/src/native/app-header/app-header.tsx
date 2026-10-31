@@ -22,6 +22,7 @@ import { View } from "react-native";
 
 import { Text } from "#native/text/text";
 import type { AppHeaderProps } from "#native/app-header/app-header.props";
+import { GlassSurface } from "#native/glass/glass-surface";
 
 /** A node as the bar can draw it: a string or number goes inside `Text`, any other node as it is. */
 function textual(node: ReactNode, className?: string): ReactNode {
@@ -49,12 +50,14 @@ export function AppHeader({
   ...rest
 }: AppHeaderProps): ReactElement {
   return (
-    <View
+    // The nav-bar role: Liquid Glass or blur in the front family, the tonal solid in studio (ADR 0320 as amended).
+    <GlassSurface
+      material="nav-bar"
       role="banner"
       {...rest}
       {...(label ? { accessibilityLabel: label } : {})}
       className={[
-        "min-h-14 flex-row items-center gap-3 border-b border-separator bg-background px-4 py-2",
+        "min-h-14 flex-row items-center gap-3 border-b border-separator px-4 py-2",
         className,
       ]
         .filter(Boolean)
@@ -67,6 +70,6 @@ export function AppHeader({
         <View className="flex-row items-center gap-1">{textual(endContent)}</View>
       )}
       {textual(userMenu)}
-    </View>
+    </GlassSurface>
   );
 }

@@ -14,7 +14,7 @@
  *           resizes; picking one selects it. A closable tab draws a close mark the pointer presses (hidden from
  *           assistive tech, since a button inside a tab is not allowed) and closes on Delete or Backspace, which the
  *           tab's description says ("Close Orders: Delete"). At the `full` motion level the selection indicator glides on the
- *           shared `SPRING` curve (a light overshoot) instead of HeroUI's ease; below it, HeroUI's own timing stands
+ *           theme's indicator step (ADR 0501, about 250ms on a fluid ease-out) instead of HeroUI's ease; below it, HeroUI's own timing stands
  *           and the system setting stills it.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (UI contract, HeroUI v3 on web); ADR 0313 (decisions 1, 2, 5);
@@ -32,7 +32,6 @@ import {
 import { Tabs as HeroTabs } from "@heroui/react";
 
 import { NAVIGATION_KEYS } from "#core/constants/navigation-keys.constant";
-import { SPRING } from "#core/constants/spring.constant";
 import { fitTabs } from "#core/functions/fit-tabs.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { Button } from "#react/button/button";
@@ -46,10 +45,10 @@ import type { TabsProps } from "#react/tabs/tabs.props";
 /** The tabs' keys. */
 const K = NAVIGATION_KEYS.ui.tabs;
 
-/** The indicator's glide on the shared spring. */
-const SPRING_STYLE = {
-  transitionDuration: `${SPRING.durationMs}ms`,
-  transitionTimingFunction: SPRING.css,
+/** The indicator's glide on the theme's indicator step (ADR 0501), as the segmented control's. */
+const INDICATOR_STYLE = {
+  transitionDuration: "var(--duration-indicator)",
+  transitionTimingFunction: "var(--ease-indicator)",
 } as const;
 
 /**
@@ -175,14 +174,14 @@ export function Tabs({
             >
               {/* Its own positioned element, above the indicator, so a checker finds the label's colour on the indicator; one line,
                  so a long label widens its tab in the scrolling row instead of wrapping and clipping. */}
-              <span className="relative z-10 whitespace-nowrap">{item.label}</span>
+              <span className="relative z-(--z-raised) whitespace-nowrap">{item.label}</span>
               {canClose ? (
                 // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- reason: the keyboard closes the tab with Delete; a button inside a tab is not allowed
                 <span
                   aria-hidden
                   title={t(K.close, { tab: item.label })}
                   data-slot="tab-close"
-                  className="relative z-10 -me-2 ms-1 flex size-5 items-center justify-center rounded-[var(--radius-pill)] text-muted hover:bg-default hover:text-foreground [&_svg]:size-3.5"
+                  className="relative z-(--z-raised) -me-2 ms-1 flex size-5 items-center justify-center rounded-[var(--radius-pill)] text-muted hover:bg-default hover:text-foreground [&_svg]:size-3.5"
                   onPointerDown={stop}
                   onPointerUp={stop}
                   onMouseDown={stop}
@@ -198,7 +197,7 @@ export function Tabs({
                   </span>
                 </span>
               ) : null}
-              <HeroTabs.Indicator {...(motion === "full" ? { style: SPRING_STYLE } : {})} />
+              <HeroTabs.Indicator {...(motion === "full" ? { style: INDICATOR_STYLE } : {})} />
             </HeroTabs.Tab>
           );
         })}

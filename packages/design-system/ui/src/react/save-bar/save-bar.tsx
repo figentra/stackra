@@ -27,6 +27,7 @@ import { Text } from "#react/text/text";
 import type { SaveBarProps } from "#react/save-bar/save-bar.props";
 
 const BASE = motionTiming(STACKRA_THEME, "base");
+const REVEAL = motionTiming(STACKRA_THEME, "reveal");
 
 /** Where the bar rests while it slides in or out: below its own edge. */
 const HIDDEN = { y: "100%", opacity: 0 } as const;
@@ -62,7 +63,8 @@ export function SaveBar({
   useEffect(() => {
     if (attentionKey === seen.current) return;
     seen.current = attentionKey;
-    if (!isReduced && scope.current) void animate(scope.current, { x: SHAKE }, { duration: 0.4 });
+    if (!isReduced && scope.current)
+      void animate(scope.current, { x: SHAKE }, { duration: REVEAL.durationMs / 1000 });
   }, [attentionKey, isReduced, animate, scope]);
 
   const save = () => {
@@ -74,7 +76,7 @@ export function SaveBar({
   };
 
   return (
-    <div {...rest} className={cn("sticky bottom-0 z-10", className)}>
+    <div {...rest} className={cn("sticky bottom-0 z-(--z-raised)", className)}>
       {/* Present before it speaks, so the bar's arrival, not the page's load, is what is announced. */}
       <div role="status" className="sr-only">
         {isDirty ? message : ""}

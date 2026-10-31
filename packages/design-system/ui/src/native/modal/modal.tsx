@@ -48,9 +48,9 @@ import { DesignSystemContext } from "#native/design-system-provider/design-syste
 
 /** The dialog's width by `size`: a cap and centring, or the whole screen. */
 const SIZE_CLASS_NAME = {
-  sm: "w-full max-w-[320px] self-center",
-  md: "w-full max-w-[448px] self-center",
-  lg: "w-full max-w-[576px] self-center",
+  sm: "w-full max-w-dialog-sm self-center",
+  md: "w-full max-w-dialog-md self-center",
+  lg: "w-full max-w-dialog-lg self-center",
   full: "flex-1 self-stretch rounded-none",
 } as const;
 

@@ -79,15 +79,16 @@ const HEADER_ALIGN_CLASS = Object.freeze({
 } as const);
 
 /** The classes that keep a header in view over the rows: HeroUI paints the tray, so the header needs its own ground. */
-const STICKY_CLASS = "sticky top-0 z-10 bg-surface-secondary";
+const STICKY_CLASS = "sticky top-0 z-(--z-raised) bg-surface-secondary";
 
 /**
- * The cell padding and row height (32, 44 and 56 px) and the header padding of each density. Elements, not HeroUI's
+ * The cell padding and row height (32, 44 and 56 px) and the header padding of each density; the normal header row is
+ * the theme's `--size-table-header` (36 in Stackra, ADR 0501). Elements, not HeroUI's
  * `table__cell` classes: Tailwind reads an underscore in an arbitrary variant as a space, so those never matched.
  */
 const DENSITY_CLASS = Object.freeze({
   compact: "[&_td]:h-8 [&_td]:py-1 [&_th]:h-8 [&_th]:py-0",
-  normal: "[&_td]:h-11 [&_td]:py-2.5 [&_th]:h-11 [&_th]:py-1.5",
+  normal: "[&_td]:h-11 [&_td]:py-2.5 [&_th]:h-(--size-table-header) [&_th]:py-0",
   roomy: "[&_td]:h-14 [&_td]:py-4 [&_th]:h-14 [&_th]:py-3",
 } as const);
 
@@ -124,7 +125,7 @@ const ROW_PX = Object.freeze({ compact: 32, normal: 44, roomy: 56 } as const);
 
 /** The header label: it truncates only when its column is too narrow, and shows in full on hover or keyboard focus. */
 const LABEL_CLASS =
-  "block truncate group-hover/header:relative group-hover/header:z-20 group-hover/header:w-max group-hover/header:overflow-visible group-hover/header:bg-surface-secondary group-data-[focus-visible=true]/header:relative group-data-[focus-visible=true]/header:z-20 group-data-[focus-visible=true]/header:w-max group-data-[focus-visible=true]/header:overflow-visible group-data-[focus-visible=true]/header:bg-surface-secondary";
+  "block truncate group-hover/header:relative group-hover/header:z-(--z-sticky) group-hover/header:w-max group-hover/header:overflow-visible group-hover/header:bg-surface-secondary group-data-[focus-visible=true]/header:relative group-data-[focus-visible=true]/header:z-(--z-sticky) group-data-[focus-visible=true]/header:w-max group-data-[focus-visible=true]/header:overflow-visible group-data-[focus-visible=true]/header:bg-surface-secondary";
 
 /**
  * The width a header needs to show its label whole beside its tools.
@@ -337,9 +338,17 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
     isVirtualized
       ? {}
       : column.pin === "start"
-        ? { position: "sticky", insetInlineStart: offsets.get(column.id), zIndex: 2 }
+        ? {
+            position: "sticky",
+            insetInlineStart: offsets.get(column.id),
+            zIndex: "var(--z-pinned)",
+          }
         : column.pin === "end"
-          ? { position: "sticky", insetInlineEnd: offsets.get(column.id), zIndex: 2 }
+          ? {
+              position: "sticky",
+              insetInlineEnd: offsets.get(column.id),
+              zIndex: "var(--z-pinned)",
+            }
           : {};
   const pinShadow = (column: TableColumn) =>
     column.id === lastStartPin ? (
@@ -357,7 +366,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
       isVirtualized ? VIRTUAL_COLUMN_CLASS : "",
       column.pin ? "bg-surface-secondary" : "",
       ALIGN_CLASS[column.align ?? "start"],
-      dragged === column.id && "opacity-50",
+      dragged === column.id && "opacity-(--opacity-dimmed)",
       dropAt?.id === column.id &&
         (dropAt.side === "start"
           ? "shadow-[inset_2px_0_0_var(--accent)] rtl:shadow-[inset_-2px_0_0_var(--accent)]"
@@ -481,7 +490,11 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
             )}
             style={
               startPins.length > 0 && !isVirtualized
-                ? { position: "sticky", insetInlineStart: 0, zIndex: 12 }
+                ? {
+                    position: "sticky",
+                    insetInlineStart: 0,
+                    zIndex: "calc(var(--z-raised) + var(--z-pinned))",
+                  }
                 : {}
             }
           >
@@ -503,7 +516,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                 ? {
                     position: "sticky",
                     insetInlineStart: isReorderable ? HANDLE_WIDTH : 0,
-                    zIndex: 12,
+                    zIndex: "calc(var(--z-raised) + var(--z-pinned))",
                   }
                 : {}
             }
@@ -530,8 +543,11 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                 {...stickyMark(column.pin === "start")}
                 allowsSorting={column.isSortable === true}
                 className={headerClass(column)}
-                // Above the scrolling headers (`z-10` when sticky), so a pinned header is never covered.
-                style={{ ...pinStyle(column), ...(column.pin ? { zIndex: 12 } : {}) }}
+                // Above the scrolling headers (`z-(--z-raised)` when sticky), so a pinned header is never covered.
+                style={{
+                  ...pinStyle(column),
+                  ...(column.pin ? { zIndex: "calc(var(--z-raised) + var(--z-pinned))" } : {}),
+                }}
                 {...(isLaidOut
                   ? column.id === fillerId && liveWidths[column.id] === undefined
                     ? omitUndefined({ width: "1fr" as const, minWidth: width })
@@ -566,7 +582,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                           >
                             <span className={LABEL_CLASS}>{column.label}</span>
                             {rank > 0 || (rank === 0 && sortKeys.length > 1) ? (
-                              <span className="ms-1 inline-flex size-4 items-center justify-center rounded-[var(--radius-pill)] bg-default text-[0.625rem] text-foreground tabular-nums">
+                              <span className="ms-1 inline-flex size-4 items-center justify-center rounded-[var(--radius-pill)] bg-default text-(length:--text-3xs) text-foreground tabular-nums">
                                 <span aria-hidden="true">{rank + 1}</span>
                                 <span className="sr-only">
                                   {t(COLLECTION_KEYS.ui.collection.sort_rank, { rank: rank + 1 })}
@@ -631,7 +647,11 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                         className={cn("pe-0", isVirtualized && VIRTUAL_CELL_CLASS[density])}
                         style={
                           startPins.length > 0 && !isVirtualized
-                            ? { position: "sticky", insetInlineStart: 0, zIndex: 1 }
+                            ? {
+                                position: "sticky",
+                                insetInlineStart: 0,
+                                zIndex: "calc(var(--z-pinned) - 1)",
+                              }
                             : {}
                         }
                       >
@@ -641,7 +661,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                             aria-label={t(COLLECTION_KEYS.ui.collection.row_handle, {
                               name: nameOf(item.id),
                             })}
-                            className="inline-flex size-6 cursor-grab items-center justify-center rounded-[var(--radius-control)] text-muted outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus"
+                            className="inline-flex size-6 cursor-grab items-center justify-center rounded-[var(--radius-control)] text-muted outline-none data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus"
                           >
                             <Icon name="grip-vertical" size="sm" />
                           </AriaButton>
@@ -656,7 +676,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                             ? {
                                 position: "sticky",
                                 insetInlineStart: isReorderable ? HANDLE_WIDTH : 0,
-                                zIndex: 1,
+                                zIndex: "calc(var(--z-pinned) - 1)",
                               }
                             : {}
                         }
@@ -676,7 +696,10 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                             isVirtualized && VIRTUAL_CELL_CLASS[density],
                             isVirtualized && VIRTUAL_ALIGN_CLASS[column.align ?? "start"],
                           )}
-                          style={{ ...pinStyle(column), ...(column.pin ? { zIndex: 1 } : {}) }}
+                          style={{
+                            ...pinStyle(column),
+                            ...(column.pin ? { zIndex: "calc(var(--z-pinned) - 1)" } : {}),
+                          }}
                         >
                           {column.wrap === undefined && !column.pin ? (
                             renderCell ? (

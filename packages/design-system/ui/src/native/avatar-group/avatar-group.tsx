@@ -9,6 +9,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0312; design-system gap inventory row 25.
  */
+import { motionSpring, STACKRA_THEME } from "@stackra/tokens";
 import { useState } from "react";
 import { Pressable } from "react-native";
 import Animated, {
@@ -27,6 +28,9 @@ import { Avatar } from "#native/avatar/avatar";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
 import { haptics } from "#native/haptics/haptics";
 import type { AvatarGroupProps } from "#native/avatar-group/avatar-group.props";
+
+/** The theme's snappy spring, for a control or a drag settling. */
+const SNAPPY = motionSpring(STACKRA_THEME, "snappy");
 
 /** How far each avatar tucks under the one before it, by size, in points: HeroUI's 0.5rem scaled. */
 const OVERLAP = Object.freeze({ sm: 8, md: 10, lg: 14 } as const);
@@ -77,7 +81,7 @@ export function AvatarGroup({
     haptics.play("light");
     const next = isFanned ? 0 : 1;
     setIsFanned(!isFanned);
-    spread.set(isReduced ? next : withSpring(next));
+    spread.set(isReduced ? next : withSpring(next, SNAPPY));
   };
 
   return (

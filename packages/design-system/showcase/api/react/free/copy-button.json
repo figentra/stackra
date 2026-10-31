@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "3c29dee3dd0fa60b",
+    "hash": "e08b91ebd149c20d",
     "propsFiles": ["ui/src/react/copy-button/copy-button.props.ts"]
   },
   "importLine": "import { CopyButton } from \"@stackra/ui/react\";",
@@ -136,7 +136,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",

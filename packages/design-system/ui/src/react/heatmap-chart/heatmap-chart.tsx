@@ -67,7 +67,7 @@ export function HeatmapChart({
             <span
               key={column}
               aria-hidden="true"
-              className="truncate text-center text-[10px] text-muted"
+              className="truncate text-center text-(length:--text-3xs) text-muted"
             >
               {column}
             </span>
@@ -76,7 +76,7 @@ export function HeatmapChart({
             <span
               key={`row-${row}`}
               aria-hidden="true"
-              className="truncate pe-1 text-[10px] text-muted"
+              className="truncate pe-1 text-(length:--text-3xs) text-muted"
             >
               {row}
             </span>,

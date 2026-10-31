@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "7ab122011797b5af",
+    "hash": "73ea71da54870cae",
     "propsFiles": ["ui/src/native/progress-button/progress-button.props.ts"]
   },
   "importLine": "import { ProgressButton } from \"@stackra/ui/native\";",
@@ -38,7 +38,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",

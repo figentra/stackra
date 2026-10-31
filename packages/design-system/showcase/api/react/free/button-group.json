@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "122810bbbaf50149",
+    "hash": "8565553435d8ece9",
     "heroDoc": "vendor/heroui/react/button-group.json",
     "propsFiles": ["ui/src/react/button-group/button-group.props.ts"]
   },
@@ -44,7 +44,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "description": "True to disable every button.",

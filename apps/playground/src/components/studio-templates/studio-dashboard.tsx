@@ -147,7 +147,7 @@ export function StudioDashboard() {
             <div
               role="img"
               aria-label={t(K.chart)}
-              className="grid h-[200px] grid-cols-6 items-end gap-3"
+              className="grid h-50 grid-cols-6 items-end gap-3"
             >
               {REVENUE.map((row) => (
                 <div key={row.month} className="grid h-full grid-rows-[1fr_auto] gap-2">

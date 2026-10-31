@@ -19,6 +19,7 @@ import {
   TextField as HeroTextField,
   useBottomSheetAwareHandlers,
 } from "heroui-native";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useState } from "react";
 import { FlatList, Pressable, View } from "react-native";
 import Animated, { LinearTransition, ReduceMotion, ZoomIn, ZoomOut } from "react-native-reanimated";
@@ -43,7 +44,9 @@ import { Text } from "#native/text/text";
 const LIST_STYLE = Object.freeze({ maxHeight: 320 });
 
 const POP_IN = ZoomIn.springify().reduceMotion(ReduceMotion.System);
-const POP_OUT = ZoomOut.duration(150).reduceMotion(ReduceMotion.System);
+const POP_OUT = ZoomOut.duration(motionTiming(STACKRA_THEME, "fast").durationMs).reduceMotion(
+  ReduceMotion.System,
+);
 const SETTLE = LinearTransition.springify().reduceMotion(ReduceMotion.System);
 
 /** The sheet's search, wired to move the sheet clear of the keyboard; called inside the sheet's content. */

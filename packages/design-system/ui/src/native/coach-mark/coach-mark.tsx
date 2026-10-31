@@ -40,7 +40,7 @@ const K = COACH_MARK_KEYS.ui.coach_mark;
 const GLIDE = motionTiming(STACKRA_THEME, "base");
 
 /** One beacon pulse, in milliseconds. */
-const PULSE_MS = 1600;
+const PULSE_MS = motionTiming(STACKRA_THEME, "pulse").durationMs;
 
 /** The room left around the target inside the cutout, and between the cutout and the callout, in points. */
 const PAD = 6;

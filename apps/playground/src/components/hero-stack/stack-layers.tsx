@@ -17,6 +17,7 @@ import {
   Switch,
   useCatalogueText,
 } from "@stackra/ui/react";
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { motion } from "motion/react";
 
 import { BRAND_KEYS } from "#src/constants/brand-keys.constant";
@@ -37,17 +38,21 @@ const STRINGS = { latin: "Aa", arabic: "أب" } as const;
 const BARS = [42, 64, 50, 78, 58, 88, 70, 96, 74, 100];
 
 /** The settle every change of the stack eases with. */
-const EASE = [0.2, 0.8, 0.2, 1] as const;
+const EASE = motionEasing(STACKRA_THEME, "enter");
+
+/** The theme's pulse in seconds (the settle, and the beat the loops count in), and the curve the loops breathe on. */
+const PULSE_S = motionTiming(STACKRA_THEME, "pulse").durationMs / 1000;
+const STANDARD = motionEasing(STACKRA_THEME, "standard");
 
 /** One layer's card: glass over the page, the theme's radius, a hairline edge. */
 const LAYER =
-  "absolute inset-0 hero-card border border-border bg-surface/75 p-6 shadow-[var(--overlay-shadow)] backdrop-blur-[2px]";
+  "absolute inset-0 hero-card material-thin border border-border p-6 shadow-[var(--overlay-shadow)]";
 
 /** The three tilted layers. */
 export function StackLayers({ isAssembled, isStill }: StackLayersProps) {
   const t = useCatalogueText(MESSAGES.en);
   const isFloating = !isAssembled && !isStill;
-  const settle = { duration: isStill ? 0 : 1.2, ease: EASE };
+  const settle = { duration: isStill ? 0 : PULSE_S, ease: EASE };
   // Apart, each layer floats a little further from its rest, on its own beat.
   const depth = (rest: number, drift: number) =>
     isAssembled
@@ -55,7 +60,7 @@ export function StackLayers({ isAssembled, isStill }: StackLayersProps) {
       : isFloating
         ? {
             z: [rest, rest + drift, rest],
-            transition: { duration: 6, ease: "easeInOut" as const, repeat: Infinity },
+            transition: { duration: PULSE_S * 5, ease: STANDARD, repeat: Infinity },
           }
         : { z: rest, transition: settle };
 
@@ -63,10 +68,10 @@ export function StackLayers({ isAssembled, isStill }: StackLayersProps) {
     <div
       aria-hidden="true"
       inert
-      className="relative h-[22rem] select-none [perspective:1800px] sm:h-[30rem] xl:h-[38rem]"
+      className="relative h-88 select-none [perspective:1800px] sm:h-120 xl:h-152"
     >
       <motion.div
-        className="absolute start-1/2 top-[62%] -ms-[17.5rem] -mt-[12rem] h-[24rem] w-[35rem] scale-[0.46] [transform-style:preserve-3d] sm:scale-[0.72] xl:scale-100"
+        className="absolute start-1/2 top-[62%] -ms-70 -mt-48 h-96 w-140 scale-[0.46] [transform-style:preserve-3d] sm:scale-[0.72] xl:scale-100"
         initial={false}
         animate={isAssembled ? { rotateX: 0, rotateZ: 0 } : { rotateX: 56, rotateZ: -36 }}
         transition={settle}
@@ -131,14 +136,15 @@ export function StackLayers({ isAssembled, isStill }: StackLayersProps) {
             <motion.span
               className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_30%,color-mix(in_oklch,var(--accent)_24%,transparent)_48%,transparent_62%)] bg-[length:300%_100%]"
               animate={{ backgroundPosition: ["120% 0%", "-120% 0%"] }}
-              transition={{ duration: 4.5, ease: "linear", repeat: Infinity }}
+              // oxlint-disable-next-line stackra/no-literal-duration -- a light scanning at constant speed has no easing curve
+              transition={{ duration: PULSE_S * 4, ease: "linear", repeat: Infinity }}
             />
           ) : null}
           <div className="flex items-center gap-2.5">
             <motion.span
               className="size-2 hero-round bg-success"
               animate={isStill ? {} : { opacity: [1, 0.25, 1] }}
-              transition={{ duration: 1.6, ease: "easeInOut", repeat: Infinity }}
+              transition={{ duration: PULSE_S, ease: STANDARD, repeat: Infinity }}
             />
             <span className="font-semibold">{t(K.orders_today)}</span>
             <span className="ms-auto font-mono text-xs tracking-widest text-muted">
@@ -155,7 +161,7 @@ export function StackLayers({ isAssembled, isStill }: StackLayersProps) {
                 transition={
                   isFloating
                     ? {
-                        duration: 2.4,
+                        duration: PULSE_S * 2,
                         ease: EASE,
                         delay: index * 0.12,
                         repeat: Infinity,

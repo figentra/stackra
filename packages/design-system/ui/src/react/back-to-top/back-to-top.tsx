@@ -61,13 +61,13 @@ export function BackToTop({
       data-slot="back-to-top"
       initial={isReduced ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={cn("end-6 bottom-6 z-40", scrollRef ? "absolute" : "fixed", className)}
+      className={cn("end-6 bottom-6 z-(--z-float)", scrollRef ? "absolute" : "fixed", className)}
     >
       <IconButton
         icon={<ArrowUp size={18} aria-hidden />}
         label={label ?? t(K.label)}
         variant="secondary"
-        className="shadow-md"
+        className="shadow-overlay"
         onPress={goTop}
       />
     </motion.div>

@@ -42,6 +42,7 @@ import type { EntityPickerProps } from "#react/entity-picker/entity-picker.props
 const CREATE_KEY = -1;
 
 /** The pause between the last keystroke and the search when the app sets none. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a search debounce, not motion
 const DEFAULT_DEBOUNCE_MS = 250;
 
 /** Shows every item: the server has already narrowed the list to the search. */

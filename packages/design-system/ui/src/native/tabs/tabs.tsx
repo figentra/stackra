@@ -10,20 +10,21 @@
  *           so a long list scrolls instead of wrapping. A string `content` is wrapped in `Text`, because HeroUI Native
  *           draws its content straight into a View, where a bare string is an error. With no tabs, `emptyState` stands
  *           in for the whole component, or a named busy spinner while `isLoading`; once tabs exist, `isLoading`
- *           changes nothing. At the `full` motion level the indicator moves on the shared `SPRING` physics (a light
- *           overshoot) in place of HeroUI Native's stiff default; below it the provider's reduced-motion setting stills
+ *           changes nothing. At the `full` motion level the indicator slides over the theme's indicator step (ADR 0501,
+ *           about 250ms on a fluid ease-out) in place of HeroUI Native's stiff default, as the web's does; below it the provider's reduced-motion setting stills
  *           it. A closable tab (with `onClose`) draws a close mark after its label, and a screen reader reaches the same close as
  *           the tab's "Close Orders" action; `overflow` is accepted and read as `scroll`.
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0165 (HeroUI Native on native); ADR 0313 (decisions 1, 2, 5 and 7);
  *          owner decision 6 of STA-350 (thin wrappers); STA-1371 (wave C).
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { Tabs as HeroTabs } from "heroui-native";
 import { useState, type ReactElement } from "react";
 import { Pressable, View } from "react-native";
+import { Easing } from "react-native-reanimated";
 
 import { NAVIGATION_KEYS } from "#core/constants/navigation-keys.constant";
-import { SPRING } from "#core/constants/spring.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { useMotion } from "#native/design-system-provider/use-motion";
 import { haptics } from "#native/haptics/haptics";
@@ -33,11 +34,19 @@ import { Text } from "#native/text/text";
 import type { TabsProps } from "#native/tabs/tabs.props";
 import { useUiText } from "#react/hooks/use-ui-text";
 
-/** The indicator's movement on the shared spring. */
-const SPRING_ANIMATION = {
-  width: { type: "spring", config: SPRING.native },
-  height: { type: "spring", config: SPRING.native },
-  translateX: { type: "spring", config: SPRING.native },
+const INDICATOR = motionTiming(STACKRA_THEME, "indicator");
+
+/** The indicator's slide: the theme's indicator step. */
+const SLIDE = {
+  duration: INDICATOR.durationMs,
+  easing: Easing.bezier(...(INDICATOR.bezier ?? [0, 0, 1, 1])),
+};
+
+/** The indicator's movement on the slide. */
+const INDICATOR_ANIMATION = {
+  width: { type: "timing", config: SLIDE },
+  height: { type: "timing", config: SLIDE },
+  translateX: { type: "timing", config: SLIDE },
 } as const;
 
 /**
@@ -89,7 +98,7 @@ export function Tabs({
     >
       <HeroTabs.List {...(label === undefined ? {} : { accessibilityLabel: label })}>
         <HeroTabs.ScrollView>
-          <HeroTabs.Indicator {...(motion === "full" ? { animation: SPRING_ANIMATION } : {})} />
+          <HeroTabs.Indicator {...(motion === "full" ? { animation: INDICATOR_ANIMATION } : {})} />
           {items.map((item) => {
             const close =
               item.isClosable && onClose && !isDisabled

@@ -20,11 +20,12 @@ const SERIES = [
 ];
 
 describe("chartColorOf", () => {
-  it("keeps a series' own colour, picks the accent steps by default and wraps after five", () => {
+  it("keeps a series' own colour, starts the accent steps at the accent, two apart, and wraps after five", () => {
     expect(chartColorOf(SERIES[1], 1)).toBe("success");
-    expect(chartColorOf(SERIES[0], 0)).toBe("chart-ramp-1");
-    expect(chartColorOf(undefined, 4)).toBe("chart-ramp-5");
-    expect(chartColorOf(undefined, 5)).toBe("chart-ramp-1");
+    expect(chartColorOf(SERIES[0], 0)).toBe("chart-ramp-3");
+    expect(chartColorOf(undefined, 1)).toBe("chart-ramp-1");
+    expect(chartColorOf(undefined, 4)).toBe("chart-ramp-4");
+    expect(chartColorOf(undefined, 5)).toBe("chart-ramp-3");
     expect(chartColorOf(undefined, 1, "categorical")).toBe("chart-2");
   });
 });

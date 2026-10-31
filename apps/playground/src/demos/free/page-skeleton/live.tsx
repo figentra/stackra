@@ -24,6 +24,7 @@ const ORDERS = [
 ] as const;
 
 /** How long the live sample stays a skeleton after a reload, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake reload delay, not motion
 const RELOAD_MS = 1500;
 
 /** The card a skeleton sits in, as a page or panel would hold it. */

@@ -12,6 +12,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0329 (motion layer); ADR 0060 (right-to-left); WCAG 2.2 SC 2.3.3.
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { type ReactElement, use, useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import Animated, {
@@ -36,8 +37,11 @@ import { ViewStackContext } from "#native/view-stack/view-stack-context";
 import { ViewStackView } from "#native/view-stack/view-stack-view";
 import type { ViewStackProps } from "#native/view-stack/view-stack.props";
 
-/** How long a move takes, in milliseconds, as on web. */
-const DURATION = 380;
+/** How long a move takes, in milliseconds, as on web: the theme's reveal step. */
+const DURATION = motionTiming(STACKRA_THEME, "reveal").durationMs;
+
+/** How long a fade takes: the theme's moderate step. */
+const FADE_MS = motionTiming(STACKRA_THEME, "moderate").durationMs;
 
 /** The entrance of the new top view and the exit of the old one, or none. */
 function layoutAnimationOf(
@@ -48,7 +52,7 @@ function layoutAnimationOf(
 ) {
   if (motion === "none" || transition === "none") return {};
   if (motion === "reduced" || transition === "fade")
-    return { entering: FadeIn.duration(200), exiting: FadeOut.duration(200) };
+    return { entering: FadeIn.duration(FADE_MS), exiting: FadeOut.duration(FADE_MS) };
   if (transition === "from-top")
     return way === "forward"
       ? { entering: SlideInUp.duration(DURATION), exiting: FadeOut.duration(DURATION) }

@@ -18,6 +18,7 @@
  *          (right-to-left); WCAG 2.2 SC 2.1.1, 2.5.7, 4.1.2 and 4.1.3; STA-1371.
  */
 import { cn } from "@heroui/react";
+import { motionSpring, STACKRA_THEME } from "@stackra/tokens";
 import { motion, useReducedMotion } from "motion/react";
 import { type PointerEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import {
@@ -41,7 +42,7 @@ import { useUiText } from "#react/hooks/use-ui-text";
 import { Icon } from "#react/icon/icon";
 
 /** The spring a tile settles with after a move. */
-const SETTLE = { type: "spring", stiffness: 500, damping: 38 } as const;
+const SETTLE = { type: "spring", ...motionSpring(STACKRA_THEME, "snappy") } as const;
 
 /** The default for an unset layout: one stable empty list. */
 const NONE: DashboardLayout = [];
@@ -51,7 +52,7 @@ const K = UI_KEYS.ui.dashboard_grid;
 
 /** A tile control's look: a 32px target, quiet until hovered or focused. */
 const CONTROL =
-  "inline-flex min-h-8 min-w-8 items-center justify-center gap-1 rounded-[var(--radius-control)] px-1.5 text-sm text-muted outline-none hover:bg-default hover:text-foreground focus-visible:outline-2 focus-visible:outline-focus data-[disabled]:opacity-40";
+  "inline-flex min-h-8 min-w-8 items-center justify-center gap-1 rounded-[var(--radius-control)] px-1.5 text-sm text-muted outline-none hover:bg-default hover:text-foreground focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus data-[disabled]:opacity-(--opacity-subtle)";
 
 /** A grid of dashboard tiles the reader can reorder and resize. */
 export function DashboardGrid({
@@ -237,15 +238,15 @@ export function DashboardGrid({
               className={
                 cn(
                   DASHBOARD_SPAN[size],
-                  "relative min-w-0 rounded-[var(--radius-container)] outline-none data-[dragging]:opacity-40",
-                  "data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 data-[focus-visible]:outline-focus",
+                  "relative min-w-0 rounded-[var(--radius-container)] outline-none data-[dragging]:opacity-(--opacity-subtle)",
+                  "data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-offset-2 data-[focus-visible]:outline-focus",
                 ) ?? ""
               }
             >
               <motion.div layout={!isReduced} transition={SETTLE} className="h-full">
                 {/* A slim toolbar attached above the tile's inline-end corner: no title and no frame around the tile,
                     its controls named by the tile. */}
-                <div className="absolute bottom-full end-0 z-10 mb-1.5 flex items-center gap-0.5 rounded-[var(--radius-control)] bg-overlay p-0.5 shadow-overlay">
+                <div className="absolute bottom-full end-0 z-(--z-raised) mb-1.5 flex items-center gap-0.5 rounded-[var(--radius-control)] bg-overlay p-0.5 shadow-overlay">
                   <AriaButton
                     slot="drag"
                     data-action="drag"
@@ -291,7 +292,7 @@ export function DashboardGrid({
                   onPointerMove={dragResize}
                   onPointerUp={endResize}
                   onPointerCancel={endResize}
-                  className="group/resize absolute inset-y-6 -end-3 z-10 hidden w-4 cursor-ew-resize touch-none items-center justify-center md:flex"
+                  className="group/resize absolute inset-y-6 -end-3 z-(--z-raised) hidden w-4 cursor-ew-resize touch-none items-center justify-center md:flex"
                 >
                   <span className="h-12 w-1.5 rounded-[var(--radius-pill)] bg-separator group-hover/resize:bg-accent" />
                 </div>

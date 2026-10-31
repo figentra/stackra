@@ -44,7 +44,7 @@ vi.mock("uniwind", () => ({ useUniwind: () => ({ theme: state.scheme }) }));
 
 vi.mock("react-native", () => ({ StyleSheet: { absoluteFill: { position: "absolute" } } }));
 
-const QUIET = ["secondary", "tertiary", "outline"] as const;
+const QUIET = ["secondary", "tertiary", "outline", "glass"] as const;
 const SOLID = ButtonVariant.filter((variant) => !(QUIET as readonly string[]).includes(variant));
 
 /** The look of `variant` under the current stand-in state. */

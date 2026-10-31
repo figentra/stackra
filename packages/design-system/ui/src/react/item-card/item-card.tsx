@@ -51,7 +51,10 @@ export function ItemCard({
       isGrouped ? "" : "rounded-[var(--radius-container)] border border-border bg-surface",
       className,
     ) ?? "";
-  if (!onPress) return <div className={cn(look, isDisabled && "opacity-50") ?? ""}>{body}</div>;
+  if (!onPress)
+    return (
+      <div className={cn(look, isDisabled && "opacity-(--disabled-opacity)") ?? ""}>{body}</div>
+    );
   return (
     <Button
       onPress={onPress}
@@ -59,7 +62,7 @@ export function ItemCard({
       className={({ isHovered, isFocusVisible, isPressed }) =>
         cn(
           look,
-          "cursor-pointer outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50",
+          "cursor-pointer outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-(--disabled-opacity)",
           (isHovered || isPressed) && "bg-surface-hover",
           isFocusVisible && "outline-2 -outline-offset-2 outline-focus",
         ) ?? ""

@@ -11,6 +11,7 @@
 import { type ReactElement, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { calendarWeeksOf } from "#core/functions/calendar-weeks-of.function";
 import { formatChartCategory } from "#core/functions/format-chart-category.function";
 import { formatChartNumber } from "#core/functions/format-chart-number.function";
@@ -71,16 +72,16 @@ export function CalendarHeatmap({
           showsHorizontalScrollIndicator={false}
           ref={(view) => view?.scrollToEnd({ animated: false })}
         >
-          <View className="flex-row gap-[3px]">
+          <View className="flex-row gap-0.75">
             {weeks.map((week, index) => {
               const firstOfMonth = week.find((item) => item.isInRange && item.date.endsWith("-01"));
               return (
-                <View key={week[0]?.date ?? index} className="gap-[3px]">
+                <View key={week[0]?.date ?? index} className="gap-0.75">
                   <Text
                     type="caption"
                     tone="muted"
                     numberOfLines={1}
-                    className="h-3 w-3 overflow-visible text-[9px] leading-3"
+                    className="h-3 w-3 overflow-visible text-3xs leading-3"
                   >
                     {firstOfMonth
                       ? formatChartCategory(firstOfMonth.date, locale, { month: "short" })
@@ -96,7 +97,7 @@ export function CalendarHeatmap({
                         opacity: item.isInRange ? 1 : 0,
                         backgroundColor: heatPaintOf(heatLevelOf(item.value, min, max), paint),
                         ...(pressed === item.date
-                          ? { borderWidth: 1.5, borderColor: paint.foreground }
+                          ? { borderWidth: THEME_PX.focusRing.width, borderColor: paint.foreground }
                           : {}),
                       }}
                     />

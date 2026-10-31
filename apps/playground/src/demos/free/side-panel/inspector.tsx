@@ -43,7 +43,7 @@ function Toggle() {
 export default function Inspector() {
   const t = useCatalogueText(MESSAGES.en);
   return (
-    <div className="h-[26rem] overflow-hidden rounded-[var(--radius-container)] border border-separator">
+    <div className="h-104 overflow-hidden rounded-[var(--radius-container)] border border-separator">
       <SidePanel label={t(K.inspector_label)} defaultState="open" defaultWidth={320}>
         <SidePanel.Inset className="gap-2 p-6">
           <div className="flex items-center justify-between gap-2">

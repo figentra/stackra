@@ -15,6 +15,7 @@ import { ERROR_PAGE_KEYS } from "#src/demos/free/error-page/error-page-keys.cons
 const K = ERROR_PAGE_KEYS.error_page;
 
 /** How long a connection check takes, in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake connection check, not motion
 const CHECK_MS = 1000;
 
 /** Error page: Retry. */

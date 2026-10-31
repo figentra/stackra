@@ -23,6 +23,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReactElement } from "react";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { FULLSCREEN_BAR_KEYS } from "#core/constants/fullscreen-bar-keys.constant";
 import { FULLSCREEN_BAR_LONG_PRESS_MS } from "#core/constants/fullscreen-bar-long-press-ms.constant";
 import { useAutoHide } from "#react/hooks/use-auto-hide";
@@ -93,7 +94,7 @@ export function FullscreenBar({
             left: 0,
             right: 0,
             height: insets.top + EDGE,
-            zIndex: 50,
+            zIndex: THEME_PX.zIndex["overlay"],
           }}
         />
       )}
@@ -105,7 +106,7 @@ export function FullscreenBar({
         accessibilityElementsHidden={!isVisible}
         importantForAccessibility={isVisible ? "auto" : "no-hide-descendants"}
         pointerEvents={isVisible ? "auto" : "none"}
-        className="absolute inset-x-0 top-0 z-50 flex-row items-center gap-3 border-b border-separator bg-surface px-4 pb-2"
+        className="absolute inset-x-0 top-0 flex-row items-center gap-3 border-b border-separator bg-surface px-4 pb-2"
         style={[{ paddingTop: insets.top + 8 }, slide, style]}
       >
         <Text className="flex-1 font-medium" numberOfLines={1}>

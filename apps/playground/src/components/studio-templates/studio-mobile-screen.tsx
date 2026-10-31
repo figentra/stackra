@@ -52,7 +52,7 @@ const TABS = [
 export function StudioMobileScreen() {
   const t = useCatalogueText(MESSAGES.en);
   return (
-    <div className="mx-auto grid w-full max-w-[390px] gap-5">
+    <div className="mx-auto grid w-full max-w-97.5 gap-5">
       <header className="flex items-center gap-3">
         <Avatar name={t(K.name)} />
         <div className="grid min-w-0 flex-1">

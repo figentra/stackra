@@ -23,6 +23,7 @@ import {
   ZAxis,
 } from "recharts";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { chartColorOf } from "#core/functions/chart-color-of.function";
 import { chartReferenceTextOf } from "#core/functions/chart-reference-text-of.function";
@@ -153,7 +154,7 @@ export function ScatterChart(props: ScatterChartProps): ReactElement {
                       value: reference.label,
                       position: isRtl ? "insideTopLeft" : "insideTopRight",
                       fill: paintOf(reference.color ?? "muted"),
-                      fontSize: 10,
+                      fontSize: THEME_PX.typeScale["3xs"]?.fontSize,
                     },
                   }
                 : {})}

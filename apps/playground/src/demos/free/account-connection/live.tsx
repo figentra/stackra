@@ -16,6 +16,7 @@ import { ACCOUNT_CONNECTION_KEYS } from "#src/demos/free/account-connection/acco
 const K = ACCOUNT_CONNECTION_KEYS.account_connection;
 
 /** How long the stand-in for the provider's round trip takes, in ms. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake network round trip, not motion
 const ROUND_TRIP_MS = 800;
 
 /** Account connection: Try it. */

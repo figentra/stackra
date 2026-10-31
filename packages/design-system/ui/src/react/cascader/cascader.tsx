@@ -183,7 +183,7 @@ export function Cascader({
               slots.trigger(),
               "w-full text-start",
               isInvalid && "border-danger",
-              isDisabled && "opacity-50",
+              isDisabled && "opacity-(--disabled-opacity)",
             ) ?? ""
           }
         >

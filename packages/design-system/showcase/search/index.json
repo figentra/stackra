@@ -8929,7 +8929,8 @@
       "selectedCount",
       "style",
       "testID",
-      "totalCount"
+      "totalCount",
+      "variant"
     ],
     "tier": "free",
     "title": "Bulk action bar"
@@ -8967,7 +8968,8 @@
       "selectedCount",
       "style",
       "testID",
-      "totalCount"
+      "totalCount",
+      "variant"
     ],
     "tier": "free",
     "title": "شريط الإجراءات الجماعية"
@@ -11324,7 +11326,8 @@
       "sort",
       "state",
       "title",
-      "updatedAt"
+      "updatedAt",
+      "variant"
     ],
     "tier": "free",
     "title": "Widget frame"
@@ -11359,7 +11362,8 @@
       "sort",
       "state",
       "title",
-      "updatedAt"
+      "updatedAt",
+      "variant"
     ],
     "tier": "free",
     "title": "إطار الأداة"

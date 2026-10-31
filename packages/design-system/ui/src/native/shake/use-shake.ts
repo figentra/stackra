@@ -6,6 +6,7 @@
  * Runtime: react-native
  * Governing contract: gap inventory rows 2 and 3 (owner decision 2026-10-28, "P1 + P2 core"); WCAG 2.2 SC 2.3.3.
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import {
   useAnimatedStyle,
   useReducedMotion,
@@ -15,8 +16,8 @@ import {
 } from "react-native-reanimated";
 import type { Shake } from "#native/shake/shake.type";
 
-/** One leg of the shake, in ms. */
-const LEG = { duration: 50 } as const;
+/** One leg of the shake, in ms: half the theme's instant step. */
+const LEG = { duration: motionTiming(STACKRA_THEME, "instant").durationMs / 2 } as const;
 
 /** The style of the shaking wrapper and the function that plays the shake. */
 export function useShake(): Shake {

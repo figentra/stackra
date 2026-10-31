@@ -17,6 +17,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { ROUTE_PROGRESS_TIMING } from "#core/constants/route-progress-timing.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -60,7 +61,14 @@ export function RouteProgress({
       accessibilityState={{ busy: isLoading }}
       pointerEvents="none"
       style={[
-        { position: "absolute", top: 0, start: 0, end: 0, height: HEIGHT, zIndex: 50 },
+        {
+          position: "absolute",
+          top: 0,
+          start: 0,
+          end: 0,
+          height: HEIGHT,
+          zIndex: THEME_PX.zIndex["overlay"],
+        },
         trackStyle,
       ]}
     >

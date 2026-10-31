@@ -150,7 +150,7 @@ export function FilterPanel({
               <HeroTabs.List aria-label={t(UI_KEYS.ui.filter_panel.views)}>
                 {views.map((view) => (
                   <HeroTabs.Tab key={view.id} id={view.id}>
-                    <span className="relative z-10">{view.label}</span>
+                    <span className="relative z-(--z-raised)">{view.label}</span>
                     <HeroTabs.Indicator />
                   </HeroTabs.Tab>
                 ))}

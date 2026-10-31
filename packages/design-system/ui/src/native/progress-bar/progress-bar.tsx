@@ -12,6 +12,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI Native on native);
  *          WCAG 2.2 SC 2.3.3 and 4.1.2.
  */
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useThemeColor } from "heroui-native";
 import { useEffect, useState, type ReactElement } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
@@ -42,10 +43,13 @@ const TRACK_RADIUS = Object.freeze({ sm: 2, md: 4, lg: 6 } as const);
 const SEGMENT = 0.4;
 
 /** How long the fill takes to reach a new value, in milliseconds, as on web. */
-const EASE_MS = 300;
+const EASE_MS = motionTiming(STACKRA_THEME, "slow").durationMs;
 
 /** How long one indeterminate sweep takes, in milliseconds, as on web. */
-const SWEEP_MS = 1500;
+const SWEEP_MS = motionTiming(STACKRA_THEME, "pulse").durationMs;
+
+/** The sweep's curve: the theme's standard easing. */
+const STANDARD = motionEasing(STACKRA_THEME, "standard");
 
 /**
  * A bar that fills as work completes: pass `value` for a determinate one, leave it out for an indeterminate sweep.
@@ -93,7 +97,7 @@ export function ProgressBar({
     sweep.set(0);
     sweep.set(
       withRepeat(
-        withTiming(1, { duration: SWEEP_MS, easing: Easing.bezier(0.65, 0, 0.35, 1) }),
+        withTiming(1, { duration: SWEEP_MS, easing: Easing.bezier(...STANDARD) }),
         -1,
         false,
       ),

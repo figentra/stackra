@@ -26,7 +26,7 @@ export function SidePanelInset({ className, ...rest }: SidePanelInsetProps): Rea
       className={cn(
         "relative flex min-h-0 min-w-0 flex-1 overflow-hidden",
         variant === "split" && !isDrawer && !isCovered
-          ? "rounded-[var(--radius-container)] border border-separator bg-surface shadow-sm"
+          ? "rounded-[var(--radius-container)] border border-separator bg-surface shadow-surface"
           : "",
       )}
     >

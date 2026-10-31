@@ -37,7 +37,7 @@ function Ask() {
 export default function Assistant() {
   const t = useCatalogueText(MESSAGES.en);
   return (
-    <div className="h-[30rem] overflow-hidden rounded-[var(--radius-container)] border border-separator">
+    <div className="h-120 overflow-hidden rounded-[var(--radius-container)] border border-separator">
       <SidePanel label={t(K.assistant_label)}>
         <SidePanel.Inset className="gap-2 p-6">
           <Heading level={3}>{t(K.page_title)}</Heading>

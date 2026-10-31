@@ -64,13 +64,10 @@ export function CalendarHeatmap({
             ? `${day(pointedDay.date)}: ${pointedDay.value === null ? "–" : value(pointedDay.value)}`
             : ""}
         </p>
-        <div
-          className="flex gap-[3px] overflow-x-auto pb-1"
-          onPointerLeave={() => setPointed(null)}
-        >
+        <div className="flex gap-0.75 overflow-x-auto pb-1" onPointerLeave={() => setPointed(null)}>
           <div
             aria-hidden="true"
-            className="flex shrink-0 flex-col gap-[3px] pe-1 pt-4 text-[10px] text-muted"
+            className="flex shrink-0 flex-col gap-0.75 pe-1 pt-4 text-(length:--text-3xs) text-muted"
           >
             {[0, 1, 2, 3, 4, 5, 6].map((offset) => (
               <span key={offset} className="h-3 leading-3">
@@ -91,10 +88,10 @@ export function CalendarHeatmap({
                   )
                 : "";
             return (
-              <div key={week[0]?.date ?? index} className="flex shrink-0 flex-col gap-[3px]">
+              <div key={week[0]?.date ?? index} className="flex shrink-0 flex-col gap-0.75">
                 <span
                   aria-hidden="true"
-                  className="h-3 w-3 overflow-visible text-[10px] leading-3 whitespace-nowrap text-muted"
+                  className="h-3 w-3 overflow-visible text-(length:--text-3xs) leading-3 whitespace-nowrap text-muted"
                 >
                   {month}
                 </span>

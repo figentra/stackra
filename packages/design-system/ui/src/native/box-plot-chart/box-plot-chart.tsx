@@ -143,7 +143,7 @@ export function BoxPlotChart(props: BoxPlotChartProps): ReactElement {
             type="caption"
             tone="muted"
             numberOfLines={1}
-            className="flex-1 text-center text-[10px]"
+            className="flex-1 text-center text-3xs"
           >
             {group.label}
           </Text>

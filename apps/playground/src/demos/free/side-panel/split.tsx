@@ -17,7 +17,7 @@ const K = SIDE_PANEL_KEYS.side_panel;
 export default function Split() {
   const t = useCatalogueText(MESSAGES.en);
   return (
-    <div className="h-[26rem] overflow-hidden rounded-[var(--radius-container)] border border-separator">
+    <div className="h-104 overflow-hidden rounded-[var(--radius-container)] border border-separator">
       <SidePanel label={t(K.split_label)} variant="split" defaultState="open" defaultWidth={320}>
         <SidePanel.Inset className="gap-2 p-6">
           <Heading level={3}>{t(K.page_title)}</Heading>

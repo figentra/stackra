@@ -4,6 +4,14 @@ description: "Accepted, amended by 0303, 0340 · 2026-10-23 · amended 2026-10-2
 ---
 
 <Note>
+  Proposed amendment 2026-10-31 (STA-1371) by
+  [0501](/adr/0501-tokens-v2-one-theme-schema-drives-every-visual-value-on-web-and-native), which
+  stands as written here until that ADR is accepted: the token schema grows the `typeScale`,
+  `layout`, `locale` blocks, the raised and pressed shadows and the radius roles as overridable
+  steps; every visual value in `@stackra/ui` comes from it, held by the `no-literal-*` lint rules.
+</Note>
+
+<Note>
   Amended 2026-10-29 (STA-1535, stackra-432): under decision 3, a native app follows the phone's
   accessibility settings and text size and never overrides them. The native `DesignSystemProvider`
   keeps font scaling on for text and text inputs, capped only by an app's `maxFontScale`

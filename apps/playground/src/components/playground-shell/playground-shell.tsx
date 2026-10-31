@@ -19,7 +19,7 @@
  * Governing contract: ADR 0302 (decision 5); ADR 0310 (decision 6); ADR 0165 (web client stack); ADR 0060 (light,
  *          dark, RTL).
  */
-import { MaterialMode } from "@stackra/tokens/contracts";
+import { MaterialFamily, MaterialMode } from "@stackra/tokens/contracts";
 import { ColorScheme } from "@stackra/ui/contracts";
 import {
   DesignSystemProvider,
@@ -161,6 +161,8 @@ function Shell({ pages }: PlaygroundShellProps) {
   const width = WIDE_PATHS.has(pathname) ? "w-[calc(100%-1.5rem)]" : "w-[min(100%-2rem,110rem)]";
   // The material mode is the document's, as the scheme is: the provider sets it (index.html before paint).
   const material = MaterialMode.find((mode) => mode === params.get("material")) ?? DEFAULT_MATERIAL;
+  // The theme family (ADR 0320 as amended 2026-10-31): `?family=front|studio`; left out, the picked theme's own.
+  const family = MaterialFamily.find((name) => name === params.get("family"));
   // React Router hands a functional update the params of the last render, so choices made before the next render (a
   // scheme, then a locale) would keep only the last; each write starts from the one before it instead. The ref takes
   // the URL's params only when something else changed them (a link, the back button), not on the echo of a write of
@@ -262,7 +264,7 @@ function Shell({ pages }: PlaygroundShellProps) {
       <div className="min-w-0 lg:px-2 2xl:px-6">
         <SectionTabs
           entry={current}
-          className="sticky top-14 z-10 -mx-4 mb-4 bg-background px-4 py-2 lg:hidden"
+          className="sticky top-14 z-(--z-raised) -mx-4 mb-4 bg-background px-4 py-2 lg:hidden"
         />
         <TocRail entry={current} variant="menu" className="mb-6 max-lg:hidden xl:hidden" />
         <Outlet context={context} />
@@ -294,6 +296,7 @@ function Shell({ pages }: PlaygroundShellProps) {
         onColorSchemeChange={(scheme) => setParam("scheme", scheme)}
         onLocaleChange={(picked) => setParam("locale", picked)}
         material={material}
+        family={family}
         defaultBrand={readActiveBrand().id}
         defaultTransition={readThemeTransition()}
       >
@@ -313,7 +316,7 @@ function Shell({ pages }: PlaygroundShellProps) {
             </div>
             <a
               href="#main"
-              className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-30 focus:bg-surface focus:p-2 focus:outline-2 focus:outline-focus"
+              className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-(--z-dock) focus:bg-surface focus:p-2 focus:outline-2 focus:outline-focus"
             >
               {t(K.skip)}
             </a>

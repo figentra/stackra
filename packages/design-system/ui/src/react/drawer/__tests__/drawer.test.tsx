@@ -21,6 +21,7 @@ import type { ReactElement } from "react";
 import type { DrawerContractProps } from "#contracts/types/drawer-contract-props.type";
 import type { OverlayTitleContractProps } from "#contracts/types/overlay-title-contract-props.type";
 import { Button } from "#react/button/button";
+import { DesignSystemProvider } from "#react/design-system-provider/design-system-provider";
 import { Drawer } from "#react/drawer/drawer";
 import type { DrawerProps } from "#react/drawer/drawer.props";
 import type { DrawerTitleProps } from "#react/drawer/drawer-title.props";
@@ -164,6 +165,27 @@ describe("Drawer (web)", () => {
     unmount();
     render(sample({ defaultOpen: true, placement: "end" }));
     expect(document.querySelector('[data-slot="drawer-handle"]')).toBeNull();
+  });
+
+  it("slides in from a starting style on the overlay tokens, so the first painted frame is off screen", () => {
+    render(sample({ defaultOpen: true }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain(
+      "starting:translate-x-[calc((100%+1rem)*var(--drawer-dir))]",
+    );
+    expect(dialog.className).toContain("duration-(--duration-overlay-in)");
+    expect(dialog.className).toContain("in-data-[exiting=true]:duration-(--duration-overlay-out)");
+  });
+
+  it("fades in place instead of sliding below the full motion level", () => {
+    const query = { matches: false, addEventListener() {}, removeEventListener() {} };
+    vi.stubGlobal("matchMedia", () => query);
+    render(
+      <DesignSystemProvider motion="reduced">{sample({ defaultOpen: true })}</DesignSystemProvider>,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain("starting:opacity-0");
+    expect(dialog.className).not.toContain("starting:translate");
   });
 
   it("passes dialog props through", () => {

@@ -93,7 +93,7 @@ export function HistogramChart(props: HistogramChartProps): ReactElement {
               key={index}
               type="caption"
               tone="muted"
-              className="flex-1 text-center text-[10px]"
+              className="flex-1 text-center text-3xs"
             >
               {name}
             </Text>

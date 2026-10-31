@@ -19,7 +19,7 @@ import type { AvatarGroupProps } from "#react/avatar-group/avatar-group.props";
 
 /** Hover and focus turn the overlap negative, so the avatars part by a small gap; reduced motion drops the easing. */
 const FAN_OUT =
-  "[&>*]:transition-[margin] [&>*]:duration-150 [&>*]:ease-out motion-reduce:[&>*]:transition-none " +
+  "[&>*]:transition-[margin] [&>*]:duration-(--duration-fast) [&>*]:ease-out motion-reduce:[&>*]:transition-none " +
   "hover:[--avatar-group-overlap:-0.25rem] focus-within:[--avatar-group-overlap:-0.25rem]";
 
 /** Stacked people (assignees, staff on shift, viewers) with a count for those that do not fit. */

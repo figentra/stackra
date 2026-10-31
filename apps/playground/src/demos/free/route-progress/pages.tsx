@@ -18,6 +18,7 @@ const K = ROUTE_PROGRESS_KEYS.route_progress;
 
 /** The pages and how long the stand-in router takes to load one, in ms. */
 const PAGES = ["orders", "products", "reports"] as const;
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake page load, not motion
 const LOAD_MS = 1600;
 
 /** Route progress: Between pages. */

@@ -217,6 +217,9 @@ catalogs:
     expo-status-bar: 57.0.1
     expo-system-ui: 57.0.4
     expo-glass-effect: 57.0.4
+    # Android 12+ blur for @stackra/ui's front-family glass (owner approval 2026-10-31, STA-1371, ADR 0320 amendment):
+    # Expo SDK 57's bundled version. MIT.
+    expo-blur: 57.0.3
     # Storage drivers for @stackra/storage (optional peers). MIT. MMKV 4.x has createMMKV and remove.
     react-native-mmkv: 4.3.2
     expo-secure-store: 57.0.4

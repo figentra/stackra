@@ -63,7 +63,7 @@ export function SankeyChart({
               key={`${link.source}-${link.target}`}
               d={path}
               fill={colorOf(sourceIndex)}
-              className="opacity-30 transition-opacity duration-150 hover:opacity-60 motion-reduce:transition-none"
+              className="opacity-30 transition-opacity duration-(--duration-fast) hover:opacity-60 motion-reduce:transition-none"
             >
               <title>{`${nameOf(link.source)} → ${nameOf(link.target)}: ${value(link.value)}`}</title>
             </path>

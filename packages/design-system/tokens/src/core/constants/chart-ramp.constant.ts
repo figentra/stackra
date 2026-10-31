@@ -17,4 +17,6 @@
 export const CHART_RAMP = {
   steps: [-0.24, -0.12, 0, 0.12, 0.24],
   bounds: { light: [0.3, 0.64], dark: [0.55, 0.95] },
+  /** The least lightness between neighbouring steps, so an accent near a bound still gives five apart (ADR 0501). */
+  minimumStep: 0.06,
 } as const;

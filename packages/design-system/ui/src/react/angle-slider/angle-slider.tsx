@@ -64,7 +64,7 @@ export function AngleSlider({
       data-slot="angle-slider"
       className={cn(
         "inline-flex flex-col items-center gap-2",
-        isDisabled && "opacity-50",
+        isDisabled && "opacity-(--disabled-opacity)",
         className,
       )}
     >
@@ -135,7 +135,7 @@ export function AngleSlider({
           aria-valuenow={angle}
           aria-valuetext={format(angle, { style: "unit", unit: "degree", unitDisplay: "long" })}
           aria-disabled={isDisabled || undefined}
-          className="absolute size-5 -translate-x-1/2 -translate-y-1/2 border-2 border-background bg-accent shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          className="absolute size-5 -translate-x-1/2 -translate-y-1/2 border-2 border-background bg-accent shadow-(--raised-shadow) outline-none focus-visible:ring-2 focus-visible:ring-focus"
           // Physical left and top on purpose: the dial is not mirrored in right-to-left.
           style={{ left: `${tip.x}%`, top: `${tip.y}%`, borderRadius: "var(--radius-full)" }}
           onKeyDown={(event) => {

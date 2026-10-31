@@ -37,7 +37,7 @@ export function SettingsCell({
         cn(
           "grid gap-3 px-4 py-3",
           !isGrouped && "rounded-[var(--radius-container)] border border-border bg-surface",
-          isDisabled && "opacity-60",
+          isDisabled && "opacity-(--opacity-muted)",
           className,
         ) ?? ""
       }

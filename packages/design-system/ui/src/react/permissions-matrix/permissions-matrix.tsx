@@ -30,7 +30,7 @@ const FAST = motionTiming(STACKRA_THEME, "fast");
 const STAGGER = motionTiming(STACKRA_THEME, "stagger");
 
 /** The longest wait before a cell of a ripple pops, so a long column still settles quickly, in ms. */
-const RIPPLE_MAX_DELAY_MS = 320;
+const RIPPLE_MAX_DELAY_MS = STAGGER.durationMs * 8;
 
 /** The keys of the words. */
 const K = PERMISSIONS_MATRIX_KEYS.ui.permissions_matrix;

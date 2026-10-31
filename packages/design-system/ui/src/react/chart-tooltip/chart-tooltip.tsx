@@ -31,7 +31,7 @@ export function ChartTooltip({
   return (
     <div
       data-slot="chart-tooltip"
-      className="grid min-w-[140px] gap-1.5 rounded-[var(--radius)] border border-separator bg-overlay px-3 py-2 text-overlay-foreground shadow-overlay tabular-nums"
+      className="grid min-w-(--size-readout) gap-1.5 rounded-[var(--radius)] border border-separator bg-overlay px-3 py-2 text-overlay-foreground shadow-overlay tabular-nums"
     >
       {title ? <div className="text-xs font-medium text-muted">{title}</div> : null}
       {items.map((item) => {

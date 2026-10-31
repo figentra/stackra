@@ -38,7 +38,7 @@ export function RouteProgress({
       data-slot="route-progress"
       className={cn(
         isFixed ? "fixed" : "absolute",
-        "inset-x-0 top-0 z-50 h-0.5 pointer-events-none",
+        "inset-x-0 top-0 z-(--z-overlay) h-0.5 pointer-events-none",
         className,
       )}
       style={{

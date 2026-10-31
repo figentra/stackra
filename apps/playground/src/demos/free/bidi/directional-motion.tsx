@@ -28,7 +28,7 @@ export default function DirectionalMotion() {
     <div className="grid max-w-sm gap-3">
       <div className="overflow-hidden border border-separator" aria-label={t(K.steps)} role="group">
         <div
-          className="flex transition-transform duration-300 ease-out motion-reduce:transition-none"
+          className="flex transition-transform duration-(--duration-slow) ease-out motion-reduce:transition-none"
           style={{ transform: `translateX(${sign * step * 100}%)` }}
         >
           {STEPS.map((key, index) => (

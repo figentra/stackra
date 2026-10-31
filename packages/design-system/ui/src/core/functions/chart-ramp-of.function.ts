@@ -25,15 +25,17 @@ export function chartRampOf(
   const chroma = Math.hypot(a, b);
   const hue = ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360;
   const [low, high] = CHART_RAMP.bounds[scheme];
-  const reach = CHART_RAMP.steps[4] - CHART_RAMP.steps[0];
-  // As on the web: a band narrower than the steps' reach scales them to fit, spread evenly; then the centre is
-  // clamped (CSS clamp: the lower bound wins when they cross), so the steps never merge.
-  const scale = Math.min(1, (high - low) / reach);
-  const half = (reach / 2) * scale;
-  const centre = Math.max(low + half, Math.min(lightness, high - half));
-  return CHART_RAMP.steps.map((step) =>
-    oklchToHex(
-      `oklch(${(centre + step * scale).toFixed(4)} ${chroma.toFixed(4)} ${hue.toFixed(2)})`,
-    ),
-  );
+  const unit = CHART_RAMP.steps[3];
+  // As on the web: the centre is the accent; one step on each side is half the room left to the bound, kept between
+  // the minimum step (so the five stay apart) and the full move.
+  return CHART_RAMP.steps.map((step) => {
+    const room = step < 0 ? lightness - low : high - lightness;
+    const move = Math.min(unit, Math.max(CHART_RAMP.minimumStep, room / 2));
+    // Inside the colour space: a black or white accent pins its outer steps at the end.
+    const at = Math.min(
+      0.98,
+      Math.max(0.02, lightness + Math.sign(step) * move * Math.round(Math.abs(step) / unit)),
+    );
+    return oklchToHex(`oklch(${at.toFixed(4)} ${chroma.toFixed(4)} ${hue.toFixed(2)})`);
+  });
 }

@@ -61,7 +61,7 @@ export function FunnelChart({
             >
               <span
                 // The pointed stage's bar stands while the others dim.
-                className="h-full rounded-[var(--radius-control-inner)] transition-[width,opacity] duration-300 group-hover/funnel:opacity-45 group-hover/stage:opacity-100 motion-reduce:transition-none"
+                className="h-full rounded-[var(--radius-control-inner)] transition-[width,opacity] duration-(--duration-slow) group-hover/funnel:opacity-45 group-hover/stage:opacity-100 motion-reduce:transition-none"
                 style={{
                   width: `${Math.max(share * 100, 1)}%`,
                   backgroundColor: paintOf(color),

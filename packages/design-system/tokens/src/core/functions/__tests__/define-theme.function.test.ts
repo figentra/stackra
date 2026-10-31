@@ -272,11 +272,14 @@ describe("defineTheme", () => {
         },
       }),
     ).toEqual([
+      "materials.levels.ultra-thin is missing",
       "materials.levels.thin.fill.light is not a share from 0 to 1",
       "materials.levels.thin.fill.dark is not a share from 0 to 1",
       "materials.levels.regular.blur is not a px length",
       "materials.levels.regular.saturation is not a factor from 0 to 4",
       "materials.levels.thick is missing",
+      "materials.levels.glass is missing",
+      "materials.levels.glass-clear is missing",
       "materials.edge.dark is not a share from 0 to 1",
     ]);
     const { materials: _materials, ...withoutMaterials } = STACKRA_THEME;
@@ -290,5 +293,47 @@ describe("defineTheme", () => {
         palette: { ...STACKRA_THEME.palette, "material-edge": STACKRA_THEME.colors.border },
       }),
     ).toEqual(["--material-edge is written by two tokens"]);
+  });
+
+  // ADR 0501: the tokens v2 families are checked like the rest.
+  it("refuses a layout, type scale or locale value out of its range or grammar", () => {
+    expect(
+      problemsOf({
+        ...STACKRA_THEME,
+        layout: {
+          ...STACKRA_THEME.layout,
+          spacing: "calc(1px + 1px)",
+          cornerShape: "bevel",
+          opacity: { disabled: "1.5" },
+          zIndex: { overlay: "5.5" },
+          regions: { sidebar: "var(--x)" },
+        },
+        typeScale: {
+          ...STACKRA_THEME.typeScale,
+          weights: { heavy: 1000 },
+          numeric: "oldstyle-nums",
+        },
+        locale: { mirrorIcons: "yes", digits: "roman" },
+      }),
+    ).toEqual([
+      "typeScale.weights.heavy is not 100 to 900",
+      "typeScale.numeric is not tabular-nums, proportional-nums or normal",
+      "layout.spacing is not a CSS length",
+      "layout.cornerShape is not round or squircle",
+      "layout.opacity.disabled is not a number from 0 to 1",
+      "layout.zIndex.overlay is not an integer",
+      "layout.regions.sidebar is not a kebab-case property name",
+      "locale.mirrorIcons is not a boolean",
+      "locale.digits is not latn or arab",
+    ]);
+  });
+
+  it("accepts a multiple of a length token, the one calc() form", () => {
+    expect(
+      problemsOf({
+        ...STACKRA_THEME,
+        layout: { ...STACKRA_THEME.layout, controlHeight: { md: "calc(var(--spacing) * 9.5)" } },
+      }),
+    ).toEqual([]);
   });
 });

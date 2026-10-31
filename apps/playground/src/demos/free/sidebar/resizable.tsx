@@ -74,7 +74,7 @@ export default function Resizable() {
 
   return (
     <div className="flex flex-wrap items-start gap-6">
-      <div className="h-[28rem] w-fit rounded-[var(--radius-container)] border border-separator">
+      <div className="h-112 w-fit rounded-[var(--radius-container)] border border-separator">
         <Sidebar
           keyboardShortcut={false}
           label={t(K.resizable_label)}

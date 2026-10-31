@@ -45,7 +45,7 @@ describe("renderNativeCss", () => {
       const block = variantOf(mode);
       for (const role of ColorRole)
         expect(block, role).toContain(`      --${role}: ${STACKRA_THEME.colors[role][mode]};`);
-      for (const shadow of ["surface", "overlay", "field"] as const)
+      for (const shadow of ["surface", "overlay", "field", "raised", "pressed"] as const)
         expect(block).toContain(`--${shadow}-shadow: ${STACKRA_THEME.shadows[shadow][mode]};`);
       // The native charts light their marks by it, so a flat brand draws flat.
       expect(block).toContain(
@@ -54,7 +54,7 @@ describe("renderNativeCss", () => {
     }
     expect(names(variantOf("dark"))).toEqual(names(variantOf("light")));
     expect(names(variantOf("light"))).toHaveLength(
-      ColorRole.length + 3 + 1 + PALETTE.length + SyntaxRole.length,
+      ColorRole.length + 5 + 1 + PALETTE.length + SyntaxRole.length,
     );
   });
 
@@ -90,10 +90,13 @@ describe("renderNativeCss", () => {
     expect(failures).toEqual([]);
   });
 
-  it("sets the radii, the field border and the display faces in @theme and leaves web-only tokens out", () => {
+  it("sets the radii, the field border, the spacing unit and the display faces in @theme and leaves web-only tokens out", () => {
     expect(css).toContain(
-      '@theme {\n  --radius: 0.25rem;\n  --field-radius: var(--radius);\n  --field-border-width: 1px;\n  --font-display: "Geist";\n  --font-display-arabic: "IBM Plex Sans Arabic";\n}',
+      '@theme {\n  --radius: 0.25rem;\n  --field-radius: var(--radius);\n  --field-border-width: 1px;\n  --spacing: 0.25rem;\n  --font-display: "Geist";\n  --font-display-arabic: "IBM Plex Sans Arabic";\n',
     );
+    // ADR 0501: the type scale and the named sizes are Uniwind utilities, in px.
+    expect(css).toContain("  --text-3xs: 10px;\n  --text-3xs--line-height: 14px;");
+    expect(css).toContain("  --spacing-drawer-sm: 400px;");
     expect(css).not.toMatch(
       /--font-(sans|mono|arabic)\b|--space-|--duration-|--material-(?!highlight-share:)/,
     );

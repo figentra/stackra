@@ -97,7 +97,7 @@ export function SplitView({
           // Centred on the list pane's end border; `inset-inline-start` follows the reading direction.
           style={{ insetInlineStart: pane.width - 4 }}
           className={cn(
-            "absolute inset-y-0 z-10 w-2 cursor-col-resize touch-none outline-none",
+            "absolute inset-y-0 z-(--z-raised) w-2 cursor-col-resize touch-none outline-none",
             "after:absolute after:inset-y-0 after:start-1 after:w-px after:bg-transparent after:transition-colors",
             "motion-reduce:after:transition-none hover:after:w-0.5 hover:after:bg-accent",
             "focus-visible:after:w-0.5 focus-visible:after:bg-focus",

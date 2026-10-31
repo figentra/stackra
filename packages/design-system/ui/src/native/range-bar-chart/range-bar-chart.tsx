@@ -11,6 +11,7 @@
 import { type ReactElement, useState } from "react";
 import { Pressable, View } from "react-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { chartTextOf } from "#core/functions/chart-text-of.function";
 import { formatChartCategory } from "#core/functions/format-chart-category.function";
@@ -80,7 +81,7 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
   const edgeOf = (index: number) =>
     emphasis === "none" || index === emphasised
       ? {}
-      : { borderWidth: 1, borderColor: paint.fieldBorder };
+      : { borderWidth: THEME_PX.borderWidth, borderColor: paint.fieldBorder };
   const fillOf = (index: number) =>
     emphasis === "none" || index === emphasised
       ? paint.series[0]
@@ -164,7 +165,7 @@ export function RangeBarChart(props: RangeBarChartProps): ReactElement {
                 type="caption"
                 tone="muted"
                 numberOfLines={1}
-                className="flex-1 text-center text-[10px]"
+                className="flex-1 text-center text-3xs"
               >
                 {row.name}
               </Text>

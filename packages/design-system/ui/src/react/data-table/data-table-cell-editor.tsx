@@ -76,7 +76,7 @@ export function DataTableCellEditor({
   return createPortal(
     <div
       data-slot="data-table-cell-editor"
-      className="fixed z-50 [&>input]:pe-[var(--editor-error)] [&>select]:pe-[var(--editor-error)]"
+      className="fixed z-(--z-overlay) [&>input]:pe-[var(--editor-error)] [&>select]:pe-[var(--editor-error)]"
       style={
         {
           top: box.top,

@@ -56,7 +56,7 @@ export default function Nested() {
   const here = `${pathname}${search}#sidebar-nested`;
 
   return (
-    <div className="h-[30rem] w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
+    <div className="h-120 w-fit overflow-hidden rounded-[var(--radius-container)] border border-separator">
       <Sidebar keyboardShortcut={false}>
         <Top />
         <Sidebar.Content label={t(K.nested_label)}>

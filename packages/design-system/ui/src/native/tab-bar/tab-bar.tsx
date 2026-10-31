@@ -22,7 +22,7 @@
 // Uniwind adds `className` to React Native's own components, which the root `View` and `Pressable` take.
 /// <reference types="uniwind/types" />
 import { use, type ReactElement } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
@@ -35,6 +35,7 @@ import { Icon } from "#native/icon/icon";
 import { RouterContext } from "#native/router-provider/router-context";
 import { Text } from "#native/text/text";
 import type { TabBarProps } from "#native/tab-bar/tab-bar.props";
+import { GlassSurface } from "#native/glass/glass-surface";
 
 // Developer log text, read in the console only, so it stays English (ADR 0080 translates what users see).
 const TOO_MANY = "TabBar draws five tabs at most; the rest are left out";
@@ -118,18 +119,18 @@ export function TabBar({
     if (href !== undefined && navigate && !isAbsoluteUrl(href)) navigate(href);
   };
   return (
-    <View
+    // The tab-bar role: glass in both families (ADR 0320 as amended 2026-10-31).
+    <GlassSurface
+      material="tab-bar"
       {...rest}
       accessibilityRole="tablist"
       accessibilityLabel={label}
-      className={["flex-row border-t border-separator bg-background", className]
-        .filter(Boolean)
-        .join(" ")}
+      className={["flex-row border-t border-separator", className].filter(Boolean).join(" ")}
       style={[{ paddingBottom: insets.bottom }, style]}
     >
       {items.slice(0, MAX_TABS).map((item) => (
         <Tab key={item.id} item={item} follow={follow} />
       ))}
-    </View>
+    </GlassSurface>
   );
 }

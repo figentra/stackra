@@ -31,6 +31,7 @@ const received = vi.hoisted(() => ({
   contents: [] as Record<string, unknown>[],
 }));
 
+vi.mock("react-native-reanimated", () => ({ Easing: { bezier: () => "indicator-curve" } }));
 vi.mock("heroui-native", async () => {
   const { createElement } = await import("react");
   const record = (name: string) => (props: Record<string, unknown>) => {
@@ -259,9 +260,11 @@ describe("Tabs (native)", () => {
     void (<Tabs items={ITEMS} selectionMode="multiple" />);
   });
 
-  it("springs the indicator at the full motion level and leaves HeroUI's timing below it", () => {
+  it("slides the indicator over the indicator step at the full motion level and leaves HeroUI's timing below it", () => {
     render(<Tabs items={ITEMS} />);
-    expect(propsOf("indicator")["animation"]).toMatchObject({ translateX: { type: "spring" } });
+    expect(propsOf("indicator")["animation"]).toMatchObject({
+      translateX: { type: "timing", config: { duration: 250 } },
+    });
     render(
       <DesignSystemContext value={{ resolvedMotion: "reduced" } as DesignSystemState}>
         <Tabs items={ITEMS} />

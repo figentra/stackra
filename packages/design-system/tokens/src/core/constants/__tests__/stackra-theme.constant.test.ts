@@ -21,6 +21,7 @@
 import { existsSync, readFileSync } from "node:fs";
 
 import type { ColorToken } from "#contracts/types/color-token.type";
+import { GLASS_CLEAR_DIM_FLOORS } from "#core/constants/glass-clear-dim-floors.constant";
 import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
 import { STACKRA_CONTRAST_PAIRS } from "#core/constants/stackra-contrast-pairs.constant";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
@@ -137,6 +138,9 @@ const over = (top: string, alpha: number, bottom: string) =>
     .map((value, index) => Math.round(value * alpha + (channels(bottom)[index] ?? 0) * (1 - alpha)))
     .map((value) => value.toString(16).padStart(2, "0"))
     .join("")}`;
+
+/** White over a pure-white frame under a black dim of `dim`. */
+const whiteOn = (dim: number) => contrastRatio("#ffffff", over("#000000", dim, "#ffffff"));
 
 const lch = (oklch: string) =>
   oklch.slice(6, -1).split(" ").map(Number) as [number, number, number];
@@ -395,5 +399,63 @@ describe("STACKRA_THEME", () => {
         .filter(([, f]) => f.thickFloor === 1)
         .map(([name]) => name),
     ).toEqual(["solid", "liquid"]);
+  });
+
+  // ADR 0320 as amended 2026-10-31: the glass level (the functional layer) holds foreground at 4.5:1 over the worst
+  // backdrops like regular, its accent tint mixed in oklch as `materialFill` writes it, in every mode and scheme, with
+  // the sheen; and every level that lists `primary` in its vibrancy holds it, so a level cannot claim text it fails.
+  it("keeps foreground at 4.5:1 on the glass level and on every level that allows primary text", () => {
+    const failures: string[] = [];
+    const { levels, highlight } = STACKRA_THEME.materials;
+    for (const mode of ["light", "dark"] as const) {
+      const text = oklchToHex(STACKRA_THEME.colors.foreground[mode]);
+      for (const [level, token] of Object.entries(levels)) {
+        if (!token.vibrancy?.includes("primary") || token.tintSource === "none") continue;
+        const source = token.tintSource ?? "surface";
+        const [tinted] = mixInOklch(
+          STACKRA_THEME.colors[source][mode],
+          1,
+          STACKRA_THEME.colors.accent[mode],
+          token.tint ?? 0,
+        );
+        for (const [name, factors] of Object.entries(MATERIAL_MODES)) {
+          const floor =
+            level === "thick" ? Math.max(factors.fillFloor, factors.thickFloor) : factors.fillFloor;
+          const fill = Math.min(1, Math.max(floor, token.fill[mode] * factors.fillScale));
+          const sheen = factors.sheen * highlight[mode];
+          for (const backdrop of ["#000000", "#ffffff"]) {
+            const ratio = contrastRatio(
+              text,
+              over("#ffffff", sheen, over(oklchToHex(tinted), fill, backdrop)),
+            );
+            if (ratio < 4.5)
+              failures.push(`${mode} ${level} ${name} over ${backdrop}: ${ratio.toFixed(2)}`);
+          }
+        }
+      }
+    }
+    expect(failures).toEqual([]);
+    expect(levels.glass.vibrancy).toContain("primary");
+    expect(levels["ultra-thin"].vibrancy).toEqual(["glyph"]);
+  });
+
+  // Owner decision 2026-10-31: clear glass never dims media below 0.50 behind glyphs (3:1, WCAG 1.4.11) or 0.55
+  // behind a label (4.5:1, WCAG 1.4.3). White over a pure-white frame under the dim is the worst case, composited in
+  // 8-bit sRGB; Apple's 0.35 fails it, which is why the floors exist.
+  it("holds white glyphs at 3:1 and labels at 4.5:1 on clear glass at the dim floors, in every mode", () => {
+    expect(whiteOn(GLASS_CLEAR_DIM_FLOORS.glyph)).toBeGreaterThanOrEqual(3);
+    expect(whiteOn(GLASS_CLEAR_DIM_FLOORS.label)).toBeGreaterThanOrEqual(4.5);
+    // The floors are the least that pass: one step below fails.
+    expect(whiteOn(GLASS_CLEAR_DIM_FLOORS.label - 0.05)).toBeLessThan(4.5);
+    expect(whiteOn(0.35)).toBeLessThan(3);
+    const clear = STACKRA_THEME.materials.levels["glass-clear"];
+    expect(clear.tintSource).toBe("none");
+    // What `materialFill` draws: the theme dim, never below the floor or the mode's plate.
+    for (const [name, factors] of Object.entries(MATERIAL_MODES)) {
+      const glyphs = Math.max(GLASS_CLEAR_DIM_FLOORS.glyph, factors.clearFloor, clear.dim ?? 0);
+      const labels = Math.max(GLASS_CLEAR_DIM_FLOORS.label, factors.clearFloor, clear.dim ?? 0);
+      expect(whiteOn(glyphs), name).toBeGreaterThanOrEqual(3);
+      expect(whiteOn(labels), name).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });

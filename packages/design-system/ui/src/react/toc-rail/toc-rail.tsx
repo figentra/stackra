@@ -106,7 +106,7 @@ export function TocRail({
   );
   if (variant === "rail") return list;
   return (
-    <div className="fixed end-4 bottom-4 z-30">
+    <div className="fixed end-4 bottom-4 z-(--z-dock)">
       <Popover
         aria-label={name}
         placement="top"
@@ -116,7 +116,7 @@ export function TocRail({
             icon="list"
             label={t(UI_KEYS.ui.toc_rail.open)}
             variant="secondary"
-            className="rounded-[var(--radius-pill)] shadow-md"
+            className="rounded-[var(--radius-pill)] shadow-overlay"
           />
         }
       >

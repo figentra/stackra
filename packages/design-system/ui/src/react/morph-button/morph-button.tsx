@@ -36,6 +36,7 @@ export function MorphButton({
   state = "idle",
   labels,
   onPress,
+  // oxlint-disable-next-line stackra/no-literal-duration -- how long the success label dwells, not motion
   successDuration = 1500,
   onSuccessEnd,
   variant = "primary",
@@ -80,7 +81,7 @@ export function MorphButton({
       <HeroButton
         {...rest}
         ref={ref}
-        variant={variant}
+        variant={variant === "glass" ? "ghost" : variant}
         size={size}
         isDisabled={isDisabled ?? false}
         fullWidth={isFullWidth ?? false}
@@ -89,6 +90,7 @@ export function MorphButton({
         {...(takesPress && onPress ? { onPress } : {})}
         className={
           cn(
+            variant === "glass" && "button--glass",
             "h-[var(--morph-h)] gap-0 data-[pending=true]:opacity-100 transition-[padding,border-radius,background-color,color,border-color] motion-reduce:transition-none",
             ROUND[size],
             motion === "full" ? grow : fade,

@@ -18,7 +18,9 @@ export function HoverCard({
   trigger,
   children,
   label,
+  // oxlint-disable-next-line stackra/no-literal-duration -- hover intent wait before opening, not motion
   openDelay = 500,
+  // oxlint-disable-next-line stackra/no-literal-duration -- grace period before closing, not motion
   closeDelay = 200,
   placement = "bottom",
   align,

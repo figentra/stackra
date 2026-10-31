@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "b129cdc55c586f77",
+    "hash": "f1a68ef4d0dad5c3",
     "propsFiles": ["ui/src/native/share-button/share-button.props.ts"]
   },
   "importLine": "import { ShareButton } from \"@stackra/ui/native\";",
@@ -59,7 +59,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "default": "md",

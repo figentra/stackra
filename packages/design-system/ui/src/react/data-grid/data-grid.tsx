@@ -101,7 +101,7 @@ function ResizeStrip({
         event.stopPropagation();
         handlers.onKeyDown(event);
       }}
-      className="absolute inset-y-0 -end-1 z-[4] w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-1 after:start-1/2 after:w-0.5 after:bg-transparent hover:after:bg-accent focus-visible:after:bg-focus"
+      className="absolute inset-y-0 -end-1 z-[calc(var(--z-pinned)+2)] w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-1 after:start-1/2 after:w-0.5 after:bg-transparent hover:after:bg-accent focus-visible:after:bg-focus"
     />
   );
 }
@@ -458,8 +458,10 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
   const sticky = (index: number): CSSProperties => {
     const column = columns[index];
     const pin = column ? pinOf(column.id, index) : undefined;
-    if (pin === "start") return { position: "sticky", insetInlineStart: offsets[index], zIndex: 2 };
-    if (pin === "end") return { position: "sticky", insetInlineEnd: endOffsets[index], zIndex: 2 };
+    if (pin === "start")
+      return { position: "sticky", insetInlineStart: offsets[index], zIndex: "var(--z-pinned)" };
+    if (pin === "end")
+      return { position: "sticky", insetInlineEnd: endOffsets[index], zIndex: "var(--z-pinned)" };
     return {};
   };
   const [dragged, setDragged] = useState<string | null>(null);
@@ -476,7 +478,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
     <div
       role="row"
       aria-rowindex={1}
-      className="sticky top-0 z-10 grid bg-surface-secondary font-medium"
+      className="sticky top-0 z-(--z-raised) grid bg-surface-secondary font-medium"
       style={{ gridTemplateColumns: template, height: rowHeight }}
     >
       {columns.map((column, index) => {
@@ -491,7 +493,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
               cellClass,
               alignOf(column),
               "relative gap-1 bg-surface-secondary",
-              dragged === column.id && "opacity-50",
+              dragged === column.id && "opacity-(--opacity-dimmed)",
             )}
             style={sticky(index)}
             {...(hasTools
@@ -676,7 +678,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
                               data-fill-handle
                               aria-hidden
                               title={t(K.fill_handle)}
-                              className="absolute -end-1 -bottom-1 z-[3] size-2.5 cursor-crosshair rounded-[var(--radius-control-inner)] border border-background bg-accent"
+                              className="absolute -end-1 -bottom-1 z-[calc(var(--z-pinned)+1)] size-2.5 cursor-crosshair rounded-[var(--radius-control-inner)] border border-background bg-accent"
                               onPointerDown={(event) => {
                                 event.stopPropagation();
                                 dragging.current = "fill";
@@ -711,7 +713,7 @@ export function DataGrid<TRow extends DataGridRow = DataGridRow>({
               <div
                 role="row"
                 aria-rowindex={rows.length + 2}
-                className="sticky bottom-0 z-10 grid bg-surface-secondary font-medium"
+                className="sticky bottom-0 z-(--z-raised) grid bg-surface-secondary font-medium"
                 style={{ gridTemplateColumns: template, height: rowHeight }}
               >
                 {columns.map((column, index) => (

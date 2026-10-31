@@ -27,6 +27,12 @@ describe("themeVariables", () => {
     expect(heroui.root).toEqual({
       "--radius": "0.25rem",
       "--field-radius": "var(--radius)",
+      "--spacing": "0.25rem",
+      "--border-width": "1px",
+      "--ring-offset-width": "2px",
+      "--disabled-opacity": "0.5",
+      "--cursor-interactive": "pointer",
+      "--skeleton-animation": "shimmer",
       "--field-border-width": "1px",
     });
   });
@@ -73,6 +79,8 @@ describe("themeVariables", () => {
       "--material-fill-floor": "0",
       // Liquid's thick level is solid, so muted text keeps 4.5:1 on it.
       "--material-thick-floor": "1",
+      "--material-specular-scale": String(MATERIAL_MODES.liquid.specularScale),
+      "--material-clear-floor": "0",
       "--material-blur-scale": String(MATERIAL_MODES.liquid.blurScale),
       "--material-saturate-scale": String(MATERIAL_MODES.liquid.saturationScale),
       "--material-brightness": String(MATERIAL_MODES.liquid.brightness),

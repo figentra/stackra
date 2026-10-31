@@ -93,7 +93,7 @@ const K = COLLECTION_KEYS.ui.collection;
 
 /** The classes of the total row: it sticks to the bottom of the scroll area, on the header's ground. */
 const TOTAL_ROW_CLASS =
-  "sticky bottom-0 z-[3] font-medium [&_td]:bg-surface-secondary [&_td]:border-t [&_td]:border-separator";
+  "sticky bottom-0 z-[calc(var(--z-pinned)+1)] font-medium [&_td]:bg-surface-secondary [&_td]:border-t [&_td]:border-separator";
 
 /**
  * A resource index on the contract of the web `Table`: the rows, the query that fetched them, the actions on a row and
@@ -404,7 +404,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
       <AriaButton
         className={
           cn(
-            "group/edit flex w-[calc(100%-0.25rem)] min-w-0 cursor-text items-center gap-1 rounded-[var(--radius-control)] px-2 py-0.5 text-start outline-none hover:bg-default data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus",
+            "group/edit flex w-[calc(100%-0.25rem)] min-w-0 cursor-text items-center gap-1 rounded-[var(--radius-control)] px-2 py-0.5 text-start outline-none hover:bg-default data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus",
             column.align === "end" ? "-me-2 ms-auto" : "-ms-2",
           ) ?? ""
         }

@@ -64,7 +64,7 @@ export function Stepper({
   const motion = useMotion();
   const states = stepperStatesOf(steps, currentStep, onStepPress !== undefined, isLinear);
   const name = label ?? t(K.label);
-  const fill = motion === "full" ? "transition-colors duration-300" : "";
+  const fill = motion === "full" ? "transition-colors duration-(--duration-slow)" : "";
 
   if (variant === "compact") {
     const at = Math.max(
@@ -113,7 +113,7 @@ export function Stepper({
             <span
               aria-hidden
               className={cn(
-                "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-pill)] text-sm font-medium tabular-nums [&_svg]:size-4",
+                "relative z-(--z-raised) flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-pill)] text-sm font-medium tabular-nums [&_svg]:size-4",
                 fill,
                 MARKER[status],
               )}

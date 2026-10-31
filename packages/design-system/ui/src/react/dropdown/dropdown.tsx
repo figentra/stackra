@@ -16,20 +16,20 @@
 /* oxlint-disable react/only-export-components -- the compound is Object.assign(Root, parts), so the export is the
    root function, which React Refresh takes as a component; the boundary holds (rule-gap B-6). */
 import {
-  buttonVariants,
   cn,
   Dropdown as HeroDropdown,
   type DropdownMenuProps as HeroDropdownMenuProps,
 } from "@heroui/react";
 import type { ReactElement } from "react";
 import type { DropdownItemProps } from "#react/dropdown/dropdown-item.props";
+import { glassButtonClasses } from "#react/button/glass-button-classes.function";
 import type { DropdownTriggerProps } from "#react/dropdown/dropdown-trigger.props";
 
 /** The button that opens the menu: HeroUI's trigger, drawn as a Button of `variant` when one is given. */
 function DropdownTrigger({ variant, className, ...rest }: DropdownTriggerProps): ReactElement {
   if (variant === undefined)
     return <HeroDropdown.Trigger {...rest} {...(className === undefined ? {} : { className })} />;
-  const look = buttonVariants({ variant });
+  const look = glassButtonClasses(variant);
   return (
     <HeroDropdown.Trigger
       {...rest}

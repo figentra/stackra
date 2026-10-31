@@ -16,6 +16,7 @@ import type { DateLabelInfo } from "#core/types/date-label-info.type";
 import { type NumberingSystem, numeralsOf, withDigits } from "@stackra/i18n";
 
 /** One day in milliseconds. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a calendar day, not motion
 const DAY_MS = 86_400_000;
 
 /** Within this many days, either way, the short text is relative. */

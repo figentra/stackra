@@ -145,7 +145,7 @@ describe("Fab (native)", () => {
       label: "Create",
       variant: "primary",
       size: "lg",
-      className: "rounded-[var(--radius-pill)] shadow-lg",
+      className: "rounded-[var(--radius-pill)] shadow-overlay",
       isDisabled: false,
     });
     expect(state.main).not.toHaveProperty("accessibilityState");
@@ -175,7 +175,8 @@ describe("Fab (native)", () => {
     expect(
       state.views.find(
         (view) =>
-          view["className"] === "rounded-[var(--radius-pill)] bg-surface px-3 py-1.5 shadow-sm",
+          view["className"] ===
+          "rounded-[var(--radius-pill)] bg-overlay px-3 py-1.5 shadow-overlay",
       ),
     ).toMatchObject({ accessibilityElementsHidden: true });
   });

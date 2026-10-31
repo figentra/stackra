@@ -12,7 +12,7 @@
  * Runtime: browser
  * Governing contract: ADR 0317 (decisions 1 and 4); ADR 0165 (HeroUI v3 on web); WCAG 2.2 SC 2.5.8.
  */
-import { buttonVariants } from "@heroui/react";
+import { glassButtonClasses } from "#react/button/glass-button-classes.function";
 import type { ReactElement, ReactNode } from "react";
 import { Link as RouterLink } from "react-aria-components";
 
@@ -53,7 +53,7 @@ function ActionButton({
       <RouterLink
         href={action.href}
         {...(action.onPress ? { onPress: action.onPress } : {})}
-        className={buttonVariants({ variant, size })}
+        className={glassButtonClasses(variant, size)}
       >
         <SlotIcon icon={action.icon} />
         {action.label}

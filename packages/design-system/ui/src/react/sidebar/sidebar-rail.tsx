@@ -70,7 +70,7 @@ export function SidebarRail({ className, ...rest }: SidebarRailProps): ReactElem
         : { "aria-hidden": true })}
       {...pointer}
       className={cn(
-        "group/rail absolute inset-y-0 -end-2 z-20 w-4 touch-none outline-none",
+        "group/rail absolute inset-y-0 -end-2 z-(--z-sticky) w-4 touch-none outline-none",
         canResize
           ? "cursor-col-resize"
           : isCollapsed

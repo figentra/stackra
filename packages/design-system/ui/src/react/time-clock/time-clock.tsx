@@ -113,7 +113,7 @@ export function TimeClock({
       data-slot="time-clock"
       className={cn(
         "inline-flex flex-col items-center gap-3",
-        isDisabled && "opacity-50",
+        isDisabled && "opacity-(--disabled-opacity)",
         className,
       )}
     >

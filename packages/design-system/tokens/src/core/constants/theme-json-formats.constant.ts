@@ -13,4 +13,5 @@
 export const THEME_JSON_FORMATS = Object.freeze({
   theme: "stackra.theme/1",
   diff: "stackra.theme-diff/2",
+  document: "stackra.theme-document/1",
 } as const);

@@ -113,7 +113,7 @@ function Lane<TItem extends CollectionItem>({
       )}
       className={cn(
         "grid min-h-24 content-start gap-2 overflow-auto rounded-[var(--radius-control)] p-1 outline-none",
-        "data-[drop-target]:bg-accent-soft data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus",
+        "data-[drop-target]:bg-accent-soft data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus",
       )}
       style={{ maxHeight: "32rem" }}
     >
@@ -123,7 +123,7 @@ function Lane<TItem extends CollectionItem>({
           textValue={nameOf(item)}
           className={cn(
             "relative flex items-start gap-1 border border-separator bg-surface p-3 shadow-surface outline-none",
-            "data-[dragging]:opacity-50 data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus",
+            "data-[dragging]:opacity-(--opacity-dimmed) data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus",
             onItemPress && "cursor-pointer",
           )}
           style={{ borderRadius: "var(--radius-container)" }}
@@ -131,7 +131,7 @@ function Lane<TItem extends CollectionItem>({
           <AriaButton
             slot="drag"
             aria-label={t(K.row_handle, { name: nameOf(item) })}
-            className="-ms-1 inline-flex size-6 shrink-0 cursor-grab items-center justify-center rounded-[var(--radius-control)] text-muted outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-focus"
+            className="-ms-1 inline-flex size-6 shrink-0 cursor-grab items-center justify-center rounded-[var(--radius-control)] text-muted outline-none data-[focus-visible]:[outline-style:var(--focus-ring-style)] data-[focus-visible]:outline-(length:--focus-ring-width) data-[focus-visible]:outline-focus"
           >
             <Icon name="grip-vertical" size="sm" />
           </AriaButton>

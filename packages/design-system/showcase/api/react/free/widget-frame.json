@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "46c2195624a32f7d",
+    "hash": "060ee1e56097b35f",
     "propsFiles": ["ui/src/react/widget-frame/widget-frame.props.ts"]
   },
   "importLine": "import { WidgetFrame } from \"@stackra/ui/react\";",
@@ -164,6 +164,13 @@
           "required": false,
           "source": "stackra",
           "type": "string"
+        },
+        {
+          "description": "`card` (the default) draws one surface; `tray` puts the title and meta on the theme's tray (`--tray`) and the\nbody on an inset card, the way lists and tables sit (ADR 0501).",
+          "name": "variant",
+          "required": false,
+          "source": "stackra",
+          "type": "\"card\" | \"tray\""
         }
       ]
     }

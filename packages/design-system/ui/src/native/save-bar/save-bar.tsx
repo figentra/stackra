@@ -41,7 +41,7 @@ const EXIT = SlideOutDown.duration(BASE.durationMs).reduceMotion(ReduceMotion.Sy
 
 /** The shake that calls the eye to the bar, in points along the inline axis, each step this long. */
 const SHAKE = [-8, 8, -6, 6, 0];
-const SHAKE_STEP_MS = 50;
+const SHAKE_STEP_MS = motionTiming(STACKRA_THEME, "instant").durationMs / 2;
 
 /** The bar that asks to save or discard a dirty form. */
 export function SaveBar({

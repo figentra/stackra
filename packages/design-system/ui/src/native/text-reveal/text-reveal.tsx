@@ -11,6 +11,7 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0329 (motion layer); ADR 0060 (right-to-left); WCAG 2.2 SC 2.3.3.
  */
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import type { ReactElement } from "react";
 import { View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -22,6 +23,9 @@ import type { TextRevealProps } from "#native/text-reveal/text-reveal.props";
 
 /** The wait between two words, in milliseconds. */
 const STAGGER = 60;
+
+/** Each word rising in: the theme's slower step. */
+const SLOWER = motionTiming(STACKRA_THEME, "slower");
 
 /** The headline type: the size and weight a hero title takes. */
 const HEADLINE = "text-3xl font-semibold";
@@ -51,7 +55,7 @@ export function TextReveal({
           // The words of one string never reorder, so the index is a stable key.
           // oxlint-disable-next-line react/no-array-index-key -- a repeated word has no other identity
           key={index}
-          entering={FadeInDown.delay(delay + index * STAGGER).duration(500)}
+          entering={FadeInDown.delay(delay + index * STAGGER).duration(SLOWER.durationMs)}
         >
           <Text className={HEADLINE}>{word}</Text>
         </Animated.View>

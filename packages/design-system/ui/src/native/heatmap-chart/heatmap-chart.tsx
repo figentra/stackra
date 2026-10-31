@@ -10,6 +10,7 @@
 import { type ReactElement, useState } from "react";
 import { Pressable, View } from "react-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { formatChartNumber } from "#core/functions/format-chart-number.function";
 import { heatLevelOf } from "#core/functions/heat-level-of.function";
@@ -70,7 +71,7 @@ export function HeatmapChart({
               type="caption"
               tone="muted"
               numberOfLines={1}
-              className="flex-1 text-center text-[10px]"
+              className="flex-1 text-center text-3xs"
             >
               {column}
             </Text>
@@ -78,7 +79,7 @@ export function HeatmapChart({
         </View>
         {grid.rows.map((row, rowIndex) => (
           <View key={row} className="flex-row items-center gap-1">
-            <Text type="caption" tone="muted" numberOfLines={1} className="w-8 text-[10px]">
+            <Text type="caption" tone="muted" numberOfLines={1} className="w-8 text-3xs">
               {row}
             </Text>
             {grid.columns.map((column, columnIndex) => (
@@ -92,7 +93,7 @@ export function HeatmapChart({
                     paint,
                   ),
                   ...(pressed?.[0] === rowIndex && pressed[1] === columnIndex
-                    ? { borderWidth: 2, borderColor: paint.foreground }
+                    ? { borderWidth: THEME_PX.focusRing.width, borderColor: paint.foreground }
                     : {}),
                 }}
               />

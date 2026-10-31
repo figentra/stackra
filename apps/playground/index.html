@@ -30,6 +30,8 @@
         document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
           m.content = t === "dark" ? "#0B0D0F" : "#F5F6F3";
         });
+        var f = q.get("family");
+        if (f === "front" || f === "studio") document.documentElement.dataset.family = f;
         var m = q.get("material");
         document.documentElement.dataset.material =
           m === "solid" || m === "frosted" || m === "liquid" ? m : "glass";

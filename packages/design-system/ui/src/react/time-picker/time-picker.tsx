@@ -57,11 +57,11 @@ export function TimePicker({
           <Button
             aria-label={pickerButtonLabel ?? t(FORMS_KEYS.ui.time_picker.open)}
             isDisabled={isLocked}
-            className="pointer-events-auto flex size-6 items-center justify-center rounded-[var(--radius-control)] text-muted outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-focus"
+            className="pointer-events-auto flex size-6 items-center justify-center rounded-[var(--radius-control)] text-muted outline-none hover:text-foreground focus-visible:[outline-style:var(--focus-ring-style)] focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-focus"
           >
             <Icon name="clock" size="sm" />
           </Button>
-          <Popover className="rounded-[var(--radius-container)] bg-overlay p-2 shadow-lg outline-none">
+          <Popover className="rounded-[var(--radius-container)] bg-overlay p-2 shadow-overlay outline-none">
             <Dialog
               aria-label={pickerButtonLabel ?? t(FORMS_KEYS.ui.time_picker.open)}
               className="outline-none"

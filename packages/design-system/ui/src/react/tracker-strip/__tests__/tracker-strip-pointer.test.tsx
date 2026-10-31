@@ -37,9 +37,11 @@ describe("TrackerStrip pointer (web)", () => {
     const readout = screen.getByRole("status");
     expect(readout.textContent).toBe("5 OctDown");
     expect(strip.getAttribute("aria-describedby")).toBeTruthy();
-    const dimmed = cellsOf(strip).filter((cell) => cell.className.includes("opacity-50"));
+    const dimmed = cellsOf(strip).filter((cell) =>
+      cell.className.includes("opacity-(--opacity-dimmed)"),
+    );
     expect(dimmed).toHaveLength(CELLS.length - 1);
-    expect(fifth.className).not.toContain("opacity-50");
+    expect(fifth.className).not.toContain("opacity-(--opacity-dimmed)");
   });
 
   it("clears the readout when the pointer leaves or focus moves away", () => {

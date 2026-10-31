@@ -13,6 +13,7 @@
  */
 import { cn } from "@heroui/react";
 import { Bell } from "@stackra/icons/react/lucide-icons";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, type ReactElement } from "react";
 import { useLocale } from "react-aria-components";
@@ -35,6 +36,10 @@ const WIGGLE: Keyframe[] = ["0deg", "-14deg", "12deg", "-8deg", "4deg", "0deg"].
   rotate,
 }));
 const BUMP: Keyframe[] = [{ scale: "1" }, { scale: "1.3" }, { scale: "1" }];
+const SLOW = motionTiming(STACKRA_THEME, "slow");
+// The Web Animations API takes CSS easing text, so the steps lend theirs.
+const EASE_IN_OUT = STACKRA_THEME.motion.base?.easing ?? "ease-in-out";
+const EASE_OUT = STACKRA_THEME.motion.fast?.easing ?? "ease-out";
 
 /** A bell that opens the viewer's notifications, grouped, with their unread state. */
 export function NotificationsPanel({
@@ -67,8 +72,8 @@ export function NotificationsPanel({
     previous.current = unread;
     if (!hasArrived || isReduced) return;
     // jsdom and old engines have no `animate`; the count still updates without the flourish.
-    bellRef.current?.animate?.(WIGGLE, { duration: 600, easing: "ease-in-out" });
-    badgeRef.current?.animate?.(BUMP, { duration: 300, easing: "ease-out" });
+    bellRef.current?.animate?.(WIGGLE, { duration: SLOW.durationMs * 2, easing: EASE_IN_OUT });
+    badgeRef.current?.animate?.(BUMP, { duration: SLOW.durationMs, easing: EASE_OUT });
   }, [unread, isReduced]);
 
   const count = badgeCountOf(unread, locale);
@@ -128,7 +133,7 @@ export function NotificationsPanel({
         role="region"
         aria-labelledby={headingId}
         data-slot="notifications-panel"
-        className={cn("w-full max-w-[28rem]", className) ?? ""}
+        className={cn("w-full max-w-(--size-dialog-md)", className) ?? ""}
       >
         <Card.Header>
           <Card.Title id={headingId} level={3}>
@@ -145,7 +150,7 @@ export function NotificationsPanel({
       title={title ?? t(K.title)}
       placement="bottom"
       align="end"
-      className={cn("w-[22rem] max-w-[calc(100vw-2rem)]", className) ?? ""}
+      className={cn("w-(--size-panel) max-w-[calc(100vw-2rem)]", className) ?? ""}
       trigger={
         <Badge.Anchor>
           <IconButton

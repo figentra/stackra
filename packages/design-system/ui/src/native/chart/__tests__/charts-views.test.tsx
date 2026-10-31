@@ -401,7 +401,7 @@ describe("CalendarHeatmap", () => {
     act(() => days[0]?.click());
     expect(screen.getByText("Thu, Oct 1: 2")).toBeTruthy();
     expect(
-      state.views.some((view) => (view["style"] as { borderWidth?: number })?.borderWidth === 1.5),
+      state.views.some((view) => (view["style"] as { borderWidth?: number })?.borderWidth === 2),
     ).toBe(true);
     act(() => days[1]?.click());
     expect(screen.getByText("Fri, Oct 2: –")).toBeTruthy();

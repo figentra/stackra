@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "dfb08e6006aa4c00",
+    "hash": "aa53f8645bdc8764",
     "propsFiles": ["ui/src/native/action-menu/action-menu.props.ts"]
   },
   "importLine": "import { ActionMenu } from \"@stackra/ui/native\";",
@@ -53,7 +53,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
         },
         {
           "default": "md",

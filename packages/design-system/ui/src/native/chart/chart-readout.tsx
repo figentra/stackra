@@ -13,6 +13,7 @@
 import type { ReactElement } from "react";
 import { View } from "react-native";
 
+import { THEME_PX } from "#core/constants/theme-px.constant";
 import type { ChartReadoutProps } from "#native/chart/chart-readout.props";
 import { Text } from "#native/text/text";
 
@@ -23,7 +24,8 @@ export function ChartReadout({ title, items, indicator = "dot" }: ChartReadoutPr
       pointerEvents="none"
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
-      className="absolute start-0 top-0 z-10 min-w-[140px] gap-1.5 rounded-[var(--radius-control)] border border-separator bg-overlay px-3 py-2 shadow-overlay"
+      style={{ zIndex: THEME_PX.zIndex["raised"] }}
+      className="absolute start-0 top-0 min-w-readout gap-1.5 rounded-[var(--radius-control)] border border-separator bg-overlay px-3 py-2 shadow-overlay"
     >
       <Text type="caption" tone="muted" className="text-xs font-medium">
         {title}

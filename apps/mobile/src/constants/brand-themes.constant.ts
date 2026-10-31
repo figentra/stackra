@@ -13,8 +13,12 @@
 import type { Theme } from "@stackra/tokens/contracts";
 
 import { brandTheme } from "./brand-theme.function";
+import APPLE from "./brand-themes/apple.json";
 import COMMERCE from "./brand-themes/commerce.json";
+import BRUTAL from "./brand-themes/brutal.json";
 import FIGENTRA from "./brand-themes/figentra.json";
+import GLASS from "./brand-themes/glass.json";
+import HEROUI from "./brand-themes/heroui.json";
 import JURISTRA from "./brand-themes/juristra.json";
 import JUTE from "./brand-themes/jute.json";
 import LINEAR from "./brand-themes/linear.json";
@@ -23,6 +27,9 @@ import MEZZORA from "./brand-themes/mezzora.json";
 import ORGANZA from "./brand-themes/organza.json";
 import OS from "./brand-themes/os.json";
 import PAY from "./brand-themes/pay.json";
+import STACKRA_GLASS from "./brand-themes/stackra-glass.json";
+import STACKRA_STUDIO from "./brand-themes/stackra-studio.json";
+import TACTILE from "./brand-themes/tactile.json";
 import TAMO from "./brand-themes/tamo.json";
 import VELORA from "./brand-themes/velora.json";
 import { SHOWCASE_THEME } from "./showcase-theme.constant";
@@ -43,4 +50,12 @@ export const BRAND_THEMES: readonly { id: string; label: string; theme: Theme }[
   { id: "velora", label: "Velora", theme: brandTheme(VELORA) },
   { id: "medusa", label: "Medusa-inspired", theme: brandTheme(MEDUSA) },
   { id: "linear", label: "Linear-inspired", theme: brandTheme(LINEAR) },
+  // The glass-system presets (ADR 0320 as amended 2026-10-31, ADR 0501 section 9), copies of the playground's.
+  { id: "stackra-glass", label: "Stackra Glass", theme: brandTheme(STACKRA_GLASS) },
+  { id: "stackra-studio", label: "Stackra Studio", theme: brandTheme(STACKRA_STUDIO) },
+  { id: "apple", label: "Apple-style", theme: brandTheme(APPLE) },
+  { id: "heroui", label: "HeroUI-style", theme: brandTheme(HEROUI) },
+  { id: "tactile", label: "Tactile", theme: brandTheme(TACTILE) },
+  { id: "glass", label: "Glass", theme: brandTheme(GLASS) },
+  { id: "brutal", label: "Brutal", theme: brandTheme(BRUTAL) },
 ];

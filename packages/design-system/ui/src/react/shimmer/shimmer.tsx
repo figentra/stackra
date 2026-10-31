@@ -76,6 +76,7 @@ export function Shimmer({
       }
       initial={{ backgroundPosition: from }}
       animate={{ backgroundPosition: to }}
+      // oxlint-disable-next-line stackra/no-literal-duration -- a looping sweep needs constant speed to join seamlessly
       transition={{ duration: SWEEP_S, ease: "linear", repeat: Infinity }}
     >
       {text}

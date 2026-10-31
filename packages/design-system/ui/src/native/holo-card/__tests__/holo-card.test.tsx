@@ -89,7 +89,7 @@ describe("HoloCard (native)", () => {
   it("rests level with a hidden glare", () => {
     draw();
     expect(state.card["className"]).toBe(
-      "overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-lg card",
+      "overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-overlay card",
     );
     expect(state.card["style"]).toEqual({
       transform: [{ perspective: 900 }, { rotateX: "0deg" }, { rotateY: "0deg" }],
@@ -129,7 +129,7 @@ describe("HoloCard (native)", () => {
     expect(state.card["style"]).toBeUndefined();
     expect(state.glare).toBeUndefined();
     expect(state.card["className"]).toBe(
-      "overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-lg",
+      "overflow-hidden rounded-[var(--radius-container)] bg-surface shadow-overlay",
     );
     state.reduced = true;
     draw();

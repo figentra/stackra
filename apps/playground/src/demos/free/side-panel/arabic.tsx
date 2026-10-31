@@ -19,7 +19,7 @@ export default function Arabic() {
   const t = useCatalogueText(MESSAGES.en);
   return (
     <div lang="ar" dir="rtl">
-      <div className="h-[26rem] overflow-hidden rounded-[var(--radius-container)] border border-separator">
+      <div className="h-104 overflow-hidden rounded-[var(--radius-container)] border border-separator">
         <SidePanel label={t(K.arabic_label)} variant="split" defaultState="open" defaultWidth={300}>
           <SidePanel.Inset className="gap-2 p-6">
             <Heading level={3}>{t(K.arabic_page_title)}</Heading>

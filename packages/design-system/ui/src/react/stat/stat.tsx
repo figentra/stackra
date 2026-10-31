@@ -60,7 +60,7 @@ export function Stat({
         {label}
       </Text>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xl font-semibold tabular-nums @[8rem]:text-2xl @[10rem]:text-3xl">
+        <span className="text-xl font-semibold tabular-nums @[8rem]:text-2xl @[10rem]:text-(length:--text-metric) @[10rem]:tracking-(--text-metric--letter-spacing)">
           {typeof value === "number" ? <NumberTicker value={value} /> : value}
         </span>
         {badge ? <Chip size="sm">{badge}</Chip> : null}

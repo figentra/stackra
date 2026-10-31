@@ -1,0 +1,78 @@
+{
+  "format": "stackra.theme-diff/2",
+  "tokenSet": 1,
+  "base": "stackra",
+  "name": "apple",
+  "changes": {
+    "name": "apple",
+    "colors": {
+      "background": {
+        "light": "oklch(0.985 0 0)",
+        "dark": "oklch(0 0 0)",
+        "hexLight": "#FAFAFA",
+        "hexDark": "#000000"
+      },
+      "accent": {
+        "light": "oklch(0.55 0.2 255)",
+        "dark": "oklch(0.68 0.17 255)",
+        "hexLight": "#006DE2",
+        "hexDark": "#4699FE"
+      },
+      "focus": {
+        "light": "oklch(0.55 0.2 255)",
+        "dark": "oklch(0.68 0.17 255)",
+        "hexLight": "#006DE2",
+        "hexDark": "#4699FE"
+      }
+    },
+    "fontFamily": {
+      "sans": "system-ui, \"Geist\", \"Helvetica Neue\", Arial, sans-serif"
+    },
+    "radius": {
+      "base": "0.75rem",
+      "field": "12px"
+    },
+    "layout": {
+      "controlHeight": {
+        "sm": "calc(var(--spacing) * 8)",
+        "md": "calc(var(--spacing) * 11)",
+        "lg": "calc(var(--spacing) * 12)"
+      }
+    },
+    "typography": {
+      "body": {
+        "weight": 400,
+        "size": "17px",
+        "lineHeight": "22px",
+        "family": "sans",
+        "letterSpacing": "-0.01em"
+      }
+    },
+    "materials": {
+      "family": "front",
+      "defaultMode": "liquid",
+      "levels": {
+        "glass": {
+          "fill": {
+            "light": 0.72,
+            "dark": 0.74
+          },
+          "blur": "28px",
+          "saturation": 1.9,
+          "brightness": 1.05,
+          "rim": {
+            "light": 0.85,
+            "dark": 0.14
+          },
+          "specular": 0.45
+        }
+      }
+    },
+    "shadows": {
+      "floating": {
+        "light": "0px 10px 30px -10px oklch(0 0 0 / 0.18)",
+        "dark": "0px 10px 30px -8px oklch(0 0 0 / 0.55)"
+      }
+    }
+  }
+}

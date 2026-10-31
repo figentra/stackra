@@ -17,6 +17,7 @@ import { ROUTE_PROGRESS_DEMO_KEYS } from "#src/demos/free/route-progress/route-p
 const K = ROUTE_PROGRESS_DEMO_KEYS.demo_free.route_progress;
 
 /** How long the report takes to open, in ms. */
+// oxlint-disable-next-line stackra/no-literal-duration -- a demo's fake page load, not motion
 const LOAD_MS = 2400;
 
 /** A header with a loading bar. */

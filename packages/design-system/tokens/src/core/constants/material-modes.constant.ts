@@ -25,6 +25,8 @@ export const MATERIAL_MODES: Readonly<Record<MaterialMode, MaterialModeFactors>>
     saturationScale: 1,
     brightness: 1,
     sheen: 0,
+    specularScale: 0,
+    clearFloor: 0.8,
   },
   frosted: {
     fillScale: 1,
@@ -34,6 +36,8 @@ export const MATERIAL_MODES: Readonly<Record<MaterialMode, MaterialModeFactors>>
     saturationScale: 0.85,
     brightness: 1,
     sheen: 0,
+    specularScale: 0,
+    clearFloor: 0.6,
   },
   glass: {
     fillScale: 1,
@@ -43,6 +47,8 @@ export const MATERIAL_MODES: Readonly<Record<MaterialMode, MaterialModeFactors>>
     saturationScale: 1,
     brightness: 1,
     sheen: 0,
+    specularScale: 1,
+    clearFloor: 0,
   },
   liquid: {
     fillScale: 0.8,
@@ -54,5 +60,7 @@ export const MATERIAL_MODES: Readonly<Record<MaterialMode, MaterialModeFactors>>
     brightness: 1.06,
     // 22% white on the stackra light scheme (rim light 0.7), under 3% on its dark one (0.09).
     sheen: 0.31,
+    specularScale: 1.3,
+    clearFloor: 0,
   },
 });

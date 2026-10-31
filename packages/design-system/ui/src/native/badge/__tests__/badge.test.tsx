@@ -57,7 +57,7 @@ const ROOT_CLASS = {
   lg: "min-h-8 min-w-8 px-0 py-0 rounded-[var(--radius-container)] border border-background",
 } as const;
 const LABEL_CLASS = {
-  sm: "px-0.5 text-[10px] leading-[1.34]",
+  sm: "px-0.5 text-3xs leading-[1.34]",
   md: "px-0.5 text-xs leading-[1.34]",
   lg: "px-0.5 text-sm leading-[1.43]",
 } as const;

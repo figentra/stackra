@@ -158,7 +158,7 @@ describe("native cartesian charts", () => {
     expect(chart["yKeys"]).toEqual(["desktop", "mobile"]);
     expect((chart["yAxis"] as { axisSide: string }[])[0]?.axisSide).toBe("left");
     // The default palette is the accent ramp (a theme step where defined); a series' own colour wins.
-    expect(state.variables[0]?.slice(-2)).toEqual(["--color-chart-ramp-1", "--color-success"]);
+    expect(state.variables[0]?.slice(-2)).toEqual(["--color-chart-ramp-3", "--color-success"]);
   });
 
   it("run right to left in Arabic with the value axis on the right and Arabic-Indic digits", () => {
@@ -318,7 +318,7 @@ describe("native polar charts", () => {
     expect(container.textContent).toContain("475Visitors");
     expect(
       (state.polar[0]?.["data"] as { color: string }[] | undefined)?.map((row) => row.color),
-    ).toEqual(["paint(--color-chart-ramp-1)", "paint(--color-chart-ramp-2)"]);
+    ).toEqual(["paint(--color-chart-ramp-3)", "paint(--color-chart-ramp-1)"]);
   });
 
   it("takes the categorical set when asked", () => {

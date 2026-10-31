@@ -358,7 +358,7 @@ describe("DesignSystemProvider (native)", () => {
         <Pickers />
       </DesignSystemProvider>,
     );
-    expect(screen.getByTestId("picked").textContent).toBe("undefined none full");
+    expect(screen.getByTestId("picked").textContent).toBe("undefined circle-origin full");
     act(() => screen.getByRole("button", { name: "brand" }).click());
     act(() => screen.getByRole("button", { name: "transition" }).click());
     act(() => screen.getByRole("button", { name: "motion" }).click());

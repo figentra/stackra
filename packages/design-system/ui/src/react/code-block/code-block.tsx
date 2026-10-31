@@ -101,7 +101,7 @@ function CodeFrame({
             {title === undefined ? null : <bdi>{title}</bdi>}
           </span>
           {language ? (
-            <span dir="ltr" className="font-mono text-[11px] uppercase text-muted">
+            <span dir="ltr" className="font-mono text-(length:--text-2xs) uppercase text-muted">
               {language}
             </span>
           ) : null}
@@ -132,7 +132,7 @@ function CodeFrame({
         // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- reason: a scroll region must take focus so a keyboard user can scroll it (WCAG 2.1.1)
         tabIndex={0}
         aria-label={title ?? t(UI_KEYS.ui.code_block.code)}
-        className="m-0 overflow-x-auto py-3 text-start font-mono text-[13px] leading-6 outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        className="m-0 overflow-x-auto py-3 text-start font-mono text-(length:--text-code) leading-6 outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         <code className={cn("block", isWrapped ? "w-full" : "w-max min-w-full")}>
           {shown.map((row) => {

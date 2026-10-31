@@ -33,7 +33,7 @@ export function LoadingOverlay({
       {isLoading ? (
         <div
           role="status"
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-[inherit] bg-background/75 p-4 text-center"
+          className="absolute inset-0 z-(--z-raised) flex flex-col items-center justify-center gap-2 rounded-[inherit] bg-background/75 p-4 text-center"
         >
           <Spinner size="md" />
           <span className="text-sm font-medium">

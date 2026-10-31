@@ -81,7 +81,7 @@ export function SlideToConfirm({
       }}
       className={cn(
         "relative flex h-14 touch-pan-y select-none items-center overflow-hidden rounded-[var(--radius-pill)] bg-default outline-none focus-visible:ring-2 focus-visible:ring-focus",
-        isDisabled && "opacity-50",
+        isDisabled && "opacity-(--disabled-opacity)",
         className,
       )}
     >

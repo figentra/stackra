@@ -15,7 +15,9 @@
  *          `font-display` and `font-display-arabic` classes), each the first family of its stack, since React Native
  *          takes one family name; the native Text adds them to headings (STA-1386).
  * Boundary: a pure function from a Theme to a string; it validates nothing (`defineTheme` does) and writes no file.
- *          The other fonts, spacing, motion and material are web-only, bar the material highlight share
+ *          The spacing unit (`--spacing`) and the raised and pressed shadows are written as on the web; the numeric
+ *          sizes, radii and type steps reach native components through `nativeTokens(theme)` (ADR 0501). The other
+ *          fonts, the legacy spacing steps, motion and material are web-only, bar the material highlight share
  *          (`--material-highlight-share`, per variant), which the native charts read to light their marks. Font weight is left to HeroUI Native's `font-*`
  *          classes, because with custom fonts a weight selects a family there.
  * Runtime: isomorphic
@@ -26,12 +28,12 @@ import { ColorRole } from "#contracts/enums/color-role.enum";
 import { SyntaxRole } from "#contracts/enums/syntax-role.enum";
 import type { Theme } from "#contracts/types/theme.type";
 import type { TypographyToken } from "#contracts/types/typography-token.type";
-import { FIELD_BORDER_WIDTH } from "#core/constants/field-border-width.constant";
 import { HEROUI_TYPOGRAPHY_TOKENS } from "#core/constants/heroui-typography-tokens.constant";
 import { fontStackOf } from "#core/functions/font-stack-of.function";
+import { nativeTokens } from "#core/functions/native-tokens.function";
 import { syntaxColours } from "#core/functions/syntax-colours.function";
 
-const SHADOWS = ["surface", "overlay", "field"] as const;
+const SHADOWS = ["surface", "overlay", "field", "raised", "pressed"] as const;
 
 /** A number as CSS prints it: two decimals at most (so 40 * 1.1 is 44, not 44.00000000000001), and no `-0`. */
 const px = (value: number) => `${Math.round(value * 100) / 100 || 0}px`;
@@ -61,6 +63,7 @@ const firstFamily = (stack: string) => stack.split(",")[0]?.trim() ?? stack;
 
 /** The native stylesheet of `theme`, to load after `@import "heroui-native/styles"` in the Uniwind entry CSS. */
 export function renderNativeCss(theme: Theme): string {
+  const native = nativeTokens(theme);
   const palette = [...Object.keys(theme.palette), ...SyntaxRole.map((role) => `syntax-${role}`)];
   const variant = (mode: "light" | "dark") =>
     [
@@ -81,9 +84,17 @@ export function renderNativeCss(theme: Theme): string {
     `@theme {\n${[
       `  --radius: ${theme.radius.base};`,
       `  --field-radius: ${theme.radius.field};`,
-      `  --field-border-width: ${FIELD_BORDER_WIDTH};`,
+      `  --field-border-width: ${theme.layout.fieldBorderWidth};`,
+      // Uniwind's spacing unit, so the density of native utilities follows the theme as on the web.
+      `  --spacing: ${theme.layout.spacing};`,
       `  --font-display: ${firstFamily(fontStackOf(theme, "display"))};`,
       `  --font-display-arabic: ${firstFamily(fontStackOf(theme, "displayArabic"))};`,
+      // The type scale and the named sizes as Uniwind utilities (`text-3xs`, `w-drawer-sm`), in px as native takes.
+      ...Object.entries(native.typeScale).flatMap(([name, step]) => [
+        `  --text-${name}: ${px(step.fontSize)};`,
+        `  --text-${name}--line-height: ${px(step.lineHeight)};`,
+      ]),
+      ...Object.entries(native.sizes).map(([name, size]) => `  --spacing-${name}: ${px(size)};`),
     ].join("\n")}\n}`,
     ...(palette.length === 0
       ? []

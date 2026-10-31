@@ -26,6 +26,7 @@ import {
   useCatalogueText,
   useDesignSystem,
 } from "@stackra/ui/native";
+import { motionEasing, motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import Animated, {
@@ -57,6 +58,10 @@ const STORM_BRANDS = BRAND_THEMES.filter(({ id }) => (STORM_IDS as readonly stri
 
 /** How long each brand shows, in milliseconds. */
 const DWELL = 3200;
+
+/** The light's sweep across the preview: the theme's `count` step on its `enter` easing. */
+const SWEEP_MS = motionTiming(STACKRA_THEME, "count").durationMs;
+const ENTER = motionEasing(STACKRA_THEME, "enter");
 
 /** The revenue chart's bars, as fractions of its height. */
 const BARS = [0.38, 0.52, 0.46, 0.64, 0.58, 0.72, 0.66, 0.8, 0.74, 0.88, 0.82, 0.96] as const;
@@ -98,7 +103,7 @@ export function StormHero({ onBrowse }: HeroProps) {
   useEffect(() => {
     if (isStill) return;
     sweep.set(0);
-    sweep.set(withTiming(1, { duration: 900, easing: Easing.bezier(0.2, 0.8, 0.2, 1) }));
+    sweep.set(withTiming(1, { duration: SWEEP_MS, easing: Easing.bezier(...ENTER) }));
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- a new brand index replays the sweep
   }, [index, isStill, sweep]);
   const band = useAnimatedStyle(() => ({

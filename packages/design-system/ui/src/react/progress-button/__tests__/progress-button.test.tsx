@@ -75,7 +75,7 @@ describe("PressFeedback (web)", () => {
       </PressFeedback>,
     );
     const button = screen.getByRole("button", { name: "Card" });
-    expect(button.className).toContain("opacity-50");
+    expect(button.className).toContain("opacity-(--disabled-opacity)");
     press(button);
     expect(onPress).not.toHaveBeenCalled();
   });

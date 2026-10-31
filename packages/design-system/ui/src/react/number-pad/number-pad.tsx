@@ -119,7 +119,7 @@ export function NumberPad({
                   key === "delete" ? "bg-transparent" : "bg-default",
                   isPressed && "scale-95 bg-default-hover",
                   isFocusVisible && "ring-2 ring-focus",
-                  isDisabled && "opacity-50",
+                  isDisabled && "opacity-(--disabled-opacity)",
                 ) ?? ""
               }
             >

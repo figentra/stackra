@@ -80,7 +80,7 @@ export function IconSearch() {
                 <span
                   aria-hidden
                   dir="ltr"
-                  className="w-full truncate text-center font-mono text-[10px] text-muted"
+                  className="w-full truncate text-center font-mono text-(length:--text-3xs) text-muted"
                 >
                   {name}
                 </span>
