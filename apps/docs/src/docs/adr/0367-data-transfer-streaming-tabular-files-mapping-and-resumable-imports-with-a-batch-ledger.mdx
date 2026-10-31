@@ -67,7 +67,10 @@ values differ per market and plan, so they are settings and market-pack data
 - A model becomes importable by supplying an `ImportTarget` (schema, `upsert`, `revert`); `@Importable` can generate it.
 - The OS data-exchange service owns the durable ledger driver, the settings keys for limits, batch size, preview size
   and the undo window, and the storage of mapping profiles.
-- `exceljs` becomes a catalogue dependency.
+- `exceljs` becomes a catalogue dependency. Amended 2026-11-01 (STA-1736): exceljs is dropped. Its last release pulls
+  uuid 8, glob and minimatch copies with advisories and no fixed release, so the `xlsx` driver reads and writes the
+  OOXML parts itself: the package's `writeZip` writes them, and a central-directory reader on `node:zlib` reads them.
+  The reader holds the file in memory, capped by `limits.bytes`.
 
 ## Enforcement
 

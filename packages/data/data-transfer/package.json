@@ -98,7 +98,6 @@
     "@stackra/filesystem": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/support": "workspace:*",
-    "exceljs": "catalog:exceljs",
     "zod": "catalog:"
   },
   "devDependencies": {

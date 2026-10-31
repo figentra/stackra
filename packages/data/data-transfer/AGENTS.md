@@ -12,7 +12,7 @@ Tabular import and export (ADR 0367, ADR 0163 decisions 3 and 4). Member at `pac
 | A port                   | `src/contracts/ports/<name>.port.ts`           |
 | A contract type or enum  | `src/contracts/{types,enums}/<name>.<kind>.ts` |
 | A format, ledger or sink | `src/core/drivers/<name>.driver.ts`            |
-| An exceljs format        | `src/node/drivers/<name>.driver.ts`            |
+| An XLSX-family format    | `src/node/drivers/<name>.driver.ts`            |
 | Seed data (profiles)     | `assets/data/<kind>/<name>.yaml`               |
 | The import engine        | `src/core/services/import-runner.service.ts`   |
 | A function               | `src/core/functions/<name>.function.ts`        |

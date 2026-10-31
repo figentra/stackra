@@ -2,8 +2,7 @@
  * Stackra file contract:
  * Purpose: build config of @stackra/data-transfer: one tsdown entry per package.json export (core `.` is `index`),
  *          each naming the stand-in barrel until gen writes the entry barrels (ADR 0294 decision 15, STA-339).
- *          `exceljs` stays external as a dependency and is
- *          imported only by the `./node` entry.
+ *          The XLSX drivers (on `node:zlib`) are imported only by the `./node` entry.
  * Boundary: build configuration only; spreads gen's `./.stackra/tsdown.config` and lays this package's own entries
  *           (the barrels package.json `exports` names) and options over it, so gen keeps this file (ADR 0295
  *           decision 5; STA-1306, STA-1299). Before gen has run the package's own config builds alone.

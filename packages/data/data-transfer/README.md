@@ -11,9 +11,10 @@ warehouse sink that exports the outbox change feed as Parquet partitions (ADR 01
 2026-10-29).
 
 **Tier:** `tier:lib` (`packages/data/data-transfer`). Entries `.`, `./contracts` and `./node` (XLSX only, so a browser
-never loads exceljs). Depends on `@stackra/container`,
+never loads `node:zlib`). Depends on `@stackra/container`,
 `@stackra/contracts`, `@stackra/errors`, `@stackra/filesystem` and `@stackra/outbox` (types only, for the warehouse
-sink), `@stackra/support` (`crc32`), `exceljs` and `zod`.
+sink), `@stackra/support` (`crc32`, `escapeXml`) and `zod`; XLSX is read and written in the package, with no spreadsheet
+library (STA-1736).
 
 Mechanism only (ADR 0363): row and byte limits, the preview size, the batch size, the undo window and the legacy
 encoding of a market are inputs the caller reads from settings and market packs. The package has no default for any.
