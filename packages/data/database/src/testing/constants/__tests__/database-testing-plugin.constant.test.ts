@@ -10,6 +10,7 @@
  * Governing contract: ADR 0269 (decision 3); ADR 0190; ADR 0022.
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
+import { UnitOfWork } from "@stackra/actions/contracts";
 import { Module } from "@stackra/container";
 import { createTestingModule } from "@stackra/container/testing";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -19,6 +20,7 @@ import { Seeder } from "#core/bases/seeder.base";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { modelOf } from "#core/functions/model-of.function";
 import { Database } from "#core/ports/database.port";
+import { DatabaseUnitOfWorkDriver } from "#node/drivers/database-unit-of-work.driver";
 import { DATABASE_TESTING_PLUGIN } from "#testing/constants/database-testing-plugin.constant";
 import { MemoryDatabaseDriver } from "#testing/drivers/memory-database.driver";
 
@@ -93,6 +95,16 @@ describe("DATABASE_TESTING_PLUGIN", () => {
     await createTestingModule(FixtureModule).compile();
     await createTestingModule(FixtureModule).compile();
     expect(Database.current()).toBe(counting);
+  });
+
+  it("runs actions in a transaction of the connected database when the test picks memory (STA-1701)", async () => {
+    const counting = new CountingDatabase();
+    ACTIVE_DATABASE.current = counting;
+    const app = await createTestingModule(FixtureModule).useDrivers("memory").compile();
+    const unit = app.get(UnitOfWork);
+    expect(unit).toBeInstanceOf(DatabaseUnitOfWorkDriver);
+    await expect(unit.transaction(() => Promise.resolve("done"))).resolves.toBe("done");
+    expect(counting.transactions).toBe(1);
   });
 
   it("hands out the model's repository", async () => {

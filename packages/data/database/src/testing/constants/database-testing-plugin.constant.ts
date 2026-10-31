@@ -3,7 +3,8 @@
  * Purpose: `DATABASE_TESTING_PLUGIN`, the testing-module plugin of @stackra/database: every compile connects a fresh
  *          `MemoryDatabaseDriver` (PGlite) unless another database is connected, `.seed(...seeders)` runs each seeder
  *          in its own transaction once the module compiles, `app.transaction(work)` runs work in a transaction of the
- *          connected database, and `app.repository(Model)` hands out the model's repository. All are declared on the
+ *          connected database, `app.repository(Model)` hands out the model's repository, and a test that picks the
+ *          `memory` drivers gets `DatabaseUnitOfWorkDriver` as its `UnitOfWork`, so each action runs in a transaction. All are declared on the
  *          testing module here and registered when this module loads.
  * Boundary: the memory database is the unit tier's default, so `useDrivers("memory")` tests reach a database whether
  *           or not their wiring lists the port's candidates. A database connected another way wins: `usePostgres()`
@@ -15,6 +16,7 @@
  * Governing contract: ADR 0269 (decision 3); ADR 0190 (seed profiles); ADR 0263 (decision 12); ADR 0266 (memory
  *                     first); ADR 0145 and ADR 0294 (classes are the only tokens).
  */
+import { UnitOfWork } from "@stackra/actions/contracts";
 import { registerTestingPlugin } from "@stackra/container/testing";
 import type { TestingModuleBuilder, TestingPlugin } from "@stackra/container/testing";
 import type { AnyClass } from "@stackra/container";
@@ -65,6 +67,20 @@ function connectDatabase(): void {
  */
 export const DATABASE_TESTING_PLUGIN: TestingPlugin = {
   name: "@stackra/database",
+  // The memory testing app runs each action in a transaction of the connected database, as production does, so its
+  // writes commit together and its events publish (STA-1701). A wiring's own candidate of the name wins.
+  drivers: [
+    {
+      port: UnitOfWork,
+      key: "actions.UnitOfWork",
+      candidates: {
+        memory: () =>
+          import("#node/drivers/database-unit-of-work.driver").then(
+            (module) => module.DatabaseUnitOfWorkDriver,
+          ),
+      },
+    },
+  ],
   builder: {
     seed(this: TestingModuleBuilder, ...seeders: readonly (new () => Seeder)[]) {
       return this.onCompile(async () => {
