@@ -56,7 +56,7 @@ const IDLE_CPU_PERCENT = 5;
 const IDLE_COOLDOWN_SECONDS = 300;
 
 /** The pinned Postgres client image the database task runs. */
-const POSTGRES_CLIENT_IMAGE = "postgres:17.6-alpine";
+const POSTGRES_CLIENT_IMAGE = "postgres:18.6-alpine";
 
 /** The Valkey engine version. */
 const VALKEY_VERSION = "8.0";

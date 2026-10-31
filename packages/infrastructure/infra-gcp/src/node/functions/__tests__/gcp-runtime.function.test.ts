@@ -31,7 +31,7 @@ const PRODUCTION: GcpRuntimeConfig = {
   labels: { project: "acme", env: "production", service: "infra-gcp" },
   database: {
     tier: "db-custom-2-7680",
-    version: "POSTGRES_17",
+    version: "POSTGRES_18",
     highAvailability: true,
     retainedBackups: 35,
     pitr: { days: 7 },
@@ -65,7 +65,7 @@ describe("gcpRuntime", () => {
     ).toMatchObject({
       project: "acme-prod",
       region: "me-central2",
-      databaseVersion: "POSTGRES_17",
+      databaseVersion: "POSTGRES_18",
       deletionProtection: true,
       settings: {
         tier: "db-custom-2-7680",

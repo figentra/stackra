@@ -1,6 +1,6 @@
 ---
 title: "0238 — Database and connection model: one server per environment, one logical database per service"
-description: "Accepted, amended by 0334, notes 2-3 closed by 0473 · 2026-10-20"
+description: "Accepted, amended by 0334 and 2026-10-31 (Postgres 18), notes 2-3 closed by 0473 · 2026-10-20"
 ---
 
 <Note>
@@ -43,6 +43,19 @@ description: "Accepted, amended by 0334, notes 2-3 closed by 0473 · 2026-10-20"
 ## Enforcement
 
 planned — gen emits one database declaration per service.
+
+## Amendment of 2026-10-31: the production major is Postgres 18
+
+The owner delegated the choice ("apply the best and standard approach"). Every environment's Postgres runs major
+**18**: RDS for PostgreSQL has offered 18 since November 2025, Aurora PostgreSQL 18.3 has been generally available in
+every commercial region since June 2026, and Cloud SQL 18 since November 2025. Tests run the same major: the test
+image (`POSTGRES_TEST_IMAGE`, PostGIS on 18 with pgvector) and Squawk's `--pg-version` stay on 18. Runway's
+`resources.postgres` defaults to `18` (ADR 0493), the GCP runtime names `POSTGRES_18`, and the tools stack's `psql`
+client image is a pinned 18 (Nominatim keeps its own data path).
+
+Before the first apply in a region, confirm the major there
+(`aws rds describe-db-engine-versions --engine postgres --engine-version 18 --region <region>`). A region that lacks it
+runs 17 alone, set by that environment's resource `version`, and the owner is told; nothing else changes.
 
 ## Implementation notes and open questions
 

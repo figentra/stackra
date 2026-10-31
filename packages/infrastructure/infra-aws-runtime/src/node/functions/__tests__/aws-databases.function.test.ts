@@ -32,7 +32,7 @@ function database(environment: string, engine: "rds" | "aurora", multiAz: boolea
     resource: "main-db",
     name: `academorix-${environment}-main-db`,
     engine,
-    version: engine === "rds" ? "17" : "17.4",
+    version: engine === "rds" ? "18" : "18.3",
     instanceClass: multiAz ? "db.r7g.large" : "db.t4g.micro",
     multiAz,
     storageGb: 20,
@@ -121,7 +121,7 @@ describe("awsDatabases", () => {
     const instance = resource("Instance", "academorix-dev-main-db").inputs;
     expect(instance).toMatchObject({
       engine: "postgres",
-      engineVersion: "17",
+      engineVersion: "18",
       instanceClass: "db.t4g.micro",
       multiAz: false,
       publiclyAccessible: false,

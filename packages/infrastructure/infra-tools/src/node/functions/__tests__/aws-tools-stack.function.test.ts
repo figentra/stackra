@@ -300,7 +300,7 @@ describe("awsToolsStack", () => {
 
   it("declares the database task with parameters only", () => {
     const container = containerOf("acme-production-gcc-tools-databases");
-    expect(container.image).toBe("postgres:17.6-alpine");
+    expect(container.image).toBe("postgres:18.6-alpine");
     expect(container.secrets).toEqual([
       { name: "PGHOST", valueFrom: "/acme/production/tools/postgres/PGHOST" },
       { name: "PGUSER", valueFrom: "/acme/production/tools/postgres/PGUSER" },
