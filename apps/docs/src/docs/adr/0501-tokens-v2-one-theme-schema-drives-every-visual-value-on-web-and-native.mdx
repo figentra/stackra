@@ -1,15 +1,15 @@
 ---
 title: "0501 — Tokens v2: one theme schema drives every visual value on web and native"
-description: "Proposed · 2026-10-31"
+description: "Accepted · 2026-10-31"
 ---
 
 {/* Stackra file contract: Purpose: the decision record for tokens v2: every token family and name, the theme schema, presets and nested themes, the DTCG export and the lint rules that keep components on tokens. Boundary: decision text only. Runtime: docs. Governing contract: ADR template; ADR 0302, 0329, 0340, 0469. */}
 
 <Note>
-  Proposed 2026-10-31 (design-system session c6, STA-1371). The owner approved the plan, not yet
-  this text: "we need to create our own theme styles … I need just to make sure that we are 100%
-  setting variables, all control from a single thing", then "yes go ahead with the full list, and
-  all recommendations". Once accepted it amends
+  Accepted 2026-10-31 by the owner: "all accepted merege and proceed" (design-system session c6,
+  STA-1371). Earlier the owner approved the plan: "we need to create our own theme styles … I need
+  just to make sure that we are 100% setting variables, all control from a single thing", then "yes
+  go ahead with the full list, and all recommendations". Once accepted it amends
   [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (the token schema),
   [0329](/adr/0329-motion-layer-tokens-reveal-and-animation-on-by-default) (motion steps become a
   placeholder family owned by the motion work) and
@@ -179,9 +179,9 @@ The oxlint `stackra` plugin (`@stackra/coding-standard`) fails the build on a li
 ### 8. Motion, haptics and accessibility modes
 
 <Note>
-  Proposed 2026-10-31 (motion work, STA-1371). This section fills the `motion` placeholder; the
-  values are the Stackra theme's defaults, and every one is a theme value a preset or Theme Studio
-  can change.
+  Accepted 2026-10-31 with the rest of this ADR (motion work, STA-1371). This section fills the
+  `motion` placeholder; the values are the Stackra theme's defaults, and every one is a theme value
+  a preset or Theme Studio can change.
 </Note>
 
 1. **Duration scale.** `Theme.motion` keeps its record of steps, each a CSS duration and easing, rendered as
@@ -246,8 +246,8 @@ The oxlint `stackra` plugin (`@stackra/coding-standard`) fails the build on a li
 ### 9. Materials
 
 <Note>
-  Proposed 2026-10-31 (material work, STA-1371). This section fills the `materials` placeholder. The
-  owner's five decisions on glass, Android and visionOS are recorded in
+  Accepted 2026-10-31 with the rest of this ADR (material work, STA-1371). This section fills the
+  `materials` placeholder. The owner's five decisions on glass, Android and visionOS are recorded in
   [0320](/adr/0320-stackra-brand-glass-material-and-the-showcase-stage) as amended 2026-10-31; this
   section is the schema they need.
 </Note>
