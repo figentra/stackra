@@ -63,7 +63,14 @@ function fixture(files: Record<string, string>): CheckRun {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), text);
   }
-  return { root, fix: false, files: Object.keys(files), base: undefined, ci: false } as CheckRun;
+  // the phase reads no `io`, so the run leaves it out
+  return {
+    root,
+    fix: false,
+    files: Object.keys(files),
+    base: undefined,
+    ci: false,
+  } as unknown as CheckRun;
 }
 
 describe("HOOKS_PHASE", () => {

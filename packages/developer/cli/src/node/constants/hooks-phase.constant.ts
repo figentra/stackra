@@ -7,7 +7,7 @@
  *          flags a class component's hook fields.
  * Boundary: reads the target files, writes and removes one folder under the OS temp directory, starts oxlint with
  *           `-f json`; skipped when oxlint is not installed or no file is a target. A compile refusal is one finding of
- *           that file, never a crash.
+ *           that file, never a crash; when no file compiled, oxlint is not started (it exits 1 over an empty folder).
  * Runtime: node
  * Governing contract: ADR 0305 (rules 37 to 41); ADR 0129.
  */
@@ -53,6 +53,7 @@ export const HOOKS_PHASE: CheckPhase = {
     const temp = mkdtempSync(join(tmpdir(), "stackra-hooks-"));
     try {
       const findings: Finding[] = [];
+      let written = 0;
       for (const file of targets) {
         const source = readFileSync(join(root, file), "utf8");
         let code = source;
@@ -73,7 +74,9 @@ export const HOOKS_PHASE: CheckPhase = {
         }
         mkdirSync(dirname(join(temp, file)), { recursive: true });
         writeFileSync(join(temp, file), code);
+        written += 1;
       }
+      if (written === 0) return { findings };
       const config = join(temp, ".hooks.oxlintrc.json");
       writeFileSync(config, CONFIG);
       // run from the repository root so the repository's oxlint is found; the folder is passed absolute

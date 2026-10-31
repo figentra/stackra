@@ -8,7 +8,12 @@
 
 /** One oxlint diagnostic, as far as the `hooks` phase reads it. */
 export type HookDiagnostic = {
+  /** The rule's message. */
   readonly message: string;
+
+  /** The linted file, as oxlint printed it. */
   readonly filename?: string;
+
+  /** The marked spans; the first one's line is the finding's line. */
   readonly labels?: readonly { readonly span?: { readonly line?: number } }[];
 };
