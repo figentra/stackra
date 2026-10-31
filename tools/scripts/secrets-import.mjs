@@ -54,6 +54,19 @@ export const ENVS = ["dev", "staging", "prod"];
 const PATH_RX = /^\/(?:agents|ci)(?:\/[a-z0-9-]+)*$/;
 const SIDECAR = ".target.yaml";
 export const isProd = (env) => /^prod(uction)?$/i.test(env);
+/** Paths an agent never writes: the gate and registry (release) keys (the owner's keeper rule of 2026-10-31). */
+export const AGENT_DENIED_PATHS = ["/ci/gate", "/ci/registry"];
+/** True when an agent runs the script (Claude Code, OpenCode or a Stackra agent run). */
+export const isAgentRun = (env) =>
+  Boolean(env.CLAUDECODE || env.OPENCODE || env.AI_AGENT || env.STACKRA_AGENT);
+/** An agent's target: never production and never a gate or release key; returns it or throws a Refusal. */
+export function checkAgentTarget(t) {
+  if (isProd(t.env))
+    throw new Refusal("an agent never imports a production value; the owner runs it");
+  if (AGENT_DENIED_PATHS.some((p) => t.path === p || t.path.startsWith(`${p}/`)))
+    throw new Refusal("an agent never imports a gate or release key; the owner runs it");
+  return t;
+}
 const sha256 = (data) => createHash("sha256").update(data).digest("hex");
 
 /** An error whose message is a fixed, value-free string. */
@@ -385,6 +398,7 @@ export function main(
     runner = cliRunner,
     now = Date.now,
     write = (s) => process.stdout.write(s),
+    env = process.env,
   } = {},
 ) {
   // Strip control characters: a crafted file name must not drive the terminal.
@@ -465,6 +479,7 @@ export function main(
         env: o.env ?? side.env ?? t.env,
         path: o.path ?? side.path ?? t.path,
       });
+      if (isAgentRun(env)) checkAgentTarget(t);
       const read = readValue(join(inbox, e.file));
       const label = `${t.name}  ${t.env}:${t.path}`;
       if (o["dry-run"]) {

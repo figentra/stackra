@@ -1213,7 +1213,33 @@ for (const c of [
   "pnpm exec node tools/scripts/secrets-import.mjs --confirm abc-123",
   "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
 ])
-  test(`allow (runner bypass, STA-400): ${c}`, () => assert.equal(decision(c), "allow"));
+  test(`deny (keeper rule of 2026-10-31, production import): ${c}`, () =>
+    assert.equal(decision(c), "deny"));
+
+test("keeper rule: an import asks the owner each run; prod, gate and registry are denied; list and dry run run", () => {
+  for (const c of [
+    "pnpm secrets:import STACKRA_X",
+    "pnpm secrets:import --env staging --path /agents/tools STACKRA_X",
+    "pnpm secrets:import --env dev --path /ci/turbo TURBO_TOKEN",
+    "node tools/scripts/secrets-import.mjs STACKRA_X",
+  ])
+    assert.equal(decision(c), "ask", c);
+  for (const c of [
+    "pnpm secrets:import --env prod STACKRA_X",
+    "pnpm secrets:import --env=production STACKRA_X",
+    "pnpm secrets:import --path /ci/gate STACKRA_X",
+    "pnpm secrets:import --path=/ci/registry REGISTRY_SIGNING_KEY",
+    "pnpm secrets:import --env dev --path /ci/gate/app STACKRA_X",
+    "pnpm secrets:import STACKRA_X --confirm abc",
+  ])
+    assert.equal(decision(c), "deny", c);
+  for (const c of [
+    "pnpm secrets:import --list",
+    "pnpm secrets:import --dry-run STACKRA_X",
+    "pnpm secrets:import --dry-run --env dev --path /ci/gateway STACKRA_X",
+  ])
+    assert.equal(decision(c), "allow", c);
+});
 
 // Productivity: a pattern, a message or history that names a guarded command is prose, not a command.
 for (const c of [
@@ -2667,7 +2693,6 @@ const NOW_ALLOWED = [
   "wrangler secret list",
   "wrangler d1 execute db --remote --command 'select 1'",
   "eas build --platform ios",
-  "pnpm secrets:import --env prod --confirm abc STACKRA_X",
   "pnpm linear comment STA-1 x",
   "pnpm bot:gh -- pr view 1",
 ];

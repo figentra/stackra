@@ -248,7 +248,14 @@
       "Bash(infisical *secrets get*)",
       "Bash(infisical *secrets set*)",
       "Bash(infisical * secrets)",
-      "Bash(infisical *run *)"
+      "Bash(infisical *run *)",
+      "Bash(pnpm secrets:import* --confirm*)",
+      "Bash(pnpm secrets:import* --env prod*)",
+      "Bash(pnpm secrets:import* --env=prod*)",
+      "Bash(pnpm secrets:import* /ci/gate*)",
+      "Bash(pnpm secrets:import* /ci/registry*)",
+      "Bash(node tools/scripts/secrets-import.mjs* --confirm*)",
+      "Bash(node tools/scripts/secrets-import.mjs* --env prod*)"
     ]
   },
   "enableAllProjectMcpServers": true,
