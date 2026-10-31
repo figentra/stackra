@@ -116,5 +116,5 @@
 "@stackra/workflow": patch
 ---
 
-The licence's copyright holder is the registered entity Fulers Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
 the MIT terms, the package names and the product names do not change.

@@ -1,4 +1,4 @@
-# Plan: copyright holder is Fulers Technologies L.L.C.
+# Plan: copyright holder is Figentra Technologies L.L.C.
 
 **Spec**: `.agents/specs/sta-1678-copyright-holder/spec.md`
 
