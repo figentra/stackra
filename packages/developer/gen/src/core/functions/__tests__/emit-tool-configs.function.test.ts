@@ -37,7 +37,7 @@ describe("emitToolConfigs", () => {
       "vitest.config.ts",
     ]);
     expect(content(".stackra/tsdown.config.ts")).toContain(
-      'export default library({\n  "server": ".stackra/entry/server.ts",\n});',
+      'const config: ReturnType<typeof library> = library({\n  "server": ".stackra/entry/server.ts",\n});\n\nexport default config;',
     );
   });
 

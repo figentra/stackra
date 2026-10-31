@@ -6,6 +6,8 @@
  */
 import { library } from "@stackra/tsdown-config";
 
-export default library({
+const config: ReturnType<typeof library> = library({
   "server": ".stackra/entry/server.ts",
 });
+
+export default config;

@@ -75,9 +75,12 @@ export function emitToolConfigs(
           // A service builds nothing with tsdown (Encore builds it at deploy).
           'import { library } from "@stackra/tsdown-config";',
           "",
-          "export default library({",
+          // Typed for declaration emit: inferred, the type is tsdown's, which a service cannot name (TS2883, STA-1743).
+          "const config: ReturnType<typeof library> = library({",
           ...entries.map((name) => `  ${JSON.stringify(name)}: ".stackra/entry/${name}.ts",`),
           "});",
+          "",
+          "export default config;",
         ]),
     "",
   ].join("\n");
