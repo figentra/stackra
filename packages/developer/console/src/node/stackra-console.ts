@@ -9,11 +9,12 @@
  */
 import { createConsole } from "#core/functions/create-console.function";
 import { CreateCommand } from "#node/commands/create.command";
+import { DemoCommand } from "#node/commands/demo.command";
 import { nodePorts } from "#node/functions/node-ports.function";
 import { ownVersion } from "#node/functions/own-version.function";
 
 process.exitCode = await createConsole({
   name: "stackra-console",
   version: ownVersion(),
-  commands: [CreateCommand],
+  commands: [CreateCommand, DemoCommand],
 }).run(process.argv.slice(2), nodePorts());

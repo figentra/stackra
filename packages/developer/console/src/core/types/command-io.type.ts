@@ -27,4 +27,7 @@ export interface CommandIo {
 
   /** Prompts are asked rather than defaulted. */
   readonly interactive: boolean;
+
+  /** Output is drawn live on a colour terminal (spinners spin, bars redraw). */
+  readonly animate: boolean;
 }

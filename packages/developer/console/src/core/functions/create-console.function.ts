@@ -136,6 +136,7 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
         verbose: mode.verbose,
         json: mode.json,
         interactive: mode.interactive,
+        animate: mode.animate,
       }),
       codeOf,
     );

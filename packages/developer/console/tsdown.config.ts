@@ -17,5 +17,6 @@ export default library(
     testing: "src/testing/index.ts",
     "stackra-console": "src/node/stackra-console.ts",
   },
-  { decorators: true },
+  // `node:` builtins stay imports; the shared preset targets the neutral platform, which would warn on each.
+  { decorators: true, external: [/^node:/] },
 );
