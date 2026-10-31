@@ -2,11 +2,11 @@
 
 **Created**: 2026-11-01
 
-**Status**: Draft
+**Status**: Clarified
 
 **Linear**: STA-1731 (phase 2 of STA-1730)
 
-**Clarifications status**: open (Q1 to Q5 below, each with a recommendation)
+**Clarifications status**: complete (the leader approved Q1 to Q5 as recommended on 2026-11-01, and added the audit entry of FR-015)
 
 **Input**: the owner's request of 2026-10-31 (Linear STA-1731), the leader's go-ahead of 2026-11-01, and ADR 0506
 (decisions 4 to 6: the `commands/` group, `@stackra/console` holds no module's commands, `#stackra/commands` is an
@@ -93,6 +93,20 @@ look and the standalone path `createConsole({ commands })`. Today the `stackra` 
   `db rollback`, `search reindex`, `search status`, `seed pack`, `settings apply`, `settings diff`), THE CLI SHALL keep
   its name and output in this spec (ADR 0500 decision 7); moving each one is a follow-up per package (Q4).
 
+### Audit
+
+- **FR-015** WHERE a command declares `Command({ ..., audit: true })` (every database and tenancy command does), THE
+  Console Kernel SHALL resolve the `CommandAudit` port from the container and record one entry per dispatched run:
+  the operator (`STACKRA_OPERATOR`, else the login from the environment), the command name, its bound arguments and
+  options, the start time, the outcome (`ok`, `failed`, `cancelled`) and the exit code. IF no `CommandAudit` is bound,
+  THEN THE Console Kernel SHALL refuse the run with exit code 1 before the handler runs (fail closed).
+- **FR-016** THE Console Kernel SHALL write `[redacted]` in an audit entry for the value of an option or argument
+  declared `secret: true`, and of one whose name ends in `password`, `secret`, `token`, `key` or `credential`; a
+  redacted value SHALL never reach the entry, a log line or `--json`.
+- **FR-017** THE `@stackra/access-log` package SHALL provide the `CommandAudit` driver that stores each entry in its
+  write-audit store (ADR 0465 decision 4), and `@stackra/console/testing` SHALL provide a memory `CommandAudit` for
+  tests.
+
 ## Inventory (for review; FR-011)
 
 | Package                     | Commands proposed                                                                 | Today                                                                                             |
@@ -124,21 +138,16 @@ A service's own modules add theirs in their `commands/` group (`projection:rebui
   `db:status` against its test database, and `--json` prints one document.
 - **SC-004** `pnpm verify` is green.
 
-## Open questions (clarify)
+## Clarifications (2026-11-01, the leader)
 
-- **Q1 Which packages contribute.** Recommendation: every package with a committed manifest that the member depends
-  on and whose `./node` entry exports a command (FR-003, FR-004), with no opt-in list. Alternative: only packages the
-  member names in `stackra.config.ts`.
-- **Q2 The bin.** Recommendation: a generated `console` script plus `stackra console <member>`; no per-service `bin`
-  in `package.json` (services are not published). Alternative: a `bin` per member.
-- **Q3 Theme.** Recommendation: `STACKRA_THEME` for every member's console; a product app may set `theme` in
-  `stackra.config.ts` later. Alternative: derive a theme per product now.
-- **Q4 Moving `stackra`'s data commands.** Recommendation: leave `stackra db migrate` and the others in place here; one
-  follow-up per package moves each into its package's command and makes the `stackra` row call it. Alternative: move
-  them in this spec.
-- **Q5 Tenancy commands and the actor.** Recommendation: commands run as a system actor named after the operator's
-  login, through the tenancy services, and `tenant:run` wraps another command in `runAsTenant`. The security review
-  (security-tenancy-reviewer) sees the tenancy and database commands before they merge.
+- **Q1** Every hosted package with a committed manifest whose `./node` entry exports a command contributes; no opt-in
+  list (FR-003, FR-004).
+- **Q2** A generated `console` script and `stackra console <member>`; no per-service `bin`.
+- **Q3** `STACKRA_THEME` for every member's console.
+- **Q4** `stackra db migrate` and the other data rows stay in the `stackra` CLI; one follow-up per package moves each.
+- **Q5** Commands run as a system actor named after the operator, through the tenancy services; `tenant:run` wraps a
+  command in `runAsTenant`. Every database and tenancy command is audited (FR-015 to FR-017), and the
+  security-tenancy-reviewer sees them before they merge.
 
 ## Out of scope
 
@@ -151,3 +160,5 @@ A service's own modules add theirs in their `commands/` group (`projection:rebui
 
 - 2026-11-01 · — → Draft · Claude (builder) · drafted from STA-1731 and ADR 0506 after the leader's go-ahead; Q1 to Q5
   sent to the leader
+- 2026-11-01 · Draft → Clarified · Claude (builder) · the leader approved Q1 to Q5 as recommended and added the
+  audit entry (FR-015 to FR-017)

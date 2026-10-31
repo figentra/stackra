@@ -193,6 +193,11 @@ Colour depth is decided once per run. It is off when `NO_COLOR` or `CI` is set t
 
 A theme is `{ name, logo, gradient, accent, glyph, asciiGlyph }`. The logo is printed with a horizontal gradient across the gradient stops. The layout, the spacing, the symbols and the copy are the same for every theme, so a product changes only these six fields. An optional `dark: { gradient, accent }` gives the colours on a dark terminal background; the console takes the ground from `STACKRA_GROUND=dark|light`, then from `COLORFGBG`, and assumes dark when neither says. `STACKRA_THEME` is the default, and the package ships no other; on a dark ground it uses the brand's dark-ground steel (#A7B6C7 to #E2E9F0), still hue-less.
 
+<Note>
+  On a light terminal that does not set `COLORFGBG` (macOS Terminal's default profile, for one), set
+  `STACKRA_GROUND=light` in your shell profile so the banner and prompts use the light-ground steel.
+</Note>
+
 A product builds its theme from its brand kit's colour tokens with `themeFromBrandTokens(tokens, choice)`. `tokens` is the parsed DTCG colour file, with its colours under `palette`. `choice` gives the name, logo, glyphs and the palette token names of the gradient and the accent, and optionally of `dark`. A missing token, or one that is not `#rrggbb`, throws a `RangeError`.
 
 ```typescript
