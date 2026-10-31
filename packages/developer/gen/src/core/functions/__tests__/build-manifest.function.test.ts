@@ -25,6 +25,10 @@ import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import {
+  CONNECTOR_PACKAGES,
+  connectorPackage,
+} from "#core/__tests__/fixtures/connector-packages.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
@@ -241,6 +245,54 @@ describe("buildManifest", () => {
       key: "loyalty_kit.loyalty_account.redeem",
       from: "@acme/loyalty-kit",
     });
+  });
+
+  it("hosts the Integrations of two connector packages with egress, once each, and refuses one key from two", () => {
+    const wallet = connectorPackage("wallet");
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      dependencies: [
+        ...BILLING_IR.dependencies,
+        ...CONNECTOR_PACKAGES,
+        // a hosted member that already merged the wallet connector: the same Integration, kept once
+        {
+          package: "@acme/wallets",
+          manifest: {
+            member: "wallets",
+            package: "@acme/wallets",
+            version: "0.1.0",
+            integrations: (
+              wallet.manifest["integrations"] as readonly Record<string, unknown>[]
+            ).map((entry) => ({ ...entry, from: wallet.package })),
+          },
+        },
+      ],
+    };
+    const built = buildManifest(ir);
+    expect(built.errors).toEqual([]);
+    expect(built.manifest["integrations"]).toEqual([
+      expect.objectContaining({ key: "billing.stripe" }),
+      expect.objectContaining({
+        key: "connector_wallet.wallet",
+        connection: "WalletConnection",
+        egress: { origin: "https://api.wallet.example" },
+        from: "@figentra/connector-wallet",
+      }),
+      expect.objectContaining({
+        key: "connector_paylink.paylink",
+        egress: { origin: "https://api.paylink.example" },
+        from: "@figentra/connector-paylink",
+      }),
+    ]);
+
+    const fork = { ...wallet, package: "@acme/wallet-fork" };
+    const clash = buildManifest({
+      ...BILLING_IR,
+      dependencies: [...BILLING_IR.dependencies, wallet, fork],
+    });
+    expect(clash.errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
+      "identity_collision @acme/wallet-fork",
+    ]);
   });
 
   it("derives integration, sequence, searchable and job identities", () => {

@@ -983,15 +983,36 @@ export function buildManifest(ir: MemberIR): {
     passes,
     entitlements,
   };
+  // An Integration reached twice (a connector package declared directly and by a hosted member) is kept once; one key
+  // from two packages is refused, since registerConnections and egress would serve only one of them (STA-1712).
+  const integrationFrom = new Map<unknown, unknown>(
+    integrations.map((entry) => [entry["key"], undefined]),
+  );
   if (ir.layout !== "package")
     for (const dependency of ir.dependencies) {
       if (dependency.manifest["kind"] === "app") continue;
       for (const section of MERGED_SECTIONS)
-        for (const item of (dependency.manifest[section] ?? []) as unknown as readonly Entry[])
-          sections[section].push({
-            ...(rehome(item, dependency.package) as Entry),
-            from: item["from"] ?? dependency.package,
-          });
+        for (const item of (dependency.manifest[section] ?? []) as unknown as readonly Entry[]) {
+          const from = item["from"] ?? dependency.package;
+          if (section === "integrations") {
+            if (integrationFrom.has(item["key"])) {
+              const other = integrationFrom.get(item["key"]);
+              if (other !== from)
+                errors.push({
+                  code: "identity_collision",
+                  file: "package.json",
+                  line: 0,
+                  column: 0,
+                  subject: String(from),
+                  message: `the integration key \`${String(item["key"])}\` of ${String(from)} is also derived by ${other === undefined ? "this member" : String(other)}`,
+                  fix: "declare only one of the two connector packages, or rename one Integration",
+                });
+              continue;
+            }
+            integrationFrom.set(item["key"], from);
+          }
+          sections[section].push({ ...(rehome(item, dependency.package) as Entry), from });
+        }
     }
 
   // A package's config classes, so a host's wiring writes a config row for exactly these (STA-1308).
