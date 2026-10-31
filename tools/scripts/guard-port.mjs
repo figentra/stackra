@@ -661,8 +661,8 @@ const REGENERABLE =
     [`build output (${BUILD}) needs no yes`, `build output (${BUILD_PORT}) needs no yes`],
     // the owner's asks: paid or signed builds, re-enabling Actions
     [
-      `  "eas-deploy",\n  "runway-deploy",\n  "publish",`,
-      `  "eas-deploy",\n  "signed-build", // port\n  "bot-gh-workflow-enable", // port\n  "runway-deploy",\n  "publish",`,
+      `  "eas-deploy",\n  "production-deploy",\n  "publish",`,
+      `  "eas-deploy",\n  "signed-build", // port\n  "bot-gh-workflow-enable", // port\n  "production-deploy",\n  "publish",`,
     ],
     ["/**\n * The rules, in order.", `${PORT_RULES}/**\n * The rules, in order.`],
     // encore deploy stays denied, and a push to the Encore remote is one
