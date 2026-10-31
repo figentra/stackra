@@ -49,7 +49,8 @@ const OVERLAY: MarketPack = {
 
 /** A typed section: `billing.dunning.*`. */
 class DunningDefaults extends Schema {
-  static readonly packPrefix = "billing.dunning";
+  // Typed as string so a subclass can name another section (a literal type would refuse it, TS2417).
+  static readonly packPrefix: string = "billing.dunning";
 
   graceDays = 3;
 
