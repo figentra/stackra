@@ -39,5 +39,5 @@ export default function Month() {
       tone: "danger",
     },
   ];
-  return <Scheduler label={t(K.label)} events={events} defaultView="month" />;
+  return <Scheduler label={t(K.month_label)} events={events} defaultView="month" />;
 }

@@ -29,7 +29,8 @@ export function SchedulerEventChip({
   const body = (
     <>
       <span className="truncate font-medium">{event.title}</span>
-      <span className={cn("truncate tabular-nums opacity-80", isCompact && "hidden")}>
+      {/* A space text node: without it the two lines join as one word ("Sara9:00") against the aria-label. */}{" "}
+      <span className={cn("truncate tabular-nums", isCompact && "hidden")}>
         {state.timeOf(event)}
       </span>
     </>

@@ -10,7 +10,18 @@ import { keys } from "@stackra/i18n";
 /** The demos' keys. */
 export const SCHEDULER_KEYS = keys({
   scheduler: {
-    _: ["label", "checkup", "cleaning", "consult", "staff", "xray", "holiday", "picked"],
+    _: [
+      "label",
+      "month_label",
+      "agenda_label",
+      "checkup",
+      "cleaning",
+      "consult",
+      "staff",
+      "xray",
+      "holiday",
+      "picked",
+    ],
     rtl: ["label", "checkup", "consult", "staff"],
   },
 });
