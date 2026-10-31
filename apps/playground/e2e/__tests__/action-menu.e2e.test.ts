@@ -142,7 +142,8 @@ test("every variant is present in every size, and every button is at least 24 px
   const buttons = sectionOf(page, "action-menu-variants").locator(
     'button[aria-label^="Actions, "]',
   );
-  await expect(buttons).toHaveCount(21);
+  // Eight ButtonVariants (glass joined on 2026-10-31) in each of the three Sizes.
+  await expect(buttons).toHaveCount(24);
   for (const button of await buttons.all()) {
     const box = await boxOf(button);
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(24);
