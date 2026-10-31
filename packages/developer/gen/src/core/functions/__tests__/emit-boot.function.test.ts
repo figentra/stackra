@@ -29,7 +29,8 @@ describe("emitBoot", () => {
     expect(boot).toContain(
       'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
     );
-    expect(boot).toContain('import { database } from "../encore/billing/database";');
+    // the Encore database is imported only when no url is passed (STA-1709: the seed entry passes one)
+    expect(boot).not.toContain('import { database } from "../encore/billing/database";');
     expect(boot).toContain(
       'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',
     );
@@ -42,7 +43,7 @@ describe("emitBoot", () => {
       [
         "export async function boot(",
         "  container: Container,",
-        "  options: { readonly signal: AbortSignal },",
+        "  options: { readonly signal: AbortSignal; readonly url?: string; readonly relay?: boolean },",
         "): Promise<void> {",
         "  if (options.signal.aborted) return;",
         "  connectHoldRegistry(container.has(HoldRegistry) ? container.get(HoldRegistry) : undefined);",
@@ -54,7 +55,8 @@ describe("emitBoot", () => {
         "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
         '  const poolMax = Number(process.env["DATABASE_POOL_MAX"] ?? "");',
         "  await PostgresDatabaseDriver.connect({",
-        "    url: database.connectionString,",
+        "    // The seed entry passes the direct url; a server takes Encore's, imported only then (it needs the Encore runtime).",
+        '    url: options.url ?? (await import("../encore/billing/database")).database.connectionString,',
         "    replicas,",
         "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
         "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
@@ -71,9 +73,11 @@ describe("emitBoot", () => {
         "  };",
         "  if (options.signal.aborted) disconnect();",
         '  else options.signal.addEventListener("abort", disconnect, { once: true });',
-        "  const relay = container.get(OutboxRelayService);",
-        "  relay.connect(container);",
-        "  void relay.work({ signal: options.signal });",
+        "  if (options.relay !== false) {",
+        "    const relay = container.get(OutboxRelayService);",
+        "    relay.connect(container);",
+        "    void relay.work({ signal: options.signal });",
+        "  }",
         "}",
       ].join("\n"),
     );

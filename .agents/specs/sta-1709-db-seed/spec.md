@@ -4,11 +4,11 @@
 
 **Created**: 2026-10-31
 
-**Status**: Draft
+**Status**: Clarified
 
 **Linear**: STA-1709
 
-**Clarifications status**: pending (Q1 to Q4 below carry a proposed answer each; the leader confirms or changes them)
+**Clarifications status**: complete
 
 **Input**: Leader: "Take `stackra db seed`: profiles, one transaction per seeder, seeders resolved through the booted
 container (reusing STA-1698), idempotent re-runs, and running through the CallIsolation context once AI everywhere's
@@ -92,8 +92,9 @@ holds (Q3).
 - **FR-4** Re-runs follow Q2.
 - **FR-5** Tenancy follows Q3.
 - **FR-6** Runway and the testbed follow Q4.
+- **FR-7** The production guard of Q5.
 
-## Questions (proposed answers; the leader confirms)
+## Clarifications (the leader accepted each proposal, 2026-10-31)
 
 - **Q1. Where the seed entry runs.** Proposed: gen writes `.stackra/entry/seed.ts`; `stackra db seed` runs it in the
   member folder with the member's own TypeScript runner (the one `stackra dev` uses), as `db migrate` runs the member's
@@ -109,6 +110,9 @@ holds (Q3).
   members, so `previewSeedStep` and the testbed's console job change nothing. Alternative: both add a second
   `stackra db seed` step.
 
+- **Q5. Production guard (leader).** On `--env production`, the `demo` and `test` profiles and `--again` are refused
+  unless `--allow-production` is given, and every production run logs who ran it (the ledger row and the output).
+
 ## Success criteria
 
 - A test boots a fixture service's generated seed entry with a seeder that injects a service and seeds it through
@@ -119,3 +123,4 @@ holds (Q3).
 ## Status history
 
 - 2026-10-31: Draft, questions sent to the leader
+- 2026-10-31: Draft → Clarified (Q1 to Q4 as proposed, Q5 added by the leader)

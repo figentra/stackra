@@ -132,7 +132,6 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       // The trait subscribers' names (Tree, ValidateOnFlush) sort after StampSubscriber, so appending keeps the order.
       `import { ${["AppendOnlySubscriber", "connectHoldRegistry", "connectSequenceTimeZone", "DatabaseConfig", "HoldSubscriber", "StampSubscriber", ...traits].join(", ")} } from "@stackra/database";`,
       'import { PostgresDatabaseDriver } from "@stackra/database/node";',
-      `import { database } from "../encore/${ir.member}/database";`,
     );
     if (encrypted)
       imports.push(
@@ -149,7 +148,8 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
       '  const poolMax = Number(process.env["DATABASE_POOL_MAX"] ?? "");',
       "  await PostgresDatabaseDriver.connect({",
-      "    url: database.connectionString,",
+      "    // The seed entry passes the direct url; a server takes Encore's, imported only then (it needs the Encore runtime).",
+      `    url: options.url ?? (await import("../encore/${ir.member}/database")).database.connectionString,`,
       "    replicas,",
       "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
       "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
@@ -208,9 +208,11 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     );
   if (outbox)
     steps.push(
-      "  const relay = container.get(OutboxRelayService);",
-      "  relay.connect(container);",
-      "  void relay.work({ signal: options.signal });",
+      "  if (options.relay !== false) {",
+      "    const relay = container.get(OutboxRelayService);",
+      "    relay.connect(container);",
+      "    void relay.work({ signal: options.signal });",
+      "  }",
     );
 
   const header = generatedHeader({
@@ -243,7 +245,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     "/** Connects the legal holds and the database, then the services that resolve classes from the container (the bus and inbox until shutdown), then the relay. */",
     "export async function boot(",
     "  container: Container,",
-    "  options: { readonly signal: AbortSignal },",
+    "  options: { readonly signal: AbortSignal; readonly url?: string; readonly relay?: boolean },",
     "): Promise<void> {",
     "  if (options.signal.aborted) return;",
     ...steps,
