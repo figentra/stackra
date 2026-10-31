@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `EventsHarness`, the event plumbing of one compiled testing app: its bus, its outbox, the memory inbox
- *          `deliverRemoteEvent` fills and the event ids the inbox has seen.
+ * Purpose: `EventsHarness`, the event plumbing of one compiled testing app: its bus, its outbox, its clock, the memory
+ *          inbox `deliverRemoteEvent` fills and the event ids the inbox has seen.
  * Boundary: a type only; built by the events testing plugin when an app compiles. Internal: not exported from the
  *           entry.
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0078 (decision 4: inbox dedup by event id).
  */
+import type { Clock } from "@stackra/contracts";
+
 import type { EventMeta, EventOutbox } from "#contracts/index";
 import type { Event, EventBus } from "#core/index";
 
@@ -17,6 +19,9 @@ export interface EventsHarness {
 
   /** The app's outbox; `drainOutbox()` needs it to be an `OutboxFake`. */
   readonly outbox: EventOutbox;
+
+  /** The app's clock, the time of an occurrence written to the outbox (`commitEvents`). */
+  readonly clock: Clock;
 
   /** Remote events received and not yet delivered, oldest first. */
   readonly inbox: { readonly event: Event; readonly meta: Partial<EventMeta> }[];

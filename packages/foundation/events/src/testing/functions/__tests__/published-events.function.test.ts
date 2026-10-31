@@ -27,6 +27,7 @@ describe(publishedEvents, () => {
     const harness: EventsHarness = {
       bus: new EventBus(clock),
       outbox: new OutboxFake(),
+      clock,
       inbox: [],
       seen: new Set(),
     };

@@ -58,10 +58,11 @@ function callsOf(harness: EventsHarness, type: AnyClass<Listener>): readonly Lis
 export const EVENTS_TESTING_PLUGIN: TestingPlugin = {
   name: "@stackra/events",
   app(app: TestingApp) {
-    const bus = app.has(EventBus) ? app.get(EventBus) : new EventBus(app.get(Clock));
+    const clock = app.get(Clock);
+    const bus = app.has(EventBus) ? app.get(EventBus) : new EventBus(clock);
     bus.connect(app);
     const outbox = app.has(EventOutbox) ? app.get(EventOutbox) : new OutboxFake();
-    const harness: EventsHarness = { bus, outbox, inbox: [], seen: new Set() };
+    const harness: EventsHarness = { bus, outbox, clock, inbox: [], seen: new Set() };
     CURRENT_HARNESS.value = harness;
     return {
       events: { published: () => publishedEvents(harness) },

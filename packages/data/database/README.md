@@ -746,6 +746,12 @@ every approved extension (`Extension`, PostGIS included) can be created (gap db1
 another image without the build. `pnpm turbo run test:int --filter=@stackra/database` runs the tier (`vitest.int.config.ts`,
 Docker needed); the CI Quality Gate runs every member's `test:int` (STA-1570).
 
+On both tiers a model's recorded events (`model.record(event)`) reach the testing app once the outermost transaction
+commits, as the outbox writer hands them on in production: an integration event to the app's outbox, any other on its
+bus, so `run()` results and `app.events.published()` hold them. A rollback drops them, and a released savepoint's
+events wait for the transaction around it (`RecordedEventsSubscriber`, STA-1740). The testing entry needs
+`@stackra/events` for this, an optional peer.
+
 `assertRowSecurity(database, { column, setting, role, probe })` checks a migrated database: every table holding
 `column` has row-level security enabled and forced with the policy `pol_<table>_<column>`, `role` is neither a
 superuser nor BYPASSRLS (created `NOLOGIN NOBYPASSRLS` when missing), and a probe as `role` with `setting` at

@@ -163,3 +163,5 @@ expect(app.events.published()).toRecord(OrderPaid, { orderId });
 
 `drainOutbox()` works through `OutboxFake`, the in-memory `EventOutbox`, so this package never depends on the outbox.
 `toRecord` also reads a `run()` result's `events`.
+`commitEvents(events)` is what `@stackra/database`'s testing databases call after a commit with the events their
+models recorded: an integration event goes to the app's outbox, any other is dispatched on its bus.

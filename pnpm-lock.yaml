@@ -3100,6 +3100,9 @@ importers:
       '@mikro-orm/pglite':
         specifier: 'catalog:'
         version: 7.2.5(@mikro-orm/core@7.2.5)
+      '@stackra/events':
+        specifier: workspace:*
+        version: link:../../foundation/events
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing

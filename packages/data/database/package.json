@@ -121,6 +121,7 @@
     "@electric-sql/pglite-pgvector": "catalog:",
     "@faker-js/faker": "catalog:",
     "@mikro-orm/pglite": "catalog:",
+    "@stackra/events": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -140,6 +141,7 @@
     "@electric-sql/pglite-pgvector": "catalog:",
     "@faker-js/faker": "catalog:",
     "@mikro-orm/pglite": "catalog:",
+    "@stackra/events": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@testcontainers/postgresql": "catalog:",
     "testcontainers": "catalog:"
@@ -155,6 +157,9 @@
       "optional": true
     },
     "@mikro-orm/pglite": {
+      "optional": true
+    },
+    "@stackra/events": {
       "optional": true
     },
     "@stackra/testing": {

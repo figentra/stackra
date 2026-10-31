@@ -4,7 +4,8 @@
  *          Stackra test image, with every approved extension: pgvector and PostGIS included), connected as
  *          `Database.current()`, with the compiled migrations applied once (given compiled, or read from a folder
  *          of `.up.sql` files with `migrationsDirectory`; without either the schema is created from the entities),
- *          and stopped after the file.
+ *          and stopped after the file. Its models' recorded events reach the testing app after commit
+ *          (`RecordedEventsSubscriber`, STA-1740).
  * Boundary: registers `beforeAll` and `afterAll` from @stackra/testing; call it at the top level of a `.int.test.ts`
  *           file. Needs Docker, which only the integration task provides. Each compiled step runs as written: a
  *           transactional step in one transaction, an online step on its own. The default image is built once per
@@ -19,6 +20,7 @@ import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
 import { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
+import { RecordedEventsSubscriber } from "#testing/orm/recorded-events.subscriber";
 import { buildPostgresTestImage } from "#testing/functions/build-postgres-test-image.function";
 import type { PostgresFixture } from "#testing/types/postgres-fixture.type";
 import type { UsePostgresOptions } from "#testing/types/use-postgres-options.type";
@@ -40,6 +42,7 @@ export function usePostgres(options: UsePostgresOptions = {}): PostgresFixture {
     ).start();
     state.database = await PostgresDatabaseDriver.connect({
       url: state.container.getConnectionUri(),
+      subscribers: [new RecordedEventsSubscriber()],
       ...(options.entities === undefined ? {} : { entities: options.entities }),
     });
     const { schema } = state.database.orm;

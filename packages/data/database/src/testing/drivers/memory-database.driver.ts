@@ -5,7 +5,8 @@
  *          becomes `Database.current()` when built, and before its first query it creates the approved extensions
  *          and applies the member's compiled migrations (`.stackra/migrations` under the working directory), or,
  *          when the member has none, creates the schema from the registered entities. Its statements are counted
- *          for the query guard like production's (`observedLogger`).
+ *          for the query guard like production's (`observedLogger`). The events its models record reach the testing
+ *          app after commit, and a rollback drops them (`RecordedEventsSubscriber`, STA-1740).
  * Boundary: the testing entry only, so a server never loads PGlite (ADR 0269 decision 3). Built with no arguments, so
  *           the container can build it as a wiring candidate; the ORM is made on first use, so entities registered
  *           after the driver was built are still in it. One database per instance, gone on `close`. Each migration
@@ -46,6 +47,7 @@ import { runTransaction } from "#core/functions/run-transaction.function";
 import { observedLogger } from "#node/functions/observed-logger.function";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
+import { RecordedEventsSubscriber } from "#testing/orm/recorded-events.subscriber";
 
 /** Where gen writes a member's compiled migrations, relative to the member root. */
 const MIGRATIONS_FOLDER = join(".stackra", "migrations");
@@ -81,6 +83,8 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       dbName: "memory://",
       entities: [...REGISTERED_ENTITIES],
       filters: deleteFilters(REGISTERED_ENTITIES),
+      // What a model records reaches the testing app after commit, as the outbox writer hands it on in production.
+      subscribers: [new RecordedEventsSubscriber()],
       // Counted like production, so `strictLoading` and `DatabaseQueryBudgetDriver` see a test's statements.
       loggerFactory: (settings) => observedLogger(settings, []),
       namingStrategy: StackraNamingStrategy,
