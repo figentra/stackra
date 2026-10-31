@@ -57,7 +57,9 @@ export class CreateChangesMigration extends Migration {
       ["scope_id", "The scope node of the transaction that wrote the change."],
       ["scope_path", "That node's path, from the transaction's scope settings."],
     ] as const)
-      schema.sql(`comment on column outbox.changes.${column} is '${text.replaceAll("'", "''")}'`, { inverse: false });
+      schema.sql(`comment on column outbox.changes.${column} is '${text.replaceAll("'", "''")}'`, {
+        inverse: false,
+      });
     schema.sql(
       "create table outbox.change_cursors (" +
         "consumer varchar(255) primary key, " +
@@ -76,8 +78,11 @@ export class CreateChangesMigration extends Migration {
       ["last_error", "The code and message of its last failed delivery."],
       ["stalled_at", "When it stalled after its last attempt, until resumed or replayed."],
     ] as const)
-      schema.sql(`comment on column outbox.change_cursors.${column} is '${text.replaceAll("'", "''")}'`, {
-        inverse: false,
-      });
+      schema.sql(
+        `comment on column outbox.change_cursors.${column} is '${text.replaceAll("'", "''")}'`,
+        {
+          inverse: false,
+        },
+      );
   }
 }
