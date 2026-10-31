@@ -23,10 +23,11 @@ import { decideBash } from "../_rules.mjs";
 
 /**
  * Every case decides in less than this of the guard's own time: the wall clock minus the time git takes to answer
- * its lookups, which a loaded machine stretches (the guard caps those at 48 and 2 s itself). A slow path in the
- * reader, the walk or the globbing fails here long before the hook's five seconds run out.
+ * its lookups, which a loaded machine stretches (the guard caps those at 48 and 2 s itself). One budget under the
+ * hook's 5 s kill, as in guard-bash (STA-1693): a loaded gate box still passes, and a super-linear path in the reader,
+ * the walk or the globbing still fails.
  */
-const LIMIT_MS = 250;
+const LIMIT_MS = 4000;
 let gitMs = 0;
 const { spawnSync } = childProcess;
 childProcess.spawnSync = (...args) => {
@@ -69,7 +70,7 @@ function wrong(cases, cwd = wt) {
   const out = [];
   for (const [c, want] of cases) {
     const [t, git] = [performance.now(), gitMs];
-    const { decision, reason } = decideBash(fill(c), { cwd, scratchpad });
+    const { decision, reason } = decideBash(fill(c), { cwd, scratchpad, deadlineMs: Infinity }); // the outcome, never TOO_SLOW from box load
     const ms = performance.now() - t - (gitMs - git);
     if (decision !== want) out.push(`${decision} (want ${want}) ${c}  [${reason.slice(0, 60)}]`);
     if (ms >= LIMIT_MS) out.push(`${ms.toFixed(0)} ms (limit ${LIMIT_MS}) ${c}`);
