@@ -5,7 +5,7 @@
  *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy and mobile onboard
  *          commands (ADR 0482), the db commands, the seed-pack
  *          command, the settings pack commands, the search reindex and status commands, the offline audit check, the operator bootstrap (`ops
- *          bootstrap-operator`, STA-1586), ls, the local MCP and agent-file commands,
+ *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the local MCP and agent-file commands,
  *          and the registry item commands (add, publish; ADR 0453).
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db diff` and `seed` land with
@@ -31,6 +31,7 @@ import { SEARCH_STATUS_COMMAND } from "#node/constants/search-status-command.con
 import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
 import { SETTINGS_APPLY_COMMAND } from "#node/constants/settings-apply-command.constant";
 import { SETTINGS_DIFF_COMMAND } from "#node/constants/settings-diff-command.constant";
+import { TESTBED_COMMAND } from "#node/constants/testbed-command.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
 import { BUILD_COMMAND } from "#node/product/constants/build-command.constant";
 import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant";
@@ -90,6 +91,7 @@ export const COMMANDS: readonly CliCommand[] = [
   SMOKE_COMMAND,
   OPS_BOOTSTRAP_OPERATOR_COMMAND,
   LS_COMMAND,
+  TESTBED_COMMAND,
   MCP_COMMAND,
   MCP_SYNC_COMMAND,
   MCP_EXEC_COMMAND,

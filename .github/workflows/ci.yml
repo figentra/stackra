@@ -14,8 +14,12 @@
 name: CI
 
 on:
-  # Owner decision 2026-10-31: the ci-box gate is the gate (runner minutes saved), so the Quality Gate runs only when
-  # started by hand (Actions > CI > Run workflow) until self-hosted runners on the boxes take it back.
+  # Owner decision 2026-10-31: every pull request into main is checked here until this repository switches to the
+  # required figentra-flow/gate (STA-1729 phase 6); pushes to main run on demand only (Actions > CI > Run workflow).
+  pull_request:
+    branches: [main]
+    # ready_for_review re-runs the gate when a draft PR is marked ready, so the Tasked rule applies.
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 # ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job alone holds an OIDC token,

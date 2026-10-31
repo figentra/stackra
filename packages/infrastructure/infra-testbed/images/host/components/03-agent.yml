@@ -1,0 +1,57 @@
+# Stackra file contract:
+# Purpose: EC2 Image Builder component `testbed-agent`: installs the box agent at /usr/local/bin/testbed-agent and its
+#          guard and idle systemd timers (every five minutes), warms the shared pnpm store on /data from the core
+#          lockfile, and cleans the build instance so the AMI carries no history.
+# Boundary: build-time only. The warm-up is best effort: packages that need a registry token fail to fetch here and are
+#           fetched at job time, under the job's Infisical token. No secret is read or written.
+# Owner: release-operations · Secrets: forbidden
+# Governing contract: ADR 0484 (decisions 2, 4 and 5).
+name: testbed-agent
+description: Box agent, its timers, a warm pnpm store and a clean build instance
+schemaVersion: 1.0
+phases:
+  - name: build
+    steps:
+      - name: Agent
+        action: ExecuteBash
+        inputs:
+          commands:
+            - |
+              set -eu
+              install -m 0755 /opt/testbed-build/testbed-agent.sh /usr/local/bin/testbed-agent
+              for unit in guard idle; do
+                install -m 0644 /opt/testbed-build/testbed-$unit.service /opt/testbed-build/testbed-$unit.timer /etc/systemd/system/
+              done
+              mkdir -p /etc/testbed
+              systemctl daemon-reload
+              systemctl enable testbed-guard.timer testbed-idle.timer
+      - name: WarmStore
+        action: ExecuteBash
+        inputs:
+          commands:
+            - |
+              set -u
+              mkdir -p /tmp/warm && cp /opt/testbed-build/pnpm-lock.yaml /tmp/warm/
+              cd /tmp/warm
+              PATH=/opt/mise/shims:$PATH pnpm fetch --store-dir /data/pnpm-store || echo "testbed: warm store incomplete, the rest is fetched at job time"
+              chown -R ubuntu:ubuntu /data/pnpm-store
+              rm -rf /tmp/warm
+      - name: Clean
+        action: ExecuteBash
+        inputs:
+          commands:
+            - |
+              set -u
+              rm -rf /opt/testbed-build /var/lib/apt/lists/* /root/.cache /home/ubuntu/.cache
+              docker image prune -f || true
+              sync
+  - name: validate
+    steps:
+      - name: Check
+        action: ExecuteBash
+        inputs:
+          commands:
+            - |
+              set -eu
+              /usr/local/bin/testbed-agent slot heavy | grep -qx free
+              systemctl is-enabled testbed-guard.timer testbed-idle.timer

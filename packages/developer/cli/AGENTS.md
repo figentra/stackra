@@ -65,6 +65,12 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
   tests), checks every tarball against its integrity, never writes outside its kind's target (ADR 0453 decision 11),
   never overwrites a target the items lock does not pin, and never prints the licence token. The registry origin is a
   setting (`registryOrigin`), never a literal in a command; the item shapes are `@stackra/skills/contracts`.
+- `stackra testbed` (ADR 0484, replaces `ci-box`) starts only `aws`, `ssh`, `rsync` and `gh`, through `TestbedDeps`
+  (`createTestbedDeps` in production, a fake in tests); every remote word is single-quoted. It calls only the verbs of
+  the box agent contract (`testbed-agent slot|health|status|job prepare|job run|job stop`) and honours its exit codes
+  (73 retry the claim, 75 another box). The decisions (heavy or light, nested-call refusal, box order, claim
+  staleness, scale, fallback) are pure functions with tests. A job never falls back to the Mac; the GitHub fallback
+  takes a preset and a ref, never a command.
 - Never add a Figentra-internal operation (Linear, bot identities, merge, secrets inbox, delegation, spend): ADR 0282
   decision 4.
 

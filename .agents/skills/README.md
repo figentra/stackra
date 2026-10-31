@@ -7,7 +7,7 @@ directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them 
 
 | Family                 | Skills                                                                                                                      |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Monorepo and release   | `pnpm`, `turborepo`, `changesets`, `vitest`, `tdd`                                                                          |
+| Monorepo and release   | `pnpm`, `turborepo`, `changesets`, `vitest`, `tdd`, `test-infra`                                                                        |
 | Web UI                 | `heroui-react`, `frontend-design`, `accessibility`, `playwright-best-practices`                                             |
 | Mobile                 | `heroui-native`, `react-native-best-practices`, `expo-*` (animation, data-fetching, design-system, dev-client, upgrade), `eas-*` (app-stores, update, workflows) |
 | Services and vendors   | `resend` (behind the mail driver), `stripe-best-practices` (billing work only)                                              |

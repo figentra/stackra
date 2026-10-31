@@ -39,6 +39,7 @@ skills:
   skills/resend: MIT
   skills/stripe-best-practices: MIT
   skills/tdd: MIT
+  skills/test-infra: MIT
   skills/turborepo: MIT
   skills/vitest: MIT
   reference/encore/encore-api: Apache-2.0

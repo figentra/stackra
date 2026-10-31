@@ -1492,6 +1492,7 @@ export const HUMAN_ASKS = new Set([
   "tag-push",
   "bot-gh-release-delete",
   "bot-gh-graphql-delete",
+  "secrets-import-write",
 ]);
 /** What an agent does instead of waiting for an answer to an ask outside `HUMAN_ASKS`. */
 export const UNATTENDED_HINT =
@@ -1541,6 +1542,20 @@ const EAS_DEPLOY = atName(
 const PUBLISH = atName(String.raw`(?:${CLI("(?:npm|pnpm|yarn|changeset)")})?publish` + END);
 /** `pnpm runway deploy|promote`, the `runway` binary or its `runway.mjs` build (STA-268) without `--dry-run`; `plan` is a read. */
 const RUNWAY_DEPLOY = /\brunway(?:\.mjs)?\s+(?:--\s+)?(?:deploy|promote)\b(?![^|;&\n]*--dry-run)/;
+/** `pnpm secrets:import`, or its script run directly. */
+const SECRETS_IMPORT = String.raw`\bsecrets(?::import|-import(?:\.mjs)?)\b`;
+/** An import that writes: not `--list`, not `--dry-run` (the owner's keeper rule of 2026-10-31). */
+const SECRETS_IMPORT_WRITE = new RegExp(
+  String.raw`${SECRETS_IMPORT}(?![^|;&\n]*\s--(?:list|dry-run)\b)`,
+);
+/**
+ * An import an agent never runs: a production value (`--confirm`, `--env prod`) or a gate or release key (a path
+ * under /ci/gate or /ci/registry). The script refuses the same targets from an inbox sidecar the guard cannot see.
+ */
+const SECRETS_IMPORT_FORBIDDEN = new RegExp(
+  String.raw`${SECRETS_IMPORT}[^|;&\n]*\s(?:--confirm\b|--env(?:=|\s+)prod(?:uction)?\b|--path(?:=|\s+)/ci/(?:gate|registry)(?:/|(?![\w-])))`,
+  "i",
+);
 /**
  * The rules, in order. A rule denies unless it says `decision: "ask"`; any deny wins over any ask. `rx` is a regex
  * or a function of (text, ctx) that returns true, or a string that replaces `why`. `scan: "bare"` rules see the
@@ -1571,6 +1586,18 @@ const RULES = [
     decision: "ask",
     id: "infisical-secrets-delete",
     why: "`infisical secrets delete`, `secrets folders delete` and `dynamic-secrets delete` remove what nobody can restore from git; the owner confirms it.",
+  },
+  {
+    // The owner's keeper rule of 2026-10-31: never a production value or a gate or release key from an agent.
+    rx: (c) => runsQuoted(c, SECRETS_IMPORT_FORBIDDEN),
+    why: "Secrets guard: `secrets:import` with `--confirm`, `--env prod` or a path under /ci/gate or /ci/registry imports a production value or a gate or release key; agents never run it, the owner runs it in their own terminal (ADR 0257). Dev and staging under /agents or /ci ask the owner per run.",
+  },
+  {
+    // The owner's keeper rule of 2026-10-31: a dev or staging import asks the owner every run.
+    rx: (c) => runsQuoted(c, SECRETS_IMPORT_WRITE),
+    decision: "ask",
+    id: "secrets-import-write",
+    why: "`pnpm secrets:import` moves a secret from the inbox into Infisical (dev or staging; never printed; the inbox file is deleted after a verified write); the owner approves each run. `--list` and `--dry-run` write nothing.",
   },
   {
     // STA-400: a deny, not an ask. The /agents set holds the bot and reviewer App keys (ADR 0230).

@@ -55,6 +55,7 @@ describe("COMMANDS", () => {
         "smoke",
         "add",
         "publish",
+        "testbed",
       ]),
     );
   });

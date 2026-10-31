@@ -88,9 +88,9 @@ function fakeInfisical({
   return { store, calls, runner };
 }
 
-function run(home, argv, runner, now) {
+function run(home, argv, runner, now, env = {}) {
   let out = "";
-  const code = main(argv, { home, runner, now, write: (s) => (out += s) });
+  const code = main(argv, { home, runner, now, write: (s) => (out += s), env });
   return { code, out };
 }
 
@@ -411,4 +411,50 @@ test("importSecret refuses a symlinked inbox before creating its temp dir (STA-1
   assert.deepEqual(r, { name: "LINKED_INBOX", ok: false, reason: "inbox is not a real directory" });
   assert.deepEqual(readdirSync(elsewhere), []);
   assert.equal(fake.calls.length, 0);
+});
+
+test("keeper rule: an agent imports dev and staging only, never prod or a gate or release key, even from a sidecar", () => {
+  const agent = { CLAUDECODE: "1" };
+  const { home, inbox } = setup();
+  const v = canary();
+  writeFileSync(join(inbox, "STACKRA_OK"), v);
+  writeFileSync(join(inbox, "STACKRA_PROD"), canary());
+  writeFileSync(join(inbox, "STACKRA_PROD.target.yaml"), "env: prod\npath: /agents\n");
+  writeFileSync(join(inbox, "STACKRA_GATE"), canary());
+  writeFileSync(join(inbox, "STACKRA_GATE.target.yaml"), "env: dev\npath: /ci/gate\n");
+  writeFileSync(join(inbox, "REGISTRY_KEY"), canary());
+  writeFileSync(join(inbox, "REGISTRY_KEY.target.yaml"), "env: staging\npath: /ci/registry/sign\n");
+  const fake = fakeInfisical();
+  const r = run(home, [], fake.runner, undefined, agent);
+  assert.equal(r.code, 1, "the refused ones fail the run");
+  assert.equal(fake.store.get("dev:/agents:STACKRA_OK"), v);
+  assert.equal(
+    existsSync(join(inbox, "STACKRA_OK")),
+    false,
+    "a verified write deletes the inbox file",
+  );
+  for (const name of ["STACKRA_PROD", "STACKRA_GATE", "REGISTRY_KEY"]) {
+    assert.ok(existsSync(join(inbox, name)), `${name} stays in the inbox`);
+    assert.equal(
+      [...fake.store.keys()].some((k) => k.endsWith(`:${name}`)),
+      false,
+      `${name} not written`,
+    );
+  }
+  assert.match(r.out, /never imports a production value/);
+  assert.match(r.out, /never imports a gate or release key/);
+  assert.doesNotMatch(r.out, /--confirm/, "no production token reaches an agent");
+  assertNoLeak([v], { ...r, home, calls: fake.calls });
+});
+
+test("keeper rule: an agent's dry run of a production target is refused, so no confirm token is printed", () => {
+  const { home, inbox } = setup();
+  writeFileSync(join(inbox, "STACKRA_PROD"), canary());
+  const fake = fakeInfisical();
+  const r = run(home, ["--dry-run", "--env", "prod", "--path", "/agents"], fake.runner, undefined, {
+    OPENCODE: "1",
+  });
+  assert.notEqual(r.code, 0);
+  assert.doesNotMatch(r.out, /--confirm/);
+  assert.ok(existsSync(join(inbox, "STACKRA_PROD")));
 });

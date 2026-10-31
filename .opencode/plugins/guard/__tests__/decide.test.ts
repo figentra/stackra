@@ -51,6 +51,9 @@ test("the secrets inbox is never read; the importer is allowed", () => {
   assert.equal(decidePath("/Users/me/Secrets-inbox/X").kind, "deny");
   assert.equal(kind("pnpm secrets:import --list"), "allow");
   assert.equal(kind("pnpm secrets:import --dry-run STACKRA_X"), "allow");
+  // The keeper rule of 2026-10-31: a write asks in Claude Code; OpenCode cannot ask, so it denies.
+  assert.equal(kind("pnpm secrets:import STACKRA_X"), "deny");
+  assert.equal(kind("pnpm secrets:import --env prod STACKRA_X"), "deny");
 });
 
 // STA-194: the same matcher as guard-bash (shared _inbox.mjs), so the same precision both ways (STA-207).
