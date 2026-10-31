@@ -198,6 +198,18 @@ const BASE_LINT_DISABLED =
 /** A `.service.ts` file of a package's testing entry: its base-less classes are harnesses, never bindings (lint `TESTING_ENTRY`). */
 const TESTING_HARNESS = /(?:^|\/)src\/testing\/(?:.*\/)?[^/]+\.service\.ts$/;
 
+/** The enum `name` among a manifest's schemas (`<module>.<Name>`, or module-prefixed as a client prints a clash). */
+function enumIn(manifest: StackraManifest | undefined, name: string): TypeDesc | undefined {
+  const schemas = (manifest?.schemas ?? {}) as Readonly<Record<string, unknown>>;
+  for (const [key, schema] of Object.entries(schemas)) {
+    const [module = "", last = key] = key.split(".");
+    const values = (schema as { readonly enum?: unknown } | null)?.enum;
+    if ((last === name || pascalCase(module) + last === name) && Array.isArray(values))
+      return { kind: "enum", name, values: values.map(String) };
+  }
+  return undefined;
+}
+
 /** Whether a path is a test file or sits in a `__tests__` folder. */
 function isTest(path: string): boolean {
   return path.includes("/__tests__/") || /\.test\.tsx?$/.test(path);
@@ -1217,18 +1229,6 @@ export function createSourceReader(
     return (
       candidates.find((from) => from === own || from.startsWith(`${own ?? ""}/`)) ?? candidates[0]
     );
-  };
-
-  /** The enum `name` among a manifest's schemas (`<module>.<Name>`, or module-prefixed as a client prints a clash). */
-  const enumIn = (manifest: StackraManifest | undefined, name: string): TypeDesc | undefined => {
-    const schemas = (manifest?.schemas ?? {}) as Readonly<Record<string, unknown>>;
-    for (const [key, schema] of Object.entries(schemas)) {
-      const [module = "", last = key] = key.split(".");
-      const values = (schema as { readonly enum?: unknown } | null)?.enum;
-      if ((last === name || pascalCase(module) + last === name) && Array.isArray(values))
-        return { kind: "enum", name, values: values.map(String) };
-    }
-    return undefined;
   };
 
   // An enum of a consumed service, by its `#stackra/clients/<service>` import: its codes from the service's committed
