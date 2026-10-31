@@ -127,6 +127,7 @@ export type { PanelRef } from "#core/types/panel-ref.type";
 export type { Path } from "#core/types/path.type";
 export type { PlacementBuilder } from "#core/types/placement-builder.type";
 export type { PlacementNode } from "#core/types/placement-node.type";
+export type { QueryInput } from "#core/types/query-input.type";
 export type { RelationNode } from "#core/types/relation-node.type";
 export type { Relations } from "#core/types/relations.type";
 export type { ResourceOperations } from "#core/types/resource-operations.type";

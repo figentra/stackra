@@ -8,6 +8,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); registry note A3 (one symbol, one entry).
  */
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
+import type { z } from "zod";
 
 import { COUNT_METRIC_SCHEMA } from "#core/constants/count-metric-schema.constant";
 import { MONEY_METRIC_SCHEMA } from "#core/constants/money-metric-schema.constant";
@@ -23,6 +24,7 @@ import type {
   Display,
   Form,
   Infolist,
+  QueryInput,
   Relations,
   Table,
   Views,
@@ -114,6 +116,11 @@ describe("@stackra/panel", () => {
   it("resolves the builder types the template names", () => {
     expectTypeOf<Table<{ id: string }>>().toHaveProperty("columns");
     expectTypeOf<Views<{ id: string }>>().toHaveProperty("view");
+    expectTypeOf<
+      QueryInput<{ readonly input: z.ZodObject<{ limit: z.ZodNumber }> }>
+    >().toEqualTypeOf<{
+      limit: number;
+    }>();
     expectTypeOf<Form<CreateInput<{ title: string }>>>().toHaveProperty("fields");
     expectTypeOf<Infolist<{ id: string }>>().toHaveProperty("entries");
     expectTypeOf<Relations<{ id: string }>>().toHaveProperty("table");
