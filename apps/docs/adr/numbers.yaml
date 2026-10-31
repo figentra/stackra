@@ -1466,7 +1466,7 @@
   owner: spec tiers (figentra/sta-1721-spec-tiers)
   issue: STA-1721
 "0503":
-  slug: vellum-runs-the-development-workflow
+  slug: figentra-flow-runs-the-development-workflow
   status: proposed
   owner: Figentra Flow (figentra/sta-1729-vellum-workflow-adr)
   issue: STA-1729
