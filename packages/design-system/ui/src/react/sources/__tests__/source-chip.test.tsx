@@ -18,7 +18,9 @@ describe("SourceChip (web)", () => {
     expect(link.getAttribute("href")).toBe("https://www.example.com/menu");
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
-    expect(link.textContent).toBe("Eexample.com");
+    // The mark's letter is drawn but hidden from the name, which comes from the content (no aria-label to mismatch).
+    expect(link.hasAttribute("aria-label")).toBe(false);
+    expect(link.textContent).toBe("Eexample.com (opens in a new tab)");
   });
 
   it("never follows a link that is not a web address", () => {
