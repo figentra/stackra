@@ -24,7 +24,7 @@ export const TESTBED_PLAN_INPUT_SCHEMA = z
       .optional(),
     /** Infisical machine identity id: the shared gate identity (CI's INFISICAL_GATE_IDENTITY_ID), from Pulumi config. */
     identityId: z.string().min(1).optional(),
-    /** Infisical project id of `figentra-ci-gate`, from Pulumi config; without it no project has a grant. */
+    /** Infisical project id of `figentra-ci`, from Pulumi config; without it no project has a grant. */
     ciGateProjectId: z.string().min(1).optional(),
     /** Infisical project id holding `/ci/turbo` when it is not `ciGateProjectId` (CI's INFISICAL_TURBO_PROJECT_ID). */
     turboProjectId: z.string().min(1).optional(),

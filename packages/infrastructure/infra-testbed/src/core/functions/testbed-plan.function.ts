@@ -31,11 +31,10 @@ export function testbedPlan(input: TestbedPlanInput = {}): TestbedPlan {
     given.ciGateProjectId === undefined
       ? {}
       : {
-          // The paths CI reads (ci.yml): the licence tokens in /ci, the remote cache in /ci/turbo, and the gate's
-          // own values in /ci/gate (vellum gate); all live in the figentra-ci-gate project, which the gate identity reads.
+          // The paths CI reads (ci.yml): the licence tokens in /ci, the remote cache in /ci/turbo; both live in the
+          // figentra-ci project, which the gate identity reads.
           core: [
             { projectId: given.ciGateProjectId, environment, path: "/ci" },
-            { projectId: given.ciGateProjectId, environment, path: "/ci/gate" },
             {
               projectId: given.turboProjectId ?? given.ciGateProjectId,
               environment,
