@@ -6,7 +6,7 @@
 
 **Linear**: STA-1731 (phase 2 of STA-1730)
 
-**Clarifications status**: complete (the leader approved Q1 to Q5 as recommended on 2026-11-01, and added the audit entry of FR-015)
+**Clarifications status**: complete
 
 **Input**: the owner's request of 2026-10-31 (Linear STA-1731), the leader's go-ahead of 2026-11-01, and ADR 0506
 (decisions 4 to 6: the `commands/` group, `@stackra/console` holds no module's commands, `#stackra/commands` is an
@@ -57,8 +57,10 @@ look and the standalone path `createConsole({ commands })`. Today the `stackra` 
 - **FR-003** WHERE a member hosts packages (their committed manifests are read through `readDependencyManifests`),
   THE gen SHALL merge each package's `commands` rows into the member's manifest marked `from: <package>`, as it does
   for the other `MERGED_SECTIONS` (STA-1712), own rows first.
-- **FR-004** THE gen SHALL take into a package's `commands` only the classes its `./node` entry exports; a command
-  the entry does not export (a bin's own, such as `@stackra/console`'s `create`) SHALL NOT be contributed.
+- **FR-004** THE gen SHALL take into a package's contributed `commands` only the classes under `src/node/` (the
+  `./node` entry); WHERE a command declares `Command({ ..., bin: true })` (a package's own bin command, such as
+  `@stackra/console`'s `create` and `demo`), THE gen SHALL record it with `bin: true` and SHALL NOT merge it into a
+  host.
 - **FR-005** IF two rows in a member's merged `commands` share a name or an alias, THEN THE gen SHALL fail with
   `command_collision`, naming the name and both classes with their packages or files, and SHALL write nothing.
 - **FR-006** THE gen SHALL write `.stackra/gen/commands.ts` (imported as `#stackra/commands`): one static import per
