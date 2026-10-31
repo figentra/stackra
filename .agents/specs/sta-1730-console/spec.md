@@ -141,8 +141,8 @@ hidden?, aliases? })`, and SHALL read a command's name, description, arguments a
 - **FR-025** WHEN the Operator presses Ctrl-C or Escape in a prompt, THE Console Kernel SHALL close the container and
   return exit code 130.
 - **FR-026** THE Console Output SHALL measure text by grapheme cluster (`Intl.Segmenter`), counting wide East Asian
-  and emoji graphemes as 2 and combining and isolate marks as 0, SHALL wrap each right-to-left run inside a
-  left-to-right layout in FSI U+2068 and PDI U+2069, and SHALL never reorder characters.
+  and emoji graphemes as 2 and combining and isolate marks as 0, SHALL never reorder characters and SHALL
+  emit no bidi isolate (FSI/PDI) itself, because many terminals draw it; `isolateBidi` is offered for callers.
 
 ### Testing harness
 

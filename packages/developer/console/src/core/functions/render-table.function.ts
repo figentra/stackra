@@ -1,13 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `renderTable(headers, rows, options)`, a table with one rule under bold headers and columns padded by
- *          display width, so Arabic, CJK and emoji cells line up; right-to-left cells are isolated.
+ *          display width, so Arabic, CJK and emoji cells line up; right-to-left cells are measured by grapheme.
  * Boundary: pure; returns the lines.
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-018, FR-026 and SC-004.
  */
 import { displayWidth } from "#core/functions/display-width.function";
-import { isolateBidi } from "#core/functions/isolate-bidi.function";
 import { padTo } from "#core/functions/pad-to.function";
 import type { Painter } from "#core/types/painter.type";
 
@@ -17,7 +16,7 @@ export function renderTable(
   rows: readonly (readonly unknown[])[],
   options: { readonly unicode: boolean; readonly painter: Painter },
 ): string[] {
-  const cells = rows.map((row) => headers.map((_, index) => isolateBidi(String(row[index] ?? ""))));
+  const cells = rows.map((row) => headers.map((_, index) => String(row[index] ?? "")));
   const widths = headers.map((header, index) =>
     Math.max(displayWidth(header), ...cells.map((row) => displayWidth(row[index] ?? ""))),
   );

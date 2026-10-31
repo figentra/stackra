@@ -92,8 +92,8 @@ decision 17). Commands need the v3 shape: a class, decorated fields, constructor
    - `--json` writes exactly one document to stdout: `{ "ok": true, "data": ... }`, or
      `{ "ok": false, "error": { "code", "message" } }` where the code is the error's class name in snake case without
      `Error`.
-   - Widths are measured by grapheme cluster. A right-to-left run inside a left-to-right layout is wrapped in FSI and PDI,
-     and characters are never reordered.
+   - Widths are measured by grapheme cluster. Characters are never reordered, and the components write no FSI/PDI
+     isolates (many terminals draw them as boxes); `isolateBidi` is offered for callers.
 
 8. **Prompts are ours.** The prompter runs on `node:readline` in raw mode, and colours come from `node:util`
    `styleText` with two escape helpers for 256 and true colour. No new dependency is added. Basalt's `@clack/prompts`

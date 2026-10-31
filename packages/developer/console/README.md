@@ -75,7 +75,7 @@ cancelled prompt), 143 (SIGTERM).
 - Plain text (no escape byte, no cursor movement) under `NO_COLOR`, `--no-ansi`, `TERM=dumb` or without a TTY. No
   prompts without a TTY, in CI, with `-n` or with `--json`: a prompt takes its default, or the run exits 2 naming the
   option that answers it. `--json` writes exactly one document, `{ ok, data }` or `{ ok: false, error: { code, message } }`.
-- Right-to-left text is measured by grapheme and wrapped in Unicode isolates; nothing is reordered.
+- Right-to-left text is measured by grapheme so it lines up; nothing is reordered, and no isolate marks are written.
 
 ## Themes
 

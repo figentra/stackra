@@ -116,7 +116,7 @@ bar.advance();
 bar.finish();
 ```
 
-Text is measured by grapheme cluster, so Arabic and emoji columns line up, and a right-to-left run is isolated inside the left-to-right layout. Use `displayWidth(text)` and `isolateBidi(text)` from `@stackra/console` when you lay out text of your own.
+Text is measured by grapheme cluster, so Arabic and emoji columns line up; characters are never reordered, and no bidi isolate marks are written, because many terminals draw them as boxes. Use `displayWidth(text)` from `@stackra/console` when you lay out text of your own; `isolateBidi(text)` wraps right-to-left runs in FSI and PDI for a destination that honours them.
 
 ## Prompts and non-interactive runs
 

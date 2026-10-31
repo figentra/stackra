@@ -8,7 +8,6 @@
  */
 import type { PromptAnswer } from "#contracts/types/prompt-answer.type";
 import type { PromptRequest } from "#contracts/types/prompt-request.type";
-import { isolateBidi } from "#core/functions/isolate-bidi.function";
 import type { PromptPaint } from "#core/types/prompt-paint.type";
 
 /** The answered line of `request`. */
@@ -27,5 +26,5 @@ export function renderAnswer(
         : Array.isArray(answer)
           ? answer.join(", ")
           : (request.choices?.find((choice) => choice.value === answer)?.label ?? String(answer));
-  return `  ${paint.painter.success(paint.symbols.success)} ${isolateBidi(request.message)} ${paint.painter.dim(isolateBidi(shown))}`;
+  return `  ${paint.painter.success(paint.symbols.success)} ${request.message} ${paint.painter.dim(shown)}`;
 }

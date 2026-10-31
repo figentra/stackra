@@ -3,7 +3,8 @@
  * Purpose: `isolateBidi(text)`, `text` with each right-to-left run (Arabic, Hebrew, Syriac, Thaana, N'Ko) wrapped in
  *          FIRST STRONG ISOLATE U+2068 and POP DIRECTIONAL ISOLATE U+2069, so a terminal that applies the bidi
  *          algorithm keeps the run whole inside a left-to-right layout. Characters are never reordered here.
- * Boundary: pure; idempotent (text that already holds an isolate is returned as it is).
+ * Boundary: pure; idempotent (text that already holds an isolate is returned as it is). Opt-in: the console's own
+ *           components do not call it, because many terminals draw the isolate characters as visible boxes.
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-026; Unicode UAX 9 (explicit isolates).
  */

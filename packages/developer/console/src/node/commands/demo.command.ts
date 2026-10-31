@@ -75,7 +75,7 @@ export class DemoCommand extends Command({
       return { prompts: false };
     }
     output.title("Prompts");
-    const name = await prompt.text({ message: "What is your name?", placeholder: "Ada" });
+    const name = await prompt.text({ message: "What is your name?", default: "Ada" });
     const tool = await prompt.select({
       message: "Which package manager?",
       choices: [{ value: "pnpm", hint: "recommended" }, { value: "npm" }, { value: "yarn" }],

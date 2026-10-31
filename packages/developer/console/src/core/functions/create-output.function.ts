@@ -10,7 +10,6 @@
 import { SYMBOLS } from "#core/constants/symbols.constant";
 import { createPainter } from "#core/functions/create-painter.function";
 import { displayWidth } from "#core/functions/display-width.function";
-import { isolateBidi } from "#core/functions/isolate-bidi.function";
 import { renderBanner } from "#core/functions/render-banner.function";
 import { renderBox } from "#core/functions/render-box.function";
 import { renderTable } from "#core/functions/render-table.function";
@@ -25,7 +24,7 @@ import type { Spinner } from "#core/types/spinner.type";
 const CLEAR_LINE = "\r\u001B[2K";
 
 /** A line with a symbol in the gutter. */
-const mark = (symbol: string, text: string) => `  ${symbol} ${isolateBidi(text)}`;
+const mark = (symbol: string, text: string) => `  ${symbol} ${text}`;
 
 /** The output of one run. */
 export function createOutput(setup: OutputSetup): ConsoleOutput {
@@ -54,15 +53,15 @@ export function createOutput(setup: OutputSetup): ConsoleOutput {
   };
 
   return {
-    line: (text = "") => out(text === "" ? "" : `  ${isolateBidi(text)}`),
+    line: (text = "") => out(text === "" ? "" : `  ${text}`),
     info: (text) => out(mark(painter.accent(symbols.info), text)),
     success: (text) => out(mark(painter.success(symbols.success), text)),
     warn: (text) => err(mark(painter.warning(symbols.warning), text)),
     error: (text) => err(mark(painter.error(symbols.error), text)),
-    title: (text) => out(`\n  ${painter.bold(painter.accent(isolateBidi(text)))}\n`),
+    title: (text) => out(`\n  ${painter.bold(painter.accent(text))}\n`),
     keyValue: (entries) => {
       for (const [key, value] of Object.entries(entries)) {
-        const right = isolateBidi(String(value));
+        const right = String(value);
         out(`  ${key} ${dots(key, right)} ${right}`);
       }
     },
@@ -74,7 +73,7 @@ export function createOutput(setup: OutputSetup): ConsoleOutput {
     },
     note: (text, tone = "info", title) => {
       const style = toneOf[tone];
-      const lines = renderBox(isolateBidi(text), {
+      const lines = renderBox(text, {
         title: title ?? style.title,
         unicode: mode.unicode,
         paint: style.paint,
@@ -87,7 +86,7 @@ export function createOutput(setup: OutputSetup): ConsoleOutput {
       const started = Date.now();
       const finish = (status: string) => {
         const timing = `${Date.now() - started}ms`;
-        return `  ${isolateBidi(label)} ${dots(label, `${timing} ${stripEscapes(status)}`)} ${painter.dim(timing)} ${status}`;
+        return `  ${label} ${dots(label, `${timing} ${stripEscapes(status)}`)} ${painter.dim(timing)} ${status}`;
       };
       try {
         const result = await work();

@@ -18,7 +18,7 @@ Member at `packages/developer/console` (`tier:lib`).
 - No module's commands here: database, cache, queue and the rest live in their own packages (owner, 2026-10-31).
 - Every component reads the decided `ConsoleMode`; never test a TTY or an environment variable outside
   `decideMode`, so plain output stays one code path.
-- Measure text with `displayWidth`, never `.length`; isolate right-to-left text with `isolateBidi`.
+- Measure text with `displayWidth`, never `.length`; never emit bidi isolates from a component (terminals draw them); `isolateBidi` is for callers who want it.
 - A password answer never reaches the output, an error or a log.
 - No new dependency without the owner: colours, gradient and prompts are hand-written on `node:util` and
   `node:readline`.

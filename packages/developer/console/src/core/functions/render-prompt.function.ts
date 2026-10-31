@@ -7,7 +7,6 @@
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-024 and FR-026.
  */
-import { isolateBidi } from "#core/functions/isolate-bidi.function";
 import { visibleChoices } from "#core/functions/visible-choices.function";
 import type { PromptPaint } from "#core/types/prompt-paint.type";
 import type { PromptState } from "#core/types/prompt-state.type";
@@ -20,19 +19,17 @@ export function renderPrompt(state: PromptState, paint: PromptPaint): string[] {
   const { painter, symbols } = paint;
   const { request } = state;
   const bar = painter.accent(symbols.bar);
-  const lines = [`  ${painter.accent(symbols.info)} ${painter.bold(isolateBidi(request.message))}`];
+  const lines = [`  ${painter.accent(symbols.info)} ${painter.bold(request.message)}`];
   if (request.kind === "text" || request.kind === "password" || request.kind === "search") {
     const shown =
-      request.kind === "password"
-        ? symbols.bullet.repeat([...state.text].length)
-        : isolateBidi(state.text);
+      request.kind === "password" ? symbols.bullet.repeat([...state.text].length) : state.text;
     const empty =
       state.text === ""
         ? painter.dim(
             request.placeholder ?? (typeof request.default === "string" ? request.default : ""),
           )
         : "";
-    lines.push(`  ${bar} ${shown}${empty}${painter.accent("_")}`);
+    lines.push(`  ${bar} ${shown}${painter.accent("_")}${empty}`);
   }
   if (request.kind === "confirm") {
     const option = (label: string, on: boolean) =>
@@ -54,7 +51,7 @@ export function renderPrompt(state: PromptState, paint: PromptPaint): string[] {
         request.kind === "multiselect"
           ? `${state.ticked.includes(choice.value) ? painter.accent(symbols.checked) : symbols.unchecked} `
           : "";
-      const label = isolateBidi(choice.label ?? choice.value);
+      const label = choice.label ?? choice.value;
       const hint = choice.hint === undefined ? "" : ` ${painter.dim(choice.hint)}`;
       lines.push(
         `  ${bar} ${on ? painter.accent(symbols.pointer) : " "} ${tick}${on ? painter.accent(label) : label}${hint}`,

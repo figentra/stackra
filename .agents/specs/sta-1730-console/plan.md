@@ -108,8 +108,8 @@ rounded (`╭╮╰╯`) with a coloured title; the error screen is a red-labell
 stack and `cause` chain. Width is `min(columns, 100)`.
 
 **Width and bidi.** `displayWidth` segments graphemes with `Intl.Segmenter`, counts wide East Asian and emoji as 2 and
-combining and isolate marks as 0, and strips escape sequences first. `isolateBidi(text)` wraps strong-RTL runs in
-FSI/PDI. Padding and truncation use `displayWidth`, never `.length`.
+combining and isolate marks as 0, and strips escape sequences first. `isolateBidi(text)` (opt-in; the components
+do not call it, since many terminals draw FSI/PDI as boxes) wraps strong-RTL runs. Padding and truncation use `displayWidth`, never `.length`.
 
 **Prompts.** `ReadlinePrompter` uses `readline.emitKeypressEvents` and raw mode, renders a frame (accent bar, message,
 hint line, error line) and redraws in place; it restores the terminal on every exit path (finally, signal, cancel).
