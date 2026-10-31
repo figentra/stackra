@@ -158,7 +158,7 @@ Rollback before the last step: the shim still names the old boxes, and `aws ec2 
 The boxes use the shared machine identity `figentra-ci-gate`, the one the Quality Gate uses over GitHub OIDC (its id is
 the GitHub organization variable `INFISICAL_GATE_IDENTITY_ID`). It already has **Viewer** on the Infisical project
 `figentra-ci-gate`, which holds exactly what a job needs: `prod` `/ci` (`HEROUI_AUTH_TOKEN`, `UNIWIND_AUTH_TOKEN`) and
-`prod` `/ci/turbo` (`TURBO_TOKEN`, `TURBO_REMOTE_CACHE_SIGNATURE_KEY`). The project is the boundary; the free plan has no
+`prod` `/ci/turbo` (`TURBO_TOKEN`, `TURBO_REMOTE_CACHE_SIGNATURE_KEY`), plus `prod` `/ci/gate` for `vellum gate`. The project is the boundary; the free plan has no
 custom roles. Nothing is created: one login method is added, so no identity slot is spent. The owner does this in the
 Infisical web app (EU, `eu.infisical.com`); no value is typed anywhere.
 
