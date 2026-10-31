@@ -157,12 +157,10 @@ jobs:
         run: pnpm test:int
 
       # STA-1403: .stackra is gitignored, so gen compiles each reference service's migrations into its
-      # .stackra/migrations for the Squawk step below. The CLI is the one Build just compiled.
+      # .stackra/migrations for the Squawk step below. Typecheck and Test already ran each service's gen task, so this
+      # is a cache hit that restores them.
       - name: Service gen (stackra gen)
-        run: |
-          for service in services/*/; do
-            (cd "$service" && node ../../packages/developer/cli/dist/stackra.mjs gen)
-          done
+        run: pnpm exec turbo run gen --filter='./services/*'
 
       # ADR 0159 d3 (stackra-251): Squawk lints the SQL gen compiled into each service's .stackra/migrations. A file
       # opening with `-- stackra:transactional=false` runs outside a transaction (concurrent indexes); every other file

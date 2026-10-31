@@ -84,7 +84,7 @@ jobs:
           pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
 
       # A broken build or a failing test never reaches Cloudflare. The build writes dist/main.mjs, wrangler's main.
-      # The test runs outside turbo: turbo's test task waits for //#gen, which refuses the uninstalled playground.
+      # The test runs outside turbo: turbo's test task waits for //#gen:workspace, which refuses the uninstalled playground.
       - name: Test and build
         run: |
           pnpm turbo run build --filter=@figentra/worker-turbo-cache

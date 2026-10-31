@@ -9163,6 +9163,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/foundation/container
     devDependencies:
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:../../packages/developer/cli
       '@stackra/tsdown-config':
         specifier: workspace:*
         version: link:../../packages/tooling/tsdown
@@ -9191,6 +9194,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/foundation/container
     devDependencies:
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:../../packages/developer/cli
       '@stackra/tsdown-config':
         specifier: workspace:*
         version: link:../../packages/tooling/tsdown
@@ -9218,6 +9224,9 @@ importers:
       '@stackra/app':
         specifier: workspace:*
         version: link:../../packages/runtime/app
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:../../packages/developer/cli
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../packages/foundation/contracts
@@ -9254,6 +9263,9 @@ importers:
 
   workers/registry:
     devDependencies:
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:../../packages/developer/cli
       '@stackra/licensing':
         specifier: workspace:*
         version: link:../../packages/security/licensing
@@ -9290,6 +9302,9 @@ importers:
 
   workers/static:
     devDependencies:
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:../../packages/developer/cli
       '@stackra/tsdown-config':
         specifier: workspace:*
         version: link:../../packages/tooling/tsdown
@@ -9323,6 +9338,9 @@ importers:
 
   workers/turbo-cache:
     devDependencies:
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:../../packages/developer/cli
       '@stackra/tsdown-config':
         specifier: workspace:*
         version: link:../../packages/tooling/tsdown

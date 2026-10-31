@@ -6,4 +6,13 @@
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
   "tags": ["tier:lib", "category:design-system", "runtime:isomorphic", "runtime:node"],
+  // This member's `gen` script is its own generator (scripts/gen.ts: the registry barrel, api/**, search and the mobile
+  // demos in apps/mobile), not `stackra gen`; the root gen:workspace pass writes its .stackra. It writes committed
+  // files, some outside this member, so it is never cached and its typecheck and tests do not wait for it.
+  "tasks": {
+    "gen": { "dependsOn": [], "cache": false },
+    "typecheck": { "dependsOn": ["^build", "//#gen:workspace"] },
+    "test": { "dependsOn": ["^build", "//#gen:workspace"] },
+    "test:coverage": { "dependsOn": ["^build", "//#gen:workspace"] },
+  },
 }

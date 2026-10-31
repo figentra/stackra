@@ -42,6 +42,7 @@
     "dev": "tsdown && wrangler dev",
     "start": "tsdown && wrangler dev",
     "build": "tsdown",
+    "gen": "stackra gen",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint .",
     "test": "vitest run",
@@ -50,6 +51,7 @@
     "clean": "rm -rf dist .turbo .wrangler"
   },
   "devDependencies": {
+    "@stackra/cli": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
