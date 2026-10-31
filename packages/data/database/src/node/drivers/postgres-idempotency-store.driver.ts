@@ -4,9 +4,13 @@
  *          Idempotency-Key is one row of `database.idempotency_keys` with its fingerprint and, once done, its output,
  *          claimed atomically and replayed until it expires. The durable store for a deployment whose keys must
  *          outlive a cache restart.
- * Boundary: every call runs in its own transaction (`requiresNew`), so a claim commits before the action's unit of
- *           work starts and a failed action's rollback never frees it; `release` does. A claim is one upsert that
- *           takes a free or expired key and leaves a live one untouched, so two concurrent calls never both run.
+ * Boundary: every call joins the transaction already running (a savepoint of it), or opens its own when none runs.
+ *           So a claim and a completion made inside a caller's transaction commit or roll back with it: a call that
+ *           joined an outer transaction which then fails to commit leaves no done key, and its retry runs again
+ *           instead of replaying a success that never committed (ADR 0495, note of 2026-11-01). A claim is one upsert
+ *           that takes a free or expired key and leaves a live one untouched; a concurrent claim of a key another
+ *           open transaction inserted waits for that transaction, so two concurrent calls never both run. `release`
+ *           frees a held key a failed call leaves when its transaction still commits.
  *           The output must be JSON-serialisable, as every action output is. Each claim also sweeps up to 100 expired
  *           keys, so the table stays bounded without a job. Raw SQL with every value bound (ADR 0160).
  * Runtime: node
@@ -35,7 +39,7 @@ const SWEEP = 100;
  * const earlier = await store.claim(key, fingerprint, Duration.hours(24));
  */
 export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
-  /** The connected database each call opens its own transaction on. */
+  /** The connected database whose running transaction each call joins. */
   private readonly database: Database;
 
   /**
@@ -114,10 +118,8 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     });
   }
 
-  /** Runs `work` in a transaction of its own, committed whatever the caller's transaction does. */
+  /** Runs `work` in the running transaction (a savepoint), or in a transaction of its own when none runs. */
   private run<T>(work: (em: EntityManager) => Promise<T>): Promise<T> {
-    return this.database.transaction(() => work(this.database.em() as EntityManager), {
-      requiresNew: true,
-    });
+    return this.database.transaction(() => work(this.database.em() as EntityManager));
   }
 }

@@ -71,7 +71,6 @@ themselves, where a session-level setting would survive into another tenant's tr
 
    | Path                            | Touches a tenant-policy table? | Classification                              |
    | ------------------------------- | ------------------------------ | ------------------------------------------- |
-   | idempotency keys                | no (no RLS)                    | needs nothing                               |
    | rate-limit buckets              | no (no RLS)                    | needs nothing                               |
    | workflow journal (`workflow.*`) | no (no RLS)                    | needs nothing; steps re-enter the isolation |
    | `webhook_deliveries`            | no (no RLS)                    | needs nothing                               |
@@ -95,6 +94,17 @@ themselves, where a session-level setting would survive into another tenant's tr
   platform call sees none, settings do not survive the transaction.
 - planned — RDS Proxy pinning under load measured by `DatabaseConnectionsCurrentlySessionPinned` on the first
   deployed proxy (infra follow-up of STA-1699).
+
+## Note 2026-11-01: idempotency keys join the call's transaction (decision 6)
+
+The Postgres idempotency store no longer uses `requiresNew`, so it leaves the table of decision 6. When a call joined
+an outer transaction (a listener in the inbox's unit, a workflow step), its `complete` committed on its own before
+the outer transaction did; if that commit then failed, the retry replayed a success that never committed. Every claim,
+completion and release now joins the running transaction (a savepoint of it), or opens its own when none runs: a key
+completed inside a failed outer commit is gone and the retry runs again. A concurrent claim of the same key waits for
+the transaction that inserted it. The Valkey store cannot join a transaction, so a deployment whose calls join outer
+transactions uses the Postgres store. Test: `postgres-idempotency-store.driver.int.test.ts` forces the outer commit
+to fail with a deferred constraint and claims the key again.
 
 ## Supersedes and sources
 

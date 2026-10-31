@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: integration tests of `PostgresIdempotencyStoreDriver` on real Postgres: a free key is claimed once and a
- *          concurrent claim sees it held, a completed key replays its output, a released key may run again, and an
- *          expired key is claimed afresh.
+ *          concurrent claim sees it held, a completed key replays its output, a released key may run again, an
+ *          expired key is claimed afresh, and a key claimed and completed inside an outer transaction whose commit
+ *          fails is gone, so the retry runs again instead of replaying.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled 0002 migration creates the table.
  * Runtime: node (vitest)
  * Governing contract: ADR 0136 (decision 3); ADR 0396 (decision 2); ADR 0022; ADR 0269.
@@ -55,5 +56,22 @@ describe(PostgresIdempotencyStoreDriver, () => {
       setTimeout(resolve, 20);
     });
     expect(await store().claim("a:-:usr_1:k4", "other", Duration.hours(24))).toBeUndefined();
+  });
+
+  it("runs a retry again when the outer transaction it completed in fails to commit", async () => {
+    const em = () => postgres.database.em();
+    // raw-sql: a deferred unique constraint, checked only at commit, so the commit itself fails
+    await em().execute(
+      "create table if not exists public.commit_probe (id int, constraint uq_commit_probe unique (id) deferrable initially deferred)",
+    );
+    const call = async () => {
+      expect(await store().claim("a:-:usr_1:k5", "f5", Duration.hours(24))).toBeUndefined();
+      // raw-sql: two equal rows: allowed until the deferred check runs at commit
+      await em().execute("insert into public.commit_probe (id) values (1), (1)");
+      await store().complete("a:-:usr_1:k5", { orderId: "ord_5" });
+    };
+    await expect(postgres.database.transaction(call)).rejects.toThrow();
+    // the claim and the completion rolled back with the outer commit: the retry runs, it does not replay
+    expect(await store().claim("a:-:usr_1:k5", "f5", Duration.hours(24))).toBeUndefined();
   });
 });

@@ -7,7 +7,9 @@
  *           `idempotency:` plus the scoped key. `claim` is one script (read, or write the held record with `PX`), so
  *           two concurrent calls with one key never both run; `complete` keeps the claim's remaining lifetime
  *           (`KEEPTTL`, Valkey 7 / Redis 6 or later). The output must be JSON-serialisable, as every action output is.
- *           A command is retried once, then rejects.
+ *           A command is retried once, then rejects. shortcut: it cannot join a database transaction, so a call that
+ *           joined an outer transaction whose commit then fails replays a success that never committed; use the
+ *           Postgres store where calls join outer transactions (ADR 0495, note of 2026-11-01).
  * Runtime: node
  * Governing contract: ADR 0136 (decision 3: key, payload hash and result, 24 hours); ADR 0150 (the Valkey client); ADR
  *                     0173 (secrets by name); ADR 0294 (decision 16).
