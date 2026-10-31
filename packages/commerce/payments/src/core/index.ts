@@ -21,11 +21,13 @@ export { MemoryPaymentRecordsDriver } from "#core/drivers/memory-payment-records
 export { MemoryRestrictedTenderProgramsDriver } from "#core/drivers/memory-restricted-tender-programs.driver";
 export { MemorySoftPosDriver } from "#core/drivers/memory-soft-pos.driver";
 export { MemoryTenderEligibilityDriver } from "#core/drivers/memory-tender-eligibility.driver";
+export { NoneConnectedAccountLimitsDriver } from "#core/drivers/none-connected-account-limits.driver";
 export { NoneAgentCommerceProtocolsDriver } from "#core/drivers/none-agent-commerce-protocols.driver";
 export { StripeTapToPaySoftPosDriver } from "#core/drivers/stripe-tap-to-pay-soft-pos.driver";
 export { AgentConfirmationRefusedError } from "#core/errors/agent-confirmation-refused.error";
 export { BalanceExceededError } from "#core/errors/balance-exceeded.error";
 export { CapabilityUnsupportedError } from "#core/errors/capability-unsupported.error";
+export { ConnectedAccountLimitsMissingError } from "#core/errors/connected-account-limits-missing.error";
 export { InvalidPaymentTransitionError } from "#core/errors/invalid-payment-transition.error";
 export { MerchantInitiatedNotAllowedError } from "#core/errors/merchant-initiated-not-allowed.error";
 export { NoEligibleLinesError } from "#core/errors/no-eligible-lines.error";
