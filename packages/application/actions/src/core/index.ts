@@ -27,6 +27,7 @@ export { MemoryReplicaLogDriver } from "#core/drivers/memory-replica-log.driver"
 export { MemoryReviewItemSinkDriver } from "#core/drivers/memory-review-item-sink.driver";
 export { OpenApprovalGateDriver } from "#core/drivers/open-approval-gate.driver";
 export { OutboxAuditTrailDriver } from "#core/drivers/outbox-audit-trail.driver";
+export { OutboxListenerAuditTrailDriver } from "#core/drivers/outbox-listener-audit-trail.driver";
 export { CacheScope } from "#core/enums/cache-scope.enum";
 export { ConflictResolution } from "#core/enums/conflict-resolution.enum";
 export { IdMinting } from "#core/enums/id-minting.enum";

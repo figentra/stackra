@@ -71,6 +71,7 @@ describe("@stackra/actions", () => {
       "OfflinePrecondition",
       "OpenApprovalGateDriver",
       "OutboxAuditTrailDriver",
+      "OutboxListenerAuditTrailDriver",
       "PipelineStage",
       "Precondition",
       "Query",

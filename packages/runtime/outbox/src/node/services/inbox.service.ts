@@ -116,7 +116,13 @@ export class InboxService extends Service {
     return this.database.withScope(envelope.scope ?? [], async () => {
       if (!(await this.driver.claim(envelope.id, this.clock.now()))) return false;
       const { id, ...rest } = meta;
-      const context: ListenerContext = { ...rest, eventId: id, now: () => this.clock.now() };
+      // a relay forwards the envelope and writes nothing to audit, so its `audit` keeps nothing
+      const context: ListenerContext = {
+        ...rest,
+        eventId: id,
+        now: () => this.clock.now(),
+        audit: () => undefined,
+      };
       for (const relay of this.relays) await relay.handle(envelope as never, context);
       if (event !== undefined) {
         this.bus.deliver(event, meta);

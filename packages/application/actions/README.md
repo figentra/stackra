@@ -228,6 +228,8 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
 - **Meters**: `meter: { name, kind, field? }` writes one `UsageRecorded` (`usage.recorded`) event through the
   `EventOutbox` in the action's unit of work, so a metered call never commits without its usage.
 - **Audit**: `OutboxAuditTrailDriver` writes each audit entry as an `AuditEntryRecorded` event for the audit service.
+  `OutboxListenerAuditTrailDriver` does the same for each listener delivery (`@stackra/events`' `ListenerAuditTrail`,
+  key `listener:<Listener>`, the event's id as the call id, `ctx.audit` fields; STA-1715).
   Its event ids, and the pipeline's, come from `@stackra/contracts`' `mintPublicId("evt")` (STA-1380).
 - **Stores**: `StoresConfig` (key `actions.stores`) picks `memory`, `valkey` or `postgres` for the idempotency and
   rate-limit stores; the Valkey drivers are in `./node` (`ACTIONS_VALKEY_URL`), and the `postgres` drivers come
