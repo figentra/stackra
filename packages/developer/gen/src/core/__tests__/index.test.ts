@@ -72,6 +72,7 @@ describe("@stackra/gen", () => {
       "emitMigrations",
       "emitPackageEntries",
       "emitPrefixes",
+      "emitQueues",
       "emitRegistrations",
       "emitReports",
       "emitRoutes",

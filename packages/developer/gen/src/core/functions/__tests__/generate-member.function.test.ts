@@ -66,6 +66,7 @@ describe("generateMember", () => {
       ".stackra/gen/boot.ts",
       ".stackra/gen/webhooks.ts",
       ".stackra/gen/prefixes.ts",
+      ".stackra/gen/queues.ts",
       ".stackra/gen/search.ts",
       ".stackra/encore/billing/cron.ts",
       ".stackra/encore/billing/database.ts",
