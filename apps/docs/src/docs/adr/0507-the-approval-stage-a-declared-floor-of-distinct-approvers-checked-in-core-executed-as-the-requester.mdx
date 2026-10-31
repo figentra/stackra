@@ -1,0 +1,94 @@
+---
+title: "0507 — The approval stage: a declared floor of distinct approvers, checked in core, executed as the requester"
+description: "Proposed · 2026-10-31"
+---
+
+{/* Stackra file contract: Purpose: the decision record for the declarative approval stage of the action pipeline (STA-1724): the `approval` declaration and the ApprovalCondition kind, where the stage runs relative to CallIsolation, the split ApprovalGate port, parking outside the call's rollback, execution on the final grant as the requester, and how the stage composes with the ADR 0360 floor. Boundary: decision text only; the code is STA-1724's tasks. Runtime: docs. Governing contract: ADR template; ADR 0098, 0138, 0360, 0397, 0398, 0495. */}
+
+<Note>
+  Proposed (STA-1724). Amends [0098](/adr/0098-actions-are-the-unit) (decision 3: the approval
+  step's contract),
+  [0397](/adr/0397-actions-remainder-effect-codes-tool-default-reserve-then-commit-audit-in-the-unit-of-work-and-approval-fails-closed)
+  (decision 5: a declared stage also fails closed with the open gate) and extends
+  [0398](/adr/0398-ai-action-permission-matrix-record-scope-pack-floor-propose-mode-and-the-approver-rule)
+  (decision 6: the approver rule is applied in core). Builds on 0495 (Proposed, `CallIsolation`).
+  Spec: `.agents/specs/sta-1724-approval-stage`.
+</Note>
+
+## Context
+
+The action pipeline already has an approval step (0098 decision 3): an `ApprovalGate` driver decides from tenant
+rules, parks a request and refuses with `approval_required`, and a resubmission naming a granted id runs. Nothing in
+code can say "this action always needs a second person above a threshold", so billing (figentra/billing#2) wrote its
+own pending state, approver check and expiry for coupons, and settings has its own four-eyes revision check that
+compares author and approver ids only. The step also trusts the driver to compare a granted request with the call.
+Under 0495 the step runs inside the call's isolation transaction, so a request parked there is rolled back with the
+refusal. The alternatives weighed were a second, separate approval mechanism for declared approvals (two models), a
+202-style pending output instead of a refusal (changes every declared action's output type), and moving the store into
+a core package (no OS dependency, but a second owner of approvals next to OS tasks-approvals).
+
+## Decision
+
+1. **Declaration.** `Action({ approval })` takes `true` (as before: a gate must be bound and its rules decide) or
+   `{ approvals?, permission, expiresAfter?, when? }`. `approvals` counts distinct approvers besides the requester
+   (default 1, four-eyes); `permission` is a `Permissions` static the approver must hold in the request's scope;
+   `expiresAfter` is a duration (default `72h`); `when` names an `ApprovalCondition` class. Without `when` every call
+   needs approval.
+2. **`ApprovalCondition` is a kind.** `extends ApprovalCondition` with `needed(input, ctx): Promise<boolean>`, in
+   `access/<name>.approval-condition.ts`, wired by gen. A threshold is data the condition reads (a setting, a plan
+   value); the comparison is code. A condition that throws fails the call.
+3. **Place.** The stage keeps its place after validation and before idempotency, rate limit, interceptors, the unit of
+   work and `handle`. Under 0495 it runs inside `CallIsolation.run`. Actions only.
+4. **One model, a floor.** The pipeline computes the declared requirement, asks the gate to `decide` (tenant rules,
+   the AI resolver's `confirm` and named approver), and enforces the larger of the two itself. A driver may add
+   requirements, never remove one; the open gate cannot pass a declared stage.
+5. **The port splits.** `ApprovalGate` has `decide` (read), `park` (write a request), `find` (read one) and `settle`
+   (record the outcome). The comparison of a request with a call (tenant, scope, requester, action key, input hash,
+   status, window, distinct votes, none in the requester's `onBehalfOf` chain) is a pure core function, not the
+   driver's.
+6. **Park outside the rollback.** The call is refused `approval_required` (with `approvalId`, `approvalsRequired`,
+   `expiresAt`, never input) and the pipeline parks the request after the isolation transaction ended, in a new
+   `CallIsolation.run` for the same actor and scope.
+7. **Execute on grant, as the requester.** For a declared stage the store publishes `actions.approval.granted.v1` (ids
+   only) at the final vote; `ApprovalExecutor` in the owning service runs the call through the whole pipeline as the
+   stored requester with `approvalId` and Idempotency-Key `approval:<id>`, as a 0495 background unit, then settles the
+   request `executed` or `failed`. Permission, preconditions, entitlement and flag are re-checked at execution. The
+   approver's authority is never lent (0360 decision 9). A request parked only by tenant rules keeps resubmission.
+8. **Approvers.** Approving is a user action only; an agent never approves. One vote per user; the requester and
+   anyone in the requester's chain are refused; votes are refused after expiry; at the final vote every voter is
+   re-checked for the permission and one who lost it does not count.
+9. **The floor.** A declared stage and the 0360 floor are one request. AI modes (allow by default, always allow,
+   bypass) may drop only the `confirm` of the person an agent acts for; nothing lowers the declared approvals or the
+   floor's named approver.
+10. **Store.** The pending requests, votes, approve, reject, withdraw, list and get actions and the expiry sweep belong
+    to OS tasks-approvals behind the port, in a tenant-owned table with forced RLS. Core ships the memory driver and a
+    conformance suite.
+
+## Consequences
+
+- Billing's coupon actions declare the stage and drop their own approval code; any product gets four-eyes by one
+  option.
+- Every `ApprovalGate` implementer changes (today only `OpenApprovalGateDriver` and test fakes in core).
+- The input snapshot of a pending call lives in OS until the request ends; approvers see it through field access.
+- A single-operator install cannot complete a declared four-eyes action.
+- `AgentRuntime.resume` must accept an executed outcome for a request that ran on grant.
+- Settings keep their revision model and adopt the chain check (spec L-07, open).
+
+## Enforcement
+
+planned — STA-1724: `Action()` validation of the option; the pipeline tests that a gate answering "none" cannot pass
+a declared call and that a parked request survives the rollback under `CallIsolation`; the `verifyApproval` tests; the
+port conformance suite in `@stackra/actions/testing`; gen refusing `approval` on a query, on an action no user or
+agent may call, and on a `credential` input field. Nothing checks this rule yet.
+
+## Open questions
+
+The lead's questions L-01 to L-10 in the spec: the count's name and meaning, the refusal versus a 202 output, the
+default and maximum expiry, on-grant execution for rules-only parks, the store's owner, users-only approvers,
+settings, step-up at execution, grant delivery by event or client, and single-operator installs.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0098 (decision 3) and 0397 (decision 5); extends 0398 (decision 6). Sources: Linear
+STA-1724; figentra/billing#2; the code of `@stackra/actions`, `@stackra/ai` and `@stackra/settings` on main,
+2026-10-31; ADR 0495 on `figentra/sta-1699-call-isolation`.
