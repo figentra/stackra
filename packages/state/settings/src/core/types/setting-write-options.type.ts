@@ -12,7 +12,7 @@
 import type { SettingEnvironment } from "#contracts/index";
 
 /**
- * The options of `SettingsResolver#write`.
+ * The options of `SettingsResolver#write`; `applyChange` takes `author`, `reason`, `environment` and `breakGlass`.
  *
  * @example
  * await resolver.write(SettingsPages.orders, { refundWindowDays: 30 }, { scope }, { environment: SettingEnvironment.Live, author });
