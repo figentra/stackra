@@ -7,12 +7,17 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0159 (as amended); ADR 0492 (decision 5).
  */
 import { compileMigration } from "@stackra/database";
+import { BelongsToTenantMacro } from "@stackra/tenancy/node";
 import { describe, expect, it } from "@stackra/testing";
 
 import { CreateSynonymsMigration } from "#node/database/migrations/0001-create-synonyms.migration";
 
 describe("CreateSynonymsMigration", () => {
-  const { steps } = compileMigration(CreateSynonymsMigration, { schema: "data_maintenance" });
+  const { steps } = compileMigration(CreateSynonymsMigration, {
+    schema: "data_maintenance",
+    createsSchema: true,
+    macros: [BelongsToTenantMacro],
+  });
   const sql = steps.flatMap((step) => step.sql);
 
   it("creates the synonym table keyed by id under a forced tenant policy", () => {

@@ -44,9 +44,11 @@ const mean = (values: readonly number[]): number =>
   values.reduce((sum, value) => sum + value, 0) / values.length;
 
 describe("search evaluation on Postgres", () => {
-  const driver = new PostgresSearchDriver(postgres.database);
+  let driver: PostgresSearchDriver;
 
   beforeAll(async () => {
+    // the database exists only inside a hook or test (usePostgres)
+    driver = new PostgresSearchDriver(postgres.database);
     const em = postgres.database.em() as unknown as {
       execute: (sql: string, params?: readonly unknown[]) => Promise<unknown>;
     };

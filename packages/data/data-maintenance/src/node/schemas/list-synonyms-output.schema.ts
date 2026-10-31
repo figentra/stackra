@@ -15,7 +15,7 @@ import type { SynonymView } from "#node/schemas/synonym-view.schema";
 const ListSynonymsOutput$ = z.object({ items: z.array(SYNONYM_VIEW_SCHEMA) });
 
 /**
- * The sets.
+ * The tenant's synonym sets, oldest first.
  *
  * @example
  * return ListSynonymsOutput.create({ items: rows.map(viewOf) });

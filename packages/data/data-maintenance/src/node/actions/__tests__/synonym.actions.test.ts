@@ -63,7 +63,7 @@ describe("the synonym actions and query", () => {
       DeleteSynonymAction,
       ListSynonymsQuery,
     ])
-      expect(kindOf(type)?.options).not.toHaveProperty("tool");
+      expect(kindOf(type)?.options).toMatchObject({ tool: true }); // the default of ADR 0360 d4, never declared
   });
 
   it("creates a set and answers its view", async () => {
