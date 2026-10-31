@@ -1,0 +1,13 @@
+{
+  "trace": {
+    "summary": "Thought for 4s",
+    "search_label": "Searched orders",
+    "search": "Read 3,912 orders from last week across 6 branches.",
+    "compare_label": "Compared branches",
+    "compare": "Al Olaya is up 12%; Al Malqa is down 3%.",
+    "check": "Checked for refunds that change the totals: none."
+  },
+  "streaming": {
+    "step": "Reading this month's stock counts…"
+  }
+}

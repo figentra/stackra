@@ -39,16 +39,20 @@ import { FREE_CANDLESTICK_CHART } from "#src/registry/components/free/candlestic
 import { FREE_CARD } from "#src/registry/components/free/card";
 import { FREE_CAROUSEL } from "#src/registry/components/free/carousel";
 import { FREE_CASCADER } from "#src/registry/components/free/cascader";
+import { FREE_CHART_EXPORT } from "#src/registry/components/free/chart-export";
 import { FREE_CHART_LEGEND } from "#src/registry/components/free/chart-legend";
 import { FREE_CHART_TOOLTIP } from "#src/registry/components/free/chart-tooltip";
+import { FREE_CHAT_MESSAGE } from "#src/registry/components/free/chat-message";
 import { FREE_CHECKBOX } from "#src/registry/components/free/checkbox";
 import { FREE_CHECKBOX_BUTTON_GROUP } from "#src/registry/components/free/checkbox-button-group";
 import { FREE_CHECKBOX_FIELD } from "#src/registry/components/free/checkbox-field";
 import { FREE_CHECKBOX_GROUP } from "#src/registry/components/free/checkbox-group";
 import { FREE_CHIP } from "#src/registry/components/free/chip";
+import { FREE_CHORD_DIAGRAM } from "#src/registry/components/free/chord-diagram";
 import { FREE_CHOROPLETH_MAP } from "#src/registry/components/free/choropleth-map";
 import { FREE_CLOSE_BUTTON } from "#src/registry/components/free/close-button";
 import { FREE_COACH_MARK } from "#src/registry/components/free/coach-mark";
+import { FREE_CODE } from "#src/registry/components/free/code";
 import { FREE_CODE_BLOCK } from "#src/registry/components/free/code-block";
 import { FREE_COLLECTION_ENGINE } from "#src/registry/components/free/collection-engine";
 import { FREE_COLOR_PICKER } from "#src/registry/components/free/color-picker";
@@ -109,6 +113,7 @@ import { FREE_HOLO_CARD } from "#src/registry/components/free/holo-card";
 import { FREE_HOVER_CARD } from "#src/registry/components/free/hover-card";
 import { FREE_ICON } from "#src/registry/components/free/icon";
 import { FREE_ICON_BUTTON } from "#src/registry/components/free/icon-button";
+import { FREE_IMAGE } from "#src/registry/components/free/image";
 import { FREE_IMAGE_CROPPER } from "#src/registry/components/free/image-cropper";
 import { FREE_IMPORT_DIALOG } from "#src/registry/components/free/import-dialog";
 import { FREE_IMPORT_FLOW } from "#src/registry/components/free/import-flow";
@@ -148,6 +153,7 @@ import { FREE_NATIVE_SELECT } from "#src/registry/components/free/native-select"
 import { FREE_NAVIGATION_HEADER } from "#src/registry/components/free/navigation-header";
 import { FREE_NAVIGATION_LIST } from "#src/registry/components/free/navigation-list";
 import { FREE_NAVIGATION_MENU } from "#src/registry/components/free/navigation-menu";
+import { FREE_NETWORK_GRAPH } from "#src/registry/components/free/network-graph";
 import { FREE_NOTIFICATIONS_PANEL } from "#src/registry/components/free/notifications-panel";
 import { FREE_NUMBER_FIELD } from "#src/registry/components/free/number-field";
 import { FREE_NUMBER_PAD } from "#src/registry/components/free/number-pad";
@@ -172,6 +178,7 @@ import { FREE_PRESS_FEEDBACK } from "#src/registry/components/free/press-feedbac
 import { FREE_PROGRESS_BAR } from "#src/registry/components/free/progress-bar";
 import { FREE_PROGRESS_BUTTON } from "#src/registry/components/free/progress-button";
 import { FREE_PROGRESS_CIRCLE } from "#src/registry/components/free/progress-circle";
+import { FREE_PROMPT_INPUT } from "#src/registry/components/free/prompt-input";
 import { FREE_PROMPT_SUGGESTIONS } from "#src/registry/components/free/prompt-suggestions";
 import { FREE_PROPERTY_LIST } from "#src/registry/components/free/property-list";
 import { FREE_PULL_TO_REFRESH } from "#src/registry/components/free/pull-to-refresh";
@@ -185,7 +192,9 @@ import { FREE_RADIO_GROUP } from "#src/registry/components/free/radio-group";
 import { FREE_RANGE_BAR_CHART } from "#src/registry/components/free/range-bar-chart";
 import { FREE_RANGE_CALENDAR } from "#src/registry/components/free/range-calendar";
 import { FREE_RANGE_SLIDER } from "#src/registry/components/free/range-slider";
+import { FREE_RATING } from "#src/registry/components/free/rating";
 import { FREE_REACTION_BUTTON } from "#src/registry/components/free/reaction-button";
+import { FREE_REASONING } from "#src/registry/components/free/reasoning";
 import { FREE_RECURRENCE_EDITOR } from "#src/registry/components/free/recurrence-editor";
 import { FREE_RESULT } from "#src/registry/components/free/result";
 import { FREE_REVEAL } from "#src/registry/components/free/reveal";
@@ -195,6 +204,7 @@ import { FREE_RULE_BUILDER } from "#src/registry/components/free/rule-builder";
 import { FREE_SANKEY_CHART } from "#src/registry/components/free/sankey-chart";
 import { FREE_SAVE_BAR } from "#src/registry/components/free/save-bar";
 import { FREE_SCATTER_CHART } from "#src/registry/components/free/scatter-chart";
+import { FREE_SCHEDULER } from "#src/registry/components/free/scheduler";
 import { FREE_SCREEN } from "#src/registry/components/free/screen";
 import { FREE_SCROLL_AREA } from "#src/registry/components/free/scroll-area";
 import { FREE_SEARCH_FIELD } from "#src/registry/components/free/search-field";
@@ -215,6 +225,7 @@ import { FREE_SLIDER } from "#src/registry/components/free/slider";
 import { FREE_SLIDE_TO_CONFIRM } from "#src/registry/components/free/slide-to-confirm";
 import { FREE_SOCIAL_SIGN_IN_BUTTONS } from "#src/registry/components/free/social-sign-in-buttons";
 import { FREE_SORTABLE_LIST } from "#src/registry/components/free/sortable-list";
+import { FREE_SOURCES } from "#src/registry/components/free/sources";
 import { FREE_SPARKLINE } from "#src/registry/components/free/sparkline";
 import { FREE_SPINNER } from "#src/registry/components/free/spinner";
 import { FREE_SPLIT_BUTTON } from "#src/registry/components/free/split-button";
@@ -252,6 +263,7 @@ import { FREE_TOOLTIP } from "#src/registry/components/free/tooltip";
 import { FREE_TRACKER_STRIP } from "#src/registry/components/free/tracker-strip";
 import { FREE_TRANSFER_LIST } from "#src/registry/components/free/transfer-list";
 import { FREE_TREEMAP_CHART } from "#src/registry/components/free/treemap-chart";
+import { FREE_TREE_DIAGRAM } from "#src/registry/components/free/tree-diagram";
 import { FREE_TREE_SELECT } from "#src/registry/components/free/tree-select";
 import { FREE_TREE_VIEW } from "#src/registry/components/free/tree-view";
 import { FREE_TRUNCATE } from "#src/registry/components/free/truncate";
@@ -267,12 +279,14 @@ import { FREE_WAFFLE_CHART } from "#src/registry/components/free/waffle-chart";
 import { FREE_WATERFALL_CHART } from "#src/registry/components/free/waterfall-chart";
 import { FREE_WHEEL_PICKER } from "#src/registry/components/free/wheel-picker";
 import { FREE_WIDGET_FRAME } from "#src/registry/components/free/widget-frame";
+import { FREE_WORD_CLOUD } from "#src/registry/components/free/word-cloud";
 import { FREE_YEAR_PICKER } from "#src/registry/components/free/year-picker";
 import type { ComponentEntry } from "#src/types/component-entry.type";
 
 /** Every component entry, in listing order. */
 export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_BIDI,
+  FREE_CODE,
   FREE_COLLECTION_ENGINE,
   FREE_FOUNDATIONS,
   FREE_HEADING,
@@ -320,6 +334,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_PHONE_FIELD,
   FREE_QUANTITY_STEPPER,
   FREE_RANGE_SLIDER,
+  FREE_RATING,
   FREE_RULE_BUILDER,
   FREE_SEARCH_FIELD,
   FREE_SETTING_ROW,
@@ -361,6 +376,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_PERIOD_PICKER,
   FREE_RANGE_CALENDAR,
   FREE_RECURRENCE_EDITOR,
+  FREE_SCHEDULER,
   FREE_TIME_CLOCK,
   FREE_TIME_FIELD,
   FREE_TIME_PICKER,
@@ -373,8 +389,10 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_BULLET_CHART,
   FREE_CALENDAR_HEATMAP,
   FREE_CANDLESTICK_CHART,
+  FREE_CHART_EXPORT,
   FREE_CHART_LEGEND,
   FREE_CHART_TOOLTIP,
+  FREE_CHORD_DIAGRAM,
   FREE_CHOROPLETH_MAP,
   FREE_COMPOSED_CHART,
   FREE_DONUT_CHART,
@@ -383,6 +401,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_HEATMAP_CHART,
   FREE_HISTOGRAM_CHART,
   FREE_LINE_CHART,
+  FREE_NETWORK_GRAPH,
   FREE_PIE_CHART,
   FREE_POLAR_CHART,
   FREE_RADAR_CHART,
@@ -394,9 +413,11 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_SUNBURST_CHART,
   FREE_TIMELINE_CHART,
   FREE_TRACKER_STRIP,
+  FREE_TREE_DIAGRAM,
   FREE_TREEMAP_CHART,
   FREE_WAFFLE_CHART,
   FREE_WATERFALL_CHART,
+  FREE_WORD_CLOUD,
   FREE_ACCORDION,
   FREE_ACCOUNT_CONNECTION,
   FREE_ATTACHMENT_CARD,
@@ -422,6 +443,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_GALLERY,
   FREE_HIGHLIGHT,
   FREE_HOLO_CARD,
+  FREE_IMAGE,
   FREE_IMPORT_DIALOG,
   FREE_IMPORT_FLOW,
   FREE_ITEM_CARD,
@@ -526,12 +548,16 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_TWO_COLUMN_LAYOUT,
   FREE_USE_BREAKPOINT,
   FREE_AI_MARK,
+  FREE_CHAT_MESSAGE,
   FREE_CONVERSATION_LIST,
   FREE_MESSAGE_ACTIONS,
   FREE_MESSAGE_SCROLLER,
   FREE_MODEL_PICKER,
+  FREE_PROMPT_INPUT,
   FREE_PROMPT_SUGGESTIONS,
   FREE_QUESTIONNAIRE_CARD,
+  FREE_REASONING,
   FREE_SHIMMER,
+  FREE_SOURCES,
   FREE_VOICE_INPUT,
 ]);

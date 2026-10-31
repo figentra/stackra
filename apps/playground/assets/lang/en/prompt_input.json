@@ -1,0 +1,12 @@
+{
+  "composer": {
+    "attach": "Attach a file",
+    "footer": "Answers can be wrong. Check important facts.",
+    "sent": "Sent: {text}",
+    "file": "menu-autumn.pdf"
+  },
+  "streaming": {
+    "value": "Summarise today's sales by branch",
+    "hint": "Press send to start the answer, then Stop."
+  }
+}

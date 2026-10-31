@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the web `Thumbnail`: a resource's image (a product, a menu item, a file) in a fixed-width box of the given
  *          aspect ratio with the theme's large radius. A blurred `placeholderSrc` shows while `src` loads, then the
- *          image fades in over it; with no image, or a broken one, an image icon shows on the default fill.
+ *          image fades in over it; with no image, or a broken one, an image icon shows on the default fill. The image
+ *          loads lazily, when it nears the viewport.
  * Boundary: the fade is a CSS opacity transition of the theme's `base` step; reduced motion shows the image at once.
  *           Decorative unless `alt` names it as one image. Colours and radius are tokens.
  * Runtime: browser
@@ -75,6 +76,8 @@ export function Thumbnail({
           <img
             src={src}
             alt=""
+            loading="lazy"
+            decoding="async"
             data-slot="thumbnail-image"
             // A cached image can finish before React attaches `onLoad`, so a complete one counts as loaded.
             ref={(node) => {

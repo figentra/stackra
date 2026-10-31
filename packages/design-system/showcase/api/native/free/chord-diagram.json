@@ -1,0 +1,65 @@
+{
+  "generatedFrom": {
+    "hash": "ffba1b336157350d",
+    "propsFiles": ["ui/src/native/chord-diagram/chord-diagram.props.ts"]
+  },
+  "importLine": "import { ChordDiagram } from \"@stackra/ui/native\";",
+  "key": "free/chord-diagram",
+  "parts": [
+    {
+      "name": "ChordDiagram",
+      "props": [
+        {
+          "description": "The groups round the circle, clockwise from the top.",
+          "name": "nodes",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SankeyNode[]"
+        },
+        {
+          "description": "The flows, each from one group to another; a group's arc is as long as all that leaves and reaches it.",
+          "name": "links",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SankeyLink[]"
+        },
+        {
+          "description": "The chart's accessible name and the data table's caption, such as \"Moves between plans\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "How values are written; plain numbers in the locale by default.",
+          "name": "valueFormat",
+          "required": false,
+          "source": "stackra",
+          "type": "NumberFormatOptions"
+        },
+        {
+          "description": "`accent` steps (the default) or the `categorical` set, by group position.",
+          "name": "palette",
+          "required": false,
+          "source": "stackra",
+          "type": "\"accent\" | \"categorical\""
+        },
+        {
+          "description": "The square plot's side in pixels; 320 by default.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

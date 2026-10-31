@@ -14,6 +14,7 @@ import { Linking, View } from "react-native";
 import { isAbsoluteUrl } from "#core/functions/is-absolute-url.function";
 import { markdownBlocksOf } from "#core/functions/markdown-blocks-of.function";
 import { markdownInlineOf } from "#core/functions/markdown-inline-of.function";
+import { Code } from "#native/code/code";
 import { CodeBlock } from "#native/code-block/code-block";
 import type { MarkdownViewerProps } from "#native/code-block/markdown-viewer.props";
 import { Text } from "#native/text/text";
@@ -28,11 +29,7 @@ function runOf(run: ReturnType<typeof markdownInlineOf>[number]): ReactElement {
       return <Text className="italic">{run.text}</Text>;
     }
     case "code": {
-      return (
-        <Text className="rounded-[var(--radius-control-inner)] bg-default/60 font-mono">
-          {run.text}
-        </Text>
-      );
+      return <Code>{run.text}</Code>;
     }
     case "link": {
       const href = run.href ?? "";

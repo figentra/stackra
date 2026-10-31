@@ -505,6 +505,11 @@
         "description": "Builds a repeating rule (RRULE) from plain controls and says it in one sentence, in the Gregorian or Hijri calendar.",
         "keywords": "recurrence, repeat, rrule, schedule, recurring, hijri"
       },
+      "scheduler": {
+        "title": "Scheduler",
+        "description": "An event calendar in day, week, month and agenda views, with events placed by time and overlaps side by side.",
+        "keywords": "scheduler, event calendar, agenda, bookings, appointments, week view"
+      },
       "breadcrumbs": {
         "title": "Breadcrumbs",
         "description": "The path from the root to the current page.",
@@ -1235,6 +1240,31 @@
         "description": "Follow every visitor from where they came in to where they ended up.",
         "keywords": "sankey, flow, journey"
       },
+      "chart_export": {
+        "title": "Chart export",
+        "description": "Save any chart as a picture, a drawing or its numbers, or share it from a phone.",
+        "keywords": "export, download, csv, png"
+      },
+      "network_graph": {
+        "title": "Network graph",
+        "description": "See who or what is connected, and which nodes hold the network together.",
+        "keywords": "network, graph, relationships"
+      },
+      "tree_diagram": {
+        "title": "Tree diagram",
+        "description": "Show a hierarchy as branches, from the top down to every leaf.",
+        "keywords": "tree, hierarchy, org chart"
+      },
+      "word_cloud": {
+        "title": "Word cloud",
+        "description": "Spot the words people use most, sized by how often they come up.",
+        "keywords": "word cloud, tag cloud, mentions"
+      },
+      "chord_diagram": {
+        "title": "Chord diagram",
+        "description": "Show how much moves between groups, both ways, round one circle.",
+        "keywords": "chord, flows, between groups"
+      },
       "sunburst_chart": {
         "title": "Sunburst chart",
         "description": "Show a whole and its parts on one ring after another.",
@@ -1504,6 +1534,41 @@
         "title": "Transfer list",
         "description": "Two lists, available and chosen, with filters and counts, and buttons to move items between them.",
         "keywords": "transfer list, dual list, shuttle, move items, pick list"
+      },
+      "rating": {
+        "title": "Rating",
+        "description": "A score in stars that people pick, or show read-only with half stars.",
+        "keywords": "rating, stars, review, score"
+      },
+      "image": {
+        "title": "Image",
+        "description": "A picture at the container's width, with a blur-up placeholder, a fallback, a caption and zoom.",
+        "keywords": "image, picture, photo, figure, zoom"
+      },
+      "code": {
+        "title": "Code",
+        "description": "A short piece of code inside a sentence, in the monospaced face.",
+        "keywords": "code, inline code, monospace, command"
+      },
+      "chat_message": {
+        "title": "Chat message",
+        "description": "One turn of a chat: the person's bubble, or the assistant's answer beside its avatar.",
+        "keywords": "ai, chat, message, bubble, assistant"
+      },
+      "prompt_input": {
+        "title": "Prompt input",
+        "description": "The chat composer: text that grows, attachments, a toolbar and one send or stop button.",
+        "keywords": "ai, composer, prompt, send, stop"
+      },
+      "reasoning": {
+        "title": "Reasoning",
+        "description": "The assistant's steps behind a quiet \"Thought for 4s\" toggle that shimmers while it runs.",
+        "keywords": "ai, reasoning, chain of thought, agent steps"
+      },
+      "sources": {
+        "title": "Sources",
+        "description": "An answer's citations as small chips, behind a \"3 sources\" toggle.",
+        "keywords": "ai, sources, citations, references"
       }
     }
   },
@@ -2489,6 +2554,20 @@
         },
         "hijri": {
           "title": "Hijri calendar"
+        },
+        "rtl": {
+          "title": "Right to left"
+        }
+      },
+      "scheduler": {
+        "week": {
+          "title": "Clinic week"
+        },
+        "month": {
+          "title": "Month"
+        },
+        "agenda": {
+          "title": "Agenda"
         },
         "rtl": {
           "title": "Right to left"
@@ -4282,6 +4361,34 @@
           "title": "Where visitors went"
         }
       },
+      "chart_export": {
+        "sales": {
+          "title": "Monthly sales"
+        },
+        "csv_only": {
+          "title": "Numbers only"
+        }
+      },
+      "network_graph": {
+        "team": {
+          "title": "Who works with whom"
+        }
+      },
+      "tree_diagram": {
+        "org": {
+          "title": "Teams and their size"
+        }
+      },
+      "word_cloud": {
+        "reviews": {
+          "title": "What reviews mention"
+        }
+      },
+      "chord_diagram": {
+        "plans": {
+          "title": "Moves between plans"
+        }
+      },
       "sunburst_chart": {
         "categories": {
           "title": "Revenue by category and product"
@@ -4772,6 +4879,71 @@
         },
         "export_columns": {
           "title": "Export columns"
+        }
+      },
+      "rating": {
+        "review": {
+          "title": "Rate your visit"
+        },
+        "read_only": {
+          "title": "Average score"
+        },
+        "sizes": {
+          "title": "Sizes"
+        },
+        "arabic": {
+          "title": "Right to left"
+        }
+      },
+      "image": {
+        "photo": {
+          "title": "Photo with a caption"
+        },
+        "zoom": {
+          "title": "Press to zoom"
+        },
+        "fallback": {
+          "title": "Missing and broken"
+        }
+      },
+      "code": {
+        "inline": {
+          "title": "In a sentence"
+        },
+        "arabic": {
+          "title": "In Arabic text"
+        }
+      },
+      "chat_message": {
+        "conversation": {
+          "title": "Conversation"
+        },
+        "loading": {
+          "title": "Thinking"
+        }
+      },
+      "prompt_input": {
+        "composer": {
+          "title": "Composer"
+        },
+        "streaming": {
+          "title": "While it answers"
+        }
+      },
+      "reasoning": {
+        "trace": {
+          "title": "Agent trace"
+        },
+        "streaming": {
+          "title": "While it thinks"
+        }
+      },
+      "sources": {
+        "answer": {
+          "title": "Under an answer"
+        },
+        "chips": {
+          "title": "Inline chips"
         }
       }
     }
@@ -6806,6 +6978,23 @@
             "calendar": "To see dates on a month grid."
           }
         },
+        "scheduler": {
+          "headline": "See the week at a glance.",
+          "intro": "People see bookings, shifts and meetings where they fall in the day, spot clashes side by side, and jump between day, week, month and a plain list.",
+          "tags": "Day · Week · Month · Agenda",
+          "what": "An event calendar with a time grid, a month grid and an agenda list.",
+          "when": "For appointments, bookings, rosters and team calendars.",
+          "rtl": "The week starts on the locale's first day and runs from the right in Arabic; times and dates use the customer's digits.",
+          "when_not": "To pick one date; use a date picker or a calendar.",
+          "do_1": "Pass the time zone the events belong to.",
+          "do_2": "Limit the hours to the working day when nights are empty.",
+          "dont_1": "Do not use colour alone to say what an event is; name it in the title.",
+          "dont_2": "Do not put long notes in the title; open the event for details.",
+          "alternative": {
+            "calendar": "To pick a date.",
+            "timeline_chart": "For tasks across weeks on one bar each."
+          }
+        },
         "toc_rail": {
           "headline": "Always know where you are.",
           "intro": "Long pages stay easy to scan, and any section is one click away.",
@@ -7235,6 +7424,46 @@
           "what": "A chart of stages joined by bands sized by how much passes between them.",
           "when": "Use it for traffic sources to outcomes, budgets to spending, and other many-to-many flows.",
           "rtl": "Stages run from the right in Arabic."
+        },
+        "chart_export": {
+          "headline": "Take the chart with you.",
+          "intro": "People save the chart for a report or a message, as it looks on screen or as numbers for a spreadsheet.",
+          "tags": "PNG · SVG · CSV",
+          "what": "A download menu around any chart.",
+          "when": "Use it on reports and dashboards people share.",
+          "rtl": "The button sits at the reading end, on the left in Arabic."
+        },
+        "network_graph": {
+          "headline": "See the connections.",
+          "intro": "Linked nodes pull together and the busiest grow larger, so clusters and hubs stand out.",
+          "tags": "Nodes · Links · Groups",
+          "what": "A chart of nodes joined by lines, placed by a force layout.",
+          "when": "Use it for teams, service dependencies, referrals and other relationships.",
+          "rtl": "The picture is mirrored in Arabic."
+        },
+        "tree_diagram": {
+          "headline": "Every level, one branch at a time.",
+          "intro": "Each level is a column and each branch keeps its colour, so people follow a path from the top to the detail.",
+          "tags": "Hierarchy · Branches · Levels",
+          "what": "A chart of nodes joined parent to child, level by level.",
+          "when": "Use it for org charts, category trees and decision paths.",
+          "rtl": "Levels run from the right in Arabic."
+        },
+        "word_cloud": {
+          "headline": "The loudest words, at a glance.",
+          "intro": "The heaviest words sit large in the middle, so the themes in reviews or searches read in one look.",
+          "tags": "Words · Weight · Themes",
+          "what": "Words set flat, each sized by its weight.",
+          "when": "Use it for review themes, search terms and survey answers.",
+          "rtl": "Arabic words are shaped by the platform and the cloud mirrors."
+        },
+        "chord_diagram": {
+          "headline": "Who moves where, round one ring.",
+          "intro": "Each group's arc is as long as all that leaves and reaches it, and ribbons show every flow between two groups.",
+          "tags": "Groups · Flows · Ring",
+          "what": "A ring of groups with ribbons between them sized by flow.",
+          "when": "Use it for plan changes, transfers between branches and trade between regions.",
+          "rtl": "Like a pie, the ring reads clockwise from the top in every language."
         },
         "sunburst_chart": {
           "headline": "Every level of the whole, at once.",
@@ -7943,6 +8172,107 @@
           "alternative": {
             "multi_select": "For several choices in a compact field.",
             "checkbox_group": "For a short list of options to tick."
+          }
+        },
+        "rating": {
+          "headline": "How was it, in one tap.",
+          "intro": "People score a visit, a product or a reply in stars, and see the average at a glance.",
+          "tags": "Stars · Half stars · Clearable",
+          "what": "A row of stars that picks a whole score, or shows one with a fraction.",
+          "when": "Use it for reviews, feedback forms and average scores.",
+          "rtl": "The first star is on the right in Arabic, and a half star fills from the right.",
+          "when_not": "For a choice between named options; use a radio group.",
+          "do_1": "Show the average as a read-only rating with its number.",
+          "do_2": "Name the rating, such as \"Your visit\".",
+          "dont_1": "Do not ask for half stars; people pick whole ones.",
+          "dont_2": "Do not use colour alone to show the score.",
+          "alternative": {
+            "radio_group": "For named options.",
+            "reaction_button": "For a quick reaction to a message."
+          }
+        },
+        "image": {
+          "headline": "Pictures that never break the page.",
+          "intro": "The space is kept while the picture loads, a blurred copy shows first, and a broken link shows an icon instead.",
+          "tags": "Aspect ratio · Lazy · Zoom",
+          "what": "A picture as wide as its container, with an optional caption.",
+          "when": "Use it for photos in articles, product pages and cards.",
+          "rtl": "Pictures never mirror; the caption follows the reading direction."
+        },
+        "code": {
+          "headline": "Code that reads as code.",
+          "intro": "Commands, keys and file names stand out from the sentence around them.",
+          "tags": "Inline · Monospaced · Left to right",
+          "what": "A short piece of code inside running text.",
+          "when": "Use it for commands, values and names a person types.",
+          "rtl": "The code stays left to right inside an Arabic sentence."
+        },
+        "chat_message": {
+          "headline": "Questions in a bubble, answers on the page.",
+          "intro": "People find their own words at a glance, and long answers read like a document, with files above and actions under them.",
+          "tags": "Bubble · Avatar · Actions",
+          "what": "One turn of a conversation with an assistant.",
+          "when": "Use it for every message in an AI chat.",
+          "rtl": "The person's bubble sits on the left in Arabic.",
+          "when_not": "For comments between people on a record; use the comment thread.",
+          "do_1": "Put the turns in a message scroller so new text is followed.",
+          "do_2": "Give the assistant's turn its actions row.",
+          "dont_1": "Do not box the assistant's answer in a bubble.",
+          "dont_2": "Do not show a spinner and the shimmer together.",
+          "alternative": {
+            "comment_thread": "For people talking about a record.",
+            "message_scroller": "For the scrolling list around the turns."
+          }
+        },
+        "prompt_input": {
+          "headline": "Ask, attach, send. Stop when you need to.",
+          "intro": "People write a question, add files and tools, and the same button sends, waits and stops the answer.",
+          "tags": "Enter to send · Attachments · Stop",
+          "what": "The box where people write to an assistant.",
+          "when": "Use it at the foot of every chat or agent screen.",
+          "rtl": "The toolbar starts at the right in Arabic and the text is right-aligned.",
+          "when_not": "For a long form field; use the text area.",
+          "do_1": "Say what the assistant can and cannot do in the footer.",
+          "do_2": "Show Stop while the answer streams.",
+          "dont_1": "Do not clear the text when sending fails.",
+          "dont_2": "Do not crowd the toolbar with more than four actions.",
+          "alternative": {
+            "text_area": "For a plain multi-line field in a form.",
+            "mention_input": "For text that names people with @."
+          }
+        },
+        "reasoning": {
+          "headline": "Show the work, without the noise.",
+          "intro": "People see that the assistant is thinking, and can open the steps when they want to check how it got there.",
+          "tags": "Disclosure · Steps · Shimmer",
+          "what": "A folded list of the steps an assistant took.",
+          "when": "Use it above an answer that came from reasoning or tool calls.",
+          "rtl": "The step line runs down the right side in Arabic.",
+          "when_not": "For an activity history with dates; use the timeline.",
+          "do_1": "Write the summary as what was done, such as \"Searched 3 files\".",
+          "do_2": "Keep it closed by default once the answer is ready.",
+          "dont_1": "Do not put the answer itself in the steps.",
+          "dont_2": "Do not open the trace on every new step.",
+          "alternative": {
+            "disclosure": "For any section that shows and hides.",
+            "timeline": "For dated events."
+          }
+        },
+        "sources": {
+          "headline": "Every claim, one tap from its source.",
+          "intro": "People see where an answer came from and open the page or document to check it.",
+          "tags": "Favicons · Links · Preview",
+          "what": "Citation chips for a web page or a document.",
+          "when": "Use it under or inside answers that cite sources.",
+          "rtl": "The chips wrap from the right in Arabic.",
+          "when_not": "For a plain link in text; use the link.",
+          "do_1": "Give each source a clear title.",
+          "do_2": "Add a description so people can preview a page.",
+          "dont_1": "Do not link to anything but a web page.",
+          "dont_2": "Do not list sources the answer did not use.",
+          "alternative": {
+            "link": "For a link in running text.",
+            "hover_card": "For a richer preview of one item."
           }
         }
       }

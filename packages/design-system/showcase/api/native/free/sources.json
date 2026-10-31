@@ -1,0 +1,82 @@
+{
+  "generatedFrom": {
+    "hash": "ed1120d177c48a40",
+    "propsFiles": [
+      "ui/src/native/sources/source-chip.props.ts",
+      "ui/src/native/sources/sources.props.ts"
+    ]
+  },
+  "importLine": "import { Sources } from \"@stackra/ui/native\";",
+  "key": "free/sources",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the list opens or closes.",
+          "name": "onExpandedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isExpanded: boolean) => void"
+        }
+      ],
+      "name": "Sources",
+      "props": [
+        {
+          "description": "The sources, in the order cited.",
+          "name": "sources",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SourceItem[]"
+        },
+        {
+          "description": "The toggle's words. Defaults to the catalogue's \"{count} sources\".",
+          "name": "summary",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True while open, for a controlled list; pair it with `onExpandedChange`.",
+          "name": "isExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to start open, for an uncontrolled list.",
+          "name": "defaultExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SourceChip",
+      "props": [
+        {
+          "description": "The source.",
+          "name": "source",
+          "required": true,
+          "source": "stackra",
+          "type": "SourceItem"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

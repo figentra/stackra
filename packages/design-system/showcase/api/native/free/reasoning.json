@@ -1,0 +1,67 @@
+{
+  "generatedFrom": {
+    "hash": "427d30b7cd5087e6",
+    "propsFiles": ["ui/src/native/reasoning/reasoning.props.ts"]
+  },
+  "importLine": "import { Reasoning } from \"@stackra/ui/native\";",
+  "key": "free/reasoning",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the trace opens or closes.",
+          "name": "onExpandedChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isExpanded: boolean) => void"
+        }
+      ],
+      "name": "Reasoning",
+      "props": [
+        {
+          "description": "The steps, in order.",
+          "name": "steps",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ReasoningStep[]"
+        },
+        {
+          "description": "The trigger's words, such as \"Thought for 4s\". Defaults to \"Thinking…\" while streaming, else \"Reasoning\".",
+          "name": "summary",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True while the reasoning runs: the trigger shimmers.",
+          "name": "isStreaming",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True while open, for a controlled trace; pair it with `onExpandedChange`.",
+          "name": "isExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to start open, for an uncontrolled trace.",
+          "name": "defaultExpanded",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

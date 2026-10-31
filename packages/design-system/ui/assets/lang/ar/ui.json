@@ -216,6 +216,22 @@
     "show": "إظهار المهام",
     "hide": "إخفاء المهام"
   },
+  "scheduler": {
+    "previous": "السابق",
+    "next": "التالي",
+    "today": "اليوم",
+    "view": "العرض",
+    "day": "يوم",
+    "week": "أسبوع",
+    "month": "شهر",
+    "agenda": "قائمة المواعيد",
+    "all_day": "طوال اليوم",
+    "more": "{count, plural, other {# أخرى}}",
+    "no_events": "لا مواعيد",
+    "event": "{title}، {time}",
+    "slot": "موعد جديد، {day}، {time}",
+    "now": "الآن"
+  },
   "recurrence_editor": {
     "label": "التكرار",
     "every": "يتكرر كل",
@@ -393,7 +409,12 @@
     "end": "النهاية",
     "today": "اليوم",
     "region": "المنطقة",
-    "no_data": "لا بيانات"
+    "no_data": "لا بيانات",
+    "download": "تنزيل الرسم البياني",
+    "share": "مشاركة الرسم البياني",
+    "share_png": "مشاركة كصورة",
+    "share_csv": "مشاركة كملف CSV",
+    "word": "الكلمة"
   },
   "data_grid": {
     "changes": "{count, plural, zero {لا تغييرات} one {تغيير واحد لم يُحفظ} two {تغييران لم يُحفظا} few {# تغييرات لم تُحفظ} many {# تغييرًا لم يُحفظ} other {# تغيير لم يُحفظ}}",
@@ -1066,5 +1087,29 @@
   },
   "shimmer": {
     "thinking": "جارٍ التفكير…"
+  },
+  "chat_message": {
+    "user": "أنت",
+    "assistant": "المساعد"
+  },
+  "prompt_input": {
+    "label": "حقل الرسالة",
+    "placeholder": "اسأل عن أي شيء…",
+    "send": "إرسال الرسالة",
+    "stop": "إيقاف الرد"
+  },
+  "reasoning": {
+    "summary": "خطوات التفكير",
+    "steps": "خطوات التفكير"
+  },
+  "sources": {
+    "label": "المصادر",
+    "count": "{count, plural, zero {لا مصادر} one {مصدر واحد} two {مصدران} few {# مصادر} many {# مصدرًا} other {# مصدر}}",
+    "document": "مستند"
+  },
+  "rating": {
+    "label": "التقييم",
+    "star": "{count, plural, zero {لا نجوم} one {نجمة واحدة} two {نجمتان} few {# نجوم} many {# نجمة} other {# نجمة}}",
+    "value": "{value} من {max} نجوم"
   }
 }

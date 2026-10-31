@@ -216,6 +216,22 @@
     "show": "Mostrar tareas",
     "hide": "Ocultar tareas"
   },
+  "scheduler": {
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "today": "Hoy",
+    "view": "Vista",
+    "day": "Día",
+    "week": "Semana",
+    "month": "Mes",
+    "agenda": "Agenda",
+    "all_day": "Todo el día",
+    "more": "{count, plural, other {# más}}",
+    "no_events": "Sin eventos",
+    "event": "{title}, {time}",
+    "slot": "Nuevo evento, {day}, {time}",
+    "now": "Ahora"
+  },
   "recurrence_editor": {
     "label": "Repetir",
     "every": "Repetir cada",
@@ -393,7 +409,12 @@
     "end": "Fin",
     "today": "Hoy",
     "region": "Región",
-    "no_data": "Sin datos"
+    "no_data": "Sin datos",
+    "download": "Descargar gráfico",
+    "share": "Compartir gráfico",
+    "share_png": "Compartir como imagen",
+    "share_csv": "Compartir como CSV",
+    "word": "Palabra"
   },
   "data_grid": {
     "changes": "{count, plural, one {# cambio sin guardar} other {# cambios sin guardar}}",
@@ -1066,5 +1087,29 @@
   },
   "shimmer": {
     "thinking": "Pensando…"
+  },
+  "chat_message": {
+    "user": "Tú",
+    "assistant": "Asistente"
+  },
+  "prompt_input": {
+    "label": "Campo de mensaje",
+    "placeholder": "Pregunta lo que quieras…",
+    "send": "Enviar mensaje",
+    "stop": "Detener respuesta"
+  },
+  "reasoning": {
+    "summary": "Razonamiento",
+    "steps": "Pasos del razonamiento"
+  },
+  "sources": {
+    "label": "Fuentes",
+    "count": "{count, plural, one {# fuente} other {# fuentes}}",
+    "document": "Documento"
+  },
+  "rating": {
+    "label": "Valoración",
+    "star": "{count, plural, one {# estrella} other {# estrellas}}",
+    "value": "{value} de {max} estrellas"
   }
 }

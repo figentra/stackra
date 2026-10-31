@@ -1,0 +1,58 @@
+{
+  "generatedFrom": {
+    "hash": "e4dbbf0dbcd58238",
+    "propsFiles": ["ui/src/native/chart-export/chart-export.props.ts"]
+  },
+  "importLine": "import { ChartExport } from \"@stackra/ui/native\";",
+  "key": "free/chart-export",
+  "parts": [
+    {
+      "name": "ChartExport",
+      "props": [
+        {
+          "description": "The chart to save: any chart of the kit.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The file name without its extension, such as \"sales-october\".",
+          "name": "fileName",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The formats offered, in order; all three by default (native leaves out SVG).",
+          "name": "formats",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"svg\" | \"png\" | \"csv\")[]"
+        },
+        {
+          "description": "The raw numbers the CSV writes. On web the chart's own data table is written when it is left out; native offers\nCSV only with it.",
+          "name": "data",
+          "required": false,
+          "source": "stackra",
+          "type": "WidgetData"
+        },
+        {
+          "description": "The button's accessible name; \"Download chart\" on web and \"Share chart\" on native by default.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

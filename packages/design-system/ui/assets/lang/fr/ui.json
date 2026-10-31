@@ -216,6 +216,22 @@
     "show": "Afficher les tâches",
     "hide": "Masquer les tâches"
   },
+  "scheduler": {
+    "previous": "Précédent",
+    "next": "Suivant",
+    "today": "Aujourd’hui",
+    "view": "Vue",
+    "day": "Jour",
+    "week": "Semaine",
+    "month": "Mois",
+    "agenda": "Agenda",
+    "all_day": "Toute la journée",
+    "more": "{count, plural, other {# de plus}}",
+    "no_events": "Aucun événement",
+    "event": "{title}, {time}",
+    "slot": "Nouvel événement, {day}, {time}",
+    "now": "Maintenant"
+  },
   "recurrence_editor": {
     "label": "Répéter",
     "every": "Répéter tous les",
@@ -393,7 +409,12 @@
     "end": "Fin",
     "today": "Aujourd’hui",
     "region": "Région",
-    "no_data": "Aucune donnée"
+    "no_data": "Aucune donnée",
+    "download": "Télécharger le graphique",
+    "share": "Partager le graphique",
+    "share_png": "Partager en image",
+    "share_csv": "Partager en CSV",
+    "word": "Mot"
   },
   "data_grid": {
     "changes": "{count, plural, one {# modification non enregistrée} other {# modifications non enregistrées}}",
@@ -1066,5 +1087,29 @@
   },
   "shimmer": {
     "thinking": "Réflexion…"
+  },
+  "chat_message": {
+    "user": "Vous",
+    "assistant": "Assistant"
+  },
+  "prompt_input": {
+    "label": "Saisie du message",
+    "placeholder": "Posez votre question…",
+    "send": "Envoyer le message",
+    "stop": "Arrêter la réponse"
+  },
+  "reasoning": {
+    "summary": "Raisonnement",
+    "steps": "Étapes du raisonnement"
+  },
+  "sources": {
+    "label": "Sources",
+    "count": "{count, plural, one {# source} other {# sources}}",
+    "document": "Document"
+  },
+  "rating": {
+    "label": "Note",
+    "star": "{count, plural, one {# étoile} other {# étoiles}}",
+    "value": "{value} sur {max} étoiles"
   }
 }

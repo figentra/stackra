@@ -684,6 +684,15 @@
         "state": "The chart's press state (`useChartPressState`)."
       }
     },
+    "chart_export": {
+      "ChartExport": {
+        "children": "The chart to save: any chart of the kit.",
+        "data": "The raw numbers the CSV writes. On web the chart's own data table is written when it is left out; native offers\nCSV only with it.",
+        "fileName": "The file name without its extension, such as \"sales-october\".",
+        "formats": "The formats offered, in order; all three by default (native leaves out SVG).",
+        "label": "The button's accessible name; \"Download chart\" on web and \"Share chart\" on native by default."
+      }
+    },
     "chart_legend": {
       "ChartLegend": {
         "className": "Extra classes for the legend container.",
@@ -703,6 +712,18 @@
         "label": "The pointed row's category (Recharts).",
         "nameKey": "Names each line from this key of its row instead of its series (one ring or slice per row).",
         "payload": "The pointed row's values (Recharts)."
+      }
+    },
+    "chat_message": {
+      "ChatMessage": {
+        "actions": "The row under the message, usually `MessageActions`.",
+        "attachments": "Files sent with the message, usually `AttachmentCard`s.",
+        "authorLabel": "The author's name read before the message. Defaults to the catalogue's \"You\" or \"Assistant\".",
+        "avatar": "The assistant's avatar, usually an `Avatar`; drawn for the assistant only.",
+        "children": "The message: text, or rendered Markdown, media or a `Reasoning` block.",
+        "className": "Styles the root.",
+        "from": "Who wrote it: `user` draws a bubble at the reading end, `assistant` an unboxed body beside the avatar.",
+        "isLoading": "True while the assistant has not written yet: a \"Thinking…\" shimmer stands in for the text."
       }
     },
     "checkbox": {
@@ -871,6 +892,16 @@
         "variant": "The emphasis of the chip: filled, neutral, transparent or tinted. Defaults to `secondary`."
       }
     },
+    "chord_diagram": {
+      "ChordDiagram": {
+        "label": "The chart's accessible name and the data table's caption, such as \"Moves between plans\".",
+        "links": "The flows, each from one group to another; a group's arc is as long as all that leaves and reaches it.",
+        "nodes": "The groups round the circle, clockwise from the top.",
+        "palette": "`accent` steps (the default) or the `categorical` set, by group position.",
+        "size": "The square plot's side in pixels; 320 by default.",
+        "valueFormat": "How values are written; plain numbers in the locale by default."
+      }
+    },
     "choropleth_map": {
       "ChoroplethMap": {
         "color": "The colour the five shades are made from; the first accent step by default.",
@@ -949,6 +980,12 @@
         "onFinish": "Called once when the tour closes: `done` after the last step, `skipped` before it.",
         "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
         "steps": "The stops, in order; each target must be mounted and on screen while its step shows."
+      }
+    },
+    "code": {
+      "Code": {
+        "children": "The code, as text.",
+        "className": "Styles the element."
       }
     },
     "code_block": {
@@ -2692,6 +2729,19 @@
         "variant": "The emphasis and colour of the button. Defaults to `primary`."
       }
     },
+    "image": {
+      "Image": {
+        "alt": "The accessible name; without it the thumbnail is decorative and hidden from assistive technology.",
+        "aspectRatio": "Width over height; defaults to 16 / 9.",
+        "caption": "A line under the picture.",
+        "className": "Styles the root.",
+        "fallback": "The icon drawn with no image or a broken one. Defaults to the image icon, or the broken-image icon after an error.",
+        "fit": "`cover` crops to fill the box, `contain` letterboxes the whole image. Defaults to `cover`.",
+        "isZoomable": "True to open the picture full size in the Lightbox on a press; needs `src` and `alt`.",
+        "placeholderSrc": "A tiny image (a few pixels wide) drawn blurred until `src` loads, then faded out.",
+        "src": "The image URL; the fallback icon shows while it is missing or after it fails to load."
+      }
+    },
     "image_cropper": {
       "ImageCropper": {
         "aspectRatio": "The frame's width over its height. Defaults to 1, a square.",
@@ -3671,6 +3721,16 @@
         "label": "The landmark's name; defaults to the catalogue's \"Main navigation\". Name it when a page has two."
       }
     },
+    "network_graph": {
+      "NetworkGraph": {
+        "height": "The plot's height in pixels; 320 by default.",
+        "label": "The chart's accessible name and the data table's caption, such as \"Who works with whom\".",
+        "links": "The links; links to unknown nodes are left out.",
+        "nodes": "The nodes.",
+        "palette": "`accent` steps (the default) or the `categorical` set, by group or node position.",
+        "valueFormat": "How values are written; plain numbers in the locale by default."
+      }
+    },
     "notifications_panel": {
       "NotificationRow": {
         "dismissLabel": "The accessible name of the dismiss button.",
@@ -4285,6 +4345,25 @@
         "valueLabel": "The spoken text of the value, for example \"3 of 12 files\", in place of the percentage. Left out, the percentage\nin the reader's locale is spoken. It is the shown text too when a bar's value is visible."
       }
     },
+    "prompt_input": {
+      "PromptInput": {
+        "attachments": "The files attached so far, usually `AttachmentCard`s, drawn above the text.",
+        "className": "Styles the root.",
+        "defaultValue": "The starting text of an uncontrolled composer.",
+        "endActions": "The toolbar's end group, before the send button, such as a `VoiceInput`.",
+        "footer": "A muted line under the composer, such as \"Answers can be wrong; check important facts.\"",
+        "isDisabled": "True to refuse typing and sending.",
+        "label": "The box's accessible name. Defaults to the catalogue's \"Message input\".",
+        "onFilesDrop": "Called with the files dropped on the composer; set it to accept drops (the border turns dashed while dragging).",
+        "onStop": "Called by the button while `streaming`, to stop the reply.",
+        "onSubmit": "Called with the trimmed text on send (the button, or Enter on web); an uncontrolled composer then clears.",
+        "onValueChange": "Called with the text on each change.",
+        "placeholder": "The hint in the empty box. Defaults to the catalogue's \"Ask anything…\".",
+        "startActions": "The toolbar's start group, such as an attach button and a `ModelPicker`.",
+        "status": "The run state: `ready` (the default), `submitted`, `streaming` or `error`. The text is locked while it runs.",
+        "value": "The text, for a controlled composer; pair it with `onValueChange`."
+      }
+    },
     "prompt_suggestions": {
       "PromptSuggestions": {
         "className": "Styles the set.",
@@ -4497,6 +4576,26 @@
         "value": "The current value, for a controlled field; pair it with `onChange`."
       }
     },
+    "rating": {
+      "Rating": {
+        "className": "Styles the root.",
+        "defaultValue": "The starting value, for an uncontrolled field.",
+        "description": "Help text under the field, tied to it for assistive technology.",
+        "errorMessage": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+        "icon": "The icon drawn for each star, filled with the current colour; defaults to `star`.",
+        "isClearable": "True to let a press on the chosen star, or Delete, clear the rating back to 0.",
+        "isDisabled": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+        "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+        "isReadOnly": "True to show the value as one image, fractions included; it is not focused or submitted.",
+        "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+        "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+        "maxValue": "How many stars; defaults to 5.",
+        "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
+        "onChange": "Called with the new value each time the user changes it.",
+        "size": "The star size: `sm` 16, `md` 20, `lg` 24 points. Defaults to `md`.",
+        "value": "The current value, for a controlled field; pair it with `onChange`."
+      }
+    },
     "reaction_button": {
       "ReactionButton": {
         "className": "Styles the root.",
@@ -4507,6 +4606,17 @@
         "isSelected": "True when the user has reacted; set it to control the state (the count is then shown as given).",
         "label": "The emoji's name, read with the count (for example \"thumbs up\").",
         "onChange": "Called with the new state when pressed."
+      }
+    },
+    "reasoning": {
+      "Reasoning": {
+        "className": "Styles the root.",
+        "defaultExpanded": "True to start open, for an uncontrolled trace.",
+        "isExpanded": "True while open, for a controlled trace; pair it with `onExpandedChange`.",
+        "isStreaming": "True while the reasoning runs: the trigger shimmers.",
+        "onExpandedChange": "Called with the new state each time the trace opens or closes.",
+        "steps": "The steps, in order.",
+        "summary": "The trigger's words, such as \"Thought for 4s\". Defaults to \"Thinking…\" while streaming, else \"Reasoning\"."
       }
     },
     "recurrence_editor": {
@@ -4639,6 +4749,32 @@
         "xLabel": "What the horizontal number is, such as \"Price\": the axis title and the data table's header.",
         "yKey": "The key of each point's vertical number.",
         "yLabel": "What the vertical number is, such as \"Units sold\"."
+      }
+    },
+    "scheduler": {
+      "Scheduler": {
+        "EventChip": {
+          "event": "The event.",
+          "isCompact": "True for a one-line chip (month and all-day rows).",
+          "onPress": "Called on a press; without it the chip is not a button.",
+          "state": "The shared state, for the event's time and name.",
+          "style": "Places a timed chip in its day column."
+        },
+        "className": "Styles the root.",
+        "date": "The day the view holds, for a controlled scheduler.",
+        "defaultDate": "The starting day, for an uncontrolled one; today by default.",
+        "defaultView": "The starting view, for an uncontrolled one; `week` by default.",
+        "endHour": "The hour the time grid ends at, 1 to 24; 24 by default.",
+        "events": "The events to place.",
+        "label": "The spoken name of the scheduler, for example \"Clinic bookings\".",
+        "now": "The moment taken as now, for the current-time line and Today; the clock at mount by default.",
+        "onDateChange": "Called with the day the view holds after previous, next, Today or a press on a date.",
+        "onEventPress": "Called when an event is pressed.",
+        "onSlotPress": "Makes each empty hour of the day and week views a button; called with the start of the hour pressed.",
+        "onViewChange": "Called with each view chosen.",
+        "startHour": "The first hour of the time grid, 0 to 23; 0 by default.",
+        "timeZone": "The IANA time zone the events are read in; the device's by default.",
+        "view": "The view, for a controlled scheduler."
       }
     },
     "screen": {
@@ -5371,6 +5507,20 @@
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
         "testID": "Used to locate this view in end-to-end tests."
+      }
+    },
+    "sources": {
+      "SourceChip": {
+        "className": "Styles the root.",
+        "source": "The source."
+      },
+      "Sources": {
+        "className": "Styles the root.",
+        "defaultExpanded": "True to start open, for an uncontrolled list.",
+        "isExpanded": "True while open, for a controlled list; pair it with `onExpandedChange`.",
+        "onExpandedChange": "Called with the new state each time the list opens or closes.",
+        "sources": "The sources, in the order cited.",
+        "summary": "The toggle's words. Defaults to the catalogue's \"{count} sources\"."
       }
     },
     "sparkline": {
@@ -6310,6 +6460,15 @@
         "value": "The current value, for a controlled field; pair it with `onChange`."
       }
     },
+    "tree_diagram": {
+      "TreeDiagram": {
+        "height": "The plot's height in pixels; 28 per leaf by default.",
+        "items": "The top nodes; usually one root.",
+        "label": "The chart's accessible name and the data table's caption, such as \"Teams and their leads\".",
+        "palette": "`accent` steps (the default) or the `categorical` set, by branch position.",
+        "valueFormat": "How values are written; plain numbers in the locale by default."
+      }
+    },
     "tree_select": {
       "TreeSelect": {
         "accessibilityLabel": "The field's name for assistive technology when it has no string `label`.",
@@ -6524,6 +6683,15 @@
         "title": "The widget's title; it also names the region.",
         "updatedAt": "When the data was fetched: the header reads \"Updated 2 min ago\" in the locale and keeps it current.",
         "variant": "`card` (the default) draws one surface; `tray` puts the title and meta on the theme's tray (`--tray`) and the\nbody on an inset card, the way lists and tables sit (ADR 0501)."
+      }
+    },
+    "word_cloud": {
+      "WordCloud": {
+        "height": "The plot's height in pixels; 260 by default.",
+        "label": "The chart's accessible name and the data table's caption, such as \"What customers mention\".",
+        "palette": "`accent` steps (the default) or the `categorical` set, by weight order.",
+        "valueFormat": "How weights are written; plain numbers in the locale by default.",
+        "words": "The words with their weights."
       }
     },
     "year_picker": {

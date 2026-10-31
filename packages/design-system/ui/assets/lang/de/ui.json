@@ -216,6 +216,22 @@
     "show": "Aufgaben anzeigen",
     "hide": "Aufgaben ausblenden"
   },
+  "scheduler": {
+    "previous": "Zurück",
+    "next": "Weiter",
+    "today": "Heute",
+    "view": "Ansicht",
+    "day": "Tag",
+    "week": "Woche",
+    "month": "Monat",
+    "agenda": "Agenda",
+    "all_day": "Ganztägig",
+    "more": "{count, plural, other {# weitere}}",
+    "no_events": "Keine Termine",
+    "event": "{title}, {time}",
+    "slot": "Neuer Termin, {day}, {time}",
+    "now": "Jetzt"
+  },
   "recurrence_editor": {
     "label": "Wiederholen",
     "every": "Wiederholen alle",
@@ -393,7 +409,12 @@
     "end": "Ende",
     "today": "Heute",
     "region": "Region",
-    "no_data": "Keine Daten"
+    "no_data": "Keine Daten",
+    "download": "Diagramm herunterladen",
+    "share": "Diagramm teilen",
+    "share_png": "Als Bild teilen",
+    "share_csv": "Als CSV teilen",
+    "word": "Wort"
   },
   "data_grid": {
     "changes": "{count, plural, one {# ungespeicherte Änderung} other {# ungespeicherte Änderungen}}",
@@ -1066,5 +1087,29 @@
   },
   "shimmer": {
     "thinking": "Denkt nach…"
+  },
+  "chat_message": {
+    "user": "Du",
+    "assistant": "Assistent"
+  },
+  "prompt_input": {
+    "label": "Nachrichteneingabe",
+    "placeholder": "Frag mich etwas…",
+    "send": "Nachricht senden",
+    "stop": "Antwort stoppen"
+  },
+  "reasoning": {
+    "summary": "Gedankengang",
+    "steps": "Denkschritte"
+  },
+  "sources": {
+    "label": "Quellen",
+    "count": "{count, plural, one {# Quelle} other {# Quellen}}",
+    "document": "Dokument"
+  },
+  "rating": {
+    "label": "Bewertung",
+    "star": "{count, plural, one {# Stern} other {# Sterne}}",
+    "value": "{value} von {max} Sternen"
   }
 }

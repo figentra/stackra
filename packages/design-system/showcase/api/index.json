@@ -208,6 +208,12 @@
     "partsCount": 1,
     "propsCount": 7
   },
+  "free/chart-export": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
   "free/chart-legend": {
     "native": true,
     "partsCount": 1,
@@ -217,6 +223,12 @@
   "free/chart-tooltip": {
     "partsCount": 1,
     "propsCount": 7,
+    "react": true
+  },
+  "free/chat-message": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 8,
     "react": true
   },
   "free/checkbox": {
@@ -248,6 +260,12 @@
     "propsCount": 24,
     "react": true
   },
+  "free/chord-diagram": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
   "free/choropleth-map": {
     "native": true,
     "partsCount": 1,
@@ -264,6 +282,12 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 5,
+    "react": true
+  },
+  "free/code": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 2,
     "react": true
   },
   "free/code-block": {
@@ -656,6 +680,12 @@
     "propsCount": 49,
     "react": true
   },
+  "free/image": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 9,
+    "react": true
+  },
   "free/image-cropper": {
     "native": true,
     "partsCount": 1,
@@ -900,6 +930,12 @@
     "propsCount": 4,
     "react": true
   },
+  "free/network-graph": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
+    "react": true
+  },
   "free/notifications-panel": {
     "native": true,
     "partsCount": 2,
@@ -1044,6 +1080,12 @@
     "propsCount": 20,
     "react": true
   },
+  "free/prompt-input": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 15,
+    "react": true
+  },
   "free/prompt-suggestions": {
     "native": true,
     "partsCount": 1,
@@ -1121,10 +1163,22 @@
     "propsCount": 16,
     "react": true
   },
+  "free/rating": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 16,
+    "react": true
+  },
   "free/reaction-button": {
     "native": true,
     "partsCount": 1,
     "propsCount": 8,
+    "react": true
+  },
+  "free/reasoning": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 7,
     "react": true
   },
   "free/recurrence-editor": {
@@ -1184,6 +1238,12 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 18,
+    "react": true
+  },
+  "free/scheduler": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 20,
     "react": true
   },
   "free/screen": {
@@ -1316,6 +1376,12 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 33,
+    "react": true
+  },
+  "free/sources": {
+    "native": true,
+    "partsCount": 2,
+    "propsCount": 8,
     "react": true
   },
   "free/sparkline": {
@@ -1559,6 +1625,12 @@
     "propsCount": 15,
     "react": true
   },
+  "free/tree-diagram": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
+    "react": true
+  },
   "free/tree-select": {
     "native": true,
     "partsCount": 1,
@@ -1640,6 +1712,12 @@
     "native": true,
     "partsCount": 1,
     "propsCount": 23,
+    "react": true
+  },
+  "free/word-cloud": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 6,
     "react": true
   },
   "free/year-picker": {

@@ -339,6 +339,11 @@
       "file": "src/routes/cascader/cascader.route.ts"
     },
     {
+      "key": "chart_export",
+      "class": "ChartExportRoute",
+      "file": "src/routes/chart-export/chart-export.route.ts"
+    },
+    {
       "key": "chart_legend",
       "class": "ChartLegendRoute",
       "file": "src/routes/chart-legend/chart-legend.route.ts"
@@ -347,6 +352,11 @@
       "key": "chart_tooltip",
       "class": "ChartTooltipRoute",
       "file": "src/routes/chart-tooltip/chart-tooltip.route.ts"
+    },
+    {
+      "key": "chat_message",
+      "class": "ChatMessageRoute",
+      "file": "src/routes/chat-message/chat-message.route.ts"
     },
     {
       "key": "checkbox_button_group",
@@ -374,6 +384,11 @@
       "file": "src/routes/chip/chip.route.ts"
     },
     {
+      "key": "chord_diagram",
+      "class": "ChordDiagramRoute",
+      "file": "src/routes/chord-diagram/chord-diagram.route.ts"
+    },
+    {
       "key": "choropleth_map",
       "class": "ChoroplethMapRoute",
       "file": "src/routes/choropleth-map/choropleth-map.route.ts"
@@ -392,6 +407,11 @@
       "key": "code_block",
       "class": "CodeBlockRoute",
       "file": "src/routes/code-block/code-block.route.ts"
+    },
+    {
+      "key": "code",
+      "class": "CodeRoute",
+      "file": "src/routes/code/code.route.ts"
     },
     {
       "key": "collection_engine",
@@ -709,6 +729,11 @@
       "file": "src/routes/image-cropper/image-cropper.route.ts"
     },
     {
+      "key": "image",
+      "class": "ImageRoute",
+      "file": "src/routes/image/image.route.ts"
+    },
+    {
       "key": "import_dialog",
       "class": "ImportDialogRoute",
       "file": "src/routes/import-dialog/import-dialog.route.ts"
@@ -899,6 +924,11 @@
       "file": "src/routes/navigation-menu/navigation-menu.route.ts"
     },
     {
+      "key": "network_graph",
+      "class": "NetworkGraphRoute",
+      "file": "src/routes/network-graph/network-graph.route.ts"
+    },
+    {
       "key": "notifications_panel",
       "class": "NotificationsPanelRoute",
       "file": "src/routes/notifications-panel/notifications-panel.route.ts"
@@ -1019,6 +1049,11 @@
       "file": "src/routes/progress-circle/progress-circle.route.ts"
     },
     {
+      "key": "prompt_input",
+      "class": "PromptInputRoute",
+      "file": "src/routes/prompt-input/prompt-input.route.ts"
+    },
+    {
       "key": "prompt_suggestions",
       "class": "PromptSuggestionsRoute",
       "file": "src/routes/prompt-suggestions/prompt-suggestions.route.ts"
@@ -1079,9 +1114,19 @@
       "file": "src/routes/range-slider/range-slider.route.ts"
     },
     {
+      "key": "rating",
+      "class": "RatingRoute",
+      "file": "src/routes/rating/rating.route.ts"
+    },
+    {
       "key": "reaction_button",
       "class": "ReactionButtonRoute",
       "file": "src/routes/reaction-button/reaction-button.route.ts"
+    },
+    {
+      "key": "reasoning",
+      "class": "ReasoningRoute",
+      "file": "src/routes/reasoning/reasoning.route.ts"
     },
     {
       "key": "recurrence_editor",
@@ -1122,6 +1167,11 @@
       "key": "scatter_chart",
       "class": "ScatterChartRoute",
       "file": "src/routes/scatter-chart/scatter-chart.route.ts"
+    },
+    {
+      "key": "scheduler",
+      "class": "SchedulerRoute",
+      "file": "src/routes/scheduler/scheduler.route.ts"
     },
     {
       "key": "screen",
@@ -1222,6 +1272,11 @@
       "key": "sortable_list",
       "class": "SortableListRoute",
       "file": "src/routes/sortable-list/sortable-list.route.ts"
+    },
+    {
+      "key": "sources",
+      "class": "SourcesRoute",
+      "file": "src/routes/sources/sources.route.ts"
     },
     {
       "key": "sparkline",
@@ -1404,6 +1459,11 @@
       "file": "src/routes/transfer-list/transfer-list.route.ts"
     },
     {
+      "key": "tree_diagram",
+      "class": "TreeDiagramRoute",
+      "file": "src/routes/tree-diagram/tree-diagram.route.ts"
+    },
+    {
       "key": "tree_select",
       "class": "TreeSelectRoute",
       "file": "src/routes/tree-select/tree-select.route.ts"
@@ -1482,6 +1542,11 @@
       "key": "widget_frame",
       "class": "WidgetFrameRoute",
       "file": "src/routes/widget-frame/widget-frame.route.ts"
+    },
+    {
+      "key": "word_cloud",
+      "class": "WordCloudRoute",
+      "file": "src/routes/word-cloud/word-cloud.route.ts"
     },
     {
       "key": "year_picker",
