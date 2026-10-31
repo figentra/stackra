@@ -69,6 +69,7 @@ test("every category and entry carries a reason and an ADR", () => {
 
 test("categoryOf reads packages/<category>/<name> and packages/tooling/<name>", () => {
   assert.equal(categoryOf("packages/cross-cutting/brand"), "cross-cutting");
+  assert.equal(categoryOf("packages/connectors/stripe"), "connectors");
   assert.equal(categoryOf("packages/design-system/tokens"), "design-system");
   assert.equal(categoryOf("packages/tooling/oxlint"), "tooling");
   assert.equal(categoryOf("packages/nope/x"), null);

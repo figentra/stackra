@@ -265,3 +265,11 @@ recorded with the package-map changes (pwa and network move into platform, route
 templates package). Mail code renders mail through `@stackra/mail`. Forms and notifications are settled in decision 12 of
 [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels). The row keeps webhooks,
 versioning, integrations and mail.
+
+## Amendment 2026-10-31: the `connectors` category (STA-1719)
+
+A product puts each provider's connector in its own package, `packages/connectors/<provider>` (Figentra Pay first, then
+the OS for the non-payment providers). `connectors` is a package category, tier `lib`: one provider per package, holding
+that provider's `Integration` and `Connection` classes (ADR 0308) and nothing a second provider shares. Shared
+integration code stays in `communication` (`@stackra/integrations`). `CATEGORIES` in `@stackra/repo-checks`,
+`StackraCategory` in `@stackra/skills`, the scaffold, the registry browser and the structure page list it.

@@ -47,6 +47,7 @@ describe("@stackra/skills/contracts", () => {
       "application",
       "commerce",
       "communication",
+      "connectors",
       "cross-cutting",
       "data",
       "design-system",

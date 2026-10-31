@@ -20,6 +20,7 @@ stackra/
 │   ├── application/        # Actions, AI, IR, registry
 │   ├── commerce/           # Money, ledger and pricing primitives
 │   ├── communication/      # Webhooks, versioning, integrations, notifications
+│   ├── connectors/         # One provider's Integration and Connection classes per package
 │   ├── cross-cutting/      # Concerns that span layers
 │   ├── data/               # Model, database, content, media, search, state machine, assets, filesystem, storage
 │   ├── design-system/      # Stackra Design System: tokens, ui, icons

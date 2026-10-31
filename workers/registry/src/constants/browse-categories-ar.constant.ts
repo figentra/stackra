@@ -11,6 +11,7 @@ export const BROWSE_CATEGORIES_AR: Readonly<Record<string, string>> = {
   application: "التطبيق",
   commerce: "التجارة",
   communication: "الاتصال",
+  connectors: "الموصلات",
   "cross-cutting": "الاهتمامات المشتركة",
   data: "البيانات",
   "design-system": "نظام التصميم",
