@@ -1053,13 +1053,14 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
   /**
    * Runs `work`, a step's or an undo's, in the bound `CallIsolation` as the run's stored actor in its scope (ADR 0495),
    * inside the transaction the journal opened (so the settings end with the step's commit); with none bound it runs as
-   * it is, in the journal's scope session alone. A run stores its starting call's actor in `origin.actor`.
+   * it is, in the journal's scope session alone. A run stores its starting call's actor in `origin.actor`, and the
+   * scope its steps read (`ctx.scope`) in `origin.scope`: the call's, or the session's when the call had none.
    */
   private isolated<T>(run: WorkflowRun, work: () => Promise<T>): Promise<T> {
     const isolation = this.optional(CallIsolation);
     return isolation === undefined
       ? work()
-      : isolation.run(run.origin.actor, run.scope, work, { readOnly: false });
+      : isolation.run(run.origin.actor, run.origin.scope ?? run.scope, work, { readOnly: false });
   }
 
   /** Runs `work` as the running call of `ctx`, so `RequestContext.current()` inside a step reads it. */
