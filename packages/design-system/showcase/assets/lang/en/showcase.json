@@ -1608,6 +1608,11 @@
         "title": "Sources",
         "description": "An answer's citations as small chips, behind a \"3 sources\" toggle.",
         "keywords": "ai, sources, citations, references"
+      },
+      "rich_text_editor": {
+        "title": "Rich text editor",
+        "description": "A document field with a formatting toolbar, on TipTap; packages add actions and panels through contributions.",
+        "keywords": "rich text, editor, wysiwyg, formatting, document, description"
       }
     }
   },
@@ -5019,6 +5024,23 @@
         "chips": {
           "title": "Inline chips"
         }
+      },
+      "rich_text_editor": {
+        "basic": {
+          "title": "Product description"
+        },
+        "controlled": {
+          "title": "Controlled value"
+        },
+        "read_only": {
+          "title": "Read-only article"
+        },
+        "arabic": {
+          "title": "Arabic text"
+        },
+        "contributions": {
+          "title": "Contributed action and panel"
+        }
       }
     }
   },
@@ -8412,6 +8434,23 @@
           "alternative": {
             "link": "For a link in running text.",
             "hover_card": "For a richer preview of one item."
+          }
+        },
+        "rich_text_editor": {
+          "headline": "Write it once, format it well.",
+          "intro": "Headings, lists, quotes, code and links from one toolbar, stored as document JSON or HTML. Packages add their own actions and panels, such as AI writing or SEO, without forking the editor. On mobile the same TipTap engine runs in a WebView (tentap), so a document written on the web opens and saves unchanged on the phone.",
+          "tags": "Formatting · Contributions · Bidi",
+          "what": "A labelled document field with a formatting toolbar.",
+          "when": "Use it for product descriptions, articles, help pages and email bodies.",
+          "rtl": "Every paragraph takes its direction from its own text, so Arabic and English lines each start at their own edge, and the toolbar's arrow keys follow the reading direction.",
+          "when_not": "For a short plain note; use a text area.",
+          "do_1": "Set a character limit where the text is shown in a fixed space.",
+          "do_2": "Register AI and SEO helpers as contributions for the document kinds that need them.",
+          "dont_1": "Do not store HTML when the value feeds other blocks; keep the JSON.",
+          "dont_2": "Do not paste markup into the value without the editor's parsing.",
+          "alternative": {
+            "text_area": "For plain text with no formatting.",
+            "code_block": "For showing code, not editing a document."
           }
         }
       }

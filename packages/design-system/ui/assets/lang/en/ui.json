@@ -1121,5 +1121,26 @@
     "label": "Rating",
     "star": "{count, plural, one {# star} other {# stars}}",
     "value": "{value} out of {max} stars"
+  },
+  "rich_text_editor": {
+    "toolbar": "Formatting",
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "strike": "Strikethrough",
+    "heading": "Heading {level, number}",
+    "bullet_list": "Bulleted list",
+    "ordered_list": "Numbered list",
+    "blockquote": "Quote",
+    "code": "Code",
+    "link": "Link",
+    "link_address": "Link address",
+    "link_apply": "Apply",
+    "link_remove": "Remove link",
+    "undo": "Undo",
+    "redo": "Redo",
+    "count": "{count, plural, one {# character} other {# characters}}",
+    "count_limit": "{count, number} / {limit, number}",
+    "unsupported": "This document has formatting the mobile editor can't change. Edit it on the web."
   }
 }

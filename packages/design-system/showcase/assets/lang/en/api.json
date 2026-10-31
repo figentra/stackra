@@ -4615,6 +4615,30 @@
         "testID": "Used to locate this view in end-to-end tests."
       }
     },
+    "rich_text_editor": {
+      "RichTextEditor": {
+        "accessibilityLabel": "The field's name for assistive technology when it has no string `label`.",
+        "aria-label": "The editor's name for assistive technology when it has no visible `label`.",
+        "characterLimit": "The most characters the document may hold; typing past it is refused and the count shows it.",
+        "className": "Styles the root.",
+        "contributions": "Editor contributions; those whose `kinds` leave out `documentKind` are skipped. Keep their ids stable.",
+        "defaultValue": "The starting value, for an uncontrolled field.",
+        "description": "Help text under the field, tied to it for assistive technology.",
+        "documentKind": "The kind of document being edited, matched against each contribution's `kinds`.",
+        "errorMessage": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
+        "format": "The form `onChange` reports and a form submits: the document JSON (default) or its HTML.",
+        "hasCharacterCount": "True to show the character count under the editor; it always shows when `characterLimit` is set.",
+        "isDisabled": "True to refuse input and show the disabled style; the field leaves the tab order and is left out of the submit.",
+        "isInvalid": "True to show the error state; the field alone never decides, so a form adapter sets it from its validation.",
+        "isReadOnly": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
+        "isRequired": "True when the form cannot be submitted without a value; the label shows it and assistive technology is told.",
+        "label": "The visible label; it is the field's accessible name, so a field without one needs the runtime's own name prop.",
+        "name": "The name the value is submitted under in a form, and the key a form adapter binds.",
+        "onChange": "Called with the new value each time the user changes it.",
+        "placeholder": "Hint text inside the empty editor.",
+        "value": "The current value, for a controlled field; pair it with `onChange`."
+      }
+    },
     "route_progress": {
       "RouteProgress": {
         "isFixed": "True, the default, to pin the bar to the top of the viewport; false pins it to the nearest positioned parent.",

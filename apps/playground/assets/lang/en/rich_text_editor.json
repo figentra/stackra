@@ -1,0 +1,34 @@
+{
+  "basic": {
+    "label": "Product description",
+    "placeholder": "Describe the fabric, the fit and how to care for it…",
+    "description": "Shown on the product page. Use headings and lists to make it easy to scan."
+  },
+  "controlled": {
+    "label": "Shipping note",
+    "heading": "Delivery in Riyadh",
+    "body": "Orders placed before 2 pm arrive the same day.",
+    "reset": "Reset",
+    "output": "HTML the editor reports"
+  },
+  "read_only": {
+    "label": "Help article",
+    "heading": "Return an item",
+    "body": "You can return most items within 14 days of delivery.",
+    "item_1": "Open the order and choose Return.",
+    "item_2": "Pack the item and hand it to the courier."
+  },
+  "arabic": {
+    "label": "وصف المنتج",
+    "placeholder": "صِف القماش والمقاس وطريقة العناية…",
+    "heading": "عباية كتان صيفية",
+    "body": "كتان خفيف يناسب أيام الصيف، بقصّة واسعة وأكمام مريحة. Machine wash at 30°C."
+  },
+  "contributions": {
+    "label": "Blog post",
+    "sample": "Our new  summer collection  arrives this week, with  linen in six colours.",
+    "tidy": "Tidy spacing",
+    "words": "{count, plural, one {# word} other {# words}}",
+    "reading": "{minutes, plural, one {# minute read} other {# minutes read}}"
+  }
+}

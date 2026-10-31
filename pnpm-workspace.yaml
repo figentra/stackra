@@ -153,6 +153,13 @@ catalogs:
     motion: 12.43.0
     # Free charts of @stackra/ui/react (a dev dependency there, a peer for apps) and the playground. MIT.
     recharts: 3.10.1
+    # @stackra/ui/react's RichTextEditor (ADR 0466, owner-approved 2026-10-31): TipTap v3 open-source packages only, all
+    # MIT, never @tiptap-pro; 3.32.0 (2026-10-13), the newest release at least two weeks old. Keep the five equal.
+    "@tiptap/core": 3.32.0
+    "@tiptap/pm": 3.32.0
+    "@tiptap/react": 3.32.0
+    "@tiptap/starter-kit": 3.32.0
+    "@tiptap/extensions": 3.32.0
     # Icons for @stackra/ui/react's Icon (ADR 0303 decision 3, owner-approved 2026-10-23); ISC licence.
     lucide-react: 1.54.0
     # Form state for @stackra/ui FormField (ADR 0055, accepted by ADR 0303); newest release at least 14 days old.
@@ -236,6 +243,10 @@ catalogs:
     expo-image-picker: 57.0.20
     # @stackra/ui's native MediaPlayer (owner approval 2026-10-30, STA-1371): Expo SDK 57's bundled version. MIT.
     expo-video: 57.0.5
+    # @stackra/ui's native RichTextEditor (owner approval 2026-10-31, STA-1371, ADR 0466 decision 1). MIT. tentap 1.0.1
+    # (1.1.0 is under two weeks old) runs TipTap v3 in a WebView; react-native-webview at Expo SDK 57's bundled version.
+    "@10play/tentap-editor": 1.0.1
+    react-native-webview: 13.16.1
     expo-font: 57.0.4
     babel-preset-expo: 57.0.16
     react: 19.2.3
@@ -367,6 +378,10 @@ overrides:
   # which 11.1.1 still ships.
   "uuid@<11.1.1": "11.1.1"
   "zod@>=4.0.0 <4.6.6": "4.6.6"
+  # One ProseMirror model for TipTap (catalog:frontend): @mintlify/cli pins prosemirror-model 1.25.4, and pnpm linked
+  # the prosemirror-* packages TipTap's @tiptap/pm brings to that copy while @tiptap/pm took 1.25.12, so splitting and
+  # wrapping nodes threw "multiple versions of prosemirror-model". Same minor, so Mintlify takes the patch.
+  "prosemirror-model@<1.25.12": "1.25.12"
 
 # Dependencies a published package uses without declaring.
 packageExtensions:

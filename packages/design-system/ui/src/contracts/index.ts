@@ -290,6 +290,8 @@ export type { TreeViewDropTarget } from "#contracts/types/tree-view-drop-target.
 export type { TreeSelectContractProps } from "#contracts/types/tree-select-contract-props.type";
 export type { MaskedFieldContractProps } from "#contracts/types/masked-field-contract-props.type";
 export type { MentionInputContractProps } from "#contracts/types/mention-input-contract-props.type";
+export type { RichTextEditorContractProps } from "#contracts/types/rich-text-editor-contract-props.type";
+export type { RichTextNode } from "#contracts/types/rich-text-node.type";
 export type { TwoColumnLayoutContractProps } from "#contracts/types/two-column-layout-contract-props.type";
 export { Space } from "#contracts/enums/space.enum";
 export type { StackContractProps } from "#contracts/types/stack-contract-props.type";

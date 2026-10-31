@@ -70,3 +70,21 @@ Lexical, BlockNote (built on TipTap; parts GPL or commercial), Plate (Slate) and
 - Planned: gen refuses a contribution whose node has no serialiser.
 - Planned: `FORBIDDEN_DEPENDENCIES` adds `@tiptap-pro/*`.
 - Planned: a schema round-trip test in `@stackra/builder` covers JSON ↔ Markdown ↔ MDX on an Arabic fixture.
+
+## Amendment 2026-10-31: the native editor is tentap (STA-1371)
+
+**Context.** Decision 1 named "a TipTap-based React Native editor (10tap class)" for native. The owner approved
+`@10play/tentap-editor` and `react-native-webview` on 2026-10-31 (MIT, MIT-licensed packages only, no TipTap Pro).
+
+**Decision.**
+
+1. `@stackra/ui/native`'s `RichTextEditor` runs on `@10play/tentap-editor` 1.0.1 with `react-native-webview` at Expo SDK
+   57's bundled version (`catalog:mobile`). Both are optional peers of `@stackra/ui`.
+2. tentap ships its own prebuilt TipTap v3 editor inside the WebView page (its TenTapStartKit schema), isolated from the
+   app's JavaScript and from the web editor's `catalog:frontend` TipTap. Its schema has no code block, horizontal rule,
+   `dir` attribute or CharacterCount, so the wrapper strips `dir` on the way in and writes `dir: "auto"` back on every
+   block on the way out (the web JSON shape, so documents round-trip), counts characters itself and puts back a change
+   past the limit, and keeps a value with nodes the native schema lacks read-only, shown as its text.
+3. Bidi on native is CSS inside the page (`unicode-bidi: plaintext` per block, the page's base direction from the app),
+   not `dir` attributes. Editor contributions stay web-only until `@stackra/builder` builds its own tentap web bundle
+   with the shared schema (tentap's `customSource`).

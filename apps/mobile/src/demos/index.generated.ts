@@ -969,6 +969,14 @@ import FreeRevealOff from "#src/demos/free/reveal/off";
 import FreeRevealOffCode from "#src/demos/free/reveal/off.code";
 import FreeRevealInside from "#src/demos/free/reveal/inside";
 import FreeRevealInsideCode from "#src/demos/free/reveal/inside.code";
+import FreeRichTextEditorBasic from "#src/demos/free/rich-text-editor/basic";
+import FreeRichTextEditorBasicCode from "#src/demos/free/rich-text-editor/basic.code";
+import FreeRichTextEditorControlled from "#src/demos/free/rich-text-editor/controlled";
+import FreeRichTextEditorControlledCode from "#src/demos/free/rich-text-editor/controlled.code";
+import FreeRichTextEditorReadOnly from "#src/demos/free/rich-text-editor/read-only";
+import FreeRichTextEditorReadOnlyCode from "#src/demos/free/rich-text-editor/read-only.code";
+import FreeRichTextEditorArabic from "#src/demos/free/rich-text-editor/arabic";
+import FreeRichTextEditorArabicCode from "#src/demos/free/rich-text-editor/arabic.code";
 import FreeRouteProgressNavigation from "#src/demos/free/route-progress/navigation";
 import FreeRouteProgressNavigationCode from "#src/demos/free/route-progress/navigation.code";
 import FreeRouteProgressPages from "#src/demos/free/route-progress/pages";
@@ -2947,6 +2955,16 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/reveal.json") as ApiDoc,
+  },
+  "free/rich-text-editor": {
+    examples: {
+      basic: { Demo: FreeRichTextEditorBasic, code: FreeRichTextEditorBasicCode },
+      controlled: { Demo: FreeRichTextEditorControlled, code: FreeRichTextEditorControlledCode },
+      "read-only": { Demo: FreeRichTextEditorReadOnly, code: FreeRichTextEditorReadOnlyCode },
+      arabic: { Demo: FreeRichTextEditorArabic, code: FreeRichTextEditorArabicCode },
+    },
+    // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
+    api: () => require("@stackra/showcase/api/native/free/rich-text-editor.json") as ApiDoc,
   },
   "free/route-progress": {
     examples: {

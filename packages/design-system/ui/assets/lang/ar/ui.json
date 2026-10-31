@@ -1121,5 +1121,26 @@
     "label": "التقييم",
     "star": "{count, plural, zero {لا نجوم} one {نجمة واحدة} two {نجمتان} few {# نجوم} many {# نجمة} other {# نجمة}}",
     "value": "{value} من {max} نجوم"
+  },
+  "rich_text_editor": {
+    "toolbar": "التنسيق",
+    "bold": "غامق",
+    "italic": "مائل",
+    "underline": "تسطير",
+    "strike": "يتوسطه خط",
+    "heading": "عنوان {level, number}",
+    "bullet_list": "قائمة نقطية",
+    "ordered_list": "قائمة مرقّمة",
+    "blockquote": "اقتباس",
+    "code": "شيفرة",
+    "link": "رابط",
+    "link_address": "عنوان الرابط",
+    "link_apply": "تطبيق",
+    "link_remove": "إزالة الرابط",
+    "undo": "تراجع",
+    "redo": "إعادة",
+    "count": "{count, plural, zero {لا أحرف} one {حرف واحد} two {حرفان} few {# أحرف} many {# حرفًا} other {# حرف}}",
+    "count_limit": "{count, number} / {limit, number}",
+    "unsupported": "في هذا المستند تنسيق لا يغيّره محرّر الجوال. عدّله من الويب."
   }
 }

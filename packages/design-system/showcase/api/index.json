@@ -1199,6 +1199,12 @@
     "propsCount": 20,
     "react": true
   },
+  "free/rich-text-editor": {
+    "native": true,
+    "partsCount": 1,
+    "propsCount": 19,
+    "react": true
+  },
   "free/route-progress": {
     "native": true,
     "partsCount": 1,
