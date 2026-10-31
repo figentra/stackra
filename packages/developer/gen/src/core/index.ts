@@ -59,6 +59,7 @@ export { emitEntities } from "#core/functions/emit-entities.function";
 export { emitExpoConfig } from "#core/functions/emit-expo-config.function";
 export { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 export { emitI18n } from "#core/functions/emit-i18n.function";
+export { emitQueues } from "#core/functions/emit-queues.function";
 export { emitMigrations } from "#core/functions/emit-migrations.function";
 export { emitMemberModule } from "#core/functions/emit-member-module.function";
 export { emitPackageEntries } from "#core/functions/emit-package-entries.function";

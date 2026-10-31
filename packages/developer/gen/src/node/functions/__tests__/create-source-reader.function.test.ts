@@ -985,6 +985,7 @@ const OVERRIDE_SOURCES: Readonly<Record<string, string>> = {
     "export class TelemetryOptions extends Schema {",
     "  errors: { enabled: boolean; sampleRate: number } = { enabled: false, sampleRate: 1 };",
     '  levels: string[] = ["platform"];',
+    '  queue: string = "default";',
     "  scopes: { key: string }[] = [];",
     "  hint: string | null = null;",
     "}",
@@ -997,12 +998,14 @@ const OVERRIDE_SOURCES: Readonly<Record<string, string>> = {
   "src/config/telemetry.config.ts": [
     'import { TENANT_LEVEL, TelemetryConfig as BaseTelemetryConfig } from "@stackra/telemetry-fixture";',
     'import { I18n } from "#stackra/i18n";',
+    'import { Queues } from "#stackra/queues";',
     "",
     "export class TelemetryConfig extends BaseTelemetryConfig {",
     "  override errors = { ...this.errors, enabled: true };",
     '  override levels: BaseTelemetryConfig["levels"] = [...this.levels, "tenant"];',
     "  override scopes = [...this.scopes, TENANT_LEVEL];",
     "  override hint = I18n.pages.settings.hint;",
+    "  override queue = Queues.LedgerClose;",
     "}",
     "",
   ].join("\n"),
@@ -1034,6 +1037,7 @@ describe("createSourceReader on a package config override", async () => {
     expect(field("levels")?.default?.value).toEqual(["platform", "tenant"]);
     expect(field("scopes")?.default?.value).toEqual([{ key: "tenant" }]);
     expect(field("hint")?.default?.value).toBe("pages::settings.hint");
+    expect(field("queue")?.default?.value).toBe("ledger_close");
     expect(reader.errors.some((error) => error.code === "shape_default_not_constant")).toBe(false);
   });
 });

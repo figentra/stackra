@@ -67,6 +67,7 @@ import { emitEncoreDatabase } from "#core/functions/emit-encore-database.functio
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
+import { emitQueues } from "#core/functions/emit-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
 import { emitI18n } from "#core/functions/emit-i18n.function";
 import { emitMemberModule } from "#core/functions/emit-member-module.function";
@@ -214,6 +215,7 @@ export function generateMember(
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
     [".stackra/gen/client-tools.ts", clientTools.content],
+    [".stackra/gen/queues.ts", emitQueues(ir, manifest)],
     [".stackra/gen/settings.ts", emitSettings(ir)],
     [".stackra/gen/reports.ts", emitReports(authored)],
     [".stackra/gen/search.ts", emitSearchQueries(authored)],

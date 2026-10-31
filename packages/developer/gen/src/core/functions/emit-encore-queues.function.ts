@@ -19,11 +19,9 @@ import { camelCase, kebabCase } from "@stackra/support";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { jobQueues } from "#core/functions/job-queues.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
-
-/** The queue a job runs on when its action names none (`JOB_DEFAULTS.queue` of @stackra/queue). */
-const DEFAULT_QUEUE = "default";
 
 /**
  * The broker queue file of a service, or undefined when it has no job action.
@@ -36,16 +34,10 @@ export function emitEncoreQueues(
   manifest: StackraManifest,
 ): GeneratedFile | undefined {
   if (ir.layout !== "service") return undefined;
-  const queues = new Set<string>();
-  for (const entry of (manifest.actions ?? []) as readonly Readonly<Record<string, unknown>>[]) {
-    const job = entry["job"] as { readonly queue?: unknown } | undefined;
-    if (entry["kind"] === "action" && job !== undefined)
-      queues.add(typeof job.queue === "string" ? job.queue : DEFAULT_QUEUE);
-  }
-  if (queues.size === 0) return undefined;
+  const queues = jobQueues(manifest);
+  if (queues.length === 0) return undefined;
 
-  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-  const rows = [...queues].sort().map((queue) => {
+  const rows = queues.map((queue) => {
     const name = `${kebabCase(ir.member)}-queue-${kebabCase(queue)}`;
     return { queue, name, topic: camelCase(`queue_${queue.replaceAll(/[^A-Za-z0-9]+/g, "_")}`) };
   });

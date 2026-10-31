@@ -534,7 +534,7 @@ export function createSourceReader(
       case "PropertyAccessExpression": {
         if (node.expression !== undefined && host.kind(node.expression) === "ThisKeyword")
           return self === undefined ? NOT_CONSTANT : self(nameOf(node.name));
-        return i18nKey(node) ?? reference(node);
+        return i18nKey(node) ?? queueName(node) ?? reference(node);
       }
       case "CallExpression": {
         const callee = node.expression === undefined ? "" : host.text(node.expression);
@@ -571,6 +571,19 @@ export function createSourceReader(
     if (importsOf(host.fileName(node)).get(nameOf(at)) !== "#stackra/i18n") return undefined;
     const [namespace, ...rest] = path;
     return `${namespace}::${rest.join(".")}`;
+  };
+
+  /**
+   * `Queues.<Name>` of `#stackra/queues` as its snake_case queue name (`LedgerClose` → `ledger_close`), so a job's
+   * options read it before gen has written the registry (STA-1723).
+   */
+  const queueName = (node: TsNode): string | undefined => {
+    const at = node.expression;
+    if (at === undefined || kindOf(at) !== "Identifier") return undefined;
+    if (importsOf(host.fileName(node)).get(nameOf(at)) !== "#stackra/queues") return undefined;
+    return nameOf(node.name)
+      .replaceAll(/(?<!^)([A-Z])/g, "_$1")
+      .toLowerCase();
   };
 
   /** The key of an object literal property: its name, or a computed key that is a constant string. */
