@@ -107,7 +107,7 @@
     },
     {
       "code": "automation_principal_mismatch",
-      "kind": "permission_denied",
+      "kind": "forbidden",
       "category": "forbidden",
       "module": "workflow",
       "class": "AutomationPrincipalMismatchError"

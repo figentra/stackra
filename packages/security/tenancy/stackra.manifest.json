@@ -204,12 +204,12 @@
       }
     },
     {
-      "port": "ScopeResolver",
-      "key": "scope.ScopeResolver",
+      "port": "ScopeOwnership",
+      "key": "actions.ScopeOwnership",
       "candidates": ["tenant"],
       "classes": {
         "tenant": {
-          "class": "TenantScopeResolverDriver",
+          "class": "TenantScopeOwnershipDriver",
           "from": "@stackra/tenancy",
           "deps": [
             {
@@ -223,12 +223,12 @@
       }
     },
     {
-      "port": "ScopeOwnership",
-      "key": "actions.ScopeOwnership",
-      "candidates": ["tenant_scope_ownership"],
+      "port": "ScopeResolver",
+      "key": "scope.ScopeResolver",
+      "candidates": ["tenant"],
       "classes": {
-        "tenant_scope_ownership": {
-          "class": "TenantScopeOwnershipDriver",
+        "tenant": {
+          "class": "TenantScopeResolverDriver",
           "from": "@stackra/tenancy",
           "deps": [
             {

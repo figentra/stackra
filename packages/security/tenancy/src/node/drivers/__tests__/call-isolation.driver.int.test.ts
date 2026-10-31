@@ -277,7 +277,11 @@ function pipelineOf(): ActionPipeline {
 }
 
 /** A staff user acting in no tenant. */
-const platform: Actor = { kind: ActorKind.User, id: tenantActor().id, realm: Realm.Staff };
+const platform: Actor = {
+  kind: ActorKind.User,
+  id: "usr_01j9z3k4m5n6p7q8r9s0t1v2p9",
+  realm: Realm.Staff,
+};
 
 /** What `actor` sees through the list query. */
 const listAs = (actor: Actor) => pipelineOf().execute(ListTicketsQuery, {}, { actor });

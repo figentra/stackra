@@ -30,7 +30,7 @@ const scope: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2wa", path: "platform.
 /** A recording database and tenant service; `running` says whether a transaction is already open. */
 function setUp(running = false, held = "") {
   const steps: string[] = [];
-  const withScope = vi.fn(async (scopes: unknown, work: () => Promise<unknown>) => {
+  const withScope = vi.fn(async (_scopes: unknown, work: () => Promise<unknown>) => {
     steps.push("scope");
     return work();
   });
