@@ -154,6 +154,9 @@ jobs:
           # retry the transient failures (timeouts, 429, 5xx); a 404 still answers at once.
           curl() { command curl --connect-timeout 20 --max-time 90 --retry 4 --retry-delay 5 "$@"; }
           host="${REGISTRY#https://}"
+          # changesets/action v2 reads the published tags from the NDJSON file it names in CHANGESETS_OUTPUT, not from
+          # stdout: an absent file left 0.2.0 (run 41166821024) without tags or GitHub releases. Created empty first.
+          : > "$CHANGESETS_OUTPUT"
           pnpm -r ls --depth -1 --json |
             jq -r '.[] | select(.private != true) | [.name, .version, .path] | @tsv' |
             while IFS=$'\t' read -r name version dir; do
@@ -175,7 +178,9 @@ jobs:
               # A tag left by an earlier run that published nothing is kept (run 40896627689); a new one is
               # annotated, so it carries its tagger and date (changesets/action has set the git user).
               git rev-parse -q --verify "refs/tags/${name}@${version}" >/dev/null || git tag -a "${name}@${version}" -m "${name}@${version}"
-              # changesets/action reads this line to push the tag and create the GitHub release.
+              # One git-tag event per publish: the action pushes the tag and creates the GitHub release from it.
+              jq -nc --arg tag "${name}@${version}" --arg name "$name" '{type: "git-tag", tag: $tag, packageName: $name}' \
+                >> "$CHANGESETS_OUTPUT"
               echo "New tag: ${name}@${version}"
             done
           SH
