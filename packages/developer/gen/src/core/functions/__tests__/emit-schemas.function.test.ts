@@ -172,7 +172,9 @@ describe("emitSchemas", () => {
     expect(content).toContain("export const DraftOrder$ = OrderView$.extend({");
     expect(content).toMatch(/lines: OrderLineView\$|get lines\(\) \{\n {4}return OrderLineView\$;/);
     // The cycle back to DraftOrder, declared later, is a getter (STA-1683).
-    expect(content).toContain("  get draft() {\n    return DraftOrder$;\n  },");
+    expect(content).toMatch(
+      / {2}get draft\(\) \{\n {4}return DraftOrder\$\.exactOptional\(\);\n {2}\},/,
+    );
     expect(content).not.toContain("z.lazy(");
     expect(content).toContain('import { CustomerView$ } from "./customers";');
     expect(content).toContain(
