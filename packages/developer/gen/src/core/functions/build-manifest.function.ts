@@ -51,6 +51,7 @@ import { camelCase, snakeCase } from "@stackra/support";
 import { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 import { GENERATED_QUERY_SCHEMAS } from "#core/constants/generated-query-schemas.constant";
 import { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
+import { PERMISSION_LEVEL } from "#core/constants/permission-level.constant";
 import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 import { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 import { REPLICA_PAGE_SCHEMA } from "#core/constants/replica-page-schema.constant";
@@ -108,9 +109,6 @@ const MERGED_SECTIONS = [
   "passes",
   "entitlements",
 ] as const;
-
-/** `Permission.L2` or `Permission.L2.system()`: the risk level and the system-only marker. */
-const PERMISSION_LEVEL = /^Permission\.(L[0-4])(\.system\(\))?$/;
 
 /** Whether `value` is a class written as a value. */
 function isClassValue(value: unknown): value is ClassValue {
@@ -184,7 +182,7 @@ export function buildManifest(ir: MemberIR): {
         key,
         risk: level[1] ?? "L0",
         class: declared.name,
-        ...(level[2] ? { system: true } : {}),
+        ...(level[2] === ".system()" ? { system: true } : {}),
       });
     }
   }
