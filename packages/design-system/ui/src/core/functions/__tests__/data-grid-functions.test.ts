@@ -7,7 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid); ADR 0022 (test placement).
  */
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import { EMPTY_DATA_GRID_HISTORY } from "#core/constants/empty-data-grid-history.constant";
 import { aggregateOf } from "#core/functions/aggregate-of.function";
 import { changedCellCountOf } from "#core/functions/changed-cell-count-of.function";
@@ -19,11 +19,11 @@ import { parseGridValue } from "#core/functions/parse-grid-value.function";
 import { parseTsv } from "#core/functions/parse-tsv.function";
 import { toTsv } from "#core/functions/to-tsv.function";
 
-const NUMBER: DataGridColumn = { id: "qty", label: "Qty", type: "number", min: 0, max: 10 };
-const SELECT: DataGridColumn = {
+const NUMBER: CollectionColumn = { id: "qty", label: "Qty", type: "number", min: 0, max: 10 };
+const SELECT: CollectionColumn = {
   id: "size",
   label: "Size",
-  type: "select",
+  type: "choice",
   options: [{ id: "s", label: "Small" }],
 };
 

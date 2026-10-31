@@ -3,8 +3,7 @@
  * Purpose: proves the web `ColumnEditorPanel` beyond the popover: the drag handle reorders one column from the keyboard
  *          with every column shown, and a row's own Show checkbox hides and shows only that column;
  *          the rename button toggles the row's editor; pin to end and back to none, a typed width, clearing it, and
- *          the wrap switch all reach the engine; a pinned column shows its pin. Also proves the plain `ColumnChooser`:
- *          ticking a box reports the hidden columns, never the row header.
+ *          the wrap switch all reach the engine; a pinned column shows its pin.
  * Boundary: the panel over a real `useCollection`, read back through the engine's resolved columns, in jsdom.
  * Runtime: browser
  * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0022 (test placement); STA-1371.
@@ -13,7 +12,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import type { CollectionColumn } from "#contracts/types/collection-column.type";
-import { ColumnChooser } from "#react/column-chooser/column-chooser";
 import { ColumnEditorPanel } from "#react/column-chooser/column-editor-panel";
 import { useCollection } from "#react/hooks/use-collection";
 
@@ -112,43 +110,5 @@ describe("ColumnEditorPanel (web)", () => {
     expect(readout()).toBe("Order,Customer-wrap,Total");
     press(screen.getByRole("button", { name: "Rename Customer" }));
     expect(screen.queryByRole("group", { name: "Customer" })).toBeNull();
-  });
-});
-
-describe("ColumnChooser (web)", () => {
-  it("reports the unticked columns as hidden and keeps the row header shown", () => {
-    const onHiddenColumnsChange = vi.fn();
-    render(
-      <ColumnChooser
-        label="Show"
-        columns={[
-          { id: "order", label: "Order" },
-          { id: "customer", label: "Customer", isRowHeader: true },
-          { id: "total", label: "Total" },
-        ]}
-        hiddenColumns={["total"]}
-        onHiddenColumnsChange={onHiddenColumnsChange}
-      />,
-    );
-    press(screen.getByRole("button", { name: "Show" }));
-    expect((screen.getByRole("checkbox", { name: "Customer" }) as HTMLInputElement).disabled).toBe(
-      true,
-    );
-    expect((screen.getByRole("checkbox", { name: "Total" }) as HTMLInputElement).checked).toBe(
-      false,
-    );
-    fireEvent.click(screen.getByRole("checkbox", { name: "Order" }));
-    expect(onHiddenColumnsChange).toHaveBeenLastCalledWith(["order", "total"]);
-  });
-
-  it("names itself Columns by default", () => {
-    render(
-      <ColumnChooser
-        columns={[{ id: "a", label: "A" }]}
-        hiddenColumns={[]}
-        onHiddenColumnsChange={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "Columns" })).toBeTruthy();
   });
 });

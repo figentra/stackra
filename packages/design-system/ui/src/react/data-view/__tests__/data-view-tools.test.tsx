@@ -3,11 +3,12 @@
  * Purpose: proves the web `DataView` toolbar beyond the basics: group and density menus reach the engine; refresh,
  *          export, import and full screen appear when asked; filter chips read a choice's label, leave out the value of
  *          an emptiness rule and remove a nested group; a narrow view folds the tools into drawers; a phone opens on the
- *          list; the grid view, a custom layout, and paged or infinite cards each render; server mode refreshes.
+ *          list; the grid view (of the engine's columns), a custom layout, and paged (the one pager) or infinite cards
+ *          each render; server mode refreshes.
  * Boundary: DataView over a real `useCollection`, in jsdom; ResizeObserver, matchMedia and the Fullscreen API are
  *          stubbed per test.
  * Runtime: browser
- * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0022 (test placement); STA-1371.
+ * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0505; ADR 0022 (test placement); STA-1371.
  */
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -63,6 +64,8 @@ function Harness({
 }
 
 const state = () => screen.getByTestId("state").textContent;
+
+const nav = () => screen.getByRole("navigation", { name: "Customers pagination" });
 
 describe("DataView tools (web)", () => {
   afterEach(() => {
@@ -188,14 +191,13 @@ describe("DataView tools (web)", () => {
     expect(state()).toBe("-|normal|cards");
   });
 
-  it("shows the grid view when grid columns are given, and a custom layout when one is drawn", () => {
+  it("shows the grid view of the engine's columns when the app saves it, and a custom layout when one is drawn", () => {
     const { unmount } = render(
-      <Harness
-        options={{ initialState: { layout: "grid" } }}
-        view={{ gridColumns: [{ id: "customer", label: "Customer" }] }}
-      />,
+      <Harness options={{ initialState: { layout: "grid" } }} view={{ onGridSave: vi.fn() }} />,
     );
     expect(screen.getByRole("radio", { name: "Grid" })).toBeTruthy();
+    expect(screen.getByRole("grid", { name: "Customers" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: /City/ })).toBeTruthy();
     expect(screen.getByRole("region", { name: "Customers" }).getAttribute("data-layout")).toBe(
       "grid",
     );
@@ -214,14 +216,14 @@ describe("DataView tools (web)", () => {
     const { unmount } = render(
       <Harness options={{ paging: "page", initialState: { layout: "cards", pageSize: 5 } }} />,
     );
-    const nav = screen.getByRole("navigation", { name: "Page 1 of 3" });
-    expect(
-      within(nav).getByRole("button", { name: "Previous page" }).hasAttribute("disabled"),
-    ).toBe(true);
-    press(within(nav).getByRole("button", { name: "Next page" }));
-    expect(screen.getByRole("navigation", { name: "Page 2 of 3" })).toBeTruthy();
-    press(screen.getByRole("button", { name: "Previous page" }));
-    expect(screen.getByRole("navigation", { name: "Page 1 of 3" })).toBeTruthy();
+    expect(within(nav()).getByText("Page 1 of 3")).toBeTruthy();
+    expect(within(nav()).getByRole("button", { name: "Previous" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    press(within(nav()).getByRole("button", { name: "Next" }));
+    expect(within(nav()).getByText("Page 2 of 3")).toBeTruthy();
+    press(within(nav()).getByRole("button", { name: "Previous" }));
+    expect(within(nav()).getByText("Page 1 of 3")).toBeTruthy();
     unmount();
     render(
       <Harness options={{ paging: "infinite", initialState: { layout: "list", pageSize: 5 } }} />,

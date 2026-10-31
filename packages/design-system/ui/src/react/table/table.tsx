@@ -212,7 +212,6 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   selectedKeys,
   defaultSelectedKeys,
   onSelectionChange,
-  sortDescriptor,
   sort,
   onSortChange,
   emptyState,
@@ -252,7 +251,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   const hasEmptyState = emptyState !== undefined && emptyState !== null && emptyState !== false;
   const isPaged = hasMore && onLoadMore !== undefined;
   const hasRows = items.length > 0;
-  const sortKeys: readonly SortDescriptor[] = sort ?? (sortDescriptor ? [sortDescriptor] : []);
+  const sortKeys: readonly SortDescriptor[] = sort ?? [];
   const primarySort = sortKeys[0];
   // Live widths while a resize drags; the app's widths win once it reports the end.
   const [liveWidths, setLiveWidths] = useState<Readonly<Record<string, number>>>({});

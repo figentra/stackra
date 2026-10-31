@@ -171,4 +171,25 @@ describe("RuleBuilder (web)", () => {
     press(screen.getByRole("button", { name: "Add a condition" }));
     expect(onChange).not.toHaveBeenCalled();
   });
+  it("draws several choices as tags and a range as a from and an until field", () => {
+    const onChange = vi.fn();
+    render(
+      <RuleBuilder
+        label="Applies when"
+        fields={FIELDS}
+        value={{
+          match: "all",
+          conditions: [
+            { id: "a", field: "tier", operator: "in", value: ["gold"] },
+            { id: "b", field: "total", operator: "between", value: ["1", ""] },
+          ],
+        }}
+        onChange={onChange}
+      />,
+    );
+    press(screen.getByRole("row", { name: "Silver" }));
+    expect(onChange.mock.lastCall?.[0].conditions[0].value).toEqual(["gold", "silver"]);
+    fireEvent.change(screen.getByRole("textbox", { name: "Until" }), { target: { value: "9" } });
+    expect(onChange.mock.lastCall?.[0].conditions[1].value).toEqual(["1", "9"]);
+  });
 });

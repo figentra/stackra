@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "c030a981b21773c1",
+    "hash": "0186c7bf948740e5",
     "propsFiles": ["ui/src/native/data-view/data-view.props.ts"]
   },
   "importLine": "import { DataView } from \"@stackra/ui/native\";",
@@ -16,7 +16,7 @@
           "type": "(item: TItem) => void"
         },
         {
-          "description": "Web: saves the grid view's edited cells.",
+          "description": "Web: saves the grid view's edited cells; given, the grid is offered. Its columns are the engine's.",
           "name": "onGridSave",
           "required": false,
           "source": "stackra",
@@ -54,7 +54,7 @@
           "type": "CollectionController<TItem>"
         },
         {
-          "description": "The views offered by the switcher, in order. Defaults to table, list and cards, with grid when `gridColumns` is\ngiven (web); native offers list and cards.",
+          "description": "The views offered by the switcher, in order. Defaults to table, list and cards, with grid when `onGridSave` is\ngiven (web) and board when `board` is (web); native offers list and cards.",
           "name": "layouts",
           "required": false,
           "source": "stackra",
@@ -109,13 +109,6 @@
           "required": false,
           "source": "stackra",
           "type": "\"none\" | \"multiple\" | \"single\""
-        },
-        {
-          "description": "Web: the typed columns of the grid view; given, the grid is offered.",
-          "name": "gridColumns",
-          "required": false,
-          "source": "stackra",
-          "type": "readonly DataGridColumn[]"
         },
         {
           "description": "The export dialog's options; given, the toolbar has Export. The counts default to the engine's.",
@@ -246,23 +239,7 @@
       ]
     },
     {
-      "name": "CollectionFilterEditor",
-      "props": []
-    },
-    {
-      "name": "CollectionSortEditor",
-      "props": []
-    },
-    {
-      "name": "DataViewCards",
-      "props": []
-    },
-    {
-      "name": "DataViewBoard",
-      "props": []
-    },
-    {
-      "name": "SavedViewsMenu",
+      "name": "SavedViews",
       "props": []
     }
   ],

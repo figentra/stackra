@@ -5,7 +5,6 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).
  */
-import type { ResourceQuery } from "@stackra/ui/contracts";
 import { DataTable, useCatalogueText } from "@stackra/ui/native";
 
 import { MESSAGES } from "#src/constants/messages.constant";
@@ -15,9 +14,6 @@ import { useOrderTable } from "#src/demos/free/data-table/use-order-table";
 
 /** The demo's keys. */
 const K = DATA_TABLE_DEMO_KEYS.demo_free.data_table.basics;
-
-/** The query with nothing set. */
-const NO_QUERY: ResourceQuery = { search: "", filterValues: {}, sort: null };
 
 /** Three orders; the query never changes. */
 export default function Basics() {
@@ -30,8 +26,6 @@ export default function Basics() {
       items={ORDERS.slice(0, 3)}
       columns={columns}
       renderCell={renderCell}
-      query={NO_QUERY}
-      onQueryChange={() => undefined}
       headingLevel={4}
     />
   );

@@ -6,12 +6,16 @@
  * Runtime: node
  * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid); ADR 0022 (test placement); STA-1371.
  */
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridValue } from "#contracts/types/data-grid-value.type";
 import { gridCellErrorOf } from "#core/functions/grid-cell-error-of.function";
 
 const ROW = { id: "r1", qty: 3 };
-const col = (extra: Partial<DataGridColumn>): DataGridColumn => ({ id: "c", label: "C", ...extra });
+const col = (extra: Partial<CollectionColumn>): CollectionColumn => ({
+  id: "c",
+  label: "C",
+  ...extra,
+});
 
 describe("gridCellErrorOf", () => {
   it.each([null, undefined, ""] as const)("asks for a required value for %j", (value) => {
@@ -19,11 +23,11 @@ describe("gridCellErrorOf", () => {
     expect(gridCellErrorOf(value, col({}), ROW)).toBeUndefined();
   });
 
-  it.each<[DataGridValue, Partial<DataGridColumn>]>([
+  it.each<[DataGridValue, Partial<CollectionColumn>]>([
     ["12x", { type: "number" }],
     ["yes", { type: "boolean" }],
-    ["m", { type: "select", options: [{ id: "s", label: "Small" }] }],
-    ["s", { type: "select" }],
+    ["m", { type: "choice", options: [{ id: "s", label: "Small" }] }],
+    ["s", { type: "choice" }],
     [5, { type: "date" }],
     ["2026/04/03", { type: "date" }],
   ])("flags %j as the wrong type for %o", (value, extra) => {
@@ -34,7 +38,7 @@ describe("gridCellErrorOf", () => {
     expect(gridCellErrorOf(true, col({ type: "boolean" }), ROW)).toBeUndefined();
     expect(gridCellErrorOf("2026-04-03", col({ type: "date" }), ROW)).toBeUndefined();
     expect(
-      gridCellErrorOf("s", col({ type: "select", options: [{ id: "s", label: "Small" }] }), ROW),
+      gridCellErrorOf("s", col({ type: "choice", options: [{ id: "s", label: "Small" }] }), ROW),
     ).toBeUndefined();
     expect(gridCellErrorOf("free", col({}), ROW)).toBeUndefined();
   });

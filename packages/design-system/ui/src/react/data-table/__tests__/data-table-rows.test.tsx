@@ -4,11 +4,11 @@
  *          row's detail, the disclosure button and "expand all" that draw a named detail row under each row, the icon
  *          actions as hover buttons beside the menu, the same actions in a right-click menu that runs them for that row,
  *          inline edit with the DataGrid's editor (a valid value reaches `onCellEdit`, an invalid one keeps the editor
- *          open with an alert, Escape drops it), a row opened in the side panel, and every row's box ticked while
- *          "select all N" is chosen.
+ *          open with an alert, Escape drops it, a refused write is marked on its cell), a row opened in the side panel,
+ *          and every row's box ticked while "select all N" is chosen. Editable columns are the engine's `isEditable` ones.
  * Boundary: jsdom with real HeroUI and React Aria; a drop itself is React Aria's and is not replayed here.
  * Runtime: browser
- * Governing contract: data-collection plan (owner, 2026-10-29), wave 3 (rows); ADR 0022 (test placement); STA-1371.
+ * Governing contract: data-collection plan (owner, 2026-10-29), wave 3 (rows); ADR 0505; ADR 0022 (test placement); STA-1371.
  */
 // @vitest-environment jsdom
 import { defineIconRegistry } from "@stackra/icons";
@@ -17,10 +17,10 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { ChevronLeft, ChevronRight, Ellipsis, Undo2 } from "lucide-react";
 import type { ReactElement } from "react";
 
-import type { ResourceQuery } from "#contracts/types/resource-query.type";
-import type { TableColumn } from "#contracts/types/table-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import { DataTable } from "#react/data-table/data-table";
 import type { DataTableProps } from "#react/data-table/data-table.props";
+import { useCollection } from "#react/hooks/use-collection";
 
 const press = (element: HTMLElement) => act(() => element.click());
 
@@ -35,12 +35,10 @@ const ORDERS: readonly Order[] = [
   { id: "o2", number: "#1002", customer: "Grace" },
 ];
 
-const COLUMNS: readonly TableColumn[] = [
+const COLUMNS: readonly CollectionColumn[] = [
   { id: "number", label: "Order" },
   { id: "customer", label: "Customer" },
 ];
-
-const QUERY: ResourceQuery = { search: "", filterValues: {}, sort: null };
 
 const icons = defineIconRegistry({
   ellipsis: Ellipsis,
@@ -53,12 +51,27 @@ const baseProps = {
   label: "Orders",
   items: ORDERS,
   columns: COLUMNS,
-  query: QUERY,
-  onQueryChange: () => undefined,
 } satisfies DataTableProps<Order>;
+
+/** The columns with Customer edited in place, under the column's own rules. */
+const editable = (rules: Partial<CollectionColumn> = {}): readonly CollectionColumn[] => [
+  COLUMNS[0] as CollectionColumn,
+  { id: "customer", label: "Customer", isEditable: true, ...rules },
+];
 
 const draw = (ui: ReactElement) =>
   render(<IconRegistryProvider registry={icons}>{ui}</IconRegistryProvider>);
+
+function AllChosen() {
+  const collection = useCollection<Order>({
+    columns: COLUMNS,
+    items: ORDERS,
+    mode: "server",
+    totalCount: 240,
+    initialState: { isAllMatchingSelected: true },
+  });
+  return <DataTable label="Orders" collection={collection} selectionMode="multiple" />;
+}
 
 describe("DataTable row tools (web)", () => {
   beforeEach(() => {
@@ -171,11 +184,7 @@ describe("DataTable row tools (web)", () => {
   it("edits a marked cell with the DataGrid's editor and hands a valid value to the app", async () => {
     const onCellEdit = vi.fn();
     draw(
-      <DataTable
-        {...baseProps}
-        editableColumns={[{ id: "customer", label: "Customer", isRequired: true }]}
-        onCellEdit={onCellEdit}
-      />,
+      <DataTable {...baseProps} columns={editable({ isRequired: true })} onCellEdit={onCellEdit} />,
     );
     expect(screen.queryByRole("button", { name: /Edit Order of/ })).toBeNull();
     await press(screen.getByRole("button", { name: /Edit Customer of #1001/ }));
@@ -202,13 +211,7 @@ describe("DataTable row tools (web)", () => {
 
   it("drops an edit on Escape", async () => {
     const onCellEdit = vi.fn();
-    draw(
-      <DataTable
-        {...baseProps}
-        editableColumns={[{ id: "customer", label: "Customer" }]}
-        onCellEdit={onCellEdit}
-      />,
-    );
+    draw(<DataTable {...baseProps} columns={editable()} onCellEdit={onCellEdit} />);
     await press(screen.getByRole("button", { name: /Edit Customer of #1002/ }));
     const input = screen.getByRole("textbox", { name: "Edit Customer of #1002" });
     fireEvent.change(input, { target: { value: "Nobody" } });
@@ -234,13 +237,7 @@ describe("DataTable row tools (web)", () => {
   });
 
   it("keeps the editor on its cell while the page scrolls", async () => {
-    draw(
-      <DataTable
-        {...baseProps}
-        editableColumns={[{ id: "customer", label: "Customer" }]}
-        onCellEdit={vi.fn()}
-      />,
-    );
+    draw(<DataTable {...baseProps} columns={editable()} onCellEdit={vi.fn()} />);
     const trigger = screen.getByRole("button", { name: /Edit Customer of #1001/ });
     const cell = trigger.closest<HTMLElement>("[role=gridcell], [role=rowheader]") as HTMLElement;
     let top = 100;
@@ -268,17 +265,25 @@ describe("DataTable row tools (web)", () => {
     expect(editor?.style.top).toBe("40px");
   });
 
-  it("ticks every row's box while every matching record is chosen", () => {
+  it("marks a cell whose write the app refused, and announces why", async () => {
     draw(
       <DataTable
         {...baseProps}
-        selectionMode="multiple"
-        selectedKeys={[]}
-        totalCount={240}
-        isAllMatchingSelected
-        onAllMatchingSelectedChange={() => undefined}
+        columns={editable()}
+        onCellEdit={() => Promise.reject(new Error("Customer is locked"))}
       />,
     );
+    await press(screen.getByRole("button", { name: /Edit Customer of #1001/ }));
+    const input = screen.getByRole("textbox", { name: "Edit Customer of #1001" });
+    fireEvent.change(input, { target: { value: "Zed" } });
+    await act(async () => {
+      fireEvent.keyDown(input, { key: "Enter" });
+    });
+    expect((await screen.findByRole("alert")).textContent).toBe("Customer is locked");
+  });
+
+  it("ticks every row's box while every matching record is chosen", () => {
+    draw(<AllChosen />);
     const boxes = screen
       .getAllByRole("checkbox")
       .filter((box) => box.closest("[role=row]")?.querySelector("[role=rowheader]"));

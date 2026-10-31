@@ -11,7 +11,7 @@
  *           export, import and full screen are the web's. Strings are always wrapped in `Text`, which React Native
  *           requires.
  * Runtime: react-native
- * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3); ADR 0165 (HeroUI Native);
+ * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3); ADR 0505 (one filter model); ADR 0165 (HeroUI Native);
  *          ADR 0060 (right-to-left); WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2, 4.1.3.
  */
 import { IconRegistryProvider } from "@stackra/icons/native";
@@ -26,6 +26,7 @@ import { DATA_GRID_KEYS } from "#core/constants/data-grid-keys.constant";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { cellTextOf } from "#core/functions/cell-text-of.function";
 import { collectionRuleFieldsOf } from "#core/functions/collection-rule-fields-of.function";
+import { conditionChipTextOf } from "#core/functions/condition-chip-text-of.function";
 import { dataViewFieldsOf } from "#core/functions/data-view-fields-of.function";
 import { filterConditionCountOf } from "#core/functions/filter-condition-count-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -76,7 +77,6 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
   rowActions: _rowActions,
   bulkActions: _bulkActions,
   selectionMode: _selectionMode,
-  gridColumns: _gridColumns,
   onGridSave: _onGridSave,
   exportOptions: _exportOptions,
   importOptions: _importOptions,
@@ -104,15 +104,9 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
   const fieldLabel = (id: string) =>
     collection.columns.find((column) => column.id === id)?.label ?? id;
   const chipText = (condition: RuleCondition) =>
-    [
-      fieldLabel(condition.field),
-      t(UI_KEYS.ui.rule_operator[condition.operator]),
-      condition.operator === "is_empty" || condition.operator === "is_not_empty"
-        ? ""
-        : condition.value,
-    ]
-      .filter(Boolean)
-      .join(" ");
+    conditionChipTextOf(condition, collection.columns, (operator) =>
+      t(UI_KEYS.ui.rule_operator[operator]),
+    );
   const groupable = collection.columns.filter((column) => column.isGroupable);
   const sortable = collection.columns.filter((column) => column.isSortable);
 

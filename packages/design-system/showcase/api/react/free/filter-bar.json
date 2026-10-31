@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "5b4e5f075b0ae0f7",
+    "hash": "109ce00f67d9f1c2",
     "propsFiles": [
       "ui/src/react/filter-bar/filter-bar.props.ts",
       "ui/src/react/filter-bar/filter-editor.props.ts"
@@ -10,23 +10,14 @@
   "key": "free/filter-bar",
   "parts": [
     {
-      "events": [
-        {
-          "description": "Called with the whole next query each time the user changes any part of it.",
-          "name": "onQueryChange",
-          "required": true,
-          "source": "stackra",
-          "type": "(query: ResourceQuery) => void"
-        }
-      ],
       "name": "FilterBar",
       "props": [
         {
-          "description": "The filters the user may add, in the order the add-filter menu lists them; `id`s are unique in the list.",
-          "name": "filters",
+          "description": "The engine whose search and filter the bar edits (`useCollection`).",
+          "name": "collection",
           "required": true,
           "source": "stackra",
-          "type": "readonly FilterDefinition[]"
+          "type": "CollectionController<TItem>"
         },
         {
           "description": "The accessible name of the search box, for example \"Search orders\"; the box draws no visible label.",
@@ -43,11 +34,11 @@
           "type": "string"
         },
         {
-          "description": "The query in force: the search text, the applied filters and the sort.",
-          "name": "query",
-          "required": true,
+          "description": "The ids of the filter's conditions and groups that the data source does not apply, for example ones a server\ncannot read (a quick filter's condition id is `quickFilterIdOf(column id)`). Their chips are drawn as warnings,\nwith the `ui` catalogue's \"not applied\" words as a tooltip on a warning button beside them.",
+          "name": "unappliedIds",
+          "required": false,
           "source": "stackra",
-          "type": "ResourceQuery"
+          "type": "readonly string[]"
         },
         {
           "description": "",

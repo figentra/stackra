@@ -6,12 +6,17 @@
  * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.
  * Runtime: browser
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0302 (decisions 3 and 5);
- *          ADR 0303 (decision 7); ADR 0313; ADR 0318 (decisions 2 and 4 to 6); ADR 0060 (light, dark, RTL).
+ *          ADR 0303 (decision 7); ADR 0313; ADR 0505 (one engine); ADR 0060 (light, dark, RTL).
  */
 import type { Tone } from "@stackra/contracts";
-import type { ResourceAction, ResourceQuery, TableColumn } from "@stackra/ui/contracts";
-import type { DataTableProps } from "@stackra/ui/react";
-import { Chip, DataTable as UiDataTable, Text, useCatalogueText } from "@stackra/ui/react";
+import type { ResourceAction, TableColumn } from "@stackra/ui/contracts";
+import {
+  Chip,
+  DataTable as UiDataTable,
+  Text,
+  useCatalogueText,
+  useCollection,
+} from "@stackra/ui/react";
 import { useState } from "react";
 import { MESSAGES } from "#src/constants/messages.constant";
 import { DATA_TABLE_KEYS } from "#src/demos/free/data-table/data-table-keys.constant";
@@ -51,14 +56,8 @@ const STATUS_TONE: Readonly<Record<Order["status"], Tone>> = Object.freeze({
 /** Fixed to US dollars in English, so the total reads the same in both reading directions. */
 const MONEY = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
-/** The query with nothing set. */
-const NO_QUERY: ResourceQuery = Object.freeze({ search: "", filterValues: {}, sort: null });
-
 /** How long a fake action or page takes, so a busy state can be seen and tested. */
 const DELAY = 500;
-
-/** Does nothing: a sample whose query never changes. */
-const ignore = () => undefined;
 
 /** Waits for `ms` milliseconds. */
 const delay = (ms: number) =>
@@ -75,35 +74,6 @@ function renderOrderCell(order: Order, column: TableColumn) {
 
 /** The first rows of the sample lists. */
 const FEW = ORDERS.slice(0, 5);
-
-/** A sample table with the common props of the page's static samples. */
-function Static(props: Partial<DataTableProps<Order>> & { readonly label: string }) {
-  const t = useCatalogueText(MESSAGES.en);
-  /** The columns: every one sortable but the status. */
-  const COLUMNS: readonly TableColumn[] = [
-    { id: "order", label: t(K.column_order), isSortable: true },
-    { id: "customer", label: t(K.column_customer), isSortable: true },
-    { id: "status", label: t(K.column_status) },
-    { id: "total", label: t(K.column_total), isSortable: true, align: "end" },
-  ];
-  /** The same columns without sorting, for the samples that do not sort. */
-  const PLAIN_COLUMNS: readonly TableColumn[] = COLUMNS.map((column) => ({
-    id: column.id,
-    label: column.label,
-    ...(column.align ? { align: column.align } : {}),
-  }));
-  return (
-    <UiDataTable
-      items={FEW}
-      columns={PLAIN_COLUMNS}
-      renderCell={renderOrderCell}
-      query={NO_QUERY}
-      onQueryChange={ignore}
-      headingLevel={4}
-      {...props}
-    />
-  );
-}
 
 /** The bulk actions of the samples: one that succeeds and clears, and one that fails and leaves the selection. */
 function bulkActionsOf(
@@ -137,24 +107,31 @@ function bulkActionsOf(
 /** A table of several selectable rows with the bulk bar and select all matching. */
 function SelectionExample() {
   const t = useCatalogueText(MESSAGES.en);
-
-  const [selected, setSelected] = useState<readonly string[]>(["ord-1001", "ord-1002"]);
-  const [isAll, setIsAll] = useState(false);
+  const columns: readonly TableColumn[] = [
+    { id: "order", label: t(K.column_order) },
+    { id: "customer", label: t(K.column_customer) },
+    { id: "status", label: t(K.column_status) },
+    { id: "total", label: t(K.column_total), align: "end" },
+  ];
+  // Server mode: the page shows five rows of the 24 that match, so "select all 24" reaches past them.
+  const collection = useCollection({
+    columns,
+    items: FEW,
+    mode: "server",
+    totalCount: ORDERS.length,
+    initialState: { selection: ["ord-1001", "ord-1002"] },
+  });
+  const { selection: selected, isAllMatchingSelected: isAll } = collection.state;
   const [last, setLast] = useState<string>(t(K.none));
   return (
     <>
-      <Static
+      <UiDataTable
         label={t(K.selection_label)}
+        collection={collection}
+        renderCell={renderOrderCell}
+        headingLevel={4}
         selectionMode="multiple"
-        selectedKeys={selected}
-        onSelectionChange={setSelected}
-        bulkActions={bulkActionsOf(t, setLast, () => {
-          setSelected([]);
-          setIsAll(false);
-        })}
-        totalCount={ORDERS.length}
-        isAllMatchingSelected={isAll}
-        onAllMatchingSelectedChange={setIsAll}
+        bulkActions={bulkActionsOf(t, setLast, () => collection.setSelection([]))}
       />
       <Text role="status" data-testid="data-table-selected" tone="muted">
         {t(K.selected, { keys: selected.join(", ") || "none" })}

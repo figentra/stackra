@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "2a0a694299df9782",
+    "hash": "d48cfe81e2d52be0",
     "propsFiles": ["ui/src/react/heading/heading.props.ts"]
   },
   "importLine": "import { Heading } from \"@stackra/ui/react\";",
@@ -74,7 +74,7 @@
           "name": "weight",
           "required": false,
           "source": "heroui",
-          "type": "\"bold\" | \"normal\" | \"medium\" | \"semibold\""
+          "type": "\"bold\" | \"medium\" | \"normal\" | \"semibold\""
         },
         {
           "description": "",

@@ -4,7 +4,8 @@
  *          `TableFilter` `CrudService.table` reads: a range `{ min, max }` becomes `{ op: "range", from, to }`, a date
  *          range `{ start, end }` (calendar days) or a `TimeRange` code becomes `{ op: "dateRange", ... }`, a comparison
  *          `{ op: <operator>, value }`, contains `{ op: "contains", value }` and is-null `{ op: "isNull", value }`.
- * Boundary: internal; pure. A value already in wire form (an object with `op`, as a saved view stores it) passes as is;
+ * Boundary: internal; pure. A value already in wire form (an object with `op`, as a saved view stores it, or a list
+ *           of values, which the server reads as "any of") passes as is;
  *           an empty value (no bound, blank text) is `undefined`, so the filter is not sent. A value or principal filter
  *           passes its value unchanged.
  * Runtime: isomorphic
@@ -36,7 +37,8 @@ function bounds(op: string, entries: Readonly<Record<string, unknown>>): unknown
  * filterWireValue({ kind: "dateRange", key: "createdAt" }, "last_7_days"); // { op: "dateRange", range: "last_7_days" }
  */
 export function filterWireValue(node: FieldFilter, value: unknown): unknown {
-  if (typeof value === "object" && value !== null && "op" in value) return value;
+  if (Array.isArray(value) || (typeof value === "object" && value !== null && "op" in value))
+    return value;
   const record = (typeof value === "object" && value !== null ? value : {}) as Readonly<
     Record<string, unknown>
   >;

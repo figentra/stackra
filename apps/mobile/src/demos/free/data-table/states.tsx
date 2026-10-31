@@ -5,8 +5,7 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6).
  */
-import type { ResourceQuery } from "@stackra/ui/contracts";
-import { Button, DataTable, Text, useCatalogueText } from "@stackra/ui/native";
+import { Button, DataTable, Text, useCatalogueText, useCollection } from "@stackra/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 
@@ -18,19 +17,20 @@ import { useOrderTable } from "#src/demos/free/data-table/use-order-table";
 /** The demo's keys. */
 const K = DATA_TABLE_DEMO_KEYS.demo_free.data_table.states;
 
-/** The query with nothing set, and a search no order matches. */
-const NO_QUERY: ResourceQuery = { search: "", filterValues: {}, sort: null };
-const NO_RESULTS_QUERY: ResourceQuery = { search: "zzz", filterValues: {}, sort: null };
-
-/** Does nothing: a table whose query never changes. */
-const ignore = () => undefined;
+/** A search no order matches. */
+const NO_MATCH = "zzz";
 
 /** One table per state around the rows. */
 export default function States() {
-  const [query, setQuery] = useState<ResourceQuery>(NO_RESULTS_QUERY);
   const [retries, setRetries] = useState(0);
   const t = useCatalogueText(MESSAGES.en);
   const { columns, renderCell } = useOrderTable();
+  // The engine searches the rows itself, so a search no row matches shows the "no results" state.
+  const searched = useCollection({
+    columns,
+    items: ORDERS.slice(0, 3),
+    initialState: { search: NO_MATCH },
+  });
   return (
     <View className="gap-4">
       <DataTable
@@ -38,20 +38,15 @@ export default function States() {
         label={t(K.empty_label)}
         items={[]}
         columns={columns}
-        query={NO_QUERY}
-        onQueryChange={ignore}
         headingLevel={4}
       />
       <DataTable
         scrollEnabled={false}
         label={t(K.no_results_label)}
-        items={[]}
-        columns={columns}
-        query={query}
-        onQueryChange={setQuery}
+        collection={searched}
         headingLevel={4}
       />
-      <Button size="sm" variant="tertiary" onPress={() => setQuery(NO_RESULTS_QUERY)}>
+      <Button size="sm" variant="tertiary" onPress={() => searched.setSearch(NO_MATCH)}>
         {t(K.search_again)}
       </Button>
       <DataTable
@@ -59,8 +54,6 @@ export default function States() {
         label={t(K.first_load_label)}
         items={[]}
         columns={columns}
-        query={NO_QUERY}
-        onQueryChange={ignore}
         isLoading
         loadingLabel={t(K.loading)}
       />
@@ -70,8 +63,6 @@ export default function States() {
         items={ORDERS.slice(0, 2)}
         columns={columns}
         renderCell={renderCell}
-        query={NO_QUERY}
-        onQueryChange={ignore}
         isLoading
         loadingLabel={t(K.loading)}
       />
@@ -80,8 +71,6 @@ export default function States() {
         label={t(K.error_label)}
         items={[]}
         columns={columns}
-        query={NO_QUERY}
-        onQueryChange={ignore}
         error={t(K.failure)}
         isMessageShown
         onRetry={() => setRetries((count) => count + 1)}

@@ -6,7 +6,7 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); data-collection plan (owner,
  *          2026-10-29); ADR 0060 (light, dark, RTL).
  */
-import type { DataGridColumn } from "@stackra/ui/contracts";
+import type { CollectionColumn } from "@stackra/ui/contracts";
 import { DataView, useCollection } from "@stackra/ui/react";
 
 import { useGulfOrders } from "#src/demos/free/data-view/use-gulf-orders";
@@ -17,32 +17,27 @@ const later = <T,>(ms: number, value: T) =>
     setTimeout(() => resolve(value), ms);
   });
 
+/** The grid view's rules, on the engine's own columns: the order number is read-only, the numbers have a floor. */
+const GRID_RULES: Readonly<Record<string, Partial<CollectionColumn>>> = {
+  order: { isReadOnly: true },
+  quantity: { min: 1 },
+  total: { min: 0 },
+};
+
 /** The DataView demo: basics. */
 export default function Basics() {
   const { orders, columns, renderCell, t, K } = useGulfOrders();
   const collection = useCollection({
-    columns,
+    columns: columns.map((column) => ({ ...column, ...GRID_RULES[column.id] })),
     items: orders,
     paging: "page",
     initialState: { pageSize: 10 },
   });
-  const gridColumns: readonly DataGridColumn[] = [
-    { id: "order", label: t(K.column_order), isReadOnly: true, width: 112 },
-    { id: "customer", label: t(K.column_customer), width: 240 },
-    { id: "city", label: t(K.column_city), width: 140 },
-    { id: "product", label: t(K.column_product), width: 170 },
-    { id: "channel", label: t(K.column_channel), width: 160 },
-    { id: "status", label: t(K.column_status), width: 150 },
-    { id: "quantity", label: t(K.column_quantity), type: "number", min: 1 },
-    { id: "total", label: t(K.column_total), type: "number", min: 0, width: 150 },
-    { id: "date", label: t(K.column_date), type: "date", width: 150 },
-  ];
   return (
     <DataView
       label={t(K.basics_label)}
       collection={collection}
       renderCell={renderCell}
-      gridColumns={gridColumns}
       onGridSave={() => later(600, undefined)}
       list={{ subtitle: "customer", meta: "total" }}
       cards={{

@@ -59,12 +59,8 @@ export default function HoverActions() {
       <Text tone="muted">{t(K.hover_hint)}</Text>
       <DataTable
         label={t(K.hover_label)}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
-        query={{ search: "", filterValues: {}, sort: null }}
-        onQueryChange={() => {}}
         rowActions={actionsOf}
         hasHoverActions
       />

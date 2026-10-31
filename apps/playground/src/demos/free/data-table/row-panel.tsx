@@ -34,12 +34,8 @@ export default function RowPanel() {
       <Text tone="muted">{t(K.panel_hint)}</Text>
       <DataTable
         label={t(K.panel_label)}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
-        query={{ search: "", filterValues: {}, sort: null }}
-        onQueryChange={() => {}}
         renderRowPanel={(order) => (
           <PropertyList
             items={columns.map((column) => ({

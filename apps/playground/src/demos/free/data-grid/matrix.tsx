@@ -7,7 +7,7 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0317 amendment 2026-10-28
  *          (wave 3d, DataGrid quantity matrix); ADR 0060 (light, dark, RTL).
  */
-import type { DataGridColumn, DataGridRow } from "@stackra/ui/contracts";
+import type { CollectionColumn, DataGridRow } from "@stackra/ui/contracts";
 import { DataGrid, useCatalogueText } from "@stackra/ui/react";
 import { useState } from "react";
 import { MESSAGES } from "#src/constants/messages.constant";
@@ -22,7 +22,7 @@ const SIZES = ["S", "M", "L", "XL"] as const;
 /** DataGrid: A quantity matrix. */
 export default function Matrix() {
   const t = useCatalogueText(MESSAGES.en);
-  const columns: readonly DataGridColumn[] = [
+  const columns: readonly CollectionColumn[] = [
     { id: "colour", label: t(K.colour) },
     ...SIZES.map((size) => ({ id: size, label: size, width: 72 })),
   ];
@@ -41,7 +41,7 @@ export default function Matrix() {
       label={t(K.matrix_label)}
       variant="matrix"
       columns={columns}
-      rows={rows}
+      items={rows}
       onSave={(changes) =>
         setRows((current) => current.map((row) => ({ ...row, ...changes[row.id] })))
       }

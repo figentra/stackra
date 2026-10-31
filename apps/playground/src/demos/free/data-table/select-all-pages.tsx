@@ -49,12 +49,8 @@ function Paged({
     <div className="grid gap-2">
       <DataTable
         label={label}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
-        query={{ search: "", filterValues: {}, sort: null }}
-        onQueryChange={() => {}}
         selectionMode="multiple"
         bulkActions={[{ id: "tag", label: t(K.tag) }]}
       />

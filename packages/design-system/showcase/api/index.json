@@ -304,8 +304,8 @@
   },
   "free/column-chooser": {
     "native": true,
-    "partsCount": 2,
-    "propsCount": 20,
+    "partsCount": 1,
+    "propsCount": 3,
     "react": true
   },
   "free/combo-box": {
@@ -389,19 +389,19 @@
   "free/data-grid": {
     "native": true,
     "partsCount": 2,
-    "propsCount": 32,
+    "propsCount": 30,
     "react": true
   },
   "free/data-table": {
     "native": true,
-    "partsCount": 8,
-    "propsCount": 82,
+    "partsCount": 6,
+    "propsCount": 64,
     "react": true
   },
   "free/data-view": {
     "native": true,
-    "partsCount": 8,
-    "propsCount": 57,
+    "partsCount": 6,
+    "propsCount": 55,
     "react": true
   },
   "free/date-field": {
@@ -554,13 +554,13 @@
   "free/filter-bar": {
     "native": true,
     "partsCount": 2,
-    "propsCount": 21,
+    "propsCount": 20,
     "react": true
   },
   "free/filter-panel": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 23,
+    "propsCount": 17,
     "react": true
   },
   "free/flip-card": {
@@ -1230,8 +1230,8 @@
   },
   "free/saved-views": {
     "native": true,
-    "partsCount": 2,
-    "propsCount": 21,
+    "partsCount": 1,
+    "propsCount": 17,
     "react": true
   },
   "free/scatter-chart": {
@@ -1488,7 +1488,7 @@
   "free/table": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 42,
+    "propsCount": 41,
     "react": true
   },
   "free/tabs": {

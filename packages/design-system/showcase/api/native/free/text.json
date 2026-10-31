@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "abe3f88b78c8cff2",
+    "hash": "f80d167997c371c4",
     "propsFiles": ["ui/src/native/text/text.props.ts"]
   },
   "importLine": "import { Text } from \"@stackra/ui/native\";",
@@ -88,7 +88,7 @@
           "name": "weight",
           "required": false,
           "source": "heroui",
-          "type": "\"bold\" | \"normal\" | \"medium\" | \"semibold\""
+          "type": "\"bold\" | \"medium\" | \"normal\" | \"semibold\""
         },
         {
           "description": "",

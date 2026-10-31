@@ -55,7 +55,7 @@ export default function Sorting() {
         items={sortedOrders(TABLE_ORDERS, sort)}
         columns={sortableColumns}
         renderCell={renderCell}
-        sortDescriptor={sort}
+        sort={sort ? [sort] : []}
         onSortChange={setSort}
         scrollEnabled={false}
       />

@@ -5,12 +5,12 @@
  *          renderer, the controlled sort, the end-of-list paging, the sticky header, and the column tools: multi-sort marks, density, resize, drag to reorder, pinning and a header menu slot. Each runtime's `TableProps` is
  *          this plus the props its HeroUI table root takes, which pass through unchanged.
  * Boundary: types only. The table never sorts, filters or pages the rows it is given: the query that fetched them did,
- *           so `sortDescriptor` is controlled and `hasMore` is the cursor page's own flag (ADR 0313 decisions 3 and 4).
+ *           so `sort` is controlled and `hasMore` is the cursor page's own flag (ADR 0313 decisions 3 and 4).
  *           The native table is the adapted form: a list of rows with a sort chooser in its header, and it reads
  *           `variant`, `isStickyHeader` and `maxHeight` as nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3: one API on web and native, adapted forms); ADR 0303 (decision 7); ADR 0313;
- *          data-collection plan (owner, 2026-10-29).
+ *          data-collection plan (owner, 2026-10-29); ADR 0505 (`sort[]` replaced `sortDescriptor`).
  */
 import type { ReactNode } from "react";
 
@@ -36,8 +36,6 @@ export interface TableContractProps<TItem extends CollectionItem = CollectionIte
   readonly renderCell?: ((item: TItem, column: TableColumn) => ReactNode) | undefined;
   /** The look of the table. Defaults to `primary`. */
   readonly variant?: TableVariant | undefined;
-  /** The sort in force, for a controlled table: the rows arrive sorted, and this only marks the header. */
-  readonly sortDescriptor?: SortDescriptor | undefined;
   /** Called with the sort a press on a sortable header asks for; the app fetches the rows in that order. */
   readonly onSortChange?: ((sort: SortDescriptor) => void) | undefined;
   /** True while a cursor page after the last row exists; with `onLoadMore` it loads it when the end comes into view. */
@@ -49,8 +47,8 @@ export interface TableContractProps<TItem extends CollectionItem = CollectionIte
   /** The height the rows scroll inside when the header is sticky, as a CSS length. Defaults to `24rem`. */
   readonly maxHeight?: string | undefined;
   /**
-   * Every sort key, most significant first, for a multi-sort: the first marks its header as `sortDescriptor` does and
-   * the others show their rank. Given, it wins over `sortDescriptor`.
+   * The sort in force, every key most significant first, for a controlled table: the rows arrive sorted, and this only
+   * marks the headers (the first by its direction, the others by their rank too).
    */
   readonly sort?: readonly SortDescriptor[] | undefined;
   /** How tightly the rows are drawn: `compact`, `normal` (the default) or `roomy`. Native reads it as nothing. */

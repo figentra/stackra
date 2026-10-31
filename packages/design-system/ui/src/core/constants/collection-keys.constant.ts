@@ -112,6 +112,7 @@ export const COLLECTION_KEYS = keys({
       "collapse_all",
       "row_detail",
       "edit_cell",
+      "edit_failed",
       "open_row",
       "row_panel",
       "board_column",

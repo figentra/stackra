@@ -44,7 +44,7 @@ export const DATA_TABLE_DEMO_KEYS = keys({
       ],
       live: ["label", "search", "matching", "reset"],
       grouped: ["label"],
-      tools: ["label", "views", "view_all", "view_unpaid"],
+      tools: ["label", "views", "views_tabs", "views_chips", "view_all", "view_unpaid"],
     },
   },
 });

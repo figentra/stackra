@@ -133,7 +133,6 @@ export type { MultipleComboBoxContractProps } from "#contracts/types/multiple-co
 export type { RouteProgressContractProps } from "#contracts/types/route-progress-contract-props.type";
 export type { SaveBarContractProps } from "#contracts/types/save-bar-contract-props.type";
 export type { SaveStatusContractProps } from "#contracts/types/save-status-contract-props.type";
-export type { SavedView } from "#contracts/types/saved-view.type";
 export type { SettingRowContractProps } from "#contracts/types/setting-row-contract-props.type";
 export type { SetupGuideContractProps } from "#contracts/types/setup-guide-contract-props.type";
 export type { SetupGuideTask } from "#contracts/types/setup-guide-task.type";
@@ -173,7 +172,6 @@ export type { DateRangeFilterDefinition } from "#contracts/types/date-range-filt
 export type { MultiSelectFilterDefinition } from "#contracts/types/multi-select-filter-definition.type";
 export type { SelectFilterDefinition } from "#contracts/types/select-filter-definition.type";
 export type { NumberFilterDefinition } from "#contracts/types/number-filter-definition.type";
-export type { SortOption } from "#contracts/types/sort-option.type";
 export type { SortableListContractProps } from "#contracts/types/sortable-list-contract-props.type";
 export type { SortableListItem } from "#contracts/types/sortable-list-item.type";
 export type { SplitButtonContractProps } from "#contracts/types/split-button-contract-props.type";
@@ -182,7 +180,6 @@ export type { SystemBannerContractProps } from "#contracts/types/system-banner-c
 export type { TextFilterDefinition } from "#contracts/types/text-filter-definition.type";
 export type { FilterDefinitionBase } from "#contracts/types/filter-definition-base.type";
 export type { FilterValue } from "#contracts/types/filter-value.type";
-export type { FilterState } from "#contracts/types/filter-state.type";
 export type { FilterValueByKind } from "#contracts/types/filter-value-by-kind.type";
 export type { FormContractProps } from "#contracts/types/form-contract-props.type";
 export type { FormFieldBinding } from "#contracts/types/form-field-binding.type";
@@ -229,8 +226,6 @@ export type { PropertyListContractProps } from "#contracts/types/property-list-c
 export type { PropertyListItem } from "#contracts/types/property-list-item.type";
 export type { RadioGroupContractProps } from "#contracts/types/radio-group-contract-props.type";
 export type { ResourceAction } from "#contracts/types/resource-action.type";
-export type { ResourceQueryContractProps } from "#contracts/types/resource-query-contract-props.type";
-export type { ResourceQuery } from "#contracts/types/resource-query.type";
 export type { RevealContractProps } from "#contracts/types/reveal-contract-props.type";
 export type { ScreenContractProps } from "#contracts/types/screen-contract-props.type";
 export type { SearchFieldContractProps } from "#contracts/types/search-field-contract-props.type";
@@ -440,6 +435,7 @@ export type { MarkdownViewerContractProps } from "#contracts/types/markdown-view
 export type { MeterSegment } from "#contracts/types/meter-segment.type";
 export type { RuleBuilderContractProps } from "#contracts/types/rule-builder-contract-props.type";
 export type { RuleCondition } from "#contracts/types/rule-condition.type";
+export type { RuleValue } from "#contracts/types/rule-value.type";
 export type { RuleField } from "#contracts/types/rule-field.type";
 export type { RuleGroup } from "#contracts/types/rule-group.type";
 export type { StackedMeterContractProps } from "#contracts/types/stacked-meter-contract-props.type";
@@ -513,16 +509,11 @@ export type { ToggleButtonContractProps } from "#contracts/types/toggle-button-c
 export type { ToggleButtonGroupContractProps } from "#contracts/types/toggle-button-group-contract-props.type";
 // Wave 3d: DataGrid, DataTable tools.
 export { AggregateKind } from "#contracts/enums/aggregate-kind.enum";
-export { DataGridCellType } from "#contracts/enums/data-grid-cell-type.enum";
 export { DataGridVariant } from "#contracts/enums/data-grid-variant.enum";
-export type { ColumnChooserContractProps } from "#contracts/types/column-chooser-contract-props.type";
 export type { DataGridChanges } from "#contracts/types/data-grid-changes.type";
-export type { DataGridColumn } from "#contracts/types/data-grid-column.type";
 export type { DataGridContractProps } from "#contracts/types/data-grid-contract-props.type";
-export type { DataGridOption } from "#contracts/types/data-grid-option.type";
 export type { DataGridRow } from "#contracts/types/data-grid-row.type";
 export type { DataGridValue } from "#contracts/types/data-grid-value.type";
-export type { FacetOption } from "#contracts/types/facet-option.type";
 export type { SavedViewsContractProps } from "#contracts/types/saved-views-contract-props.type";
 // Data collection (useCollection, DataView).
 export { CollectionDensity } from "#contracts/enums/collection-density.enum";
@@ -548,7 +539,6 @@ export type { ColumnEditorContractProps } from "#contracts/types/column-editor-c
 export type { DataViewContractProps } from "#contracts/types/data-view-contract-props.type";
 export type { DataViewFields } from "#contracts/types/data-view-fields.type";
 export type { DataViewBoard } from "#contracts/types/data-view-board.type";
-export type { SavedViewsMenuContractProps } from "#contracts/types/saved-views-menu-contract-props.type";
 
 // Wave B: charts (annotations, dual axis, log scale, sync, tracker strip).
 export { TrackerStatus } from "#contracts/enums/tracker-status.enum";

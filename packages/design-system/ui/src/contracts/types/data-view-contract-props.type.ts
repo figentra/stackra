@@ -3,7 +3,8 @@
  * Purpose: the props every runtime's `DataView` takes: a collection engine, the views it offers (table, grid, list, cards; board in wave 4) and how each draws a row, the row and bulk actions, export, import, share and refresh.
  * Boundary: types only. Every view draws from the same engine, so switching keeps the search, filter, sort and columns; `renderLayout` is the slot of a view the component does not draw itself (the board).
  * Runtime: isomorphic
- * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3); STA-1371.
+ * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0302 (decision 3); ADR 0505 (one column type: the grid
+ *          and inline-edit columns are the engine's); STA-1371.
  */
 import type { ReactNode } from "react";
 
@@ -12,7 +13,6 @@ import type { CollectionController } from "#contracts/types/collection-controlle
 import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { CollectionView } from "#contracts/types/collection-view.type";
 import type { DataGridChanges } from "#contracts/types/data-grid-changes.type";
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
 import type { DataViewFields } from "#contracts/types/data-view-fields.type";
 import type { ExportDialogContractProps } from "#contracts/types/export-dialog-contract-props.type";
 import type { ImportDialogContractProps } from "#contracts/types/import-dialog-contract-props.type";
@@ -27,8 +27,8 @@ export interface DataViewContractProps<TItem extends CollectionItem = Collection
   /** The engine every view draws from (`useCollection`). */
   readonly collection: CollectionController<TItem>;
   /**
-   * The views offered by the switcher, in order. Defaults to table, list and cards, with grid when `gridColumns` is
-   * given (web); native offers list and cards.
+   * The views offered by the switcher, in order. Defaults to table, list and cards, with grid when `onGridSave` is
+   * given (web) and board when `board` is (web); native offers list and cards.
    */
   readonly layouts?: readonly CollectionLayout[] | undefined;
   /** The view a phone opens on when the engine was never switched: `list` (the default) or `cards`. */
@@ -47,9 +47,7 @@ export interface DataViewContractProps<TItem extends CollectionItem = Collection
   readonly bulkActions?: readonly ResourceAction[] | undefined;
   /** How many rows can be selected in the table. Defaults to `none`, or `multiple` with `bulkActions`. */
   readonly selectionMode?: SelectionContractProps["selectionMode"];
-  /** Web: the typed columns of the grid view; given, the grid is offered. */
-  readonly gridColumns?: readonly DataGridColumn[] | undefined;
-  /** Web: saves the grid view's edited cells. */
+  /** Web: saves the grid view's edited cells; given, the grid is offered. Its columns are the engine's. */
   readonly onGridSave?: ((changes: DataGridChanges) => void | Promise<void>) | undefined;
   /** The export dialog's options; given, the toolbar has Export. The counts default to the engine's. */
   readonly exportOptions?:

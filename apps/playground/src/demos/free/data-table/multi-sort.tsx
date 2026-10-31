@@ -28,15 +28,11 @@ export default function MultiSort() {
       <Text tone="muted">{t(K.multisort_hint)}</Text>
       <DataTable
         label={t(K.multisort_label)}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
         hasColumnTools
         isStickyHeader
         maxHeight="22rem"
-        query={{ search: "", filterValues: {}, sort: collection.state.sort[0] ?? null }}
-        onQueryChange={() => {}}
       />
     </div>
   );

@@ -1,25 +1,23 @@
 /**
  * Stackra file contract:
- * Purpose: `SavedViewTabs`, the web saved view picker: an all-rows tab, then one tab per saved view, each drawing the
- *          list under its view.
- * Boundary: draws only; the views come from the `ViewStore` the caller read. Only the selected tab's content is drawn,
- *           so one list query runs at a time. Board, gallery, calendar and chart layouts draw as the table until their
- *           renderers exist.
+ * Purpose: `SavedViewTabs`, the web saved view picker: `@stackra/ui`'s `SavedViews` drawn as tabs over a
+ *          `useCollection` engine, one tab per view (all rows first, then the presets and the saved views).
+ * Boundary: draws only; the views are the engine's, read from the `ViewStore` through a `CollectionStore` adapter.
+ *           Choosing a tab applies its view to the one list.
  * Runtime: browser
- * Governing contract: ADR 0271 (decisions 1, 2 and 7); ADR 0359 (decision 14).
+ * Governing contract: ADR 0271 (decisions 1, 2 and 7); ADR 0359 (decision 14); ADR 0505 (one saved-view model).
  */
-import { Tabs } from "@stackra/ui/react";
+import { SavedViews } from "@stackra/ui/react";
 import type { ReactElement } from "react";
 
-import { savedViewTabsOf } from "#core/functions/saved-view-tabs-of.function";
 import type { SavedViewTabsProps } from "#react/saved-view-tabs/saved-view-tabs.props";
 
 /**
- * Tabs over a resource's saved views.
+ * Tabs over a collection's views.
  *
  * @example
- * <SavedViewTabs label="Saved views" allLabel="All" views={views} render={(view) => <List view={view} />} />
+ * <SavedViewTabs collection={collection} label="Saved views" />
  */
-export function SavedViewTabs(props: SavedViewTabsProps): ReactElement {
-  return <Tabs {...savedViewTabsOf(props)} />;
+export function SavedViewTabs({ collection, label }: SavedViewTabsProps): ReactElement {
+  return <SavedViews variant="tabs" collection={collection} label={label} />;
 }

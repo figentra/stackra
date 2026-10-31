@@ -71,7 +71,7 @@ export function DataGridEditor({
     onPaste: (event: { stopPropagation: () => void }) => event.stopPropagation(),
   };
 
-  if (column.type === "select") {
+  if (column.type === "choice") {
     return (
       <select
         {...common}

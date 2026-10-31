@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `RuleCondition`, one line of a rule: a field, an operator and the value compared with.
- * Boundary: types only. The value is text; a number field parses it when the rule is evaluated.
+ * Boundary: types only. The value is text or a list of text (`RuleValue`); a number field parses it when the rule is
+ *           evaluated.
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (decision 3: one API on web and native); STA-1371.
  */
 import type { RuleOperator } from "#contracts/enums/rule-operator.enum";
+import type { RuleValue } from "#contracts/types/rule-value.type";
 
 /** One condition of a rule. */
 export interface RuleCondition {
@@ -16,5 +18,5 @@ export interface RuleCondition {
   /** How the field is compared with the value. */
   readonly operator: RuleOperator;
   /** The value the field is compared with. */
-  readonly value: string;
+  readonly value: RuleValue;
 }

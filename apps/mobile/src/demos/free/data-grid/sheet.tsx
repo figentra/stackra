@@ -6,7 +6,7 @@
  * Runtime: react-native
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0317 amendment 2026-10-28.
  */
-import type { DataGridColumn, DataGridRow } from "@stackra/ui/contracts";
+import type { CollectionColumn, DataGridRow } from "@stackra/ui/contracts";
 import { DataGrid, useCatalogueText } from "@stackra/ui/native";
 import { useState } from "react";
 
@@ -19,13 +19,13 @@ const K = DATA_GRID_DEMO_KEYS.demo_free.data_grid;
 /** A price list on a phone. */
 export default function Sheet() {
   const t = useCatalogueText(MESSAGES.en);
-  const columns: readonly DataGridColumn[] = [
+  const columns: readonly CollectionColumn[] = [
     { id: "item", label: t(K.item), isRequired: true },
     { id: "price", label: t(K.price), type: "number", min: 0, max: 50 },
     {
       id: "size",
       label: t(K.size),
-      type: "select",
+      type: "choice",
       options: [
         { id: "small", label: t(K.small) },
         { id: "large", label: t(K.large) },
@@ -46,7 +46,7 @@ export default function Sheet() {
     <DataGrid
       label={t(K.sheet_label)}
       columns={columns}
-      rows={rows}
+      items={rows}
       onSave={(changes) =>
         setRows((current) => current.map((row) => ({ ...row, ...changes[row.id] })))
       }

@@ -38,12 +38,8 @@ export default function RowReorder() {
       <Text tone="muted">{t(K.row_reorder_hint)}</Text>
       <DataTable
         label={t(K.row_reorder_label)}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
-        query={{ search: "", filterValues: {}, sort: null }}
-        onQueryChange={() => {}}
         onReorder={setRows}
       />
       <Text role="status" tone="muted">

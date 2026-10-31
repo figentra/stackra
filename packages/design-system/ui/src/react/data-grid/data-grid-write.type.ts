@@ -5,7 +5,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid).
  */
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridRow } from "#contracts/types/data-grid-row.type";
 import type { DataGridValue } from "#contracts/types/data-grid-value.type";
 
@@ -14,7 +14,7 @@ export interface DataGridWrite {
   /** The row of the cell to write. */
   readonly row: DataGridRow;
   /** The column of the cell to write. */
-  readonly column: DataGridColumn;
+  readonly column: CollectionColumn;
   /** The new value. */
   readonly value: DataGridValue;
 }

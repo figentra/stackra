@@ -53,7 +53,7 @@ export const DATA_TABLE_KEYS = keys({
     "views_label",
     "view_all",
     "view_unpaid",
-    "facet_label",
-    "saved_view_name",
+    "views_tabs_label",
+    "views_chips_label",
   ],
 });

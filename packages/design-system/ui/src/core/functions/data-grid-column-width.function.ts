@@ -6,12 +6,12 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid); STA-1371.
  */
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 
 /**
  * The column's width.
  * @param column - the grid column
  */
-export function dataGridColumnWidth(column: DataGridColumn): number {
+export function dataGridColumnWidth(column: CollectionColumn): number {
   return column.width ?? (column.type === "number" || column.type === "boolean" ? 96 : 160);
 }

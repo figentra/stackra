@@ -38,8 +38,6 @@ export default function Virtual() {
       />
       <DataTable
         label={t(K.virtual_label)}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
         selectionMode="multiple"
@@ -47,8 +45,6 @@ export default function Virtual() {
         hasColumnTools
         isVirtualized
         maxHeight="28rem"
-        query={{ search: "", filterValues: {}, sort: collection.state.sort[0] ?? null }}
-        onQueryChange={() => {}}
       />
     </div>
   );

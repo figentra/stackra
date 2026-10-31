@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: the "tickets" demo of the native FilterPanel: an admin's support tickets: saved views and priority facets with counts, no sort menu.
+ * Purpose: the "tickets" demo of the native FilterPanel: an admin's support tickets: saved views as tabs (`SavedViews`)
+ *          and priority facets with counts, on one engine.
  * Boundary: a demo with no props, @stackra/ui and local state only; the same file is the preview and the code shown.
  * Runtime: react-native
- * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0310 (decision 6);
- *          design-system gap inventory (2026-10-28).
+ * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0302 (decisions 3 and 5);
+ *          ADR 0505 (one filter model, one SavedViews); ADR 0310 (decision 6).
  */
-import type { FilterDefinition, ResourceQuery, SavedView } from "@stackra/ui/contracts";
-import { FilterPanel, useCatalogueText } from "@stackra/ui/native";
-import { useState } from "react";
+import type { CollectionColumn } from "@stackra/ui/contracts";
+import { FilterPanel, SavedViews, useCatalogueText, useCollection } from "@stackra/ui/native";
+import { View } from "react-native";
 
 import { MESSAGES } from "#src/constants/messages.constant";
 import { FILTER_PANEL_DEMO_KEYS } from "#src/demos/free/filter-panel/filter-panel-demo-keys.constant";
@@ -16,39 +17,47 @@ import { FILTER_PANEL_DEMO_KEYS } from "#src/demos/free/filter-panel/filter-pane
 /** The demo's keys. */
 const K = FILTER_PANEL_DEMO_KEYS.demo_free.filter_panel.tickets;
 
-/** Open tickets of every priority. */
-const OPEN: ResourceQuery = { search: "", filterValues: {}, sort: null };
-
-/** Views and priority facets, no sort. */
+/** Filter panel: Support tickets. */
 export default function Tickets() {
   const t = useCatalogueText(MESSAGES.en);
-  const [query, setQuery] = useState(OPEN);
-  const [view, setView] = useState("open");
-  const filters: readonly FilterDefinition[] = [
+  const columns: readonly CollectionColumn[] = [
     {
       id: "priority",
       label: t(K.priority),
-      kind: "select",
+      type: "choice",
       options: (["high", "normal", "low"] as const).map((id) => ({ id, label: t(K[id]) })),
     },
-    { id: "mine", label: t(K.mine), kind: "boolean" },
+    { id: "mine", label: t(K.mine), type: "boolean" },
   ];
-  const views: readonly SavedView[] = [
-    { id: "open", label: t(K.open), query: OPEN },
-    { id: "mine", label: t(K.view_mine), query: { ...OPEN, filterValues: { mine: true } } },
-    { id: "closed", label: t(K.closed), query: OPEN },
-  ];
+  const none = { match: "all", conditions: [] } as const;
+  const collection = useCollection({
+    columns,
+    mode: "server",
+    totalCount: 26,
+    views: [
+      { id: "open", label: t(K.open), state: { filter: none } },
+      {
+        id: "mine",
+        label: t(K.view_mine),
+        state: {
+          filter: {
+            match: "all",
+            conditions: [{ id: "filter:mine", field: "mine", operator: "is_true", value: "" }],
+          },
+        },
+      },
+      { id: "closed", label: t(K.closed), state: { filter: none } },
+    ],
+    defaultViewId: "open",
+  });
   return (
-    <FilterPanel
-      label={t(K.label)}
-      query={query}
-      onQueryChange={setQuery}
-      filters={filters}
-      counts={{ priority: { high: 3, normal: 17, low: 6 } }}
-      resultCount={26}
-      views={views}
-      activeViewId={view}
-      onViewChange={setView}
-    />
+    <View className="gap-3">
+      <SavedViews collection={collection} variant="tabs" label={t(K.label)} />
+      <FilterPanel
+        label={t(K.label)}
+        collection={collection}
+        counts={{ priority: { high: 3, normal: 17, low: 6 } }}
+      />
+    </View>
   );
 }

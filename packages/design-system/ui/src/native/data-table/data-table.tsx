@@ -1,34 +1,35 @@
 /**
  * Stackra file contract:
- * Purpose: the native `DataTable`, the adapted form of ADR 0302 (decision 3) and ADR 0318 (decision 10): the native
- *          `Table` (a list of cards, itself the adapted form) with the rest of a resource index around it, on the web
- *          one's contract. It reads the sort from `query.sort` and writes the next sort to `onQueryChange` (the table's
- *          sort chooser asks), lists a row's `rowActions` in an `ActionMenu` on a last line of the card, draws the
- *          `filterBar` slot above the list, a `BulkActionBar` as the bottom bar while several rows are selected, an
- *          `EmptyState` (`no-results` when the query narrows, `no-data` otherwise), a `PageSkeleton` for a first load,
- *          an `ErrorState` for a failed one and `CursorPagination` under the list, and passes every other `View` prop to
- *          its root.
- *          `groupBy`, `aggregates` and `hiddenColumns` go through `useDataTableLayout`: group heading and total rows
- *          are drawn in the rows, kept out of the selection and given no row actions.
- * Boundary: it holds no query and fetches nothing. The selection is the one state it keeps, and only when the app does
- *           not control it, so the bar can count it; choosing a row or clearing the selection while "all matching" is
- *           chosen takes the app back to the rows shown. A row action is pending while its promise is, shown as a
- *           disabled item that says so, and refuses a second tap. The row menu is HeroUI Native's popover, never a bottom
- *           sheet, because every native sheet is the inset one and the bar's overflow already is. Known limit: a selectable
- *           row of the native `Table` is one accessible element that reads out its cells, so a screen reader reaches a row's
- *           menu only on a table with no selection; with a selection, the bulk bar offers the same actions on the chosen
- *           rows. Native has no focus to move after the clear button, which the bar's removal leaves to the platform. It
- *           never imports `FilterBar`, which is built beside it; the app puts one in the `filterBar` slot with the same
- *           `query`. Strings are always wrapped in `Text`, which React Native requires.
+ * Purpose: the native `DataTable`, the adapted form of ADR 0302 (decision 3): the native `Table` (a list of cards,
+ *          itself the adapted form) drawn from a `useCollection` engine, on the web one's contract. The rows, the
+ *          columns as arranged (hidden ones left out), the sort (the table's sort chooser asks the engine), the
+ *          selection with "all matching", the group heading and total rows and the pages are the engine's: the app's
+ *          (`collection`) or the table's own client-mode one over the shorthand `items` and `columns`. It lists a row's
+ *          `rowActions` in an `ActionMenu` on a last line of the card, draws the `filterBar` slot above the list (with
+ *          `hasColumnTools`, a `ColumnEditor` beside it: show, hide, order, pin, rename and density, the column tools a
+ *          phone has; a header menu, a resize and "Filter by this column" stay web-only), a
+ *          `BulkActionBar` as the bottom bar while several rows are selected, an `EmptyState` (`no-results` when the
+ *          search or filter narrows, `no-data` otherwise), a `PageSkeleton` for a first load, an `ErrorState` for a
+ *          failed one and `CursorPagination` under the list for `page` and `cursor` paging (`infinite` loads at the
+ *          end), and passes every other `View` prop to its root.
+ * Boundary: it holds no data state: every change goes to the engine. Group heading and total rows are kept out of the
+ *           selection and given no row actions. A row action is pending while its promise is, shown as a disabled item
+ *           that says so, and refuses a second tap. The row menu is HeroUI Native's popover, never a bottom sheet,
+ *           because every native sheet is the inset one and the bar's overflow already is. Known limit: a selectable
+ *           row of the native `Table` is one accessible element that reads out its cells, so a screen reader reaches a
+ *           row's menu only on a table with no selection; with a selection, the bulk bar offers the same actions on the
+ *           chosen rows. It never imports `FilterBar`; the app puts one given the same engine in the `filterBar` slot.
+ *           Strings are always wrapped in `Text`, which React Native requires.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3); product audit 2026-10-28 (group-by, aggregates, hidden columns); ADR 0165 (HeroUI Native on native); ADR 0303 (decision 7); ADR 0313; ADR 0318
- *          (decisions 2, 4 to 6 and 10); ADR 0139 (action UX); ADR 0060 (right-to-left); WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2;
- *          owner decision 6 of STA-350 (thin wrappers).
+ * Governing contract: ADR 0302 (decision 3); ADR 0505 (one data family: the table on the engine, audit D9); ADR 0165
+ *          (HeroUI Native on native); ADR 0303 (decision 7); ADR 0313; ADR 0139 (action UX); ADR 0060 (right-to-left);
+ *          WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2; owner decision 6 of STA-350 (thin wrappers).
  */
-import { useContext, useState, type ReactElement } from "react";
+import { useContext, type ReactElement } from "react";
 import { View } from "react-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useCollection } from "#react/hooks/use-collection";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { useDataTableLayout } from "#react/data-table/use-data-table-layout";
 import { DesignSystemContext } from "#native/design-system-provider/design-system-context";
@@ -36,12 +37,11 @@ import type { CollectionItem } from "#contracts/types/collection-item.type";
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
 import type { TableColumn } from "#contracts/types/table-column.type";
 import { cellTextOf } from "#core/functions/cell-text-of.function";
-import { clearResourceQueryFilters } from "#core/functions/clear-resource-query-filters.function";
-import { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
 import { ActionMenu } from "#native/action-menu/action-menu";
 import { BulkActionBar } from "#native/bulk-action-bar/bulk-action-bar";
 import { usePendingActions } from "#react/hooks/use-pending-actions";
 import { Button } from "#native/button/button";
+import { ColumnEditor } from "#native/column-chooser/column-editor";
 import { CursorPagination } from "#native/cursor-pagination/cursor-pagination";
 import { EmptyState } from "#native/empty-state/empty-state";
 import { ErrorState } from "#native/error-state/error-state";
@@ -54,9 +54,8 @@ import type { DataTableProps } from "#native/data-table/data-table.props";
 const ACTIONS_COLUMN_ID = "data-table-row-actions";
 
 /**
- * A resource index on the contract of the native `Table`: the rows, the query that fetched them, the actions on a row
- * and on a selection, and the states around them. The query is controlled by the app (or the router binding): the
- * table's sort chooser calls `onQueryChange` with the next query, and the app fetches the rows in that order.
+ * A collection on the contract of the native `Table`: the engine's rows, the actions on a row and on a selection, and
+ * the states around them. Give `collection`, or `items` and `columns` for a client-mode engine of the table's own.
  */
 export function DataTable<TItem extends CollectionItem = CollectionItem>({
   label,
@@ -67,37 +66,25 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   isStickyHeader,
   maxHeight,
   selectionMode = "none",
-  selectedKeys,
-  defaultSelectedKeys,
-  onSelectionChange,
   emptyState,
-  isLoading = false,
+  isLoading: isLoadingProp,
   loadingLabel,
-  hasMore = false,
-  hasPrevious,
-  onNext,
-  onPrevious,
-  mode,
-  query,
-  onQueryChange,
+  collection: given,
+  collectionKey,
   rowActions,
   bulkActions,
   filterBar,
   filteredEmptyState,
-  error,
+  error: errorProp,
   errorKind,
   isMessageShown,
-  onRetry,
+  onRetry: onRetryProp,
   retryLabel: retryLabelProp,
   headingLevel = 3,
   paginationLabel: paginationLabelProp,
   bulkActionsLabel: bulkActionsLabelProp,
-  totalCount,
-  isAllMatchingSelected = false,
-  onAllMatchingSelectedChange,
-  groupBy,
-  aggregates,
-  hiddenColumns,
+  hasColumnTools = false,
+  onFilterColumn: _onFilterColumn,
   scrollEnabled,
   className,
   ...rest
@@ -105,7 +92,26 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   const t = useUiText();
   // Read softly: a table with no aggregates needs no provider, and numbers fall back to English.
   const locale = useContext(DesignSystemContext)?.locale ?? "en";
-  const layout = useDataTableLayout({ items, columns, groupBy, aggregates, hiddenColumns, locale });
+  // The table's own engine over the shorthand; the app's `collection` wins. The hook always runs (rules of hooks).
+  const own = useCollection<TItem>({
+    columns: columns ?? [],
+    items: items ?? [],
+    locale,
+    collectionKey,
+  });
+  const collection = given ?? own;
+  const { state } = collection;
+  const rows = collection.rows;
+  const isLoading = isLoadingProp ?? collection.isLoading;
+  const error = errorProp ?? collection.error;
+  const onRetry = onRetryProp ?? (collection.mode === "server" ? collection.refresh : undefined);
+  const layout = useDataTableLayout({
+    items: rows,
+    columns: collection.visibleColumns,
+    groupBy: state.groupBy ?? undefined,
+    aggregates: state.aggregates,
+    locale,
+  });
   const retryLabel = retryLabelProp ?? t(UI_KEYS.ui.data_table.retry);
   const paginationLabel = paginationLabelProp ?? t(UI_KEYS.ui.data_table.pagination, { label });
   const bulkActionsLabel = bulkActionsLabelProp ?? t(UI_KEYS.ui.data_table.bulk_actions, { label });
@@ -115,21 +121,15 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
     align: "end",
   };
   const { pending, run } = usePendingActions();
-  // The selection is kept here only so the bar can count it; a controlled `selectedKeys` always wins.
-  const [own, setOwn] = useState<readonly string[]>(defaultSelectedKeys ?? []);
-  const selected = selectedKeys ?? own;
+  const selected = state.selection;
   const hasError = error !== undefined && error !== null;
-  const isFiltered = isResourceQueryFiltered(query);
-  const hasRows = items.length > 0;
-  const rowHeaderId = (columns.find((column) => column.isRowHeader) ?? columns[0])?.id ?? "";
+  const hasRows = rows.length > 0;
+  const rowHeaderId =
+    (collection.columns.find((column) => column.isRowHeader) ?? collection.columns[0])?.id ?? "";
 
-  const changeSelection = (picked: readonly string[]) => {
-    const keys = picked.filter((key) => !layout.isSummary(key));
-    setOwn(keys);
-    onSelectionChange?.(keys);
-    // The keys are the rows on screen once "all matching" is chosen, so any change goes back to them.
-    if (isAllMatchingSelected) onAllMatchingSelectedChange?.(false);
-  };
+  // Any change of the rows chosen goes back to them from "all matching" (the engine drops it on a new selection).
+  const changeSelection = (picked: readonly string[]) =>
+    collection.setSelection(picked.filter((key) => !layout.isSummary(key)));
 
   const menuItemsOf = (item: TItem): readonly MenuLeafItem[] =>
     (rowActions?.(item) ?? []).map((action) => {
@@ -175,7 +175,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
     return renderCell ? renderCell(item, column) : cellTextOf(item, column.id);
   };
 
-  const empty = isFiltered
+  const empty = collection.isFiltered
     ? (filteredEmptyState ?? (
         <EmptyState
           reason="no-results"
@@ -185,7 +185,10 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
           actions={
             <Button
               variant="secondary"
-              onPress={() => onQueryChange(clearResourceQueryFilters(query))}
+              onPress={() => {
+                collection.setSearch("");
+                collection.setFilter({ match: "all", conditions: [] });
+              }}
             >
               {t(UI_KEYS.ui.data_table.clear_filters)}
             </Button>
@@ -201,7 +204,7 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
         />
       ));
 
-  const hasPager = onNext !== undefined || onPrevious !== undefined;
+  const hasPager = collection.paging === "page" || collection.paging === "cursor";
 
   return (
     <View {...rest} className={`flex-1 gap-3 ${className ?? ""}`}>
@@ -210,6 +213,11 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
       ) : (
         filterBar
       )}
+      {hasColumnTools ? (
+        <View className="flex-row justify-end">
+          <ColumnEditor collection={collection} isIconOnly />
+        </View>
+      ) : null}
       {hasError ? (
         <ErrorState
           title={t(UI_KEYS.ui.data_table.error_title)}
@@ -236,23 +244,29 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
           selectionMode={selectionMode}
           selectedKeys={selected}
           onSelectionChange={changeSelection}
-          sortDescriptor={query.sort ?? undefined}
-          onSortChange={(sort) => onQueryChange({ ...query, sort })}
+          sort={state.sort}
+          onSortChange={(sort) => collection.setSort([sort])}
           emptyState={empty}
           isLoading={isLoading}
           loadingLabel={loadingLabel}
+          {...(collection.paging === "infinite"
+            ? { hasMore: collection.hasMore, onLoadMore: collection.loadMore }
+            : {})}
           {...(scrollEnabled === undefined ? {} : { scrollEnabled })}
         />
       )}
       {hasPager && !hasError ? (
         <CursorPagination
           label={paginationLabel}
-          hasMore={hasMore}
-          hasPrevious={hasPrevious}
-          onNext={onNext}
-          onPrevious={onPrevious}
-          mode={mode}
-          count={items.length}
+          hasMore={collection.hasMore}
+          hasPrevious={state.page > 0}
+          onNext={() =>
+            collection.paging === "page"
+              ? collection.setPage(state.page + 1)
+              : collection.loadMore()
+          }
+          onPrevious={() => collection.setPage(state.page - 1)}
+          count={rows.length}
           isLoading={isLoading && hasRows}
         />
       ) : null}
@@ -261,11 +275,15 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
           label={bulkActionsLabel}
           selectedCount={selected.length}
           actions={bulkActions ?? []}
-          isPageSelected={hasRows && items.every((item) => selected.includes(item.id))}
-          isAllMatchingSelected={isAllMatchingSelected}
+          isPageSelected={hasRows && rows.every((item) => selected.includes(item.id))}
+          isAllMatchingSelected={state.isAllMatchingSelected}
           onClearSelection={() => changeSelection([])}
-          {...(totalCount === undefined ? {} : { totalCount })}
-          {...(onAllMatchingSelectedChange ? { onAllMatchingSelectedChange } : {})}
+          totalCount={
+            state.isAllMatchingSelected
+              ? Math.max(0, collection.totalCount - state.excludedKeys.length)
+              : collection.totalCount
+          }
+          onAllMatchingSelectedChange={collection.setAllMatchingSelected}
         />
       ) : null}
     </View>

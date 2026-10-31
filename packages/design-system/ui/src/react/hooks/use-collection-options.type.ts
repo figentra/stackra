@@ -53,6 +53,11 @@ export interface UseCollectionOptions<TItem extends CollectionItem = CollectionI
   readonly totalCount?: number | undefined;
   /** Server mode without `fetch`: true while the app fetches. */
   readonly isLoading?: boolean | undefined;
+  /**
+   * Server mode without `fetch`, `cursor` paging: the cursor of the page after the rows given, or `null` when they are
+   * the last; `loadMore` asks for it and Previous goes back through the cursors shown.
+   */
+  readonly nextCursor?: string | null | undefined;
   /** The locale text is sorted in. Defaults to `en`. */
   readonly locale?: string | undefined;
 }

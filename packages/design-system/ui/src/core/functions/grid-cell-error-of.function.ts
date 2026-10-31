@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid validation); WCAG 2.2 SC 3.3.1.
  */
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridRow } from "#contracts/types/data-grid-row.type";
 import type { DataGridValue } from "#contracts/types/data-grid-value.type";
 import type { GridCellError } from "#core/types/grid-cell-error.type";
@@ -20,7 +20,7 @@ import type { GridCellError } from "#core/types/grid-cell-error.type";
  */
 export function gridCellErrorOf(
   value: DataGridValue | undefined,
-  column: DataGridColumn,
+  column: CollectionColumn,
   row: DataGridRow,
 ): GridCellError | undefined {
   const type = column.type ?? "text";
@@ -31,7 +31,7 @@ export function gridCellErrorOf(
   const isWrongType =
     (type === "number" && typeof value !== "number") ||
     (type === "boolean" && typeof value !== "boolean") ||
-    (type === "select" && !column.options?.some((option) => option.id === value)) ||
+    (type === "choice" && !column.options?.some((option) => option.id === value)) ||
     (type === "date" && (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)));
   if (isWrongType) return { kind: "type" };
   if (typeof value === "number") {

@@ -1,33 +1,28 @@
 /**
  * Stackra file contract:
- * Purpose: proves the FilterBar contract: it takes the controlled resource query, the list of filter definitions and the
- *          accessible name of its search box as required props, a hint for the box as an optional one, and nothing for
- *          the sort or the page, which belong to the table and to the app.
+ * Purpose: proves the FilterBar contract: it takes the `useCollection` engine whose search and filter it edits and the
+ *          accessible name of its search box as required props, a hint for the box as an optional one, and nothing of
+ *          the old resource query (`query`, `onQueryChange`, `filters`), the sort or the page.
  * Boundary: type assertions only; they are checked by the typechecker and the test passes at run time.
  * Runtime: node
- * Governing contract: ADR 0318 (decisions 1 to 3); ADR 0022 (test placement).
+ * Governing contract: ADR 0505 (one filter model); ADR 0022 (test placement).
  */
 // @covers sta-350:FR-194
+import type { CollectionController } from "#contracts/types/collection-controller.type";
 import type { FilterBarContractProps } from "#contracts/types/filter-bar-contract-props.type";
-import type { FilterDefinition } from "#contracts/types/filter-definition.type";
-import type { ResourceQueryContractProps } from "#contracts/types/resource-query-contract-props.type";
 
 describe("FilterBarContractProps", () => {
-  it("takes the controlled query, as every resource index piece does", () => {
-    expectTypeOf<FilterBarContractProps>().toExtend<ResourceQueryContractProps>();
-    expectTypeOf<FilterBarContractProps["query"]>().not.toBeUndefined();
-    expectTypeOf<FilterBarContractProps["onQueryChange"]>().toBeFunction();
-  });
-
-  it("requires the filters and the accessible name of the search box", () => {
-    expectTypeOf<FilterBarContractProps["filters"]>().toEqualTypeOf<readonly FilterDefinition[]>();
+  it("takes the engine and the accessible name of the search box", () => {
+    expectTypeOf<FilterBarContractProps["collection"]>().toEqualTypeOf<CollectionController>();
     expectTypeOf<FilterBarContractProps["searchLabel"]>().toEqualTypeOf<string>();
   });
 
-  it("offers a hint for the search box and nothing for the sort or the page", () => {
+  it("offers a hint for the search box and nothing of the resource query, the sort or the page", () => {
     expectTypeOf<FilterBarContractProps["searchPlaceholder"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<FilterBarContractProps>().not.toHaveProperty("query");
+    expectTypeOf<FilterBarContractProps>().not.toHaveProperty("onQueryChange");
+    expectTypeOf<FilterBarContractProps>().not.toHaveProperty("filters");
     expectTypeOf<FilterBarContractProps>().not.toHaveProperty("sort");
     expectTypeOf<FilterBarContractProps>().not.toHaveProperty("cursor");
-    expectTypeOf<FilterBarContractProps>().not.toHaveProperty("searchParams");
   });
 });

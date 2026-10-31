@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "c06e8449be31dfd5",
+    "hash": "12cc73ec924a63d6",
     "propsFiles": ["ui/src/native/table/table.props.ts"]
   },
   "importLine": "import { Table } from \"@stackra/ui/native\";",
@@ -76,13 +76,6 @@
           "type": "\"secondary\" | \"primary\""
         },
         {
-          "description": "The sort in force, for a controlled table: the rows arrive sorted, and this only marks the header.",
-          "name": "sortDescriptor",
-          "required": false,
-          "source": "stackra",
-          "type": "SortDescriptor"
-        },
-        {
           "description": "True while a cursor page after the last row exists; with `onLoadMore` it loads it when the end comes into view.",
           "name": "hasMore",
           "required": false,
@@ -105,7 +98,7 @@
           "type": "string"
         },
         {
-          "description": "Every sort key, most significant first, for a multi-sort: the first marks its header as `sortDescriptor` does and\nthe others show their rank. Given, it wins over `sortDescriptor`.",
+          "description": "The sort in force, every key most significant first, for a controlled table: the rows arrive sorted, and this only\nmarks the headers (the first by its direction, the others by their rank too).",
           "name": "sort",
           "required": false,
           "source": "stackra",
@@ -116,7 +109,7 @@
           "name": "density",
           "required": false,
           "source": "stackra",
-          "type": "\"compact\" | \"normal\" | \"roomy\""
+          "type": "\"normal\" | \"compact\" | \"roomy\""
         },
         {
           "description": "Web: true to give each header a resize handle (pointer, and the keyboard through the column menu's \"Resize\"); the\ncolumns then take their `width`, `minWidth` and `maxWidth`, and the table scrolls sideways past its width.",

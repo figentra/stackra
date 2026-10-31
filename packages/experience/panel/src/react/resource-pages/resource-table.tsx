@@ -1,41 +1,47 @@
 /**
  * Stackra file contract:
- * Purpose: `ResourceTable`, the data table of a list query: the recorded columns (or the row's own keys), sort, the
- *          filter bar with search, cursor pagination, row actions and the bulk bar, drawn with `@stackra/ui`'s
- *          `DataTable` and `FilterBar`. The List page and every relation manager draw it.
- * Boundary: internal to the resource pages. Holds the list state (search, filters, sort, cursor history, selection)
- *           and reads one page with `useQuery`; `tableInput` builds the closed input, so only declared sorts and
- *           filters are sent. A cell shows an enum code by its label (`ResourceValue`); a value filter is a text filter
- *           until gen writes filter kinds; a range filter draws as a number range, a date range as two calendar days, is-null as
- *           yes or no, and contains and compare as text. A principal column shows the principal's name. A saved view
- *           (`view`) sets the columns shown and the filter values and sort the table starts with (`savedViewState`); the
- *           caller keys the table by view so a new view starts fresh. A preset view (`preset`) sets the filter values
- *           and sort the table starts with, and its fixed input goes with every read under the user's state, below a
- *           relation's bound keys (`tableInput`). A page that carries a count shows it beside the
- *           filter bar, capped as "10,000+" (`CrudService.table`'s `TableCount`).
+ * Purpose: `ResourceTable`, the data table of a list query on `@stackra/ui`'s `useCollection` engine in server mode with
+ *          cursor paging: the recorded columns (or the row's own keys), sort, the filter bar with search, the cursor
+ *          pager, row actions and the bulk bar, drawn with `DataTable` and `FilterBar`, and the views as tabs
+ *          (`SavedViewTabs`) when there are any. The List page and every relation manager draw it.
+ * Boundary: internal to the resource pages. The engine holds the list state (search, filter, sort, cursor, selection,
+ *           the view); this component reads one page with `useQuery` and hands it back (`items`, `totalCount`,
+ *           `nextCursor`, `isLoading`). `tableInput` builds the closed input, so only declared sorts and filters are
+ *           sent; the engine's columns carry each declared filter's kind (range as a number, a date range as days,
+ *           is-null as yes or no, an enum as a choice, the trashed filter as with or only, the rest as text), and
+ *           `listFiltersOf` reads their values back, and names the conditions the server cannot read, whose chips the
+ *           filter bar draws as warnings (`unappliedIds`). A cell shows an enum code by its label (`ResourceValue`); a
+ *           principal column shows the principal's name. The views are the all-rows view, the tree's presets and the
+ *           `ViewStore`'s saved views (`listViewOf`), read through a `CollectionStore` adapter that writes nothing; a
+ *           preset's fixed input goes with every read under the user's state, below a relation's bound keys. A page
+ *           that carries a count shows it beside the filter bar, capped as "10,000+" (`CrudService.table`'s
+ *           `TableCount`).
  * Runtime: browser
- * Governing contract: ADR 0307 (rules 1, 2, 9, 11 and 12); ADR 0164; ADR 0271 (decision 1); reporting gaps 5 and 7.
+ * Governing contract: ADR 0307 (rules 1, 2, 9, 11 and 12); ADR 0164; ADR 0271 (decision 1); ADR 0505 (one data
+ *          family: the panel on the engine); reporting gaps 5 and 7.
  */
 import { useQuery } from "@stackra/clients/react";
 import { Enum, SortDirection } from "@stackra/contracts";
 import { useTranslation } from "@stackra/i18n/react";
 import type {
-  FilterDefinition,
-  FilterState,
-  ResourceQuery,
-  TableColumn,
+  CollectionColumn,
+  CollectionState,
+  CollectionStore,
+  CollectionView,
 } from "@stackra/ui/contracts";
-import { DataTable, EmptyState, FilterBar, Text } from "@stackra/ui/react";
-import { useState, type ReactElement } from "react";
+import { DataTable, EmptyState, FilterBar, Text, useCollection } from "@stackra/ui/react";
+import { useMemo, useState, type ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
+import { listFiltersOf } from "#core/functions/list-filters-of.function";
+import { listViewOf } from "#core/functions/list-view-of.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
-import { savedViewState } from "#core/functions/saved-view-state.function";
 import { tableInput } from "#core/functions/table-input.function";
 import { valueAt } from "#core/functions/value-at.function";
 import type { ColumnNode } from "#core/types/column-node.type";
 import type { ResourceTableProps } from "#react/resource-pages/resource-table.props";
 import { ResourceValue } from "#react/resource-pages/resource-value";
+import { SavedViewTabs } from "#react/saved-view-tabs/saved-view-tabs";
 
 /** One row as the table holds it. */
 type Row = Readonly<Record<string, unknown>> & { readonly id: string };
@@ -48,16 +54,24 @@ interface Page {
   readonly count?: { readonly value: number; readonly capped: boolean };
 }
 
+/** The slices of the engine's state the list query reads. */
+type ListSlices = Pick<
+  CollectionState,
+  "search" | "filter" | "sort" | "cursor" | "pageSize" | "viewId"
+>;
+
+/** The id of the all-rows view. */
+const ALL = "all";
+
 /** The columns a table without a recording shows: the first row's own scalar keys. */
 const derived = (rows: readonly Row[]): ColumnNode[] =>
   Object.keys(rows[0] ?? {}).map((key) => ({ kind: "value", key }));
 
-/** `@stackra/ui`'s sort direction of a wire direction, and back. */
-const toUi = (direction: SortDirection) =>
-  direction === SortDirection.Asc ? "ascending" : "descending";
-
 /** One empty input for every render, so a default never changes identity. */
 const NO_INPUT: Readonly<Record<string, unknown>> = {};
+
+/** No presets. */
+const NO_PRESETS: readonly never[] = [];
 
 /**
  * One list query's rows as a data table.
@@ -76,44 +90,144 @@ export function ResourceTable({
   rowActions,
   bulkActions,
   emptyState,
-  view,
-  preset,
+  views: viewStore,
+  presets = NO_PRESETS,
 }: ResourceTableProps): ReactElement {
   const { t } = useTranslation();
-  const [state, setState] = useState<ResourceQuery>(() => {
-    const start = view ?? preset;
-    return {
-      search: "",
-      // reason: a view's filter values were drawn by this same filter bar, or declared against its filters
-      filterValues: (start?.filter ?? {}) as FilterState,
-      sort:
-        start?.sort === undefined
-          ? null
-          : { column: start.sort.key, direction: toUi(start.sort.direction) },
-    };
-  });
-  const [cursors, setCursors] = useState<readonly (string | undefined)[]>([undefined]);
-  const [selected, setSelected] = useState<readonly string[]>([]);
-  const cursor = cursors.at(-1);
-  const sort =
-    state.sort === null
+  // The last page's rows name the columns of a table without a recording.
+  const [rowsSeen, setRowsSeen] = useState<readonly Row[]>([]);
+  const columns = useMemo<readonly CollectionColumn[]>(() => {
+    const filters = table?.filters ?? [];
+    const shown: CollectionColumn[] = (table?.columns ?? derived(rowsSeen))
+      .filter((column) => column.hidden !== true)
+      .map((column) => ({
+        id: column.key,
+        label: t(resourceLabel(resourceKey, "columns", column.key)),
+        isFilterable: false,
+        ...(column.sortable === true ? { isSortable: true } : {}),
+      }));
+    const all = [...shown];
+    for (const filter of filters) {
+      const kind: Partial<CollectionColumn> =
+        filter.kind === "trashed"
+          ? {
+              type: "choice",
+              options: [
+                { id: "with", label: t(PANEL_KEYS.panel.resources.trashed_with) },
+                { id: "only", label: t(PANEL_KEYS.panel.resources.trashed_only) },
+              ],
+            }
+          : filter.kind === "range"
+            ? { type: "number" }
+            : filter.kind === "dateRange"
+              ? { type: "date" }
+              : filter.kind === "isNull"
+                ? { type: "boolean" }
+                : filter.enum === undefined
+                  ? { type: "text" }
+                  : {
+                      type: "choice",
+                      options: Enum.values(filter.enum).map((code) => ({
+                        id: String(code),
+                        label: String(code),
+                      })),
+                    };
+      const id = filter.kind === "trashed" ? "trashed" : filter.key;
+      const at = all.findIndex((column) => column.id === id);
+      const column = all[at];
+      if (column !== undefined) all[at] = { ...column, ...kind, isFilterable: true };
+      else
+        all.push({
+          id,
+          label:
+            filter.kind === "trashed"
+              ? t(PANEL_KEYS.panel.resources.trashed)
+              : t(resourceLabel(resourceKey, "filters", filter.key)),
+          isHidden: true,
+          ...kind,
+        });
+    }
+    return all;
+  }, [table, rowsSeen, resourceKey, t]);
+
+  // The views (all rows, presets, saved), and per view what the quick filters cannot hold and a preset's fixed input.
+  const [extras] = useState(
+    () =>
+      new Map<
+        string,
+        { rest: Readonly<Record<string, unknown>>; input?: Readonly<Record<string, unknown>> }
+      >(),
+  );
+  const viewOf = (
+    id: string,
+    name: string,
+    start: Parameters<typeof listViewOf>[2],
+    fixed?: Readonly<Record<string, unknown>>,
+  ): CollectionView => {
+    const { view, rest } = listViewOf(id, name, start, table, columns);
+    extras.set(id, { rest, ...(fixed === undefined ? {} : { input: fixed }) });
+    return view;
+  };
+  const [fixedViews] = useState(() => [
+    viewOf(ALL, t(PANEL_KEYS.panel.resources.all_views), undefined),
+    ...presets.map((preset) =>
+      viewOf(
+        `preset:${preset.name}`,
+        t(resourceLabel(resourceKey, "views", preset.name)),
+        preset,
+        preset.input,
+      ),
+    ),
+  ]);
+  const [store] = useState<CollectionStore | null>(() =>
+    viewStore === undefined
       ? null
       : {
-          key: state.sort.column,
-          direction: state.sort.direction === "ascending" ? SortDirection.Asc : SortDirection.Desc,
-        };
+          // The views are read from the panel's store; the engine's own state is not kept between visits.
+          get: async () => {
+            const saved = await viewStore.list(resourceKey).catch(() => []);
+            return {
+              version: 1 as const,
+              state: {},
+              views: [...fixedViews, ...saved.map((view) => viewOf(view.id, view.name, view))],
+              defaultViewId: null,
+            };
+          },
+          // shortcut: saving a view from the tabs is not offered, so nothing is written back; add the ViewStore's save when the menu is.
+          save: () => undefined,
+        },
+  );
+  const start = fixedViews[0]?.state;
+  const [slices, setSlices] = useState<ListSlices>({
+    search: "",
+    filter: start?.filter ?? { match: "all", conditions: [] },
+    sort: start?.sort ?? [],
+    cursor: null,
+    pageSize,
+    viewId: ALL,
+  });
+  const extra = extras.get(slices.viewId ?? ALL);
+  const sent = listFiltersOf(slices.filter, columns);
+  const first = slices.sort[0];
+  const fixed = extra?.input === undefined ? input : { ...extra.input, ...input };
   const answer = useQuery(
     query,
     tableInput(
       table,
       {
-        search: state.search,
-        filters: state.filterValues,
-        sort,
-        limit: pageSize,
-        ...(cursor === undefined ? {} : { cursor }),
+        search: slices.search,
+        filters: { ...extra?.rest, ...sent.values },
+        sort:
+          first === undefined
+            ? null
+            : {
+                key: first.column,
+                direction: first.direction === "ascending" ? SortDirection.Asc : SortDirection.Desc,
+              },
+        limit: slices.pageSize,
+        ...(slices.cursor === null ? {} : { cursor: slices.cursor }),
       },
-      preset?.input === undefined ? input : { ...preset.input, ...input },
+      fixed,
     ) as never,
     { keepPreviousData: true },
   );
@@ -122,57 +236,25 @@ export function ResourceTable({
     ...item,
     id: String(item["id"] ?? index),
   }));
-  const nodes =
-    view?.columns === undefined
-      ? (table?.columns ?? derived(rows)).filter((column) => column.hidden !== true)
-      : savedViewState(table, view).columns;
-  const columns: TableColumn[] = nodes.map((column) => ({
-    id: column.key,
-    label: t(resourceLabel(resourceKey, "columns", column.key)),
-    ...(column.sortable === true ? { isSortable: true } : {}),
-  }));
-  const filters: FilterDefinition[] = (table?.filters ?? []).map((filter) => {
-    if (filter.kind === "trashed")
-      return {
-        id: "trashed",
-        kind: "select",
-        label: t(PANEL_KEYS.panel.resources.trashed),
-        options: [
-          { id: "with", label: t(PANEL_KEYS.panel.resources.trashed_with) },
-          { id: "only", label: t(PANEL_KEYS.panel.resources.trashed_only) },
-        ],
-      };
-    const filterLabel = t(resourceLabel(resourceKey, "filters", filter.key));
-    // `tableInput` turns each drawn value into the kind's wire form (`filterWireValue`).
-    if (filter.kind === "range") return { id: filter.key, kind: "number", label: filterLabel };
-    if (filter.kind === "dateRange")
-      return { id: filter.key, kind: "date-range", label: filterLabel };
-    if (filter.kind === "isNull") return { id: filter.key, kind: "boolean", label: filterLabel };
-    return filter.enum === undefined
-      ? { id: filter.key, kind: "text", label: filterLabel }
-      : {
-          id: filter.key,
-          kind: "select",
-          label: filterLabel,
-          options: Enum.values(filter.enum).map((code) => ({
-            id: String(code),
-            label: String(code),
-          })),
-        };
+  if (table === undefined && rows.length > 0 && rowsSeen.length === 0) setRowsSeen(rows);
+
+  const collection = useCollection<Row>({
+    columns,
+    items: rows,
+    mode: "server",
+    paging: "cursor",
+    initialState: { ...slices },
+    state: slices,
+    onStateChange: ({ search, filter, sort, cursor, pageSize: size, viewId }) =>
+      setSlices({ search, filter, sort, cursor, pageSize: size, viewId }),
+    ...(store === null
+      ? { views: fixedViews, store: null }
+      : { store, collectionKey: `panel:${resourceKey}` }),
+    isLoading: answer.isPending,
+    nextCursor: page.hasMore === true ? (page.nextCursor ?? null) : null,
+    ...(page.count === undefined ? {} : { totalCount: page.count.value }),
   });
-  const onQueryChange = (next: ResourceQuery) => {
-    setState(next);
-    setCursors([undefined]);
-    setSelected([]);
-  };
-  const shown = {
-    ...state,
-    sort:
-      state.sort ??
-      (table?.defaultSort === undefined
-        ? null
-        : { column: table.defaultSort.key, direction: toUi(table.defaultSort.direction) }),
-  };
+
   const count =
     page.count === undefined ? null : (
       <Text tone="muted">
@@ -184,29 +266,30 @@ export function ResourceTable({
         )}
       </Text>
     );
-  const filterBar =
-    searchable || filters.length > 0 ? (
-      <>
+  const tabs =
+    collection.views.length > 1 ? (
+      <SavedViewTabs collection={collection} label={t(PANEL_KEYS.panel.resources.saved_views)} />
+    ) : null;
+  const hasFilters = columns.some((column) => column.isFilterable !== false);
+  const filterBar = (
+    <>
+      {tabs}
+      {searchable || hasFilters ? (
         <FilterBar
-          query={shown}
-          onQueryChange={onQueryChange}
-          filters={filters}
+          collection={collection}
           searchLabel={t(PANEL_KEYS.panel.resources.search)}
+          unappliedIds={sent.unsent}
         />
-        {count}
-      </>
-    ) : (
-      count
-    );
+      ) : null}
+      {count}
+    </>
+  );
   return (
     <DataTable
       label={label}
-      columns={columns}
-      items={rows}
-      query={shown}
-      onQueryChange={onQueryChange}
+      collection={collection}
       renderCell={(row, column) => {
-        const node = nodes.find((candidate) => candidate.key === column.id);
+        const node = table?.columns.find((candidate) => candidate.key === column.id);
         const currency =
           node?.currency === undefined
             ? undefined
@@ -222,24 +305,15 @@ export function ResourceTable({
           />
         );
       }}
-      {...(filterBar === null ? {} : { filterBar })}
+      {...(tabs === null && count === null && !searchable && !hasFilters ? {} : { filterBar })}
       {...(rowActions === undefined ? {} : { rowActions })}
       {...(bulkActions === undefined
         ? {}
         : {
             selectionMode: "multiple" as const,
-            selectedKeys: selected,
-            onSelectionChange: setSelected,
-            bulkActions: bulkActions(selected),
+            bulkActions: bulkActions(collection.state.selection),
           })}
-      isLoading={answer.isPending}
       loadingLabel={label}
-      hasMore={page.hasMore === true}
-      hasPrevious={cursors.length > 1}
-      onNext={() => {
-        if (page.nextCursor !== undefined) setCursors([...cursors, page.nextCursor]);
-      }}
-      onPrevious={() => setCursors(cursors.slice(0, -1))}
       {...(answer.error === null
         ? {}
         : {

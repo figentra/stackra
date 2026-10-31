@@ -1,19 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web DataTable names its grid by `label` and draws the rows and columns of the Table it composes,
- *          marks the sorted header from `query.sort` and answers a header press with the whole next query (search and
- *          filters kept, only the sort changed), lists `rowActions` in a menu named for the row and runs one once while
- *          showing it pending, draws the `filterBar` slot above the rows, shows the bulk bar only while several rows are
- *          selected with the count and "select all N" for a fully selected page (and returns to the shown rows when a row
- *          changes), clears the selection and moves focus to its container, chooses the `no-results` empty state when the
- *          query narrows and the `no-data` one otherwise (with a clear-filters button that keeps the sort), shows a named
- *          skeleton for a first load and keeps the rows with a loading line for a reload, shows an error state with a
- *          retry in place of the rows, draws cursor paging only when the app gave a handler, passes the root's other props
- *          through, and refuses the raw names the contract replaces.
+ * Purpose: proves the web DataTable names its grid by `label` and draws the rows and columns of the Table it composes
+ *          from a `useCollection` engine (the app's, or its own over the shorthand `items` and `columns`), sorts through
+ *          the engine on a header press, lists `rowActions` in a menu named for the row and runs one once while showing
+ *          it pending, draws the `filterBar` slot above the rows, shows the bulk bar only while several rows are
+ *          selected with the count and "select all N" for a fully selected page (keeping the choice, less the row, when
+ *          a row is unticked), clears the selection and moves focus to its container, chooses the `no-results` empty
+ *          state when the search or filter narrows and the `no-data` one otherwise (with a clear-filters button that
+ *          keeps the sort), shows a named skeleton for a first load and keeps the rows with a loading line for a
+ *          reload, shows an error state with a retry in place of the rows, draws the engine's pager (and none under a
+ *          DataView, which owns it), passes the root's other props through, and refuses the names the contract dropped.
  * Boundary: jsdom with real HeroUI and React Aria; the theme CSS is not loaded, so classes are checked, not looks.
  *           jsdom has no IntersectionObserver, which the table's load-more sentinel needs, so a stand-in is installed.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313; ADR 0318 (decisions 2 and 4 to 6); ADR 0022
+ * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0313; ADR 0505 (one data family); ADR 0022
  *          (test placement).
  */
 // @vitest-environment jsdom
@@ -22,13 +22,16 @@ import { defineIconRegistry } from "@stackra/icons";
 import { IconRegistryProvider } from "@stackra/icons/react";
 import { act, render, screen, within } from "@testing-library/react";
 import { ChevronLeft, ChevronRight, Ellipsis } from "lucide-react";
-import { useState, type ReactElement } from "react";
+import { useEffect, type ReactElement } from "react";
 
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
+import type { CollectionController } from "#contracts/types/collection-controller.type";
 import type { DataTableContractProps } from "#contracts/types/data-table-contract-props.type";
-import type { ResourceQuery } from "#contracts/types/resource-query.type";
-import type { TableColumn } from "#contracts/types/table-column.type";
+import { CollectionPagerContext } from "#react/data-table/collection-pager-context";
 import { DataTable } from "#react/data-table/data-table";
 import type { DataTableProps } from "#react/data-table/data-table.props";
+import { useCollection } from "#react/hooks/use-collection";
+import type { UseCollectionOptions } from "#react/hooks/use-collection-options.type";
 
 const press = (element: HTMLElement) => act(() => element.click());
 
@@ -44,12 +47,10 @@ const ORDERS: readonly Order[] = [
   { id: "o3", number: "#1003", customer: "Linus" },
 ];
 
-const COLUMNS: readonly TableColumn[] = [
+const COLUMNS: readonly CollectionColumn[] = [
   { id: "number", label: "Order", isSortable: true },
   { id: "customer", label: "Customer", isSortable: true },
 ];
-
-const QUERY: ResourceQuery = { search: "", filterValues: {}, sort: null };
 
 const icons = defineIconRegistry({
   ellipsis: Ellipsis,
@@ -57,26 +58,46 @@ const icons = defineIconRegistry({
   "chevron-right": ChevronRight,
 });
 
-/** The props every test starts from; each test adds what it is about. */
+/** The props every test starts from (the shorthand); each test adds what it is about. */
 const baseProps = {
   label: "Orders",
   items: ORDERS,
   columns: COLUMNS,
-  query: QUERY,
-  onQueryChange: () => undefined,
 } satisfies DataTableProps<Order>;
 
 const draw = (ui: ReactElement) =>
   render(<IconRegistryProvider registry={icons}>{ui}</IconRegistryProvider>);
 
-/** A table that keeps its own query and selection, the way a page does. */
-function Live(props: Partial<DataTableProps<Order>>) {
-  const [query, setQuery] = useState<ResourceQuery>(QUERY);
-  return <DataTable {...baseProps} {...props} query={query} onQueryChange={setQuery} />;
+/** The engine the last `Engine` drew from, for the tests to read. */
+const seen: { current: CollectionController<Order> | undefined } = { current: undefined };
+
+/** A table over an engine the test configures, the way an app does. */
+function Engine({
+  options,
+  ...props
+}: Partial<DataTableProps<Order>> & {
+  readonly options?: Partial<UseCollectionOptions<Order>>;
+}) {
+  const collection = useCollection<Order>({ columns: COLUMNS, items: ORDERS, ...options });
+  useEffect(() => {
+    seen.current = collection;
+  });
+  return <DataTable label="Orders" {...props} collection={collection} />;
 }
+
+const customerHeader = () => screen.getByRole("columnheader", { name: "Customer" });
+
+const pager = (name: string) => screen.getByRole("navigation", { name });
+
+const rowTexts = () =>
+  screen
+    .getAllByRole("row")
+    .slice(1)
+    .map((row) => row.textContent);
 
 describe("DataTable (web)", () => {
   beforeEach(() => {
+    seen.current = undefined;
     vi.stubGlobal(
       "IntersectionObserver",
       class {
@@ -104,23 +125,26 @@ describe("DataTable (web)", () => {
     expect(within(grid).getAllByRole("row")).toHaveLength(1 + ORDERS.length);
   });
 
-  it("marks the sorted header from the query and answers a header press with the whole next query", () => {
-    const onQueryChange = vi.fn();
-    const query: ResourceQuery = {
-      search: "ada",
-      filterValues: { status: "paid" },
-      sort: { column: "customer", direction: "ascending" },
-    };
-    draw(<DataTable {...baseProps} query={query} onQueryChange={onQueryChange} />);
+  it("sorts through the engine: a header press marks the header and orders the rows", () => {
+    draw(<DataTable {...baseProps} />);
+    press(customerHeader());
+    expect(customerHeader().getAttribute("aria-sort")).toBe("ascending");
+    press(customerHeader());
+    expect(customerHeader().getAttribute("aria-sort")).toBe("descending");
+    expect(rowTexts()[0]).toContain("Linus");
+  });
+
+  it("marks the sorted header from the app's engine and writes a header press back to it", () => {
+    draw(
+      <Engine
+        options={{ initialState: { sort: [{ column: "customer", direction: "ascending" }] } }}
+      />,
+    );
     expect(screen.getByRole("columnheader", { name: "Customer" }).getAttribute("aria-sort")).toBe(
       "ascending",
     );
     press(screen.getByRole("columnheader", { name: "Order" }));
-    expect(onQueryChange).toHaveBeenCalledWith({
-      search: "ada",
-      filterValues: { status: "paid" },
-      sort: { column: "number", direction: "ascending" },
-    });
+    expect(seen.current?.state.sort).toEqual([{ column: "number", direction: "ascending" }]);
   });
 
   it("draws the filterBar slot above the rows", () => {
@@ -211,105 +235,64 @@ describe("DataTable (web)", () => {
 
     it("draws no bar for none or one", () => {
       const { rerender } = draw(
-        <DataTable {...baseProps} selectionMode="single" defaultSelectedKeys={["o1"]} />,
+        <Engine selectionMode="single" options={{ initialState: { selection: ["o1"] } }} />,
       );
       expect(screen.queryByRole("toolbar")).toBeNull();
       rerender(
         <IconRegistryProvider registry={icons}>
-          <DataTable {...baseProps} defaultSelectedKeys={["o1"]} />
+          <Engine options={{ initialState: { selection: ["o1"] } }} />
         </IconRegistryProvider>,
       );
       expect(screen.queryByRole("toolbar")).toBeNull();
     });
 
-    it("reports the selection as ids and obeys a controlled one", () => {
-      const onSelectionChange = vi.fn();
-      draw(
-        <DataTable
-          {...baseProps}
-          selectionMode="multiple"
-          selectedKeys={["o2"]}
-          onSelectionChange={onSelectionChange}
-        />,
-      );
+    it("writes the selection to the engine as ids", () => {
+      draw(<Engine selectionMode="multiple" options={{ initialState: { selection: ["o2"] } }} />);
       expect(screen.getByText("1 selected", { selector: "p" })).toBeTruthy();
       press(
         within(screen.getByRole("row", { name: /#1003/ })).getByRole("checkbox", { hidden: true }),
       );
-      expect(onSelectionChange).toHaveBeenCalledWith(["o2", "o3"]);
+      expect(seen.current?.state.selection).toEqual(["o2", "o3"]);
     });
 
     it("clears the selection from the bar and moves focus to the table's container", () => {
-      const onSelectionChange = vi.fn();
       const { container } = draw(
-        <DataTable
-          {...baseProps}
-          selectionMode="multiple"
-          defaultSelectedKeys={["o1", "o2"]}
-          onSelectionChange={onSelectionChange}
-        />,
+        <Engine selectionMode="multiple" options={{ initialState: { selection: ["o1", "o2"] } }} />,
       );
       press(screen.getByRole("button", { name: "Clear selection" }));
-      expect(onSelectionChange).toHaveBeenCalledWith([]);
+      expect(seen.current?.state.selection).toEqual([]);
       expect(screen.queryByRole("toolbar")).toBeNull();
       expect(document.activeElement).toBe(container.firstElementChild);
     });
 
     it("offers select all N for a fully selected page and keeps it, less the row, when a row is unticked", () => {
-      const onAllMatchingSelectedChange = vi.fn();
-      const { rerender } = draw(
-        <DataTable
-          {...baseProps}
+      draw(
+        <Engine
           selectionMode="multiple"
-          selectedKeys={["o1", "o2", "o3"]}
-          totalCount={245}
-          onAllMatchingSelectedChange={onAllMatchingSelectedChange}
+          options={{
+            mode: "server",
+            totalCount: 245,
+            initialState: { selection: ["o1", "o2", "o3"] },
+          }}
         />,
       );
       press(screen.getByRole("button", { name: "Select all 245" }));
-      expect(onAllMatchingSelectedChange).toHaveBeenLastCalledWith(true);
-
-      rerender(
-        <IconRegistryProvider registry={icons}>
-          <DataTable
-            {...baseProps}
-            selectionMode="multiple"
-            selectedKeys={["o1", "o2", "o3"]}
-            totalCount={245}
-            isAllMatchingSelected
-            onAllMatchingSelectedChange={onAllMatchingSelectedChange}
-          />
-        </IconRegistryProvider>,
-      );
+      expect(seen.current?.state.isAllMatchingSelected).toBe(true);
       expect(screen.getByText("245 selected", { selector: "p" })).toBeTruthy();
       press(
         within(screen.getByRole("row", { name: /#1001/ })).getByRole("checkbox", { hidden: true }),
       );
       // Every match but the unticked row stays chosen: the exception is remembered, the choice kept.
-      expect(onAllMatchingSelectedChange).toHaveBeenLastCalledWith(true);
+      expect(seen.current?.state.isAllMatchingSelected).toBe(true);
       expect(screen.getByText("244 selected", { selector: "p" })).toBeTruthy();
     });
 
-    it("offers no select all N for a page that is only partly selected, or without a total", () => {
-      const { rerender } = draw(
-        <DataTable
-          {...baseProps}
+    it("offers no select all N for a page that is only partly selected", () => {
+      draw(
+        <Engine
           selectionMode="multiple"
-          selectedKeys={["o1"]}
-          totalCount={245}
-          onAllMatchingSelectedChange={() => {}}
+          options={{ mode: "server", totalCount: 245, initialState: { selection: ["o1"] } }}
         />,
-      );
-      expect(screen.queryByRole("button", { name: /^Select all/ })).toBeNull();
-      rerender(
-        <IconRegistryProvider registry={icons}>
-          <DataTable
-            {...baseProps}
-            selectionMode="multiple"
-            selectedKeys={["o1", "o2", "o3"]}
-            onAllMatchingSelectedChange={() => {}}
-          />
-        </IconRegistryProvider>,
       );
       expect(screen.queryByRole("button", { name: /^Select all/ })).toBeNull();
     });
@@ -325,28 +308,15 @@ describe("DataTable (web)", () => {
       ).toBeTruthy();
     });
 
-    it("shows the no-results state when the query narrows, and its button clears filters but keeps the sort", () => {
-      const onQueryChange = vi.fn();
-      draw(
-        <DataTable
-          {...baseProps}
-          items={[]}
-          query={{
-            search: "zzz",
-            filterValues: { status: "paid" },
-            sort: { column: "number", direction: "descending" },
-          }}
-          onQueryChange={onQueryChange}
-        />,
-      );
+    it("shows the no-results state when the search narrows, and its button clears it but keeps the sort", () => {
+      const sort = [{ column: "number", direction: "descending" }] as const;
+      draw(<Engine options={{ initialState: { search: "zzz", sort } }} />);
       const state = screen.getByRole("group", { name: "Orders" });
       expect(state.querySelector('[data-reason="no-results"]')).toBeTruthy();
       press(within(state).getByRole("button", { name: "Clear filters" }));
-      expect(onQueryChange).toHaveBeenCalledWith({
-        search: "",
-        filterValues: {},
-        sort: { column: "number", direction: "descending" },
-      });
+      expect(seen.current?.state.search).toBe("");
+      expect(seen.current?.state.filter.conditions).toEqual([]);
+      expect(seen.current?.state.sort).toEqual(sort);
     });
 
     it("takes the app's own empty states and heading level", () => {
@@ -356,10 +326,8 @@ describe("DataTable (web)", () => {
       expect(screen.getByText("No orders yet")).toBeTruthy();
       rerender(
         <IconRegistryProvider registry={icons}>
-          <DataTable
-            {...baseProps}
-            items={[]}
-            query={{ ...QUERY, search: "x" }}
+          <Engine
+            options={{ initialState: { search: "x" } }}
             filteredEmptyState={<p>Nothing like that</p>}
           />
         </IconRegistryProvider>,
@@ -389,6 +357,16 @@ describe("DataTable (web)", () => {
       expect(screen.getAllByText("Loading orders").length).toBeGreaterThan(0);
     });
 
+    it("reads the loading state from a server engine", () => {
+      draw(
+        <Engine
+          options={{ mode: "server", items: [], isLoading: true }}
+          loadingLabel="Loading orders"
+        />,
+      );
+      expect(screen.queryByRole("grid")).toBeNull();
+    });
+
     it("shows an error state in place of the rows, with a retry only when the app can retry", () => {
       const onRetry = vi.fn();
       const { rerender } = draw(
@@ -414,45 +392,42 @@ describe("DataTable (web)", () => {
     });
   });
 
-  describe("cursor paging", () => {
-    it("draws no pager unless the app gave a handler", () => {
-      draw(<DataTable {...baseProps} hasMore />);
+  describe("the engine's pager", () => {
+    it("draws no pager when the engine does not page", () => {
+      draw(<DataTable {...baseProps} />);
       expect(screen.queryByRole("navigation")).toBeNull();
     });
 
-    it("names the pager after the table and asks for the next and the previous page", () => {
-      const onNext = vi.fn();
-      const onPrevious = vi.fn();
+    it("names the pager after the table and walks the engine's pages", () => {
+      draw(<Engine options={{ paging: "page", initialState: { pageSize: 1 } }} />);
+      expect(within(pager("Orders pagination")).getByText("Page 1 of 3")).toBeTruthy();
+      press(within(pager("Orders pagination")).getByRole("button", { name: "Next" }));
+      expect(seen.current?.state.page).toBe(1);
+      press(within(pager("Orders pagination")).getByRole("button", { name: "Previous" }));
+      expect(seen.current?.state.page).toBe(0);
+    });
+
+    it("loads the next cursor page and goes back to the cursor it came from", () => {
       draw(
-        <DataTable {...baseProps} hasMore hasPrevious onNext={onNext} onPrevious={onPrevious} />,
+        <Engine
+          paginationLabel="Order pages"
+          options={{ mode: "server", paging: "cursor", nextCursor: "c2", totalCount: 9 }}
+        />,
       );
-      const pager = screen.getByRole("navigation", { name: "Orders pagination" });
-      expect(within(pager).getByText("Showing 3 items")).toBeTruthy();
-      press(within(pager).getByRole("button", { name: "Next" }));
-      press(within(pager).getByRole("button", { name: "Previous" }));
-      expect(onNext).toHaveBeenCalledTimes(1);
-      expect(onPrevious).toHaveBeenCalledTimes(1);
+      press(within(pager("Order pages")).getByRole("button", { name: "Next" }));
+      expect(seen.current?.state).toMatchObject({ page: 1, cursor: "c2" });
+      press(within(pager("Order pages")).getByRole("button", { name: "Previous" }));
+      expect(seen.current?.state).toMatchObject({ page: 0, cursor: null });
     });
 
-    it("disables next without hasMore and takes its own landmark name", () => {
-      draw(<DataTable {...baseProps} onNext={() => {}} paginationLabel="Order pages" />);
-      const pager = screen.getByRole("navigation", { name: "Order pages" });
-      expect(within(pager).getByRole<HTMLButtonElement>("button", { name: "Next" }).disabled).toBe(
-        true,
+    it("draws none under a DataView, which owns the pager", () => {
+      draw(
+        <CollectionPagerContext.Provider value>
+          <Engine options={{ paging: "page", initialState: { pageSize: 1 } }} />
+        </CollectionPagerContext.Provider>,
       );
+      expect(screen.queryByRole("navigation")).toBeNull();
     });
-  });
-
-  it("works as a page does, with the query in the page's state", () => {
-    draw(<Live selectionMode="multiple" />);
-    press(screen.getByRole("columnheader", { name: "Customer" }));
-    expect(screen.getByRole("columnheader", { name: "Customer" }).getAttribute("aria-sort")).toBe(
-      "ascending",
-    );
-    press(screen.getByRole("columnheader", { name: "Customer" }));
-    expect(screen.getByRole("columnheader", { name: "Customer" }).getAttribute("aria-sort")).toBe(
-      "descending",
-    );
   });
 
   it("passes the root's other props through", () => {
@@ -462,14 +437,14 @@ describe("DataTable (web)", () => {
     expect(root?.classList.contains("mine")).toBe(true);
   });
 
-  it("extends the contract and refuses the names it replaces", () => {
+  it("extends the contract and refuses the names it dropped", () => {
     expectTypeOf<DataTableProps<Order>>().toExtend<DataTableContractProps<Order>>();
-    // @ts-expect-error -- the sort is the query's, not a separate prop
+    // @ts-expect-error -- the sort is the engine's, not a separate prop
     const withSort: DataTableProps<Order> = { ...baseProps, sortDescriptor: undefined };
-    // @ts-expect-error -- paging is by cursor handlers, not an end-reached callback
-    const withLoadMore: DataTableProps<Order> = { ...baseProps, onLoadMore: () => undefined };
+    // @ts-expect-error -- the resource query is gone: the engine holds the search, filter and sort
+    const withQuery: DataTableProps<Order> = { ...baseProps, query: {} };
     // @ts-expect-error -- `commands` is a raw name; the contract's word is `rowActions`
     const raw: DataTableProps<Order> = { ...baseProps, commands: [] };
-    expect([withSort, withLoadMore, raw]).toHaveLength(3);
+    expect([withSort, withQuery, raw]).toHaveLength(3);
   });
 });

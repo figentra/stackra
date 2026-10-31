@@ -9,7 +9,7 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); data-collection plan (owner,
  *          2026-10-29), wave 3 (rows); ADR 0060 (light, dark, RTL).
  */
-import type { DataGridColumn } from "@stackra/ui/contracts";
+import type { CollectionColumn } from "@stackra/ui/contracts";
 import { DataTable, Text, useCollection } from "@stackra/ui/react";
 import { useState } from "react";
 
@@ -25,8 +25,14 @@ export default function InlineEdit() {
   const [edits, setEdits] = useState<Readonly<Record<string, Partial<GulfOrder>>>>({});
   const [last, setLast] = useState<string | null>(null);
   const items = orders.map((order) => ({ ...order, ...edits[order.id] }));
+  // The edited columns say so themselves: their kind picks the editor, their rules check the value.
+  const rules: Readonly<Record<string, Partial<CollectionColumn>>> = {
+    customer: { isEditable: true, isRequired: true },
+    status: { isEditable: true },
+    quantity: { isEditable: true, min: 1, isRequired: true },
+  };
   const collection = useCollection({
-    columns,
+    columns: columns.map((column) => ({ ...column, ...rules[column.id] })),
     items,
     initialState: {
       columns: columns.map((column) => ({
@@ -37,24 +43,13 @@ export default function InlineEdit() {
     },
   });
   const labelOf = (id: string) => columns.find((column) => column.id === id)?.label ?? id;
-  const statuses = columns.find((column) => column.id === "status")?.options ?? [];
-  const editable: readonly DataGridColumn[] = [
-    { id: "customer", label: labelOf("customer"), isRequired: true },
-    { id: "status", label: labelOf("status"), type: "select", options: statuses },
-    { id: "quantity", label: labelOf("quantity"), type: "number", min: 1, isRequired: true },
-  ];
   return (
     <div className="grid gap-3">
       <Text tone="muted">{t(K.edit_hint)}</Text>
       <DataTable
         label={t(K.edit_label)}
-        items={collection.rows}
-        columns={collection.columns}
         collection={collection}
         renderCell={renderCell}
-        query={{ search: "", filterValues: {}, sort: null }}
-        onQueryChange={() => {}}
-        editableColumns={editable}
         onCellEdit={(order, columnId, value) => {
           // A quantity changes the total too.
           const unit = order.total / Math.max(1, order.quantity);

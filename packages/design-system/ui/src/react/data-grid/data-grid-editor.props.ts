@@ -5,13 +5,13 @@
  * Runtime: browser
  * Governing contract: ADR 0305 (rules 10 and 12); ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid typed cells).
  */
-import type { DataGridColumn } from "#contracts/types/data-grid-column.type";
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
 import type { DataGridEditorMove } from "#react/data-grid/data-grid-editor-move.type";
 
 /** Props of the in-cell editor. */
 export interface DataGridEditorProps {
   /** The column, which picks the input. */
-  readonly column: DataGridColumn;
+  readonly column: CollectionColumn;
   /** The text being edited. */
   readonly draft: string;
   /** Called as the text changes. */

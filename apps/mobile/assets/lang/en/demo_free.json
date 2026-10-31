@@ -516,10 +516,12 @@
       "label": "Orders grouped by status"
     },
     "tools": {
-      "label": "Orders with views",
+      "label": "Orders with saved views and a column editor",
       "views": "Order views",
       "view_all": "All orders",
-      "view_unpaid": "Unpaid"
+      "view_unpaid": "Unpaid",
+      "views_tabs": "Order views as tabs",
+      "views_chips": "Order views as chips"
     }
   },
   "date_field": {

@@ -428,13 +428,16 @@ The kit now also registers the `chevron-left`, `chevron-right` and (native) `che
 
 Wave 7 adds the resource index (ADR 0318), on the web for now; the native forms follow.
 
-- `query` and `onQueryChange` hold the search, the applied filters and the sort as one controlled object, which
-  `FilterBar` and `DataTable` both take and neither copies, so an app can mirror it to the URL.
+- (Superseded 2026-10-31 by ADR 0505: the `ResourceQuery` props are gone.) The data family is nine components on the
+  `useCollection` engine: `Table`, `DataTable`, `DataGrid`, `List`, `DataView`, `ColumnEditor`, `FilterBar`,
+  `FilterPanel` and `SavedViews` (`variant` `menu`, `tabs` or `chips`). One `CollectionColumn` declares a column for
+  the table, the grid, inline edit and the filters; one `CollectionFilter` is the filter of FilterBar, FilterPanel and
+  DataView; `DataTable` and `DataGrid` take `collection`, or the shorthand `items` and `columns`.
 - `DataTable` is the `Table` with a `filterBar` slot above the rows, a row menu of `rowActions`, the filtered-empty and
   empty states, and a `BulkActionBar` from `bulkActions` while rows are selected. An action is a `ResourceAction`: its
   `onPress` may return a promise, during which it shows busy and refuses a second press.
-- `FilterBar` draws the search field, an add-filter menu, one removable chip per applied filter and clear-all; each of
-  the six filter kinds has one editor.
+- `FilterBar` draws the search field, an add-filter menu (one filter per filterable column, the editor from its
+  `type`), one removable chip per applied filter, "Advanced" for the whole and/or tree, and clear-all.
 - `EntityPicker` picks one record or several (as tags) from the pages `loadOptions(search, cursor)` answers; it waits
   for a pause in typing, drops a stale answer, loads the next page at the end of the list and can offer a create-new
   row.

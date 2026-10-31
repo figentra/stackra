@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the native `Table`, the adapted form of ADR 0302 (decision 3) and ADR 0313 (decision 7): HeroUI Native has
  *          no table, so it is a React Native `FlatList` with one card per row on the web table's contract (`items`,
- *          `columns`, `renderCell`, `selectionMode`, the selected ids, the controlled sort, `emptyState`, `isLoading`,
+ *          `columns`, `renderCell`, `selectionMode`, the selected ids, the controlled sort (`sort`, its first key), `emptyState`, `isLoading`,
  *          `hasMore`, `onLoadMore`). A row shows its row-header cell as a title and every other cell as a labelled line;
  *          the sort is a chooser of buttons in the list's header; every other `FlatList` prop passes through.
  * Boundary: no styling of its own beyond the card layout. A phone has no columns, so `variant`, `isStickyHeader` and
@@ -14,7 +14,7 @@
  *           `emptyState` shows only when nothing loads. Strings a child returns are wrapped in `Text`, which
  *           React Native requires.
  * Runtime: react-native
- * Governing contract: ADR 0302 (decision 3); ADR 0313; ADR 0165 (HeroUI Native on native); ADR 0060 (right-to-left);
+ * Governing contract: ADR 0302 (decision 3); ADR 0313; ADR 0505 (`sort[]`); ADR 0165 (HeroUI Native on native); ADR 0060 (right-to-left);
  *          WCAG 2.2 SC 1.3.1, 2.5.8, 4.1.2; owner decision 6 of STA-350 (thin wrappers).
  */
 import { Checkbox as HeroCheckbox } from "heroui-native";
@@ -76,7 +76,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   selectedKeys,
   defaultSelectedKeys,
   onSelectionChange,
-  sortDescriptor,
+  sort,
   onSortChange,
   emptyState,
   isLoading = false,
@@ -93,6 +93,8 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   const loadingText = loadingLabel ?? t(UI_KEYS.ui.table.loading);
   const rowHeaderId = (columns.find((column) => column.isRowHeader) ?? columns[0])?.id;
   const sortableColumns = columns.filter((column) => column.isSortable);
+  // The chooser marks the first key; a phone has no header row to show the others' rank.
+  const sortDescriptor = sort?.[0];
 
   const choose = (id: string) => {
     const ids = items.map((item) => item.id);
@@ -131,7 +133,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
       accessibilityLabel={label}
       accessibilityState={{ ...accessibilityState, busy: isLoading }}
       data={items}
-      extraData={[selected, sortDescriptor, columns, renderCell]}
+      extraData={[selected, sort, columns, renderCell]}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => {
         const isSelected = selected.includes(item.id);

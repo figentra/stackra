@@ -8,7 +8,6 @@
  */
 export { UiConfig } from "#config/ui.config";
 export { ICON_SIZES } from "#core/constants/icon-sizes.constant";
-export { clearResourceQueryFilters } from "#core/functions/clear-resource-query-filters.function";
 export { directionOf } from "#core/functions/direction-of.function";
 export { resolveMotion } from "#core/functions/resolve-motion.function";
 export { viewStackKeyframes } from "#core/functions/view-stack-keyframes.function";
@@ -34,7 +33,6 @@ export { formatChartCategory } from "#core/functions/format-chart-category.funct
 export { formatChartNumber } from "#core/functions/format-chart-number.function";
 export { initialsOf } from "#core/functions/initials-of.function";
 export { isFilterValueEmpty } from "#core/functions/is-filter-value-empty.function";
-export { isResourceQueryFiltered } from "#core/functions/is-resource-query-filtered.function";
 export { isolateText } from "#core/functions/isolate-text.function";
 export { isDirectionalIcon } from "#core/functions/is-directional-icon.function";
 export { markCurrentItems } from "#core/functions/mark-current-items.function";
@@ -53,12 +51,16 @@ export { toGregorian } from "#core/functions/to-gregorian.function";
 export { applyCollection } from "#core/functions/apply-collection.function";
 export { createMemoryCollectionSource } from "#core/functions/create-memory-collection-source.function";
 export { collectionFilterMatches } from "#core/functions/collection-filter-matches.function";
+export { collectionFilterWith } from "#core/functions/collection-filter-with.function";
+export { conditionChipTextOf } from "#core/functions/condition-chip-text-of.function";
+export { filterDefinitionsOf } from "#core/functions/filter-definitions-of.function";
+export { filterValueOf } from "#core/functions/filter-value-of.function";
+export { quickFilterIdOf } from "#core/functions/quick-filter-id-of.function";
 export { collectionQueryOf } from "#core/functions/collection-query-of.function";
 export { collectionSelectionOf } from "#core/functions/collection-selection-of.function";
 export { createLocalCollectionStore } from "#core/functions/create-local-collection-store.function";
 export { sortCollectionItems } from "#core/functions/sort-collection-items.function";
 export { fitColumnWidth } from "#core/functions/fit-column-width.function";
-export { collectionColumnOfGrid } from "#core/functions/collection-column-of-grid.function";
 export { dataGridColumnWidth } from "#core/functions/data-grid-column-width.function";
 export { dataViewFieldsOf } from "#core/functions/data-view-fields-of.function";
 export { collectionRuleFieldsOf } from "#core/functions/collection-rule-fields-of.function";

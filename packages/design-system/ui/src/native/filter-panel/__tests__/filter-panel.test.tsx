@@ -1,19 +1,24 @@
 /**
  * Stackra file contract:
- * Purpose: proves the native FilterPanel draws one clearable chip per applied filter, counts them on its Filters
- *          button, opens a drawer of facets whose choice options carry their counts, applies a saved view's query and
- *          speaks the result count politely.
+ * Purpose: proves the native FilterPanel on a `useCollection` engine draws one clearable chip per applied filter,
+ *          counts them on its Filters button, opens a drawer of facets (one per filterable column) whose choice options
+ *          carry their counts, writes a facet's change as one condition of the engine's filter, clears every filter,
+ *          and speaks the result count (the engine's by default) politely.
  * Boundary: jsdom with React Native, Reanimated and the house parts replaced by stand-ins that record their props.
  * Runtime: react-native
- * Governing contract: ADR 0022 (test placement); design-system gap inventory (2026-10-28) row 9.
+ * Governing contract: ADR 0022 (test placement); ADR 0505 (one filter model); design-system gap inventory
+ *          (2026-10-28) row 9.
  */
 // @vitest-environment jsdom
 import { act, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
+import type { CollectionController } from "#contracts/types/collection-controller.type";
 import type { FilterDefinition } from "#contracts/types/filter-definition.type";
-import type { ResourceQuery } from "#contracts/types/resource-query.type";
 import { FilterPanel } from "#native/filter-panel/filter-panel";
+import type { FilterPanelProps } from "#native/filter-panel/filter-panel.props";
+import { useCollection } from "#react/hooks/use-collection";
 
 const received = vi.hoisted(() => ({
   props: {} as Record<string, Record<string, unknown>>,
@@ -94,38 +99,6 @@ vi.mock("#native/close-button/close-button", async () => {
   };
 });
 
-vi.mock("#native/menu/menu", async () => {
-  const { createElement } = await import("react");
-  return {
-    Menu: (props: Record<string, unknown>) => {
-      received.props["menu"] = props;
-      return createElement("div", null, props["children"] as ReactNode);
-    },
-  };
-});
-
-vi.mock("#native/tabs/tabs", async () => {
-  const { createElement } = await import("react");
-  return {
-    Tabs: (props: Record<string, unknown>) => {
-      received.props["tabs"] = props;
-      const items = props["items"] as { id: string; label: string }[];
-      const onChange = props["onSelectionChange"] as (keys: string[]) => void;
-      return createElement(
-        "div",
-        null,
-        items.map((item) =>
-          createElement(
-            "button",
-            { key: item.id, type: "button", role: "tab", onClick: () => onChange([item.id]) },
-            item.label,
-          ),
-        ),
-      );
-    },
-  };
-});
-
 vi.mock("#native/drawer/drawer", async () => {
   const { createElement } = await import("react");
   const part = (props: Record<string, unknown>) =>
@@ -163,11 +136,11 @@ vi.mock("#native/filter-bar/filter-editor", async () => {
   };
 });
 
-const FILTERS: readonly FilterDefinition[] = [
+const COLUMNS: readonly CollectionColumn[] = [
   {
     id: "status",
     label: "Status",
-    kind: "select",
+    type: "choice",
     options: [
       { id: "open", label: "Open" },
       { id: "closed", label: "Closed" },
@@ -175,142 +148,73 @@ const FILTERS: readonly FilterDefinition[] = [
   },
 ];
 
-const QUERY: ResourceQuery = { search: "", filterValues: { status: "open" }, sort: null };
+/** The engine the harness last drew. */
+const latest = { collection: undefined as CollectionController | undefined };
+
+/** An engine over two tickets, open ones filtered, with the panel on it. */
+function Harness(props: Partial<FilterPanelProps>): ReactNode {
+  const collection = useCollection({
+    columns: COLUMNS,
+    items: [
+      { id: "1", status: "open" },
+      { id: "2", status: "closed" },
+    ],
+    initialState: {
+      filter: {
+        match: "all",
+        conditions: [{ id: "filter:status", field: "status", operator: "in", value: ["open"] }],
+      },
+    },
+  });
+  useEffect(() => {
+    latest.collection = collection;
+  });
+  return <FilterPanel collection={collection} label="Filter tickets" {...props} />;
+}
 
 describe("FilterPanel (native)", () => {
   it("draws a clearable chip per applied filter and counts them on the Filters button", () => {
-    const onQueryChange = vi.fn();
-    render(
-      <FilterPanel
-        query={QUERY}
-        onQueryChange={onQueryChange}
-        filters={FILTERS}
-        label="Filter tickets"
-      />,
-    );
+    render(<Harness />);
     expect(screen.getByText("Status: Open")).toBeTruthy();
-    act(() => screen.getByRole("button", { name: "Remove filter Status" }).click());
-    expect(onQueryChange).toHaveBeenLastCalledWith({ ...QUERY, filterValues: {} });
     expect(screen.getByRole("button", { name: "Filters (1)" })).toBeTruthy();
+    act(() => screen.getByRole("button", { name: "Remove filter Status" }).click());
+    expect(latest.collection?.state.filter.conditions).toEqual([]);
+    expect(screen.getByRole("button", { name: "Filters" })).toBeTruthy();
   });
 
   it("opens a drawer of facets whose options carry their counts", () => {
-    render(
-      <FilterPanel
-        query={QUERY}
-        onQueryChange={vi.fn()}
-        filters={FILTERS}
-        label="Filter tickets"
-        counts={{ status: { open: 8, closed: 21 } }}
-      />,
-    );
+    render(<Harness counts={{ status: { open: 8, closed: 21 } }} />);
     expect(screen.queryByRole("dialog")).toBeNull();
     act(() => screen.getByRole("button", { name: "Filters (1)" }).click());
     expect(screen.getByRole("dialog", { name: "Filter tickets" })).toBeTruthy();
     expect(screen.getByText("Closed (21)")).toBeTruthy();
   });
 
-  it("applies a saved view's query and speaks the result count politely", () => {
-    const onQueryChange = vi.fn();
-    const closed: ResourceQuery = { search: "", filterValues: { status: "closed" }, sort: null };
-    render(
-      <FilterPanel
-        query={QUERY}
-        onQueryChange={onQueryChange}
-        filters={FILTERS}
-        label="Filter tickets"
-        resultCount={1}
-        views={[
-          { id: "open", label: "Open", query: QUERY },
-          { id: "closed", label: "Closed", query: closed },
-        ]}
-      />,
-    );
-    act(() => screen.getByRole("tab", { name: "Closed" }).click());
-    expect(onQueryChange).toHaveBeenLastCalledWith(closed);
+  it("speaks the engine's result count politely, or the one given", () => {
+    const { rerender } = render(<Harness />);
     expect(screen.getByText("1 result").closest("[aria-live]")?.getAttribute("aria-live")).toBe(
       "polite",
     );
-  });
-
-  it("sorts by the chosen column and direction, keeping ascending by default", () => {
-    const onQueryChange = vi.fn();
-    render(
-      <FilterPanel
-        query={{ ...QUERY, sort: { column: "due", direction: "descending" } }}
-        onQueryChange={onQueryChange}
-        filters={FILTERS}
-        label="Filter tickets"
-        sortOptions={[{ column: "due", label: "Due" }]}
-      />,
-    );
-    const menu = received.props["menu"] ?? {};
-    expect(menu["value"]).toEqual(["due", "descending"]);
-    const choose = menu["onChange"] as (ids: string[]) => void;
-    choose(["due"]);
-    expect(onQueryChange).toHaveBeenLastCalledWith({
-      ...QUERY,
-      sort: { column: "due", direction: "ascending" },
-    });
-    choose(["due", "descending"]);
-    expect(onQueryChange.mock.lastCall?.[0].sort.direction).toBe("descending");
-    onQueryChange.mockClear();
-    choose(["descending"]);
-    expect(onQueryChange).not.toHaveBeenCalled();
+    rerender(<Harness resultCount={9} />);
+    expect(screen.getByText("9 results")).toBeTruthy();
   });
 
   it("clears every filter, edits a facet in the drawer and closes it with Done", () => {
     received.isReduced = true;
-    const onQueryChange = vi.fn();
-    render(
-      <FilterPanel
-        query={QUERY}
-        onQueryChange={onQueryChange}
-        filters={FILTERS}
-        label="Filter tickets"
-        resultCount={3}
-        sortOptions={[{ column: "due", label: "Due" }]}
-        className="x"
-      />,
-    );
-    expect((received.props["menu"] ?? {})["value"]).toEqual([]);
+    render(<Harness className="x" />);
     act(() => screen.getByRole("button", { name: "Clear all" }).click());
-    expect(onQueryChange).toHaveBeenLastCalledWith({ ...QUERY, filterValues: {} });
-    act(() => screen.getByRole("button", { name: "Filters (1)" }).click());
+    expect(latest.collection?.isFiltered).toBe(false);
+    act(() => screen.getByRole("button", { name: "Filters" }).click());
     act(() =>
-      (received.props["editor"]?.["onChange"] as ((value: unknown) => void) | undefined)?.(
+      (received.props["editor"]?.["onChange"] as ((value: unknown) => void) | undefined)?.([
         "closed",
-      ),
+      ]),
     );
-    expect(onQueryChange).toHaveBeenLastCalledWith({
-      ...QUERY,
-      filterValues: { status: "closed" },
-    });
+    expect(latest.collection?.state.filter.conditions).toEqual([
+      { id: "filter:status", field: "status", operator: "in", value: ["closed"] },
+    ]);
     act(() => screen.getByRole("button", { name: "Done" }).click());
     expect(screen.queryByRole("dialog")).toBeNull();
     received.isReduced = false;
-  });
-
-  it("follows the active view, reports a change of view and ignores an unknown one", () => {
-    const onQueryChange = vi.fn();
-    const onViewChange = vi.fn();
-    render(
-      <FilterPanel
-        query={{ ...QUERY, filterValues: {} }}
-        onQueryChange={onQueryChange}
-        filters={FILTERS}
-        label="Filter tickets"
-        views={[{ id: "open", label: "Open", query: QUERY }]}
-        activeViewId="open"
-        onViewChange={onViewChange}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "Filters" })).toBeTruthy();
-    const tabs = received.props["tabs"] ?? {};
-    expect(tabs["selectedKeys"]).toEqual(["open"]);
-    act(() => screen.getByRole("tab", { name: "Open" }).click());
-    expect(onViewChange).toHaveBeenCalledWith("open");
-    (tabs["onSelectionChange"] as (keys: string[]) => void)(["gone"]);
-    expect(onQueryChange).toHaveBeenCalledTimes(1);
   });
 });

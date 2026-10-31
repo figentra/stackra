@@ -1,25 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: `SavedViewTabsContractProps`, the props the web and native saved view tabs share: the views, the label of
- *          the all-rows tab, the resource's preset view tabs and what each tab draws.
- * Boundary: a type only; each `SavedViewTabsProps` is this contract, and `savedViewTabsOf` reads it.
+ * Purpose: `SavedViewTabsContractProps`, the props the web and native saved view tabs share: the `useCollection` engine
+ *          whose views (the all-rows view, the presets and the `ViewStore`'s saved views, as `CollectionView`s) draw as
+ *          tabs, and the tab list's spoken name.
+ * Boundary: a type only; each `SavedViewTabsProps` is this contract.
  * Runtime: isomorphic
- * Governing contract: ADR 0271 (decisions 1 and 7); ADR 0359 (decision 14); ADR 0305 (`<name>.props.ts`).
+ * Governing contract: ADR 0271 (decisions 1 and 7); ADR 0359 (decision 14); ADR 0305 (`<name>.props.ts`); ADR 0505
+ *          (one saved-view model).
  */
-import type { TabItem } from "@stackra/ui/contracts";
-
-import type { SavedView } from "#core/schemas/saved-view.schema";
+import type { CollectionController, CollectionItem } from "@stackra/ui/contracts";
 
 /** Props of `SavedViewTabs`, on the web and on native. */
-export interface SavedViewTabsContractProps {
+export interface SavedViewTabsContractProps<TItem extends CollectionItem = CollectionItem> {
+  /** The engine whose views draw as tabs; choosing one applies it. */
+  readonly collection: CollectionController<TItem>;
   /** The spoken name of the tab list. */
   readonly label: string;
-  /** The text of the first tab, which draws the list with no view. */
-  readonly allLabel: string;
-  /** The resource's preset view tabs, drawn after the all-rows tab and before the saved views. */
-  readonly presets?: readonly TabItem[];
-  /** The views the viewer may see, in the store's order. */
-  readonly views: readonly SavedView[];
-  /** What the selected tab draws: the list under `view`, or with no view for the first tab. */
-  readonly render: (view: SavedView | undefined) => TabItem["content"];
 }

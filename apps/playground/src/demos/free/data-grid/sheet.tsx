@@ -8,7 +8,7 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0317 amendment 2026-10-28
  *          (wave 3d, DataGrid); ADR 0060 (light, dark, RTL).
  */
-import type { DataGridChanges, DataGridColumn, DataGridRow } from "@stackra/ui/contracts";
+import type { DataGridChanges, CollectionColumn, DataGridRow } from "@stackra/ui/contracts";
 import { DataGrid, Text, useCatalogueText } from "@stackra/ui/react";
 import { useState } from "react";
 import { MESSAGES } from "#src/constants/messages.constant";
@@ -28,8 +28,8 @@ function applied(rows: readonly DataGridRow[], changes: DataGridChanges): DataGr
 /** DataGrid: A price list sheet. */
 export default function Sheet() {
   const t = useCatalogueText(MESSAGES.en);
-  const columns: readonly DataGridColumn[] = [
-    { id: "item", label: t(K.item), isRequired: true },
+  const columns: readonly CollectionColumn[] = [
+    { id: "item", label: t(K.item), isRequired: true, pin: "start" },
     {
       id: "price",
       label: t(K.price),
@@ -42,7 +42,7 @@ export default function Sheet() {
     {
       id: "size",
       label: t(K.size),
-      type: "select",
+      type: "choice",
       options: [
         { id: "small", label: t(K.small) },
         { id: "large", label: t(K.large) },
@@ -67,7 +67,7 @@ export default function Sheet() {
       <DataGrid
         label={t(K.sheet_label)}
         columns={columns}
-        rows={rows}
+        items={rows}
         onSave={(changes) =>
           new Promise<void>((resolve) => {
             setTimeout(() => {

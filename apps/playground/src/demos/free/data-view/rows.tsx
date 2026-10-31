@@ -10,7 +10,7 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); data-collection plan (owner,
  *          2026-10-29), wave 3 (rows); ADR 0060 (light, dark, RTL).
  */
-import type { DataGridColumn, ResourceAction } from "@stackra/ui/contracts";
+import type { CollectionColumn, ResourceAction } from "@stackra/ui/contracts";
 import { DataView, PropertyList, Text, useCollection } from "@stackra/ui/react";
 import { useState } from "react";
 
@@ -21,6 +21,12 @@ import { useGulfOrders } from "#src/demos/free/data-view/use-gulf-orders";
 /** The columns shown in an order's detail row; the table hides them. */
 const DETAIL = new Set(["city", "product", "channel", "status", "quantity", "total", "date"]);
 
+/** The columns edited in place, with their rules. */
+const EDITABLE: Readonly<Record<string, Partial<CollectionColumn>>> = {
+  customer: { isEditable: true, isRequired: true },
+  quantity: { isEditable: true, min: 1, isRequired: true },
+};
+
 /** DataView: Row tools. */
 export default function Rows() {
   const { orders, columns, renderCell, t, K } = useGulfOrders(40);
@@ -28,7 +34,7 @@ export default function Rows() {
   const [last, setLast] = useState<string | null>(null);
   const items = orders.map((order) => ({ ...order, ...edits[order.id] }));
   const collection = useCollection({
-    columns,
+    columns: columns.map((column) => ({ ...column, ...EDITABLE[column.id] })),
     items,
     paging: "page",
     initialState: {
@@ -41,10 +47,6 @@ export default function Rows() {
     },
   });
   const labelOf = (id: string) => columns.find((column) => column.id === id)?.label ?? id;
-  const editable: readonly DataGridColumn[] = [
-    { id: "customer", label: labelOf("customer"), isRequired: true },
-    { id: "quantity", label: labelOf("quantity"), type: "number", min: 1, isRequired: true },
-  ];
   const actionsOf = (order: GulfOrder): readonly ResourceAction[] => [
     {
       id: "print",
@@ -83,7 +85,6 @@ export default function Rows() {
         bulkActions={[{ id: "tag", label: t(K.tag), onPress: () => setLast(t(K.tag)) }]}
         renderRowDetail={(order) => <PropertyList columns="auto" items={fieldsOf(order, DETAIL)} />}
         renderRowPanel={(order) => <PropertyList items={fieldsOf(order)} />}
-        editableColumns={editable}
         onCellEdit={(order, columnId, value) => {
           setEdits((current) => ({
             ...current,

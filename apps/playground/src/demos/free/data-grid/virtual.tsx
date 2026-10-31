@@ -9,7 +9,7 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); data-collection plan (owner,
  *          2026-10-29), wave 4 (virtual scrolling for 10k+ rows); ADR 0060 (light, dark, RTL).
  */
-import type { DataGridColumn, DataGridRow } from "@stackra/ui/contracts";
+import type { CollectionColumn, DataGridRow } from "@stackra/ui/contracts";
 import { DataGrid, Text } from "@stackra/ui/react";
 import { useState } from "react";
 
@@ -20,10 +20,10 @@ export default function Virtual() {
   const { orders, columns, t, K } = useGulfOrders(10_000);
   const [edits, setEdits] = useState<Readonly<Record<string, Partial<DataGridRow>>>>({});
   const statuses = columns.find((column) => column.id === "status")?.options ?? [];
-  const gridColumns: readonly DataGridColumn[] = [
-    { id: "order", label: t(K.column_order), isReadOnly: true, width: 112 },
+  const grid: readonly CollectionColumn[] = [
+    { id: "order", label: t(K.column_order), isReadOnly: true, pin: "start", width: 112 },
     { id: "customer", label: t(K.column_customer), isRequired: true, width: 240 },
-    { id: "status", label: t(K.column_status), type: "select", options: statuses, width: 160 },
+    { id: "status", label: t(K.column_status), type: "choice", options: statuses, width: 160 },
     { id: "quantity", label: t(K.column_quantity), type: "number", min: 1, width: 120 },
     { id: "total", label: t(K.column_total), type: "number", min: 0, width: 150 },
     { id: "date", label: t(K.column_date), type: "date", width: 170 },
@@ -34,10 +34,9 @@ export default function Virtual() {
       <Text tone="muted">{t(K.grid_virtual_hint)}</Text>
       <DataGrid
         label={t(K.grid_virtual_label)}
-        columns={gridColumns}
-        rows={rows}
-        frozenColumns={1}
-        height="28rem"
+        columns={grid}
+        items={rows}
+        maxHeight="28rem"
         onSave={(changes) =>
           setEdits((current) => {
             const next = { ...current };

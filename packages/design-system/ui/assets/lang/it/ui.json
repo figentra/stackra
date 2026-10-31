@@ -14,7 +14,9 @@
     "from": "Dal",
     "until": "Al",
     "minimum": "Minimo",
-    "maximum": "Massimo"
+    "maximum": "Massimo",
+    "advanced": "Avanzate",
+    "unapplied": "Non applicato sul server"
   },
   "date_field": {
     "empty": "Seleziona una data",
@@ -553,6 +555,7 @@
     "collapse_all": "Nascondi tutti i dettagli",
     "row_detail": "Dettagli di {name}",
     "edit_cell": "Modifica {column} di {name}",
+    "edit_failed": "{column} non è stato salvato",
     "open_row": "Apri {name}",
     "row_panel": "Dettagli di {label}",
     "board_column": "{label}: {column}",
@@ -694,7 +697,14 @@
     "greater": "è maggiore di",
     "less": "è minore di",
     "is_empty": "è vuoto",
-    "is_not_empty": "non è vuoto"
+    "is_not_empty": "non è vuoto",
+    "in": "è uno tra",
+    "not_in": "non è nessuno tra",
+    "between": "è tra",
+    "before": "è prima di",
+    "after": "è dopo",
+    "is_true": "è sì",
+    "is_false": "è no"
   },
   "comment_thread": {
     "reply": "Rispondi",

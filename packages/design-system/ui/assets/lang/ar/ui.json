@@ -14,7 +14,9 @@
     "from": "من",
     "until": "حتى",
     "minimum": "الحد الأدنى",
-    "maximum": "الحد الأقصى"
+    "maximum": "الحد الأقصى",
+    "advanced": "بحث متقدّم",
+    "unapplied": "غير مطبّق على الخادم"
   },
   "date_field": {
     "empty": "اختر تاريخًا",
@@ -553,6 +555,7 @@
     "collapse_all": "أخفِ كل التفاصيل",
     "row_detail": "تفاصيل {name}",
     "edit_cell": "عدّل {column} في {name}",
+    "edit_failed": "لم يُحفظ {column}",
     "open_row": "افتح {name}",
     "row_panel": "تفاصيل {label}",
     "board_column": "{label}: {column}",
@@ -694,7 +697,14 @@
     "greater": "أكبر من",
     "less": "أقل من",
     "is_empty": "فارغ",
-    "is_not_empty": "غير فارغ"
+    "is_not_empty": "غير فارغ",
+    "in": "أيٌّ من",
+    "not_in": "ليس أيًّا من",
+    "between": "بين",
+    "before": "قبل",
+    "after": "بعد",
+    "is_true": "نعم",
+    "is_false": "لا"
   },
   "comment_thread": {
     "reply": "ردّ",

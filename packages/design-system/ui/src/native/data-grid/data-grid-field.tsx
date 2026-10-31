@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: the native DataGrid's field for one column in its quick-edit and bulk-edit sheets: a `Switch` for a
- *          boolean, a `Select` of the options for a select, and a `TextField` otherwise (a decimal keypad for numbers,
+ *          boolean, a `Select` of the options for a choice, and a `TextField` otherwise (a decimal keypad for numbers,
  *          `YYYY-MM-DD` for days, left to right for both).
  * Boundary: it edits a draft; the grid parses it on Done or Apply with `parseGridValue`.
  * Runtime: react-native
- * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid typed cells); ADR 0060 (RTL).
+ * Governing contract: ADR 0317 amendment 2026-10-28 (wave 3d, DataGrid typed cells); ADR 0505 (one column type); ADR 0060 (RTL).
  */
 import type { ReactElement } from "react";
 
@@ -25,11 +25,11 @@ export function DataGridField({
   const isInvalid = errorMessage !== undefined;
   if (column.type === "boolean")
     return <Switch label={label} value={draft === true} onChange={onDraftChange} />;
-  if (column.type === "select")
+  if (column.type === "choice")
     return (
       <Select
         label={label}
-        items={(column.options ?? []).map((option) => ({ id: option.id, label: option.label }))}
+        items={column.options ?? []}
         value={typeof draft === "string" && draft !== "" ? draft : null}
         onChange={(id) => onDraftChange(id ?? "")}
         isInvalid={isInvalid}

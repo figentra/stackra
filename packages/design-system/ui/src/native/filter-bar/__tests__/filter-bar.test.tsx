@@ -1,30 +1,33 @@
 /**
  * Stackra file contract:
- * Purpose: proves the native FilterBar, the adapted form, names its root a search and its box by `searchLabel`, edits only
- *          `search` of the query from the box, opens the sheet on the list of filters not yet applied from the add button
- *          (disabled when none is left), swaps the same sheet to a chosen filter's editor and draws its chip at once,
- *          draws one chip per applied filter in the order applied with the value written out, opens a chip's own editor,
- *          applies each change at once, removes a filter from its close button (closing its sheet), drops the chip of an
- *          emptied filter once the sheet is done, shows clear-all only while the query narrows and clears search and
- *          filters but not the sort, wraps its one loose string in `Text`, gives the close buttons a hit area, and
- *          passes the root's other props through.
+ * Purpose: proves the native FilterBar, the adapted form, on a `useCollection` engine: it names its root a search and
+ *          its box by `searchLabel`, writes the engine's search from the box, opens the sheet on the quick filters not
+ *          yet applied, swaps the same sheet to a chosen filter's editor and draws its chip at once, writes each change
+ *          as one top-level condition of the engine's filter, opens a chip's own editor with its value, removes a
+ *          filter from its close button (closing its sheet), drops the chip of an emptied filter once the sheet is
+ *          done, shows another condition as a read-only chip that removes it, opens the advanced rule builder over the
+ *          top level, shows clear-all only while the search or filter narrows and clears both, gives the close buttons
+ *          a hit area, and passes the root's other props through.
  * Boundary: React Native does not render in vitest, so react-native and the sibling native components are replaced by
  *           recording stand-ins that render plain DOM; what reaches them is checked, not their rendering. The editor has
  *           its own test.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decisions 2, 3 and 10); ADR 0022 (test
+ * Governing contract: ADR 0302 (decision 3); ADR 0318 (decision 10); ADR 0505 (one filter model); ADR 0022 (test
  *          placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-194 sta-350:FR-195 sta-350:FR-197
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
+import type { CollectionColumn } from "#contracts/types/collection-column.type";
+import type { CollectionController } from "#contracts/types/collection-controller.type";
+import type { CollectionFilter } from "#contracts/types/collection-filter.type";
 import type { FilterBarContractProps } from "#contracts/types/filter-bar-contract-props.type";
 import type { FilterDefinition } from "#contracts/types/filter-definition.type";
-import type { ResourceQuery } from "#contracts/types/resource-query.type";
 import { FilterBar } from "#native/filter-bar/filter-bar";
 import type { FilterBarProps } from "#native/filter-bar/filter-bar.props";
+import { useCollection } from "#react/hooks/use-collection";
 
 /** The props each stand-in was last handed, by name. */
 const received = vi.hoisted(() => ({ props: {} as Record<string, Record<string, unknown>> }));
@@ -148,44 +151,90 @@ vi.mock("#native/filter-bar/filter-editor", async () => {
   };
 });
 
-const FILTERS: readonly FilterDefinition[] = [
+vi.mock("#native/chip/chip", async () => {
+  const { createElement } = await import("react");
+  return {
+    Chip: (props: Record<string, unknown>) =>
+      createElement(
+        "span",
+        { "data-chip": "true", "data-tone": props["tone"] as string | undefined },
+        props["children"] as ReactNode,
+      ),
+  };
+});
+
+vi.mock("#native/icon-button/icon-button", async () => {
+  const { createElement } = await import("react");
+  return {
+    IconButton: (props: Record<string, unknown>) =>
+      createElement("button", {
+        type: "button",
+        "aria-label": props["label"] as string,
+        "aria-description": props["accessibilityHint"] as string | undefined,
+      }),
+  };
+});
+
+vi.mock("#native/rule-builder/rule-builder", async () => {
+  const { createElement } = await import("react");
+  return {
+    RuleBuilder: (props: Record<string, unknown>) => {
+      received.props["rules"] = props;
+      return createElement("div", { "data-testid": "rules" }, "Rule builder");
+    },
+  };
+});
+
+const COLUMNS: readonly CollectionColumn[] = [
   {
     id: "status",
     label: "Status",
-    kind: "select",
+    type: "choice",
     options: [
       { id: "paid", label: "Paid" },
       { id: "shipped", label: "Shipped" },
     ],
-    icon: "check",
   },
-  { id: "customer", label: "Customer", kind: "text" },
-  { id: "gift", label: "Gift", kind: "boolean", isDisabled: true },
+  { id: "customer", label: "Customer" },
+  { id: "note", label: "Note", isFilterable: false },
 ];
 
-const EMPTY: ResourceQuery = { search: "", filterValues: {}, sort: null };
+const EMPTY: CollectionFilter = { match: "all", conditions: [] };
 
-/** What the harness last held, so a test can read the query the bar asked for. */
-const latest = { query: EMPTY };
+/** A filter of quick conditions, by field: text `contains`, a list `in`. */
+const quick = (values: Readonly<Record<string, string | readonly string[]>>): CollectionFilter => ({
+  match: "all",
+  conditions: Object.entries(values).map(([field, value]) => ({
+    id: `filter:${field}`,
+    field,
+    operator: typeof value === "string" ? "contains" : "in",
+    value,
+  })),
+});
 
-/** Holds the query as an app would, so the bar is exercised controlled. */
-function Harness({
-  initial = EMPTY,
-  ...rest
-}: { readonly initial?: ResourceQuery } & Partial<FilterBarProps>): ReactNode {
-  const [query, setQuery] = useState(initial);
-  return (
-    <FilterBar
-      query={query}
-      onQueryChange={(next) => {
-        latest.query = next;
-        setQuery(next);
-      }}
-      filters={FILTERS}
-      searchLabel="Search orders"
-      {...rest}
-    />
+/** The engine the harness last drew. */
+const latest = { collection: undefined as CollectionController | undefined };
+
+/** The engine's filter as `field operator value` lines. */
+const conditions = () =>
+  latest.collection?.state.filter.conditions.map(
+    (entry) => `${entry.field} ${entry.operator} ${JSON.stringify(entry.value)}`,
   );
+
+/** An engine over no rows, with the bar on it. */
+function Harness({
+  filter = EMPTY,
+  search = "",
+  ...rest
+}: {
+  readonly filter?: CollectionFilter;
+  readonly search?: string;
+} & Partial<FilterBarProps>): ReactNode {
+  const collection = useCollection({ columns: COLUMNS, initialState: { filter, search } });
+  useEffect(() => {
+    latest.collection = collection;
+  });
+  return <FilterBar collection={collection} searchLabel="Search orders" {...rest} />;
 }
 
 const press = (element: HTMLElement) => act(() => element.click());
@@ -194,7 +243,7 @@ const sheet = () => screen.getByRole("dialog");
 describe("FilterBar (native)", () => {
   beforeEach(() => {
     received.props = {};
-    latest.query = EMPTY;
+    latest.collection = undefined;
   });
 
   it("is a search named after the box, and the box is named by searchLabel", () => {
@@ -211,13 +260,13 @@ describe("FilterBar (native)", () => {
     expect(received.props["root"]).toMatchObject({ testID: "orders-filters" });
   });
 
-  it("shows the search text and edits only the search, keeping filters and sort", () => {
-    const sort = { column: "total", direction: "ascending" } as const;
-    render(<Harness initial={{ search: "ada", filterValues: { status: "paid" }, sort }} />);
+  it("writes the engine's search from the box, keeping the filter", () => {
+    render(<Harness search="ada" filter={quick({ status: ["paid"] })} />);
     const box = screen.getByRole<HTMLInputElement>("textbox", { name: "Search orders" });
     expect(box.value).toBe("ada");
     fireEvent.change(box, { target: { value: "grace" } });
-    expect(latest.query).toEqual({ search: "grace", filterValues: { status: "paid" }, sort });
+    expect(latest.collection?.state.search).toBe("grace");
+    expect(conditions()).toEqual(['status in ["paid"]']);
   });
 
   it("lays the chips out in a horizontal row", () => {
@@ -225,27 +274,19 @@ describe("FilterBar (native)", () => {
     expect(received.props["row"]).toMatchObject({ horizontal: true });
   });
 
-  it("opens the sheet on the filters not yet applied, each pressable unless it is disabled", () => {
-    render(<Harness initial={{ ...EMPTY, filterValues: { customer: "ada" } }} />);
+  it("opens the sheet on the filterable columns not yet applied", () => {
+    render(<Harness filter={quick({ customer: "ada" })} />);
     expect(screen.queryByRole("dialog")).toBeNull();
     press(screen.getByRole("button", { name: "Add filter" }));
     const names = within(sheet())
       .getAllByRole("button")
-      .map((button) => ({
-        name: button.textContent,
-        disabled: (button as HTMLButtonElement).disabled,
-      }));
-    expect(names).toEqual([
-      { name: "Status", disabled: false },
-      { name: "Gift", disabled: true },
-      { name: "Done", disabled: false },
-    ]);
+      .map((button) => button.textContent);
+    expect(names).toEqual(["Status", "Done"]);
     expect(sheet().getAttribute("aria-label")).toBe("Add filter");
   });
 
   it("disables the add button when every filter is applied", () => {
-    const only: readonly FilterDefinition[] = [FILTERS[0] as FilterDefinition];
-    render(<Harness filters={only} initial={{ ...EMPTY, filterValues: { status: "paid" } }} />);
+    render(<Harness filter={quick({ customer: "ada", status: ["paid"] })} />);
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Add filter" }).disabled).toBe(
       true,
     );
@@ -257,37 +298,34 @@ describe("FilterBar (native)", () => {
     press(within(sheet()).getByRole("button", { name: "Status" }));
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
     expect(sheet().getAttribute("aria-label")).toBe("Status");
-    expect(within(sheet()).getByRole("heading", { name: "Status" })).toBeTruthy();
     expect(within(sheet()).getByRole("button", { name: "Editor Status" })).toBeTruthy();
     expect(
       screen.getAllByRole("button", { name: "Status" }).some((button) => !sheet().contains(button)),
     ).toBe(true);
-    expect(latest.query.filterValues).toEqual({});
+    expect(conditions()).toEqual([]);
   });
 
-  it("applies an editor's change at once and writes it on the chip", () => {
+  it("writes an editor's change at once as a condition and on the chip", () => {
     render(<Harness />);
     press(screen.getByRole("button", { name: "Add filter" }));
     press(within(sheet()).getByRole("button", { name: "Customer" }));
     press(within(sheet()).getByRole("button", { name: "Editor Customer" }));
-    expect(latest.query.filterValues).toEqual({ customer: "typed" });
+    expect(conditions()).toEqual(['customer contains "typed"']);
     press(within(sheet()).getByRole("button", { name: "Done" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByRole("button", { name: "Customer: typed" })).toBeTruthy();
   });
 
-  it("draws one chip per applied filter in the order applied, and opens a chip's own editor", () => {
-    render(
-      <Harness initial={{ ...EMPTY, filterValues: { customer: "ada", status: "shipped" } }} />,
-    );
+  it("draws one chip per applied filter, and opens a chip's own editor with its value", () => {
+    render(<Harness filter={quick({ customer: "ada", status: ["shipped"] })} />);
     const chips = screen
       .getAllByRole("button")
       .map((button) => button.textContent)
       .filter((text) => text?.includes(": "));
-    expect(chips).toEqual(["Customer: ada", "Status: Shipped"]);
+    expect(chips).toEqual(["Status: Shipped", "Customer: ada"]);
     press(screen.getByRole("button", { name: "Status: Shipped" }));
     expect(within(sheet()).getByRole("button", { name: "Editor Status" })).toBeTruthy();
-    expect(received.props["editor"]).toMatchObject({ value: "shipped" });
+    expect(received.props["editor"]).toMatchObject({ value: ["shipped"] });
   });
 
   it("drops the chip of a filter left empty once the sheet is done", () => {
@@ -296,58 +334,79 @@ describe("FilterBar (native)", () => {
     press(within(sheet()).getByRole("button", { name: "Customer" }));
     press(within(sheet()).getByRole("button", { name: "Done" }));
     expect(screen.queryByRole("button", { name: "Customer" })).toBeNull();
-    expect(latest.query.filterValues).toEqual({});
+    expect(conditions()).toEqual([]);
   });
 
   it("removes a filter from its close button, closing the sheet if it was that filter's", () => {
-    render(<Harness initial={{ ...EMPTY, filterValues: { status: "paid", customer: "ada" } }} />);
+    render(<Harness filter={quick({ status: ["paid"], customer: "ada" })} />);
     press(screen.getByRole("button", { name: "Status: Paid" }));
     expect(screen.getByRole("dialog")).toBeTruthy();
     press(screen.getByRole("button", { name: "Remove filter Status" }));
-    expect(latest.query.filterValues).toEqual({ customer: "ada" });
+    expect(conditions()).toEqual(['customer contains "ada"']);
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Status: Paid" })).toBeNull();
+  });
+
+  it("shows another condition as a read-only chip that removes it", () => {
+    render(
+      <Harness
+        filter={{
+          match: "all",
+          conditions: [{ id: "c1", field: "customer", operator: "is_empty", value: "" }],
+        }}
+      />,
+    );
+    expect(screen.getByText("Customer is empty")).toBeTruthy();
+    press(screen.getByRole("button", { name: "Remove filter Customer is empty" }));
+    expect(conditions()).toEqual([]);
+  });
+
+  it("marks a chip in unappliedIds as a warning, led by a button whose name and hint say it is not applied", () => {
+    const filter: CollectionFilter = {
+      match: "all",
+      conditions: [{ id: "c1", field: "customer", operator: "is_empty", value: "" }],
+    };
+    const { rerender } = render(<Harness filter={filter} />);
+    expect(screen.queryByRole("button", { name: "Not applied on the server" })).toBeNull();
+    expect(screen.getByText("Customer is empty").getAttribute("data-tone")).toBeNull();
+    rerender(<Harness filter={filter} unappliedIds={["c1"]} />);
+    const mark = screen.getByRole("button", { name: "Not applied on the server" });
+    expect(mark.getAttribute("aria-description")).toBe("Not applied on the server");
+    expect(screen.getByText("Customer is empty").getAttribute("data-tone")).toBe("warning");
+  });
+
+  it("opens the rule builder over the filter's top level from Advanced", () => {
+    render(<Harness filter={quick({ customer: "ada" })} />);
+    press(screen.getByRole("button", { name: "Advanced" }));
+    expect(sheet().getAttribute("aria-label")).toBe("Advanced");
+    expect(received.props["rules"]).toMatchObject({
+      value: quick({ customer: "ada" }),
+    });
+    expect(
+      ((received.props["rules"] ?? {})["fields"] as readonly { key: string }[]).map(
+        (field) => field.key,
+      ),
+    ).toEqual(["status", "customer"]);
   });
 
   it("gives the close buttons a hit area, so a touch target is at least 24 points", () => {
-    render(<Harness initial={{ ...EMPTY, filterValues: { status: "paid" } }} />);
+    render(<Harness filter={quick({ status: ["paid"] })} />);
     expect(received.props["close:Remove filter Status"]).toMatchObject({ hitSlop: 8 });
   });
 
-  it("shows clear-all only while the query narrows, and clears search and filters but not the sort", () => {
-    const sort = { column: "total", direction: "descending" } as const;
-    render(<Harness initial={{ search: "", filterValues: {}, sort }} />);
-    expect(screen.queryByRole("button", { name: "Clear all" })).toBeNull();
+  it("shows clear-all only while the search or filter narrows, and clears both", () => {
+    render(<Harness filter={quick({ status: ["paid"] })} />);
     fireEvent.change(screen.getByRole("textbox", { name: "Search orders" }), {
       target: { value: "ada" },
     });
     press(screen.getByRole("button", { name: "Clear all" }));
-    expect(latest.query).toEqual({ search: "", filterValues: {}, sort });
+    expect(latest.collection?.state.search).toBe("");
+    expect(conditions()).toEqual([]);
     expect(screen.queryByRole("button", { name: "Clear all" })).toBeNull();
   });
 
-  it("wraps the one loose string of the sheet in Text, when a change elsewhere leaves nothing to add", () => {
-    const { rerender } = render(<Harness key="same" />);
-    press(screen.getByRole("button", { name: "Add filter" }));
-    rerender(<Harness key="same" filters={[]} />);
-    const note = within(sheet()).getByText("Every filter is applied.");
-    expect(note.getAttribute("data-text")).toBe("true");
-  });
-
-  it("types: extends its contract, needs the query, the filters and the search label, and refuses children", () => {
+  it("types: extends its contract and needs the engine", () => {
     expectTypeOf<FilterBarProps>().toExtend<FilterBarContractProps>();
-    // Elements are made, not rendered: the point is what the compiler refuses.
-    // @ts-expect-error the bar is controlled, so the query is required
-    void (<FilterBar filters={FILTERS} searchLabel="Search" onQueryChange={() => undefined} />);
-    // @ts-expect-error the box needs its accessible name
-    void (<FilterBar query={EMPTY} filters={FILTERS} onQueryChange={() => undefined} />);
-    void (
-      (
-        // @ts-expect-error the bar draws its own content
-        <FilterBar query={EMPTY} filters={FILTERS} searchLabel="Search" onQueryChange={() => 0}>
-          x
-        </FilterBar>
-      )
-    );
+    // @ts-expect-error the bar needs its engine
+    void (<FilterBar searchLabel="Search" />);
   });
 });

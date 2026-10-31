@@ -30,9 +30,11 @@ const SCHEMES = ["light", "dark"] as const;
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 const LOCALES = ["en", "ar"] as const;
 
-const open = async (page: Page, scheme: string, locale: string) => {
+const open = async (page: Page, scheme: string, locale: string, material?: "solid") => {
   await page.emulateMedia({ colorScheme: scheme as "light" | "dark", reducedMotion: "reduce" });
-  await page.goto(`/data-table?scheme=${scheme}&locale=${locale}`);
+  await page.goto(
+    `/data-table?scheme=${scheme}&locale=${locale}${material === undefined ? "" : `&material=${material}`}`,
+  );
   await expect(
     page.getByRole("heading", { level: 1, name: pageTitle("Data table", locale) }),
   ).toBeVisible();
@@ -66,6 +68,8 @@ for (const scheme of SCHEMES)
       // trace shows the page settled in under 5 s), as in playground.e2e's SLOW_SCANS.
       test.slow(true, "the axe analysis of this page alone takes most of the default budget");
       await open(page, scheme, locale);
+      // Every lazy demo mounted first: one arriving mid-scan leaves heading-order unable to place its headings.
+      await expect(page.locator("[data-demo-loading]")).toHaveCount(0);
       const { violations, incomplete } = await new AxeBuilder({ page })
         .withTags(AXE_TAGS)
         .analyze();
@@ -76,12 +80,21 @@ for (const scheme of SCHEMES)
       // In right to left, an Arabic amount in a column pinned to the end sits over the scrolled cells beneath its
       // opaque sticky cell, and axe 4.14 cannot settle that background ("partially overlaps"); the test below measures
       // every pinned amount against its cell instead.
+      // Likewise a row scrolled under a table's sticky totals row is a smaller target only until it scrolls out from
+      // under it; axe names the totals cell (`data-table-summary:`) as the neighbour and leaves it for review.
+      const isUnderTotals = (node: (typeof incomplete)[number]["nodes"][number]) =>
+        node.any.some((check) =>
+          check.relatedNodes?.some((related) =>
+            related.html.includes('data-key="data-table-summary:'),
+          ),
+        );
       expect(
         incomplete
           .filter(
             (finding) =>
-              finding.id !== "color-contrast" ||
-              finding.nodes.some((node) => !node.html.includes('data-slot="money-value"')),
+              (finding.id !== "color-contrast" ||
+                finding.nodes.some((node) => !node.html.includes('data-slot="money-value"'))) &&
+              (finding.id !== "target-size" || !finding.nodes.every(isUnderTotals)),
           )
           .map((finding) => finding.id),
         "axe checks left for review",
@@ -135,7 +148,8 @@ for (const [scheme, locale] of [
   ["dark", "ar"],
 ] as const)
   test(`axe finds nothing with a row menu open in ${scheme}, ${locale}`, async ({ page }) => {
-    await open(page, scheme, locale);
+    // Scanned solid (the product default): axe cannot see through glass; ADR 0501 decision 4's thick fill and the tokens contrast test cover glass.
+    await open(page, scheme, locale, "solid");
     await openMenu(page, menuButton(example(page, "row-actions"), "#1002"));
     await axe(page);
   });
@@ -371,7 +385,7 @@ test("the live table searches, shows a failed load and recovers", async ({ page 
   await expect(live.getByRole("grid", { name: "Orders, live" })).toBeVisible();
 });
 
-test("a query change in the live table clears the selection and returns to the first page", async ({
+test("a page change in the live table keeps the selection, and a new sort clears it and returns to the first page", async ({
   page,
 }) => {
   await open(page, "light", "en");
@@ -384,9 +398,11 @@ test("a query change in the live table clears the selection and returns to the f
     .getByRole("button", { name: "Next" })
     .click();
   await expect(grid.getByRole("rowheader").first()).toHaveText("#1006");
-  await expect(live.getByTestId("data-table-live-selected")).toHaveText("Selected: none");
+  // The engine's selection spans pages (select all matching, then untick exceptions), so paging keeps it.
+  await expect(live.getByTestId("data-table-live-selected")).toHaveText("Selected: ord-1001");
   await grid.getByRole("columnheader", { name: "Customer" }).click();
   await expect(grid.getByRole("rowheader").first()).toHaveText("#1001");
+  await expect(live.getByTestId("data-table-live-selected")).toHaveText("Selected: none");
 });
 
 test("every press target of the table and the bar is at least 24 px square", async ({ page }) => {

@@ -51,5 +51,9 @@ describe(filterWireValue, () => {
     const wire = { op: "range", from: 1 };
     expect(filterWireValue({ kind: "range", key: "total" }, wire)).toBe(wire);
     expect(filterWireValue({ kind: "value", key: "status" }, ["paid"])).toEqual(["paid"]);
+    // A list is "any of" on every kind, so an advanced "is any of" on a comparison filter is not turned into one.
+    expect(filterWireValue({ kind: "compare", key: "total", operator: "ne" }, [5, 7])).toEqual([
+      5, 7,
+    ]);
   });
 });

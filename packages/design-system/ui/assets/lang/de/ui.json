@@ -14,7 +14,9 @@
     "from": "Von",
     "until": "Bis",
     "minimum": "Minimum",
-    "maximum": "Maximum"
+    "maximum": "Maximum",
+    "advanced": "Erweitert",
+    "unapplied": "Nicht auf dem Server angewendet"
   },
   "date_field": {
     "empty": "Datum auswählen",
@@ -553,6 +555,7 @@
     "collapse_all": "Alle Details ausblenden",
     "row_detail": "Details zu {name}",
     "edit_cell": "{column} von {name} bearbeiten",
+    "edit_failed": "{column} wurde nicht gespeichert",
     "open_row": "{name} öffnen",
     "row_panel": "{label}: Details",
     "board_column": "{label}: {column}",
@@ -694,7 +697,14 @@
     "greater": "ist größer als",
     "less": "ist kleiner als",
     "is_empty": "ist leer",
-    "is_not_empty": "ist nicht leer"
+    "is_not_empty": "ist nicht leer",
+    "in": "ist eines von",
+    "not_in": "ist keines von",
+    "between": "liegt zwischen",
+    "before": "ist vor",
+    "after": "ist nach",
+    "is_true": "ist ja",
+    "is_false": "ist nein"
   },
   "comment_thread": {
     "reply": "Antworten",

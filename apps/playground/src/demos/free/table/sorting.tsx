@@ -98,7 +98,7 @@ export default function Sorting() {
         items={sortedOrders(sort).slice(0, 6)}
         columns={COLUMNS}
         renderCell={renderOrderCell}
-        sortDescriptor={sort}
+        sort={[sort]}
         onSortChange={setSort}
       />
       <Text role="status" data-testid="table-sort" tone="muted">

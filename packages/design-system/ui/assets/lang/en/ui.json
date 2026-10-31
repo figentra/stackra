@@ -14,7 +14,9 @@
     "from": "From",
     "until": "Until",
     "minimum": "Minimum",
-    "maximum": "Maximum"
+    "maximum": "Maximum",
+    "advanced": "Advanced",
+    "unapplied": "Not applied on the server"
   },
   "date_field": {
     "empty": "Select a date",
@@ -553,6 +555,7 @@
     "collapse_all": "Hide all details",
     "row_detail": "Details of {name}",
     "edit_cell": "Edit {column} of {name}",
+    "edit_failed": "{column} was not saved",
     "open_row": "Open {name}",
     "row_panel": "{label} details",
     "board_column": "{label}: {column}",
@@ -694,7 +697,14 @@
     "greater": "is more than",
     "less": "is less than",
     "is_empty": "is empty",
-    "is_not_empty": "is not empty"
+    "is_not_empty": "is not empty",
+    "in": "is any of",
+    "not_in": "is none of",
+    "between": "is between",
+    "before": "is before",
+    "after": "is after",
+    "is_true": "is yes",
+    "is_false": "is no"
   },
   "comment_thread": {
     "reply": "Reply",

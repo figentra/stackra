@@ -11,9 +11,10 @@
  * Governing contract: ADR 0302 (decision 3); WCAG 2.2 SC 1.3.1 and 4.1.2; ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
+import type { RuleField } from "#contracts/types/rule-field.type";
 import type { RuleGroup } from "#contracts/types/rule-group.type";
 import { RuleBuilder } from "#native/rule-builder/rule-builder";
 
@@ -97,6 +98,31 @@ vi.mock("#native/icon-button/icon-button", async () => {
       }),
   };
 });
+vi.mock("#native/date-field/date-field", async () => {
+  const { createElement } = await import("react");
+  const { CalendarDate: Day } = await import("@internationalized/date");
+  return {
+    DateField: (props: Record<string, unknown>) =>
+      createElement("button", {
+        type: "button",
+        "aria-label": props["label"] as string,
+        "data-day": String(props["value"] ?? ""),
+        onClick: () => (props["onChange"] as (day: unknown) => void)(new Day(2026, 3, 1)),
+      }),
+  };
+});
+vi.mock("#native/tag-group/tag-group", async () => {
+  const { createElement } = await import("react");
+  return {
+    TagGroup: (props: Record<string, unknown>) =>
+      createElement("button", {
+        type: "button",
+        "aria-label": props["label"] as string,
+        "data-value": (props["value"] as readonly string[]).join(","),
+        onClick: () => (props["onChange"] as (ids: readonly string[]) => void)(["pro"]),
+      }),
+  };
+});
 vi.mock("#react/hooks/use-ui-text", () => ({ useUiText: () => (key: string) => key }));
 
 const K = "ui::rule_builder.";
@@ -119,7 +145,11 @@ const RULE: RuleGroup = {
   ],
 };
 
-const setup = (value: RuleGroup = RULE, fields = FIELDS, isDisabled = false) => {
+const setup = (
+  value: RuleGroup = RULE,
+  fields: readonly RuleField[] = FIELDS,
+  isDisabled = false,
+) => {
   const onChange = vi.fn();
   render(
     <RuleBuilder
@@ -247,5 +277,50 @@ describe("RuleBuilder (native)", () => {
     expect(screen.getAllByLabelText(`${K}operator`)[0]?.querySelectorAll("option")).toHaveLength(1);
     fireEvent.click(screen.getByText(`${K}add`));
     expect(onChange).not.toHaveBeenCalled();
+  });
+  it("draws several choices as tags, a range as two inputs and a day as a date field", () => {
+    const fields = [
+      ...FIELDS,
+      { key: "due", label: "Due", type: "date" as const },
+      { key: "vip", label: "VIP", type: "boolean" as const },
+    ];
+    const { last } = setup(
+      {
+        match: "all",
+        conditions: [
+          { id: "a", field: "plan", operator: "in", value: [] },
+          { id: "b", field: "age", operator: "between", value: ["1", ""] },
+          { id: "c", field: "due", operator: "after", value: "2026-01-01" },
+          { id: "d", field: "vip", operator: "is_true", value: "" },
+        ],
+      },
+      fields,
+    );
+    act(() => (screen.getAllByLabelText(`${K}value`)[0] as HTMLElement).click());
+    expect(last().conditions[0]?.value).toEqual(["pro"]);
+    const ends = [
+      screen.getByLabelText("ui::filter_bar.from"),
+      screen.getByLabelText("ui::filter_bar.until"),
+    ];
+    expect((ends[0] as HTMLInputElement).value).toBe("1");
+    change(ends[1], "9");
+    expect(last().conditions[1]?.value).toEqual(["1", "9"]);
+    const day = screen.getAllByRole("button").find((button) => button.dataset["day"] !== undefined);
+    expect(day?.dataset["day"]).toBe("2026-01-01");
+    act(() => day?.click());
+    expect(last().conditions[2]?.value).toBe("2026-03-01");
+    // A yes or no takes no value: four fields, three value controls.
+    expect(screen.getAllByLabelText(`${K}field`)).toHaveLength(4);
+  });
+
+  it("resets the value to the new operator's shape", () => {
+    const { last } = setup({
+      match: "all",
+      conditions: [{ id: "a", field: "plan", operator: "equals", value: "pro" }],
+    });
+    change(screen.getByLabelText(`${K}operator`), "in");
+    expect(last().conditions[0]).toMatchObject({ operator: "in", value: [] });
+    change(screen.getByLabelText(`${K}operator`), "not_equals");
+    expect(last().conditions[0]).toMatchObject({ operator: "not_equals", value: "pro" });
   });
 });
