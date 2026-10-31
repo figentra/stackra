@@ -16,7 +16,7 @@ import { parse } from "yaml";
 import * as botNetwork from "./bot-token.mjs";
 import { gh } from "./pr-merge.mjs";
 
-export const NUMBERS_PATH = "apps/docs/src/docs/adr/numbers.yaml";
+export const NUMBERS_PATH = "apps/docs/adr/numbers.yaml";
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ISSUE = /^STA-\d+$/;
 

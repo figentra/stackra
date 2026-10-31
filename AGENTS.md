@@ -35,7 +35,7 @@ nobody writes `main.ts` or a tool config. No member is converted yet (STA-344) a
 STA-339, STA-340), so today's code and `validate-repository.mjs` still show the older shapes.
 
 Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue STA-n` lands it in
-`apps/docs/src/docs/adr/numbers.yaml` on main first (STA-1732); never take "the highest on disk plus one" from a branch.
+`apps/docs/adr/numbers.yaml` on main first (STA-1732); never take "the highest on disk plus one" from a branch.
 
 Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
 

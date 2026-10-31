@@ -32,7 +32,7 @@ const of = (rule: string, texts: readonly string[]): RawFinding[] =>
 export function configFindings(context: RepoContext): RawFinding[] {
   const { root, files } = context;
   const gitignore = join(root, ".gitignore");
-  const numbers = join(root, "apps/docs/src/docs/adr/numbers.yaml");
+  const numbers = join(root, "apps/docs/adr/numbers.yaml");
   return [
     ...of("json-configs", checkJsonConfigs(files)),
     ...files

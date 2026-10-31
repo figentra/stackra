@@ -15,7 +15,7 @@ took 0501, because numbers were picked from local branches. Reserve numbers on m
 
 ## Impact
 
-- **Apps touched**: `apps/docs` (new `src/docs/adr/numbers.yaml`)
+- **Apps touched**: `apps/docs` (new `adr/numbers.yaml`, outside `src/docs`, which holds pages only)
 - **Services touched**: none
 - **Packages touched**: `packages/developer/repo-checks` (the `adr-numbers` rule in the config phase)
 - **Cross-service events**: none
@@ -31,7 +31,7 @@ took 0501, because numbers were picked from local branches. Reserve numbers on m
 
 ## Requirements
 
-- **FR-001** `apps/docs/src/docs/adr/numbers.yaml`: number → `slug`, `status` (reserved, proposed, accepted,
+- **FR-001** `apps/docs/adr/numbers.yaml`: number → `slug`, `status` (reserved, proposed, accepted,
   superseded, deferred), and for a reservation `owner` and `issue`. Seeded with every ADR on main and today's 0501 to
   0506, each checked against the branches.
 - **FR-002** `pnpm adr:reserve <slug> --issue STA-n [--owner <who>]`: reads `numbers.yaml` from GitHub's main, takes

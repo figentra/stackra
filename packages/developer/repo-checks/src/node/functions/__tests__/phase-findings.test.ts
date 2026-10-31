@@ -47,7 +47,7 @@ describe("phase runners", () => {
       "tools/x.json": "{}",
       "lefthook.yml": "a: { b: c }\n",
       "apps/docs/src/docs/adr/0001-first.mdx": "",
-      "apps/docs/src/docs/adr/numbers.yaml": '"0002":\n  slug: second\n',
+      "apps/docs/adr/numbers.yaml": '"0002":\n  slug: second\n',
     });
     expect(configFindings(context).map((f) => f.rule)).toEqual([
       "json-configs",

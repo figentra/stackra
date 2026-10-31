@@ -50,7 +50,7 @@ to the owner.
 ## How to work
 
 1. **Number.** Reserve it first: `pnpm adr:reserve <slug> --issue STA-n` lands the entry in
-   `apps/docs/src/docs/adr/numbers.yaml` on main, and the first reservation to land wins (a conflicting one is closed
+   `apps/docs/adr/numbers.yaml` on main, and the first reservation to land wins (a conflicting one is closed
    and run again). Never take the highest on a branch plus one, and never rely on memory. Numbers are never reused or renumbered, and Stackra ADRs are cited by
    path, never by a number from another repository.
 2. **Write.** Copy `apps/docs/src/docs/adr/template.mdx`. Frontmatter: `title: "NNNN — Title"`,

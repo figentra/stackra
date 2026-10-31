@@ -6,7 +6,7 @@ description: Write or supersede an Architecture Decision Record in the house for
 
 The format is `apps/docs/src/docs/adr/template.mdx`; this skill only restates it.
 
-1. Number: reserve it first with `pnpm adr:reserve <slug> --issue STA-n`, which lands it in `apps/docs/src/docs/adr/numbers.yaml` on main; the first reservation to land wins, so a conflicting reservation PR is closed and run again. Never take the highest on a branch plus one.
+1. Number: reserve it first with `pnpm adr:reserve <slug> --issue STA-n`, which lands it in `apps/docs/adr/numbers.yaml` on main; the first reservation to land wins, so a conflicting reservation PR is closed and run again. Never take the highest on a branch plus one.
    File: `apps/docs/src/docs/adr/NNNN-<kebab-slug>.mdx`, copied from the template.
 2. Frontmatter: `title: "NNNN — Title"` and `description: "<Status> · YYYY-MM-DD"`. Status is one of Proposed, Accepted,
    Deferred, Rejected or `Superseded by NNNN` (the template's status table). Nothing may rely on a Proposed ADR.

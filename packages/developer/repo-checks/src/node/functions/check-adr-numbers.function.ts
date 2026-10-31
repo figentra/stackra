@@ -3,7 +3,7 @@
  * Purpose: `checkAdrNumbers(adrFiles, numbersText)`, the ADR number register (STA-1732): every
  *          `apps/docs/src/docs/adr/NNNN-<slug>.mdx` has its number in `numbers.yaml` with the same slug, and no number is
  *          used twice, by two files or by two entries.
- * Boundary: pure; `numbersText` is `apps/docs/src/docs/adr/numbers.yaml`, undefined when absent. A repository without
+ * Boundary: pure; `numbersText` is `apps/docs/adr/numbers.yaml`, undefined when absent. A repository without
  *           the register (a product that keeps no ADRs here) is not checked.
  * Runtime: node
  * Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); STA-1732.
@@ -35,7 +35,7 @@ export function checkAdrNumbers(
     // A repeated key (a number registered twice) throws here.
     register = (parse(numbersText, { uniqueKeys: true }) ?? {}) as typeof register;
   } catch (error) {
-    return [`apps/docs/src/docs/adr/numbers.yaml: ${(error as Error).message.split("\n")[0]}`];
+    return [`apps/docs/adr/numbers.yaml: ${(error as Error).message.split("\n")[0]}`];
   }
   const slugs = new Map(
     Object.entries(register).map(([key, entry]) => [key.padStart(4, "0"), entry?.slug]),
