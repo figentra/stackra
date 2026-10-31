@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: proves `library()` returns the agreed shape (ESM, dts, sourcemap, clean, treeshake) and that the decorators
+ * Purpose: proves `library()` returns the agreed shape (ESM, dts, sourcemap, clean, treeshake), that its guard fails a
+ *          chunk carrying rolldown's `__require` shim (STA-1722), and that the decorators
  *          flag installs the inputOptions hook which adds the legacy transform and swallows only the known conflict
  *          log.
  * Boundary: test only; imports the subject by relative path (a package cannot depend on itself).
@@ -18,6 +19,14 @@ type Resolved = {
   clean: unknown;
   treeshake: unknown;
   inputOptions?: (i: Record<string, unknown>) => Record<string, unknown>;
+  plugins: {
+    name: string;
+    renderChunk: (
+      this: { error: (message: string) => never },
+      code: string,
+      chunk: { fileName: string },
+    ) => null;
+  }[];
 };
 
 describe("@stackra/tsdown-config library()", () => {
@@ -34,6 +43,21 @@ describe("@stackra/tsdown-config library()", () => {
     expect(cfg.clean).toBe(true);
     expect(cfg.treeshake).toBe(true);
     expect(cfg.inputOptions).toBeUndefined();
+  });
+
+  it("fails a chunk that calls a bundled require through rolldown's __require shim (STA-1722)", () => {
+    const [guard] = (library() as unknown as Resolved).plugins;
+    if (guard === undefined) throw new Error("no guard plugin");
+    const context = {
+      error: (message: string): never => {
+        throw new Error(message);
+      },
+    };
+    const chunk = { fileName: "active-view-id-of.function-ORsh_53L.mjs" };
+    expect(() =>
+      guard.renderChunk.call(context, 'var x = __require("react"); __require("react");', chunk),
+    ).toThrow(/active-view-id-of\.function-ORsh_53L\.mjs calls require\("react"\) through/);
+    expect(guard.renderChunk.call(context, 'import { useState } from "react";', chunk)).toBeNull();
   });
 
   it("decorators: true adds the legacy transform (no metadata) and filters the duplicate-flag log", () => {
