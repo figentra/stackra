@@ -138,7 +138,19 @@ function connect(automations: Automation[], revisions: Revision[] = []) {
 /** The grants every test starts from: the publisher and the seed principal may send an SMS. */
 let access = new MemoryPublisherAccessDriver();
 
-const serviceOf = () => new AutomationService(new RevisionRepository(), access);
+/** A resolver that binds only `bound`. */
+const resolverOf = (bound: readonly object[] = []) => ({
+  has: (token: unknown) => bound.some((instance) => instance.constructor === token),
+  get: <T extends object>(token: unknown) =>
+    bound.find((instance) => instance.constructor === token) as T,
+});
+
+/** A connected service that binds no `ScopeOwnership`, as a member without tenancy is. */
+const serviceOf = () => {
+  const service = new AutomationService(new RevisionRepository(), access);
+  service.connect(resolverOf());
+  return service;
+};
 
 beforeEach(() => {
   access = new MemoryPublisherAccessDriver();
@@ -149,6 +161,13 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
 });
+
+/** A dry-run automation to publish. */
+const ready = () => {
+  const automation = storedAutomation({ dryRunRevision: 1 });
+  connect([automation], [storedRevision(automation, 1, { document: { ...DOCUMENT, version: 1 } })]);
+  return automation;
+};
 
 describe(AutomationService, () => {
   it("opens an automation of the key in the scope", async () => {
@@ -208,35 +227,51 @@ describe(AutomationService, () => {
     expect(automation.publishedRevision).toBeNull();
   });
 
-  it("refuses a principal whose scope does not own the automation's, when the check is bound", async () => {
+  describe("the principal check", () => {
     class OwnsAcme extends Driver(ScopeOwnership) {
       async holds(actor: Actor): Promise<boolean> {
         return actor.scopeId === undefined || actor.scopeId === SCOPE.id;
       }
     }
-    const automation = storedAutomation({ dryRunRevision: 1 });
-    connect(
-      [automation],
-      [storedRevision(automation, 1, { document: { ...DOCUMENT, version: 1 } })],
-    );
-    const service = new AutomationService(new RevisionRepository(), access);
-    const owns = new OwnsAcme();
-    service.connect({
-      has: (token) => token === ScopeOwnership,
-      get: <T extends object>() => owns as unknown as T,
-    });
     const stranger: Actor = { ...PRINCIPAL, scopeId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w9" };
-    const refused = await service
-      .publish(automation.id, 1, stranger, PUBLISHER)
-      .catch((error: unknown) => error);
-    expect(isRefusal(refused, AutomationPrincipalMismatchError)).toBe(true);
-    expect(automation.publishedRevision).toBeNull();
-    await service.publish(automation.id, 1, { ...PRINCIPAL, scopeId: SCOPE.id }, PUBLISHER);
-    expect(automation.publishedRevision).toBe(1);
-    // none bound: the principal is trusted as chosen
-    service.connect({ has: () => false, get: <T extends object>() => undefined as unknown as T });
-    await service.publish(automation.id, 1, stranger, PUBLISHER);
-    expect(automation.principal).toEqual(stranger);
+    const scoped: Actor = { ...PRINCIPAL, scopeId: SCOPE.id };
+
+    it("refuses to publish when the service was never connected", async () => {
+      const automation = ready();
+      const service = new AutomationService(new RevisionRepository(), access);
+      await expect(service.publish(automation.id, 1, PRINCIPAL, PUBLISHER)).rejects.toThrow(
+        /AutomationService is not connected/,
+      );
+      expect(automation.publishedRevision).toBeNull();
+    });
+
+    it("refuses a tenant principal when no ScopeOwnership is bound, since nothing can verify it", async () => {
+      const automation = ready();
+      const refused = await serviceOf()
+        .publish(automation.id, 1, scoped, PUBLISHER)
+        .catch((error: unknown) => error);
+      expect(isRefusal(refused, AutomationPrincipalMismatchError)).toBe(true);
+      expect(automation.publishedRevision).toBeNull();
+    });
+
+    it("lets a platform principal through when no ScopeOwnership is bound", async () => {
+      const automation = ready();
+      await serviceOf().publish(automation.id, 1, PRINCIPAL, PUBLISHER);
+      expect(automation.publishedRevision).toBe(1);
+    });
+
+    it("lets a matching principal through and refuses a mismatched one when the port is bound", async () => {
+      const automation = ready();
+      const service = new AutomationService(new RevisionRepository(), access);
+      service.connect(resolverOf([new OwnsAcme()]));
+      const refused = await service
+        .publish(automation.id, 1, stranger, PUBLISHER)
+        .catch((error: unknown) => error);
+      expect(isRefusal(refused, AutomationPrincipalMismatchError)).toBe(true);
+      expect(automation.publishedRevision).toBeNull();
+      await service.publish(automation.id, 1, scoped, PUBLISHER);
+      expect(automation.publishedRevision).toBe(1);
+    });
   });
 
   it("pauses an automation whose publisher lost access instead of starting it, and recheck does too", async () => {

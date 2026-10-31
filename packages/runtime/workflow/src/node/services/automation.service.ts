@@ -94,7 +94,7 @@ export class AutomationService extends CrudService<Automation> {
   /**
    * Gives the service the container it reads the optional `ScopeOwnership` from, as the pipeline reads its optional
    * ports (the runtime and the testing module call it, as they call `EventBus.connect`); a later call replaces it.
-   * With none connected, or none bound, a principal is trusted as the caller chose it.
+   * Publishing fails closed without it (see `publish`).
    */
   connect(resolver: Resolver): void {
     this.resolver = resolver;
@@ -147,7 +147,10 @@ export class AutomationService extends CrudService<Automation> {
    * @throws NotFoundError when the automation or the revision is not visible.
    * @throws AutomationNotDryRunError when the last dry run was not of this revision.
    * @throws AutomationExceedsPublisherError when `publisher` may not call an action block the revision calls.
-   * @throws AutomationPrincipalMismatchError when a bound `ScopeOwnership` says `principal`'s scope does not own the automation's.
+   * @throws AutomationPrincipalMismatchError when `principal` acts in a scope (a tenant principal) and a bound `ScopeOwnership`
+   *         says that scope does not own the automation's, or none is bound, so nothing could verify it; a platform
+   *         principal (no `scopeId`) needs no check.
+   * @throws Error when the service was never connected: the boot connects it before an automation is published.
    */
   async publish(
     automationId: PublicId<"wfa">,
@@ -370,14 +373,22 @@ export class AutomationService extends CrudService<Automation> {
     principal: Actor,
     publisher: Actor,
   ): Promise<void> {
-    // a run acts as the principal in the automation's isolation, so its scope must own the automation's (ADR 0495)
-    const ownership =
-      this.resolver?.has(ScopeOwnership) === true ? this.resolver.get(ScopeOwnership) : undefined;
-    if (
-      ownership !== undefined &&
-      !(await ownership.holds(principal, { id: automation.scopeId, path: automation.scopePath }))
-    )
-      throw AutomationPrincipalMismatchError.create({ automationId: automation.id });
+    // a run acts as the principal in the automation's isolation, so its scope must own the automation's (ADR 0495); the
+    // check fails closed: never connected, or a tenant principal nothing can verify, publishes nothing. The port is read
+    // here, so the order of binding and connecting does not matter.
+    const { resolver } = this;
+    if (resolver === undefined)
+      throw new Error(
+        "AutomationService is not connected: the boot connects it before an automation is published",
+      );
+    if (principal.scopeId !== undefined) {
+      const ownership = resolver.has(ScopeOwnership) ? resolver.get(ScopeOwnership) : undefined;
+      if (
+        ownership === undefined ||
+        !(await ownership.holds(principal, { id: automation.scopeId, path: automation.scopePath }))
+      )
+        throw AutomationPrincipalMismatchError.create({ automationId: automation.id });
+    }
     const row = await this.revisions.findOneOrFail({
       model: MODEL,
       recordId: automation.id,
