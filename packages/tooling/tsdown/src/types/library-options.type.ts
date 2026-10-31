@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `LibraryOptions`, the options of `library()`: the legacy-decorator transform flag and extra externals.
+ * Purpose: `LibraryOptions`, the options of `library()`: the legacy-decorator transform flag, extra externals and the
+ *          optional peers a native entry requires lazily.
  * Boundary: a type only.
  * Runtime: node
  * Governing contract: ADR 0025 (build output); ADR 0005 (legacy decorators).
@@ -22,4 +23,10 @@ export interface LibraryOptions {
   decorators?: boolean;
   /** Mark packages external even if they are dependencies (rare: peer-provided runtimes). */
   external?: (string | RegExp)[];
+  /**
+   * Optional peers a native entry loads lazily with `require("x")` inside a try, so an app without the peer still runs
+   * (`expo-haptics`). The require polyfill is turned off so the literal call reaches Metro, which bundles the peer only
+   * when it sees that call; any other `require` in a chunk still fails the build (STA-1722).
+   */
+  optionalRequires?: readonly string[];
 }

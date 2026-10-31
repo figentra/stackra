@@ -31,6 +31,16 @@ export default {
       native: "src/native/index.ts",
       testing: "src/testing/fakes/fake-confirmation-provider.tsx",
     },
-    { decorators: true },
+    // The native entry's lazy optional peers, kept as literal requires for Metro (STA-1722).
+    {
+      decorators: true,
+      optionalRequires: [
+        "expo-clipboard",
+        "expo-document-picker",
+        "expo-haptics",
+        "expo-image-picker",
+        "expo-video",
+      ],
+    },
   ),
 };

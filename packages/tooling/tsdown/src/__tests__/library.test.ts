@@ -60,6 +60,36 @@ describe("@stackra/tsdown-config library()", () => {
     expect(guard.renderChunk.call(context, 'import { useState } from "react";', chunk)).toBeNull();
   });
 
+  it("keeps a listed optional peer's literal require for Metro and fails any other (STA-1722)", () => {
+    const cfg = library(undefined, {
+      optionalRequires: ["expo-haptics"],
+    }) as unknown as Resolved & {
+      outputOptions?: { polyfillRequire?: boolean };
+    };
+    expect(cfg.outputOptions).toEqual({ polyfillRequire: false });
+    expect((library() as unknown as { outputOptions?: unknown }).outputOptions).toBeUndefined();
+    const [guard] = cfg.plugins;
+    if (guard === undefined) throw new Error("no guard plugin");
+    const context = {
+      error: (message: string): never => {
+        throw new Error(message);
+      },
+    };
+    const chunk = { fileName: "native.mjs" };
+    expect(
+      guard.renderChunk.call(context, 'try { e = require("expo-haptics"); } catch {}', chunk),
+    ).toBeNull();
+    expect(
+      guard.renderChunk.call(context, 'x.require("react"); my_require("react");', chunk),
+    ).toBeNull();
+    expect(() => guard.renderChunk.call(context, 'var r = require("react");', chunk)).toThrow(
+      /native\.mjs calls require\("react"\), which throws/,
+    );
+    expect(() => guard.renderChunk.call(context, '__require("expo-haptics");', chunk)).toThrow(
+      /__require shim/,
+    );
+  });
+
   it("decorators: true adds the legacy transform (no metadata) and filters the duplicate-flag log", () => {
     const cfg = library({ index: "src/index.ts" }, { decorators: true }) as unknown as Resolved;
     expect(cfg.inputOptions).toBeTypeOf("function");

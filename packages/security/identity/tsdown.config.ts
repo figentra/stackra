@@ -30,6 +30,7 @@ export default {
       react: "src/react/index.ts",
       testing: "src/testing/index.ts",
     },
-    { decorators: true },
+    // The native entry's lazy optional peers, kept as literal requires for Metro (STA-1722).
+    { decorators: true, optionalRequires: ["expo-apple-authentication"] },
   ),
 };

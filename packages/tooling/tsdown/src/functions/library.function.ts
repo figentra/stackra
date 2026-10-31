@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `library()`, the one tsdown preset every library's `tsdown.config.ts` calls: ESM only as `dist/*.mjs` +
  *          `.d.mts` (ADR 0025), maps, sourcemaps, clean dist, tree-shaking, and a guard that fails the build when a
- *          chunk carries rolldown's `__require` shim (STA-1722); the optional decorators flag turns on the
+ *          chunk carries rolldown's `__require` shim or an unlisted `require` (STA-1722); the optional decorators flag turns on the
  *          legacy-decorator transform for the DI tier.
  * Boundary: builds the configuration object; it does not run the build.
  * Runtime: node
@@ -45,27 +45,43 @@ const withDecorators: InputOptionsFn = (input) => ({
 /** A call through rolldown's `__require` shim, which throws in ESM: `__require("react")`. */
 const REQUIRE_SHIM = /__require\(\s*["']([^"']+)["']\s*\)/g;
 
+/** A literal `require("x")` call, left in place when the polyfill is off (`optionalRequires`). */
+const REQUIRE_CALL = /(?<![\w$.])require\(\s*["']([^"']+)["']\s*\)/g;
+
+/** The distinct module names `pattern` captures in `code`. */
+const namesIn = (code: string, pattern: RegExp): string[] => [
+  ...new Set([...code.matchAll(pattern)].map((match) => match[1] ?? "")),
+];
+
 /**
  * Fails the build when a chunk calls `__require(...)`: a CommonJS dependency was bundled instead of kept external, and
- * its `require` throws for every ESM consumer (STA-1722). Declare the required package as a dependency or peer.
+ * its `require` throws for every ESM consumer (STA-1722). Declare the required package as a dependency or peer. A
+ * literal `require("x")` passes only for a name in `optionalRequires`: a native entry's lazy optional peer, which
+ * Metro bundles only when it sees the literal call.
  */
-const noRequireShim = {
+const noRequireShim = (optionalRequires: readonly string[]) => ({
   name: "stackra:no-require-shim",
   renderChunk(
     this: { error: (message: string) => never },
     code: string,
     chunk: { fileName: string },
   ) {
-    const required = [...new Set([...code.matchAll(REQUIRE_SHIM)].map((match) => match[1]))];
-    if (required.length > 0)
+    const shimmed = namesIn(code, REQUIRE_SHIM);
+    if (shimmed.length > 0)
       this.error(
-        `${chunk.fileName} calls require(${required.map((name) => JSON.stringify(name)).join(", ")}) through rolldown's ` +
+        `${chunk.fileName} calls require(${shimmed.map((name) => JSON.stringify(name)).join(", ")}) through rolldown's ` +
           "__require shim, which throws under ESM: a CommonJS dependency was bundled. Declare the package that " +
           "imports it as a dependency or peer so it stays external.",
       );
+    const unlisted = namesIn(code, REQUIRE_CALL).filter((name) => !optionalRequires.includes(name));
+    if (unlisted.length > 0)
+      this.error(
+        `${chunk.fileName} calls require(${unlisted.map((name) => JSON.stringify(name)).join(", ")}), which throws ` +
+          "under ESM: a CommonJS dependency was bundled, or a lazy optional peer is missing from optionalRequires.",
+      );
     return null;
   },
-};
+});
 
 /**
  * Build configuration for a TypeScript library using tsdown + rolldown.
@@ -97,7 +113,9 @@ export function library(
     sourcemap: true,
     clean: true,
     treeshake: true,
-    plugins: [noRequireShim],
+    plugins: [noRequireShim(options.optionalRequires ?? [])],
+    // Keep the literal `require("x")` of a lazy optional peer, so Metro sees and bundles it (STA-1722).
+    ...(options.optionalRequires ? { outputOptions: { polyfillRequire: false } } : {}),
     ...(options.external ? { external: options.external } : {}),
     ...(options.decorators ? { inputOptions: withDecorators } : {}),
   });
