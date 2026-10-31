@@ -19,6 +19,7 @@ export { MemoryPaymentRecordsDriver } from "#core/drivers/memory-payment-records
 export { MemoryRestrictedTenderProgramsDriver } from "#core/drivers/memory-restricted-tender-programs.driver";
 export { MemorySoftPosDriver } from "#core/drivers/memory-soft-pos.driver";
 export { MemoryTenderEligibilityDriver } from "#core/drivers/memory-tender-eligibility.driver";
+export { NoneAgentCommerceProtocolsDriver } from "#core/drivers/none-agent-commerce-protocols.driver";
 export { StripeTapToPaySoftPosDriver } from "#core/drivers/stripe-tap-to-pay-soft-pos.driver";
 export { AgentConfirmationRefusedError } from "#core/errors/agent-confirmation-refused.error";
 export { BalanceExceededError } from "#core/errors/balance-exceeded.error";

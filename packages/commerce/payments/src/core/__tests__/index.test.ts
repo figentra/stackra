@@ -29,6 +29,7 @@ describe("@stackra/payments", () => {
       "MerchantInitiatedNotAllowedError",
       "NoEligibleLinesError",
       "NoPaymentProviderError",
+      "NoneAgentCommerceProtocolsDriver",
       "PaymentBalanceService",
       "PaymentDeclinedError",
       "PaymentFieldRequiredError",
