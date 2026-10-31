@@ -1453,6 +1453,10 @@
 "0494":
   slug: credential-data-class-for-provider-secrets
   status: accepted
+"0496":
+  slug: settings-is-a-foundation-package-each-module-declares-its-group-a-device-level-and-ui-config-is-dynamic
+  status: accepted
+  owner: c6 design system
 "0500":
   slug: four-clis-stackra-runway-vellum-and-figentra
   status: accepted
