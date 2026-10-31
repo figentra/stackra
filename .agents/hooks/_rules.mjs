@@ -2192,11 +2192,13 @@ function context(raw, cwd, agentType, scratchpad, role) {
  * also run on every substitution body found with quotes ignored. An ask is a deny (`unattended`) unless every ask
  * it hit is in `HUMAN_ASKS`, from the main thread and a subagent alike (STA-400; STA-351 did it for subagents).
  * @param {string} raw the command as the agent wrote it
- * @param {{ cwd?: string, agentType?: string, scratchpad?: string, executor?: boolean }} [options] the shell's
+ * @param {{ cwd?: string, agentType?: string, scratchpad?: string, executor?: boolean, deadlineMs?: number }} [options]
+ *   the shell's
  *   directory, the agent type (`agent_type`, for the reviewer rule), the session's scratchpad directory
  *   (`sessionScratchpad`; none: no scratch `rm -rf`), and whether an OpenCode executor runs it (the `executor`
  *   rules: `npx`, `eas`, `wrangler secret|--remote`, `encore env set|create`, `secrets:import --confirm`), and the
- *   session's role (`STACKRA_ROLE`; `qa-release` may deploy, the deploy rules)
+ *   session's role (`STACKRA_ROLE`; `qa-release` may deploy, the deploy rules), and the
+ *   decision's deadline (`DEADLINE_MS`; a test lifts it so box load never decides an outcome)
  */
 export function decideBash(raw, options = {}) {
   try {
@@ -2210,12 +2212,19 @@ const UNREADABLE =
   "The guard could not read this command, so it is denied. Split it into plain commands";
 function decide(
   raw,
-  { cwd = process.cwd(), agentType = "", scratchpad = "", executor = false, role = "" } = {},
+  {
+    cwd = process.cwd(),
+    agentType = "",
+    scratchpad = "",
+    executor = false,
+    role = "",
+    deadlineMs = DEADLINE_MS,
+  } = {},
 ) {
   clearCaches();
   gitRuns = 0;
   gitLate = false;
-  deadline = performance.now() + DEADLINE_MS;
+  deadline = performance.now() + deadlineMs;
   if (substitutionDepth(raw) > MAX_DEPTH) return { decision: "deny", reason: TOO_DEEP };
   const cmd = stripHeredocs(raw);
   const ctx = context(raw, cwd, agentType, scratchpad, role);

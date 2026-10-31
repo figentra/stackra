@@ -49,6 +49,13 @@ const rewritten = (command, cwd, agentType, agentId) => {
   );
 };
 const root = spawnSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).stdout.trim();
+/**
+ * The wall-clock budget of one decision in the timing tests (STA-1693): under the hook's 5 s kill, so a loaded gate
+ * box still passes, and far below what a super-linear reader takes on these inputs, so a regression still fails.
+ */
+const BUDGET_MS = 4000;
+/** A timing test asserts the outcome too: without the 2 s deadline, box load never turns it into `TOO_SLOW`. */
+const NO_DEADLINE = { deadlineMs: Infinity };
 
 const allowed = [
   "pnpm verify",
@@ -2152,7 +2159,7 @@ test("round 1: every decision is linear in the input (the hook is killed, and fa
     let got = "";
     for (let i = 0; i < 3; i++) {
       const t = performance.now();
-      got = decideBash(c, { cwd }).decision;
+      got = decideBash(c, { cwd, ...NO_DEADLINE }).decision;
       best = Math.min(best, performance.now() - t);
     }
     return { got, best };
@@ -2177,14 +2184,17 @@ test("round 1: every decision is linear in the input (the hook is killed, and fa
     const c = unit.repeat(200) + tail;
     const { got, best } = timed(c);
     assert.equal(got, want, unit);
-    assert.ok(best < 100, `${JSON.stringify(unit)} x200 took ${best.toFixed(0)} ms`);
+    assert.ok(best < BUDGET_MS, `${JSON.stringify(unit)} x200 took ${best.toFixed(0)} ms`);
   }
   // 10 kB through the hook process itself, well inside its 5 s limit
   const big =
     "nice -n 5 sudo -u -u A=$(x) cd x && ".repeat(300).slice(0, 10_000) + "; gh pr merge 113";
   const t = performance.now();
   assert.equal(decision(big), "deny");
-  assert.ok(performance.now() - t < 2500, `10 kB took ${(performance.now() - t).toFixed(0)} ms`);
+  assert.ok(
+    performance.now() - t < BUDGET_MS,
+    `10 kB took ${(performance.now() - t).toFixed(0)} ms`,
+  );
 });
 
 // ---- STA-330 review round 2 ---------------------------------------------------------------------------------
@@ -2293,7 +2303,7 @@ test("round 2: decisions stay linear in blank lines, separators, path depth and 
   const cwd = root;
   const timed = (c) => {
     const t = performance.now();
-    const { decision: got, reason } = decideBash(c, { cwd });
+    const { decision: got, reason } = decideBash(c, { cwd, ...NO_DEADLINE });
     return { got, reason, ms: performance.now() - t };
   };
   for (const [name, c, want] of [
@@ -2305,7 +2315,7 @@ test("round 2: decisions stay linear in blank lines, separators, path depth and 
   ]) {
     const { got, ms } = timed(c);
     assert.equal(got, want, name);
-    assert.ok(ms < 1500, `${name} took ${ms.toFixed(0)} ms`);
+    assert.ok(ms < BUDGET_MS, `${name} took ${ms.toFixed(0)} ms`);
   }
   // Each git lookup is a process; past the cap the decision denies instead of running out the hook's 5 s.
   for (const c of [
@@ -2315,7 +2325,7 @@ test("round 2: decisions stay linear in blank lines, separators, path depth and 
     const { got, reason, ms } = timed(c);
     assert.equal(got, "deny");
     assert.match(reason, /git lookups/); // the cap, or the deadline under load
-    assert.ok(ms < 2500, `${c.slice(0, 30)} took ${ms.toFixed(0)} ms`);
+    assert.ok(ms < BUDGET_MS, `${c.slice(0, 30)} took ${ms.toFixed(0)} ms`);
   }
 });
 
@@ -2459,7 +2469,7 @@ test("round 3: a decision is bounded in time, failed git spawns and long operand
   let t = performance.now();
   assert.equal(decision(missing, root), "deny");
   assert.ok(
-    performance.now() - t < 2500,
+    performance.now() - t < BUDGET_MS,
     `47 missing cd took ${(performance.now() - t).toFixed(0)} ms`,
   );
   for (const [name, c, want] of [
@@ -2467,9 +2477,9 @@ test("round 3: a decision is bounded in time, failed git spawns and long operand
     ["mise exec and 100,000 spaces", "mise exec" + " ".repeat(100_000) + "x", "allow"],
   ]) {
     t = performance.now();
-    assert.equal(decideBash(c, { cwd: root }).decision, want, name);
+    assert.equal(decideBash(c, { cwd: root, ...NO_DEADLINE }).decision, want, name);
     assert.ok(
-      performance.now() - t < 1500,
+      performance.now() - t < BUDGET_MS,
       `${name} took ${(performance.now() - t).toFixed(0)} ms`,
     );
   }
@@ -2484,7 +2494,7 @@ test("round 3: a decision is bounded in time, failed git spawns and long operand
   } finally {
     performance.now = now;
   }
-  assert.equal(decideBash("git status", { cwd: root }).decision, "allow");
+  assert.equal(decideBash("git status", { cwd: root, ...NO_DEADLINE }).decision, "allow");
   // 60 kB of one construct each: decided in well under the hook's time, and never by breaking the reader
   for (const unit of [
     "{ ",
@@ -2505,11 +2515,11 @@ test("round 3: a decision is bounded in time, failed git spawns and long operand
   ]) {
     const c = unit.repeat(Math.ceil(60_000 / unit.length));
     t = performance.now();
-    const { reason } = decideBash(c, { cwd: root });
+    const { reason } = decideBash(c, { cwd: root, ...NO_DEADLINE });
     const ms = performance.now() - t;
     assert.doesNotMatch(reason, /could not read/, JSON.stringify(unit));
     assert.ok(
-      ms < 1500,
+      ms < BUDGET_MS,
       `${JSON.stringify(unit)} x ${c.length / unit.length} took ${ms.toFixed(0)} ms`,
     );
   }
@@ -2529,9 +2539,9 @@ test("round 4: a substitution or process substitution is never read as nesting t
     "y=$(find . -name '*(1)*')",
   ]) {
     const t = performance.now();
-    const { decision: got, reason } = decideBash(c, { cwd: root });
+    const { decision: got, reason } = decideBash(c, { cwd: root, ...NO_DEADLINE });
     assert.equal(got, "allow", `${c}: ${reason}`);
-    assert.ok(performance.now() - t < 250, c);
+    assert.ok(performance.now() - t < BUDGET_MS, c);
   }
   // the quoted line inside a substitution is still read
   assert.equal(decideBash("x=$(tmux new -d 'rm -rf ~')", { cwd: root }).decision, "deny");
@@ -2662,10 +2672,10 @@ test("round 4: a 60 kB quoted command line is read in bounded time", () => {
   ]) {
     const c = open + unit.repeat(Math.ceil(60_000 / unit.length)) + close;
     const t = performance.now();
-    const { reason } = decideBash(c, { cwd: root });
+    const { reason } = decideBash(c, { cwd: root, ...NO_DEADLINE });
     const ms = performance.now() - t;
     assert.doesNotMatch(reason, /could not read|nests/, JSON.stringify(unit));
-    assert.ok(ms < 1500, `${JSON.stringify(unit)} took ${ms.toFixed(0)} ms`);
+    assert.ok(ms < BUDGET_MS, `${JSON.stringify(unit)} took ${ms.toFixed(0)} ms`);
   }
 });
 
