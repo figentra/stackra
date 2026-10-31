@@ -427,12 +427,11 @@ test("the v2 templates carry the state machine, Impact v2, Amendments, Status hi
   );
 });
 
-// The Quality Gate runs on demand since 31faaac4 (the ci-box gate is the gate), so ci.yml no longer lists the
-// pull_request types; the ready rule still reads SPEC_GATE_REQUIRE_READY when the gate does run on a pull request.
-test("validate and CI run both gates; a pull request run sets the Tasked rule", () => {
+test("validate and CI run both gates; a ready-for-review PR sets the Tasked rule", () => {
   const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).scripts;
   assert.match(pkg.validate, /spec-gate\.mjs ci && node tools\/scripts\/spec-trace\.mjs ci/);
   const ci = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");
+  assert.match(ci, /ready_for_review/);
   assert.match(ci, /SPEC_GATE_REQUIRE_READY:/);
   assert.match(ci, /STACKRA_BRANCH:/);
 });
