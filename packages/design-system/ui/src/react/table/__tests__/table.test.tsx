@@ -267,8 +267,10 @@ describe("Table (web)", () => {
   it("pins a sticky header and scrolls the rows inside maxHeight", () => {
     const { rerender } = render(<Table {...baseProps} isStickyHeader maxHeight="10rem" />);
     const scroller = document.querySelector<HTMLElement>('[data-slot="table-scroll-container"]');
-    // Rounded down to whole rows, so a sticky total row never covers half of one.
-    expect(scroller?.style.maxHeight).toBe("round(down, 10rem, 44px)");
+    // The header plus whole rows, so a sticky total row never covers part of one.
+    expect(scroller?.style.maxHeight).toBe(
+      "calc(var(--size-table-header) + round(down, 10rem - var(--size-table-header), 44px))",
+    );
     for (const header of screen.getAllByRole("columnheader"))
       expect(header.classList.contains("sticky")).toBe(true);
     rerender(<Table {...baseProps} />);
@@ -281,7 +283,7 @@ describe("Table (web)", () => {
     render(<Table {...baseProps} isStickyHeader />);
     expect(
       document.querySelector<HTMLElement>('[data-slot="table-scroll-container"]')?.style.maxHeight,
-    ).toBe("round(down, 24rem, 44px)");
+    ).toBe("calc(var(--size-table-header) + round(down, 24rem - var(--size-table-header), 44px))");
   });
 
   it("draws HeroUI's two variants", () => {

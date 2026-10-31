@@ -80,21 +80,12 @@ for (const scheme of SCHEMES)
       // In right to left, an Arabic amount in a column pinned to the end sits over the scrolled cells beneath its
       // opaque sticky cell, and axe 4.14 cannot settle that background ("partially overlaps"); the test below measures
       // every pinned amount against its cell instead.
-      // Likewise a row scrolled under a table's sticky totals row is a smaller target only until it scrolls out from
-      // under it; axe names the totals cell (`data-table-summary:`) as the neighbour and leaves it for review.
-      const isUnderTotals = (node: (typeof incomplete)[number]["nodes"][number]) =>
-        node.any.some((check) =>
-          check.relatedNodes?.some((related) =>
-            related.html.includes('data-key="data-table-summary:'),
-          ),
-        );
       expect(
         incomplete
           .filter(
             (finding) =>
-              (finding.id !== "color-contrast" ||
-                finding.nodes.some((node) => !node.html.includes('data-slot="money-value"'))) &&
-              (finding.id !== "target-size" || !finding.nodes.every(isUnderTotals)),
+              finding.id !== "color-contrast" ||
+              finding.nodes.some((node) => !node.html.includes('data-slot="money-value"')),
           )
           .map((finding) => finding.id),
         "axe checks left for review",
