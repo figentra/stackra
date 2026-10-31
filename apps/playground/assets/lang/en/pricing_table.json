@@ -1,0 +1,28 @@
+{
+  "basics": {
+    "period": "Billing period",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "per_month": "/ month",
+    "per_year": "/ year",
+    "starter": "Starter",
+    "starter_line": "For a first online shop.",
+    "growth": "Growth",
+    "growth_line": "For a shop that sells every day.",
+    "scale": "Scale",
+    "scale_line": "For several shops and teams.",
+    "one_shop": "One shop",
+    "products_500": "Up to 500 products",
+    "cod": "Cash on delivery",
+    "three_shops": "Three shops",
+    "unlimited": "Unlimited products",
+    "reports": "Sales reports",
+    "api": "API access",
+    "support": "Priority support",
+    "start": "Start free trial",
+    "choose": "Choose plan",
+    "talk": "Talk to sales",
+    "popular": "Most popular",
+    "chosen": "Chosen: {plan}, {period}."
+  }
+}

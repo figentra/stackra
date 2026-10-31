@@ -1,0 +1,15 @@
+{
+  "basics": {
+    "title": "Open your shop this week",
+    "description": "Start free for 14 days. No card needed, and your first sale is on us.",
+    "start": "Start free",
+    "demo": "Book a demo",
+    "news_title": "Tips for growing shops, once a month",
+    "news_label": "Email",
+    "news_placeholder": "you@example.com",
+    "news_submit": "Subscribe",
+    "news_note": "One email a month. Unsubscribe any time.",
+    "news_thanks": "Thanks for subscribing. The next issue arrives at the start of the month.",
+    "pressed": "Pressed: {action}."
+  }
+}

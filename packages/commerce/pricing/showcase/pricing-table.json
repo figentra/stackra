@@ -1,0 +1,21 @@
+{
+  "slug": "pricing-table",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/pricing",
+  "exportName": "PricingTable",
+  "parts": ["PricingTable"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 560
+    }
+  ],
+  "related": ["free/segmented-control", "free/card", "free/cart"],
+  "tokens": ["color.surface", "color.accent"],
+  "keywords": ["pricing", "plans", "subscription", "billing", "monthly", "yearly", "kit"],
+  "status": "new"
+}

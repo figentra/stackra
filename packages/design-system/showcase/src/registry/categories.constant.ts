@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `CATEGORIES`, the twelve categories with the brand glyph each wears, in navigation order.
+ * Purpose: `CATEGORIES`, the thirteen categories with the brand glyph each wears, in navigation order.
  * Boundary: data only; titles and descriptions are `showcase::category.<id>.*` keys.
  * Runtime: isomorphic
  * Governing contract: showcase redesign spec (2026-10-27) section 2.
@@ -20,5 +20,6 @@ export const CATEGORIES: readonly CategoryEntry[] = Object.freeze([
   { id: "navigation", glyph: "link", order: 8 },
   { id: "overlays", glyph: "package", order: 9 },
   { id: "layout", glyph: "menu", order: 10 },
-  { id: "ai", glyph: "provider", order: 11 },
+  { id: "blocks", glyph: "docs", order: 11 },
+  { id: "ai", glyph: "provider", order: 12 },
 ]);

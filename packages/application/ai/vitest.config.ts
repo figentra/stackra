@@ -20,8 +20,8 @@ export default mergeConfig(
   defineConfig(
     withCoverage({
       test: {
-        include: ["src/**/__tests__/**/*.test.ts"],
-        exclude: ["**/*.{int,contract,e2e,load}.test.ts"],
+        include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
+        exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],
       },
     }),
   ),

@@ -1,0 +1,17 @@
+{
+  "basics": {
+    "title": "Your cart",
+    "empty": "Your cart is empty.",
+    "quantity": "Quantity of {name}",
+    "remove": "Remove",
+    "checkout": "Checkout",
+    "abaya": "Linen abaya",
+    "abaya_detail": "Size M · Sand",
+    "scarf": "Silk scarf",
+    "scarf_detail": "Olive",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "vat": "VAT 15%",
+    "total": "Total"
+  }
+}

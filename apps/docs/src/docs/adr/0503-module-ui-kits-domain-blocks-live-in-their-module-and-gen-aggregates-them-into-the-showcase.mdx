@@ -1,0 +1,101 @@
+---
+title: "0503 — Module UI kits: domain blocks live in their module, and gen aggregates them into the showcase"
+description: "Proposed · 2026-10-31"
+---
+
+{/* Stackra file contract: Purpose: the decision record that a module's domain UI blocks (chat, pricing, cart, checkout, sign-in, marketing sections) live in that module's package as its UI kit, depend on @stackra/ui one way, and reach the showcases through gen. Boundary: decision text only. Runtime: docs. Governing contract: ADR template; ADR 0003, 0165, 0259, 0302, 0305, 0469. */}
+
+<Note>
+  Proposed 2026-10-31 (design-system session c6, STA-1371). The owner's direction of 2026-10-31:
+  "what about commerce block and ai block each will be placed in it's own module or service and we
+  will aggergate via the gen right?", answered yes (generic parts in `@stackra/ui`, domain parts in
+  module kits, gen aggregates them), then "all accepted merege and proceed". This page records that
+  direction; it is not yet accepted.
+</Note>
+
+## Context
+
+The component inventory of 2026-10-31 (`notes/design-system-research-2026-10-31/gaps.md`) lists blocks we lack that
+six or more systems ship: a login page, a pricing table, a cart, a checkout, a chat surface, feature and
+call-to-action sections. Each is two things at once. Its generic parts (a chat message, a prompt input, a reasoning
+trace, a list of sources, a quantity stepper, a radio group) belong in `@stackra/ui`
+([0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground)). The block itself is domain UI: a checkout
+knows about shipping options and payment methods, a sign-in card about the tenant's identity providers. Put in
+`@stackra/ui`, those blocks would pull commerce and identity vocabulary into the design system, which every tier
+depends on ([0003](/adr/0003-tier-dependency-direction)). Put in an app, a second product would copy them. The
+showcases list only `@stackra/ui` today, from hand-written entry files.
+
+## Decision
+
+1. **A module UI kit is the module's own `./react` entry (and `./native` when it has one).** It ships the module's
+   domain blocks, composed only from `@stackra/ui` and the module's own contracts. There is no separate kit package:
+   the blocks sit beside the ports and services they render, in the package that owns the domain
+   ([0259](/adr/0259-module-placement-three-homes)). The first kits:
+
+   | Kit       | Package and entry           | Blocks                         |
+   | --------- | --------------------------- | ------------------------------ |
+   | AI        | `@stackra/ai/react`         | `ChatSurface`                  |
+   | Commerce  | `@stackra/pricing/react`    | `PricingTable`                 |
+   | Commerce  | `@stackra/payments/react`   | `Cart`, `Checkout`             |
+   | Identity  | `@stackra/identity/react`   | `SignIn`                       |
+   | Marketing | `@stackra/experience/react` | `FeatureSection`, `CtaSection` |
+
+2. **Layout of a kit.** Each block is `src/react/<block>/<block>.tsx` with `<block>.props.ts` beside it and its test in
+   `__tests__/` ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components)); the entry
+   barrel names every block and its Props. The package's `package.json` exports `./react`, depends on `@stackra/ui`
+   (`workspace:*`) and takes `react` as an optional peer; its `tsconfig.json` uses a `-react` preset.
+
+3. **One direction.** A kit depends on `@stackra/ui`; `@stackra/ui` and `@stackra/showcase` never depend on a kit. A
+   generic part a block needs is built in `@stackra/ui` first, then the block uses it (the AI kit uses `ChatMessage`,
+   `PromptInput`, `Reasoning` and `Sources` from `@stackra/ui`). Box and Spacer are not built
+   (owner, 2026-10-31).
+
+4. **Configuration, not code.** A block hard-codes no business value. Plans, prices, periods, cart lines, totals,
+   checkout fields, shipping options, payment methods, providers and every word arrive in props, from the tenant's
+   settings, a market pack or the module's catalogue. A block computes no tax, shipping, discount or price: totals
+   come from the host's pricing. A block takes no payment and authenticates nobody: it hands values to the host,
+   which calls the module's ports.
+
+5. **gen discovers kits by a folder.** A kit declares its showcase entries as JSON in
+   `packages/<category>/<name>/showcase/<slug>.json`, one `ComponentEntry` each, with `packageName` set to its own
+   package. `@stackra/showcase`'s gen (`scripts/load-kit-entries.function.ts`) reads every such file outside the
+   design system, refuses one that names another package or whose file name is not its slug, and inlines it in
+   `src/registry/components.generated.ts`. The showcase imports no kit code; the registry gate
+   (`checkRegistry`) checks a kit entry exactly as it checks a `@stackra/ui` one, catalogue keys included.
+
+6. **The showcases.** Kit entries list under a new **Blocks** category (the AI chat stays under **AI**). Both
+   showcases read the one generated registry, so the playground and the mobile showcase list kit blocks with no
+   further wiring; a web-only block shows its "Web only" chip on mobile. The playground holds each block's route and
+   demos as it does for `@stackra/ui` (`src/routes/<slug>/`, `src/demos/free/<slug>/`), depends on the kit packages
+   and points Tailwind's `@source` at each kit's `src/react`. A kit's native demos go in `apps/mobile/src/demos`, which
+   gen already indexes.
+
+7. **Docs.** A kit block's words (title, description, keywords, the doc page's hero, pillars and right-to-left note)
+   live in the showcase catalogues in English and Arabic, like any entry. Its API tables are generated from its
+   `*.props.ts` once gen's API reader reads kit packages (see Enforcement).
+
+## Consequences
+
+- A product gets a working checkout, sign-in or chat by importing its module's `./react`, configured by data.
+- The design system stays domain-free; a module can grow its kit without a design-system release.
+- Module packages that were node-only now carry React as an optional peer and a test setup for TSX.
+- An app that renders kit blocks must add each kit's `src/react` to its Tailwind sources, as it does for `@stackra/ui`.
+- Until gen's API reader reads kits, a kit block's page has no generated API table.
+
+## Enforcement
+
+- `packages/design-system/showcase/scripts/load-kit-entries.function.ts` refuses a kit entry that names another
+  package or a mismatched file; `src/registry/__tests__/check-registry.test.ts` runs the registry gate over kit
+  entries; `pnpm -F @stackra/showcase gen:check` fails on a stale registry.
+- Each kit's `src/react/__tests__/index.test.ts` (where present) pins the entry's exports; the block tests render the
+  real `@stackra/ui` components.
+- planned — a boundaries rule refusing an import of a module package from `packages/design-system/**`; today only
+  review and the absence of such a dependency in `@stackra/ui`'s and `@stackra/showcase`'s `package.json` hold it.
+- planned — gen's API reader (`scripts/gen-api.ts`) reads `*.props.ts` under each kit's `src/react` and writes the
+  block's `api/react/free/<slug>.json`.
+- planned — a lint or gen check that a kit block holds no literal prices, plan names or copy.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: the owner's messages of 2026-10-31 in the c6 session;
+`notes/design-system-research-2026-10-31/summary.md` and `gaps.md` (stackra notes repository).

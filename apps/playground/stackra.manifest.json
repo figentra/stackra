@@ -334,6 +334,11 @@
       "file": "src/routes/carousel/carousel.route.ts"
     },
     {
+      "key": "cart",
+      "class": "CartRoute",
+      "file": "src/routes/cart/cart.route.ts"
+    },
+    {
       "key": "cascader",
       "class": "CascaderRoute",
       "file": "src/routes/cascader/cascader.route.ts"
@@ -359,6 +364,11 @@
       "file": "src/routes/chat-message/chat-message.route.ts"
     },
     {
+      "key": "chat_surface",
+      "class": "ChatSurfaceRoute",
+      "file": "src/routes/chat-surface/chat-surface.route.ts"
+    },
+    {
       "key": "checkbox_button_group",
       "class": "CheckboxButtonGroupRoute",
       "file": "src/routes/checkbox-button-group/checkbox-button-group.route.ts"
@@ -377,6 +387,11 @@
       "key": "checkbox",
       "class": "CheckboxRoute",
       "file": "src/routes/checkbox/checkbox.route.ts"
+    },
+    {
+      "key": "checkout",
+      "class": "CheckoutRoute",
+      "file": "src/routes/checkout/checkout.route.ts"
     },
     {
       "key": "chip",
@@ -477,6 +492,11 @@
       "key": "country_select",
       "class": "CountrySelectRoute",
       "file": "src/routes/country-select/country-select.route.ts"
+    },
+    {
+      "key": "cta_section",
+      "class": "CtaSectionRoute",
+      "file": "src/routes/cta-section/cta-section.route.ts"
     },
     {
       "key": "cursor_pagination",
@@ -602,6 +622,11 @@
       "key": "fab",
       "class": "FabRoute",
       "file": "src/routes/fab/fab.route.ts"
+    },
+    {
+      "key": "feature_section",
+      "class": "FeatureSectionRoute",
+      "file": "src/routes/feature-section/feature-section.route.ts"
     },
     {
       "key": "file_trigger",
@@ -1034,6 +1059,11 @@
       "file": "src/routes/press-feedback/press-feedback.route.ts"
     },
     {
+      "key": "pricing_table",
+      "class": "PricingTableRoute",
+      "file": "src/routes/pricing-table/pricing-table.route.ts"
+    },
+    {
       "key": "progress_bar",
       "class": "ProgressBarRoute",
       "file": "src/routes/progress-bar/progress-bar.route.ts"
@@ -1242,6 +1272,11 @@
       "key": "sidebar",
       "class": "SidebarRoute",
       "file": "src/routes/sidebar/sidebar.route.ts"
+    },
+    {
+      "key": "sign_in",
+      "class": "SignInRoute",
+      "file": "src/routes/sign-in/sign-in.route.ts"
     },
     {
       "key": "single_column_layout",

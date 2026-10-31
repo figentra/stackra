@@ -1,0 +1,29 @@
+{
+  "basics": {
+    "contact": "Contact",
+    "email": "Email",
+    "phone": "Mobile number",
+    "address": "Delivery address",
+    "name": "Full name",
+    "street": "Street and building",
+    "district": "District",
+    "city": "City",
+    "shipping": "Shipping",
+    "standard": "Standard",
+    "standard_line": "2 to 4 working days",
+    "express": "Express",
+    "express_line": "Next working day",
+    "payment": "Payment",
+    "card": "Card",
+    "card_line": "Mada, Visa or Mastercard",
+    "cod": "Cash on delivery",
+    "summary": "Order summary",
+    "place": "Place order",
+    "abaya": "Linen abaya",
+    "scarf": "Silk scarf",
+    "subtotal": "Subtotal",
+    "vat": "VAT 15%",
+    "total": "Total",
+    "placed": "Order placed with {shipping} shipping, paid by {payment}."
+  }
+}
