@@ -18,8 +18,8 @@ import type { TextProps } from "#react/text/text.props";
 
 /**
  * Running text in the theme's type scale. A `lang` marks text in another language than the page and sets its
- * direction; the theme's `:lang(ar)` rule then draws it in the Arabic style. Pass `render` to draw a `span` inside
- * a sentence.
+ * direction; the theme's `:lang(ar)` rule then draws it in the Arabic style. Pass `elementType="span"` to draw a
+ * `span` inside a sentence.
  */
 export function Text({
   type = "body",
@@ -28,6 +28,7 @@ export function Text({
   isTruncated,
   lang,
   className,
+  elementType,
   ...rest
 }: TextProps): ReactElement {
   return (
@@ -37,6 +38,9 @@ export function Text({
       align={align ?? "start"}
       truncate={isTruncated ?? false}
       className={[TONE_CLASS_NAME[tone], className].filter(Boolean).join(" ")}
+      // The element through the `elementType` HeroUI passes to React Aria's Text (its props type leaves it out): a
+      // `render` drawing another tag than React Aria expects trips its element check (`p` expected, `span` drawn).
+      {...(elementType ? ({ elementType } as object) : {})}
       {...(lang ? { lang, dir: directionOf(lang) } : {})}
       {...rest}
     />

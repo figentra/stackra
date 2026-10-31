@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "03b55b8bf86be119",
+    "hash": "0e4836511f12f18a",
     "propsFiles": ["ui/src/react/text/text.props.ts"]
   },
   "importLine": "import { Text } from \"@stackra/ui/react\";",
@@ -54,6 +54,13 @@
           "required": false,
           "source": "stackra",
           "type": "string"
+        },
+        {
+          "description": "The element drawn: `p` (the default) for a paragraph, `span` inside a sentence or a row, `div` for a block.",
+          "name": "elementType",
+          "required": false,
+          "source": "stackra",
+          "type": "\"div\" | \"p\" | \"span\""
         },
         {
           "description": "",
