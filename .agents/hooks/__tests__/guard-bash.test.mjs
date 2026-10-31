@@ -2749,6 +2749,7 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
     ],
     "eas-deploy": ["eas submit --platform ios", worktree],
     "runway-deploy": ["pnpm runway deploy cloudflare-workers", worktree],
+    "secrets-import-write": ["pnpm secrets:import STACKRA_X", worktree],
     publish: ["npm publish", worktree],
     "rm-delete": ["rm -rf src", worktree],
     "git-clean": ["git clean -fd", worktree],
