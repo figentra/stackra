@@ -1,7 +1,7 @@
 # `.agents/` — the source of truth for every AI artifact
 
 One canonical tree, projected into each assistant's own directory by
-[`tools/scripts/agents-sync.mjs`](../tools/scripts/agents-sync.mjs) (`pnpm agents:sync`). Edit here; never edit the
+`figentra agents sync` (`@figentra/cli`, `pnpm agents:sync`). Edit here; never edit the
 projection ([ADR 0016](../apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx)).
 
 | Entry                     | Holds                                                         | Projected to                                                             |
@@ -27,8 +27,8 @@ hand-edited projection rather than silently overwriting it; `pnpm agents:sync` r
 ```bash
 pnpm agents:sync                              # project into every detected assistant (.claude/, .opencode/)
 pnpm agents:check                             # verify; fails on drift
-node tools/scripts/agents-sync.mjs --list     # show the mapping
-node tools/scripts/agents-sync.mjs --lint     # validate agent sources only; writes nothing
+pnpm exec figentra agents sync --list         # show the mapping
+pnpm exec figentra agents sync --lint         # validate agent sources only; writes nothing
 ```
 
 The `guard-paths` hook refuses writes to `.claude/agents/`, `.opencode/agents/`, `.mcp.json` and the generated

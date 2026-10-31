@@ -125,7 +125,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          node tools/scripts/linear.mjs check-pr
+          pnpm exec figentra linear check-pr
           case "$PR_BRANCH" in renovate/*|changeset-release/*) exit 0 ;; esac
           # The preset builds to dist for its tarball; here, before any build, Node reads its src (ADR 0025).
           NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"

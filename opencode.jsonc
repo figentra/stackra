@@ -100,6 +100,9 @@
     { "action": "shell", "resource": "infisical*", "effect": "deny" },
     { "action": "shell", "resource": "*secrets-import*", "effect": "deny" },
     { "action": "shell", "resource": "node *bot-token*", "effect": "deny" },
+    // The same two through the private CLI (@figentra/cli), under any runner.
+    { "action": "shell", "resource": "*figentra secrets import*", "effect": "deny" },
+    { "action": "shell", "resource": "*figentra bot token*", "effect": "deny" },
     { "action": "shell", "resource": "printenv*", "effect": "deny" },
     { "action": "shell", "resource": "env", "effect": "deny" },
     { "action": "shell", "resource": "security *", "effect": "deny" },

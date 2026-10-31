@@ -35,7 +35,7 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 5. Tier to model lives in `models.yaml`; change a model there, not in an agent. OpenCode has rows only for the
    steward and executor tiers, so reviewers, guardians and the lead are never projected there; add
    `assistants: [claude]` to keep an executor or steward off OpenCode too (ADR 0258).
-6. Run `node tools/scripts/agents-sync.mjs --lint`, then `pnpm agents:sync`.
+6. Run `pnpm exec figentra agents sync --lint`, then `pnpm agents:sync`.
 
 ## Roster in this folder
 

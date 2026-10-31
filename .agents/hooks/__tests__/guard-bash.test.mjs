@@ -1220,6 +1220,8 @@ test("deny (runner bypass, STA-400 review): pnpm exec infisical run -- pnpm buil
 for (const c of [
   "pnpm exec node tools/scripts/secrets-import.mjs --confirm abc-123",
   "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
+  "figentra secrets import STACKRA_X --env prod --path /ci --confirm abc-123",
+  "pnpm exec figentra secrets import --confirm abc-123",
 ])
   test(`deny (keeper rule of 2026-10-31, production import): ${c}`, () =>
     assert.equal(decision(c), "deny"));
@@ -1252,6 +1254,7 @@ test("keeper rule: an import asks the owner each run; prod, gate and registry ar
 // Productivity: a pattern, a message or history that names a guarded command is prose, not a command.
 for (const c of [
   'grep -rn "git push origin main" apps/docs',
+  'grep -rn "figentra bot token" .agents',
   "rg 'DROP SCHEMA' services",
   'git log --grep "push origin main" --oneline',
   'git grep -n "git reset --hard"',
@@ -1312,6 +1315,15 @@ for (const c of [
   // tokens
   "node tools/scripts/bot-token.mjs",
   "infisical run -- node tools/scripts/bot-token.mjs",
+  // the private CLI's form, bare and through each runner (wave 4: the scripts moved into @figentra/cli)
+  "figentra bot token",
+  "figentra bot token reviewer",
+  "pnpm exec figentra bot token",
+  "npx figentra bot token",
+  "npx @figentra/cli bot token",
+  "mise exec -- figentra bot token",
+  "node node_modules/@figentra/cli/bin/figentra.mjs bot token",
+  "node node_modules/@figentra/cli/src/commands/bot-token.mjs",
   // the shared stash stack
   "git stash pop",
   "git stash clear",

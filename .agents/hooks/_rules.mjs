@@ -1879,7 +1879,8 @@ const RULES = [
   },
   {
     executor: true,
-    rx: (c) => executorRuns(c, /\bsecrets(?::import|-import(?:\.mjs)?)\b[^|;&\n]*\s--confirm\b/),
+    rx: (c) =>
+      executorRuns(c, /\bsecrets(?::import|-import(?:\.mjs)?|\s+import)\b[^|;&\n]*\s--confirm\b/),
     why: "`secrets:import … --confirm` writes a production secret; executors never run it (ADR 0257).",
   },
 
@@ -2047,6 +2048,8 @@ const RULES = [
         scanShell(dropMessages(c)).literal,
       ) ||
       runs(c, /(?:^|\s)(?:\S*\/)?(?:node|bun|deno|tsx)\b[^|;&\n]*(?:\s|\/)bot-token\.mjs\b/) ||
+      // The private CLI's form (`figentra bot token`), bare or through any runner (`pnpm exec`, `npx`, `mise exec --`).
+      runs(c, /(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+token\b/) ||
       runs(
         c,
         new RegExp(
@@ -2058,7 +2061,7 @@ const RULES = [
             String.raw`)credential\b`,
         ),
       ),
-    why: "A token is never printed, read or handed to `gh auth`: `pnpm bot:token`, running `bot-token.mjs`, `$GH_TOKEN` (any `$…_TOKEN`, `$…_API_KEY`, `$…_SECRET`), `bot:gh -- auth …`, and `git credential …` or `git credential-<helper> …` (bare or through `bot:git`) are denied. Use `pnpm bot:gh -- <args>`, which keeps the token in its child process.",
+    why: "A token is never printed, read or handed to `gh auth`: `pnpm bot:token`, running `bot-token.mjs` or `figentra bot token`, `$GH_TOKEN` (any `$…_TOKEN`, `$…_API_KEY`, `$…_SECRET`), `bot:gh -- auth …`, and `git credential …` or `git credential-<helper> …` (bare or through `bot:git`) are denied. Use `pnpm bot:gh -- <args>`, which keeps the token in its child process.",
   },
   // ADR 0230: an agent never speaks for the owner, and only the reviewer identity posts verdicts. A tripwire, not
   // the control: pr-merge checks the verdict's author.
