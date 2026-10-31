@@ -10,7 +10,7 @@
 # Boundary: no member fact (a member's port and host are its own runway.yaml) and no secret value (ADR 0173): ids
 #           here identify, they do not grant. `ref:<path>` resolves from the private stacks repository (ADR 0289
 #           decision 9) once it exists. `workers/static` gets its member runway with gen (ADR 0284 decision 8).
-# Runtime: CI; checked by `pnpm validate` (checkRunwayFiles) and read by `tools/scripts/runway.mjs`
+# Runtime: CI; checked by `pnpm validate` (checkRunwayFiles) and read by the `runway` binary (`@stackra/runway`)
 # Governing contract: ADR 0002, 0026, 0168, 0170, 0173, 0177, 0184, 0185, 0284, 0289, 0296, 0299, 0453
 $schema: "@stackra/runway/schema/root.json"
 version: 3

@@ -2754,14 +2754,15 @@ test("STA-268: runway deploy and promote ask the owner in every spelling; plan a
   for (const c of [
     "pnpm runway deploy cloudflare-workers",
     "pnpm runway -- promote 0123abc",
-    "node tools/scripts/runway.mjs promote 0123abc",
+    "node packages/developer/runway/dist/runway.mjs promote 0123abc",
+    "runway promote 0123abc",
     "pnpm --silent runway deploy mintlify",
   ])
     assert.equal(decision(c, worktree), "ask", c);
   for (const c of [
     "pnpm runway plan production",
     "pnpm runway deploy cloudflare-workers --dry-run",
-    "node tools/scripts/runway.mjs promote 0123abc --dry-run",
+    "node packages/developer/runway/dist/runway.mjs promote 0123abc --dry-run",
   ])
     assert.equal(decision(c, worktree), "allow", c);
   done();

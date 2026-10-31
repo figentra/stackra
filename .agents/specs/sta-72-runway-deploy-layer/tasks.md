@@ -26,7 +26,7 @@
 
 ## Phase 5: Command and design
 
-- [x] T011 [US5] `tools/scripts/runway.mjs` (`plan`, `deploy`, `promote`), the `runway` script in `package.json` and the `runway-deploy` owner ask in `.agents/hooks/_rules.mjs` — covers: FR-010 — route: infra — deps: T005 [STA-268]
+- [x] T011 [US5] the `runway` command, now the `runway` binary of `@stackra/runway` (`plan`, `deploy`, `promote`), the `runway` script in `package.json` and the `runway-deploy` owner ask in `.agents/hooks/_rules.mjs` — covers: FR-010 — route: infra — deps: T005 [STA-268]
 - [x] T012 [US5] `tools/scripts/__tests__/runway.test.mjs` and the guard case in `.agents/hooks/__tests__/guard-bash.test.mjs` — covers: P-010 — route: tests — deps: T011 [STA-268]
 - [x] T013 `apps/docs/src/docs/runbooks/runway.mdx`, `apps/docs/src/docs/runbooks/deploys.mdx`, `apps/docs/src/docs.json` and `.github/workflows/README.md` — covers: FR-011, FR-012 — route: steward-docs — deps: T008, T011 [STA-603]
 
@@ -36,7 +36,7 @@
 - [ ] T016 Provider port, plan model and records in `packages/developer/runway/src/node/` — covers: FR-014, FR-017 — route: package — deps: T015 [STA-607]
 - [ ] T017 Providers in build order (npm, cloudflare-workers, mintlify first; encore-cloud and eas after STA-136 and STA-17) in `packages/developer/runway/src/node/providers/` — covers: FR-014 — route: package — deps: T016 [STA-607]
 - [ ] T018 The infra engine over the infra-* components in `packages/developer/runway/src/node/infra/` — covers: FR-015 — route: infra — deps: T016 [STA-607]
-- [ ] T019 `stackra runway` commands in `packages/developer/cli/src/node/` with gen run first on deploy; remove `tools/scripts/runway.mjs` — covers: FR-013, FR-018 — route: package — deps: T017, T018 [STA-607]
+- [ ] T019 `stackra runway` commands in `packages/developer/cli/src/node/` with gen run first on deploy; fold in the interim `runway` binary — covers: FR-013, FR-018 — route: package — deps: T017, T018 [STA-607]
 - [ ] T021 Runway MCP tools in `packages/developer/mcp/src/node/` and the `runway` skill in `.agents/skills/runway/SKILL.md` — covers: FR-019 — route: package — deps: T019 [STA-607]
 - [ ] T020 `.github/workflows/runway.yml` and `.github/workflows/runway-promote.yml`; the wave 1 workflows become callers; the validator check — covers: FR-016 — route: ci-permissions — deps: T019 [STA-607]
 

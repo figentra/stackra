@@ -1539,7 +1539,7 @@ const EAS_DEPLOY = atName(
  * one.
  */
 const PUBLISH = atName(String.raw`(?:${CLI("(?:npm|pnpm|yarn|changeset)")})?publish` + END);
-/** `pnpm runway deploy|promote` or `runway.mjs deploy|promote` (STA-268) without `--dry-run`; `plan` is a read. */
+/** `pnpm runway deploy|promote`, the `runway` binary or its `runway.mjs` build (STA-268) without `--dry-run`; `plan` is a read. */
 const RUNWAY_DEPLOY = /\brunway(?:\.mjs)?\s+(?:--\s+)?(?:deploy|promote)\b(?![^|;&\n]*--dry-run)/;
 /**
  * The rules, in order. A rule denies unless it says `decision: "ask"`; any deny wins over any ask. `rx` is a regex

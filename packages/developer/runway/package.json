@@ -23,6 +23,9 @@
     "url": "git+https://github.com/figentra/stackra.git",
     "directory": "packages/developer/runway"
   },
+  "bin": {
+    "runway": "./dist/runway.mjs"
+  },
   "files": [
     "dist",
     "src",

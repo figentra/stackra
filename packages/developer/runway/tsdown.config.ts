@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: build config of @stackra/runway: one tsdown entry per package.json code export (core `.` is `index`), each
+ * Purpose: build config of @stackra/runway: one tsdown entry per package.json code export (core `.` is `index`) and
+ *          the `runway` binary (`runway`), each
  *          naming the stand-in barrel until gen writes the entry barrels (ADR 0294 decision 15, STA-339). The
  *          `./schema/*.json` files are committed assets, not built.
  * Boundary: build configuration only; spreads gen's `./.stackra/tsdown.config` and lays this package's own entries
@@ -23,5 +24,6 @@ export default {
   ...library({
     index: "src/core/index.ts",
     node: "src/node/index.ts",
+    runway: "src/node/runway.ts",
   }),
 };

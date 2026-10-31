@@ -47,7 +47,7 @@
     "spec:gate": "node tools/scripts/spec-gate.mjs",
     "spec:trace": "node tools/scripts/spec-trace.mjs",
     "secrets:import": "node tools/scripts/secrets-import.mjs",
-    "runway": "node tools/scripts/runway.mjs",
+    "runway": "node packages/developer/runway/dist/runway.mjs",
     "bot:token": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-token.mjs",
     "bot:gh": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs gh",
     "bot:git": "infisical run --env=dev --path=/agents --silent -- node tools/scripts/bot-gh.mjs git",

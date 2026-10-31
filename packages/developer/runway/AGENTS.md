@@ -11,7 +11,8 @@ Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `min
 
 Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway` (`tier:lib`). Entries `.` and
 `./node`, plus the `schema/{root,app,service}.json` assets, byte copies of `tools/schemas/runway-*.schema.json`
-(ADR 0127, 2026-10-24 note).
+(ADR 0127, 2026-10-24 note). The `runway` binary (`src/node/runway.ts`, body `runRunway`; root alias `pnpm runway`)
+runs `plan`, `deploy` and `promote` (ADR 0170, STA-268).
 
 ## Where code goes
 

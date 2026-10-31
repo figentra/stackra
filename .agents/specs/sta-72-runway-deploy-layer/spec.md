@@ -178,7 +178,7 @@ dispatch the same CI workflow a merge runs.
 - **FR-009**: `.github/rulesets/release-tags.json` protects `runway-v*`, `schemas@*` and the changesets package tags
   from update and deletion, for the owner to apply (it replaces the live `v*` pattern, which matches no tag the
   repository makes).
-- **FR-010**: `tools/scripts/runway.mjs` (`pnpm runway`) is the one deploy command shape. `plan <env>` prints, from
+- **FR-010**: the `runway` binary of `@stackra/runway` (`pnpm runway`) is the one deploy command shape. `plan <env>` prints, from
   the root runway, the build order, each target with its caller workflow, and the secret names to sync with their
   Infisical paths (names only). `deploy <target>` and `promote <sha>` refuse a dirty tree, an unpushed commit or a
   commit not on `origin/main`, print the SHA, and dispatch the target's caller workflow on `main` (with the SHA for a
@@ -190,7 +190,7 @@ dispatch the same CI workflow a merge runs.
   the commit SHA with the tag in a comment, and core's own callers use the local path. Documented in the runbook.
 
 - **FR-013**: `@stackra/runway` with `stackra runway validate|plan|infra preview|infra up|deploy|promote|rollback|secrets
-sync|status` in `@stackra/cli` is the one deployment tool (ADR 0352 decision 1); `tools/scripts/runway.mjs` folds into
+sync|status` in `@stackra/cli` is the one deployment tool (ADR 0352 decision 1); the interim `runway` binary folds into
   it.
 - **FR-014**: Every target is a provider in `@stackra/runway/node` behind one port (plan, apply, verify, rollback), in
   the build order npm and Keygen, Cloudflare Workers, Encore Cloud, EAS, AWS or Compose, Mintlify (ADR 0352 decision 3).

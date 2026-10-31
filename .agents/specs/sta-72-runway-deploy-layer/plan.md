@@ -21,7 +21,7 @@ readers). This change adds the deploy layer that needs no gen output, in the own
 4. **Hardening.** actionlint, zizmor (`.github/zizmor.yml`: hash pins everywhere) and OSV-Scanner in the Quality Gate,
    pinned in `mise.toml`; Trivy (filesystem scan before publish) and cosign (keyless SBOM signature) in
    `runway-npm.yml` through `mise exec`; `.github/rulesets/release-tags.json` for the owner to apply.
-5. **The command shape.** `tools/scripts/runway.mjs`: `plan <env>` (names only), `deploy <target>` and
+5. **The command shape.** the `runway` binary of `@stackra/runway` (`pnpm runway`): `plan <env>` (names only), `deploy <target>` and
    `promote <sha>` with a clean-commit preflight that dispatch the caller workflow; a `runway-deploy` owner ask in
    the guard.
 6. **The sync design.** `apps/docs/src/docs/runbooks/runway.mdx`: the workflows, the command, the secrets and vars sync, the
@@ -63,9 +63,9 @@ readers). This change adds the deploy layer that needs no gen output, in the own
 - **P-007**: `runway-mintlify.yml` runs the three mint checks before a deploy, polls the update to a terminal status and smoke-tests the pages; the Quality Gate runs `mint a11y` — Validates: FR-007
 - **P-008**: the Quality Gate runs actionlint, zizmor with `hash-pin` for every `uses:` and OSV-Scanner on the lockfile — Validates: FR-008
 - **P-009**: `release-tags.json` covers `runway-v*`, `schemas@*` and the package tags with update and deletion rules — Validates: FR-009
-- **P-010**: `runway.mjs` refuses a dirty tree, an unpushed commit or a SHA not on `origin/main` before it dispatches, prints the SHA, and `plan` prints names only — Validates: FR-010
+- **P-010**: `runway` refuses a dirty tree, an unpushed commit or a SHA not on `origin/main` before it dispatches, prints the SHA, and `plan` prints names only — Validates: FR-010
 - **P-011**: the runbook states the sync source, identities, write paths, plan and blocked parts — Validates: FR-011
-- **P-013**: `stackra runway --help` lists exactly the nine commands and `tools/scripts/runway.mjs` is gone — Validates: FR-013
+- **P-013**: `stackra runway --help` lists exactly the nine commands and the interim `runway` binary folds into it — Validates: FR-013
 - **P-014**: a conformance suite runs plan, apply, verify and rollback against every provider with a fake target — Validates: FR-014
 - **P-015**: `infra preview` against a fake Pulumi workspace prints the plan and never applies; `infra up` is a guard ask — Validates: FR-015
 - **P-016**: no workflow under `.github/workflows` deploys without calling the Runway CLI (validator check) — Validates: FR-016

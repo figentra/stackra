@@ -37,7 +37,7 @@ By 2026-10-25 the deploy path had three owners. Runway had its manifest (`runway
 
 - A deploy is one command over one file, testable in the package, identical in CI and on a laptop.
 - The per-provider workflows of STA-72 wave 1 keep working until the CLI ships; then their steps move into providers and the workflows shrink to callers.
-- `tools/scripts/runway.mjs` is the interim command and folds into `stackra runway`.
+- The interim command, the `runway` binary of `@stackra/runway` (`pnpm runway`), folds into `stackra runway`.
 - Infrastructure and deploys share the manifest, the plan and the records, so a reviewer reads one plan for both.
 - `@stackra/runway` grows from a schema library into the tool, so its entries gain `./node` and its dependency on the infra-\* packages is a Node-only one.
 
