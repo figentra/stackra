@@ -92,4 +92,8 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /(^|\/)assets\/landing\/[\w-]+\.json$/,
     "landing page documents: stackra dev seeds the os/landing shell with the content folder's .json (ADR 0441)",
   ],
+  [
+    /^figentra-flow\.config\.json$/,
+    "Figentra Flow reads its configuration by this fixed name with JSON.parse (ADR 0503, STA-1729)",
+  ],
 ];
