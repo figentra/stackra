@@ -51,8 +51,6 @@ export function appFiles(spec: AppSpec): Readonly<Record<string, string>> {
     noUncheckedIndexedAccess: true,
     skipLibCheck: true,
     types: ["node"],
-    outDir: "dist",
-    rootDir: "src",
   };
   return {
     "package.json": json(pkg),
@@ -69,7 +67,8 @@ export function appFiles(spec: AppSpec): Readonly<Record<string, string>> {
     }),
     "tsconfig.build.json": json({
       extends: "./tsconfig.json",
-      compilerOptions: { noEmit: false },
+      // Only the build has a root and an output; typecheck also covers vitest.config.ts beside src.
+      compilerOptions: { noEmit: false, rootDir: "src", outDir: "dist" },
       include: ["src"],
       exclude: ["src/**/__tests__"],
     }),
