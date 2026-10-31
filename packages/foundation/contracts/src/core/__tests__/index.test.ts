@@ -113,6 +113,8 @@ describe("@stackra/contracts", () => {
       "Target",
       "Tone",
       "Tracer",
+      "actorChainOverlaps",
+      "actorsSharePerson",
       "backoffDelay",
       "brand",
       "capabilityGuard",

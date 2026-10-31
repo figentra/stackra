@@ -33,6 +33,8 @@ export { Rounding } from "#core/enums/rounding.enum";
 export { SortDirection } from "#core/enums/sort-direction.enum";
 export { Target } from "#core/enums/target.enum";
 export { Tone } from "#core/enums/tone.enum";
+export { actorChainOverlaps } from "#core/functions/actor-chain-overlaps.function";
+export { actorsSharePerson } from "#core/functions/actors-share-person.function";
 export { backoffDelay } from "#core/functions/backoff-delay.function";
 export { brand } from "#core/functions/brand.function";
 export { capabilityGuard } from "#core/functions/capability-guard.function";

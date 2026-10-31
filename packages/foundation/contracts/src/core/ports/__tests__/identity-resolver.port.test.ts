@@ -93,4 +93,9 @@ describe("IdentityResolver", () => {
     // @ts-expect-error -- not an email address
     await expect(identity.principalByVerifiedEmail("sara")).resolves.toBeNull();
   });
+
+  it("answers no person link by default, so callers fall back to the verified contact points", async () => {
+    const identity: IdentityResolver = new MemoryIdentity([SARA]);
+    await expect(identity.personOf(SARA.id)).resolves.toBeNull();
+  });
 });
