@@ -22,7 +22,8 @@
  *                     versioned seed documents; a new seed version never overwrites tenant values); ADR 0423
  *                     (decisions 1 to 4).
  */
-import type { ScopeOwnership } from "@stackra/actions/contracts";
+import type { Resolver } from "@stackra/actions";
+import { ScopeOwnership } from "@stackra/actions/contracts";
 import type { Revision } from "@stackra/content/node";
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
 import { CrudService, type Repository, UniqueViolation } from "@stackra/database";
@@ -77,23 +78,26 @@ export class AutomationService extends CrudService<Automation> {
   /** What each publisher may call. */
   private readonly access: PublisherAccess;
 
-  /** Whether a principal's scope owns an automation's, when a service binds the check (`@stackra/tenancy` does). */
-  private readonly ownership: ScopeOwnership | undefined;
+  /** Where `ScopeOwnership` is looked up when an automation is released; set by `connect`. */
+  private resolver: Resolver | undefined;
 
   /**
    * @param revisions - the revisions of every `HasRevisions` model, one row per revision.
    * @param access - which action blocks a publisher may call; @stackra/iam binds it.
-   * @param ownership - refuses a principal from another scope when bound; none trusts the caller's choice.
    */
-  constructor(
-    revisions: Repository<Revision>,
-    access: PublisherAccess,
-    ownership?: ScopeOwnership,
-  ) {
+  constructor(revisions: Repository<Revision>, access: PublisherAccess) {
     super();
     this.revisions = revisions;
     this.access = access;
-    this.ownership = ownership;
+  }
+
+  /**
+   * Gives the service the container it reads the optional `ScopeOwnership` from, as the pipeline reads its optional
+   * ports (the runtime and the testing module call it, as they call `EventBus.connect`); a later call replaces it.
+   * With none connected, or none bound, a principal is trusted as the caller chose it.
+   */
+  connect(resolver: Resolver): void {
+    this.resolver = resolver;
   }
 
   /** A new automation keyed `key` at `scope`, with no revision yet. */
@@ -367,12 +371,11 @@ export class AutomationService extends CrudService<Automation> {
     publisher: Actor,
   ): Promise<void> {
     // a run acts as the principal in the automation's isolation, so its scope must own the automation's (ADR 0495)
+    const ownership =
+      this.resolver?.has(ScopeOwnership) === true ? this.resolver.get(ScopeOwnership) : undefined;
     if (
-      this.ownership !== undefined &&
-      !(await this.ownership.holds(principal, {
-        id: automation.scopeId,
-        path: automation.scopePath,
-      }))
+      ownership !== undefined &&
+      !(await ownership.holds(principal, { id: automation.scopeId, path: automation.scopePath }))
     )
       throw AutomationPrincipalMismatchError.create({ automationId: automation.id });
     const row = await this.revisions.findOneOrFail({

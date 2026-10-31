@@ -219,7 +219,12 @@ describe(AutomationService, () => {
       [automation],
       [storedRevision(automation, 1, { document: { ...DOCUMENT, version: 1 } })],
     );
-    const service = new AutomationService(new RevisionRepository(), access, new OwnsAcme());
+    const service = new AutomationService(new RevisionRepository(), access);
+    const owns = new OwnsAcme();
+    service.connect({
+      has: (token) => token === ScopeOwnership,
+      get: <T extends object>() => owns as unknown as T,
+    });
     const stranger: Actor = { ...PRINCIPAL, scopeId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w9" };
     const refused = await service
       .publish(automation.id, 1, stranger, PUBLISHER)
@@ -228,6 +233,10 @@ describe(AutomationService, () => {
     expect(automation.publishedRevision).toBeNull();
     await service.publish(automation.id, 1, { ...PRINCIPAL, scopeId: SCOPE.id }, PUBLISHER);
     expect(automation.publishedRevision).toBe(1);
+    // none bound: the principal is trusted as chosen
+    service.connect({ has: () => false, get: <T extends object>() => undefined as unknown as T });
+    await service.publish(automation.id, 1, stranger, PUBLISHER);
+    expect(automation.principal).toEqual(stranger);
   });
 
   it("pauses an automation whose publisher lost access instead of starting it, and recheck does too", async () => {
