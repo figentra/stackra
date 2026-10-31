@@ -192,7 +192,7 @@ components:
     type: database
     label: infrastructure
     sublabel: isomorphic, node
-    tag: 9 packages
+    tag: 10 packages
     row: 5
     col: 1
     size: *a1
@@ -295,7 +295,7 @@ cards:
       - "developer: brand-kit, cli, coding-standard, devtools-kit, gen, mcp, renderers, repo-checks, runway, skills, testing, vite-plugin"
       - "experience: builder, collaboration, experience, native-card-terminal, native-cash-drawer, native-customer-display, native-receipt-printer, native-scale, native-share, native-spotlight, navigation, panel, peripherals, platform, shortcuts"
       - "foundation: calendar, config, container, contracts, errors, events, i18n, logger, market-packs, support, transport, validation"
-      - "infrastructure: infra-aws, infra-aws-runtime, infra-cloudflare, infra-gcp, infra-github, infra-identity, infra-mobile, infra-observability, infra-tools"
+      - "infrastructure: infra-aws, infra-aws-runtime, infra-cloudflare, infra-gcp, infra-github, infra-identity, infra-mobile, infra-observability, infra-testbed, infra-tools"
       - "runtime: app, cache, devices, locking, outbox, queue, realtime, sandbox, scheduler, workflow"
       - "security: access-log, consent, csp, entitlements, iam, identity, licensing, privacy, scope, tenancy"
       - "state: coordinator, feature-flags, query, settings, state, theming"
