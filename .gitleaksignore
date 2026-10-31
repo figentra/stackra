@@ -1,0 +1,8 @@
+# Fingerprints of fixture values that only look like secrets (owner-approved 2026-10-31; one entry per finding,
+# so any new leak in these files still fails the scan):
+# - sentry-envelope.function.test.ts: a sample JWT and an "sk_live_...gh1234" string the redaction test must mask
+# - webhook-receiver.service.test.ts: the sealed gateway's hex AES-256 test key (00112233...eeff)
+2d5a8881da2e3cd5b99b05ca40efd53302b6dae8:packages/foundation/errors/src/core/functions/__tests__/sentry-envelope.function.test.ts:stripe-access-token:89
+2d5a8881da2e3cd5b99b05ca40efd53302b6dae8:packages/foundation/errors/src/core/functions/__tests__/sentry-envelope.function.test.ts:stripe-access-token:93
+2d5a8881da2e3cd5b99b05ca40efd53302b6dae8:packages/foundation/errors/src/core/functions/__tests__/sentry-envelope.function.test.ts:jwt:87
+09823c1475f0cd3803dc44267500f65039118dc4:packages/communication/webhooks/src/core/services/__tests__/webhook-receiver.service.test.ts:generic-api-key:125
