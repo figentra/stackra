@@ -7,6 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-020, FR-021 and FR-023; https://no-color.org.
  */
+import { VISUAL_BIDI_TERMINALS } from "#core/constants/visual-bidi-terminals.constant";
 import type { ConsolePorts } from "#core/types/console-ports.type";
 import type { ConsoleMode } from "#core/types/console-mode.type";
 import type { GlobalFlags } from "#core/types/global-flags.type";
@@ -34,7 +35,14 @@ export function decideMode(ports: ConsolePorts, globals: GlobalFlags): ConsoleMo
         (!set(env["NO_COLOR"]) && !set(env["CI"]) && ports.stdoutIsTTY && env["TERM"] !== "dumb")));
   const locale = env["LC_ALL"] ?? env["LC_CTYPE"] ?? env["LANG"];
   const unicode = env["TERM"] !== "linux" && (!set(locale) || /utf-?8/i.test(locale ?? ""));
+  const bidiChoice = env["STACKRA_BIDI"];
+  const visual =
+    !globals.json &&
+    ports.stdoutIsTTY &&
+    (bidiChoice === "visual" ||
+      (bidiChoice !== "logical" && VISUAL_BIDI_TERMINALS.has(env["TERM_PROGRAM"] ?? "")));
   return {
+    bidi: visual ? "visual" : "logical",
     depth: colour ? depthOf(env) : 0,
     unicode,
     interactive:

@@ -142,7 +142,10 @@ hidden?, aliases? })`, and SHALL read a command's name, description, arguments a
   return exit code 130.
 - **FR-026** THE Console Output SHALL measure text by grapheme cluster (`Intl.Segmenter`), counting wide East Asian
   and emoji graphemes as 2 and combining and isolate marks as 0, SHALL never reorder characters and SHALL
-  emit no bidi isolate (FSI/PDI) itself, because many terminals draw it; `isolateBidi` is offered for callers.
+  emit no bidi isolate (FSI/PDI) itself, because many terminals draw it; `isolateBidi` is offered for callers. WHILE stdout is a terminal
+  without bidi or shaping (`TERM_PROGRAM` in claude-desktop, vscode, iTerm.app, Hyper, Tabby) or `STACKRA_BIDI=visual`,
+  THE Console Output SHALL write each right-to-left run shaped (joined Arabic forms, lam-alef ligatures) and in
+  visual order, digit groups kept left to right; `STACKRA_BIDI=logical`, a pipe and `--json` keep logical text.
 
 ### Testing harness
 

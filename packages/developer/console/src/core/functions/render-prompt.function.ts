@@ -19,10 +19,12 @@ export function renderPrompt(state: PromptState, paint: PromptPaint): string[] {
   const { painter, symbols } = paint;
   const { request } = state;
   const bar = painter.accent(symbols.bar);
-  const lines = [`  ${painter.accent(symbols.info)} ${painter.bold(request.message)}`];
+  const lines = [`  ${painter.accent(symbols.info)} ${painter.bold(paint.bidi(request.message))}`];
   if (request.kind === "text" || request.kind === "password" || request.kind === "search") {
     const shown =
-      request.kind === "password" ? symbols.bullet.repeat([...state.text].length) : state.text;
+      request.kind === "password"
+        ? symbols.bullet.repeat([...state.text].length)
+        : paint.bidi(state.text);
     const empty =
       state.text === ""
         ? painter.dim(
@@ -51,8 +53,8 @@ export function renderPrompt(state: PromptState, paint: PromptPaint): string[] {
         request.kind === "multiselect"
           ? `${state.ticked.includes(choice.value) ? painter.accent(symbols.checked) : symbols.unchecked} `
           : "";
-      const label = choice.label ?? choice.value;
-      const hint = choice.hint === undefined ? "" : ` ${painter.dim(choice.hint)}`;
+      const label = paint.bidi(choice.label ?? choice.value);
+      const hint = choice.hint === undefined ? "" : ` ${painter.dim(paint.bidi(choice.hint))}`;
       lines.push(
         `  ${bar} ${on ? painter.accent(symbols.pointer) : " "} ${tick}${on ? painter.accent(label) : label}${hint}`,
       );

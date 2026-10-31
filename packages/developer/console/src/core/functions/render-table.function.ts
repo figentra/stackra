@@ -14,9 +14,15 @@ import type { Painter } from "#core/types/painter.type";
 export function renderTable(
   headers: readonly string[],
   rows: readonly (readonly unknown[])[],
-  options: { readonly unicode: boolean; readonly painter: Painter },
+  options: {
+    readonly unicode: boolean;
+    readonly painter: Painter;
+    readonly bidi?: (text: string) => string;
+  },
 ): string[] {
-  const cells = rows.map((row) => headers.map((_, index) => String(row[index] ?? "")));
+  const cells = rows.map((row) =>
+    headers.map((_, index) => (options.bidi ?? String)(String(row[index] ?? ""))),
+  );
   const widths = headers.map((header, index) =>
     Math.max(displayWidth(header), ...cells.map((row) => displayWidth(row[index] ?? ""))),
   );

@@ -18,7 +18,11 @@ import { stepPrompt } from "#core/functions/step-prompt.function";
 import type { PromptKey } from "#core/types/prompt-key.type";
 import type { PromptStep } from "#core/types/prompt-step.type";
 
-const PAINT = { painter: createPainter(0, "#647384"), symbols: SYMBOLS.unicode };
+const PAINT = {
+  painter: createPainter(0, "#647384"),
+  symbols: SYMBOLS.unicode,
+  bidi: (text: string) => text,
+};
 
 /** Feeds `keys` to a prompt and returns the last step. */
 function press(request: PromptRequest, ...keys: PromptKey[]): PromptStep {

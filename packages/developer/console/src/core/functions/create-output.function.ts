@@ -14,6 +14,7 @@ import { renderBanner } from "#core/functions/render-banner.function";
 import { renderBox } from "#core/functions/render-box.function";
 import { renderTable } from "#core/functions/render-table.function";
 import { stripEscapes } from "#core/functions/strip-escapes.function";
+import { visualBidi } from "#core/functions/visual-bidi.function";
 import type { ConsoleOutput } from "#core/types/console-output.type";
 import type { NoteTone } from "#core/types/note-tone.type";
 import type { OutputSetup } from "#core/types/output-setup.type";
@@ -32,6 +33,8 @@ export function createOutput(setup: OutputSetup): ConsoleOutput {
   const painter = createPainter(mode.depth, theme.accent);
   const symbols = SYMBOLS[mode.unicode ? "unicode" : "ascii"];
   const silent = mode.json || mode.quiet;
+  // Right-to-left text is reordered once, here, before anything measures it.
+  const bidi = mode.bidi === "visual" ? visualBidi : (text: string) => text;
   const out = (text: string) => {
     if (!silent) setup.stdout.write(`${text}\n`);
   };
@@ -53,27 +56,29 @@ export function createOutput(setup: OutputSetup): ConsoleOutput {
   };
 
   return {
-    line: (text = "") => out(text === "" ? "" : `  ${text}`),
-    info: (text) => out(mark(painter.accent(symbols.info), text)),
-    success: (text) => out(mark(painter.success(symbols.success), text)),
-    warn: (text) => err(mark(painter.warning(symbols.warning), text)),
-    error: (text) => err(mark(painter.error(symbols.error), text)),
-    title: (text) => out(`\n  ${painter.bold(painter.accent(text))}\n`),
+    line: (text = "") => out(text === "" ? "" : `  ${bidi(text)}`),
+    info: (text) => out(mark(painter.accent(symbols.info), bidi(text))),
+    success: (text) => out(mark(painter.success(symbols.success), bidi(text))),
+    warn: (text) => err(mark(painter.warning(symbols.warning), bidi(text))),
+    error: (text) => err(mark(painter.error(symbols.error), bidi(text))),
+    title: (text) => out(`\n  ${painter.bold(painter.accent(bidi(text)))}\n`),
     keyValue: (entries) => {
-      for (const [key, value] of Object.entries(entries)) {
-        const right = String(value);
+      for (const [name, value] of Object.entries(entries)) {
+        const key = bidi(name);
+        const right = bidi(String(value));
         out(`  ${key} ${dots(key, right)} ${right}`);
       }
     },
     list: (items) => {
-      for (const item of items) out(mark(painter.dim(symbols.bullet), item));
+      for (const item of items) out(mark(painter.dim(symbols.bullet), bidi(item)));
     },
     table: (headers, rows) => {
-      for (const line of renderTable(headers, rows, { unicode: mode.unicode, painter })) out(line);
+      for (const line of renderTable(headers, rows, { unicode: mode.unicode, painter, bidi }))
+        out(line);
     },
     note: (text, tone = "info", title) => {
       const style = toneOf[tone];
-      const lines = renderBox(text, {
+      const lines = renderBox(bidi(text), {
         title: title ?? style.title,
         unicode: mode.unicode,
         paint: style.paint,
@@ -82,7 +87,8 @@ export function createOutput(setup: OutputSetup): ConsoleOutput {
       const write = tone === "info" ? out : err;
       for (const line of lines) write(`  ${line}`);
     },
-    task: async (label, work) => {
+    task: async (name, work) => {
+      const label = bidi(name);
       const started = Date.now();
       const finish = (status: string) => {
         const timing = `${Date.now() - started}ms`;
@@ -98,7 +104,7 @@ export function createOutput(setup: OutputSetup): ConsoleOutput {
       }
     },
     spinner: (message): Spinner => {
-      let text = message;
+      let text = bidi(message);
       let frame = 0;
       const draw = () => {
         if (!silent)
@@ -115,19 +121,21 @@ export function createOutput(setup: OutputSetup): ConsoleOutput {
       }
       return {
         update: (next) => {
-          text = next;
+          text = bidi(next);
         },
-        stop: (final = text, ok = true) => {
+        stop: (final?: string, ok = true) => {
           if (timer !== undefined) {
             clearInterval(timer);
             if (!silent) setup.stdout.write(CLEAR_LINE);
           }
-          if (ok) out(mark(painter.success(symbols.success), final));
-          else err(mark(painter.error(symbols.error), final));
+          const shown = final === undefined ? text : bidi(final);
+          if (ok) out(mark(painter.success(symbols.success), shown));
+          else err(mark(painter.error(symbols.error), shown));
         },
       };
     },
-    progress: (total, label = ""): Progress => {
+    progress: (total, name = ""): Progress => {
+      const label = bidi(name);
       let done = 0;
       let reported = -1;
       const width = Math.max(10, Math.min(40, mode.columns - displayWidth(label) - 16));

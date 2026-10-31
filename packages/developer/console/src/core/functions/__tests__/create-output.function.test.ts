@@ -14,6 +14,7 @@ import type { ConsoleMode } from "#core/types/console-mode.type";
 import { memoryText } from "#testing/functions/memory-text.function";
 
 const PLAIN: ConsoleMode = {
+  bidi: "logical",
   depth: 0,
   unicode: true,
   interactive: false,

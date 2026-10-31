@@ -93,7 +93,7 @@ decision 17). Commands need the v3 shape: a class, decorated fields, constructor
      `{ "ok": false, "error": { "code", "message" } }` where the code is the error's class name in snake case without
      `Error`.
    - Widths are measured by grapheme cluster. Characters are never reordered, and the components write no FSI/PDI
-     isolates (many terminals draw them as boxes); `isolateBidi` is offered for callers.
+     isolates (many terminals draw them as boxes); `isolateBidi` is offered for callers. On a terminal without bidi or Arabic shaping (`TERM_PROGRAM` claude-desktop, vscode, iTerm.app, Hyper, Tabby), right-to-left runs are written shaped and in visual order; `STACKRA_BIDI=visual|logical` overrides the choice, and pipes and `--json` always get logical text.
 
 8. **Prompts are ours.** The prompter runs on `node:readline` in raw mode, and colours come from `node:util`
    `styleText` with two escape helpers for 256 and true colour. No new dependency is added. Basalt's `@clack/prompts`

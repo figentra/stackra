@@ -26,5 +26,5 @@ export function renderAnswer(
         : Array.isArray(answer)
           ? answer.join(", ")
           : (request.choices?.find((choice) => choice.value === answer)?.label ?? String(answer));
-  return `  ${paint.painter.success(paint.symbols.success)} ${request.message} ${paint.painter.dim(shown)}`;
+  return `  ${paint.painter.success(paint.symbols.success)} ${paint.bidi(request.message)} ${paint.painter.dim(paint.bidi(shown))}`;
 }

@@ -12,6 +12,9 @@ export interface ConsoleMode {
   /** Colour bits: 0 (none), 4 (16 colours), 8 (256) or 24 (true colour). */
   readonly depth: 0 | 4 | 8 | 24;
 
+  /** How right-to-left text is written: as stored, or reordered and shaped for a terminal that cannot. */
+  readonly bidi: "logical" | "visual";
+
   /** Box lines and symbols in Unicode; ASCII when false. */
   readonly unicode: boolean;
 

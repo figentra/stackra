@@ -53,6 +53,7 @@ Take the colours from the product's brand tokens (`brands/<id>/tokens/color.json
   `{"ok":false,"error":{"code":"snake_case","message":"…"}}`, with no other output.
 - **Exit codes**: 0 ok, 1 error, 2 usage, 130 SIGINT or a cancelled prompt, 143 SIGTERM.
 - **Right-to-left text**: measure by grapheme cluster (wide East Asian characters and emoji take 2 columns, marks
-  take 0). Never reverse characters yourself, and do not emit U+2068 … U+2069 isolates: many terminals draw them as boxes.
+  take 0). Never reverse characters yourself, and do not emit U+2068 … U+2069 isolates: many terminals draw them as boxes. On terminals without bidi or shaping
+  (xterm.js based, iTerm2), write right-to-left runs shaped and in visual order, with an env override.
 
 Reference implementation: `packages/developer/console` in stackra/core, which you can read but should not import.

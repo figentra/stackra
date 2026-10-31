@@ -38,7 +38,7 @@ describe("colourEscape", () => {
 
 describe("renderBanner", () => {
   it("colours the logo column by column and ends with the glyph, name and version", () => {
-    const mode = { depth: 24, unicode: true } as const;
+    const mode = { bidi: "logical", depth: 24, unicode: true } as const;
     const lines = renderBanner(STACKRA_THEME, "1.0.0", {
       ...mode,
       interactive: false,

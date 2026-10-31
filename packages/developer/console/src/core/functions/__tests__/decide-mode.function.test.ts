@@ -59,6 +59,19 @@ describe("decideMode", () => {
     });
   });
 
+  it("writes visual right-to-left text only on terminals without bidi, unless STACKRA_BIDI says otherwise", () => {
+    expect(decideMode(ports({ TERM_PROGRAM: "claude-desktop" }), GLOBALS).bidi).toBe("visual");
+    expect(decideMode(ports({ TERM_PROGRAM: "Apple_Terminal" }), GLOBALS).bidi).toBe("logical");
+    expect(decideMode(ports({ TERM_PROGRAM: "vscode" }, false), GLOBALS).bidi).toBe("logical");
+    expect(decideMode(ports({ TERM_PROGRAM: "vscode" }), { ...GLOBALS, json: true }).bidi).toBe(
+      "logical",
+    );
+    expect(
+      decideMode(ports({ TERM_PROGRAM: "vscode", STACKRA_BIDI: "logical" }), GLOBALS).bidi,
+    ).toBe("logical");
+    expect(decideMode(ports({ STACKRA_BIDI: "visual" }), GLOBALS).bidi).toBe("visual");
+  });
+
   it("uses ASCII on TERM=linux or a non-UTF-8 locale, and caps the width at 100", () => {
     expect(decideMode(ports({ TERM: "linux" }), GLOBALS).unicode).toBe(false);
     expect(decideMode(ports({ LANG: "C" }), GLOBALS).unicode).toBe(false);

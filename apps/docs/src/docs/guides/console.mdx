@@ -116,7 +116,7 @@ bar.advance();
 bar.finish();
 ```
 
-Text is measured by grapheme cluster, so Arabic and emoji columns line up; characters are never reordered, and no bidi isolate marks are written, because many terminals draw them as boxes. Use `displayWidth(text)` from `@stackra/console` when you lay out text of your own; `isolateBidi(text)` wraps right-to-left runs in FSI and PDI for a destination that honours them.
+Text is measured by grapheme cluster, so Arabic and emoji columns line up; characters are never reordered, and no bidi isolate marks are written, because many terminals draw them as boxes. Use `displayWidth(text)` from `@stackra/console` when you lay out text of your own; `isolateBidi(text)` wraps right-to-left runs in FSI and PDI for a destination that honours them. On a terminal without bidi or Arabic shaping (`TERM_PROGRAM` claude-desktop, vscode, iTerm.app, Hyper, Tabby), right-to-left runs are written shaped and in visual order; `STACKRA_BIDI=visual|logical` overrides the choice, and pipes and `--json` always get logical text.
 
 ## Prompts and non-interactive runs
 

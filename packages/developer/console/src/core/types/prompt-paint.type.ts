@@ -14,6 +14,9 @@ export interface PromptPaint {
   /** The run's colours. */
   readonly painter: Painter;
 
+  /** Puts right-to-left text in the order this terminal needs (identity unless the mode is visual). */
+  readonly bidi: (text: string) => string;
+
   /** The run's symbols (Unicode or ASCII). */
   readonly symbols: (typeof SYMBOLS)["unicode"];
 }

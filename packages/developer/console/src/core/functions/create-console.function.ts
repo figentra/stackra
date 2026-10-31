@@ -27,6 +27,7 @@ import { renderHelp } from "#core/functions/render-help.function";
 import { renderList } from "#core/functions/render-list.function";
 import { runCommand } from "#core/functions/run-command.function";
 import { splitInvocation } from "#core/functions/split-invocation.function";
+import { visualBidi } from "#core/functions/visual-bidi.function";
 import type { CommandEntry } from "#core/types/command-entry.type";
 import type { ConsoleApp } from "#core/types/console-app.type";
 import type { ConsoleConfig } from "#core/types/console-config.type";
@@ -122,7 +123,11 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
     }
 
     const prompter = mode.interactive
-      ? ports.prompter({ painter, symbols: SYMBOLS[mode.unicode ? "unicode" : "ascii"] })
+      ? ports.prompter({
+          painter,
+          symbols: SYMBOLS[mode.unicode ? "unicode" : "ascii"],
+          bidi: mode.bidi === "visual" ? visualBidi : (text) => text,
+        })
       : defaultsPrompter();
     const outcome = await runCommand(
       entry,
