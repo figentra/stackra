@@ -4,11 +4,11 @@
 
 **Created**: 2026-10-31
 
-**Status**: Draft <!-- design for the lead's approval and a security review; nothing is built -->
+**Status**: Clarified <!-- design approved by the leader 2026-11-01; L-08 waits on the security-tenancy reviewer; nothing is built -->
 
 **Linear**: STA-1724
 
-**Clarifications status**: open (see Open questions; L-01 to L-09 are the lead's)
+**Clarifications status**: complete
 
 **Input**: Billing (figentra/billing#2) needs a second approver before a coupon above a threshold is created or
 changed, and today hand-writes the pending state, the second-approver check and the expiry. Requested shape, roughly
@@ -47,7 +47,8 @@ rather than trusted to a driver, (c) execution on the final grant, and (d) a par
   reject, withdraw, list and get actions, the sweep); figentra/billing (coupon actions adopt the declaration)
 - **Packages touched**: packages/application/actions (option, port, stage, kind base, executor, memory driver,
   errors, event), packages/application/ai (`AgentRuntime.resume` for an executed request), packages/state/settings
-  (approver check moves to the actor chain; see L-07)
+  (the approver check uses the shared chain function; see L-07), packages/foundation/contracts
+  (`actorChainOverlaps`)
 - **Cross-service events**: new `actions.approval.granted.v1` (published by the store's service, consumed by the
   service that owns the action; ids only); the store's own lifecycle events `approvals.request.requested.v1`,
   `.approved.v1`, `.rejected.v1`, `.expired.v1`, `.executed.v1` (OS, ids, key, counts and input hash only, never input)
@@ -55,13 +56,13 @@ rather than trusted to a driver, (c) execution on the final grant, and (d) a par
   `approvals.approval_votes`), `tenant_id` with FORCE RLS from the scoped-table pattern; holds an input snapshot
   (data-class rules in FR-014). Core adds no table; the memory driver is for tests and single-process dev
 - **Secrets**: none
-- **ADR needed**: yes, draft 0507 (Proposed) in this change; it amends 0098 decision 3, 0397 decision 5 and the
-  `ApprovalGate` contract, and states the stage's place under 0495. 0507 is the next free number in `apps/docs/adr/numbers.yaml` on main (2026-11-01); its register entry lands with the ADR
+- **ADR needed**: yes, draft 0509 (Proposed) in this change; it amends 0098 decision 3, 0397 decision 5 and the
+  `ApprovalGate` contract, and states the stage's place under 0495. 0509 is reserved in `apps/docs/adr/numbers.yaml` in this change (0507 and 0508 were taken)
 - **New dependencies**: none
 - **Deploy modes**: SaaS, on-prem and air-gapped the same; the store is a tenant table, no outbound call (see plan)
 - **Licence tier**: free (MIT) in core; the OS store follows the OS licence
 - **Docs to update**: `packages/application/actions/README.md` and `AGENTS.md`, the actions guide page in
-  `apps/docs`, the ADR index row and the `numbers.yaml` entry for 0507
+  `apps/docs`, the ADR index row for 0509 when the owner accepts it
 - **Lane**: full (an ADR, a public port change, several members)
 - **Change risk**: R3 (auth and iam, tenancy, money: the stage gates financial actions and moves who may execute)
 
@@ -127,12 +128,13 @@ coupon changes, as the requester, without the requester coming back.
   `{ approvals?: number; permission: unknown; expiresAfter?: string; when?: AnyClass<ApprovalCondition> }`.
   `approvals` is the number of distinct approvers besides the requester, a whole number from 1, default 1 (four-eyes;
   see L-01). `permission` is a `Permissions` static the approver must hold in the request's scope. `expiresAfter` is
-  a duration string (`"72h"`), default `"72h"` (L-03). `Action()` refuses any other shape at definition time.
+  a duration string (`"72h"`), default `"72h"`, at most 30 days (`"720h"`) (L-03). `Action()` refuses any other shape, and an
+  `expiresAfter` above the maximum, at definition time (boot); gen refuses the same.
 - **FR-002** `ApprovalCondition` is a new kind base: `extends ApprovalCondition` with `needed(input, ctx):
 Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-condition.ts`. It reads data (a setting, a
   plan value) through its constructor dependencies; the threshold is data, the comparison is code. No condition means
   every call needs approval. A condition that throws fails the call (it is not read as "not needed").
-- **FR-003** A declared action needs effect tags and a permission like any action; gen refuses `approval` on a query,
+- **FR-003** Gen refuses an `expiresAfter` above 30 days, as `Action()` does at boot (L-03). A declared action needs effect tags and a permission like any action; gen refuses `approval` on a query,
   on an action whose `actors` include neither a user nor an agent (no one could request it), and on an action whose
   input schema has a field of the `credential` data class (ADR 0494).
 
@@ -200,7 +202,8 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
   `approvals.request.expired.v1`. A granted request may execute until `grantedAt + 24h` (the idempotency TTL),
   whatever its `expiresAt`.
 - **FR-016** Step-up: the requester's `stepUp` is checked when the call is requested (the permission step runs before
-  approval). At execution the stored assurance stands in for the requester's (L-08); an approver's step-up is the
+  approval). At execution the stored assurance stands in for the requester's (L-08, pending the security-tenancy
+  reviewer; if they object, the requester steps up again at execution); an approver's step-up is the
   approver rule's (`ApproverRule.stepUp`) at approve time.
 - **FR-017** Audit: the request is the call's `refused` entry (`approval_required`) with fields `approvalId` and
   `inputHash`; each vote, rejection and withdrawal is the audit entry of that store action; the execution is the
@@ -213,9 +216,10 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
 
 ### Settings and billing
 
-- **FR-019** `SettingsResolver.approve` and `reject` take the deciding `Actor` instead of a string and refuse through
-  `approverRefusal` (the whole `onBehalfOf` chain); `SettingFourEyesError` stays the refusal code. Settings keep their
-  revision model (L-07).
+- **FR-019** `actorChainOverlaps(a, b)` in `@stackra/contracts` is the one chain check (L-07). `approverRefusal` uses
+  it, and `SettingsResolver.approve` and `reject` take the deciding `Actor` instead of a string and refuse through it
+  (the whole `onBehalfOf` chain), in today's settings and in the ADR 0496 rewrite alike; `SettingFourEyesError` stays
+  the refusal code. Settings keep their revision model.
 - **FR-020** Billing adopts the declaration on its coupon create and update actions and deletes its hand-written
   pending state, approver check and expiry (a figentra/billing change, tracked there; core's part is that FR-001 to
   FR-013 cover its case).
@@ -231,36 +235,39 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
 - **SC-004**: a parked request survives its call's rollback under `CallIsolation` (real-Postgres test with the 0495
   driver).
 
-## Open questions (for the lead)
+## Clarifications
 
-- **L-01 Count semantics.** Linear wrote `approvers: 2`. Recommended: `approvals: 1` = one approver besides the
-  requester (four-eyes), so the name says what is counted. Alternative: `approvers` counts people including the
-  requester (`2` = four-eyes). Pick one name and meaning.
-- **L-02 Caller's answer.** Recommended: keep the `approval_required` refusal (412) with `approvalId`: clients and
-  `AgentRuntime` already handle it, and a refusal rolls back cleanly. Alternative: a 202-style output with a request
-  id, which changes every declared action's output type and the generated adapter. A client shows the 412 code as
-  "sent for approval", not as an error.
-- **L-03 Default expiry.** Recommended `72h`; billing may want longer. Is there a platform maximum?
-- **L-04 Execution mode for rules-only parks.** Recommended: declared stages execute on grant; rules-only parks keep
-  resubmission for now (no change to today's AI path). Moving everything to on-grant is one model but changes the
-  AgentRuntime contract for every parked tool call.
-- **L-05 Who owns the store.** Recommended: the OS tasks-approvals module (as the `ApprovalGate` docblock, 0360
-  decision 9 and 0397 already say), with the port, the stage, the checks, the executor and a memory driver in core.
-  Alternative: a free core package `@stackra/approvals` with the table, for products that do not run OS. Is billing
-  an OS consumer? Not verified from core.
-- **L-06 Agents never approve.** Recommended: approve actions take only user actors. 0360 says only "an agent never
-  approves its own call"; this is stricter. Confirm.
-- **L-07 Settings.** Recommended: settings keep their revision model (a revision is domain data with `previous`
-  values and scheduling, enforced in the resolver without the pipeline) and only adopt the chain check (FR-019).
-  Alternative: settings writes declare the stage and the `pending` status goes; that removes settings' own
-  enforcement for callers outside the pipeline and collides with the open ADR 0496 rewrite of settings.
-- **L-08 Step-up at execution.** Recommended: the requester's step-up at request time stands; the fresh factor at
-  execution is the approvers' step-up when the approver rule asks for it. The security reviewer should confirm.
-- **L-09 Grant delivery.** Recommended: the `actions.approval.granted.v1` integration event defined in
-  `@stackra/actions` and published by the store. Alternative: the store calls the owning service's generated client,
-  which needs a client per consuming service in OS.
-- **L-10 Single-operator installs.** A declared four-eyes action can never complete with one human. Recommended: that
-  is correct and stays so (no override); confirm for on-prem.
+### Session 2026-11-01 (the leader; each recommendation of the design taken, with three refinements)
+
+- **L-01 Count semantics.** Decided 2026-11-01 by the leader: `approvals` counts distinct approvers besides the
+  requester; `approvals: 1` (the default) is four-eyes. Linear's `approvers: 2` is not used.
+- **L-02 Caller's answer.** Decided 2026-11-01 by the leader: the `approval_required` refusal (412) with
+  `approvalId`, `approvalsRequired` and `expiresAt`; no 202-style output. Clients show the code as "sent for
+  approval".
+- **L-03 Expiry.** Decided 2026-11-01 by the leader: default `72h`, **maximum 30 days** (`720h`). A declaration above
+  the maximum is refused by gen and at boot (`Action()` validation), so it never reaches a running pipeline.
+- **L-04 Execution mode.** Decided 2026-11-01 by the leader: declared stages execute on grant; requests parked only by
+  tenant rules keep resubmission for now.
+- **L-05 Store owner.** Decided 2026-11-01 by the leader: OS tasks-approvals owns the table, the approve, reject,
+  withdraw, list and get actions and the sweep; core owns the port, the stage, the checks, the executor, the memory
+  driver and the conformance suite.
+- **L-06 Approvers.** Decided 2026-11-01 by the leader: approve actions take user actors only; an agent never
+  approves, whoever's call it is.
+- **L-07 Settings.** Decided 2026-11-01 by the leader: settings keep their revision model and adopt the chain check,
+  **shared with the ADR 0496 settings rewrite, not forked**. The one function both use is
+  `actorChainOverlaps(a: Actor, b: Actor): boolean` in `@stackra/contracts`
+  (`packages/foundation/contracts/src/core/functions/actor-chain-overlaps.function.ts`): true when any principal id in
+  `a`'s `onBehalfOf` chain is in `b`'s. It sits beside `Actor` in the foundation package because settings becomes a
+  foundation package under 0496 and may not import `@stackra/actions`. `approverRefusal` (actions) and
+  `SettingsResolver.approve` (settings) both call it; neither keeps its own chain walk.
+- **L-08 Step-up at execution.** Decided 2026-11-01 by the leader, **pending the security-tenancy reviewer**: the
+  requester's step-up at request time stands and the fresh factor is the approvers' step-up. If the reviewer objects,
+  the requester steps up again at execution: the executor parks the executed call on a step-up prompt to the
+  requester instead of running it with the stored assurance (FR-016 changes; a new task follows the review).
+- **L-09 Grant delivery.** Decided 2026-11-01 by the leader: the `actions.approval.granted.v1` integration event,
+  defined in `@stackra/actions` and published by the store.
+- **L-10 Single-operator installs.** Decided 2026-11-01 by the leader: a declared four-eyes action cannot complete
+  with one human, on every deploy mode; no override.
 
 ## Security notes (for the reviewer)
 
@@ -287,3 +294,5 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
 ## Status history
 
 - 2026-10-31 · — → Draft · Claude (spec-writer) · from STA-1724 and the lead's brief; design for approval
+- 2026-11-01 · Draft → Clarified · Claude (spec-writer) · the leader approved L-01 to L-10 as recommended, with the
+  30-day expiry maximum, the shared `actorChainOverlaps` and L-08 pending the security-tenancy reviewer

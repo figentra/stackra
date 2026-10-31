@@ -1,7 +1,7 @@
 # Implementation Plan: Declarative approval stage (second approver, four-eyes)
 
 **Spec**: `.agents/specs/sta-1724-approval-stage/spec.md` · **Linear**: STA-1724 · **Date**: 2026-10-31 · **ADR**:
-0507 (Proposed)
+0509 (Proposed)
 
 ## Summary
 
@@ -49,7 +49,8 @@ The audit's `refused` entry is written outside, as today, after the park, so it 
 | `MemoryApprovalGateDriver` and the port conformance suite (`./testing`)                               | `packages/application/actions`             |
 | `ApprovalExecutor` listener                                                                           | `packages/application/actions` (node)      |
 | `AgentRuntime.resume` taking an executed outcome                                                      | `packages/application/ai`                  |
-| `approve(id, approver: Actor)` with `approverRefusal`                                                 | `packages/state/settings`                  |
+| `actorChainOverlaps(a, b)`, the one chain check (L-07)                                                | `packages/foundation/contracts`            |
+| `approve(id, approver: Actor)` through `actorChainOverlaps`                                           | `packages/state/settings`                  |
 | Table, RLS, approve/reject/withdraw/list/get actions, sweep, lifecycle events, inbox                  | OS tasks-approvals (not in this repo)      |
 
 `OpenApprovalGateDriver` stays for `approval: true` actions; a declared stage refuses with it bound (it cannot park),
@@ -57,20 +58,20 @@ which is the fail-closed rule of SC-003.
 
 ## Constitution Check
 
-| Law                                   | Result | Note                                                                                                                                                                                                   |
-| ------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Boundaries (tier direction, ADR 0003) | PASS   | core holds the port, stage and memory driver; the store is OS behind the port (ADR 0260); ai already depends on actions; settings gains `@stackra/actions/contracts` for `approverRefusal` only (L-07) |
-| Secrets (ADR 0173)                    | PASS   | no secret; a `credential` data-class input cannot declare approval (FR-003)                                                                                                                            |
-| Security                              | PASS   | fail closed (FR-005, SC-003); checks in core (FR-008); requester authority only (FR-011); security review required before build                                                                        |
-| HTTP and events                       | PASS   | approve, reject and withdraw are PUT state transitions on `/requests/:requestId/<verb>`; list and get are queries; events are versioned, ids only                                                      |
-| Tenancy                               | PASS   | store rows tenant-owned with FORCE RLS in OS; park and execution run in the requester's isolation (0495); isolation test required in OS                                                                |
-| Delegation                            | PASS   | each task names its route; security review before merge of phase 2                                                                                                                                     |
-| Not built yet (ADR 0227)              | PASS   | no rejected or deferred technology; no external state-machine library (status is a plain enum)                                                                                                         |
-| Test placement (ADR 0022)             | PASS   | `src/**/__tests__/` beside each subject                                                                                                                                                                |
-| Versions and catalogs                 | PASS   | no new dependency                                                                                                                                                                                      |
-| Deploy modes (ADR 0076)               | PASS   | same behaviour in every mode (table below)                                                                                                                                                             |
-| Licence tier (ADR 0077)               | PASS   | core parts free (MIT)                                                                                                                                                                                  |
-| Docs and ADRs                         | PASS   | ADR 0507 drafted; actions README, AGENTS.md and guide page in phase 2                                                                                                                                  |
+| Law                                   | Result | Note                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Boundaries (tier direction, ADR 0003) | PASS   | core holds the port, stage and memory driver; the store is OS behind the port (ADR 0260); ai already depends on actions; the shared chain check `actorChainOverlaps` sits in `@stackra/contracts` (foundation), which actions and settings already depend on, so settings stays importable as a foundation package under 0496 (L-07) |
+| Secrets (ADR 0173)                    | PASS   | no secret; a `credential` data-class input cannot declare approval (FR-003)                                                                                                                                                                                                                                                          |
+| Security                              | PASS   | fail closed (FR-005, SC-003); checks in core (FR-008); requester authority only (FR-011); security review required before build                                                                                                                                                                                                      |
+| HTTP and events                       | PASS   | approve, reject and withdraw are PUT state transitions on `/requests/:requestId/<verb>`; list and get are queries; events are versioned, ids only                                                                                                                                                                                    |
+| Tenancy                               | PASS   | store rows tenant-owned with FORCE RLS in OS; park and execution run in the requester's isolation (0495); isolation test required in OS                                                                                                                                                                                              |
+| Delegation                            | PASS   | each task names its route; security review before merge of phase 2                                                                                                                                                                                                                                                                   |
+| Not built yet (ADR 0227)              | PASS   | no rejected or deferred technology; no external state-machine library (status is a plain enum)                                                                                                                                                                                                                                       |
+| Test placement (ADR 0022)             | PASS   | `src/**/__tests__/` beside each subject                                                                                                                                                                                                                                                                                              |
+| Versions and catalogs                 | PASS   | no new dependency                                                                                                                                                                                                                                                                                                                    |
+| Deploy modes (ADR 0076)               | PASS   | same behaviour in every mode (table below)                                                                                                                                                                                                                                                                                           |
+| Licence tier (ADR 0077)               | PASS   | core parts free (MIT)                                                                                                                                                                                                                                                                                                                |
+| Docs and ADRs                         | PASS   | ADR 0509 drafted; actions README, AGENTS.md and guide page in phase 2                                                                                                                                                                                                                                                                |
 
 ## Deploy modes
 
@@ -82,23 +83,23 @@ which is the fail-closed rule of SC-003.
 
 ## Lanes and pull requests (ADR 0120 D8)
 
-Full lane, change risk R3. One design PR (this folder and ADR 0507), then one PR per phase:
+Full lane, change risk R3. One design PR (this folder and ADR 0509), then one PR per phase:
 
-| PR  | Phase                | Members                         | Blocked by                      |
-| --- | -------------------- | ------------------------------- | ------------------------------- |
-| 0   | Design               | spec, plan, tasks, ADR 0507     | lead approval, security review  |
-| 1   | US1 core stage       | actions                         | PR 0; rebased on 0495 if merged |
-| 2   | US1 executor and US2 | actions                         | PR 1                            |
-| 3   | US3 agents and floor | actions, ai                     | PR 2                            |
-| 4   | US4 settings         | settings                        | PR 1; L-07; ADR 0496 outcome    |
-| —   | OS store, billing    | OS repository, figentra/billing | PR 2 published                  |
+| PR  | Phase                | Members                         | Blocked by                                         |
+| --- | -------------------- | ------------------------------- | -------------------------------------------------- |
+| 0   | Design               | spec, plan, tasks, ADR 0509     | lead approval, security review                     |
+| 1   | US1 core stage       | actions                         | PR 0; rebased on 0495 if merged                    |
+| 2   | US1 executor and US2 | actions                         | PR 1                                               |
+| 3   | US3 agents and floor | actions, ai                     | PR 2                                               |
+| 4   | US4 settings         | settings                        | PR 1; lands in the 0496 rewrite if it merges first |
+| —   | OS store, billing    | OS repository, figentra/billing | PR 2 published                                     |
 
 If 0495 is not merged when PR 1 starts, PR 1 parks after the refusal without isolation (FR-006's no-isolation path)
 and PR 1's 0495 test lands with the rebase.
 
 ## Correctness properties
 
-- **P-001**: `Action()` accepts `true` or a well-formed `ActionApproval` and refuses any other shape, a zero or fractional `approvals`, an unparsable `expiresAfter` and a `when` that is not an `ApprovalCondition` — Validates: FR-001, FR-002
+- **P-001**: `Action()` accepts `true` or a well-formed `ActionApproval` and refuses any other shape, a zero or fractional `approvals`, an unparsable `expiresAfter` or one above 30 days, and a `when` that is not an `ApprovalCondition` — Validates: FR-001, FR-002
 - **P-002**: gen refuses `approval` on a query, on an action no user or agent may call, and on an input with a `credential` field — Validates: FR-003
 - **P-003**: the approval step runs after validation and before the idempotency claim, inside the isolation callback, and only for actions — Validates: FR-004
 - **P-004**: with a declared requirement, a gate answering "none" (including the open gate) still yields a park or refusal; a gate answering more raises the requirement — Validates: FR-005, FR-018
@@ -113,6 +114,7 @@ and PR 1's 0495 test lands with the rebase.
 - **P-013**: approve and verify refuse after `expiresAt` with the sweep never run; a granted request executes until `grantedAt + 24h` — Validates: FR-015
 - **P-014**: a declared action with `stepUp` checks the requester at request time and executes with the stored assurance — Validates: FR-016
 - **P-015**: the refused entry carries `approvalId` and `inputHash`, the execution's entry carries `approvalId` and the voters, and no event payload carries input — Validates: FR-017
+- **P-018**: `actorChainOverlaps` is true for the same principal, an agent acting for the other, and the human an agent acts for, false for unrelated chains; `approverRefusal` and `SettingsResolver.approve` both call it and walk no chain of their own — Validates: FR-019
 - **P-016**: `SettingsResolver.approve` refuses an agent acting for the author and still refuses the author — Validates: FR-019
 - **P-017**: billing's coupon case (a threshold condition reading a setting, one approver, `financial`) passes the US1 scenarios against the memory driver in core's tests — Validates: FR-020
 

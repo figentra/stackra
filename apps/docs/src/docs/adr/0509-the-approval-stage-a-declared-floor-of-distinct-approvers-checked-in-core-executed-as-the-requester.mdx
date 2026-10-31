@@ -1,5 +1,5 @@
 ---
-title: "0507 — The approval stage: a declared floor of distinct approvers, checked in core, executed as the requester"
+title: "0509 — The approval stage: a declared floor of distinct approvers, checked in core, executed as the requester"
 description: "Proposed · 2026-10-31"
 ---
 
@@ -32,7 +32,8 @@ a core package (no OS dependency, but a second owner of approvals next to OS tas
 1. **Declaration.** `Action({ approval })` takes `true` (as before: a gate must be bound and its rules decide) or
    `{ approvals?, permission, expiresAfter?, when? }`. `approvals` counts distinct approvers besides the requester
    (default 1, four-eyes); `permission` is a `Permissions` static the approver must hold in the request's scope;
-   `expiresAfter` is a duration (default `72h`); `when` names an `ApprovalCondition` class. Without `when` every call
+   `expiresAfter` is a duration (default `72h`, at most 30 days; a longer one is refused by gen and by `Action()` at
+   boot); `when` names an `ApprovalCondition` class. Without `when` every call
    needs approval.
 2. **`ApprovalCondition` is a kind.** `extends ApprovalCondition` with `needed(input, ctx): Promise<boolean>`, in
    `access/<name>.approval-condition.ts`, wired by gen. A threshold is data the condition reads (a setting, a plan
@@ -56,11 +57,17 @@ a core package (no OS dependency, but a second owner of approvals next to OS tas
    approver's authority is never lent (0360 decision 9). A request parked only by tenant rules keeps resubmission.
 8. **Approvers.** Approving is a user action only; an agent never approves. One vote per user; the requester and
    anyone in the requester's chain are refused; votes are refused after expiry; at the final vote every voter is
-   re-checked for the permission and one who lost it does not count.
-9. **The floor.** A declared stage and the 0360 floor are one request. AI modes (allow by default, always allow,
-   bypass) may drop only the `confirm` of the person an agent acts for; nothing lowers the declared approvals or the
-   floor's named approver.
-10. **Store.** The pending requests, votes, approve, reject, withdraw, list and get actions and the expiry sweep belong
+   re-checked for the permission and one who lost it does not count. The chain check is one function,
+   `actorChainOverlaps(a, b)` in `@stackra/contracts`, used by `approverRefusal` and by settings' four-eyes
+   approval (today's and the 0496 rewrite's); nothing else walks an `onBehalfOf` chain for approval.
+9. **Step-up at execution** (pending the security-tenancy reviewer). The requester's step-up is checked when the
+   call is requested, and the execution runs with that stored assurance; the fresh factor is the approvers' step-up
+   when the approver rule asks for it. If the reviewer objects, the requester steps up again before the execution
+   runs.
+10. **The floor.** A declared stage and the 0360 floor are one request. AI modes (allow by default, always allow,
+    bypass) may drop only the `confirm` of the person an agent acts for; nothing lowers the declared approvals or the
+    floor's named approver.
+11. **Store.** The pending requests, votes, approve, reject, withdraw, list and get actions and the expiry sweep belong
     to OS tasks-approvals behind the port, in a tenant-owned table with forced RLS. Core ships the memory driver and a
     conformance suite.
 
@@ -72,20 +79,22 @@ a core package (no OS dependency, but a second owner of approvals next to OS tas
 - The input snapshot of a pending call lives in OS until the request ends; approvers see it through field access.
 - A single-operator install cannot complete a declared four-eyes action.
 - `AgentRuntime.resume` must accept an executed outcome for a request that ran on grant.
-- Settings keep their revision model and adopt the chain check (spec L-07, open).
+- Settings keep their revision model and use the shared `actorChainOverlaps`, so the 0496 rewrite carries the same
+  check rather than a fork.
 
 ## Enforcement
 
 planned — STA-1724: `Action()` validation of the option; the pipeline tests that a gate answering "none" cannot pass
 a declared call and that a parked request survives the rollback under `CallIsolation`; the `verifyApproval` tests; the
 port conformance suite in `@stackra/actions/testing`; gen refusing `approval` on a query, on an action no user or
-agent may call, and on a `credential` input field. Nothing checks this rule yet.
+agent may call, on a `credential` input field and on an `expiresAfter` above 30 days; the `actorChainOverlaps`
+tests. Nothing checks this rule yet.
 
-## Open questions
+## Decided questions
 
-The lead's questions L-01 to L-10 in the spec: the count's name and meaning, the refusal versus a 202 output, the
-default and maximum expiry, on-grant execution for rules-only parks, the store's owner, users-only approvers,
-settings, step-up at execution, grant delivery by event or client, and single-operator installs.
+The leader decided L-01 to L-10 of the spec on 2026-11-01 as recommended, with three refinements: a 30-day maximum
+expiry (decision 1), one shared chain check with settings (decision 8), and step-up at execution pending the
+security-tenancy reviewer (decision 11). The owner accepts this ADR.
 
 ## Supersedes and sources
 
