@@ -324,9 +324,6 @@ catalogs:
   documents:
     docx: 9.10.0
     uqr: 0.1.3
-  # @stackra/data-transfer streaming XLSX reader and writer (ADR 0367). MIT.
-  exceljs:
-    exceljs: 4.4.0
   deploy:
     wrangler: 4.148.0
   # Documentation site (apps/docs).
@@ -374,7 +371,7 @@ overrides:
   "sharp@<0.35.5": "0.35.5"
   "tar@>=7.0.0 <7.5.21": "7.5.21"
   "undici@>=7.0.0 <7.30.1": "7.30.1"
-  # uuid 7 and 8 (xcode, exceljs) have no fixed release of their own; both call only v4() through the CommonJS entry,
+  # uuid 7 (xcode) has no fixed release of its own; it calls only v4() through the CommonJS entry,
   # which 11.1.1 still ships.
   "uuid@<11.1.1": "11.1.1"
   "zod@>=4.0.0 <4.6.6": "4.6.6"
