@@ -174,7 +174,7 @@
     "react": "catalog:frontend",
     "react-native": "catalog:mobile",
     "react-native-safe-area-context": "catalog:mobile",
-    "react-router": "catalog:frontend"
+    "react-router": "^7.18.4"
   },
   "peerDependenciesMeta": {
     "@react-navigation/native": {

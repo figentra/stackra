@@ -182,7 +182,7 @@
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
     "react-native": "catalog:mobile",
-    "react-router": "catalog:frontend"
+    "react-router": "^7.18.4"
   },
   "peerDependenciesMeta": {
     "electron": {
