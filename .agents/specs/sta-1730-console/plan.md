@@ -121,7 +121,7 @@ object become `data`, an error becomes `{ code, message }` (code is the error cl
 the kernel prints the one document at the end.
 
 **Scaffolder.** `CreateCommand` is the first real user of the framework. Templates are typed functions returning file
-text (no template engine). `--package-spec` lets the verification install `@stackra/console` (and its two deps) from
+text (no template engine). `--tarballs <dir>` lets the verification install `@stackra/console` (and its three deps) from
 packed tarballs. Install runs `pnpm install` (or `npm install`) with inherited stdio inside a `task()`.
 
 ## Verification (SC-001), on stackra-f4
@@ -129,14 +129,14 @@ packed tarballs. Install runs `pnpm install` (or `npm install`) with inherited s
 1. In this worktree: `pnpm --filter @stackra/console... build`, then `pnpm pack` the console, container and contracts
    packages into a scratch folder outside the repos.
 2. f4: `node packages/developer/console/dist/stackra-console.mjs create /tmp/sta-1730-demo --no-interaction
---package-spec <tarballs> --pm pnpm`, then in the demo: `pnpm build`, `pnpm typecheck`, `pnpm test`,
-   `node dist/main.mjs --help`, `node dist/main.mjs greet Ada`, `NO_COLOR=1 ... greet Ada | grep -c $'\x1b'` = 0,
+--tarballs <dir> --pm pnpm`, then in the demo: `pnpm build`, `pnpm typecheck`, `pnpm test`,
+   `node dist/main.js --help`, `node dist/main.js greet Ada`, `NO_COLOR=1 ... greet Ada | grep -c $'\x1b'` = 0,
    `... greet Ada --json | node -e 'JSON.parse(...)'`, and `CI=1 ... greet` (no prompt, default used).
 3. Report the transcript to the leader. The Mac runs only oxfmt and oxlint.
 
 ## Tasks
 
-1. ADR 0501 (docs-adr-steward) and the 0294 amendment note.
+1. ADR 0506 (docs-adr-steward) and the 0294 amendment note.
 2. Scaffold the member; the kind, decorators, `readCommand`, refusals (FR-001 to FR-005).
 3. Registry, parse, suggestions, help and list, exit codes, lifecycle, signals (FR-006 to FR-015).
 4. Presentation: mode, depth, gradient, width and bidi, components, themes, error screen, JSON (FR-016 to FR-022,

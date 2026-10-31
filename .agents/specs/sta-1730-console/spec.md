@@ -21,14 +21,14 @@ stop ("handle all, all approved") and added STA-1731: every package exposes its 
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Secrets**: none (the scaffolder writes registry scope lines only; a password prompt never echoes and never logs)
-- **ADR needed**: yes. ADR 0501 adds the `Command` kind (a row in the 0294 kind table; a `commands/` group in a
+- **ADR needed**: yes. ADR 0506 adds the `Command` kind (a row in the 0294 kind table; a `commands/` group in a
   module, a package's `src/node/` and an app; `.command.ts`), the `@Argument` and `@Option` field decorators, the
   generated `#stackra/commands` registry, and names `@stackra/console` the framework and look of 0500's CLIs
 - **New dependencies**: none (`node:util` `parseArgs` and `styleText`, `node:readline`, `Intl.Segmenter`; basalt's
   `@clack/prompts` is replaced by a prompter of our own)
 - **Deploy modes**: same everywhere (a library and a bin; nothing deployed)
 - **Licence tier**: free (`@stackra/console`)
-- **Docs to update**: ADR 0501; an amendment note on ADR 0294 (kind table, groups); `packages/developer/README.md`;
+- **Docs to update**: ADR 0506; an amendment note on ADR 0294 (kind table, groups); `packages/developer/README.md`;
   the package README and AGENTS.md; a docs page `apps/docs/src/docs/packages/console.mdx`
 - **Lane**: full
 - **Change risk**: R2 (a new member and a new kind; no runtime of any service or app changes)
@@ -156,7 +156,7 @@ hidden?, aliases? })`, and SHALL read a command's name, description, arguments a
 
 - **FR-029** WHEN the Operator runs `stackra-console create <dir>`, THE Console Package SHALL ask for the app name, the
   binary name and the accent colour WHILE interactive (else take `--name`, `--bin`, `--accent`), SHALL write the app,
-  and SHALL install it unless `--no-install` is given, with `--pm pnpm|npm` and `--package-spec <spec>` honoured.
+  and SHALL install it unless `--no-install` is given, with `--pm pnpm|npm` and `--tarballs <dir>` (install `@stackra/*` from packed tarballs) honoured.
 - **FR-030** IF `<dir>` exists and is not empty, THEN THE Console Package SHALL refuse with exit code 1 and write
   nothing.
 - **FR-031** THE generated app SHALL be standalone TypeScript with no `.stackra/`: `package.json` (bin, `build`,
