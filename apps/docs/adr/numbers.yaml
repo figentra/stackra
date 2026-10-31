@@ -1467,7 +1467,7 @@
   issue: STA-1721
 "0503":
   slug: figentra-flow-runs-the-development-workflow
-  status: proposed
+  status: accepted
   owner: Figentra Flow (figentra/sta-1729-vellum-workflow-adr)
   issue: STA-1729
 "0504":
