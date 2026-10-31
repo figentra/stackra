@@ -12,5 +12,6 @@
  */
 export { libraryPreset } from "./constants/library-preset.constant.ts";
 export { library } from "./functions/library.function.ts";
+export type { LibraryConfig } from "./types/library-config.type.ts";
 export type { LibraryOptions } from "./types/library-options.type.ts";
 export type { LibraryPresetOptions } from "./types/library-preset-options.type.ts";

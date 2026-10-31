@@ -7,8 +7,8 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0025 (build output); ADR 0005 (legacy decorators).
  */
-import { describe, expect, it, vi } from "vitest";
-import { library } from "../index.ts";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
+import { library, type LibraryConfig } from "../index.ts";
 
 type Resolved = {
   entry: Record<string, string>;
@@ -21,6 +21,10 @@ type Resolved = {
 };
 
 describe("@stackra/tsdown-config library()", () => {
+  it("returns LibraryConfig, a type a member can name through this package (TS2883, STA-1743)", () => {
+    expectTypeOf(library()).toEqualTypeOf<LibraryConfig>();
+  });
+
   it("defaults to the barrel entry and the agreed options", () => {
     const cfg = library() as unknown as Resolved;
     expect(cfg.entry).toEqual({ index: "src/index.ts" });

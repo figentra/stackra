@@ -9,6 +9,7 @@
  */
 import { defineConfig, type UserConfig } from "tsdown";
 
+import type { LibraryConfig } from "../types/library-config.type.ts";
 import type { LibraryOptions } from "../types/library-options.type.ts";
 
 const DECORATOR_CONFLICT = /`transform\.decorator`/;
@@ -60,7 +61,7 @@ const withDecorators: InputOptionsFn = (input) => ({
 export function library(
   entries: Record<string, string> = { index: "src/index.ts" },
   options: LibraryOptions = {},
-): UserConfig {
+): LibraryConfig {
   return defineConfig({
     entry: entries,
     format: ["esm"],
