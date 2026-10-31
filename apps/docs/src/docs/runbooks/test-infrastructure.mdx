@@ -159,8 +159,8 @@ The boxes use the shared machine identity `figentra-ci-gate`, the one the Qualit
 the GitHub organization variable `INFISICAL_GATE_IDENTITY_ID`). It already has **Viewer** on the Infisical project
 `figentra-ci` (renamed from `figentra-ci-gate`, same id), which holds exactly what a job needs: `prod` `/ci`
 (`HEROUI_AUTH_TOKEN`, `UNIWIND_AUTH_TOKEN`) and `prod` `/ci/turbo` (`TURBO_TOKEN`, `TURBO_REMOTE_CACHE_SIGNATURE_KEY`).
-The `vellum gate` key is not here: it lives in the project `figentra-flow-gate`, read only by the `figentra-flow-box`
-identity, and no job grant names it. The project is the boundary; the free plan has no
+The Figentra Flow gate key is not here: it lives in the project `figentra-flow-gate`, read only by the `figentra-flow-box`
+identity through figentra-flow's poster, and no job grant names it. The project is the boundary; the free plan has no
 custom roles. Nothing is created: one login method is added, so no identity slot is spent. The owner does this in the
 Infisical web app (EU, `eu.infisical.com`); no value is typed anywhere.
 
