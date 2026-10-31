@@ -42,7 +42,12 @@ export function ChordDiagram({
   const side = Math.min(size, width || size);
   const centre = side / 2;
   const outer = Math.max(0, centre - LABEL_ROOM);
-  const layout = chordLayoutOf(nodes, links, { cx: centre, cy: centre, inner: Math.max(0, outer - 10), outer });
+  const layout = chordLayoutOf(nodes, links, {
+    cx: centre,
+    cy: centre,
+    inner: Math.max(0, outer - 10),
+    outer,
+  });
   const paint = useChartPaint(nodes.map((node, index) => chartColorOf(node, index, palette)));
   const value = (figure: number) => formatChartNumber(figure, locale, valueFormat);
   const nameOf = (key: string) => nodes.find((node) => node.key === key)?.label ?? key;
@@ -71,7 +76,11 @@ export function ChordDiagram({
             ))}
             {layout.groups.map((group) =>
               group.value > 0 ? (
-                <Path key={group.node.key} path={group.path} color={paint.series[group.index] ?? ""} />
+                <Path
+                  key={group.node.key}
+                  path={group.path}
+                  color={paint.series[group.index] ?? ""}
+                />
               ) : null,
             )}
           </Canvas>

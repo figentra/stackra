@@ -21,7 +21,10 @@ vi.mock("#react/widget-frame/download-file.function", () => ({
 /** The saved file: its first three bytes (the byte-order mark) and its text, which decoding strips the mark from. */
 async function file(at: number) {
   const blob = saved[at]?.blob ?? new Blob();
-  return { bom: [...new Uint8Array(await blob.arrayBuffer()).slice(0, 3)], text: await blob.text() };
+  return {
+    bom: [...new Uint8Array(await blob.arrayBuffer()).slice(0, 3)],
+    text: await blob.text(),
+  };
 }
 
 beforeEach(() => {
@@ -51,7 +54,11 @@ describe("ChartExport (web)", () => {
 
   it("prefers the raw data and offers only the formats asked for", async () => {
     render(
-      <ChartExport fileName="sales" formats={["csv"]} data={{ head: ["Month", "Sales"], rows: [["Jan", 1200]] }}>
+      <ChartExport
+        fileName="sales"
+        formats={["csv"]}
+        data={{ head: ["Month", "Sales"], rows: [["Jan", 1200]] }}
+      >
         <WordCloud label="Mentions" words={[{ text: "fresh", value: 9 }]} />
       </ChartExport>,
     );

@@ -53,7 +53,8 @@ export function wordCloudLayoutOf(
       const angle = step * TURN;
       // An elliptic spiral as wide as the box is, so the cloud fills it rather than a circle in its middle.
       const radius = step * 0.35;
-      const x = width / 2 + radius * Math.cos(angle) * (isRtl ? -1 : 1) * (width / Math.max(1, height));
+      const x =
+        width / 2 + radius * Math.cos(angle) * (isRtl ? -1 : 1) * (width / Math.max(1, height));
       const y = height / 2 + radius * Math.sin(angle);
       const rect = { x0: x - halfWidth, y0: y - halfHeight, x1: x + halfWidth, y1: y + halfHeight };
       if (rect.x0 < 0 || rect.y0 < 0 || rect.x1 > width || rect.y1 > height) {

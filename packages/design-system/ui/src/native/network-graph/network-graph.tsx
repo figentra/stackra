@@ -39,7 +39,9 @@ export function NetworkGraph({
   const { width, onLayout } = useCanvasSize();
   const layout = networkLayoutOf(nodes, links, { width, height, isRtl });
   const paint = useChartPaint(
-    nodes.map((node, index) => chartColorOf(node, layout.nodes[index]?.colorIndex ?? index, palette)),
+    nodes.map((node, index) =>
+      chartColorOf(node, layout.nodes[index]?.colorIndex ?? index, palette),
+    ),
   );
   const value = (figure: number) => formatChartNumber(figure, locale, valueFormat);
   const spoken = layout.links
@@ -86,7 +88,11 @@ export function NetworkGraph({
               key={point.node.key}
               pointerEvents="none"
               className="absolute items-center"
-              style={{ top: point.y + point.radius + 2, left: point.x - LABEL_WIDTH / 2, width: LABEL_WIDTH }}
+              style={{
+                top: point.y + point.radius + 2,
+                left: point.x - LABEL_WIDTH / 2,
+                width: LABEL_WIDTH,
+              }}
             >
               <Text type="caption" numberOfLines={1}>
                 {point.node.label}

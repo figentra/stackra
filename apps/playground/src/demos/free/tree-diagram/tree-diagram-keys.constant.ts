@@ -9,5 +9,18 @@ import { keys } from "@stackra/i18n";
 
 /** The tree_diagram namespace's keys. */
 export const TREE_DIAGRAM_KEYS = keys({
-  tree_diagram: ["label", "company", "operations", "riyadh", "jeddah", "technology", "platform", "mobile", "data", "sales", "retail", "wholesale"],
+  tree_diagram: [
+    "label",
+    "company",
+    "operations",
+    "riyadh",
+    "jeddah",
+    "technology",
+    "platform",
+    "mobile",
+    "data",
+    "sales",
+    "retail",
+    "wholesale",
+  ],
 });

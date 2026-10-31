@@ -52,7 +52,10 @@ export function Reasoning({
         className="m-0 grid list-none gap-2 border-s border-separator ps-3"
       >
         {steps.map((step) => (
-          <li key={step.key} className="relative grid gap-1 text-sm leading-relaxed text-foreground">
+          <li
+            key={step.key}
+            className="relative grid gap-1 text-sm leading-relaxed text-foreground"
+          >
             <span
               aria-hidden="true"
               className="absolute top-2 -start-3.75 size-1.5 rounded-[var(--radius-pill)] bg-muted"

@@ -35,7 +35,8 @@ export default function CsvOnly() {
         rows: MONTHS.map((row) => [t(K[row.month]), row.sales]),
       }}
     >
-      <BarChart className="w-full"
+      <BarChart
+        className="w-full"
         label={t(K.label)}
         data={MONTHS.map((row) => ({ name: t(K[row.month]), sales: row.sales }))}
         series={[{ key: "sales", label: t(K.sales) }]}

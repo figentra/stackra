@@ -25,7 +25,14 @@ vi.mock("#native/disclosure/disclosure", () => ({
 
 describe("Sources (native)", () => {
   it("counts the sources and lists a chip each", () => {
-    render(<Sources sources={[{ key: "a", title: "Menu" }, { key: "b", title: "Q3.pdf" }]} />);
+    render(
+      <Sources
+        sources={[
+          { key: "a", title: "Menu" },
+          { key: "b", title: "Q3.pdf" },
+        ]}
+      />,
+    );
     expect(screen.getByRole("heading").textContent).toBe("2 sources");
     expect(screen.getAllByTestId("chip")).toHaveLength(2);
   });

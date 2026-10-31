@@ -49,8 +49,12 @@ export function ChatMessage({
   if (from === "user") {
     return (
       <View className={`items-end gap-2 ${className ?? ""}`}>
-        {attachments ? <View className="flex-row flex-wrap justify-end gap-2">{attachments}</View> : null}
-        <View className="max-w-[80%] rounded-[var(--radius-container)] bg-default px-4 py-2">{body}</View>
+        {attachments ? (
+          <View className="flex-row flex-wrap justify-end gap-2">{attachments}</View>
+        ) : null}
+        <View className="max-w-[80%] rounded-[var(--radius-container)] bg-default px-4 py-2">
+          {body}
+        </View>
         {actions}
       </View>
     );

@@ -26,7 +26,8 @@ vi.mock("react-native", async () => {
         return { action: "sharedAction" };
       },
     },
-    View: (props: Record<string, unknown>) => createElement("div", null, props["children"] as ReactNode),
+    View: (props: Record<string, unknown>) =>
+      createElement("div", null, props["children"] as ReactNode),
   };
 });
 
@@ -70,7 +71,11 @@ describe("native ChartExport", () => {
 
   it("shares the raw data as CSV", async () => {
     render(
-      <ChartExport fileName="sales" formats={["csv"]} data={{ head: ["Month", "Sales"], rows: [["Jan", 1200]] }}>
+      <ChartExport
+        fileName="sales"
+        formats={["csv"]}
+        data={{ head: ["Month", "Sales"], rows: [["Jan", 1200]] }}
+      >
         <span>chart</span>
       </ChartExport>,
     );

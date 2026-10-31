@@ -49,7 +49,8 @@ const LINKS = [
 export default function Team() {
   const t = useCatalogueText(MESSAGES.en);
   return (
-    <NetworkGraph className="w-full"
+    <NetworkGraph
+      className="w-full"
       label={t(K.label)}
       nodes={PEOPLE.map(([key, group]) => ({ key, group, label: t(K[key]) }))}
       links={LINKS}

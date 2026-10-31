@@ -24,7 +24,9 @@ export default function Composer() {
     <div className="grid w-full max-w-xl gap-2">
       <PromptInput
         onSubmit={(text) => setSent(text)}
-        onFilesDrop={(dropped) => setFiles((names) => [...names, ...dropped.map((file) => file.name)])}
+        onFilesDrop={(dropped) =>
+          setFiles((names) => [...names, ...dropped.map((file) => file.name)])
+        }
         attachments={
           files.length > 0
             ? files.map((name) => (

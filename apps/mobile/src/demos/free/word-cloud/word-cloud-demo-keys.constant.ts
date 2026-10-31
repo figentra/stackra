@@ -11,7 +11,27 @@ import { keys } from "@stackra/i18n";
 export const WORD_CLOUD_DEMO_KEYS = keys({
   demo_free: {
     word_cloud: {
-      reviews: ["label", "delivery", "fresh", "price", "friendly", "fast", "late", "coffee", "clean", "app", "parking", "cold", "coupon", "staff", "quality", "queue", "music", "breakfast", "portion"],
+      reviews: [
+        "label",
+        "delivery",
+        "fresh",
+        "price",
+        "friendly",
+        "fast",
+        "late",
+        "coffee",
+        "clean",
+        "app",
+        "parking",
+        "cold",
+        "coupon",
+        "staff",
+        "quality",
+        "queue",
+        "music",
+        "breakfast",
+        "portion",
+      ],
     },
   },
 });

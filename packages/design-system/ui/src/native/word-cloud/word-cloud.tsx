@@ -36,7 +36,9 @@ export function WordCloud({
   const { width, onLayout } = useCanvasSize();
   const layout = wordCloudLayoutOf(words, { width, height, isRtl });
   const paint = useChartPaint(
-    layout.words.map((placed) => placed.word.color ?? chartColorOf(undefined, placed.rank, palette)),
+    layout.words.map(
+      (placed) => placed.word.color ?? chartColorOf(undefined, placed.rank, palette),
+    ),
   );
   const spoken = [...words]
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts a copy built here; toSorted is ES2023 and the base lib is ES2022

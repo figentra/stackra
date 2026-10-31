@@ -49,7 +49,11 @@ export function Sources({
       }
       {...omitUndefined({ isExpanded, defaultExpanded, onExpandedChange, className })}
     >
-      <View accessibilityRole="list" accessibilityLabel={t(K.label)} className="flex-row flex-wrap gap-2">
+      <View
+        accessibilityRole="list"
+        accessibilityLabel={t(K.label)}
+        className="flex-row flex-wrap gap-2"
+      >
         {sources.map((source) => (
           <SourceChip key={source.key} source={source} />
         ))}

@@ -37,9 +37,21 @@ function valueOf(item: TreeDiagramItem): number | undefined {
  */
 export function treeLayoutOf(items: readonly TreeDiagramItem[], box: TreeBox): TreeLayout {
   const { width, height, padding = 8, labelRoom = 120, isRtl = false } = box;
-  const flat: { item: TreeDiagramItem; trail: string[]; depth: number; branch: number; parent: number }[] = [];
+  const flat: {
+    item: TreeDiagramItem;
+    trail: string[];
+    depth: number;
+    branch: number;
+    parent: number;
+  }[] = [];
   const isLone = items.length === 1;
-  const walk = (item: TreeDiagramItem, trail: string[], depth: number, branch: number, parent: number) => {
+  const walk = (
+    item: TreeDiagramItem,
+    trail: string[],
+    depth: number,
+    branch: number,
+    parent: number,
+  ) => {
     const at = flat.length;
     flat.push({ item, trail: [...trail, item.label], depth, branch, parent });
     (item.children ?? []).forEach((child, index) =>

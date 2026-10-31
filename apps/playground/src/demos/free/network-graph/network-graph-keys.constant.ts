@@ -9,5 +9,17 @@ import { keys } from "@stackra/i18n";
 
 /** The network_graph namespace's keys. */
 export const NETWORK_GRAPH_KEYS = keys({
-  network_graph: ["label", "sara", "omar", "lina", "khalid", "noura", "faisal", "huda", "yousef", "reem", "majed"],
+  network_graph: [
+    "label",
+    "sara",
+    "omar",
+    "lina",
+    "khalid",
+    "noura",
+    "faisal",
+    "huda",
+    "yousef",
+    "reem",
+    "majed",
+  ],
 });

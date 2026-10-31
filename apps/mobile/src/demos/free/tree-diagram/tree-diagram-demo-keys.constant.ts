@@ -11,7 +11,20 @@ import { keys } from "@stackra/i18n";
 export const TREE_DIAGRAM_DEMO_KEYS = keys({
   demo_free: {
     tree_diagram: {
-      org: ["label", "company", "operations", "riyadh", "jeddah", "technology", "platform", "mobile", "data", "sales", "retail", "wholesale"],
+      org: [
+        "label",
+        "company",
+        "operations",
+        "riyadh",
+        "jeddah",
+        "technology",
+        "platform",
+        "mobile",
+        "data",
+        "sales",
+        "retail",
+        "wholesale",
+      ],
     },
   },
 });

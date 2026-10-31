@@ -19,7 +19,10 @@ import { Text } from "#native/text/text";
 export function SourceMark({ source }: { readonly source: SourceItem }): ReactElement {
   const [isBroken, setBroken] = useState(false);
   const { href, letter } = sourceLinkOf(source);
-  const hidden = { accessibilityElementsHidden: true, importantForAccessibility: "no-hide-descendants" } as const;
+  const hidden = {
+    accessibilityElementsHidden: true,
+    importantForAccessibility: "no-hide-descendants",
+  } as const;
   if (href === undefined) {
     return (
       <View {...hidden}>
@@ -38,7 +41,10 @@ export function SourceMark({ source }: { readonly source: SourceItem }): ReactEl
     );
   }
   return (
-    <View {...hidden} className="size-3.5 items-center justify-center rounded-[var(--radius-pill)] bg-foreground">
+    <View
+      {...hidden}
+      className="size-3.5 items-center justify-center rounded-[var(--radius-pill)] bg-foreground"
+    >
       <Text type="caption" className="text-[0.7em] leading-none font-semibold text-background">
         {letter}
       </Text>

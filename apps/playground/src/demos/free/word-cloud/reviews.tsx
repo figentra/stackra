@@ -39,7 +39,8 @@ const COUNTS = [
 export default function Reviews() {
   const t = useCatalogueText(MESSAGES.en);
   return (
-    <WordCloud className="w-full"
+    <WordCloud
+      className="w-full"
       label={t(K.label)}
       words={COUNTS.map(([key, value]) => ({ text: t(K[key]), value }))}
     />

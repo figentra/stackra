@@ -10,6 +10,9 @@ import { keys } from "@stackra/i18n";
 /** The demos' keys. */
 export const REASONING_DEMO_KEYS = keys({
   demo_free: {
-    reasoning: { trace: ["summary", "search_label", "search", "compare_label", "compare", "check"], streaming: ["step"] },
+    reasoning: {
+      trace: ["summary", "search_label", "search", "compare_label", "compare", "check"],
+      streaming: ["step"],
+    },
   },
 });

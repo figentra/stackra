@@ -6,7 +6,13 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0302 (decisions 3 and 5);
  *          ADR 0060 (light, dark, RTL); STA-1371 (component gaps, owner approval 2026-10-31).
  */
-import { AttachmentCard, IconButton, PromptInput, Text, useCatalogueText } from "@stackra/ui/native";
+import {
+  AttachmentCard,
+  IconButton,
+  PromptInput,
+  Text,
+  useCatalogueText,
+} from "@stackra/ui/native";
 import { useState } from "react";
 import { View } from "react-native";
 

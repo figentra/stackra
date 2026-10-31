@@ -39,11 +39,22 @@ export function ChartExport({
   const [chart, setChart] = useState<View | null>(null);
   const shareImage = async () => {
     const image = await makeImageFromView({ current: chart });
-    if (image) await Share.share({ url: `data:image/png;base64,${image.encodeToBase64()}`, title: fileName });
+    if (image)
+      await Share.share({
+        url: `data:image/png;base64,${image.encodeToBase64()}`,
+        title: fileName,
+      });
   };
   const items = [
     ...(formats.includes("png")
-      ? [{ id: "png", label: t(K.share_png), icon: WIDGET_MENU_ICON.png, onPress: () => void shareImage().catch(() => undefined) }]
+      ? [
+          {
+            id: "png",
+            label: t(K.share_png),
+            icon: WIDGET_MENU_ICON.png,
+            onPress: () => void shareImage().catch(() => undefined),
+          },
+        ]
       : []),
     ...(formats.includes("csv") && data
       ? [
@@ -51,7 +62,10 @@ export function ChartExport({
             id: "csv",
             label: t(K.share_csv),
             icon: WIDGET_MENU_ICON.csv,
-            onPress: () => void Share.share({ message: chartCsvOf(data), title: `${fileName}.csv` }).catch(() => undefined),
+            onPress: () =>
+              void Share.share({ message: chartCsvOf(data), title: `${fileName}.csv` }).catch(
+                () => undefined,
+              ),
           },
         ]
       : []),

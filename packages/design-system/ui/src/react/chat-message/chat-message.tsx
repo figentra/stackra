@@ -33,7 +33,9 @@ export function ChatMessage({
   className,
 }: ChatMessageProps): ReactElement {
   const t = useUiText();
-  const author = <span className="sr-only">{authorLabel ?? t(from === "user" ? K.user : K.assistant)}</span>;
+  const author = (
+    <span className="sr-only">{authorLabel ?? t(from === "user" ? K.user : K.assistant)}</span>
+  );
   const body = isLoading ? <Shimmer /> : children;
   if (from === "user") {
     return (

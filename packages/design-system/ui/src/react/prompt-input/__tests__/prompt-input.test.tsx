@@ -39,7 +39,9 @@ describe("PromptInput (web)", () => {
   it("locks the text and offers Stop while streaming", () => {
     const onSubmit = vi.fn();
     const onStop = vi.fn();
-    render(<PromptInput onSubmit={onSubmit} onStop={onStop} status="streaming" defaultValue="Hi" />);
+    render(
+      <PromptInput onSubmit={onSubmit} onStop={onStop} status="streaming" defaultValue="Hi" />,
+    );
     fireEvent.keyDown(box(), { key: "Enter" });
     expect(onSubmit).not.toHaveBeenCalled();
     expect(box().readOnly).toBe(true);

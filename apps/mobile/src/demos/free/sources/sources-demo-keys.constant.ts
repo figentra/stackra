@@ -10,6 +10,9 @@ import { keys } from "@stackra/i18n";
 /** The demos' keys. */
 export const SOURCES_DEMO_KEYS = keys({
   demo_free: {
-    sources: { answer: ["text", "zatca", "zatca_note", "gazette", "handbook"], chips: ["before", "after"] },
+    sources: {
+      answer: ["text", "zatca", "zatca_note", "gazette", "handbook"],
+      chips: ["before", "after"],
+    },
   },
 });
