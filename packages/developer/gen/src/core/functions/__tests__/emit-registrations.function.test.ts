@@ -396,3 +396,69 @@ describe("emitRegistrations for permissions and roles (STA-1702)", () => {
     );
   });
 });
+
+describe("emitRegistrations for a hosted package's permissions and roles (STA-1710)", () => {
+  const content =
+    registrationsOf({
+      ...COMMERCE_IR,
+      dependencies: [
+        {
+          package: "@acme/records-kit",
+          manifest: {
+            member: "records_kit",
+            package: "@acme/records-kit",
+            version: "0.1.0",
+            permissions: [
+              {
+                key: "records_kit.record.purge",
+                risk: "L2",
+                class: "RecordPermissions",
+                module: "records_kit",
+                member: "purge",
+                file: "src/node/access/record.permissions.ts",
+                system: true,
+              },
+              {
+                key: "records_kit.record.read_medical",
+                risk: "L3",
+                class: "RecordPermissions",
+                module: "records_kit",
+                member: "readMedical",
+                file: "src/node/access/record.permissions.ts",
+              },
+              // a manifest written before STA-1710: no member or file, the verb from the key
+              { key: "legacy_kit.note.read", risk: "L0", class: "NotePermissions" },
+            ],
+            roles: [
+              {
+                key: "records_kit.nurse",
+                class: "NurseRole",
+                module: "records_kit",
+                file: "src/node/access/nurse.role.ts",
+              },
+            ],
+          },
+        },
+      ],
+    }) ?? "";
+
+  it("registers each hosted permission set by its entry, keyed by its statics", () => {
+    expect(content).toContain(
+      '  { type: RecordPermissions, keys: { purge: "records_kit.record.purge", readMedical: "records_kit.record.read_medical" } },',
+    );
+    expect(content).toMatch(
+      /import \{[^}]*RecordPermissions[^}]*\} from "@acme\/records-kit\/node";/,
+    );
+    expect(content).toContain(
+      '  { type: NotePermissions, keys: { read: "legacy_kit.note.read" } },',
+    );
+  });
+
+  it("registers each hosted module role after every permission", () => {
+    expect(content).toContain('  { type: NurseRole, key: "records_kit.nurse" },');
+    expect(content).toMatch(/import \{[^}]*NurseRole[^}]*\} from "@acme\/records-kit\/node";/);
+    expect(content.indexOf("registerRoles([")).toBeGreaterThan(
+      content.indexOf("registerPermissions(["),
+    );
+  });
+});

@@ -8,7 +8,8 @@
  *          class it reacts to, the relay listeners, the change consumers with the models their `@ConsumesChanges` names, the outbound webhooks, the job actions for the queue
  *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
  *          the `@Searchable` models, each report with its source model (`registerReportSources`, ADR 0470), and the
- *          locked key of every `Permission` static and module role (`registerPermissions`, then `registerRoles`; without
+ *          locked key of every `Permission` static and module role, the hosted packages' included (`registerPermissions`,
+ *          then `registerRoles`; without
  *          them the decision point cannot tell a system or restricted permission, and a module role holds nothing,
  *          STA-1702).
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
@@ -25,16 +26,14 @@
  *                     cdc2 (`@ConsumesChanges` replaces hand `registerChangeConsumers` calls).
  */
 import type { StackraManifest } from "@stackra/contracts";
-import { snakeCase } from "@stackra/support";
+import { camelCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
-import { PERMISSION_LEVEL } from "#core/constants/permission-level.constant";
 import { PLATFORM_PARTNERS } from "#core/constants/platform-partners.constant";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
-import { permissionKey } from "#core/functions/permission-key.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
 import type { ClassRef } from "#core/types/class-ref.type";
@@ -328,34 +327,38 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       ),
   );
 
-  // Every Permission static by its locked key (the manifest's), then each module role, whose grants resolve through
-  // those keys, so `registerPermissions` is written first (STA-1702).
+  // Every Permission static by its locked key, own and hosted packages' (the manifest merges both), then each module
+  // role, whose grants resolve through those keys, so `registerPermissions` is written first (STA-1702, STA-1710).
+  const sets = new Map<string, { readonly entry: Entry; readonly keys: string[] }>();
+  for (const entry of (manifest.permissions ?? []) as readonly Entry[]) {
+    const id = `${String(entry["from"] ?? "")}#${String(entry["class"])}`;
+    const key = String(entry["key"]);
+    // a manifest written before STA-1710 has no `member`: the static is the key's verb in camelCase
+    const member =
+      typeof entry["member"] === "string"
+        ? entry["member"]
+        : camelCase(key.split(".").at(-1) ?? "");
+    const set = sets.get(id) ?? { entry, keys: [] };
+    set.keys.push(`${member}: ${JSON.stringify(key)}`);
+    sets.set(id, set);
+  }
   call(
     "registerPermissions",
     "@stackra/iam",
-    ir.classes
-      .filter((declared) => declared.kind === "permissions")
-      .map((declared) => {
-        const keys = Object.entries(declared.statics)
-          .filter(([, source]) => PERMISSION_LEVEL.test(source.replaceAll(/\s+/g, "")))
-          .map(
-            ([verb]) =>
-              `${verb}: ${JSON.stringify(permissionKey(declared.module, declared.name, verb))}`,
-          );
-        return keys.length === 0
-          ? undefined
-          : `{ type: ${ref({ name: declared.name, from: declared.importPath })}, keys: { ${keys.join(", ")} } }`;
-      }),
+    [...sets.values()].map(({ entry, keys }) => {
+      const type = classOf(entry);
+      return type === undefined ? undefined : `{ type: ${type}, keys: { ${keys.join(", ")} } }`;
+    }),
   );
   call(
     "registerRoles",
     "@stackra/iam",
-    ir.classes
-      .filter((declared) => declared.kind === "role")
-      .map(
-        (declared) =>
-          `{ type: ${ref({ name: declared.name, from: declared.importPath })}, key: ${JSON.stringify(`${declared.module}.${snakeCase(declared.name.replace(/Role$/, ""))}`)} }`,
-      ),
+    ((manifest["roles"] ?? []) as readonly Entry[]).map((entry) => {
+      const type = classOf(entry);
+      return type === undefined
+        ? undefined
+        : `{ type: ${type}, key: ${JSON.stringify(entry["key"])} }`;
+    }),
   );
 
   if (loads.length === 0 && calls.length === 0) return undefined;

@@ -69,6 +69,7 @@ import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
+import { roleKey } from "#core/functions/role-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
@@ -108,6 +109,7 @@ const MERGED_SECTIONS = [
   "agents",
   "passes",
   "entitlements",
+  "roles",
 ] as const;
 
 /** Whether `value` is a class written as a value. */
@@ -178,14 +180,27 @@ export function buildManifest(ir: MemberIR): {
       claim(key, declared);
       risks.set(key, level[1] ?? "L0");
       // `class` lets a consumer's generated client name the set as the producer does (`ReviewPermissions`, STA-1296).
+      // `module`, `member` and `file` let a host import the set and register the key at boot (STA-1710).
       permissions.push({
         key,
         risk: level[1] ?? "L0",
         class: declared.name,
+        module: declared.module,
+        member: verb,
+        file: declared.file,
         ...(level[2] === ".system()" ? { system: true } : {}),
       });
     }
   }
+  // Module roles by their derived key, so a host registers its hosted packages' roles too (STA-1710).
+  const moduleRoles: Entry[] = ir.classes
+    .filter((declared) => declared.kind === "role")
+    .map((declared) => ({
+      key: roleKey(declared.module, declared.name),
+      class: declared.name,
+      module: declared.module,
+      file: declared.file,
+    }));
   for (const dependency of ir.dependencies)
     for (const permission of dependency.manifest.permissions ?? [])
       risks.set(permission.key, permission.risk);
@@ -980,6 +995,7 @@ export function buildManifest(ir: MemberIR): {
     agents,
     passes,
     entitlements,
+    roles: moduleRoles,
   };
   if (ir.layout !== "package")
     for (const dependency of ir.dependencies) {

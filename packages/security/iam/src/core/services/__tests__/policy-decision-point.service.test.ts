@@ -560,6 +560,23 @@ describe("PolicyDecisionPointService (restricted, break-glass, dimensions, field
     );
   });
 
+  it("holds the system and restricted rules only for registered sets, so a host registers its hosted ones (STA-1710)", async () => {
+    const owner = pdpOver({
+      grants: [{ role: SystemRole.Owner, scope: ROOT }],
+      roles: { owner: ["*"] },
+    });
+    const self = pdpOver({
+      grants: [{ role: "nurse", scope: ROOT, grantedBy: staff.id }],
+      roles: { nurse: [MEDICAL] },
+    });
+    expect(await owner.check(staff, "orders.order.expire")).toBe(false);
+    expect(await self.check(staff, MEDICAL)).toBe(false);
+    // the same keys with nothing registered: a role grants the system one and a self-grant counts
+    PERMISSION_REGISTRY.clear();
+    expect(await owner.check(staff, "orders.order.expire")).toBe(true);
+    expect(await self.check(staff, MEDICAL)).toBe(true);
+  });
+
   it("allows through an open break-glass grant, inside its window and past breakable denies only", async () => {
     const glass = {
       principal: staff.id,
