@@ -2686,7 +2686,6 @@ const NOW_ALLOWED = [
   "pnpm bot:gh api -X PATCH repos/figentra/stackra/pulls/1 -f title=x",
   "pnpm bot:gh repo edit --enable-auto-merge",
   "pnpm bot:gh variable set X",
-  "pnpm bot:gh secret set X",
   "git config user.email t@t",
   "encore env set prod",
   "encore env create staging",
@@ -2704,6 +2703,10 @@ test("STA-400: the categorical asks outside HUMAN_ASKS are allowed, main thread 
     assert.equal(decision(c, root), "allow", c);
     assert.equal(decision(c, root, "Explore", "a1"), "allow", c);
   }
+  // The deploy permission (2026-10-31): agents never write a repo or environment secret; the owner does.
+  const secretSet = "pnpm bot:gh secret set X";
+  assert.equal(decision(secretSet, root), "deny", secretSet);
+  assert.equal(decision(secretSet, root, "Explore", "a1"), "deny", secretSet);
 });
 
 // STA-400: a search pattern that names a guarded command is prose, not a command.
@@ -2876,7 +2879,6 @@ test("STA-400 review: deploy and release asks see through every runner and versi
 test("STA-400 review: the other deletes and deploys ask too", () => {
   for (const c of [
     "pnpm bot:gh variable delete X",
-    "pnpm bot:gh secret delete X",
     "pnpm bot:gh -- issue delete 4 --yes",
     "pnpm bot:gh -- label delete bug --yes",
     "pnpm bot:gh -- api -X=DELETE repos/figentra/stackra/git/refs/tags/x",
@@ -2894,6 +2896,8 @@ test("STA-400 review: the other deletes and deploys ask too", () => {
     "infisical dynamic-secrets delete x",
   ])
     assert.equal(decision(c, root), "ask", c);
+  // The deploy permission (2026-10-31): deleting a repo or environment secret is the owner's, a deny.
+  assert.equal(decision("pnpm bot:gh secret delete X", root), "deny");
   for (const c of [
     "pnpm bot:gh -- workflow run ci.yml",
     "pnpm bot:gh -- workflow list",

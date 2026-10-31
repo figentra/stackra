@@ -1079,5 +1079,5 @@ test("deploys are denied in OpenCode, production and staging alike", () => {
     "pnpm runway deploy cloudflare-workers --env staging",
     "pnpm bot:gh -- workflow run deploy-static.yml -f environment=staging",
   ])
-    expect(decideCommand(c).decision).toBe("deny");
+    assert.equal(kind(c), "deny", c);
 });
