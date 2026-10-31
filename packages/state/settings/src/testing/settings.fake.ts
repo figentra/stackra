@@ -19,11 +19,18 @@ import { settingsKeyOf } from "#core/functions/settings-key-of.function";
 import type { SettingsPatch } from "#testing/types/settings-patch.type";
 import type { SettingsWrite } from "#testing/types/settings-write.type";
 
-/** A patch as flat paths, each field of a section as `<section>.<field>`. */
+/**
+ * A patch as flat paths, each field of a section as `<section>.<field>`. Only a plain object is a section: an array
+ * (or a date) is one value, never `<field>.0` paths.
+ */
 function flatten(patch: object): Record<string, SettingValue> {
   const out: Record<string, SettingValue> = {};
   for (const [name, value] of Object.entries(patch))
-    if (typeof value === "object" && value !== null)
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      Object.getPrototypeOf(value) === Object.prototype
+    )
       for (const [field, inner] of Object.entries(value))
         out[`${name}.${field}`] = inner as SettingValue;
     else out[name] = value as SettingValue;
