@@ -12,6 +12,7 @@ import { Module } from "@stackra/container";
 import { createTestingModule, registerWiring } from "@stackra/container/testing";
 import { Clock } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { EventOutbox } from "#contracts/index";
 import { DomainEvent, EventBus, Listener, registerListeners } from "#core/index";
@@ -111,7 +112,12 @@ describe("EVENTS_TESTING_PLUGIN", () => {
       root: FixtureModule,
       bindings: [{ module: "fixture", provide: NeedsMissingListener, deps: [Missing] }],
     });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const app = await createTestingModule(FixtureModule).compile();
+    expect(warn).toHaveBeenCalledWith(
+      "events testing: skipped NeedsMissingListener: nothing binds Missing",
+    );
+    warn.mockRestore();
     await dispatch(new StockLow());
     await drainEvents();
     expect(app.listeners.calls(NeedsMissingListener)).toHaveLength(0);

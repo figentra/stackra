@@ -50,16 +50,24 @@ function callsOf(harness: EventsHarness, type: AnyClass<Listener>): readonly Lis
 }
 
 /**
- * Whether `app` can build `type`: false when a dependency has no binding, as for a listener of a module the test did
- * not boot (STA-1740); any other error building it still throws.
+ * The listener `app` builds for `type`, or undefined, with a warning naming the listener and the class, when a
+ * dependency has no binding, as for a listener of a module the test did not boot (STA-1740); any other error building
+ * it still throws.
  */
-function buildable(app: TestingApp, type: AnyClass): boolean {
+function built(app: TestingApp, type: AnyClass): object | undefined {
   try {
-    app.get(type);
-    return true;
+    return app.get(type);
   } catch (error) {
-    if (error instanceof UnboundTokenError || error instanceof UnresolvedPortError) return false;
-    throw error;
+    const missing =
+      error instanceof UnboundTokenError
+        ? error.token
+        : error instanceof UnresolvedPortError
+          ? error.port
+          : undefined;
+    if (missing === undefined) throw error;
+    // oxlint-disable-next-line no-console -- reason: a skipped listener must stay visible, so a wiring bug cannot hide in a test
+    console.warn(`events testing: skipped ${type.name}: nothing binds ${missing.name}`);
+    return undefined;
   }
 }
 
@@ -76,9 +84,16 @@ export const EVENTS_TESTING_PLUGIN: TestingPlugin = {
   app(app: TestingApp) {
     const clock = app.get(Clock);
     const bus = app.has(EventBus) ? app.get(EventBus) : new EventBus(clock);
+    const instances = new Map<AnyClass, object>();
     bus.connect({
-      has: (type) => app.has(type) && buildable(app, type),
-      get: (type) => app.get(type),
+      has: (type) => {
+        const instance = app.has(type) ? built(app, type) : undefined;
+        // kept so `get` hands back this instance: a transient listener is built once
+        if (instance !== undefined) instances.set(type, instance);
+        return instance !== undefined;
+      },
+      get: <T extends object>(type: AnyClass<T>) =>
+        (instances.get(type) as T | undefined) ?? app.get(type),
     });
     const outbox = app.has(EventOutbox) ? app.get(EventOutbox) : new OutboxFake();
     const harness: EventsHarness = {
