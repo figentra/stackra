@@ -30,6 +30,8 @@ describe(publishedEvents, () => {
       clock,
       inbox: [],
       seen: new Set(),
+      app: {} as never,
+      scopes: new Map(),
     };
     const low = new StockLow();
     const paid = new OrderPaid();
