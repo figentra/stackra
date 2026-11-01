@@ -28,6 +28,13 @@ icon: "rocket"
     pnpm mobile    # iOS simulator (needs Xcode)
     ```
   </Step>
+  <Step title="Add a service">
+    ```bash
+    stackra new service demo --area app --summary "Demo."   # pnpm new service demo ... is its alias
+    pnpm install
+    cd services/demo && stackra gen && stackra test
+    ```
+  </Step>
   <Step title="Verify before you push">
     ```bash
     pnpm verify

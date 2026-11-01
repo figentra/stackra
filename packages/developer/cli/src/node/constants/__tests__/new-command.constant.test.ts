@@ -5,17 +5,31 @@
  *          `catalog:stackra` versions, `--over` (writes only missing files, diffs authored ones, keeps runway.yaml and
  *          CHANGELOG.md), and the refusals of an unknown kind, a bad name or scope, a missing category or area, and
  *          a folder that exists without `--over`; a template kind (`app:docs`) rendered from tools/scaffold/templates.
+ *          A service is complete (root module, its test, no tool config, `checkService` clean), `--data` adds the
+ *          example module and `test:int`, `--over` never writes or diffs under `src/`, `--repo` into a folder with no
+ *          workspace also writes the workspace root (and into an existing one writes none), the next line is
+ *          `pnpm install && stackra gen && stackra test`, and the old `services/service` template and its kind are gone.
  * Boundary: test only; writes a throwaway workspace in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (consequences); ADR 0294 (rule R12); ADR 0349; STA-1210.
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { checkService, type PackageManifest } from "@stackra/repo-checks/node";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { NEW_COMMAND } from "#node/constants/new-command.constant";
+import { SCAFFOLD_KINDS } from "#node/scaffold/constants/scaffold-kinds.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { captureIo } from "#node/functions/capture-io.function";
 import type { CliContext } from "#node/types/cli-context.type";
@@ -49,6 +63,12 @@ const run = (positionals: readonly string[], values: CliContext["values"] = {}) 
 /** The package name written at a member path. */
 const nameOf = (path: string) =>
   (JSON.parse(readFileSync(join(root, path, "package.json"), "utf8")) as { name: string }).name;
+
+/** Every file under `folder`, relative and `/`-separated. */
+const filesUnder = (folder: string): string[] =>
+  readdirSync(folder, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => join(entry.parentPath, entry.name).slice(folder.length + 1));
 
 describe("NEW_COMMAND", () => {
   it("creates a package in the v3 shape", async () => {
@@ -96,6 +116,77 @@ describe("NEW_COMMAND", () => {
       "defineService({ area: ApiArea.App })",
     );
     expect(existsSync(join(root, "services/orders/runway.yaml"))).toBe(true);
+  });
+
+  it("creates a complete service: root module, its test, no tool config, a clean checkService", async () => {
+    const { code, output } = run(["service", "demo"], { area: "app", summary: "Demo." });
+    expect(await code).toBe(0);
+    const folder = join(root, "services/demo");
+    const files = filesUnder(folder);
+    expect(files).toEqual(
+      expect.arrayContaining(["src/demo.module.ts", "src/__tests__/demo.module.test.ts"]),
+    );
+    expect(files.filter((file) => /^(vitest|tsdown)[^/]*config/.test(file))).toEqual([]);
+    const pkg = JSON.parse(
+      readFileSync(join(folder, "package.json"), "utf8"),
+    ) as PackageManifest & {
+      scripts: Record<string, string>;
+    };
+    expect(pkg.scripts["test:int"]).toBeUndefined();
+    expect(checkService({ dir: "services/demo", pkg, paths: files })).toEqual([]);
+    expect(output()).toContain("pnpm install && stackra gen && stackra test");
+    // The workspace already existed: nothing of it is written.
+    expect(existsSync(join(root, ".npmrc"))).toBe(false);
+  });
+
+  it("adds the example module and test:int with --data", async () => {
+    expect(await run(["service", "demo"], { area: "app", data: true }).code).toBe(0);
+    const folder = join(root, "services/demo");
+    expect(filesUnder(folder)).toEqual(
+      expect.arrayContaining([
+        "src/modules/notes/models/note.model.ts",
+        "src/modules/notes/database/migrations/0001-create-notes.migration.ts",
+        "src/modules/notes/database/migrations/__tests__/0001-create-notes.migration.test.ts",
+        "src/modules/notes/database/migrations/__tests__/0001-create-notes.migration.int.test.ts",
+      ]),
+    );
+    const pkg = JSON.parse(readFileSync(join(folder, "package.json"), "utf8")) as {
+      scripts: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+    expect(pkg.scripts["test:int"]).toBe("stackra test --tier int");
+    expect(pkg.devDependencies["@stackra/testing"]).toBe("workspace:*");
+    expect(pkg.devDependencies["testcontainers"]).toBe("catalog:");
+  });
+
+  it("writes the workspace root when --repo names a folder with none, never over an existing one", async () => {
+    const fresh = join(root, "fresh");
+    mkdirSync(fresh);
+    const { code, output } = run(["service", "demo"], { area: "app", repo: "../fresh" });
+    expect(await code).toBe(0);
+    expect(filesUnder(fresh)).toEqual(
+      expect.arrayContaining([
+        "package.json",
+        "pnpm-workspace.yaml",
+        ".npmrc",
+        "services/demo/package.json",
+      ]),
+    );
+    expect(readFileSync(join(fresh, "pnpm-workspace.yaml"), "utf8")).toMatch(
+      /stackra:\n\s+"@stackra\/app": \d+\.\d+\.\d+/,
+    );
+    expect(readFileSync(join(fresh, ".npmrc"), "utf8")).toBe(
+      "@stackra:registry=https://npm.stackra.figentra.com/\n",
+    );
+    const pkg = JSON.parse(readFileSync(join(fresh, "services/demo/package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    expect(pkg.dependencies["@stackra/app"]).toBe("catalog:stackra");
+    expect(output()).toContain("wrote pnpm-workspace.yaml");
+    // A second service finds the root and leaves it alone.
+    const before = readFileSync(join(fresh, "pnpm-workspace.yaml"), "utf8");
+    expect(await run(["service", "other"], { area: "app", repo: "../fresh" }).code).toBe(0);
+    expect(readFileSync(join(fresh, "pnpm-workspace.yaml"), "utf8")).toBe(before);
   });
 
   it("names a service from the root runway product key, in the template shape", async () => {
@@ -150,8 +241,23 @@ describe("NEW_COMMAND", () => {
     expect(readFileSync(join(folder, "src/modules/orders/orders.module.ts"), "utf8")).toBe(
       "// authored\n",
     );
+    // `src/` is create-only: the root module and its test are neither written nor diffed under --over.
+    writeFileSync(join(folder, "src/orders.module.ts"), "// edited\n");
+    const again = run(["service", "orders"], { area: "app", over: true });
+    expect(await again.code).toBe(0);
+    expect(readFileSync(join(folder, "src/orders.module.ts"), "utf8")).toBe("// edited\n");
+    expect(again.output()).not.toContain("src/orders");
+    expect(again.output()).not.toContain("src/__tests__");
+    expect(existsSync(join(folder, "src/__tests__/orders.module.test.ts"))).toBe(false);
     expect(existsSync(join(folder, "CHANGELOG.md"))).toBe(false);
     expect(existsSync(join(folder, "stackra.config.ts"))).toBe(true);
+  });
+
+  it("has one service path: the old service template and its scaffold kind are gone", async () => {
+    const core = join(import.meta.dirname, "../../../../../../..");
+    expect(existsSync(join(core, "tools/scaffold/templates/services"))).toBe(false);
+    expect(Object.keys(SCAFFOLD_KINDS)).not.toContain("service");
+    expect(NEW_COMMAND.usage).toContain("service");
   });
 
   it("creates a seed pack with its profiles", async () => {

@@ -181,6 +181,22 @@ describe("resolveTool", () => {
     });
   });
 
+  it("runs the generated int config for a package or service, and refuses without it or in an app", () => {
+    expect(() => resolveTool("test", member("service"), { tier: "int" })).toThrow(
+      "no .stackra/vitest.int.config.ts",
+    );
+    generated("vitest.int.config.ts");
+    expect(resolveTool("test", member("service"), { tier: "int" })).toEqual({
+      command: "vitest",
+      args: ["run", "--config", ".stackra/vitest.int.config.ts"],
+      cwd: root,
+    });
+    expect(resolveTool("test", member("package"), { tier: "int" }).command).toBe("vitest");
+    expect(() => resolveTool("test", member("app", ["web"]), { tier: "int" })).toThrow(
+      "integration tests run in a package or a service",
+    );
+  });
+
   it("refuses an unknown target or tier as a usage error", () => {
     expect(() => resolveTool("dev", member("app", ["web"]), { target: "ios" })).toThrow(
       CliUsageError,

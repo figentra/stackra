@@ -10,7 +10,6 @@ import type { ScaffoldKind } from "#node/scaffold/types/scaffold-kind.type";
 
 /** Kind to its template dir and destination (relative to the target repo root). */
 export const SCAFFOLD_KINDS: Readonly<Record<string, ScaffoldKind>> = {
-  service: { tpl: "services/service", dest: (n) => `services/${n}`, runtimes: ["node"] },
   package: {
     tpl: "packages/package",
     dest: (n, c) => `packages/${c}/${n}`,

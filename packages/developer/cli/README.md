@@ -38,7 +38,7 @@ and `yaml`.
 | `stackra smoke --env <e> [--only <targets>]`              | after a preview deploy: Playwright on each web surface, Maestro on the given mobile builds; exit 1 blocks promotion (STA-265)   |
 | `stackra start`                                           | gen, then `vite preview` of an app's web build                                                                                  |
 | `stackra typecheck`                                       | gen, then `tsc --noEmit`                                                                                                        |
-| `stackra test [--tier unit\|e2e]`                         | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)                                               |
+| `stackra test [--tier unit\|int\|e2e]`       | gen, then vitest (unit, or integration through `.stackra/vitest.int.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e) |
 | `stackra lint`                                            | `oxlint .`                                                                                                                      |
 | `stackra check [flags]`                                   | the quality gate: every check phase in order at the workspace root (see below)                                                  |
 | `stackra validate`                                        | `check --only config,structure,docs,catalogues,spec`                                                                            |
@@ -234,8 +234,17 @@ catalog (`workspace:*` in this repository). The published name follows ADR 0349 
 
 `--over` regenerates over an existing member: it writes only the files that are missing and prints a line diff for
 each authored file that differs from the template, without writing it. It never writes or diffs `CHANGELOG.md` or an
-existing `runway.yaml` (ports and sizes are authored), and the templates write nothing under `src/`, so
-`src/modules/` and an authored root module are never touched.
+existing `runway.yaml` (ports and sizes are authored), and writes nothing under `src/` (the root module, its test and
+`--data`'s example module are written on create only), so `src/modules/` and an authored root module are never touched.
+
+A service is complete on creation: `stackra new service demo --area app --summary "Demo."`, then `pnpm install`, then
+`stackra gen` and `stackra test` in the member, with no hand edit and no tool config written. It gets the root module
+`src/<name>.module.ts` and one `createTestingModule` test. `--data` adds the database test peers, `@stackra/testing`, an
+example module (`src/modules/notes/`: model, migration, a PGlite unit test, one `.int.test.ts`) and
+`"test:int": "stackra test --tier int"`; gen writes `.stackra/vitest.int.config.ts` for a member with an int test.
+`--repo <path>` names the workspace for every kind; a service written into a folder with no `pnpm-workspace.yaml` also
+writes a minimal workspace root (`package.json`, `pnpm-workspace.yaml` with the catalogs it names and `stackra` pinned to
+this CLI's version, and an `.npmrc` for the Stackra registry, no token). An existing root is never overwritten.
 
 ## Settings packs
 
@@ -286,8 +295,8 @@ are compared; a declared package's tables are its own models'.
 not attach the provenance bundle; the release workflow does (stackra-185). `stackra whoami` (entitlements) is not
 built.
 
-`stackra db structure`, `db diff --write` and `seed` are not built yet (ADR 0159 note). `stackra new` makes
-packages, services and seed packs; app kinds stay with `pnpm new` until their templates move here. `structure`
+`stackra db structure` and `db diff --write` are not built yet (ADR 0159 note). `stackra new` makes
+packages, services and seed packs, and renders the template kinds (tooling and apps) through its `scaffold` function. `structure`
 (the docs page), `doctor` and `agents setup` move in from `tools/scripts` and their owning packages as those are built
 (ADR 0282 consequences). Runway deploy locks for a settings apply are runway's (STA-779 hand-off). Figentra-internal
 operations never ship here (ADR 0282 decision 4).
