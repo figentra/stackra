@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0470 (decisions 1 and 2).
  */
-import type { Json } from "@stackra/contracts";
+import type { ActorKind, Json } from "@stackra/contracts";
 
 import type { ReportDimension } from "#core/types/report-dimension.type";
 import type { ReportMeasure } from "#core/types/report-measure.type";
@@ -28,4 +28,7 @@ export interface ReportDeclaration {
 
   /** The permission as written; absent when none. */
   readonly permission?: unknown;
+
+  /** The actor kinds its generated query takes, as written; absent for the default (`User`, `Agent`). */
+  readonly actors?: readonly ActorKind[];
 }
