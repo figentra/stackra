@@ -11,6 +11,7 @@
 /** The kind codes of bindings. */
 export const BINDING_KINDS: readonly string[] = Object.freeze([
   "action",
+  "approval_condition",
   "bridge",
   "controller",
   "driver",

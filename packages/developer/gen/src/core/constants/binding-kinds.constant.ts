@@ -13,6 +13,7 @@
 /** The kind codes that are container bindings. */
 export const BINDING_KINDS: readonly string[] = Object.freeze([
   "action",
+  "approval_condition",
   "agent",
   "controller",
   "explorer",

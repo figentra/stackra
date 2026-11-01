@@ -16,6 +16,7 @@
 /** Kind base name to kind code. */
 export const KIND_BASES: Readonly<Record<string, string>> = Object.freeze({
   Action: "action",
+  ApprovalCondition: "approval_condition",
   Agent: "agent",
   AnalyticsEvent: "analytics_event",
   Block: "block",

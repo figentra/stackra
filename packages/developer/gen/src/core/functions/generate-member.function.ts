@@ -48,6 +48,7 @@ import { checkConventions } from "#core/functions/check-conventions.function";
 import { checkBlindIndexes } from "#core/functions/check-blind-indexes.function";
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 import { checkModelScope } from "#core/functions/check-model-scope.function";
+import { checkApproval } from "#core/functions/check-approval.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
 import { checkSearchableDrift } from "#core/functions/check-searchable-drift.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
@@ -169,6 +170,7 @@ export function generateMember(
     ...checkEncryptedFields(ir),
     ...checkBlindIndexes(ir),
     ...checkModelScope(ir),
+    ...checkApproval(ir),
     ...checkQueryCache(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
