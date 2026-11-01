@@ -3689,7 +3689,7 @@
         "height": "The plot's height in pixels; 320 by default.",
         "label": "The chart's accessible name and the data table's caption, such as \"Who works with whom\".",
         "links": "The links; links to unknown nodes are left out.",
-        "nodes": "The nodes.",
+        "nodes": "The nodes to draw.",
         "palette": "`accent` steps (the default) or the `categorical` set, by group or node position.",
         "valueFormat": "How values are written; plain numbers in the locale by default."
       }
@@ -4732,7 +4732,7 @@
     "scheduler": {
       "Scheduler": {
         "EventChip": {
-          "event": "The event.",
+          "event": "The event to show.",
           "isCompact": "True for a one-line chip (month and all-day rows).",
           "onPress": "Called on a press; without it the chip is not a button.",
           "state": "The shared state, for the event's time and name.",
@@ -5490,7 +5490,7 @@
     "sources": {
       "SourceChip": {
         "className": "Styles the root.",
-        "source": "The source."
+        "source": "The source the chip cites."
       },
       "Sources": {
         "className": "Styles the root.",

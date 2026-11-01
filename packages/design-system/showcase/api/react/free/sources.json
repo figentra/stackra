@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "ed1120d177c48a40",
+    "hash": "ea06b396763e62c5",
     "propsFiles": [
       "ui/src/react/sources/source-chip.props.ts",
       "ui/src/react/sources/sources.props.ts"
@@ -62,7 +62,7 @@
       "name": "SourceChip",
       "props": [
         {
-          "description": "The source.",
+          "description": "The source the chip cites.",
           "name": "source",
           "required": true,
           "source": "stackra",

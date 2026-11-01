@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "4f3d2836a368eb12",
+    "hash": "39e27075897a3f46",
     "propsFiles": ["ui/src/react/network-graph/network-graph.props.ts"]
   },
   "importLine": "import { NetworkGraph } from \"@stackra/ui/react\";",
@@ -10,7 +10,7 @@
       "name": "NetworkGraph",
       "props": [
         {
-          "description": "The nodes.",
+          "description": "The nodes to draw.",
           "name": "nodes",
           "required": true,
           "source": "stackra",

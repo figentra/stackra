@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "d39e13e62fa66485",
+    "hash": "9a2827b0694da431",
     "propsFiles": [
       "ui/src/react/scheduler/scheduler-event-chip.props.ts",
       "ui/src/react/scheduler/scheduler.props.ts"
@@ -134,7 +134,7 @@
       "name": "Scheduler.EventChip",
       "props": [
         {
-          "description": "The event.",
+          "description": "The event to show.",
           "name": "event",
           "required": true,
           "source": "stackra",
