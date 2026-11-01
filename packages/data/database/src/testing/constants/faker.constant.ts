@@ -47,7 +47,7 @@ function read(_target: object, key: string | symbol): unknown {
 }
 
 /** Faker with public ids. */
-export const FAKER: Faker = new Proxy({} as Faker, {
+export const FAKER: Faker = new Proxy<Faker>({} as Faker, {
   get: read,
   has: (_target, key) => key in resolve(),
 });

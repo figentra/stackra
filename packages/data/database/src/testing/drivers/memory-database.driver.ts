@@ -26,6 +26,8 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
+import type { Extension, Extensions } from "@electric-sql/pglite";
+import type { vector } from "@electric-sql/pglite-pgvector";
 import { RequestContext, TransactionContext } from "@mikro-orm/core";
 import type * as PgliteOrm from "@mikro-orm/pglite";
 import type { MikroORM, PgliteConnection } from "@mikro-orm/pglite";
@@ -53,21 +55,19 @@ const MIGRATIONS_FOLDER = join(".stackra", "migrations");
 const EXTENSIONS = ["vector", "ltree", "pg_trgm", "citext", "pgcrypto"] as const;
 
 /** What PGlite and the ORM driver need, loaded together on first use and kept. */
-let peers:
-  | { readonly orm: typeof PgliteOrm; readonly extensions: Record<string, unknown> }
-  | undefined;
+let peers: { readonly orm: typeof PgliteOrm; readonly extensions: Extensions } | undefined;
 
 /** Loads PGlite, its contrib extensions, pgvector and the ORM driver; none is loaded before a database is used. */
 function loadPeers(): NonNullable<typeof peers> {
   peers ??= {
     orm: requireTestPeer<typeof PgliteOrm>("@mikro-orm/pglite"),
     extensions: {
-      vector: requireTestPeer<{ vector: unknown }>("@electric-sql/pglite-pgvector").vector,
-      ltree: requireTestPeer<{ ltree: unknown }>("@electric-sql/pglite/contrib/ltree").ltree,
-      pg_trgm: requireTestPeer<{ pg_trgm: unknown }>("@electric-sql/pglite/contrib/pg_trgm")
+      vector: requireTestPeer<{ vector: typeof vector }>("@electric-sql/pglite-pgvector").vector,
+      ltree: requireTestPeer<{ ltree: Extension }>("@electric-sql/pglite/contrib/ltree").ltree,
+      pg_trgm: requireTestPeer<{ pg_trgm: Extension }>("@electric-sql/pglite/contrib/pg_trgm")
         .pg_trgm,
-      citext: requireTestPeer<{ citext: unknown }>("@electric-sql/pglite/contrib/citext").citext,
-      pgcrypto: requireTestPeer<{ pgcrypto: unknown }>("@electric-sql/pglite/contrib/pgcrypto")
+      citext: requireTestPeer<{ citext: Extension }>("@electric-sql/pglite/contrib/citext").citext,
+      pgcrypto: requireTestPeer<{ pgcrypto: Extension }>("@electric-sql/pglite/contrib/pgcrypto")
         .pgcrypto,
     },
   };
@@ -111,7 +111,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       discovery: { inferDefaultValues: false, warnWhenNoEntities: false },
       allowGlobalContext: false,
       ensureDatabase: false,
-      // reason: the loaded extensions are typed by their own packages, which the member may not have installed
+      // reason: PGlite's Extensions and the ORM driver's option type come from separately versioned packages
       driverOptions: { extensions: extensions as never },
       // Kysely opens PGlite's one connection on the first query and awaits this before running it.
       onCreateConnection: () => this.prepare(),

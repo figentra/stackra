@@ -9,7 +9,7 @@
  */
 import { CallIsolation } from "@stackra/actions/contracts";
 import type { TestingApp } from "@stackra/container/testing";
-import { ActorKind } from "@stackra/contracts";
+import { ActorKind, Realm } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
@@ -17,7 +17,11 @@ import type { Database } from "#core/ports/database.port";
 import { deliverInIsolation } from "#testing/functions/deliver-in-isolation.function";
 
 const SCOPE = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2wa", path: "platform.acme" } as const;
-const ACTOR = { kind: ActorKind.User, id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3" } as const;
+const ACTOR = {
+  kind: ActorKind.User,
+  id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
+  realm: Realm.Staff,
+} as const;
 const DONE = [{ ran: true }] as never;
 
 /** What the recording database and isolation were asked, in order. */
