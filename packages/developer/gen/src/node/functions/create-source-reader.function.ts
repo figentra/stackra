@@ -57,6 +57,7 @@ import { BELOW_CONTAINER_PACKAGES } from "#core/constants/below-container-packag
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { folderKey } from "#core/functions/folder-key.function";
+import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { shippedSpecifier } from "#core/functions/shipped-specifier.function";
@@ -339,7 +340,8 @@ export function createSourceReader(
       facts.layout === "service" &&
       parts[1] === "modules" &&
       parts.length > 3 &&
-      parts[2] !== undefined
+      parts[2] !== undefined &&
+      isModuleFolder(parts[2])
     )
       return folderKey(parts[2]);
     return facts.member;
