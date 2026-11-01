@@ -1,58 +1,61 @@
+<!-- Rendered by figentra-flow from .flow/readme.yml (stackra preset, STA-1879). Edit the data file, then run `figentra-flow readme`. -->
+
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/brand/logos/stackra-endorsed-en-dark.svg" />
-    <img src="apps/docs/src/assets/brand/logos/stackra-endorsed-en-light.svg" alt="stackra, by figentra" height="48" />
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/brand/banner-dark.png" />
+    <img src=".github/assets/brand/banner-light.png" alt="Stackra" width="640" />
   </picture>
 </p>
 
-<p align="center">Packages that implement Figentra's contracts.</p>
+<h1 align="center">Stackra</h1>
+
+<p align="center"><strong>The TypeScript framework and toolchain behind Figentra (services, packages, gen, CLI, docs).</strong></p>
+
+<p align="center">
+  <a href="https://github.com/figentra/stackra/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/figentra/stackra/actions/workflows/ci.yml/badge.svg?branch=main" /></a>
+  <a href="https://github.com/figentra/stackra/releases/latest"><img alt="Release" src="https://img.shields.io/badge/release-latest-blue" /></a>
+  <a href="https://github.com/figentra/stackra/blob/main/LICENSE"><img alt="Licence: MIT" src="https://img.shields.io/badge/licence-MIT-green" /></a>
+  <a href="https://github.com/figentra/stackra#status"><img alt="Status: In progress" src="https://img.shields.io/badge/status-In%20progress-orange" /></a>
+  <a href="https://docs.stackra.figentra.com"><img alt="Docs" src="https://img.shields.io/badge/docs-read-0a7bd6" /></a>
+</p>
+
+## What it is
 
 Stackra is a TypeScript framework, shipped as the `@stackra/*` packages, plus the reference apps and services that
 prove them. This repository is its monorepo, on pnpm and Turborepo.
 
-## What Stackra is
-
-- **A framework tier, not a product** ([ADR 0023](apps/docs/src/docs/adr/0023-stackra-is-a-framework.mdx)). Stackra ships
-  packages only. The apps and services here are small reference members and test beds; they never carry a product
-  feature ([ADR 0075](apps/docs/src/docs/adr/0075-stackra-ships-packages-figentra-os-ships-services.mdx)).
-- **Decorators-only authoring** ([ADR 0094](apps/docs/src/docs/adr/0094-decorators-only-authoring.mdx)). You describe
-  modules, actions, endpoints and fields with decorators on plain TypeScript classes, with explicit DI tokens
-  (`@stackra/container`, Nest-shaped but with no `@nestjs/*` and no `reflect-metadata`;
+- **A framework tier, not a product** ([ADR 0023](apps/docs/src/docs/adr/0023-stackra-is-a-framework.mdx)). Stackra
+  ships packages only. The apps and services here are small reference members and test beds; they never carry a
+  product feature ([ADR 0075](apps/docs/src/docs/adr/0075-stackra-ships-packages-figentra-os-ships-services.mdx)).
+  Figentra OS, Figentra's private product, builds its services on the published packages.
+- **Decorators-only authoring** ([ADR 0094](apps/docs/src/docs/adr/0094-decorators-only-authoring.mdx)). Modules,
+  actions, endpoints and fields are decorators on plain TypeScript classes, with explicit DI tokens
+  (`@stackra/container`, no `@nestjs/*` and no `reflect-metadata`;
   [ADR 0005](apps/docs/src/docs/adr/0005-di-container-and-legacy-decorators.mdx)). Input and output are Zod schemas
   ([ADR 0095](apps/docs/src/docs/adr/0095-zod-inside-field-decorators.mdx)).
-- **Actions are the unit** ([ADR 0098](apps/docs/src/docs/adr/0098-actions-are-the-unit.mdx)). Behaviour is a decorated
-  action with a key, typed input and output and a permission. The action pipeline supplies the typed caller,
-  authorisation and idempotency. An action becomes an HTTP endpoint with `@AsEndpoint`.
+- **Actions are the unit** ([ADR 0098](apps/docs/src/docs/adr/0098-actions-are-the-unit.mdx)). Behaviour is a
+  decorated action with a key, typed input and output and a permission; the action pipeline supplies the typed
+  caller, authorisation and idempotency, and `@AsEndpoint` makes it an HTTP endpoint.
 - **Encore is generated, never hand-written**
   ([ADR 0091](apps/docs/src/docs/adr/0091-generated-encore-app-in-stackra-folder.mdx),
-  [ADR 0124](apps/docs/src/docs/adr/0124-encore-is-the-generated-runtime-target.mdx)). Service source stays plain
-  TypeScript; `stackra gen` emits the Encore.ts application into the gitignored `.stackra/encore/`. No package or
-  service imports `encore.dev`.
+  [ADR 0124](apps/docs/src/docs/adr/0124-encore-is-the-generated-runtime-target.mdx)). `stackra gen` emits the
+  Encore.ts application into the gitignored `.stackra/encore/`; no package or service imports `encore.dev`.
 - **AI-native** ([ADR 0021](apps/docs/src/docs/adr/0021-ai-engine-and-agent-write-safety.mdx),
-  [ADR 0100](apps/docs/src/docs/adr/0100-ai-model-and-ownership.mdx)). The planned `@stackra/ai` package builds on AI SDK
-  core and the MCP SDK. Every tool call is an action, under the same authorisation as a human caller, and a write
-  tool needs a named human approver. The repository is also built with AI agents, under the rules in
-  [`AGENTS.md`](AGENTS.md).
+  [ADR 0100](apps/docs/src/docs/adr/0100-ai-model-and-ownership.mdx)). Every AI tool call is an action, under the
+  same authorisation as a human caller, and a write tool needs a named human approver. The repository is built with
+  AI agents too, under the rules in [`AGENTS.md`](AGENTS.md).
 
-## Stackra and Figentra OS
-
-Figentra OS is Figentra's private product: a set of services built on Stackra packages and sold as SaaS, on-prem and
-air-gapped. Its services live in their own repository and install published `@stackra/*` packages from public npmjs
-([ADR 0025](apps/docs/src/docs/adr/0025-packages-publish-to-private-registry.mdx),
-[ADR 0075](apps/docs/src/docs/adr/0075-stackra-ships-packages-figentra-os-ships-services.mdx)). No product code lands here,
-and shared packages never contain a product name or literal. Several Stackra packages are being ported from Figentra
-OS and relicensed to MIT on port ([ADR 0084](apps/docs/src/docs/adr/0084-figentra-os-package-port-plan.mdx)).
+Packages publish only to the Stackra registry (`https://npm.stackra.figentra.com/`,
+[ADR 0453](apps/docs/src/docs/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine.mdx)),
+never npmjs. The plan is the [roadmap](apps/docs/src/docs/roadmap.mdx).
 
 ## Status
 
-**Pre-release.** Nothing is published or deployed yet. Foundation work is in progress: the SDLC, the repository
-gates, the tooling presets and the brand package are in place; the foundation kernel packages (contracts, support,
-container, config, logger, validation, events) are drafted as specs in [`.agents/specs`](.agents/specs) and not yet
-built.
-Apps and services are minimal entries. The ordered plan is the
-[roadmap](apps/docs/src/docs/roadmap.mdx).
+**In progress**: the `@stackra/*` packages are at 0.3.0 on the Stackra registry.
 
-## Quickstart
+The states: **Live** (serving customers), **In progress** (being built), **Planned** (no build yet).
+
+## Quick start
 
 ```bash
 mise install    # Node, pnpm, gitleaks, the Infisical CLI, uv and Maestro, pinned in mise.toml
@@ -68,31 +71,19 @@ a file ([ADR 0009](apps/docs/src/docs/adr/0009-secrets-two-mechanisms.mdx)). `pn
 says what is missing. Full steps: [quickstart](apps/docs/src/docs/quickstart.mdx) and
 [fresh machine](apps/docs/src/docs/runbooks/fresh-machine.mdx).
 
-## Repository map
+## Architecture at a glance
 
-| Path                                             | Holds                                                                                                   |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| [`apps/`](apps)                                  | `@figentra/console` (web), `@figentra/mobile` (Expo), `@figentra/docs` (Mintlify docs and the ADRs)     |
-| [`packages/<category>/<name>`](packages)         | `@stackra/<name>` libraries, one folder per category (foundation, application, communication, …)        |
-| [`packages/tooling/`](packages/tooling)          | `@stackra/{typescript,oxlint,vitest,tsdown}-config` presets every member extends                        |
-| [`services/`](services)                          | `@figentra/service-<name>` reference services (`example`, `health`), plain TypeScript                   |
-| [`tools/scripts/`](tools/scripts)                | the repository scripts behind `pnpm validate`, `pnpm new`, `pnpm linear`, the spec gates and agent sync |
-| [`tools/scaffold/`](tools/scaffold)              | the templates `pnpm new` renders                                                                        |
-| [`.agents/`](.agents)                            | the source of every AI artifact: rules, agents, hooks, skills and specs                                 |
-| [`.claude/`](.claude), [`.opencode/`](.opencode) | what Claude Code and OpenCode read, mostly projected from `.agents/` by `pnpm agents:sync`              |
-| [`.flow/`](.flow)                                | the Figentra Flow install: the generated constitution, `lock.json` and optional `overrides/`            |
-| [`.agents/specs/`](.agents/specs)                | Figentra Flow specs, one folder per Linear issue (`sta-<n>-<slug>/`)                                    |
-| [`.github/`](.github)                            | CI (the `Quality Gate`), release and Linear sync workflows, the PR template, CODEOWNERS                 |
-| [`.changeset/`](.changeset)                      | pending changesets for package releases                                                                 |
-| `.notes/`                                        | a private git submodule for the owner only; excluded from every check                                   |
+| Path                         | Holds                                                                                   |
+| ---------------------------- | --------------------------------------------------------------------------------------- |
+| `apps/`                      | `@figentra/console`, `@figentra/mobile`, `@figentra/playground` and `@figentra/docs`    |
+| `packages/<category>/<name>` | the `@stackra/<name>` libraries; `packages/tooling/` holds the config presets           |
+| `services/`                  | `@figentra/service-<name>` reference services, plain TypeScript                         |
+| `workers/`                   | `@figentra/worker-<name>` Cloudflare Workers (`static`, static.stackra.figentra.com)    |
+| `tools/`                     | the repository scripts and the templates `pnpm new` renders                             |
+| `.agents/`                   | every AI artifact (rules, agents, hooks, skills) and the Figentra Flow specs (`specs/`) |
+| `.flow/`                     | the Figentra Flow install: the constitution, `lock.json` and this README's data         |
 
-Root configuration: `pnpm-workspace.yaml` (members and version catalogs), `turbo.jsonc` (tasks and tier tags),
-`mise.toml` (toolchain), `lefthook.yml` (git hooks), `.commitlintrc.yaml`, `.oxlintrc.jsonc`, `.oxfmtrc.jsonc`,
-`knip.jsonc`, `.gitleaks.toml`, `.mcp.yaml` (MCP servers, rendered to the gitignored `.mcp.json`) and `opencode.jsonc`.
-
-## Tiers and the key rules
-
-Every member declares exactly one tier tag in its `turbo.jsonc`, and dependencies flow one way
+Every member declares one tier tag, and dependencies flow one way
 ([ADR 0003](apps/docs/src/docs/adr/0003-tier-dependency-direction.mdx)):
 
 ```text
@@ -100,95 +91,60 @@ tier:config → tier:lib → tier:app
                        → tier:service      (apps and services never import each other)
 ```
 
-- **Versions** come only from the catalogs in `pnpm-workspace.yaml` (`catalog:<name>`) or `workspace:*`, pinned
-  exactly; `catalogMode: strict`.
-- **Tests** sit directly in a `__tests__/` folder beside their subject, `src/**/__tests__/<name>.test.ts`; no root
-  `tests/`, no `.spec` ([ADR 0022](apps/docs/src/docs/adr/0022-tests-live-in-tests-folders.mdx)).
-- **Boundaries**: a package never imports an app, a service, `encore.dev` or another package's `src/`; services talk
-  through versioned events or typed clients, never each other's source.
-- **Imports**: a member with a `src/` tree declares `#` subpath imports (`#core`, `#application/*`) in its
-  `package.json`; relative imports never climb with `../` and carry no extension
-  ([ADR 0006](apps/docs/src/docs/adr/0006-naming-exports-and-imports.mdx)). tsdown bundles every `#` import, so
-  `pnpm pack` and `pnpm publish` drop the map from the packed manifest (`.pnpmfile.mjs`, ADR 0177 PK4).
-- **Naming**: packages are `@stackra/<name>`, apps `@figentra/<dir>`, services `@figentra/service-<dir>`. Files are
-  kebab-case, one exported declaration per file with a kind suffix (`token.class.ts`), and barrels name every symbol.
-- **Config**: `tsconfig.json` extends one `@stackra/typescript-config` preset; a JSON config is `.jsonc` when its
-  reader accepts comments.
-- **Not built yet**: rejected and deferred technologies (ESLint, Prettier, Jest, Prisma, Express, Zustand, `.env`
-  files and more) are listed in
-  [ADR 0011](apps/docs/src/docs/adr/0011-rejected-and-deferred-technologies.mdx) and refused by `pnpm validate`.
+The full repository map, the key rules, every root command and how a change moves from issue to merge are in the
+[repository guide](docs/repository-guide.md); every rule and what enforces it is in [`AGENTS.md`](AGENTS.md). The
+code is MIT, but the Stackra logos, marks and brand images are not and the fonts keep their SIL Open Font License:
+see [`NOTICE`](NOTICE), [`TRADEMARKS.md`](TRADEMARKS.md) and
+[ADR 0024](apps/docs/src/docs/adr/0024-mit-license-with-exclusions.mdx).
 
-The rules in full, and what enforces each one, are in [`AGENTS.md`](AGENTS.md).
+## Development
 
-## Commands
+```bash
+pnpm install
+pnpm verify
+```
 
-| Command                                      | Does                                                                                  |
-| -------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `pnpm verify`                                | format check, lint, typecheck, test, build, then `validate`, `boundaries` and `knip`  |
-| `pnpm verify:affected`                       | the turbo half of `verify`, only for members changed since `main`                     |
-| `pnpm validate`                              | repository shape, spec gates, hook tests and the agent sync check                     |
-| `pnpm build` / `test` / `lint` / `typecheck` | one turbo task across every member                                                    |
-| `pnpm format` / `pnpm format:check`          | oxfmt (and shfmt for `*.sh`) over the repo, writing or checking                       |
-| `pnpm boundaries`                            | `turbo boundaries`: the tier direction                                                |
-| `pnpm knip`                                  | unused files, exports and dependencies                                                |
-| `pnpm docs` / `pnpm console` / `pnpm mobile` | run one app in dev mode                                                               |
-| `pnpm new <kind> <name>`                     | scaffold a member from `tools/scaffold/templates`                                     |
-| `pnpm changeset`                             | record a release note for a package change                                            |
-| `pnpm secrets:scan`                          | gitleaks over the whole history                                                       |
-| `pnpm doctor`                                | fresh-machine checklist                                                               |
-| `pnpm agents:sync` / `pnpm agents:check`     | project `.agents/` into `.claude/` and `.opencode/`, or check for drift               |
-| `pnpm spec:sync`                             | render the Figentra Flow `flow-*` skills and record them in `.flow/lock.json`         |
-| `pnpm spec:gate` / `pnpm spec:trace`         | spec stage gates and requirement-to-test traceability                                 |
-| `pnpm linear <command>`                      | keep the Linear issue current: `start`, `review`, `done`, `comment`, `create`, `mine` |
-| `pnpm delegate <task-type> "<brief>"`        | hand a task to the executor `.agents/routing.yaml` names (`--issue STA-n` required)   |
-| `pnpm pr:merge <n>`                          | the only way an agent merges: green gate and an `AI-REVIEW: PASS` for the head's diff |
+`pnpm verify` is the full check: CI and the gate run the same command.
 
-`pnpm linear`, `pnpm spec:linear`, `pnpm bot:*` and `pnpm pr:merge` read their tokens from Infisical. One line per
-script: [`tools/scripts`](tools/scripts).
+Changes go through [Figentra Flow](https://github.com/figentra/flow), the `figentra-flow` CLI.
 
-## How work flows
+Every branch and pull request carries a Linear `STA-` key.
 
-1. **Issue.** Every piece of work has an issue in the Linear team `STA`
-   ([ADR 0065](apps/docs/src/docs/adr/0065-linear-gate-is-checked-offline.mdx)).
-2. **Lane and spec.** The change picks a lane: bug, chore, lite or full
-   ([ADR 0120](apps/docs/src/docs/adr/0120-sdlc-spec-location-lanes-and-change-risk.mdx)). Lite and full work starts as a
-   Figentra Flow spec in `.agents/specs/sta-<n>-<slug>/` (`/flow-specify` → clarify → plan → tasks → implement); the
-   plan step refuses until the spec gate passes ([ADR 0510](apps/docs/src/docs/adr/0510-flow-replaces-spec-kit.mdx)).
-3. **Branch.** The branch is Linear's name, `figentra/sta-<n>-<slug>`; `pnpm linear start STA-n` moves the issue to
-   In Progress. Commits are conventional, and `feat`, `fix`, `refactor` and `perf` commits carry `Refs: STA-n`.
-4. **Pull request.** `pnpm verify` is green, the PR follows the template, and `pnpm linear review STA-n <url>` moves
-   the issue to In Review. CI's `Quality Gate` is the only required check.
-5. **Independent review.** A separate AI reviewer, never the author, posts `AI-REVIEW: PASS <head sha> base=<base ref> patch=<patch id>` as the
-   `stackra-reviewer` app through `pnpm bot:review`
-   ([ADR 0230](apps/docs/src/docs/adr/0230-reviewer-identity-separate-from-builder.mdx)). Design PRs
-   and change-risk R3 also need the owner's approval.
-6. **Merge.** `pnpm pr:merge` enqueues the PR in the merge queue, which squash-merges after the gate passes on the group
-   ([ADR 0119](apps/docs/src/docs/adr/0119-merge-policy-and-release-authority.mdx)); the issue moves to Done. Packages
-   release through changesets in CI.
+| Step                          | Command                                                       |
+| ----------------------------- | ------------------------------------------------------------- |
+| Spec the change               | `/flow-specify`, `/flow-clarify`, `/flow-plan`, `/flow-tasks` |
+| Start a worktree for an issue | `figentra-flow start STA-<n>`                                 |
+| Run the gate on the branch    | `figentra-flow gate run`                                      |
+| Land the pull request         | `figentra-flow land`                                          |
+| See specs, worktrees and PRs  | `figentra-flow status`                                        |
+| Re-render this README         | `figentra-flow readme`                                        |
 
-## Documentation and decisions
+## Docs and playground
 
-The guides, standards, runbooks and the architecture decision records live in [`apps/docs/src/docs`](apps/docs/src/docs), a
-Mintlify site; run it locally with `pnpm docs`. Start with the [introduction](apps/docs/src/docs/index.mdx), the
-[repository structure](apps/docs/src/docs/guides/structure.mdx), the [constitution](apps/docs/src/docs/constitution/index.mdx)
-and the [ADR index](apps/docs/src/docs/adr/index.mdx). Agent setup is under [agents](apps/docs/src/docs/agents/index.mdx).
+- **Docs**: <https://docs.stackra.figentra.com>
 
-## Contributing
+## Release and changelog
 
-Read [`AGENTS.md`](AGENTS.md) first: it holds every rule, for people and agents alike. Then follow
-[how work flows](#how-work-flows) and the [definition of done](apps/docs/src/docs/guides/definition-of-done.mdx). A change
-is done when `pnpm verify` is green and its Linear issue is in the right state.
+Every change that ships carries a changeset in `.changeset/`.
+
+Merging the version pull request that Changesets opens cuts the release.
+
+The notes are in [Releases][releases] and in each package's `CHANGELOG.md`.
+
+[releases]: https://github.com/figentra/stackra/releases
 
 ## Security
 
-There is no `SECURITY.md` yet. Report a vulnerability privately to the maintainer
-([@figentra-usr](https://github.com/figentra-usr)), never in a public issue, pull request or spec. The rules for
-secrets and security are in the [secrets](apps/docs/src/docs/constitution/secrets.mdx) and
-[security](apps/docs/src/docs/constitution/security.mdx) laws; `gitleaks` scans every commit.
+Report a vulnerability privately, as the [security policy][security] describes.
+
+Never report one in a public issue or pull request.
+
+[security]: https://github.com/figentra/stackra/security/policy
 
 ## Licence
 
-The code is MIT ([`LICENSE`](LICENSE)). The Stackra logos, marks and brand images are not, and the fonts keep their
-SIL Open Font License: see [`NOTICE`](NOTICE) and
-[ADR 0024](apps/docs/src/docs/adr/0024-mit-license-with-exclusions.mdx). The Stackra and Figentra names and logos are trademarks: see
-[`TRADEMARKS.md`](TRADEMARKS.md).
+Released under the MIT licence. See [LICENSE](LICENSE).
+
+---
+
+<p align="center"><sub>Stackra is made by Figentra Technologies L.L.C · <a href="https://figentra.com">figentra.com</a></sub></p>
