@@ -7,7 +7,7 @@
  *          `registerChanges` call linking each `Change<Subject>` class to its subject (ADR 0118, 0141 notes).
  * Boundary: pure. Names are qualified by the file (one file per module), so a class name used in two modules never
  *           collides; zod is imported only when the file builds a schema. A `@Hidden` field is left out of `X$` and of `X$Check` (stackra-260); `@Lowercase` compiles to
- *           `.toLowerCase()` after `.trim()`. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
+ *           `.toLowerCase()` after `.trim()`. A settings section field is `.prefault(() => ({}))` (STA-1826). `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
  *           to its codes in source order; a member base is `.extend`ed and a package base's shipped `X$` gets only new
  *           defaults. A field naming a shape declared later in the file (itself, or a cycle) is a zod getter, so a
  *           cycle still loads and its type is inferred (STA-1683). A
@@ -202,8 +202,12 @@ function elementOf(context: Context, type: TypeDesc, rules: readonly FieldRule[]
   return zodOf(context, type, rules, []);
 }
 
-/** The zod expression of one field, with its nullability, default or optionality. */
-function fieldOf(context: Context, field: FieldIR): string {
+/**
+ * The zod expression of one field, with its nullability, default or optionality. A section of a settings class
+ * (a schema-typed field with no initializer) is `.prefault(() => ({}))`, so a section nothing stored parses its own
+ * field defaults; `.default` would skip the parse, and a stored non-object still fails.
+ */
+function fieldOf(context: Context, field: FieldIR, shape: ShapeIR): string {
   const own = field.rules.filter((rule) => rule.options["each"] !== true);
   const each = field.rules.filter((rule) => rule.options["each"] === true);
   let expression = zodOf(context, field.type, own, each);
@@ -223,7 +227,9 @@ function fieldOf(context: Context, field: FieldIR): string {
       : Array.isArray(value)
         ? `.default(() => [...(${field.default.code} as const)])`
         : `.default(() => (${field.default.code}))`;
-  } else if (field.optional) expression += ".exactOptional()";
+  } else if (shape.kind === "settings" && field.type.kind === "schema" && !field.optional)
+    expression += ".prefault(() => ({}))";
+  else if (field.optional) expression += ".exactOptional()";
   return expression;
 }
 
@@ -275,7 +281,7 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
   const wire = shape.fields.filter((field) => field.hidden !== true);
   const hidden = shape.fields.filter((field) => field.hidden === true).map((field) => field.name);
   const body = wire.map((field) => {
-    const expression = fieldOf(context, field);
+    const expression = fieldOf(context, field, shape);
     // A shape not declared yet (this one, or a later one in a cycle) is read through a getter, which zod 4 infers and
     // evaluates only when parsing; `z.lazy` inside the object initializer is TS7022 (implicit any, STA-1683).
     return LAZY.test(expression)
