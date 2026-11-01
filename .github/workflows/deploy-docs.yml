@@ -2,7 +2,9 @@
 # Purpose: deploy apps/docs (docs.stackra.figentra.com) to Mintlify through Runway's `mintlify` provider,
 #          runway-mintlify.yml (ADR 0299): on a push to main that touches the docs, or by hand, after `stackra build`
 #          (gen assembles apps/docs/.stackra/site from src/docs and src/config/docs.config.ts, then `mint validate`)
-#          and `stackra lint` (`mint broken-links`, `mint a11y`), ADR 0002 2026-10-27 amendment. Once it has
+#          and `stackra lint` (`mint broken-links`, `mint a11y`), ADR 0002 2026-10-27 amendment, then publishes
+#          that site to the `docs-site` branch (one appended commit per run), which the Mintlify project builds (its
+#          Git settings: branch `docs-site`, root path `/`; the default `site-branch` input). Once it has
 #          deployed, the owner switches off the Mintlify GitHub-app deploy so a change is not deployed twice (STA-605).
 # Secrets: MINTLIFY_ADMIN_KEY from Infisical /ci (env prod) through GitHub OIDC inside the provider. The Mintlify
 #          project id is the non-secret repository variable MINTLIFY_PROJECT_ID. Until both the identity and that
@@ -33,7 +35,7 @@ jobs:
     # Mintlify builds main; a dispatch from another branch would deploy main under that branch's checks.
     if: github.ref == 'refs/heads/main'
     permissions:
-      contents: read
+      contents: write # the provider pushes the generated `docs-site` branch; this job only
       id-token: write
     uses: ./.github/workflows/runway-mintlify.yml
     with:
