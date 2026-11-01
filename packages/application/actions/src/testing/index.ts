@@ -17,6 +17,12 @@ export { ACTIONS_TESTING_PLUGIN } from "#testing/constants/actions-testing-plugi
 export { denyPermission } from "#testing/functions/deny-permission.function";
 export { expectScopeCacheSafe } from "#testing/functions/expect-scope-cache-safe.function";
 export { MemoryAccessControlDriver } from "#testing/drivers/memory-access-control.driver";
+export { MemoryActorStatusCheckDriver } from "#testing/drivers/memory-actor-status-check.driver";
+export { MemoryApprovalBindingStoreDriver } from "#testing/drivers/memory-approval-binding-store.driver";
+export { MemoryApprovalGateDriver } from "#testing/drivers/memory-approval-gate.driver";
+export { ApproverRefusedError } from "#testing/errors/approver-refused.error";
+export { describeApprovalBindingStoreConformance } from "#testing/functions/describe-approval-binding-store-conformance.function";
+export { describeApprovalGateConformance } from "#testing/functions/describe-approval-gate-conformance.function";
 export { RecordingAuditTrailDriver } from "#testing/drivers/recording-audit-trail.driver";
 export { extension } from "#testing/functions/extension.function";
 export { fakeActionContext } from "#testing/functions/fake-action-context.function";
@@ -24,8 +30,11 @@ export { fakeExtensionContext } from "#testing/functions/fake-extension-context.
 export { grantedConsent } from "#testing/functions/granted-consent.function";
 export { run } from "#testing/functions/run.function";
 export { toHaveAudited } from "#testing/matchers/to-have-audited.matcher";
+export type { ApprovalGateHarness } from "#testing/types/approval-gate-harness.type";
 export type { AuditExpectation } from "#testing/types/audit-expectation.type";
 export type { FakeActionContext } from "#testing/types/fake-action-context.type";
+export type { MemoryApprovalGateOptions } from "#testing/types/memory-approval-gate-options.type";
+export type { MemoryApprover } from "#testing/types/memory-approver.type";
 export type { RunOptions } from "#testing/types/run-options.type";
 export type { RunResult } from "#testing/types/run-result.type";
 export type { ScopeCacheSafeOptions } from "#testing/types/scope-cache-safe-options.type";
