@@ -8,7 +8,7 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 | `apps/console`                                             | `@figentra/console` — Vite web app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                        | `tier:app`     |
 | `apps/mobile`                                              | `@figentra/mobile` — Expo app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                             | `tier:app`     |
 | `apps/docs`                                                | `@figentra/docs` — Mintlify; pages in `src/docs/` (ADRs in `src/docs/adr`), site config `src/config/docs.config.ts`                                       | `tier:app`     |
-| `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
+| `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, connectors, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
 | `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown,commitlint}-config`, exactly five presets (ADR 0300)                                                           | `tier:config`  |
 | `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`); root module `src/<key>.module.ts` (ADR 0294)                                   | `tier:service` |
 | `workers/<name>`                                           | `@figentra/worker-<name>` — Cloudflare Worker members (`static`: `stackra-static`, static.stackra.figentra.com), `wrangler.jsonc`, ADR 0284               | `tier:app`     |
@@ -751,6 +751,7 @@ stackra/
 │   ├── application/        # Actions, AI, IR, registry
 │   ├── commerce/           # Money, ledger and pricing primitives
 │   ├── communication/      # Webhooks, versioning, integrations, notifications
+│   ├── connectors/         # One provider's Integration and Connection classes per package
 │   ├── cross-cutting/      # Concerns that span layers
 │   ├── data/               # Model, database, content, media, search, state machine, assets, filesystem, storage
 │   ├── design-system/      # Stackra Design System: tokens, ui, icons

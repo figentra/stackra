@@ -16,6 +16,8 @@ export const StackraCategory = Enum.of({
   Commerce: "commerce",
   /** Webhooks, versioning, integrations and notifications. */
   Communication: "communication",
+  /** One provider's Integration and Connection classes per package (`packages/connectors/<provider>`). */
+  Connectors: "connectors",
   /** Concerns that span layers. */
   CrossCutting: "cross-cutting",
   /** Model, database, content, media, search and storage. */
