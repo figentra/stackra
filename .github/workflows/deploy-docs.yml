@@ -35,7 +35,7 @@ jobs:
     # Mintlify builds main; a dispatch from another branch would deploy main under that branch's checks.
     if: github.ref == 'refs/heads/main'
     permissions:
-      contents: write # the provider pushes the generated `docs-site` branch; this job only
+      contents: write # the provider's `publish` job pushes the generated `docs-site` branch; its other jobs ask for read
       id-token: write
     uses: ./.github/workflows/runway-mintlify.yml
     with:

@@ -10,8 +10,10 @@
 #          another commit than the one published, and smoke-tests the published pages. Mintlify builds its configured
 #          branch, so callers run only on main. Callers set the branch with `site-branch:`; the Mintlify project's Git
 #          settings must name the same branch, with root path `/`.
-# Permissions: the job needs `contents: write` (push to the site branch only, with the job's GITHUB_TOKEN, in the
-#          publish step) and `id-token: write`; the caller's job must grant both.
+# Jobs: `build` (install, checks, upload the site; `contents: read`), `publish` (main only; downloads the artifact and
+#          runs git only; the one job with `contents: write`, pushes `site-branch` and nothing else), `deploy` (after
+#          publish: Mintlify update and smoke test; `contents: read`). The caller's job must grant `contents: write`
+#          and `id-token: write`, since a called workflow's jobs cannot exceed the caller's grant.
 # Secrets: MINTLIFY_ADMIN_KEY only, from Infisical /ci through GitHub OIDC (ADR 0299 decision 3), read by this job
 #          alone. Without an identity id or a project id the job checks, prints a notice and deploys nothing.
 # Owner: release-operations
@@ -79,22 +81,20 @@ on:
     outputs:
       deployed:
         description: "`true` when Mintlify reported `success`, `false` when the deploy was skipped."
-        value: ${{ jobs.deploy.outputs.deployed }}
+        value: ${{ jobs.deploy.outputs.deployed == 'true' }}
 
 # ADR 0019 D2: nothing by default; the job asks for what it needs (the caller's job must grant the same).
 permissions: {}
 
 jobs:
-  deploy:
-    name: Deploy ${{ inputs.member }}
+  build:
+    name: Check ${{ inputs.member }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: ${{ inputs.environment }}
     permissions:
-      contents: write # push the generated site branch (publish step); main is never written
-      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci
-    outputs:
-      deployed: ${{ steps.deploy.outcome == 'success' }}
+      contents: read # checkout; the install and the build run third-party code, so this job never writes
+      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci/turbo
     env:
       INFISICAL_IDENTITY_ID: ${{ inputs.infisical-identity-id }}
       MINTLIFY_PROJECT_ID: ${{ inputs.mintlify-project-id }}
@@ -150,20 +150,56 @@ jobs:
             pnpm --filter "$PACKAGE" run "$script"
           done
 
+      - name: Upload site
+        if: github.ref == 'refs/heads/main' && env.INFISICAL_IDENTITY_ID != '' && env.MINTLIFY_PROJECT_ID != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mintlify-site
+          path: ${{ inputs.member }}/.stackra/site
+          if-no-files-found: error
+          include-hidden-files: true # the site tree may hold dot files
+          retention-days: 1
+
+      - name: Deploy prerequisites missing
+        if: env.INFISICAL_IDENTITY_ID == '' || env.MINTLIFY_PROJECT_ID == ''
+        run: >-
+          echo "::notice title=Docs deploy skipped::No Infisical identity id or Mintlify project id was passed.
+          Checked, nothing deployed."
+
+  # Git only: no install, no third-party code beyond the pinned artifact download. Main only; the caller's
+  # concurrency group serialises runs, so each run appends on top of the last.
+  publish:
+    name: Publish ${{ inputs.site-branch }}
+    needs: build
+    if: github.ref == 'refs/heads/main' && inputs.infisical-identity-id != '' && inputs.mintlify-project-id != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: write # push the generated site branch only; main is never written
+    outputs:
+      sha: ${{ steps.publish.outputs.sha }}
+    steps:
+      - name: Download site
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mintlify-site
+          path: site
+
       # Mintlify builds a Git branch and docs.json is generated into the gitignored `.stackra/site`, so the checked
-      # tree is published to `site-branch` first. One commit per run on top of the branch's history (no force push);
-      # the caller's concurrency group serialises runs. Main only: a branch run never moves the site.
+      # tree is published to `site-branch`: one commit per run on top of the branch's history (no force push).
       - name: Publish site branch
         id: publish
-        if: github.ref == 'refs/heads/main' && env.INFISICAL_IDENTITY_ID != '' && env.MINTLIFY_PROJECT_ID != ''
         env:
           GH_TOKEN: ${{ github.token }}
           SITE_BRANCH: ${{ inputs.site-branch }}
-          MEMBER: ${{ inputs.member }}
           SHA: ${{ github.sha }}
         run: |
-          site="$PWD/$MEMBER/.stackra/site"
-          [ -f "$site/docs.json" ] || { echo "::error::$MEMBER/.stackra/site/docs.json is missing; the build did not assemble the site"; exit 1; }
+          case "$SITE_BRANCH" in
+            main | master | refs/*) echo "::error::site-branch must not be main, master or a ref path: $SITE_BRANCH"; exit 1 ;;
+          esac
+          git check-ref-format --branch "$SITE_BRANCH" > /dev/null || { echo "::error::site-branch is not a valid branch name"; exit 1; }
+          [ -f site/docs.json ] || { echo "::error::the artifact has no docs.json; the build did not assemble the site"; exit 1; }
           echo "::add-mask::$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           work="$(mktemp -d)"
@@ -175,7 +211,7 @@ jobs:
           else
             git -C "$work" checkout --quiet --orphan "$SITE_BRANCH" # first publish: the branch does not exist yet
           fi
-          cp -a "$site/." "$work/"
+          tar -C site --exclude=.git --exclude=.github -cf - . | tar -C "$work" -xf -
           git -C "$work" add -A
           if git -C "$work" diff --cached --quiet; then
             echo "Site unchanged on $SITE_BRANCH"
@@ -186,14 +222,22 @@ jobs:
           fi
           echo "sha=$(git -C "$work" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy prerequisites missing
-        if: env.INFISICAL_IDENTITY_ID == '' || env.MINTLIFY_PROJECT_ID == ''
-        run: >-
-          echo "::notice title=Docs deploy skipped::No Infisical identity id or Mintlify project id was passed.
-          Checked, nothing deployed."
-
+  deploy:
+    name: Deploy ${{ inputs.member }}
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci
+    outputs:
+      deployed: ${{ steps.deploy.outcome == 'success' }}
+    env:
+      INFISICAL_IDENTITY_ID: ${{ inputs.infisical-identity-id }}
+      MINTLIFY_PROJECT_ID: ${{ inputs.mintlify-project-id }}
+    steps:
       - name: Mintlify admin key (Infisical OIDC)
-        if: env.INFISICAL_IDENTITY_ID != '' && env.MINTLIFY_PROJECT_ID != ''
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
@@ -209,10 +253,9 @@ jobs:
       # later run published over it and passed its own gate), not a failure.
       - name: Mintlify update
         id: deploy
-        if: env.INFISICAL_IDENTITY_ID != '' && env.MINTLIFY_PROJECT_ID != ''
         env:
           API: https://api.mintlify.com/v1/project
-          SHA: ${{ steps.publish.outputs.sha || github.sha }}
+          SHA: ${{ needs.publish.outputs.sha }}
         run: |
           auth="Authorization: Bearer $MINTLIFY_ADMIN_KEY"
           status_id="$(curl --fail-with-body --silent --show-error -X POST -H "$auth" "$API/update/$MINTLIFY_PROJECT_ID" | jq -r .statusId)"

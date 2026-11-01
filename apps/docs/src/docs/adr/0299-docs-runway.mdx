@@ -31,8 +31,8 @@ Enforcement of this note: planned — the internal deployment and its Access pol
 <Note>
   Note 2026-11-01 (STA-1896): the provider workflow `runway-mintlify.yml` publishes the assembled site itself, after
   the checks and on main only: one appended commit (no force push) with a `Source: <sha>` trailer on the `site-branch`
-  input (default `docs-site`), then triggers the Mintlify update, which builds that branch. The job holds
-  `contents: write` for this and nothing else writes the branch.
+  input (default `docs-site`), then triggers the Mintlify update, which builds that branch. Only the provider's
+  `publish` job (git only, no install, fed by a build artifact) holds `contents: write`; the build job stays read-only.
 </Note>
 
 ## Context
