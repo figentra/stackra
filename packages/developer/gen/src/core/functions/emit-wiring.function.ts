@@ -586,6 +586,7 @@ export function emitWiring(ir: MemberIR): string {
 
   const driverLines: string[] = [];
   const registry: string[] = [];
+  const portRegistry: string[] = [];
   for (const { port, key, candidates, own: owned, selectedBy } of ports.values()) {
     const selected = selectors.get(port.name);
     const select = selected?.selectedBy ?? selectedBy;
@@ -632,10 +633,12 @@ export function emitWiring(ir: MemberIR): string {
     // A package's own port names are its `DriverRegistry` augmentation; the member augments only its own drivers.
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const driverNames = [...new Set(owned)].sort();
-    if (driverNames.length > 0)
+    if (driverNames.length > 0) {
       registry.push(
         `    ${JSON.stringify(key)}: ${driverNames.map((name) => JSON.stringify(name)).join(" | ")};`,
       );
+      portRegistry.push(`    ${JSON.stringify(key)}: typeof ${ref(port)};`);
+    }
   }
 
   // Replacements and partners.
@@ -665,6 +668,10 @@ export function emitWiring(ir: MemberIR): string {
           'declare module "@stackra/container" {',
           "  interface DriverRegistry {",
           ...registry,
+          "  }",
+          "  /** The port class of each key above; `DriverName<Port>` finds its names by the class. */",
+          "  interface PortRegistry {",
+          ...portRegistry,
           "  }",
           "}",
           "",

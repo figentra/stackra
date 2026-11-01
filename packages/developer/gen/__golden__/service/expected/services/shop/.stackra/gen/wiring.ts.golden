@@ -30,6 +30,10 @@ declare module "@stackra/container" {
   interface DriverRegistry {
     "shop.PaymentGateway": "stripe";
   }
+  /** The port class of each key above; `DriverName<Port>` finds its names by the class. */
+  interface PortRegistry {
+    "shop.PaymentGateway": typeof PaymentGateway;
+  }
 }
 
 /** The container wiring of this member. */

@@ -58,6 +58,7 @@ import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
 import { folderKey } from "#core/functions/folder-key.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
+import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { shippedSpecifier } from "#core/functions/shipped-specifier.function";
 import type { ClassRef } from "#core/types/class-ref.type";
@@ -2433,6 +2434,27 @@ export function createSourceReader(
         "`Event` is the abstract base of the four event kinds",
         "extend DomainEvent, IntegrationEvent, WebhookEvent or AnalyticsEvent",
       );
+    // A hand-written `declare readonly "~key": "<lit>"` brand must be the derived port key (STA-1810, ADR 0294 d20).
+    if (info.kind === "port" && isAbstract && path.endsWith(".port.ts"))
+      for (const brand of node.members ?? []) {
+        if (host.kind(brand) !== "PropertyDeclaration" || nameOf(brand.name) !== "~key") continue;
+        const written =
+          brand.type !== undefined &&
+          host.kind(brand.type) === "LiteralType" &&
+          brand.type.literal !== undefined &&
+          host.kind(brand.type.literal) === "StringLiteral"
+            ? nameOf(brand.type.literal)
+            : undefined;
+        const derived = portKey(facts.member, name);
+        if (written !== undefined && written !== derived)
+          fail(
+            brand,
+            name,
+            "port_key_mismatch",
+            `the \`~key\` brand of ${name} is "${written}", but its port key is "${derived}"`,
+            `write \`declare readonly "~key": "${derived}"\`, or delete the brand: gen derives the key`,
+          );
+      }
     // Kind base names are reserved: a model named `Policy` would shadow the base (ADR 0305 rule 4, STA-1306).
     if (info.kind === "model" && KIND_BASES[name] !== undefined)
       fail(

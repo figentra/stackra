@@ -21,7 +21,7 @@
  *          `Config({ schema })` options class, reading `this.<field>` spreads, `Object.freeze` constants and `I18n` keys
  *          as constants, and a shipped `X$` of a declared package the program never loaded is still found (STA-1296).
  *          `kind_base_name_reserved`, `partner_mismatch` for a same-stem kind (a Resource), `secret_name_missing` and
- *          each file's exported class names (STA-1306). A `@Classify(Class)` facet carries its data class's constant
+ *          each file's exported class names (STA-1306), `port_key_mismatch` for a port whose `~key` brand is not `<member>.<Port>` (STA-1810). A `@Classify(Class)` facet carries its data class's constant
  *          effects as `options.dataClass` (STA-1251). Each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`
  *          reads with its options, import and props record, and a non-constant fill is `slot_options_not_constant`
  *          (ADR 0438). A `PickType` of, or a form extending, a `remoteShape` of `#stackra/clients/<service>` reads as a
@@ -1170,6 +1170,25 @@ const GATE_SOURCES: Readonly<Record<string, string>> = {
     "",
   ].join("\n"),
   "src/core/services/plain.service.ts": "export class PlainService {}\n",
+  "src/contracts/ports/wrong-key.port.ts": [
+    'import { Port } from "@stackra/contracts";',
+    "export abstract class WrongKey extends Port {",
+    '  declare readonly "~key": "gate-way.WrongKey";',
+    "}",
+    "",
+  ].join("\n"),
+  "src/contracts/ports/right-key.port.ts": [
+    'import { Port } from "@stackra/contracts";',
+    "export abstract class RightKey extends Port {",
+    '  declare readonly "~key": "gate.RightKey";',
+    "}",
+    "",
+  ].join("\n"),
+  "src/contracts/ports/no-key.port.ts": [
+    'import { Port } from "@stackra/contracts";',
+    "export abstract class NoKey extends Port {}",
+    "",
+  ].join("\n"),
 };
 
 describe("createSourceReader on the quality-gate forms (STA-1306)", async () => {
@@ -1199,6 +1218,16 @@ describe("createSourceReader on the quality-gate forms (STA-1306)", async () => 
       "secret_name_missing VaultOptions.computed",
       "secret_name_missing VaultOptions.lower",
     ]);
+  });
+
+  it("refuses a hand-written port key brand that is not the derived key (STA-1810)", () => {
+    expect(codes.filter((code) => code.startsWith("port_key_mismatch"))).toEqual([
+      "port_key_mismatch WrongKey",
+    ]);
+    const error = reader.errors.find((candidate) => candidate.code === "port_key_mismatch");
+    expect(error?.file).toBe("src/contracts/ports/wrong-key.port.ts");
+    expect(error?.message).toContain('"gate-way.WrongKey"');
+    expect(error?.message).toContain('"gate.WrongKey"');
   });
 
   it("lists each file's exported classes, kind or not", () => {
