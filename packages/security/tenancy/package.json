@@ -114,6 +114,7 @@
   },
   "devDependencies": {
     "@stackra/config": "workspace:*",
+    "@stackra/queue": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",

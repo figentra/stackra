@@ -51,6 +51,20 @@
       "class": "TenantRequiredError"
     },
     {
+      "code": "tenant_scope_mismatch",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "tenancy",
+      "class": "TenantScopeMismatchError"
+    },
+    {
+      "code": "tenant_scope_unresolved",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "tenancy",
+      "class": "TenantScopeUnresolvedError"
+    },
+    {
       "code": "tenant_switch_refused",
       "kind": "failed_precondition",
       "category": "precondition_failed",
@@ -260,6 +274,12 @@
               "class": {
                 "name": "TenantIsolationService",
                 "from": "@stackra/tenancy/node"
+              }
+            },
+            {
+              "class": {
+                "name": "ScopeTree",
+                "from": "@stackra/scope/contracts"
               }
             }
           ]

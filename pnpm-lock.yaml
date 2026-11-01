@@ -8742,6 +8742,9 @@ importers:
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
+      '@stackra/queue':
+        specifier: workspace:*
+        version: link:../../runtime/queue
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
