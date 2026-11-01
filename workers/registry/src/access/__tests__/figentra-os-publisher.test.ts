@@ -3,7 +3,7 @@
  * Purpose: tests of migration 0006: `figentra/os`'s release workflow on main, in the `release` environment, is
  *          a trusted publisher of `@figentra`; the same repository from another ref or environment, another
  *          repository with the same name but a different id, and the core publisher's claims are not;
- *          figentra/brand stays trusted.
+ *          figentra/brand and figentra/commerce stay trusted.
  * Boundary: test only; D1 is node:sqlite with the real migrations.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0453 (decisions 6 and 10); ADR 0481.
@@ -14,7 +14,7 @@ import type { GithubClaims } from "#src/interfaces/github-claims.interface";
 import { matchPublisher } from "#src/oidc/match-publisher";
 import { RegistryStore } from "#src/store/registry-store";
 
-/** The claims of the figentra/OS release workflow (migrations/0006_figentra_os.sql). */
+/** The claims of the figentra/os release workflow (migrations/0006_figentra_os.sql). */
 const OS_CLAIMS: GithubClaims = {
   ...STACKRA_CLAIMS,
   repository: "figentra/os",
@@ -56,12 +56,12 @@ describe("migration 0006: figentra/os publishes @figentra", () => {
     expect(matchPublisher(STACKRA_CLAIMS, publishers)).toBeNull();
   });
 
-  it("keeps figentra/brand trusted", async () => {
+  it("keeps figentra/brand and figentra/commerce trusted", async () => {
     const { db } = sqliteD1();
     const publishers = await new RegistryStore(db).publishers("@figentra");
     expect(publishers.map((row) => row.repository).sort()).toEqual([
       "figentra/brand",
-      "figentra/os",
+      "figentra/commerce",
       "figentra/os",
     ]);
   });
