@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-01
 
-**Status**: Clarified
+**Status**: Built (tests written, not yet run)
 
 **Linear**: STA-1819
 
@@ -152,6 +152,17 @@ Each has a proposed answer; the plan assumes the proposal until told otherwise.
    import `./.stackra/<tool>.config`, the same `shim_authored` shape where gen writes those configs. Proposed: a
    follow-up issue per kind, not this spec, so this change stays one command.
 
+## Leader answers (2026-11-01)
+
+1. Q1: `--area` stays required; the acceptance command and the docs name `--area app`.
+2. Q2 and Q5: yes. gen writes `.stackra/vitest.int.config.ts`; the old template folder, its `service` kind and its
+   config class are deleted; the `checkService` assertion moved to the `new` command's test.
+3. Q3: one `--repo <path>` flag for every kind; there is no `--into`.
+4. Q4: the `--data` example reuses the consumer-gate fixture's model and migration shape (a non-tenant model).
+   Built as `src/modules/notes/` (not `<name>`) so the module key never equals the root module's key.
+5. Q6: packages and apps are tracked separately; their templates are unchanged.
+
 ## Status history
 
 - 2026-11-01 → Clarified (leader brief; open questions carry proposed answers)
+- 2026-11-01 → Built (all four phases in one branch; tests written, not run on the Mac)

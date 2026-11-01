@@ -106,11 +106,11 @@ The direction rule is a law: see [Boundaries](/constitution/boundaries) and [ADR
 
 ## Scaffolding
 
-`pnpm new <kind> <name> --description "<one sentence>" --summary "<when an agent reaches for it>" [--keywords a,b,c] [--category <c>] [--entries react,native|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE` (packages and tooling only), writes the npm metadata, keywords, `stackra` field and turbo tags above, and formats the result. Then run `pnpm install` and `pnpm verify`.
+`stackra new <kind> <name> --description "<one sentence>" --summary "<when an agent reaches for it>" [--keywords a,b,c] [--category <c>] [--entries react,native|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE` (packages and tooling only), writes the npm metadata, keywords, `stackra` field and turbo tags above, and formats the result. Then run `pnpm install` and `pnpm verify`.
 
 | Kind          | Template                     | Lands in                                             |
 | ------------- | ---------------------------- | ---------------------------------------------------- |
-| `service`     | `templates/services/service` | `services/<name>` (`@figentra/service-<name>`)       |
+| `service`     | the CLI's own template       | `services/<name>` (`@figentra/service-<name>`)       |
 | `package`     | `templates/packages/package` | `packages/<category>/<name>` (`--category` required) |
 | `tooling`     | `templates/packages/tooling` | `packages/tooling/<name>`                            |
 | `app:console` | `templates/apps/console`     | `apps/<name>` (port from 3710)                       |
