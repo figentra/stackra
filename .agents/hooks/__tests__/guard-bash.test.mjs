@@ -1266,7 +1266,10 @@ test("figentra CLI: the keeper rule holds for `figentra secrets import` in every
     "mise exec -- figentra secrets import STACKRA_X --env prod",
   ])
     assert.equal(decision(c), "deny", c);
-  for (const c of ["figentra secrets import STACKRA_X", "pnpm exec figentra secrets import STACKRA_X"])
+  for (const c of [
+    "figentra secrets import STACKRA_X",
+    "pnpm exec figentra secrets import STACKRA_X",
+  ])
     assert.equal(decision(c), "ask", c);
   for (const c of [
     "figentra secrets import --list",
@@ -1336,10 +1339,20 @@ test("figentra CLI: a read through `figentra bot gh` stays allowed", () => {
 });
 test("figentra CLI: the settings floor denies secrets import and bot token when the hook fails open", async () => {
   const { readFile } = await import("node:fs/promises");
-  const { deny } = JSON.parse(await readFile(join(root, ".claude", "settings.json"), "utf8")).permissions;
+  const { deny } = JSON.parse(
+    await readFile(join(root, ".claude", "settings.json"), "utf8"),
+  ).permissions;
   const globs = deny
     .filter((r) => r.startsWith("Bash("))
-    .map((r) => new RegExp(`^${r.slice(5, -1).replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`));
+    .map(
+      (r) =>
+        new RegExp(
+          `^${r
+            .slice(5, -1)
+            .replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&")
+            .replaceAll("*", ".*")}$`,
+        ),
+    );
   for (const c of [
     "figentra secrets import X --confirm abc",
     "figentra secrets import X --env prod",

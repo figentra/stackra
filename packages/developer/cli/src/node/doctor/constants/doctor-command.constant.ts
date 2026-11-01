@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `DOCTOR_COMMAND`, `stackra doctor` (`pnpm doctor`): the fresh-machine checklist: mise tools, pnpm install,
- *          Infisical login, the AWS `bedrock` profile, the claude and opencode CLIs, the pinned spec-kit `specify`,
- *          `pnpm agents:check` and .mcp.json. Prints what is missing and how to fix it; exits 1 when a required check
+ *          Infisical login, the AWS `bedrock` profile, the claude and opencode CLIs, `pnpm agents:check` and
+ *          .mcp.json. Prints what is missing and how to fix it; exits 1 when a required check
  *          fails (a `warn` check never fails the run) (was `tools/scripts/doctor.mjs`).
  * Boundary: runs read-only status commands and prints what is missing; installs and changes nothing. Secrets:
  *           forbidden: only non-secret status commands run (`infisical profile list`, `aws sts get-caller-identity`);
@@ -11,7 +11,7 @@
  * Governing contract: ADR 0027 (CLI tools pinned in mise); ADR 0121 (SDLC tooling roles); ADR 0282 (decision 3).
  */
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { awsIdentityOk } from "#node/doctor/functions/aws-identity-ok.function";
@@ -19,8 +19,6 @@ import { doctorExitCode } from "#node/doctor/functions/doctor-exit-code.function
 import { infisicalLoggedIn } from "#node/doctor/functions/infisical-logged-in.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
 import { renderDoctor } from "#node/doctor/functions/render-doctor.function";
-import { speckitMatches } from "#node/doctor/functions/speckit-matches.function";
-import { speckitPin } from "#node/doctor/functions/speckit-pin.function";
 import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
 import type { CliCommand } from "#node/types/cli-command.type";
@@ -106,15 +104,6 @@ function checks(root: string): DoctorResult[] {
     has("opencode") ? "ok" : "fail",
     undefined,
     "https://opencode.ai/install (v2; not pinned by mise)",
-  );
-  const miseToml = join(root, "mise.toml");
-  const pin = speckitPin(existsSync(miseToml) ? readFileSync(miseToml, "utf8") : "");
-  const specify = has("specify") ? (sh("specify", ["--version"]).stdout ?? "") : "";
-  add(
-    `spec-kit ${pin ?? "(unpinned)"}`,
-    speckitMatches(specify, pin) ? "ok" : "fail",
-    specify ? specify.trim() : "specify not on PATH",
-    "mise install (pinned as pipx:specify-cli in mise.toml)",
   );
   add(
     "encore CLI",
