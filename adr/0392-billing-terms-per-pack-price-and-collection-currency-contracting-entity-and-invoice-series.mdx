@@ -1,0 +1,51 @@
+---
+title: "0392 — Billing terms per pack: price and collection currency, dated contracting entity and an invoice series per seller"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It reads with
+  [0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors) (dated pack
+  values), [0220](/adr/0220-stackra-money-and-the-ledger-package) (money and rate sources) and
+  [0391](/adr/0391-plan-catalogue-admin-dated-versions-apply-at-renewal-and-a-second-approver-for-discounts)
+  (price lists). Linear STA-798.
+</Note>
+
+## Context
+
+Egypt is priced on a USD list and collected in EGP (R3-SO-14); the US and EU launch from the UAE company until local
+companies open (R3-SO-15, US-144). Price lists were keyed by currency alone and nothing said who sells or which
+numbering series an invoice uses. Market packs already hold dated values, so a switch of seller on a given day is a
+pack entry, not code.
+
+## Decision
+
+1. **Price-list key.** A plan price list is keyed by (regional tier, price currency) (`priceListKey`); the regional
+   tier and the price currency of a billing country are market-pack values.
+2. **Separate currencies.** `market-pack:<code>` carries `billing.price_currency` and `billing.collection_currency`
+   separately, and `billing.rate_source` (the `RateSource` driver key) whenever they differ. Missing values, or
+   differing currencies with no rate source, are refused: billing never guesses. The rate snapshot is stored on the
+   invoice by OS billing.
+3. **Seller and series.** `billing.contracting_entity` and `billing.billing_seller` are dated pack values. The invoice
+   series is one per billing seller and market (`<seller>:<market>`), so a new local company opens its own gapless
+   series from its first day. `billingTermsOf` reads all of it from `valuesOn` for the invoice date
+   (`BILLING_PACK_KEYS`).
+4. **Optional cash rounding.** A cash rounding row may be `optional` (the US 5-cent rule, US-39); `roundCash` applies it
+   only where the tenant turned it on.
+5. **Live rate drivers** (the central-bank and metal-rate feeds) are drivers of the existing `RateSource` port, built
+   with their vendor feed; they are not part of this decision.
+
+## Consequences
+
+OS billing reads one function for a country's terms and numbering. The packs need the `billing.*` entries before
+launch; the base packs own them.
+
+## Enforcement
+
+Unit tests of `billingTermsOf`, `planPrice` and `roundCash`. planned — a market-pack data test that every launch pack
+sets every `BILLING_PACK_KEYS` entry.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: `notes/handover/review-round-3/defaults-applied.md` (R3-SO-14, R3-SO-15, R3-SO-16);
+owner US-144, US-39.

@@ -1,0 +1,51 @@
+---
+title: "0139 — Actions declare their user experience"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0098](/adr/0098-actions-are-the-unit) and
+  [0110](/adr/0110-experience-is-the-sdui-service-at-l2): an action carries its confirmation,
+  feedback and after-effects, so one declaration drives every client.
+</Note>
+
+## Context
+
+Consoles built by hand repeat the same confirm, feedback and undo logic for every button. The owner asked, on 2026-10-20 (mem
+L740–746), for actions to declare that behaviour, in the way a panel framework does, so web, native and AI clients all read one
+declaration.
+
+## Decision
+
+1. An action declares:
+   - `requiresConfirmation`, with text and a danger colour;
+   - a modal form built from its input schema;
+   - success and failure notifications, translated, with the refusal reason mapped ([0137](/adr/0137-declared-action-options-and-refusal-codes));
+   - after-effects, chosen only from the closed UI-verb set of [0110](/adr/0110-experience-is-the-sdui-service-at-l2): redirect,
+     refresh, close modal, open URL, download, copy, and emit a UI event;
+   - halt and validation states;
+   - progress for long jobs, with a completion notification;
+   - an undo window for reversible actions;
+   - keyboard shortcuts;
+   - visibility and disabled state, derived from iam and entitlements, with an upgrade prompt when the entitlement is missing.
+2. One declaration drives web, native and AI tool responses.
+
+## Consequences
+
+- Clients render actions from the declaration, so a new action needs no new screen code.
+- The declaration is part of the action's contract, so changing it is a versioned change ([0136](/adr/0136-action-runtime-contract)).
+
+## Enforcement
+
+planned — gen emits the declarations into the manifest, and the validator rejects an undeclared after-effect verb outside the closed set.
+
+## Alternatives
+
+- Per-client UI code for each action: rejected, it repeats behaviour across web, native and AI.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0098](/adr/0098-actions-are-the-unit), [0110](/adr/0110-experience-is-the-sdui-service-at-l2). Sources: owner answer on
+action UX, modelled on the Filament panel behaviour (mem L740–746, 2026-10-20).

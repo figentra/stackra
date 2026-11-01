@@ -1,0 +1,86 @@
+---
+title: "0155 — AI-native rule: queries are MCP tools, and all AI code is free"
+description: "Accepted, amended by 0245, 0294, 0348, 0360 · 2026-10-20"
+---
+
+<Note>
+  Amended 2026-10-25 by
+  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor),
+  owner decision in chat (ai-chain-plan Q3): decision 1: every action or query whose `actors`
+  include a user is an MCP tool by default; `tool: false` needs a written reason, which gen checks.
+  Writes are no longer opt-in. L3 and L4 still need a named human. Decisions 2 to 5 stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-474) by
+  [0348](/adr/0348-integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes):
+  the MCP gateway of decision 4 also serves `ui://` resources that a tool names, built by an app
+  member or a package and published as assets, never built in the AI service, and publishes
+  protected-resource metadata naming the identity provider as the authorization server. Decisions 1
+  to 3 and 5 stand.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, for decision 1. The opt-in for writes is the `tool: true` option of the
+  action's base class, which replaces `@AsTool`. A query at risk level L0 or L1 is still an MCP tool
+  by default, under the caller's own permissions. Risk now belongs to the permission the action uses
+  (see [0099](/adr/0099-risk-scale-l0-to-l4)), so an action whose permission is L3 or above still
+  needs a named human. Decisions 2 to 5 are unchanged.
+
+Enforcement of this note: planned — STA-340 (gen derives MCP tools from queries at L0 and L1).
+
+</Note>
+
+<Note>
+  Amended by
+  [0245](/adr/0245-ai-intelligence-plane-skills-prompts-context-providers-plans-and-intents): the
+  intelligence plane over the MCP tools.
+</Note>
+
+<Note>
+  Amends [0098](/adr/0098-actions-are-the-unit), decision 2, and
+  [0100](/adr/0100-ai-model-and-ownership), decisions 1 and 15. Also amends 0077 (wave 3, not on
+  this branch).
+</Note>
+
+## Context
+
+[0098](/adr/0098-actions-are-the-unit) defaulted AI exposure to deny, and [0100](/adr/0100-ai-model-and-ownership) left MCP as a later
+add-on. The owner's AI answers (mem L656, L658, L703–705, 2026-10-20) make AI and MCP part of every package from day one, and make all
+AI code free. Commercial control moves to runtime entitlements.
+
+## Decision
+
+1. Every `@Query` at risk level L0 or L1 is automatically an MCP tool, under the caller's own permissions. Writes are opt-in through
+   `@AsTool`. Any action at L3 or above always needs a named human.
+2. AI and MCP are in every package and service from the start. Specifications do not ask whether AI is needed.
+3. All AI and MCP capability is free code. Commercial control happens at runtime: a tenant that is not entitled to a tool gets
+   "requires subscription" and an upgrade path (mem L704–705).
+4. There is one MCP gateway, in the `ai` service. It runs one server per tenant over Streamable HTTP, uses OAuth through ZITADEL,
+   aggregates tools from the registry, filters them by iam and entitlements, and audits each call as an agent acting for the user
+   (mem L658). The gateway service is an OS item; the Stackra part is tool derivation and the gateway contracts.
+5. The default-deny rule of 0098 for AI exposure is replaced by points 1 and 3 (contradiction C-25).
+
+## Consequences
+
+- Every read query is available to agents, under the same permissions a user has, so the permission catalogue ([0132](/adr/0132-permissions-catalogue-and-policy-providers))
+  has to be right for queries.
+- The AI gateway is a single place to audit agent actions.
+
+## Enforcement
+
+planned — gen derives MCP tools from `@Query` at L0 and L1, and the gateway's tests check that a tool is filtered out for a tenant
+without the entitlement.
+
+## Alternatives
+
+- Default-deny AI exposure (0098 decision 2): replaced (C-25).
+- A separate AI gateway product: rejected; one gateway in the `ai` service (C-24 reword in 0011 is in the final pass).
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0098](/adr/0098-actions-are-the-unit) decision 2, [0100](/adr/0100-ai-model-and-ownership) decisions 1 and 15; 0077 (wave 3).
+Sources: owner AI answers (`stackra-decisions-2026-10-19.md` L656, L658, L703–705, 2026-10-20); contradictions C-24 and C-25.

@@ -1,0 +1,33 @@
+---
+title: "0224 — @stackra/webhooks"
+description: "Accepted, amended by 0308 · 2026-10-20"
+---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks). A provider's webhook is a `WebhookEvent<I>({ type })` on its Integration. The Integration declares verification and routing once, and each connection's webhook URL is `/webhooks/<module>/<name>/:connectionId` (rules 15 and 16). Rotation keeps two secrets valid for 24 hours (rule 17), which is the dual-secret rotation of decision 2 with its window stated. Decision 4 says one inbound gateway verifies provider webhooks; rule 15 of [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) moves that verification to the Integration. The gateway's routing and retention stand. Decision 5 is not restated by [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks).
+</Note>
+
+## Context
+
+Customers receive events from Stackra by webhook. The design ADR that 0078 promised was never written, and the owner's webhook answers WH1 to WH4 (mem L748–751, L502, 2026-10-20) fix it. Webhooks are a separate logical service from integrations.
+
+## Decision
+
+1. **What is delivered (WH1).** Only public, versioned integration events, filtered by scope.
+2. **Format (WH2).** The Standard Webhooks specification: HMAC-SHA256 signatures, optional ed25519, and dual-secret rotation. A thin mode sends personal-data events with the minimum fields.
+3. **Delivery (WH3).** At-least-once delivery, retried for about three days. A subscription that keeps failing is disabled automatically. FIFO is optional. A portal shows the deliveries, with replay and a dead-letter queue. The native driver is the default. Convoy (MPL-2.0) is the high-volume option.
+4. **Inbound (WH4).** One inbound gateway verifies provider webhooks. Raw payloads are kept for 30 days.
+5. **Boundary.** Webhooks are a separate service from integrations (ADR 0218).
+
+## Consequences
+
+- A receiver verifies every delivery with its own secret, so a forged request fails.
+- A thin payload for personal data keeps personal information out of a third party's logs.
+
+## Enforcement
+
+planned — the signature test runs against the Standard Webhooks test vectors; the delivery test covers retry, disable and replay.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner webhook answers WH1–WH4 (`stackra-decisions-2026-10-19.md` L502, L748–751, 2026-10-20). Builds on [0078](/adr/0078-messaging-layer-eight-packages).

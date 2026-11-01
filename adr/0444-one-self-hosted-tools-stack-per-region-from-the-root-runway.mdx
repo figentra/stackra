@@ -1,0 +1,49 @@
+---
+title: "0444 — One self-hosted tools stack per region, from the root runway"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-1285, batch stackra-154). It carries out owner decision R3-5 of 2026-10-26 and the
+  capability map's mismatch M8. The integration architecture itself (connectors, apps, extensions,
+  vendor drivers in OS integrations) is ADR 0443.
+</Note>
+
+## Context
+
+Round 2 chose open-source, self-hosted defaults for OCR (PaddleOCR or Surya, R2-5), e-signature (Documenso, R2-6),
+geocoding and autocomplete (Nominatim and Photon on regional OpenStreetMap extracts, R2-9) and offline translation
+(LibreTranslate, R2-10); Chatwoot was already the help-desk engine. Nothing ran them. Round 3 (R3-5) decided one shared
+tools stack per region, provisioned by Runway and the infra packages, rather than one copy per owning OS service.
+
+## Decision
+
+1. **A new package, `@stackra/infra-tools`, owns the stack.** Its `.` entry plans (`toolsStackPlan(root, env)`, pure);
+   its `./node` entry reads the runway and declares the resources (`awsToolsStack(plan, region)`).
+2. **The runway block is `providers.tools`.** The root schema already leaves every provider block open, so the
+   canonical schema does not change; infra-tools checks the block strictly. It names the environments that run the
+   stack, the OSM extract each region imports, each region's network, the secret parameter path, the log retention
+   and per-tool overrides. The regions are the environment's `regions` (ADR 0354 decision 4).
+3. **Configuration, not code.** `TOOLS_CATALOGUE` holds each tool's pinned image, port, size, environment, secret
+   names, volume and provider category; `OSM_EXTRACTS` holds GCC, Egypt, EU and US. The runway overrides any of them
+   and may disable a tool. OCR and Photon have no upstream server image, so the runway names Figentra's.
+4. **AWS runs it on ECS Fargate.** One cluster, a private DNS namespace `<region>.tools.<project>.internal`, an
+   encrypted EFS file system for tools that keep data, no public address. Secrets are SSM parameter references the
+   Infisical sync fills (ADR 0173). A GCP region is refused until its Cloud Run program is built.
+5. **Endpoints are data.** Each tool with a port yields a `ToolEndpoint` (`tool`, `category`, `provider`, `region`,
+   `baseUrl`). OS integrations computes them from the plan and creates the tenant's `managed` Connection
+   (ADR 0376 decision 5); a tenant may replace it with its own provider (T4).
+
+## Consequences
+
+- The deploy composes one tools stack per environment and region (`stackra infra gen`, the stacks repository).
+- OS integrations needs provider categories `e-signature`, `ocr`, `geocoding`, `address-autocomplete`, `translation`
+  and `help-desk`, and a driver per tool behind the Stackra ports.
+- Documenso and Chatwoot use the environment's shared Postgres server (ADR 0238) and Chatwoot a Valkey; their
+  databases and the URL secrets are provisioned outside this package.
+- Nominatim's Postgres on EFS is slow to import; moving it to EC2 with EBS is the known upgrade.
+
+## Open
+
+- The GCP (Cloud Run) program for in-country regions.
+- Who builds and publishes the OCR and Photon server images.

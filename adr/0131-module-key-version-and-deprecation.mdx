@@ -1,0 +1,62 @@
+---
+title: "0131 — Module key, version and deprecation"
+description: "Accepted, amended by 0264, 0349, 0350 · 2026-10-20"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-478) by
+  [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules):
+  the optional metadata of decision 3 gains `enhances`, the modules a module only extends and does
+  not need; a module may not list one module in both `dependsOn` and `enhances`. The other decisions
+  stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-477) by
+  [0349](/adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products): the
+  uniqueness of decision 1 holds across products, not only inside one manifest: the registry
+  reserves a module key for the first product that publishes it and refuses another product's
+  manifest that carries it, and an edition's gen refuses a local key that collides with its base's
+  released manifests. Decisions 2 to 4 stand.
+</Note>
+
+<Note>
+  Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders): A
+  module `key` is one segment in snake_case, globally unique, and is the namespace for everything in
+  the module (decisions 1 and 3). The `name` field is removed.
+</Note>
+
+## Context
+
+A module is the unit of contribution ([0111](/adr/0111-module-is-the-unit-of-contribution)). Modules need a stable name
+for the manifest, for permissions, for events and for settings, and a way to retire an old action without breaking users
+silently. The owner's intent-map item P1 answered this (accepted 2026-10-20; mem L400, "a required module key; the version
+is the package semver").
+
+## Decision
+
+1. Every `@Module` declares a required `key`: a dotted namespace unique across the manifest. The key prefixes action,
+   permission, model, setting and event keys. Gen fails on a key collision.
+2. The module's version is its package's semver. There is no second version number.
+3. `owner` and `dependsOn` are optional metadata.
+4. `@Deprecated({ since, replacement, sunset })` marks an action, event, field, setting or trait. Gen records the deprecation
+   in the manifest and warns on use. The lifecycle rule for public APIs is in [0136](/adr/0136-action-runtime-contract).
+
+## Consequences
+
+- A module author picks a key once. Renaming a key is a breaking change, so it goes through deprecation.
+- The manifest (ADR 0158, wave 1 part 3, not on this branch) is the place that holds the namespace check.
+
+## Enforcement
+
+planned — gen fails on a duplicate `key` across the manifest and warns on deprecated use. The module authoring guide
+(`guides/structure.mdx`) gets a section when the rule lands (register: docs to change).
+
+## Alternatives
+
+- A second, module-only version number: rejected, the package semver is the single version (P1).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner intent-map item P1 (`stackra-notes/owner-docs-intent-map.md`, Part 4, accepted; mem L400,
+2026-10-20).

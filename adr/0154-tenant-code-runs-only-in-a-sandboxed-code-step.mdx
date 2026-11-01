@@ -1,0 +1,54 @@
+---
+title: "0154 — Tenant code runs only in a sandboxed code step"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0110](/adr/0110-experience-is-the-sdui-service-at-l2), decision 4,
+  [0122](/adr/0122-workflow-studio-three-layers), and
+  [0011](/adr/0011-rejected-and-deferred-technologies) (the tenant-code row and the not-built-yet
+  rule). The "no tenant code" rule of 0110 now has one exception: the sandbox below.
+</Note>
+
+## Context
+
+[0110](/adr/0110-experience-is-the-sdui-service-at-l2) forbids tenant code on the wire, and [0011](/adr/0011-rejected-and-deferred-technologies)
+rejects "tenant data that carries code, markup or logic". The owner's workflow answer WF2 (mem L771, 2026-10-20) says the sandboxed code step
+**amends ADR 0110 and 0011**: tenants may write logic in automations, but only inside the sandbox. The sandbox answer (mem L778) sets its
+limits. The pricing builder keeps its rule of no expressions in tenant data (mem L529; contradiction C-23).
+
+## Decision
+
+1. A sandboxed code step is the only place tenant code may run.
+2. The sandbox is WebAssembly: QuickJS-WASM for JavaScript and TypeScript, and Pyodide for Python, in a sandbox worker pool.
+3. It is identical in SaaS, on-prem and air-gapped installs.
+4. It has no filesystem access.
+5. Network access goes only through an allow-listed, audited fetch proxy.
+6. CPU, memory, time and output are limited.
+7. Input and output are JSON.
+8. Usage is metered as `automation.code_ms`.
+9. Pricing data carries no expressions. Pricing models use registered building blocks ([0110](/adr/0110-experience-is-the-sdui-service-at-l2)).
+   Sandboxed code runs only in automations.
+10. **0011 and the not-built-yet rule are amended in this change.** The tenant-code row of 0011 lists the sandboxed code step among the allowed
+    forms, and the not-built-yet rule carries the same exception.
+
+## Consequences
+
+- Tenant code runs in one place with fixed limits, which makes it auditable and billable.
+- Data that carries code is still rejected. Only the sandbox may execute tenant logic.
+
+## Enforcement
+
+planned — the sandbox's resource limits and proxy allow-list are tested in the sandbox worker pool, and the validator rejects code in tenant
+data outside the code step.
+
+## Alternatives
+
+- Tenant code in the platform process: rejected, it cannot be limited.
+- No tenant code at all (0110 as it was): replaced, because automations need logic.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0110](/adr/0110-experience-is-the-sdui-service-at-l2) decision 4, [0122](/adr/0122-workflow-studio-three-layers),
+[0011](/adr/0011-rejected-and-deferred-technologies). Sources: owner answer WF2 (`stackra-decisions-2026-10-19.md` L771: "amends ADR 0110/0011"),
+sandbox answer (L778), pricing rule (L529), all 2026-10-20; contradictions C-20 and C-23.

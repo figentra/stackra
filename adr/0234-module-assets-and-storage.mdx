@@ -1,0 +1,145 @@
+---
+title: "0234 — Module assets and storage"
+description: "Accepted, amended by 0263, 0264, 0294, 0305, 0306 · 2026-10-20 · amended 2026-10-24 (STA-456)"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-456): a `data/` asset may declare a schema and a version
+  (`assets/data/<name>.data.json` beside `<name>.schema.json`). Gen validates it against the schema
+  at build, content-hashes it into the manifest as decision 5 already does for every asset, and the
+  runtime refuses to start a module whose shipped data does not match its manifest hash.
+  Jurisdiction rule packs and reference tables ship this way. The folder names of decision 2 stand.
+</Note>
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers) for the overrides and by [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) for the language files: decision 9 is superseded in part. Overrides no longer sit in `assets/overrides/<namespace>/`. They sit in the member's `src/overrides/<owner>/` tree, which mirrors the owner's path, and a file there shadows the file at the same path. Language files still merge key by key. Language files are namespaced: `assets/lang/<locale>/<namespace>.json`, for example `console`, `shortcuts`, `manifest`, `pages` and `documents`. Regional overlays such as `ar-SA` and `en-US` hold only the keys that differ, and they fall back to the base language (`ar` or `en`). Folder names use BCP 47 case, and URL prefixes stay lowercase (ADR 0297). Decisions 1 to 8 and 10 stand.
+</Note>
+
+<Note>
+  Amends [0127](/adr/0127-package-categories-including-infrastructure): the `data` category gains
+  `assets` and `filesystem`, and the `developer` category holds `stackra gen`, which gains the
+  assets collector. "Resource" is reserved for `@Resource`, the admin-UI declaration of
+  [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package). Files shipped with a
+  package are **assets**.
+</Note>
+
+<Note>
+  Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders):
+  The namespace is the module's `key`, and the `name` field is removed (decision 1). Decision 2's
+  `@Module({name})` no longer applies.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), decision 9: overrides are
+  path-bound and typed, with no decorator. A file override replaces the module file at the same path, as decision 9
+  already says. A component override is a file at `overrides/<owner>/<block-or-widget>.override.tsx`; it replaces the
+  block or Custom widget at that path and is typed against that block's props. The override-point kind is retired, so blocks and
+  Custom widgets are the only replaceable components. Behaviour is replaced through `@Replaces`, which swaps a DI binding.
+</Note>
+
+<Note>
+  Amended 2026-10-21 (STA-219): the package `assets/` folder sits at the package root, outside
+  `src/`, and the namespace is the module `key`. See the amendment at the end of this page.
+</Note>
+
+<Note>
+  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) (decision 3): the `Assets` port is
+  a same-named token, so a constructor typed `Assets` needs no `@Inject`. The `ASSETS` token named
+  in decision 3's list is replaced by that value.
+</Note>
+
+## Context
+
+A module ships files with its code: images, icons, fonts, language files, mail and PDF templates, scaffold stubs and seed data. Those files are
+read-only and versioned with the package. Runtime files, such as uploads and generated PDFs, are different: a tenant owns them and they change. The
+owner accepted the proposal in `stackra-notes/resources-discovery-proposal.md` (2026-10-20), with the placements below. The owner then renamed the
+concept from "resources" to "assets", so that the word "resource" stays with `@Resource`.
+
+## Decision
+
+1. **One pipeline.** A module's assets follow the same path as its other contributions: declare, collect, publish, merge, consume
+   ([0144](/adr/0144-metadata-registry-and-explorers) for the registry, [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client) for the manifest).
+2. **Declare by location.** A module's files sit in an `assets/` folder beside its module file. For a package's root module that is the package's
+   `assets/` folder. The namespace is the module's `name` (`@Module({ name })`). There is no `defineAssets`. Folder name = kind:
+   - `public/`: anything with a URL, published to the CDN;
+   - `lang/`: goes into the i18n registry under the namespace;
+   - `templates/`: mail, PDF and SMS templates, going into the templates registry;
+   - `stubs/`: used by the scaffolder (`pnpm new` and `stackra make`);
+   - `data/`: private seed or reference data, read with `read()`.
+3. **Packages.**
+   - `@stackra/assets` is in the `data` category. Its entries:
+     - `./contracts`: the `Assets` interface, the `ASSETS` token and the `AssetKey` type;
+     - `.`: the `Assets` service, a read-only view over a filesystem disk with namespace and override resolution, and a manifest loader;
+     - `./node`: the Explorer that registers module assets at boot, and the dev server that serves them;
+     - `./react` and `./native`: the `useAsset()` hook;
+     - `./testing`: a fake.
+   - `@stackra/filesystem` is in the `data` category: disks and drivers (S3, R2, MinIO, local and database).
+   - `@stackra/container` modules carry `name`, which is the namespace.
+   - A package exports its assets as `./assets/*`. Its folder is `assets/`, not `resources/`.
+4. **Keys use `::`.** An asset key is `<module>::<path>`, for example `flags::public/images/eg.svg`. The same form is used for i18n keys
+   (`billing::invoice.refund_confirm`), template keys (`billing::mail/invoice-paid`) and stub keys (ADR 0231, decision 3).
+5. **Collection.** The collector lives in the codegen compiler (`stackra gen`, `developer` category). It walks the module graph and writes the
+   `assets` section of `app-manifest.json`, with namespace, kind, path, content hash, public flag and owning module. It emits the `AssetKey`
+   union into the gitignored `.stackra/` (0162). The collector and the Explorer agree, and a conformance test checks it (0144).
+6. **Publish.** Publishing public assets to the CDN bucket is a deploy step, run by `stackra build` or CI. Files are content-hashed.
+7. **Storage.** `@stackra/filesystem` is the only storage API. Disks are injected, never reached through a facade. Usage is `disk('public').url()` and
+   `disk('private').temporaryUrl()`. Static helpers exist only for pure utilities (`Str`, `Date`, `Arr`, ADR 0145).
+8. **Consumers.** `@stackra/i18n` consumes `lang/`. The templates registry in the communication category consumes `templates/`. The scaffolder consumes `stubs/`.
+9. **Overrides.** A member replaces a module file at `assets/overrides/<namespace>/<same path>`. The override wins, and gen records which one won.
+   Language JSON files merge key by key. Other files are replaced whole.
+10. **Bundler imports.** `#assets/public/...?url` imports are allowed only inside the owning package, for tree-shaking. Overrides do not apply to them.
+    The docs say so.
+11. **Runtime tenant files** belong to the Figentra OS files service, not to assets. Tenant branding stays in the runtime brand service.
+12. **Why two places.** Laravel also separates `resources/` (shipped with code) from `storage/` (created at runtime). This ADR keeps that split, and
+    names the first `assets/` here, because Stackra reserves "resource" for `@Resource`.
+
+## Consequences
+
+- An agent can predict an asset's path from its kind and namespace, without reading code.
+- Every asset is in `app-manifest.json`, so it is reviewed and diffed in a pull request.
+- Public assets are immutable after publish (content-hashed), so caches never serve a stale file.
+- Any text that calls a package folder `resources/` is stale. ADR 0126 is amended by a forward note in the same change.
+
+## Enforcement
+
+planned — gen fails on an asset whose kind folder is unknown, and the Explorer and collector conformance test covers the manifest section. The
+validator rejects a `../` import into `assets/` (0233). The scaffold templates gain `assets/` with `public/` and `lang/`.
+
+## Alternatives
+
+- Assets as runtime uploads in the same store: rejected; the two have different owners and mutability.
+- A `defineAssets` call per module: rejected; the folder is the declaration.
+- "Resources" for shipped files: rejected by the owner; the word is reserved for `@Resource`.
+
+## Amendment 2026-10-21: consistency with 0264 and 0177 (STA-219)
+
+**Context.** Three statements in this page disagreed with later decisions. Decision 2 named the namespace `name`, which
+[0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders) removed. Decision 2 put a package's `assets/`
+beside its module file, which is inside `src/`, while [0177](/adr/0177-package-distribution-npmjs-and-keygen) (amendment of
+2026-10-21) puts static files at the package root. Decision 3 kept the `name` of `@stackra/container` modules. The owner settled
+the location on 2026-10-21.
+
+**Decision.**
+
+1. **The namespace is the module `key`**, in decision 2 and in the container note of decision 3. `@Module({ name })` is not used.
+2. **Where the `assets/` folder sits.**
+   - A package's root-module assets are in `assets/` at the package root, outside `src/`, exported as `./assets/*`. Static files are
+     not code. This is the rule of 0177 (amendment of 2026-10-21).
+   - A feature module's assets are in `assets/` beside the module's files, inside `src/modules/<feature>/`, as
+     [0130](/adr/0130-module-layout-by-semantic-kind) (amendment of 2026-10-21) places the feature module.
+3. **The folder names of decision 2** (`public/`, `lang/`, `templates/`, `stubs/`, `data/`) are unchanged.
+
+**Consequences.**
+
+- Each asset path, namespace and module key has one spelling, and the validator and gen can read the same rule.
+
+**Enforcement.** planned — the asset collector in `stackra gen` (developer category) and the `exports` rule for `./assets/*` named in
+[0177](/adr/0177-package-distribution-npmjs-and-keygen). Nothing checks the location yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0127](/adr/0127-package-categories-including-infrastructure); forward note on [0126](/adr/0126-member-shapes-and-scaffold-templates).
+Builds on: [0144](/adr/0144-metadata-registry-and-explorers), [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client),
+[0162](/adr/0162-validation-translatable-fields-and-entityschema-placement). Sources: `stackra-notes/resources-discovery-proposal.md` (owner
+accepted, 2026-10-20); the owner's placements and the rename to assets (2026-10-20); the owner's naming convention (`stackra-decisions-2026-10-19.md`,
+end of file: `::` for namespace lookups); DA3 (`stackra-decisions-2026-10-19.md`, public CDN bucket).

@@ -1,0 +1,69 @@
+---
+title: "0449 — Kitchen ticket printers, bump bars, scale presets, a shared used-receipt store and the kiosk window"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract: Purpose: the decision record for the peripherals and platform additions Mezzora, Organza and Commerce asked for (named kitchen printers with raster Arabic and a buzzer, the bump bar driver, the precision scale preset, the shared used-receipt store port, the kiosk window kind). Boundary: decision text only; the code is in packages/experience/peripherals and packages/experience/platform. Runtime: docs. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0253, 0281, 0339, 0428, 0429. */}
+
+<Note>
+  Proposed (STA-925, batch stackra-49; the remainder of STA-801). It extends
+  [0253](/adr/0253-peripherals-web-api-first-and-device-presets) and
+  [0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)
+  (peripherals), [0429](/adr/0429-exit-gates-on-signed-receipt-tokens-and-continuous-scale-weights)
+  (decision 3: the shared used-receipt store, "later") and
+  [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (desktop windows).
+  Sources: Mezzora module catalogue open question 4, Organza module catalogue (precision scale
+  preset), Commerce module catalogue gaps (platform: no kiosk window kind).
+</Note>
+
+## Context
+
+A restaurant kitchen prints each order on several named printers, one per station, with Arabic item names and a
+buzzer so the line hears a new ticket; the kitchen display is driven by a bump bar. The `KitchenPrinter` and `BumpBar`
+ports existed with no driver. A jeweller weighs gold to the hundredth of a gram, where `ScaleReading` spoke of whole
+grams. An exit gate remembered its own used receipts only, so a venue with two exits let one receipt out of each. And
+a desktop window could be ordinary or utility, never a kiosk window.
+
+## Decision
+
+1. **Named kitchen printers.** `PeripheralsConfig.kitchenPrinters` names each printer with its address, the stations it
+   prints for (a station on one printer at most) and its buzzer (`times` beeps of `length` × 50 ms, or null). The
+   `escpos` `KitchenPrinter` driver (desktop main) routes a ticket to its station's printer and prints the ticket's
+   `raster` (`GS v 0`) when it carries one, else its lines as text, then cuts and sounds `ESC B n t`. Arabic is drawn by
+   the renderer, as 0339 decision 2 says for receipts. The renderer reaches it through `peripherals.kitchen.print`.
+   Which items go to which station stays the product's routing.
+2. **Bump bar.** The `hid` `BumpBar` driver reads a keypad's keys in main from `before-input-event`, as the scanner
+   does, and maps them through `PeripheralsConfig.bumpBarKeys` (a keypad model is a map, not code). A `memory` driver
+   ships for tests.
+3. **Scale presets.** `ScaleReading.grams` is grams to the scale's division. `PeripheralsConfig.scalePresets` holds
+   profiles (`retail`: 1 g up to 15 kg; `precision`: 0.01 g up to 600 g) and `scalePreset` names the device's;
+   `fitScaleReading` rounds a reading to it and answers null outside its range. A serial scale driver is still later
+   (0253 decision 3).
+4. **Shared used-receipt store.** `UsedReceiptStore` (`peripherals.UsedReceiptStore`) has an atomic `claim(receiptId,
+until)` and a `release`. `ExitGateService` claims after the product's rule admits the receipt and gives it back if
+   the gate fails to open; a store that cannot answer keeps the gate closed (`store`). Only the `memory` driver (one
+   gate) ships; a shared driver comes with the first venue with several exits.
+5. **Kiosk window kind.** `WindowKind.Kiosk` joins `normal` and `utility`. `browserWindowOptions` in
+   `@stackra/platform/desktop` maps a configured window to Electron options; a kiosk window is full-display, frameless,
+   menu-less and cannot be resized, moved, minimised or closed. It locks that window only; `KioskMode` (0428) still
+   locks the whole app.
+
+## Consequences
+
+- A kitchen adds a printer or moves a station by configuration; an Arabic ticket prints on any ESC/POS printer that
+  takes raster.
+- A printer that ignores `ESC B n t` prints silently; another buzzer command is a preset entry when one is needed.
+- Until a shared store driver ships, several exits still each remember their own receipts.
+- The desktop shell (`@stackra/app` `createApp`) must spread `browserWindowOptions` for the kind to take effect; until
+  then the kind is configuration that nothing reads.
+
+## Enforcement
+
+planned — the unit tests in `packages/experience/peripherals/src/{core,desktop}/**/__tests__/` and
+`packages/experience/platform/src/desktop/functions/__tests__/browser-window-options.function.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none (0429 decision 3's "later" is this). Sources: Mezzora `apps/docs/src/docs/build/module-catalogue.mdx` open
+question 4; Organza `apps/docs/src/docs/build/module-catalogue.mdx` (pieces, buyback); Commerce
+`apps/docs/src/docs/build/module-catalogue.mdx` (platform gap).

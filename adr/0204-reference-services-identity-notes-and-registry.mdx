@@ -1,0 +1,35 @@
+---
+title: "0204 — Reference services: identity, notes and registry"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0010](/adr/0010-services-are-independent-workspace-members). Decisions 5 and 6 were
+  already amended by [0124](/adr/0124-encore-is-the-generated-runtime-target). The member shape is
+  in [0126](/adr/0126-member-shapes-and-scaffold-templates) and
+  [0130](/adr/0130-module-layout-by-semantic-kind).
+</Note>
+
+## Context
+
+Stackra needs reference services that show how a service is built. The owner's answer FW10 a (mem L543, 2026-10-20) names three: identity, notes and registry. They replace the `example` and `health` services.
+
+## Decision
+
+1. **Three reference services.** Identity, notes and registry replace `example` and `health`.
+2. **Root module.** A service declares its root module in `package.json` (G2, mem L116, and ADR 0090), and only hosts modules (ADR 0111).
+3. **Entry file.** The entry is `src/main.ts`, which bootstraps the declared root module. The owner's decisions do not remove this entry; an earlier draft of the register said otherwise, and that statement was wrong.
+4. **Identity reference service.** It is the control plane for apps, orgs, the tenant to org mapping, and identity events. Login is ZITADEL's (ADR 0206). Its exact contents are in ADR 0241.
+
+## Consequences
+
+- The three services are the examples that `create-stackra-app` copies (ADR 0199).
+- The root module in `package.json` and the entry file both exist, so gen and a runtime can each find the module.
+
+## Enforcement
+
+planned — `pnpm validate` checks that each service has a root module declared in `package.json` and an entry file that imports it.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0010](/adr/0010-services-are-independent-workspace-members). Sources: owner answer FW10 a (`stackra-decisions-2026-10-19.md` L543, 2026-10-20); G2 (L116); the owner's correction on the entry file, from the review of wave 2 (no owner line removes `src/main.ts`).

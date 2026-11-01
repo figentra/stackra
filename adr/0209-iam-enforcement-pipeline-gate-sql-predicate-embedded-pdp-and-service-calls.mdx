@@ -1,0 +1,28 @@
+---
+title: "0209 — IAM enforcement: the pipeline gate, an SQL predicate, an embedded PDP and service-to-service calls"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+An access check that runs in only one place can be bypassed, and a list that filters in code can leak rows. The owner's enforcement answers A5, A6, A8 and A9 (mem L622–626, 2026-10-20) fix where the check runs and how lists are filtered.
+
+## Decision
+
+1. **Pipeline gate (A5).** The IAM gate runs on every action (ADR 0138). Lists are filtered by compiling grants to an ltree SQL predicate, combined with row-level security. The interface receives a cosmetic permissions snapshot. No hand-rolled checks.
+2. **Embedded policy decision point (A6).** `@stackra/iam` contains an embedded decision point that evaluates a versioned policy snapshot pushed by events. A level L3 or above action can force a fresh read. The IAM service owns the writes and the `explain` call.
+3. **Service-to-service (A8).** Each service has its own ZITADEL service account. A call carries the service token and `onBehalfOf`. Both grants are checked.
+4. **Audit (A9).** Every deny and every L3 or higher allow is audited. Routine allows are metrics only. `explain` is itself a permission.
+
+## Consequences
+
+- A list returned to a user contains only rows the user may see, enforced in the database as well as in code.
+- A service call proves both the calling service and the user it acts for.
+
+## Enforcement
+
+planned — a test checks that every list action carries the predicate, and the service-call test checks both grants.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner IAM enforcement answers A5, A6, A8, A9 (`stackra-decisions-2026-10-19.md` L622–626, 2026-10-20).

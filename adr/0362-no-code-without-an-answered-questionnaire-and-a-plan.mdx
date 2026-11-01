@@ -1,0 +1,72 @@
+---
+title: "0362 — No code without an answered questionnaire and a plan"
+description: "Accepted · 2026-10-25"
+---
+
+<Note>
+  Amends [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk) (the lanes: every change to
+  source needs an answered spec and a plan before code), by a Note.
+</Note>
+
+## Context
+
+The owner's planning rule of 2026-10-25 says no project starts building until everything it needs is decided and
+recorded (`planning-sequence.md`). The spec flow already asks for a spec with an Impact questionnaire and a plan
+([0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk)), but only CI checks it, after the code is written, and
+the chore and bug lanes skip parts of it. On 2026-10-25 the owner decided that the rule applies to every change in
+every repository and is enforced before the code is written, by a local hook (`ai-chain-plan.md`, "Owner answers",
+Enforcement).
+
+## Decision
+
+1. **Every change needs an answered questionnaire and a plan before code.** This holds in every repository and for
+   every change: a bug fix, a feature, a module or a service.
+2. **Depth scales with size.** A bug gets 5 to 10 questions. A feature gets about 20. A module or a service gets the
+   full questionnaire.
+3. **Defaults are allowed; blanks are not.** A question may be answered with its recommended default, but every
+   question is answered before the plan is written. This follows the owner's default rule of 2026-10-25
+   (`notes/handover/os/default-applied.md`: the owner may change any default by number); the owner was not asked this
+   as a separate question.
+4. **A local hook enforces it.** An agent's write to a source path is refused until the branch's spec has every
+   question answered and a plan exists. The hook is the plan gate in `.agents/hooks` (Enforcement).
+5. **Hotfix exception.** A production hotfix may go before its questionnaire only with the owner's approval. Its
+   questionnaire and plan follow right after the fix.
+
+## Consequences
+
+- Planning moves ahead of code for small changes too; a bug costs a short questionnaire first.
+- A branch without a Linear key (`main`, an unnamed branch) cannot change source through an agent's file tools.
+- The owner approves each hotfix explicitly, in a marker file that agents cannot write.
+- The hook sees only file tools; a shell write is not seen. It is an accident guard, like the other hooks.
+- Markdown (`.md`, `.mdx`) is never gated, so documentation inside a source folder is never blocked.
+- The hook gates any git checkout an agent writes into, not only Stackra. Until a repository has `.agents/specs` and
+  `spec-gate`, an agent cannot edit its source paths from a Stackra session, for example Figentra OS or the template.
+
+## Enforcement
+
+`.agents/hooks/guard-paths.mjs` calls `decidePlanGate` in `.agents/hooks/_rules.mjs` (tests:
+`.agents/hooks/__tests__/plan-gate.test.mjs`). A Write or Edit to `packages/**`, `services/**`, `workers/**`,
+`apps/**` (except `apps/docs/**`) or `tools/**` (except `tools/scaffold/templates/apps/docs/**`) is refused unless the
+branch key `sta-<n>` has exactly one `.agents/specs/sta-<n>-*/` folder whose `spec.md` passes the `checkSpec` of
+`tools/scripts/spec-gate.mjs` and which holds a non-empty `plan.md`. The hotfix marker is
+`.agents/specs/sta-<n>-<slug>/hotfix.md` with filled `**Approved by**:`, `**Approved on**:` and `**Reason**:` lines;
+a write rule in `_rules.mjs` refuses an agent's write to it. Markdown files are exempt even inside those folders. Documented in `.agents/hooks/README.md`. planned — the
+same gate in the OpenCode guard (`.opencode/plugins/guard`), and the hook in the other repositories.
+
+## Open questions
+
+- **Bug lane folder.** 0120 puts bug specs in `.specify/bugs/sta-<n>-<slug>/`. The hook reads `.agents/specs/` only,
+  so a bug change to source needs a spec folder there. Whether the bug lane moves to `.agents/specs/` or the hook also
+  reads `.specify/bugs/` is not decided.
+- **Size questionnaires.** The 5-10 and ~20 question sets for bugs and features are not written. Today the hook
+  checks the full Impact list of `checkSpec` for every size.
+- **Other repositories.** "Every repository" needs the hook, `spec-gate` and the `.agents/specs/` layout in OS,
+  Commerce and the product repositories; how they get it (`stackra new`, a shared package) is not decided.
+- **Hotfix marker life.** Whether the marker expires, or must be removed when the questionnaire lands, is not decided.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk), by Note. Reads with
+[0293](/adr/0293-agent-permission-tiers-and-executor-pushes). Sources: owner decision in chat, 2026-10-25
+(`360/ai-chain-plan.md`, "Owner answers", Enforcement); the owner's default rule (`os/default-applied.md`, decision 3); `planning-sequence.md` (rule: no project builds before its
+decisions are recorded).

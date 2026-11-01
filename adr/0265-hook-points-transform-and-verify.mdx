@@ -1,0 +1,70 @@
+---
+title: "0265 — Hook points: owner-declared transform and verify hooks, with implicit Before and After on actions"
+description: "Accepted, amended by 0294, 0305 · 2026-10-21"
+---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components): the transform point is named `after`, and the verify point is named `before`. A point is declared in `extensions/<name>.extension-point.ts`. An implementer is one `Extension<Point["slot"]>` class per slot, with a `handle` method, in the extender's `extensions/` group; it replaces the `@Hook` class in `hooks/`. The `Extension(Point, { order })` form of ADR 0294, and the rule that a method is named after the point, are superseded by rule 25 of [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components). The slot verbs and the call form follow ADR 0305 (rules 22 to 25). A `before` slot refuses by throwing a Refusal, and it may also return replacement arguments of the same type (rule 23 of [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components)); the verify point of decision 1 returned nothing, so that addition is new. Decision 1's ban on `around` at a point stands. The whole-call wrapper is an interceptor (ADR 0305 rule 24). Decision 2 (the implicit before and after of every action) stands. Decisions 4 to 8 stand in substance, and the call of decision 4 is the explicit call of a named slot.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): a hook point is an extension point (`extends ExtensionPoint`, with `transform<T>()` and `verify<T>()` properties), and an implementer is an extension (`extends Extension(Point, { order })`, with one method named after one point) in the `extensions/` folder. The words "hook" and "hook point" are retired for this meaning. The interceptor is a new kind: `extends Interceptor`, with `intercept(ctx, next)`, wraps a whole action call between idempotency and the handler ([ADR 0138](/adr/0138-pipeline-order-is-fixed)). Decisions 1, 3, 5, 6 and 8 keep their rules under the new names. Decision 2 (implicit points before and after every action) is not in the v3 kind table, so this note does not carry it forward, and it stays open. Decision 4 (the explicit call) and decision 7 (the printed chain) still apply in substance; the call form and the generated file's name under the new vocabulary are not yet decided.
+</Note>
+
+<Note>
+  Amends [0101](/adr/0101-action-first-workflow-behind-when-needed) (decision 4: "before and after
+  hooks" is the hook model of this ADR) and
+  [0261](/adr/0261-generated-stackra-modules-in-stackra-gen) (decision 1: gen also writes
+  `hooks.ts`).
+</Note>
+
+## Context
+
+Other modules need to change a value in an action, or to refuse it, without editing the owner's code. Three mechanisms were weighed.
+Magento-style plugins can wrap any public method with `around`, which hides control flow and makes every method an API. Medusa-style
+workflow hooks are named and owner-declared, but they belong to workflows only. Laravel-style events cannot change a value. The owner
+settled on 2026-10-21 that a hook point is declared by the module that runs it, has one of two kinds, and is printed by gen.
+
+## Decision
+
+1. **Hook points are declared and owned.** `defineHooks(key, { ... })` in the owning module's `hooks/` folder declares named points. Each
+   point has one of two kinds:
+   - **transform**: receives a value and a context, and returns the value. Implementers run in `order`, and each one receives the
+     previous one's output;
+   - **verify**: receives a context, and returns nothing or throws a `StackraError` with a snake_case refusal code
+     ([0140](/adr/0140-error-envelope-and-error-kinds)).
+     There is no `around` and no observe point. Observing is an event listener ([0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders)).
+2. **Implicit points on every action.** Every `@Action` has `Before(ActionClass)`, which transforms the validated input, and
+   `After(ActionClass)`, which transforms the output before it is returned. This replaces the open "before and after hooks" of
+   [0101](/adr/0101-action-first-workflow-behind-when-needed) decision 4 with named, typed points.
+3. **Implementers live in the extender's folder.** A hook class is decorated `@Hook(Point, { order, extends })` and sits in the
+   `hooks/` folder of the module that extends the point. Equal `order` values on one point are a gen error.
+4. **The owner calls the point explicitly.** The owner's code calls `this.hooks.transform(OrderHooks.totals.adjust, base, draft, ctx)`,
+   so the call site is greppable.
+5. **Typed extensions.** A hook may declare `extends: { <namespace>: ZodSchema }`. Gen merges `extensions.<namespace>` into the owning
+   action's input schema, the manifest, the OpenAPI projection and every generated client. An output extension works the same way on
+   `After(...)`. A namespace used by two hooks is a gen error.
+6. **Rules that keep hooks safe.** A hook runs inside the owner's transaction and pipeline. It makes no network call (a lint), and it
+   writes only the module's own data. Anything else uses `ctx.afterCommit` or an event. Hooks are in-process only. Another service never
+   hooks into a module; it listens to events, or the module exposes a port.
+7. **The chain is printed.** Gen writes `.stackra/gen/hooks.ts`, which lists every point with its implementers in order and their file paths.
+8. **A hook point is part of its module's contract.** Changing its types follows the deprecation rule of
+   [0131](/adr/0131-module-key-version-and-deprecation).
+
+## Consequences
+
+- A reviewer answers "who changes the order total?" by reading one generated file.
+- A transform cannot hide control flow, because the order is printed and the call is explicit.
+- Extension of an action needs no workflow, and the extended input reaches the console and the clients with its type.
+- A module must declare its points before a customer can extend them, which is more work for the owner.
+
+## Enforcement
+
+planned — gen fails on equal `order` values on one point, on an `extends` namespace collision, and on a hook point with no declaration; the
+house lint fails a network call inside a hook. Nothing checks these yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0101](/adr/0101-action-first-workflow-behind-when-needed), [0261](/adr/0261-generated-stackra-modules-in-stackra-gen).
+Relates to [0136](/adr/0136-action-runtime-contract) (the handler context and transaction). Sources: owner settlement in chat, 2026-10-21
+(programming model question Q3).

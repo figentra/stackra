@@ -1,0 +1,102 @@
+---
+title: "0368 — Achievements: award kinds as data, criteria grants, revoke and a cross-scope verify token"
+description: "Proposed · 2026-10-25"
+---
+
+<Note>
+  Proposed. It is the Stackra ADR that [OS
+  0058](https://docs.os.figentra.com/adr/0058-engagement-achievements-and-checklists) decision 1
+  asks for before the kit is built. It reads with
+  [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) (criteria are rule
+  sets) and
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  (award kinds, levels and certificate layouts are data and studio templates, never code).
+</Note>
+
+## Context
+
+[OS 0058](https://docs.os.figentra.com/adr/0058-engagement-achievements-and-checklists) approved `@stackra/achievements`
+as a narrow kit: awards, criteria, revoke, an unguessable verify token with a QR code, and certificates through
+`@stackra/documents`. Its first consumer is OS workforce (recognition); the sports-academy product moves onto it at its
+rewrite. That product's award code is the behaviour reference: a template with ordered levels (belts, swim levels), an
+ascending rule (the next level must be higher), a once-per-period rule (player of the month), revoke with a reason,
+and a certificate with a verification code. Its kinds were a fixed list in code, which
+[0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios) no longer allows:
+the owner's answers classify award kinds as seed data (ACA-179), automatic awards as a rule set (ACA-180), certificate
+design as a studio print template (ACA-181), revoke as a workflow template (ACA-183) and verification as a capability
+(ACA-182). A verify link is opened by a stranger who has no scope session, while every scope-owned table is under
+forced row-level security ([0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer)); the tenancy rule
+allows a cross-scope read only where an ADR names it.
+
+## Decision
+
+1. **One package, mechanism only.** `@stackra/achievements` (`packages/application/achievements`, `tier:lib`) holds the
+   award kind, award and verification models, their services and two integration events. It names no recipient
+   model: a consumer registers each model it grants awards to (`workforce.member`) with the `Rules` its criteria may
+   test. Points stay in `@stackra/loyalty-kit`, leaderboards are report widgets, Open Badges and goals are out
+   ([OS 0058](https://docs.os.figentra.com/adr/0058-engagement-achievements-and-checklists) decisions 2 and 5).
+2. **Award kinds are scope data.** A kind is a record of a scope: key, name, recipient model, ordered levels, whether
+   levels ascend, whether it is once per period, its criteria rule set, its certificate template key and whether it is
+   active. Products seed their kinds in their seed packs and tenants edit them in the admin; no kind is a literal in
+   code. Archiving a kind stops new grants and keeps its awards.
+3. **One grant check.** `checkGrant` refuses an archived kind, another recipient model, a missing or unknown level, a
+   level not above the recipient's highest live level on an ascending kind, and a missing or already awarded period on
+   a once-per-period kind. It is isomorphic, so a form previews the refusal with the server's code; the refusal is
+   `award_not_grantable` with one of seven codes. A period is an opaque key the caller chooses (`2026-09`).
+4. **Criteria grant automatically.** A kind without levels may carry criteria: a `@stackra/rules` rule set over the
+   recipient model's fields. `AwardService.consider(scope, recipient, facts)` evaluates every active kind over the
+   model with a published revision at the clock's time and grants each match the recipient may hold: once, or once per
+   period. The consumer computes the facts and decides when to call (its own events); the package only evaluates
+   ([0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) decision 9). An automatic award records
+   the revision that matched and no granting principal.
+5. **An opaque verify token, resolved across scopes.** Each award gets 32 random bytes in base64url, kept on the award
+   (under row-level security) so its certificate can be printed again. The one cross-scope read is the table
+   `achievements.award_verifications`, which has no row-level security and holds only the token's SHA-256, the award id
+   and the award's scope: `verify(token)` finds the row, opens that scope's session and returns the live award. Revoke
+   deletes the row, so a revoked award's token resolves nothing, and a token resolves only the award it was issued
+   with. The QR code is the verify URL drawn as SVG (`verifyQr`); the URL's base is the consumer's setting.
+6. **Certificates through documents.** `certificateOf(awardId, verifyBaseUrl)` returns the fields a certificate shows
+   (kind name, level, period, grant time, verify URL and QR code) and the kind's template key. The layout is a print
+   template in [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)'s
+   builder, rendered by `@stackra/documents`; the recipient's display name, and any rule about what a stranger may see
+   of a minor, is the consumer's.
+7. **Events.** `AwardGranted` (`achievements.award.granted.v1`) and `AwardRevoked` (`achievements.award.revoked.v1`)
+   are integration events ([0141](/adr/0141-integration-event-names-and-envelope)) written through the outbox in the
+   transaction that changed the award. They never carry a reason, a fact or a token.
+
+## Consequences
+
+- A product adds an award kind, a level ladder or a certificate design without a release.
+- The verification index is readable by any session, so it must never gain a column with personal data or the token
+  itself; a leaked index row cannot be turned into a working link.
+- A revoke is final for the token; reissuing means a new grant with a new token.
+- `verify` opens a scope session, so it runs in its own public action and never inside another action's transaction.
+- Two concurrent grants of a once-per-period kind for the same period can both pass the check; there is no unique index
+  on the period yet.
+
+## Enforcement
+
+- planned — tests in `@stackra/achievements` (written, not yet run): a verify token resolves only its own award and
+  resolves nothing after revoke ([OS 0058](https://docs.os.figentra.com/adr/0058-engagement-achievements-and-checklists)
+  Enforcement); the verification row holds the hash and never the token; `checkGrant` covers each refusal code.
+- planned — a validator check that `achievements.award_verifications` is the only table here without a scope policy.
+
+## Open questions
+
+- Whether an AI principal may grant awards: the Academorix answer is a platform floor
+  (`settings:platform-floor:ai-no-awards`, ACA-314). The package takes the granting principal as given; the floor
+  belongs to the action that calls `grant`.
+- A short human-typeable verification code beside the QR code, and Apple and Google Wallet passes (ACA-186), are not
+  built.
+
+## Supersedes and sources
+
+Supersedes: none. Implements [OS 0058](https://docs.os.figentra.com/adr/0058-engagement-achievements-and-checklists)
+decision 1. Builds on [0141](/adr/0141-integration-event-names-and-envelope),
+[0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels),
+[0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer),
+[0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) and
+[0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios). Sources:
+`notes/handover/stackra-package-needs.md` (the `@stackra/achievements` row), `notes/handover/answers-as-config.md`
+(OS-266, ACA-179 to ACA-183, ACA-314), `notes/handover/config-model.md`, and the Academorix award domain at
+`93d9dca2fdcc83bd71988092bd4507ee2499412c` (behaviour only).

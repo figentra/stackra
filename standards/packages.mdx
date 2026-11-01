@@ -1,0 +1,91 @@
+---
+title: "Package standards"
+description: "The entries-first package shape, exports, barrels, and the provenance of copied code."
+icon: "boxes"
+---
+
+A package lives at `packages/<category>/<name>` and is published as `@stackra/<name>`. The category is only a folder (see [Package categories](/guides/packages)). Every package is also a [member](/standards/members) and carries its required files.
+
+## Shape: entries first
+
+Every library package has one shape ([0126](/adr/0126-member-shapes-and-scaffold-templates), which supersedes the
+archetypes of [0004](/adr/0004-package-archetypes-and-layers), as amended by
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 15 and
+[0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)).
+`pnpm new package <name> --category <c> --description "<one sentence>" [--entries react,native] [--data]` renders the
+v3 shape below. `tooling` presets keep their own shape (below).
+
+```text
+stackra.config.ts                the member definition: static data (0295)
+assets/                          static files (public/, lang/, …), exported as ./assets/* (0177, 0234)
+src/
+  config/        "."             the config classes; a host subclasses them to override (0294 d19)
+  core/          "."             isomorphic code: services, drivers, errors, functions, schemas, blocks
+  contracts/     "./contracts"   the leaf: ports/, enums/, types/; imports nothing else from the package
+  node/          "./node"        the module: <name>.module.ts and the module groups; database/ with --data
+  react/<name>/  "./react"       web renderers; react is an optional peer (--entries react)
+  native/<name>/ "./native"      native renderers; react-native is an optional peer (--entries native)
+  testing/       "./testing"     fakes/ and matchers/ for consumers' tests
+```
+
+Today's packages still use the v2 shape until STA-344: hand-written `index.ts` barrels per entry, and `config/` or
+`resources/` outside `src/` where they have them.
+
+| Rule                              | Detail                                                                                                                                                                                                                                   |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Declare only real entries         | An entry is exported once its folder holds a file: its `exports` key and its `tsdown.config.ts` entry are added together. A new package exports `.` (the config class), `./node` (the root module) and `./assets/*`.                     |
+| Entry barrels are generated       | Never authored (0294 d15). Until `stackra gen` writes them (STA-339), an export names its entry's one public file; an entry with a second public file gets a stand-in `src/<entry>/index.ts` whose `Purpose:` starts `Stand-in barrel:`. |
+| Dependencies run one way          | Core imports contracts; node, react and native import core; testing imports them all. No symbol is exported from two entries.                                                                                                            |
+| Host libraries are optional peers | A runtime-specific dependency is an optional peer (`peerDependenciesMeta`), so installing the package pulls in no host library.                                                                                                          |
+| Module groups in `src/node/`      | Each kind suffix has one home group (`models/`, `actions/`, `queries/`, `events/`, …), created with its first file; the table is [Structure](/standards/structure). No `controllers/`, `dtos/`, `repositories/`, `helpers/`, `utils/`.   |
+| Decorators ship an Explorer       | A package that ships decorators has `src/<entry>/<pkg>.explorer.ts`, which registers them (0294 d15).                                                                                                                                    |
+
+### Tooling
+
+Data, not a build: JSON or JSONC presets with a `files` allowlist and an `exports` map, tag `tier:config`, no `src/` layers. A change goes into the preset, never into each consumer. Presets keep `./x.ts` specifiers because plain Node loads them.
+
+## Exports, barrels and imports
+
+- Every package builds with tsdown to ESM-only `dist/*.mjs` plus `.d.mts`. Each `exports` entry lists the `@stackra/source` condition first (pointing at `./src/**`, read by typecheck, Vitest and Vite), then `types` and `default` in `dist` (runtimes load these). The validator checks the shape ([0025](/adr/0025-packages-publish-to-private-registry)).
+- `index.ts` is the only barrel name. A barrel declares nothing; it re-exports.
+- A consumer imports the package or a declared subpath, never another package's `src/` (`@stackra/*/src/*` is a lint error).
+- A package never imports an app, a service, or `encore.dev` and `~encore/*`.
+- A shared package holds mechanisms, not product literals: no brand name, locale list, project id or `process.env` read. Decorators annotate code (classes, methods, fields); `define*` creates values other code references (`defineToken`, `defineConfig`, `definePermissions`, `defineEvents`, `defineMeters`, `defineEntitlements`); the app holds the definition. See [Boundaries](/constitution/boundaries).
+- Naming, one declaration per file and specifier style: [Code style](/standards/code-style).
+
+## Provenance of copied code
+
+Code copied from another repository is copied, not depended on, and says where it came from. Next to the package, `ORIGIN.md` records:
+
+- the source repository, path and commit hash, and the date;
+- what changed on copy (renames, product values removed, dependencies swapped);
+- how to pull a later change: diff the source at the new commit against the recorded one, port by hand, update the file.
+
+### Port or rewrite
+
+Decide per package before copying:
+
+| Verdict     | When                                                                                            |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| **Port**    | The design is sound and tests exist; only names, product literals and dependencies change       |
+| **Shrink**  | Most of it is surface nobody uses; keep the core and its tests                                  |
+| **Replace** | A platform primitive (`fetch`, Intl) does the job; keep only the parts it lacks, with new tests |
+| **Rewrite** | The model is wrong (strings where typed keys belong); keep the ideas, write it fresh            |
+| **Drop**    | A few typed lines in an existing package replace it                                             |
+
+A port that diverges from its origin does so openly: in `ORIGIN.md`, not silently.
+
+## What enforces this
+
+| Rule                                                           | Check                                                             | Status |
+| -------------------------------------------------------------- | ----------------------------------------------------------------- | ------ |
+| Entries never import entries                                   | planned: oxlint `boundaries.jsonc` per entry folder               | No     |
+| No import of an app, service or `encore.dev` from a package    | oxlint `boundaries.jsonc` + `turbo boundaries`                    | Yes    |
+| No deep import of `@stackra/*/src/*`                           | oxlint `boundaries.jsonc`                                         | Yes    |
+| `exports` dist + `@stackra/source` shape, `sideEffects: false` | `stackra validate --repository`                                   | Yes    |
+| Unused files and exports                                       | `knip`                                                            | Yes    |
+| Entry folders match `exports` and `tsdown.config.ts`           | planned: validator check                                          | No     |
+| No product literal or `process.env` in a package               | planned: validator check                                          | No     |
+| `ORIGIN.md` present where code was copied                      | planned: validator check; review by `architecture-guardian` today | No     |
+
+The `architecture-guardian` reviews every new package and every new `exports` subpath, and `code-standards-steward` keeps package shape; see the [agent roster](/agents/roster).

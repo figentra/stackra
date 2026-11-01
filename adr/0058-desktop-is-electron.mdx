@@ -1,0 +1,40 @@
+---
+title: "0058 — The desktop app is Electron"
+description: "Superseded by 0181 · 2026-10-20"
+---
+
+<Note>
+  Amended by [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron) (decisions 1 to 3),
+  fulfilled by [0251](/adr/0251-desktop-bridge-generated-from-desktop-action-and-electron-hardening)
+  and [0254](/adr/0254-desktop-release-signing-update-feed-channels-and-version-policy).
+</Note>
+
+<Note>
+  Superseded by [0181](/adr/0181-the-desktop-app-pipeline): the desktop release pipeline. The
+  desktop and PWA group (ADRs 0249 to 0256) refines signing and distribution.
+</Note>
+
+## Context
+
+Some products need hardware access (for example printers and scanners) from a desktop client, and Stackra wants that logic in TypeScript.
+Electron runs the same web stack as the console ([0052](/adr/0052-console-is-a-vite-react-spa)) with Node access to devices. No existing ADR covers desktop.
+
+## Decision
+
+1. **`apps/desktop` is an Electron app**, scaffolded now as a `tier:app` member with `pnpm new`.
+2. **The renderer reuses the web stack** ([0054](/adr/0054-tanstack-query-and-zustand-for-client-state), [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters), [0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components)).
+3. **Hardware access lives in the main process, in TypeScript**, exposed to the renderer through a narrow preload bridge; the renderer has no direct Node access.
+4. **Packaging, signing and auto-update are TODO** and need their own ADR before the first release.
+
+## Consequences
+
+- One language across web, desktop and hardware code.
+- A larger binary and an Electron security surface to keep current.
+
+## Enforcement
+
+Planned — the scaffold template and a validator check that the renderer is configured with context isolation and no Node integration.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19.

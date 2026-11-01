@@ -1,0 +1,28 @@
+---
+title: "Images and embeds"
+description: "Pictures, light/dark variants and video."
+icon: "image"
+---
+
+Put images in `apps/docs/src/assets/assets/images/` and reference them from the site root:
+
+```mdx
+![The console home page](/assets/images/console-home.png)
+```
+
+Show a different image in light and dark mode:
+
+```mdx
+<img className="block dark:hidden" src="/assets/images/diagram-light.svg" alt="Package tiers" />
+<img className="hidden dark:block" src="/assets/images/diagram-dark.svg" alt="Package tiers" />
+```
+
+Embed a video with a responsive iframe:
+
+```mdx
+<Frame>
+  <iframe src="https://www.youtube.com/embed/<id>" title="Walkthrough" allowFullScreen />
+</Frame>
+```
+
+Every image needs alt text that says what it shows.

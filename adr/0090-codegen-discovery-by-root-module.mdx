@@ -1,0 +1,62 @@
+---
+title: "0090 — Codegen discovers decorators through each member's root module"
+description: "Accepted, amended by 0144, 0268, 0294, 0305 · 2026-10-19"
+---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components). Decision 1 is
+  restated: the root module is optional (rule 15), and a member with none is one module keyed by its
+  folder. Gen finds kinds by their base classes, as ADR 0294 records, so a module file is read only
+  where it states something. Decisions 2 to 4 stand, and the validation pass of decision 4 applies
+  to the same kinds.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): gen finds kinds by reading their base classes (for example `extends Action({ key })`), so it no longer imports the root module to discover them, and decision 2 is replaced. A root module is found at its path, `src/<key>.module.ts` (or `src/node/<key>.module.ts` in a package), so the `stackra.module` field of decision 1 is not needed to find it. A handler's input and output are the types of its `handle` signature, so decision 3 reads those signatures. Decision 4 stands.
+</Note>
+
+<Note>
+  Amended by [0144](/adr/0144-metadata-registry-and-explorers): every decorator package ships an
+  Explorer, and the metadata registry lives in @stackra/container.
+</Note>
+
+<Note>
+  Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R8: a documentation app
+  imports only the `./contracts` entries and the generated clients of the members it documents. It
+  never imports module source.
+</Note>
+
+## Context
+
+`stackra gen` ([0041](/adr/0041-decorated-controllers-and-build-time-generator)) must find every decorated class (controllers,
+handlers, crons, models, resources), including those that come from packages. Scanning every TypeScript file with a parser is
+slow and misses runtime registration. Running the app to find them would start databases and side effects. The container
+already knows every provider through its modules ([0042](/adr/0042-di-first-with-one-container-per-service)), and its decorator
+metadata lives in its own `WeakMap` store ([0005](/adr/0005-di-container-and-legacy-decorators)).
+
+## Decision
+
+1. **Each member declares its root module in `package.json`**: `"stackra": { "module": "<path>" }`.
+2. **`stackra gen` imports that module in Node and runs the container's scan and plan steps only.** It never instantiates a
+   provider. Decorator metadata comes from the container's store.
+3. **ts-morph reads only the request and response types** of the handlers that discovery found, and emits wire interfaces
+   from them. No other file is parsed.
+4. **A validation pass fails the build** on duplicate paths, a destructive action without a permission, an unversioned
+   integration event ([0078](/adr/0078-messaging-layer-eight-packages)), or exposed PII.
+
+## Consequences
+
+- A package's module is discovered the same way as a service's. No file globbing and no naming convention is needed.
+- Module code must be safe to import without starting anything. Side effects belong in providers, which are never instantiated during gen.
+- Discovery is only as complete as the module graph: a class not reachable from the root module does not exist for gen.
+
+## Enforcement
+
+The validation pass of decision 4 is itself the check, once built. Planned: `pnpm validate` fails a `tier:service` or
+`tier:app` member without a `stackra.module` field. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Specifies the discovery mechanism of [0041](/adr/0041-decorated-controllers-and-build-time-generator)
+decision 2. Sources: owner decision in chat, 2026-10-19 (Round 9 G2).

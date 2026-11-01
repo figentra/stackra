@@ -1,0 +1,83 @@
+---
+title: "0225 — Realtime drivers, co-editing and the Commentable trait"
+description: "Accepted, amended by 0270, 0294, 0315, 0346 · 2026-10-20 · amended 2026-10-23 (STA-349)"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-470) by
+  [0346](/adr/0346-collaboration-rooms-a-two-way-payload-channel-derived-from-a-documents-collaboration-level):
+  the channels of decision 1 gain a kind that clients publish to, the room, derived from a document
+  kind's collaboration level and authorised by the document's own permission at its `ScopeRef` plus
+  the live-collaboration entitlement; it carries typed presence, awareness and Yjs update payloads,
+  which is the transport decision 2 lacked. Every driver of decision 1 carries rooms. The other
+  decisions stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-406) by [0315](/adr/0315-realtime-live-queries-and-streams): decision 1
+  gains one bounded exception. The site invalidation channel of a Site-scoped, public query on a
+  published site has no principal and no IAM check; it is read-only for clients, carries only the
+  key and public input of the invalidated entry, publishes only when the public result changed,
+  lives in its own driver namespace, and identifies a subscriber by site, locale and market. Every
+  other channel, and every stream, is IAM-checked as decision 1 says; a stream is partitioned per
+  tenant and takes `permission` and `audience` like a broadcast. Decisions 2 and 3 are unchanged.
+</Note>
+
+<Note>
+  Amended 2026-10-23 (STA-349), with the amendment of the same date on
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): the `broadcast`
+  option of the note below becomes `broadcast: { permission, audience }`. `permission` is still
+  required and works as that note says. `audience` is `"principal"` or `"tenant"` and defaults to
+  `"principal"`. With `"principal"`, an event about one user reaches only that user's sessions that
+  hold the permission, as before the programming model v3, so no tenant-wide signal reveals
+  activity about one person. With `"tenant"`, it reaches every session of the tenant that holds the
+  permission.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: an event's `broadcast` option takes the permission that a subscriber must
+  hold, for example `broadcast: OrderPermissions.read`. A session without the permission receives
+  nothing. A session with it receives a data-free refresh, never the payload, and there is no
+  broadcast without a permission. This is the channel check of decision 1 applied to events.
+  Decisions 2 and 3 are unchanged.
+
+Enforcement of this note: planned — STA-340 (gen check: a `broadcast` with no permission).
+
+</Note>
+
+<Note>
+  Amended by
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels):
+  RT2 is implemented by the free `@stackra/collaboration` package on `@stackra/realtime`, gated by
+  entitlement; Yjs co-editing with cursors applies only to long free-form documents, and structured
+  documents get presence and optimistic concurrency.
+</Note>
+
+<Note>
+  Amends the realtime row of [0084](/adr/0084-figentra-os-package-port-plan) and the trait list of
+  [0096](/adr/0096-trait-naming-grammar).
+</Note>
+
+## Context
+
+Users see changes live, and some documents are edited by several people at once. The owner's realtime answers RT1, RT2 and CO1 (mem L812–814, 2026-10-20) fix the transport, the drivers, presence and co-editing. Presence and co-editing are no longer a Pro-only package (contradiction C-06).
+
+## Decision
+
+1. **Transport (RT1).** WebSocket, with a server-sent-events fallback. Channels are authenticated, and presence is supported. Drivers: a native driver on Valkey or Postgres pub/sub, Centrifugo, Ably and Pusher. IAM authorises each channel.
+2. **Presence and co-editing (RT2).** Presence and cursors. Rich documents are co-edited with Yjs (a CRDT), and the state is saved as snapshots. Form records keep optimistic concurrency control instead.
+3. **Commentable (CO1).** A `@Commentable` trait adds comments to any model.
+
+## Consequences
+
+- A form record cannot be lost to a concurrent edit, because forms keep the version check.
+- A rich document can be edited by several people without a lock, and its history is its snapshots.
+
+## Enforcement
+
+planned — the channel authorisation test; the Yjs snapshot round-trip test.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: the realtime row of [0084](/adr/0084-figentra-os-package-port-plan), the trait list of [0096](/adr/0096-trait-naming-grammar). Sources: owner realtime answers RT1, RT2, CO1 (`stackra-decisions-2026-10-19.md` L812–814, 2026-10-20). Contradiction C-06.

@@ -1,0 +1,84 @@
+---
+title: "0099 — One action risk scale, L0 to L4, with derived MCP hints and effect tags; change risk is R0 to R3"
+description: "Accepted, amended by 0268, 0294, 0360, 0513 · 2026-10-19"
+---
+
+<Note>
+  Amended 2026-11-01 by [0513](/adr/0513-permission-vocabulary-moves-to-contracts-and-container)
+  (STA-1890): `Risk` lives in `@stackra/contracts` and is re-exported from `@stackra/iam`. The five
+  levels and the other decisions are unchanged.
+</Note>
+
+<Note>
+  Amended 2026-10-25 by
+  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor),
+  owner decision in chat (the never-bypass floor): decision 2 gains the effect tag `bulk`, for an
+  action that acts on many records or recipients in one call. `external-communication` with `bulk`
+  is never bypassable. The other decisions stand.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: the risk level moves from the action to the permission. A permission is a
+  static on the model's `<Model>Permissions` class with its level, as in
+  `static readonly cancel = Permission.L2`. An action or a query takes its level from the permission
+  it uses and declares no level of its own, so the two cannot disagree. The levels of decision 1 are
+  unchanged. Decision 3 (MCP hints) and decision 4 (the inputs to approval and AI exposure) read the
+  level from the permission. Decision 2 (effect tags) and decision 5 (change risk) are unchanged.
+
+Enforcement of this note: planned — STA-340 (gen checks: a permission static that is not a
+`Permission.L0` to `Permission.L4` value; a query above L1; a hand-written MCP hint).
+
+</Note>
+
+<Note>
+  Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R9: AI exposure risk is read
+  low, write medium, and delete, money, permission and bulk operations high, and high-risk
+  operations require approval. These are AI exposure tiers, not the L0 to L4 action levels of
+  decision 1, which are unchanged.
+</Note>
+
+## Context
+
+The two AI planning documents use five different risk scales between them. Actions ([0098](/adr/0098-actions-are-the-unit)),
+approval, AI exposure and the gen validation pass all need a single scale, so that one rule can decide, for example, whether
+an agent can call an action without a human. MCP tools carry their own annotation hints, which clients use to warn users. The
+SDLC plan has a separate scale for how risky a code change is, which must not be confused with this one.
+
+## Decision
+
+1. **Every action declares one risk level**:
+
+   | Level | Meaning                                           |
+   | ----- | ------------------------------------------------- |
+   | L0    | Informational: no data read beyond public context |
+   | L1    | Read                                              |
+   | L2    | Reversible write                                  |
+   | L3    | Financial                                         |
+   | L4    | Privileged or destructive                         |
+
+2. **Effects are tags, separate from the level**: `financial`, `security`, `pii`, `external-communication` and
+   `irreversible`. Policies, approvals and evidence can filter on them. A new tag is added by amending this ADR.
+3. **MCP tool hints are derived, never hand-written.** When an action is exposed as a tool, gen sets `readOnlyHint` (L0–L1),
+   `destructiveHint` (L4, or the `irreversible` tag), `idempotentHint` (the action declares idempotency) and `openWorldHint`
+   (the `external-communication` tag).
+4. **The level and the tags are the only risk inputs to approval and AI exposure rules.** Other scales in source documents are not used.
+5. **Code-change risk is a different scale, named "change risk", R0 to R3**, defined in
+   [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk). The two scales never share a letter or a name.
+
+## Consequences
+
+- One vocabulary across actions, policies, approvals, MCP clients and evidence.
+- Choosing a level is a reviewable line on every action. A wrong level is a security finding.
+- An MCP client's warning can never disagree with the server's own level, because both come from one declaration.
+
+## Enforcement
+
+Planned: the gen validation pass rejects an action without a level, a destructive or `irreversible` action marked below L4,
+and a hand-written MCP hint. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: recommendation by the coordinating agent, 2026-10-19; accepted by the owner with MCP hints and
+effect tags (Round 11 R1), and the change-risk name (R2). Informational: the AI Implementation Standard and the Stackra
+AI-driven architecture plan, whose scales this replaces.

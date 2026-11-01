@@ -1,0 +1,83 @@
+---
+title: "0132 — Permissions are a module catalogue; policies are providers"
+description: "Accepted, amended by 0263, 0294, 0513 · 2026-10-20"
+---
+
+<Note>
+  Amended 2026-11-01 by [0513](/adr/0513-permission-vocabulary-moves-to-contracts-and-container)
+  (STA-1890): the `Permissions` kind base lives in `@stackra/container`, and the `Permission` value
+  in `@stackra/contracts`. Iam re-exports both. Keys, the catalogue and the policy decisions stand.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3. Decision 1 is superseded: a module's permissions are no longer one
+  `definePermissions()` value. Each model has a `<Model>Permissions` class that extends
+  `Permissions` and declares one `static readonly` per verb, valued by its risk (`Permission.L0` to
+  `Permission.L4`), in `access/<model>.permissions.ts`. The module's catalogue is what gen collects
+  from those classes. Decision 2 holds in form: keys are `<module>.<resource>.<action>`, now derived
+  from the class and static names, so `orders.order.cancel` is not written by hand. Decision 4 is
+  superseded in form. A record policy extends `Policy(<Model>Permissions)`. Its methods are named
+  after verbs and return `Decision.Allow`, `Decision.Deny` or `Decision.Abstain`, and any deny still
+  wins. `@Policy` is retired. Gen binds `ctx.authorize(record)` to the method named after the
+  action's permission verb, as [0263](/adr/0263-di-stays-and-gen-writes-the-wiring) already
+  recorded. Decisions 3, 5 and 6 hold in substance. A permission's key follows the identity rule of
+  the programming model v3, so a rename needs `@Renamed`. The new model does not state where a
+  permission's label and description live, so this note does not settle them.
+
+Enforcement of this note: planned — STA-338 (the kind-path check for `access/`); STA-340 (gen
+checks: a permissions static that is not a `Permission.Lx` value; a policy method with no matching
+verb; wildcard use outside system roles; `identity_changed` for a changed key).
+
+</Note>
+
+<Note>
+  Forward note: the naming table of [0231](/adr/0231-naming-and-casing-standard) (accepted) restates
+  this key form.
+</Note>
+
+<Note>
+  Amended by [0263](/adr/0263-di-stays-and-gen-writes-the-wiring): A policy method is named by a
+  permission verb (decision 4). Gen binds `ctx.authorize(Permissions.x, record)` to the method of
+  the same verb, and fails on a verb with no permission.
+</Note>
+
+## Context
+
+Permissions were a flat list, and nothing checked that an action's permission made sense for what the action does. The
+owner's intent-map item P2 and the IAM answer A10 (mem L627) set a curated catalogue per module, with labels and risk, and
+policy providers that decide per request. The owner confirmed the key form on 2026-10-20 (mem L930): a permission key is
+`<module>.<resource>.<action>`, and each module's permissions are one `definePermissions()` value.
+
+## Decision
+
+1. Each module declares its permissions as one `definePermissions()` value. That value is the module's catalogue. It replaces the
+   `@Permissions` class of P2, because the owner's `define*` rule makes `definePermissions()` the value form (0145).
+2. Keys are `<module>.<resource>.<action>`, for example `billing.invoice.refund`, as A10 sets. The module key (0131) is the first
+   segment. Each catalogue entry carries a label, a description, a risk and a verb (A10).
+3. The catalogue is curated per module. Gen **warns**, and does not fail, when an action reuses a permission whose verb
+   differs from the action's verb (mem L401).
+4. A `@Policy` provider method returns `allow`, `deny` or `abstain`. Any `deny` wins.
+5. Wildcard permissions are allowed only in system roles (A10).
+6. A rename of a permission goes through deprecation ([0131](/adr/0131-module-key-version-and-deprecation)).
+
+## Consequences
+
+- Permission review becomes a catalogue review, per module.
+- A verb mismatch is a warning, so an existing action is not broken on the day the check lands.
+- A key names its module, so the registry can check uniqueness by prefix.
+
+## Enforcement
+
+planned — gen emits the catalogue from each module's `definePermissions()` value and warns on a verb mismatch. Wildcard use outside
+system roles is planned as a gen error. The uniqueness check on keys is planned.
+
+## Alternatives
+
+- `resource:verb` keys: not chosen; the owner confirmed `<module>.<resource>.<action>`.
+- A `@Permissions` class: replaced by the `definePermissions()` value (decision 1).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner intent-map item P2 (accepted; mem L401), IAM answer A10 (mem L627), the owner's confirmed naming
+of 2026-10-20 (mem L930: `billing.invoice.refund`, one `definePermissions()` per module), and the define rule (mem L546).

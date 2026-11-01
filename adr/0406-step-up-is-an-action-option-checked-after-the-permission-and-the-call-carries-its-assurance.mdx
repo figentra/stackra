@@ -1,0 +1,42 @@
+---
+title: "0406 — Step-up is an action option checked after the permission, and the call carries its assurance"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-814). It applies [0207](/adr/0207-authentication-assurance-and-machine-identities)
+  decision 1 to the action pipeline. Linear STA-814.
+</Note>
+
+## Context
+
+ADR 0207 requires a recent strong authentication for L3 and L4 actions, and `@stackra/identity` already maps a token's
+`amr` to an assurance level and checks its age (`requireAssurance`). Nothing carried the token's `amr` and `auth_time`
+into an action call, and no action could say it needs a step-up, so each handler would have checked it by hand.
+
+## Decision
+
+1. **The call carries its assurance.** `CallOptions.assurance` (`amr`, `authTime`, `level`) is filled by the transport
+   from the verified token, never from input; the pipeline hands it to `ctx.assurance`. It is absent without an
+   interactive session (a job, an API key).
+2. **`Action({ stepUp: AssuranceLevel.Aal2 })`** names the level an action needs. `AssuranceLevel` in
+   `@stackra/actions/contracts` has the same codes as identity's, because actions depends on neither identity nor iam.
+3. **A `StepUpCheck` port decides, right after the permission.** The bound driver wraps `requireAssurance`, so the
+   window is `IdentityConfig.stepUpMaxAgeMinutes` (configuration). A refusal is `step_up_required`.
+4. **It fails closed.** An action that declares `stepUp` with no `StepUpCheck` bound is an error, like a missing
+   `AccessControl`. An action that declares none never asks.
+
+## Consequences
+
+- The identity service or app binds a `StepUpCheck` driver over `requireAssurance`; every transport fills
+  `CallOptions.assurance`.
+- A handler that needs the facts (an audit field, a risk score) reads `ctx.assurance`.
+
+## Enforcement
+
+`packages/application/actions/src/core/services/__tests__/action-pipeline.service.test.ts` (step-up order, refusal,
+fail closed); `packages/application/actions/src/contracts/__tests__/index.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-814; ADR 0207; ADR 0397 as amended (STA-813).

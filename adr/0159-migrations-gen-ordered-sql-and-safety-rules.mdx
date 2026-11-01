@@ -1,0 +1,130 @@
+---
+title: "0159 — Migrations: gen-ordered SQL, migrations shipped in packages, and safety rules"
+description: "Accepted, amended by 0294, 0305, 0334 · 2026-10-20 · amended 2026-10-24 (STA-408)"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rules 1, 2 and 4):
+  every column carries a Postgres `COMMENT` taken from its field's docblock and an explicit
+  nullability, and gen fails when either is missing; gen also fails on a foreign key to a table that
+  no earlier migration created; there are no schema-patch or data-patch kinds, a data change is a
+  seeder or a backfill job, and DML in a migration stays banned. The ordering and safety rules of
+  this ADR stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-408): the spike that the 2026-10-23 note waited on is done. Encore's
+  runner (v1.58.6) sends each migration file and its own bookkeeping insert as one query string,
+  so Postgres runs them in an implicit transaction, and every concurrent index build fails with
+  SQLSTATE 25001. The runner has no option to change that. A constraint added `NOT VALID` and
+  validated in a later step works, but that covers constraints, not index builds.
+
+Decision 2 is amended: `stackra db migrate` applies the migrations as a release step in every
+environment, SaaS and on-prem. Encore's runner is not used. Rollback stays as the 2026-10-23
+note says: `stackra db rollback` on dev, preview and test databases only, and production stays
+forward-only.
+
+The runner keeps the `N_name.up.sql` numbering of the compiled SQL and the
+`schema_migrations(version, dirty)` table shape. It closes the gaps the spike found in
+Encore's runner:
+
+- **Steps outside a transaction.** A compiled step that cannot run in a transaction (a
+  concurrent index build, which sits in its own step under decision 3) carries a per-file
+  marker. The runner sends each of its statements as its own query and writes the bookkeeping
+  row separately.
+- **Timeouts.** Every session sets `lock_timeout` and `statement_timeout`, as decision 3
+  requires.
+- **Failed concurrent builds.** After a concurrent index build fails, the runner detects the
+  INVALID index it left, drops it concurrently, and then retries the step or reports it.
+- **Dirty versions.** A dirty version fails loudly and names the file. The runner never retries
+  it silently.
+- **Positions.** An error names the statement's position in the file.
+
+</Note>
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components), with the v3.1
+  migration rules. A migration is a frozen snapshot: it imports only `@stackra/database` and
+  `#stackra/migrations`, and it names tables and columns with literals, so a model change does not
+  rewrite history. Authors write `up()` only. Gen derives an inverse for every step and stores it
+  beside the compiled SQL. Rollback runs on dev, preview and test databases only, through `stackra
+  db rollback`; production stays forward-only. Decision 4 (forward fix only) and the rejected
+  alternative of rolling back data apply to production only.
+
+A raw SQL step takes `schema.sql(x, { inverse })`. `inverse: false` marks an irreversible step, and a missing `inverse` is a gen error.
+
+Order is the number within a module, plus `after:` across members and the edges that macros imply;
+a released prefix does not move, and there is no `before`. Gen locks each compiled step with a
+SHA-256 hash in `stackra.manifest.json`. Operations belong to classes (Additive, Online, Contract
+and Banned), and gen enforces the class of each step. Stackra's column conventions are a `Macro`
+kind in `database/macros/`, named after its partner. Decision 2 (Encore's runner applies the SQL)
+stands until the spike on single-statement concurrent index builds decides whether one Stackra
+runner runs everywhere. Decision 3 applies: concurrent index builds sit in their own step.
+
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: migrations live in each module's `database/migrations/` folder
+  (`src/modules/<key>/database/migrations/` in a service, `src/node/database/migrations/` in a
+  package), named `NNNN-<name>.migration.ts`. The number counts per module, from `0001` with no
+  gaps, and a module's migrations change only its own Postgres schema (0294 decision 20). `stackra
+  db diff` writes them, and a migration class extends `Migration`. A migration has no `down()`: a
+  bad migration is fixed by a later one, as decision 4 already requires, and the validator refuses
+  a `down()`. Gen pulls a package's migrations into the host (decision 1) and writes the ordered SQL
+  of decision 2 with modules in dependency order, then each module's migrations by number.
+  Decisions 2 and 3 are otherwise unchanged.
+
+Enforcement of this note: planned — STA-338 (the kind-path check for `database/migrations/`);
+STA-340 (the validator's database-folder check: a migration not named `NNNN-<kebab>`, a gap in a
+module's sequence, or a `down()`).
+
+</Note>
+
+<Note>
+  Amends [0097](/adr/0097-model-and-database-packages) and
+  [0124](/adr/0124-encore-is-the-generated-runtime-target). It closes the migration items (DP12 and
+  FW4) that 0124 left open.
+</Note>
+
+## Context
+
+[0124](/adr/0124-encore-is-the-generated-runtime-target) left open how MikroORM migrations, including migrations shipped in packages,
+reach the runner (DP12 and FW4). The owner answered on 2026-10-20: gen produces the migrations, and the runner applies them. The
+owner also set expand-and-contract rules and a forward-only policy (DP13 and DP14, mem L443–444, L355–356).
+
+## Decision
+
+1. **Package migrations (FW4 a).** Gen pulls the migrations shipped in packages into the host's migration stream.
+2. **Ordered SQL (DP12 a).** Gen writes ordered SQL files. Encore's runner applies them in SaaS. On-prem runs them as a pre-upgrade job.
+3. **Safety (DP13 a).**
+   - expand-and-contract, with destructive steps deferred to a later release;
+   - lock and statement timeouts on every migration;
+   - concurrent index builds in their own migration;
+   - a squawk lint in CI;
+   - backfills run as queue jobs ([0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)).
+4. **Forward fix only (DP14).** Data is never rolled back by a migration. A bad migration is fixed by a new migration.
+
+## Consequences
+
+- An on-prem upgrade runs migrations as a job before the new code starts, so a failed migration stops the upgrade.
+- Destructive changes take two releases, so a rollback never meets a dropped column.
+
+## Enforcement
+
+planned — the squawk lint in CI, the lock and statement timeouts in the migration runner, and `stackra gen --check` for stale SQL.
+The upgrade runbook is a final-pass item (`runbooks/upgrade.mdx`).
+
+## Alternatives
+
+- Migrations applied by MikroORM at boot: not chosen; the runner is Encore in SaaS and a job on-prem.
+- Rolling back data: rejected by DP14.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0097](/adr/0097-model-and-database-packages), [0124](/adr/0124-encore-is-the-generated-runtime-target). Sources: owner answers
+FW4 a (`stackra-decisions-2026-10-19.md` L355), DP12 a (L356), DP13 a and DP14 (L443–444), all 2026-10-20.

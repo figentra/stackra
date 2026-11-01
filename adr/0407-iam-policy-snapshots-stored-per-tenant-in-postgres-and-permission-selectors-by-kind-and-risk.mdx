@@ -1,0 +1,44 @@
+---
+title: "0407 — IAM: policy snapshots stored per tenant in Postgres, and permission selectors by kind and risk"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-815, STA-818). It extends
+  [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names) and
+  [0132](/adr/0132-permissions-catalogue-and-policy-providers). Linear STA-815, STA-818.
+</Note>
+
+## Context
+
+A consuming service keeps each principal's policy snapshot from the IAM service's events (ADR 0208), but only a memory
+store existed, keyed by principal alone, so a principal acting in two tenants had one snapshot. A role could hold exact
+keys or wildcards (wildcards in system roles only), so a custom role "read everything in orders" listed every key by
+hand and fell behind each new permission.
+
+## Decision
+
+1. **Snapshots are tenant-scoped.** `PolicySnapshotStore.read` and `write` take the tenant; `StorePolicySourceDriver`
+   reads under the actor's tenant. A platform principal is its own partition (`-`).
+2. **The durable store is `iam.policy_snapshots` in Postgres** (`./node`, driver `postgres`): one row per tenant and
+   principal, under the forced equality policy on `app.tenant_id`, replaced only by a higher version in one upsert.
+3. **The listener body is `PolicySnapshotIntakeService`**: it decodes the untrusted payload and stores it under the
+   event's `meta.tenantId`. The listener kind stays in the consumer, because iam does not depend on events.
+4. **Selectors.** A role may hold `@read` (every registered L0 and L1 permission) or `@risk:<l0-l4>`, optionally behind
+   a module or model prefix (`orders.@read`). A selector counts in any role because it never picks a system or
+   restricted permission for a grant; a deny's selector picks them too, since a deny only narrows.
+
+## Consequences
+
+- Each consuming service runs the iam migration and binds `postgres` for `PolicySnapshotStore`.
+- Custom roles stay data: an admin grants `orders.@read` and new read permissions are covered on registration.
+
+## Enforcement
+
+`packages/security/iam/src/node/drivers/__tests__/postgres-policy-snapshot-store.driver.int.test.ts`,
+`packages/security/iam/src/core/services/__tests__/policy-snapshot-intake.service.test.ts`,
+`packages/security/iam/src/core/functions/__tests__/selects-permission.function.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-815; STA-818; OS gate-A gaps (services/iam SPEC).

@@ -1,0 +1,107 @@
+---
+title: "Mobile onboarding"
+description: "One command takes a product's mobile app from nothing to store-ready; the owner does a few portal steps once."
+icon: "rocket"
+---
+
+{/* Stackra file contract: Purpose: the runbook of `stackra mobile onboard` and `stackra deploy --product --mobile-only`: what each onboarding step does, the one-time setup, every owner step and who does it, the academorix plan. Boundary: docs only; the code is @stackra/runway `onboardMobile` and @stackra/cli `runMobileOnboard`. Runtime: docs. Governing contract: ADR 0482, ADR 0480, ADR 0439, ADR 0062. */}
+
+<Note>
+  Status: built (STA-1623), waiting for the first live run. The real drivers are written against the
+  documented API shapes and have not called Apple, Google, Expo, Sentry or Infisical yet. Decision:
+  [0482](/adr/0482-mobile-onboarding-is-a-runway-step-and-eas-owns-signing).
+</Note>
+
+## The commands
+
+```bash
+stackra mobile onboard --app academorix
+```
+
+Run at a product root. Three modes:
+
+| Mode                     | Where                                                       | What it does                                                                                                             |
+| ------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| _(default)_ offline plan | anywhere                                                    | Memory drivers that start empty: plans every step as if nothing existed. Reads no secret, calls nothing, writes nothing. |
+| `--check`                | GitHub Actions only                                         | The real drivers, read-only: plans only what is missing.                                                                 |
+| `--live`                 | GitHub Actions only, the product's `production` environment | Makes every change it can and writes `runway.yaml` and the Firebase config files.                                        |
+
+Exit code 0: every step done or planned. 3: an owner step is pending or a step is blocked. 2: a usage error.
+
+Releasing is the existing build and deploy, with the mobile part alone:
+
+```bash
+stackra build --product
+```
+
+```bash
+stackra deploy --product --env production --mobile-only
+```
+
+Each build goes through the `eas` driver's `submit` to TestFlight and the Play internal track. An Android build waits
+while Play has no release yet (the first upload is by hand) and the deploy prints `held:` with the reason; iOS still
+goes. The listing, screenshots, review details and App Review submission are ADR 0480's `store` steps.
+
+## The steps
+
+| Step               | Does                                                                                                                                                                                              | Owner step when                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `identity`         | Fills absent `identity.ios.bundleId` and `identity.android.package` with `com.figentra.<product>.<app>` (no `<app>` when it repeats the product; `_` for `-` on Android). A set id never changes. | —                              |
+| `eas-project`      | Finds or creates `<owner>/<project>-<app>` on Expo (`eas.owner`, default `figentra`) and writes `eas.project`.                                                                                    | —                              |
+| `eas-profiles`     | Checks `mise.toml` pins node exactly; the mobile job writes `eas.json` (`development`, `preview`, the channel) at each build.                                                                     | node is not `x.y.z`            |
+| `apple-bundle`     | Registers the bundle id and enables push, Sign in with Apple and associated domains as the app declares.                                                                                          | —                              |
+| `apple-app-record` | Finds the App Store Connect app by bundle id.                                                                                                                                                     | always the first time (no API) |
+| `google-project`   | Creates the Google Cloud project `google.project` (default the product key) under the organisation folder.                                                                                        | the id is taken                |
+| `firebase`         | Adds Firebase, registers the iOS and Android apps, writes `GoogleService-Info.plist` and `google-services.json` into the app's `assets` folder.                                                   | —                              |
+| `analytics-link`   | Links the Firebase project to `google.analyticsAccount`.                                                                                                                                          | no account named, or no grant  |
+| `sentry`           | Creates the Sentry project `<project>-<app>` and writes `sentry.dsn`.                                                                                                                             | —                              |
+| `signing`          | Reads what EAS holds. EAS creates every certificate, profile, APNs key and keystore on the first production build.                                                                                | —                              |
+| `push`             | Creates the `eas-fcm` service account key, writes it blind to `prod:/ci/store/<product>/FCM_SERVICE_ACCOUNT_JSON` and hands it to EAS.                                                            | —                              |
+| `store-keys`       | Checks the root-kit names are set (never a value).                                                                                                                                                | a name is missing              |
+| `play-app`         | Reads whether Play has the app and a release.                                                                                                                                                     | until the first upload is done |
+
+## One-time setup (owner, for every product)
+
+1. **Root kit** (ADR 0480, STA-1591): `ASC_API_KEY_ID`, `ASC_API_ISSUER_ID`, `ASC_API_PRIVATE_KEY`,
+   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `EXPO_TOKEN` into Infisical `prod:/ci/store` through `~/Secrets-inbox` and
+   `pnpm secrets:import`.
+2. **Google workload identity federation**: in Figentra's Google Cloud organisation, a workload identity pool and
+   provider that trust GitHub OIDC from each product repository's `production` environment, and a folder for product
+   projects. Grant the pool's principal Project Creator, Firebase Admin, Service Account Admin, Service Account Key
+   Admin and Service Usage Admin on that folder. The job's auth step exports the token as `GOOGLE_OAUTH_ACCESS_TOKEN`;
+   the folder is the organisation variable `GOOGLE_PROJECT_FOLDER` (`folders/<number>`).
+3. **Google Analytics**: add the same principal as Editor on Figentra's Analytics account.
+4. **Sentry**: `SENTRY_AUTH_TOKEN` in `/ci` with `project:write`, and a `mobile` team in the `figentra` organisation.
+5. **Infisical**: the job's OIDC login exports `INFISICAL_TOKEN`; the identity may write under `prod:/ci/store`.
+
+## Owner steps per app
+
+- **App Store Connect app record**: Apps › + › New App with the platform, name, primary language, bundle id and SKU
+  the step prints.
+- **Play app and first upload**: create the app with the name and default language the step prints; fill App content
+  (privacy policy, app access with the review demo account, ads, content rating, target audience, Data safety from
+  `pnpm store build`); upload the first production `.aab` from EAS to Internal testing; keep Play App Signing on; invite
+  the root kit's service account with release rights. The step is done once Play shows a release.
+
+## Academorix
+
+The offline plan of academorix's `runway.yaml` today (traced from the code, not run: this Mac runs no tests). Its ids
+are the live store ids, so `identity` keeps them.
+
+| Step             | Offline plan                                                                                   |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| identity         | done: keeps `app.academorix.mobile` (iOS and Android)                                          |
+| eas-project      | planned: would create `figentra/academorix-academorix` (`eas.project` is `ref:expo.projectId`) |
+| eas-profiles     | done: node 24.22.0                                                                             |
+| apple-bundle     | planned: would register `app.academorix.mobile`, enable push and associated domains            |
+| apple-app-record | manual (the live record exists; `--check` reads it)                                            |
+| google-project   | planned: would create `academorix`                                                             |
+| firebase         | planned                                                                                        |
+| analytics-link   | manual: name `google.analyticsAccount`                                                         |
+| sentry           | planned: would create `figentra/academorix-academorix`                                         |
+| signing, push    | blocked until the EAS project exists                                                           |
+| store-keys       | planned: checked by name in CI                                                                 |
+| play-app         | manual (the live app exists; `--check` reads it)                                               |
+
+Before its first `--check`: set `mobile.academorix.eas.owner: academorix` (owner answer, STA-1623 Q4) and
+`google.analyticsAccount`, in the product's go-live change.

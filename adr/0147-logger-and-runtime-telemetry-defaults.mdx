@@ -1,0 +1,49 @@
+---
+title: "0147 — Logger and runtime telemetry defaults"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0085](/adr/0085-logger-reporters). Amends
+  [0042](/adr/0042-di-first-with-one-container-per-service) and, in the final pass,
+  [0073](/adr/0073-observability-better-stack-sentry-encore).
+</Note>
+
+## Context
+
+[0085](/adr/0085-logger-reporters) kept CloudWatch and added Encore log, Sentry and Better Stack as reporters. The owner's logger
+answer LG1 (mem L871, 2026-10-20) and the runtime defaults P12 replace that. LG1 wins over the earlier list (contradiction C-11):
+CloudWatch and Sentry reach logs through OTLP or a collector. Packages carry no vendor SDK.
+
+## Decision
+
+1. **Logger (LG1).** Structured JSON output. Per-module levels can be changed through settings. Request-scope context is added
+   automatically. Redaction is driven by classification ([0134](/adr/0134-data-invariants-classification-and-delete-lifecycle)),
+   with secret detection. Sampling is supported. Drivers: console, OTLP (the production default) and Better Stack. No vendor SDK
+   is used in packages.
+2. **Health (P12).** One health shape, in `@stackra/contracts`, with the states `starting`, `ready`, `degraded`, `draining` and
+   `stopped`, and per-dependency checks.
+3. **Telemetry (P12).** The action pipeline sets span and log attributes that carry no values: `requestId`, `correlationId`,
+   `tenantId`, `actorType`, `actorId`, `onBehalfOfRoot`, `action`, `workflowRunId`, `stepId`, `toolCallId`, `policyDecision`, `outcome`
+   and `latencyMs`.
+4. **Generated clients (P12).** They default to a deadline and propagate the trace. They retry only actions that declare idempotency.
+5. The lifecycle names come from [0143](/adr/0143-container-scopes-registration-lifecycle-and-testing) (CT3), not from P12.
+
+## Consequences
+
+- Logs leave the service as OTLP, so the destination can change without a code change.
+- A log line never carries a secret value, because redaction runs on classification.
+
+## Enforcement
+
+planned — the boundaries rule bans vendor logging SDKs in packages, and the pipeline test checks that span attributes carry no values.
+
+## Alternatives
+
+- CloudWatch, Encore log, Sentry and Better Stack as separate reporters (0085): superseded (C-11).
+
+## Supersedes and sources
+
+Supersedes: [0085](/adr/0085-logger-reporters). Amends: [0042](/adr/0042-di-first-with-one-container-per-service); [0073](/adr/0073-observability-better-stack-sentry-encore)
+(final pass). Sources: owner logger answer LG1 (`stackra-decisions-2026-10-19.md` L871, 2026-10-20); intent-map item P12
+(accepted); contradiction C-11.

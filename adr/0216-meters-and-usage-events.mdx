@@ -1,0 +1,39 @@
+---
+title: "0216 — Meters and usage events"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Restates [0098](/adr/0098-actions-are-the-unit) through the pipeline: an action that declares a
+  meter writes a usage event.
+</Note>
+
+## Context
+
+Usage drives billing and quotas, and it must not be confused with audit or analytics. The owner's usage answers P6, U1, PP5 and the owner's intent (mem L389–402, L789–791, 2026-10-20) fix the meter kinds, the event stream and the split between free declaration and the usage service.
+
+## Decision
+
+1. **Declaration (P6).** An action declares a `meter`. The pipeline writes `usage.recorded.v1` to the outbox. Usage, audit, analytics and domain events are four separate streams.
+2. **Meter kinds (U1).** `@Meter` kinds count, sum, max, last and unique, with windows. Tenants can define their own meters and an ingestion API.
+3. **Free and paid split (owner intent, L402).** Declaring meters and emitting usage events is free code. Aggregation and quotas run in the usage service, an OS service. Its tier is a plan entitlement (ADR 0215), not a package tier (contradiction C-35).
+4. **Metering through the outbox (PP5).** Usage is written with the change, so a metered action cannot commit without its usage.
+5. **Rollups (U2 and U3).** Rollups and hot counters are the usage service's job.
+6. **Free contracts.** The contract types sit in `@stackra/entitlements`.
+
+## Consequences
+
+- A usage record is never lost with its action, because both commit in one transaction.
+- Analytics and billing read different streams, so a change to one does not change the other.
+
+## Enforcement
+
+planned — the outbox test checks the same-transaction rule for usage; the meter kinds have unit tests.
+
+## Open questions
+
+1. Who owns aggregation and its tier is settled by the plan entitlement, but the usage service's quota rules are open (register D-05, the hot-limit overshoot).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner usage answers P6, U1, PP5 (`stackra-decisions-2026-10-19.md` L389–402, L789–791, 2026-10-20). Contradiction C-35.

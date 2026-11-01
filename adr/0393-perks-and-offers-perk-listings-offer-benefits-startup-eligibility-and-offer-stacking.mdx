@@ -1,0 +1,58 @@
+---
+title: "0393 — Perks and offers: perk listings, offer benefits, startup eligibility and offer stacking"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It extends
+  [0391](/adr/0391-plan-catalogue-admin-dated-versions-apply-at-renewal-and-a-second-approver-for-discounts)
+  (offers) and the app market of
+  [0355](/adr/0355-marketplace-one-integration-with-up-to-five-roles-one-app-market-and-open-to-any-developer),
+  and uses [0331](/adr/0331-stackra-rules-one-condition-engine-for-every-rule-consumer) (rules)
+  through its public API. Linear STA-800.
+</Note>
+
+## Context
+
+The owner added a partner perks page (partners pay to be listed) and a startup programme (RV-52: incubator and
+accelerator members from an editable list, plus software startups, get 50% and AI credits for 12 months). Review round
+3 (M3-6, M3-7, R3-SO-18) found no perk record, no non-price benefits on an offer and no stacking rule: Founding,
+startup, Switcher and annual discounts together could reach zero.
+
+## Decision
+
+1. **Perk listings.** `@stackra/registry` adds the listing role `perk` beside `app`, `connector` and `agency` (listing
+   roles, not the Integration roles of 0355). A perk never installs. It is redeemed by `code`, `link` or `lead`; a lead
+   sends only the listing's named fields and only after the tenant admin consents (US-62). It is shown when approved
+   and listed for the tenant's pack and product. Its listing fee is the flat fee of its `fee-schedule:<name>` in force
+   on the period start, invoiced by OS billing to the partner's developer tenant (`perkListingFee`); no schedule means a
+   free listing.
+2. **Offer benefits.** An offer holds `benefits[]` of four kinds: `percent` (basis points), `credit_grant` (credit
+   kind, units, period), `free_migration` and `module_grant`, each but the migration for a number of months or while
+   the offer holds; and `eligibility` (packs, products, a rule-set key, a cap per pack). `applyOffers` gives one
+   month's price and grants.
+3. **Startup eligibility** is `rule-set:os:startup-perk-eligibility`, seeded in the `RuleSetPack$` shape: incubator
+   members, or software companies incorporated in the last 730 days. The incubator list is the editable
+   `settings:os:startup-incubators` record (shipped empty); OS billing sets the fact
+   `organisation.incubator_member` from it. The 50% and AI credits are `offer:startup` rows, not rule outcomes.
+4. **Stacking** is `rule-set:os:offer-stacking`: an offer the rule matches stacks; of the rest, the single best
+   (largest percentage) applies and the others are refused and reported (`stackOffers`). The seed lets only
+   `offer:annual` stack.
+5. **No new dependency.** `@stackra/registry` and `@stackra/pricing` do not import `@stackra/rules`; OS billing runs
+   `decide` and passes the answers in.
+
+## Consequences
+
+Perks, offers, eligibility and stacking are edited in the admin. OS billing owns the perk-redemption workflow, the
+consent log and the facts the rule sets read.
+
+## Enforcement
+
+Unit tests of the perk functions and schema, the offer functions, and a data test of the seeds
+(`packages/application/registry/src/core/__tests__/offer-seeds.test.ts`). planned — seeding checks the rule sets
+against the OS consumer's `Rules`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: `notes/handover/review-round-3/markets-money.md` (M3-6, M3-7);
+`notes/handover/review-round-3/defaults-applied.md` (R3-SO-18); owner RV-52.

@@ -1,0 +1,56 @@
+---
+title: "0192 — Translation workflow and Arabic defaults"
+description: "Accepted · 2026-10-20 · amended 2026-10-24 (STA-456)"
+---
+
+<Note>
+  Amended 2026-10-28 (owner decision, STA-1371): the digits of decision 2 are a per-customer
+  setting. `I18nConfig.numerals` is the default (`latn`, Latin 0-9); a customer, tenant or user
+  switches to `arab` (Arabic-Indic ٠-٩) through `I18nProvider`'s `numerals`, taken where
+  `scopeChoosesNumerals` allows. Every shared formatter writes the setting on every engine (Hermes
+  on iOS ignores the `-u-nu-` keyword): `formatMessage` numbers, plurals and dates, `formatNumber`,
+  `formatDateTime`, `useNumber`, `useMoney`, `useDateTime`, the date labels and the charts of
+  `@stackra/ui`. No screen forces Arabic-Indic digits because its text is Arabic. Decisions 1, 3 and
+  4 stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-456): the calendars of decision 3 are named. The calendar systems are
+  `gregory` (default) and `islamic-umalqura`, chosen per user (decision 3 makes Hijri optional; this
+  names the two systems), and a dual display shows both. `@stackra/i18n` formats dates in the chosen
+  calendar, and the date fields and pickers of `@stackra/ui` take the calendar from the locale
+  settings. Decisions 1, 2 and 4 stand.
+</Note>
+
+<Note>
+  Amends and accepts [0080](/adr/0080-i18n-is-the-figentra-i18n-port). The translation providers are
+  ADR 0236.
+</Note>
+
+## Context
+
+[0080](/adr/0080-i18n-is-the-figentra-i18n-port) (Proposed) ported i18n and left the workflow open. The owner's answers PP10, PP11 and LO1 (mem L825, L562, 2026-10-20) fix the translation workflow, the Arabic defaults and where UI strings live.
+
+## Decision
+
+1. **Workflow (PP10).** English catalogues are the source. A steward pre-translates into other languages. A native Arabic reviewer approves Arabic. Tolgee is added at the third locale. The connectors are ADR 0236.
+2. **Digits (PP11).** Latin digits are the default. Arabic-Indic digits are optional.
+3. **Calendar (PP11).** Gregorian is the default. Hijri is optional.
+4. **Storage (LO1).** UI strings stay in the i18n catalogues, not in a separate store.
+
+## Consequences
+
+- An Arabic string is reviewed by a native speaker before it ships, so pre-translation is a draft.
+- Digits and calendar are user settings, so the defaults do not force a choice on anyone.
+
+## Enforcement
+
+planned — the catalogue check fails a locale with missing keys in CI; the Arabic review status is a field in the catalogue.
+
+## Alternatives
+
+- Machine translation without review: rejected by PP10.
+
+## Supersedes and sources
+
+Supersedes: none. Amends and accepts: [0080](/adr/0080-i18n-is-the-figentra-i18n-port). Sources: owner answers PP10, PP11, LO1 (`stackra-decisions-2026-10-19.md` L562, L825, 2026-10-20).

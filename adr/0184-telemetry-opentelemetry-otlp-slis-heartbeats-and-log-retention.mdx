@@ -1,0 +1,42 @@
+---
+title: "0184 — Telemetry: OpenTelemetry, OTLP, SLIs, heartbeats and log retention"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0073](/adr/0073-observability-better-stack-sentry-encore) and
+  [0020](/adr/0020-observability-and-crash-reporting). Sentry for crashes and no personal data in
+  telemetry (0020 decisions 1 to 3) carry forward.
+</Note>
+
+## Context
+
+[0020](/adr/0020-observability-and-crash-reporting) and [0073](/adr/0073-observability-better-stack-sentry-encore) (both Proposed) named the tools. The logger ADR (0147) and the error package (0232) now fix the logger and error reporting. The owner's
+telemetry answers OB1 to OB3, OB10 and OB11 (mem L557, L560, 2026-10-20) set the standard, the SLI rule, heartbeats and log retention.
+
+## Decision
+
+1. **Standard (OB1).** OpenTelemetry, with the Stackra field dictionary of attribute names (ADR 0147). Telemetry leaves every service as OTLP.
+2. **Destination (OB1).** OTLP everywhere, with an optional bundled LGTM stack for on-prem.
+3. **Service levels (OB2 and OB3).** SLIs are defined now. SLOs start at the first paying tenant.
+4. **Heartbeats (OB10).** Crons, relays and workers send heartbeats.
+5. **Retention (OB11).** Logs are kept 30 days hot and 13 months in S3. Logs carry no personal data.
+6. **Crashes.** Sentry handles crash reports, and telemetry carries no personal data (0020 decisions 1 to 3).
+
+## Consequences
+
+- One pipe (OTLP) means a destination can change without changing service code.
+- SLIs exist before the first tenant, so the first incident has a measurement.
+
+## Enforcement
+
+planned — the telemetry port in `@stackra/logger` and the reporter port in `@stackra/errors` (ADR 0232) are checked by the redaction tests; the heartbeat check runs in the scheduler.
+
+## Alternatives
+
+- Vendor SDKs in each package: rejected by ADR 0147.
+
+## Supersedes and sources
+
+Supersedes: [0073](/adr/0073-observability-better-stack-sentry-encore) and [0020](/adr/0020-observability-and-crash-reporting). Sources: owner answers OB1–OB3, OB10, OB11 (`stackra-decisions-2026-10-19.md` L557, L560, 2026-10-20).
+Closes gaps C25 and C32.

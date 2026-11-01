@@ -1,0 +1,48 @@
+---
+title: "0061 — Mobile keeps React Navigation 7 and native tabs; one app"
+description: "Proposed · 2026-10-19 · amended 2026-10-24 (STA-469)"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-469), still Proposed: the acceptance condition of decision 4 is read on
+  the current Xcode and SDK
+  ([0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) decision 8):
+  a build must confirm the native stack and the native tabs on the foldable iPhone's inner screen
+  and in iPad windowing before this ADR is Accepted. Decisions 1 to 3 are unchanged.
+</Note>
+
+<Note>
+  Amended by [0180](/adr/0180-mobile-apps-and-release-trains): the app count, the release train and
+  the store process.
+</Note>
+
+<Note>
+  Settled by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R17: mobile modules are
+  compile-time. A product variant is compiled into the app, not loaded at run time, and is not a
+  separate app. Decision 3's TODO is settled.
+</Note>
+
+## Context
+
+[0011](/adr/0011-rejected-and-deferred-technologies) rejects expo-router in favour of code-based React Navigation, and this ADR is consistent with it. The mobile app wants platform-native tab
+bars, including iOS Liquid Glass, which `react-native-bottom-tabs` provides. Support is verified in its documentation but not yet built with Xcode 26.
+
+## Decision
+
+1. **Mobile navigation is React Navigation 7**, fed by the adapter in [0053](/adr/0053-decorator-route-classes-compiled-to-router-adapters).
+2. **Tabs use `react-native-bottom-tabs`** (native tabs, Liquid Glass, `minimizeBehavior`, search role).
+3. **There is one mobile app.** Products that need variants use compile-time modules later (TODO), not separate apps.
+4. **A build with Xcode 26 must succeed before this ADR is Accepted.**
+
+## Consequences
+
+- Native look and feel on iOS and Android.
+- A native-module dependency to track on each Expo SDK upgrade.
+
+## Enforcement
+
+Planned — a CI build of the iOS app on Xcode 26 and a Maestro smoke flow through the tab bar.
+
+## Supersedes and sources
+
+Supersedes: none. Consistent with [0011](/adr/0011-rejected-and-deferred-technologies). Sources: owner decision in chat, 2026-10-19.

@@ -1,0 +1,95 @@
+---
+title: "0369 — Stackra shipping: carrier ports, tracking states, label documents and dimensional weight"
+description: "Proposed · 2026-10-25"
+---
+
+<Note>
+  Proposed. It applies
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  to carriers and reads with
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios):
+  every carrier, factor, increment, rate and tracking code below is data, never a value in code.
+</Note>
+
+## Context
+
+Commerce moved shipping into release 1 (COM-37) and asked for one new Stackra package, `@stackra/shipping`
+(`notes/handover/stackra-package-needs.md`, Commerce `services-and-packages.md`). The answers it serves: main carriers
+per country plus one aggregator (COM-147); the merchant's own or the platform's carrier accounts (COM-148); flat, table
+and live rates (COM-149); A4 PDF and 4x6 thermal ZPL labels with batch printing (COM-153); customs data for cross-border
+parcels (COM-154); dimensional weight for box choice and cost (COM-155); pickup points through connectors that offer
+them (COM-156); carrier events normalised into one set of tracking states (COM-158); and a failed-delivery flow
+(COM-159). The carrier itself is an Integration with a Connection, and which carrier a tenant uses in a Market is the
+rule of [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default). Nothing
+on disk defines a carrier contract.
+
+## Decision
+
+1. **One package, mechanism only.** `@stackra/shipping` (`packages/commerce/shipping`, `tier:lib`) holds the carrier
+   contract and the arithmetic every consumer shares. Carrier and aggregator drivers are OS integrations connectors;
+   zones, rates, free shipping, restrictions, the delivery promise, slots, box suggestion and the failed-delivery flow
+   are the Commerce shipping module with rule sets and workflow templates
+   ([0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios) decision 2).
+2. **Capability interfaces on the Connection.** A carrier connection is a `CarrierGateway` (connection id, provider
+   code, declared `capabilities`). Each `CarrierCapability` names one interface: `rates` (`RateGateway.quote`),
+   `labels` (`LabelGateway.createLabel` and `cancel`), `pickups` (`PickupGateway.schedulePickup` and `cancelPickup`)
+   and `tracking` (`TrackingGateway.track` and its `trackingMap`). `hasCapability` narrows by the declared list and
+   never calls the carrier. Parcels are whole millimetres and grams; parties and addresses carry what a label prints;
+   customs lines carry HS code, origin, quantity, value and weight. This mirrors the gateway shape of
+   [0357](/adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet) decision 2.
+3. **`CarrierGateways` picks the carrier.** The port answers one gateway for a Market and the capabilities a call
+   needs, every such gateway preferred first (live quotes at checkout), or the gateway of a stored connection (cancel,
+   pickup and tracking go to the account that bought the label). Its driver applies 0356 decisions 2 and 3 and lives
+   with the Connection store in OS integrations; which carriers a Market offers is market-pack data. No match is the
+   refusal `no_carrier`. Label and pickup calls carry the caller's `reference`, and a repeated reference returns the
+   result already made, so a retry never buys a second label.
+4. **One tracking-state model.** `TrackingState` has ten codes (`label_created`, `in_transit`, `out_for_delivery`,
+   `ready_for_pickup`, `delivered`, `delivery_failed`, `returning_to_origin`, `returned`, `cancelled`, `exception`);
+   `delivered`, `returned` and `cancelled` are terminal. A connector ships a `TrackingMap` from its carrier's codes to
+   these states as data. `normaliseTracking` maps polled and webhook events alike, keeps one event per code and
+   instant, orders by instant, takes the state of the latest, and lists codes the map lacks instead of guessing them.
+   What a shopper is told on a state is a notification rule or workflow, not this package.
+5. **Label documents are checked.** A label is `{ format, bytes }` in `pdf` or `zpl`. A connector builds each one with
+   `labelDocument`, which decodes base64 and checks the envelope (`%PDF-`; `^XA` … `^XZ`), refusing with
+   `label_document_invalid`. `batchZpl` joins ZPL labels into one print job. The format and label stock come from the
+   location's printer setting in each request. Printing ZPL is `@stackra/peripherals`' `LabelPrinter`
+   ([0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)
+   decision 1); storing labels and merging PDFs is `@stackra/documents`.
+6. **Dimensional weight takes the carrier's numbers.** `dimensionalWeight(parcel, factor)` is the volume over the
+   carrier's factor in cubic centimetres per kilogram, in whole grams rounded up; `chargeableWeight` is the greater of
+   actual and dimensional weight, rounded up to the carrier's billing increment. Factor and increment come from the
+   connector or rate card; the package has no default for either.
+
+## Consequences
+
+- A new carrier is a connector with a tracking map and its factor, not a change here; a new market is pack data.
+- Notifications, reports and rules read one state model, so they do not change per carrier.
+- OS integrations owns the carrier connectors, the `CarrierGateways` driver and the alert on `unmapped` codes.
+- The Commerce shipping and returns modules depend on this package for labels, pickups and tracking.
+
+## Enforcement
+
+planned — the package's unit tests (`packages/commerce/shipping/src/**/__tests__`) cover capability narrowing, the
+tracking order and deduplication, the label envelopes and the weight arithmetic with arbitrary factors; the 0363 lint
+rule flags a carrier name, factor or tracking code literal in package source; a conformance test per carrier connector
+(a repeated reference returns the same shipment; every tracking code in its fixtures is in its map) belongs to OS
+integrations.
+
+## Open questions
+
+1. **Pickup points and lockers (COM-156).** Searching a carrier's pickup points near an address is not in the port
+   yet; whether it is a fifth capability or a geography concern is not decided.
+2. **Shipping resale (COM-148).** Billing merchants for labels bought on the platform's accounts needs an OS ADR note
+   and counsel (package-needs Commerce conflict 2); the port is the same either way.
+3. **Return labels.** A return label may be a `LabelRequest` with the parties swapped or a carrier's own return
+   product; not decided until the returns module is specified.
+
+## Supersedes and sources
+
+Supersedes: none. Reads with [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default),
+[0357](/adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet),
+[0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver) and
+[0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios). Sources:
+`notes/handover/stackra-package-needs.md` (`@stackra/shipping` row); `notes/handover/commerce/services-and-packages.md`;
+COM-147 to COM-159 (`notes/handover/commerce/owner-answers.md`, `default-applied.md`);
+`notes/handover/config-model.md`; `notes/handover/answers-as-config.md` (CAP-shipping).

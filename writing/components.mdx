@@ -1,0 +1,46 @@
+---
+title: "Components"
+description: "Callouts, cards, steps, tabs and accordions."
+icon: "layout-grid"
+---
+
+## Callouts
+
+<Note>Background the reader should know.</Note>
+<Tip>A faster or better way to do something.</Tip>
+<Warning>Something that can break or lose data.</Warning>
+<Info>Neutral context.</Info>
+
+## Cards
+
+<CardGroup cols={2}>
+  <Card title="Packages" icon="boxes" href="/guides/packages">
+    Category layout.
+  </Card>
+  <Card title="Catalogs" icon="package" href="/guides/catalogs">
+    Dependency versions.
+  </Card>
+</CardGroup>
+
+## Steps
+
+<Steps>
+  <Step title="First">Do this.</Step>
+  <Step title="Second">Then this.</Step>
+</Steps>
+
+## Tabs
+
+<Tabs>
+  <Tab title="Console">`pnpm console`</Tab>
+  <Tab title="Docs">`pnpm docs`</Tab>
+</Tabs>
+
+## Accordions
+
+<AccordionGroup>
+  <Accordion title="Why strict catalogs?">
+    One version per dependency across the whole repo.
+  </Accordion>
+  <Accordion title="Why no root tests folder?">Tests live with the code they prove.</Accordion>
+</AccordionGroup>

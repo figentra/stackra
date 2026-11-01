@@ -1,0 +1,48 @@
+---
+title: "0207 — Authentication assurance and machine identities"
+description: "Accepted, amended by 0274, 0278 · 2026-10-20"
+---
+
+<Note>
+  Amended by [0274](/adr/0274-app-grants-and-the-connect-app-page): decision 2 is refined for OAuth
+  apps. The first connection shows the Connect-app page, and the approval is saved as an app grant
+  that the gateway checks on every call.
+</Note>
+
+<Note>
+  Amended by [0278](/adr/0278-api-key-lifecycle): decision 2 is refined for API keys. Stackra's
+  identity service issues prefixed, hashed, checksummed API keys for programmatic access; the
+  gateway validates each key and maps it to a ZITADEL machine identity. The machine identity is the
+  principal; its permissions are its IAM grants
+  ([0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names)),
+  decided by the policy decision point
+  ([0209](/adr/0209-iam-enforcement-pipeline-gate-sql-predicate-embedded-pdp-and-service-calls)).
+  ZITADEL stays the issuer for sign-in, OIDC and machine-to-machine JWTs.
+</Note>
+
+## Context
+
+Some actions need a stronger proof of identity than a session. The owner's answers I5, I6 and SC14 (mem L609, L610, L553, 2026-10-20) fix the step-up rule, the machine identity types, and the ASVS baseline.
+
+## Decision
+
+1. **MFA policy (I5).** An MFA policy cascades down the tenant tree. The authentication assurance level (AAL) is carried in the token. A level L3 or L4 action needs a step-up within 10 minutes. Without it, the refusal is `step_up_required`.
+2. **Machine identities (I6).** All machine identities go through ZITADEL: service accounts, personal access tokens (free), tenant service tokens (an entitlement tier), OAuth apps, and the device flow for devices (ADR 0235).
+3. **Baseline (SC14, ASVS level 1).** MFA for administrators and operators. A breached-password check. Sessions last 30 days, or 12 hours on the platform. Rate limits and Turnstile.
+
+## Consequences
+
+- A destructive action cannot run on an old session, because a step-up is required within the window.
+- Tenant service tokens are a plan tier, so a machine credential is part of the commercial model (ADR 0242).
+
+## Enforcement
+
+planned — the pipeline checks the AAL claim against the action's level (ADR 0138); the validator checks that every L3 action declares its step-up.
+
+## Open questions
+
+1. The ASVS level for SaaS general availability: gap analysis P1-1 proposes L2 for identity, sessions and access control. The owner decides.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner answers I5, I6, SC14 (`stackra-decisions-2026-10-19.md` L553, L609, L610, 2026-10-20).

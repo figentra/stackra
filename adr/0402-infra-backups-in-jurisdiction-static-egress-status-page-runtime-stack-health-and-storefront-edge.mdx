@@ -1,0 +1,64 @@
+---
+title: "0402 — Infra: backups stay in the jurisdiction, static egress addresses, the status page, a per-service runtime stack, health drivers and the storefront edge"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It completes the infra packages after their audit:
+  [0186](/adr/0186-backups-and-disaster-recovery) and
+  [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+  for AWS backups, [0185](/adr/0185-incident-response-on-call-status-page-and-support-tiers)
+  decision 3 for the status page, and the `HealthIndicator` port of
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decisions 16 and 17.
+  Linear STA-733, STA-735, STA-741 and STA-738.
+</Note>
+
+## Context
+
+Backups and replicas already landed in the one AWS region, but nothing stopped an environment serving a region of
+another jurisdiction from backing up there. Partners (payment providers, banks, government gateways) allow-list the
+addresses our services call from. ADR 0185 places the status page in `@stackra/infra-observability`. No OS service could
+deploy through the AWS runtime stack on its own. The contracts `HealthIndicator` port had no infra driver. Commerce
+drops need a waiting room and per-shopper limits on hot items at the edge, set per campaign by the tenant.
+
+## Decision
+
+1. **Backups stay in the jurisdiction.** `awsBaselineConfig` refuses an environment with backups or replicated files
+   whose AWS regions are not the foundation's region; such a region gets its own account and stack (0354 decision 2).
+   The config names the jurisdiction from the runway `regions`, for residency evidence.
+2. **Static egress addresses.** `environments.<env>.shared.network.egress.staticIps` holds that many Elastic IPs in the
+   environment's account, retained on delete, and the stack exports their addresses for partner allow-lists and their
+   allocation ids for the network's NAT gateways.
+3. **Status page.** `observability.statusPage` (subdomain, company, time zone, custom domain, `published`, the
+   environments shown) becomes a Better Stack status page with one section per environment and an entry per heartbeat.
+4. **Per-service runtime stack.** `awsRuntimeStack` reads the runways, narrows the plan to the members one stack
+   deploys, and takes the cache network from `shared.network` (`subnetIds`, `securityGroupIds`, ids or `ref:`).
+5. **Health drivers.** Each infra package ships a `HealthIndicator` driver of its dependency: one GET bounded by a
+   timeout to a target the wiring passes from runway data (the AWS or GCP region's endpoint, an edge host, the GitHub
+   API, the ZITADEL discovery document, the EAS update endpoint, the telemetry endpoint). A failure is `down`, never a
+   throw, and its detail names the host only.
+6. **Storefront edge.** A storefront's campaign settings (`parseStorefront`: shopper cookie or header; per campaign a
+   waiting room with thresholds, window and `enabled`, and hot-item limits) become a Cloudflare waiting room and event
+   per campaign, suspended while the room is off, and per-shopper rate-limit rules appended to the zone's rate-limit
+   entry point. The thresholds are tenant settings the storefront exports; none is in code.
+
+## Consequences
+
+- A region in another jurisdiction cannot share an account's backups by mistake.
+- Allow-listed addresses survive stack changes; releasing one is a deliberate owner step.
+- The status page starts unpublished or published as the runway says, at the first external customer.
+- Waiting rooms need a Cloudflare plan that includes them, and cookie or header rate-limit keys need Advanced Rate
+  Limiting; both are owner steps.
+
+## Enforcement
+
+The unit tests beside each subject: `infra-aws` (`aws-baseline-config`, `aws-baseline`), `infra-aws-runtime`
+(`plan-for-members`, `runtime-network`, `aws-runtime-stack`), `infra-observability` (`observability-plan`,
+`observability-stack`), `infra-cloudflare` (`parse-storefront`, `shopper-limit-rules`, `storefront-edge`,
+`cloudflare-core-stack`) and each package's `*-health-indicator.driver.test.ts`, under Pulumi's mocks where they declare
+resources.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-733, STA-735, STA-738, STA-741; COM-335; `notes/handover/stackra-package-needs.md`;
+`notes/handover/package-audit-2026-10-25.md`.

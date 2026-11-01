@@ -1,0 +1,107 @@
+---
+title: "0438 — The extension model: slots for shells, shadows for own code, rules and events toward the OS"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666). Amends
+  [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers) (where the
+  override tree applies once products have no apps) and
+  [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules)
+  decision 1 (slots in shell screens), each by a Note. Builds on
+  [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells).
+</Note>
+
+## Context
+
+[0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers) lets an app shadow a file it does not
+own from `src/overrides/<owner>/`, and gen checks the shadow's shape. That works when the app compiles the owner's code
+itself. Under [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells) the shells are built and deployed
+once by the OS, and a product's bundle is compiled separately with the shell's dependencies as externals, so a product
+can no longer shadow a shell file or a shared package: its shadow would never reach the running shell. OS services and
+product services also deploy separately, so product code never runs inside an OS process. Products still need to change
+how screens look (a sign-in page per brand), add behaviour and react to OS facts. Runway's review of 2026-10-26 asked
+that a shell major, which changes the shared dependencies and the slots for every product at once, be checked against
+every product before it ships.
+
+## Decision
+
+1. **Pick the mechanism by what changes.**
+
+   | To change                            | Use                                                         | Never                                                                                 |
+   | ------------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+   | Part of a shell screen               | a slot fill in the product's UI package (decision 2)        | a shadow of a shell or shared-package file                                            |
+   | A page's content or layout           | an experience document                                      | code                                                                                  |
+   | A tenant's brand                     | the tenant theme in experience                              | a build                                                                               |
+   | Which plan grants a feature or limit | plan catalogue and entitlement data                         | code                                                                                  |
+   | A right the product needs            | an `Entitlement` in the product's own module                | editing an OS entitlement                                                             |
+   | React to a fact                      | a `Listener` in the product's own module                    | editing an OS listener                                                                |
+   | A step inside an action              | an `Extension` on the owner's declared `ExtensionPoint`     | patching the action                                                                   |
+   | Wrapping a whole call                | an `Interceptor` the action lists                           | a method-level around ([0265](/adr/0265-hook-points-transform-and-verify) decision 1) |
+   | A business answer                    | a rule set                                                  | an `if`                                                                               |
+   | A sequence of steps                  | a workflow template                                         | hard-coded screens                                                                    |
+   | A provider                           | a driver behind the port, chosen by the tenant's Connection | a fork                                                                                |
+
+2. **Shells declare slots; products fill them.** A shell declares typed slots the way
+   [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules)
+   decision 1 describes for app screens: a key (`auth.sign-in.page`, `auth.sign-in.brand-panel`, `auth.sign-in.footer`,
+   `shell.header`, `shell.home` and the like), a props type and the displays it allows. A product's UI package fills a
+   slot with a component of that props type; gen registers the fill and records it in the manifest. The shell renders
+   the fill on that product's hosts and its default elsewhere. Precedence: the OS default, then the product's fill, then
+   tenant data, and tenants change data only.
+
+3. **Slot fills change presentation only.** A fill of a sign-in slot changes how sign-in looks and which fields show
+   (from a schema); the sign-in flow (passwords, codes, passkeys, MFA, sessions, lockout) stays in OS identity and no
+   product can replace it.
+
+4. **Gen checks fills as it checks shadows.** A fill whose props do not match the slot fails with the same codes as
+   [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers) decision 11
+   (`override_shape_mismatch`, `override_target_missing` for a slot the shell does not declare, `override_duplicate`),
+   and a shell release that removes or reshapes a slot lists every product fill it affects, as decision 12 does.
+
+5. **Shell compatibility is checked before a shell ships.** A product bundle and its fills declare the shell line they
+   target (`targets: console@N`, 0436 decision 4). Before a shell release, the contract test of 0436 decision 5 builds
+   every published product bundle, fills included, against the next shell; a removed or reshaped slot, or a shared
+   dependency that breaks a bundle, fails the release. The registry refuses a product release whose `targets` names a
+   shell line the edge does not serve. One version line (owner decision D7 of 2026-10-26) stands; these checks stop a
+   broken release, they do not keep old lines alive.
+
+6. **Shadows stay for code a member compiles.** The override tree of 0306 still applies to code a member builds into
+   its own output: a product service's declaration shadows of a consumed module, and files inside the product's own
+   bundle. It never applies to a shell, to a dependency the shell's import map provides, or to an OS service.
+
+7. **Toward the OS: rules and events only.** A product takes part in an OS decision through the rule sets and settings
+   the OS service declares (its data) and reacts to OS integration events with its own listeners. The OS never calls
+   product code synchronously during its own action (owner decision of 2026-10-26).
+
+8. **Owners list their interceptors and points.** An interceptor or extension attaches only where the owning member
+   declared it. The registry never attaches an interceptor to another member's action (owner decision of 2026-10-26).
+   Between an edition and its base product, released extension points work as
+   [0350](/adr/0350-additions-across-products-slots-in-app-screens-released-extension-points-rule-facts-and-enhanced-modules)
+   decision 2 says; that is product-to-product inside the edition's own deploy, not toward the OS.
+
+## Consequences
+
+- A shell upgrade cannot silently break a product override: every product customisation of a shell is a declared slot
+  with a typed contract, and the contract test runs before the shell ships.
+- A product that needs a place the shell lacks asks the OS for a slot, through a shell release; until then it uses only
+  its own screens, as 0350 decision 1 already says for editions.
+- Products cannot change OS behaviour beyond the rule sets, settings and events the OS declares; an OS that wants to be
+  extensible in a decision declares a rule set for it.
+- The sign-in surface is safe to brand per product without touching authentication.
+- A shell release takes longer: it waits on a build of every published product bundle.
+
+## Enforcement
+
+- planned — gen's extension-bundle mode fails on a fill for an undeclared slot or with mismatched props, and on any
+  `src/overrides/<owner>/` path whose owner is a shell or an import-map dependency.
+- planned — the shell release check lists product fills affected by a removed or reshaped slot, and the contract test
+  fails the release on a break.
+- planned — the registry refuses a release whose `targets` the edge does not serve.
+- exists — interceptors and extensions attach only where the owner lists them (`@stackra/actions` kinds; 0305
+  rule 24).
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: stackra-notes `handover/app-shells/app-shells-edge-and-extension.md` sections 7 and 15
+(point 7), owner decisions D4, D5 and D7 of 2026-10-26, and `handover/app-shells/review-runway-2026-10-26.md` (item 6).

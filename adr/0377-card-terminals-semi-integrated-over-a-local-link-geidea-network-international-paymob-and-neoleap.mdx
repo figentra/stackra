@@ -1,0 +1,76 @@
+---
+title: "0377 — Card terminals, semi-integrated over a local link: Geidea, Network International, Paymob and NeoLeap"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It is the per-provider decision that
+  [0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver)
+  open question 1 asked for, for the providers whose terminals the till drives over a local link.
+  Review round 2 (X2-23) asked for one ADR covering this family with a driver each; each provider
+  has its own decision below. The server-driven family is
+  [0378](/adr/0378-card-terminals-server-driven-and-tap-to-pay-stripe-terminal-square-and-adyen). It
+  reads with
+  [0357](/adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet)
+  and [0253](/adr/0253-peripherals-web-api-first-and-device-presets) decision 3.
+</Note>
+
+## Context
+
+Commerce launches with Geidea, NeoLeap or Surepay, Network International, Paymob and Stripe Terminal in its first
+markets (COM-231). Wave 10 built the `CardTerminal` port in `@stackra/peripherals` (pair and report only, with a
+`memory` driver), the `TerminalGateway` interface in `@stackra/payments` (present an amount, read or cancel the
+session) with a Stripe Terminal driver, and `Capability.CardTerminal` in `@stackra/platform`. The Gulf and Egypt
+providers' terminals are semi-integrated: the till sends the amount to the terminal over a local link (serial, USB,
+Bluetooth or the shop's network) under the provider's electronic cash register (ECR) protocol, and the terminal talks
+to its acquirer. A cloud API that a server can drive was not confirmed for any of them. 0339 decision 1 keeps the
+terminal's protocol in the payments driver and leaves pairing and state to the peripheral port.
+
+## Decision
+
+1. **The split for this family.** The provider's ECR protocol is a `TerminalGateway` driver in a client entry of
+   `@stackra/payments` (`./native` for the Expo staff app, and the Electron till's main process), one driver per
+   provider. The local link is `@stackra/peripherals`: `CardTerminal` pairs the terminal and reports its state, and its
+   native transport carries the protocol's bytes. Neither package knows the other's internals.
+2. **The server learns the result from the till, then checks it.** The till reports the terminal's outcome to the
+   payments service as a terminal session result; the service records it as pending confirmation and confirms it
+   against the provider's settlement or transaction report where the provider offers one. A lost answer is handled
+   by cancel-then-reconcile, as built for Stripe Terminal. An integrated card payment never completes offline (0339).
+3. **Geidea.** Driver `geidea` on the provider's ECR protocol over the link the terminal model supports. The protocol
+   specification and test terminals come from Geidea under its integration agreement; the driver is written against
+   that specification, not inferred. Certification by Geidea is a row of `launch-gate:sa` and of every pack that
+   offers it.
+4. **Network International.** Driver `network-international` on N-Genius terminal ECR integration, under the same
+   conditions as Geidea: specification and terminals from the provider, certification as a launch-gate row of each
+   pack that offers it (`ae` first).
+5. **Paymob.** Driver `paymob` for Paymob's terminals in `eg` and the Gulf markets where it offers them, under the same
+   conditions. Paymob's online gateway driver is separate and unaffected.
+6. **NeoLeap or Surepay.** One of the two is chosen for `sa` by the owner or sales (COM-231 names both). The chosen one
+   gets a driver under the same conditions; the other is not built until a merchant needs it.
+7. **SoftPOS from a Gulf provider.** Where a pack names a Gulf SoftPOS SDK (Geidea or Checkout.com, R3-SO-12), it is a
+   further `TerminalGateway` driver on the staff app's phone, under the same certification rule.
+8. **Choice is data.** Which terminal providers a market offers is `market-pack:<code>.payments.terminal-providers`.
+   A merchant with its own acquiring contract connects its own provider account (own mode); a merchant on Figentra
+   Pay uses the managed Connection ([0376](/adr/0376-provider-resolution-ports-credential-references-managed-or-own-accounts-and-the-telephony-ports)
+   decision 5). The tip prompt and its suggested amounts are a rule set and settings, never driver constants.
+9. **Values.** Pack data: terminal providers per market and the launch-gate certification rows. Settings: tip
+   suggestions and whether to prompt. Rule sets: when to prompt for a tip. Seed data: the device catalogue's terminal
+   models. Code: the protocol drivers only.
+
+## Consequences
+
+- Each driver waits on its provider's specification and test terminals; nothing is written from guesses.
+- The till, not the server, holds the live terminal session, so the payments service must accept a reported result
+  and confirm it later.
+- Each driver adds a native module, which 0253 decision 3 already allows with this evidence.
+
+## Enforcement
+
+planned — each driver ships a conformance suite against the provider's test terminal or simulator, and each pack's
+launch gate lists the certified driver. Nothing checks it yet.
+
+## Supersedes and sources
+
+Supersedes: none. Answers 0339 open question 1 for this family. Sources: `notes/handover/build-wave10-2026-10-25.md`
+(payments builder, not built item 1; commerce primitives builder, not built item 3 and question 4);
+`notes/handover/review-round-2/cross.md` (X2-23); `notes/handover/review-round-3/stackra-os.md` (R3-SO-04, R3-SO-12).

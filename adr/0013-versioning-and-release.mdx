@@ -1,0 +1,51 @@
+---
+title: "0013 — Versioning and release"
+description: "Superseded by 0025, rule 6 amended by 0468 · 2026-10-19"
+---
+
+{/* Stackra file contract. Purpose: ADR 0013, versioning and release (superseded by 0025, whose decision 5 carries rule 6 forward). Boundary: decision text; the 2026-10-28 note records the deploy model of ADR 0468 (stackra-244, STA-1395). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468. */}
+
+<Note>
+  Amended 2026-10-28 (STA-1395) by
+  [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval),
+  owner decision of that date: rule 6, as carried forward by 0025, applies to production only. The
+  human approval of a release is the owner's approval of the `release` GitHub Environment when
+  `release.yml` publishes; it is the one gate, and nothing else asks (the version pull request is
+  merged by an agent through `pnpm pr:merge`). A prerelease under a dist-tag other than `latest`,
+  and a dev or staging deploy, need no human approval. Release automation prepares; the owner's
+  approval decides.
+</Note>
+
+<Note>
+  Superseded by [0025](/adr/0025-packages-publish-to-private-registry): changesets now version
+  packages only; apps and services deploy by commit SHA. Decisions 1, 2, 4, 5 and 6 carry forward
+  there.
+</Note>
+
+## Context
+
+Many members, one repository. A member's version must be recorded where the member travels with it, and nobody should hand-edit a version or a changelog.
+
+## Decision
+
+1. **Changesets owns versions.** A change to a member needs a changeset (`pnpm changeset`). Versioning is `pnpm changeset:version`, which also refreshes the lockfile. `CHANGELOG.md` is never hand-edited.
+2. **Every member carries `CHANGELOG.md` and `LICENSE`.** The changelog starts as a `# <package-name>` heading, which Changesets prepends to. The licence is a verbatim copy of the root file, because a licence travels with the artifact, not with the repository.
+3. **Private members still version and tag** (`privatePackages: { version, tag }`), so apps and services have a release narrative.
+4. **Published versions are never replaced.** A fix is a new version; rollback is rolling forward.
+5. **A release note per major or breaking release**, written by a human before the release: what changes for a consumer, pins, human steps, verification, rollback. Routine releases need none; their notes are the changesets.
+6. **A human approves every release.** Release automation prepares; it does not decide.
+
+## Consequences
+
+- One release narrative across apps, packages and services.
+- Non-npm members (Go, Python) are out of scope; if one appears, an ADR adds its tag rule.
+
+## Enforcement
+
+- `.changeset/config.json` is the configuration; `validate-repository.mjs` requires `CHANGELOG.md` and `LICENSE` in every member.
+- `.agents/hooks/guard-bash.mjs` denies running `changeset version` by an agent.
+- Planned: chain `pnpm changeset:status` into `pnpm verify` so a change without a changeset fails.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: basalt `adr/0003-versioning-across-three-languages` (npm half), `0008-per-member-changelog-and-licence`; platform `docs/releases/README.md`.

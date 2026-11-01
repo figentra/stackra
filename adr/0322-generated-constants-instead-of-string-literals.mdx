@@ -1,0 +1,61 @@
+---
+title: "0322 — Generated constants instead of string literals"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0309](/adr/0309-icons-declarations-name-an-icon-and-the-platform-resolves-it): a declaration
+  writes the generated constant for an icon, `icon: Icons.House`, where 0309 decision 1 had it write the
+  string `"house"`. The `IconName` union of 0309 decision 2 stays, as the type behind the constants. The
+  `Icons.*` form that 0309 rejects was an import of an icon component, and that stays rejected: a
+  constant is a value that gen emits. Decisions 3 to 6 of 0309 stand.
+
+Enforcement of this note: planned — gen emission of the constants and the lint rule of decision 6 below.
+
+</Note>
+
+## Context
+
+[0309](/adr/0309-icons-declarations-name-an-icon-and-the-platform-resolves-it) lets a declaration name an
+icon by a string, and the `IconName` union lets the compiler check that the string exists. A typed string
+still repeats its spelling at every use, and a rename of an icon name, a column key, a route, a resource or a
+permission has to find each copy. The same problem applies to the keys that declarations use for columns,
+routes, resources and permissions. A generated constant gives the editor a name to complete, and it lets a
+rename change one generated name, while the value stays the string that the platform reads.
+
+## Decision
+
+1. **Gen emits the constants.** Authors never write them.
+   - **Icons.** One constant for each name in `@stackra/icons` (ADR 0309), and one for each custom icon of a
+     member, in the form `<namespace>::<name>` (0309 decision 5). The constant of `house` is `Icons.House`.
+   - **Keys.** A typed key object for each of columns, routes, resources and permissions.
+2. **Declarations use the constants.** `icon: Icons.House`, and never `icon: "house"`.
+3. **Gen output, never a hand-written file.** The generated constants are gen output and no author writes them. A
+   module's own `constants/` group ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)) is
+   unchanged, and a module keeps using its model, enum and event classes ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components)).
+4. **Migrations are unchanged.** A migration is a literal snapshot ([0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules)),
+   so its table and column names stay strings.
+5. **The name union stays.** `IconName` is the type that the icon constants are built on, and gen still checks each
+   icon name against it (0309 decision 4).
+6. **A lint rule bans raw strings in four positions.** A raw string literal is refused as an icon, as a column key,
+   as a route key and as a permission. Only a generated constant is accepted there.
+
+## Consequences
+
+- A misspelt icon or key is a compile error or a gen error. It does not become an empty square or a dead route.
+- A rename changes the generated name once, and the editor follows every use.
+- Gen owns one more generated output for each set of constants, and the lint rule depends on it.
+- The position that typed string literals were enough, and that no constants layer was needed, is replaced.
+  The `Icons.*` form that 0309 left out now exists, as generated constants and not as component imports.
+- Existing declarations that use raw strings are not converted by this ADR. The conversion is not scheduled here.
+
+## Enforcement
+
+- planned — gen emission of the icon and key constants, and the lint rule of decision 6 that bans raw strings
+  in the four positions. No work item is recorded in this repository yet.
+- planned — gen's check of each icon name against `IconName`, which 0309 already names.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0309](/adr/0309-icons-declarations-name-an-icon-and-the-platform-resolves-it).
+Sources: the owner's final structure review of 2026-10-24, restated in this ADR's own words.

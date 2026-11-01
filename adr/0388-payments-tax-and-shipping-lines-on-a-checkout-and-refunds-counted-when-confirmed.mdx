@@ -1,0 +1,56 @@
+---
+title: "0388 — Payments: tax and shipping lines on a checkout, and refunds counted when confirmed"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It answers two open questions from the wave 10 hand-over of `@stackra/payments`
+  (STA-672): what a `CheckoutRequest` says about tax and shipping (Tamara), and when a refund the
+  provider accepted as pending counts. It reads with
+  [0357](/adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet)
+  (payments architecture) and
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  (configuration over code).
+</Note>
+
+## Context
+
+A `CheckoutRequest` carries a tax-inclusive total, an optional tip and optional lines. Tamara asks for `tax_amount` and
+`shipping_amount` on every order, so its driver sends zero for both, which misstates the order to the provider and to
+its credit scoring. Other buy-now-pay-later and invoice providers ask for the same split. Separately,
+`PaymentService.refund` moves the payment to `partially_refunded` or `refunded` as soon as the provider accepts a refund,
+even when the provider answers `pending`; a pending refund that later fails leaves the record wrong, and the next refund
+is checked against an amount that was never returned. Alternatives weighed: computing tax in payments (rejected: tax is
+the pricing and tax ports' answer, and payments must never hold a rate) and refusing pending refunds (rejected: several
+providers only ever answer pending first).
+
+## Decision
+
+1. `CheckoutRequest` gains two optional fields, `tax` and `shipping`, each a `Money` in the request's currency and each
+   already included in `amount`. The product fills them from the order it priced (pricing and tax ports); payments
+   never computes them. A driver whose provider takes the split sends them; a driver whose provider does not ignores
+   them. When they are absent, a provider that requires them gets zero, as today, and the driver says so in its file.
+2. A refund is counted against the payment only once it is confirmed. `PaymentRecord` keeps `refunded` (confirmed) and
+   gains `refunding` (accepted, not yet confirmed), each keyed by the refund reference. A refund is refused when
+   `amount` exceeds `total - refunded - refunding`. A `pending` answer adds to `refunding`; a `succeeded` answer, a later
+   lookup through `reconcile`, or a verified provider webhook moves it to `refunded`; a `failed` one removes it. The
+   payment's status moves to `partially_refunded` or `refunded` only from confirmed amounts.
+3. Neither change adds a Market, rate or provider to code: which providers need the split is each driver's mapping of
+   its own API, and when a refund counts is mechanism.
+
+## Consequences
+
+Tamara and similar providers receive true order data. Refund state can no longer run ahead of the provider, and two
+concurrent refunds cannot together exceed the total. Products must pass `tax` and `shipping` where they have them, and the
+payments service's durable `PaymentRecords` driver gains the `refunding` column. Reconciliation of pending refunds now
+matters: a host that never runs `reconcile` or receives webhooks leaves refunds pending.
+
+## Enforcement
+
+planned — `payment.service.test.ts` cases for a pending refund that later succeeds and one that fails, and a Tamara
+driver test that sends the given `tax` and `shipping`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: notes/handover/build-wave10-2026-10-25.md (`@stackra/payments` owner questions 5 and 6);
+STA-672.

@@ -1,0 +1,48 @@
+---
+title: "0414 — Notification inputs: the whole verified principal, and prayer times computed from a pack method"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-838, STA-840). It extends
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) and
+  [0366](/adr/0366-stackra-calendar-umm-al-qura-business-days-recurrence-and-slots-over-market-pack-data)
+  for the notifications service (OS gaps 2 and 4).
+</Note>
+
+## Context
+
+Notifications sends email, SMS and WhatsApp and keeps quiet hours. `IdentityResolver` answered only a verified email
+and a locale, so the service had no verified number to text and no time zone for quiet hours. Quiet hours in Muslim
+markets also fall around prayer times, and no package computed them.
+
+## Decision
+
+1. **The whole principal.** `IdentityResolver.principalOf(principalId)` returns the `VerifiedPrincipal`, which now
+   carries the verified `phone` (E.164) and the `timeZone` (IANA) beside `email` and `locale`. Both are optional: an
+   unverified number is never returned, and a principal without a zone of their own leaves the caller to fall back to
+   the tenant's or the location's. Nothing is copied into the caller's tables (ADR 0134). `@stackra/identity`'s drivers
+   implement the new method.
+2. **Prayer times are computed, the method is data.** `@stackra/calendar` has a `PrayerTimes` port and a computed
+   driver (sun position, the praytimes.org method). The method is the pack key `calendar.prayer_times`: the Fajr angle,
+   Isha as an angle or minutes after Maghrib, the Asr factor (1 or 2), minutes added to sunset for Maghrib, and a
+   high-latitude rule (`none`, `angle_based`, `middle_of_night`, `one_seventh`). No authority's angles are written in
+   code; a market or a tenant's location picks them in its pack. A driver over a published table can replace the
+   computed one where a market requires the authority's own timetable.
+3. **Instants out.** A day's times are UTC instants rounded to the minute; the caller formats them in the place's zone.
+
+## Consequences
+
+- Every `IdentityResolver` implementation adds `principalOf`.
+- Packs for markets with prayer-aware quiet hours need a `calendar.prayer_times` entry; without one the calendar
+  refuses rather than guesses.
+
+## Enforcement
+
+`packages/foundation/contracts/src/core/ports/__tests__/identity-resolver.port.test.ts`;
+`packages/foundation/calendar/src/core/drivers/__tests__/computed-prayer-times.driver.test.ts` and
+`packages/foundation/calendar/src/core/functions/__tests__/prayer-method-from-pack.function.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: OS `services/notifications/SPEC.md` gaps 2 and 4; STA-838; STA-840.

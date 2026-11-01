@@ -1,0 +1,46 @@
+---
+title: "0405 — US formats: EIN, SSN last four, ZIP+4, state codes and phone numbers as pack data"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-797, validation part). It applies
+  [0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors) to the US
+  identity formats. The 5-cent cash rounding belongs to the plan-catalogue work; carriers and
+  delivery connectors are vendor integrations and are not decided here.
+</Note>
+
+## Context
+
+The US launch needs the employer number, the last four digits of a social security number, ZIP and ZIP+4 codes, state
+codes and US phone numbers to validate. `@stackra/validation` checks any identifier against an `IdentifierFormat` from
+a pack, but stored only the compacted value, so `12-3456789` and `94105-1234` lost their separators.
+
+## Decision
+
+1. **Mechanism only in code.** `IdentifierFormat.canonical` is a `$1`-to-`$9` template over the pattern's groups that
+   writes the stored form; a group that did not match drops with the text just before it, so one ZIP format stores
+   `94105` and `94105-1234`. Check algorithms still run on the compacted value.
+2. **The `us` pack carries the formats** (draft until counsel signs off):
+   - `identity.ein`: `^(?!00|07|08|09|17|18|19|28|29|49|69|70|78|79|89|96|97)(\d{2})(\d{7})$`, canonical `$1-$2`
+     (IRS prefixes never issued are refused);
+   - `identity.ssn_last_four`: `^(?!0000)\d{4}$` (the full number is never collected);
+   - `identity.address_format.postalCode`: `^(\d{5})(\d{4})?$`, canonical `$1-$2`;
+   - `identity.address_format.region`: the fifty states, DC and the five inhabited territories as one alternation;
+   - `identity.phone`: `^\+1([2-9]\d{2})([2-9]\d{6})$` over the `e164()` output (NANP area and exchange codes).
+3. **Nothing US-specific in code paths.** The tests carry these values as fixtures the way the pack does.
+
+## Consequences
+
+- A US form validates through the same `identifier()` and `address()` schemas as every Market.
+- A format change (a new territory, a new EIN prefix) is a pack edit.
+
+## Enforcement
+
+planned — `packages/foundation/validation/src/core/functions/__tests__/check-identifier.function.test.ts` fixes the
+behaviour with the US values.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/stackra-package-needs.md` (added by review round 3);
+`notes/handover/us/default-applied.md` (US-21, US-22, US-39, US-96, US-124); R3-SO-16; STA-797.

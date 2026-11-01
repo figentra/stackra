@@ -1,0 +1,37 @@
+---
+title: "0198 — SDLC: spec location, spec states, traceability and roadmap structure"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk),
+  [0121](/adr/0121-sdlc-tooling-roles-and-linear), [0065](/adr/0065-linear-gate-is-checked-offline)
+  and [0067](/adr/0067-spec-kit-is-the-sdlc).
+</Note>
+
+## Context
+
+The SDLC specs were kept in several places, with several state names and stale paths. The owner's answers OR2 a, OR6, OR12 and B9 to B12 (mem L577, L579, 2026-10-20) fix the location, the states, the traceability and the roadmap.
+
+## Decision
+
+1. **Location (OR2 a).** Specs stay in `.agents/specs/`. They are excluded from the agents-sync projection. oxfmt covers them.
+2. **States (OR12).** A spec is Draft, Clarified, Planned, Tasked, Implementing or Done.
+3. **Traceability (OR12).** Specs and tests trace with `@covers` tags.
+4. **Roadmap (OR6).** A public roadmap and Linear projects.
+5. **Impact template (B10).** The impact template gains deploy modes, lane and change risk.
+6. **Stale paths (B9, B11, B12).** Spec paths and `sdlc:*` routes are corrected.
+7. **Tasklists.** Tasklists go to Linear and are then deleted (mem L60 #5).
+
+## Consequences
+
+- A spec's state says what work is left, and a `Done` spec has tests that cover it.
+- Tasklists in Linear are the only tasklists.
+
+## Enforcement
+
+planned — `tools/scripts/spec-gate.mjs` checks the states and the `@covers` tags.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk), [0121](/adr/0121-sdlc-tooling-roles-and-linear), [0065](/adr/0065-linear-gate-is-checked-offline), [0067](/adr/0067-spec-kit-is-the-sdlc). Sources: owner answers OR2 a, OR6, OR12, B9–B12 (`stackra-decisions-2026-10-19.md` L577, L579, 2026-10-20).

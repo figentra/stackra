@@ -1,0 +1,77 @@
+---
+title: "0457 — Multi-binding extension points, request guards, and the session on RouteServices"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract: Purpose: the decision record for the container's multi-binding (a module contributes to another module's extension point by binding a subclass of its base), the server's RequestGuard extension point built on it, and the session and identity members @stackra/app adds to navigation's RouteServices. Boundary: decision text only; the code is in packages/foundation/container and packages/runtime/app. Runtime: docs. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0004, 0263, 0294, 0305. */}
+
+<Note>
+  Proposed (STA-916, batch stackra-21). The batch reserved 0444, which ADR 0444 (one self-hosted
+  tools stack per region) took first; this is the next number after 0456, the last one taken.
+</Note>
+
+## Context
+
+The Commerce wave A build listed two gaps (Commerce `apps/docs/src/docs/build/module-catalogue.mdx`, "Stackra gaps"). The
+container has no extension point or multi-binding: a class token resolves to one instance, so a module that builds on
+another (personalisation or b2b on carts) cannot contribute a guard to its checkout gate without the gate's owner
+listing every contributor in code. And no package adds members to `@stackra/navigation`'s open `RouteServices`, so a
+route context carries no session and a console, till or mobile layout cannot gate on one. The signed edge-header check
+(stackra-65, ADR 0437) needs the same kind of extension point on the server: a check every inbound request passes.
+
+The alternatives weighed were a multi token (`multi(CheckoutGuard)`, or an array type gen reads from a constructor
+parameter), rejected because classes are the only tokens (ADR 0294 decision 17) and it needs a new wiring section gen
+must write; a contribution decorator (`@Contributes(CheckoutGuard)`), rejected because a decorator only records
+(ADR 0305) and subclassing already says the same thing; and identity owning the `RouteServices` augmentation, deferred
+because the route needs the session per request on a Worker, which only the app runtime's request loop can load.
+
+## Decision
+
+1. **A contribution is a subclass, and `getAll(Base)` lists them.** The module that owns an extension point declares
+   an abstract base (`abstract class CheckoutGuard extends Service`); a module that contributes binds a subclass, as
+   gen binds any class. `Container.getAll(Base)` returns every class the booted modules bind or export that extends
+   `Base`, resolved through the normal recipe (overrides, `@Replaces`, lifetimes), in wiring order: dependencies
+   first, the host last. `Base` itself is never listed; a contribution from a module that did not boot is not listed;
+   a `Lifetime.Request` contribution needs a `forRequest()` container. `DiscoveryService.getAll(Base)` gives a
+   service the same list through its constructor. No new token type, no wiring section, no gen change.
+2. **The server's request guards are one such extension point.** `RequestGuard` (`@stackra/app/server`) is an abstract
+   `Service` with `check(request)` and an `order` (default 0; the place a guard holds in a fixed check sequence such
+   as ADR 0437's server-check order, never a business value). `ServerApp.handlers.guard(request, container)` runs
+   every contributed guard on the call's request container, lowest order first and wiring order within an order, and
+   rejects with the first refusal; later guards do not run. The generated adapter calls it inside `handlers.run`.
+3. **`@stackra/app` adds `session` and `identity` to `RouteServices`.** `RouteSession` augments navigation's
+   `RouteServices` with `session: SessionUser | null` and `identity: SessionStore | undefined`, both
+   `@stackra/identity/contracts` shapes. The Worker target loads the session from the bound `SessionStore` into each
+   request container before the member's context factory runs; the browser and native targets load it once at boot.
+   Each target contributes one route context part that reads it. No bound store, or a refusal from the store (a
+   revoked session), is signed out; any other failure rejects, and the target reports it.
+
+## Consequences
+
+- Commerce's carts declares its checkout guard base and reads `getAll`; personalisation, b2b and the till contribute
+  without carts knowing them. stackra-65 contributes its edge-header guard as a `RequestGuard` with a negative order.
+- `@stackra/app` depends on `@stackra/navigation` and `@stackra/identity` (no cycle: no package depends on
+  `@stackra/app`); the lockfile row is the integration batch's (stackra-90).
+- The Worker's member context factory must hand the routes the request container it was given, or `ctx.session` is
+  null. The browser and native session is loaded once per page load or launch: the web's sign-in and sign-out leave the
+  page, and a device flow that signs in or out without a reload must re-boot or call for a refresh (a later change).
+- A Worker that binds a `SessionStore` loads the session on every request, including public pages; a storefront that
+  needs no session binds no store.
+- Navigation's README and `RouteServices` docblock still say identity adds the members; stackra-90 updates them.
+
+## Enforcement
+
+`packages/foundation/container/src/core/services/__tests__/container.service.test.ts` ("getAll (multi-binding)":
+wiring order, unbooted modules left out, overrides honoured, the base never listed, request lifetime) and
+`discovery.service.test.ts`; `packages/runtime/app/src/server/functions/__tests__/create-app.function.test.ts`
+("guard": order, first refusal stops the rest, no guard lets through);
+`packages/runtime/app/src/core/functions/__tests__/route-session.function.test.ts` (per-container session, refusal is
+signed out, other failures reject, no store) and the Worker `create-app.function.test.ts` (the request container
+carries the session); `packages/runtime/app/src/core/__tests__/index.test.ts` (the augmentation's types).
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends ADR 0294 decision 17 (classes are the only tokens: a base class now also names the set of
+its booted subclasses, read with `getAll`). Sources:
+Linear STA-916; Commerce `apps/docs/src/docs/build/module-catalogue.mdx` (container and app rows); ADR 0004, 0206, 0263,
+0305, 0437.

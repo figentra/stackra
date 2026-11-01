@@ -1,0 +1,30 @@
+---
+title: "Navigation"
+description: "Adding pages, groups and tabs in the DocsConfig."
+icon: "map"
+---
+
+{/* Stackra file contract: Purpose: how a page reaches the sidebar: tabs, groups, pages and folder entries in src/config/docs.config.ts. Boundary: authoring guidance; gen's refusals are the rules. Runtime: docs. Governing contract: ADR 0002 (2026-10-27 amendment); stackra-177. */}
+
+Pages appear in the sidebar only once they're listed in `navigation` in `src/config/docs.config.ts`. Use the page's
+path under `src/docs` without `.mdx`, or `{ folder }` to list every page of one folder (its `index` first, then by
+path):
+
+```ts src/config/docs.config.ts
+override readonly navigation = [
+  {
+    tab: "Guides",
+    groups: [
+      { group: "Monorepo", pages: ["guides/structure", "guides/packages"] },
+      { group: "Decisions", pages: [{ folder: "adr" }] },
+    ],
+  },
+];
+```
+
+- A **tab** is a top-level section in the navbar.
+- A **group** is a sidebar heading; a group can nest inside another group's `pages`.
+- A page can set `sidebarTitle` and `icon` in its frontmatter.
+
+Gen writes `docs.json` into `.stackra/site/` from this list and refuses a page no entry lists and an entry with no page.
+`mint broken-links` (run by `pnpm lint`) catches links to pages that don't exist.

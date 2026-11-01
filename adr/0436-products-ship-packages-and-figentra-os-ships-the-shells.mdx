@@ -1,0 +1,161 @@
+---
+title: "0436 — Products ship packages; Figentra OS ships the shells"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666). Amends [0052](/adr/0052-console-is-a-vite-react-spa) and
+  [0063](/adr/0063-cloudflare-hosts-web-surfaces) (who owns and deploys the console),
+  [0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package) (where a product's
+  panels render), [0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers) (Pro in the shells)
+  and
+  [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle)
+  decision 7 (an edition's app members), each by a Note. The edge that serves the shells is
+  [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks); the first product app under
+  decision 3 is
+  [0442](/adr/0442-native-android-till-for-pos-terminals-from-the-commerce-till-template).
+</Note>
+
+<Note>
+  Since written: the Pro components package is now `@stackra-pro/ui`, internal only and never sold
+  ([0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)).
+  Read `@stackra/ui-pro` below as that package.
+</Note>
+
+## Context
+
+Every Figentra product (the OS, the commerce product and its editions, the legal product, Academorix after its rewrite)
+was set to carry its own console, landing site and mobile app copied from the template. Seven copies of one console
+means seven deploys, seven security perimeters and seven places to fix one bug, while the screens themselves are
+already server-driven: panels are declared by modules
+([0164](/adr/0164-console-panels-are-resources-rendered-by-the-panel-package)), pages are experience documents
+([0110](/adr/0110-experience-is-the-sdui-service-at-l2)) and tenant branding is run-time data
+([0340](/adr/0340-one-token-engine-stackra-tokens-grows-layers-policy-checks-and-native-palettes-brand-kits-are-figentra-os-tooling)
+decision 12). The owner decided on 2026-10-26 that the OS owns every shell and products ship packages, data and assets.
+Runway's review of the same day and eleven agent reviews asked for a local development loop, a shell compatibility
+check, first-paint and offline rules, a health-gated canary and a hardened ops console before this lands.
+
+## Decision
+
+1. **The OS owns the shells.** A shell is the app for one surface: routing, the sign-in and account screens, the block
+   and panel registry, the renderer and the chrome. Figentra OS owns the `console`, `ops`, `landing` and `mobile`
+   shells in `figentra/os/apps`. The commerce product owns the `till` (with kiosk and customer display) and `shopper`
+   templates, which its editions use. No other repository holds a shell.
+
+2. **A product ships packages, data and assets, not apps.** A product contributes to a surface with packages (panels,
+   resources, widgets, blocks, slot fills, screens), data (experience documents, themes, settings, entitlements, rule
+   sets, workflow templates) and assets
+   ([0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces)). A product repository has no
+   `apps/` folder by default.
+
+3. **A product app needs its own ADR.** A product builds an app of its own only when no shell fits the surface, and only
+   after an ADR names the surface, why no shell fits and why the shell cannot grow to fit. The first is the native
+   Android till of the commerce product
+   ([0442](/adr/0442-native-android-till-for-pos-terminals-from-the-commerce-till-template)), built from the commerce
+   till template behind capability flags ([0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags)).
+
+4. **Web shells deploy once; product code arrives as extension bundles.** The OS builds and deploys each web shell once
+   per OS release, with its shared dependencies (React, the router, `@stackra/ui`, `@stackra/ui-pro`,
+   `@stackra/experience`, `@stackra/panel`, `@stackra/i18n`, `@stackra/query`) exposed through an import map. A
+   product's CI builds each surface's packages into an extension bundle with those dependencies as externals, declares
+   the shell line it targets (`targets: console@N`), and publishes the bundle and its manifest
+   ([0109](/adr/0109-registry-manifests-published-by-ci)) to the OS. No shell is rebuilt for a product. A product rolls
+   back by moving its release pointer ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks)).
+
+5. **One version line during development, checked anyway.** Until general availability every shell has one version
+   line and every bundle targets it; there is no policy for serving an old shell line (owner decision of 2026-10-26).
+   The policy is decided before the first breaking shell change after general availability. Because the import map
+   swaps React, `@stackra/ui` and the other shared dependencies for every product at once, two checks still apply:
+   - before a shell release, a contract test builds every published product bundle against the next shell and fails
+     the release on any break;
+   - the registry refuses a product release whose `targets` names a shell line the edge does not serve.
+
+6. **Local development runs the real shell.** `stackra dev --surface <surface>` runs the shell from a published shell
+   version (or a local OS checkout), serves the product's bundle from Vite with hot reload through the import map, and
+   points at the local API. A product developer sees a change without a deploy.
+
+7. **First paint.** The edge Worker writes `modulepreload` links for the shell entry and the product bundle into the
+   HTML, so a bundle loaded at run time adds no round trip.
+
+8. **Offline surfaces keep the last good bundle.** A surface that must work offline keeps the last good bundle and the
+   last good documents with a version pin, and falls back to them when a newer one fails to load. The till does so
+   with a cached bundle (Commerce owns this,
+   [0442](/adr/0442-native-android-till-for-pos-terminals-from-the-commerce-till-template) decision 7); the mobile
+   shell does so through over-the-air updates with an embedded fallback (the OS owns this,
+   [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags)).
+
+9. **One ops console, hardened.** Figentra's own staff use one ops console for every product, on its own host and
+   sign-in realm, built with each product's ops bundle. A tenant token is never accepted there, and an ops token never
+   on a tenant host. Because one ops site loads every product's contribution into staff sessions:
+   - ops contributions are declarative only (panels, resources and widgets over registered blocks), never arbitrary
+     components;
+   - the ops content-security policy allows only the OS shell's scripts;
+   - the ops realm requires hardware-key MFA, offers an IP allow-list as a setting, and writes its own audit stream;
+   - every ops contribution passes a second-reviewer gate in Runway before it publishes.
+
+10. **Portals are console presets.** A customer portal (a business buyer's, a supplier's, a client's) is a preset of
+    the OS console shell with its own realm; a product ships the portal's package, not a portal app.
+
+11. **Hosts.** A product's console answers at `console.<product>.figentra.com` and its landing site at
+    `<product>.figentra.com`; staging and previews follow the same pattern under their environment zones
+    ([0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing)). A product may also
+    register a domain of its own for its landing site
+    ([0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge)).
+
+12. **Both component sets in the shells, subject to the licence check.** The OS shells use `@stackra/ui` and
+    `@stackra/ui-pro` (HeroUI Pro), the Pro set heavily. The Pro licence is held once, by the OS shell build, and
+    product bundles reach Pro components only through the shell's import map, so no product repository needs the
+    licence: product CI type-checks against a types-only Pro package, and the shell serves Pro chunks only on
+    authenticated hosts, never on public landing pages. Before this ADR is accepted, the HeroUI Pro licence terms are
+    checked (counsel or vendor confirmation) against runtime redistribution to product bundles, the types-only package
+    and white-label apps, and the answer is recorded here. A white-label app keeps the free set only, whichever account
+    publishes it ([0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) decision 9), as
+    [0335](/adr/0335-editions-a-product-made-of-another-products-modules-packs-brand-and-entitlement-bundle) decision 8
+    requires.
+
+13. **Canary, promoted on health.** A new product bundle goes first to internal and demo tenants (owner decision of
+    2026-10-26). It reaches everyone after 24 hours only when its error rate stayed under the threshold for that
+    window; a timer alone never promotes, and a breach rolls the pointer back. The canary window (24 hours by default)
+    and the error-rate threshold are OS settings; the threshold has no default yet and is set before the first canary.
+    Shell releases get the same canary list
+    ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks) decision 9), after the contract test of
+    decision 5.
+
+## Consequences
+
+- One console, one ops app and one landing app to secure, patch and deploy; a product cannot break another product's
+  bundle, only its own.
+- A product's screen work is package work: panels, blocks and slot fills. A product that wants a different shell
+  behaviour asks the OS for a slot or a setting.
+- Commerce's `apps/console` and `apps/web` become packages (`@figentra/commerce-console-ui`,
+  `@figentra/commerce-storefront-ui`); its till and shopper apps stay as templates. Commerce keeps its current
+  `apps/console` running until a shell can load its bundle. Academorix moves onto the shells during its OS rewrite,
+  not before (the owner's no-infra-refactor decision of 2026-10-21).
+- The work starts with one thin slice end to end: the edge Worker with hand-written KV rows, the console shell and one
+  Commerce bundle loaded through the import map. The registry, the projector, edge rendering and canaries follow;
+  Runway writes the KV pointers by hand until the projector exists.
+- The OS carries the shared dependency versions for every product; a product cannot pin its own React.
+- Gen and `@stackra/vite-plugin` need an extension-bundle build mode, Runway a publish step, the CLI the
+  `stackra dev --surface` command, and the OS a release job that runs the contract test of decision 5.
+- Ops contributions lose free-form components; a product that needs one asks the OS for a block.
+- Decision 12 is open until the licence answer is recorded; nothing may rely on Pro in product bundles before then.
+
+## Enforcement
+
+- planned — Runway refuses a product root `runway.yaml` that declares an app member without an ADR reference in its
+  `surfaces` entry.
+- planned — gen's extension-bundle mode fails when a bundle imports a shared dependency instead of the import-map
+  external, and when it targets a shell line the OS does not serve; the registry refuses the same release.
+- planned — the shell release job builds every published product bundle against the next shell and fails on a break.
+- planned — the edge Worker refuses an ops token on a tenant host and a tenant token on the ops host
+  ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks)).
+- planned — Runway refuses an ops contribution that ships a component instead of a declaration, and holds every ops
+  publish for a second reviewer.
+- planned — the canary promoter reads the bundle's error rate before it moves the pointer.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: stackra-notes `handover/app-shells/app-shells-edge-and-extension.md` sections 1 to 4, 15
+(points 2, 7, 8 and 9) and 16 (points 3, 4, 7, 8 and 10), the owner decisions D1, D6, D7, D9, D11, D12 and D15 of
+2026-10-26, `handover/app-shells/review-runway-2026-10-26.md` (items 1, 6, 7, 8, 12, 13 and 16) and
+`handover/app-shells/agent-reviews-2026-10-26.md`.

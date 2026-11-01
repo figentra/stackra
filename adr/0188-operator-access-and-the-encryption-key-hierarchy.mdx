@@ -1,0 +1,32 @@
+---
+title: "0188 — Operator access and the encryption key hierarchy"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+Operators can reach customer data for support, and tenant data is encrypted. The owner's answers SC12 and SC13, and the backup rule DA5 (mem L533, L553, 2026-10-20), fix how operators get access and how keys are held.
+
+## Decision
+
+1. **Break-glass only (SC12).** Operator access to production is break-glass. It needs MFA, lasts one hour, raises an alert, and is audited.
+2. **Key per environment (SC13).** A KMS key per environment wraps a per-tenant data key. Deleting a tenant destroys its key, which crypto-shreds its data.
+3. **Backups (DA5).** Backups are kept 35 days or less, or they are crypto-shredded.
+4. **Consented support access.** The support access flow of the identity decisions (ADR 0241, wave 3) is the only other path to a customer's data.
+
+## Consequences
+
+- Deleting a tenant is a key operation, so erasure does not depend on finding every copy.
+- Any operator session in production leaves an alert and an audit record.
+
+## Enforcement
+
+planned — the break-glass grant is logged by the audit service (ADR 0134); the key-per-tenant wrapping is checked by the data layer tests.
+
+## Alternatives
+
+- Standing operator access: rejected by SC12.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner answers SC12, SC13 (`stackra-decisions-2026-10-19.md` L553, 2026-10-20); DA5 (L533).

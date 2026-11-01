@@ -1,0 +1,102 @@
+---
+title: "0141 — Integration event names and the envelope"
+description: "Accepted, amended by 0260, 0294, 0328 · 2026-10-20 · amended 2026-10-27 (STA-1255)"
+---
+
+<Note>
+  Amended 2026-10-24 by [0328](/adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed):
+  an integration event is built from data with the static `create({...})` that `IntegrationEvent` provides, and not
+  with `new`. A domain event is built the same way, as the note below already says, through `DomainEvent`.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3. The name form of decision 1 is unchanged, but its parts are now written in
+  different places. An integration event extends
+  `IntegrationEvent({ name, version, webhook, broadcast })`. The author writes `name` once in the
+  short form, such as `order.paid`. Gen adds the module key and the version, so the wire name is
+  `orders.order.paid.v1`, and the version is 1 unless `version: n` is given. The `public: true`
+  marker that [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events) added is
+  retired, because the base class is the kind. A domain event extends `DomainEvent`, has no name and
+  no version, and is built with `create()`. The envelope of decision 2 is unchanged.
+
+A breaking change sets `version: n` on the event and adds a `Change` class beside it. That class
+holds the earlier fields, with `up` and `down` functions, as described in
+[0118](/adr/0118-api-versioning-dormant-package). Both versions are published until the sunset
+date of the change.
+
+Enforcement of this note: planned — STA-340 (gen checks: a breaking change with no version bump;
+`version: n` with no change class from `n - 1`; a version or a webhook on a domain event).
+
+</Note>
+
+<Note>
+  Amends [0078](/adr/0078-messaging-layer-eight-packages), decision 3, and
+  [0117](/adr/0117-contracts-placement-and-decorator-ownership), decision C1. Closes the open
+  event-naming item of 0125. Changes the name form of C27 by adding the module key (see below).
+  Forward note: the naming table of [0231](/adr/0231-naming-and-casing-standard) (accepted) restates
+  this form.
+</Note>
+
+<Note>
+  Amended by [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events): An event
+  becomes an integration event when its `defineEvents` entry is marked `public: true`. The name
+  format of this ADR is unchanged.
+</Note>
+
+## Context
+
+The service questionnaires used service-prefixed event names (`identity.user.created.v1`, `tenancy.tenant.<state>.v1`). The owner's
+answer C27 (mem L855, 2026-10-20) fixes the form as `<aggregate>.<verb>.v<n>`, with no service prefix, and it wins over the earlier names
+(contradiction C-12). On 2026-10-20 the owner confirmed the final form (mem L930): the name starts with the module key, so `billing.invoice.paid.v1`
+and `identity.user.created.v1`. The module key is the one of [0131](/adr/0131-module-key-version-and-deprecation).
+
+## Decision
+
+1. Events are named `<module-key>.<aggregate>.<verb>.v<n>`:
+   - `module-key` is the module's key from [0131](/adr/0131-module-key-version-and-deprecation), for example `billing` or `identity`;
+   - `aggregate` is the entity the event is about, for example `invoice` or `user`;
+   - `verb` is the event, for example `paid` or `created`;
+   - `v<n>` is the version.
+     Names are globally unique through the registry (C27). The module key replaces the service prefix that the questionnaires used.
+2. The envelope fields are `id`, `type`, `version`, `occurredAt`, `tenant`, `actor`, `onBehalfOf`, `correlation` and `causation`,
+   `traceId`, and `data`. The envelope lives in `contracts`.
+3. An in-process event maps one-to-one to an integration event at the outbox.
+
+## Consequences
+
+- An event name says which module owns it, and the registry still enforces uniqueness.
+- Consumers depend on `contracts`, not on another service's source.
+- Names in the service questionnaires that carry a service prefix must be renamed to the module-key form before they are published.
+
+## Enforcement
+
+planned — the registry rejects a duplicate event name, and the validator rejects a name whose first segment is not a registered module key.
+
+## Alternatives
+
+- Service-prefixed names (I10, T2, T10): superseded by C27 (C-12).
+- `<aggregate>.<verb>.v<n>` with no module key (C27 as first written): amended by the 2026-10-20 confirmation.
+
+## Note 2026-10-27: one wire name, no prefix (STA-1255)
+
+The wire name of an event is always `<module>.<name>.v<n>` (`orders.order.paid.v1`). There is no member-level wire
+name and no service-key prefix: the two harvested gaps (integrations open question 1, identity G5) close the way os-100
+already went. Gen refuses an event `name` that starts with the module or member key (`event_name_prefixed`), and the
+fix is the name without the prefix. Default applied 2026-10-27 (stackra-124); the owner may override it.
+
+Enforcement of this note: automated — `buildManifest` in `packages/developer/gen` (`event_name_prefixed`), with
+`build-manifest.function.test.ts`.
+
+## Amendment 2026-11-01: two cross-app fields
+
+Written with `0511` (`adr/0511-cross-repo-service-contracts-and-cross-app-events`), which amends decision 2 for an integration
+event that crosses apps. Two fields join the envelope: `envelopeVersion`, the version of the envelope, and `producer`, the
+verified producer service. The relay sets `producer` from the verified identity of the sending service (STA-1792), never
+from a value the producer writes. Decision 2's other fields, decision 1 and the name form stand.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0078](/adr/0078-messaging-layer-eight-packages) decision 3, [0117](/adr/0117-contracts-placement-and-decorator-ownership)
+decision C1. Sources: owner answer C27 (`stackra-decisions-2026-10-19.md` L855, 2026-10-20; fixes STA-149); the owner's confirmed naming
+(`stackra-decisions-2026-10-19.md` L930, 2026-10-20: module-key prefix); contradiction C-12.

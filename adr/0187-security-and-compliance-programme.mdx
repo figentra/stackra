@@ -1,0 +1,40 @@
+---
+title: "0187 — The security and compliance programme"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0072](/adr/0072-soc2-groundwork). The blocking security review and gitleaks carry
+  forward.
+</Note>
+
+## Context
+
+[0072](/adr/0072-soc2-groundwork) (Proposed) set SOC 2 groundwork without a timeline, a tool or a disclosure route. The owner's answers SC1 to SC4, SC11 and the compliance tooling (mem L550, L552, L554, 2026-10-20) fix them.
+
+## Decision
+
+1. **Frameworks (SC1).** SOC 2 Security and Availability. Type I at the first enterprise deal. Type II six months later.
+2. **Reviews (SC2).** Access is reviewed quarterly.
+3. **Testing (SC3).** A penetration test before general availability, and yearly after it. A nightly ZAP scan. A bug bounty after general availability.
+4. **Tooling (compliance).** Comp AI, self-hosted or free until the managed package is needed at the first enterprise report, covering SOC 2, ISO 27001, GDPR and the UAE and KSA PDPL.
+5. **Disclosure (SC11).** `SECURITY.md` in the repository, private reporting, a `security@` address, and a three-business-day acknowledgement.
+6. **Carried forward.** The blocking security review and gitleaks.
+
+## Consequences
+
+- A customer asking for SOC 2 gets a dated plan, not a promise.
+- The controls map is the single source for every framework, so each control is written once.
+
+## Enforcement
+
+planned — the controls map page (new) is kept current with the programme; the quarterly review is a Linear recurring issue.
+
+## Alternatives
+
+- SOC 2 plus ISO 27001 plus self-hosted Comp AI now: rejected by the gap analysis (E-10); the owner chose the staged plan.
+
+## Supersedes and sources
+
+Supersedes: [0072](/adr/0072-soc2-groundwork). Sources: owner answers SC1–SC4, SC11 and the compliance tooling (`stackra-decisions-2026-10-19.md` L550, L552, L554, 2026-10-20).
+Closes gap C24.

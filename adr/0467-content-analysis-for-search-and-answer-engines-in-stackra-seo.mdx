@@ -1,0 +1,78 @@
+---
+title: "0467 — Content analysis for search and answer engines in @stackra/seo"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract: Purpose: the decision record for the Yoast-class SEO, readability and answer-engine (AEO) analysis added to @stackra/seo, its Arabic rules, and where its UI and composition live. Boundary: decision text only. Runtime: docs. Governing contract: ADR template; ADR 0116, 0270, 0297, 0301. */}
+
+<Note>
+  Accepted by the owner on 2026-10-28 (design-system session c6, STA-1371), as drafted. It gates
+  gap-inventory batch 2.
+</Note>
+
+## Context
+
+[0301](/adr/0301-stackra-seo-package) gives `@stackra/seo` sitemaps, robots rules, structured data, canonical URLs and
+alternates, but no analysis of the content itself. Merchants and editors need what Yoast gives WordPress and what Shopify's
+search-listing panel gives products:
+
+- a live search-result preview;
+- length limits measured the way the engines measure them;
+- keyphrase and readability checks with a traffic-light list.
+
+They also need the same for answer engines, the AI assistants that quote pages. Arabic is a first-class language, and
+English readability formulas don't apply to it.
+
+## Decision
+
+1. **The engine lives in `@stackra/seo`, as pure functions** (`core` entry), so it runs on the server, in a Worker and in the
+   editor. Its input is a content snapshot: title, meta description, slug, focus keyphrase(s), body as the builder document
+   JSON or plain text, images with alt text, links, locale, and content type. Its output is a list of
+   `{ id, group: "seo" | "readability" | "aeo", rating: "good" | "ok" | "bad", messageKey, values }` and a score per group.
+   Messages are i18n keys.
+2. **SEO checks:**
+   - keyphrase in the title, introduction, slug, meta description, subheadings and image alt;
+   - keyphrase density, and keyphrase used before on another page (through a port the app implements);
+   - title width in pixels against the engine's limit, and meta description length;
+   - text length per content type;
+   - internal and outbound links;
+   - a single H1 and heading order.
+3. **Readability checks, one rule set per language:**
+   - English: sentence and paragraph length, passive voice, transition words, consecutive sentence starts, a Flesch score.
+   - Arabic: sentence and paragraph length, transition words (لذلك، علاوة على ذلك، …), and diacritics-insensitive keyphrase
+     matching with alef/ya/ta-marbuta normalisation from `@stackra/i18n`. No Flesch score, because it is not valid for Arabic.
+4. **AEO checks and outputs:**
+   - an answer-first summary of 40-60 words near the top;
+   - question-shaped subheadings;
+   - FAQ, HowTo, Product and Article structured data, generated through the existing escaper (0301 decision 4);
+   - entity links (`sameAs`);
+   - author and updated date present;
+   - `llms.txt` and `llms-full.txt` generated beside the sitemaps;
+   - robots groups for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot), each allow or deny per
+     tenant setting.
+5. **Configuration, not code.** Thresholds, the enabled checks and the crawler policy are settings with market-pack
+   defaults. A product may add checks through `@stackra/seo` extension points (for example, the commerce product's
+   checks).
+6. **UI split:**
+   - `@stackra/ui` ships the parts (gap-inventory rows 61-64): search-result preview, counted field, social card preview,
+     analysis checklist with score.
+   - `@stackra/content` composes the "Search engine listing" section on every content type, per
+     [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels) decision 2.
+   - The document editor shows the same analysis as a side-panel contribution.
+7. **AI assist** (title, description, FAQ, alt text suggestions) comes from `@stackra/ai` actions. Suggestions are shown,
+   never auto-applied.
+
+## Consequences
+
+- One analysis everywhere: product pages, posts, help articles and the storefront, in English and Arabic.
+- Answer-engine readiness is measurable and shipped by default.
+- Chores:
+  - `@stackra/seo` gains a language-rules folder that needs native-speaker review for Arabic;
+  - engine limits (title pixel width, description length) are settings that need updating when Google changes them.
+
+## Enforcement
+
+Planned:
+
+- fixtures in `@stackra/seo` for every check in both languages;
+- the content section's e2e test asserts the preview and counters update live.

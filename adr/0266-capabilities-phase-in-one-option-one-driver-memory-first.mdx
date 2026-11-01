@@ -1,0 +1,84 @@
+---
+title: "0266 — Capabilities phase in as one option, one config driver, and a memory driver and fake before production"
+description: "Accepted · 2026-10-21"
+---
+
+<Note>
+  Relates to [0078](/adr/0078-messaging-layer-eight-packages) (the messaging packages),
+  [0102](/adr/0102-workflow-engine-in-process-journal),
+  [0142](/adr/0142-cross-service-transport-through-drivers) (drivers),
+  [0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules),
+  [0150](/adr/0150-cache-package) and
+  [0151](/adr/0151-workflow-engine-is-a-port-with-native-and-temporal-drivers) (the drivers these
+  capabilities select). It amends none of them.
+</Note>
+
+<Note>
+  2026-10-28 (owner decision, STA-1299): `Driver(Port, options)` takes two options gen reads.
+  `internal: true` marks a helper its package builds itself and does not export (the console error
+  reporter, the no-market context, the sandbox's IPC fetch proxy); it is never a candidate in a
+  manifest or a wiring, so no host can select it. `testDefault: true` marks the driver a package's
+  own tests take for a port with several candidates when the package ships no `memory` driver or
+  single `./testing` driver (`ProviderDefaults` takes `region-map`). In a package's own wiring the
+  order is: the test's choice, `memory`, the one `./testing` driver, the one `testDefault` driver,
+  config. The default goes ahead of config, selected port or not, because config there always holds
+  the schema's production value (`QueueOptions.driver` is `postgres`), which put the queue's own
+  tests on Postgres. Hosts are unaffected and select through config as before.
+</Note>
+
+## Context
+
+Cache, queue, outbox, workflows, realtime and the scheduler are each a capability that a product turns on, and each has a production driver
+that needs infrastructure. If each capability is built with its own wiring rules, every phase rewrites code written in an earlier phase, and
+a product cannot test a capability before its infrastructure exists. The owner settled on 2026-10-21 one rule for every capability, and an
+order in which they arrive.
+
+## Decision
+
+1. **One option, one driver.** Each capability is turned on by one option or flag on an existing declaration, and a driver is chosen in
+   config. Nothing else changes in the author's code.
+2. **Memory driver and fake first.** Each capability ships a `memory` driver and a fake in its `./testing` entry before it ships its
+   production driver. The gate for each capability is: the module's tests pass with the memory driver and the fake, then the integration
+   tier passes with the production driver ([0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies)).
+3. **No phase rewrites an earlier phase.** A later phase adds a driver or a flag. It does not change the code written for an earlier phase.
+4. **The order.** The capabilities arrive in this order, and each one's option and driver list is:
+   1. **Cache**: `cache: { ttl, invalidateOn: [Events.x] }` on a `@Query`, or `@Cacheable` and `@CacheEvict` on a service method. Drivers:
+      `memory`, then `valkey`.
+   2. **Queue**: `queue` on `@OnEvent`, `@AsJob` on an action, and `.queue()` on a client call. Drivers: `memory`, then `postgres`, then
+      `encore-pubsub`.
+   3. **Outbox and integration events**: `public: true` on a `defineEvents` entry, and `@OnEvent(Producer.x)` on the consumer. Drivers:
+      `memory`, then a `postgres` outbox, then `encore-pubsub`.
+   4. **Workflows**: `runs: XWorkflow` on an action. Drivers: `native`, then `temporal`.
+   5. **Realtime**: `broadcast: { channel }` on an event, and `refreshOn: [Events.x]` on a widget. Drivers: `memory`, then SSE or WebSocket.
+   6. **Scheduler**: `@Cron` on a job action. It runs alongside the others. Drivers: the Encore CronJob in SaaS, with a croner timer and an
+      advisory lock on-prem.
+5. **Config picks the driver.** The driver is named in the config layers of
+   [0146](/adr/0146-package-configuration-typescript-layers-and-secret-references), including `runway.yaml`. Code never names a production
+   driver.
+
+## Consequences
+
+- A product can build and test a capability before its infrastructure exists, and an agent reads one option to know what is turned on.
+- The memory driver is a real implementation, so it must be kept in step with its production driver by the conformance tests.
+- A capability's fake is part of its package, which adds a small amount of code per capability.
+- The order is a sequencing rule. It does not stop a team from building two capabilities in parallel, but no capability may ship its
+  production driver before its memory driver and fake.
+
+## Enforcement
+
+planned — the conformance test of [0144](/adr/0144-metadata-registry-and-explorers) checks that each capability's driver list includes
+`memory` and a fake in `./testing`, and `stackra gen` fails when a declared capability names a driver that is not in its list. Nothing checks
+this yet.
+
+## Addendum 2026-10-26: the database memory driver is PGlite
+
+`@stackra/database/testing` ships `MemoryDatabaseDriver`, the `memory` candidate of the Database port: PGlite (Postgres compiled to
+WASM) in process, through `@mikro-orm/pglite`. It applies the member's compiled migrations, or the entity schema, before the first query,
+and the testing plugin connects a fresh one per testing module unless another database is already connected. Unit tests
+(`.test.ts`) keep real Postgres SQL, constraints and migrations without Docker; Testcontainers stays the integration tier
+(`.int.test.ts`, [0269](/adr/0269-stackra-testing-package-entries-and-helper-placement) decision 3). The driver lives on the testing entry only and never in a
+runtime path. Source: STA-597 run 4 (178 unit tests failed with "No database is connected"); STA-1292.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: none. Sources: owner settlement in chat, 2026-10-21 (programming model question Q12).

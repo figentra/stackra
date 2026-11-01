@@ -1,0 +1,59 @@
+---
+title: "0390 — Payments: four connection modes, and the Stripe Connect account type as data"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It answers the wave 10 hand-over question on the Stripe Connect account-type default
+  (STA-672) and records the connection modes built for STA-680. It reads with
+  [0357](/adr/0357-payments-architecture-ports-gateway-drivers-a-platform-layer-and-a-closed-loop-wallet)
+  (platform layer),
+  [0356](/adr/0356-choosing-a-provider-per-tenant-and-market-through-the-connection-with-a-market-default)
+  (provider per Market) and
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  (configuration over code).
+</Note>
+
+## Context
+
+Owner decisions R4-6, A3-1, RV-43 and US-43 split payments connections by how they reach the money: a merchant's own
+Stripe account over OAuth with no platform fee, a merchant's own key at a provider without OAuth, a Figentra Pay account
+the platform creates (with a fee schedule, a pre-verification cap and a payout hold), and accounts a product already runs
+under its own Connect platform before cutover. `StripeConnection.onboard` refuses until the connection's
+`connectAccountType` field is set, and the hand-over asked whether a platform-level default belongs in data. Stripe's own
+guidance now favours describing a connected account by its controller properties rather than a legacy type, so a fixed
+type in code would age badly.
+
+## Decision
+
+1. A payments Connection carries a `mode` field: `oauth-standard`, `own-key` (the default when absent),
+   `connected-account` or `legacy-connected-account:<platform>`. `modeOf` reads it and refuses any other value.
+2. The pre-verification cap and the payout hold apply to `connected-account` only. Their values come from the
+   `ConnectedAccountLimits` port, which the host binds over the OS verification record and `fee-schedule:pay`;
+   `PaymentService` asks it for no other mode.
+3. `oauth-standard` and `connected-account` connections act on their `accountRef` with the platform's key through
+   `Stripe-Account`. OAuth Standard onboarding and revocation are `StripeConnectIntegration.authorizeUrl`, `complete`
+   and `revoke`; the merchant may also revoke from Stripe, which arrives as the platform's Connect webhook.
+4. The account type used by `onboard` for `connected-account` mode is data: the market-pack key
+   `payments.connect-account-type`, overridden by a Connection's `connectAccountType`. The seed value for packs that offer
+   Figentra Pay on Stripe is `express`. A merchant-owned Standard account is never created by onboarding; it arrives
+   through OAuth (`oauth-standard`). When neither the pack nor the Connection names a type, onboarding stays refused.
+5. Wallets and pay-later on Stripe are the account's enabled payment methods, read from it (`paymentMethods`), never a
+   driver or a list per Market.
+
+## Consequences
+
+The cap and hold cannot leak onto a merchant's own account, and a typo in a mode fails loudly instead of skipping the
+cap. Packs gain one key; the `onboard` path must read the pack through the same source as `MarketPaymentDefaults`, which
+is not wired yet. Products that cut over from their own Connect platform keep working under the legacy mode until they
+migrate.
+
+## Enforcement
+
+`packages/commerce/payments/src/core/functions/__tests__/mode-of.function.test.ts` and the connection-mode cases in
+`payment.service.test.ts` check decisions 1 and 2. planned — a pack-backed `connectAccountType` read in `onboard`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: notes/handover/build-wave10-2026-10-25.md (`@stackra/payments` owner question 4);
+notes/handover/review-round-4/whole-plan.md (R4-4, R4-6); STA-672; STA-680.

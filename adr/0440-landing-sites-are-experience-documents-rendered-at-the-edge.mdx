@@ -1,0 +1,80 @@
+---
+title: "0440 — Landing sites are experience documents rendered at the edge"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666). Amends
+  [0176](/adr/0176-marketing-site-placeholder-then-prerendered-from-the-experience-service) decision
+  2 (render at the edge per request instead of prerendering per build) and records how
+  [0276](/adr/0276-tenant-custom-domains) decision 6 relates to product hosts, each by a Note.
+  Builds on [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells) and
+  [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks).
+</Note>
+
+## Context
+
+[0176](/adr/0176-marketing-site-placeholder-then-prerendered-from-the-experience-service) planned to prerender the
+landing site from the experience service. With one landing shell for every product
+([0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells)) and content edited in the builder at any
+time, a prerender per build would be stale after every edit and would need a build per product.
+[0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding) decision 3 caches data, not HTML.
+Search engines and first paint still need real HTML. The agent reviews of 2026-10-26 found that rendering a product's
+own blocks in the shared Worker would run product code inside the OS edge, and that the edge renderer is the riskiest
+single piece to build.
+
+## Decision
+
+1. **No code for a landing site.** A product's landing site is experience documents in the OS landing shell. The shell
+   carries the marketing blocks (hero, features, pricing from the plan catalogue, testimonials, FAQ, form, footer)
+   from `@stackra/experience` and the OS landing block package.
+
+2. **Seeds, then the builder.** A product seeds its pages in `assets/landing`
+   ([0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces)); Runway imports them into
+   experience for the product's platform tenant once. After that, marketing edits them in the builder, with revisions
+   and rollback, and the repository no longer owns them.
+
+3. **Rendered in the Worker, data cached.** The edge Worker renders each published page to HTML per request with the
+   product's theme, from the published document it caches by host, path and revision, as 0297 decision 3 requires. A
+   publish event from experience evicts the cached document. The shell hydrates interactive blocks (forms, toggles).
+
+4. **Only OS blocks render at the edge.** The Worker renders only blocks registered in the OS landing block set. A
+   product that needs a block the set lacks adds it in its own landing-blocks package; that block renders in the
+   browser only: the edge sends a placeholder that the shell hydrates. No product code runs in the Worker.
+
+5. **The edge render falls back to the browser.** When the edge render fails or passes its CPU budget, the Worker serves
+   the shell and the page renders in the browser; the failure is logged with the document revision. The CPU budget is a
+   Worker setting.
+
+6. **Two addresses for a product site.** A landing site answers at `<product>.figentra.com` and, when the product
+   registers one per environment in its root runway (`surfaces.landing.ownDomain`,
+   [0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces) decision 3), at its own domain too. Both serve the same site as two host rows; the row marked canonical sets the
+   canonical link and the sitemap's host (owner decision of 2026-10-26). This is for product hosts only: a tenant's own
+   domains keep [0276](/adr/0276-tenant-custom-domains) decision 6, where the others redirect to the primary.
+
+7. **Tenant sites use the same path.** A merchant's or an academy's public pages render the same way under the tenant's
+   host.
+
+## Consequences
+
+- An edit is live on the next request after publish, with no build.
+- The Worker carries the experience renderer's edge target; rendering costs a little CPU per request, bounded by the
+  data cache and the CPU budget.
+- A product's own landing blocks reach search engines as placeholders; a block that matters for search belongs in the
+  OS set.
+- The edge renderer is its own Stackra batch. If it slips, landing pages launch rendered in the browser with prerendered
+  HTML snapshots for search engines, and the edge render replaces them when it ships.
+- Marketing owns landing content in the builder; a product repository owns only the first seed and any extra blocks.
+
+## Enforcement
+
+- planned — Runway's landing import refuses a seed document that names an unregistered block.
+- planned — the edge renderer refuses a block outside the OS landing block set and emits its placeholder.
+- planned — a Worker test checks canonical links and sitemap hosts for a product with two hosts, and the browser
+  fallback on a failed or over-budget render.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: stackra-notes `handover/app-shells/app-shells-edge-and-extension.md` sections 10 and 16
+(points 1 and 6), owner decision D2 of 2026-10-26, `handover/app-shells/review-runway-2026-10-26.md` (items 10 and 15)
+and `handover/app-shells/agent-reviews-2026-10-26.md`.

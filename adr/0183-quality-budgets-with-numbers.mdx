@@ -1,0 +1,34 @@
+---
+title: "0183 — Quality budgets with numbers"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>Supersedes [0070](/adr/0070-quality-budgets). WCAG 2.2 AA from 0070 carries forward.</Note>
+
+## Context
+
+[0070](/adr/0070-quality-budgets) (Proposed) named quality budgets without numbers. The owner's answers TS16, TS17 and PP12 (mem L562, 2026-10-20) give the numbers and the accessibility process.
+
+## Decision
+
+1. **Bundle and vitals (TS17).** The console entry JavaScript is 200 KB gzipped or less. A route chunk is 100 KB or less. LCP is 2.5 s or less, INP 200 ms or less, and CLS 0.1 or less. Mobile cold start is 2 s or less on an iPhone 12 or a Pixel 6a.
+2. **Accessibility in tests (TS16).** axe runs on every end-to-end journey, and fails on critical or serious findings. A manual pass runs per release train.
+3. **Accessibility audits (PP12).** An internal audit runs per release train. An external VPAT is produced before an enterprise or government deal.
+4. **Standard.** WCAG 2.2 AA (0070) carries forward.
+
+## Consequences
+
+- A budget that is exceeded fails the build, so the number is a gate, not a guideline.
+- The VPAT is a sales deliverable, produced on demand, not on every release.
+
+## Enforcement
+
+planned — the bundle budget is a build check in the console; axe runs in the end-to-end tier (ADR 0182).
+
+## Alternatives
+
+- Budgets without numbers: superseded.
+
+## Supersedes and sources
+
+Supersedes: [0070](/adr/0070-quality-budgets). Sources: owner answers TS16, TS17, PP12 (`stackra-decisions-2026-10-19.md` L562, 2026-10-20). Closes gap C22.

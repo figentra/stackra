@@ -1,0 +1,67 @@
+---
+title: "0330 — Shortcut chords on a TanStack Hotkeys driver inside @stackra/shortcuts"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends, by Notes, the `kbd` row of [0084](/adr/0084-figentra-os-package-port-plan) (the package is
+  now `@stackra/shortcuts`) and the `Shortcut` kind of
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming). Each of those pages
+  carries a note that says so.
+</Note>
+
+## Context
+
+[0084](/adr/0084-figentra-os-package-port-plan) ported the keyboard package as `kbd`, and
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) renamed it `@stackra/shortcuts`. The package
+handles single-key bindings. Users expect chords, which are sequences of keys such as `mod+e mod+e`. A chord needs state
+across key presses, a timeout and conflict checks before a build. TanStack Hotkeys already provides type-safe bindings, a
+cross-platform `Mod` key, sequences with modifiers and timeouts, scopes, key-state tracking and recording. The package
+builds on it rather than writing its own matcher.
+
+## Decision
+
+1. **Chords.** `@stackra/shortcuts` accepts a sequence of keys as well as a single key. `mod+e mod+e` is one example.
+   The sequence is written in the `keys` option of `Shortcut({ keys })`.
+
+2. **Waiting for the second key.** After the first key of a chord, the shortcut status shows that the key was pressed and
+   that the package waits for the second key. The wait ends after 1.5 seconds. If the second key is unknown, the status
+   shows that the pair is not a command.
+
+3. **Gen checks.** Gen fails on a conflict between two bindings, and on a chord that shadows a single-key binding.
+
+4. **Display.** `@stackra/shortcuts` formats chord labels with a per-platform formatter, which writes `⌘` on Apple
+   platforms and `Ctrl` elsewhere. The palette UI of each app displays those labels, and the help shows them too. The
+   palette itself is still built per app ([0084](/adr/0084-figentra-os-package-port-plan)).
+
+5. **The driver.** On web and desktop, the driver is TanStack Hotkeys, and only `@stackra/shortcuts` uses it. Apps never
+   import it. The exact beta pin lands with the driver work, not with this decision. The dependency steward checks the
+   pinned version's age and licence before it lands.
+
+6. **The package's own API.** The API of `@stackra/shortcuts`, the chord hint UI, gen's conflict checks and the label
+   formatter sit above the driver. A breaking change in the beta then stays inside one package.
+
+7. **Scope of this decision.** Chords are in-app bindings only. The global shortcuts of
+   [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) are unchanged: they stay in the Electron
+   main process, with their own config and conflict checks.
+
+8. **Mobile.** Hardware keyboards on mobile get a native driver later. This ADR does not add one.
+
+## Consequences
+
+- A chord is a binding kind that gen checks at build time, so a conflict fails the build and does not reach a user.
+- A breaking change in the beta driver costs one package's change, not a change in each app.
+- The label that a user sees in the palette and the help is the label the binding uses, per platform.
+- Apps keep using the package's API, so they do not learn TanStack Hotkeys.
+
+## Enforcement
+
+- planned — the gen conflict and shadowing checks of decision 3.
+- planned — tests in `@stackra/shortcuts` for the 1.5 second wait, the unknown-second-key status and the label formatter per platform.
+- planned — an oxlint boundary rule that refuses the TanStack Hotkeys import outside `@stackra/shortcuts`.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Notes: [0084](/adr/0084-figentra-os-package-port-plan) and
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming). Sources: the owner's final structure review
+of 2026-10-24, restated in this ADR's own words.

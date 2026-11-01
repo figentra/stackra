@@ -1,0 +1,45 @@
+---
+title: "0055 — Forms use react-hook-form and Zod with thin HeroUI field adapters"
+description: "Accepted · 2026-10-23"
+---
+
+<Note>
+  Accepted by [0303](/adr/0303-stackra-ui-component-catalogue-decisions) on 2026-10-23: the owner
+  accepted this decision (form state in react-hook-form, validation in Zod, thin HeroUI field
+  adapters); `react-hook-form` joins `catalog:frontend` with `FormField`, not in wave 1.
+</Note>
+
+<Note>
+  Amended by [0255](/adr/0255-pwa-service-worker-scope-and-push-per-platform): the PWA port plan.
+</Note>
+
+<Note>
+  Amended by [0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs): the HeroUI
+  field adapters move into @stackra/ui and the renderer packages.
+</Note>
+
+## Context
+
+Validation must run on the client and in the service from one definition, and Zod schemas are the shared validation language
+([0015](/adr/0015-contract-packages)). Forms in the console need a state library and fields that match the UI kit
+([0056](/adr/0056-heroui-v3-pro-on-web-share-everything-but-components)).
+
+## Decision
+
+1. **Form state is react-hook-form**; **validation is Zod**, with the same schemas used by the API client and services.
+2. **HeroUI inputs are wrapped by thin `FormField` adapters** that connect a HeroUI component to a react-hook-form controller and show Zod errors.
+3. **Adapters contain no business rules**; a form builds on a schema, not the reverse.
+4. **Mobile forms reuse the schemas, not the web adapters.**
+
+## Consequences
+
+- One schema validates in the browser and on the server.
+- The adapters are a small surface we maintain against HeroUI changes.
+
+## Enforcement
+
+Planned — architecture-guardian review; no automated check yet.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19.

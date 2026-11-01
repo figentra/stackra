@@ -1,0 +1,47 @@
+---
+title: "0314 — PostGIS is an approved extension: the geospatial field types, their macros and GiST indexes"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 2 (the
+  approved extensions). PostGIS joins pgvector, pg_trgm, ltree, citext and pgcrypto. Decision 2 said
+  PostGIS was not approved yet, and this ADR is the future ADR that its Alternatives section asks
+  for.
+</Note>
+
+<Note>
+  Lifts the deferral of the geospatial field in
+  [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events), decision 2
+  and its deferred item, and the v3 Note's statement that it stays deferred. The field is given as
+  the types `GeoPoint`, `GeoPolygon` and `GeoLine`, set out in decision 2 below.
+</Note>
+
+## Context
+
+Location and tracking data, such as fleet positions, service areas and delivery zones, need geospatial column types and spatial indexes. [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions) approved five Postgres extensions and left PostGIS out until an ADR approved it. The geography work belongs to the geography service, which is a layer 2 platform core service ([0201](/adr/0201-the-app-split-framework-platform-core-and-first-party-apps)). The owner approved PostGIS on 2026-10-24, with the field types, the macros and the index type below.
+
+## Decision
+
+1. **PostGIS is approved.** It joins the approved extensions of [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 2. It is enabled only by `schema.createExtension(name)`, a step of the migration blueprint of [0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules) that emits `CREATE EXTENSION IF NOT EXISTS` for an approved name and fails for any other, and not by a raw `schema.sql` file or a raw query.
+2. **The geospatial field types, their macros and their index.**
+   - Geospatial values are field types, not decorators, as the v3 Note of [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events) gives money and JSON. The types are `GeoPoint`, `GeoPolygon` and `GeoLine`.
+   - Each type is stored as a PostGIS column with SRID 4326 (WGS 84): `GeoPoint` is `geography(Point, 4326)`, `GeoPolygon` is `geography(Polygon, 4326)` and `GeoLine` is `geography(LineString, 4326)`.
+   - The migration blueprint gains three macros: `t.point()` for a `GeoPoint` column, `t.polygon()` for a `GeoPolygon` column and `t.line()` for a `GeoLine` column.
+   - Each geospatial column has a GiST index by default. The index is named with the `idx_` prefix of [0231](/adr/0231-naming-and-casing-standard).
+   - `HasLocation` is a trait, named under [0096](/adr/0096-trait-naming-grammar), that adds `location: GeoPoint` to a model.
+3. **Ownership.** The geography service's package owns the three field types, the macros, the GiST index support and the `HasLocation` trait. No other package defines its own geospatial field type, macro or location trait.
+
+## Consequences
+
+- A location feature uses one approved extension, and it does not need a new service.
+- Each environment that runs the geography package needs PostGIS installed in its Postgres, including on-prem and air-gapped deliveries ([0179](/adr/0179-on-prem-and-air-gapped-delivery)). [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions) already makes every approved extension a dependency of every environment.
+- The deferral of the geospatial field in [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events) is lifted, so no revival trigger is needed.
+
+## Enforcement
+
+planned — gen rejects a `schema.createExtension()` call that names an extension outside the approved list of [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), rejects `CREATE EXTENSION` inside any raw `schema.sql` step or raw query, and rejects a `GeoPoint`, `GeoPolygon` or `GeoLine` column whose migration drops the default GiST index without another spatial index. Nothing checks these rules yet.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0160](/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions), decision 2; [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events), decision 2 and the deferred item for the geospatial field. Builds on: [0201](/adr/0201-the-app-split-framework-platform-core-and-first-party-apps) (layer 2), [0096](/adr/0096-trait-naming-grammar) (trait naming). Sources: owner decision of 2026-10-24 on geospatial and location macros.

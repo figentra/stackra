@@ -1,0 +1,78 @@
+---
+title: "0217 — API surfaces: MCP first plus REST, SDKs and rate limits"
+description: "Accepted, amended by 0274, 0278, 0294, 0348 · 2026-10-20 · noted 2026-10-26 (STA-1254)"
+---
+
+<Note>
+  Noted 2026-10-26 (STA-1254), for Figentra OS ADR 0039 decisions 2 and 3: an action or query is
+  published to third parties only when its options say `public: true`, which gen records in the
+  manifest as `public` and refuses without an endpoint (`public_without_endpoint`). Gen writes the
+  SDKs from the manifest's public entries only, in TypeScript, Python and PHP (decision 1 named
+  TypeScript and Python), into `.stackra/sdks/`; which languages a release ships is the release
+  pipeline's setting. `area: public` (no session) is a different thing and publishes nothing. The
+  other decisions stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-474) by
+  [0348](/adr/0348-integration-surfaces-assistant-hosts-chat-apps-messaging-flows-and-wallet-passes):
+  the one declaration of decision 1 also reaches the integration surfaces (assistant hosts with a
+  rendered interface, Slack and Teams apps, messaging flows), each an Integration that exposes only
+  the actions and queries that are already tools, filtered by IAM and entitlements. Decisions 2 and
+  3 stand.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, for decision 1. REST routes are derived from each action's key by
+  convention, so nothing is written per action. `x.list` maps to `GET /xs`, `x.get` to
+  `GET /xs/:xId`, `x.create` to `POST /xs`, `x.update` to `PATCH /xs/:xId` and `x.delete` to
+  `DELETE /xs/:xId`. Another action verb maps to `PUT /xs/:xId/<verb>` when its input carries the
+  id, and to `POST /xs/<verb>` otherwise. A query name maps to `GET /xs/<name>`. The `endpoint`
+  option overrides a route, and `endpoint: false` removes it. An action whose actors include neither
+  a user nor an agent has no public route. Decision 1's rule that an action is declared once still
+  holds, and so does the rest of this page.
+
+Enforcement of this note: planned — STA-340 (gen checks: an endpoint collision; GET on an action,
+or a non-GET on a query).
+
+</Note>
+
+<Note>
+  Supersedes [0038](/adr/0038-rate-limits-app-buckets-and-waf). Notes on
+  [0039](/adr/0039-openapi-mintlify-and-oauth-guide) (generated OpenAPI and the SDKs).
+</Note>
+
+<Note>
+  Amended by [0274](/adr/0274-app-grants-and-the-connect-app-page): calls from OAuth apps and MCP
+  clients are checked by the gateway against an app grant of (user, client, workspace, scopes).
+</Note>
+
+<Note>
+  Amended by [0278](/adr/0278-api-key-lifecycle): API keys follow one lifecycle: shown once and
+  hashed, a scanner-registered prefix, scopes, last-used time and IP, rotation with an overlap
+  window, expiry and revoke.
+</Note>
+
+## Context
+
+[0038](/adr/0038-rate-limits-app-buckets-and-waf) (Proposed) set rate limits and the web application firewall. The owner's API answers DV1 and DV4 (mem L765, L767, 2026-10-20) fix the surfaces, the SDKs and the bucket rules.
+
+## Decision
+
+1. **One declaration, two surfaces (DV1).** Each action is declared once and exposed as an MCP tool first, and as REST from the same declaration. REST and OpenAPI are versioned by the `Stackra-Version` header (ADR 0118). TypeScript and Python SDKs are generated. There is no GraphQL.
+2. **Rate limits (DV4).** Token buckets per (app, tenant), sized by the plan entitlements, and stricter for AI and exports. The `RateLimit-*` headers are sent. Limits are metered, and enforced at the edge and in the pipeline.
+3. **Edge.** The Cloudflare WAF of 0038 decision 1 carries forward. On-prem has no edge, so the pipeline buckets apply there (register C-41).
+
+## Consequences
+
+- An agent and a human client see the same action, so a fix reaches both.
+- A tenant on a lower plan is throttled by its entitlement, and the header says so.
+
+## Enforcement
+
+planned — the SDK generator is checked by the contract tests (ADR 0182); the bucket sizes are checked against the entitlement table.
+
+## Supersedes and sources
+
+Supersedes: [0038](/adr/0038-rate-limits-app-buckets-and-waf). Notes on: [0039](/adr/0039-openapi-mintlify-and-oauth-guide). Sources: owner API answers DV1, DV4 (`stackra-decisions-2026-10-19.md` L765, L767, 2026-10-20); gap C41.

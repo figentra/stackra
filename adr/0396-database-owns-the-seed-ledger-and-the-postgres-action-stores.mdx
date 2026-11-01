@@ -1,0 +1,52 @@
+---
+title: "0396 — The database package owns the seed ledger and the Postgres action stores"
+description: "Accepted · 2026-10-26"
+---
+
+<Note>
+  Completes the runner contract `stackra seed-pack` declared (config-model section 6,
+  [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) decision 7) and
+  the durable stores the `@stackra/actions` ports name ([0136](/adr/0136-action-runtime-contract),
+  [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits)).
+</Note>
+
+## Context
+
+`stackra seed-pack` plans a pack against what a member already stores and needs `seedState` and `applySeed` from
+`@stackra/database/node`; without them a run failed unless it was `--check`. The action pipeline's idempotency and
+rate-limit ports had memory and Valkey drivers only, and their own docblocks put the durable Postgres driver in the
+database package, since `@stackra/actions` must never import it.
+
+## Decision
+
+1. **A seed ledger.** `database.seed_records` holds one row per record of a product seed pack: kind, key, profile,
+   pack version, content hash, owner (`seed` or `tenant`) and the rows. `seedState` reads a pack's rows; `applySeed`
+   writes the planned records as product defaults in one transaction and never overwrites a row whose owner is
+   `tenant`, even from a stale plan. The owning package reads its product defaults from the ledger by kind and key and
+   flips the owner when someone edits a default. The connection is the member's `DATABASE_URL`, as for `db migrate`.
+2. **Postgres action stores.** `PostgresIdempotencyStoreDriver` and `PostgresRateLimitStoreDriver` (driver name
+   `postgres`) keep `database.idempotency_keys` and `database.rate_limit_buckets`. Every call commits in its own
+   transaction. A claim is one upsert that takes a free or expired key and leaves a live one untouched; a take locks
+   its bucket row. Each bounds its table by sweeping at most 100 expired rows per call. The tables carry no row-level
+   security: a key is already scoped by action, tenant and actor, and the pipeline claims before the scope session
+   opens.
+
+## Consequences
+
+- `stackra seed-pack` runs end to end once `stackra db migrate` has applied this package's migrations.
+- A deployment without Valkey keeps idempotency and rate limits across instances on its own Postgres.
+- `@stackra/actions` must list `postgres` among its store driver names before runway can select it.
+- Writing each seeded record into its owning package's own store (settings layers, rule sets) is that package's
+  reader of the ledger, not this runner's.
+
+## Enforcement
+
+- `packages/data/database/src/node/functions/__tests__/seed-runner.int.test.ts`.
+- `packages/data/database/src/node/drivers/__tests__/postgres-idempotency-store.driver.int.test.ts` and
+  `postgres-rate-limit-store.driver.int.test.ts`.
+- planned — a conformance test in `@stackra/actions` that runs every store driver through one suite.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-756; the wave 10 handover (`notes/handover/build-wave10-2026-10-25.md`, the CLI and
+actions rows); config-model section 6.

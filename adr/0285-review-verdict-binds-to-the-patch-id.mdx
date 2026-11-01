@@ -1,0 +1,54 @@
+---
+title: "0285 — An AI-REVIEW verdict binds to the pull request's patch id"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Amends [0230](/adr/0230-reviewer-identity-separate-from-builder) rule 2 and
+  [0119](/adr/0119-merge-policy-and-release-authority) rule 2: a verdict for an earlier head counts
+  for the current head when both have the same diff against the base. Everything else in 0230
+  stands.
+</Note>
+
+## Context
+
+`pnpm pr:merge` counted an `AI-REVIEW` verdict only for the exact head SHA, and the `main` ruleset requires a branch
+to be up to date. So every merge to `main` forced each other open pull request to update its branch, which made a new
+head SHA and voided its review, though the reviewed change was the same. The owner chose (2026-10-22, RW1 and RW2) to
+build the merge queue of [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix) CI3 and to bind the
+verdict to the change rather than the commit.
+
+## Decision
+
+1. A reviewer verdict for an earlier head SHA counts for the current head when the `git patch-id --verbatim` of that
+   SHA's diff against its merge base with the base branch equals the current head's. Any change to the diff,
+   whitespace and context lines included, voids it; only a shift in line numbers keeps it. `--stable` is not used: it
+   ignores whitespace, so it would carry a verdict onto a re-indented YAML key. The base ref must still match, and every identity rule of 0230 still applies.
+2. A FAIL carries over the same way: a FAIL for an earlier head with the same patch id is sticky for the current head,
+   whether it names the full SHA, a short SHA of 7 or more hex, or has text after the SHA.
+3. The reviewer writes `AI-REVIEW: PASS <full head sha> base=<base ref> patch=<patch id>`. `pr:merge` recomputes the
+   patch id from the SHA; the `patch=` value of an unedited verdict is used only when that commit can no longer be read,
+   and a recomputed id always wins over it. Verdicts without `patch=` keep counting. When the head's patch id cannot be
+   computed, nothing carries over and the PR needs a fresh review.
+4. Where the repository has a merge queue on the base branch, `pr:merge` enqueues instead of merging; the queue runs the
+   `Quality Gate` on the group commit before anything lands. The `merge_queue` rule is applied only after STA-302
+   (a 30-second connect timeout and retries in the bot's network layer) lands; until `bot-token.mjs` declares that
+   support, `pr:merge` refuses to enqueue.
+
+## Consequences
+
+- A clean rebase or update-branch keeps the review; only a real change to the diff needs a new one.
+- A change in `main` next to the pull request's lines changes the patch id and asks for a new review. That is the
+  conservative side.
+- The merge queue, not an up-to-date branch, proves the change against the newest `main`.
+
+## Enforcement
+
+`tools/scripts/pr-merge.mjs` (`patchId`, `samePatchShas`, `aiReview`; tests in
+`tools/scripts/__tests__/pr-merge.test.mjs`); `.agents/agents/code-reviewer.md` (the `patch=` field);
+`.github/workflows/ci.yml` (`merge_group`); `.github/rulesets/main.json` (the `merge_queue` rule, applied by the owner after STA-302); `enqueueReady` in
+`pr-merge.mjs` refuses to enqueue before STA-302.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0230 and 0119. Linear STA-233 and STA-234.

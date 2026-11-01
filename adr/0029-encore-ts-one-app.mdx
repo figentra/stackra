@@ -1,0 +1,41 @@
+---
+title: "0029 — Encore.ts as one application under services/"
+description: "Superseded by 0075 · 2026-10-19"
+---
+
+<Note>
+  Superseded by [0075](/adr/0075-stackra-ships-packages-figentra-os-ships-services): Stackra ships
+  packages only; services in this repository are reference apps. Decisions 1, 3, 4 and 6 carry
+  forward there.
+</Note>
+
+## Context
+
+[0011](/adr/0011-rejected-and-deferred-technologies) defers Encore as the service runtime until the first service needs managed
+databases, pub/sub or secrets. The owner has decided the backend runs on Encore.ts, and that trigger is met. [0010](/adr/0010-services-are-independent-workspace-members)
+decision 6 already says that adopting Encore means one Encore application for the whole repository, but its layout (one
+workspace member per service at `services/<name>`, each with its own entry) does not fit Encore, where an app is one
+`encore.app` with a folder per service.
+
+## Decision
+
+1. **Encore.ts is the backend runtime.** The Encore row of [0011](/adr/0011-rejected-and-deferred-technologies) no longer applies.
+2. **There is one Encore application**: a single `encore.app` under `services/`. Its gateway is the only gateway.
+3. **One folder per Encore service** inside `services/`, declared by an `encore.service.ts`. A service never imports another service's source; calls use the generated client or events ([0015](/adr/0015-contract-packages)).
+4. **Packages never import `encore.dev`, and apps never import a service** ([0003](/adr/0003-tier-dependency-direction)).
+5. **Workspace shape:** how the single `encore.app` maps to workspace members, `tier:service` tags and `@stackra/service-<name>` names is TODO and decided in the first-service spec. Until then 0010 decisions 1 and 5 are amended only as far as stated here.
+6. The Encore plus legacy-decorator combination ([0005](/adr/0005-di-container-and-legacy-decorators)) is proven by a spike before any service depends on it.
+
+## Consequences
+
+- Managed Postgres, Pub/Sub, cron, secrets and tracing come from one platform.
+- Services deploy as one unit; independent per-service deploys are given up.
+- The `AGENTS.md` "Not built yet" row for Encore and the `services/example`, `services/health` layout need revising when this is accepted.
+
+## Enforcement
+
+`boundaries.jsonc` keeps `encore.dev` out of packages. Planned — `validate-repository.mjs` check that exactly one `encore.app` exists and sits under `services/`.
+
+## Supersedes and sources
+
+Will supersede [0011](/adr/0011-rejected-and-deferred-technologies) in part (the Encore deferral row). Amends [0010](/adr/0010-services-are-independent-workspace-members) (layout). Sources: owner decisions in chat, 2026-10-19.

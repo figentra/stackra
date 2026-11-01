@@ -1,0 +1,106 @@
+---
+title: "0346 — Collaboration rooms: a two-way payload channel derived from a document's collaboration level"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Amends [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) (decision 1: a room
+  is a channel kind that clients publish to; decision 2 gains its transport),
+  [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+  (decision 5: what `@stackra/collaboration` runs on, and memory drivers until then) and
+  [0315](/adr/0315-realtime-live-queries-and-streams) (decision 4: rooms are authorised like every
+  channel; a second payload-carrying kind beside streams), each by a Note.
+</Note>
+
+## Context
+
+[0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait) decision 2 promises presence, cursors and
+Yjs co-editing, and [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels)
+decision 5 builds them in `@stackra/collaboration` on `@stackra/realtime`. As built, `@stackra/realtime` pushes
+data-free refresh notices from the server to the client (a channel, an event name and an id, never a payload) and takes
+nothing from the client; the one payload-carrying channel is the typed stream of
+[0315](/adr/0315-realtime-live-queries-and-streams) decision 2, which is also server to client. Presence, cursors and
+Yjs updates are the opposite: small payloads that every member of an editing session sends and receives. The
+collaboration package therefore has no network driver and ships memory drivers only. The framework build raised this
+on 2026-10-24; the decision belongs to the realtime ADRs, so it is recorded here.
+
+## Decision
+
+1. **A room is a channel kind.** Beside the tenant, principal, job-progress, stream and site channels, `@stackra/realtime`
+   has rooms: two-way channels whose members publish to each other through the server. A room is keyed by one document
+   (its kind, its id and its `ScopeRef`), lives in the document's tenant, and closes when its last member leaves. It
+   is the second payload-carrying channel kind, a deliberate departure from the data-free refresh of 0225 decision 2
+   for the same reason streams are.
+
+2. **Rooms are derived, never declared.** A document kind whose collaboration level in 0270 decision 6 is "full" or
+   "presence" has a room; a kind at "OCC" has none. Nobody writes a channel class; gen derives the room from the kind.
+
+3. **Joining is the document's own check.** A session joins a room only when IAM grants it the document's view
+   permission at the document's `ScopeRef` ([0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer)),
+   its tenant comes from the authenticated session and never from the client, and the tenant holds the
+   live-collaboration entitlement ([0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code), 0270
+   decision 5). Publishing an update needs the edit permission; a viewer publishes presence only. A document a
+   visibility rule hides ([0333](/adr/0333-record-visibility-rules-who-can-see-which-records)) admits nobody the rule
+   hides it from. A room never spans tenants: a copy shared under
+   [0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) has its own room in its own tenant.
+
+4. **Three message kinds, all typed.** `presence` (who is here, with a state), `awareness` (cursor and selection) and
+   `update` (a Yjs update, as bytes). Each is a `Schema` owned by `@stackra/collaboration`, as every wire shape is. The
+   server stamps the sender from the session and drops any sender a client claims. Updates are applied to the server's
+   copy of the document and saved as the snapshots of 0225 decision 2; presence and awareness are never stored.
+
+5. **The client-to-server leg.** A member publishes over the socket when the driver supports client publish; on the
+   server-sent-events fallback, and on any driver that lacks it, the member publishes through the action
+   `collaboration.room.publish`, which runs the same checks. The server relays to the other members through the
+   driver's fan-out. Every driver of 0225 decision 1 (the native Valkey or Postgres pub/sub driver, Centrifugo, Ably,
+   Pusher) carries rooms this way; the memory driver carries them in tests.
+
+6. **Bounds.** `@stackra/realtime` config sets the caps: members per room (default 50), message size (default 64 KiB),
+   messages per member per second (default 20), and an idle close (default 60 s). A member over a cap is dropped
+   with the typed refusal `room_limit_reached`, never silently. Rooms live in the tenant namespace of the driver, apart
+   from site channels. Nothing in a room reaches the offline queue of
+   [0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps): a
+   disconnected editor keeps its local Yjs state and merges on reconnect, which the CRDT makes safe.
+
+7. **Until the room lands,** `@stackra/collaboration` ships memory drivers only, and no product promises live
+   co-editing over the network. Its ports do not change when the room arrives; only the driver does.
+
+## Consequences
+
+- Presence, cursors and co-editing get a transport without a second realtime stack, and every room passes the same
+  IAM check as every other channel.
+- Rooms carry payloads, so the caps of decision 6 are the guard against a noisy or hostile member; the refusal is typed
+  and visible.
+- A document kind's collaboration level now has a runtime meaning: changing it in 0270's table creates or removes a
+  room, so that table is read as a contract.
+- The server holds a copy of every open co-edited document, which is the cost of authoritative snapshots.
+
+## Enforcement
+
+- planned — a conformance test in `@stackra/realtime` for every driver: a member without the view permission never
+  joins; a viewer's `update` is refused; a message over a cap is refused with `room_limit_reached`; a message is never
+  delivered across tenants.
+- planned — gen (STA-340): a document kind at level "OCC" that a client tries to open a room for fails at build; the
+  derived room list is in the manifest.
+- planned — a test in `@stackra/collaboration` that the sender of every stored update is the session's principal.
+
+## Alternatives
+
+- **A peer-to-peer transport (WebRTC) between editors.** Not chosen: no authoritative snapshot, no IAM check per
+  message, and it fails behind the networks tills and offices sit on.
+- **Carrying updates through the typed stream of 0315.** Not chosen: a stream is server to client, declared per module
+  and partitioned per tenant and scope; a room is per document and two-way.
+- **A declared `Room` class per document kind.** Not chosen: the collaboration level already says it (0294's decorator
+  test).
+
+## Supersedes and sources
+
+Supersedes: none. Amends, by Note: [0225](/adr/0225-realtime-drivers-co-editing-and-the-commentable-trait),
+[0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels) and
+[0315](/adr/0315-realtime-live-queries-and-streams). Reads with
+[0327](/adr/0327-scope-package-owns-the-scope-tree-tenancy-is-a-consumer),
+[0333](/adr/0333-record-visibility-rules-who-can-see-which-records),
+[0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) and
+[0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps). Sources:
+the framework build's finding of 2026-10-24 that `@stackra/realtime` carries no client-to-server payload, and the
+collaboration package's needs, restated in this ADR's own words.

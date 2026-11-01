@@ -1,0 +1,133 @@
+---
+title: "0468 — Agents deploy dev and staging end to end; production waits on one Environment approval"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract. Purpose: ADR 0468 (Accepted 2026-10-28, owner decision of that date, "Yes, apply it", then "everywhere"), the deploy model: agents develop and deploy end to end, dev and staging deploy and publish without asking, production waits on one owner GitHub Environment approval, secret values stay with the owner; it lists every ADR it retires or amends. Boundary: decision text; the code is batch stackra-244 (STA-1395) in .github/workflows/release.yml and .agents/rules; the guard (.agents/hooks/_rules.mjs) and the settings and opencode.jsonc permission entries are owner steps listed here; the ADR index row and docs nav belong to stackra-90; the other repositories are stackra-245 (STA-1394). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0012, 0013, 0017, 0025, 0030, 0119, 0170, 0193, 0230, 0293, 0325, 0453. */}
+
+<Note>
+  Reserved number: 0468, the next free on every branch and worktree of stackra/core on 2026-10-28
+  (0464, 0466 and 0467 are drafted on other branches).
+</Note>
+
+## Context
+
+Development already ran end to end: agents commit, branch, open pull requests and merge through `pnpm pr:merge`. Every
+remaining stop sat at deploy, publish, secrets or one-time infrastructure, and the rules that made those stops
+disagreed with each other: [0017](/adr/0017-agent-roster-and-models) rule 6 said agents never merge, release or
+deploy, while [0119](/adr/0119-merge-policy-and-release-authority) and
+[0293](/adr/0293-agent-permission-tiers-and-executor-pushes) let them merge; a package release waited on two owner
+acts (merging the version pull request under 0119 D7, then approving the `release` environment); and the guard asked
+the owner before every deploy, staging included. The audit of 2026-10-28 (Session A notes,
+`deploy-blockers-audit-2026-10-28.md`) listed them. The owner decided on 2026-10-28: agents develop and deploy end to
+end; dev and staging deploy and publish without asking; production waits on one owner GitHub Environment approval;
+secret values stay with the owner; and the model applies everywhere.
+
+## Decision
+
+1. **Dev and staging run without asking.** An agent deploys to dev and staging, publishes prereleases (a dist-tag
+   other than `latest`, to the Stackra registry only, [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)) and pushes prerelease
+   tags (`<package>@x.y.z-<pre>`), with no owner prompt. A merge to main deploys staging
+   ([0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) DP6).
+2. **Production waits on one approval.** A production deploy, promote, rollback or package release runs in CI, in a
+   GitHub Environment whose required reviewer is the owner. That approval is the only gate: no rule adds a second owner
+   act in front of it. An agent may start any of them (a merge, `pnpm runway promote <sha>`, a workflow dispatch); the
+   run waits for the owner's click.
+3. **One gate per package release.** An agent merges the changesets version pull request through `pnpm pr:merge`
+   (0119 D7 retired). `release.yml` runs the version pull request's squash merge (no changeset pending, subject
+   `chore(release): version packages`) in the protected `release` environment and every other run (opening the
+   version pull request, a push with nothing new to publish, a dry run) in `release-pr`, which has no reviewer and which the registry never accepts a
+   publish from, so a wrong pick fails closed. The prerelease job stays in `release` until the registry has a trusted
+   publisher row for an unprotected `prerelease` environment (plan, below).
+4. **The guard asks only for production.** `HUMAN_ASKS` in `.agents/hooks/_rules.mjs` keeps its ids, but each deploy
+   and release ask fires only for a production target, recognised per command; when the guard cannot tell, it asks:
+   - `wrangler deploy|rollback|preview|pages deployment create`: production unless every `--env`/`-e` names `dev`,
+     `development`, `staging`, `stage`, `preview`, `test`, `qa` or `sandbox` (the top-level Worker of a
+     `wrangler.jsonc` here is the production one). `wrangler … delete` asks in every environment.
+   - `eas update`: production unless every `--channel`, `--branch` and `--environment` names one of those. `eas
+deploy`: production only with `--prod`. `eas submit`, `--auto-submit`, `channel:edit|rollout`, the update
+     rollbacks, `workflow:run` and `<x>:delete` ask in every environment.
+   - `npm|pnpm|yarn|changeset publish`: a prerelease when every `--tag` is `next`, `canary`, `dev`, `staging`,
+     `preview`, `alpha`, `beta`, `rc` or `snapshot` and `--registry` names `https://npm.stackra.figentra.com/`;
+     anything else asks (with no `.npmrc` the default registry is npmjs, never ours).
+   - `tag-push`: a bot push asks unless every pushed tag is a prerelease tag; `--tags` and `--follow-tags` ask.
+   - `pnpm bot:gh -- workflow run <deploy workflow>`: runs when every `-f|-F|--field|--raw-field environment=` names a
+     dev or staging environment; a deploy workflow without that input deploys production, so it asks. `api …
+/dispatches` and `release create|edit|delete|upload` ask.
+   - `pnpm runway deploy|promote`: unchanged, they dispatch production (core has no staging runway environment).
+5. **Rollback.** An agent may trigger a rollback (0170 DP14 amended): in dev and staging directly, in production as
+   `pnpm runway promote <last good sha>`, which waits on the same Environment approval.
+6. **Encore.** A workstation `encore deploy` stays denied (guard and settings): it ships with the owner's Encore login.
+   Encore deploys run from a CI workflow that reads its token from Infisical `/ci` over OIDC, deploys staging on a
+   merge to main and production behind the production Environment. Stackra core has no Encore app to ship (0170 DP1,
+   reference apps run only in CI), so no `deploy-encore.yml` is written here; the first repository that ships an Encore
+   app adds it with its runway target. STA-136 can close as the deploy-path question for agents; whether Encore Cloud
+   builds the generated `.stackra/encore` (0170 DP2, option a or b) is settled by that first repository's workflow.
+7. **What stays.** The production GitHub Environments (0170 DP6); the secret read and write denies, `secrets:import
+--confirm` and owner-held secret values ([0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox)); no direct push to
+   main, which changes only through a merged pull request; the owner-approval review of
+   [0230](/adr/0230-reviewer-identity-separate-from-builder); no installs or builds on the Mac (ci-box); repository
+   deletion stays the owner's.
+8. **Shared root files.** `pnpm-workspace.yaml` and `turbo.jsonc` are no longer owner-only: one agent edits each at a
+   time (the round's integration batch, or the batch that owns it), like `.agents/rules`.
+
+### Amended and retired
+
+| ADR                                                                                                                                                                                   | Change                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [0017](/adr/0017-agent-roster-and-models) rule 6                                                                                                                                      | Retired: agents merge, deploy dev and staging, and start production runs                                                                                                |
+| [0119](/adr/0119-merge-policy-and-release-authority) D7                                                                                                                               | Retired: an agent merges the version pull request through `pnpm pr:merge`                                                                                               |
+| [0030](/adr/0030-encore-cloud-on-owner-aws) decision 3                                                                                                                                | Retired ("production promoted manually"), as superseded by 0170 DP6                                                                                                     |
+| [0013](/adr/0013-versioning-and-release) rule 6 (carried by 0025)                                                                                                                     | Production only: the human release approval is the `release` Environment approval                                                                                       |
+| [0012](/adr/0012-code-host-and-ci) rule 7                                                                                                                                             | Production only: dev and staging deploy and release jobs need no approval                                                                                               |
+| [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) rule 4                                                                                              | Production only: dev and staging deploy buttons need no approval                                                                                                        |
+| [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) DP14 and DP2                                                                                            | An agent may trigger a rollback; Encore deploys through CI                                                                                                              |
+| [0293](/adr/0293-agent-permission-tiers-and-executor-pushes) (ask list), [0025](/adr/0025-packages-publish-to-private-registry), [0193](/adr/0193-agents-and-model-policy) decision 4 | Read with this ADR: their deploy and release asks and "releases stay with a human" mean production, behind the one approval (notes on those pages are integration asks) |
+
+`AGENTS.md` and `.agents/rules/concurrent-sessions.md` drop the owner-only edit of `pnpm-workspace.yaml` and
+`turbo.jsonc`; `.agents/rules/secrets.md` names the Encore CI path.
+
+## Consequences
+
+- An agent ships a change to staging and prepares a production release without waiting; the owner clicks once per
+  production run, in GitHub, where the run records who approved it.
+- The production GitHub Environments and the secret controls are now the only real gates. The guard is an accident
+  guard that fails open (`_rules.mjs` header), so a production Environment without a required reviewer is a hole:
+  every production deploy job must name one.
+- `runway promote` and a production workflow dispatch still meet a guard ask in front of the Environment approval
+  until the owner drops it (open question 1).
+- Owner chores: the one-time steps below.
+
+## Enforcement
+
+- Built (stackra-244): `release.yml` `gate` job (the environment pick of decision 3); the ADR notes above; the rule
+  source edits.
+- Planned, owner step: the guard of decision 4. The change to `.agents/hooks/_rules.mjs` and its tests
+  (`.agents/hooks/__tests__/guard-bash.test.mjs`, `guard-differential.test.mjs`) is specified on STA-1395; an agent's
+  edit of its own guard was refused as self-modification on 2026-10-28, so the owner applies it or clears an agent to.
+  Until then the guard still asks before staging deploys.
+- Planned, owner step: the `.claude/settings.json` and `opencode.jsonc` permission edits listed on STA-1395 (settings
+  asks are the floor below the guard, so a staging deploy keeps prompting until they go).
+- Planned, owner step: the `release-pr` GitHub environment (main only, no reviewer); then a registry publisher row for
+  a `prerelease` environment (a `workers/registry` migration, a new batch) and the prerelease job's move to it.
+- Planned: `deploy-encore.yml` in the first repository that ships an Encore app (decision 6).
+
+## Open questions
+
+1. Whether the guard's production asks (`runway-deploy`, a production `workflow run`) should go once every production
+   job sits behind a required-reviewer Environment, leaving the Environment approval as the single prompt.
+2. `mcp__cloudflare-api__execute` stays an ask: it runs arbitrary code against the Cloudflare API, so reads cannot be
+   told from writes by a permission pattern. Reads use `mcp__cloudflare-api__search` and `docs`.
+
+## One-time owner steps
+
+- Create the `release-pr` environment (deployment branches: main; no reviewer).
+- Apply the settings and `opencode.jsonc` edits listed on STA-1395, and the guard change (or clear an agent to).
+- Encore repository relink and the Infisical identity for deploy-static (STA-15), when an Encore app ships.
+
+## Supersedes and sources
+
+Supersedes: none. Retires 0017 rule 6, 0119 D7 and 0030 decision 3; amends 0012 rule 7, 0013 rule 6, 0170 DP2 and
+DP14, 0325 rule 4. Sources: owner decision in Session A, 2026-10-28 ("Yes, apply it", then "everywhere"); Session A
+audit `deploy-blockers-audit-2026-10-28.md` (the `S` rows); STA-1395 (stackra-244); STA-1394 (stackra-245, the other
+repositories).

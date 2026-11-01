@@ -1,0 +1,46 @@
+---
+title: "0148 — Queue and scheduler: full job features, fair queuing and tenant schedules"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0078](/adr/0078-messaging-layer-eight-packages), decisions 5 and 6 (queue and scheduler).
+</Note>
+
+## Context
+
+[0078](/adr/0078-messaging-layer-eight-packages) named the queue and the scheduler without their features. The owner's answers
+MQ1 and SCH1 (mem L866–867, 2026-10-20) and the deploy-mode answer FW8 a (mem L541) fix the job features, the fair queuing,
+the drivers, and the split between system jobs and tenant schedules.
+
+## Decision
+
+1. **Queue (MQ1).** Jobs support priority, delay, retries with backoff and jitter, a dead-letter queue with replay, timeouts,
+   per-queue concurrency, unique jobs, batches and chains, and progress.
+2. **Fair queuing (MQ1).** Per-tenant fair queuing uses round-robin with per-tenant caps, so one tenant cannot starve others.
+3. **Queue drivers (MQ1).** Encore Pub/Sub, Postgres with `SKIP LOCKED`, and Valkey as an option ([0150](/adr/0150-cache-package) for the Valkey driver).
+4. **System jobs (SCH1).** `@Cron` jobs run on Encore CronJob in SaaS, and on croner with an advisory lock on-prem.
+5. **Tenant schedules (SCH1).** Automations, calendars and timed transitions are data, run by a scheduler worker. Each runs in the
+   tenant's time zone, with a missed-run policy, jitter and heartbeats.
+6. **Deploy mode (FW8 a).** Gen emits Encore Topic and CronJob in SaaS, and Postgres plus croner on-prem. Deploy targets are in
+   [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client).
+
+## Consequences
+
+- A job with no timeout or unique key is a review finding, because the queue features exist to be declared.
+- On-prem has no Encore dependency for jobs. The Postgres queue carries them.
+
+## Enforcement
+
+planned — gen rejects a `@Cron` with no lock on-prem, and the queue driver conformance tests cover the features on each driver.
+
+## Alternatives
+
+- Encore-only queues: rejected, on-prem has no Encore runtime (FW8).
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0078](/adr/0078-messaging-layer-eight-packages) decisions 5 and 6. Sources: owner answers MQ1 and SCH1 (`stackra-decisions-2026-10-19.md`
+L866–867, 2026-10-20), framework answer FW8 a (L541).

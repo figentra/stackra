@@ -1,0 +1,103 @@
+---
+title: "0483 — Analytics relay: apps send product analytics only to the analytics service, which fans out to PostHog and GA4"
+description: "Accepted · 2026-10-30"
+---
+
+{/* Stackra file contract. Purpose: ADR 0483 (Accepted 2026-10-30, owner decision of 2026-10-30 taken during STA-1623, ADR 0482 decision 5), which routes every app's product analytics through one `relay` driver of `@stackra/analytics` to the analytics service, where the vendor destinations run server-side. Boundary: decision text only, as a new ADR file; the code is STA-1624 (`.agents/specs/sta-1624-analytics-relay/`); the forward Notes on ADR 0298 and 0190, the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0071, 0190, 0298, 0334, 0353, 0461, 0472, 0482. */}
+
+## Context
+
+Today an app that measures product use sends its events straight to the vendor: the `posthog` driver of
+`@stackra/analytics` posts batches from the browser or the phone to PostHog with the project key, and a web app reaches
+it through the edge reverse proxy (`edge.analyticsProxy: /ingest`). Adding Google Analytics the same way would put the
+Firebase Analytics SDK in the app, which reads the advertising id, needs the `AD_ID` permission on Android and an App
+Tracking Transparency prompt on iOS ([0071](/adr/0071-privacy-obligations) decision 4 keeps tracking off). The owner
+decided on 2026-10-30, while specifying mobile onboarding ([0482](/adr/0482-mobile-onboarding-is-a-runway-step-and-eas-owns-signing)
+decision 5), that apps send product analytics only to our analytics service, through one relay driver, and that the
+service fans out server-side to PostHog and to GA4 through the Measurement Protocol. Every piece the server side needs
+exists: the client already batches the delivery envelope v2 behind consent ([0298](/adr/0298-consent-and-analytics)),
+the signed consent snapshot travels with server calls and is verified with public keys alone
+([0472](/adr/0472-server-side-consent-a-signed-short-lived-consent-snapshot-travels-with-server-calls)), and the
+server `posthog` driver and erasure listener run in `./node`.
+
+## Decision
+
+1. **One relay driver on the client.** `@stackra/analytics` ships a `relay` driver of the `AnalyticsDriver` port (in
+   `.`, and a buffered one in `./native`). It posts the envelope v2 deliveries it is handed, unchanged, as one batch to
+   `<ingestOrigin>/analytics/batches` (`ingestOrigin` is then the product's public API origin), with the
+   `Stackra-Consent` header it gets from the consent endpoint under the same origin (`consentSnapshotHeaders` over
+   `ConsentLedger.snapshotRequest`, the anonymous id as subject). An app holds no vendor key, no vendor SDK and no vendor host. Figentra's apps select `relay`; the client `posthog`
+   driver stays in the free package for hosts that want direct delivery.
+2. **Consent is decided twice, by the same decision.** On the client nothing changes: `AnalyticsClient` sends to the
+   relay only once the gating category is granted, and the pre-consent queue, its bound and the discard on refusal of
+   0298 decisions 1 to 5 hold. On the server, the action pipeline verifies the snapshot (`ctx.consent()`, 0472 decisions 3
+   and 4): a missing, expired, wrongly signed, outdated or Global Privacy Control snapshot drops the whole
+   batch; a delivery whose `anonymousId` or `userId` is not the snapshot's subject is dropped. Each destination
+   receives a delivery only when the snapshot grants that destination's category. The endpoint answers the counts
+   accepted and dropped and never an error for a refusal, so a client never retries one.
+3. **The server minimises before it sends.** The endpoint validates every delivery against the envelope schema and
+   the batch bound, removes `denyProperties` again and forwards nothing but the envelope: no IP address, user agent or
+   header. A relayed batch turns the vendor's GeoIP off, because the request address is the service's. Vendor ids stay the envelope's: `eventId`, `anonymousId`,
+   `sessionId` and `userId` (a public id, never a contact field).
+4. **The fan-out drivers live in the analytics service.** The ingest action and the fan-out ship in
+   `@stackra/analytics/node`; the product's analytics service ([0190](/adr/0190-seed-profiles-and-product-analytics)
+   decision 3; Figentra's is `services/analytics-reports` in Figentra OS) mounts them on the product's public
+   API host and binds the destinations as configuration. Each destination is its own outbox subscription, so a
+   vendor that is down retries alone. `posthog` is free; `ga4` (Measurement Protocol) is an `AnalyticsDriver` of
+   `@stackra-pro/analytics-destinations` ([0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)).
+   Vendor credentials are server secrets synced by runway; none reaches an app.
+5. **Destinations are per region.** The ingest endpoint runs in each region's stack and fans out only to that
+   region's destinations ([0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+   decisions 5 and 7). PostHog is PostHog Cloud EU by default, or a self-hosted PostHog in the region where a region or
+   a customer requires in-region processing. GA4 is a destination in every region: Figentra's product events carry no personal data
+   ([0071](/adr/0071-privacy-obligations) decision 6), which 0353 decision 7 allows from one jurisdiction. Which region
+   gets which destination stays the deployment's configuration, recorded on the sub-processor list. This is Figentra's
+   own product analytics only: a tenant's analytics in its own Google Analytics property is a separate, tenant-owned
+   destination with its own decision.
+6. **What the client SDKs gave and the relay does not.** No session replay, heatmaps, surveys or SDK feature flags
+   (feature flags stay with Stackra's own flags). No automatic device properties: the envelope's `context` gains a
+   declared, coarse `device` record (OS name and version, build and device type, beside the existing `appVersion`) that the client fills,
+   and nothing else about the device leaves. No advertising id: the Android `AD_ID` permission stays blocked, the app
+   asks for no App Tracking Transparency permission, and GA4 receives `client_id` (the anonymous id) only, so its
+   demographics and Google-signals reports stay empty.
+7. **Erasure reaches PostHog from the service.** The `EraseAnalyticsPersonListener` runs in the analytics service with
+   the server `posthog` driver ([0189](/adr/0189-privacy-operations-and-data-retention) decision 2). GA4 receives no
+   `user_id`, so it holds nothing keyed to a person, and its event retention is set to the shortest GA4 offers.
+
+## Consequences
+
+- One code path leaves the device for every app, and the same consent decision gates it on both sides.
+- Adding or removing a vendor, or moving a region to a self-hosted PostHog, is a service configuration change and no
+  app release.
+- The analytics service is now on the hot path of every app's analytics; it must answer fast and scale with app
+  traffic. A service outage parks events in the client's retry buffer and offline queue, as a vendor outage did.
+- Server-side counts can be lower than client counts: a batch whose snapshot fails is dropped (0472 consequence 2).
+- GA4 reports that rely on the Google tag or the Firebase SDK (engagement time, demographics, automatic screen and
+  device dimensions) are partial; product questions are answered in PostHog.
+- GA4's Measurement Protocol has no dedup on our event id, so a destination retry can count an event twice in GA4.
+- [0298](/adr/0298-consent-and-analytics) decision 5 is amended (the queue drains to the relay, not to a vendor);
+  [0190](/adr/0190-seed-profiles-and-product-analytics) decision 2 (PostHog is fed by the analytics service, not by the
+  apps) and decision 3 (the service also hosts ingest and fan-out) are amended; the "no Google Analytics by default"
+  rule of [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) item 12 holds for Stackra's
+  defaults, and Figentra turns GA4 on per region by configuration.
+
+## Enforcement
+
+planned — `@stackra/analytics` tests: the `relay` driver posts the envelope unchanged with the consent header and no
+vendor key; the ingest action drops a batch on every snapshot refusal reason, drops a delivery for another subject,
+sends a destination only what its category grants, strips `denyProperties` and forwards nothing but the envelope; the native relay
+buffers and flushes on background. An app manifest check that `AD_ID` stays blocked and no ATT usage string is set
+(STA-1625). Linear: STA-1624.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0298](/adr/0298-consent-and-analytics) decision 5 and
+[0190](/adr/0190-seed-profiles-and-product-analytics) decisions 2 and 3 (forward Notes added by the integration batch).
+Related: [0071](/adr/0071-privacy-obligations), [0189](/adr/0189-privacy-operations-and-data-retention),
+[0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr),
+[0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction),
+[0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers),
+[0472](/adr/0472-server-side-consent-a-signed-short-lived-consent-snapshot-travels-with-server-calls),
+[0482](/adr/0482-mobile-onboarding-is-a-runway-step-and-eas-owns-signing). Sources: owner decisions Q7 and Q8 of
+2026-10-30 (STA-1623); notes `handover/gap-analysis/data-layer/analytics-tracking.md` (items 13 and the GA4 row) and
+`DECISIONS.md` (decision 22: GA4 is Pro); Linear STA-1624.

@@ -1,0 +1,45 @@
+---
+title: "0418 — An injectable resolved-pack source for a deployment"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-831). It adds the runtime half of
+  [0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors) decision 2
+  and
+  [0385](/adr/0385-market-packs-a-pack-per-rule-subject-for-records-that-touch-two-markets-nested-overlays-and-storage-by-content-hash).
+</Note>
+
+## Context
+
+`PackStore`, `fetchPacks` and `resolvePack` existed, but nothing handed a service its deployment's verified packs as
+one injectable dependency, so identity, billing and notifications each wired the store, the hashes and the keys.
+
+## Decision
+
+1. **A port.** `ResolvedPackSource` (key `market_packs.ResolvedPackSource`) gives `packs()`, the deployment's verified
+   pack versions, and `valueFor(market, key, options)`, the value in force on a day (today, UTC, by default) under the
+   tenant's pins, statuses and sections. A driver supplies `packs()` only; `valueFor` is the port's, so every driver
+   answers alike.
+2. **Drivers.** `store` (default) fetches the hashes in `MarketPacksConfig.packHashes` from `PackStore` and verifies
+   them against `MarketPacksConfig.trustedKeys` once per process; a failed load is retried on the next call. `memory`
+   serves packs handed to it. The OS loader (STA-763) is a further driver or a host `@Replaces`.
+3. **Binding.** `MarketPacksModule` (the `./node` entry) exports the port; gen binds the driver from config `source`
+   (`STACKRA_MARKET_PACKS_SOURCE`). Which packs a deployment trusts is deploy-time configuration, never per tenant.
+
+## Consequences
+
+- `@stackra/market-packs` depends on `@stackra/config` and `@stackra/validation` at runtime (the lockfile gains those
+  links).
+- New pack versions reach a running service with a new deployment config.
+
+## Enforcement
+
+`packages/foundation/market-packs/src/core/ports/__tests__/resolved-pack-source.port.test.ts`,
+`packages/foundation/market-packs/src/core/drivers/__tests__/store-resolved-pack-source.driver.test.ts`,
+`packages/foundation/market-packs/src/node/__tests__/market-packs.module.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: OS `services/identity/SPEC.md` G1, `services/billing/SPEC.md`,
+`services/notifications/SPEC.md` gap 6; STA-831.

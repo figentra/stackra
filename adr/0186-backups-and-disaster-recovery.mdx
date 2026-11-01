@@ -1,0 +1,99 @@
+---
+title: "0186 — Backups and disaster recovery"
+description: "Accepted, amended by 0272, 0353, OS 0001, OS 0062 · 2026-10-20 · amended 2026-10-24 (STA-456)"
+---
+
+<Note>
+  Amended 2026-10-28 (stackra-310, STA-1473; owner decision 8 of the data-layer questionnaire): the
+  "data plus a picker" of decision 6 is now in place for cells inside a region. Every tenant carries
+  a `cell` beside its `region` (`primary` until cells exist), read through `@stackra/tenancy`'s
+  `TenantPlacement` port, and `@stackra/database`'s `ConnectionResolver` names the connection set of
+  a scope (the free driver answers `primary`; the tenancy driver answers the tenant's cell). The
+  routing `Database` driver, the per-cell fan-out and move-tenant remain later work (stackra-322);
+  sharding stays deferred and Citus stays out. Decision 6 otherwise stands.
+</Note>
+
+<Note>
+  Amended 2026-10-25 by
+  [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+  decisions 6 and 8 (owner, OS-5; default OS-304): disaster copies (backups, snapshots and the
+  object replication of decision 3) stay inside one jurisdiction, in a second account, zone or
+  region of it, and never cross between jurisdictions; this replaces "cross-region replication" in
+  decision 3 and "never another region" in the Note of 2026-10-24. Open question 1 is answered: one
+  tenant is restored from the pooled database through an isolated point-in-time copy and
+  data-transfer tooling. Open question 2 is answered for Figentra by [OS
+  0001](https://docs.os.figentra.com/adr/0001-three-regions-on-aws-and-gcp-one-account-per-product-and-region)
+  (OS-6): after a whole-region loss `eu` is restored in a second EU region and `me` is down until
+  its region returns, as the SLA states; which plans get a single-tenant restore is [OS
+  0062](https://docs.os.figentra.com/adr/0062-operations-slas-and-support-tiers).
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-456), owner decision: decision 6 changes from one region to two
+  independent hosting regions from launch, GCC and EU. A tenant stays in the region chosen at its
+  creation ([0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region)
+  decision 4). The platform never replicates tenant data between regions: the object replication of
+  decision 3 and the snapshots of decision 2 stay inside the tenant's region (a second account and a
+  second availability zone of that region, never another region), and the one thing that crosses a
+  region boundary is an item a user explicitly releases over a cross-tenant share
+  ([0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) decision 4), audited
+  and checked against the sending legal entity's transfer rules. The objectives of decision 5 hold
+  per region, for the loss of a zone, an account or a database inside it; after the loss of a whole
+  region, service is restored in that region when it returns, and whether a residency-compliant
+  standby is wanted for either region is an open owner item recorded here. The stack is never
+  active-active, so the rejection in the
+  [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) row stands (its wording takes a
+  Note there). A customer that needs in-country hosting in Saudi Arabia, the UAE or Egypt, and every
+  government customer, gets a dedicated in-country deployment per customer that Figentra runs.
+  Cells, within a region, still come later. Decisions 1, 4 and 7 stand; decisions 2, 3 and 5 are
+  read per region as above.
+</Note>
+
+<Note>
+  Supersedes [0048](/adr/0048-point-in-time-recovery-and-quarterly-restore-drill). The drill record
+  of 0048 decisions 3 to 5 carries forward.
+</Note>
+
+<Note>
+  Amended by [0272](/adr/0272-account-model-personal-workspace-and-opt-in-organisations): decision 6
+  stands. Every tenant carries a `region` field set to the one region, so a later cell is data plus
+  a picker.
+</Note>
+
+## Context
+
+[0048](/adr/0048-point-in-time-recovery-and-quarterly-restore-drill) (Proposed) set point-in-time recovery and a restore drill without the retention, the region rule or the objectives. The owner's answers OB7 to OB9 (mem L559, 2026-10-20) fix them.
+
+## Decision
+
+1. **Point-in-time recovery (OB7).** Fourteen days.
+2. **Snapshots (OB7).** 35-day snapshots in the backup account. Snapshots are not in the production account.
+3. **Replication (OB8).** S3 versioning and cross-region replication for object storage.
+4. **Drill (OB8).** A restore drill runs quarterly.
+5. **Objectives (OB9).** Recovery point objective 15 minutes. Recovery time objective 4 hours.
+6. **Region (OB9).** One region. Cells come later, and the stack is never active-active.
+7. **Single-tenant restore (gap P1-7, open).** Restoring one tenant from the pooled database is a separate runbook, not decided here.
+
+## Consequences
+
+- A backup outlives its production account, so an account compromise does not destroy the backups.
+- The restore drill is the only evidence that the objectives are met, so it is recorded.
+
+## Enforcement
+
+planned — the drill result is written to the runbook each quarter; the backup account policy is created by `@stackra/infra-aws` (ADR 0171).
+
+## Open questions
+
+1. Single-tenant restore from a pooled database (gap P1-7). The owner decides before the first paid tenant.
+2. **Whole-region loss (owner item, 2026-10-24).** Decision 5 is read per region. Whether either region gets a
+   residency-compliant standby elsewhere, or a region outage is accepted as downtime until the region returns, is
+   the owner's to decide; the Note above records it.
+
+## Alternatives
+
+- Active-active across regions: rejected by OB9.
+
+## Supersedes and sources
+
+Supersedes: [0048](/adr/0048-point-in-time-recovery-and-quarterly-restore-drill). Sources: owner answers OB7–OB9 (`stackra-decisions-2026-10-19.md` L559, 2026-10-20). Closes gap C43 in part.

@@ -1,0 +1,54 @@
+---
+title: "Member standards"
+description: "What every app, package and service must contain."
+icon: "badge-check"
+---
+
+## Required files per member
+
+| File            | Holds                                                                             |
+| --------------- | --------------------------------------------------------------------------------- |
+| `README.md`     | What it is, a tasks table of its scripts, the structure of `src/`, how to run it  |
+| `AGENTS.md`     | Where code goes, rules that fail the build, tasks, and a mandatory `## PII` table |
+| `CHANGELOG.md`  | `# <package name>` and a note that Changesets writes it                           |
+| `LICENSE`       | A byte-for-byte copy of the root `LICENSE`                                        |
+| `turbo.jsonc`   | Extends `//` with exactly one tier tag                                            |
+| `tsconfig.json` | Extends one `@stackra/typescript-config` preset and nothing else                  |
+
+The PII table is always present. A member that handles no personal data says "None" and names the change that would make it revisit the answer.
+
+## Kinds
+
+- **Apps:** vite, expo, docs, next.
+- **Packages:** domain, platform, lib, tooling.
+- **Services:** plain TypeScript members at `services/<name>`; `stackra gen` generates the Encore app into `.stackra/encore/` ([0124](/adr/0124-encore-is-the-generated-runtime-target)).
+
+## Conventions
+
+- Package `exports` list `@stackra/source` (`./src/*.ts`) first, then `types`/`default` in tsdown's `dist/*.d.mts`/`dist/*.mjs` ([0025](/adr/0025-packages-publish-to-private-registry)).
+- Tests sit beside the code, in `src/**/__tests__`.
+- `package.json` key order: name, version, private, description, license, type, main (Expo only), scripts, dependencies, devDependencies.
+
+## Scaffolding
+
+`stackra new <kind> <name> --description "<one sentence>" [--category <c>] [--entries react,native|none] [--data] [--title "<Title>"] [--port <n>] [--repo <path>] [--dry-run]` copies a template from `tools/scaffold/templates`, replaces the tokens, copies the target repo's `LICENSE`, and formats the result. Then run `pnpm install` and `pnpm verify`.
+
+| Kind          | Template                     | Lands in                                             |
+| ------------- | ---------------------------- | ---------------------------------------------------- |
+| `service`     | the CLI's own template       | `services/<name>` (`@figentra/service-<name>`)       |
+| `package`     | `templates/packages/package` | `packages/<category>/<name>` (`--category` required) |
+| `tooling`     | `templates/packages/tooling` | `packages/tooling/<name>`                            |
+| `app:console` | `templates/apps/console`     | `apps/<name>` (port from 3710)                       |
+| `app:mobile`  | `templates/apps/mobile`      | `apps/<name>` (no hyphens in the name)               |
+| `app:desktop` | `templates/apps/desktop`     | `apps/<name>`                                        |
+| `app:docs`    | `templates/apps/docs`        | `apps/<name>` (port from 3334)                       |
+
+```bash
+pnpm new service billing --description "Billing." --summary "Reach for it to invoice tenants."
+pnpm new package retry --category foundation --description "Retries with backoff." --summary "Reach for it to retry a flaky call."
+pnpm new package ledger --category commerce --description "Double-entry ledger." --summary "Reach for it to post balanced entries." --data
+pnpm new app:console admin --title "Admin" --description "The admin console." --summary "Open it to run the platform."
+pnpm new service billing --description "Billing." --summary "Reach for it to invoice tenants." --repo ../figentra-os --dry-run
+```
+
+`--description` is required: the sentence becomes the `package.json` description and opens `README.md` and `AGENTS.md`. Members come out in the programming model v3 shape ([ADR 0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12). Shapes: [ADR 0126](/adr/0126-member-shapes-and-scaffold-templates). Flags and tokens: [Scaffolding](/guides/scaffolding).

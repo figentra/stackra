@@ -1,0 +1,66 @@
+---
+title: "0206 — ZITADEL is the identity provider; @stackra/identity is provider-neutral"
+description: "Accepted, amended by 0268, 0353, 0361, 0493, OS 0002, OS 0007 · 2026-10-20"
+---
+
+<Note>
+  Amended 2026-10-25 by [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction) decisions 3 and 7 (recommended defaults OS-22 and OS-37):
+  decision 4: a deployment runs one ZITADEL instance per region, in the IdP's cloud where it has a
+  region that meets residency and self-hosted, unmodified, in the region otherwise; self-hosting for
+  on-prem and air-gap stands. Decision 7: one login host per product and region, for example
+  `login.<region>.<product-domain>`. Figentra's choices (self-hosted in `me`, custom-domain sign-in
+  on Enterprise only) are [OS 0002](https://docs.os.figentra.com/adr/0002-region-routing-global-login-directory-hosts-and-regional-operations) and [OS 0007](https://docs.os.figentra.com/adr/0007-figentra-id-one-login-layer-on-zitadel-per-region).
+</Note>
+
+<Note>
+  Amended 2026-10-25 by [0361](/adr/0361-principals-and-parties) decision 6, owner decision in chat
+  (OS-25): decision 5: one ZITADEL instance per region, not one instance for all regions, and end
+  customers sign in once in the product's brand, linked to each merchant's customer profile only by
+  sign-up or consent. The Figentra ID name and its choices are [OS
+  0007](https://docs.os.figentra.com/adr/0007-figentra-id-one-login-layer-on-zitadel-per-region).
+  The other decisions stand.
+</Note>
+
+<Note>
+  Supersedes [0093](/adr/0093-better-auth-integration), and the identity decisions 1 to 3 and 5 of
+  [0087](/adr/0087-identity-and-iam-are-driver-packages) (0087 is superseded together with
+  [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names).
+  [0051](/adr/0051-better-auth-identity-service) is already superseded; its note now points here.
+</Note>
+
+<Note>
+  Amended by [0268](/adr/0268-register-answers-thin-items-r1-to-r18): R3: Stackra builds no login
+  UI. Decision 7 (the login app) is withdrawn. ZITADEL's hosted sign-in pages are used, and
+  ZITADEL's own branding replaces the brand cascade of decision 7 (the per-tenant login branding).
+  The identity service is a thin control plane over ZITADEL.
+</Note>
+
+## Context
+
+Better Auth was the identity choice (0051, 0093). The owner's identity answers of 2026-10-20 (mem L587–592, L604–616) make ZITADEL the one identity provider for every Stackra product and for Figentra OS, and remove Better Auth from the stack.
+
+## Decision
+
+1. **One provider.** ZITADEL is the identity provider. Better Auth leaves the stack.
+2. **Provider-neutral client.** `@stackra/identity` is the OIDC client, the SDK and the contracts, with provider-neutral ids and claims mapping.
+3. **Control plane, not login.** The identity service is a control plane: the app registry, the tenant to ZITADEL org mapping, the IdP metadata, the identity events and the service identities. It never proxies a login.
+4. **Hosting.** ZITADEL Cloud serves SaaS. ZITADEL is self-hosted, unmodified, for on-prem and air-gap (AGPL is accepted). `stackra dev` runs a ZITADEL container. _Amended by [0493](/adr/0493-runway-resources-and-workloads-one-runway-provisions-the-product-runtime) (owner, 2026-10-30): a SaaS region that residency forces (KSA in-country) self-hosts ZITADEL as a runway workload; ZITADEL Cloud stays the default elsewhere._
+5. **One instance (I1).** Staff have one global account. Each tenant gets a ZITADEL org for its end customers.
+6. **Sign-in methods (I2).** All the sign-in methods of memory L605.
+7. **Login app (I3).** One login app of ours, on ZITADEL session APIs, serves every hostname through Cloudflare for SaaS, with the brand cascade.
+8. **Sessions (I4).** The web uses a BFF with an HttpOnly cookie, code and PKCE. Mobile uses PKCE with a rotated refresh token in SecureStore. JWT access tokens last 5 to 15 minutes and are verified by JWKS.
+9. **IdP outage (I12).** Existing sessions keep working during an identity provider outage.
+
+## Consequences
+
+- The provider can change behind `@stackra/identity`, because no product calls ZITADEL directly.
+- The identity service never sits on the login path, so an identity outage does not stop a signed-in user.
+
+## Enforcement
+
+planned — the contract tests of `@stackra/identity` run against a ZITADEL container in CI; the validator rejects a direct `zitadel` import in a product.
+
+## Supersedes and sources
+
+Supersedes: [0093](/adr/0093-better-auth-integration); identity decisions 1 to 3 and 5 of [0087](/adr/0087-identity-and-iam-are-driver-packages). Closes gap C33.
+Sources: owner identity decisions (`stackra-decisions-2026-10-19.md` L587–592, L604–616, 2026-10-20).

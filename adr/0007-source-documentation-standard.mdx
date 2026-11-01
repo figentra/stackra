@@ -1,0 +1,115 @@
+---
+title: "0007 — Source documentation standard"
+description: "Accepted, amended by 0128, 0334 · 2026-10-19"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 17), the
+  docblock form. A docblock with one sentence and no tags is one line, `/** … */`; a docblock with a
+  tag or more than one sentence is multi-line. The header and TSDoc rules of this ADR are unchanged.
+</Note>
+
+<Note>
+  Amended by [0128](/adr/0128-code-conventions-enums-classes-components-and-kind-folders): the
+  documentation rules for classes and members are assumed there, pending the owner.
+</Note>
+
+<Note>
+  Amended 2026-10-21 (STA-215): the format is TSDoc, and members, tokens and the header are
+  required. See the amendment at the end of this page.
+</Note>
+
+## Context
+
+Agents and new contributors read files cold. The cheapest durable defence against a wrong change is a header that says
+what the file is for and which rule governs it. Doc comments that restate a signature are noise and teach readers to skip comments.
+
+## Decision
+
+1. **Every source file opens with a contract block** before its imports:
+   - `Purpose:` what the file is for.
+   - `Boundary:` what it declares and what it does not own.
+   - `Runtime:` one of `node`, `browser`, `worker`, `react-native`, `isomorphic`.
+   - `Governing contract:` the ADR or standard a change must respect.
+
+   Non-TypeScript files (JSON with comments, YAML, shell, `.mjs`) carry the same fields in their own comment syntax. The
+   repository's own config files already do this (`# Stackra file contract:`).
+
+2. **Every exported symbol has TSDoc that says something the type does not**: a purpose sentence always; `@param` and
+   `@returns` when meaning, units or ownership are not in the type; `@throws` for each error a caller must handle; `Side effects:`
+   for I/O and global mutation; `Invariant:`; `@example` when use is not obvious; `@deprecated` with replacement and removal target.
+3. **Types carry the weight first.** No `any`; generics get meaningful names; an exported type is its own documentation.
+4. **Boilerplate is a finding.** A comment restating the signature fails review.
+
+## Consequences
+
+- Reading cost per file drops; writing cost rises by a few lines.
+- `/standards/code-style` is the operating form (header fields, tags, examples).
+
+## Enforcement
+
+`tools/scripts/doc-standard.mjs` (test: `tools/scripts/__tests__/doc-standard.test.mjs`) runs in `pnpm validate`. It uses
+the TypeScript compiler API to check the file contract header and the TSDoc presence rules of the amendment below, and it
+rejects types in `@param`, `@returns`, `@throws` and `@property`. oxlint's `jsdoc/check-tag-names` (in
+`packages/tooling/oxlint/src/base.jsonc`) holds the tag names to TSDoc. oxlint 1.86 has no `jsdoc/no-types`, so the type
+ban lives in the check. The check never judges wording: a block that restates the signature is a review finding.
+
+## Amendment 2026-10-21: TSDoc on members, tokens and the check
+
+**Context.** The owner found exported interfaces, class methods and DI token files with no docblocks. Decision 2 asked
+for TSDoc on exported symbols only, and its check stayed planned, so nothing enforced it. The owner settled the format
+in STA-215. This amendment replaces decision 2 where the two differ.
+
+**Decision.**
+
+1. **The format is TSDoc, not JSDoc with types.** Types never appear in a tag. Write `@param name - meaning`, never
+   `@param {type} name`; no typed `@returns`. TypeScript owns the types.
+2. **Required on:**
+   - every exported symbol;
+   - every property and method signature of an exported interface or type literal;
+   - every public and protected member of an exported class (`private` and `#` members are internal);
+   - every DI token constant made with `defineToken`. The block says what resolves to the token and which package or app
+     provides it.
+3. **What the block says.** A purpose sentence always. `@param` and `@returns` only where meaning, units or edge behaviour
+   are not in the type (for example, "returns false and changes nothing on a repeat"). `@throws` for each typed error a
+   caller must handle. `@defaultValue` on optional config properties. `@example` on public entry points. `@remarks` for
+   longer notes. `@deprecated` with the replacement and the removal target.
+4. **The header.** Decision 1 applies to every `.ts` and `.tsx` source file in `packages/`, `services/` and `apps/`,
+   excluding tests, generated code and declaration files. Its `Runtime:` field is one of the five values in decision 1.
+
+**Consequences.** The check is mechanical: it verifies presence and the typed-tag ban, and review judges the wording.
+Writing cost rises for interface members, class methods and tokens. That is the point of the amendment.
+
+## Amendment 2026-10-21 (STA-219, L5): the frozen header and docblock fields
+
+**Context.** The file-contract header and the TSDoc rules were in use, but their exact spelling was not frozen. Tools
+(`tools/scripts/doc-standard.mjs`, the scaffold templates, and the agents that write files) need one spelling to match.
+
+**Decision.**
+
+1. **The header prefix is frozen.** The contract block is a comment whose first line is exactly `Stackra file contract:`
+   (the colon included, no other words on that line). In a `.ts` or `.tsx` file it sits before the first import. In other
+   files it uses that file's comment syntax (a `/* */` block in `.mjs`, `#` in YAML and shell, `//` in JSONC).
+2. **The header field list is frozen, in this order:** `Purpose:`, `Boundary:`, `Runtime:`, `Governing contract:`. Each
+   field starts its own line. `Runtime:` takes one of `node`, `browser`, `worker`, `react-native`, `isomorphic`.
+3. **The docblock field list is frozen.** A TSDoc block uses these tags and no others for the cases of decision 2 of the
+   amendment above: a purpose sentence (no tag); `@param name - meaning`; `@returns`; `@throws`; `@defaultValue`;
+   `@example`; `@remarks`; `@deprecated` with the replacement and the removal target; and the two labelled lines
+   `Side effects:` and `Invariant:`. A tag outside this list needs an ADR.
+4. **Typed tags are banned.** No `{type}` after `@param`, `@returns`, `@throws`, `@property` or `@prop`. TypeScript owns
+   the type.
+
+**Consequences.**
+
+- Any header that uses another prefix, or another field name, fails the check: a spelling change is a new amendment.
+- The scaffold templates write this header; a template that drifts is a finding for the code-standards steward.
+
+**Enforcement.** `tools/scripts/doc-standard.mjs` (test `tools/scripts/__tests__/doc-standard.test.mjs`) checks the prefix,
+the four header fields, the `Runtime:` value and the typed-tag ban. It runs in `pnpm validate`. The presence of the
+docblock fields on members is checked by the same script under decision 2 of the 2026-10-21 amendment; the wording is
+review, not a check.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: decision 2 of this page (by the amendment above). Freezes: the header and docblock field lists (STA-219). Sources: basalt `adr/0011-documentation-and-source-comment-standard`; figentra `docs/constitution/documentation.md`; owner ruling in STA-215.

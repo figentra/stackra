@@ -1,0 +1,64 @@
+---
+title: "0101 — Every operation is an action; a workflow sits behind it only when the criteria hit"
+description: "Accepted, amended by 0265, 0294 · 2026-10-19"
+---
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3: the rule of this ADR holds. The kinds named in decision 1 are base classes,
+  `extends Action({ key })` and `extends Query({ key })`. A workflow is a class that extends
+  `Workflow(...)`, and its public async methods are its steps (see
+  [0152](/adr/0152-workflow-semantics-timeouts-waits-pinned-versions-and-one-graph-format)). An
+  action starts a workflow with `ctx.run(Workflow, input)`, and an event starts one only through the
+  workflow's `startOn` option. Adapters still never expose a workflow directly. The criteria of
+  decision 3 are unchanged. The reads of decision 5 are `Query` classes, and cross-module reads
+  follow [0104](/adr/0104-links-and-query-graph) as amended.
+
+Enforcement of this note: planned — STA-340 (gen warns when an action calls another module's
+client without a workflow, and fails a workflow reachable from an adapter).
+
+</Note>
+
+<Note>
+  Amended by [0265](/adr/0265-hook-points-transform-and-verify): The before and after hooks of
+  decision 4 are the hook model: declared transform and verify points, with implicit `Before` and
+  `After` on every action, typed extensions and an explicit call site.
+</Note>
+
+## Context
+
+Medusa makes every mutation a workflow (about 341 of them, many with one step), mainly to get extension hooks and grouped
+events. Stackra's action pipeline ([0098](/adr/0098-actions-are-the-unit)) and the outbox
+([0078](/adr/0078-messaging-layer-eight-packages)) already give hooks, audit and transactional events for a single-aggregate
+write. The owner asked which rule is the right standard for all heavy development, even where both approaches reach the same goal.
+
+## Decision
+
+1. **Every operation is an action** (`@Action` or `@Query`). Actions are the only public surface; workflows are never exposed
+   directly to an adapter, an agent or a client.
+2. **A single-aggregate write is handled inline** in the action, in one transaction, with its events through the outbox.
+3. **A `@Workflow` is mandatory behind the action when any criterion hits**:
+   - the work crosses modules or services;
+   - it calls an external system;
+   - a later failure must undo an earlier effect (compensation);
+   - it waits (for a human, a timer or an event);
+   - it runs long enough that it must survive a restart.
+4. **Actions carry before and after hooks**, so extension does not need a workflow.
+5. **Reads use `@Query` actions**, and cross-module reads use `query.graph` ([0104](/adr/0104-links-and-query-graph)).
+
+## Consequences
+
+- Simple writes stay one readable method; complex ones get compensation and a journal.
+- A reviewer can reject a diff with a one-step workflow that meets none of the criteria, or an action that calls an external
+  system without a workflow.
+- Moving from inline to workflow later does not change the action's key or contract.
+
+## Enforcement
+
+Planned: the gen validation pass warns when an action handler calls a client of another module or an outbound HTTP driver
+without a workflow, and fails a `@Workflow` reachable from an adapter without an action. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decision in chat, 2026-10-19 (Round 11 W1). Informational: Medusa source study
+(`archive/medusa-develop`).

@@ -1,0 +1,52 @@
+---
+title: "0373 — The feature-flags no-plan-targeting lint rule"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It gives the check that
+  [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions) decision 7 (flags
+  are not entitlements) lacked, as a house rule of
+  [0129](/adr/0129-house-lint-plugin-and-coding-standard). It answers the wave 10 settings and flags
+  builder's question 1.
+</Note>
+
+## Context
+
+0213 decision 7 says a flag switches a feature on or off and an entitlement sells it. Nothing checked it, so a flag
+named `ProPlanReportsFlag` or a `Flag({ plan: "pro" })` would quietly turn the flag system into a second, unaudited
+entitlement engine that bypasses the plan catalogue (0363 decision 6). Wave 10 wrote the rule as an oxlint plugin at
+`@stackra/feature-flags/lint` and left it disabled everywhere.
+
+## Decision
+
+1. **What it checks.** `feature-flags/no-plan-targeting` reports:
+   - a class that extends `Flag(...)` whose name contains `Plan`, `Tier`, `Edition`, `Entitlement` or `Subscription`
+     (singular or plural) as a PascalCase word; and
+   - a key in the `Flag({...})` options object that is one of those words, in any case.
+2. **What it does not check.** It reads syntax only. It does not inspect flag targeting data stored at run time; that
+   data is checked by the flags service, which refuses a targeting rule whose fact is a plan, tier, edition or
+   entitlement fact.
+3. **Level and preset.** The rule runs at `error` in the `base.jsonc` preset of `@stackra/oxlint-config`, so every
+   member gets it. It has no autofix: moving a flag to an entitlement is a design change. A justified exception is an
+   `oxlint-disable-next-line` with a `-- reason:` comment, which review reads.
+4. **Home.** The rule's source stays in `@stackra/feature-flags` (entry `./lint`), next to the `Flag` kind it reads;
+   the preset loads it as a jsPlugin.
+5. **Values.** None. The five words are the commercial vocabulary of 0213 decision 7, not a business value; which
+   features a plan sells stays plan-catalogue data (0363 decision 6), and flag targeting stays settings data.
+
+## Consequences
+
+- A paid feature can only be gated by an entitlement, so the plan catalogue stays the one source of what a tier sells.
+- A flag that happens to use one of the words for an unrelated meaning must be renamed or carry a reasoned disable.
+
+## Enforcement
+
+planned — `packages/tooling/oxlint/src/base.jsonc` lists the plugin and sets `feature-flags/no-plan-targeting` to
+`error`; the rule's own tests sit in `packages/state/feature-flags/src/lint/**/__tests__/`. Until the preset change
+lands, nothing runs it.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/build-wave10-2026-10-25.md` (settings and flags builder, not built item 4
+and question 1); `packages/state/feature-flags/src/lint/constants/no-plan-targeting-rule.constant.ts`.

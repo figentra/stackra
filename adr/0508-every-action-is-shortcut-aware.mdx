@@ -1,0 +1,126 @@
+---
+title: "0508 — Every action is shortcut-aware: one action definition, scopes, hint modes, three settings layers"
+description: "Accepted · 2026-10-31"
+---
+
+{/* Stackra file contract: Purpose: the decision record that every @stackra/ui action can carry a keyboard shortcut defined once with the action, registered at run time in @stackra/shortcuts' registry, drawn with HeroUI's free Kbd, scoped, configurable in three layers and accessible. Boundary: decision text only; the code is @stackra/shortcuts (core and ./react) and @stackra/ui (STA-1371). Runtime: docs. Governing contract: ADR template; ADR 0003, 0165, 0281, 0294, 0302, 0496, 0504, 0507. */}
+
+<Note>
+  Accepted 2026-10-31 by the owner: "Accept both" (asked directly in design-system session c6,
+  STA-1371). Proposed Built on the owner's direction of the same day: hints use HeroUI's free Kbd
+  ("already heorui community has … kbd"); people can remap keys, there is a shortcuts reference, and
+  a toggle makes the keys "visible or hidden by default — if hidden we can have tooltip and if
+  visible kbd"; single-key shortcuts can be turned off ("Yes, user can turn off"); and it builds on
+  the existing `@stackra/shortcuts` ("we have our own stackra kbd or commands or shortcuts
+  package").
+</Note>
+
+## Context
+
+`@stackra/shortcuts` declares app-level shortcuts as classes (`Shortcut({ keys, group })`, ADR 0294 decision 23):
+parsing with chords, a conflict detector, key hints and keyboard bindings through TanStack Hotkeys. Nothing used it
+from the design system. `@stackra/ui` drew key hints as ready-made text (`MenuLeafItem.shortcut = "⌘E"`, a sidebar
+item's `shortcut`, a hard-coded `esc` in the drawer) and bound no key; the command palette had its own `window`
+keydown listener for Cmd+K. So a hint could lie, a key could not be remapped, and a page shortcut kept firing under an
+open dialog.
+
+## Decision
+
+1. **One action definition.** A UI action is `ShortcutAction { id, label, icon, shortcut, run, when, permission }`
+   (plus `group`, `scope`, `isDisabled`, `isDirectional`), a client-side descriptor in `@stackra/shortcuts`. The same
+   object feeds the button (`<Button action={save} />`), the menu item, the palette entry, the tooltip and the cheat
+   sheet. It is not the server `Action` kind of `@stackra/actions`: `run` may call one, `permission` names the
+   permission the host checks, and `id` is what remaps key on. A component also takes the loose form
+   `shortcut="mod+s"` (with an optional `shortcutId`) next to its own `onPress`.
+
+2. **Dependency direction.** `@stackra/ui` depends on `@stackra/shortcuts` (`workspace:*`), one way; `@stackra/shortcuts`
+   never imports `@stackra/ui`. Parsing, display (`formatShortcutKeys`), matching, conflict detection, the settings
+   layers and the run-time registry (`ShortcutProvider`, `useShortcutAction`, `useShortcutRegistry`,
+   `ShortcutOverlayScope`) live in `@stackra/shortcuts` (`.` for the pure parts, `./react` for the provider and
+   hooks); `@stackra/ui` adds only the prop contract (`ShortcutContractProps`), the hint part on HeroUI's Kbd
+   (`ShortcutHint`), the component wiring (`useActionShortcut`), the cheat sheet and the settings panel. Both are
+   `tier:lib`, so turbo boundaries hold; no cycle exists for knip or the build. The new provider needs no DI container,
+   so it sits beside `ShortcutBindings` (which binds the `Shortcut` classes) and both may run. Every change to
+   `@stackra/shortcuts` is additive.
+
+3. **Registration and scopes.** `DesignSystemProvider` mounts `ShortcutProvider` (one capture-phase `window` key
+   listener) and the cheat sheet. A component registers while mounted. Four scopes, narrowest first: **focus** (only
+   while focus is inside an element: a table, a carousel), **overlay** (only the topmost open modal, drawer, panel or
+   popover, through `ShortcutOverlayScope`), **page** (paused while any overlay is open) and **app** (always: the
+   palette Mod+K, the cheat sheet `?`, Ask Tamo Mod+J). When two match, the narrower scope wins, then the latest
+   registered.
+
+4. **Hint modes.** `visible` draws an inline HeroUI `Kbd` beside the action; `hidden` puts the keys only in the
+   action's tooltip (`Tooltip shortcut`). A control with no room for an inline hint (an icon button) always uses the
+   tooltip. Holding Mod (Command or Control) alone for 500 ms reveals a Kbd badge over every visible action that shows
+   no inline hint, in either mode; releasing Mod or pressing another key hides them. Hints are HeroUI's free `Kbd`
+   only; there is no custom key chip and no HeroUI Pro.
+
+5. **Three settings layers, all runtime configuration.** `ShortcutSettings { enabled, hintMode, singleKey, remaps,
+locked }`, folded by `resolveShortcutSettings(platform, tenant, person)`:
+
+   | Layer    | Sets                                                                                | Stored in                                        |
+   | -------- | ----------------------------------------------------------------------------------- | ------------------------------------------------ |
+   | Platform | `DEFAULT_SHORTCUT_SETTINGS` (on, visible, single-key on) and `STANDARD_SHORTCUTS`   | code defaults                                    |
+   | Tenant   | enable, the default hint mode, remaps, and `locked` fields the person cannot change | the dashboard (settings, ADR 0496)               |
+   | Person   | hint mode, remaps with a key recorder, single-key off                               | person preferences, group `shortcuts` (ADR 0496) |
+
+   The UI never stores them: `ShortcutSettingsPanel` takes `value` and `onChange`, and `DesignSystemProvider` takes
+   `shortcuts` and `onShortcutsChange`. A tenant changes a default without a release.
+
+6. **Platform labels and layouts.** Bindings are written with `mod` (Command on Apple devices, Control elsewhere) and
+   drawn per platform (`⌘K`, `Ctrl+K`). Matching reads `event.code`, the physical key, so `mod+k` fires on an Arabic
+   layout where that key types `ن`; labels stay Latin and isolated left to right in Arabic. A binding marked
+   `isDirectional` (next and previous) swaps Left and Right on a right-to-left page, for matching and for the hint.
+
+7. **Typing guard and IME.** A step with no command modifier (`e`, `/`, arrows) never fires while focus is in a text
+   field, a select or an editable element; Escape, the function keys and modified keys still do (Mod+Enter submits from
+   a text area). A key pressed during IME composition (`isComposing`, key code 229) is ignored. With `singleKey` off,
+   every binding made of one character key (Shift allowed) is skipped (WCAG 2.2 SC 2.1.4).
+
+8. **Reserved keys.** `RESERVED_SHORTCUTS` holds what the browser or the system keeps (Mod+W, Mod+T, Mod+N, Mod+R,
+   Mod+L, Mod+Q, zoom, Ctrl+Tab, Alt+F4, F5, F11, F12, …). `findShortcutConflicts(…, { reserved: true })` reports them
+   as `reserved`; the key recorder refuses to save one and warns on a clash with another action or a standard binding.
+   Mod+J is reserved in `STANDARD_SHORTCUTS` for "Ask Tamo" (ADR 0507), so no app binding takes it silently.
+
+9. **Sequences, availability.** Two-key sequences (`g o`) wait `CHORD_TIMEOUT` (1.5 s) for the second key. A disabled
+   action, or one whose `permission` the host's `can` refuses, is not registered: its key does nothing and it is not
+   listed; `when` is checked at key time and, when false, lets the key fall through.
+
+10. **Accessibility.** Every bound control carries `aria-keyshortcuts` (`Meta+K`, `Control+Shift+L`; none for a
+    chord, which the attribute cannot express). An inline hint inside a control is `aria-hidden`; a hint on its own
+    (the cheat sheet) is read as its spoken form ("Command K", "G, then O").
+
+11. **Touch and native.** On web, hints hide on a touch screen until a hardware key is pressed or a fine pointer is
+    present. On native the contract props are accepted and draw nothing: `@stackra/ui/native` has no hardware-keyboard
+    handling today, so iPad and Android hardware-keyboard shortcuts and hints are a later step (an Expo module per ADR
+    0478 behind a port).
+
+12. **The cheat sheet and the palette read the registry.** `?` (Shift+/) opens a dialog generated from what is
+    registered right now, grouped by the action's group or its scope, searchable (case, accents and Arabic diacritics
+    folded), in every locale. `CommandPalette` registers its own key (remappable) instead of a `window` listener and
+    lists every registered action with its keys in an "Actions" section.
+
+## Consequences
+
+- A product gets keyboard support by passing `shortcut` or `action`; the hint, the tooltip, the cheat sheet and the
+  palette can no longer disagree with the key.
+- `MenuLeafItem.shortcut` and `CommandItem.shortcut` now mean a binding; an older ready-made string (`⌘E`) is still
+  drawn as given and binds nothing.
+- The palette's Cmd+K needs a `ShortcutProvider` (mounted by `DesignSystemProvider`); a palette rendered outside one
+  opens only through `isOpen`.
+- Native shows no hints until the hardware-keyboard step lands.
+
+## Enforcement
+
+- `@stackra/shortcuts` tests cover matching (`shortcut-aware-ui.function.test.ts`), the registry's scopes, typing
+  guard, IME, single-key, sequences, permissions and reveal (`create-shortcut-registry.function.test.ts`) and the
+  provider and hooks (`use-shortcut-action.test.tsx`); the entry tests pin the new exports.
+- `@stackra/ui` component tests press the keys through a `ShortcutProvider`.
+- planned — a lint rule refusing a `window.addEventListener("keydown")` in `@stackra/ui` outside `@stackra/shortcuts`.
+- planned — a gen check that a tenant or person remap names a registered action id.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: the owner's answers of 2026-10-31 in the c6 session; HeroUI's Kbd documentation
+(`heroui.com/en/docs/react/components/kbd`); WAI-ARIA 1.2 `aria-keyshortcuts`; WCAG 2.2 SC 2.1.4.

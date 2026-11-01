@@ -1,0 +1,103 @@
+---
+title: "0095 — @stackra/validation: Laravel-style decorators compiled to one Zod schema, plus an output serializer"
+description: "Accepted, amended by 0133, 0162, 0294, 0328, 0334 · 2026-10-19"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 5): a
+  validation message is the lang key `<module>::validation.<field>.<rule>`, never a string in the
+  decorator. The decorator set is unchanged.
+</Note>
+
+<Note>
+  Amended 2026-10-24 by [0328](/adr/0328-value-classes-are-built-with-create-and-containers-are-never-constructed): the two forms have one meaning each. `X.parse(input)` of decision 5
+  is the wire-boundary form. On invalid input it refuses with the invalid-argument `Refusal`, which is the `ValidationError`
+  of decision 5, the `validation` kind of [0140](/adr/0140-error-envelope-and-error-kinds), so the two agree. `X.create({...})` is how an author builds a
+  `Schema` value in code. An invalid argument there is a programming error: it throws an invariant error of the `internal`
+  category of 0140, and it is never a `Refusal`. The other decisions stand.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, which restates decisions 2, 3, 5 and 6. Where this note and the text below
+  differ, this note governs.
+
+The type of a field is its rule, its column type and its wire type. The initializer is the
+default, `?:` marks an optional field, and `| null` marks a nullable one. A `number` field carries
+`@Int` or `@Num`. Literal unions, `any` and unknown alias types are refused by gen, which asks for
+an enum or a `Schema` class instead. The field decorators are constraints (`@Str`, `@Int`, `@Num`,
+`@List`), transforms (`@Trim`, `@Lowercase`), the serializer (`@Hidden`, `@Visible({ audience })`)
+and the escape hatch `@Field(zod)`. The escape hatch needs a `// reason:` comment, and it is the
+only place Zod appears in a member. The other shorthands of decisions 2, 5 and 6 are not in that
+decorator set and are removed: `@Min`, `@Max`, `@Email`, `@Between`, `@Enum`, `@Date`, `@After`,
+`@ArrayOf`, `@Nested`, `@Uuid`, `@Optional`, `@Default`, `@ToInt`, `@ToBoolean`, `@ToDate`,
+`@Transform`, `@Expose`, `@Cast` and `@Format`.
+
+Gen compiles each shape class to one Zod schema in `#stackra/schemas`. Validation, forms, the API
+and the MCP tool schemas read that schema, and authors never write Zod. `@stackra/validation`
+refuses to validate a class that gen has not compiled, so it fails closed. The async rules of
+decision 4 (`@Exists` and `@Unique`) are not addressed by the new model, so they stand as written
+until that is decided. The field decorators recorded in
+[0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events) are replaced
+by the type rule.
+
+Enforcement of this note: the type-to-schema compiler spike of STA-335 has run, outside this
+repository, and its rules are decision 26 of 0294; planned — STA-340 (gen checks
+`shape_unknown_type`, `shape_number_kind` and `shape_decorator_type_mismatch`).
+
+</Note>
+
+<Note>
+  Amended by [0162](/adr/0162-validation-translatable-fields-and-entityschema-placement): async
+  database rules are skipped on the client and fail closed on the server.
+</Note>
+
+<Note>
+  Amended by [0133](/adr/0133-field-semantics-model-keys-rename-safe-fields-and-lifecycle-events):
+  @Nullable, the semantic field types and @Stored are recorded there.
+</Note>
+
+## Context
+
+With decorators as the only authoring style ([0094](/adr/0094-decorators-only-authoring)), fields on models and action inputs
+need validation, input transforms and output shaping declared on the class. The Nest ecosystem uses class-validator and
+class-transformer, which depend on `reflect-metadata` ([0011](/adr/0011-rejected-and-deferred-technologies)) and duplicate what
+Zod already does for forms and the API client ([0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters)). The IR already
+converts schemas to Zod ([0092](/adr/0092-ir-ported-definition-package-dropped)). The owner asked for the class-validator and
+class-transformer developer experience with Zod underneath, rather than only `@Field(z…)`.
+
+## Decision
+
+1. **A new client-safe package, `@stackra/validation`**, owns the validation, transform and serializer decorators.
+   `@stackra/model` ([0097](/adr/0097-model-and-database-packages)) builds on it. It imports no ORM and no Node-only module.
+2. **Short, Laravel-style rule decorators** append to a per-class schema: `@Str`, `@Min`, `@Max`, `@Email`, `@Int`,
+   `@Between`, `@Enum`, `@Date`, `@After`, `@ArrayOf`, `@Nested`, `@Uuid`, `@Optional` and `@Default`. **`@Field(z…)` is the
+   escape hatch** for anything the shorthands do not cover.
+3. **Each class compiles to one cached `z.object`.** That schema is the one used by actions, forms, wire types, OpenAPI, MCP
+   tool schemas and the IR. Zod is the only validation engine.
+4. **Async rules `@Exists` and `@Unique`** run through a database rule driver supplied by `@stackra/database`.
+5. **Input transforms compile into the same Zod schema**: `@Trim`, `@Lowercase`, `@ToInt`, `@ToBoolean`, `@ToDate` and
+   `@Transform(fn)`. `X.parse(input)` returns a typed instance of `X` or an `STK`-coded `ValidationError`.
+6. **Output goes through a serializer**, separate from validation: `@Hidden`, `@Visible({ audience })`, `@Expose`, `@Cast` and
+   `@Format`. The audiences are `public`, `app`, `admin` and `agent`.
+7. **class-validator and class-transformer are rejected.**
+
+## Consequences
+
+- One schema per shape, shared from database model to form to agent tool.
+- Every shorthand must map exactly to a Zod construct, and the set needs a maintainer and a test per decorator.
+- What an agent sees of a record is an explicit audience, so a field hidden from `agent` never reaches a prompt.
+- Which rule driver answers `@Exists` and `@Unique` on the client (skip, or a remote call) is left to the package spec.
+- A row for class-validator and class-transformer is added to [0011](/adr/0011-rejected-and-deferred-technologies) by a
+  superseding change to that page.
+
+## Enforcement
+
+Planned: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` gains `class-validator` and `class-transformer`;
+a test in `@stackra/validation` that every decorator produces its documented Zod construct; `boundaries.jsonc` keeps
+`@stackra/validation` free of Node-only imports. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19 (Round 10: a full decorator suite on Zod; "ADR 0095 FINAL").

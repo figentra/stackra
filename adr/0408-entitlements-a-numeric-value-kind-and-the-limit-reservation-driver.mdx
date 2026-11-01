@@ -1,0 +1,40 @@
+---
+title: "0408 — Entitlements: a numeric value kind, and the limit reservation driver"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-824, STA-765 remainder). It amends [0215](/adr/0215-entitlements) decision 1 (a
+  fourth kind) and fills
+  [0397](/adr/0397-actions-remainder-effect-codes-tool-default-reserve-then-commit-audit-in-the-unit-of-work-and-approval-fails-closed)
+  decision 3. Linear STA-824, STA-765.
+</Note>
+
+## Context
+
+A plan sometimes grants a plain number that counts no model: the audit service's visible window in days, a retention,
+an export size. The three kinds (feature, limit, module) had nowhere for it. Separately, ADR 0397 put a
+`LimitReservation` port around every action's unit of work, but no driver used `LimitReservationService`, so creates at
+a limit were still checked from a snapshot only.
+
+## Decision
+
+1. **`EntitlementKind.Value`** (`value`): granted as a number of zero or more (`Infinity` for no bound), counting no
+   model. `EntitlementValueService.valueOf(entitlement, scope)` reads it from the effective plan; `undefined` means the
+   plan does not set it. A value that gates a call gates it by being in the plan.
+2. **`PlanLimitReservationDriver`** binds `LimitReservation`: for a call a limit entitlement gates (gen's `gates`), the
+   unit of work runs inside `LimitReservationService.reserve`; a call no limit gates commits as it is.
+
+## Consequences
+
+- The audit window and similar numbers are plan-catalogue data, edited without code.
+- A service with plan limits binds the driver; two creates at the last slot can no longer both pass.
+
+## Enforcement
+
+`packages/security/entitlements/src/core/services/__tests__/entitlement-value.service.test.ts`,
+`packages/security/entitlements/src/core/drivers/__tests__/plan-limit-reservation.driver.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-824 (services/audit SPEC gap 5); STA-765; owner round 3 item 18.

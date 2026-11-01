@@ -1,0 +1,114 @@
+---
+title: "Service standards"
+description: "The eight things a complete service must have, and what is checked today."
+icon: "server"
+---
+
+A service is a `tier:service` [member](/standards/members) at `services/<name>`, named `@figentra/service-<name>`. In the programming model v3 shape that `pnpm new service` writes, it authors `stackra.config.ts` and one root module, `src/<name>.module.ts`, and gen writes its runtime entry into `.stackra/entry/` ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R12, [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries)). Today's services, `services/example` and `services/health`, still use the v2 shape, an authored `src/main.ts` with the root module named in `package.json` `stackra.module`, until STA-344 converts them. Services are independent workspace members. Service source holds no Encore files: Encore is the **generated** runtime target, emitted by `stackra gen` into `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)). The generator is not built yet, so the Encore-specific rules below ("when Encore lands") describe the target, not today's code.
+
+## Layout
+
+`pnpm new service <name> --description "<one sentence>"` renders the v3 shape
+([0126](/adr/0126-member-shapes-and-scaffold-templates), as amended by
+[0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming),
+[0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) and
+[0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)):
+
+```text
+services/<name>/
+  package.json        no "stackra" field, no dev or start script
+  stackra.config.ts   the member definition: static data (0295)
+  runway.yaml         runway v3: requires, secrets (names only), environments (0296)
+  turbo.jsonc  tsconfig.json  tsdown.config.ts  vitest.config.ts
+  README.md  AGENTS.md (with ## PII)  CHANGELOG.md
+  src/
+    <name>.module.ts              root module; feature modules join its imports
+    config/<name>.config.ts       the Config class: deploy-time defaults
+    contracts/                    types other members may import
+    modules/<key>/                module groups: models/ actions/ queries/ events/ listeners/ workflows/
+                                  access/ services/ resources/<model>/ database/ …
+    __tests__/<name>.module.test.ts
+```
+
+The v2 shape that today's services keep until STA-344 has an authored `src/main.ts` that bootstraps the root module,
+names the root module in `package.json` (`"stackra": { "module": "./src/<name>.module.ts" }`,
+[0090](/adr/0090-codegen-discovery-by-root-module)) and uses kind folders instead of the module groups.
+
+There are no `api.ts`, `db.ts` or `encore.service.ts` files: endpoints, topics, crons and databases are declared in the
+modules and `stackra gen` emits the Encore primitives into `.stackra/encore/`. A new service is a skeleton with no
+feature module; `src/modules/README.md` lists the module groups.
+
+## The eight non-negotiables
+
+<Steps>
+  <Step title="Placement, and one file per primitive">
+    The placement test passes: a second product with none of this product's domain would still need
+    it verbatim, so it belongs in a service named for the capability, not for the product (see
+    [Boundaries](/constitution/boundaries)). Primitives follow the file layout above.
+  </Step>
+  <Step title="Two-layer tenant isolation, always">
+    Every query runs inside the tenancy helper, and every tenant-owned table has `tenant_id uuid NOT
+    NULL` with row-level security enabled **and** forced. Tenant, scope and actor come only from the
+    authenticated principal, never from request input. Full rule: [Tenancy](/constitution/tenancy).
+    **In force from the first tenant-owned table.**
+  </Step>
+  <Step title="Event-first">
+    Cross-service communication is a versioned event unless the caller needs an authoritative
+    decision now, and then only through a typed client on a short, closed list of allowed
+    synchronous calls. A service imports another service's `Topic` and nothing else from it. No
+    distributed transactions: order steps so a partial failure is safe and reconcilable. See [HTTP
+    and events](/constitution/http-and-events).
+  </Step>
+  <Step title="One gateway">
+    When Encore lands, the single `encore.app` is the only gateway and CORS configuration; a service
+    never sets CORS, and `auth: true` is the default on every endpoint. Until then a service exposes
+    no public surface.
+  </Step>
+  <Step title="Idempotency on every write">
+    Writes carry an `Idempotency-Key` header and the service dedupes for 24 hours per tenant.
+    Financial writes also run in one transaction and emit an audit event. See [HTTP and
+    events](/constitution/http-and-events).
+  </Step>
+  <Step title="Required files, present and current">
+    Everything in [Member standards](/standards/members), plus `isolation.test.ts` once a scoped
+    table exists. `AGENTS.md` carries a PII table even when it says none.
+  </Step>
+  <Step title="Secrets">
+    Application secrets are declared by name (`secret("NAME")`) and set by a human; never in a file,
+    test, log or chat. Tests need zero secrets. See [Secrets](/constitution/secrets).
+  </Step>
+  <Step title="Definition of done">
+    Code, `pnpm verify` green, the service's own tests green, docs current, reviewer sign-off. A
+    service is not "done" because it typechecks: `pnpm verify` never starts a service (see
+    [Testing](/standards/testing#what-a-green-run-proves)).
+  </Step>
+</Steps>
+
+## Service boundary
+
+- A service owns its entry, its database and migrations, its topics, its public API and its tests.
+- No service imports another service's internals. Cross-service calls go through the generated typed client; shared types go through the producer's `./contracts` entry ([ADR 0117](/adr/0117-contracts-placement-and-decorator-ownership)).
+- Reading another service's database is allowed only read-only, only where an ADR names the pair.
+- Cross-service reads: call the owner's API, or subscribe and keep a small local read model. Cross-service writes: call the owner's API inside the caller's flow, or publish a versioned event and let the owner react.
+- Service calls are written inside a service directory so the framework can resolve them statically; shared library code takes callbacks instead.
+- Data ownership and the ORM: [ADR 0014](/adr/0014-data-ownership-and-orm).
+
+## Adding a service
+
+1. `pnpm new service <name> --description "<one sentence>"` (or `--repo <path>` for another monorepo).
+2. Fill `README.md`, `AGENTS.md` and its `## PII` table.
+3. Add a feature module under `src/modules/<key>/` and import it from the root module, group folders only as files appear.
+4. Run `pnpm install` then `pnpm verify`.
+
+## What enforces this
+
+| Rule                                                                                                                                  | Check                                                           | Status  |
+| ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------- |
+| Member files, PII heading, `tier:service` tag, catalog versions                                                                       | `stackra validate --repository`                                 | Yes     |
+| A package or app never imports a service                                                                                              | `turbo boundaries`, oxlint `boundaries.jsonc`                   | Yes     |
+| A service's `internal/`, `entities/` and `db` are private                                                                             | oxlint `boundaries.jsonc` (`services/**` rule)                  | Yes     |
+| v3: `stackra.config.ts` and the root module exist; v2 (until STA-344): `src/main.ts` and an existing `stackra.module`; no Encore file | `stackra validate --repository` (`checkService`, `isV2Service`) | Yes     |
+| One `api()` per operation, `auth: true` default                                                                                       | planned: lint rule when Encore lands                            | No      |
+| Generated client has not drifted                                                                                                      | planned: `gen:client:check` in `pnpm verify`                    | No      |
+| Tenant isolation (RLS audit, `isolation.test.ts`)                                                                                     | planned: from the first tenant-owned table                      | No      |
+| Application secrets declared, never valued                                                                                            | [Secrets](/constitution/secrets) checks (partly planned)        | Partial |

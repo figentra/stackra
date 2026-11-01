@@ -1,0 +1,120 @@
+---
+title: "Roster"
+description: "The agents that work in this repository: tier, model, whether they block, and what each owns."
+icon: "users"
+---
+
+Every role is defined in this repository under `.agents/agents/`, and the roster is [ADR 0258](/adr/0258-agent-roster-v2-and-skill-fencing) (roster v2). The `sdlc` plugin is retired here ([ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear) D3). Each agent file is the source of truth for its own checks; this page is the map.
+
+## Tiers and models
+
+An agent declares a **tier**, never a model. `.agents/models.yaml` maps each tier to a model per assistant, so a model change is one edit (ADR 0193).
+
+| Tier     | Claude | OpenCode | Used for                                                 |
+| -------- | ------ | -------- | -------------------------------------------------------- |
+| lead     | Opus   | —        | The main session and the incident commander              |
+| guardian | Opus   | —        | Blocking gates                                           |
+| reviewer | Sonnet | —        | Advisory reviews; escalate to Opus on a disputed finding |
+| executor | Sonnet | Kimi K3  | Builders that write code, tests or specs                 |
+| steward  | Haiku  | Kimi K3  | Mechanical sweeps                                        |
+
+Fable is used only for ADR and constitution reversals and deep audits. OpenCode receives only steward and executor agents ([ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear) D10), and an agent marked `assistants: [claude]` never reaches it: `secret-manager`, `compiler-engineer`, `data-engineer`, `infra-engineer` and `spec-writer` are Claude-only because each touches change risk R3 or a generated contract. If a cheaper tier produces a wrong result, escalate one tier for that task rather than editing the agent.
+
+## Who blocks
+
+1. **Where enforcement and prose disagree, the enforcement is the fact.** If a charter and the check disagree, the charter is the bug.
+2. **Never report a stage complete on the strength of a gate that could not have observed it.** Say what was and was not run.
+3. **No agent both writes a change and holds the blocking verdict on it.** `test-engineer` writes tests; the Quality Gate blocks on a red suite.
+
+A human approves every release and every production promotion. No agent promotes to production.
+
+## Roster
+
+### Lead
+
+| Agent                | Model | Owns                                                                                                          |
+| -------------------- | ----- | ------------------------------------------------------------------------------------------------------------- |
+| the main session     | Opus  | Classify (lane, change risk), brief, delegate, adjudicate analyze, keep Linear in state, merge via `pr:merge` |
+| `incident-commander` | Opus  | Pipeline, release and leaked-secret incidents; post-mortems and runbooks                                      |
+
+### Guardians (block)
+
+| Agent                       | Blocks on                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| `architecture-guardian`     | Placement, tier direction, module layout, the not-built-yet list, a decision with no ADR      |
+| `security-tenancy-reviewer` | Auth, IAM, tenancy and RLS, secrets, webhooks, SSRF, personal data in logs, events and errors |
+| `release-operations`        | CI, the version pull request, publishing, promotion readiness, mobile and desktop trains      |
+
+### Executors (write)
+
+| Agent                 | Owns                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `package-builder`     | One package change; the default executor for spec tasks in packages                               |
+| `compiler-engineer`   | `stackra gen` and the CLI in `packages/developer`; the only reader of the fenced Encore reference |
+| `service-builder`     | One service change: modules, actions, queries, listeners, workflows                               |
+| `data-engineer`       | Models, `@stackra/database`, migrations and their safety rules, RLS policies, seeds               |
+| `frontend-builder`    | The console and web experience packages: panel resources, pages, widgets                          |
+| `desktop-pwa-builder` | PWA and Electron targets, `@stackra/platform`, peripherals, client storage, offline               |
+| `mobile-builder`      | `apps/mobile` and EAS profiles                                                                    |
+| `infra-engineer`      | Pulumi components, `runway.yaml`, edge, reusable workflows; previews only                         |
+| `test-engineer`       | Tests at every tier, isolation tests, Playwright with axe, Maestro                                |
+| `spec-writer`         | Flow spec documents for one Linear issue; lists open questions, decides none                      |
+| `secret-manager`      | `pnpm secrets:import` from the secrets inbox; never sees a value                                  |
+
+### Reviewers (advise)
+
+| Agent                    | Blocks?                                                   | Owns                                                              |
+| ------------------------ | --------------------------------------------------------- | ----------------------------------------------------------------- |
+| `code-reviewer`          | No; its `AI-REVIEW` verdict gates `pr:merge`              | Correct, simple, reused, right altitude                           |
+| `api-contract-reviewer`  | No; escalates to the guardian                             | Action and event contracts, envelope, ids, MCP exposure, versions |
+| `accessibility-reviewer` | No; axe in the end-to-end tier fails critical and serious | WCAG 2.2 AA, web and native, LTR and RTL                          |
+| `performance-reviewer`   | No                                                        | The quality budgets and query cost                                |
+| `design-brand-reviewer`  | No                                                        | Reuse first, tokens only, brand rules                             |
+
+### Stewards (sweep)
+
+| Agent                     | Owns                                                                        |
+| ------------------------- | --------------------------------------------------------------------------- |
+| `code-standards-steward`  | Naming, kind folders, imports, barrels, package entries and exports, errors |
+| `dependency-steward`      | Catalogs, advisories, licences, mise pins, Renovate, vendored skills        |
+| `docs-adr-steward`        | ADRs, their index and navigation                                            |
+| `docs-changesets-steward` | Changesets on the fixed version line                                        |
+| `i18n-steward`            | Keys, RTL, locale data; reports only                                        |
+
+## Review chain
+
+Every builder's change goes to `code-reviewer`, then the domain reviewer its charter names, then the guardian its change risk triggers: `architecture-guardian` at R2 (a public contract, a new member or dependency), `security-tenancy-reviewer` at R3 ([ADR 0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk)). The Quality Gate runs, and the lead merges only after an independent `AI-REVIEW: PASS`.
+
+## Routing
+
+`.agents/routing.yaml` maps a task type to an executor, model and agent; `pnpm delegate` reads it. A route that sends an agent to OpenCode when the agent is not projected there fails `pnpm agents:check`.
+
+| The work                                                            | Goes to                                                                                            |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Adds a member or dependency, crosses a tier, or reverses a decision | `architecture-guardian` before anyone builds                                                       |
+| A package change                                                    | `package-builder`                                                                                  |
+| The generator, the CLI, anything that emits Encore                  | `compiler-engineer`                                                                                |
+| Backend behaviour in a service                                      | `service-builder`                                                                                  |
+| A model, table, migration or RLS policy                             | `data-engineer`, then `security-tenancy-reviewer`                                                  |
+| A web screen or panel resource                                      | `frontend-builder`, then `design-brand-reviewer`, `accessibility-reviewer`, `performance-reviewer` |
+| A PWA, desktop, device or offline change                            | `desktop-pwa-builder`                                                                              |
+| A mobile screen or EAS profile                                      | `mobile-builder`                                                                                   |
+| Pulumi, `runway.yaml`, workflows                                    | `infra-engineer`, then `release-operations`                                                        |
+| Tests, isolation tests, flaky tests                                 | `test-engineer`                                                                                    |
+| A spec, plan or task list                                           | `spec-writer`, then `/flow-analyze` and the lead                                                   |
+| Changes an action, event or MCP contract                            | `api-contract-reviewer`                                                                            |
+| Touches auth, secrets, tenancy, payments, files or webhooks         | `security-tenancy-reviewer` (gate)                                                                 |
+| Versions, advisories, licences, skills                              | `dependency-steward`                                                                               |
+| A secret value to set                                               | `secret-manager`                                                                                   |
+| CI, release, promotion                                              | `release-operations`                                                                               |
+
+## Not created
+
+- `delivery-orchestrator`, `docs-governance` and `spec-planner` fold into the lead (ADR 0121 D9).
+- `spec-executor` is not ported: the builders implement spec tasks (ADR 0258).
+- `package-steward` is folded into `code-standards-steward` (ADR 0193).
+- `sql-reviewer` and `privacy-officer` are deferred to the first tenant-owned table that holds personal data; until then `security-tenancy-reviewer` and the migration lint cover them.
+- A read-only auditor is the built-in `Explore` agent.
+- A design agency (director, senior designer, design engineer) was judged too heavy; one non-blocking `design-brand-reviewer` plus the design skills replaces it.
+
+Related: [Working with agents](/agents/index), [Skills](/agents/skills), [Spec lifecycle](/agents/spec-lifecycle).

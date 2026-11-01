@@ -1,0 +1,101 @@
+---
+title: "0284 — Hosted static files: one Cloudflare static-assets Worker member at static.stackra.figentra.com"
+description: "Accepted · 2026-10-22"
+---
+
+<Note>
+  Builds on [0175](/adr/0175-edge-domains-and-tls) (Cloudflare proxies every public hostname; the
+  product domain is `stackra.figentra.com`),
+  [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) (Infisical is the source
+  of every production secret) and
+  [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) (zones and DNS belong
+  to the core Pulumi stack). Adds the member root `workers/` to the layout of
+  [0001](/adr/0001-monorepo-layout) and the tier rules of
+  [0003](/adr/0003-tier-dependency-direction). Records a temporary carve-out from
+  [0168](/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml) for one
+  hand-written `wrangler.jsonc`.
+</Note>
+
+## Context
+
+Stackra needs public, stable URLs for files it publishes, starting with the JSON Schemas of its config files
+(STA-305: `runway.yaml`, `stackra.lock.yaml`, `.mcp.yaml`, branch protection), so editors and SchemaStore can resolve
+each schema's `$id`. Later the same need covers CDN files and install scripts. Two Stackra hosts already live under
+`stackra.figentra.com` on the `figentra.com` zone: `docs.` (a Mintlify custom hostname) and `npm.` (the `npm-registry`
+Worker), so a third host follows an existing pattern. The owner decided on 2026-10-22: the domain is
+`stackra.figentra.com` (not `stackra.dev`); one host, `static.`, serves every kind of static file; the code stays in this
+monorepo under a new `workers/` folder; Wrangler deploys from CI; and a Worker Custom Domain issues the certificate for
+the two-level hostname itself, so no Advanced Certificate Manager is bought. Alternatives weighed: a separate
+repository (rejected by the owner), a host per kind such as `schemas.` (rejected by the owner: one Worker, one host),
+Cloudflare Pages (Workers static assets is Cloudflare's current path and reads `_headers` the same way) and R2 behind a
+Worker (a bucket to manage and no atomic deploy, for a few hundred kilobytes).
+
+## Decision
+
+1. **A `workers/` member root.** Cloudflare Worker members live in `workers/<name>`, are pnpm workspace members, are
+   named `@figentra/worker-<name>` and reuse the app tier, `tier:app`: a Worker is deployed and sits at the top of the
+   graph like an app, so no new tier tag or boundary is needed. They follow every app rule (README, AGENTS with PII,
+   CHANGELOG, UNLICENSED with no LICENSE, `src/`, tests in `__tests__/`).
+2. **One Worker, one host, one segment per kind.** Every hosted static file is served by one Cloudflare Worker with
+   static assets only, `stackra-static`, built by `workers/static` (`@figentra/worker-static`), at
+   `static.stackra.figentra.com`. Each kind of file has its own first path segment; the first kind is `/schemas/`. A
+   new kind adds a segment to this member, not a new member, Worker or host.
+3. **Schema paths come from `$id`.** The sources are `tools/schemas/*.schema.json`. A schema's `$id` must be
+   `https://static.stackra.figentra.com/schemas/<name>.json`; that path is its moving address and equals `main`. The
+   site also serves `/schemas/latest/<name>` (the same content), `/schemas/v<major>/<name>` (the newest release of
+   that major, moving) and `/schemas/<x.y.z>/<name>` (one release, immutable), plus `/schemas/index.json` listing every
+   latest schema and every release. Every copy carries its own URL as `$id`, so a pinned copy never resolves
+   references against `latest`. Below `/schemas/` the first segments `latest`, `v<n>`, `<x.y.z>` and `index.json` are
+   reserved.
+4. **Releases are git tags.** A schema release is the tag `schemas@<x.y.z>` on a commit of `main`. Every build
+   rebuilds every release from its tag, because a Workers assets deploy replaces the whole asset set. A `schemas@*` tag
+   is never moved or deleted; that is what makes a versioned path immutable.
+5. **Headers.** A generated `_headers` file sends `Access-Control-Allow-Origin: *` on every path and
+   `Cache-Control: public, max-age=31536000, immutable` on each `/schemas/<x.y.z>/*` tree. Moving paths keep
+   Cloudflare's default, `public, max-age=0, must-revalidate` with an ETag: short enough that a change is visible on the
+   next request. Cache-Control is never set on a broader rule, because Cloudflare joins the values of every matching
+   rule. There is no Worker script while `_headers` can express the rules.
+6. **Deploy only from CI.** `.github/workflows/deploy-static.yml` runs `wrangler deploy` on a push to `main` that
+   touches the member or `tools/schemas/`, on a pushed `schemas@*` tag that is reachable from `main`, and by hand. It
+   runs in the GitHub environment `static`. Nobody, human or agent, runs `wrangler deploy` from a workstation.
+7. **Credentials.** The Cloudflare API token is `CLOUDFLARE_API_TOKEN` in Infisical, environment `prod`, path `/ci`,
+   fetched for the job through GitHub OIDC by an Infisical machine identity whose id is the repository variable
+   `INFISICAL_CI_IDENTITY_ID`. It is never a repository secret. Its scopes are Account · Workers Scripts · Edit and
+   Zone · Workers Routes · Edit on `figentra.com`, nothing more. While the identity does not exist, the job builds,
+   tests, prints a notice and skips the deploy. The account id is in `wrangler.jsonc`: it identifies, it does not grant.
+8. **Carve-out from generated config.** `workers/static/wrangler.jsonc` is hand-written. Workers config is meant to
+   come from `runway.yaml` through `stackra gen` (0168); until that generator exists, this one file is allowed. When it
+   lands, the member gets a `runway.yaml` and the hand-written file is deleted in the same change.
+9. **DNS ownership.** The Custom Domain creates its own DNS record and certificate today. When the core Pulumi stack
+   (0171 decision 6) takes over the `figentra.com` zone, it adopts that record; the Worker and its assets stay with
+   this member.
+
+## Consequences
+
+- One deploy publishes every hosted file, atomically; a broken schema fails the build before anything is uploaded.
+- The schemas get permanent URLs that SchemaStore and editors can rely on, with exact versions cacheable forever.
+- `_headers` caps a Worker at 100 rules, one per schema release here: roughly 99 releases before old versions must
+  move behind one prefix rule or a Worker script sets the header. The builder fails loudly before the cap.
+- `workers/` is a fourth member root: the validator, doc-standard, knip, the oxlint boundaries and the workspace rules
+  name it.
+- Cutting a schema release is a manual tag until the release workflow creates it; that chore is the owner's.
+- The owner creates the token, the Infisical identity, the repository variable and the `static` environment once
+  (`workers/static/README.md`, "Owner prerequisites").
+
+## Enforcement
+
+- `tools/scripts/validate-repository.mjs`: `tierFor` and `expectedName` give `workers/*` the tier `tier:app` and the
+  name `@figentra/worker-<dir>`; `MUST_STAY_JSONC` admits `wrangler.jsonc` as the one Wrangler config form.
+- `workers/static/src/site/parse-schema.ts` rejects a schema whose `$id` names another host, lies outside `/schemas/`,
+  has no `.json` path or uses a reserved segment; `read-schema-releases.ts` rejects a malformed `schemas@*` tag;
+  `render-headers.ts` fails past the rule cap. Their tests in `workers/static/src/site/__tests__/` run in the Quality
+  Gate.
+- `.github/workflows/deploy-static.yml` holds the only deploy, checks that a release tag is on `main`, and reads the
+  token through OIDC.
+- `gitleaks` scans for a committed token. planned — the `static` environment's branch and tag restriction is applied by
+  the Pulumi GitHub provider (0171 decision 8); the immutability of `schemas@*` tags by a GitHub tag ruleset.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: Linear STA-322 and the owner's decisions in chat, 2026-10-22; Cloudflare documentation for
+Workers static assets (`_headers`), Custom Domains (certificates) and Workers API token permissions.

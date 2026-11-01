@@ -1,0 +1,180 @@
+---
+title: "0496 — Settings is a foundation package, each module declares its own group, a device level, and every UI configuration is a runtime setting"
+description: "Accepted · 2026-10-31"
+---
+
+{/* Stackra file contract: Purpose: the decision record that @stackra/settings moves to the foundation category with no ui or icons dependency, that its forms move to a new @stackra/settings-ui, that each module declares its own settings group (identity owns `account`, theming owns `appearance`, `motion` and `accessibility`, panel owns `layout` and `help`, shortcuts owns `shortcuts`), that a device level and client-side resolution are added, that the identity service stores every person-preference group, that every UI configuration is a runtime setting editable from the dashboard, and that themes built in Theme Studio are tenant or platform records. Boundary: decision text only; the code is @stackra/settings, @stackra/settings-ui, @stackra/identity, @stackra/theming, @stackra/panel, @stackra/shortcuts and gen (STA-1371). Runtime: docs. Governing contract: ADR template; ADR 0003, 0044, 0077, 0080, 0108, 0127, 0146, 0192, 0213, 0294, 0302, 0307, 0320, 0359, 0370, 0420. */}
+
+<Note>
+  Accepted 2026-10-31 by the owner: "all accepted merege and proceed" (STA-1371); owner direction
+  and answers of 2026-10-31. Amends [0108](/adr/0108-scoped-settings) S1 and S9,
+  [0213](/adr/0213-settings-v2-cascade-flags-as-a-kind-yaml-packs-and-revisions) decision 2,
+  [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards) rules 22 and
+  24, and [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (the 2026-10-29 note
+  on text size). Adds a note to [0080](/adr/0080-i18n-is-the-figentra-i18n-port). Under
+  [0003](/adr/0003-tier-dependency-direction), moving a member between categories is an ADR; this is
+  that record.
+</Note>
+
+## Context
+
+`@stackra/settings` lives in `packages/state/settings` and depends on `ui` (only for the native `SettingsForm`),
+`icons` (only for the `SettingsNavigation` icon type), and `database` and `model` (only for `./node`). So `theming`, a
+light web client or a native app cannot use it, and no UI preference is a setting today: the colour scheme, language,
+digits, brand, transition and haptics live in MMKV on mobile, in `localStorage` in the playground, and in the `prefs`
+storage area in theming. `AccountSettings` (`account.locale`) is declared inside the settings package, which owns no
+domain. The owner: "settings package should be a foundation package for frontend and node … each service registers
+its settings … account … should be under identity or user", and "for any UI configurations make it dynamic config we
+can set from the dashboard", "and in the theme builder also". The design is
+`notes/design-system-research-2026-10-31/ui-settings-design.md`.
+
+## Decision
+
+**The split.**
+
+1. **Settings core is foundation.** `@stackra/settings` moves to `packages/foundation/settings` and keeps its name and
+   its `.`, `./contracts`, `./testing` and `./node` entry points. The core depends only on foundation members
+   (`contracts`, `container`, `errors`, `validation`, `i18n`, `market-packs`) plus `zod` and `yaml`. It never imports
+   `@stackra/ui` or `@stackra/icons`: `SettingsNavigation.icon` is an icon-name string, and gen checks the name.
+2. **`./node` keeps the Postgres drivers**: `StoredSetting`, the value and revision stores, the migrations, and
+   `settingsDiff` and `settingsApply`. `@stackra/database` and `@stackra/model` are optional peer dependencies used only
+   by `./node`, so a web or native install pulls neither.
+3. **`./react` holds hooks only** (`useSettings`, `useSettingsStore`), with React as an optional peer.
+4. **The forms move to `@stackra/settings-ui`**, a new experience member at `packages/experience/settings-ui` with
+   `./react` (web) and `./native`: the generic `SettingsForm`, the generic settings route, the Preferences hub, the lock,
+   provenance and entitlement badges, and the option-source registry. It depends on `settings`, `ui`, `i18n`, `icons`
+   and `navigation`.
+
+**Group ownership.**
+
+5. **The settings package declares no group.** Each group is declared by the module that owns what its values mean, in
+   `<module>.settings.ts` (0307 rule 22, 0294):
+
+   | Group                                                              | Declared by                                                                   |
+   | ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+   | `account` (locale, numerals, calendar, time zone, region, formats) | `@stackra/identity`                                                           |
+   | `appearance`, `motion`, `accessibility`                            | `@stackra/theming`                                                            |
+   | `layout`, `help`                                                   | `@stackra/panel`                                                              |
+   | `shortcuts`                                                        | `@stackra/shortcuts`                                                          |
+   | Each service's business groups                                     | that module, unchanged                                                        |
+   | Notification preferences                                           | the notifications service (0213 decision 8), linked from the hub, not a group |
+
+6. **`AccountSettings` moves to `@stackra/identity`** and keeps the group key `account` and the path
+   `account.locale`, so stored rows (`stored_settings.group_key = 'account'`) are not rewritten. It gains the Tenant
+   scope and the additive keys `numerals` (default `latn`, 0192), `calendar`, `hourCycle`, `dateStyle`,
+   `firstDayOfWeek`, `timeZone`, `region` and `currencyDisplay`.
+7. **One owner per group key.** Gen fails with `settings_group_conflict` when two members declare the same group key.
+8. **Plain types stay where they are.** `tokens` and `ui` expose plain preference types (`ColorScheme`, `MotionLevel`,
+   `MaterialMode`, density) and take values as props. `ui` never imports settings; theming bridges the two.
+
+**Key types and controls (amends 0307 rule 22).**
+
+9. `SettingType` gains `Choice` (a closed `options` list, emitted by gen from an enum field, with option labels at
+   `<module>::settings.<path>.options.<value>`) and `List` (an array of strings, optionally constrained to an option
+   list). Gen refuses a field type it cannot map instead of dropping it. An option list may be dynamic through a named
+   option source (`theming.presets`, `theming.themes`); the server still validates the stored value. `@Setting` takes a
+   closed `control` hint (`hue`, `swatch`, `preview`).
+
+**The device level and client resolution (amends 0213 decision 2).**
+
+10. **Device level.** `SettingScope.Device` is the innermost level, after User. A device value is stored only on the
+    client and the server ignores it. The cascade is: default, platform, product, ancestor tenants, tenant, nodes,
+    user, device. Locks and floors of every outer level apply to it.
+11. **Per device, or per account (owner Q3).** `appearance.colorScheme`, `appearance.material`,
+    `appearance.transition`, `appearance.density` and `motion.haptics` are written at Device by default. Every other
+    person key is written at User. A "Use on all my devices" action copies the device values of a group to User. A
+    page writes each field at its innermost allowed level (`SettingsPage` gains a per-field write level).
+12. **Client resolution.** A client driver in the settings core resolves over the bootstrap snapshot (the merged outer
+    layers with their locks, then the user's layer), then the device layer, with the same `mergeSettingLayers` and
+    schema parse as the server, so a locked key stays locked offline. It takes a structural `{ get, set }` handle, which
+    `@stackra/storage`'s `prefs` area satisfies, so the core never imports storage. The last snapshot per host and user
+    is cached and read synchronously before the first frame; before sign-in the client uses the defaults, then the
+    host's public bootstrap (tenant values and locks, no user), then the device layer. Sign-out drops the user layer and
+    keeps the device layer.
+13. **Live.** A User write calls the owning module's generated `settings.update` and applies optimistically. Every write
+    and every `settings.changed.v1` (0108 S7) received over realtime notifies subscribers. Theming's `ThemeBridge`
+    feeds `DesignSystemProvider` and `I18nProvider` from the resolved values, re-derives the theme and plays the
+    transition. Nothing reloads.
+14. **Floors from holders (amends 0213).** A floor may be declared by a holder (platform or tenant) as well as by a
+    market pack (0370): "may force on, never off" for the `accessibility.*` switches and `motion.level` (never higher
+    than the floor). A tenant may raise a platform floor, never lower it. OS flags (reduce motion, increase contrast,
+    reduce transparency) are combined on the client; settings store only the person's choice.
+
+**Where person preferences are stored (amends 0108 S1 and S9, owner Q2).**
+
+15. A group declared by a package is stored by the service that mounts that package's module. In Figentra OS the
+    identity service mounts `account`, `appearance`, `motion`, `accessibility`, `layout`, `help` and `shortcuts`, so
+    one bootstrap returns every person-preference group with its locks.
+
+**Every UI configuration is a runtime setting (the dynamic-config rule).**
+
+16. Anything that configures UI is a setting at Platform or Tenant (and lower where it makes sense), lockable and
+    editable from the dashboard, and applies live with no deploy. This moves out of deploy-time `@stackra/config`:
+    the `ThemingConfig` values (theme, default and offered schemes, logo and brand, the tenant colour switch,
+    `maxFontScale`), the offered locales and default numerals, the allowed presets and themes, the material and motion
+    defaults, and the transition. A deploy-time `ThemingConfig` or `I18nConfig` value becomes the packaged default of
+    the matching setting during the transition and is then removed.
+17. **Deploy-time config keeps only infrastructure**: what needs a rebuild or is the same for every scope of a
+    deployment and is not a UI choice: bundled fonts and assets, icons, splash and web manifest files, the identity
+    flow and device client, endpoints and credentials (credentials are never settings, 0307 rule 23).
+18. **Defaults (owner Q4).** `appearance.transition` defaults to `circle-origin` (the circle from the tap) and falls
+    back to `fade` under Reduce Motion. `appearance.material` defaults by theme family: front themes are `glass`;
+    studio themes are `solid` with `glass` on overlays.
+
+**Text size (amends 0302, owner Q1).**
+
+19. `appearance.textScale` (number, 0.85 to 1.6, default 1) is an in-app text-size setting that multiplies the
+    device's own scale (Dynamic Type or the browser zoom) and never replaces it. The effective cap is the
+    `appearance.maxFontScale` setting (Platform, Product, Tenant; lockable; replaces `ThemingConfig.maxFontScale`).
+    The 0302 note's "no in-app text-size setting" is withdrawn; the rest of that note stands.
+
+**Themes from Theme Studio are records (owner: "and in the theme builder also").**
+
+20. A theme built in Theme Studio is data: a `ThemeDocument` that the tokens v2 schema validates. A custom theme is a
+    named record owned by a tenant, or by the platform for a shared theme, with append-only revisions and a publish
+    step. Settings revisions version one key's value, not a named document, so they do not fit. Theming gains a small
+    theme-records store (`ThemeRecordStore` port, memory driver, a Postgres driver in `./node`): `{ id, name, owner,
+draft, publishedRevision, revisions }`. Publishing honours the same four-eyes approval as the `appearance.theme`
+    key at that holder (0213 decision 5) and emits `settings.changed.v1` for the `appearance` group.
+21. `appearance.theme` is a choice over the built-in presets and the saved theme ids visible to the holder (option
+    source `theming.themes`). `appearance.allowedThemes` (a List, Platform, Product, Tenant, lockable) restricts what
+    users may pick; a stored choice that is no longer allowed reads as the holder's default, as the entitlement
+    fallback of 0420 does. A published theme applies live through the theme bridge's live-apply function.
+22. **Admin-only keys** (Platform, Product, Tenant): `appearance.brand`, `appearance.neutral.*`,
+    `appearance.allowedThemes`, `appearance.schemes`, `appearance.maxFontScale`, `account.locales` (the offered
+    locales). Per-tenant brand stays Pro (0077): the keys are free code, and the Tenant level exists only where tenancy
+    is installed.
+
+**Pages (amends 0307 rule 24).**
+
+23. Gen collects groups from the member's own modules and from every consumed manifest, emits `SettingsPages` (an admin
+    page per group at Tenant, or Platform in the console, and a person page at User and Device), registers one
+    generic route per page (`/settings/<group>`, and `/preferences/<group>` for person pages) and a Preferences hub,
+    all rendered by `@stackra/settings-ui`'s `SettingsForm`. No settings page is written by hand. Quick switchers may
+    stay hand-built but read and write only through `useSettings`.
+
+## Consequences
+
+- Any web, native or node member can declare and read settings; ui stays settings-free.
+- A new module's group appears in the dashboard and the Preferences hub with no frontend change.
+- Theming, identity, panel and shortcuts gain a dependency on `@stackra/settings`.
+- Stored `account` rows keep working. Mobile MMKV and playground `localStorage` keys migrate once at launch
+  (`migrateDisplayPrefs`), and the native transition becomes the string id everywhere.
+- `ThemingConfig` and `I18nConfig` shrink to infrastructure over a transition; until then their UI values are only the
+  packaged defaults.
+- Chores: the theme-records store and its Postgres migration, the realtime subscription, and the console pages for
+  floors and allowed themes.
+
+## Enforcement
+
+- `settings_group_conflict` in gen (`tools/gen`), failing when two members declare one group key.
+- Gen refuses an unmappable settings field type (`settings_unsupported_type`).
+- Boundaries: the core entry points of `@stackra/settings` may not import `@stackra/ui`, `@stackra/icons`,
+  `@stackra/database` or `@stackra/model` (`pnpm boundaries`).
+- planned — a gen check that no `ThemingConfig` or `I18nConfig` field configures UI once the transition ends.
+- planned — the client and server resolve-identically test (peer session).
+
+## Supersedes and sources
+
+Supersedes: none. Amends: 0108 S1 and S9, 0213 decision 2, 0302 (the 2026-10-29 note on text size), 0307 rules 22 and 24. Notes: 0080. Sources: `notes/design-system-research-2026-10-31/ui-settings-design.md`; owner answers Q1 to Q4 and
+the dynamic-config and theme-builder directions, 2026-10-31.

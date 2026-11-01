@@ -1,0 +1,66 @@
+---
+title: "0342 — Gapless sequences, allocated at commit, per tenant and series"
+description: "Accepted · 2026-10-24"
+---
+
+<Note>
+  Reads with [0097](/adr/0097-model-and-database-packages) (the database package),
+  [0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules) (migrations) and
+  [0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps)
+  (documents issued offline).
+</Note>
+
+## Context
+
+Invoices, receipts, legal filings and ledger entries need numbers that have no gaps and are never reused, per tenant and
+per series, and tax authorities check the gaps. A Postgres `SEQUENCE` is not gapless: a rolled-back transaction burns a
+number. Products have each written their own counter table, and a retail edition also needs numbers for documents
+issued on an offline till and submitted later. The owner locked the legal product's plan with this need on 2026-10-24,
+and the retail edition's e-receipts need the same primitive.
+
+## Decision
+
+1. **A `Sequence` primitive in `@stackra/database`.** A module declares a sequence as a class that extends
+   `Sequence({ key })` in its `database/sequences/` group, in a `<name>.sequence.ts` file ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 13 as amended the same day). Its scope is the tenant plus the series dimensions the module
+   names (`series: ["legalEntityId", "locationId"]`), and its format is a pattern (`"INV-{year}-{n:06}"`) with a reset
+   rule (`never`, `yearly`).
+
+2. **Allocated at commit.** A number is taken inside the transaction that writes the document, from a per-scope counter
+   row locked for the transaction, so a rolled-back write takes no number and two commits never share one. The
+   allocation is the last step before commit, so the lock is held briefly.
+
+3. **Never reused.** A document's number is immutable. A cancelled document keeps its number and is cancelled by a
+   later document that references it; nothing renumbers.
+
+4. **Reservation blocks for offline issue.** A device that issues documents offline
+   ([0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps)) holds a
+   reserved block per series (`reserve: { size }`), taken at sync time; the documents it issues take numbers from the
+   block in order, and an unused remainder is returned on the next sync or, when a device is wiped, recorded as voided
+   numbers with the reason, so the gap is explained and audited. Numbers from blocks are issued in block order, not
+   in date order across devices; a series whose law requires strict date order declares `reserve: false` and issues
+   online only, or adds the device as a series dimension, and the product's own record says which.
+
+5. **One primitive, no per-product counters.** A module never writes its own counter table. A product that needs a
+   series the primitive cannot express extends the primitive in `@stackra/database`, with an ADR.
+
+## Consequences
+
+- A tax audit of a series finds every number, in block order, each either a document or an explained void.
+- Offline tills issue legal numbers without the network, and the audit trail says which block they came from.
+- A hot series serialises on its counter row for the duration of the commit; a product that needs more throughput adds
+  a series dimension, not a second counter.
+
+## Enforcement
+
+- planned — a conformance test in `@stackra/database`: concurrent commits on one series produce consecutive numbers, a
+  rolled-back commit leaves no gap, and a wiped device's unused block appears as voids.
+- planned — gen (STA-340): a model field marked as a document number without a `Sequence` fails; a migration that
+  creates a Postgres `SEQUENCE` for a document number fails.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0097](/adr/0097-model-and-database-packages),
+[0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules) and
+[0338](/adr/0338-offline-queue-completed-per-device-order-sealed-payloads-bounded-replicas-revoke-and-caps). Sources: the
+owner-locked plan of the legal product and the retail edition's invoicing needs, 2026-10-24 (STA-456, STA-451),
+restated in this ADR's own words.

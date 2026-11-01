@@ -1,0 +1,35 @@
+---
+title: "0222 — Files and media: storage drivers, uploads, scanning and public assets"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Supersedes [0034](/adr/0034-object-storage-malware-scan-limits). Media builds on the
+  `@stackra/filesystem` drivers of ADR 0234.
+</Note>
+
+## Context
+
+[0034](/adr/0034-object-storage-malware-scan-limits) (Proposed) set object storage and scanning limits without the key layout, the upload path or the public-asset rule. The owner's file answers F1 to F8 and DA3, DA4 (mem L692–701, L532, 2026-10-20) fix them.
+
+## Decision
+
+1. **Storage (F1).** Shared buckets per region and environment. Keys have the form `t/<tenantId>/<fileId>/<version>`. Server-side encryption uses the KMS key and the tenant key (ADR 0188). Drivers exist for S3, R2, MinIO, Azure, GCS, local disk and Postgres bytea. A bring-your-own bucket is an entitlement tier.
+2. **Uploads (F2).** Presigned, multipart and tus uploads. Services never stream the bytes. A malware scan runs before a file is available: ClamAV on-premises, a cloud scanner in SaaS.
+3. **Public assets (DA3).** After the scan and publish, a public CDN bucket serves the file.
+4. **Variants (DA4).** Image variants are made by sharp, in queue jobs.
+5. **Processing (F5)** and **retention and trash (F7)** follow the processing drivers and the retention rules of ADR 0189.
+6. **Out of scope here.** Records, sharing, documents and tools (F3, F4, F6, F8) are OS items.
+
+## Consequences
+
+- A file in a tenant bucket is unreadable by another tenant even with a valid key, because the key carries the tenant id and the encryption uses the tenant key.
+- An unscanned file is never served.
+
+## Enforcement
+
+planned — the scan gate is a state check before a file URL is issued; the key layout is checked by the storage tests.
+
+## Supersedes and sources
+
+Supersedes: [0034](/adr/0034-object-storage-malware-scan-limits). Sources: owner file answers F1–F8, DA3, DA4 (`stackra-decisions-2026-10-19.md` L105, L532, L692–701, 2026-10-20). Closes gaps B32 and C38.

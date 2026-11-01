@@ -1,0 +1,56 @@
+---
+title: "0381 — Refusal codes live_read_only and approval_required, and the live-configuration option names"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It amends [0137](/adr/0137-declared-action-options-and-refusal-codes)
+  decisions 2 and 3 (two more refusal codes, which 0137 says need an ADR) and settles
+  [0359](/adr/0359-modes-and-configuration-environments-display-modes-sandbox-promotion-and-live-records)
+  open question 5 (names). It answers the wave 10 runtime builder's questions 2 and 3 and the
+  settings builder's questions 2 and 3.
+</Note>
+
+## Context
+
+Wave 10 raised two refusals that 0137 does not list. `LiveReadOnlyError` (`live_read_only`, in `@stackra/errors`) is
+raised when an action declared `structural: true` runs where live configuration is read-only (0359 decision 3).
+`ApprovalRequiredError` (`approval_required`, in `@stackra/actions`) is raised when the approval step parks a call
+(0098 decision 3). `@stackra/settings` raised its own `setting_live_read_only` for the same rule on a setting, because
+the code comes from the class name. 0359 left the option names open.
+
+## Decision
+
+1. **`live_read_only`.** A write to structural configuration where live is read-only refuses with `live_read_only`,
+   kind `Conflict` (409), not retryable, no details. It is one code for actions and settings:
+   `@stackra/settings` raises `LiveReadOnlyError` from `@stackra/errors` and drops `setting_live_read_only`.
+2. **`approval_required`.** A call the approval step parks refuses with `approval_required`, kind `FailedPrecondition`
+   (412), not retryable as it is, with one detail, `approvalId`. The caller resubmits the same call with that id once
+   it is granted. Nothing of the input travels in the refusal.
+3. **Option names.** An action that changes structural configuration declares `structural: true` in `Action({...})`;
+   a setting field that is live-editable declares `@Setting({ live: true })`, one essential for normal mode
+   `@Setting({ essential: true })`, and one bounded by a pack floor `@Setting({ floor: "<pack key>" })`. These names
+   are final.
+4. **The guard is a port.** `LiveConfigurationGuard` (`@stackra/actions/contracts`) answers whether live is read-only
+   for the call's scope and whether a break-glass grant is open; the tenancy package binds it. A structural action
+   with no bound guard is an error, never an allowed write.
+5. **Values.** None of these is data: the codes and option names are mechanism. Which keys are live or structural is
+   declared in code per kind (0359 decision 5); who may break glass is a permission, and whether a change needs
+   approval is a rule set evaluated by the `ApprovalGate` driver.
+
+## Consequences
+
+- Clients branch on two more stable codes; a sandbox banner and an approval card can key on them.
+- One code for a read-only live write, whichever package refused it.
+
+## Enforcement
+
+planned — gen's refusal-code list (0137 enforcement) gains both codes; the `@stackra/errors` and `@stackra/actions`
+tests already fix their kinds.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, when accepted: 0137 decisions 2 and 3; settles 0359 open question 5. Sources:
+`notes/handover/build-wave10-2026-10-25.md` (runtime builder, questions 2 and 3; settings builder, questions 2 and 3);
+`packages/foundation/errors/src/core/errors/live-read-only.error.ts`;
+`packages/application/actions/src/core/errors/approval-required.error.ts`.

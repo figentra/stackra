@@ -1,0 +1,75 @@
+---
+title: "0237 — The API gateway is generated, in four layers, with no gateway service"
+description: "Accepted, amended by 0290, 0297, 0325, 0334 · 2026-10-20 · amended 2026-10-24 (STA-428) · amended 2026-10-24 (STA-417)"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-417), for the runway v3 schemas of stackra#136: the generated gateway
+  reads the names of the secrets it needs from `secrets.gateway` in the root `runway.yaml`
+  ([0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups) as amended the same day), so
+  the gateway code holds no secret name of its own. The four layers stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 7): the API
+  host answers JSON only. Its root is a small index document, and an unknown route returns the error
+  envelope of 0140 with `not_found`, never HTML. A web host renders a React 404 route, and the
+  static host keeps its branded 404 page (0284). The four layers stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-428), by
+  [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) (rule 22): the
+  gateway applies that ADR's header rule. Every API response to a signed-in request, and every API
+  response that sets a cookie, is `private, no-store`, and the gateway sets it, so no app does.
+  Static assets and HTML are not API responses and follow rules 20 and 21 of 0325. The other
+  decisions stand.
+</Note>
+
+<Note>
+  Amended by [0290](/adr/0290-dev-environment-and-cloudflare-services) (decisions 6 and 11): layer 1
+  also puts Cloudflare Access in front of every non-production host, with GitHub sign-in and
+  per-path bypass for callbacks and webhooks, and in front of the `/platform` area and the internal
+  dashboards in production. Tenant admin stays behind ZITADEL alone.
+</Note>
+
+<Note>
+  Amends [0082](/adr/0082-public-ids-and-api-areas) and
+  [0118](/adr/0118-api-versioning-dormant-package). The gate chain it uses is
+  [0138](/adr/0138-pipeline-order-is-fixed). The rejection of a separate gateway product in
+  [0011](/adr/0011-rejected-and-deferred-technologies) stands.
+</Note>
+
+<Note>
+  Amended by [0297](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding),
+  decision 6: the web Worker forwards a W3C `traceparent`, a visitor address that it signs with an
+  HMAC, and `Sec-Purpose` to the API. The API verifies the signature before it uses the address. No
+  gateway service is added.
+</Note>
+
+## Context
+
+A gateway in front of the services was rejected in ADR 0011. The owner's answer on 2026-10-20 (mem L953) keeps that rejection and fills the gateway role with four generated layers, so no gateway service has to be written or run.
+
+## Decision
+
+1. **Edge (layer 1).** Cloudflare, configured from `runway.yaml` and Pulumi. It provides TLS, WAF, DDoS protection, bot control and a coarse per-IP rate limit. It routes the hosts `api.figentra.com/{public,app,admin,platform}`.
+2. **Encore gateway (layer 2).** `stackra gen` generates the Encore built-in gateway. It has one authentication handler that verifies ZITADEL tokens into an `Actor`, CORS per area, a request id, trace propagation, and path-to-service routing per topology (ADR 0169).
+3. **Per-endpoint middleware (layer 3).** Modules declare `@Middleware({ phase })` providers. An Explorer finds them, and they run in the order of their declared phase: version, tenant, limits, idempotency, and so on. The area gate chain (ADR 0138) runs here too, with audit on the admin and platform areas.
+4. **Action pipeline (layer 4).** Tenancy, then iam, then policy, then entitlement, then the transaction, then effects (ADR 0138 and 0136).
+5. **Manifest.** `app-manifest.json` lists every route, area, version and middleware chain (ADR 0158).
+
+## Consequences
+
+- No gateway service exists to run, scale or secure separately.
+- A route's full chain is visible in one file, so a reviewer sees what runs before a handler.
+
+## Enforcement
+
+planned — gen fails on a route with no area, and the middleware order is checked by the Explorer's conformance test (ADR 0144).
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0082](/adr/0082-public-ids-and-api-areas), [0118](/adr/0118-api-versioning-dormant-package). Builds on [0011](/adr/0011-rejected-and-deferred-technologies) (no gateway product).
+Sources: owner decision "API gateway (owner 2026-10-20 night): GENERATED, no gateway service" (`stackra-decisions-2026-10-19.md` L953, 2026-10-20).

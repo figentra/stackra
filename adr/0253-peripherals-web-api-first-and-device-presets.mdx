@@ -1,0 +1,56 @@
+---
+title: "0253 — Peripherals are Web-API first; native modules only on evidence; device presets"
+description: "Accepted, amended by 0339, 0345 · 2026-10-20"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-469) by
+  [0345](/adr/0345-native-code-generation-and-the-native-shared-layer) decision 11, under decision
+  3: the native modules approved are the watch connectivity bridge (with the watch companion, tier
+  next), the Wear OS data-layer bridge (later) and a window-posture module only if a layout needs
+  it, each generated or vendored and listed in the manifest. The till vendors' printer and scanner
+  modules stay the per-vendor ADRs that 0339 lists. Decisions 1 to 5 stand.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-451) by
+  [0339](/adr/0339-point-of-sale-peripherals-printers-labels-drawer-scanner-display-and-the-native-bluetooth-driver):
+  the peripheral ports are fixed (receipt printer with Arabic raster, ZPL label printer, cash drawer
+  through the printer, keyboard-wedge scanner, customer display, card terminal pairing), the drivers
+  per target are named, and the native Bluetooth printer driver is the first native module of
+  decision 3, approved by that ADR as decision 3 requires. Decisions 1 and 5 stand; decision 3 is
+  applied, not changed; decisions 2 and 4 are read with 0339.
+</Note>
+
+<Note>
+  Clarifies [0235](/adr/0235-devices-and-iot-minimal-now-full-later): peripherals are the client's
+  own hardware; devices are principals in identity.
+</Note>
+
+## Context
+
+Retail and attendance clients need local hardware: receipt printers, barcode scanners, cash drawers, card readers and QR kiosks. The owner accepted the defaults on 2026-10-20 night: browser device APIs first, no native modules on day one, and device presets for the first two kits.
+
+## Decision
+
+1. **Package.** `@stackra/peripherals` (experience category) provides the peripheral ports, and the thin browser implementations of them.
+2. **Web APIs first.** Browser device APIs (WebUSB, WebHID, Web Bluetooth, Web NFC where available) are used first. No native module is added on day one.
+3. **Native on evidence.** A native module is added only when a measured requirement is not met by the Web APIs, and each one needs its own ADR.
+4. **Presets.** Device presets are profiles in `@stackra/peripherals`:
+   - the POS kit for Retail OS: ESC/POS receipt printer, HID barcode scanner and cash drawer;
+   - the attendance kit for Academorix: NFC or card reader and a QR scanner kiosk.
+     More presets follow the same form.
+5. **Separate from devices.** A peripheral is hardware the client uses. A device is a principal in identity (ADR 0235).
+
+## Consequences
+
+- A kiosk works in a browser before any installer exists.
+- A new preset is a profile, not new code.
+
+## Enforcement
+
+planned — each preset has a test against a recorded device fixture; the validator rejects a native module added without an ADR reference.
+
+## Supersedes and sources
+
+Supersedes: none. Clarifies: [0235](/adr/0235-devices-and-iot-minimal-now-full-later). Sources: desktop and PWA owner decision (defaults and device presets, `stackra-decisions-2026-10-19.md` L954, 2026-10-20 night); plan section 2.3.

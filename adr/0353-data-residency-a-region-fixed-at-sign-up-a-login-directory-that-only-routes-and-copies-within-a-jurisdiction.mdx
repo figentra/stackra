@@ -1,0 +1,54 @@
+---
+title: "0353 — Data residency: a region fixed at sign-up, a login directory that only routes, and copies within a jurisdiction"
+description: "Accepted · 2026-10-25"
+---
+
+<Note>
+  Amends [0186](/adr/0186-backups-and-disaster-recovery) (decision 3: object replication stays
+  inside one jurisdiction; the Note of 2026-10-24),
+  [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) (decision 3: the tenant
+  `region` column holds a region key) and
+  [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)
+  (decision 4: one identity instance per region; decision 7: one login host per product and region),
+  each by a Note. Reads with
+  [0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events), whose consented
+  copies stay the only way tenant data crosses a region. The clouds and accounts that host a region
+  are [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region).
+</Note>
+
+## Context
+
+Products built on Stackra sell in places whose laws (KSA and UAE PDPL, Egypt's Law 151, GDPR) limit where personal data goes. [0186](/adr/0186-backups-and-disaster-recovery) as amended on 2026-10-24 kept tenant data inside its region, but its decision 3 still said cross-region object replication. [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) put a `region` column on every tenant without saying what it holds. Some vendors (ZITADEL Cloud, Resend, Sentry, PostHog Cloud, some AI models) have no region in every jurisdiction. The owner settled the shape in round 3 (#4) and the OS questionnaire rounds 1 to 3 on 2026-10-25, and in round 22 ruled that Stackra keeps only the mechanism ([0259](/adr/0259-module-placement-three-homes)). Which regions Figentra runs, where they run and in what order they open are Figentra's choices, recorded in Figentra OS [ADR 0001](https://docs.os.figentra.com/adr/0001-three-regions-on-aws-and-gcp-one-account-per-product-and-region) and [ADR 0002](https://docs.os.figentra.com/adr/0002-region-routing-global-login-directory-hosts-and-regional-operations).
+
+## Decision
+
+1. **Region keys.** A deployment declares its regions as short keys (Figentra's are in OS ADR 0001). The tenant `region` column of [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) decision 3 holds one of them.
+2. **Chosen at sign-up, then fixed.** A tenant picks its region at sign-up, and the region never changes ([0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region) decision 4). A tenant moves only by export and import into a new tenant in another region (OS-31). Tenant handles are unique across all regions per product and are reserved through the directory (OS-30).
+3. **Hosts.** Each product is served per region at `<region>.<product-domain>`, and sign-in is at one login host per product and region, for example `login.<region>.<product-domain>`, with the tenant's branding (round-3 #4, OS-10). Which plans may sign in on a custom domain is the product's choice.
+4. **A login directory that only routes.** One directory routes sign-in to the right region (round-3 #4). It stores only keyed hashes (an HMAC of the normalised email or phone) mapped to a list of regions, plus tenant handles and custom hostnames mapped to a region. It is owned by identity, runs as an edge Worker with globally replicated KV, and each region's identity service writes to it through events (OS-4). It authenticates no one: sign-in itself always runs in the tenant's region. A person with accounts in two regions has one account per region; after the email is entered, the directory shows a region picker, and the accounts are linked only for that routing (OS-24).
+5. **Regions are independent.** Each region runs its own stack and keeps its tenants' data. No tenant data moves between regions, except an item a user releases over a cross-tenant share ([0343](/adr/0343-cross-tenant-record-sharing-consented-copies-fed-by-events) decision 4). Operators use one operations host per region; a view across regions (such as audit) fans out queries and copies nothing centrally (OS-9).
+6. **Disaster copies stay in one jurisdiction.** Backups, snapshots and object replication stay inside the tenant's jurisdiction: a second account, a second zone or a second region of the same jurisdiction. They never cross between regions of different jurisdictions (OS-5). This replaces "cross-region replication" in [0186](/adr/0186-backups-and-disaster-recovery) decision 3. The stack is never active-active ([0186](/adr/0186-backups-and-disaster-recovery) decision 6); how each region recovers from a whole-region loss is the deployment's choice, stated in its SLA.
+7. **Vendors without a region** (OS-7, OS-192, OS-293).
+   - Identity runs in the tenant's region: the IdP's cloud where it has a region that meets residency, otherwise self-hosted (unmodified) in the region (OS-22).
+   - AI processing is routed per tenant region by `@stackra/ai` under the rule the product sets ([0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) decision 14).
+   - A vendor that carries no tenant records of substance (email delivery, crash reports, product analytics) may serve every region from one jurisdiction, recorded on the sub-processor list. Its port gets a per-region driver when a customer needs in-region processing (OS-192). Product analytics events carry no personal data ([0071](/adr/0071-privacy-obligations) decision 6, OS-293).
+8. **Restoring one tenant** (OS-304; answers open question 1 of [0186](/adr/0186-backups-and-disaster-recovery)). A single tenant is restored from the pooled database by restoring a point-in-time copy into an isolated environment and copying the tenant's rows and files back with data-transfer tooling. Which plans get it as a support operation is the product's choice.
+
+## Consequences
+
+- A tenant's data has one home, so the residency promise at sign-up is a fact of the stack, not a policy.
+- Sign-in needs the directory before it knows the region. The directory holds no readable personal data and survives the loss of any one region.
+- Every service that stores bytes or rows needs a per-region configuration, and every new vendor needs a residency check against decision 7.
+- A tenant that needs to change region has a manual export and import.
+
+## Enforcement
+
+planned — the `region` value check in the migration lint ([0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) enforcement) against the deployment's declared keys; bucket and snapshot replication targets checked in the `@stackra/infra-*` components against the tenant jurisdiction; a directory schema test that refuses a plain email, phone or name field; the sub-processor list reviewed against decision 7.
+
+## Open questions
+
+1. **Region keys in the schema.** Whether the region keys are declared in `runway.yaml` or in the tenancy configuration, and how a lint reads them, is not decided.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0186](/adr/0186-backups-and-disaster-recovery) decision 3 and its Note of 2026-10-24, [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) decision 3 and [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral) decisions 4 and 7. Figentra's regions, their locations and launch order, region loss, Egypt, the AI region rule and the ladder's region row are Figentra OS ADRs [0001](https://docs.os.figentra.com/adr/0001-three-regions-on-aws-and-gcp-one-account-per-product-and-region), [0002](https://docs.os.figentra.com/adr/0002-region-routing-global-login-directory-hosts-and-regional-operations), [0062](https://docs.os.figentra.com/adr/0062-operations-slas-and-support-tiers) and [0067](https://docs.os.figentra.com/adr/0067-ai-data-region-credits-own-keys-and-customer-facing-ai); entities in other countries (OS-29) are OS [0012](https://docs.os.figentra.com/adr/0012-legal-entities-store-brands-and-locations). Figentra OS ADRs are linked on the OS docs host, `docs.os.figentra.com`. Sources: owner decisions in chat, 2026-10-25: round-3 #4 (`notes/handover/360/questionnaire-round-3.md`); OS rounds 1 to 3 and 22, OS-5, OS-7, OS-192, OS-293 (`notes/handover/os/owner-answers.md`); recommended defaults OS-4, OS-9, OS-10, OS-22, OS-24, OS-30, OS-31, OS-304 (`notes/handover/os/default-applied.md`).

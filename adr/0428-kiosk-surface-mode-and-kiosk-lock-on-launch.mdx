@@ -1,0 +1,51 @@
+---
+title: "0428 — Kiosk surface mode and the kiosk lock on launch"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-801, kiosk part). It builds on
+  [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (kiosk mode) and
+  [0344](/adr/0344-platform-targets-form-factors-native-surfaces-and-the-tier-matrix) (the kiosk
+  launch mode is tier now). Owner items R3-SO-10, GRO-95, RES-6, US-128 and RV-45.
+</Note>
+
+## Context
+
+Grocery lanes, restaurant ordering kiosks and the Academorix entry kiosks run unattended. They must be usable by a
+seated person and a blind person, reset when a visitor walks away, and lock the device to the app. `@stackra/platform`
+had a `KioskMode` port and a desktop `kioskOnLaunch` default that nothing read, and `@stackra/ui` had no unattended
+mode at all.
+
+## Decision
+
+1. **`KioskSurface` in `@stackra/ui`, web and native.** It wraps an unattended screen: it resets through the caller's
+   `onIdle` after `idleTimeoutMs` with no touch, pointer or key; lays the screen out for a `KioskReach` (`standing`, or
+   `seated` with every control in the lower band and larger targets); carries high contrast; and `useKiosk().announce`
+   writes every announcement to a polite live region (web) or the screen reader (native) and, with audio on, speaks it
+   (the browser's speech synthesis on web, the caller's `speak` on native). It decides nothing about sessions.
+2. **The defaults are configuration, the values are device settings.** `KioskConfig` (`platform.kiosk`) holds
+   `enterOnLaunch`, `idleTimeout` (90 seconds), `reach`, `isHighContrast` and `isAudioOn`; a device's settings, keyed by
+   its device-catalogue kind and its venue, override them. No timeout or layout is a constant in a component.
+3. **The kiosk lock on launch.** `enterKioskOnLaunch(kiosk, config, deviceSetting?)` enters `KioskMode` when the device
+   setting (or the config) asks, answers a refusal instead of throwing so a till still starts, and leaves a lock that is
+   already on. Each target's `createApp` (`@stackra/app`) calls it once after boot; on Electron it passes
+   `{ enterOnLaunch: desktop.kioskOnLaunch }`.
+
+## Consequences
+
+- A product builds a kiosk screen from the ordinary components inside one `KioskSurface`; the same components work on a
+  staffed till because `useKiosk()` answers null there.
+- High contrast on web is the theme's `prefers-contrast: more` edge set on the surface; a full high-contrast palette
+  needs a token mode (later, in `@stackra/tokens`).
+- Native audio needs a speech driver; until one ships the caller passes `speak`.
+
+## Enforcement
+
+planned — the accessibility audit of the kiosk screens in the playground e2e suite (axe, light and dark, LTR and RTL);
+the unit tests in `packages/design-system/ui/src/{react,native}/kiosk-surface/__tests__/` and
+`packages/experience/platform/src/core/functions/__tests__/enter-kiosk-on-launch.function.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/stackra-package-needs.md` (review round 3 row); `notes/handover/config-model.md`.

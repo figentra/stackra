@@ -1,0 +1,32 @@
+---
+title: "0226 — Content: tenant-defined types at runtime, and headless delivery"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends decision 6 of [0116](/adr/0116-content-types-and-custom-fields). Corrects its "Pro and
+  later" placement (contradiction C-19).
+</Note>
+
+## Context
+
+[0116](/adr/0116-content-types-and-custom-fields) (Accepted) made tenant content types a Pro feature, later. The owner's content answer (mem L733, 2026-10-20) moves them to day one, as data only, and adds headless delivery.
+
+## Decision
+
+1. **Tenant types from day one.** Tenants define content types at runtime. A type is data only: registered field types, validation, relations, localisation, revisions and publishing. It is stored as typed JSON with generated indexes. It holds no code and no logic.
+2. **Business rules stay in code.** `@ContentType` is used for business rules that need code.
+3. **Headless delivery.** A public REST API, a CDN with purge, signed previews, scheduled publishing, webhooks (ADR 0224) and an SDK.
+
+## Consequences
+
+- A tenant's new content type needs no deploy, because it is data.
+- Because a type holds no code, a type cannot run anything that the platform has not reviewed.
+
+## Enforcement
+
+planned — the validator rejects a content type that carries a function or a template expression; the preview signature test.
+
+## Supersedes and sources
+
+Supersedes: none. Amends decision 6 of [0116](/adr/0116-content-types-and-custom-fields). Sources: owner content answer (`stackra-decisions-2026-10-19.md` L733, 2026-10-20). Contradiction C-19.

@@ -1,0 +1,54 @@
+---
+title: "0423 — Automation principals: bounded by the publisher, paused on lost access, and the seed principal and dry-run policy"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-773). It implements decision 2 of
+  [0153](/adr/0153-automations-run-as-principals-and-every-package-exposes-building-blocks) in
+  `@stackra/workflow` and proposes the principal and dry-run policy for seeded automations. Nothing
+  may rely on decisions 3 and 4 until the owner accepts them.
+</Note>
+
+## Context
+
+An automation runs as its own principal, and 0153 says its grants are never more than its publisher's and that it
+pauses when the publisher loses access. `AutomationService.publish` took a principal and checked nothing, and nothing
+paused an automation. Seeded automations (a product's workflow template pack) are published by no person, and 0122
+requires a dry run before a publish, which a seed never ran.
+
+## Decision
+
+1. **Publish is bounded by the publisher.** `AutomationService.publish(id, revision, principal, publisher)` asks the
+   `PublisherAccess` port which action blocks of the revision the publisher may not call in the automation's scope,
+   and refuses `automation_exceeds_publisher` (403, the blocks named) when any. `@stackra/iam` binds the managed driver
+   over its policy decision point; a host may bind its own; `MemoryPublisherAccessDriver` is fail-closed and for tests.
+   The principal's own grants are still checked on every step by the action pipeline.
+2. **Lost access pauses.** The automation keeps its publisher (`workflow.automations.publisher`, migration
+   `workflow.0004`). Before a trigger starts it, the publisher's access is asked again; a block it lost pauses the
+   automation (`paused_at`, `pause_reason` `publisher_access_lost`) and records `AutomationPaused`, and it starts
+   nothing. `recheck()` does the same on demand (a host calls it when a grant is revoked). Publishing again, by someone
+   with access, resumes it.
+3. **Seed principal (proposed).** Each product's seed pack names one system principal per product,
+   `sys_seed_<product>`, granted by iam exactly the action blocks that product's workflow template packs call. A seeded
+   automation is published by and runs as that principal, so decision 2 holds for seeds too: a product that drops a
+   block from the principal's grants pauses its seeded automations instead of running them.
+4. **Seed dry-run policy (proposed).** A seed skips the per-revision dry run of 0122: the pack's own release runs
+   `dryRun` over every template against the pack's sample inputs in CI, and a tenant's own edit of a seeded automation
+   needs the dry run as any draft does.
+
+## Consequences
+
+- Publishing an automation now needs the publisher, which the publishing action has as `ctx.actor`.
+- A service that binds `AutomationService` must bind a `PublisherAccess` driver (iam's), or boot fails.
+- The console lists paused automations and why, from the row and the event.
+
+## Enforcement
+
+`packages/runtime/workflow/src/node/services/__tests__/automation.service.test.ts` (refusal past the publisher, pause on
+trigger and on `recheck`). Decisions 3 and 4: planned — the seed-pack release check in `@stackra/cli`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends nothing; applies 0153 decision 2 and 0122 decision 3. Sources: STA-773; owner decisions 0153,
+0122, 0245 d8; config-model sections 3 to 5.

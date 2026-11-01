@@ -1,0 +1,52 @@
+---
+title: "0416 — One canonical JSON, ES256 signatures through a Signer port, and stackra audit:verify"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-823, STA-827). It implements
+  [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention) decision 3 (a KMS-signed
+  daily checkpoint, `stackra audit:verify` checks the chain).
+</Note>
+
+## Context
+
+Audit checkpoints and proof bundles carried chain hashes but no signature, `stackra audit:verify` did not exist, and
+each chain writer (access-log, OS audit) kept its own canonical JSON, so a verifier had nothing single to agree with.
+
+## Decision
+
+1. **One canonical form.** `@stackra/support` exports `canonicalJson` (object keys sorted by UTF-16 code unit at every
+   depth, `undefined` members dropped, array order kept, `undefined` items and non-finite numbers as `null`, dates as
+   ISO 8601 UTC) and `canonicalHash` (its SHA-256, 64 lowercase hex). The form is the one access-log already chained
+   over, so stored chains still verify, and it never changes.
+2. **A Signer port.** `@stackra/contracts` has `Signer` (`sign(bytes)`, `publicKey()`) with one algorithm, ES256
+   (ECDSA P-256, SHA-256). A `Signature` is `{ keyId, algorithm, value }` with the 64-byte `r || s` value in
+   base64url; a `SignerPublicKey` is `{ keyId, algorithm, spki }`. Drivers: memory (Web Crypto) and `aws-kms`, which
+   signs the SHA-256 digest inside KMS so the private key never leaves it. `verifySignature` checks offline and never
+   throws on bad input.
+3. **What is signed.** A checkpoint is `{ sequence, hash, takenAt }` (`takenAt` as ISO 8601); its signature is over
+   `canonicalJson(checkpoint)` as UTF-8. A link's hash is `canonicalHash(link)` where the link holds `sequence`,
+   `previousHash` and the record fields; the first link's `previousHash` is 64 zeros.
+4. **The proof bundle and `stackra audit:verify`.** A bundle is JSON Lines of `{"key": SignerPublicKey}`,
+   `{"link": {...}, "hash": "…"}` and `{"checkpoint": {...}, "signature": {...}}`. `stackra audit:verify <bundle>
+[--key <keys.json>]` rehashes every link, checks each follows the one before (the first from the genesis hash or a
+   signed checkpoint just before it), checks each checkpoint's signature and that it matches its link, and exits 1 at
+   the first broken sequence. With `--key` only the caller's keys count; without, it says the check used the bundle's
+   own keys.
+
+## Consequences
+
+- OS audit signs its daily checkpoint through `Signer` and writes bundles in this form; access-log and audit hash with
+  `canonicalHash`.
+- `@stackra/cli` depends on `@stackra/support` (the lockfile gains that link).
+
+## Enforcement
+
+`packages/foundation/support/src/core/functions/__tests__/canonical-json.function.test.ts`,
+`packages/foundation/contracts/src/core/drivers/__tests__/aws-kms-signer.driver.test.ts`,
+`packages/developer/cli/src/node/functions/__tests__/verify-audit-proof.function.test.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: OS `services/audit/SPEC.md` gaps 4 and 8; STA-823; STA-827.

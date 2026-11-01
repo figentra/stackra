@@ -1,0 +1,85 @@
+---
+title: "0469 — Stackra ships no HeroUI Pro: free HeroUI and Stackra's own components only"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract: Purpose: the decision record that removes HeroUI Pro from every Stackra package, template, app scaffold, app and showcase after HeroUI refused redistribution. Boundary: decision text only. Runtime: docs. Governing contract: ADR template; ADR 0165, 0197, 0291, 0310, 0461. */}
+
+<Note>
+  Accepted by the owner on 2026-10-28 (design-system session c6, STA-1371): "Remove the pro. We
+  don't need the pro anymore." Supersedes [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps).
+  Amends [0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers) (decisions 1 to 10 and 12
+  withdrawn; decision 11, Uniwind Pro, stands) and
+  [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)
+  (decision 3 and the `design-system/ui-pro` row of decision 6).
+</Note>
+
+## Context
+
+[0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps) kept HeroUI Pro in Stackra's own apps until HeroUI answered
+the OEM request (STA-41). [0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers) then wrapped Pro in a private
+package, and [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)
+moved that package to `figentra/stackra-pro` as the internal-only `@stackra-pro/ui`.
+
+HeroUI answered in writing. Under sections 8 and 9 of its licence terms, HeroUI Pro and HeroUI Native Pro may not be
+redistributed in Stackra in any form, and HeroUI offers no OEM licence. Wrapping the components, keeping the source
+private, installing through revocable tokens or asking each customer to hold their own licence does not change that.
+End-user applications, such as Figentra OS and Academorix, may still use Pro within Figentra's plan, because they are
+apps Figentra builds and runs, not a framework other people build on.
+
+Stackra is a framework that other people build on ([0023](/adr/0023-stackra-is-a-framework)), so every Pro path left in
+it is a redistribution path.
+
+## Decision
+
+1. **No HeroUI Pro in Stackra.** No Stackra package, template, app scaffold, app or showcase depends on, imports,
+   bundles or re-exports `@heroui-pro/react` or `heroui-native-pro`, apps in this repository included. This covers
+   `@stackra-pro/*` too: the HeroUI Pro wrappers (`@stackra/ui-pro`, later `@stackra-pro/ui`) are withdrawn, not moved.
+2. **Stackra ships free HeroUI and its own components.** `@stackra/ui` builds on free HeroUI v3 (`@heroui/react`) and
+   HeroUI Native (`heroui-native`). A component Stackra needs that only HeroUI Pro offers today (charts, maps, data
+   grid, app layout and the like) is built clean-room on free HeroUI, React Aria and permissively licensed libraries.
+   It is never derived from HeroUI Pro source, including source returned by the HeroUI Pro MCP servers
+   ([0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule) applies).
+3. **No Pro tooling in this repository.** No HeroUI Pro MCP server, no `heroui-pro login` install path and no
+   `HEROUI_AUTH_TOKEN` or `HEROUI_PERSONAL_TOKEN` are configured here. The free HeroUI MCP servers stay.
+4. **End-user products are outside this rule.** A Figentra product app (Figentra OS, Academorix) may use HeroUI Pro
+   within Figentra's plan. It imports Pro directly in the app and installs it with the product repository's own token,
+   never through a Stackra package.
+5. **Uniwind Pro is unaffected.** [0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers) decision 11 (Uniwind
+   Pro as the styling engine of our own apps) is a separate vendor and a separate decision, and it stands.
+6. **A future reseller partnership** with HeroUI would add Pro only as an optional extra that each customer licenses
+   from HeroUI, never as part of a Stackra package, and it needs a new ADR.
+
+## Consequences
+
+- A framework user installs Stackra with no licence, token or HeroUI CDN download for UI.
+- The Pro chart and map wrappers of `packages/design-system/ui-pro` are deleted. Stackra's own chart components
+  replace them; until they land, the showcase lists no chart or map entry.
+- The showcase registry links only free HeroUI packages, and the API generator reads only free HeroUI documentation.
+- Chores for the dependency session (owner-assigned files): remove `@heroui-pro/react`, `heroui-native-pro` and their
+  Pro-only peers from the `pnpm-workspace.yaml` catalogs, `packageExtensions` and `allowBuilds`; refresh
+  `pnpm-lock.yaml`; drop `HEROUI_AUTH_TOKEN` from `runway.yaml`, Infisical `/ci` and the gate identity; and remove
+  `@stackra-pro/ui` from `figentra/stackra-pro`.
+- Clean-room components cost build time that wrapping Pro did not.
+
+## Enforcement
+
+- `checkMember` in `@stackra/repo-checks` (`PRO_DEPENDENCIES`, run by `pnpm validate`) refuses `@heroui-pro/react`
+  and `heroui-native-pro` in every member, apps included, and `PRO_SCOPE` refuses any `@stackra-pro/*` dependency.
+- `HERO_LINK` in `packages/design-system/showcase/src/schemas/component-entry.schema.ts` accepts only
+  `@heroui/react` and `heroui-native`.
+- The extension bundle check of `@stackra/vite-plugin` (`bundle-plugin.function.ts`) refuses HeroUI Pro code inside a
+  bundle.
+- planned — the dependency session removes the Pro catalog entries; until then the catalogs list packages no member
+  may use.
+- planned — review checks decision 2 (clean-room provenance); no tool can.
+
+## Supersedes and sources
+
+Supersedes: [0197](/adr/0197-heroui-pro-is-used-only-in-our-own-apps). Amends:
+[0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers) decisions 1 to 10 and 12, and
+[0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers) decision 3
+and the `design-system/ui-pro` row of decision 6. Related: [0113](/adr/0113-heroui-pro-distribution),
+[0165](/adr/0165-web-client-stack-ui-contract-form-adapters-and-no-nextjs) decision 5,
+[0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule). Sources: HeroUI's written reply to the OEM
+request (STA-41), citing sections 8 and 9 of its terms; owner decision in chat, 2026-10-28 (STA-1371).

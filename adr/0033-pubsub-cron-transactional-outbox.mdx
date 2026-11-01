@@ -1,0 +1,35 @@
+---
+title: "0033 — Encore Pub/Sub and cron, with a transactional outbox"
+description: "Superseded by 0078 · 2026-10-19"
+---
+
+<Note>
+  Superseded by [0078](/adr/0078-messaging-layer-eight-packages): the messaging layer is eight
+  packages with SaaS and self-hosted drivers; the outbox, idempotent-consumer and versioned-name
+  rules carry forward there.
+</Note>
+
+## Context
+
+Services communicate by events ([0010](/adr/0010-services-are-independent-workspace-members)). Publishing after a database commit can lose or duplicate an event if the process fails between the two; Pub/Sub delivers at least once.
+
+## Decision
+
+1. **Events use Encore Pub/Sub; scheduled work uses Encore cron.**
+2. **Publishing goes through a transactional outbox**: the event row is written in the same transaction as the state change, and a relay publishes it.
+3. **Every consumer is idempotent**, deduplicating on the event id.
+4. Events are versioned by name (`user.created.v1`) and their shapes live in contract packages ([0015](/adr/0015-contract-packages)).
+5. Outbox table shape, relay cadence and dead-letter handling: TODO in the first-service spec.
+
+## Consequences
+
+- No lost or phantom events; consumers must tolerate duplicates and reordering.
+- An outbox table and relay per publishing service is a standing chore.
+
+## Enforcement
+
+Planned — a validator check that Pub/Sub topics are published only from the outbox module; a conformance test every consumer passes (redelivery is a no-op).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner decisions in chat, 2026-10-19.

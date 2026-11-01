@@ -1,0 +1,158 @@
+---
+title: "Get access and install"
+description: "Point your package manager at the Stackra registry, install the free @stackra packages, and add a licence token for @stackra-pro."
+icon: "download"
+---
+
+{/* Stackra file contract: Purpose: the customer guide from zero to an installed package: the registry, the .npmrc, the free and licensed scopes, licence tokens in CI, the answers the registry gives and what is still pending. Boundary: customer-facing documentation only; the decision is ADR 0453 and the registry's behaviour is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 4, 10, 13 and 18); ADR 0461; ADR 0316; ADR 0025 (decision 3); STA-1575. */}
+
+Every Stackra package is served by one npm-compatible registry, `https://npm.stackra.figentra.com/`
+([ADR 0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)). It
+holds two scopes:
+
+| Scope            | Licence                                                                                          | Who can install                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `@stackra/*`     | MIT ([0024](/adr/0024-mit-license-with-exclusions))                                              | anyone, no account and no token                              |
+| `@stackra-pro/*` | commercial; minified `dist` and types only, no source ([0316](/adr/0316-open-core-distribution)) | a holder of a licence token whose licence covers the package |
+
+The registry never proxies npmjs: it answers only for these scopes, so every other dependency keeps coming from your
+usual registry.
+
+<Note>
+  Status, 2026-10-29: the registry is built and the release workflow publishes to it. Version `0.1.0` is not released
+  yet, so `latest` is absent; prereleases go out under the `next` dist-tag (the tooling presets first). Check what is
+  there with `npm view @stackra/<name> dist-tags --registry https://npm.stackra.figentra.com/`.
+</Note>
+
+## Requirements
+
+- Node.js 24 or later (`engines` in every package).
+- npm, pnpm or Yarn. Packages are ESM only (`dist/*.mjs` with `.d.mts` types); there is no CommonJS build
+  ([0025](/adr/0025-packages-publish-to-private-registry) decision 3).
+
+## Install the free packages
+
+<Steps>
+  <Step title="Map the scope">
+    Add one line to the `.npmrc` at the root of your project and commit it:
+
+    ```ini
+    @stackra:registry=https://npm.stackra.figentra.com/
+    ```
+
+  </Step>
+  <Step title="Install">
+    ```bash
+    pnpm add @stackra/container
+    ```
+
+    A token sent for `@stackra` is ignored, so a wrong or revoked token never breaks a free install.
+
+  </Step>
+</Steps>
+
+## Install Pro packages
+
+<Steps>
+  <Step title="Get a licence token">
+    A Pro licence is issued by Figentra when you buy it; each licence carries one or more tokens. A token looks like
+    `stkl_` followed by 43 characters. It is shown once, when it is issued; Figentra keeps only its hash, so a lost
+    token is replaced, never recovered.
+
+    <Warning>
+      **Owner to supply (STA-1576):** how a customer buys a licence and asks for a token (form, email or account
+      page), and who to contact. Not decided yet.
+    </Warning>
+
+    Ask for one token per machine or CI system and give each a label. A licence holds up to 20 live tokens (the
+    registry's default setting), and each can be revoked on its own.
+
+  </Step>
+  <Step title="Map both scopes and name the token">
+    ```ini
+    @stackra:registry=https://npm.stackra.figentra.com/
+    @stackra-pro:registry=https://npm.stackra.figentra.com/
+    //npm.stackra.figentra.com/:_authToken=${STACKRA_LICENCE_TOKEN}
+    ```
+
+    Commit this file: it names the environment variable, never the value. Set the variable in your shell or your
+    secret manager. The Stackra CLI (`stackra add`) reads the same name.
+
+  </Step>
+  <Step title="Check the token">
+    ```bash
+    curl -fsS -H "Authorization: Bearer $STACKRA_LICENCE_TOKEN" \
+      https://npm.stackra.figentra.com/-/stackra/v1/entitlements
+    ```
+
+    The answer is `{ holder, grants, expiresAt, status }`: the scopes and names the licence may read, and until when.
+    `npm whoami --registry https://npm.stackra.figentra.com/` prints the holder.
+
+  </Step>
+  <Step title="Install">
+    ```bash
+    pnpm add @stackra-pro/<name>
+    ```
+  </Step>
+</Steps>
+
+What Pro holds for 0.1.0 is decided in
+[0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers): paid
+studio UIs and advanced drivers over free runtimes. Runtime code stays free; a paid runtime feature is a plan
+entitlement, not a package.
+
+## In CI
+
+Store the token as a secret of your CI system named `STACKRA_LICENCE_TOKEN` and expose it to the install step. Use a
+token issued for that CI system, not a developer's. GitHub Actions:
+
+```yaml
+- name: Install
+  run: pnpm install --frozen-lockfile
+  env:
+    STACKRA_LICENCE_TOKEN: ${{ secrets.STACKRA_LICENCE_TOKEN }}
+```
+
+A job that installs only `@stackra/*` needs no secret.
+
+## What the registry answers
+
+| You see                           | Means                                                                                                  | Do                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| `401` on a `@stackra-pro` package | no token, or a token the registry does not know (mistyped, or revoked)                                 | check `STACKRA_LICENCE_TOKEN` is set where you install |
+| `403` on a `@stackra-pro` package | the licence does not cover that name, is suspended or revoked, or expired more than the grace days ago | check the entitlements call above; contact Figentra    |
+| `403` on `npm login`              | there is no login: access is the licence token                                                         | use the `.npmrc` above                                 |
+| `404`                             | the name is not on the registry (the registry never fetches from npmjs)                                | check the scope mapping and the spelling               |
+
+## Licence lifecycle
+
+- A revoked token or licence stops working everywhere within about a minute (the registry caches a token check for 60
+  seconds by default).
+- After `expiresAt` the licence keeps reading for a grace period (14 days by default), then reads stop.
+- Suspension, revocation and expiry never touch what you already installed: nothing in a package calls home
+  ([0076](/adr/0076-every-package-runs-saas-on-prem-and-air-gapped)).
+- An expired licence does not keep access to versions released before it expired (0453, "Decided, with triggers" 2).
+- To rotate a token: get the new one, switch your secret, then ask for the old one to be revoked.
+
+## Check what you installed
+
+Every version carries a registry signature, and the registry publishes its keys in npm's format, so npm can check
+them:
+
+```bash
+npm audit signatures
+```
+
+Each version also has a Sigstore provenance bundle tying the tarball to the release workflow run that built it,
+served at `https://npm.stackra.figentra.com/-/npm/v1/attestations/@scope%2fname@<version>`. See
+[Security overview](/customers/security) for the whole chain.
+
+## Not ready yet
+
+| Item                                                              | State                                                            |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------- |
+| The Pro licence text (`LICENSE` of `@stackra-pro/*`)              | pending, owner (STA-30)                                          |
+| Whether a Pro package checks its licence at runtime               | pending, owner (STA-1589); today access is gated at install only |
+| How to buy a licence and request tokens                           | pending, owner (STA-1576)                                        |
+| `stackra whoami` (the entitlements call from the CLI)             | not built; use the `curl` call above                             |
+| A signed offline licence file for on-prem and air-gapped installs | not built (0453 decision 15)                                     |

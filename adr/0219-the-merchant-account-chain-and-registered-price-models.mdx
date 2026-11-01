@@ -1,0 +1,29 @@
+---
+title: "0219 — The merchant-account chain and registered price models"
+description: "Accepted · 2026-10-20"
+---
+
+## Context
+
+A customer sells through a chain of accounts: Figentra, then the product operator, then the tenant, then the end customer. Fees and payments move through that chain. The owner's merchant answers (mem L520–529, 2026-10-20) fix the payment modes, the fee cascade, the ledger rule and the pricing builder.
+
+## Decision
+
+1. **Chain.** The merchant chain runs Figentra, then product operator, then tenant, then end customer. It is the tenant tree of ADR 0210.
+2. **Payment modes per merchant.** Platform Connect with fees, bring-your-own keys, direct merchant, and B2B invoicing.
+3. **Fees.** Fee rules cascade down the chain. Every movement goes through the ledger, per party (ADR 0220).
+4. **Pricing builder.** The no-code builder is made of registered blocks. Developer-registered `@PriceModel` code covers the rest. Tenant data holds no expressions (mem L529; contradiction C-23).
+5. **Price resolution (PR, mem L792).** The precedence of price resolution belongs to the OS pricing service.
+
+## Consequences
+
+- A tenant cannot write a price expression, so a price is always code the platform has reviewed.
+- Every fee is traceable to the chain level that set it.
+
+## Enforcement
+
+planned — the fee cascade test covers each payment mode; the validator rejects an expression in tenant pricing data.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: owner merchant answers (`stackra-decisions-2026-10-19.md` L520–529, L792, 2026-10-20). Contradiction C-23.

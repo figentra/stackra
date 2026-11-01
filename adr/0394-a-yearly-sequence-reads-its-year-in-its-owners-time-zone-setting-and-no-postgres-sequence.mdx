@@ -1,0 +1,52 @@
+---
+title: "0394 — A yearly sequence reads its year in its owner's time zone setting, and no Postgres sequence"
+description: "Accepted · 2026-10-26"
+---
+
+<Note>
+  Builds on [0342](/adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series) (gapless
+  sequences). Settles its open point on the time zone of a yearly series and turns its two planned
+  gen checks into checks that run.
+</Note>
+
+## Context
+
+A yearly series (`INV-{year}-{n:06}`) starts again at 1 each year, and the year is read at the moment a number is
+taken. `SequenceService.next` read it in the time zone the caller passed, which in an action is the user's own
+(`ctx.timeZone`): two cashiers of one legal entity in different zones could number the same night in two different
+years. The year belongs to the legal entity's calendar, which is configuration, not code. ADR 0342 also planned two gen
+checks: a document-number field without a `Sequence`, and a migration that creates a Postgres `SEQUENCE`. No field
+marker for a document number exists in `@stackra/model` yet, so the first cannot be checked; the second can, and the
+sequence's one home (`database/sequences/`) can too.
+
+## Decision
+
+1. **The time zone is the series owner's setting.** `@stackra/database/contracts` has a `SequenceTimeZone` port:
+   `timeZoneOf(key, scope, series)` answers the IANA zone of one series, or nothing. The product that owns the series
+   binds a driver that reads its own settings (for example a legal entity's numbering time zone); the database never
+   reads a setting. Gen's boot connects the bound driver (`connectSequenceTimeZone`). When a driver answers, its zone
+   governs the year for `next` and `reserve`; when none is bound or the setting is unset, the caller's zone governs.
+2. **A sequence has one home.** Gen refuses a `Sequence` class outside `database/sequences/<name>.sequence.ts`
+   (`sequence_misplaced`).
+3. **No Postgres sequence.** The migration compiler refuses a raw `CREATE SEQUENCE` (any `TEMP` or `UNLOGGED` form):
+   a document number is a `Sequence`, an id is a public id, and a rolled-back transaction burns a sequence value.
+
+## Consequences
+
+- A product that numbers yearly documents ships one small driver over its settings; markets set the zone as data.
+- A series counts in one calendar whoever issues the number, online or from a reserved block.
+- The document-number field check of ADR 0342 still waits for a field marker in `@stackra/model`.
+
+## Enforcement
+
+- `packages/data/database/src/core/services/__tests__/sequence.service.test.ts` (the owner's zone wins over the call's).
+- `packages/developer/gen/src/core/functions/build-manifest.function.ts` (`sequence_misplaced`) and its test.
+- `packages/data/database/src/core/records/schema.record.ts` (`CREATE SEQUENCE` refused) and
+  `compile-migration.function.test.ts`.
+- planned — a gen check for a document-number field without a `Sequence`, once `@stackra/model` has the marker.
+
+## Supersedes and sources
+
+Supersedes: none. Builds on [0342](/adr/0342-gapless-sequences-allocated-at-commit-per-tenant-and-series). Sources:
+STA-756; the wave 10 data handover (`notes/handover/build-wave10-2026-10-25.md`, "Still undecided: which time zone
+governs a yearly series"); config-model section 3.

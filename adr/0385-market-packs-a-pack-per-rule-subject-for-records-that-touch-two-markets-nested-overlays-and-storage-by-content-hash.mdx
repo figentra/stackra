@@ -1,0 +1,87 @@
+---
+title: "0385 — Market packs: a pack per rule subject for records that touch two markets, nested overlays and storage by content hash"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-666). It amends
+  [0370](/adr/0370-market-packs-signed-dated-overlaid-data-with-pins-and-legal-floors) decisions 3,
+  7 and 9 and settles
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  open question 3 (which pack wins for a tenant active in two markets). It reads with
+  [0386](/adr/0386-market-pack-signing-the-platform-release-service-holds-the-key-reviewers-sign-off-per-key)
+  (who signs) and
+  [0387](/adr/0387-calendar-remainder-every-rrule-part-supported-or-refused-a-kept-count-mode-and-calendar-data-from-packs)
+  (calendar data read from packs).
+</Note>
+
+## Context
+
+0370 resolves one market per tenant. US law stacks federal, state and city rules (US-3: `us` → `us-ca` → `us-ca-sf`),
+and one sale can owe two markets: a New York shop selling to a California buyer owes California's sales-tax and
+privacy rules on that sale while its tips and labour rules stay New York's (US-4). The review (R3-SO-01, X2-18) found
+three gaps: overlays deeper than two levels were not confirmed, a product section could not sit on an overlay (the
+restaurant's `us-ca-sf` rules, Juristra's DIFC defaults), and `MarketContext` gave one pack per record. 0363 asked
+whether the strictest pack or the legal entity's pack wins. Alternatives weighed: the strictest value across both
+markets (rejected: "strictest" has no meaning for a tax rate or a provider, and it applies a law that does not govern
+the sale), and always the entity's pack (rejected: it gives the buyer's state no say over its own sales tax and
+privacy law). 0370 also left where pack bytes are stored to the caller, so every service would invent its own fetch.
+
+## Decision
+
+1. **No pack wins for a tenant; each rule kind names its subject.** A pack carries `subjects`: a key or key prefix
+   mapped to `location` (where the work or sale happens), `buyer` (the ship-to or billing address), `entity` (where
+   the legal entity is formed) or `tenant` (the tenant's own market). The longest matching prefix wins; an overlay may
+   restate one. With no match the tenant's market answers, as before. The subjects are pack data; no rule kind is
+   named in code.
+2. **`MarketContext.packFor(record, ruleKind)`.** A `MarketContext` is built per tenant from the verified packs and the
+   tenant's resolve options. `packFor` reads the rule kind's subject from the tenant's resolved market and returns the
+   resolved market of the record's market for that subject (`MarketRecord`: `tenant`, `location`, `buyer`, `entity`).
+   A record without the subject's market is refused (`subject_market_missing`); the caller supplies it, never a
+   guess. Rules facts carry one resolved pack per subject.
+3. **Floors follow the subject.** A legal floor is enforced from the pack the rule kind's subject resolves to, and
+   only from it. Nothing merges floors across markets; a tenant who wants a stricter value sets it above the floor in
+   its settings.
+4. **Overlays of any depth.** `extends` chains of any length resolve parent first, and a loop of any length is refused
+   (`overlay_cycle`). 0370 decision 3 is read this way.
+5. **Product sections per overlay.** A section is declared per market in the chain (`us-ca-sf` / `restaurant`); each
+   resolves beside its own base pack, so an overlay's section overlays its parent's section. A section still has no
+   `extends` of its own and its keys keep its prefix (0370 decision 7).
+6. **Storage and fetch by content hash.** Signed packs are stored and fetched through the `PackStore` port, addressed
+   by their content hash. The production driver keeps one file per pack at `market-packs/<hash>.json` on an injected
+   `FileSystem` disk (`@stackra/filesystem`), refuses a pack whose hash does not match, and never rewrites a stored
+   hash. `fetchPacks(store, hashes, trustedKeys)` loads the hashes a deployment names and verifies each; a hash the
+   store lacks is refused (`not_stored`). Packs a module ships as `data/` assets are read through `AssetLibrary`
+   (`@stackra/assets`) after the manifest hash check. Which hashes a deployment loads and its trusted keys are
+   deployment configuration.
+7. **Seed packs ship as draft data.** The `us` base pack and the overlays of the first launch list (`us-ny`, `us-nj`,
+   `us-ca`, `us-tx`, `us-il`, `us-mi`, `us-fl`, US-2) ship as `draft` data assets of `@stackra/market-packs`, with a
+   `counsel_review` checklist item and no sign-offs. They carry the subjects of US-4, the federal and state holiday
+   sets and the first calendar values (0387). Draft is never served outside authoring (0370 decision 4).
+8. **Bindings.** `@stackra/fiscal` answers `FiscalPackSource` from packs (`fiscal.invoice`, `fiscal.till`). The
+   payments binding (`MarketPaymentDefaults`) follows in its own package.
+
+## Consequences
+
+- A cross-state or cross-border sale reads each rule from the market that governs it; the subject table is reviewed
+  data, so counsel can change it without a release.
+- Every caller of `packFor` must fill the record's markets from its addresses; a missing buyer address on a taxable
+  sale now fails loudly.
+- Pack bytes have one home and one address; a tampered or misfiled pack stops start-up.
+- `@stackra/market-packs` now depends on `@stackra/assets`, `@stackra/container` and `@stackra/filesystem`, and ships
+  data assets (drafts only; base packs remain owned by the platform).
+
+## Enforcement
+
+planned — the package tests fix the behaviour
+(`packages/foundation/market-packs/src/core/values/__tests__/market-context.value.test.ts`,
+`src/core/functions/__tests__/resolve-pack.function.test.ts`, `src/core/drivers/__tests__/`,
+`src/core/__tests__/us-packs.test.ts`); nothing runs them in CI yet. A publish check that a section declared on an
+overlay keeps its parent's subjects is not built.
+
+## Supersedes and sources
+
+Supersedes: none. Amends 0370 decisions 3, 7 and 9; settles 0363 open question 3. Sources:
+`notes/handover/review-round-3/stackra-os.md` (R3-SO-01); `notes/handover/us/default-applied.md` (US-2, US-3, US-4);
+`notes/handover/stackra-package-needs.md` (market-pack loader row); `notes/handover/review-round-2/cross.md` (X2-18,
+X2-19); STA-666.

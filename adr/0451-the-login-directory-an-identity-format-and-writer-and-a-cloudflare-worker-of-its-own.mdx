@@ -1,0 +1,79 @@
+---
+title: "0451 — The login directory: an identity format and writer, and a Cloudflare Worker of its own"
+description: "Proposed · 2026-10-27"
+---
+
+{/* Stackra file contract: Purpose: records where the global login directory of ADR 0353 decision 4 lives in Stackra and the shape of its keys. Boundary: decision record only; the region list, the routes and the key are the deployment's. Runtime: docs. Governing contract: ADR 0353; OS ADR 0002; ADR 0437; STA-752, batch stackra-57 (STA-1023). */}
+
+<Note>
+  Proposed (STA-752, batch stackra-57). Places the mechanism of
+  [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+  decision 4 and Figentra OS [ADR
+  0002](https://docs.os.figentra.com/adr/0002-region-routing-global-login-directory-hosts-and-regional-operations)
+  decision 1. Reads with ADR 0437 (the OS edge Worker, its KV copy and the server checks), whose
+  `host:` rows already map a hostname to its region.
+</Note>
+
+## Context
+
+[0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+decision 4 says one directory routes sign-in to the right region: keyed hashes of an email or phone mapped to the regions
+that hold an account, owned by identity, served by an edge Worker over globally replicated KV and written by each region's
+identity service through events. It named no package. The writer and the reader must hash the same way, and neither
+`@stackra/identity` nor `@stackra/infra-cloudflare` may depend on the other: identity is provider-neutral, and the
+Cloudflare package carries Pulumi.
+
+## Decision
+
+1. **Identity owns the format.** `@stackra/identity/contracts` exports `loginDirectoryPrefix(identifier, key)`, the only
+   code that spells a directory key: the identifier is normalised (an email trimmed, NFKC and lower-cased; a phone
+   stripped to E.164), hashed with HMAC-SHA-256 under the directory key over `<kind>:<normal form>`, and returned as
+   `dir:<key id>:<kind>:<hex>:`. It runs on Web Crypto, so the same code runs in a region and in the Worker. An
+   identifier that does not normalise has no row.
+2. **One row per identifier and region.** A region writes `dir:<key id>:<kind>:<hex>:<region>` (value `1`). Each region
+   writes and deletes only keys ending in its own region key, so no two regions write the same key, no write reads first,
+   and a delete is a plain delete. The Worker lists the prefix to learn every region.
+3. **Identity writes.** `LoginDirectoryWriterService` (`@stackra/identity`) records and forgets a region's rows over the
+   `LoginDirectoryStore` port, configured by `LoginDirectoryConfig` (`region`, `keyId`, and the hash key from the
+   `IDENTITY_LOGIN_DIRECTORY_KEY` secret). The host's listeners on its own identity events call it through the outbox: an
+   account created or an identifier verified is `record`; a changed email is `forget` of the old and `record` of the new;
+   a deleted account is `forget` of all. Both calls are idempotent, so a redelivered event is harmless. Stackra declares
+   no directory event; the event names are the host's.
+4. **Cloudflare carries it.** `@stackra/infra-cloudflare` holds the Cloudflare side: `loginDirectoryHandler` (the
+   Worker's fetch handler: `POST {kind, value}` answers `{regions}` in the deployment's order, `no-store`, the identifier
+   never echoed or logged), `loginDirectoryKvRequest` (the KV bulk write and bulk delete a region's store driver sends
+   with its own KV-scoped token) and `loginDirectoryWorker` (the Pulumi KV namespace and routes). The host wires the two:
+   its Worker passes `loginDirectoryPrefix` with the Worker's key into the handler.
+5. **A Worker of its own.** The directory is a separate Worker and KV namespace from the OS edge Worker of ADR 0437, on
+   its own route (for example `login.<product-domain>/directory`, same origin as the login page, so no CORS). Its
+   namespace has no jurisdiction: it is replicated everywhere so sign-in survives the loss of any region, which is safe
+   because it holds hashes and region keys only. Rate limits and bot checks on the route are the zone edge's.
+6. **Configuration, not code.** The region list, the key id and the routes are deployment config; the hash key is a
+   secret held by the Worker and by each region, never in KV, a log or a config value. A key rotation writes rows under a
+   new key id beside the old ones, the Worker switches its key id, and the old rows are then deleted.
+7. **Hostnames and handles.** A hostname's region is the edge KV `host:` row of ADR 0437; the directory does not copy
+   it. Tenant handles reserved across regions (OS-30) are tenancy's and are not part of this decision.
+
+## Consequences
+
+- The directory holds no readable personal data: a leaked namespace yields hashes that cannot be reversed without the key.
+- A person with accounts in two regions gets both regions back and picks one (ADR 0353 decision 4, OS-24).
+- The directory answers whether an identifier has an account somewhere; the route's rate limits are the defence against
+  enumeration, as they are for the login page itself.
+- A region's rows lag its identity events by the outbox delay plus KV propagation (about a minute).
+- The OS adds a Workers member for the directory and binds a `LoginDirectoryStore` driver that sends
+  `loginDirectoryKvRequest`.
+
+## Enforcement
+
+- planned — `loginDirectoryPrefix` tests pin the key shape and an HMAC known answer, and that no clear identifier is in a
+  key (`@stackra/identity`).
+- planned — `loginDirectoryKvRequest` refuses any key that is not a `dir:` key (`@stackra/infra-cloudflare`).
+- planned — only the regions' KV-scoped tokens can write the directory namespace; the Worker binding reads only.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: Linear STA-752 and STA-1023 (batch stackra-57);
+[0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+decision 4; Figentra OS ADR 0002 decision 1; ADR 0437; `notes/handover/stackra-package-needs.md` (login directory edge
+Worker row).

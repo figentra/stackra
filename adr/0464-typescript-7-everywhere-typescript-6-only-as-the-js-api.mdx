@@ -1,0 +1,48 @@
+---
+title: "0464 — TypeScript 7 everywhere; TypeScript 6 only as the JS API"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract: Purpose: the decision record for which TypeScript each member, tool and session uses: TypeScript 7 compiles and checks, TypeScript 6 is loaded only as a JS library until TypeScript 7 ships its API. Boundary: decision text only; the versions live in pnpm-workspace.yaml catalogs build and tooling. Runtime: docs. Governing contract: ADR template (apps/docs/src/adr/template.mdx); ADR 0263, 0294 decision 26, 0300. */}
+
+<Note>
+  Accepted by the owner on 2026-10-28 (design-system session c6, STA-1072). It writes down one rule
+  for every session; it changes no version.
+</Note>
+
+## Context
+
+TypeScript 7 (the native compiler) checks and builds every member from `catalog:build` (7.0.2). It does not ship the
+JavaScript compiler API yet, so a tool that loads `typescript` as a library fails on it
+(`ts.TypeFlags` is undefined). Four places need that API today: the Expo CLI, `tools/scripts/doc-standard.mjs`,
+`@stackra/gen` discovery ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) decision 26,
+[0263](/adr/0263-di-stays-and-gen-writes-the-wiring)) and the `@stackra/showcase` generator. Each session has solved
+this on its own, so the rule needs to be stated once.
+
+## Decision
+
+1. **TypeScript 7 for every typecheck and build.** Every member takes `typescript` from `catalog:build`. `tsc`, the
+   presets ([0300](/adr/0300-published-tooling-presets-and-enforced-spell-checking)), tsdown declarations and CI run
+   TypeScript 7. No member downgrades its compiler.
+2. **TypeScript 6 only as a library, under the alias `typescript6`.** Code that calls the compiler API imports
+   `typescript6` (`catalog:tooling`, `npm:typescript@6.0.3`), never `typescript`, so the TypeScript 7 binary stays
+   the one on PATH. Today: `@stackra/gen` (its fallback host) and `@stackra/showcase` (`scripts/props.reader.ts`,
+   `scripts/omitted-names.function.ts`).
+3. **`typescript` at 6.0.3 only where a third-party tool requires that name.** The root tooling (`doc-standard.mjs`)
+   and the mobile app (the Expo CLI) take `typescript` from `catalog:tooling`; a code comment beside each entry says
+   why. A new entry of this kind names its tool in the catalog comment.
+4. **No ts-morph and no third version.** Nothing pins TypeScript 5 or a nightly.
+5. **Exit.** When TypeScript 7 ships its JS API, `typescript6` and the 6.0.3 `catalog:tooling` entries are removed in
+   one change, and gen's TypeScript 7 host becomes the only one.
+
+## Consequences
+
+- A tool that crashes on `typescript` with an undefined `ts.*` member is moved to `typescript6`, not the member's
+  compiler.
+- Two TypeScript versions stay in the lockfile until the exit in decision 5.
+
+## Enforcement
+
+Planned: a `validate-repository.mjs` row that refuses `import … from "typescript"` in a file that also reads
+`ts.TypeFlags`, `ts.createProgram` or `ts.createSourceFile`, outside the catalog:tooling members named in decision 3.
+Until then, review.

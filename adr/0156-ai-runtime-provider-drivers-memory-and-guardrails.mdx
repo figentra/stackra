@@ -1,0 +1,51 @@
+---
+title: "0156 — The AI runtime: provider drivers, a managed-runtime driver, memory and guardrails"
+description: "Accepted · 2026-10-20"
+---
+
+<Note>
+  Amends [0100](/adr/0100-ai-model-and-ownership), decisions 2, 9 and 15, and
+  [0021](/adr/0021-ai-engine-and-agent-write-safety), decision 3.
+</Note>
+
+## Context
+
+[0100](/adr/0100-ai-model-and-ownership) and [0021](/adr/0021-ai-engine-and-agent-write-safety) set the AI engine and write safety. The
+owner's answers P14, AI1, AI4 and AI5 (mem L399, L781, L784, L785, 2026-10-20) add provider drivers, the data rules for threads and
+memory, and guardrails. P14 changes [0100](/adr/0100-ai-model-and-ownership) decision 15, which said AgentCore is not a driver.
+
+## Decision
+
+1. **Hosting driver (P14, AI6).** A managed agent runtime, such as AgentCore, is a _deferred hosting driver_ behind the `Promptable`
+   port. Tools, approval, evidence and audit stay in the action pipeline, whatever the hosting driver.
+2. **Model providers (AI1).** Drivers for Bedrock (the SaaS default), Anthropic, OpenAI and Google, and local vLLM or Ollama for on-prem
+   and air-gapped installs. A routing table per task type can be overridden per tenant, and tenants can bring their own keys through
+   connections ([0107](/adr/0107-connections-store-and-three-key-homes)). This closes the provider half of gap C5.
+3. **Threads and memory (AI4).** Threads are encrypted with the tenant key and kept 90 days by default. They can be exported and erased.
+   Scoped long-term memory is explicit, can be viewed, and can be deleted. Customer data is never used for training.
+4. **Guardrails and evals (AI5).** Guardrails are layered. Each agent and each built-in prompt has an eval suite. Token budgets are
+   enforced with meters.
+5. **Decision 3 of 0021 and decision 9 of 0100** are restated under these rules, not changed in meaning.
+6. Open: the sources give no revival trigger for the deferred AgentCore driver. The owner must name one.
+
+## Consequences
+
+- Swapping a provider is a driver change and a routing change, not a rewrite of agents.
+- Thread retention is a default, so a tenant that needs longer or shorter has to change a setting within bounds.
+
+## Enforcement
+
+planned — the eval suites run in CI for each agent and built-in prompt, and the meter check blocks a run over its token budget.
+
+## Alternatives
+
+- AgentCore as the runtime: deferred; it is a hosting driver, not the engine.
+- AgentCore as "not a driver" (0100 decision 15): superseded by P14 (C-29).
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0100](/adr/0100-ai-model-and-ownership) decisions 2, 9 and 15; [0021](/adr/0021-ai-engine-and-agent-write-safety) decision 3. Sources:
+owner answers P14 and AI6 (`stackra-decisions-2026-10-19.md` L399, L786), AI1 (L781), AI4 (L784), AI5 (L785), all 2026-10-20; gap C5 (provider half).
+Open question: the revival trigger for the AgentCore hosting driver.

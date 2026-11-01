@@ -1,0 +1,140 @@
+---
+title: "0098 — Actions are the unit of behaviour, in @stackra/actions, with one pipeline and a typed actor"
+description: "Accepted, amended by 0136, 0137, 0139, 0155, 0211, 0264, 0294, 0305 · 2026-10-19"
+---
+
+<Note>
+  Amended 2026-10-23 (STA-406), by
+  [0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components). The `ux`
+  option of ADR 0139 is retired (rule 29). The surfaces that decision 2 describes are typed options
+  with defaults from the key and the actors (rule 28): `endpoint`, `tool`, `job` and `intent`.
+  Intent phrases are in the lang files, not in strings in the code. A cached read is a Query's
+  `cache:` option (rule 31), so an action never caches. Decisions 1, 3, 4, 5, 6 and 7 stand.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the
+  programming model v3, which restates decisions 1 to 5 in the new form. Decisions 6 and 7 (the
+  actor model) are unchanged. Where this note and the text below differ, this note governs.
+
+Decision 1 is superseded. An action or a query is a base class that takes its options:
+`extends Action({ key, actors, ... })` for a write, and `extends Query({ key, ... })` for a read.
+No decorator names the kind. The author writes the `key`, and gen adds the module prefix and the
+major version. The permission defaults from the key, the risk comes from that permission (see
+[0099](/adr/0099-risk-scale-l0-to-l4)), and the input and output are the parameter and return
+types of `handle`, from which gen compiles the schemas.
+
+Decision 2 is superseded. The HTTP route follows the endpoint convention of the programming model
+v3, derived from the key with an optional `endpoint` override. An action is an MCP tool only when
+its options say `tool: true`, and a job is an action with a `job:` option. `@AsEndpoint`,
+`@AsTool`, `@AsJob` and `@AsCommand` are not in the v3 decorator set, and the word command now
+means a CLI command only. `@AsListener` was already removed by
+[0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders). AI exposure
+stays default-deny.
+
+Decision 3's list of steps is superseded by the order in
+[0138](/adr/0138-pipeline-order-is-fixed), as amended: tenancy, permission, precondition,
+entitlement, flag, idempotency, interceptors, and then `handle`. The record rule runs inside
+`handle`, through `ctx.authorize(record)`. Approval, budget, evidence and audit appear in decision
+3 but not in that order, and this note does not settle their place. The `@AccessLogged` facet
+records access and stays.
+
+Decision 4 is superseded by [0105](/adr/0105-crud-generates-service-methods). A service extends
+`CrudService(Model)`, and a resource's `operations` map generates the standard actions. Decision 5
+keeps controllers for raw endpoints only, as the `Controller` kind: a class that extends
+`Controller({ path })` in the module's `raw/` group, with no `@Controller` decorator. Inbound
+webhooks are `WebhookEvent` classes, so they need no controller. The `ux` option of [0139](/adr/0139-actions-declare-their-user-experience)
+becomes resource `toasts`. Guards are preconditions, declared in `preconditions:` and run after
+the permission check. A workflow started from an action is `ctx.run(Workflow, input)`.
+
+Enforcement of this note: planned — STA-338 (`base-matches-suffix`, and the kind-path check for
+`actions/` and `queries/`); STA-340 (gen checks: a permission that cannot be derived; an endpoint
+collision; GET on an action or a non-GET on a query; a query above L1; a precondition on a query).
+
+</Note>
+
+<Note>
+  Amended by [0211](/adr/0211-memberships-and-support-access): the actor gains the acting-as marker.
+</Note>
+
+<Note>
+  Amended by [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free), decision 2: every L0
+  and L1 query is an MCP tool; writes are opt-in.
+</Note>
+
+<Note>
+  Amended by [0139](/adr/0139-actions-declare-their-user-experience): actions declare confirmation,
+  feedback and after-effects.
+</Note>
+
+<Note>
+  Amended by [0136](/adr/0136-action-runtime-contract) (handler context, transaction, idempotency,
+  versions) and [0137](/adr/0137-declared-action-options-and-refusal-codes) (declared options and
+  refusal codes).
+</Note>
+
+<Note>
+  Amended by [0264](/adr/0264-declaration-vocabulary-module-keys-define-family-and-kind-folders):
+  `@AsListener` is removed (decision 2). A reaction is `@OnEvent` on a method of a class in
+  `listeners/`.
+</Note>
+
+## Context
+
+The same operation is reached from an HTTP endpoint, an AI tool, a CLI command, a queue job and an event listener. If each
+entry point re-implements validation, tenancy, authorization, approval, idempotency and audit, they drift, and an AI agent
+ends up with a path a human does not have ([0021](/adr/0021-ai-engine-and-agent-write-safety) decision 9). The AI
+Implementation Standard §35 describes one execution pipeline for this. [0091](/adr/0091-generated-encore-app-in-stackra-folder)
+made decorated controllers the primary HTTP pattern, written before actions were proposed. Medusa types its callers with
+`authenticate(actorType)`; Stackra needs more than a type: who is acting, how they arrived, and on whose behalf.
+
+## Decision
+
+1. **An action is the unit of behaviour.** `@Action` (writes) and `@Query` (reads) in `@stackra/actions` declare a
+   `key@version`, Zod input and output ([0095](/adr/0095-zod-inside-field-decorators)), a permission, a risk level
+   ([0099](/adr/0099-risk-scale-l0-to-l4)), effects, whether approval is needed, intents with examples, and the actor types
+   allowed to call it (`actors: [...]`).
+2. **Adapters expose an action**: `@AsEndpoint`, `@AsTool`, `@AsCommand`, `@AsJob` and `@AsListener`. **AI exposure is
+   default-deny**: an action is a tool only if it carries `@AsTool`.
+3. **Every invocation runs one pipeline**, whatever the adapter: actor → validate → tenancy → iam → policy → entitlement →
+   budget → approval (durable park and resume) → idempotency → transaction → handle → outbox → evidence → audit. The tenancy,
+   iam, policy and entitlement steps run the app's gate chain ([0081](/adr/0081-gate-chain-configurable-per-app)).
+4. **`@Crud` generates opt-in service methods and actions** for a model, per [0105](/adr/0105-crud-generates-service-methods).
+   No controllers are generated.
+5. **`@Controller` remains only for raw endpoints** that are not actions (webhook receivers, `/api/auth/*`, streaming).
+6. **The actor model.** Every invocation carries one typed `Actor`, defined in `@stackra/contracts`
+   ([0117](/adr/0117-contracts-placement-and-decorator-ownership)):
+
+   | Field        | Values                                                                                                                     |
+   | ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+   | `type`       | `user`, `service`, `agent`, `external-agent`, `job`, `webhook`, `system`, `anonymous`                                      |
+   | `id`         | The principal's public id                                                                                                  |
+   | `tenantId`   | The tenant the call acts in, or none for platform calls                                                                    |
+   | `realm`      | `platform`, `tenant` or `customer`; only for `user` actors                                                                 |
+   | `via`        | `http`, `mcp`, `a2a`, `cli`, `queue`, `cron`, `event` or `ui`                                                              |
+   | `credential` | What authenticated the call (session, personal token, service token, OAuth app, signature), by reference, never the secret |
+   | `onBehalfOf` | The delegation chain: the actor this one acts for, recursively, ending at the originating principal                        |
+
+7. **An action refuses an actor type it does not list in `actors`.** The audit record, the evidence record and the integration
+   event envelope carry the full `onBehalfOf` chain.
+
+## Consequences
+
+- A human, an agent, a job and a CLI user go through the same checks, approval and audit.
+- "Who did this" always has an answer that names the agent and the human behind it, which agent permissions
+  ([0100](/adr/0100-ai-model-and-ownership)) and approvals depend on.
+- Approval needs durable park-and-resume state, which ties the pipeline to the workflow and queue packages ([0078](/adr/0078-messaging-layer-eight-packages)).
+- How the fixed pipeline order and the configurable gate chain of 0081 fit together is left to the actions spec.
+- Decorated controllers stop being the primary HTTP pattern; [0091](/adr/0091-generated-encore-app-in-stackra-folder) decision 7 is amended accordingly.
+
+## Enforcement
+
+Planned: the gen validation pass ([0090](/adr/0090-codegen-discovery-by-root-module)) rejects an action without a permission,
+a risk level or an `actors` list, and an `@AsTool` on an L4 action without approval. A pipeline-order test and an actor-refusal
+test in `@stackra/actions`. Nothing checks this today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0091](/adr/0091-generated-encore-app-in-stackra-folder) decision 7. Sources: recommendation by the
+coordinating agent, 2026-10-19, accepted by the owner in Round 10; actor model locked in Round 11 (AI3b); `@Crud` service
+methods from W4. Informational: AI Implementation Standard §18 and §35; Medusa `authenticate(actorType)`.

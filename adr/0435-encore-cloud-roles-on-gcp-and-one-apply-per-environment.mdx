@@ -1,0 +1,56 @@
+---
+title: "0435 — Encore Cloud roles on GCP and one apply per environment"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-730, STA-779). It narrows the Encore Cloud grant the way
+  [0401](/adr/0401-gcp-spend-stop-cloud-sql-recovery-and-deploy-roles-narrower-than-owner) narrowed
+  the deploy role, and adds a lock to the deploy orchestration of
+  [0400](/adr/0400-runway-deploy-providers-promote-rollback-environment-cloud-and-dedicated-tenants).
+  The backup project (0186) and the project per product and region (0354 open question 2) stay owner
+  decisions.
+</Note>
+
+## Context
+
+Encore Cloud's GCP connect flow asks for `roles/owner` on the project for its own service account. ADR 0172 decision 1
+asks for least privilege, and ADR 0401 already replaced `roles/owner` for the infra service account.
+
+Settings promotion (`stackra settings:apply`, ADR 0395) and code deploys (`deploy`, `promote`, `rollback`) both change
+an environment. Two of them running at once in one environment interleave: a settings change can land against a
+release that is halfway rolled out, or two promotions can race.
+
+## Decision
+
+1. **Encore Cloud gets `ENCORE_ROLES`, never owner.** When an environment's `destinations.services` is `encore-cloud`
+   and the root runway names `providers.gcp.encore.serviceAccount` (an email or `ref:<path>`), the GCP foundation
+   (`gcpBaseline`) grants that service account one predefined role per kind of resource Encore provisions: Cloud Run,
+   Cloud SQL, Pub/Sub, Storage, Memorystore, Secret Manager, Cloud Scheduler, the VPC (network admin, Serverless VPC
+   Access, private services access), Artifact Registry, service accounts and project IAM, enabling APIs, and reading
+   logs and metrics. A missing role shows as a failed provisioning in Encore's dashboard and is added to the list in
+   the same change; the grant never widens to owner.
+2. **One apply per environment at a time.** `withDeployLock(root, environment, lock, work)` in `@stackra/runway` runs
+   any apply (a code deploy, a promotion, a rollback or a settings promotion) holding the key
+   `runway:deploy:<project>:<environment>`. A held lock refuses at once with `RunwayLockedError`; it never queues. The
+   lock store is the caller's `Locks` from `@stackra/locking` (Postgres or Valkey through `locking.driver`), passed as
+   the structural `DeployLock` type so runway takes no dependency on it. The lease is renewed while the apply runs;
+   its TTL (30 minutes unless the caller passes one) only bounds how long a crashed holder blocks the environment.
+
+## Consequences
+
+- Turning Encore Cloud on for a GCP project is runway data: the destination and the service account.
+- The role list may lag Encore's primitives; the first deploy that needs a new resource kind fails visibly.
+- The CLI's `settings:apply` and the deploy commands wrap their work in `withDeployLock`; until they do, the lock
+  holds only for callers that use it.
+
+## Enforcement
+
+planned — `packages/infrastructure/infra-gcp/src/node/functions/__tests__/encore-access.function.test.ts` and
+`gcp-baseline.function.test.ts` assert the roles and the absence of `roles/owner`;
+`packages/developer/runway/src/core/functions/__tests__/with-deploy-lock.function.test.ts` asserts the refusal.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-730 (Encore role on GCP), STA-779 (runway deploy locks for settings promotion); ADR
+0172, 0289 (decision 5), 0352 (decision 3), 0103, 0149, 0395, 0400, 0401.

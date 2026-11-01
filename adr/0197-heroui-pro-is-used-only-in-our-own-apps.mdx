@@ -1,0 +1,70 @@
+---
+title: "0197 — HeroUI Pro is used only in our own apps until an OEM agreement exists"
+description: "Superseded by 0469 · 2026-10-28"
+---
+
+<Note>
+  Superseded by
+  [0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only) on
+  2026-10-28 (STA-1371). HeroUI answered the OEM request (STA-41): HeroUI Pro may not be
+  redistributed in Stackra in any form. Stackra ships no HeroUI Pro, apps and the stackra-template
+  console included.
+</Note>
+
+<Note>
+  Amended 2026-10-23 (STA-406): an owner decision of 2026-10-23, recorded in this note. The owner
+  has approved one exception to decisions 1 and 4. The public `stackra-template` console installs
+  HeroUI Pro directly, as `@heroui-pro/react`, and as `heroui-native-pro` where a native target uses
+  it. The exception is for the template only. The template uses Figentra's own HeroUI licence, for
+  Figentra's own use of it. The licence token is `HEROUI_PERSONAL_TOKEN` from Infisical. Locally it
+  is read from `/agents` through the pnpm script that wraps the install, and in the template's CI it
+  is read through the template's OIDC path to Infisical. It is never a file in a repository and
+  never a repository secret. No Pro source is committed. `@stackra/ui-pro`, Stackra's own wrapper
+  package, stays private to Stackra's own apps and is never published. A third party who copies the
+  template must bring their own HeroUI Pro licence, or remove the Pro components. The template's
+  README states this requirement. Decision 3 (the bring-your-own-key option is suspended) concerns
+  Stackra product tenants, not template consumers, and it stands for them. The Consequences of this
+  page hold for every app except the template console under this exception. Revival trigger for
+  ending the exception: the template is published for third parties in a form that installs HeroUI
+  Pro without that party's own licence. At that point the console returns to free components only,
+  as decision 1 says. Decisions 2 and 3 stand.
+</Note>
+
+<Note>
+  Supersedes [0113](/adr/0113-heroui-pro-distribution). Closes gap C14 and contradiction C-22.
+</Note>
+
+<Note>
+  Amended by [0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers). Decision 4 changes: our
+  apps install HeroUI Pro with a `heroui-pro login` session locally and with `HEROUI_AUTH_TOKEN` in
+  CI. `HEROUI_PERSONAL_TOKEN` is used only by the HeroUI MCP servers. The Enforcement line below is
+  met by the check that 0310 names. Decisions 1 to 3 and the OEM question (STA-41) stand.
+</Note>
+
+## Context
+
+[0113](/adr/0113-heroui-pro-distribution) (Accepted) let HeroUI Pro reach customers through a mirror bundle and a bring-your-own-key option. The owner's answer OR9 (mem L579, 2026-10-20) suspends that until the OEM request (STA-41) is answered.
+
+## Decision
+
+1. **Scope.** HeroUI Pro is used only in Stackra's own apps, until an OEM agreement exists (OR9, STA-41).
+2. **Packages.** Free packages never depend on Pro components (mem L579).
+3. **Suspended.** The mirror bundle and the bring-your-own-key option are suspended.
+4. **Access.** Our apps and CI keep `HEROUI_PERSONAL_TOKEN`.
+
+## Consequences
+
+- A customer's app built on Stackra gets the free HeroUI components only.
+- Lifting the restriction is a new ADR, after STA-41.
+
+## Enforcement
+
+planned — the validator rejects a free package that depends on a Pro component.
+
+## Open questions
+
+1. STA-41, the HeroUI OEM answer. This ADR waits for it (register thin item 20).
+
+## Supersedes and sources
+
+Supersedes: [0113](/adr/0113-heroui-pro-distribution). Sources: owner answer OR9 (`stackra-decisions-2026-10-19.md` L579, 2026-10-20).

@@ -1,0 +1,84 @@
+---
+title: "0164 — Console panels are Filament-style resources rendered by @stackra/panel"
+description: "Accepted, amended by 0249, 0294, 0307 · 2026-10-20 · amended 2026-10-24 (STA-445)"
+---
+
+<Note>
+  Proposed amendment 2026-10-26 (STA-666) by
+  [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells): a product's panels,
+  resources and widgets render in the OS console shell, loaded from the product's extension bundle
+  through the shell's import map; a product has no console app of its own. This page stands as
+  written until that ADR is accepted.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-445, STA-446): the web app of decision 6 is the Figentra OS console,
+  `@figentra/console` in the `figentra/os` repository
+  ([0200](/adr/0200-stackra-and-figentra-os-horizontal-services-private-os-repo) decision 2). This
+  repository's console is the reference app, `@figentra/reference-console` once STA-446 lands
+  ([0083](/adr/0083-npm-scopes-and-cli-names) as amended). The rest of decision 6 stands.
+</Note>
+
+<Note>
+  Amended 2026-10-23 (STA-406), by [0307](/adr/0307-panel-v3-1-resource-tables-placements-widgets-slots-and-dashboards). The declarations of decision 1 are classes now: a resource is `Resource<M>({ ... })` and its members are `override` methods, `table`, `views`, `form`, `infolist`, `relations` and `actions` (rule 7). `bulkActions` and `toasts` are retired into `actions`. A table's keys are server contracts (rules 1 and 2), and placement follows the action's input (rule 3). Decisions 2 to 6 stand, and the override of decision 4 follows [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers).
+</Note>
+
+<Note>
+  Amended by [0249](/adr/0249-one-app-three-targets-web-pwa-and-electron), decision 6: the console
+  is one member that also builds the PWA and desktop targets.
+</Note>
+
+<Note>
+  Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), which replaces the
+  decorators of decision 1. A resource extends `Resource(Model, { navigation, operations })`; its `operations`
+  map says which pages exist, so List, View and Create follow from it and an Edit page exists only when `update` does.
+  Notifications declared in a resource's folder appear on the View page's Messages tab, with the delivery log, a
+  preview and resend. A widget extends `Widget({ slot, query, display, refreshOn })`, is a query with a display kind,
+  and takes a typed slot on a resource page; only the Custom kind takes a renderer. `refreshOn` names events, and each
+  one sends a data-free invalidation to the sessions allowed to see the widget, which then refetch through the
+  widget's query; `refreshEvery` is at least 30 seconds. A host places a package's widget with `Widget.place`. `@Resource`, `@Widget` and `@Page` are retired; a
+  saved page is a `Document` (see [0110](/adr/0110-experience-is-the-sdui-service-at-l2)).
+</Note>
+
+<Note>
+  Supersedes [0052](/adr/0052-console-is-a-vite-react-spa). Amends
+  [0110](/adr/0110-experience-is-the-sdui-service-at-l2) and
+  [0112](/adr/0112-experience-packages-and-renderer-kit).
+</Note>
+
+## Context
+
+[0052](/adr/0052-console-is-a-vite-react-spa) made the console a Vite and React single-page app with coded screens. The owner's panel answers
+(mem L735–739, 2026-10-20) replace coded screens with resources that modules declare, and a generic renderer that draws them. The console
+stays a Vite single-page app on Safari 17 or later, as 0052 said (gap B29).
+
+## Decision
+
+1. Modules declare `@Resource`, `@Page` and `@Widget`.
+   - A resource has form and infolist schemas built from model fields.
+   - Tables have columns, filters, sorts and bulk actions, bound to `@Action`.
+   - Relation panels and navigation are declared too.
+2. Gen and the registry publish these declarations. The generic `@stackra/panel` renderer, built on `@stackra/ui`, draws them on web and native.
+3. There are several panels: platform admin, product operator, tenant admin and customer portal.
+4. A tenant can override a level-2 page ([0110](/adr/0110-experience-is-the-sdui-service-at-l2)). Custom pages are the escape hatch.
+5. Coded screens are replaced by this model.
+6. The web app is `@figentra/console`, a Vite single-page app on Safari 17 or later.
+
+## Consequences
+
+- A new admin screen is a declaration, not a new component.
+- The renderer is the one place to fix layout, accessibility and i18n for every panel.
+
+## Enforcement
+
+planned — gen fails on a resource whose bound action does not exist, and the renderer's accessibility checks run in the console app.
+
+## Alternatives
+
+- Coded screens per panel: superseded by this decision.
+
+## Supersedes and sources
+
+Supersedes: [0052](/adr/0052-console-is-a-vite-react-spa). Amends: [0110](/adr/0110-experience-is-the-sdui-service-at-l2),
+[0112](/adr/0112-experience-packages-and-renderer-kit). Sources: owner panel answers (`stackra-decisions-2026-10-19.md` L735–739, 2026-10-20);
+gap B29.

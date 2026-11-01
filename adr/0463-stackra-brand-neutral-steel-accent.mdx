@@ -1,0 +1,77 @@
+---
+title: "0463 — Stackra brand: a neutral steel accent"
+description: "Accepted · 2026-10-28"
+---
+
+{/* Stackra file contract. Purpose: ADR 0463 (Accepted 2026-10-28), the owner's pick of a neutral steel accent for the stackra theme (figentra/brand rules §31, brand commit 0a475ed), superseding ADR 0319 decision 1 (the steel-blue accent) and keeping ADR 0319 decisions 2 and 3 (glass quiet buttons on the web, the native route); plus the Beam-S wordmark redraw (brand commit 86ec08a) and the tagline mirrored into core. Boundary: decision text; the code is batch stackra-213 (STA-1370) in packages/design-system/tokens and the wordmark copies; the ADR index row and docs nav belong to stackra-90. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0024, 0302, 0319, 0320, 0340; figentra/brand .workflow/rules.md §29, §30, §31. */}
+
+<Note>
+  Supersedes [0319](/adr/0319-stackra-brand-steel-blue-accent-and-glass-buttons) decision 1 (the
+  steel-blue accent). 0319 decisions 2 (glass quiet buttons on the web) and 3 (native) stand
+  unchanged. Reserved number: 0463, the next free after 0462 on every branch and worktree of
+  stackra/core on 2026-10-28.
+</Note>
+
+## Context
+
+ADR 0319 gave the stackra theme a steel-blue accent on the wordmark's hue (`oklch(0.5 0.12 248)` light,
+`oklch(0.72 0.11 248)` dark, `#1C67A4` / `#6AAAE6`). On 2026-10-28 the owner looked at steel against other picks for
+the family's brand books and chose a neutral steel instead. The brand session recorded it as binding rule §31 in
+figentra/brand (commit 0a475ed) and changed the brand's tokens (`brands/stackra/tokens/color.json`, `theme.json`,
+`heroui/web.css`), which say they mirror `@stackra/tokens`. Core now has to match them. The same round redrew the
+Beam-S so the wordmark reads "stackra" (brand commit 86ec08a) and fixed the tagline (rules §29 and §30).
+
+## Decision
+
+1. **The accent is neutral steel.** It sits at oklch hue 252 and chroma 0.03, copied from the brand, never retuned
+   here:
+
+   | Role                     | Light                             | Dark                              |
+   | ------------------------ | --------------------------------- | --------------------------------- |
+   | `accent`, `focus`        | `#647282` `oklch(0.546 0.03 252)` | `#A7B6C7` `oklch(0.77 0.03 252)`  |
+   | `accent-hover`           | `#576574` `oklch(0.5 0.03 252)`   | `#97A6B7` `oklch(0.72 0.03 252)`  |
+   | `accent-pressed`         | `#495766` `oklch(0.45 0.03 252)`  | `#8897A8` `oklch(0.67 0.03 252)`  |
+   | `accent-soft`            | `#E6ECF3` `oklch(0.94 0.012 252)` | `#262C33` `oklch(0.29 0.015 252)` |
+   | `accent-soft-foreground` | `#3C4958` `oklch(0.4 0.03 252)`   | `#CED9E5` `oklch(0.88 0.02 252)`  |
+   - `focus` is the accent.
+   - `accent-foreground` stays the kit's paper and ink: paper on the accent is 4.53:1 (light) and ink on the dark
+     accent 9.42:1. `accent-soft-foreground` on `accent-soft` is 7.72:1 and 9.85:1. All pass WCAG 2.2 AA for text, and
+     the focus ring stands 3:1 or more from the page.
+   - `link` and `signal` stay neutral. Stackra owns no hue on the family wheel; amber stays Figentra's.
+
+2. **The accent is not a hue-separation subject.** ADR 0340 decision 5 separates an accent from the status colours by
+   25 degrees of hue or 0.1 of lightness, and reads no hue under chroma 0.03. The neutral steel sits on that edge, so a
+   status could never be read in its hue. The stackra theme's test stops asserting the accent's separation and asserts
+   the banners' separation from the status colours only. A product theme with a chromatic accent is still checked, and
+   `resolveTheme` still applies a brand policy's separation rules.
+3. **ADR 0319 decisions 2 and 3 stand.** The quiet button variants stay glass on the web with no backdrop filter, and
+   the native route is unchanged. Their label rule (4.5:1 over black and white at rest, hover and pressed) now covers
+   the new `accent-soft-foreground`.
+4. **The brand mirror.** `assets/data/stackra/brand.json` records the new accent and the tagline, "One backend, every
+   surface." and «أساس واحد، لكل واجهة.». Core's copies of the wordmark (the docs logos, the static worker's inline
+   SVG, the playground and mobile wordmark components) take the redrawn Beam-S: three beams joined by two posts in the
+   same 7.1 stroke and 53.2 x-height, the brand's path copied and placed with a translate, never redrawn. The small
+   wordmark keeps its real "s".
+
+## Consequences
+
+- Every Stackra web and native surface on the stackra theme turns from steel blue to steel grey; primary buttons read
+  as the brand's neutral, and the focus ring is grey-blue.
+- The kit's token reports in `assets/data/stackra/` (`color`, `aliases`, `contrast`, `resolved`, `separation`) still
+  record the kit 0.1.0 as approved, with its neutral ink accent. ADR 0319 left them so, and so does this ADR; the theme
+  constant is the source and its test holds it to the brand's hex.
+- The specs of STA-425 and the docs and playground pages that say "steel blue" are history or need a follow-up outside
+  this batch's paths.
+
+## Enforcement
+
+`stackra-theme.constant.test.ts`: the frozen snapshot holds the new oklch values; the accent family sits at hue 252
+with chroma above 0 and at most 0.03; its derived hex equals the brand's hex for all six roles in both schemes;
+paper and ink on the accent are 4.5:1 or more and close to the brand's 4.53 and 9.42; the focus ring stands 3:1 from
+the page; the quiet button labels hold 4.5:1.
+
+## Supersedes and sources
+
+Supersedes: [0319](/adr/0319-stackra-brand-steel-blue-accent-and-glass-buttons) decision 1. Sources: figentra/brand
+`.workflow/rules.md` §31 and `brands/stackra/tokens/{color.json,theme.json,heroui/web.css}` at 0a475ed; the Beam-S
+redraw at 86ec08a (`brands/stackra/logo/src/beam-s.mjs`); taglines in rules §29 and §30. STA-1370, batch stackra-213.

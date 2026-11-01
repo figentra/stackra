@@ -1,0 +1,67 @@
+---
+title: "0400 — Runway deploys through Encore Cloud and EAS providers, promotes and rolls back, and names each environment's cloud and dedicated tenants"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed. It implements
+  [0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
+  decision 3 for the `encore-cloud` and `eas` targets and sets the field names
+  [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region) decision 4 left to
+  the Runway schema. Linear STA-790 and STA-730 (the `cloud` field).
+</Note>
+
+## Context
+
+Runway had the cloud and region dimensions (wave 10) but no deploy path: no provider, no promotion and no rollback, so
+nothing reached Encore Cloud or EAS from `runway.yaml`. The GCP foundation read which environment runs in which project
+from `providers.gcp.environments`, a stop-gap until the schema named the cloud of an environment. Juristra needs a
+`dedicated` profile: one tenant, its own project, the same release train (R3-SO-13, `JUR-1`). The runway schema existed
+twice, in `tools/schemas` and in the package, with no recorded owner.
+
+## Decision
+
+1. **The provider port.** `RunwayProvider` (`@stackra/runway`) has plan, apply, verify and rollback, plus `current`
+   (what a target runs now), which promotion needs. A plan is data; apply and rollback change a deployment; verify and
+   current only read. Drivers live in `@stackra/runway/node` and run the destination's own CLI without a shell.
+2. **Encore Cloud.** `EncoreCloudProviderDriver` pushes the release commit to the environment's branch on
+   `encore://<app>`; rollback force-pushes the earlier commit; verify reads the branch. The branch is runway data
+   (`environments.<env>.encore.branch`, per region `encore.regions.<region>.branch`, or a dedicated deployment's own).
+3. **EAS.** `EasProviderDriver` starts `eas build` of the environment's profile, or publishes `eas update` to its
+   channel when `targets.eas.release` is `update`; verify reads the build status or the update group; rollback
+   republishes an earlier group. A store build cannot be rolled back and the driver refuses it.
+4. **Targets, promotion and rollback.** `deployTargets` lists every place a release lands: each kind in build order,
+   each region in release order, then each dedicated tenant's services. `deploy` applies and verifies in that order and
+   stops at the first target that is down. `promote` ships what the source runs to an environment with
+   `deploy.on: promote`. `rollback` returns each target to its record of an earlier release, which the caller reads
+   from the release records ([0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
+   decision 7).
+5. **`cloud` per environment.** `environments.<env>.cloud: { name, account }` names the cloud of the environment's
+   foundation and the key of `providers.aws.accounts` or `providers.gcp.projects` that holds it. It replaces
+   `providers.gcp.environments`. A KSA in-country environment is `cloud: { name: gcp, account: ksa }` with a `ksa`
+   region on `me-central2`; `@stackra/infra-gcp` deploys into the region's location.
+6. **Dedicated deployments.** `environments.<env>.dedicated.<key>: { tenant, cloud, regions?, encore? }` deploys the
+   environment's services for one tenant in its own account or project whenever the environment is released. Web,
+   mobile, desktop and docs stay one per environment.
+7. **Schema source of truth.** `tools/schemas/runway-<kind>.schema.json` stays canonical (the static Worker serves
+   it); `packages/developer/runway/schema/<kind>.json` is its byte copy. Both are updated in the same change.
+8. **Deferred.** Helm and Zarf output for on-prem waits for the first prospect.
+
+## Consequences
+
+- A deploy, promotion or rollback is one call over one file, testable with fake command runners.
+- Encore Cloud must track branches per environment and region; the owner creates those environments.
+- `checkRegions` reports a `cloud` whose provider section is missing or does not hold the account.
+- Existing runways that used `providers.gcp.environments` move to `environments.<env>.cloud`.
+
+## Enforcement
+
+`packages/developer/runway/src/core/functions/__tests__/{deploy-targets,deploy,promote,rollback}.function.test.ts`;
+`packages/developer/runway/src/node/drivers/__tests__/{encore-cloud,eas}-provider.driver.test.ts`;
+`packages/developer/runway/src/core/functions/__tests__/runway-json-schema.function.test.ts` (zod against the shipped
+schema). Planned — `pnpm validate` comparing the two schema copies; the `stackra runway` commands (STA-607).
+
+## Supersedes and sources
+
+Supersedes: none. Sources: STA-790, STA-730, STA-136, STA-607; R3-SO-13, RV-39, RV-40, `JUR-1`;
+`notes/handover/stackra-package-needs.md` (`@stackra/runway` rows); `notes/handover/build-wave10-2026-10-25.md`.

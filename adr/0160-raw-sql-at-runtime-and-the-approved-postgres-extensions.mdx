@@ -1,0 +1,64 @@
+---
+title: "0160 — Raw SQL at runtime and the approved Postgres extensions"
+description: "Accepted, amended by 0314, 0334 and a 2026-10-29 note (pg_stat_statements) · 2026-10-20"
+---
+
+<Note>
+  Amended 2026-10-29 (STA-1400, stackra-282; owner answer 7 of the data-layer gap analysis):
+  `pg_stat_statements` is approved, so decision 2 lists seven extensions. It records normalised
+  statements with their call counts and times, which query telemetry reads alongside the
+  application's own slow-statement log; it holds no parameter values. A migration enables it through
+  `schema.createExtension(Extension.PgStatStatements)`; the server must also preload it (Cloud SQL
+  ships it for `create extension`; not verified on Encore's RDS). Decision 2 stands otherwise;
+  `btree_gist` and the preload flags are left to stackra-283, and pg_cron and TimescaleDB stay out.
+</Note>
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 3): a
+  migration enables an extension through the built-in `schema.createExtension(name)` step, for the
+  approved extensions of decision 2, as amended by 0314, only; a raw `schema.sql` is not the way.
+  Decision 2 stands.
+</Note>
+
+<Note>Amends [0014](/adr/0014-data-ownership-and-orm), decision 6 (raw SQL and extensions).</Note>
+
+<Note>
+  Amended by [0314](/adr/0314-postgis-approved-geospatial-field-and-macros): PostGIS is approved, so
+  decision 2 lists six extensions, not five. The statement that PostGIS is not approved yet, and the
+  Alternatives bullet "PostGIS now", no longer hold. The field, its macros and the GiST indexes are
+  decided in 0314.
+</Note>
+
+## Context
+
+[0014](/adr/0014-data-ownership-and-orm) chose MikroORM and did not say when raw SQL is allowed. The owner's answers P15 and DA11
+(mem L537, 2026-10-20) fix where raw SQL may appear, and which Postgres extensions are approved.
+
+## Decision
+
+1. **Where raw SQL may appear (P15).** Typed `raw()` is allowed only in a module service method of `@stackra/database`. Results are
+   typed with Zod. Queries are parameterised only. The row-level security session applies tenant scope. Each raw query carries a
+   `// raw-sql:` comment with the reason. Actions contain no SQL.
+2. **Approved extensions (DA11).** pgvector, pg_trgm, ltree, citext and pgcrypto are approved. PostGIS is not approved yet.
+
+## Consequences
+
+- SQL review is confined to service methods, so an action cannot hide a query.
+- A new extension is an ADR change, because each extension is a dependency of every environment.
+
+## Enforcement
+
+planned — the validator rejects `raw(` outside a module service method, and rejects a raw query with no `// raw-sql:` reason.
+
+## Alternatives
+
+- SQL in actions: rejected by P15.
+- PostGIS now: not approved (DA11); a future ADR would decide it.
+
+## Supersedes and sources
+
+Supersedes: none.
+
+Amends: [0014](/adr/0014-data-ownership-and-orm) decision 6. Sources: owner intent-map item P15 (accepted, `stackra-notes/owner-docs-intent-map.md`,
+Part 4), owner answer DA11 (`stackra-decisions-2026-10-19.md` L537, 2026-10-20).

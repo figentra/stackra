@@ -1,0 +1,81 @@
+---
+title: "0374 — Seed packs, the `stackra seed-pack` command and the `stackra new` template set"
+description: "Proposed · 2026-10-26"
+---
+
+<Note>
+  Proposed (STA-806). It gives a format and a command to
+  [0363](/adr/0363-configuration-over-code-business-behaviour-is-data-rules-workflows-and-studios)
+  decision 7 (seeds), [0190](/adr/0190-seed-profiles-and-product-analytics) (three profiles) and
+  [0325](/adr/0325-launch-readiness-release-rules-edge-caching-and-update-strategy) decision 7, and
+  names the CLI scaffolding of
+  [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc). It answers the wave
+  10 CLI builder's questions 2 to 5 and 8.
+</Note>
+
+## Context
+
+Every owner answer that is a default value becomes a seed row (config-model section 6), so each product needs one
+seed pack with a stable format and a command that loads it without overwriting what a tenant changed. Wave 10 built
+`stackra seed-pack <product>` and `stackra new seed-pack` in `@stackra/cli` with a closed list of eleven record kinds,
+and left the seed runner (`seedState`, `applySeed`) to `@stackra/database/node`. Review round 2 (X2-36) found that a
+closed kind list in the CLI is code deciding what configuration may exist, and that half the record kinds named since
+2026-10-25 were missing from it. `stackra new` covers packages, services and seed packs; app kinds still use
+`pnpm new`.
+
+## Decision
+
+1. **One pack per product.** A product keeps `seed-pack:<product>` in `seed-packs/<product>/` of its repository: a
+   `seed-pack.yaml` header (`key`, `product`, a semantic `version`) and one YAML document per record under
+   `profiles/minimal/`, `profiles/demo/` and `profiles/test/`. A document has `kind`, the record `key` and `rows`; every
+   row has an `id` and the `answer` id it encodes (`COM-160`). A row without an answer id is refused.
+2. **Record kinds are a registry.** A record kind is registered by the package that owns it, with a schema and a
+   validator, and the CLI reads the registry; it holds no list of its own. The first kinds are those of the wave 10
+   list (settings, rule-set, workflow-template, studio-template, role-template, industry-template, plan-catalogue,
+   price-list, offer, connector-catalogue, brand-kit) plus the kinds the answers already use: rate-card,
+   fee-schedule, launch-gate, module-availability, product-availability, device-catalogue, tenant-kind, region-map,
+   os-company, notification-category, data-class, provider-category, perk, payroll mapping and importer profile. An
+   unknown kind is `seed_kind_unknown`.
+3. **Profiles layer.** `minimal` is a new tenant's defaults; `demo` and `test` load `minimal` first and add their own
+   records. One record key seeded twice across a profile's layers is refused (`seed_record_duplicate`); a demo that
+   needs another value seeds its own record.
+4. **The command.** `stackra seed-pack <product> --check` validates the header, every record against its kind's
+   schema, the answer ids, and (with X2-19) every market pack section the product ships, against the section schemas
+   of `@stackra/market-packs`, including that an overlay floor is not looser than its parent. Without `--check`, the
+   command plans by content hash and writes through the member's `SeedRunner` (`seedState`, `applySeed` in
+   `@stackra/database/node`) only new records and seed-owned records whose hash changed.
+5. **Product defaults, never tenant values.** The runner writes the product-default layer (0363 decision 5). A
+   tenant's edit is a tenant-layer value or a tenant-owned copy, so a new seed version only changes the default
+   underneath. Ownership is per record (`owner: seed | tenant`), because a tenant edits a template by copying it.
+6. **No `--tenant` option.** The CLI never seeds a tenant. A new sandbox receives live configuration plus the `demo`
+   profile through the OS sandbox workflow (0359 decision 11), which calls the same runner for that sandbox.
+7. **Seeded automations run as a principal.** A seeded automation is owned by a standing service principal
+   `seed:<product>` ([0153](/adr/0153-automations-run-as-principals-and-every-package-exposes-building-blocks)); Figentra's
+   own seeds skip the dry run of [0122](/adr/0122-workflow-studio-three-layers), and a tenant edit re-owns its copy to
+   the editor and runs the dry run (X2-38).
+8. **`stackra new` template set.** `stackra new <kind> <name>` writes the v3 shapes of
+   [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming): `package` (`--category`), `service`
+   (`--area`) and `seed-pack`. App kinds (console, mobile, desktop, docs) move to `stackra new` as their v3 templates
+   land; until then they stay with `pnpm new`. Templates are code in `@stackra/cli/node`; they hold no business value.
+9. **Values.** Everything in a seed pack is seed data; market-pack sections are pack data and are only checked here.
+   Settings rows seed the product-default layer of settings; rule-set and workflow-template records seed rule sets and
+   workflows. The command itself holds none of them.
+
+## Consequences
+
+- A changed owner answer is one changed row, found by its answer id.
+- A package that adds a record kind registers it; no CLI release is needed.
+- `stackra seed-pack` fails without `--check` until `@stackra/database/node` exports the runner.
+
+## Enforcement
+
+planned — `stackra seed-pack <product> --check` in each product's CI; the refusal codes are `seed_pack_header`,
+`seed_profile_unknown`, `seed_kind_unknown`, `seed_record_key_missing`, `seed_record_duplicate`,
+`seed_row_id_missing`, `seed_row_duplicate` and `seed_row_answer_missing`. The kind registry replaces
+`packages/developer/cli/src/node/constants/seed-record-kinds.constant.ts`.
+
+## Supersedes and sources
+
+Supersedes: none. Sources: `notes/handover/build-wave10-2026-10-25.md` (CLI builder, questions 2 to 5 and 8; rules and
+workflow builder, question 1); `notes/handover/config-model.md` section 6; `notes/handover/review-round-2/cross.md`
+(X2-19, X2-36, X2-38); `packages/developer/cli/README.md` (seed packs).

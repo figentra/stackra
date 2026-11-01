@@ -1,0 +1,71 @@
+---
+title: "0238 — Database and connection model: one server per environment, one logical database per service"
+description: "Accepted, amended by 0334 and 2026-10-31 (Postgres 18), notes 2-3 closed by 0473 · 2026-10-20"
+---
+
+<Note>
+  Amended 2026-10-24 (STA-428) by
+  [0334](/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr) (rule 6): the
+  finest split unit is the module, not the table. A module's tables live in the module's own
+  Postgres schema (0294), so runway topology may move a module to its own logical database with no
+  code change, and MikroORM then holds one connection per module. Decision 2, one logical database
+  per service, is the default and stands.
+</Note>
+
+<Note>
+  Notes 2 and 3 closed 2026-10-28 by
+  [0473](/adr/0473-connection-pooling-a-managed-proxy-per-cloud-a-pool-budget-per-service-and-a-direct-url-for-session-tools)
+  (stackra-254): the proxy is the cloud's managed one (RDS Proxy on AWS, the Cloud SQL connector on
+  GCP), the runway pool budget is per service and divided per instance, and session tools use a
+  direct URL.
+</Note>
+
+<Note>
+  Amends [0014](/adr/0014-data-ownership-and-orm) and [0097](/adr/0097-model-and-database-packages).
+  Closes gap P0-7 with the answer below.
+</Note>
+
+## Context
+
+[0014](/adr/0014-data-ownership-and-orm) gave each service one database. Topologies (ADR 0169) can pack several services into one deployable, and connection pooling was not decided. The owner's database answer (mem L932, 2026-10-20) follows Encore's own model exactly.
+
+## Decision
+
+1. **Server.** One Postgres server per environment. RDS is the default; Aurora or Neon are optional.
+2. **Databases.** Every declared database is its own logical database, one per service. This holds for monolith, grouped and split topologies alike, so topology never changes how databases are declared.
+3. **Roles.** Each service has its own database role. Each container has its own credentials.
+
+## Consequences
+
+- Grouping services into one deployable never merges their data.
+- The owner's answer says to follow what Encore does; the rest of the connection detail is an implementation choice (below), not a decision.
+
+## Enforcement
+
+planned — gen emits one database declaration per service.
+
+## Amendment of 2026-10-31: the production major is Postgres 18
+
+The owner delegated the choice ("apply the best and standard approach"). Every environment's Postgres runs major
+**18**: RDS for PostgreSQL has offered 18 since November 2025, Aurora PostgreSQL 18.3 has been generally available in
+every commercial region since June 2026, and Cloud SQL 18 since November 2025. Tests run the same major: the test
+image (`POSTGRES_TEST_IMAGE`, PostGIS on 18 with pgvector) and Squawk's `--pg-version` stay on 18. Runway's
+`resources.postgres` defaults to `18` (ADR 0493), the GCP runtime names `POSTGRES_18`, and the tools stack's `psql`
+client image is a pinned 18 (Nominatim keeps its own data path).
+
+Before the first apply in a region, confirm the major there
+(`aws rds describe-db-engine-versions --engine postgres --engine-version 18 --region <region>`). A region that lacks it
+runs 17 alone, set by that environment's resource `version`, and the owner is told; nothing else changes.
+
+## Implementation notes and open questions
+
+To confirm in the first-service spec, following Encore's own behaviour. These are not decisions of this ADR:
+
+1. Tenant context is set with `set_config(..., true)` inside the action transaction (ADR 0136), as Encore's transaction model suggests.
+2. Pooling: transaction-mode pooling through a proxy (RDS Proxy or PgBouncer, depending on where the service runs), with a pool budget per deployable group in `runway.yaml` (ADR 0168). The owner has not chosen the proxy or the budget sizes.
+3. The per-group pool budget sizes are set when the first deployable exists.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0014](/adr/0014-data-ownership-and-orm), [0097](/adr/0097-model-and-database-packages). Sources: owner database answer (`stackra-decisions-2026-10-19.md` L932, 2026-10-20),
+Encore's AWS infrastructure documentation (verified by the owner's notes); gap P0-7.
