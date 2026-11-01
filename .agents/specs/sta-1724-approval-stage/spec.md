@@ -149,7 +149,7 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
   be a key marked `approval` (S9), so a threshold cannot be lowered without a second person. It receives a settings
   reader limited to that list as an argument, `needed(input, ctx, settings)`, which throws on any key not listed (N2); it
   takes no constructor dependencies, and gen refuses any constructor dependency and any `reads` key not marked
-  `approval` (an allow-list for platform plan and entitlement values opens when those classes exist).
+  `approval` (an allow-list for platform plan and entitlement values opens when those classes exist). The source behind the reader is the `ApprovalSettingsSource` port in `@stackra/contracts`, and `@stackra/settings` ships its driver; a condition that declares `reads` with none bound is refused `approval_settings_unavailable`.
 - **FR-003** Gen refuses an `expiresAfter` above 30 days, as `Action()` does at boot (L-03). A declared action needs
   effect tags and a permission like any action. Gen refuses `approval` on a query, on an action whose input schema has
   a field of the `credential` data class (ADR 0494), and unless every entry of `actors` is `User`, `Agent` or

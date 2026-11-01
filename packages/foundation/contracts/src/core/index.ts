@@ -46,6 +46,7 @@ export { defineWorker } from "#core/functions/define-worker.function";
 export { mintPublicId } from "#core/functions/mint-public-id.function";
 export { verifySignature } from "#core/functions/verify-signature.function";
 export { wrapScopeKey } from "#core/functions/wrap-scope-key.function";
+export { ApprovalSettingsSource } from "#core/ports/approval-settings-source.port";
 export { Clock } from "#core/ports/clock.port";
 export { FieldCipher } from "#core/ports/field-cipher.port";
 export { HealthIndicator } from "#core/ports/health-indicator.port";

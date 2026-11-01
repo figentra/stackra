@@ -80,6 +80,7 @@ describe("@stackra/contracts", () => {
       "ActorKind",
       "AesGcmFieldCipherDriver",
       "ApiArea",
+      "ApprovalSettingsSource",
       "AssuranceLevel",
       "AwsKmsKeyProviderDriver",
       "AwsKmsSignerDriver",

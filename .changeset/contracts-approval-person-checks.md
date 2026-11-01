@@ -9,3 +9,5 @@ verified email or phone match, and lets an identity rejection propagate so calle
 
 Add `AUDIT_HOT_RETENTION`, ADR 0212's thirteen months of hot audit retention as `Duration.days(397)` (the longest any thirteen
 consecutive calendar months can run), which the approval binding prune reads.
+
+Add the `ApprovalSettingsSource` port, the one settings read behind an approval condition's limited reader; `@stackra/settings` ships its driver.

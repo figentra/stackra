@@ -69,6 +69,7 @@ import { kindOf, type AnyClass } from "@stackra/container";
 import {
   ActorKind,
   type ApiArea,
+  ApprovalSettingsSource,
   AssuranceLevel,
   Clock,
   Duration,
@@ -98,7 +99,6 @@ import { AccessControl } from "#contracts/ports/access-control.port";
 import { ActorStatusCheck } from "#contracts/ports/actor-status-check.port";
 import { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
-import { ApprovalSettingsSource } from "#contracts/ports/approval-settings-source.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
 import { CallIsolation } from "#contracts/ports/call-isolation.port";
 import { ConsentCheck } from "#contracts/ports/consent-check.port";
@@ -150,6 +150,7 @@ import { OpenApprovalGateDriver } from "#core/drivers/open-approval-gate.driver"
 import { CacheScope } from "#core/enums/cache-scope.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
 import { ApprovalRequiredError } from "#core/errors/approval-required.error";
+import { ApprovalSettingsUnavailableError } from "#core/errors/approval-settings-unavailable.error";
 import { DeviceRevokedError } from "#core/errors/device-revoked.error";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
@@ -629,11 +630,13 @@ export class ActionPipeline {
   /** The reader a condition receives: limited to its static `reads`, over the bound settings source (read lazily). */
   private settingsFor(condition: AnyClass<ApprovalCondition>): ApprovalSettingsReader {
     const { reads = [] } = condition as unknown as { readonly reads?: readonly string[] };
+    const source = this.optional(ApprovalSettingsSource);
+    // fail closed before `needed()` runs: a condition that cannot read its threshold is never "not needed"
+    if (reads.length > 0 && source === undefined) throw ApprovalSettingsUnavailableError.create();
     return limitedSettingsReader(reads, (key) =>
-      this.required(
-        ApprovalSettingsSource,
-        `${condition.name} reads ${key}, so bind a source (the settings package)`,
-      ).get(key),
+      source === undefined
+        ? Promise.reject(ApprovalSettingsUnavailableError.create())
+        : source.get(key),
     );
   }
 

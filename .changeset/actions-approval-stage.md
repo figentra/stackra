@@ -11,7 +11,7 @@ an `IdentityResolver`. New refusals: `approval_mismatch`, `approval_expired`, `a
 `approval_pending_limit`, `approval_identity_unavailable`; `approval_required` also carries `approvalsRequired` and
 `expiresAt`. `StepUpCheck.require` takes an optional `at`, `ApproverRefusal` gains `already_approved` and
 `approver_not_permitted`, and `approverRefusal` uses `actorChainOverlaps`. `./testing` ships `MemoryApprovalGateDriver`,
-`MemoryApprovalBindingStoreDriver`, `MemoryActorStatusCheckDriver` and the two port conformance suites. The `ApprovalSettingsSource` port answers a condition's limited reader.
+`MemoryApprovalBindingStoreDriver`, `MemoryActorStatusCheckDriver` and the two port conformance suites. A condition that declares `reads` with no `ApprovalSettingsSource` bound is refused `approval_settings_unavailable` before `needed()` runs.
 
 ### Breaking
 

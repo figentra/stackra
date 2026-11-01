@@ -43,7 +43,6 @@ describe("@stackra/actions/contracts", () => {
       "ApprovalGate",
       "ApprovalGrantOrigin",
       "ApprovalGranted",
-      "ApprovalSettingsSource",
       "ApprovalStatus",
       "ApproverRefusal",
       "AuditTrail",

@@ -56,6 +56,7 @@ describe("@stackra/actions", () => {
       "ApprovalNotGrantedError",
       "ApprovalPendingLimitError",
       "ApprovalRequiredError",
+      "ApprovalSettingsUnavailableError",
       "AuditEntryRecorded",
       "CacheScope",
       "ConflictResolution",

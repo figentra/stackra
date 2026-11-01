@@ -45,7 +45,7 @@ anyone, so the owning service keeps its own binding; a per-service MAC key was t
    value); the comparison is code. A condition that throws fails the call. Every setting it reads is listed in its
    static `reads` and must itself be a key marked `approval`. The condition receives a settings reader limited to
    that list as an argument, which throws on any other key; it receives the limited reader as an argument and takes no
-   constructor dependencies, and gen refuses any constructor dependency.
+   constructor dependencies, and gen refuses any constructor dependency. The port behind the reader, `ApprovalSettingsSource`, lives in `@stackra/contracts` and `@stackra/settings` ships its driver; with none bound, a condition that declares `reads` is refused `approval_settings_unavailable`.
 3. **Place.** The stage keeps its place after validation and before idempotency, rate limit, interceptors, the unit of
    work and `handle`. Under 0495 it runs inside `CallIsolation.run`. Actions only. A park takes a token from the
    action's rate-limit bucket before the binding is inserted, and the store caps pending requests per requester per action.

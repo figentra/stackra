@@ -43,6 +43,7 @@ import {
   type Actor,
   ActorKind,
   type Email,
+  ApprovalSettingsSource,
   AssuranceLevel,
   Clock,
   Duration,
@@ -81,7 +82,6 @@ import {
   ActorStatusCheck,
   ApprovalBindingStore,
   ApprovalGate,
-  ApprovalSettingsSource,
   AuditTrail,
   CallIsolation,
   ConsentCheck,
@@ -3034,6 +3034,23 @@ describe("ActionPipeline approval stage (ADR 0509)", () => {
     await expect(pipeline.execute(GreedyAction, {}, { actor: customer })).rejects.toThrow(
       RangeError,
     );
+  });
+
+  it("refuses a condition that declares reads when no settings source is bound, before needed() runs", async () => {
+    const { pipeline, bindings } = stage({}, [
+      [ThresholdCondition, new ThresholdCondition()],
+      [ThresholdAction, new ThresholdAction()],
+    ]);
+    await expect(
+      pipeline.execute(ThresholdAction, { percent: 30 }, { actor: customer }),
+    ).rejects.toMatchObject({ code: "approval_settings_unavailable", retryable: false });
+    expect(bindings.inserts).toBe(0);
+    // a condition with no reads needs no source
+    await expect(
+      pipeline.execute(CouponAction, { percent: 3 }, { actor: customer }),
+    ).resolves.toEqual({
+      percent: 3,
+    });
   });
 
   it("runs a call whose condition is false, and parks nothing", async () => {

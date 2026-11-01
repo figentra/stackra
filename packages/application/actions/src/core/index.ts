@@ -42,6 +42,7 @@ export { ApprovalIdentityUnavailableError } from "#core/errors/approval-identity
 export { ApprovalMismatchError } from "#core/errors/approval-mismatch.error";
 export { ApprovalNotGrantedError } from "#core/errors/approval-not-granted.error";
 export { ApprovalPendingLimitError } from "#core/errors/approval-pending-limit.error";
+export { ApprovalSettingsUnavailableError } from "#core/errors/approval-settings-unavailable.error";
 export { ApprovalRequiredError } from "#core/errors/approval-required.error";
 export { DeviceRevokedError } from "#core/errors/device-revoked.error";
 export { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
