@@ -67,6 +67,9 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 | docs-adr-steward          | steward  | no                       | both       |
 | docs-changesets-steward   | steward  | no                       | both       |
 | i18n-steward              | steward  | no                       | both       |
+| git-steward               | steward  | no                       | claude     |
+| ci-steward                | steward  | no                       | claude     |
+| linear-steward            | steward  | no                       | claude     |
 | incident-commander        | lead     | no                       | claude     |
 
 ## Routing: Stackra agents and the knowledge-work plugins

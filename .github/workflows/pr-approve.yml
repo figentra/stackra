@@ -1,0 +1,135 @@
+# Stackra file contract:
+# Purpose: approve one pull request as a GitHub App after re-checking in code the rules an author could get around:
+#          the PR is open and not a draft; its head is in this repo and is the SHA the caller checked; its author is
+#          not the approving App; it has no `design` or `risk:R3` label; it changes no path in `OWNER_ONLY`; and every
+#          required check passed or was skipped. A refused PR gets one comment with the reasons. git-steward
+#          dispatches it; another figentra repo calls it (`workflow_call`) from a caller workflow of the same name
+#          (STA-1856).
+# Boundary: approves or comments, nothing else. It never merges (`pnpm pr:merge` does), and it never checks out or
+#           runs the PR's code.
+# Runtime: GitHub Actions
+# Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY, secrets of the `pr-approval` environment (main only, no
+#          reviewer) in the repo the job runs for, so a workflow edited on a branch cannot mint the token. Names only.
+# Governing contract: ADR 0119 (amendment of 2026-11-01); ADR 0230; ADR 0019.
+# Owner: release-operations
+name: PR approval
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+        type: number
+      head:
+        description: The head SHA the caller checked; the approval is refused if the PR moved since
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+        type: number
+      head:
+        description: The head SHA the caller checked; the approval is refused if the PR moved since
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: pr-approve-${{ github.repository }}-${{ inputs.pr }}
+  cancel-in-progress: false
+
+jobs:
+  approve:
+    name: Approve
+    # The App key is only in this environment, and it allows `main` only.
+    environment: pr-approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+      statuses: read
+    env:
+      # Owner-only (STA-1856): every workflow and action (production deploy, promote and release, and the definition of
+      # the required check); secrets and the secret guards; `catalog:` entries; repo settings and branch protection;
+      # billing and legal files. One ERE, the only copy: git-steward reads it here.
+      OWNER_ONLY: '^\.github/(workflows|actions|rulesets)/|^\.github/branch-protection\.json$|(^|/)CODEOWNERS$|^pnpm-workspace\.yaml$|^\.npmrc$|^\.infisical\.ya?ml$|^\.gitleaks\.toml$|^\.agents/hooks/|^\.agents/rules/secrets\.md$|^\.claude/settings[^/]*\.json$|^opencode\.jsonc$|^\.opencode/plugins/guard/|(^|/)\.env|(^|/)\.dev\.vars$|\.(pem|key|p8|p12)$|(^|/)(billing|legal)/|^(\.github/)?(LICEN[CS]E|NOTICE|COPYRIGHT)[^/]*$'
+    steps:
+      # Fail closed when an edit to OWNER_ONLY stops matching what it must, or starts matching ordinary code.
+      - name: Owner-only list self-check
+        run: |
+          set -euo pipefail
+          for p in .github/workflows/ci.yml .github/actions/x/action.yml .github/rulesets/main.json \
+            .github/CODEOWNERS pnpm-workspace.yaml .agents/hooks/_rules.mjs .claude/settings.json \
+            services/a/.env.example certs/signing.p12 apps/console/src/billing/plan.ts LICENSE .github/NOTICE; do
+            grep -Eq "$OWNER_ONLY" <<<"$p" || { echo "::error::OWNER_ONLY misses $p"; exit 1; }
+          done
+          for p in packages/ui/src/button.tsx packages/ui/LICENSE .agents/agents/git-steward.md package.json \
+            apps/docs/src/docs/adr/0119-merge-policy-and-release-authority.mdx .github/pull_request_template.md; do
+            if grep -Eq "$OWNER_ONLY" <<<"$p"; then echo "::error::OWNER_ONLY wrongly matches $p"; exit 1; fi
+          done
+
+      # Only pull requests: write is asked for; the approval counts because the App itself has write access.
+      - name: App token
+        id: bot
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
+          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+          permission-pull-requests: write
+
+      - name: Check and approve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BOT_TOKEN: ${{ steps.bot.outputs.token }}
+          APPROVER: ${{ steps.bot.outputs.app-slug }}[bot]
+          REPO: ${{ github.repository }}
+          PR: ${{ inputs.pr }}
+          EXPECTED_HEAD: ${{ inputs.head }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          refuse=()
+          [[ $EXPECTED_HEAD =~ ^[0-9a-f]{40}$ ]] || refuse+=("\`head\` is not a 40-hex SHA")
+
+          pr=$(gh api "repos/$REPO/pulls/$PR")
+          sha=$(jq -r .head.sha <<<"$pr")
+          [ "$(jq -r .state <<<"$pr")" = open ] || refuse+=("the PR is not open")
+          [ "$(jq -r .draft <<<"$pr")" = false ] || refuse+=("the PR is a draft")
+          [ "$(jq -r .head.repo.full_name <<<"$pr")" = "$REPO" ] || refuse+=("the head is not in $REPO")
+          [ "$sha" = "$EXPECTED_HEAD" ] || refuse+=("the head is $sha, not the $EXPECTED_HEAD that was checked")
+          [ "$(jq -r .user.login <<<"$pr")" != "$APPROVER" ] || refuse+=("the author is $APPROVER, the approving App")
+          gated=$(jq -r '.labels[].name | select(. == "design" or . == "risk:R3")' <<<"$pr")
+          [ -z "$gated" ] || refuse+=("labelled $(paste -sd, <<<"$gated"): the owner approves it")
+
+          # A rename counts from both sides: moving a file out of an owner-only path is owner-only too.
+          files=$(gh api --paginate "repos/$REPO/pulls/$PR/files?per_page=100" \
+            --jq '.[] | .filename, (.previous_filename // empty)' | sort -u)
+          listed=$(gh api --paginate "repos/$REPO/pulls/$PR/files?per_page=100" --jq '.[].filename' | wc -l)
+          [ "$listed" -ge "$(jq -r .changed_files <<<"$pr")" ] || refuse+=("GitHub lists only $listed changed files")
+          owned=$(grep -E "$OWNER_ONLY" <<<"$files" || true)
+          [ -z "$owned" ] || refuse+=("owner-only paths: $(head -20 <<<"$owned" | paste -sd, | sed 's/,/, /g')")
+
+          checks=$(gh pr checks "$PR" --repo "$REPO" --required --json name,bucket 2>/dev/null) || true
+          if ! jq -e 'type == "array" and length > 0' <<<"$checks" >/dev/null 2>&1; then
+            refuse+=("no required check is reported")
+          else
+            red=$(jq -r '.[] | select(.bucket != "pass" and .bucket != "skipping") | "\(.name) (\(.bucket))"' <<<"$checks")
+            [ -z "$red" ] || refuse+=("required checks not green: $(paste -sd, <<<"$red" | sed 's/,/, /g')")
+            jq -e 'any(.[]; .bucket == "pass")' <<<"$checks" >/dev/null || refuse+=("no required check passed")
+          fi
+
+          if ((${#refuse[@]})); then
+            body=$(printf 'PR approval refused ([run](%s)):\n\n' "$RUN_URL"; printf -- '- %s\n' "${refuse[@]}")
+            GH_TOKEN=$BOT_TOKEN gh pr comment "$PR" --repo "$REPO" --body "$body"
+            printf '::error::%s\n' "${refuse[@]}"
+            exit 1
+          fi
+          GH_TOKEN=$BOT_TOKEN gh api -X POST "repos/$REPO/pulls/$PR/reviews" -f commit_id="$sha" -f event=APPROVE \
+            -f body="Approved at $sha by pr-approve.yml: no owner-only path, required checks green ([run]($RUN_URL))." >/dev/null
+          echo "Approved $REPO#$PR at $sha as $APPROVER"

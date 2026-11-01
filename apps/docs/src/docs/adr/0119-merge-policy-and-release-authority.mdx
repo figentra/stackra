@@ -1,6 +1,6 @@
 ---
 title: "0119 — Merge policy: Quality Gate is the only required check; Claude merges only through pnpm pr:merge"
-description: "Accepted, amended by 0285 and 0468 · 2026-10-19 · amended 2026-10-28"
+description: "Accepted, amended by 0285 and 0468 · 2026-10-19 · amended 2026-11-01"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0119, the merge policy and release authority. Boundary: decision text; the 2026-10-28 note records the deploy model of ADR 0468 (stackra-244, STA-1395). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468. */}
@@ -27,6 +27,19 @@ description: "Accepted, amended by 0285 and 0468 · 2026-10-19 · amended 2026-1
 <Note>
   Amended by [0285](/adr/0285-review-verdict-binds-to-the-patch-id): the AI review verdict for the
   head commit includes one for an earlier head with the same patch id.
+</Note>
+
+<Note>
+  Amended 2026-11-01 (STA-1856), by owner decision of that date. Decision 1 now reads: a ruleset
+  requires one approving review. The owner no longer gives that approval with an admin bypass.
+  Instead, a GitHub App approves through `.github/workflows/pr-approve.yml`. The App's key is kept
+  in the `pr-approval` environment, which allows `main` only. The workflow re-checks the changed
+  paths against its `OWNER_ONLY` list, checks that the required checks are green, checks that the
+  head is the SHA the caller checked, and checks that the author is not the App. If any check fails,
+  it refuses and comments why. The `git-steward` agent decides when to request the approval, and
+  then merges through `pnpm pr:merge`, never `--admin`. Owner-only paths, and pull requests labelled
+  `design` or `risk:R3`, wait for the owner. Owner-only paths are workflows, secrets and the secret
+  guards, `catalog:` entries, repo settings and branch protection, and billing or legal files.
 </Note>
 
 ## Context
