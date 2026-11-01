@@ -10,11 +10,11 @@
 
 /**
  * Plain Node loads the tooling presets, the house lint plugins (feature-flags' `src/lint`, and coding-standard's
- * `src/core` files outside its tests) and the showcase's generator scripts (`node scripts/gen.ts`), so they keep
+ * `src/core` files outside its tests), repo-checks' `spec-*` files (core's spec gate wrappers load them) and the showcase's generator scripts (`node scripts/gen.ts`), so they keep
  * `./x.ts`; oxlint's fixtures break the rules on purpose.
  */
 const IMPORTS_EXEMPT =
-  /^(?:packages\/tooling\/|packages\/design-system\/showcase\/scripts\/|packages\/state\/feature-flags\/src\/lint\/|packages\/developer\/coding-standard\/src\/core\/[^/]+\/[^/]+\.ts$|tools\/scaffold\/templates\/packages\/tooling\/)|\/__tests__\/fixtures\//;
+  /^(?:packages\/tooling\/|packages\/design-system\/showcase\/scripts\/|packages\/state\/feature-flags\/src\/lint\/|packages\/developer\/coding-standard\/src\/core\/[^/]+\/[^/]+\.ts$|packages\/developer\/repo-checks\/src\/node\/(?:functions|constants|types)\/spec-[^/]+\.ts$|tools\/scaffold\/templates\/packages\/tooling\/)|\/__tests__\/fixtures\//;
 
 /**
  * True for member TS source the import rule checks.

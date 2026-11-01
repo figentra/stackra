@@ -164,7 +164,7 @@ token of its OIDC exchange (ADR 0453 decision 6); the registry Worker runs the l
 `format` (oxfmt), `spelling` (cspell), `secrets` (gitleaks), `structure`, `docs`, `lint` (oxlint), `hooks` (oxlint `react/rules-of-hooks` over the compiled output of the `.tsx` files in the
 component homes, where `lint` has the rule off because it flags a class component's hook fields; ADR 0305), `gen`
 (`stackra gen --check`), `typecheck` (`turbo run typecheck`; `tsc --noEmit -p <member>` per member when turbo is
-absent or refuses a dependency cycle), `catalogues`, `spec` (the repository's spec gates) and,
+absent or refuses a dependency cycle), `catalogues`, `spec` (the spec checks of `@stackra/repo-checks`, run in any repository that has `.agents/specs` and skipped without) and,
 opt-in, `test` (`turbo run test`). The `config`, `structure`, `docs` and `catalogues` checks come from
 `@stackra/repo-checks`. The run stops after the first phase that fails, unless `--keep-going` (every phase runs, so a baseline is one call).
 A finding two tools report for the same file under the same meaning (gen `two_declarations_in_file` and lint

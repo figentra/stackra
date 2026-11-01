@@ -12,7 +12,8 @@
  *                           every SC naming its verification method. Wired into `pnpm validate`.
  * A test covers an ID with a tag anywhere in a `__tests__/*.test.*` file: `@covers sta-163:FR-001 sta-163:P-002`.
  * Dependency-free; reads files and git only, never Linear or the network.
- * Boundary: reads specs, tasks, tests and the git diff; writes nothing.
+ * Boundary: reads specs, tasks, tests and the git diff; writes nothing. The rules are the published `spec-*` functions of
+ *   the repo-checks package; this script keeps the CLI modes and their output.
  * Runtime: node
  * Governing contract: ADR 0120 (SDLC spec location, lanes and change risk); STA-348.
  * Secrets: none.
@@ -21,87 +22,30 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { FOLDER, SPECS_DIR, statusOf, testsText } from "./spec-gate.mjs";
-import {
-  coversTags,
-  definedIds,
-  definedLines,
-  memberOf,
-  parseTasks,
-  properties,
-  strip,
-} from "./spec-parse.mjs";
+import { SPECS_DIR, statusOf, testsText } from "./spec-gate.mjs";
+import { memberOf } from "./spec-parse.mjs";
+import { checks } from "./spec-checks.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const readIf = (p) => (existsSync(p) ? readFileSync(p, "utf8") : "");
 
+// The rules are published code in @stackra/repo-checks (spec-*.function.ts); core's issue prefix is `sta`.
+const PREFIXES = ["sta"];
+
 /** The trace matrix for one spec folder's texts; `tests` is the concatenated text of the test files. */
-export function trace({ folder, spec, plan = "", tasks = "", tests = "" }) {
-  const key = folder.match(FOLDER)?.[1];
-  const covered = new Set(coversTags(tests, key));
-  const live = parseTasks(tasks).filter((t) => !t.struck);
-  const tasksFor = (id) => live.filter((t) => t.covers.includes(id)).map((t) => t.id);
-  const props = properties(plan);
-  const ps = [...props.keys()].map((id) => ({ id, tasks: tasksFor(id), tested: covered.has(id) }));
-  const frs = [...definedIds(spec, "FR").live].map((id) => {
-    const via = ps.filter((p) => p.tested && props.get(p.id).includes(id)).map((p) => p.id);
-    return { id, tasks: tasksFor(id), tested: covered.has(id), via };
-  });
-  const scLines = definedLines(spec, "SC");
-  const scs = [...definedIds(spec, "SC").live].map((id) => ({
-    id,
-    method: scLines
-      .get(id)
-      .match(/verified by:\s*([a-z0-9/ -]+)/i)?.[1]
-      ?.trim(),
-  }));
-  return { key, frs, ps, scs };
-}
+export const trace = (context) => checks.specTrace({ ...context, prefixes: PREFIXES });
 
 /** Done rules over a trace: every live FR and P tested, every SC with a method. */
-export function traceProblems(t) {
-  const problems = [];
-  for (const fr of t.frs)
-    if (!fr.tested && !fr.via.length)
-      problems.push(
-        `${fr.id} has no test carrying \`@covers sta-${t.key}:${fr.id}\` (directly or via a P-###)`,
-      );
-  for (const p of t.ps)
-    if (!p.tested) problems.push(`${p.id} has no test carrying \`@covers sta-${t.key}:${p.id}\``);
-  for (const sc of t.scs)
-    if (!sc.method)
-      problems.push(`${sc.id} names no verification method ("— verified by: unit|e2e|k6|manual")`);
-  return problems;
-}
+export const traceProblems = (t) => checks.specTraceProblems(t, "sta");
 
 /** The text of a spec's `## Impact` section. */
-export function impactOf(spec) {
-  return strip(spec).match(/^## Impact\b[^\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m)?.[1] ?? "";
-}
+export const impactOf = checks.specImpactOf;
 
 /**
  * Drift between a spec and the changed paths. `exists` tells whether a repo path exists; `named` holds the members
  * another spec in the same diff already names (one branch may carry many specs, as the STA-348 build does).
  */
-export function drift({ spec, tasks = "", changed = [], exists = () => true, named = new Set() }) {
-  const problems = [];
-  const impact = impactOf(spec);
-  const members = new Set(changed.map(memberOf).filter(Boolean));
-  for (const m of members)
-    if (!impact.includes(m) && !named.has(m))
-      problems.push(`the diff changes \`${m}\`, which no spec in the diff names in its Impact`);
-  for (const t of parseTasks(tasks).filter((x) => x.done && !x.struck))
-    for (const p of t.paths)
-      if (/\//.test(p) && !/[[\]<>*]/.test(p) && !exists(p))
-        problems.push(`${t.id} is ticked, but its path \`${p}\` does not exist`);
-  if (statusOf(spec) === "done") {
-    const docs = impact.match(/^- \*\*Docs to update\*\*:(.*)$/m)?.[1] ?? "";
-    for (const d of docs.match(/apps\/docs\/src\/[^\s`,;)]+/g) ?? [])
-      if (!changed.includes(d))
-        problems.push(`status done, but Impact's doc \`${d}\` is not touched by this diff`);
-  }
-  return problems;
-}
+export const drift = (context) => checks.specDrift({ ...context, prefixes: PREFIXES });
 
 const git = (...a) => {
   try {

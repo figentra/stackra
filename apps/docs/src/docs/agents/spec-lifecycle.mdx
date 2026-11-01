@@ -16,6 +16,25 @@ The wrap rests on core spec-kit behaviour an upgrade could change. `spec-gate ci
 
 Specs are public on GitHub and are not published here (D17). They never hold secrets, customer data or details of an unfixed vulnerability.
 
+## Tiers
+
+Every change takes one of four tiers ([ADR 0502](/adr/0502-spec-tiers-and-approval-stops)), declared as `**Tier**:` in the
+spec header:
+
+- **trivial**: a typo, format, lint, docs wording, test-only fix, approved version bump or obvious one-line bug. No spec: the
+  commit message and the Linear issue. Nothing blocks it.
+- **small**: a bug or small change in one package with no contract, data or permission change. A lite spec, 5 to 10
+  answered questions, with a short `## Design` and `## Tasks` in the same file. No stop.
+- **feature**: new behaviour, a contract or API, a migration, permissions, money, security or personal data, or more than
+  one package. Spec, plan.md, tasks.md; one approval stop after the spec and plan.
+- **big**: a new service, module or product, a new ADR, brand or pricing. Questionnaire, ADR, spec, plan, tasks; stops
+  after the spec and after the plan.
+
+The lane check computes a floor from the diff and refuses a lower declared tier. An approval is `Approved by <who>
+<YYYY-MM-DD>` on the Status line of the stage it approves, asked for with the question tool (Approve, Revise with notes,
+Reject); `**Approver**` names the owner (product, money, legal, security, brand, pricing) or the leader (technical-only
+stops).
+
 ## The flow
 
 ```text

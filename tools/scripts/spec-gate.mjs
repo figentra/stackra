@@ -4,7 +4,8 @@
  * Purpose: `spec-gate` — the stage gates for spec-kit specs in `.agents/specs/sta-<n>-<slug>/` (ADR 0120 D1, owner
  *          decision OR12).
  * Boundary: reads the spec folders, git and, through `pnpm linear`, comments on Linear (best-effort); writes no spec
- *           file.
+ *           file. The read-only rules are the published `spec-*` functions of @stackra/repo-checks (`stackra check` runs
+ *           them in any repo); this script keeps the CLI modes, the tripwire, `branch`, `dir` and the Linear calls.
  * Runtime: node
  * Governing contract: ADR 0120 (SDLC spec location, lanes and change risk); ADR 0121; ADR 0065 (rule 7).
  *
@@ -42,261 +43,76 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { BRANCH_RE } from "./linear.mjs";
-import { definedIds, definedLines, parseTasks, properties, routes, strip } from "./spec-parse.mjs";
+import { checks } from "./spec-checks.mjs";
+import { routes } from "./spec-parse.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const IMPACT_FIELDS = [
-  "Apps touched",
-  "Services touched",
-  "Packages touched",
-  "Cross-service events",
-  "Tenancy and data",
-  "Secrets",
-  "ADR needed",
-  "New dependencies",
-  "Deploy modes",
-  "Licence tier",
-  "Docs to update",
-  "Lane",
-  "Change risk",
-];
-export const SPECS_DIR = ".agents/specs";
+// The read-only rules are published code in @stackra/repo-checks (spec-*.function.ts); core's issue prefix is `sta`,
+// and core's callers keep bare issue numbers ("163") and the messages they have always printed, adapted here.
+const PREFIXES = ["sta"];
 const FOLDER_RE = /^sta-(\d+)-[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export const STATUSES = [
-  "draft",
-  "clarified",
-  "planned",
-  "tasked",
-  "implementing",
-  "done",
-  "abandoned",
-  "superseded",
-];
+export const SPECS_DIR = checks.SPECS_DIR;
+export const STATUSES = [...checks.SPEC_STATUSES];
+export const STAGES = [...checks.SPEC_STAGES];
+export const FOLDER = FOLDER_RE;
+const atLeast = checks.specAtLeast;
+
+// The published message names no tool; core's points at its own Linear helpers.
+const NO_LINEAR_KEY = "`**Linear**` has no STA-n key";
+const withLinearHint = (problems) =>
+  problems.map((p) =>
+    p === NO_LINEAR_KEY ? `${p} (spec-linear.mjs issue, or the Linear MCP)` : p,
+  );
+const keyed = (numbers) => new Set([...numbers].map((n) => `STA-${n}`));
 
 /** Problems that stop a spec from being planned; empty means it may be. */
-export function checkSpec(text) {
-  const body = text.replaceAll(/<!--[\s\S]*?-->/g, "");
-  const problems = [];
-  if (!/^\*\*Clarifications status\*\*:\s*complete\s*$/im.test(body))
-    problems.push("`**Clarifications status**` is not `complete` (run /speckit.clarify)");
-  if (!/^\*\*Linear\*\*:\s*STA-\d+\b/m.test(body))
-    problems.push("`**Linear**` has no STA-n key (spec-linear.mjs issue, or the Linear MCP)");
-  if (/\[NEEDS CLARIFICATION/i.test(body)) problems.push("a `[NEEDS CLARIFICATION` marker remains");
-
-  const impact = body.match(/^## Impact\b[^\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m)?.[1];
-  if (impact === undefined) {
-    problems.push("the `## Impact` section is missing");
-  } else {
-    for (const field of IMPACT_FIELDS) {
-      const value = impact.match(new RegExp(`^- \\*\\*${field}\\*\\*:[ \\t]*(.*)$`, "m"))?.[1];
-      if (value === undefined) problems.push(`Impact: \`${field}\` is missing`);
-      else if (value.trim() === "" || /^\[.*\]$/.test(value.trim()))
-        problems.push(`Impact: \`${field}\` is unanswered`);
-    }
-  }
-  return problems;
-}
-
-export const STAGES = ["clarified", "planned", "tasked", "implementing", "done"];
-export const FOLDER = FOLDER_RE;
-const atLeast = (status, stage) => STATUSES.indexOf(status) >= STATUSES.indexOf(stage);
+export const checkSpec = (text) => withLinearHint(checks.specCheckClarified(text, "sta"));
 
 /** The declared `**Status**`, lower-cased ("" when absent). */
-export const statusOf = (text) =>
-  strip(text)
-    .match(/^\*\*Status\*\*:\s*([A-Za-z]+)/m)?.[1]
-    ?.toLowerCase() ?? "";
-
-/** The table rows of `text`: every `|` line but the first (the header) and the rules, each as its trimmed cells. */
-const tableRows = (text) =>
-  (text ?? "")
-    .split("\n")
-    .filter((l) => l.startsWith("|") && !/^\|\s*-/.test(l))
-    .slice(1)
-    .map((l) =>
-      l
-        .split("|")
-        .slice(1, -1)
-        .map((c) => c.trim()),
-    );
+export const statusOf = checks.specStatusOf;
 
 /** Planned rules for plan.md against its spec. */
-export function checkPlan(plan, spec) {
-  const problems = [];
-  const body = strip(plan);
-  if (/\[NEEDS CLARIFICATION/i.test(body))
-    problems.push("plan.md: a `[NEEDS CLARIFICATION` marker remains");
-  const section = (name) =>
-    body.match(new RegExp(`^## ${name}\\b[^\\n]*\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m"))?.[1];
-  const constitution = section("Constitution Check");
-  if (constitution === undefined)
-    problems.push("plan.md: the `## Constitution Check` table is missing");
-  for (const [law, result, note] of tableRows(constitution)) {
-    if (!/^(PASS|N\/A)$/i.test(result ?? ""))
-      problems.push(
-        `plan.md: Constitution Check \`${law}\` is \`${result ?? ""}\`, not PASS or N/A`,
-      );
-    else if (/^N\/A$/i.test(result) && !note)
-      problems.push(`plan.md: Constitution Check \`${law}\` is N/A without a reason`);
-  }
-  const modes = new Set(tableRows(section("Deploy modes")).map(([m]) => m.toLowerCase()));
-  for (const mode of ["saas", "on-prem", "air-gapped"])
-    if (!modes.has(mode)) problems.push(`plan.md: Deploy modes has no \`${mode}\` row`);
-  const validated = new Set([...properties(plan).values()].flat());
-  const frLines = definedLines(spec, "FR");
-  for (const fr of definedIds(spec, "FR").live)
-    if (!validated.has(fr) && !/example-only/i.test(frLines.get(fr) ?? ""))
-      problems.push(`plan.md: ${fr} is validated by no P-### (or mark it example-only in spec.md)`);
-  return problems;
-}
+export const checkPlan = checks.specCheckPlan;
 
 /** Tasks lint for tasks.md against its spec and plan; `known` holds the routing.yaml task types. */
-export function checkTasks(tasksText, { spec = "", plan = "", known = new Set() } = {}) {
-  const problems = [];
-  const tasks = parseTasks(tasksText);
-  if (!tasks.length) return ["tasks.md: no `- [ ] T###` task lines"];
-  const ids = new Set(definedIds(spec, "(?:FR|SC|EC)").live);
-  for (const p of properties(plan).keys()) ids.add(p);
-  const seen = new Map();
-  for (const t of tasks) {
-    if (seen.has(t.id)) problems.push(`tasks.md:${t.line}: ${t.id} repeats line ${seen.get(t.id)}`);
-    seen.set(t.id, t.line);
-  }
-  const live = tasks.filter((t) => !t.struck);
-  for (const t of live) {
-    const at = `tasks.md:${t.line}: ${t.id}`;
-    if (!t.covers.length) problems.push(`${at} has no \`covers:\``);
-    for (const id of t.covers)
-      if (!ids.has(id))
-        problems.push(`${at} covers ${id}, which spec.md and plan.md do not define`);
-    if (!t.route) problems.push(`${at} has no \`route:\``);
-    else if (known.size && !known.has(t.route))
-      problems.push(`${at} route \`${t.route}\` is not a task type in .agents/routing.yaml`);
-    for (const d of t.deps)
-      if (!seen.has(d)) problems.push(`${at} depends on ${d}, which does not exist`);
-  }
-  const deps = new Map(live.map((t) => [t.id, t.deps]));
-  const state = new Map();
-  const visit = (id, trail) => {
-    if (state.get(id) === "done") return;
-    if (state.get(id) === "open")
-      return problems.push(`tasks.md: dependency cycle ${[...trail, id].join(" → ")}`);
-    state.set(id, "open");
-    for (const d of deps.get(id) ?? []) visit(d, [...trail, id]);
-    state.set(id, "done");
-  };
-  for (const id of deps.keys()) visit(id, []);
-  const covered = new Set(live.flatMap((t) => t.covers));
-  for (const fr of definedIds(spec, "FR").live)
-    if (!covered.has(fr)) problems.push(`tasks.md: ${fr} is covered by no task`);
-  const waves = new Map();
-  for (const t of live.filter((x) => x.parallel))
-    for (const path of t.paths) {
-      const k = `${t.phase}\0${path}`;
-      if (waves.has(k))
-        problems.push(
-          `tasks.md: [P] tasks ${waves.get(k)} and ${t.id} share \`${path}\` in one wave`,
-        );
-      else waves.set(k, t.id);
-    }
-  return problems;
-}
+export const checkTasks = (tasksText, context = {}) =>
+  checks.specCheckTasks(tasksText, { ...context, prefixes: PREFIXES });
 
 /** Problems for a spec at its declared `**Status**`; `files` lists the names in its folder. */
-export function checkStage(folder, text, { files = [], tasks = "", plan = "", known } = {}) {
-  const body = strip(text);
-  const key = folder.match(FOLDER_RE)?.[1];
-  if (!key) return [`folder \`${folder}\` is not \`sta-<n>-<slug>\` (ADR 0120 D1)`];
-  const status = statusOf(text);
-  if (!STATUSES.includes(status)) return [`\`**Status**\` is not one of ${STATUSES.join(", ")}`];
-  if (status === "abandoned" || status === "superseded") return [];
-  const problems = [];
-  const linear = body.match(/^\*\*Linear\*\*:\s*STA-(\d+)\b/m)?.[1];
-  if (linear && linear !== key)
-    problems.push(`\`**Linear**: STA-${linear}\` does not match the folder key STA-${key}`);
-  if (status === "draft") return problems;
-  problems.push(...checkSpec(text));
-  const history =
-    body.match(/^## Status history\b[^\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m)?.[1] ?? "";
-  if (!new RegExp(`→\\s*${status}\\b`, "i").test(history))
-    problems.push(
-      `\`## Status history\` has no "→ ${status[0].toUpperCase()}${status.slice(1)}" line`,
-    );
-  if (atLeast(status, "planned")) {
-    if (!files.includes("plan.md")) problems.push(`status ${status} needs plan.md`);
-    else problems.push(...checkPlan(plan, text));
-  }
-  if (atLeast(status, "tasked")) {
-    if (!files.includes("tasks.md")) problems.push(`status ${status} needs tasks.md`);
-    else problems.push(...checkTasks(tasks, { spec: text, plan, known }));
-  }
-  const live = parseTasks(tasks).filter((t) => !t.struck);
-  if (atLeast(status, "implementing") && !live.some((t) => t.done))
-    problems.push(`status ${status}, but no task is ticked`);
-  if (status === "done" && live.some((t) => !t.done))
-    problems.push(
-      `status done, but ${live
-        .filter((t) => !t.done)
-        .map((t) => t.id)
-        .join(", ")} are unticked`,
-    );
-  return problems;
-}
+export const checkStage = (folder, text, context = {}) =>
+  withLinearHint(checks.specCheckStage(folder, text, { ...context, prefixes: PREFIXES }));
 
 /** feat commits need a lite or full spec reached through the branch key or their `Refs:` keys (ADR 0120 D4). */
-export function checkLane({
+export const checkLane = ({
   commits = [],
   branch = "",
   specKeys = new Set(),
   taskKeys = new Set(),
-}) {
-  const feats = commits.filter((c) => /^feat(\(|!|:)/.test(c));
-  if (!feats.length) return [];
-  const keys = new Set(
-    [branch, ...feats].flatMap((t) => [...t.matchAll(/\bsta-(\d+)\b/gi)].map((m) => m[1])),
-  );
-  if ([...keys].some((k) => specKeys.has(k) || taskKeys.has(k))) return [];
-  return [
-    `lane: ${feats.length} feat commit(s), but neither the branch nor their Refs keys (${[...keys].map((k) => `STA-${k}`).join(", ") || "none"}) reach a spec in ${SPECS_DIR} — new behaviour takes the lite or full lane; use chore/fix/docs for the others`,
-  ];
-}
+}) =>
+  checks.specCheckLane({
+    commits,
+    branch,
+    specKeys: keyed(specKeys),
+    taskKeys: keyed(taskKeys),
+    prefixes: PREFIXES,
+  });
 
 /** The spec folder is the PR's own (keyed by the branch's STA key); only it must reach Tasked on a ready PR. */
-export function isOwnSpec(folder, branch) {
-  const n = branch.match(/(?:^|[/-])sta-(\d+)(?:-|$)/i)?.[1];
-  return Boolean(n) && folder.startsWith(`sta-${n}-`);
-}
+export const isOwnSpec = (folder, branch) => checks.specIsOwn(folder, branch, PREFIXES);
 
 /** The spec's `**Status**:` line, trimmed ("" when absent). */
-export const statusLine = (text) =>
-  strip(text)
-    .match(/^\*\*Status\*\*:.*$/m)?.[0]
-    .trim() ?? "";
+export const statusLine = checks.specStatusLine;
 
 /** STA numbers named on the `Refs:` trailers of the commit messages. */
 export const refsKeys = (commits) =>
-  new Set(
-    commits.flatMap((c) =>
-      [...c.matchAll(/^Refs:[ \t]*(.*)$/gim)].flatMap((r) =>
-        [...r[1].matchAll(/\bSTA-(\d+)\b/gi)].map((m) => m[1]),
-      ),
-    ),
-  );
+  new Set([...checks.specRefsKeys(commits, PREFIXES)].map((k) => k.slice("STA-".length)));
 
 /**
  * A PR may move another spec's `**Status**` only when one of its commits' `Refs:` names that spec's key, so a
  * spec's stage never changes as a side effect of unrelated work. The own spec and a newly added spec are exempt.
  */
-export function checkForeignStatus({ folder, before = "", after = "", branch = "", commits = [] }) {
-  if (isOwnSpec(folder, branch) || !before) return [];
-  const [was, now] = [statusLine(before), statusLine(after)];
-  if (was === now) return [];
-  const key = folder.match(FOLDER_RE)?.[1];
-  if (key && refsKeys(commits).has(key)) return [];
-  return [
-    `${folder}: this PR changes another spec's Status line (\`${was || "(none)"}\` → \`${now || "(none)"}\`), but no commit has \`Refs: STA-${key ?? "?"}\``,
-  ];
-}
+export const checkForeignStatus = (context) =>
+  checks.specCheckForeignStatus({ ...context, prefixes: PREFIXES });
 
 /** The branch is Linear-named (ADR 0065 decision 5) or allow-listed. */
 export function checkBranch(branch) {
@@ -310,13 +126,7 @@ export function checkBranch(branch) {
 }
 
 /** Bug lane: `.specify/bugs/sta-<n>-<slug>/` with a regression test tagged `@covers sta-<n>:BUG`. */
-export function checkBug(folder, tests) {
-  const key = folder.match(FOLDER_RE)?.[1];
-  if (!key) return [`.specify/bugs/${folder}: folder is not \`sta-<n>-<slug>\``];
-  return new RegExp(`@covers[^\\n]*\\bsta-${key}:BUG\\b`, "i").test(tests)
-    ? []
-    : [`.specify/bugs/${folder}: no regression test carries \`@covers sta-${key}:BUG\``];
-}
+export const checkBug = (folder, tests) => checks.specCheckBug(folder, tests, PREFIXES);
 
 /** The repo-relative spec folder for a key: its existing `sta-<n>-*` folder, else one named from `slug`. */
 export function specDir({ root = ROOT, branch = "", key, slug } = {}) {

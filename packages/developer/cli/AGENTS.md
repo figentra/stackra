@@ -51,6 +51,9 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
   with gen's `compileClassComponents` (`retainLines`) into a temp folder and runs `react/rules-of-hooks` alone on it,
   because `lint` has that rule off there. Findings carry the source path and line, no column; a compile refusal is one
   `compile` finding. Keep the target filter (`isHooksTarget`) in step with the oxlint preset's component homes.
+- The `spec` phase calls `specFindings` of `@stackra/repo-checks` in any repository with `.agents/specs`; it runs no script of
+  the repository. Core's Linear side effects (`spec-linear.mjs`, `plan`/`stage` comments) stay in core's `tools/scripts`, and
+  nothing the CLI publishes names them (a packed-files test checks it).
 - Two tools reporting the same problem on the same file is a pair in `SAME_MEANING_RULES` (later phase to the kept
   earlier one), never a special case inside a phase. A phase whose orchestrator cannot run falls back to the plain
   tool (typecheck: turbo, else `tsc --noEmit -p <member>`) rather than reporting one opaque `exit` finding.

@@ -33,6 +33,12 @@ The repository checks `stackra check` runs (ADR 0282 decision 3). Member at `pac
 - No test source holds an import string the `imports` check would flag; build such strings with a quote variable.
 - `RAW_SQL_BASELINE` is a ratchet: lower a file's count when its raw SQL calls get their `// raw-sql:` reasons, never
   raise one or add a file; a new call gets its reason instead (ADR 0160, stackra-288).
+- The `spec-*` files (`functions`, `constants`, `types`) are loaded by core's `tools/scripts/spec-*.mjs` wrappers with plain
+  `node`: they import values from each other by relative `./x.ts` paths (`IMPORTS_EXEMPT` in `isMemberSource`), use erasable
+  TypeScript only and name no issue tracker: the key prefix is read from the spec folder names, never hard-coded, and
+  nothing in them mentions Linear scripts or a `STA-` key (the packed-files test fails if one does). Core's wrapper adapts the
+  generic API (uppercase `PREFIX-n` keys, prefixes passed in) to its bare numbers and `STA-n` messages; a change to a
+  `spec-*` check keeps `tools/scripts/__tests__/spec-wrappers.test.mjs` passing.
 - One declaration per file (ADR 0305); a file opens with the Stackra file contract and every export carries TSDoc.
 - No `@stackra-pro/*` member or dependency in figentra/stackra (ADR 0461): `checkMember` refuses any `@stackra-pro/*`
   dependency in every member, apps included (`PRO_SCOPE`), and HeroUI Pro everywhere (`PRO_DEPENDENCIES`, ADR 0469). Pro
