@@ -107,23 +107,29 @@ describe("EVENTS_TESTING_PLUGIN", () => {
   });
 
   it("skips a listener whose dependency nothing binds, and still throws a constructor's error (STA-1740)", async () => {
+    // In another member's wiring with no root, as SendWebhooksListener beside a webhooks fixture: the container builds
+    // every singleton of the modules the root's wiring binds at compile, so there it would fail the compile first.
     registerWiring({
-      member: "fixture",
-      root: FixtureModule,
-      // In a module the app does not boot, as SendWebhooksListener in a webhooks fixture: a booted module's singleton
-      // is built at compile, so its unbound dependency fails the compile before the plugin runs.
+      member: "elsewhere",
       bindings: [{ module: "elsewhere", provide: NeedsMissingListener, deps: [Missing] }],
     });
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const app = await createTestingModule(FixtureModule).compile();
-    expect(warn).toHaveBeenCalledWith(
-      "events testing: skipped NeedsMissingListener: nothing binds Missing",
-    );
-    warn.mockRestore();
-    expect(app.listeners.skipped()).toEqual([{ listener: NeedsMissingListener, missing: Missing }]);
-    await dispatch(new StockLow());
-    await drainEvents();
-    expect(app.listeners.calls(NeedsMissingListener)).toHaveLength(0);
+    try {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      const app = await createTestingModule(FixtureModule).compile();
+      expect(warn).toHaveBeenCalledWith(
+        "events testing: skipped NeedsMissingListener: nothing binds Missing",
+      );
+      warn.mockRestore();
+      expect(app.listeners.skipped()).toEqual([
+        { listener: NeedsMissingListener, missing: Missing },
+      ]);
+      await dispatch(new StockLow());
+      await drainEvents();
+      expect(app.listeners.calls(NeedsMissingListener)).toHaveLength(0);
+    } finally {
+      // the registry outlives the test: leave the other member with nothing to bind
+      registerWiring({ member: "elsewhere", bindings: [] });
+    }
 
     registerWiring({
       member: "fixture",
