@@ -68,7 +68,7 @@ describe("testbedPlan", () => {
     });
     expect(plan.idleMinutes).toBe(60);
     expect(plan.image.schedule).toBe("cron(0 3 ? * SUN *)");
-    expect(plan.image.amiParameter).toBe("/stackra/testbed/ami");
+    expect(plan.image.amiParameter).toBe("/imagebuilder/stackra-testbed/ami");
   });
 
   it("grants figentra-ci paths to the core project, ids only", () => {

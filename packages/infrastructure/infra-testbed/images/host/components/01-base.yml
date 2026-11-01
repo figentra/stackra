@@ -65,6 +65,7 @@ phases:
           commands:
             - |
               set -eu
+              export MISE_DATA_DIR=/opt/mise MISE_GLOBAL_CONFIG_FILE=/opt/mise/config.toml
               mountpoint -q /data
               [ "$(findmnt -no FSTYPE /data)" = xfs ]
               docker info 2>/dev/null | grep -q 'Docker Root Dir: /data/docker'

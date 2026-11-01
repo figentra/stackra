@@ -12,7 +12,7 @@
  * Boundary: declares resources only, inside the Pulumi program that calls it; agents only preview, the owner applies.
  *           No secret value is created or read: the box reaches Infisical through its instance role (AWS IAM auth) and
  *           the plan holds ids and paths. The first apply uses `groups: false`, builds the first image, then applies
- *           again with the groups, because the launch template resolves the AMI parameter at launch.
+ *           again with the groups and their launch template: EC2 refuses a template whose AMI parameter is missing.
  * Runtime: node
  * Governing contract: ADR 0484 (decisions 2 to 10); ADR 0171 (decisions 2, 3 and 5); ADR 0172 (cost tags); ADR 0173
  *                     (no secret values); ADR 0167 (OIDC, no long-lived keys).
@@ -331,54 +331,6 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
   );
 
   // ---- the launch template and the two groups ---------------------------------------------------------------
-  const launchTemplate = new aws.ec2.LaunchTemplate(
-    "testbed",
-    {
-      name: "stackra-testbed",
-      imageId: `resolve:ssm:${plan.image.amiParameter}`,
-      instanceType: plan.groups.heavy.instanceTypes[0] ?? "c7i.2xlarge",
-      iamInstanceProfile: { name: instanceProfile.name },
-      metadataOptions: {
-        httpEndpoint: "enabled",
-        httpTokens: "required",
-        // One hop: the host reads its role, a job container cannot.
-        httpPutResponseHopLimit: 1,
-      },
-      blockDeviceMappings: [
-        {
-          deviceName: plan.disks.root.deviceName,
-          ebs: {
-            volumeSize: plan.disks.root.sizeGb,
-            volumeType: "gp3",
-            deleteOnTermination: String(plan.disks.deleteOnTermination),
-            encrypted: "true",
-          },
-        },
-        {
-          deviceName: plan.disks.data.deviceName,
-          ebs: {
-            volumeSize: plan.disks.data.sizeGb,
-            volumeType: "gp3",
-            deleteOnTermination: String(plan.disks.deleteOnTermination),
-            encrypted: "true",
-          },
-        },
-      ],
-      networkInterfaces: [
-        {
-          associatePublicIpAddress: "true",
-          deleteOnTermination: "true",
-          securityGroups: [securityGroup.id],
-        },
-      ],
-      userData: Buffer.from(testbedUserData(plan)).toString("base64"),
-      tagSpecifications: ["instance", "volume"].map((resourceType) => ({ resourceType, tags })),
-      updateDefaultVersion: true,
-      tags,
-    },
-    opts,
-  );
-
   const groupTags = (group: "heavy" | "light") =>
     [
       { key: "Name", value: plan.groups[group].name },
@@ -396,7 +348,6 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
       scaleInProtectedInstances: "Wait",
     },
   };
-  const version = launchTemplate.latestVersion.apply(String);
   const common = {
     vpcZoneIdentifiers: subnetIds,
     healthCheckType: "EC2",
@@ -408,8 +359,62 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
   const groupOpts = { ...opts, ignoreChanges: ["desiredCapacity"] };
 
   let groups: AwsTestbed["groups"];
+  let launchTemplateId: pulumi.Output<string> | undefined;
+  // EC2 refuses a launch template whose `resolve:ssm:` parameter does not exist yet, so the template comes with the
+  // groups, after the first image build has written the parameter.
   if (options.groups !== false) {
     const { heavy, light } = plan.groups;
+    const launchTemplate = new aws.ec2.LaunchTemplate(
+      "testbed",
+      {
+        name: "stackra-testbed",
+        imageId: `resolve:ssm:${plan.image.amiParameter}`,
+        instanceType: plan.groups.heavy.instanceTypes[0] ?? "c7i.2xlarge",
+        // `stackra testbed` connects with this pair's key file (TESTBED_DEFAULTS.keyFile).
+        keyName: D.keyPair,
+        iamInstanceProfile: { name: instanceProfile.name },
+        metadataOptions: {
+          httpEndpoint: "enabled",
+          httpTokens: "required",
+          // One hop: the host reads its role, a job container cannot.
+          httpPutResponseHopLimit: 1,
+        },
+        blockDeviceMappings: [
+          {
+            deviceName: plan.disks.root.deviceName,
+            ebs: {
+              volumeSize: plan.disks.root.sizeGb,
+              volumeType: "gp3",
+              deleteOnTermination: String(plan.disks.deleteOnTermination),
+              encrypted: "true",
+            },
+          },
+          {
+            deviceName: plan.disks.data.deviceName,
+            ebs: {
+              volumeSize: plan.disks.data.sizeGb,
+              volumeType: "gp3",
+              deleteOnTermination: String(plan.disks.deleteOnTermination),
+              encrypted: "true",
+            },
+          },
+        ],
+        networkInterfaces: [
+          {
+            associatePublicIpAddress: "true",
+            deleteOnTermination: "true",
+            securityGroups: [securityGroup.id],
+          },
+        ],
+        userData: Buffer.from(testbedUserData(plan)).toString("base64"),
+        tagSpecifications: ["instance", "volume"].map((resourceType) => ({ resourceType, tags })),
+        updateDefaultVersion: true,
+        tags,
+      },
+      opts,
+    );
+    const version = launchTemplate.latestVersion.apply(String);
+    launchTemplateId = launchTemplate.id;
     // oxlint-disable-next-line no-new -- reason: Pulumi registers a resource when it is constructed
     new aws.autoscaling.Group(
       "heavy",
@@ -456,11 +461,11 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     region: plan.region,
     securityGroupId: securityGroup.id,
     instanceRoleArn: instanceRole.arn,
-    launchTemplateId: launchTemplate.id,
     buildBucket: bucket.bucket,
     imagePipelineArn: pipeline.arn,
     imageVersion: inputs.version,
     amiParameter: plan.image.amiParameter,
     ...(groups === undefined ? {} : { groups }),
+    ...(launchTemplateId === undefined ? {} : { launchTemplateId }),
   };
 }

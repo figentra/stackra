@@ -72,7 +72,7 @@ and never prints or passes a secret value. Defaults: AWS profile `academorix`, r
 - `status`, `unlock [--box N|id] [--slot heavy|light]`, `ip`, `ssh [--box] [cmd]`, `sync [--box] <dir>`; box numbers
   are by launch time.
 - `scale [--slot heavy|light]` prints the groups' counts, or raises one by one; `image` prints the AMI id and its age
-  from SSM `/stackra/testbed/ami`.
+  from SSM `/imagebuilder/stackra-testbed/ami`.
 
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
 run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
