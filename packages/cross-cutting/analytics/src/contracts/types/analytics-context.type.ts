@@ -5,9 +5,10 @@
  *          asking the event class to repeat them.
  * Boundary: a type only, carried by every `AnalyticsDelivery`. Every field but `library` is optional: a driver never
  *           assumes one is set. A page carries its path only (no query string, no title, no referrer), so nothing a
- *           URL may hold leaves the device here.
+ *           URL may hold leaves the device here. `device` is coarse and declared (ADR 0483 decision 6): the OS, its
+ *           version, the build and the device type, never a model, a hardware id or an advertising id.
  * Runtime: isomorphic
- * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0305 (rule 20); ADR 0294 (decision 15).
+ * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0483 (decision 6); ADR 0305 (rule 20); ADR 0294 (decision 15).
  */
 
 /** Where an event was captured. */
@@ -26,6 +27,14 @@ export interface AnalyticsContext {
 
   /** The host app's version, such as `1.4.0`. */
   readonly appVersion?: string;
+
+  /** The device, coarsely: `os` (`ios`, `android`, `web`...), its version, the app build and the device type. */
+  readonly device?: {
+    readonly os: string;
+    readonly osVersion?: string;
+    readonly build?: string;
+    readonly type?: string;
+  };
 
   /** The visitor's region code, as `ConsentLedger.setRegion` received it, such as `SA`. */
   readonly region?: string;

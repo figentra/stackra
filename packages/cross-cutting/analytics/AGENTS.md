@@ -23,6 +23,8 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
 | A native hook                         | `src/native/analytics/`                                     |
 | A built-in analytics event            | `src/core/analytics/<name>.analytics-event.ts`              |
 | The server relay listener             | `src/node/listeners/`                                       |
+| The ingest action, its permission     | `src/node/actions/`, `src/node/access/`                     |
+| Its input, output and outbox event    | `src/node/schemas/`, `src/node/events/`                     |
 | A test helper                         | `src/testing/`, `src/testing/functions/`                    |
 | A test                                | `__tests__/<name>.<kind>.test.ts(x)` beside it              |
 
@@ -75,6 +77,11 @@ Product analytics delivery behind consent, with a bounded pre-consent queue (ADR
   vendor driver either erases or fails loudly, never resolves without erasing. A missing personal API key or project
   id rejects too (a dead-lettered erasure, not a silent success). The listener lives here, not in privacy, because
   privacy does not depend on analytics.
+- The relay (ADR 0483, STA-1624): the `relay` driver posts the envelope unchanged and never holds a vendor key or
+  host. The ingest action reads `ctx.consent()` (never verifies a token itself), publishes nothing for an unverified
+  snapshot, drops deliveries of another subject, strips `denyProperties` and forwards only the validated envelope (no
+  address, user agent or header). One `AnalyticsBatchAccepted` per destination, so retries stay per destination; the
+  fan-out listener never widens what the event holds. `context.device` stays coarse: OS, OS version, build, type.
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
 ## Rules that fail the build

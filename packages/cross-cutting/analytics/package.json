@@ -130,6 +130,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/iam": "workspace:*",
     "@stackra/platform": "workspace:*",
     "@stackra/privacy": "workspace:*",
     "@stackra/storage": "workspace:*",

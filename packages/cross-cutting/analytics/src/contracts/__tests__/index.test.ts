@@ -22,6 +22,7 @@ import type {
 describe("@stackra/analytics/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "ANALYTICS_INGEST_PATH",
       "AdPixel",
       "AnalyticsDeliveryKind",
       "AnalyticsDriver",
@@ -46,6 +47,10 @@ describe("@stackra/analytics/contracts", () => {
     }>();
   });
 
+  it("names the ingest path", () => {
+    expect(contracts.ANALYTICS_INGEST_PATH).toBe("/analytics/batches");
+  });
+
   it("names the delivery kinds and types the kept identity", () => {
     expect([...Enum.values(contracts.AnalyticsDeliveryKind)].sort()).toEqual([
       "group",
@@ -66,6 +71,12 @@ describe("@stackra/analytics/contracts", () => {
       readonly screen?: { readonly name: string };
       readonly locale?: string;
       readonly appVersion?: string;
+      readonly device?: {
+        readonly os: string;
+        readonly osVersion?: string;
+        readonly build?: string;
+        readonly type?: string;
+      };
       readonly region?: string;
     }>();
   });

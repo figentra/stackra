@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./native` entry of @stackra/analytics (the native `PosthogAnalyticsDriver`, which a
- *          mobile app's gen wiring loads for `analytics.driver: posthog`, and the `useScreenViews` auto-capture hook) until `stackra gen` writes the entry barrels
+ * Purpose: Stand-in barrel: the `./native` entry of @stackra/analytics (the native `PosthogAnalyticsDriver` and `RelayAnalyticsDriver`, which a
+ *          mobile app's gen wiring loads for `analytics.driver: posthog` or `relay`, and the `useScreenViews` auto-capture hook) until `stackra gen` writes the entry barrels
  *          (STA-339).
  * Boundary: names each re-export and declares nothing; imports `core` and `contracts`, never `./react` or
  *           `./testing`. React Native is an optional peer, loaded by this entry only.
@@ -10,3 +10,4 @@
  */
 export { useScreenViews } from "#native/analytics/use-screen-views";
 export { PosthogAnalyticsDriver } from "#native/drivers/posthog-analytics.driver";
+export { RelayAnalyticsDriver } from "#native/drivers/relay-analytics.driver";

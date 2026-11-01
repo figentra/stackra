@@ -28,6 +28,7 @@ export { NoneAnalyticsDriver } from "#core/drivers/none-analytics.driver";
 export { NoneAnalyticsDriverLookupDriver } from "#core/drivers/none-analytics-driver-lookup.driver";
 export { NoneAnalyticsOfflineQueueDriver } from "#core/drivers/none-analytics-offline-queue.driver";
 export { PosthogAnalyticsDriver } from "#core/drivers/posthog-analytics.driver";
+export { RelayAnalyticsDriver } from "#core/drivers/relay-analytics.driver";
 export { StorageAnalyticsIdentityDriver } from "#core/drivers/storage-analytics-identity.driver";
 export { StorageAnalyticsOfflineQueueDriver } from "#core/drivers/storage-analytics-offline-queue.driver";
 export { AnalyticsState } from "#core/enums/analytics-state.enum";
