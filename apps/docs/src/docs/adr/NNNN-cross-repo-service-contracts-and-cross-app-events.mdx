@@ -3,19 +3,20 @@ title: "NNNN — Cross-repo service contracts and cross-app events"
 description: "Proposed · 2026-11-01"
 ---
 
-{/* Stackra file contract. Purpose: ADR NNNN, cross-repo service contracts and cross-app events: the `@figentra/<service>-contract` packages that carry a producer's committed manifest and OpenAPI document to consumers in other repositories, the `contract` kind, release and trusted publishing per producer repository, prerelease builds for branches, the first contracts from the OS handover, and the transport of integration events that cross apps (the outbox relay to idempotent inboxes, behind the event-bus port). Boundary: decision text only; the gen changes, the registry rows, the kind's schema and the relay are built by their own issues. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0260, 0453, 0349, 0294, 0142, 0141. */}
+{/* Stackra file contract. Purpose: ADR NNNN, cross-repo service contracts and cross-app events: the `@figentra/<service>-contract` packages that carry a producer's committed manifest and OpenAPI document to consumers in other repositories, the `contract` kind, release and trusted publishing per producer repository, prerelease builds for branches, the first contracts from the OS handover, and the transport of integration events that cross apps (HTTP push from the producer's outbox to idempotent consumer inboxes, with a broker driver deferred). Boundary: decision text only; the gen changes, the registry rows, the kind's schema and the relay are built by their own issues. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0260, 0453, 0141, 0349, 0294, 0142. */}
 
 <Note>
   Proposed 2026-11-01 (STA-1821). The number is reserved by the testing session; until then this
   page uses `NNNN` in its name and text. It amends
-  [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events) (decisions 2 to 4) and
+  [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events) (decisions 2 to 4),
   [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
-  (decisions 6, 10 and 11), each by a dated note at its end. It relates to
+  (decisions 6, 10 and 11) and [0141](/adr/0141-integration-event-names-and-envelope) (decision 2),
+  each by a dated note at its end. It relates to
   [0349](/adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products)
   (decisions 2, 4 and 5),
   [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rule R10),
   [0142](/adr/0142-cross-service-transport-through-drivers) and
-  [0141](/adr/0141-integration-event-names-and-envelope).
+  [0227](/adr/0227-rejected-and-deferred-technologies-refreshed).
 </Note>
 
 ## Context
@@ -43,8 +44,10 @@ apps is decided here too, and phase 1 ships only the clients.
 
 1. **A contract is a package.** A service that another repository consumes publishes `@figentra/<service>-contract`, where
    `<service>` is the service's published name after `@figentra/`, as [0349](/adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products)
-   decision 2 names it. The package holds three things and nothing else: `stackra.manifest.json`, `openapi.json` and the
-   service's lang catalogue. It carries no source: no `src/` folder and no source maps.
+   decision 2 names it. So the OS's `service-<name>` gives `@figentra/service-<name>-contract`, and another product's
+   `<product>-service-<name>` gives `@figentra/<product>-service-<name>-contract`. The leader confirmed this reading on
+   2026-11-01. The package holds three things and nothing else: `stackra.manifest.json`, `openapi.json` and the service's lang
+   catalogue. It carries no source: no `src/` folder and no source maps.
 2. **The kind is `contract`.** `stackra.kind` gets a sixth value, `contract` (decision 11 of
    [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine), amended below).
    The kind, and not a `-contract` suffix on the name, says what a package is. A contract is not installed by `stackra add`.
@@ -64,9 +67,9 @@ apps is decided here too, and phase 1 ships only the clients.
    A consumer moves by a catalog bump, and `stackra gen --check` reports a consumer whose generated output differs from its
    pinned contract.
 7. **Branch builds publish prerelease versions.** A branch or pull request build of a producer may publish a prerelease
-   contract version under the dist-tag `pr-<n>` (`n` is the pull request number). A branch build never moves `latest` and
-   never publishes a stable version. A branch may pin such a prerelease exactly in its catalog; a build from `main` refuses
-   one.
+   contract version under the dist-tag `pr-<n>` (`n` is the pull request number). A stable contract version is published only
+   from `main`. A branch build never moves `latest`. A branch may pin such a prerelease exactly in its catalog; a build from
+   `main` refuses one.
 8. **The OS handover manifests go first.** The first contracts published are the OS handover manifests. Once they are on the
    registry, the uncommitted local overlays that stand in for them retire.
 
@@ -80,23 +83,27 @@ apps is decided here too, and phase 1 ships only the clients.
     implies sharing a bus, and a consumer with a contract gets no subscription to the producer's Encore Pub/Sub topics.
 11. **One envelope for every transport.** An integration event that crosses apps uses the envelope of
     [0141](/adr/0141-integration-event-names-and-envelope) decision 2: its `id` is the event id, `occurredAt` is the
-    occurred-at time, `tenant` and `actor` carry the tenant and scope context, and `correlation` is the correlation id.
-    The cross-app form adds two fields: `envelopeVersion`, the version of this envelope, and `producer`, the producer's module
-    key and repository. The envelope does not change with the transport.
-12. **The producer's outbox is the only source, and a relay carries it.** An event leaves a producer only from its
-    transactional outbox ([0078](/adr/0078-messaging-layer-eight-packages), [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)
+    occurred-at time, `tenant`, `actor`, `onBehalfOf`, `correlation` and `causation` carry the tenant, scope and correlation
+    context. The cross-app form adds two fields, set by 0141's dated amendment: `envelopeVersion`, the version of this
+    envelope, and `producer`, the verified producer service. The relay sets `producer` from the verified identity of the
+    sending service (STA-1792), never from a value the producer writes into the envelope. The envelope does not change with
+    the transport.
+12. **Phase 1 transport is HTTP push from the producer's outbox.** An event leaves a producer only from its transactional
+    outbox ([0078](/adr/0078-messaging-layer-eight-packages), [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)
     decision 5), never from a request handler. A cross-app relay reads the outbox and delivers each event to each subscribed
-    consumer, by one of two drivers behind the existing event-bus port of [0142](/adr/0142-cross-service-transport-through-drivers):
-    - HTTP push: one signed request per event to the consumer's inbox endpoint, with the signing key read from the secret
-      store ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)), never from a file;
-    - a broker driver. No broker is chosen here, and [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) keeps
-      Kafka, NATS and Redpanda deferred. The in-service relay of [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)
-      decision 4 is a different thing and stays inside one service.
+    consumer as one signed HTTP request to the consumer's inbox endpoint. A failed delivery is retried. The consumer's inbox
+    (decision 13) makes a retry safe. The signing key is read from the secret store
+    ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)), never from a file. The in-service relay of
+    [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events) decision 4 is a different thing and stays inside
+    one service.
 
-    This page does not choose between the two drivers. Either one must meet decision 13.
+    A broker driver behind the event-bus port of [0142](/adr/0142-cross-service-transport-through-drivers) is an explicit later
+    option, not chosen here. [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) keeps Kafka, NATS and Redpanda
+    deferred, and adopting any broker needs its own ADR.
 
-13. **Consumer inboxes are idempotent.** Delivery is at least once. A consumer records each event id in its inbox in the same
-    transaction as the handling. A delivery whose id is already recorded is acknowledged and not handled again.
+13. **Consumer inboxes are idempotent.** Delivery is at least once, and a retry is delivered with the same event id. A consumer
+    records each event id in its inbox in the same transaction as the handling. A delivery whose id is already recorded is
+    acknowledged and not handled again.
 14. **Encore Pub/Sub stays inside one app.** Within one app, events keep the typed subscription of
     [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events) decision 4. Across apps, only decisions 11 to 13 apply.
 15. **Gen refuses a remote listener until the relay ships.** A listener on an event of a service with no sibling folder, that is
@@ -115,6 +122,18 @@ apps is decided here too, and phase 1 ships only the clients.
 - Cross-app listeners wait for the relay. Until it ships, a product that needs them stays on calls and queued commands.
 - The relay needs an outbox on the producer side, an inbox on the consumer side, and signing keys in the secret store. Those are
   chores for the owner and the lanes that build them.
+- AGENTS.md's "Services" section names the generated Encore app as the only event path and the manifest as the only client
+  source. It is updated in the same PR that implements the contracts, not in this ADR's commit.
+
+## Rollout
+
+1. **Registry pre-publish check.** Before the first contract publish, check the registry's D1 publisher seed for the
+   `@figentra` row: its read rule is `internal`, and its trusted publishers must match decision 5. Add the producer repository
+   rows that are missing. No contract is published until this check passes.
+2. **Gen and the kind.** Land decisions 2, 3 and 15 with their tests, and update AGENTS.md's "Services" section in the same PR.
+3. **OS handover contracts.** Publish the OS handover manifests as the first contracts (decision 8), then retire the overlays.
+4. **Consumers switch.** Each consuming repository moves from a sibling or local copy to its declared contract.
+5. **Relay.** Build the outbox relay and the consumer inbox (decisions 12 and 13), then lift the refusal of decision 15.
 
 ## Enforcement
 
@@ -128,20 +147,22 @@ apps is decided here too, and phase 1 ships only the clients.
 - planned — STA-TBD: `pnpm validate` refuses a prerelease contract in a catalog of the `main` branch.
 - planned — STA-TBD: `stackra gen --check` fails when a consumer's generated output differs from its pinned contract.
 - planned — STA-TBD: gen refuses a remote listener with `client_event_remote_transport` (decision 15).
-- planned — STA-TBD: the relay and its inbox (decisions 12 and 13), with a test that a repeated event id is handled once.
-- Nothing checks the handover of decision 8 or the choice of driver in decision 12; they are owner and lane steps tracked in Linear.
+- planned — STA-TBD: the relay sets `producer` from the verified sender identity (STA-1792), refuses an unsigned or mis-signed
+  push, and the inbox handles a repeated event id once (decisions 11 to 13).
+- Nothing checks the handover of decision 8, the registry seed check of the Rollout, or the AGENTS.md update; they are owner and
+  lane steps tracked in Linear.
 
 ## Supersedes and sources
 
-Supersedes: none. Amends: [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events) decisions 2 to 4 and
-[0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine) decisions 6, 10 and 11,
-each by a dated note at the end of that page. Relates to
-[0349](/adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products) decisions 2, 4 and 5,
+Supersedes: none. Amends: [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events) decisions 2 to 4,
+[0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine) decisions 6, 10 and 11, and
+[0141](/adr/0141-integration-event-names-and-envelope) decision 2 (two fields), each by a dated note at the end of that page.
+Relates to [0349](/adr/0349-product-scopes-package-names-and-the-module-key-registry-across-products) decisions 2, 4 and 5,
 [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R10,
-[0142](/adr/0142-cross-service-transport-through-drivers), [0141](/adr/0141-integration-event-names-and-envelope) (decision 2 gains
-the two cross-app fields of decision 11), [0010](/adr/0010-services-are-independent-workspace-members) (no service imports another
-service's source, and a contract ships none), [0157](/adr/0157-stackra-inspect-and-stackra-diff),
+[0142](/adr/0142-cross-service-transport-through-drivers), [0010](/adr/0010-services-are-independent-workspace-members) (no service
+imports another service's source, and a contract ships none), [0157](/adr/0157-stackra-inspect-and-stackra-diff),
 [0158](/adr/0158-gen-artefacts-openapi-manifest-and-client), [0078](/adr/0078-messaging-layer-eight-packages),
 [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) and
-[0227](/adr/0227-rejected-and-deferred-technologies-refreshed). Sources: the leader's decisions of 2026-11-01, recorded for
-the ADR steward in Linear STA-1821; the research proposal of the same date, whose options A to C are the ones weighed in Context.
+[0227](/adr/0227-rejected-and-deferred-technologies-refreshed). Sources: the leader's decisions of 2026-11-01 and the leader's
+answers of the same date to the open points, recorded for the ADR steward in Linear STA-1821; the research proposal of the same
+date, whose options A to C are the ones weighed in Context.

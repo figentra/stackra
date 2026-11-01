@@ -150,8 +150,11 @@ conformance test of [0144](/adr/0144-metadata-registry-and-explorers) checks tha
 Written with `NNNN` (`adr/NNNN-cross-repo-service-contracts-and-cross-app-events`), which amends decisions 2 to 4 as follows.
 Decisions 2 and 3: where no sibling folder holds a producer, the manifest a consumer reads is the one in its
 `@figentra/<service>-contract` package, pinned through the catalog, and a manifest is never matched by member name. Decision 4
-does not carry an event across apps: that transport is decided by `NNNN` decisions 9 to 15 (clients first, then the outbox
-relay to idempotent inboxes), and sharing a contract never implies sharing a bus. The other decisions stand.
+does not carry an event across apps: that transport is decided by `NNNN` decisions 9 to 15 (clients first, then HTTP push
+from the producer's outbox to idempotent consumer inboxes), and sharing a contract never implies sharing a bus. The envelope
+fields that the decision 4 note above names as `scope` and `meta` are corrected to those of
+[0141](/adr/0141-integration-event-names-and-envelope) decision 2: `tenant`, `actor`, `onBehalfOf`, `correlation` and
+`causation`. The other decisions stand.
 
 ## Supersedes and sources
 
