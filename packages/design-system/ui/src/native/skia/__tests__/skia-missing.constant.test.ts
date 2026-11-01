@@ -7,7 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0302 (decision 3).
  */
-import { describe, expect, it } from "@stackra/testing";
+import { describe, expect, it } from "vitest";
 
 import { loadSkia } from "#native/skia/load-skia.function";
 import { SKIA_MISSING } from "#native/skia/skia-missing.constant";
