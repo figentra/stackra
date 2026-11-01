@@ -6,10 +6,13 @@ description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-351, STA-352, ST
 {/* Stackra file contract. Purpose: ADR 0293, the agent permission tiers and executor pushes. Boundary: decision text; the 2026-10-28 note reads its deploy and release asks with ADR 0468 (stackra-246, STA-1394); the guard change itself is an owner step. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468. */}
 
 <Note>
-  Read with [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval) (2026-10-28, STA-1394, owner decision of that date): the deploy and release asks of the STA-400 note mean production. Under 0468 decision 4 they fire only for
-  a production target (or when the guard cannot tell); dev and staging deploys, prerelease publishes and
-  prerelease tags run without asking. Until the owner applies that guard change (STA-1395), the asks below
-  still fire for every environment. Deletes, secrets and `encore deploy` keep their tiers.
+  Read with
+  [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)
+  (2026-10-28, STA-1394, owner decision of that date): the deploy and release asks of the STA-400
+  note mean production. Under 0468 decision 4 they fire only for a production target (or when the
+  guard cannot tell); dev and staging deploys, prerelease publishes and prerelease tags run without
+  asking. Until the owner applies that guard change (STA-1395), the asks below still fire for every
+  environment. Deletes, secrets and `encore deploy` keep their tiers.
 </Note>
 
 <Note>

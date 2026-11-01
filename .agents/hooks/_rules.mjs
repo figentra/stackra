@@ -728,7 +728,10 @@ function readGitCommands(text, cwd) {
         at[next] === subAt && words[next].startsWith(m[2])
           ? words.slice(next + 1)
           : argWords(src.slice(subAt + m[2].length));
-      const bot = /\bbot:git\b|\bbot-gh\.mjs\s+git\b|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+git\b/.test(src);
+      const bot =
+        /\bbot:git\b|\bbot-gh\.mjs\s+git\b|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+git\b/.test(
+          src,
+        );
       const gitDir = target === null || target.some((w) => /^--(?:git-dir|bare)\b/.test(w));
       for (const dir of dirs)
         out.push({
@@ -1377,7 +1380,9 @@ const PM_VALUE = /^(?:-C|-F|--filter|--dir|--prefix|-w|--workspace|--cwd)$/;
  * `$(…)`; STA-330 review), or `bot-gh.mjs review` directly. One pass over the words.
  */
 const runsBotReview = (t) =>
-  /\bbot-gh\.mjs\s+review\b|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+review\b/.test(t) ||
+  /\bbot-gh\.mjs\s+review\b|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+review\b/.test(
+    t,
+  ) ||
   simpleCommands(t).some(({ words }) => {
     let script = false; // the word may be the script a package manager before it runs
     for (let k = 0; k < words.length; k++) {
