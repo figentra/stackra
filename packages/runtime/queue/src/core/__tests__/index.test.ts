@@ -37,6 +37,8 @@ describe("@stackra/queue", () => {
       "ScopeNotPlatformWrittenError",
       "TopicBrokerPublisherDriver",
       "UnknownJobError",
+      "assertPlatformScope",
+      "callerScopeOf",
       "queues",
       "registerBrokerTopics",
       "registerJobs",

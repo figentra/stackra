@@ -9,19 +9,22 @@
  *           (`Prefer: respond-async`, sent by @stackra/clients' `queue(...)`), and the scheduler. A unique job is
  *           unique per scope: the scope's id, else the scope the caller acts in, else platform-wide. A `scope` is
  *           platform-written (ADR 0098), so every entry point refuses one that is not shaped like a `ScopeRef`
- *           (`ScopeNotPlatformWrittenError`); whether the node exists is checked when the job runs.
+ *           (`ScopeNotPlatformWrittenError`), as does one outside the running call's own scope; whether the node exists is
+ *           checked when the job runs.
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decisions 1 and 2: unique jobs, batches, chains, priority, the dead-letter queue with
  *                     replay); ADR 0305 (rule 28);
  *                     ADR 0260 (decision 4: queued calls); ADR 0098; ADR 0327 and ADR 0323 (`ScopeRef`).
  */
 import type { Action, CallInput } from "@stackra/actions";
+import type { ContextStorage } from "@stackra/actions/contracts";
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import type { Clock, PublicId } from "@stackra/contracts";
 
 import type { JobBatch, QueuedJob, QueueDriver } from "#contracts/index";
 import { assertPlatformScope } from "#core/functions/assert-platform-scope.function";
+import { callerScopeOf } from "#core/functions/caller-scope-of.function";
 import { buildJob } from "#core/functions/build-job.function";
 import { mintJobId } from "#core/functions/mint-job-id.function";
 import { readJob } from "#core/functions/read-job.function";
@@ -43,14 +46,19 @@ export class QueueService extends Service {
   /** Reads when a job is due. */
   private readonly clock: Clock;
 
+  /** The running call's context, which holds a queued scope to the caller's own; none: no such check. */
+  private readonly calls: ContextStorage | undefined;
+
   /**
    * @param driver - the job store.
    * @param clock - the time a job is queued at and redriven at.
+   * @param calls - where the running call's scope is read, when a pipeline is bound.
    */
-  constructor(driver: QueueDriver, clock: Clock) {
+  constructor(driver: QueueDriver, clock: Clock, calls?: ContextStorage) {
     super();
     this.driver = driver;
     this.clock = clock;
+    this.calls = calls;
   }
 
   /**
@@ -155,13 +163,14 @@ export class QueueService extends Service {
   }
 
   /**
-   * Checks `options`: the scope is a platform `ScopeRef` and the priority a whole number.
+   * Checks `options`: the scope is shaped like a `ScopeRef` and inside the running call's own scope, and the priority a
+   * whole number.
    *
    * @throws ScopeNotPlatformWrittenError when `options.scope` is not shaped like a platform `ScopeRef`.
    * @throws RangeError when the priority is not a whole number.
    */
   private checkOptions(options: PushOptions): void {
-    assertPlatformScope(options.scope);
+    assertPlatformScope(options.scope, callerScopeOf(this.calls));
     if (options.priority !== undefined && !Number.isInteger(options.priority))
       throw new RangeError(`priority is a whole number, got ${options.priority}`);
   }

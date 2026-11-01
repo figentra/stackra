@@ -24,11 +24,17 @@ const LTREE_PATH = /^[\w-]+(?:\.[\w-]+)*$/;
 /**
  * Checks `scope`, when there is one.
  *
- * @throws ScopeNotPlatformWrittenError when `scope` is present and is not shaped like a platform `ScopeRef`.
+ * @param scope - the scope a job is queued in.
+ * @param within - the scope the running call acts in, when it acts in one.
+ * @throws ScopeNotPlatformWrittenError when `scope` is present and is not shaped like a `ScopeRef`, or lies outside
+ *         `within`.
  * @example
- * assertPlatformScope(options.scope);
+ * assertPlatformScope(options.scope, callerScopeOf(storage));
  */
-export function assertPlatformScope(scope: unknown): asserts scope is ScopeRef | undefined {
+export function assertPlatformScope(
+  scope: unknown,
+  within?: ScopeRef,
+): asserts scope is ScopeRef | undefined {
   if (scope === undefined) return;
   if (typeof scope !== "object" || scope === null || Array.isArray(scope))
     throw ScopeNotPlatformWrittenError.create();
@@ -39,5 +45,7 @@ export function assertPlatformScope(scope: unknown): asserts scope is ScopeRef |
     !SCOPE_ID.test(id) ||
     !LTREE_PATH.test(path)
   )
+    throw ScopeNotPlatformWrittenError.create();
+  if (within !== undefined && path !== within.path && !path.startsWith(`${within.path}.`))
     throw ScopeNotPlatformWrittenError.create();
 }

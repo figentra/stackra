@@ -327,8 +327,15 @@ describe("a job's tenant on Postgres", () => {
     expect(run.output).toEqual([B1]);
   });
 
-  it("takes the tenant from the scope, not from the user that queued the job", async () => {
+  it("refuses a job queued by a user of B in A's scope, instead of silently taking A", async () => {
     const run = await survey({ scope: SCOPE_A, origin: tenantActor(TENANT_B as PublicId<"scp">) });
+    expect(run.outcome).not.toBe(JobOutcome.Done);
+    expect(isRefusal(run.error, TenantScopeMismatchError)).toBe(true);
+    expect(handled.count).toBe(0);
+  });
+
+  it("runs a job queued by a user of A in a branch of A as A", async () => {
+    const run = await survey({ scope: BRANCH, origin: tenantActor(TENANT_A as PublicId<"scp">) });
     expect(run.output).toEqual([A1, A2]);
   });
 
@@ -387,5 +394,42 @@ describe("why the tree is read from the root of the scope's path", () => {
     expect(
       (await database.withScope(ROOT, () => tree.node(TENANT_A as PublicId<"scp">)))?.level,
     ).toBe("tenant");
+  });
+});
+
+/** The three scope settings of the running transaction. */
+async function scopeSettings(): Promise<readonly (string | null)[]> {
+  const [row] = (await postgres.database
+    .em()
+    .execute(
+      "select current_setting('app.scope_id', true) as id, current_setting('app.scope_path', true) as path, " +
+        "current_setting('app.scope_paths', true) as paths",
+    )) as { id: string | null; path: string | null; paths: string | null }[];
+  return [row?.id ?? null, row?.path ?? null, row?.paths ?? null];
+}
+
+describe("a refusal inside a held transaction", () => {
+  const job: Actor = { kind: ActorKind.Job, id: "job_01j9z3k4m5n6p7q8r9s0t1v2w3" };
+
+  it("leaves the scope settings exactly as they were, so a caller that catches it still sees only its own scope", async () => {
+    const { database } = postgres;
+    const refusals: readonly [Actor, ScopeRef][] = [
+      [job, NOWHERE],
+      [job, FORGED],
+      [tenantActor(TENANT_A as PublicId<"scp">), SCOPE_B],
+      [tenantActor(TENANT_B as PublicId<"scp">), BRANCH],
+    ];
+    await database.transaction(async () => {
+      // the caller's own scope session, which stays set until the outer transaction ends
+      await database.withScope(BRANCH, async () => {});
+      const before = await scopeSettings();
+      expect(before).toEqual([BRANCH.id, BRANCH.path, BRANCH.path]);
+      for (const [who, at] of refusals) {
+        await expect(
+          isolationOf().run(who, at, async () => "ran", { readOnly: false }),
+        ).rejects.toBeDefined();
+        expect(await scopeSettings()).toEqual(before);
+      }
+    });
   });
 });

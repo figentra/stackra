@@ -195,20 +195,54 @@ describe("the tenant of a call", () => {
     expect(tenantOfRun(scheduled.withTenant)).toBe(ID_A);
   });
 
-  it("takes the scope's tenant over the one a job's origin carried, since the scope is platform-written", async () => {
-    const { driver, withTenant } = setUp();
-    await run(driver, { ...actor, scopeId: ID_B }, scope);
-    expect(tenantOfRun(withTenant)).toBe(ID_A);
+  it("refuses a job that claims another tenant than its scope's, instead of taking the scope's", async () => {
+    const claims: readonly Actor[] = [
+      { ...actor, scopeId: ID_B },
+      { kind: ActorKind.Job, id: actor.id, onBehalfOf: { ...userOfA, scopeId: ID_B } },
+      { ...actor, scopeId: ID_B, onBehalfOf: { ...userOfA, scopeId: ID_B } },
+    ];
+    for (const who of claims) {
+      const { driver, withTenant } = setUp();
+      await expect(run(driver, who, scope)).rejects.toBeInstanceOf(TenantScopeMismatchError);
+      expect(withTenant).not.toHaveBeenCalled();
+    }
   });
 
-  it("keeps the actor's own tenant for a job whose scope is above every tenant, and none when it had none", async () => {
-    const own = setUp();
-    await run(own.driver, actor, platformScope);
-    expect(own.withTenant.mock.calls[0]?.[0]).toBe(actor);
-    const none = setUp();
+  it("lets a job act for a user of the scope's own tenant, also in a branch, and runs it in that tenant", async () => {
+    const forUser: Actor = { ...actor, onBehalfOf: userOfA };
+    for (const at of [scope, branch]) {
+      const { driver, withTenant } = setUp();
+      await run(driver, forUser, at);
+      expect(tenantOfRun(withTenant)).toBe(ID_A);
+    }
+  });
+
+  it("refuses a job that claims a tenant when its scope is above every tenant, and runs one that claims none or only the scope's own id", async () => {
+    const claiming = setUp();
+    await expect(run(claiming.driver, actor, platformScope)).rejects.toBeInstanceOf(
+      TenantScopeMismatchError,
+    );
+    expect(claiming.withTenant).not.toHaveBeenCalled();
     const platformJob: Actor = { kind: ActorKind.System, id: "sys_maintenance" };
+    const none = setUp();
     await run(none.driver, platformJob, platformScope);
     expect(none.withTenant.mock.calls[0]?.[0]).toBe(platformJob);
+    const stamped: Actor = { kind: ActorKind.System, id: "sys_scheduler", scopeId: ID_PLATFORM };
+    const stamp = setUp();
+    await run(stamp.driver, stamped, platformScope);
+    expect(stamp.withTenant.mock.calls[0]?.[0]).toBe(stamped);
+  });
+
+  it("refuses an agent whose tenant differs from the human's it acts for, and runs one in the same tenant", async () => {
+    const agent: Actor = { kind: ActorKind.Agent, id: "agt_1", scopeId: ID_A, onBehalfOf: userOfA };
+    const refused = setUp();
+    await expect(
+      run(refused.driver, { ...agent, onBehalfOf: { ...userOfA, scopeId: ID_B } }, undefined),
+    ).rejects.toBeInstanceOf(TenantScopeMismatchError);
+    expect(refused.withTenant).not.toHaveBeenCalled();
+    const same = setUp();
+    await run(same.driver, agent, scope);
+    expect(same.withTenant.mock.calls[0]?.[0]).toBe(agent);
   });
 
   it("refuses a job or system call whose scope the tree does not show, and never runs it with an empty tenant", async () => {
