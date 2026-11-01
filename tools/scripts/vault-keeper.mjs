@@ -24,7 +24,10 @@ import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { parse } from "yaml";
-import { plan, readRunways } from "./runway.mjs";
+// The runway readers live in @stackra/runway (its `runway` binary); loaded from source, as plain Node strips the types
+// (ADR 0421 decision 2), so this script needs no build (STA-1859).
+import { deployPlan } from "../../packages/developer/runway/src/node/functions/deploy-plan.function.ts";
+import { readRunways } from "../../packages/developer/runway/src/node/functions/read-runways.function.ts";
 import {
   ENVS,
   PROJECTS,
@@ -84,7 +87,7 @@ export function declared(env, { root = ROOT } = {}) {
   const out = [];
   const runways = readRunways(root);
   if (runways.root.environments?.[RUNWAY_ENV[env]]) {
-    const p = plan(RUNWAY_ENV[env], runways);
+    const p = deployPlan(RUNWAY_ENV[env], runways);
     for (const name of p.ci) out.push({ name, ...ciHome(name), why: "runway ci" });
     // shortcut: runtime secrets carry no project until runway sync binds the product's project (STA-606).
     for (const s of p.sync.filter((x) => x.kind === "secret"))
