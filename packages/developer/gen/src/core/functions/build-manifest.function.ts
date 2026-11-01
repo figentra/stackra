@@ -53,6 +53,7 @@ import { camelCase, snakeCase } from "@stackra/support";
 import { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 import { GENERATED_QUERY_SCHEMAS } from "#core/constants/generated-query-schemas.constant";
 import { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
+import { PERMISSION_LEVEL } from "#core/constants/permission-level.constant";
 import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 import { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 import { REPLICA_PAGE_SCHEMA } from "#core/constants/replica-page-schema.constant";
@@ -71,6 +72,7 @@ import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
 import { modelEntityFacts } from "#core/functions/model-entity-facts.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
+import { roleKey } from "#core/functions/role-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
@@ -114,10 +116,8 @@ const MERGED_SECTIONS = [
   "agents",
   "passes",
   "entitlements",
+  "roles",
 ] as const;
-
-/** `Permission.L2` or `Permission.L2.system()`: the risk level and the system-only marker. */
-const PERMISSION_LEVEL = /^Permission\.(L[0-4])(\.system\(\))?$/;
 
 /** Whether `value` is a class written as a value. */
 function isClassValue(value: unknown): value is ClassValue {
@@ -187,14 +187,27 @@ export function buildManifest(ir: MemberIR): {
       claim(key, declared);
       risks.set(key, level[1] ?? "L0");
       // `class` lets a consumer's generated client name the set as the producer does (`ReviewPermissions`, STA-1296).
+      // `module`, `member` and `file` let a host import the set and register the key at boot (STA-1710).
       permissions.push({
         key,
         risk: level[1] ?? "L0",
         class: declared.name,
-        ...(level[2] ? { system: true } : {}),
+        module: declared.module,
+        member: verb,
+        file: declared.file,
+        ...(level[2] === ".system()" ? { system: true } : {}),
       });
     }
   }
+  // Module roles by their derived key, so a host registers its hosted packages' roles too (STA-1710).
+  const moduleRoles: Entry[] = ir.classes
+    .filter((declared) => declared.kind === "role")
+    .map((declared) => ({
+      key: roleKey(declared.module, declared.name),
+      class: declared.name,
+      module: declared.module,
+      file: declared.file,
+    }));
   for (const dependency of ir.dependencies)
     for (const permission of dependency.manifest.permissions ?? [])
       risks.set(permission.key, permission.risk);
@@ -1018,6 +1031,7 @@ export function buildManifest(ir: MemberIR): {
     agents,
     passes,
     entitlements,
+    roles: moduleRoles,
   };
   if (ir.layout !== "package")
     for (const dependency of ir.dependencies) {

@@ -6,7 +6,8 @@
  *          connections, webhook events, outbound webhooks, sequences (a hosted package's imported from its entry),
  *          entitlements with the calls they gate (STA-903) and searchable models; a listener with the event class it imports (its own, or a consumed service's, whose wire
  *          name comes from the producer's manifest) and a relay listener; no file for an app or a member with nothing
- *          to register.
+ *          to register; every Permission static (system and restricted included) and module role by its locked key,
+ *          permissions first (STA-1702).
  * Boundary: test only; runs on the IR fixtures and the manifests `buildManifest` derives from them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 22); ADR 0097; ADR 0141; ADR 0308;
@@ -354,5 +355,131 @@ describe("emitRegistrations for change consumers (data-layer gap cdc2)", () => {
       /import \{[^}]*registerChangeConsumers[^}]*\} from "@stackra\/outbox";/,
     );
     expect(content).toContain('import { Variant } from "@acme/catalogue-kit";');
+  });
+});
+
+/** A class of the orders module's access group. */
+function access(
+  name: string,
+  kind: DeclaredClass["kind"],
+  file: string,
+  statics: DeclaredClass["statics"] = {},
+): DeclaredClass {
+  return {
+    name,
+    kind,
+    module: "orders",
+    file: `src/modules/orders/access/${file}.ts`,
+    importPath: `#modules/orders/access/${file}`,
+    options: {},
+    deps: [],
+    facets: [],
+    methods: [],
+    refusals: [],
+    statics,
+    traits: [],
+  };
+}
+
+describe("emitRegistrations for permissions and roles (STA-1702)", () => {
+  const content =
+    registrationsOf({
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes,
+        access("RefundPermissions", "permissions", "refund.permissions", {
+          approve: "Permission.L3.restricted()",
+          expire: "Permission.L2 .system()",
+          label: '"refunds"',
+        }),
+        access("OrderClerkRole", "role", "order-clerk.role"),
+      ],
+    }) ?? "";
+
+  it("registers every Permission static by its locked key, system and restricted ones included", () => {
+    expect(content).toContain(
+      [
+        "registerPermissions([",
+        '  { type: OrderPermissions, keys: { read: "orders.order.read", create: "orders.order.create", cancel: "orders.order.cancel" } },',
+        '  { type: RefundPermissions, keys: { approve: "orders.refund.approve", expire: "orders.refund.expire" } },',
+        "]);",
+      ].join("\n"),
+    );
+    expect(content).toMatch(/import \{[^}]*registerPermissions[^}]*\} from "@stackra\/iam";/);
+  });
+
+  it("registers each module role by its derived key, after the permissions its grants name", () => {
+    expect(content).toContain(
+      'registerRoles([\n  { type: OrderClerkRole, key: "orders.order_clerk" },\n]);',
+    );
+    expect(content.indexOf("registerRoles([")).toBeGreaterThan(
+      content.indexOf("registerPermissions(["),
+    );
+  });
+});
+
+describe("emitRegistrations for a hosted package's permissions and roles (STA-1710)", () => {
+  const content =
+    registrationsOf({
+      ...COMMERCE_IR,
+      dependencies: [
+        {
+          package: "@acme/records-kit",
+          manifest: {
+            member: "records_kit",
+            package: "@acme/records-kit",
+            version: "0.1.0",
+            permissions: [
+              {
+                key: "records_kit.record.purge",
+                risk: "L2",
+                class: "RecordPermissions",
+                module: "records_kit",
+                member: "purge",
+                file: "src/node/access/record.permissions.ts",
+                system: true,
+              },
+              {
+                key: "records_kit.record.read_medical",
+                risk: "L3",
+                class: "RecordPermissions",
+                module: "records_kit",
+                member: "readMedical",
+                file: "src/node/access/record.permissions.ts",
+              },
+              // a manifest written before STA-1710: no member or file, the verb from the key
+              { key: "legacy_kit.note.read", risk: "L0", class: "NotePermissions" },
+            ],
+            roles: [
+              {
+                key: "records_kit.nurse",
+                class: "NurseRole",
+                module: "records_kit",
+                file: "src/node/access/nurse.role.ts",
+              },
+            ],
+          },
+        },
+      ],
+    }) ?? "";
+
+  it("registers each hosted permission set by its entry, keyed by its statics", () => {
+    expect(content).toContain(
+      '  { type: RecordPermissions, keys: { purge: "records_kit.record.purge", readMedical: "records_kit.record.read_medical" } },',
+    );
+    expect(content).toMatch(
+      /import \{[^}]*RecordPermissions[^}]*\} from "@acme\/records-kit\/node";/,
+    );
+    expect(content).toContain(
+      '  { type: NotePermissions, keys: { read: "legacy_kit.note.read" } },',
+    );
+  });
+
+  it("registers each hosted module role after every permission", () => {
+    expect(content).toContain('  { type: NurseRole, key: "records_kit.nurse" },');
+    expect(content).toMatch(/import \{[^}]*NurseRole[^}]*\} from "@acme\/records-kit\/node";/);
+    expect(content.indexOf("registerRoles([")).toBeGreaterThan(
+      content.indexOf("registerPermissions(["),
+    );
   });
 });

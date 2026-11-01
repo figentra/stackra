@@ -98,10 +98,32 @@ describe("buildManifest", () => {
     expect(manifest.$comment).toBe(MANIFEST_NOTICE);
     expect(manifest.member).toBe("commerce");
     expect(manifest.permissions).toEqual([
-      { key: "orders.order.read", risk: "L0", class: "OrderPermissions" },
-      { key: "orders.order.create", risk: "L1", class: "OrderPermissions" },
-      { key: "orders.order.cancel", risk: "L2", class: "OrderPermissions" },
+      {
+        key: "orders.order.read",
+        risk: "L0",
+        class: "OrderPermissions",
+        module: "orders",
+        member: "read",
+        file: "src/modules/orders/access/order.permissions.ts",
+      },
+      {
+        key: "orders.order.create",
+        risk: "L1",
+        class: "OrderPermissions",
+        module: "orders",
+        member: "create",
+        file: "src/modules/orders/access/order.permissions.ts",
+      },
+      {
+        key: "orders.order.cancel",
+        risk: "L2",
+        class: "OrderPermissions",
+        module: "orders",
+        member: "cancel",
+        file: "src/modules/orders/access/order.permissions.ts",
+      },
     ]);
+    expect(manifest["roles"]).toEqual([]);
     expect(manifest.events).toEqual([
       {
         name: "orders.order.paid.v1",
