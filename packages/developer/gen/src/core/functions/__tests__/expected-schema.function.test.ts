@@ -87,7 +87,12 @@ function member(
 }
 
 const ID = field("id", { kind: "public_id", prefix: "inv" });
-const relation = (name: string, kind: RelationIR["kind"], extra: Partial<RelationIR> = {}) =>
+// `| undefined` lets a case clear a default (a link with no targetModule) under exactOptionalPropertyTypes.
+const relation = (
+  name: string,
+  kind: RelationIR["kind"],
+  extra: { [K in keyof RelationIR]?: RelationIR[K] | undefined } = {},
+) =>
   ({
     name,
     kind,
