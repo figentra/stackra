@@ -46,8 +46,15 @@ export class CreateConnectedAccountLimitsMigration extends Migration {
       t.string("set_by", 63).notNull().comment("The platform principal who set them.");
       t.string("reason", 1000).notNull().comment("Why they were set.");
       t.timestamp("set_at").notNull().comment("When they were set.");
-      t.index(["scope_id", "connection_id", "set_at"]);
       t.rowLevelSecurity("scope_id", { setting: "app.tenant_id", match: "equalsOrUnset" });
     });
+    // reason: the derived name `idx_<table>_<columns>` is over Postgres' 63-character limit, so the index is named here.
+    schema.sql(
+      'create index "idx_connected_account_limit_changes_scope_set" on ' +
+        '"payments"."connected_account_limit_changes" (scope_id, connection_id, set_at)',
+      {
+        inverse: 'drop index if exists "payments"."idx_connected_account_limit_changes_scope_set"',
+      },
+    );
   }
 }
