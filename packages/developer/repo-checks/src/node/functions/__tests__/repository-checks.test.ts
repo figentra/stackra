@@ -390,6 +390,8 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       ".changeset/config.json",
       ".specify/integration.json",
       "assets/landing/index.json",
+      "services/billing/assets/seeds/plans/price-levels.json",
+      "assets/seeds/credits.json",
       "brand.json",
       "apps/mobile/brand.json",
       "apps/playground/src/constants/brand-themes/jute.json",

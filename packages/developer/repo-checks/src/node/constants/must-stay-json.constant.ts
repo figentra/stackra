@@ -113,6 +113,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     "landing page documents: stackra dev seeds the os/landing shell with the content folder's .json (ADR 0441)",
   ],
   [
+    /(^|\/)assets\/seeds\/(?:[\w-]+\/)*[\w-]+\.json$/,
+    "seed data: a member's seeders load assets/seeds/<group>/<name>.json as JSON documents (STA-1825)",
+  ],
+  [
     /^figentra-flow\.config\.json$/,
     "Figentra Flow reads its configuration by this fixed name with JSON.parse (ADR 0503, STA-1729)",
   ],
