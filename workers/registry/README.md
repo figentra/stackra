@@ -128,8 +128,9 @@ repository and owner ids too). A publisher covers its whole scope, not single na
 `npm:npm.stackra.figentra.com` and exchanges it for a `stkp_` publish token bound to one package for
 `REGISTRY_PUBLISH_TOKEN_SECONDS`. A publish is refused when the version exists, the tarball is over the size limit,
 package.json's name or version differs from the request, `stackra.kind` is unknown or a non-package item is not named
-`@<scope>/<kind>-<name>`, the scope's licence rule fails (commercial: the scope's licence string, a LICENSE file, no
-`src/`, no `.map`; open-source: MIT, or another open licence with a NOTICE), the client's integrity or shasum differs,
+`@<scope>/<kind>-<name>`, the scope's licence rule fails (commercial: the scope's licence string, a LICENSE file, and
+in a `licensed` scope no `src/` and no `.map`, which an `internal` scope such as `@figentra` may ship; open-source: MIT,
+or another open licence with a NOTICE), the client's integrity or shasum differs,
 or the Sigstore bundle is missing, is for another digest or was signed by another workflow. A brand kit (`@figentra`, commercial)
 therefore names `"license": "SEE LICENSE IN LICENSE"` and ships a LICENSE file beside its assets. Each version is signed
 (ECDSA P-256 over `<name>@<version>:<integrity>`); every publish, tag change, deprecation and token exchange is an
