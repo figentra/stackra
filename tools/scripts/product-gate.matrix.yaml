@@ -1,0 +1,32 @@
+# Stackra file contract:
+# Purpose: the products `product-gate.mjs` gates every core train against (STA-1813): repository, a pinned commit SHA,
+#          the services to gate, and the services whose manifests are overlaid from the caller's `--overlays` directory
+#          because the product does not hold them. A pin moves only by a reviewed pull request.
+# Boundary: data only; the script never fetches, so the caller clones each repository at its pin.
+# Owner: release-operations · Secrets: forbidden
+# Seed pins are the tips the 2026-11-01 hand-run gates ended on; billing and invoicing hold nothing on main yet.
+products:
+  billing:
+    repo: figentra/billing
+    ref: c605e78
+    services:
+      - billing
+      - entitlements
+    overlays:
+      - tenancy
+      - invoicing
+      - payments
+  pay:
+    repo: figentra/pay
+    ref: ae59928
+    services:
+      - payments
+    overlays:
+      - tenancy
+  invoicing:
+    repo: figentra/invoicing
+    ref: 3c00e82
+    services:
+      - invoicing
+    overlays:
+      - tenancy
