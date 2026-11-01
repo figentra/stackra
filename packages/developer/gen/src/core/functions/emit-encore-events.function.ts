@@ -198,6 +198,9 @@ function emitSubscriptions(
     const service = event.from.startsWith(CLIENTS_SPECIFIER)
       ? event.from.slice(CLIENTS_SPECIFIER.length)
       : ir.member;
+    // A service from a contract package has no sibling folder to import a topic from; `emitClients` refuses it.
+    if (ir.services?.find((candidate) => candidate.member === service)?.package !== undefined)
+      continue;
     const events = service === ir.member ? manifest.events : serviceManifest(ir, service)?.events;
     const entry = (events ?? []).find(
       (candidate) => candidate.kind === "integration" && candidate["class"] === event.name,

@@ -21,6 +21,8 @@ export const StackraKind = Enum.of({
   Mcp: "mcp",
   /** A plugin folder with its manifest, installed into `.agents/plugins/<name>/`. */
   Plugin: "plugin",
+  /** A producer service's published contract (manifest, OpenAPI, lang; no source), a consumer's devDependency that gen reads; never installed by `stackra add`. */
+  Contract: "contract",
 });
 
 /** One of the codes above. */

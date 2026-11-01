@@ -216,6 +216,7 @@ export async function structureFindings(
           pkg,
           turbo: at("turbo.jsonc") as Parameters<typeof checkMemberMetadata>[0]["turbo"],
           schema: manifestSchema,
+          files: readdirSync(path),
         }),
       );
     if (dir !== "")

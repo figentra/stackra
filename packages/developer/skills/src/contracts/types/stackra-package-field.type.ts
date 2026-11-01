@@ -29,7 +29,7 @@ export type StackraPackageField =
       readonly summary?: string | undefined;
     }
   | {
-      /** A skill, agent or plugin item. */
+      /** A skill, agent or plugin item, or a service `contract` package (no other field). */
       readonly kind: Exclude<StackraKind, "package" | "mcp">;
     }
   | {

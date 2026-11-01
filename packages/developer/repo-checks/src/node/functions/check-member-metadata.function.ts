@@ -5,6 +5,9 @@
  *          `homepage`, `bugs`, `author` and `engines` of `npmMetadataFor`, a `stackra` field with `"kind": "package"`
  *          that the shared `STACKRA_MANIFEST_SCHEMA` accepts, whose `tier` and `category` match the folder, with
  *          `runtimes` and a `summary` that is not the description, and turbo tags equal to `turboTagsFor` of it.
+ *          A `"kind": "contract"` member (a producer service's published manifest, OpenAPI and lang, no source) needs only
+ *          that kind, which the schema accepts, and a `stackra.manifest.json` among `files`; it has no tier, category,
+ *          runtimes, summary or turbo tags (STA-1820).
  * Boundary: pure: the caller passes the parsed package.json and turbo.jsonc, and the schema (from the built
  *           `@stackra/skills/contracts`; skipped when undefined, the other rules still run).
  * Runtime: node
@@ -43,11 +46,20 @@ export function checkMemberMetadata(member: {
   readonly pkg: PackageManifest;
   readonly turbo?: { readonly tags?: readonly string[] } | undefined;
   readonly schema?: ManifestSchema | undefined;
+  /** The member's root entries, for the `contract` kind's manifest check; skipped when undefined. */
+  readonly files?: readonly string[] | undefined;
 }): string[] {
-  const { dir, pkg, turbo, schema } = member;
+  const { dir, pkg, turbo, schema, files } = member;
   const tierTag = tierFor(dir);
   if (tierTag === null || tierTag === "unknown") return [];
   const out: string[] = [];
+  if (pkg.stackra?.kind === "contract") {
+    for (const issue of schema?.safeParse(pkg.stackra).error?.issues ?? [])
+      out.push(`stackra.${issue.path.join(".")}: ${issue.message} (STACKRA_MANIFEST_SCHEMA)`);
+    if (files !== undefined && !files.includes("stackra.manifest.json"))
+      out.push("a contract package must hold stackra.manifest.json at its root");
+    return out;
+  }
   const tier = tierTag.slice("tier:".length);
   const category = categoryOf(dir);
   const want = npmMetadataFor(dir);
