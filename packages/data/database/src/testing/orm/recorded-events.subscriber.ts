@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `RecordedEventsSubscriber`, the testing tier's stand-in for the outbox writer: on each flush it takes the
- *          events every changed model recorded (`model.record(event)`), and once the outermost transaction commits it
+ *          events every changed model recorded (`model.record(event)`), at commit those recorded after a model's last
+ *          flush (a row `insert` returned), and once the outermost transaction commits it
  *          hands them to the testing app (`commitEvents`) with the running call's actor, id and scope, so `run()` results
  *          and `app.events.published()` hold them and `drainOutbox()` delivers them in that scope (STA-1789). A rollback
  *          drops them (STA-1740).
@@ -36,6 +37,16 @@ function runningCall(): CommittingCall | undefined {
   };
 }
 
+/**
+ * Takes what the transaction's models recorded after their last flush: a row `insert` flushed at once records its
+ * first event on the returned model, which no later flush sees because the model has no change left (STA-1740).
+ */
+function unflushed(args: TransactionEventArgs): Event[] {
+  return [...(args.uow ?? args.em.getUnitOfWork()).getIdentityMap()].flatMap((entity) =>
+    takeRecordedEvents(entity),
+  );
+}
+
 /** Whether `args` is a savepoint's release or rollback rather than the outer transaction's. */
 function isSavepoint(args: TransactionEventArgs): boolean {
   return args.transaction?.savepointName !== undefined;
@@ -65,7 +76,7 @@ export class RecordedEventsSubscriber implements EventSubscriber<object> {
 
   /** The ORM's `afterTransactionCommit`: a savepoint carries its events outward; the outer one publishes them all. */
   async afterTransactionCommit(args: TransactionEventArgs): Promise<void> {
-    const events = this.take(args.em);
+    const events = [...this.take(args.em), ...unflushed(args)];
     if (isSavepoint(args)) {
       this.carried.push(...events);
       return;
@@ -78,6 +89,7 @@ export class RecordedEventsSubscriber implements EventSubscriber<object> {
   /** The ORM's `afterTransactionRollback`: drops the rolled-back flushes' events, and the carried ones with the outer. */
   afterTransactionRollback(args: TransactionEventArgs): void {
     this.take(args.em);
+    unflushed(args);
     if (!isSavepoint(args)) this.carried = [];
   }
 

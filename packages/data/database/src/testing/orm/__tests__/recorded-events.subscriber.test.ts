@@ -70,6 +70,25 @@ describe("RecordedEventsSubscriber", { timeout: 60_000 }, () => {
     expect(app.events.published()).toHaveLength(2);
   });
 
+  it("publishes an event recorded on a row insert returned, after its flush, and drops it on a rollback", async () => {
+    const app = await createTestingModule(FixtureModule).compile();
+    const opened = new NoteWritten();
+    await app.transaction(async () => {
+      const note = await notes().insert({ id: "note_01ja0000000000000000000006", body: "first" });
+      note.record(opened);
+    });
+    expect([...app.events.published()]).toEqual([opened]);
+
+    await expect(
+      app.transaction(async () => {
+        const note = await notes().insert({ id: "note_01ja0000000000000000000007", body: "gone" });
+        note.record(new NoteFiled());
+        throw new Error("refused");
+      }),
+    ).rejects.toThrow("refused");
+    expect([...app.events.published()]).toEqual([opened]);
+  });
+
   it("publishes nothing when the transaction rolls back", async () => {
     const app = await createTestingModule(FixtureModule).compile();
     await expect(
