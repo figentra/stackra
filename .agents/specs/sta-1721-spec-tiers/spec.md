@@ -16,14 +16,14 @@
 
 **Input**: The owner approved ("goooo", relayed by the leader on 2026-10-31) four spec sizes recorded as a `Tier:` header,
 auto-classification from the diff in the lane check, approval stops recorded in the spec's Status, and who approves.
-Build it in core's spec checks (STA-1669's repo-checks and the CLI) and in Vellum, with an ADR.
+Build it in core's spec checks (STA-1669's repo-checks and the CLI) and in Figentra Flow, with an ADR.
 
 ## Impact
 
 - **Apps touched**: apps/docs (the ADR, the spec-flow guide)
 - **Services touched**: none
-- **Packages touched**: packages/developer/repo-checks, packages/developer/cli (through `specFindings`); Vellum's
-  `packages/vellum` (figentra/vellum)
+- **Packages touched**: packages/developer/repo-checks, packages/developer/cli (through `specFindings`); Figentra
+  Flow's `packages/figentra-flow` (figentra/flow, `@figentra-oss/flow`)
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Secrets**: none
@@ -56,7 +56,7 @@ Build it in core's spec checks (STA-1669's repo-checks and the CLI) and in Vellu
   leader for technical-only stops under the owner's delegation. Feature and big specs must carry it.
 - **FR-7** The agent asks for an approval with the question tool: Approve, Revise with notes, Reject; Revise loops.
 - **FR-8** Trivial work is never blocked: the plan-gate hook lets a branch with no spec folder write code.
-- **FR-9** Vellum's `gate` carries the same rules.
+- **FR-9** Figentra Flow's `gate` carries the same rules.
 - **FR-10** Kiro depth (the owner, 2026-10-31): EARS acceptance criteria with ids in spec.md; plan.md is the design
   with its required sections; each task names the criteria and files it covers; the small tier keeps a short form of
   the same sections in spec.md.
@@ -72,7 +72,7 @@ Build it in core's spec checks (STA-1669's repo-checks and the CLI) and in Vellu
 - **AC-007**: WHEN a feature or big spec is Planned THE stage gate SHALL require plan.md's design sections (architecture overview to rollout)
 - **AC-008**: WHEN a feature or big spec is Tasked THE stage gate SHALL require each task to cover an AC id and name a file, and every AC to be covered
 - **AC-009**: WHILE a spec is small THE stage gate SHALL read a short design and the tasks from spec.md instead of plan.md and tasks.md
-- **AC-010**: WHERE a repository runs Vellum THE vellum gate SHALL apply the same rules
+- **AC-010**: WHERE a repository runs Figentra Flow THE `figentra-flow gate` SHALL apply the same rules
 
 ## Status history
 

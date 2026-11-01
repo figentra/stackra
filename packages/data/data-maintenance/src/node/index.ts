@@ -51,3 +51,4 @@ export { SynonymView } from "#node/schemas/synonym-view.schema";
 export { UpdateSynonymInput } from "#node/schemas/update-synonym-input.schema";
 export { UpdateSynonymOutput } from "#node/schemas/update-synonym-output.schema";
 export { SynonymService } from "#node/services/synonym.service";
+export { DATA_MAINTENANCE_ENTITIES } from "#node/entities.gen";

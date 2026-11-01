@@ -127,7 +127,8 @@ describe("emitPackageEntries", () => {
     const node = emitPackageEntries(withModel).find(
       (file) => file.path === ".stackra/entry/node.ts",
     )?.content;
-    expect(node).toContain('export { LOYALTY_KIT_ENTITIES } from "#stackra/entities/loyalty_kit";');
+    // A package's entity list is its committed `src/node/entities.gen.ts`, so its built ./node inlines it (STA-1874).
+    expect(node).toContain('export { LOYALTY_KIT_ENTITIES } from "#node/entities.gen";');
     expect(entry("node")).not.toContain("_ENTITIES");
   });
 

@@ -15,6 +15,7 @@
  *                     0305 (rules 16 and 18); ADR 0127 2026-10-24 note (the allowed entries); ADR 0336 (a module of
  *                     model additions re-exports its side-table entities).
  */
+import { entitiesFile } from "#core/functions/entities-file.function";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { entryOf } from "#core/functions/entry-of.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
@@ -123,7 +124,7 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
       ?.push(
         exportLine(
           [{ name: entitiesName(module), typeOnly: false }],
-          `#stackra/entities/${module}`,
+          entitiesFile(ir, module).specifier,
         ),
       );
 

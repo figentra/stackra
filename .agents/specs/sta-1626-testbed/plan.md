@@ -52,7 +52,7 @@ The tester keeps using the old boxes until the new pool has passed the same work
 1. **Now (stackra-f4).** Box 1's disk freed and `put-env` hardened (already in `ci-box`: free-space check, build
    beside, keep every name). Nothing in this plan touches the old boxes before phase 5.
 2. **Infisical (owner).** Add AWS IAM auth to the shared gate identity, bound to the testbed instance role ARN; it
-   already reads `figentra-ci-gate` `/ci`. No old box changes.
+   already reads the project `figentra-ci` (formerly `figentra-ci-gate`) `/ci`. No old box changes.
 3. **Stand up beside (owner apply).** `pulumi up` in the chosen region: image pipeline, first AMI, `heavy` min 1,
    `light` min 0. Cost from this point: about +$300 a month while both run.
 4. **Canary (tester).** `stackra testbed run` on the new pool for one day with the same jobs the tester runs on the

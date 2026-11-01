@@ -14,7 +14,7 @@
 # Secrets: none in the repository. Infisical `prod` `/ci/observability` holds BETTERSTACK_UPTIME_API_TOKEN,
 #          BETTERSTACK_TELEMETRY_API_TOKEN, PULUMI_CONFIG_PASSPHRASE and the credentials of the state backend (for an
 #          S3-compatible bucket, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY), read through GitHub OIDC with the
-#          identity INFISICAL_OBSERVABILITY_IDENTITY_ID (an `observability` environment variable, not a secret). The
+#          deploy identity INFISICAL_CI_IDENTITY_ID in the project INFISICAL_DEPLOY_PROJECT_ID (org variables, ADR 0512). The
 #          tokens reach Pulumi as secret stack config through stdin on the runner, never a file in git or an argument.
 name: Apply observability
 
@@ -55,8 +55,9 @@ jobs:
       id-token: write # GitHub OIDC token, exchanged with Infisical for /ci/observability
     env:
       ENABLED: ${{ vars.OBSERVABILITY_ENABLED }}
-      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_OBSERVABILITY_IDENTITY_ID }}
-      INFISICAL_PROJECT_ID: dd4724f4-7b9a-46ae-a899-b34af2d626b2 # .infisical.yaml workspace id, not a secret
+      # ADR 0512: the deploy identity and project; the identity trusts this environment's subject.
+      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+      INFISICAL_PROJECT_ID: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
       INFISICAL_DOMAIN: https://eu.infisical.com
       # The state backend URL (s3://…, or https://api.pulumi.com): an identifier, not a credential.
       PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL }}
@@ -100,7 +101,7 @@ jobs:
         if: env.ENABLED == 'true'
         run: |
           [ -n "$INFISICAL_IDENTITY_ID" ] || {
-            echo "::error title=INFISICAL_OBSERVABILITY_IDENTITY_ID::missing in the observability environment"; exit 1; }
+            echo "::error title=INFISICAL_CI_IDENTITY_ID::missing org variable"; exit 1; }
           [ -n "$PULUMI_BACKEND_URL" ] || {
             echo "::error title=PULUMI_BACKEND_URL::missing in the observability environment"; exit 1; }
           mise install "$PULUMI_TOOL"

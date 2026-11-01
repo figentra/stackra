@@ -2123,6 +2123,9 @@ importers:
 
   packages/commerce/payments:
     dependencies:
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../application/actions
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config

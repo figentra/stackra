@@ -8,7 +8,8 @@
  * Runtime: node
  * Governing contract: ADR 0257 (secret manager agent and the secrets inbox).
  * Input: files directly in $HOME/Secrets-inbox/ (file name = secret name, one extension stripped); optional
- *   `<NAME>.target.yaml` sidecar with `env` / `path`; flags --env --path --name --dry-run --list --confirm --actor.
+ *   `<NAME>.target.yaml` sidecar with `project` / `env` / `path`; flags --project --env --path --name --dry-run --list
+ *   --confirm --actor. `/agents` is figentra-agents; a `/ci` target names its project (ADR 0512).
  * Output: one line per secret NAME with the target and a value-free result; exit 1 when any secret failed.
  * Secrets: reads values; never prints, logs or passes one on argv. The Infisical CLI's stdout/stderr are captured
  *   and only classified into fixed messages. Safe for any caller: hooks cannot tell agents apart, so the script is
@@ -17,7 +18,7 @@
  * Usage:
  *   pnpm secrets:import --list                       # inbox file NAMES, nothing else
  *   pnpm secrets:import --dry-run [FILE…]            # validate, reach Infisical, would-overwrite; prod: prints a token
- *   pnpm secrets:import [FILE…] [--env e --path p --name N] [--confirm <token>] [--actor <agent>]
+ *   pnpm secrets:import [FILE…] [--project P --env e --path p --name N] [--confirm <token>] [--actor <agent>]
  */
 import { spawnSync } from "node:child_process";
 import { createHash, createHmac, randomBytes } from "node:crypto";
@@ -53,6 +54,15 @@ export const ENVS = ["dev", "staging", "prod"];
 // The vault layout (rules/secrets.md): /agents and /ci, plus sub-folders.
 const PATH_RX = /^\/(?:agents|ci)(?:\/[a-z0-9-]+)*$/;
 const SIDECAR = ".target.yaml";
+/** The projects a write may target (ADR 0512, one project per reader): slug → Infisical project id, not a secret. */
+export const PROJECTS = {
+  "figentra-agents": "c008ea1e-c997-4d15-90b2-9eb75dcb0896",
+  "figentra-ci": "0f940219-c073-4071-a1bf-1eacc725201a",
+  "figentra-ci-deploy": "f9f11e24-e2e1-45bb-aa89-d98d14887fdd",
+  "figentra-registry": "6c1f114a-1247-407a-8ad5-51057c602f1a",
+  "figentra-flow-gate": "86c297d4-ce42-4e94-b4b3-810a715812f2",
+  stackra: "dd4724f4-7b9a-46ae-a899-b34af2d626b2",
+};
 export const isProd = (env) => /^prod(uction)?$/i.test(env);
 /** Paths an agent never writes: the gate and registry (release) keys (the owner's keeper rule of 2026-10-31). */
 export const AGENT_DENIED_PATHS = ["/ci/gate", "/ci/registry"];
@@ -96,7 +106,7 @@ export function scanInbox(inbox) {
   return { entries, problems };
 }
 
-/** `<NAME>.target.yaml` → { env?, path? }. Throws a Refusal on a bad sidecar. */
+/** `<NAME>.target.yaml` → { project?, env?, path? }. Throws a Refusal on a bad sidecar. */
 export function readSidecar(inbox, name) {
   const p = join(inbox, name + SIDECAR);
   const st = lstatSync(p, { throwIfNoEntry: false });
@@ -108,17 +118,23 @@ export function readSidecar(inbox, name) {
   } catch {
     throw new Refusal("sidecar is not valid YAML");
   }
-  const extra = Object.keys(data).filter((k) => k !== "env" && k !== "path");
+  const extra = Object.keys(data).filter((k) => !["project", "env", "path"].includes(k));
   if (extra.length) throw new Refusal(`sidecar has unknown keys: ${extra.join(", ")}`);
   return data;
 }
 
 /** Check a resolved target; returns it or throws a Refusal. */
-export function checkTarget({ name, env, path }) {
+export function checkTarget({ name, env, path, project }) {
   if (!NAME_RX.test(name)) throw new Refusal("name is not SCREAMING_SNAKE");
   if (!ENVS.includes(env)) throw new Refusal(`env must be one of ${ENVS.join(", ")}`);
   if (!PATH_RX.test(path)) throw new Refusal("path must be /agents or /ci (or a sub-folder)");
-  return { name, env, path };
+  // `/agents` lives in figentra-agents; a `/ci` path exists in several projects, so it must say which.
+  project ??= /^\/agents(?:\/|$)/.test(path) ? "figentra-agents" : undefined;
+  if (!project)
+    throw new Refusal("a /ci target names its project (--project or the sidecar's project)");
+  if (!Object.hasOwn(PROJECTS, project))
+    throw new Refusal(`project must be one of ${Object.keys(PROJECTS).join(", ")}`);
+  return { name, env, path, project };
 }
 
 /** Raw bytes → { value, hash }: UTF-8, no NUL, one trailing newline stripped (editors add it), not empty. */
@@ -192,7 +208,12 @@ function cliFailure(what, r) {
   return new Refusal(`${what}: infisical exited ${r.status}`);
 }
 
-const scope = (t) => [`--env=${t.env}`, `--path=${t.path}`, "--silent"];
+const scope = (t) => [
+  `--projectId=${PROJECTS[t.project]}`,
+  `--env=${t.env}`,
+  `--path=${t.path}`,
+  "--silent",
+];
 
 /** SHA-256 of the stored value, or null when the secret does not exist. Proves Infisical is reachable. */
 export function remoteHash(t, runner) {
@@ -277,11 +298,11 @@ function confirmKey(home) {
   return readFileSync(p);
 }
 
-/** One-time token binding name, env, path, value hash and issue time. */
+/** One-time token binding name, project, env, path, value hash and issue time. */
 export function confirmToken(home, t, hash, now = Date.now()) {
   const issued = Math.floor(now / 1000).toString(36);
   const mac = createHmac("sha256", confirmKey(home))
-    .update([t.name, t.env, t.path, hash, issued].join("\n"))
+    .update([t.name, t.project, t.env, t.path, hash, issued].join("\n"))
     .digest("hex")
     .slice(0, 20);
   return `${issued}-${mac}`;
@@ -294,7 +315,7 @@ export function checkConfirm(home, token, t, hash, now = Date.now()) {
   if (!(now - issuedMs >= 0 && now - issuedMs <= TOKEN_TTL_MS))
     return "confirm token expired; run the dry run again";
   if (confirmToken(home, t, hash, issuedMs) !== token)
-    return "confirm token does not match this name, env, path and file";
+    return "confirm token does not match this name, project, env, path and file";
   if (auditLines(home).some((l) => l.confirm === token && l.action === "confirm-used"))
     return "confirm token already used";
   return null;
@@ -355,6 +376,7 @@ function store(t, { value, hash }, { confirm, bindHash, home, runner, now, actor
  */
 export async function importSecret({
   name,
+  project,
   env = "dev",
   path = "/agents",
   valueStream,
@@ -373,15 +395,16 @@ export async function importSecret({
     if (st && (st.isSymbolicLink() || !st.isDirectory()))
       throw new Refusal("inbox is not a real directory");
     cleanStaleTemps(inbox);
-    const t = checkTarget({ name, env, path });
+    const t = checkTarget({ name, env, path, project });
     store(t, await readStream(valueStream), { confirm, bindHash, home, runner, now, actor, inbox });
-    audit(home, { actor, name, env, path, action: "import", result: "ok" });
+    audit(home, { actor, name, project: t.project, env, path, action: "import", result: "ok" });
     return { name: label, ok: true };
   } catch (error) {
     if (!(error instanceof Refusal)) throw error;
     audit(home, {
       actor,
       name: label,
+      project,
       env,
       path,
       action: "import",
@@ -415,6 +438,7 @@ export function main(
       options: {
         "dry-run": { type: "boolean" },
         list: { type: "boolean" },
+        project: { type: "string" },
         env: { type: "string" },
         path: { type: "string" },
         name: { type: "string" },
@@ -481,10 +505,11 @@ export function main(
         name: t.name,
         env: o.env ?? side.env ?? t.env,
         path: o.path ?? side.path ?? t.path,
+        project: o.project ?? side.project,
       });
       if (isAgentRun(env)) checkAgentTarget(t);
       const read = readValue(join(inbox, e.file));
-      const label = `${t.name}  ${t.env}:${t.path}`;
+      const label = `${t.name}  ${t.project}/${t.env}:${t.path}`;
       if (o["dry-run"]) {
         const before = remoteHash(t, runner);
         say(
@@ -494,11 +519,27 @@ export function main(
           const token = confirmToken(home, t, read.hash, now());
           say(`  production: ask the owner; on yes re-run with --confirm ${token} (valid 30 min)`);
         }
-        audit(home, { actor, name: t.name, env: t.env, path: t.path, action, result: "ok" });
+        audit(home, {
+          actor,
+          name: t.name,
+          project: t.project,
+          env: t.env,
+          path: t.path,
+          action,
+          result: "ok",
+        });
         continue;
       }
       const before = store(t, read, { confirm: o.confirm, home, runner, now, actor, inbox });
-      audit(home, { actor, name: t.name, env: t.env, path: t.path, action, result: "ok" });
+      audit(home, {
+        actor,
+        name: t.name,
+        project: t.project,
+        env: t.env,
+        path: t.path,
+        action,
+        result: "ok",
+      });
       unlinkSync(join(inbox, e.file));
       rmSync(join(inbox, e.name + SIDECAR), { force: true });
       const how = before === null ? "" : before === read.hash ? " (unchanged)" : " (overwritten)";
@@ -506,10 +547,11 @@ export function main(
     } catch (error) {
       if (!(error instanceof Refusal)) throw error;
       failed++;
-      say(`${t.name}  ${t.env}:${t.path}  refused: ${error.message}`);
+      say(`${t.name}  ${t.project ?? "?"}/${t.env}:${t.path}  refused: ${error.message}`);
       audit(home, {
         actor,
         name: t.name,
+        project: t.project,
         env: t.env,
         path: t.path,
         action,

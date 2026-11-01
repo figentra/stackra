@@ -54,17 +54,12 @@ providers:
         branches: [main]
         reviewers: [figentra-usr]
   infisical:
-    # Infisical Cloud EU; the workspace id of .infisical.yaml, not a secret.
+    # Infisical Cloud EU. Core has no runtime project (ADR 0512): CI reads figentra-ci and figentra-ci-deploy through
+    # the org variables, agents read figentra-agents through .infisical.yaml.
     domain: https://eu.infisical.com
-    workspace: dd4724f4-7b9a-46ae-a899-b34af2d626b2
     environments:
       dev: dev
       production: prod
-    paths:
-      ci: /ci
-      # The Turborepo remote cache (STA-1393), read by its own identity INFISICAL_TURBO_IDENTITY_ID.
-      turbo: /ci/turbo
-      agents: /agents
   # The deploy reads the repository variable MINTLIFY_PROJECT_ID until the stacks repository holds it.
   mintlify:
     project: ref:mintlify.project
@@ -166,8 +161,8 @@ secrets:
     - CLOUDFLARE_API_TOKEN
     - MINTLIFY_ADMIN_KEY
     - UNIWIND_AUTH_TOKEN
-    # From `/ci/turbo` (paths.turbo, STA-1393): ci.yml and release.yml export them for turbo; deploy-turbo-cache.yml
-    # sets TURBO_TOKEN as the Worker's TURBO_CACHE_TOKEN.
+    # From figentra-ci `/ci/turbo` (STA-1393, ADR 0512): ci.yml and release.yml export them for turbo;
+    # deploy-turbo-cache.yml sets TURBO_TOKEN as the Worker's TURBO_CACHE_TOKEN.
     - TURBO_API
     - TURBO_TOKEN
     - TURBO_TEAM

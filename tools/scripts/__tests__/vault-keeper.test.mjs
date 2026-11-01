@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stringify } from "yaml";
-import { STORE_KIT, declared, main } from "../vault-keeper.mjs";
+import { STORE_KIT, ciHome, declared, main } from "../vault-keeper.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const fixedNow = () => 1_800_000_000_000;
@@ -90,7 +90,12 @@ function productRoot() {
 test("declared: runway CI names and, for prod with mobile apps, the root kit and each app's review secrets", () => {
   const root = productRoot();
   const names = declared("prod", { root });
-  assert.ok(names.some((d) => d.name === "CLOUDFLARE_API_TOKEN" && d.path === "/ci"));
+  assert.ok(
+    names.some(
+      (d) =>
+        d.name === "CLOUDFLARE_API_TOKEN" && d.project === "figentra-ci-deploy" && d.path === "/ci",
+    ),
+  );
   for (const n of STORE_KIT)
     assert.ok(
       names.some((d) => d.name === n && d.path === "/ci/store"),
@@ -129,16 +134,34 @@ test("preflight: present, missing and placeholder by name; values never printed"
 test("generate creates a random value blind; a second generate is refused; --rotate replaces it", async () => {
   const fake = fakeInfisical();
   const first = await run(
-    ["generate", "STACKRA_WEBHOOK_SECRET", "--env", "dev", "--path", "/ci"],
+    [
+      "generate",
+      "STACKRA_WEBHOOK_SECRET",
+      "--env",
+      "dev",
+      "--path",
+      "/ci",
+      "--project",
+      "figentra-ci-deploy",
+    ],
     fake,
   );
   assert.equal(first.code, 0, first.out);
-  assert.match(first.out, /STACKRA_WEBHOOK_SECRET  dev:\/ci  created/);
+  assert.match(first.out, /STACKRA_WEBHOOK_SECRET  figentra-ci-deploy\/dev:\/ci  created/);
   const v1 = fake.store.get("dev:/ci:STACKRA_WEBHOOK_SECRET");
   assert.equal(Buffer.from(v1, "base64url").length, 32);
 
   const again = await run(
-    ["generate", "STACKRA_WEBHOOK_SECRET", "--env", "dev", "--path", "/ci"],
+    [
+      "generate",
+      "STACKRA_WEBHOOK_SECRET",
+      "--env",
+      "dev",
+      "--path",
+      "/ci",
+      "--project",
+      "figentra-ci-deploy",
+    ],
     fake,
   );
   assert.equal(again.code, 1);
@@ -152,6 +175,8 @@ test("generate creates a random value blind; a second generate is refused; --rot
       "dev",
       "--path",
       "/ci",
+      "--project",
+      "figentra-ci-deploy",
       "--rotate",
       "--encoding",
       "hex",
@@ -171,7 +196,16 @@ test("generate creates a random value blind; a second generate is refused; --rot
 test("prod generate needs the dry run's one-time token, bound to the operation", async () => {
   const fake = fakeInfisical();
   const home = mkdtempSync(join(tmpdir(), "vault-test-"));
-  const args = ["generate", "STACKRA_SESSION_SECRET", "--env", "prod", "--path", "/ci"];
+  const args = [
+    "generate",
+    "STACKRA_SESSION_SECRET",
+    "--env",
+    "prod",
+    "--path",
+    "/ci",
+    "--project",
+    "figentra-ci-deploy",
+  ];
   const refused = await run(args, fake, { home, now: fixedNow });
   assert.equal(refused.code, 1);
   assert.match(refused.out, /needs --confirm/);
@@ -195,7 +229,22 @@ test("prod generate needs the dry run's one-time token, bound to the operation",
 test("rotate refuses a secret that does not exist; bad flags are refused without echo", async () => {
   const fake = fakeInfisical();
   assert.match(
-    (await run(["generate", "STACKRA_X", "--env", "dev", "--path", "/ci", "--rotate"], fake)).out,
+    (
+      await run(
+        [
+          "generate",
+          "STACKRA_X",
+          "--env",
+          "dev",
+          "--path",
+          "/ci",
+          "--project",
+          "figentra-ci",
+          "--rotate",
+        ],
+        fake,
+      )
+    ).out,
     /nothing to rotate/,
   );
   const pasted = canary();
@@ -206,4 +255,14 @@ test("rotate refuses a secret that does not exist; bad flags are refused without
     (await run(["generate", "STACKRA_X", "--env", "dev", "--bytes", "8"], fake)).code,
     2,
   );
+});
+
+test("ciHome: build tokens live in figentra-ci, every other CI name in figentra-ci-deploy /ci (ADR 0512)", () => {
+  assert.deepEqual(ciHome("TURBO_TOKEN"), { project: "figentra-ci", path: "/ci/turbo" });
+  assert.deepEqual(ciHome("UNIWIND_AUTH_TOKEN"), { project: "figentra-ci", path: "/ci" });
+  assert.deepEqual(ciHome("STACKRA_REGISTRY_TOKEN"), {
+    project: "figentra-ci",
+    path: "/ci/registry",
+  });
+  assert.deepEqual(ciHome("MINTLIFY_ADMIN_KEY"), { project: "figentra-ci-deploy", path: "/ci" });
 });
