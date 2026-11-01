@@ -18,13 +18,14 @@ import { DomainEvent } from "@stackra/events";
 import { dispatch } from "@stackra/events/testing";
 import { describe, expect, it } from "@stackra/testing";
 
-import { AccessControl, IdempotencyStore } from "#contracts/index";
+import { AccessControl, ApprovalGate, IdempotencyStore } from "#contracts/index";
 import {
   Action,
   type ActionContext,
   Idempotency,
   IdempotencyKeyRequiredError,
   MemoryIdempotencyStoreDriver,
+  OpenApprovalGateDriver,
   Query,
 } from "#core/index";
 import "#testing/index";
@@ -84,10 +85,14 @@ registerWiring({
 
 const as: Actor = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer };
 
-/** The fixture app with an allowing AccessControl and the memory idempotency store. */
+/**
+ * The fixture app with an allowing AccessControl, the memory idempotency store and the open approval gate (the
+ * generated wiring lists the memory gate, which needs an IdentityResolver this fixture has no use for).
+ */
 function compile() {
   return createTestingModule(FixtureModule)
     .override(AccessControl, new AllowAll())
+    .override(ApprovalGate, new OpenApprovalGateDriver())
     .override(IdempotencyStore, new MemoryIdempotencyStoreDriver(new WallClock()))
     .compile();
 }
@@ -131,7 +136,7 @@ describe(run, () => {
     await expect(run(BrokenQuery, {}, { as })).rejects.toThrow("bug");
   });
 
-  it("runs an action with no ApprovalGate bound (STA-813)", async () => {
+  it("runs an action that declares no approval under the open ApprovalGate (STA-813)", async () => {
     await compile();
     expect((await run(PlaceOrderAction, { sku: "kettle" }, { as, idempotencyKey: "k5" })).ok).toBe(
       true,

@@ -14,6 +14,7 @@ import { AUDIT_HOT_RETENTION, Duration } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { PruneApprovalBindingsAction } from "#node/actions/prune-approval-bindings.action";
+import { PruneApprovalBindingsInput } from "#node/schemas/prune-approval-bindings-input.schema";
 
 class RecordingBindings extends Driver(ApprovalBindingStore) {
   cutoff: Date | undefined;
@@ -42,9 +43,12 @@ describe(PruneApprovalBindingsAction, () => {
   it("keeps a binding for its window, the 24-hour tail and 397 days, then prunes", async () => {
     const bindings = new RecordingBindings();
     const now = new Date("2027-12-01T04:15:00.000Z");
-    const output = await new PruneApprovalBindingsAction(bindings).handle({}, {
-      now: () => now,
-    } as unknown as ActionContext);
+    const output = await new PruneApprovalBindingsAction(bindings).handle(
+      PruneApprovalBindingsInput.create({}),
+      {
+        now: () => now,
+      } as unknown as ActionContext,
+    );
     expect(output).toEqual({ deleted: 3 });
     const kept = 24 * 3_600_000 + 397 * 86_400_000;
     expect(bindings.cutoff?.getTime()).toBe(now.getTime() - kept);
