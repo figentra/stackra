@@ -1,0 +1,113 @@
+---
+title: "0513 — The permission vocabulary moves to @stackra/contracts and @stackra/container; iam keeps evaluation"
+description: "Accepted · 2026-11-01"
+---
+
+{/* Stackra file contract. Purpose: ADR 0513 (Accepted 2026-11-01, STA-1890), the owner's decision that the permission vocabulary (Risk, Permission, the Permissions kind base, registerPermissions, permissionKey and the registry) moves out of @stackra/iam into @stackra/contracts and @stackra/container, with iam re-exporting it; it supersedes the clause of ADR 0462 decision 1 that keeps Permissions, Permission and Risk in iam, and records the amendment notes of 0099, 0132, 0208 and 0462. Boundary: decision text only; the code moves in a separate PR after this one merges. Runtime: documentation. Governing contract: ADR template; ADR 0003, 0099, 0132, 0208, 0294, 0462. */}
+
+<Note>
+  Accepted 2026-11-01 by the owner (STA-1890). Reserved number 0513 through `pnpm adr:reserve`
+  (figentra/stackra PR #212). It supersedes one clause of
+  [0462](/adr/0462-iam-knows-no-segments-segments-is-an-add-on-and-one-layering-exemption-table)
+  decision 1, and it adds amendment notes to [0099](/adr/0099-risk-scale-l0-to-l4),
+  [0132](/adr/0132-permissions-catalogue-and-policy-providers) and
+  [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names). Docs
+  only: the code follows in a separate PR.
+</Note>
+
+## Context
+
+[0462](/adr/0462-iam-knows-no-segments-segments-is-an-add-on-and-one-layering-exemption-table) decision 1 keeps
+`Permissions`, `Permission` and `Risk` in `@stackra/iam`. It rejected option B, moving them with re-exports from iam,
+because "a permission is IAM's concept", and because the move "only worked around an edge that should not exist". That
+edge was the one type import from iam to segments, which 0462 removed.
+
+The vocabulary is now needed below iam, not only by iam:
+
+- `@stackra/tenancy` must declare a `Permissions` class. `PruneApprovalBindingsAction` declares
+  `prune = Permission.L4.system()`, and without a class gen refuses it with `permission_unknown`.
+- `@stackra/iam` depends on `@stackra/tenancy` at runtime (iam → rules → ai → tenancy), so tenancy cannot import iam
+  without closing a package cycle, which turbo refuses.
+- Every module that declares permissions needs the same vocabulary, so the reason that held for segments, a single
+  consumer on the wrong side of an edge, does not hold for permissions. The owner's decision of 2026-11-01 is that
+  the vocabulary is shared, and that iam keeps evaluation.
+
+The vocabulary has no dependency that forces it into iam. `Risk` needs only `Enum` from `@stackra/contracts`.
+`Permission` needs only `Risk`. The `Permissions` kind base needs only `registerKind`, which `@stackra/container`
+exports and iam already imports. `registerPermissions`, `permissionKey` and the registry read `kindOf`, which
+`@stackra/container` exports.
+
+The architecture-guardian reviewed this placement and found nothing blocking, except the clash with 0462 that this
+record resolves.
+
+## Decision
+
+1. **`Risk` and `Permission` move to `@stackra/contracts`.** Both are dependency-free values: `Risk` is an `Enum.of`
+   value, and `Permission` is the frozen `Permission.Lx` value with `.system()` and `.restricted()`. `@stackra/contracts`
+   keeps importing nothing. Its charter allows this: its `stackra.summary` says it "is the dependency-free leaf every
+   member imports, so shared cross-member vocabulary lands here", and its README says "Every other Stackra package may
+   import it; it imports nothing." The README's table of what is here gets rows for `Risk` and `Permission` in the code
+   PR, not in this one.
+2. **The permission registry moves to `@stackra/container`.** The `Permissions` kind base, `registerPermissions`,
+   `permissionKey`, `PERMISSION_REGISTRY` and the `PermissionRegistration` type move beside the Driver, Explorer and
+   Service kind bases. The registry uses `kindOf`. A container's charter covers defining a kind, which the `Permissions`
+   base is. Its `stackra.summary` was checked; its README was not re-read for this record.
+3. **`@stackra/iam` re-exports what moves, and does not copy it.** `Risk`, `Permission`, `Permissions`,
+   `registerPermissions`, `permissionKey` and `PermissionRegistration` are re-exported from iam, so existing
+   `import { Permissions, Permission, Risk } from "@stackra/iam"` keep working. Because the symbols are the same objects,
+   one registry is shared, and `registerPermissions`' `instanceof Permission` check holds across both entries.
+4. **Iam keeps evaluation.** `coversPermission`, `selectsPermission`, the permission snapshot code, `registerRoles`,
+   roles, policies and the decision point stay in `@stackra/iam`. Iam imports the vocabulary; it does not own it.
+5. **gen writes `registerPermissions` from `@stackra/container`.** `emit-registrations.function.ts` imports it from
+   `@stackra/container` instead of `@stackra/iam`. A member that declares permissions but no roles gets no
+   `@stackra/iam` import. `registerRoles` still comes from `@stackra/iam`.
+6. **Nothing moves to `@stackra/actions`.** The rest of 0462 decision 1 stands. Rejected option B there, "move with
+   re-exports from iam", is reconsidered only for `@stackra/contracts` and `@stackra/container`, never for actions.
+7. **Dependency direction.** `@stackra/tenancy` declares its `Permissions` class from `@stackra/container`, which it
+   already depends on. No edge goes from iam to tenancy, and no edge goes upward from contracts or container.
+
+## Consequences
+
+- Tenancy, and every other module that declares permissions, can declare them without depending on iam.
+- Permission vocabulary now lives in two packages: values in contracts, the registry and the kind base in container.
+  Anyone changing a permission's shape edits contracts, and anyone changing how keys are registered edits container.
+- `@stackra/contracts` grows by two symbols, which every member imports. It stays a leaf, so the cost is a larger
+  surface in a package every member already loads.
+- Iam's snapshot and decision code now imports `Permission` from contracts. Iam's public names do not change.
+- Two copies of `@stackra/contracts` in one install would break `instanceof Permission`, which is the same failure the
+  existing `Enum` and `Port` bases already have, so this record adds no new class of risk.
+- A member that declares permissions but no roles stops importing `@stackra/iam` in its generated entry.
+
+## Enforcement
+
+- planned — the code PR after this one (STA-1890): a test in `@stackra/iam` asserts that `Risk`, `Permission`,
+  `Permissions`, `registerPermissions`, `permissionKey` and `PermissionRegistration` re-exported from iam are the same
+  objects as their contracts and container exports.
+- planned — the code PR after this one (STA-1890): a test in gen's `emit-registrations` asserts that
+  `registerPermissions` is imported from `@stackra/container`, and that a member declaring permissions but no roles
+  gets no `@stackra/iam` import.
+- Existing: `turbo boundaries` and turbo's package-cycle refusal (ADR 0462, Enforcement) fail any edge from iam back to
+  tenancy, or any upward edge out of contracts or container.
+- Existing: gen's `permission_unknown` (ADR 0462, decision 1) refuses an action whose permission no `Permissions` class
+  declares, which is the check tenancy needs to pass.
+
+## Supersedes and sources
+
+Supersedes: the clause of [0462](/adr/0462-iam-knows-no-segments-segments-is-an-add-on-and-one-layering-exemption-table)
+decision 1 that reads "`Permissions`, `Permission` and `Risk` stay in `@stackra/iam`". 0462 is otherwise in force, so
+its status becomes "Accepted, amended by 0513", not "Superseded by 0513": only one clause changes.
+
+Amends, as amendment notes on each page (their status stays Accepted, and their bodies are not edited):
+
+- [0099](/adr/0099-risk-scale-l0-to-l4): `Risk` lives in `@stackra/contracts` and is re-exported from `@stackra/iam`.
+  The five levels and every other decision stand.
+- [0132](/adr/0132-permissions-catalogue-and-policy-providers): the `Permissions` kind base lives in
+  `@stackra/container`, and the `Permission` value in `@stackra/contracts`. Keys and decisions stand.
+- [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names): decision 6 holds. The
+  vocabulary that names permissions moves; roles, policies and the decision point stay in iam.
+- [0462](/adr/0462-iam-knows-no-segments-segments-is-an-add-on-and-one-layering-exemption-table): decision 1, as
+  described above; its option B is reconsidered for contracts and container only.
+
+Sources: the owner's decision of 2026-11-01 (STA-1890); ADR 0462 decision 1 and its rejected option B; the
+architecture-guardian's review of the placement (STA-1890); the `@stackra/contracts` and `@stackra/container` charters
+(`stackra.summary` in each `package.json`, and the contracts README).
