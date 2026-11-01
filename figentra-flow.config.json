@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@figentra-oss/flow/schema/figentra-flow.config.schema.json",
   "version": 1,
-  "preset": "stackra",
+  "preset": ".agents/speckit/presets/stackra",
   "tracker": {
     "kind": "linear",
     "team": "STA",
