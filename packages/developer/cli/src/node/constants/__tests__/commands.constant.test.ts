@@ -45,6 +45,7 @@ describe("COMMANDS", () => {
         "db migrate",
         "db rollback",
         "db seed",
+        "db diff",
         "new",
         "seed-pack",
         "settings:diff",

@@ -29,6 +29,13 @@ export interface FacetUse {
    */
   readonly options: unknown;
 
+  /**
+   * The constant arguments after the first (`@Index(["a"], { unique: true })` gives `[{ unique: true }]`), present only
+   * when the decorator was called with more than one and every one is constant; `stackra db diff` reads an index's
+   * `unique` and `where` from it.
+   */
+  readonly rest?: readonly unknown[];
+
   /** The module specifier it was imported from. */
   readonly from: string;
 }

@@ -13,6 +13,7 @@
 export { classComponentsPlugin } from "#node/functions/class-components-plugin.function";
 export { classComponents } from "#node/functions/class-components.function";
 export { compileClassComponents } from "#node/functions/compile-class-components.function";
+export { checkMigrationDrift } from "#node/functions/check-migration-drift.function";
 export { compileMigrations } from "#node/functions/compile-migrations.function";
 export { discoverMember } from "#node/functions/discover-member.function";
 export { generateDocsSite } from "#node/functions/generate-docs-site.function";
@@ -24,6 +25,7 @@ export { watchDocsSite } from "#node/functions/watch-docs-site.function";
 export { writeRepoGraph } from "#node/functions/write-repo-graph.function";
 export type { ClassComponentsPlugin } from "#node/types/class-components-plugin.type";
 export type { GenerateResult } from "#node/types/generate-result.type";
+export type { MigrationDrift } from "#node/types/migration-drift.type";
 export type { TsHost } from "#node/types/ts-host.type";
 export type { TsSymbol } from "#node/types/ts-symbol.type";
 export type { TsType } from "#node/types/ts-type.type";

@@ -853,6 +853,7 @@ export function createSourceReader(
         /(^|[^\w])Decorator\s*</.test(host.text(declaration.type)));
     if (!made) return undefined;
     const value = use.args[0] === undefined ? undefined : constant(use.args[0]);
+    const rest = use.args.slice(1).map((argument) => constant(argument));
     // `@Classify(Class)` carries its data class's effects, so a check can read `ai` without the class (STA-1251).
     const effects = use.name === "Classify" ? dataClassOf(use.args[0]) : undefined;
     return {
@@ -866,6 +867,7 @@ export function createSourceReader(
           ? value
           : { ...value, dataClass: effects },
       from: refOf(use.local, symbol).from,
+      ...(rest.length > 0 && !rest.some(hasNonConstant) ? { rest } : {}),
     };
   };
 

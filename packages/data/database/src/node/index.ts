@@ -39,6 +39,7 @@ export { databaseUrl } from "#node/functions/database-url.function";
 export { directDatabaseUrl } from "#node/functions/direct-database-url.function";
 export { migrate } from "#node/functions/migrate.function";
 export { provideDatabaseUrl } from "#node/functions/provide-database-url.function";
+export { readMigratedSchema } from "#node/functions/read-migrated-schema.function";
 export type { SeedLedger } from "#node/types/seed-ledger.type";
 export type { SeederEntry } from "#node/types/seeder-entry.type";
 export { rollback } from "#node/functions/rollback.function";
