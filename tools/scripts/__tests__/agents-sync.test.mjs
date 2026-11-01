@@ -702,13 +702,13 @@ test("the constitution is generated from the docs laws and drift is detected", (
       '---\ntitle: "Secrets"\ndescription: "d"\n---\n\n<Note>\nNever print values.\n</Note>\n\n## Rule\n\nText.\n',
     );
     assert.equal(run(root).code, 0);
-    const out = read(root, ".specify/memory/constitution.md");
+    const out = read(root, ".flow/constitution.md");
     assert.match(out, /^# Stackra Constitution/);
     assert.match(out, /## Secrets\n\n<Note>|## Secrets\n\nNever print values\./);
     assert.doesNotMatch(out, /<Note>/);
     assert.match(out, /### Rule/);
     assert.equal(run(root, "--check").code, 0);
-    writeFileSync(join(root, ".specify/memory/constitution.md"), "hand edited\n");
+    writeFileSync(join(root, ".flow/constitution.md"), "hand edited\n");
     const drift = run(root, "--check");
     assert.equal(drift.code, 1);
     assert.match(drift.out, /constitution\.md: stale/);
@@ -736,7 +736,7 @@ test("oxfmt-wrapped multi-line <Step> and <Note> blocks keep titles and render a
       ].join("\n"),
     );
     assert.equal(run(root).code, 0);
-    const out = read(root, ".specify/memory/constitution.md");
+    const out = read(root, ".flow/constitution.md");
     assert.match(out, /^- \*\*Laws\*\*: Short and normative\.$/m);
     assert.match(
       out,
