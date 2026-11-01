@@ -746,6 +746,12 @@ every approved extension (`Extension`, PostGIS included) can be created (gap db1
 another image without the build. `pnpm turbo run test:int --filter=@stackra/database` runs the tier (`vitest.int.config.ts`,
 Docker needed); the CI Quality Gate runs every member's `test:int` (STA-1570).
 
+The unit tier's tools are optional peers: `@faker-js/faker`, `@electric-sql/pglite`, `@electric-sql/pglite-pgvector`
+and `@mikro-orm/pglite`. `@stackra/database/testing` loads each on first use (the first factory definition, the first
+memory database), never on import, so a service that has none of them can still load the entry. A member whose tests
+use them adds all four as `devDependencies` with their `catalog:` entries; a missing one throws an error naming all
+four (STA-1812).
+
 On both tiers a model's recorded events (`model.record(event)`) reach the testing app once the outermost transaction
 commits, as the outbox writer hands them on in production: an integration event to the app's outbox, any other on its
 bus, so `run()` results and `app.events.published()` hold them. A rollback drops them, and a released savepoint's

@@ -49,6 +49,10 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "@electric-sql/pglite-pgvector": "catalog:",
+    "@faker-js/faker": "catalog:",
+    "@mikro-orm/pglite": "catalog:",
     "@stackra/cli": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
