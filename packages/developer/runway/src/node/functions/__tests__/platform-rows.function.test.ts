@@ -112,15 +112,12 @@ describe("platformRows", () => {
   });
 
   it("refuses two surfaces on one host instead of overwriting the first row (STA-1796)", () => {
-    const parsed = parseRunway("root", PRODUCT_ROOT);
     // parseRunway refuses this root already; platformRows guards a root built another way.
-    const root = {
-      ...parsed,
-      surfaces: {
-        ...parsed.surfaces,
-        portal: { shell: "os/console@3", preset: "portal", host: "console.mezzora" },
-      },
-    } as typeof parsed;
+    const root = parseRunway("root", PRODUCT_ROOT);
+    // Assigned by key, so it is typed as a web surface: a spread literal cannot satisfy `ops` beside the catchall.
+    const surfaces: NonNullable<typeof root.surfaces> = root.surfaces ?? {};
+    surfaces.portal = { shell: "os/console@3", preset: "portal", host: "console.mezzora" };
+    root.surfaces = surfaces;
     expect(issuePaths(() => platformRows(root, "production", { appLinks: APP_LINKS }))).toEqual([
       "surfaces.portal.host",
     ]);

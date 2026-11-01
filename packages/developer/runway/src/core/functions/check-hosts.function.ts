@@ -27,8 +27,10 @@ export function checkHosts(root: RootRunway): HostIssue[] {
   for (const [environment, env] of Object.entries(root.environments ?? {})) {
     const zone = env?.domains?.zone;
     const owners = new Map<string, string>();
-    for (const [surface, entry] of Object.entries(root.surfaces ?? {})) {
-      if (surface === "ops" || entry === undefined) continue;
+    for (const surface of Object.keys(root.surfaces ?? {})) {
+      // Indexing by a string key types the entry as a web surface; `ops` (no host) is the other variant.
+      const entry = surface === "ops" ? undefined : root.surfaces?.[surface];
+      if (entry === undefined) continue;
       const at = `surfaces.${surface}`;
       const claims = [
         ...(entry.host === undefined ? [] : [{ name: entry.host, path: `${at}.host` }]),
