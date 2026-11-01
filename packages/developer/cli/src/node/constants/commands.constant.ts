@@ -10,8 +10,8 @@
  *          `tools/scripts` (doctor, eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs
  *          and `validate --repository`).
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
- *           are never added here (ADR 0282 decision 4); `stackra db diff` and `seed` land with
- *           `@stackra/database`; infra is `stackra runway infra`, not a command here (ADR 0352).
+ *           are never added here (ADR 0282 decision 4); `stackra db structure`, `db diff --write` and `seed`
+ *           are not built yet; infra is `stackra runway infra`, not a command here (ADR 0352).
  * Runtime: node
  * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows).
  */
@@ -22,6 +22,7 @@ import { APP_NATIVE_DEPS_COMMAND } from "#node/app-native-deps/constants/app-nat
 import { ARCHITECTURE_MAP_COMMAND } from "#node/architecture-map/constants/architecture-map-command.constant";
 import { AUDIT_VERIFY_COMMAND } from "#node/constants/audit-verify-command.constant";
 import { CATALOGUE_COMPLETENESS_COMMAND } from "#node/constants/catalogue-completeness-command.constant";
+import { DB_DIFF_COMMAND } from "#node/constants/db-diff-command.constant";
 import { DB_MIGRATE_COMMAND } from "#node/constants/db-migrate-command.constant";
 import { DB_ROLLBACK_COMMAND } from "#node/constants/db-rollback-command.constant";
 import { DOC_STANDARD_COMMAND } from "#node/constants/doc-standard-command.constant";
@@ -89,6 +90,7 @@ export const COMMANDS: readonly CliCommand[] = [
   ),
   DB_MIGRATE_COMMAND,
   DB_ROLLBACK_COMMAND,
+  DB_DIFF_COMMAND,
   SEED_PACK_COMMAND,
   SETTINGS_DIFF_COMMAND,
   SETTINGS_APPLY_COMMAND,

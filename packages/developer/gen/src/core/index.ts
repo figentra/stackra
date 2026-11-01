@@ -6,7 +6,7 @@
  *          blocks (with `registerResources` and the resource label keys), the generated service clients, the setting keys
  *          (`#stackra/settings`, stackra-209), the tool configs,
  *          the openapi projection, the docs-site target and its `DocsConfig` base, the public id prefix registry and
- *          the IR types, the surface targets and the extension bundle's modulepreload list), until `stackra gen` writes the
+ *          `stackra db diff`'s expected schema, comparison and type map (STA-1808), the IR types, the surface targets and the extension bundle's modulepreload list), until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Isomorphic: no file system and no TypeScript host here; those
  *           are `./node`. The case helpers, the import printer and the emitters' path helpers stay internal.
@@ -32,6 +32,7 @@ export { SCOPE_OWNER_TRAITS } from "#core/constants/scope-owner-traits.constant"
 export { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 export { actionKey } from "#core/functions/action-key.function";
 export { additionsOf } from "#core/functions/additions-of.function";
+export { diffSchemas } from "#core/functions/diff-schemas.function";
 export { blockKey } from "#core/functions/block-key.function";
 export { buildManifest } from "#core/functions/build-manifest.function";
 export { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
@@ -75,8 +76,10 @@ export { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 export { emitWebhooks } from "#core/functions/emit-webhooks.function";
 export { emitWiring } from "#core/functions/emit-wiring.function";
 export { eventName } from "#core/functions/event-name.function";
+export { expectedSchema } from "#core/functions/expected-schema.function";
 export { folderKey } from "#core/functions/folder-key.function";
 export { formatGenError } from "#core/functions/format-gen-error.function";
+export { formatSchemaDifference } from "#core/functions/format-schema-difference.function";
 export { generateMember } from "#core/functions/generate-member.function";
 export { memberGraphOf } from "#core/functions/member-graph-of.function";
 export { migrationId } from "#core/functions/migration-id.function";
@@ -85,6 +88,8 @@ export { jsonSchemaOf } from "#core/functions/json-schema-of.function";
 export { modelKey } from "#core/functions/model-key.function";
 export { modulepreloadOf } from "#core/functions/modulepreload-of.function";
 export { openApiOf } from "#core/functions/open-api-of.function";
+export { postgresTypeAgrees } from "#core/functions/postgres-type-agrees.function";
+export { postgresTypeOf } from "#core/functions/postgres-type-of.function";
 export { orderMigrations } from "#core/functions/order-migrations.function";
 export { permissionKey } from "#core/functions/permission-key.function";
 export { portKey } from "#core/functions/port-key.function";
@@ -127,6 +132,8 @@ export type { MigrationUnit } from "#core/types/migration-unit.type";
 export type { OpenApiDocument } from "#core/types/open-api-document.type";
 export type { RegexValue } from "#core/types/regex-value.type";
 export type { RelationIR } from "#core/types/relation-ir.type";
+export type { SchemaDifference } from "#core/types/schema-difference.type";
+export type { SchemaSnapshot } from "#core/types/schema-snapshot.type";
 export type { ShapeIR } from "#core/types/shape-ir.type";
 export type { SlotFillIR } from "#core/types/slot-fill-ir.type";
 export type { SlotIR } from "#core/types/slot-ir.type";

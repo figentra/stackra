@@ -246,13 +246,24 @@ environment's bootstrap token in `STACKRA_OPS_TOKEN`, sent as a bearer token and
 (nothing written) or `would grant` (`--dry-run`) and exits 0; no user with the email, an error status or an unreachable
 origin exits 1.
 
+## db diff
+
+`stackra db diff [--json]` compares the member's models with the schema its migrations build, with no database and no
+network: it compiles the member's migrations (its own and its declared packages', in gen's order), replays them on an
+in-memory PGlite through the member's own `@stackra/database/node`, and compares tables, columns (type and
+nullability), indexes and foreign keys with what the models declare. One line per difference,
+`<module>  <table>  <kind>  <subject>  <expected>  <actual>`; `--json` prints the same as an array. Exit 0 when they
+agree, 1 on a difference, 2 when a migration does not compile or replay, or `@stackra/database` or PGlite
+(`@electric-sql/pglite`, `@electric-sql/pglite-pgvector`) is not installed in the member. Only the member's own modules
+are compared; a declared package's tables are its own models'.
+
 ## Not here yet
 
 `stackra add` does not list or search the catalogue yet (`GET /-/stackra/v1/catalogue`), and `stackra publish` does
 not attach the provenance bundle; the release workflow does (stackra-185). `stackra whoami` (entitlements) is not
 built.
 
-`stackra db diff` and `seed` land with `@stackra/database` in the data wave (ADR 0159 note). `stackra new` makes
+`stackra db structure`, `db diff --write` and `seed` are not built yet (ADR 0159 note). `stackra new` makes
 packages, services and seed packs; app kinds stay with `pnpm new` until their templates move here. `structure`
 (the docs page), `doctor` and `agents setup` move in from `tools/scripts` and their owning packages as those are built
 (ADR 0282 consequences). Runway deploy locks for a settings apply are runway's (STA-779 hand-off). Figentra-internal

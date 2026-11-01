@@ -15,6 +15,7 @@ import * as node from "#node/index";
 describe("@stackra/gen/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "checkMigrationDrift",
       "classComponents",
       "classComponentsPlugin",
       "compileClassComponents",

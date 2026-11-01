@@ -44,6 +44,7 @@ describe("COMMANDS", () => {
         "agents check",
         "db migrate",
         "db rollback",
+        "db diff",
         "new",
         "seed-pack",
         "settings:diff",

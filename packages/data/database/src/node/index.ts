@@ -30,5 +30,6 @@ export { ServiceHoldRegistryDriver } from "#node/drivers/service-hold-registry.d
 export { applySeed } from "#node/functions/apply-seed.function";
 export { directDatabaseUrl } from "#node/functions/direct-database-url.function";
 export { migrate } from "#node/functions/migrate.function";
+export { readMigratedSchema } from "#node/functions/read-migrated-schema.function";
 export { rollback } from "#node/functions/rollback.function";
 export { seedState } from "#node/functions/seed-state.function";
