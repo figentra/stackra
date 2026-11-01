@@ -53,6 +53,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /^packages\/design-system\/showcase\/vendor\/[\w-]+\/(react|native)\/[\w-]+\.json$/,
     "HeroUI's component docs data, vendored byte-for-byte; gen-api JSON.parses it",
   ],
+  [
+    /^packages\/[\w-]+\/[\w-]+\/showcase\/[\w-]+\.json$/,
+    "a module UI kit's showcase entry; the showcase gen-barrel (load-kit-entries) JSON.parses it (ADR 0504)",
+  ],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [/^\.github\/rulesets\/[\w-]+\.json$/, "GitHub REST ruleset payload (PUT …/rulesets/<id>)"],
   [
