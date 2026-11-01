@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/database until `stackra gen` writes the entry barrels
- *          (STA-339): `PostgresDatabaseDriver`, which gen's boot calls to connect, and `DatabaseUnitOfWorkDriver`, the
+ *          (STA-339): `PostgresDatabaseDriver`, which gen's boot calls to connect with `databaseUrl()`, the url the
+ *          generated Encore database hands `provideDatabaseUrl` (STA-1652), and `DatabaseUnitOfWorkDriver`, the
  *          action pipeline's unit of work on it, and `DatabaseReplicaReadsDriver`, its replica reads (STA-1504); the
  *          durable Postgres drivers of `@stackra/actions`' idempotency and rate-limit ports; `ServiceHoldRegistryDriver`,
  *          the `HoldRegistry` every service binds over its `HoldChannel`; `DatabaseRunner` and the four `db:*` commands (`DbMigrateCommand`, `DbRollbackCommand`, `DbStatusCommand`, `DbSeedCommand`, STA-1731); `migrate` and `rollback`, the runner
@@ -33,7 +34,9 @@ export { PostgresRateLimitStoreDriver } from "#node/drivers/postgres-rate-limit-
 export { PrimaryConnectionResolverDriver } from "#node/drivers/primary-connection-resolver.driver";
 export { ServiceHoldRegistryDriver } from "#node/drivers/service-hold-registry.driver";
 export { applySeed } from "#node/functions/apply-seed.function";
+export { databaseUrl } from "#node/functions/database-url.function";
 export { directDatabaseUrl } from "#node/functions/direct-database-url.function";
 export { migrate } from "#node/functions/migrate.function";
+export { provideDatabaseUrl } from "#node/functions/provide-database-url.function";
 export { rollback } from "#node/functions/rollback.function";
 export { seedState } from "#node/functions/seed-state.function";

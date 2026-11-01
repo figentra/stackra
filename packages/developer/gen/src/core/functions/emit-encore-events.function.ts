@@ -27,6 +27,7 @@ import { camelCase, kebabCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
+import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -55,8 +56,9 @@ function topicConst(wire: string): string {
 }
 
 /** The imports and the `receive` handler of a subscriptions file, into the service's inbox. */
-function inboxPreamble(imports: readonly string[]): string[] {
+function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
   return [
+    ...encoreDatabaseImport(ir),
     'import type { EventEnvelope } from "@stackra/outbox/contracts";',
     'import { InboxService } from "@stackra/outbox/node";',
     'import type { BrokerMessage } from "@stackra/queue/contracts";',
@@ -163,7 +165,7 @@ function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[])
     path: `.stackra/encore/${ir.member}/relay.ts`,
     content: [
       header,
-      ...inboxPreamble(imports),
+      ...inboxPreamble(ir, imports),
       ...subscribed.flatMap((wire) => [
         `/** Relays \`${wire}\`. */`,
         `export const ${topicConst(wire)}Relay = new Subscription(${topicConst(wire)}, ${JSON.stringify(subscription)}, {`,
@@ -239,7 +241,7 @@ function emitSubscriptions(
     path: `.stackra/encore/${ir.member}/subscriptions.ts`,
     content: [
       header,
-      ...inboxPreamble(imports),
+      ...inboxPreamble(ir, imports),
       ...subscribed.flatMap((wire) => [
         `/** Delivers \`${wire}\` to this service's typed listeners. */`,
         `export const ${topicConst(wire)}Subscription = new Subscription(${topicConst(wire)}, ${JSON.stringify(`${kebabCase(ir.member)}-${kebabCase(stem(wire))}`)}, {`,

@@ -31,8 +31,10 @@ describe("@stackra/database/node", () => {
       "PrimaryConnectionResolverDriver",
       "ServiceHoldRegistryDriver",
       "applySeed",
+      "databaseUrl",
       "directDatabaseUrl",
       "migrate",
+      "provideDatabaseUrl",
       "rollback",
       "seedState",
     ]);
