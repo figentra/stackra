@@ -239,6 +239,8 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     "registerConnections",
     "@stackra/integrations",
     integrations.map((entry) => {
+      // classOf imports what it names: an integration without a connection is not registered, so not imported (STA-1803)
+      if (typeof entry["connection"] !== "string") return undefined;
       const connection = classOf(entry, "connection", "connectionFile");
       const integration = classOf(entry);
       return connection === undefined || integration === undefined
