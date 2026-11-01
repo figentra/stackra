@@ -74,7 +74,8 @@
       "@stackra/source": "./src/node/index.ts",
       "types": "./dist/node.d.mts",
       "default": "./dist/node.mjs"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "publishConfig": {
     "access": "public",
