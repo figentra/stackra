@@ -5,10 +5,12 @@
  *          `app.events.published()` and `app.listeners.calls(X)` / `.failures(X)`. Declared on `TestingApp` here and
  *          registered when this module loads.
  * Boundary: uses the app's own `EventBus` and `EventOutbox` when it binds them, else a bus on the app's clock and an
- *           `OutboxFake`. Each compile replaces the current app; nothing is shared between apps.
+ *           `OutboxFake`. Each compile replaces the current app; nothing is shared between apps. A listener the app
+ *           cannot build because a dependency has no binding is skipped (STA-1740).
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0263 (decision 12); the STA-348 registry row (builder extension point).
  */
+import { UnboundTokenError, UnresolvedPortError } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { registerTestingPlugin } from "@stackra/container/testing";
 import type { TestingApp, TestingPlugin } from "@stackra/container/testing";
@@ -48,6 +50,20 @@ function callsOf(harness: EventsHarness, type: AnyClass<Listener>): readonly Lis
 }
 
 /**
+ * Whether `app` can build `type`: false when a dependency has no binding, as for a listener of a module the test did
+ * not boot (STA-1740); any other error building it still throws.
+ */
+function buildable(app: TestingApp, type: AnyClass): boolean {
+  try {
+    app.get(type);
+    return true;
+  } catch (error) {
+    if (error instanceof UnboundTokenError || error instanceof UnresolvedPortError) return false;
+    throw error;
+  }
+}
+
+/**
  * The plugin; registered with the testing module when this module loads.
  *
  * @example
@@ -60,7 +76,10 @@ export const EVENTS_TESTING_PLUGIN: TestingPlugin = {
   app(app: TestingApp) {
     const clock = app.get(Clock);
     const bus = app.has(EventBus) ? app.get(EventBus) : new EventBus(clock);
-    bus.connect(app);
+    bus.connect({
+      has: (type) => app.has(type) && buildable(app, type),
+      get: (type) => app.get(type),
+    });
     const outbox = app.has(EventOutbox) ? app.get(EventOutbox) : new OutboxFake();
     const harness: EventsHarness = {
       bus,

@@ -86,6 +86,7 @@ describe("@stackra/container", () => {
       "Replaces",
       "Service",
       "SystemClockDriver",
+      "UnboundTokenError",
       "UnresolvedPortError",
       "createDecorator",
       "createKind",

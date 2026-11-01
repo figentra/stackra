@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of the events testing plugin: on compile it subscribes the registered listeners the app binds,
+ * Purpose: unit tests of the events testing plugin: on compile it subscribes the registered listeners the app binds
+ *          and can build (one whose dependency nothing binds is skipped; a constructor's error still throws),
  *          uses the app's own `EventBus` and `EventOutbox` when bound (else its own bus and an `OutboxFake`), and adds
  *          `app.events.published()` and `app.listeners.calls` / `.failures`.
  * Boundary: test only; registers a wiring the way gen's vitest setup does, and the plugin by importing the entry.
@@ -42,12 +43,34 @@ class UnboundListener extends Listener {
   async handle(_event: StockLow): Promise<void> {}
 }
 
+/** A dependency no test binds, as `QueueService` in an app that boots no queue module. */
+class Missing {}
+
+class NeedsMissingListener extends Listener {
+  constructor(readonly missing: Missing) {
+    super();
+  }
+
+  async handle(_event: StockLow): Promise<void> {}
+}
+
+class ThrowingListener extends Listener {
+  constructor() {
+    super();
+    throw new RangeError("broken constructor");
+  }
+
+  async handle(_event: StockLow): Promise<void> {}
+}
+
 class FixtureModule extends Module {}
 
 registerListeners([
   [StockLow, AlertListener],
   [StockLow, BrokenListener],
   [StockLow, UnboundListener],
+  [StockLow, NeedsMissingListener],
+  [StockLow, ThrowingListener],
 ]);
 
 beforeEach(() => {
@@ -80,6 +103,27 @@ describe("EVENTS_TESTING_PLUGIN", () => {
     expect(app.listeners.calls(UnboundListener)).toHaveLength(0);
     expect(app.events.published().ofType(StockLow)).toEqual([low]);
     expect(app.events.published()).toHaveLength(2);
+  });
+
+  it("skips a listener whose dependency nothing binds, and still throws a constructor's error (STA-1740)", async () => {
+    registerWiring({
+      member: "fixture",
+      root: FixtureModule,
+      bindings: [{ module: "fixture", provide: NeedsMissingListener, deps: [Missing] }],
+    });
+    const app = await createTestingModule(FixtureModule).compile();
+    await dispatch(new StockLow());
+    await drainEvents();
+    expect(app.listeners.calls(NeedsMissingListener)).toHaveLength(0);
+
+    registerWiring({
+      member: "fixture",
+      root: FixtureModule,
+      bindings: [{ module: "fixture", provide: ThrowingListener, deps: [] }],
+    });
+    await expect(createTestingModule(FixtureModule).compile()).rejects.toThrow(
+      "broken constructor",
+    );
   });
 
   it("falls back to its own bus and an OutboxFake", async () => {
