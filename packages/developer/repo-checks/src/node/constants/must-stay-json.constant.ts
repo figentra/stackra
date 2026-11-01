@@ -86,6 +86,18 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     "stackra gen writes each member's committed OpenAPI contract as strict JSON (ADR 0294 R10)",
   ],
   [/(^|\/)(app|eas)\.json$/, "Expo/EAS: fixed names, rewritten by the expo/eas CLIs"],
+  [
+    /^tools\/lines\/(expected|fixture)\/[\w.-]+\.json$/,
+    "fixtures of the lines tool's JSON output, compared byte for byte with what it writes (STA-1794)",
+  ],
+  [
+    /^apps\/[\w-]+\/capabilities\.json$/,
+    "Runway's capabilityConfig reads an app's capabilities.json by this fixed name as strict JSON (STA-1794)",
+  ],
+  [
+    /^workers\/[\w-]+\/edge\.json$/,
+    "the edge worker's scripts JSON.parse its edge.json (STA-1794)",
+  ],
   [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
   [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],
   [
