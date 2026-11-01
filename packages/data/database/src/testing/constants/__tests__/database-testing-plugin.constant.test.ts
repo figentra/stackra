@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `DATABASE_TESTING_PLUGIN`: `.seed(...)` runs each seeder in its own transaction when the
- *          module compiles, `app.transaction(work)` runs work in a transaction of the connected database, a compile
+ *          module compiles, a wired seeder with its injected service (STA-1698), `app.transaction(work)` runs work in a transaction of the connected database, a compile
  *          with no database connects a fresh memory one (replacing the one an earlier module left, keeping any other),
  *          and `app.repository(Model)` hands out the model's repository.
  * Boundary: test only; the database is a stand-in that counts transactions, and the module is an empty one. The
@@ -11,7 +11,7 @@
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Module } from "@stackra/container";
-import { createTestingModule } from "@stackra/container/testing";
+import { createTestingModule, registerWiring } from "@stackra/container/testing";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { CrudService } from "#core/bases/crud-service.base";
@@ -63,6 +63,35 @@ class SecondSeeder extends Seeder {
 
 class Widget {}
 
+/** A service a seeder injects. */
+class Greeter {
+  greet(): string {
+    return "hello";
+  }
+}
+
+class GreetingSeeder extends Seeder {
+  constructor(private readonly greeter: Greeter) {
+    super();
+  }
+
+  async run(): Promise<void> {
+    seeded.push(this.greeter.greet());
+    await Promise.resolve();
+  }
+}
+
+class WiredModule extends Module {}
+
+registerWiring({
+  member: "seeding",
+  root: WiredModule,
+  bindings: [
+    { module: "seeding", provide: Greeter, deps: [] },
+    { module: "seeding", provide: GreetingSeeder, deps: [Greeter] },
+  ],
+});
+
 afterEach(async () => {
   await ACTIVE_DATABASE.current?.close();
   ACTIVE_DATABASE.current = undefined;
@@ -78,6 +107,13 @@ describe("DATABASE_TESTING_PLUGIN", () => {
     expect(database.transactions).toBe(2);
     expect(await app.transaction(async () => "done")).toBe("done");
     expect(database.transactions).toBe(3);
+  });
+
+  it("takes a wired seeder from the container, its injected service included", async () => {
+    seeded.length = 0;
+    ACTIVE_DATABASE.current = new CountingDatabase();
+    await createTestingModule(WiredModule).seed(GreetingSeeder).compile();
+    expect(seeded).toEqual(["hello"]);
   });
 
   it("connects a fresh memory database per module and keeps one connected another way", async () => {
