@@ -42,7 +42,7 @@
   },
   "tamo": {
     "label": "Orders",
-    "search": "Search orders",
+    "search": "Search the orders with Ask Tamo",
     "hint": "Press Ask Tamo and write: paid orders over 500, newest first",
     "screen": "Orders"
   }

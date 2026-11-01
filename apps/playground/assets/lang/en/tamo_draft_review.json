@@ -4,5 +4,7 @@
   "accepted": "In the field: {text}",
   "again": "Show the draft again",
   "working": "While Tamo works",
-  "error": "When it fails"
+  "working_title": "Tamo's draft, in progress",
+  "error": "When it fails",
+  "error_title": "Tamo's draft, not made"
 }

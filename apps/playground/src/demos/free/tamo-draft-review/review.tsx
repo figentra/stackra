@@ -48,6 +48,7 @@ export default function Review() {
         before={field}
         after=""
         status="working"
+        title={t(K.working_title)}
         onAccept={() => undefined}
         onDiscard={() => undefined}
         onStop={() => undefined}
@@ -59,6 +60,7 @@ export default function Review() {
         before={field}
         after=""
         status="error"
+        title={t(K.error_title)}
         onAccept={() => undefined}
         onDiscard={() => undefined}
         onRetry={() => undefined}

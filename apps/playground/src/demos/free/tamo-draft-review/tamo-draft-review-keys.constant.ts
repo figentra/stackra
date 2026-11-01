@@ -9,5 +9,14 @@ import { keys } from "@stackra/i18n";
 
 /** The tamo_draft_review namespace's keys. */
 export const TAMO_DRAFT_REVIEW_KEYS = keys({
-  tamo_draft_review: ["before", "after", "accepted", "again", "working", "error"],
+  tamo_draft_review: [
+    "before",
+    "after",
+    "accepted",
+    "again",
+    "working",
+    "working_title",
+    "error",
+    "error_title",
+  ],
 });
