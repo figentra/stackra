@@ -380,6 +380,30 @@
       },
     },
     {
+      // STA-1655: a component may be a class whose hook fields (`i18n = useTranslation()`) gen compiles into hook
+      // calls (ADR 0305 rules 37 and 38; Commerce's AGENTS.md R7 makes every component a class). Rule 41 runs the
+      // hooks lint on gen's compiled output, so the source rule is off for .tsx files in the component homes; it stays
+      // on for hook files, every .ts file and tests. The `hooks` phase of `stackra check` lints the compiled output of these
+      // homes with react/rules-of-hooks (STA-1671, ADR 0305 rule 41), so a function component here is still checked.
+      "files": [
+        "**/src/components/**/*.tsx",
+        "**/src/blocks/**/*.tsx",
+        "**/src/routes/**/*.tsx",
+        "**/src/react/**/*.tsx",
+        "**/src/native/**/*.tsx",
+        "**/*.mail.tsx",
+      ],
+      "plugins": ["react"],
+      "rules": { "react/rules-of-hooks": "off" },
+    },
+    {
+      // STA-1655: a hook file and a test keep the source rule inside the component homes. Test files only, never a
+      // whole `__tests__/` folder: a lint fixture under it is a component home of its own.
+      "files": ["**/use-*.tsx", "**/__tests__/*.test.tsx"],
+      "plugins": ["react"],
+      "rules": { "react/rules-of-hooks": "error" },
+    },
+    {
       // B-6 and B-8: a test, story or e2e spec renders fixture text and anonymous stand-in components (vi.mock
       // factories); neither is shipped UI. The override names the plugin, or oxlint ignores its rules here.
       "files": ["**/__tests__/**", "**/*.test.*", "**/*.stories.*", "**/e2e/**"],
