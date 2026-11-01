@@ -11,9 +11,10 @@
 # Runtime: GitHub Actions
 # Governing contract: ADR 0026 (decision 2); ADR 0289 (decision 2, RW11); ADR 0284 (decision 8); ADR 0173; ADR 0019.
 # Owner: release-operations
-# Secrets: none in the repository. CLOUDFLARE_API_TOKEN (`/ci`) and TURBO_TOKEN (`/ci/turbo`, STA-1393) come from
-#          Infisical `prod` through GitHub OIDC with the existing identity INFISICAL_CI_IDENTITY_ID (a repository
-#          variable, not a secret), the one deploy-static.yml and deploy-docs.yml use. Its trust names environment
+# Secrets: none in the repository. CLOUDFLARE_API_TOKEN (figentra-ci-deploy `/ci`) comes from Infisical `prod`
+#          through GitHub OIDC with the deploy identity INFISICAL_CI_IDENTITY_ID (an org variable, not a secret), the
+#          one deploy-static.yml and deploy-docs.yml use; TURBO_TOKEN comes from figentra-ci `/ci/turbo` with the turbo
+#          variables, its one home (ADR 0512). Its trust names environment
 #          subjects, so this job runs in the `static` environment (main and schemas@* tags only), whose subject that
 #          identity already trusts: no new identity and no new trust. The gate identity (INFISICAL_GATE_IDENTITY_ID) is
 #          not used: it also trusts the pull_request subject and may read only the two licence tokens (ADR 0310 decisions 9 and 11). Each secret is
@@ -143,9 +144,10 @@ jobs:
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          # ADR 0512: the one TURBO_TOKEN lives in figentra-ci, read with the turbo variables (the gate identity).
+          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
           domain: ${{ env.INFISICAL_DOMAIN }}
-          project-id: ${{ env.INFISICAL_PROJECT_ID }}
+          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
           env-slug: prod
           secret-path: /ci/turbo # STA-1393: the turbo values live in /ci/turbo
           secret-name: TURBO_TOKEN

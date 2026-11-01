@@ -5,7 +5,7 @@
  *     preflight --env e [--root dir]    every secret a deploy or a store release of `e` needs, by NAME and path:
  *                                       present, missing or placeholder, and where CI may read them (PLACEMENT).
  *                                       Exit 1 when any is missing or a placeholder.
- *     generate NAME --env e --path p    a random machine secret (--bytes 32, --encoding base64url|hex), written blind
+ *     generate NAME --env e --path p    a random machine secret (--project P for a /ci path, ADR 0512) (--bytes 32, --encoding base64url|hex), written blind
  *              [--rotate]               into Infisical through secrets-import's core; --rotate replaces an existing
  *                                       one, without it an existing secret is refused. --dry-run first; for prod the
  *                                       dry run prints a one-time --confirm token (the owner's yes, as ADR 0257).
@@ -24,9 +24,13 @@ import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { parse } from "yaml";
-import { plan, readRunways } from "./runway.mjs";
+// The runway readers live in @stackra/runway (its `runway` binary); loaded from source, as plain Node strips the types
+// (ADR 0421 decision 2), so this script needs no build (STA-1859).
+import { deployPlan } from "../../packages/developer/runway/src/node/functions/deploy-plan.function.ts";
+import { readRunways } from "../../packages/developer/runway/src/node/functions/read-runways.function.ts";
 import {
   ENVS,
+  PROJECTS,
   checkTarget,
   cliRunner,
   confirmToken,
@@ -37,9 +41,25 @@ import {
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const USAGE =
-  "usage: pnpm vault preflight --env e [--root dir] | generate NAME --env e --path p [--rotate] [--bytes n] [--encoding base64url|hex] [--dry-run] [--confirm t]";
-/** The store root kit (ADR 0480): one-time owner keys, read by runway-store.yml from this path. */
+  "usage: pnpm vault preflight --env e [--root dir] | generate NAME --env e --path p [--project P] [--rotate] [--bytes n] [--encoding base64url|hex] [--dry-run] [--confirm t]";
+/** The store root kit (ADR 0480): one-time owner keys, read by runway-store.yml from this project and path. */
+export const STORE_PROJECT = "figentra-ci-deploy";
 export const STORE_PATH = "/ci/store";
+/** The build tokens every CI job reads from figentra-ci (ADR 0512); any other CI name is a deploy credential. */
+const BUILD_TOKENS = {
+  HEROUI_AUTH_TOKEN: "/ci",
+  UNIWIND_AUTH_TOKEN: "/ci",
+  STACKRA_REGISTRY_TOKEN: "/ci/registry",
+  TURBO_API: "/ci/turbo",
+  TURBO_TEAM: "/ci/turbo",
+  TURBO_TOKEN: "/ci/turbo",
+  TURBO_REMOTE_CACHE_SIGNATURE_KEY: "/ci/turbo",
+};
+/** `{ project, path }` of a runway CI name: figentra-ci for the build tokens, figentra-ci-deploy `/ci` otherwise. */
+export const ciHome = (name) =>
+  Object.hasOwn(BUILD_TOKENS, name)
+    ? { project: "figentra-ci", path: BUILD_TOKENS[name] }
+    : { project: "figentra-ci-deploy", path: "/ci" };
 export const STORE_KIT = [
   "ASC_API_KEY_ID",
   "ASC_API_ISSUER_ID",
@@ -62,21 +82,27 @@ export const PLACEMENT = {
   prod: "only in the GitHub environment `production`",
 };
 
-/** `{ name, path, why }` for every secret `env` needs: runway CI and member secrets, and the mobile apps' store secrets. */
+/** `{ name, project, path, why }` for every secret `env` needs: runway CI and member secrets, and the mobile apps' store secrets. */
 export function declared(env, { root = ROOT } = {}) {
   const out = [];
   const runways = readRunways(root);
   if (runways.root.environments?.[RUNWAY_ENV[env]]) {
-    const p = plan(RUNWAY_ENV[env], runways);
-    const ci = runways.root.providers?.infisical?.paths?.ci ?? "/ci";
-    for (const name of p.ci) out.push({ name, path: ci, why: "runway ci" });
+    const p = deployPlan(RUNWAY_ENV[env], runways);
+    for (const name of p.ci) out.push({ name, ...ciHome(name), why: "runway ci" });
+    // shortcut: runtime secrets carry no project until runway sync binds the product's project (STA-606).
     for (const s of p.sync.filter((x) => x.kind === "secret"))
-      out.push({ name: s.name, path: s.path ?? ci, why: `runway ${s.member}` });
+      out.push({
+        name: s.name,
+        project: null,
+        path: s.path ?? "/runtime",
+        why: `runway ${s.member}`,
+      });
   }
   // Every mobile app the runway declares (ADR 0441): the root kit once, and each app's review secret names.
   const apps = Object.entries(runways.root.mobile ?? {});
   if (env === "prod" && apps.length)
-    for (const name of STORE_KIT) out.push({ name, path: STORE_PATH, why: "store root kit" });
+    for (const name of STORE_KIT)
+      out.push({ name, project: STORE_PROJECT, path: STORE_PATH, why: "store root kit" });
   for (const [app, entry] of env === "prod" ? apps : []) {
     const file = entry.store && join(root, entry.store, "store.yaml");
     const r = file && existsSync(file) ? (parse(readFileSync(file, "utf8"))?.review ?? {}) : {};
@@ -87,14 +113,26 @@ export function declared(env, { root = ROOT } = {}) {
       r.contact?.phoneSecret,
       r.seed?.tokenSecret,
     ])
-      if (name) out.push({ name, path: STORE_PATH, why: `store review ${app}` });
+      if (name)
+        out.push({ name, project: STORE_PROJECT, path: STORE_PATH, why: `store review ${app}` });
   }
-  return out.filter((d, i) => out.findIndex((x) => x.name === d.name && x.path === d.path) === i);
+  return out.filter(
+    (d, i) =>
+      out.findIndex((x) => x.name === d.name && x.project === d.project && x.path === d.path) === i,
+  );
 }
 
 /** Name → "present" | "placeholder" for one folder. The values are looked at here and dropped. */
-export function inventory(env, path, runner = cliRunner) {
-  const r = runner(["export", "--format=json", `--env=${env}`, `--path=${path}`, "--silent"]);
+export function inventory(env, path, runner = cliRunner, project = null) {
+  const scope = project ? [`--projectId=${PROJECTS[project]}`] : [];
+  const r = runner([
+    "export",
+    "--format=json",
+    ...scope,
+    `--env=${env}`,
+    `--path=${path}`,
+    "--silent",
+  ]);
   if (r.status !== 0)
     throw new Error(`cannot read ${env}:${path} (infisical exited ${r.status}; logged in?)`);
   let rows;
@@ -132,6 +170,7 @@ export async function main(
       args: argv,
       allowPositionals: true,
       options: {
+        project: { type: "string" },
         env: { type: "string" },
         path: { type: "string" },
         root: { type: "string" },
@@ -162,14 +201,17 @@ export async function main(
     for (const d of need) {
       let state;
       try {
-        if (!byPath.has(d.path)) byPath.set(d.path, inventory(o.env, d.path, runner));
-        state = byPath.get(d.path).get(d.name) ?? "missing";
+        const key = `${d.project}:${d.path}`;
+        if (!byPath.has(key)) byPath.set(key, inventory(o.env, d.path, runner, d.project));
+        state = byPath.get(key).get(d.name) ?? "missing";
       } catch (error) {
         say(`vault: ${error.message}`);
         return 1;
       }
       if (state !== "present") bad++;
-      say(`${state.padEnd(11)} ${d.name}  ${o.env}:${d.path}  (${d.why})`);
+      say(
+        `${state.padEnd(11)} ${d.name}  ${o.env}:${d.path}  (${d.why})  [${d.project ?? "product"}]`,
+      );
     }
     say(`preflight ${o.env}: ${need.length} declared, ${bad} missing or placeholder`);
     say(`placement: CI reads ${o.env} secrets ${PLACEMENT[o.env]}`);
@@ -179,7 +221,7 @@ export async function main(
   if (cmd === "generate") {
     let t;
     try {
-      t = checkTarget({ name, env: o.env, path: o.path ?? "/ci" });
+      t = checkTarget({ name, env: o.env, path: o.path ?? "/ci", project: o.project });
     } catch (error) {
       say(`vault: ${error.message}`);
       return 2;
@@ -194,7 +236,7 @@ export async function main(
       say("vault: --bytes is 16 to 128 and --encoding base64url or hex");
       return 2;
     }
-    const label = `${t.name}  ${t.env}:${t.path}`;
+    const label = `${t.name}  ${t.project}/${t.env}:${t.path}`;
     let exists;
     try {
       exists = remoteHash(t, runner) !== null;
@@ -212,9 +254,16 @@ export async function main(
     }
     const intent = createHash("sha256")
       .update(
-        ["generate", t.name, t.env, t.path, o.rotate ? "rotate" : "create", bytes, o.encoding].join(
-          "\n",
-        ),
+        [
+          "generate",
+          t.name,
+          t.project,
+          t.env,
+          t.path,
+          o.rotate ? "rotate" : "create",
+          bytes,
+          o.encoding,
+        ].join("\n"),
       )
       .digest("hex");
     if (o["dry-run"]) {

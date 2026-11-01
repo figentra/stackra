@@ -15,6 +15,7 @@
  */
 import { Driver } from "@stackra/container";
 import { actorsSharePerson, ActorKind, AssuranceLevel, Enum, Realm } from "@stackra/contracts";
+import type { Clock, IdentityResolver } from "@stackra/contracts";
 import { ForbiddenError, isRefusal } from "@stackra/errors";
 
 import { ApprovalStatus } from "#contracts/enums/approval-status.enum";
@@ -55,7 +56,7 @@ const FINAL: ReadonlySet<ApprovalStatus> = new Set([
  * Parks, votes on and settles approval requests in memory.
  *
  * @example
- * const gate = new MemoryApprovalGateDriver({ identity, clock });
+ * const gate = new MemoryApprovalGateDriver(identity, clock);
  * await gate.park(draft);
  * await gate.approve(draft.approvalId, approver); // the final vote grants it
  */
@@ -68,14 +69,30 @@ export class MemoryApprovalGateDriver extends Driver(ApprovalGate) {
 
   private readonly rows = new Map<string, Row>();
 
-  private readonly options: MemoryApprovalGateOptions;
+  private options: MemoryApprovalGateOptions;
 
   /**
-   * @param options - the identity, the clock, the cap and the rules.
+   * Its two dependencies are ports, so gen can wire it (STA-1884); a test sets the cap and the rules with `of`.
+   *
+   * @param identity - answers who a person is, for the self-approval and one-vote-per-person checks.
+   * @param clock - the time source of expiry.
    */
-  constructor(options: MemoryApprovalGateOptions) {
+  constructor(identity: IdentityResolver, clock: Clock) {
     super();
-    this.options = options;
+    this.options = { identity, clock };
+  }
+
+  /**
+   * A gate built from every option, for tests that set the pending cap or the tenant rules.
+   *
+   * @param options - the identity, the clock, the cap and the rules.
+   * @example
+   * const gate = MemoryApprovalGateDriver.of({ identity, clock, cap: 2 });
+   */
+  static of(options: MemoryApprovalGateOptions): MemoryApprovalGateDriver {
+    const gate = new MemoryApprovalGateDriver(options.identity, options.clock);
+    gate.options = options;
+    return gate;
   }
 
   /** What the configured rules add; nothing by default. */

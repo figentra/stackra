@@ -239,7 +239,7 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
     `@stackra/settings` answers it for a key marked `approval`. A condition that declares `reads` with no source bound
     is refused `approval_settings_unavailable` (503, fail closed), never read as "not needed".
   - **Execute on grant.** The store publishes `ApprovalGranted` (`actions.approval.granted.v1`, ids only). In the
-    owning service `ApprovalExecutor` (`./node`, call `connect(container)` after boot) reads the binding in a read-only
+    owning service `ApprovalExecutorListener` (`./node`, call `connect(container)` after boot) reads the binding in a read-only
     run as the tenant's system actor, checks `ScopeOwnership` and the snapshot hash, moves the store
     `granted → executing` by compare-and-set, and runs the whole pipeline as the stored requester under
     `approval:<id>`, so a duplicate delivery runs `handle` once. A refusal settles `failed` with its code; an in-flight

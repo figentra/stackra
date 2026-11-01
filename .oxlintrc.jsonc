@@ -14,6 +14,8 @@
     "**/node_modules/**",
     // generated
     "**/encore.gen/**",
+    // a package's committed entity list, written by `stackra gen` and checked byte-for-byte by `gen --check` (STA-1874)
+    "packages/*/*/src/node/entities.gen.ts",
     "**/dist/**",
     // Expo: generated native projects and the CLI cache
     "**/ios/**",

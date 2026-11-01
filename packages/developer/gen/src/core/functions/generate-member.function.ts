@@ -72,6 +72,8 @@ import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 import { emitQueues } from "#core/functions/emit-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
+import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
+import { entitiesFile } from "#core/functions/entities-file.function";
 import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { emitI18n } from "#core/functions/emit-i18n.function";
 import { emitMemberModule } from "#core/functions/emit-member-module.function";
@@ -203,12 +205,31 @@ export function generateMember(
   const missing = undeclaredPackages(ir, schemas, "schema_dependency_missing", ["zod"]);
   if (missing.length > 0) return { files: [], errors: missing, manifest };
   files.push(...schemas);
+  const entityFiles: GeneratedFile[] = [];
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const module of [...new Set(ir.shapes.map((shape) => shape.module))].sort()) {
     const entities = emitEntities(ir, module);
     if (entities !== undefined)
-      files.push({ path: `.stackra/gen/entities/${module}.ts`, content: entities });
+      entityFiles.push({ path: entitiesFile(ir, module).path, content: entities });
   }
+  // A package's one committed entity file holds one module's list (STA-1874); a second module would overwrite it.
+  if (ir.layout === "package" && entityFiles.length > 1)
+    return {
+      files: [],
+      errors: [
+        {
+          code: "package_entities_modules",
+          file: PACKAGE_ENTITIES_FILE,
+          line: 0,
+          column: 0,
+          subject: ir.package,
+          message: `${ir.package} has models in ${entityFiles.length} modules, but a package commits one entity list`,
+          fix: "keep a package's models in its one module (the package folder's key)",
+        },
+      ],
+      manifest,
+    };
+  files.push(...entityFiles);
   files.push(...emitHostedEntities(ir));
   // A member off the container (`@stackra/testing`, rule 6c) has nothing to wire and no module (STA-1365 item 8).
   const container = usesContainer(ir);

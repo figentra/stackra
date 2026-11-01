@@ -1,7 +1,13 @@
 ---
 title: "0132 — Permissions are a module catalogue; policies are providers"
-description: "Accepted, amended by 0263, 0294 · 2026-10-20"
+description: "Accepted, amended by 0263, 0294, 0513 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-11-01 by [0513](/adr/0513-permission-vocabulary-moves-to-contracts-and-container)
+  (STA-1890): the `Permissions` kind base lives in `@stackra/container`, and the `Permission` value
+  in `@stackra/contracts`. Iam re-exports both. Keys, the catalogue and the policy decisions stand.
+</Note>
 
 <Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming), the

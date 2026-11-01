@@ -88,7 +88,8 @@ Never run `wrangler deploy` or `wrangler secret put` by hand.
 The owner's only steps; everything else is the workflow's.
 
 1. Make two random values on your own machine: `openssl rand -hex 32`, twice (one token, one signature key).
-2. In Infisical, environment `prod`, path `/ci/turbo` (STA-1393; `CLOUDFLARE_API_TOKEN` stays in `/ci`), add:
+2. In Infisical, project `figentra-ci`, environment `prod`, path `/ci/turbo` (STA-1393, ADR 0512; `CLOUDFLARE_API_TOKEN`
+   stays in `figentra-ci-deploy` `/ci`), add:
 
    | Secret                             | Value                                |
    | ---------------------------------- | ------------------------------------ |
@@ -136,7 +137,5 @@ Workers Logs are on at one request in ten (`observability` in `wrangler.jsonc`).
 ## Not built
 
 - The ci.yml env: built on branch `turbo-remote-cache` (STA-1393), not landed yet.
-- Not checked from here: that the role of `INFISICAL_CI_IDENTITY_ID` reads `/ci/turbo` as well as `/ci`. It reads
-  `CLOUDFLARE_API_TOKEN` in `/ci` for the static deploy; this job also needs `TURBO_TOKEN` in `/ci/turbo`.
 - Usage events are dropped, not counted; `GET /v2/user` and `/v2/teams` (turbo's `login` flow) are not served.
 - No per-team token: one token reaches every team's namespace.

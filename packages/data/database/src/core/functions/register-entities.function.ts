@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `registerEntities`, how a generated entity file (`#stackra/entities/<module>`) hands its `EntitySchema`s to
+ * Purpose: `registerEntities`, how a generated entity file (`#stackra/entities/<module>`, or a package's committed
+ *          `#node/entities.gen`, STA-1874) hands its `EntitySchema`s to
  *          the database, so a driver and `usePostgres()` connect with every module's entities without a list.
  * Boundary: called by generated code; adding the same schema twice keeps one.
  * Runtime: node

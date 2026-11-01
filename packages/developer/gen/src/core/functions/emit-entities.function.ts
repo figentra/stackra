@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `emitEntities`, the entity file of one module (`.stackra/gen/entities/<module>.ts`, reached as
- *          `#stackra/entities/<module>`): the `[OptionalProps]` augmentation of each model (every trait field, and
+ *          `#stackra/entities/<module>`; a package's is the committed `src/node/entities.gen.ts`, `#node/entities.gen`,
+ *          STA-1874): the `[OptionalProps]` augmentation of each model (every trait field, and
  *          every field or relation with an initializer, so a create may leave them out), one `EntitySchema` per model
  *          in the module's Postgres schema, the module's list `<MODULE>_ENTITIES`, and the `registerEntities` call that
  *          hands them to the database; and one side-table `EntitySchema` per model addition of the module (ADR 0336

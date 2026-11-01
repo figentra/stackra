@@ -12,8 +12,8 @@
  *           snapshot, never identity. PII: the actor chain (principal ids) and the input hash (an unkeyed SHA-256 of
  *           low-entropy input, so it never leaves this table, the audit trail and the owning service) are personal
  *           data of the owning service and belong in its PII table. The assurance is flattened into three columns so
- *           its instant keeps its type. Its string and number fields carry no `@Str` or `@Int`: tenancy does not depend on @stackra/validation (the lead's
- *           decision, STA-1724), and the column lengths are the migration's. The ORM loads rows without running the constructor.
+ *           its instant keeps its type. Its string fields carry no `@Str`: the column lengths are the migration's. `approvals` carries `@Int`,
+ *           which gen needs to type a number (STA-1884; tenancy now depends on @stackra/validation). The ORM loads rows without running the constructor.
  * Runtime: node
  * Governing contract: ADR 0509 (the binding, B1, N7); ADR 0294 (decisions 4, 20 and 27); ADR 0321 and 0323 d1
  *                     (`BelongsToTenant` is tenancy's); ADR 0239 (equality on `tenant_id`); ADR 0134.
@@ -21,6 +21,7 @@
 import type { Actor, AssuranceLevel, ScopeRef } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
 import { AppendOnly, HasPublicId, Index, Model } from "@stackra/model";
+import { Int } from "@stackra/validation";
 
 import { BelongsToTenant } from "#node/traits/belongs-to-tenant.trait";
 
@@ -29,6 +30,10 @@ import { BelongsToTenant } from "#node/traits/belongs-to-tenant.trait";
 @Index(["expiresAt"])
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class ApprovalBinding extends Model.with(HasPublicId("apr"), BelongsToTenant, AppendOnly) {
+  /** Distinct approvers needed besides the requester. */
+  @Int
+  approvals!: number;
+
   /** The scope node the call acts in; null for a call acting at the tenant itself. */
   scope!: ScopeRef | null;
 
@@ -55,9 +60,6 @@ export class ApprovalBinding extends Model.with(HasPublicId("apr"), BelongsToTen
 
   /** When the request stops accepting votes, by the owning service's clock. */
   expiresAt!: Date;
-
-  /** Distinct approvers needed besides the requester. */
-  approvals!: number;
 
   /** The permission each approver holds; null when only the tenant's rules parked the call. */
   permission!: string | null;

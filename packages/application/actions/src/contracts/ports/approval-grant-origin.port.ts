@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the `ApprovalGrantOrigin` port: whether a delivered `approval.granted` envelope came from the approval
- *          store's service, so `ApprovalExecutor` acts on no other.
+ *          store's service, so `ApprovalExecutorListener` acts on no other.
  * Boundary: an abstract class that is its own token, keyed `actions.ApprovalGrantOrigin`. The driver decides from what
  *           the transport verified (the producing service of the envelope), never from the event's own fields. The
  *           executor fails closed with none bound: it cannot be built without one. The OS tasks-approvals package

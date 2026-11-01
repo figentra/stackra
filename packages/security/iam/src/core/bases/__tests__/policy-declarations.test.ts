@@ -24,9 +24,8 @@ const preset = resolve(core, "../../../../tooling/typescript/src/decorators-reac
 // `typescript` resolves to <package>/lib/version.cjs; the launcher is <package>/bin/tsc.
 const tsc = join(dirname(dirname(createRequire(import.meta.url).resolve("typescript"))), "bin/tsc");
 
-const consumer = `import { Permissions } from "#core/bases/permissions.base";
+const consumer = `import { Permission, Permissions } from "#core/index";
 import { Policy } from "#core/bases/policy.base";
-import { Permission } from "#core/values/permission.value";
 
 class Thread {}
 

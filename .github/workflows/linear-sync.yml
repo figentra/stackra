@@ -46,13 +46,18 @@ jobs:
           persist-credentials: false
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
-      # ADR 0027 D2: node comes from mise.toml.
+      # ADR 0027 D2: node and pnpm come from mise.toml.
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
-          install_args: node
+          install_args: node pnpm
 
-      # Read-only, every repo the App is installed on in the org; revoked when the job ends.
+      # linear-reconcile.mjs imports `yaml`, a root devDependency: the root project alone is installed (STA-1897).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter .
+
+      # Read-only, scoped to the repos the reconcile reads (tools/scripts/linear-reconcile.repos.yaml; keep the two lists
+      # in step), never the whole org; revoked when the job ends.
       - name: App token
         id: bot
         continue-on-error: true
@@ -61,6 +66,26 @@ jobs:
           app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
           private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
           owner: figentra
+          repositories: |
+            stackra
+            stackra-pro
+            stackra-template
+            stackra-notes
+            billing
+            pay
+            invoicing
+            tamo
+            os
+            juristra
+            figentra
+            flow
+            brand
+            commerce
+            organza
+            velora
+            academorix
+            jute
+            mezzora
           permission-contents: read
           permission-pull-requests: read
 

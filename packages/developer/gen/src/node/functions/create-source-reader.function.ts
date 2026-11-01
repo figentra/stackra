@@ -57,6 +57,7 @@ import { pascalCase, snakeCase } from "@stackra/support";
 import { BELOW_CONTAINER_PACKAGES } from "#core/constants/below-container-packages.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
+import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { entryOf } from "#core/functions/entry-of.function";
 import { enumCodesOf } from "#core/functions/enum-codes-of.function";
 import { folderKey } from "#core/functions/folder-key.function";
@@ -299,7 +300,10 @@ export function createSourceReader(
   const srcRoot = `${root}/src/`;
   const all = host.files();
   const byPath = new Map(all.map((file) => [file.fileName ?? "", file]));
-  const isOwn = (path: string): boolean => path.startsWith(srcRoot) && !path.endsWith(".d.ts");
+  // A package's committed entity list is gen's own output, never an authored source to read back (STA-1874).
+  const generated = `${root}/${PACKAGE_ENTITIES_FILE}`;
+  const isOwn = (path: string): boolean =>
+    path.startsWith(srcRoot) && !path.endsWith(".d.ts") && path !== generated;
   const sources = all
     .filter((file) => {
       const path = file.fileName ?? "";

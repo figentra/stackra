@@ -32,6 +32,7 @@ import { camelCase } from "@stackra/support";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { PLATFORM_PARTNERS } from "#core/constants/platform-partners.constant";
 import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
+import { entitiesFile } from "#core/functions/entities-file.function";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -110,7 +111,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     ]
       // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
       .sort()
-      .map((module) => `import "#stackra/entities/${module}";`),
+      .map((module) => `import "${entitiesFile(ir, module).specifier}";`),
     ...schemaModules(ir).map((module) => `import "#stackra/schemas/${module}";`),
   ];
 
@@ -357,7 +358,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   }
   call(
     "registerPermissions",
-    "@stackra/iam",
+    "@stackra/container",
     [...sets.values()].map(({ entry, keys }) => {
       const type = classOf(entry);
       return type === undefined ? undefined : `{ type: ${type}, keys: { ${keys.join(", ")} } }`;

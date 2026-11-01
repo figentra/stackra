@@ -12,7 +12,7 @@ import * as node from "#node/index";
 describe("@stackra/actions/node", () => {
   it("exports exactly its drivers and its listener", () => {
     expect(Object.keys(node).sort()).toEqual([
-      "ApprovalExecutor",
+      "ApprovalExecutorListener",
       "AsyncContextStorageDriver",
       "ValkeyIdempotencyStoreDriver",
       "ValkeyRateLimitStoreDriver",

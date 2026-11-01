@@ -220,9 +220,9 @@ function fieldOf(context: Context, field: FieldIR, shape: ShapeIR): string {
     // constructor's value (Money) is immutable. An array spreads its `as const` literal, so its codes keep their literal
     // type through zod's overloads instead of widening to `string[]` (TS2769, STA-1695).
     // shortcut: an object default's nested codes still widen, add a typed factory when a shape needs one.
-    const literal =
+    const isLiteral =
       typeof value === "object" && value !== null && field.default.imports.length === 0;
-    expression += !literal
+    expression += !isLiteral
       ? `.default(${field.default.code})`
       : Array.isArray(value)
         ? `.default(() => [...(${field.default.code} as const)])`

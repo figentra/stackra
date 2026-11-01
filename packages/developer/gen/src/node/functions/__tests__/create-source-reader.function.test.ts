@@ -94,6 +94,12 @@ const SOURCES: Readonly<Record<string, string>> = {
     "export class Two extends Schema {}",
     "",
   ].join("\n"),
+  // A package's committed entity list is gen's own output (STA-1874): never read back, so never refused.
+  "src/node/entities.gen.ts": [
+    "export const OneSchema = {};",
+    "export const TWO_ENTITIES = [OneSchema];",
+    "",
+  ].join("\n"),
   "src/node/actions/untyped.action.ts": [
     'import { Action } from "@stackra/actions";',
     'export class UntypedAction extends Action({ key: "order.untyped" }) {',
@@ -256,6 +262,7 @@ describe("createSourceReader", async () => {
 
   it("refuses the banned class and file forms", () => {
     expect(codes).toContain("two_declarations_in_file src/core/schemas/two.schema.ts");
+    expect(codes).not.toContain("two_declarations_in_file src/node/entities.gen.ts");
     expect(codes).toContain("action_handle_signature UntypedAction");
     expect(codes).toContain("event_base_abstract RawEvent");
     expect(codes).toContain("token_not_a_class BadTokenService.constructor");

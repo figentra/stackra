@@ -8,14 +8,12 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0305 (rules 2, 5 to 7 and 44); ADR 0132 (as amended by 0294).
  */
-import { kindOf } from "@stackra/container";
-import { type Actor, Realm } from "@stackra/contracts";
+import { kindOf, Permissions } from "@stackra/container";
+import { type Actor, Permission, Realm } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { Permissions } from "#core/bases/permissions.base";
 import { Policy } from "#core/bases/policy.base";
 import { Decision } from "#core/enums/decision.enum";
-import { Permission } from "#core/values/permission.value";
 
 class Order {
   customerId = "usr_01j9z3k4m5n6p7q8r9s0t1v2c1";

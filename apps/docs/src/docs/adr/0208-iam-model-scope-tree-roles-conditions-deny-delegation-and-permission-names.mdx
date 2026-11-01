@@ -1,7 +1,14 @@
 ---
 title: "0208 — The IAM model: scope tree, roles, conditions and deny, delegation and permission names"
-description: "Accepted, amended by 0240, 0242, 0294, 0327, 0333, 0351 · 2026-10-20"
+description: "Accepted, amended by 0240, 0242, 0294, 0327, 0333, 0351, 0513 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-11-01 by [0513](/adr/0513-permission-vocabulary-moves-to-contracts-and-container)
+  (STA-1890): decision 6 holds. The vocabulary that declares permission names (`Permissions`,
+  `Permission` and `Risk`) moves to `@stackra/contracts` and `@stackra/container`, and iam
+  re-exports it. Roles, policies, the decision point and the other decisions stay in iam.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-479) by

@@ -56,7 +56,7 @@ The reader sits over the `ApprovalSettingsSource` port of `@stackra/contracts`, 
    the request, after the refused call's transaction rolled back.
 3. Approvers vote in the store. Each is a different person, none is the requester's person or in the requester's chain,
    and none is an agent. At the last vote the store re-checks every voter and publishes `ApprovalGranted`.
-4. `ApprovalExecutor`, in the owning service, runs the call as the requester under the key `approval:<id>`. The pipeline
+4. `ApprovalExecutorListener`, in the owning service, runs the call as the requester under the key `approval:<id>`. The pipeline
    checks permission, preconditions, entitlement and flag again, and `verifyApproval` compares the call with the binding
    and the store's row before `handle` runs.
 

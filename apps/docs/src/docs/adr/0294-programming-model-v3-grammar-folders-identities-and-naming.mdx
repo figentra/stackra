@@ -1,7 +1,17 @@
 ---
 title: "0294 — Programming model v3: grammar, group folders, derived identities and naming"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456) · amended 2026-10-24 (STA-469) · amended 2026-10-24 (STA-479) · amended 2026-10-27 (showcase registry) · amended 2026-10-31 (STA-1730)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456) · amended 2026-10-24 (STA-469) · amended 2026-10-24 (STA-479) · amended 2026-10-27 (showcase registry) · amended 2026-10-31 (STA-1730) · amended 2026-11-01 (STA-1874)"
 ---
+
+<Note>
+  Amended 2026-11-01 (STA-1874). Rule R10 gains a package's entity list: `src/node/entities.gen.ts`
+  is a committed generated contract, written by `stackra gen` for each package (`layout: "package"`)
+  and never by hand. `stackra gen --check` fails when it is stale or missing, as it does for
+  `stackra.manifest.json`. Services and apps keep their entity files in the gitignored
+  `.stackra/gen/entities/`.
+  [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries) explains why a
+  package's built `./node` cannot take its list from `.stackra/`. The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-31 (STA-1730) by [0506](/adr/0506-console-command-kind): the kind table of decision 16 gains
@@ -225,7 +235,13 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
 
 10. **Generated output is never authored (R10).** `.stackra/` is fully gitignored. The committed generated contracts sit
     at the member root: `stackra.manifest.json` and `openapi.json`. A tool that reads only the member root reads a
-    gitignored shim there.
+    gitignored shim there. Amended 2026-11-01 (STA-1874): a package also commits its entity list,
+    `src/node/entities.gen.ts`, written by `stackra gen` and kept fresh by `stackra gen --check`, as the manifest is.
+    Services and apps keep their entity files in the gitignored `.stackra/gen/entities/`. The `.gen.ts` suffix marks a
+    committed generated file: only gen writes it, `gen --check` compares it byte for byte, and so it is exempt from
+    R9's file header, the house formatting and lint rules, and the doc standard. Those exemptions live only in the tool
+    configs and in repo-checks today. The only such file today is a package's `src/node/entities.gen.ts`, and the
+    planned `kind-path` check (STA-338) treats `.gen.ts` as reserved, not as a kind.
 
 11. **Model references are thunks (R11).** Inside a decorator a model is a thunk, as in `@ManyToOne(() => Variant)`. A
     model is passed directly only as the first argument of a base factory: `Resource(Order)`, `Factory(Order)`,

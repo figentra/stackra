@@ -1,9 +1,19 @@
 ---
 title: "0462 — IAM knows no segments, segments is an add-on with its own permissions, and one table of layering exemptions"
-description: "Accepted · 2026-10-28"
+description: "Accepted, amended by 0513 · 2026-10-28"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0462 (Accepted 2026-10-28), the owner's decision on STA-1365 item 9: IAM is permission-only and knows no segments (an audience is a scope or a role); segment-targeted business rules live in the rules engine through a fact provider; segments is an optional add-on above iam and rules with its own permissions, the recompute job's system-held; plus the one table of layering exemptions that gen and lint both honour, and the amendment notes of ADR 0333 decision 2, ADR 0332 and the other pages it amends. Boundary: decision text; the code is batch stackra-211 (STA-1368); gen and lint changes belong to STA-1365; the index row and docs nav belong to stackra-90; the amended ADRs are not edited, their amendment notes are in this page only. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0003, 0098, 0099, 0132, 0208, 0232, 0269, 0294, 0305, 0331, 0332, 0333; STA-1365, STA-1366, STA-1368; notes handover/batches/permission-and-exemption-audit.md. */}
+
+<Note>
+  Amended 2026-11-01 by [0513](/adr/0513-permission-vocabulary-moves-to-contracts-and-container)
+  (STA-1890). The clause of decision 1 that reads "`Permissions`, `Permission` and `Risk` stay in
+  `@stackra/iam`" is superseded: `Risk` and `Permission` move to `@stackra/contracts`, and the
+  `Permissions` kind base, `registerPermissions`, `permissionKey`, `PERMISSION_REGISTRY` and
+  `PermissionRegistration` move to `@stackra/container`. `@stackra/iam` re-exports all of them and
+  keeps evaluation. Rejected option B is reconsidered for contracts and container only; moving to
+  `@stackra/actions` stays rejected. The other decisions stand.
+</Note>
 
 <Note>
   Accepted 2026-10-28 by the owner (STA-1368, batch stackra-211). It replaces the proposal of

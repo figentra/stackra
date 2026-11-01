@@ -10,7 +10,7 @@
  * Governing contract: ADR 0483 (decisions 2 and 4); ADR 0472 (decision 4); ADR 0141 (event names); ADR 0305.
  */
 import { IntegrationEvent } from "@stackra/events";
-import { registerSchemas } from "@stackra/validation";
+import { Field, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
 
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
@@ -22,15 +22,17 @@ import { ANALYTICS_DELIVERY_SCHEMA } from "#core/constants/analytics-delivery-sc
  * @example
  * await ctx.publish(AnalyticsBatchAccepted.create({ destination: "default", snapshotId, deliveries }));
  */
-export class AnalyticsBatchAccepted extends IntegrationEvent({ name: "analytics.batch.accepted" }) {
+export class AnalyticsBatchAccepted extends IntegrationEvent({ name: "batch.accepted" }) {
+  /** The deliveries this destination takes, in capture order. */
+  // reason: the envelope is a package interface with no `X$`; its zod schema already holds its rules
+  @Field(z.array(ANALYTICS_DELIVERY_SCHEMA).min(1))
+  deliveries!: AnalyticsDelivery[];
+
   /** `default` (the `driver` instance) or an instance name from `AnalyticsConfig.drivers`. */
   destination!: string;
 
   /** The consent snapshot that granted the destination's category (`csn_...`). */
   snapshotId!: string;
-
-  /** The deliveries this destination takes, in capture order. */
-  deliveries!: AnalyticsDelivery[];
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).
