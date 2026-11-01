@@ -379,9 +379,9 @@ state.** Every agent, including subagents and OpenCode executors without the Lin
 
 #### Enforcement
 
-`.commitlintrc.yaml` (`refs-issue-key`, lefthook and the Quality Gate over the PR range); `linear.mjs check-pr`
-in the Quality Gate; `requireIssue` in `tools/scripts/delegate.mjs`; `.github/workflows/linear-sync.yml`
-(`tools/scripts/linear-reconcile.mjs`) moves states, closes decided ADR issues and labels stale work.
+`.commitlintrc.yaml` (`refs-issue-key`, lefthook and the Quality Gate over the PR range); `figentra linear check-pr`
+in the Quality Gate; `requireIssue` in `figentra delegate`; `.github/workflows/linear-sync.yml`
+(`figentra linear reconcile`) moves states, closes decided ADR issues and labels stale work.
 
 <!-- source: .agents/rules/module-boundary.md -->
 
@@ -657,8 +657,9 @@ file holding just that value; there is no `--value` flag.
 - `guard-bash.mjs` (rules in `.agents/hooks/_rules.mjs`, shared with the OpenCode guard, ADR 0293): blocks
   `infisical export`, `infisical secrets get` in every form (`--silent` still prints the value), `infisical secrets set`,
   a bare `infisical secrets` (lists values), `infisical run -- env|printenv`, `env`/`printenv`, process-environment
-  listings (`ps -E`, `ps eww`, `launchctl procinfo`) and running `bot-token.mjs`, also behind `pnpm exec`, `npx` and
-  `mise exec --`. Raw `infisical run`, `infisical secrets delete` and `secrets:import … --confirm` ask the owner.
+  listings (`ps -E`, `ps eww`, `launchctl procinfo`) and running `bot-token.mjs` or `figentra bot token`, also behind
+  `pnpm exec`, `npx` and `mise exec --`. Raw `infisical run`, `infisical secrets delete` and `secrets:import … --confirm`
+  (or `figentra secrets import … --confirm`) ask the owner.
 - `guard-bash.mjs` (matcher `.agents/hooks/_inbox.mjs`, shared with the OpenCode guard): blocks any command in which
   a word, after unquoting, names `Secrets-inbox` (any case) or the import confirm key. Two kinds of word are exempt: a
   grep/rg/ag pattern, and a `--title`/`--body`/`--message`/`-m` value with no `$(` or backtick. Program text
@@ -681,7 +682,7 @@ Each article below is bound to a check:
 2. **No .env files** → `guard-paths` hook
 3. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
 4. **Production values reach runtimes by Infisical sync** (ADR 0173, decision 1), and only the `secret-manager` agent writes values through `pnpm secrets:import` (ADR 0173, decision 7; ADR 0257). Review checks the sync, not a manual copy.
-5. **Nobody reads a value; the inbox flow writes blind** → `tools/scripts/secrets-import.mjs` (+ its test, which
+5. **Nobody reads a value; the inbox flow writes blind** → `figentra secrets import` (`@figentra/cli`, + its test, which
    asserts no canary value reaches output, audit log or argv), `guard-bash` / `guard-paths` inbox rules
 
 #### Setup

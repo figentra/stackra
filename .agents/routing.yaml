@@ -1,7 +1,7 @@
 # Stackra file contract:
 # Purpose: who does what — maps a task type to an executor (claude = the lead, opencode = Kimi K3 on Bedrock),
 #          model and agent, plus the daily OpenCode spend cap. Read by `pnpm delegate` and `pnpm ai:spend`.
-# Scope: delegation (tools/scripts/delegate.mjs, tools/scripts/ai-spend.mjs)
+# Scope: delegation (`figentra delegate`, `figentra ai spend`)
 # Owner: the lead (ADR 0258)
 # Secrets: forbidden
 # Override: `--executor claude|opencode` on the command line, or STACKRA_EXECUTOR in the environment.

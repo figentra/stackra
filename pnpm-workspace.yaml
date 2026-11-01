@@ -27,6 +27,9 @@ verifyDepsBeforeRun: warn
 # Default catalog (`catalog:`): shared by many members, no reason to fork a version per topic.
 catalog:
   "@types/node": 26.6.4
+  # The private figentra CLI (figentra/figentra packages/cli, the Stackra registry only): the internal-operations
+  # commands that were tools/scripts (agents sync, bot, linear, pr merge, secrets import…); the root aliases call it.
+  "@figentra/cli": 0.1.0
   # YAML reader for repo-owned config (.agents/models.yaml, .mcp.yaml) read by tools/scripts.
   yaml: 2.9.1
   # HTTP client for tools/scripts' GitHub and Linear calls: an Agent with a 30 s connect timeout (STA-302).

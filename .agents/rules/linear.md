@@ -28,6 +28,6 @@ state.** Every agent, including subagents and OpenCode executors without the Lin
 
 ## Enforcement
 
-`.commitlintrc.yaml` (`refs-issue-key`, lefthook and the Quality Gate over the PR range); `linear.mjs check-pr`
-in the Quality Gate; `requireIssue` in `tools/scripts/delegate.mjs`; `.github/workflows/linear-sync.yml`
-(`tools/scripts/linear-reconcile.mjs`) moves states, closes decided ADR issues and labels stale work.
+`.commitlintrc.yaml` (`refs-issue-key`, lefthook and the Quality Gate over the PR range); `figentra linear check-pr`
+in the Quality Gate; `requireIssue` in `figentra delegate`; `.github/workflows/linear-sync.yml`
+(`figentra linear reconcile`) moves states, closes decided ADR issues and labels stale work.

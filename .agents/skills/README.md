@@ -25,7 +25,7 @@ directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them 
   is only the generated target in `.stackra/encore/`, [ADR 0124](../../apps/docs/src/docs/adr/0124-encore-is-the-generated-runtime-target.mdx)),
   so they are fenced in [`../reference/encore`](../reference/encore), read only by `compiler-engineer` (ADR 0258).
 - A skill that names rejected technology fails `pnpm agents:check` unless `SKILL_TECH_ALLOWED` in
-  `tools/scripts/agents-sync.mjs` records why the mention is harmless (ADR 0258). Where a skill and
+  `figentra agents sync` (@figentra/cli) records why the mention is harmless (ADR 0258). Where a skill and
   [`AGENTS.md`](../../AGENTS.md) disagree, `AGENTS.md` wins.
 - oxfmt and oxlint skip this folder and `../reference` (`.oxfmtrc.jsonc`, `.oxlintrc.jsonc`, `lefthook.yml`).
 - Retired (ADR 0258): `encore-getting-started`, `encore-migrate`, `encore-frontend`, `sanity-best-practices` (Sanity is

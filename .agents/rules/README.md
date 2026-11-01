@@ -1,6 +1,6 @@
 # `.agents/rules/`
 
-Canonical repository rules, written once with assistant-neutral frontmatter. `tools/scripts/agents-sync.mjs`
+Canonical repository rules, written once with assistant-neutral frontmatter. `figentra agents sync`
 (`pnpm agents:sync`) renders them into a marked block in the root `AGENTS.md`: `always: true` rules in full,
 scoped and manual rules as an index line. Do not edit the block; edit the source here and re-run the sync.
 `pnpm agents:check` fails on drift.

@@ -39,7 +39,7 @@
     ]
   },
   "scripts": {
-    "brand:pull": "node ../../tools/scripts/brand-pull.mjs",
+    "brand:pull": "figentra brand pull",
     "predev": "pnpm brand:pull",
     "dev": "expo start",
     "preios": "pnpm brand:pull",

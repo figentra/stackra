@@ -14,7 +14,7 @@
 // deploys in `HUMAN_ASKS` are denied too, so they stay with the lead. On top of the shared rules sits the
 // executor layer: what only the lead does (owner-only CLIs, the GitHub bot wrappers beyond the executor's own push,
 // Infisical, local data git cannot restore) and edits outside the worktree. The categorical asks STA-400 allows for
-// Claude (`npx`, `pnpm dlx`, `eas`, `wrangler secret|--remote`, `secrets:import --confirm`) stay denied here through
+// Claude (`npx`, `pnpm dlx`, `eas`, `wrangler secret|--remote`, `secrets:import --confirm`, `figentra secrets import --confirm`) stay denied here through
 // the shared `executor` rules, so each wrapper the shared rules read through is covered.
 // opencode.jsonc repeats the same tiers as order-sensitive patterns, a second layer.
 // shortcut: executor commands are split on && || ; | and newlines without honouring quotes; nested scripts come
@@ -149,6 +149,14 @@ const BOT_SCRIPT = /^(?:bot:\S+|pr:merge|linear|spec:linear)$/;
  */
 const EXECUTOR_BOT_GIT =
   /^pnpm bot:git (?:-- )?(?:fetch origin(?: [\w./-]+)?|push (?:--force-with-lease )?origin HEAD)$/;
+/**
+ * The private CLI (`@figentra/cli`, ADR 0500) running what `BOT_SCRIPT` and `secrets:*` run: `figentra bot …`,
+ * `pr merge`, `linear`, `secrets …`, bare or after any runner (`pnpm exec`, `npx`, `mise exec --`). All the lead's;
+ * the executor's one push stays the exact `pnpm bot:git` form above. A quoted mention (`grep "figentra bot"`) is not
+ * at a word start and stays allowed.
+ */
+const FIGENTRA_LEAD =
+  /(?:^|[\s/])(?:figentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?(?:bot|pr\s+merge|linear|secrets)\b/;
 
 /** Executors run unattended: anything that leaves the worktree, ships, or destroys local data is the lead's. */
 function denyExecutor(cmd: string, args: string[], exact: boolean): Decision {
@@ -192,6 +200,10 @@ function denySub(sub: string, exact: boolean): Decision {
 
   const executor = denyExecutor(cmd, args, exact);
   if (executor.kind === "deny") return executor;
+  if (FIGENTRA_LEAD.test(sub))
+    return deny(
+      "`figentra bot`, `pr merge`, `linear` and `secrets` run with the /agents values or move a secret; they are the lead's, as `pnpm bot:*`, `pr:merge`, `linear` and `secrets:*` are.",
+    );
 
   for (const t of tokens(sub))
     if (isSecretPath(t)) return deny(`${t} holds secret values; never read, copy or print it.`);

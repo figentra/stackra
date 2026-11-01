@@ -244,8 +244,7 @@
   "ignoreIssues": {
     "**/.stackra/**": ["unlisted", "duplicates"],
   },
-  // sips: macOS's image tool, which tools/scripts/brand-pull.mjs runs to rasterise a brand SVG (brand rules §32).
-  "ignoreBinaries": ["gitleaks", "mint", "sips"],
+  "ignoreBinaries": ["gitleaks", "mint"],
   "rules": {
     // A catalog entry no member names is an error (rule-gap B-10, stackra-235): add the entry with its first consumer,
     // and drop it with the last one.
