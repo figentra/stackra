@@ -157,6 +157,11 @@ A service's own modules add theirs in their `commands/` group (`projection:rebui
   string cannot make a branded `CacheKey` safely). The `Cache` port gained `flush()`.
 - `db:seed` reports a pack's ledger (`seedState`) and writes nothing; writing needs the planner `stackra seed-pack`
   computes, which stays in the CLI until Q4's follow-up moves it.
+- SC-003 ran on a throwaway v3 service on the testbed instead of `services/example`, which stays v2 until STA-344's
+  codemod (no hand conversion): gen merged its own `greet:hello` with ten hosted commands (no bin command), wrote
+  `#stackra/commands` and the entry, and `stackra console` listed all eleven through the Vite runner. Running one
+  boots the service's container, which needs its database driver chosen by runway config; core's root runway also
+  names no Encore app, which gen needs for any v3 service. Running a command end to end waits for a real host.
 - `queue:work` needs the host to have connected `QueueWorkerService`; nothing wires that for a console yet.
 - The database commands take their environment from `STACKRA_ENVIRONMENT` and refuse a `--env` that contradicts it
   (security review B2). `ready()` on `CommandAudit` refuses a run before its handler when the sink cannot write
