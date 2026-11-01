@@ -72,10 +72,53 @@ describe("emitSchemas", () => {
     expect(orders).not.toContain("interface CancelOrderInput");
   });
 
+  it("omits a driver-name field from the check and still augments it as defaulted (STA-1694, STA-1805)", () => {
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      shapes: [
+        {
+          name: "ChargeInput",
+          kind: "schema",
+          module: "orders",
+          file: "src/modules/orders/schemas/charge-input.schema.ts",
+          importPath: "#modules/orders/schemas/charge-input.schema",
+          fields: [
+            {
+              name: "gateway",
+              optional: false,
+              nullable: false,
+              type: { kind: "driver_name", port: "PaymentGateway", values: ["stripe"] },
+              rules: [],
+              default: { value: "stripe", code: '"stripe"', imports: [] },
+            },
+            {
+              name: "retries",
+              optional: false,
+              nullable: false,
+              type: { kind: "number", integer: true },
+              rules: [],
+              default: { value: 3, code: "3", imports: [] },
+            },
+          ],
+          relations: [],
+        } as ShapeIR,
+      ],
+    };
+    const out = emitSchemas(ir, "orders");
+    expect(out).toContain(
+      'export type ChargeInput$Check = Assert<Same<Omit<z.output<typeof ChargeInput$>, "gateway">, Omit<Fields<ChargeInput>, "gateway">>>;',
+    );
+    expect(out).toContain('readonly "~defaults"?: "gateway" | "retries";');
+  });
+
   it("aliases a config to its schema", () => {
     const commerce = emitSchemas(COMMERCE_IR, "commerce");
     expect(commerce).toContain('  gateway: z.enum(["stripe"]).default("stripe"),');
     expect(commerce).toContain("export const CommerceConfig$ = CommerceOptions$;");
+    // a driver-name field is left out of the check on both sides: DriverName<P> widens without a `~key` brand (STA-1805)
+    expect(commerce).toContain(
+      'export type CommerceOptions$Check = Assert<Same<Omit<z.output<typeof CommerceOptions$>, "gateway">, Omit<Fields<CommerceOptions>, "gateway">>>;',
+    );
   });
 
   it("declares no config alias the member ships itself, so a hatch importing it reads the shipped one", () => {
