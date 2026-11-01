@@ -11,6 +11,10 @@ pnpm = "12.6.0"
 gitleaks = "8.30.1"
 # shell formatter for *.sh (oxfmt has no shell support); reads .editorconfig
 shfmt = "3.14.1"
+# The commit hooks' linter and formatter, so lefthook runs them without a workspace install (STA-1865). Same
+# versions as `catalog:quality` in pnpm-workspace.yaml; `stackra check`'s tool-pins finding keeps the two in step.
+"npm:oxlint" = "1.86.0"
+"npm:oxfmt" = "0.71.0"
 # Supply-chain checks of the Quality Gate (ADR 0019, ADR 0174; STA-310, STA-311): workflow lint, workflow security
 # lint (zizmor, policy in .github/zizmor.yml) and the lockfile vulnerability scan. Trivy and cosign run only in the
 # Runway release workflow, pinned there (`mise exec <tool>@<version>`).
