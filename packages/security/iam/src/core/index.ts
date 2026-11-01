@@ -11,7 +11,9 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
-export { Permissions } from "#core/bases/permissions.base";
+export { Permission, Risk } from "@stackra/contracts";
+export { Permissions, permissionKey, registerPermissions } from "@stackra/container";
+export type { PermissionRegistration } from "@stackra/container";
 export { Policy } from "#core/bases/policy.base";
 export { Role } from "#core/bases/role.base";
 export { IamAccessControlDriver } from "#core/drivers/iam-access-control.driver";
@@ -23,7 +25,6 @@ export { MemoryPolicySourceDriver } from "#core/drivers/memory-policy-source.dri
 export { StorePolicySourceDriver } from "#core/drivers/store-policy-source.driver";
 export { AccessReason } from "#core/enums/access-reason.enum";
 export { Decision } from "#core/enums/decision.enum";
-export { Risk } from "#core/enums/risk.enum";
 export { SystemRole } from "#core/enums/system-role.enum";
 export { assertFieldsReadable } from "#core/functions/assert-fields-readable.function";
 export { assertFieldsWritable } from "#core/functions/assert-fields-writable.function";
@@ -32,23 +33,19 @@ export { connectPolicies } from "#core/functions/connect-policies.function";
 export { decodePolicySnapshot } from "#core/functions/decode-policy-snapshot.function";
 export { existenceHit } from "#core/functions/existence-hit.function";
 export { hiddenColumns } from "#core/functions/hidden-columns.function";
-export { permissionKey } from "#core/functions/permission-key.function";
 export { redactFields } from "#core/functions/redact-fields.function";
 export { registerDimensions } from "#core/functions/register-dimensions.function";
-export { registerPermissions } from "#core/functions/register-permissions.function";
 export { registerPolicies } from "#core/functions/register-policies.function";
 export { registerRoles } from "#core/functions/register-roles.function";
 export { PermissionSnapshotService } from "#core/services/permission-snapshot.service";
 export { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
 export { PolicySnapshotIntakeService } from "#core/services/policy-snapshot-intake.service";
-export { Permission } from "#core/values/permission.value";
 export type { AccessExplanation } from "#core/types/access-explanation.type";
 export type { CheckOptions } from "#core/types/check-options.type";
 export type { ColumnRule } from "#core/types/column-rule.type";
 export type { DimensionRegistration } from "#core/types/dimension-registration.type";
 export type { FieldPermissions } from "#core/types/field-permissions.type";
 export type { MemoryPolicyState } from "#core/types/memory-policy-state.type";
-export type { PermissionRegistration } from "#core/types/permission-registration.type";
 export type { PolicyClass } from "#core/types/policy-class.type";
 export type { PolicyOptions } from "#core/types/policy-options.type";
 export type { PolicyRegistration } from "#core/types/policy-registration.type";

@@ -7,9 +7,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 20 and 22); ADR 0132 (as amended by 0294).
  */
-import type { AnyClass } from "@stackra/container";
-
 import type { Permissions } from "#core/bases/permissions.base";
+import type { AnyClass } from "#core/types/any-class.type";
 
 /** The locked keys of one permission set. */
 export interface PermissionRegistration {

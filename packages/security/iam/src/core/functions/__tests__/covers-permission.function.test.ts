@@ -7,12 +7,11 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0132 (decisions 2 and 5).
  */
+import { Permissions, registerPermissions } from "@stackra/container";
+import { Permission } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { Permissions } from "#core/bases/permissions.base";
 import { coversPermission } from "#core/functions/covers-permission.function";
-import { registerPermissions } from "#core/functions/register-permissions.function";
-import { Permission } from "#core/values/permission.value";
 
 class SelectorFixturePermissions extends Permissions {
   static readonly read = Permission.L1;

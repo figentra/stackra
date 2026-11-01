@@ -8,12 +8,11 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0208 (decision 2, as amended by 0294); ADR 0294 (decisions 20 and 22).
  */
-import { kindOf } from "@stackra/container";
+import { kindOf, permissionKey } from "@stackra/container";
+import type { Permission } from "@stackra/contracts";
 
 import { ROLE_REGISTRY } from "#core/constants/role-registry.constant";
-import { permissionKey } from "#core/functions/permission-key.function";
 import type { RoleRegistration } from "#core/types/role-registration.type";
-import type { Permission } from "#core/values/permission.value";
 
 /** `<module>.<name>`, each segment snake_case. */
 const KEY = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;

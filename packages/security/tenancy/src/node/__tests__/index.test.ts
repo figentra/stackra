@@ -19,6 +19,7 @@ describe("@stackra/tenancy/node", () => {
   it("exports exactly the traits, the macro, the service, the isolation driver, the approval binding model with its store driver, the prune job and the commands", () => {
     expect(Object.keys(node).sort()).toEqual([
       "ApprovalBinding",
+      "ApprovalBindingPermissions",
       "BelongsToTenant",
       "BelongsToTenantMacro",
       "BelongsToTenantOrPlatform",

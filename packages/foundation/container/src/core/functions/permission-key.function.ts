@@ -8,7 +8,7 @@
  * Governing contract: ADR 0294 (decision 20: derived identities); ADR 0132 (decision 2).
  */
 import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
-import type { Permission } from "#core/values/permission.value";
+import type { Permission } from "@stackra/contracts";
 
 /**
  * The locked key of `permission`.
