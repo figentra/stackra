@@ -137,7 +137,6 @@ function clientFile(service: string, manifest: StackraManifest): string {
   };
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const key of Object.keys(schemas).sort()) visit(key);
-  if (declarations.length > 0) use("zod", "z");
 
   // Refusals the producer declares.
   const refusals: string[] = [];
@@ -227,6 +226,16 @@ function clientFile(service: string, manifest: StackraManifest): string {
     if (!members.has(verb)) members.set(verb, entry.class);
     groups.set(group, members);
   }
+  // An enum's schema constant nothing reads is left out: a consumer's noUnusedLocals refuses it (STA-1751).
+  const readers = [...declarations, ...eventLines, ...calls].join("\n");
+  const kept = declarations.filter((declaration) => {
+    const name = /^const (\w+)\$ = z\.enum\(/.exec(declaration)?.[1];
+    return (
+      name === undefined ||
+      new RegExp(`(?<![\\w$])${name}\\$(?![\\w$])`).test(readers.replace(declaration, ""))
+    );
+  });
+  if (kept.some((declaration) => declaration.includes("z."))) use("zod", "z");
   const body = [...groups].map(
     ([group, members]) =>
       `  readonly ${group} = {\n${[...members].map(([verb, name]) => `    ${verb}: this.member(${name}),`).join("\n")}\n  };`,
@@ -247,7 +256,7 @@ function clientFile(service: string, manifest: StackraManifest): string {
     header,
     ...importLines(imports),
     "",
-    ...declarations,
+    ...kept,
     ...(refusals.length > 0 ? [...refusals, ""] : []),
     ...(eventLines.length > 0 ? [...eventLines, ""] : []),
     ...(access.length > 0 ? [...access, ""] : []),

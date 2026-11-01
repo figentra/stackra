@@ -103,6 +103,18 @@ describe("emitClients", () => {
     );
   });
 
+  it("leaves out an enum's schema constant that nothing reads (STA-1751)", () => {
+    const producer = {
+      ...PRODUCER,
+      schemas: { ...PRODUCER.schemas, "orders.Unread": { type: "string", enum: ["a", "b"] } },
+    };
+    const unread =
+      emitClients(consumer({ services: [{ member: "commerce", manifest: producer }] })).files[0]
+        ?.content ?? "";
+    expect(unread).toContain("export const Unread = Enum.of({");
+    expect(unread).not.toContain("const Unread$");
+  });
+
   it("writes a client module per producer module and a permission set per Permissions class (STA-1296)", () => {
     expect(content).toContain(
       'export class OrdersModule extends moduleRef("commerce", "orders") {}',

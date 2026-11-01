@@ -30,6 +30,24 @@ const LOYALTY_KIT: StackraManifest = {
   ],
 };
 
+/** A `payments` member manifest published under `pkg`. */
+function payments(pkg: string): StackraManifest {
+  return {
+    member: "payments",
+    package: pkg,
+    version: "0.2.1",
+    modules: [
+      {
+        key: "payments",
+        class: "PaymentsModule",
+        file: "src/node/payments.module.ts",
+        exports: [],
+        dependsOn: [],
+      },
+    ],
+  };
+}
+
 describe("emitMemberModule", () => {
   it("writes a bare module without dependencies", () => {
     const content = emitMemberModule(COMMERCE_IR) ?? "";
@@ -68,6 +86,27 @@ describe("emitMemberModule", () => {
       }) ?? "";
     expect(content).not.toContain("LoyaltyKitModule");
     expect(content).toContain("export class CommerceModule extends Module {}");
+  });
+
+  it("aliases a dependency module named like the member's own or an earlier import (STA-1749)", () => {
+    const content =
+      emitMemberModule({
+        ...COMMERCE_IR,
+        member: "payments",
+        dependencies: [
+          { package: "@stackra/payments", manifest: payments("@stackra/payments") },
+          { package: "@acme/payments", manifest: payments("@acme/payments") },
+        ],
+      }) ?? "";
+    expect(content).toContain(
+      'import { PaymentsModule as StackraPaymentsModule } from "@stackra/payments/node";',
+    );
+    expect(content).toContain(
+      'import { PaymentsModule as AcmePaymentsModule } from "@acme/payments/node";',
+    );
+    expect(content).toContain(
+      "export class PaymentsModule extends Module({ imports: [StackraPaymentsModule, AcmePaymentsModule] }) {}",
+    );
   });
 
   it("writes nothing when the root module is authored", () => {

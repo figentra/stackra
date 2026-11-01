@@ -399,6 +399,16 @@ const MODEL_SOURCES: Readonly<Record<string, string>> = {
     'export class Customer extends Model.with(HasPublicId("cus")) {}',
     "",
   ].join("\n"),
+  "src/node/models/receipt.model.ts": [
+    'import { HasPublicId, Model, OptionalProps, Timestamps } from "@stackra/model";',
+    "",
+    'export class Receipt extends Model.with(HasPublicId("rcp"), Timestamps) {}',
+    "",
+    "export interface Receipt {",
+    '  [OptionalProps]?: "createdAt" | "updatedAt";',
+    "}",
+    "",
+  ].join("\n"),
 };
 
 describe("createSourceReader on models", async () => {
@@ -425,6 +435,10 @@ describe("createSourceReader on models", async () => {
     expect(entity("Order")?.computed).toEqual(["isOpen"]);
     expect(entity("OrderLine")?.optional).toEqual(["id"]);
     expect(entity("Customer")).toEqual({ optional: ["id"], relations: [], computed: [] });
+  });
+
+  it("leaves the keys out when the model writes its own [OptionalProps], which a generated one would redeclare (STA-1750)", () => {
+    expect(entity("Receipt")?.optional).toEqual([]);
   });
 
   it("reads a one-to-many with its inverse and options", () => {
