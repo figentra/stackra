@@ -165,24 +165,32 @@ export class TestingModuleBuilder {
   async compile(): Promise<TestingApp> {
     await loadMemberSchemas();
     const wirings = [...REGISTERED_WIRINGS.values()];
-    const drivers: DriverChoice =
-      this.fallback === undefined
-        ? { byPort: { ...this.byPort } }
-        : { fallback: this.fallback, byPort: { ...this.byPort } };
-    const picked = pickedDrivers(drivers);
+    const byPort = { ...this.byPort };
+    const choice: DriverChoice =
+      this.fallback === undefined ? { byPort } : { fallback: this.fallback, byPort };
+    const picked = pickedDrivers(choice);
     const overrides = new Map(this.overrides);
-    // A driver that logs boots even where no wiring lists a Logger driver (no @stackra/logger dependency, STA-1805).
-    if (
-      !overrides.has(Logger) &&
-      ![...picked, ...wirings].some((wiring) =>
-        (wiring.drivers ?? []).some((driver) => driver.port === Logger),
-      )
-    )
-      overrides.set(Logger, new MemoryLoggerDriver());
+    // A driver that logs boots whatever the wirings say of Logger (STA-1805): with no Logger row it takes the memory
+    // driver; with several candidates of which none is a default, selected by config or picked by the test, it takes
+    // `memory`. One candidate is the container's to take, and a row it cannot settle without memory still refuses.
+    const loggers = [...picked, ...wirings].flatMap((wiring) =>
+      (wiring.drivers ?? []).filter((driver) => driver.port === Logger),
+    );
+    if (!overrides.has(Logger)) {
+      const names = new Set(loggers.flatMap((driver) => Object.keys(driver.candidates)));
+      const unchosen = loggers.every(
+        (driver) =>
+          driver.default === undefined &&
+          driver.selectedBy === undefined &&
+          pickedFor(driver, choice) === undefined,
+      );
+      if (loggers.length === 0) overrides.set(Logger, new MemoryLoggerDriver());
+      else if (unchosen && names.size > 1 && names.has("memory")) byPort[Logger.name] = "memory";
+    }
     const container = await Container.create([...picked, ...wirings], {
       roots: this.roots,
       overrides,
-      drivers,
+      drivers: choice,
     });
     const app = new TestingApp(container, recordsOf(this.roots, wirings));
     for (const plugin of TESTING_PLUGINS.values())

@@ -128,6 +128,26 @@ describe("TestingModuleBuilder", () => {
     });
     const wired = await new TestingModuleBuilder([ReportingModule]).compile();
     expect(wired.get(Logger)).toBeInstanceOf(SilentLoggerDriver);
+
+    // listed but unselected, as @stackra/logger's memory and silent drivers with no config field: memory is taken
+    registerWiring({
+      member: "logging",
+      drivers: [
+        {
+          port: Logger,
+          candidates: {
+            memory: () => Promise.resolve(MemoryLoggerDriver),
+            silent: () => Promise.resolve(SilentLoggerDriver),
+          },
+        },
+      ],
+    });
+    const listed = await new TestingModuleBuilder([ReportingModule]).compile();
+    expect(listed.get(Logger)).toBeInstanceOf(MemoryLoggerDriver);
+    const chosen = await new TestingModuleBuilder([ReportingModule])
+      .useDrivers({ Logger: "silent" })
+      .compile();
+    expect(chosen.get(Logger)).toBeInstanceOf(SilentLoggerDriver);
   });
 
   it("leaves the registered wiring as it was", async () => {
