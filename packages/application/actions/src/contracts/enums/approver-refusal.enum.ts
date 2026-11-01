@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ApproverRefusal`, why a person may not grant a parked approval under an `ApproverRule`: the wrong seat
- *          kind, self-approval, or no step-up.
+ *          kind, self-approval, no step-up, a repeated vote, or a missing approver permission.
  * Boundary: an `Enum.of` value plus the type of the same name, in the leaf entry; snake_case machine codes (ADR 0231).
  *           The gate's driver turns one into its refusal.
  * Runtime: isomorphic
@@ -22,6 +22,10 @@ export const ApproverRefusal = Enum.of({
   SelfApproval: "self_approval",
   /** The rule needs a step-up the approver's session lacks. */
   StepUpRequired: "step_up_required",
+  /** The approver already voted on this request (one vote per person). */
+  AlreadyApproved: "already_approved",
+  /** The approver lacks the request's approver permission in its scope. */
+  ApproverNotPermitted: "approver_not_permitted",
 });
 
 /** One of the codes above. */
