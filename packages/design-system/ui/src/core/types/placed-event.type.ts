@@ -10,7 +10,7 @@ import type { SchedulerEvent } from "#contracts/types/scheduler-event.type";
 
 /** An event placed in a day column. */
 export interface PlacedEvent {
-  /** The event. */
+  /** The placed event. */
   readonly event: SchedulerEvent;
   /** Where it starts, as a share (0 to 1) of the column from its top. */
   readonly top: number;

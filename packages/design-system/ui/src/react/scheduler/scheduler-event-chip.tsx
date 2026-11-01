@@ -12,7 +12,7 @@ import type { ReactElement } from "react";
 import { MARKER_TONE_CLASS_NAME } from "#core/constants/marker-tone-class-name.constant";
 import type { SchedulerEventChipProps } from "#react/scheduler/scheduler-event-chip.props";
 
-/** One event. */
+/** One event on the scheduler. */
 export function SchedulerEventChip({
   event,
   state,

@@ -12,7 +12,7 @@ import type { SchedulerState } from "#react/hooks/scheduler-state.type";
 
 /** Props of one event chip. */
 export interface SchedulerEventChipProps {
-  /** The event. */
+  /** The event to show. */
   readonly event: SchedulerEvent;
   /** The shared state, for the event's time and name. */
   readonly state: SchedulerState;

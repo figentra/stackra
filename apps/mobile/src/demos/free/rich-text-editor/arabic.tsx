@@ -16,7 +16,7 @@ import { RICH_TEXT_EDITOR_DEMO_KEYS } from "#src/demos/free/rich-text-editor/ric
 /** The demo's keys. */
 const K = RICH_TEXT_EDITOR_DEMO_KEYS.demo_free.rich_text_editor.arabic;
 
-/** RichTextEditor: Arabic. */
+/** RichTextEditor: an Arabic document. */
 export default function Arabic() {
   const t = useCatalogueText(MESSAGES.en);
   const document: RichTextNode = {

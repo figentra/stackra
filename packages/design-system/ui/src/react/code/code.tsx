@@ -12,7 +12,7 @@ import type { ReactElement } from "react";
 
 import type { CodeProps } from "#react/code/code.props";
 
-/** Inline code. */
+/** Inline code, always left to right. */
 export function Code({ children, className }: CodeProps): ReactElement {
   return (
     <code

@@ -28,7 +28,9 @@ interface ChatTurn {
  * <ChatSurface messages={turns} onSend={send} suggestions={starters} labels={labels} />
  */
 export interface ChatSurfaceProps {
+  /** The conversation's turns, oldest first. */
   readonly messages: readonly ChatTurn[];
+  /** Called with the text the user sends or the starter they pick. */
   readonly onSend: (text: string) => void;
   /** Stops the streaming answer. */
   readonly onStop?: (() => void) | undefined;
@@ -52,5 +54,6 @@ export interface ChatSurfaceProps {
     readonly user?: string | undefined;
     readonly assistant?: string | undefined;
   };
+  /** Styles the root. */
   readonly className?: string | undefined;
 }

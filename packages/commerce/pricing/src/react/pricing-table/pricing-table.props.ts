@@ -40,6 +40,7 @@ interface PricingPlan {
  * <PricingTable plans={plans} periods={periods} periodLabel="Billing period" onSelect={choose} />
  */
 export interface PricingTableProps {
+  /** The plans, one column each, in the order shown. */
   readonly plans: readonly PricingPlan[];
   /** One period hides the switch. */
   readonly periods: readonly PricingPeriod[];
@@ -47,10 +48,12 @@ export interface PricingTableProps {
   readonly period?: string | undefined;
   /** The first selected period (uncontrolled); default the first period. */
   readonly defaultPeriod?: string | undefined;
+  /** Called with the id of the newly selected period. */
   readonly onPeriodChange?: ((periodId: string) => void) | undefined;
   /** The accessible name of the period switch. */
   readonly periodLabel: string;
   /** A plan's button was pressed. */
   readonly onSelect: (planId: string, periodId: string) => void;
+  /** Styles the root. */
   readonly className?: string | undefined;
 }

@@ -10,5 +10,5 @@
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the views carry no labels.
 export const SchedulerView = Object.freeze(["day", "week", "month", "agenda"] as const);
 
-/** One view. */
+/** One scheduler view. */
 export type SchedulerView = (typeof SchedulerView)[number];

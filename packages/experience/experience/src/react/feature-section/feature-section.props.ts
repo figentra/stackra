@@ -17,8 +17,11 @@ import type { IconSlot } from "@stackra/ui/contracts";
 export interface FeatureSectionProps {
   /** A short line over the title: "Why us". */
   readonly eyebrow?: string | undefined;
+  /** The section's heading. */
   readonly title: string;
+  /** A line of text under the title. */
   readonly description?: string | undefined;
+  /** The features, one grid cell each, in the order shown. */
   readonly features: readonly {
     readonly id: string;
     readonly title: string;
@@ -27,5 +30,6 @@ export interface FeatureSectionProps {
   }[];
   /** Columns on a wide screen; default 3. Narrow screens stack. */
   readonly columns?: 2 | 3 | 4 | undefined;
+  /** Styles the root. */
   readonly className?: string | undefined;
 }

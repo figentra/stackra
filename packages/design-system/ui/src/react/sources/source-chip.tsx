@@ -26,7 +26,7 @@ import type { SourceChipProps } from "#react/sources/source-chip.props";
 const PILL =
   "inline-flex h-5 max-w-60 items-center gap-1 rounded-[var(--radius-pill)] bg-default ps-0.5 pe-2 text-xs text-muted no-underline transition-colors duration-(--duration-fast) motion-reduce:transition-none";
 
-/** One citation. */
+/** One citation, as a pill. */
 export function SourceChip({ source, className }: SourceChipProps): ReactElement {
   const t = useUiText();
   const { href, title } = sourceLinkOf(source);

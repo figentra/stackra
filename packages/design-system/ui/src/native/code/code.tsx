@@ -12,7 +12,7 @@ import type { ReactElement } from "react";
 import type { CodeProps } from "#native/code/code.props";
 import { Text } from "#native/text/text";
 
-/** Inline code. */
+/** Inline code in a monospace font. */
 export function Code({ children, className }: CodeProps): ReactElement {
   return (
     <Text

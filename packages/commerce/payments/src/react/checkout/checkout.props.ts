@@ -54,8 +54,11 @@ interface CheckoutValues {
  *   labels={labels} onSubmit={placeOrder} />
  */
 export interface CheckoutProps {
+  /** The form sections, in the order shown. */
   readonly sections: readonly CheckoutSection[];
+  /** The shipping options the buyer picks from. */
   readonly shippingOptions: readonly CheckoutChoice[];
+  /** The payment methods the buyer picks from. */
   readonly paymentMethods: readonly CheckoutChoice[];
   /** The summary lines: name, quantity and line amount. */
   readonly lines: readonly {
@@ -64,18 +67,23 @@ export interface CheckoutProps {
     readonly quantity: number;
     readonly amount: Amount;
   }[];
+  /** The rows under the summary lines, from the host's pricing. */
   readonly totals: OrderTotalsProps["totals"];
   /** The selected shipping option (controlled), so the host can re-price the totals. */
   readonly shipping?: string | undefined;
+  /** Called with the id of the newly selected shipping option. */
   readonly onShippingChange?: ((optionId: string) => void) | undefined;
+  /** Called with the buyer's values when the order is placed. */
   readonly onSubmit: (values: CheckoutValues) => void;
   /** True while the order is placed: the button spins. */
   readonly isSubmitting?: boolean | undefined;
+  /** The checkout's words; the host writes them. */
   readonly labels: {
     readonly shipping: string;
     readonly payment: string;
     readonly summary: string;
     readonly placeOrder: string;
   };
+  /** Styles the root. */
   readonly className?: string | undefined;
 }

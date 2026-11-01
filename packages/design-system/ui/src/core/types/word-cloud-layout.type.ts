@@ -10,6 +10,7 @@ import type { WordCloudWord } from "#contracts/types/word-cloud-word.type";
 
 /** The words that found room, heaviest first. */
 export interface WordCloudLayout {
+  /** The placed words, heaviest first. */
   readonly words: readonly {
     readonly word: WordCloudWord;
     /** Its place in weight order, which picks its colour. */

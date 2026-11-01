@@ -28,7 +28,9 @@ export interface SignInProps {
         readonly remember: boolean;
       }) => void)
     | undefined;
+  /** Called by the forgot-password link; omit it to hide the link. */
   readonly onForgotPassword?: (() => void) | undefined;
+  /** Called by the sign-up link; omit it to hide the link. */
   readonly onSignUp?: (() => void) | undefined;
   /** The provider id or "form" that is signing in: its button spins and the rest wait. */
   readonly pending?: string | undefined;
@@ -36,6 +38,7 @@ export interface SignInProps {
   readonly error?: string | undefined;
   /** The title's level in the page outline: 2 by default, below the page's h1; 1 when the card is the whole page. */
   readonly headingLevel?: HeadingLevel | undefined;
+  /** The sign-in card's words; the host writes them. */
   readonly labels: {
     readonly title: string;
     readonly description?: string | undefined;
@@ -50,5 +53,6 @@ export interface SignInProps {
     readonly signUpPrompt: string;
     readonly signUp: string;
   };
+  /** Styles the root. */
   readonly className?: string | undefined;
 }

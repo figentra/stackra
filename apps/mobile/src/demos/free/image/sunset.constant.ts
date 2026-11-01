@@ -7,6 +7,6 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); STA-1371.
  */
 
-/** The picture. */
+/** The demo picture, a one-pixel PNG data URI. */
 export const SUNSET =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGO42ekFAAPrAa2rQs6bAAAAAElFTkSuQmCC";

@@ -11,6 +11,6 @@ import type { SourceItem } from "#contracts/types/source-item.type";
 
 /** Props shared by the web and native `SourceChip`. */
 export interface SourceChipContractProps {
-  /** The source. */
+  /** The source the chip cites. */
   readonly source: SourceItem;
 }

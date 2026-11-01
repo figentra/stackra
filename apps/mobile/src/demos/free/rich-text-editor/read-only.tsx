@@ -21,7 +21,7 @@ const paragraph = (text: string): RichTextNode => ({
   content: [{ type: "text", text }],
 });
 
-/** RichTextEditor: read-only. */
+/** RichTextEditor: a read-only document. */
 export default function ReadOnly() {
   const t = useCatalogueText(MESSAGES.en);
   const document: RichTextNode = {

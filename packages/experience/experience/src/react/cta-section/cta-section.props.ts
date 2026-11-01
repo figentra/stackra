@@ -14,12 +14,15 @@
  * <CtaSection title="Open your shop today" actions={[{ id: "start", label: "Start free" }]} onAction={go} />
  */
 export interface CtaSectionProps {
+  /** The section's heading. */
   readonly title: string;
+  /** A line of text under the title. */
   readonly description?: string | undefined;
   /** The buttons; the first is primary. */
   readonly actions?:
     | readonly { readonly id: string; readonly label: string; readonly href?: string | undefined }[]
     | undefined;
+  /** Called with the id of the pressed action. */
   readonly onAction?: ((actionId: string) => void) | undefined;
   /** A newsletter form instead of (or beside) the actions; `onSubscribe` gets the address. */
   readonly newsletter?:
@@ -33,6 +36,8 @@ export interface CtaSectionProps {
         readonly thanks: string;
       }
     | undefined;
+  /** Called with the email address the newsletter form submits. */
   readonly onSubscribe?: ((email: string) => void) | undefined;
+  /** Styles the root. */
   readonly className?: string | undefined;
 }

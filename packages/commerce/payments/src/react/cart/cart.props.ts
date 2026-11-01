@@ -29,14 +29,19 @@ interface CartLine {
  * <Cart lines={lines} totals={totals} labels={labels} onQuantityChange={set} onRemove={remove} onCheckout={go} />
  */
 export interface CartProps {
+  /** The cart's lines, in the order shown. */
   readonly lines: readonly CartLine[];
   /** The rows under the lines, from the host's pricing (subtotal, shipping, tax, total). */
   readonly totals: OrderTotalsProps["totals"];
+  /** Called with a line's id and its new quantity. */
   readonly onQuantityChange: (lineId: string, quantity: number) => void;
+  /** Called with the id of the line to remove. */
   readonly onRemove: (lineId: string) => void;
+  /** Called when the checkout button is pressed. */
   readonly onCheckout: () => void;
   /** True while the host starts checkout: the button spins. */
   readonly isCheckingOut?: boolean | undefined;
+  /** The cart's words; the host writes them. */
   readonly labels: {
     readonly title: string;
     /** Shown instead of the lines when there are none. */
@@ -46,5 +51,6 @@ export interface CartProps {
     readonly remove: string;
     readonly checkout: string;
   };
+  /** Styles the root. */
   readonly className?: string | undefined;
 }

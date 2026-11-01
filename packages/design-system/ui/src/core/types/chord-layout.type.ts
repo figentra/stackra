@@ -11,6 +11,7 @@ import type { SankeyNode } from "#contracts/types/sankey-node.type";
 
 /** The groups' arcs and the flows' ribbons. */
 export interface ChordLayout {
+  /** One arc per node, around the ring. */
   readonly groups: readonly {
     readonly node: SankeyNode;
     /** Its position in the caller's nodes, which picks its colour. */
@@ -22,6 +23,7 @@ export interface ChordLayout {
     /** The ring slice's SVG path. */
     readonly path: string;
   }[];
+  /** One ribbon per flow, between two arcs. */
   readonly ribbons: readonly {
     readonly link: SankeyLink;
     readonly sourceIndex: number;

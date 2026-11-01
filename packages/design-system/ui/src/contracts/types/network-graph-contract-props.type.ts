@@ -13,7 +13,7 @@ import type { NetworkNode } from "#contracts/types/network-node.type";
 
 /** Props shared by the web and native `NetworkGraph`. */
 export interface NetworkGraphContractProps {
-  /** The nodes. */
+  /** The nodes to draw. */
   readonly nodes: readonly NetworkNode[];
   /** The links; links to unknown nodes are left out. */
   readonly links: readonly NetworkLink[];

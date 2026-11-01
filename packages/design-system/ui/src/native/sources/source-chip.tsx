@@ -23,7 +23,7 @@ import { Text } from "#native/text/text";
 const PILL =
   "h-5 max-w-60 flex-row items-center gap-1 self-start rounded-[var(--radius-pill)] bg-default ps-0.5 pe-2";
 
-/** One citation. */
+/** One citation, as a pill. */
 export function SourceChip({ source, className }: SourceChipProps): ReactElement {
   const t = useUiText();
   const { href, title } = sourceLinkOf(source);

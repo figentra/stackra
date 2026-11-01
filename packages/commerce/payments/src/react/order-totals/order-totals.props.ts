@@ -14,6 +14,7 @@
  * <OrderTotals totals={[{ id: "total", label: "Total", amount: { amount: 120, currency: "SAR" }, isTotal: true }]} />
  */
 export interface OrderTotalsProps {
+  /** The rows, in the order shown: a label and an amount each. */
   readonly totals: readonly {
     readonly id: string;
     readonly label: string;
