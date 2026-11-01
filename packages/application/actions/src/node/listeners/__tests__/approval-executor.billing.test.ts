@@ -3,7 +3,7 @@
  * Purpose: the billing-shaped case (P-017) of the approval stage, built only from test fixtures: a coupon create action
  *          that declares a stage with a threshold condition reading a setting, one approver and the `financial` effect;
  *          a call under the threshold runs, one above it is parked, the requester cannot approve it, an approver can, and
- *          `ApprovalExecutor` then runs it once as the requester.
+ *          `ApprovalExecutorListener` then runs it once as the requester.
  * Boundary: test only. It needs the three-argument `ApprovalCondition.needed(input, ctx, settings)` and the
  *           `ApprovalSettingsSource` port of `@stackra/contracts`; it builds no billing code.
  * Runtime: node (vitest)
@@ -49,7 +49,7 @@ import { ActionPipeline } from "#core/services/action-pipeline.service";
 import type { ActionContext } from "#core/types/action-context.type";
 import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
 import type { Resolver } from "#core/types/resolver.type";
-import { ApprovalExecutor } from "#node/listeners/approval-executor.listener";
+import { ApprovalExecutorListener } from "#node/listeners/approval-executor.listener";
 import { MemoryActorStatusCheckDriver } from "#testing/drivers/memory-actor-status-check.driver";
 import { MemoryApprovalBindingStoreDriver } from "#testing/drivers/memory-approval-binding-store.driver";
 import { MemoryApprovalGateDriver } from "#testing/drivers/memory-approval-gate.driver";
@@ -173,7 +173,7 @@ describe("a billing-shaped coupon create action with an approval stage", () => {
   it("runs below the threshold, parks above it, refuses self-approval, and executes once on grant", async () => {
     created.length = 0;
     const identity = new SilentIdentity();
-    const gate = new MemoryApprovalGateDriver({ identity, clock: new FixedClock() });
+    const gate = new MemoryApprovalGateDriver(identity, new FixedClock());
     const bindings = new MemoryApprovalBindingStoreDriver();
     const map = new Map<AnyClass, object>([
       [Clock, new FixedClock()],
@@ -195,7 +195,7 @@ describe("a billing-shaped coupon create action with an approval stage", () => {
       get: <T extends object>(token: AnyClass<T>): T => map.get(token) as T,
     };
     const pipeline = new ActionPipeline(resolver);
-    const executor = new ApprovalExecutor(
+    const executor = new ApprovalExecutorListener(
       gate,
       bindings,
       new FromStore(),

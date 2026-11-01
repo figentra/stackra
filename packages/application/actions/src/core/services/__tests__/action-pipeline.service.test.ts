@@ -3120,7 +3120,7 @@ describe("ActionPipeline approval stage (ADR 0509)", () => {
       open.pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
     ).rejects.toThrow(/cannot park/);
     const identity = new SilentIdentity();
-    const gate = new MemoryApprovalGateDriver({ identity, clock: new FixedClock() });
+    const gate = new MemoryApprovalGateDriver(identity, new FixedClock());
     const parts: [AnyClass, object][] = [
       [ApprovalBindingStore, new MemoryApprovalBindingStoreDriver()],
       [ActorStatusCheck, new MemoryActorStatusCheckDriver()],

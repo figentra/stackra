@@ -5,7 +5,7 @@
  *          vote: the approval id, the action key, the owning service and the tenant, and nothing else.
  * Boundary: ids only. It never carries the input, its hash, the requester or the voters: the owning service reads
  *           who, where and what from its own binding (B1), so a forged or replayed envelope can start no more than
- *           the execution of a request the store already holds as granted. Only `ApprovalExecutor` consumes it, and
+ *           the execution of a request the store already holds as granted. Only `ApprovalExecutorListener` consumes it, and
  *           only from the store's service. It registers its schema when the module loads (STA-339 replaces the
  *           registration).
  * Runtime: isomorphic
