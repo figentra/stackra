@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: ADR 0340's one token engine. A theme's palette (its own accent steps and a product's accent ramp)
 reaches the web through `renderWebCss`, which overrides HeroUI's `color-mix` steps of the same name. The native

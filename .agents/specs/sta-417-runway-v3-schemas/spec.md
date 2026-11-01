@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: The Stackra side of STA-417, written retroactively for PR figentra/stackra#136: the runway v3 schemas
 (`tools/schemas/runway-root.schema.json`, `runway-service.schema.json`, `runway-app.schema.json`) per ADR 0296,

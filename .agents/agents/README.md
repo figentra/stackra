@@ -77,7 +77,7 @@ decisions. Full detail and skill lists: `apps/docs/src/docs/agents/plugins.mdx`.
 | Work                                            | Use                                                                         | Not                                                            |
 | ----------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | Code review of a diff                           | `code-reviewer` + the AI-REVIEW gate                                        | `engineering:code-review`, `/review`                           |
-| Specs, plans, tasks                             | spec-kit (`speckit-*`) + `spec-writer`                                      | `product-management:write-spec`                                |
+| Specs, plans, tasks                             | Figentra Flow (`flow-*`) + `spec-writer`                                    | `product-management:write-spec`                                |
 | Architecture decisions                          | ADRs through `docs-adr-steward` (`docs-adr`)                                | `engineering:architecture` (draft input only)                  |
 | Incidents                                       | `incident-commander`                                                        | `engineering:incident-response`, `/incident`                   |
 | Tests, security, deploy                         | `test-engineer`, `security-tenancy-reviewer`, `release-operations`          | `engineering:testing-strategy`, `engineering:deploy-checklist` |

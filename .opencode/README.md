@@ -5,13 +5,12 @@ it (`.agents/routing.yaml`, [ADR 0066](../apps/docs/src/docs/adr/0066-delegation
 project configuration is the root `opencode.jsonc` (model, `AGENTS.md` as instructions, permissions); it reads the
 rules from `AGENTS.md` and the skills from `.agents/skills` directly.
 
-| Path                       | Holds                                                                                                     | Edit here?                                           |
-| -------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `agents/`                  | subagents generated from `.agents/agents/*.md` with OpenCode's frontmatter and permissions                | no: `guard-paths` refuses it; edit `.agents/agents`  |
-| `commands/speckit.*.md`    | the spec-kit commands, rendered by `specify` with the Stackra preset                                      | no: edit `.agents/speckit`, then `pnpm speckit:sync` |
-| `plugins/guard/index.ts`   | the guard plugin: denies secret reads and writes and owner-only commands, and edits in the main checkout  | yes                                                  |
-| `plugins/guard/decide.ts`  | the plugin's decisions: the shared `.agents/hooks/_rules.mjs` tiers (ask is deny) plus the executor layer | yes                                                  |
-| `plugins/guard/__tests__/` | `node:test` suite for `decide.ts`, run by `pnpm test:hooks`                                               | yes                                                  |
+| Path                       | Holds                                                                                                     | Edit here?                                          |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `agents/`                  | subagents generated from `.agents/agents/*.md` with OpenCode's frontmatter and permissions                | no: `guard-paths` refuses it; edit `.agents/agents` |
+| `plugins/guard/index.ts`   | the guard plugin: denies secret reads and writes and owner-only commands, and edits in the main checkout  | yes                                                 |
+| `plugins/guard/decide.ts`  | the plugin's decisions: the shared `.agents/hooks/_rules.mjs` tiers (ask is deny) plus the executor layer | yes                                                 |
+| `plugins/guard/__tests__/` | `node:test` suite for `decide.ts`, run by `pnpm test:hooks`                                               | yes                                                 |
 
 ## Rules
 

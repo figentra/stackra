@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Owner, asking for the playground's Theme Studio on mobile: the Settings tab becomes the app's settings and the
 native twin of the web studio, applied live.

@@ -2,8 +2,8 @@
 
 Invocable skills, one folder per skill with a `SKILL.md` (Agent Skills format: `name` and `description` frontmatter,
 then the instructions). `pnpm agents:sync` symlinks each folder into `.claude/skills/`; OpenCode reads this folder
-directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them into `.claude/skills/` and
-`.opencode/commands/` (see [`../speckit`](../speckit)).
+directly. The Figentra Flow skills (`flow-*`) are here too, but rendered by `pnpm spec:sync` (`figentra-flow sync`) and
+recorded in `.flow/lock.json`: never edit them in place; override in `.flow/overrides/` (ADR 0510).
 
 | Family                 | Skills                                                                                                                      |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |

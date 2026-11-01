@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Owner, choosing "Accent + glass" for the buttons (STA-425, ADR 0319): the native side gets its own mapping.
 Refined by the owner on 2026-10-24: "CSS-only material on web with no refraction, Liquid Glass on iOS 26+, solid

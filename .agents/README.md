@@ -11,8 +11,7 @@ projection ([ADR 0016](../apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx
 | [`hooks/`](hooks)         | the guard, hint and context hooks                             | symlinked into `.claude/hooks/`                                          |
 | [`skills/`](skills)       | invocable skills (`<name>/SKILL.md`)                          | symlinked into `.claude/skills/`; OpenCode reads `.agents/skills` itself |
 | [`reference/`](reference) | fenced upstream material (the Encore skills, ADR 0258)        | not projected; read on purpose by `compiler-engineer`                    |
-| [`specs/`](specs)         | spec-kit specs, one `sta-<n>-<slug>/` folder per Linear issue | read in place, not projected                                             |
-| [`speckit/`](speckit)     | the Stackra spec-kit preset source                            | installed into `.specify/presets/` by `pnpm speckit:sync`                |
+| [`specs/`](specs)         | Flow specs, one `sta-<n>-<slug>/` folder per Linear issue     | read in place, not projected                                             |
 | `models.yaml`             | which model each assistant runs for each agent tier           | read by agents-sync                                                      |
 | `routing.yaml`            | task type → executor, model and agent; the daily OpenCode cap | read by `pnpm delegate` and `pnpm ai:spend`                              |
 
@@ -22,7 +21,7 @@ A folder's `README.md` is documentation and is never projected.
 
 Generated files open with a provenance marker. `pnpm agents:check` (part of `pnpm validate`) fails on drift or on a
 hand-edited projection rather than silently overwriting it; `pnpm agents:sync` repairs it. agents-sync also renders
-`.mcp.yaml` into the gitignored local `.mcp.json` (`--mcp-only` on install; `--check` compares it only if present) and the constitution into `.specify/memory/constitution.md`.
+`.mcp.yaml` into the gitignored local `.mcp.json` (`--mcp-only` on install; `--check` compares it only if present) and the constitution into `.flow/constitution.md`.
 
 ```bash
 pnpm agents:sync                              # project into every detected assistant (.claude/, .opencode/)

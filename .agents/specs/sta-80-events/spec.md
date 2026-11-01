@@ -14,13 +14,13 @@
 
 **Linear project**: Foundation kernel (W1.3, STA-54)
 
-**Clarifications status**: pending <!-- /speckit.clarify sets this to "complete" when nothing is open -->
+**Clarifications status**: pending <!-- /flow-clarify sets this to "complete" when nothing is open -->
 
 **Input**: User description: "Draft the specify-stage spec for `packages/foundation/events` (roadmap W1.3, STA-80), the core of the
 messaging layer: the in-process bus, `@OnEvent`, source and sink contracts and the BroadcastChannel sink, ported and adapted
 from Figentra OS `@figentra-os/events`. Outbox wiring lands in W4.1 (ADR 0078)."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none
 - **Services touched**: none

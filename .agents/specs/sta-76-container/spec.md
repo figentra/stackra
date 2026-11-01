@@ -14,11 +14,11 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: pending <!-- /speckit.clarify sets this to "complete" when nothing is open -->
+**Clarifications status**: pending <!-- /flow-clarify sets this to "complete" when nothing is open -->
 
 **Input**: User description: "Port `@figentra-os/container` to `packages/foundation/container` as `@stackra/container`, as-is after the Encore plus legacy-decorator spike (roadmap W1.2, ADR 0084, Round 8 F3): WeakMap metadata, @Injectable/@Inject/@Module, createDecorator/createParamDecorator, and scan + plan without instantiating (ADR 0090)."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none
 - **Services touched**: none

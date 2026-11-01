@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Owner, in chat: "we need a better layout for the playground than a sidebar and so on ... we need to make our design system playground amazing and glass", later "use stackra branding all the way with better illustrations, patterns", "we need to update the records to introduce it", "header bad on mobile".
 

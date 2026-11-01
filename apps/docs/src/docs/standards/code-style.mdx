@@ -88,7 +88,7 @@ Repo-owned YAML (`lefthook.yml`, `.github/**`, `.mcp.yaml`, `.agents/*.yaml` and
 - A flow sequence is allowed only for a short list of scalars that fits on one line (`branches: [main]`). Anything longer or nested is a block sequence.
 - A trailing comment stays only when the line is still 100 characters or fewer; otherwise the comment moves to the line above.
 
-Generated and vendored YAML is exempt: `pnpm-lock.yaml`, `pnpm-workspace.yaml` (until STA-300), `.specify/**`, `.agents/skills/**` and `.agents/reference/**`. `pnpm validate` rejects a flow mapping and names the file and line.
+Generated and vendored YAML is exempt: `pnpm-lock.yaml`, `pnpm-workspace.yaml` (until STA-300), `.agents/skills/**` and `.agents/reference/**`. `pnpm validate` rejects a flow mapping and names the file and line.
 
 ## TSDoc
 

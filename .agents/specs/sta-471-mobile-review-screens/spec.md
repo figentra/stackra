@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: The design-system review app in `apps/mobile` has a page for every Pro component and for the waves 1-3 free
 components. The free native components of waves 4 to 7 (overlays, feedback, data display, navigation, layout and the

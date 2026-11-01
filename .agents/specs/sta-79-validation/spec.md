@@ -14,13 +14,13 @@
 
 **Linear project**: Foundation kernel (W1.3, STA-54)
 
-**Clarifications status**: pending <!-- /speckit.clarify sets this to "complete" when nothing is open -->
+**Clarifications status**: pending <!-- /flow-clarify sets this to "complete" when nothing is open -->
 
 **Input**: User description: "Draft the specify-stage spec for `packages/foundation/validation` (roadmap W1.3, STA-79): Laravel-style
 rule decorators and input transforms compiled once per class to one cached Zod object, `X.parse()` returning an instance or
 an STK `ValidationError`, and an output serializer with audiences (ADR 0095)."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none
 - **Services touched**: none

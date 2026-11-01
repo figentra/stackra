@@ -58,7 +58,7 @@ A human approves every release and every production promotion. No agent promotes
 | `mobile-builder`      | `apps/mobile` and EAS profiles                                                                    |
 | `infra-engineer`      | Pulumi components, `runway.yaml`, edge, reusable workflows; previews only                         |
 | `test-engineer`       | Tests at every tier, isolation tests, Playwright with axe, Maestro                                |
-| `spec-writer`         | spec-kit documents for one Linear issue; lists open questions, decides none                       |
+| `spec-writer`         | Flow spec documents for one Linear issue; lists open questions, decides none                      |
 | `secret-manager`      | `pnpm secrets:import` from the secrets inbox; never sees a value                                  |
 
 ### Reviewers (advise)
@@ -101,7 +101,7 @@ Every builder's change goes to `code-reviewer`, then the domain reviewer its cha
 | A mobile screen or EAS profile                                      | `mobile-builder`                                                                                   |
 | Pulumi, `runway.yaml`, workflows                                    | `infra-engineer`, then `release-operations`                                                        |
 | Tests, isolation tests, flaky tests                                 | `test-engineer`                                                                                    |
-| A spec, plan or task list                                           | `spec-writer`, then `/speckit.analyze` and the lead                                                |
+| A spec, plan or task list                                           | `spec-writer`, then `/flow-analyze` and the lead                                                   |
 | Changes an action, event or MCP contract                            | `api-contract-reviewer`                                                                            |
 | Touches auth, secrets, tenancy, payments, files or webhooks         | `security-tenancy-reviewer` (gate)                                                                 |
 | Versions, advisories, licences, skills                              | `dependency-steward`                                                                               |

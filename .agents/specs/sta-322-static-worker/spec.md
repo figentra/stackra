@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: User description: "A small Cloudflare Worker that serves Stackra's hosted static files, starting with the JSON Schemas, from the monorepo, deployed with Wrangler from CI, with immutable versioned paths, a moving latest, CORS for everyone and a token from Infisical /ci over OIDC."
 

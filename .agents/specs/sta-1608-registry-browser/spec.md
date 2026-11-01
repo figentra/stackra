@@ -16,7 +16,7 @@
 our packages as they do on npmjs." The owner chose server-rendered pages with a small inline vanilla script (instant
 search, ajax page swaps, a page progress bar and transitions), the full Stackra theme, and English and Arabic (RTL), with no new dependency (2026-10-29).
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: `workers/registry` (`@figentra/worker-registry`) only
 - **Services touched**: none

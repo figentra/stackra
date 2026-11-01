@@ -21,7 +21,7 @@ The owner then widened it (D6): one smoke step after every preview deploy, for e
 only the playground has Playwright e2e; products' real surfaces have only Runway's production canary verdict, and
 desktop has nothing.
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: `apps/mobile` of the OS repository (the os/mobile@3 line: one Maestro flow and one ready marker);
   the web shells need nothing, the smoke opens their published preview hosts
