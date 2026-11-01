@@ -17,7 +17,7 @@ import { ShortcutRegistryContext } from "#react/shortcut-provider/shortcut-regis
 import type { ShortcutRegistryState } from "#react/shortcut-registry/shortcut-registry-state.type";
 
 /**
- * The registry.
+ * Reads the shortcut registry: the registered actions, the settings, a runner and the conflict check.
  *
  * @example
  * const { actions } = useShortcutRegistry();

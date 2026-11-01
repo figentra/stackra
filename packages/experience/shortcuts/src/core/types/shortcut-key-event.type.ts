@@ -13,8 +13,12 @@ export interface ShortcutKeyEvent {
   readonly code?: string;
   /** The typed key (`k`, `ك`), used only when `code` is unknown. */
   readonly key: string;
+  /** True while Command (or the Windows key) is held. */
   readonly metaKey: boolean;
+  /** True while Control is held. */
   readonly ctrlKey: boolean;
+  /** True while Option (Alt) is held. */
   readonly altKey: boolean;
+  /** True while Shift is held. */
   readonly shiftKey: boolean;
 }

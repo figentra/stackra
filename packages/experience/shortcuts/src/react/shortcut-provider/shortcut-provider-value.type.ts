@@ -10,11 +10,16 @@ import type { ShortcutRegistry } from "#react/shortcut-provider/shortcut-registr
 
 /** What the provider shares. */
 export interface ShortcutProviderValue {
+  /** The registry the provider's hooks register with. */
   readonly registry: ShortcutRegistry;
+  /** The shortcut settings in force. */
   readonly settings: ShortcutSettings;
+  /** True on a Mac, iPhone or iPad, where Mod is Command. */
   readonly apple: boolean;
+  /** True on a right-to-left page, where directional bindings mirror. */
   readonly rtl: boolean;
   /** False for the detached default outside any provider. */
   readonly isMounted: boolean;
+  /** Changes the settings and reports them to the host. */
   readonly setSettings: (settings: ShortcutSettings) => void;
 }

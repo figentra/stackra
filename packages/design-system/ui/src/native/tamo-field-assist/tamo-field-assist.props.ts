@@ -23,6 +23,6 @@ export interface TamoFieldAssistProps {
   readonly isShown: boolean;
   /** True to offer "Continue writing" (a text area). */
   readonly hasContinue?: boolean | undefined;
-  /** The input. */
+  /** The field's input, which the Tamo button sits beside. */
   readonly children: ReactNode;
 }

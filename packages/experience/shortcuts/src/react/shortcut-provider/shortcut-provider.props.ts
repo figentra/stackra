@@ -12,6 +12,7 @@ import type { ShortcutSettings } from "#core/types/shortcut-settings.type";
 
 /** The props of the shortcut provider. */
 export interface ShortcutProviderProps {
+  /** The app the provider listens for shortcuts in. */
   readonly children?: ReactNode;
   /** The settings in force (`resolveShortcutSettings`); controlled when given. */
   readonly settings?: ShortcutSettings | undefined;

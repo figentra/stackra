@@ -12,7 +12,7 @@ import type { TamoStatus } from "#contracts/enums/tamo-status.enum";
 export interface TamoDraftReviewContractProps {
   /** The text as it is now; empty for a first draft. */
   readonly before: string;
-  /** Tamo's draft. */
+  /** The text Tamo drafted, shown beside the text as it is now. */
   readonly after: string;
   /** The task's state: `working` shows the shimmer and Stop, `error` the message and Try again. */
   readonly status?: TamoStatus | undefined;

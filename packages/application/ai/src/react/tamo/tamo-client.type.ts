@@ -13,6 +13,7 @@ import type { TamoRunContext } from "#react/tamo/tamo-run-context.type";
 
 /** Runs Tamo's tasks. */
 export interface TamoClient {
+  /** Runs one Tamo task and resolves with its output; rejects with an `AbortError` when `signal` aborts. */
   readonly run: <K extends keyof TamoTasks>(
     task: K,
     input: TamoTasks[K]["input"],

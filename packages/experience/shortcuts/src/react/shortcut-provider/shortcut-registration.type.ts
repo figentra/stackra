@@ -8,10 +8,11 @@
 import type { ShortcutScope } from "#core/enums/shortcut-scope.enum";
 import type { ShortcutAction } from "#core/types/shortcut-action.type";
 
-/** One registration. */
+/** One action registered with the registry. */
 export interface ShortcutRegistration {
   /** The latest definition (its `run` and `when` change every render). */
   readonly action: () => ShortcutAction | undefined;
+  /** Where the action's key listens. */
   readonly scope: ShortcutScope;
   /** The overlay it belongs to, for the `overlay` scope. */
   readonly overlay: number | null;

@@ -41,7 +41,7 @@ const THINK_MS = 700;
 /** The mark's side in points by size. */
 const PX = { sm: 16, md: 20, lg: 28 } as const;
 
-/** Tamo's mark. */
+/** Draws Tamo's mark, whose eyes scan while Tamo works and go flat on an error. */
 export function TamoMark({
   label,
   status = "idle",

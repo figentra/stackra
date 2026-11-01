@@ -12,10 +12,15 @@ import type { ShortcutScope } from "#core/enums/shortcut-scope.enum";
 
 /** One registered action. */
 export interface RegisteredShortcut {
+  /** The action's stable id, which remaps key on. */
   readonly id: string;
+  /** The words that name the action in lists. */
   readonly label: string;
+  /** The cheat sheet group the action is listed under. */
   readonly group?: string | undefined;
+  /** Where the action's key listens. */
   readonly scope: ShortcutScope;
+  /** The icon a palette shows beside the action. */
   readonly icon?: IconName | undefined;
   /** The binding the action declares, before remaps. */
   readonly defaultKeys?: string | undefined;

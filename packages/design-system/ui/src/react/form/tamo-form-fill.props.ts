@@ -13,7 +13,9 @@ import type { SchemaFormHandle } from "#form/types/schema-form-handle.type";
 
 /** Props of a form's fill-from-text bar. */
 export interface TamoFormFillProps<T extends FieldValues = FieldValues> {
+  /** The slot `useTamo` returned for the form. */
   readonly slot: TamoSlot;
+  /** The form whose fields Tamo fills from the text. */
   readonly form: SchemaFormHandle<T>;
   /** The fields Tamo may fill; left out, the form's plain text inputs and areas, named by their labels. */
   readonly fields?: readonly TamoFieldHint[] | undefined;

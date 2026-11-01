@@ -29,5 +29,6 @@ export interface TamoProviderProps {
   readonly actions?: readonly TamoActionItem[] | undefined;
   /** False to leave out the Ask Tamo panel (a host that draws its own). Defaults to true. */
   readonly hasPanel?: boolean | undefined;
+  /** The app the provider wraps, which can then use Tamo's slots. */
   readonly children: ReactNode;
 }

@@ -20,9 +20,13 @@ export interface ActionShortcutInput {
   readonly label?: string | undefined;
   /** What the key runs: the component's press handler. */
   readonly run?: (() => void) | undefined;
+  /** True to leave the action unregistered, so its key does nothing. */
   readonly isDisabled?: boolean | undefined;
+  /** Where the key listens; `page` by default. */
   readonly scope?: ShortcutScope | undefined;
+  /** The cheat sheet group the action is listed under. */
   readonly group?: string | undefined;
+  /** True when the binding mirrors (Left and Right swap) on a right-to-left page. */
   readonly isDirectional?: boolean | undefined;
   /** False for a control with no room for an inline hint (an icon button): the keys go in its tooltip. */
   readonly canInline?: boolean | undefined;

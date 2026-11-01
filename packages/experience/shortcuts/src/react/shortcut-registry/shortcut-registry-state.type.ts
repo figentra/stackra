@@ -12,8 +12,11 @@ import type { RegisteredShortcut } from "#react/shortcut-provider/registered-sho
 
 /** The registry as a component sees it. */
 export interface ShortcutRegistryState {
+  /** The registered actions, as lists show them. */
   readonly actions: readonly RegisteredShortcut[];
+  /** The shortcut settings in force. */
   readonly settings: ShortcutSettings;
+  /** Changes the settings and reports them to the host. */
   readonly setSettings: (settings: ShortcutSettings) => void;
   /** Runs the registered action `id`; false when none answers. */
   readonly run: (id: string) => boolean;

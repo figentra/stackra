@@ -11,7 +11,9 @@ import type { TamoSlot } from "#contracts/types/tamo-slot.type";
 
 /** Props of the ask-to-filter box of a collection. */
 export interface TamoFilterAskProps<TItem extends CollectionItem = CollectionItem> {
+  /** The slot `useTamo` returned for the filter box. */
   readonly slot: TamoSlot;
+  /** The collection whose filters the proposal sets. */
   readonly collection: CollectionController<TItem>;
   /** Called once the proposal is applied or discarded (a popover closes). */
   readonly onDone?: (() => void) | undefined;

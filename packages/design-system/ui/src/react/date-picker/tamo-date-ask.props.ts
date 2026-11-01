@@ -11,6 +11,7 @@ import type { TamoSlot } from "#contracts/types/tamo-slot.type";
 
 /** Props of the natural-language date box. */
 export interface TamoDateAskProps {
+  /** The slot `useTamo` returned for the date box. */
   readonly slot: TamoSlot;
   /** True for a range ("last month"). */
   readonly isRange: boolean;
