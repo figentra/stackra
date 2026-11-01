@@ -14,7 +14,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { decideEdit, decidePath, decideShell } from "../decide.ts";
-import { UNATTENDED_HINT } from "../../../../.agents/hooks/_rules.mjs";
+import { UNATTENDED_HINT, decideBash } from "../../../../.agents/hooks/_rules.mjs";
 
 const kind = (c: string) => decideShell(c).kind;
 
@@ -888,6 +888,32 @@ test("STA-400 review 3: an executor may read the eas binary's path; running it i
     "./node_modules/.bin/npx tsc",
   ])
     assert.equal(kind(c), "deny", c);
+});
+
+// ADR 0500 (STA-1748): the shared `bot:gh` rules read `figentra bot gh` too; an executor is denied every one.
+test("figentra CLI: an executor is denied the bot:gh writes through `figentra bot gh` in every form", () => {
+  for (const f of [
+    "figentra bot gh",
+    "pnpm exec figentra bot gh",
+    "npx figentra bot gh",
+    "npx @figentra/cli bot gh",
+    "mise exec -- figentra bot gh",
+  ])
+    for (const v of [
+      "pr merge 3",
+      "pr edit 3 --add-label owner-approved",
+      "api graphql -f query='mutation { addLabelsToLabelable(input: {}) { clientMutationId } }'",
+      "release create v1",
+      "repo delete figentra/x --yes",
+      "api graphql -f query='mutation { deleteIssue(input: {}) { clientMutationId } }'",
+      "workflow run deploy.yml",
+      "secret set X",
+    ]) {
+      const c = `${f} ${v}`;
+      assert.equal(kind(c), "deny", c);
+      // the shared rules deny it on their own, before the executor layer's FIGENTRA_LEAD
+      assert.notEqual(decideBash(c, { cwd: process.cwd(), executor: true }).decision, "allow", c);
+    }
 });
 
 // ADR 0500 (STA-1748): the private CLI's forms of the lead's wrappers are the lead's too, bare or after a runner.

@@ -1206,6 +1206,12 @@ function stashRefusal(c, ctx) {
 }
 
 /**
+ * The bot's gh wrapper: `pnpm bot:gh`, or the private CLI's `figentra bot gh` (ADR 0500), bare or after a runner
+ * (`pnpm exec`, `npx`, `npx @figentra/cli`, `mise exec --`). Every `bot:gh` rule below reads both.
+ */
+const BOT_GH = String.raw`(?:\bbot:gh|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+gh)\b`;
+const BOT_GH_WORD = new RegExp(BOT_GH);
+/**
  * `pnpm bot:gh` merging or moving a branch outside `pr:merge`: `pr merge`, `api …/pulls/<n>/merge` (any method),
  * `api repos/<o>/<r>/merges`, and the GraphQL merge, enqueue, commit-on-branch and ref mutations.
  */
@@ -1235,7 +1241,7 @@ const botMerges = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
     segments(t).some(
       (s) =>
-        /\bbot:gh\b/.test(blank(s)) &&
+        BOT_GH_WORD.test(blank(s)) &&
         (MERGE.test(s) || MERGE.test(s.replaceAll(/\S+/g, normalizeWord))),
     ),
   );
@@ -1321,20 +1327,22 @@ const LABEL_MUTATION =
   /\b(?:add|remove|replace|clear)Labels\w*Labelable\b|\b(?:create|update|delete)Label\b/;
 const botLabelMutation = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
-    segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && LABEL_MUTATION.test(s)),
+    segments(t).some((s) => BOT_GH_WORD.test(blank(s)) && LABEL_MUTATION.test(s)),
   );
 /**
  * A `pnpm bot:gh` release or delete: `release create|edit|delete|upload`, `<noun> delete` (`repo`, `variable`,
  * `secret`, `issue`, `label`, `run`, `cache`), and `api` with a `DELETE` method in any spelling (`-X DELETE`,
  * `-X=DELETE`, `-vX DELETE`, `--method=DELETE`). Workflow dispatches are the deploy rules' (`deployTarget`).
  */
-const BOT_GH_RELEASE_DELETE =
-  /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:release\s+(?:create|edit|delete|upload)\b|[\w-]+\s+delete\b|api\b[^|;&\n]*(?:\s-[a-zA-Z]*X(?:=|\s*)DELETE\b|\s--method(?:=|\s+)DELETE\b))/i;
+const BOT_GH_RELEASE_DELETE = new RegExp(
+  String.raw`${BOT_GH}\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:release\s+(?:create|edit|delete|upload)\b|[\w-]+\s+delete\b|api\b[^|;&\n]*(?:\s-[a-zA-Z]*X(?:=|\s*)DELETE\b|\s--method(?:=|\s+)DELETE\b))`,
+  "i",
+);
 /** A GraphQL `delete…` mutation through `pnpm bot:gh` (the query is a quoted value, so the raw text is read). */
 const botGraphqlDelete = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
     segments(t).some(
-      (s) => /\bbot:gh\b/.test(blank(s)) && /\bmutation\b[^]*\bdelete[A-Z]\w*/.test(s),
+      (s) => BOT_GH_WORD.test(blank(s)) && /\bmutation\b[^]*\bdelete[A-Z]\w*/.test(s),
     ),
   );
 /**
@@ -1568,8 +1576,9 @@ const STACKRA_DEPLOY = /\bstackra\s+(?:--\s+)?deploy\b(?![^|;&\n]*--dry-run)/;
  * `gh` or `pnpm bot:gh` dispatching a workflow: `workflow run <file>` or `api … /dispatches` (raw text: the fields are
  * quoted values).
  */
-const WORKFLOW_DISPATCH =
-  /(?:\bbot:gh\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:workflow\s+run\b|api\b[^|;&\n]*\/dispatches\b)/;
+const WORKFLOW_DISPATCH = new RegExp(
+  String.raw`(?:${BOT_GH}\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:workflow\s+run\b|api\b[^|;&\n]*\/dispatches\b)`,
+);
 /** The only role that may start a deploy (owner decision 2026-10-31); its session's settings set `STACKRA_ROLE`. */
 export const DEPLOY_ROLE = "qa-release";
 /** Environments a deploy reaches without asking the owner (owner decision 2026-10-31); any other one is production. */
@@ -1633,7 +1642,9 @@ const PRODUCTION_FORBIDDEN = [
     CLI("wrangler") + String.raw`(?:r2\s+object|kv\s+(?:key|bulk))\s+delete\b(?![^|;&\n]*--local)`,
   ),
   /\bdns_records\b|\bflarectl\s+dns\b/,
-  /(?:\bbot:gh\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?secret\s+(?:set|delete)\b/,
+  new RegExp(
+    String.raw`(?:${BOT_GH}\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?secret\s+(?:set|delete)\b`,
+  ),
 ];
 /**
  * The rules, in order. A rule denies unless it says `decision: "ask"`; any deny wins over any ask. `rx` is a regex
@@ -2024,7 +2035,7 @@ const RULES = [
       [dropMessages(c), ...runnable(c)].some((t) =>
         segments(t).some(
           (s) =>
-            /\bbot:gh\b/.test(blank(s)) &&
+            BOT_GH_WORD.test(blank(s)) &&
             (/\balias\s+(?:set|import|delete)\b/.test(s) ||
               (/\bapi\s+(?:-\S+\s+)*graphql\b/.test(s) && /=@|--input\b|\$\(|`/.test(s))),
         ),

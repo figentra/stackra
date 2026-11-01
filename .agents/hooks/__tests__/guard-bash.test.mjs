@@ -1299,6 +1299,41 @@ for (const c of [
   "figentra secrets import --list; cat /proc/self/cmdline",
 ])
   test(`deny (STA-303, figentra CLI): ${c}`, () => assert.equal(decision(c), "deny"));
+// The `bot:gh` rules read `figentra bot gh` too (merge, label writes, release and delete, GraphQL, workflow dispatch,
+// secret set), bare and after each runner, with the decision the `pnpm bot:gh` form gets.
+const BOT_GH_GUARDED = [
+  "pr merge 3",
+  "api -X PUT repos/figentra/stackra/pulls/12/merge",
+  "pr edit 3 --add-label owner-approved",
+  "api graphql -f query='mutation { addLabelsToLabelable(input: {}) { clientMutationId } }'",
+  "api graphql -f query='mutation { mergePullRequest(input: {}) { clientMutationId } }'",
+  "release create v1",
+  "repo delete figentra/x --yes",
+  "variable delete X",
+  "api -X DELETE repos/figentra/stackra/git/refs/tags/x",
+  "api graphql -f query='mutation { deleteIssue(input: {issueId: \"x\"}) { clientMutationId } }'",
+  "api graphql -F query=@q.graphql",
+  "workflow run deploy-static.yml -f environment=staging",
+  "api -X POST repos/figentra/stackra/actions/workflows/deploy.yml/dispatches -f ref=main",
+  "secret set X",
+];
+const FIGENTRA_BOT_GH = [
+  "figentra bot gh",
+  "figentra bot gh --",
+  "pnpm exec figentra bot gh",
+  "npx figentra bot gh",
+  "npx @figentra/cli bot gh",
+  "mise exec -- figentra bot gh",
+];
+for (const v of BOT_GH_GUARDED)
+  test(`figentra CLI: \`bot gh ${v}\` gets the \`pnpm bot:gh\` decision in every form`, () => {
+    const want = decision(`pnpm bot:gh -- ${v}`, root);
+    assert.notEqual(want, "allow", v);
+    for (const f of FIGENTRA_BOT_GH) assert.equal(decision(`${f} ${v}`, root), want, `${f} ${v}`);
+  });
+test("figentra CLI: a read through `figentra bot gh` stays allowed", () => {
+  for (const f of FIGENTRA_BOT_GH) assert.equal(decision(`${f} pr view 1`, root), "allow", f);
+});
 test("figentra CLI: the settings floor denies secrets import and bot token when the hook fails open", async () => {
   const { readFile } = await import("node:fs/promises");
   const { deny } = JSON.parse(await readFile(join(root, ".claude", "settings.json"), "utf8")).permissions;
