@@ -5,7 +5,7 @@
  *          generated Encore database hands `provideDatabaseUrl` (STA-1652), and `DatabaseUnitOfWorkDriver`, the
  *          action pipeline's unit of work on it, and `DatabaseReplicaReadsDriver`, its replica reads (STA-1504); the
  *          durable Postgres drivers of `@stackra/actions`' idempotency and rate-limit ports; `ServiceHoldRegistryDriver`,
- *          the `HoldRegistry` every service binds over its `HoldChannel`; `DatabaseRunner` and the four `db:*` commands (`DbMigrateCommand`, `DbRollbackCommand`, `DbStatusCommand`, `DbSeedCommand`, STA-1731); `migrate` and `rollback`, the runner
+ *          the `HoldRegistry` every service binds over its `HoldChannel`; `DatabaseRunner`, the three `db:*` commands (`DbMigrateCommand`, `DbRollbackCommand`, `DbStatusCommand`, STA-1731) and `SeedPackStatusCommand` (`seed-pack:status`, STA-1852); `migrate` and `rollback`, the runner
  *          `stackra db` calls; `seedState` and `applySeed`, the runner `stackra seed-pack` calls; `runSeeders`,
  *          `runSeedEntry` and `seederLedger`, the seeder runner a service's generated seed entry calls (STA-1709);
  *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `PrimaryConnectionResolverDriver`, the free one-pool
@@ -22,8 +22,8 @@
 export { DatabaseRunner } from "#node/services/database-runner.service";
 export { DbMigrateCommand } from "#node/commands/db-migrate.command";
 export { DbRollbackCommand } from "#node/commands/db-rollback.command";
-export { DbSeedCommand } from "#node/commands/db-seed.command";
 export { DbStatusCommand } from "#node/commands/db-status.command";
+export { SeedPackStatusCommand } from "#node/commands/seed-pack-status.command";
 export { DatabaseHealthIndicatorDriver } from "#node/drivers/database-health-indicator.driver";
 export { DatabaseQueryBudgetDriver } from "#node/drivers/database-query-budget.driver";
 export { DatabaseReplicaReadsDriver } from "#node/drivers/database-replica-reads.driver";
