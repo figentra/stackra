@@ -76,6 +76,7 @@ export type { Party } from "#core/types/party.type";
 export type { FieldDecorator } from "#core/types/field-decorator.type";
 export type { TranslatedStrings } from "#core/types/translated-strings.type";
 export type { Fields } from "#core/types/fields.type";
+export type { InputFields } from "#core/types/input-fields.type";
 export type { Same } from "#core/types/same.type";
 export type { ShapeClass } from "#core/types/shape-class.type";
 export type { VisibleOptions } from "#core/types/visible-options.type";

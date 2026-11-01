@@ -31,6 +31,12 @@ import type { Fields } from "#core/types/fields.type";
  * const input = RedeemPointsInput.create({ memberId, points: 100 });
  */
 export abstract class Schema {
+  /**
+   * Type-only: the names of the fields with an initializer. Gen narrows it per class by a module augmentation, so
+   * `InputFields` (and `CallInput`) make those fields optional; never present at runtime, and `Fields` ignores it.
+   */
+  declare readonly "~defaults"?: string;
+
   /** Type-only: never present at runtime. */
   declare protected readonly "~kind": "schema";
 

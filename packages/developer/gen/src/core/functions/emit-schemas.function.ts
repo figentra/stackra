@@ -17,6 +17,8 @@
  *           source uses, and a nullable field is `.nullable()` once, even when the hatch already says it (STA-1293). A
  *           form over a consumed shape of `#stackra/clients/<service>` extends that class's `schema` static (aliased
  *           `Remote<Name>`), picked, omitted or made partial first when it derives from it (STA-1363).
+ *          A shape with initializers also gets a `declare module "<its import path>"` augmentation naming them in the
+ *          type-only `~defaults` brand, so `CallInput` makes them optional (STA-1694).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1;
  *                     ADR 0162 (decision 2); ADR 0222 (decision 2); ADR 0260 (decision 2: remote shapes); STA-1365
@@ -316,6 +318,19 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
       ? `Omit<z.output<typeof ${shape.name}$>, ${quotedKeys(drivers)}>`
       : `z.output<typeof ${shape.name}$>`;
   lines.push(`export type ${shape.name}$Check = Assert<Same<${output}, ${fields}>>;`, "");
+  // A type cannot see an initializer: tell it which fields are defaulted, so `CallInput` makes them optional (STA-1694).
+  const defaulted = shape.fields.filter((field) => field.default !== undefined);
+  if (shape.kind !== "config" && defaulted.length > 0)
+    lines.splice(
+      -1,
+      0,
+      `declare module ${JSON.stringify(shape.importPath)} {`,
+      `  interface ${shape.name} {`,
+      `    readonly "~defaults"?: ${defaulted.map((field) => JSON.stringify(field.name)).join(" | ")};`,
+      "  }",
+      "}",
+      "",
+    );
   return lines;
 }
 

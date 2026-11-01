@@ -8,9 +8,13 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 26); ADR 0095 as amended.
  */
-import type { Fields } from "@stackra/validation";
+import type { InputFields } from "@stackra/validation";
 
 import type { InputOf } from "#core/types/input-of.type";
 
-/** The input data a caller passes to an action or query instance type `T`. */
-export type CallInput<T> = Fields<InputOf<T>>;
+/**
+ * The input data a caller passes to an action or query instance type `T`: what the schema's parse accepts, so a field
+ * with an initializer is optional (gen lists them in the class's `~defaults`; until generated, all are required).
+ * Inside `handle` the input is the full class, `InputOf<T>`, with the defaults filled.
+ */
+export type CallInput<T> = InputFields<InputOf<T>>;

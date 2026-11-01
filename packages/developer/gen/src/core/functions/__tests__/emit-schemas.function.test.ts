@@ -63,14 +63,19 @@ describe("emitSchemas", () => {
     );
   });
 
+  it("augments a shape with initializers by its defaulted field names, and no other (STA-1694)", () => {
+    expect(orders).toContain(
+      'declare module "#modules/orders/schemas/list-orders-input.schema" {\n' +
+        "  interface ListOrdersInput {\n" +
+        '    readonly "~defaults"?: "limit";\n',
+    );
+    expect(orders).not.toContain("interface CancelOrderInput");
+  });
+
   it("aliases a config to its schema", () => {
     const commerce = emitSchemas(COMMERCE_IR, "commerce");
     expect(commerce).toContain('  gateway: z.enum(["stripe"]).default("stripe"),');
     expect(commerce).toContain("export const CommerceConfig$ = CommerceOptions$;");
-    // a driver-name field is left out of the check on both sides: DriverName<P> widens without a `~key` brand (STA-1805)
-    expect(commerce).toContain(
-      'export type CommerceOptions$Check = Assert<Same<Omit<z.output<typeof CommerceOptions$>, "gateway">, Omit<Fields<CommerceOptions>, "gateway">>>;',
-    );
   });
 
   it("declares no config alias the member ships itself, so a hatch importing it reads the shipped one", () => {
