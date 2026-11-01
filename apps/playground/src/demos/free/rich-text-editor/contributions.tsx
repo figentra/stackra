@@ -9,8 +9,9 @@
  *          ADR 0350 (UI slots); STA-1371.
  */
 import type { Editor } from "@tiptap/core";
-import type { RichTextContribution } from "@stackra/ui/react";
-import { RichTextEditor, Text, useCatalogueText } from "@stackra/ui/react";
+import type { RichTextContribution } from "@stackra/ui/rich-text";
+import { Text, useCatalogueText } from "@stackra/ui/react";
+import { RichTextEditor } from "@stackra/ui/rich-text";
 import { Icons } from "#src/constants/icons.constant";
 import { MESSAGES } from "#src/constants/messages.constant";
 import { RICH_TEXT_EDITOR_KEYS } from "#src/demos/free/rich-text-editor/rich-text-editor-keys.constant";
