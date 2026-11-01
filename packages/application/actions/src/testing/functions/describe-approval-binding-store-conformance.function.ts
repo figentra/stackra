@@ -3,7 +3,7 @@
  * Purpose: `describeApprovalBindingStoreConformance(name, make)`, the port conformance suite of `ApprovalBindingStore`:
  *          insert then find returns every field, an unknown id finds nothing, a second insert of an id rejects (the row
  *          is never replaced), and the prune deletes only bindings that expired before the cutoff.
- * Boundary: test support. The memory driver runs it here; `@stackra/tenancy`'s Postgres driver runs it against a real
+ * Boundary: test support. Every binding is of the tenant `scp_01j9z3k4m5n6p7q8r9s0t1v2a1`, so a driver over row-level security wraps its calls in that tenant's isolation run. The memory driver runs it here; `@stackra/tenancy`'s Postgres driver runs it against a real
  *           database in its integration tests.
  * Runtime: node
  * Governing contract: ADR 0509 (the binding is insert-only, N7); ADR 0269; STA-1724 FR-007.
@@ -17,20 +17,23 @@ import type { ApprovalBinding } from "#contracts/types/approval-binding.type";
 
 const APPROVE = "billing.coupon.approve";
 
+/** The tenant of every binding the suite inserts; a driver over a real database runs as this tenant. */
+const SCOPE_ID = "scp_01j9z3k4m5n6p7q8r9s0t1v2a1";
+
 /** A binding with a fresh id that expires at `expiresAt`. */
 function bindingOf(expiresAt: Date): ApprovalBinding {
   return {
     approvalId: mintPublicId("apr"),
-    scopeId: "tnt_01j9z3k4m5n6p7q8r9s0t1v2w3",
+    scopeId: SCOPE_ID,
     requester: {
       kind: ActorKind.Agent,
       id: "agt_01j9z3k4m5n6p7q8r9s0t1v2w5",
-      scopeId: "tnt_01j9z3k4m5n6p7q8r9s0t1v2w3",
+      scopeId: SCOPE_ID,
       onBehalfOf: {
         kind: ActorKind.User,
         id: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
         realm: Realm.Staff,
-        scopeId: "tnt_01j9z3k4m5n6p7q8r9s0t1v2w3",
+        scopeId: SCOPE_ID,
       },
     },
     key: "billing.coupon.update@1",
