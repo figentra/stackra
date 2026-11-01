@@ -48,6 +48,13 @@ describe("@stackra/actions", () => {
       "Action",
       "ActionPipeline",
       "AnalyticsTracked",
+      "ApprovalCondition",
+      "ApprovalConsumedError",
+      "ApprovalExpiredError",
+      "ApprovalIdentityUnavailableError",
+      "ApprovalMismatchError",
+      "ApprovalNotGrantedError",
+      "ApprovalPendingLimitError",
       "ApprovalRequiredError",
       "AuditEntryRecorded",
       "CacheScope",
@@ -90,11 +97,14 @@ describe("@stackra/actions", () => {
       "approverRefusal",
       "connectExtensions",
       "isRawBody",
+      "limitedSettingsReader",
+      "mergeApprovalRequirements",
       "rawBody",
       "registerActions",
       "registerCachedQueries",
       "registerExtensions",
       "requestCallOptions",
+      "verifyApproval",
     ]);
     expect("IdempotencyStore" in actions).toBe(false);
     expect("AsyncContextStorageDriver" in actions).toBe(false);

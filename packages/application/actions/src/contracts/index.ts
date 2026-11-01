@@ -8,12 +8,16 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { CALL_HEADERS } from "#contracts/constants/call-headers.constant";
+export { ApprovalExecution } from "#contracts/enums/approval-execution.enum";
+export { ApprovalStatus } from "#contracts/enums/approval-status.enum";
 export { ApproverRefusal } from "#contracts/enums/approver-refusal.enum";
 export { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
 export { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 export { Effect } from "#contracts/enums/effect.enum";
 export { ReviewReason } from "#contracts/enums/review-reason.enum";
 export { AccessControl } from "#contracts/ports/access-control.port";
+export { ActorStatusCheck } from "#contracts/ports/actor-status-check.port";
+export { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 export { ApprovalGate } from "#contracts/ports/approval-gate.port";
 export { AuditTrail } from "#contracts/ports/audit-trail.port";
 export { CallIsolation } from "#contracts/ports/call-isolation.port";
@@ -39,6 +43,12 @@ export { StepUpCheck } from "#contracts/ports/step-up-check.port";
 export { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 export { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 export { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
+export type { ApprovalBinding } from "#contracts/types/approval-binding.type";
+export type { ApprovalDraft } from "#contracts/types/approval-draft.type";
+export type { ApprovalOutcome } from "#contracts/types/approval-outcome.type";
+export type { ApprovalRecord } from "#contracts/types/approval-record.type";
+export type { ApprovalRequirement } from "#contracts/types/approval-requirement.type";
+export type { ApprovalVote } from "#contracts/types/approval-vote.type";
 export type { Approver } from "#contracts/types/approver.type";
 export type { ApproverRule } from "#contracts/types/approver-rule.type";
 export type { AuditEntry } from "#contracts/types/audit-entry.type";
