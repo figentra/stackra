@@ -323,12 +323,12 @@ Figentra Flow is MIT, so it cannot publish to `@figentra`, which is `internal` w
 added an open scope for Figentra's open products (migration `0005_figentra_oss.sql`); this amendment is the ADR decision
 10 asks for before another scope is added. The scope rows are now:
 
-| Scope           | Read rule  | Licence rule  | Trusted publishers (environment)                                     |
-| --------------- | ---------- | ------------- | -------------------------------------------------------------------- |
-| `@stackra`      | `open`     | `open-source` | `figentra/stackra` (`release`)                                       |
-| `@stackra-pro`  | `licensed` | `commercial`  | `figentra/stackra-pro` (`release`)                                   |
-| `@figentra`     | `internal` | `commercial`  | `figentra/brand` (`brand-registry`), `figentra/commerce` (`release`) |
-| `@figentra-oss` | `open`     | `open-source` | `figentra/flow` (`release`)                                          |
+| Scope           | Read rule  | Licence rule  | Trusted publishers (environment)                                                                |
+| --------------- | ---------- | ------------- | ----------------------------------------------------------------------------------------------- |
+| `@stackra`      | `open`     | `open-source` | `figentra/stackra` (`release`)                                                                  |
+| `@stackra-pro`  | `licensed` | `commercial`  | `figentra/stackra-pro` (`release`)                                                              |
+| `@figentra`     | `internal` | `commercial`  | `figentra/brand` (`brand-registry`), `figentra/commerce` (`release`), `figentra/os` (`release`) |
+| `@figentra-oss` | `open`     | `open-source` | `figentra/flow` (`release`)                                                                     |
 
 Every publisher uses `.github/workflows/release.yml` on `refs/heads/main` and is matched on its numeric repository and
 owner ids (decision 6).
