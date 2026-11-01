@@ -72,6 +72,7 @@ import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 import { emitQueues } from "#core/functions/emit-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
+import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { emitI18n } from "#core/functions/emit-i18n.function";
 import { emitMemberModule } from "#core/functions/emit-member-module.function";
 import { emitPackageEntries } from "#core/functions/emit-package-entries.function";
@@ -208,6 +209,7 @@ export function generateMember(
     if (entities !== undefined)
       files.push({ path: `.stackra/gen/entities/${module}.ts`, content: entities });
   }
+  files.push(...emitHostedEntities(ir));
   // A member off the container (`@stackra/testing`, rule 6c) has nothing to wire and no module (STA-1365 item 8).
   const container = usesContainer(ir);
   if (container) files.push({ path: ".stackra/gen/wiring.ts", content: emitWiring(ir) });

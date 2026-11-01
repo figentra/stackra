@@ -68,6 +68,7 @@ import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { eventName } from "#core/functions/event-name.function";
 import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
+import { modelEntityFacts } from "#core/functions/model-entity-facts.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
@@ -456,6 +457,12 @@ export function buildManifest(ir: MemberIR): {
   const hostedKeys = new Map<string, string>();
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "model")) {
     const key = modelKey(declared.module, declared.name);
+    const shape = ir.shapes.find(
+      (candidate) =>
+        candidate.kind === "model" &&
+        candidate.name === declared.name &&
+        candidate.module === declared.module,
+    );
     claim(key, declared);
     const publicId = declared.traits.find((trait) => trait.name === "HasPublicId")?.args[0];
     let hosts: string | undefined;
@@ -507,6 +514,8 @@ export function buildManifest(ir: MemberIR): {
       ...(declared.facets.some((facet) => facet.name === "Searchable" && facet.target === "class")
         ? { searchable: true }
         : {}),
+      // What a hosting service writes this model's EntitySchema from (STA-1667).
+      ...(shape === undefined ? {} : { entity: jsonOf(modelEntityFacts(shape)) }),
     });
   }
   if (ir.layout !== "package")
