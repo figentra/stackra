@@ -1,6 +1,6 @@
 # AGENTS — @stackra/renderers
 
-The renderer layer shared by Stackra and Vellum (ADR 0286 decision 6). Member at `packages/developer/renderers`
+The renderer layer shared by Stackra and Figentra Flow (ADR 0286 decision 6). Member at `packages/developer/renderers`
 (`tier:lib`), in the programming model v3.1 shape (ADR 0294). One entry, `.`.
 
 ## Where code goes
@@ -19,7 +19,7 @@ The renderer layer shared by Stackra and Vellum (ADR 0286 decision 6). Member at
   `render-assistant.function.ts`; a document an assistant cannot take is skipped with a reason, never dropped.
 - `renderAssistant` is the one public function; the per-assistant renderers stay internal. Add every public file to
   `src/core/index.ts` and to `src/core/__tests__/index.test.ts`.
-- The input types come from `@stackra/skills`; a change to them must keep Vellum working (ADR 0286 consequences).
+- The input types come from `@stackra/skills`; a change to them must keep Figentra Flow working (ADR 0286 consequences).
 
 ## PII
 

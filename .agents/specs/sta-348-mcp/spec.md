@@ -107,7 +107,7 @@ The package follows the v3.1 registry row and the owner decisions of 2026-10-24 
 - The `stackra` binary and its argument parsing: `@stackra/cli`.
 - The hosted mode (`mcp.stackra.figentra.com`, OAuth, read-only docs and project data) and its approval-gated writes:
   a separate deployment.
-- Read-only spec status (ADR 0282 decision 15): waits for the CLI's `spec` command (Vellum, STA-298).
+- Read-only spec status (ADR 0282 decision 15): waits for the CLI's `spec` command (Figentra Flow, STA-298).
 - Rendering `.mcp.yaml` for tools other than Claude Code: `stackra agents setup` with `@stackra/renderers`.
 
 ## Status history

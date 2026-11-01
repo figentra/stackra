@@ -6,7 +6,8 @@
  * Boundary: internal; pure. Paths are relative to `.kiro/` or `~/.kiro/`. Commands and hooks are skipped: Kiro has no
  *           command file, and its hooks run on IDE events the neutral events do not map to.
  * Runtime: isomorphic
- * Governing contract: ADR 0282 (decision 2); ADR 0286 (decisions 6 and 16: ported from Vellum, Kiro untested).
+ * Governing contract: ADR 0282 (decision 2); ADR 0286 (decisions 6 and 16:
+ *                     ported from Figentra Flow, Kiro untested).
  */
 import type { AgentDocument, RuleDocument } from "@stackra/skills";
 

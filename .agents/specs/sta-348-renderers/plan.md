@@ -5,10 +5,10 @@
 ## Approach
 
 - Port the assistant dialects of `@vellum/renderers` (Claude Code, Kiro and OpenCode frontmatter, the Kiro tool table,
-  the OpenCode derived denies) and add Cursor and `AGENTS.md` (ADR 0282 decision 2). Leave Vellum's engine renderers
-  in Vellum.
+  the OpenCode derived denies) and add Cursor and `AGENTS.md` (ADR 0282 decision 2). Leave Figentra Flow's engine renderers
+  in Figentra Flow.
 - Input is `AgentDocument` from `@stackra/skills` (already parsed and validated there), so this package re-parses
-  nothing; its own frontmatter parser and `parseNeutralAgent` are not ported. Vellum's model tiers, permissions and
+  nothing; its own frontmatter parser and `parseNeutralAgent` are not ported. Figentra Flow's model tiers, permissions and
   skill references are not in the neutral format (sub-agents name no model), so they are not ported either.
 - YAML is written with `yaml` (`lineWidth: 0`); Cursor's `globs` line is written by hand in Cursor's own unquoted form.
 - One public function, `renderAssistant`, dispatches through a `Record<Assistant, …>` map, sorts by path and refuses
@@ -34,9 +34,9 @@ packages/developer/renderers/
 
 ## Risks
 
-- The OpenCode agent `permissions` list follows the Vellum port (OpenCode's V2 agent docs), which the Vellum spike
+- The OpenCode agent `permissions` list follows the Figentra Flow port (OpenCode's V2 agent docs), which the Figentra Flow spike
   tests; Kiro and Cursor are untested (ADR 0286 decision 16).
-- The input types come from `@stackra/skills`, built in the same wave; a change there must keep this package and Vellum
+- The input types come from `@stackra/skills`, built in the same wave; a change there must keep this package and Figentra Flow
   working.
 
 ## Constitution Check

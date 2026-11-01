@@ -99,7 +99,7 @@ describe("NEW_COMMAND", () => {
   });
 
   it("names a service from the root runway product key, in the template shape", async () => {
-    writeFileSync(join(root, "runway.yaml"), "version: 3\nproduct:\n  key: beautilon\n");
+    writeFileSync(join(root, "runway.yaml"), "version: 3\nproduct:\n  key: velora\n");
     writeFileSync(
       join(root, "pnpm-workspace.yaml"),
       "packages: []\ncatalogs:\n  stackra:\n    '@stackra/contracts': 0.1.0\n",
@@ -111,7 +111,7 @@ describe("NEW_COMMAND", () => {
       exports: Record<string, unknown>;
       dependencies: Record<string, string>;
     };
-    expect(pkg.name).toBe("@figentra/beautilon-service-salon");
+    expect(pkg.name).toBe("@figentra/velora-service-salon");
     expect(pkg.dependencies["@stackra/contracts"]).toBe("catalog:stackra");
     // gen's server entry and Encore app import @stackra/app and @stackra/container; gen refuses them undeclared.
     expect(pkg.dependencies["@stackra/app"]).toBe("catalog:stackra");

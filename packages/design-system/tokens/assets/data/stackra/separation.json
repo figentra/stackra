@@ -1,5 +1,5 @@
 {
-  "rule": "Accent Separation, as the engine defines it (core/color/separation.mjs): separated when hueDelta >= 25 deg OR lightnessDelta >= 0.1 (oklch). Stackra's subjects (accent, link, focus) are achromatic (chroma < 0.02), so a row that fails both deltas is still separated by chroma and says so in its note. Compared: the shared status colours, the amber cursor, and the family accents read from their owners (Figentra OS cyan, Academorix volt, Vellum violet; scripts/lib/family.mjs).",
+  "rule": "Accent Separation, as the engine defines it (core/color/separation.mjs): separated when hueDelta >= 25 deg OR lightnessDelta >= 0.1 (oklch). Stackra's subjects (accent, link, focus) are achromatic (chroma < 0.02), so a row that fails both deltas is still separated by chroma and says so in its note. Compared: the shared status colours, the amber cursor, and the family accents read from their owners (Figentra OS cyan, Academorix volt, Figentra Flow violet; scripts/lib/family.mjs).",
   "neutrality": [
     {
       "theme": "base",
@@ -215,7 +215,7 @@
       "subject": "accent",
       "compared": "vellum:violet-deep",
       "group": "family",
-      "brand": "Vellum (Ink violet, PROPOSED)",
+      "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 54,
       "lightnessDelta": 0.322,
       "chroma": {
@@ -324,7 +324,7 @@
       "subject": "link",
       "compared": "vellum:violet-deep",
       "group": "family",
-      "brand": "Vellum (Ink violet, PROPOSED)",
+      "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 54,
       "lightnessDelta": 0.322,
       "chroma": {
@@ -433,7 +433,7 @@
       "subject": "focus",
       "compared": "vellum:violet-deep",
       "group": "family",
-      "brand": "Vellum (Ink violet, PROPOSED)",
+      "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 54,
       "lightnessDelta": 0.322,
       "chroma": {
@@ -543,7 +543,7 @@
       "subject": "accent",
       "compared": "vellum:violet",
       "group": "family",
-      "brand": "Vellum (Ink violet, PROPOSED)",
+      "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 180,
       "lightnessDelta": 0.252,
       "chroma": {
@@ -653,7 +653,7 @@
       "subject": "link",
       "compared": "vellum:violet",
       "group": "family",
-      "brand": "Vellum (Ink violet, PROPOSED)",
+      "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 180,
       "lightnessDelta": 0.252,
       "chroma": {
@@ -763,7 +763,7 @@
       "subject": "focus",
       "compared": "vellum:violet",
       "group": "family",
-      "brand": "Vellum (Ink violet, PROPOSED)",
+      "brand": "Figentra Flow (Ink violet, PROPOSED)",
       "hueDelta": 180,
       "lightnessDelta": 0.252,
       "chroma": {
