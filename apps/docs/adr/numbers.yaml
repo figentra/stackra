@@ -1500,3 +1500,15 @@
   slug: every-action-is-shortcut-aware
   status: proposed
   owner: c6 design system (feat/c6-shortcuts)
+"0509":
+  slug: the-approval-stage-a-declared-floor-of-distinct-approvers-checked-in-core-executed-as-the-requester
+  status: reserved
+  issue: STA-1724
+"0510":
+  slug: flow-replaces-spec-kit
+  status: reserved
+  issue: STA-1729
+"0511":
+  slug: cross-repo-service-contracts-and-cross-app-events
+  status: reserved
+  issue: STA-1821
