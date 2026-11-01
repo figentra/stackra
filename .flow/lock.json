@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.1.0",
   "preset": "stackra",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "20e49febcf17bc47a31abb12e53894c0ff65b6fa755605b12a2f6b2ade66bca1",
