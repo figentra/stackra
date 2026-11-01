@@ -15,6 +15,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decisions 2 to 6); ADR 0263 (a class is its own token).
  */
+import type { Json } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
@@ -106,7 +107,10 @@ describe("emitClients", () => {
   it("leaves out an enum's schema constant that nothing reads (STA-1751)", () => {
     const producer = {
       ...PRODUCER,
-      schemas: { ...PRODUCER.schemas, "orders.Unread": { type: "string", enum: ["a", "b"] } },
+      schemas: {
+        ...(PRODUCER.schemas as Readonly<Record<string, Json>>),
+        "orders.Unread": { type: "string", enum: ["a", "b"] },
+      },
     };
     const unread =
       emitClients(consumer({ services: [{ member: "commerce", manifest: producer }] })).files[0]
