@@ -255,6 +255,25 @@
       }
     },
     {
+      "port": "ListenerAuditTrail",
+      "key": "events.ListenerAuditTrail",
+      "candidates": ["outbox"],
+      "classes": {
+        "outbox": {
+          "class": "OutboxListenerAuditTrailDriver",
+          "from": "@stackra/actions",
+          "deps": [
+            {
+              "class": {
+                "name": "EventOutbox",
+                "from": "@stackra/events/contracts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "port": "ContextStorage",
       "key": "actions.ContextStorage",
       "candidates": ["async"],

@@ -8,6 +8,8 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { EventOutbox } from "#contracts/ports/event-outbox.port";
+export { ListenerAuditTrail } from "#contracts/ports/listener-audit-trail.port";
 export { RegionBus } from "#contracts/ports/region-bus.port";
 export type { EventMeta } from "#contracts/types/event-meta.type";
+export type { ListenerAuditEntry } from "#contracts/types/listener-audit-entry.type";
 export type { RecordedEvent } from "#contracts/types/recorded-event.type";
