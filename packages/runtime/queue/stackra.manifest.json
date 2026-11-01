@@ -16,6 +16,13 @@
   "permissions": [],
   "errors": [
     {
+      "code": "job_isolation_missing",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "queue",
+      "class": "JobIsolationMissingError"
+    },
+    {
       "code": "job_not_due",
       "kind": "unavailable",
       "category": "unavailable",
@@ -28,6 +35,13 @@
       "category": "unavailable",
       "module": "queue",
       "class": "JobTimedOutError"
+    },
+    {
+      "code": "scope_not_platform_written",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "queue",
+      "class": "ScopeNotPlatformWrittenError"
     },
     {
       "code": "unknown_job",

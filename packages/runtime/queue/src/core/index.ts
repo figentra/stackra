@@ -24,9 +24,13 @@ export { QueueHealthIndicatorDriver } from "#core/drivers/queue-health-indicator
 export { QueueJobDispatcherDriver } from "#core/drivers/queue-job-dispatcher.driver";
 export { TopicBrokerPublisherDriver } from "#core/drivers/topic-broker-publisher.driver";
 export { JobOutcome } from "#core/enums/job-outcome.enum";
+export { JobIsolationMissingError } from "#core/errors/job-isolation-missing.error";
 export { JobNotDueError } from "#core/errors/job-not-due.error";
 export { JobTimedOutError } from "#core/errors/job-timed-out.error";
+export { ScopeNotPlatformWrittenError } from "#core/errors/scope-not-platform-written.error";
 export { UnknownJobError } from "#core/errors/unknown-job.error";
+export { assertPlatformScope } from "#core/functions/assert-platform-scope.function";
+export { callerScopeOf } from "#core/functions/caller-scope-of.function";
 export { queues } from "#core/functions/queues.function";
 export { registerBrokerTopics } from "#core/functions/register-broker-topics.function";
 export { registerJobs } from "#core/functions/register-jobs.function";

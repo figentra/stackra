@@ -79,7 +79,8 @@ describe(asTenant, () => {
       await expect(
         asTenant(scope.id as never, async () => 42, { scope, readOnly: true }),
       ).resolves.toBe(42);
-      expect(scopes).toEqual([scope]);
+      // the driver's tenant check reads the tree in a session over the path's root label, then the call's own scope
+      expect(scopes).toEqual([{ id: scope.id, path: "platform" }, scope]);
       expect(transactions[0]).toEqual({ readOnly: true });
     } finally {
       restore();

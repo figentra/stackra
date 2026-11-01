@@ -107,6 +107,33 @@ running transaction with such a store bound (`idempotency_store_not_transactiona
 run; a deployment whose calls join outer transactions binds the Postgres store. Test: `postgres-idempotency-store.driver.int.test.ts` forces the outer commit
 to fail with a deferred constraint and claims the key again.
 
+## Note 2026-11-01: a job's tenant comes from its platform-written scope (decision 2)
+
+Owner approval, 2026-11-01 (STA-1823). Decision 2 said a scope that is not a tenant's matches no tenant row, so it
+fails closed. That rule is reversed for platform-written scopes. Failing closed there was wrong data, not safety: a job
+pushed with `{ scope }` and no origin (segments, webhook delivery, search maintenance, a dead-letter hook) ran with
+`app.tenant_id = ''` and saw zero rows, and a schedule stored in a branch scope got the branch id as its tenant, which
+is no tenant either. Neither leaked anything and both returned silently empty results.
+
+The rule now, in `CallIsolationDriver` (`@stackra/tenancy`), for a single scope:
+
+1. A `job` or `system` actor takes the tenant its scope belongs to, read from the `ScopeTree` with `tenantOf`; a branch
+   resolves to its parent tenant, whatever `actor.scopeId` says. This is safe because the scope of a job or a schedule
+   is written by the platform and never comes from client input (ADR 0098, ADR 0327 decision 7); `QueueService` refuses
+   a pushed scope that is not shaped like a `ScopeRef` (`scope_not_platform_written`), and the driver refuses a scope
+   the tree does not show or shows at another path (`tenant_scope_unresolved`), so a job never runs with an empty
+   tenant because of a missing node. A scope above every tenant (the platform) keeps the actor's own `scopeId`.
+2. Every other actor kind, a user above all, stays bound to its own tenant. When that tenant and the scope's tenant are
+   both known and differ the call is refused (`tenant_scope_mismatch`); neither is picked.
+3. The queue worker with no `CallIsolation` bound refuses a scoped job (`job_isolation_missing`, dead-lettered at once)
+   instead of running it with a scope session alone, which set no tenant. The tenant rule is not repeated there.
+
+The tree is read in a scope session over the root label of the scope's path, because the node table's row security
+shows a session only its own subtree and hides a branch's tenant ancestor from the branch itself; that read touches
+`scope_nodes` only and the call's own scope session follows it. The decision text above is unchanged. Tests:
+`call-isolation.driver.test.ts` (the rules and each refusal) and `queue-tenant-from-scope.int.test.ts` (real Postgres,
+a real worker and a tree table under the scope package's row policy).
+
 ## Supersedes and sources
 
 `Supersedes: none`. Amends 0239 and 0138. Sources: the core trace of 2026-10-31 (STA-1699); AWS, "Avoiding pinning

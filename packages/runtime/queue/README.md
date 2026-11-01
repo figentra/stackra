@@ -28,6 +28,8 @@ Postgres (`SKIP LOCKED`) drivers (ADR 0148, ADR 0305 rule 28).
 | `JOB_BACKOFF`                                       | `.`           | a job's waits (10 s base, half again, 1 h cap) for `backoffDelay`                                  |
 | `JobOutcome`, `JobRun`, `PushOptions`               | `.`           | how an attempt ended; what `push` takes                                                            |
 | `JobTimedOutError`, `UnknownJobError`               | `.`           | `job_timed_out` (retryable) and `unknown_job` (dead-lettered at once)                              |
+| `ScopeNotPlatformWrittenError`                      | `.`           | `scope_not_platform_written`: a pushed `scope` that is not shaped like a `ScopeRef`                |
+| `JobIsolationMissingError`                          | `.`           | `job_isolation_missing`: a scoped job on a worker with no `CallIsolation` (dead-lettered at once)  |
 | `QueueConfig`, `QueueConfig$`                       | `.`           | key `queue`: `driver` (`postgres` default, `memory`, `broker`)                                     |
 | `JobNotDueError`                                    | `.`           | `job_not_due`: a broker delivered a job before its `runAt` (redelivered later)                     |
 | `BrokerQueueDriver`                                 | `./node`      | the `broker` driver: jobs ride the generated Pub/Sub topics, dead letters stay in `queue.jobs`     |
@@ -109,8 +111,12 @@ driver keeps batches but applies neither priority nor the cap: the broker delive
 receives a queued call (`Prefer: respond-async`, sent by `client.x.y.queue(input)` of @stackra/clients) pushes it with
 the verified caller as `origin`, the resolved `ScopeRef` and the Idempotency-Key, and answers at once; an action without
 a `job` option then runs as its caller. With a `CallIsolation` bound (ADR 0495) the pipeline runs each attempt in it as the job's actor (the caller that queued it,
-else a `job` or `system` actor with no tenant) in the job's scope, and so does the action's `onDeadLetter` hook; with none
-bound a job with a `scope` runs each attempt inside `Database.withScope(scope, ...)`. The attempt is called with that scope
+else a `job` or `system` actor) in the job's scope, and so does the action's `onDeadLetter` hook. The tenant of a `job` or
+`system` actor is the one its platform-written scope belongs to (a branch resolves to its parent tenant; ADR 0495, note of
+2026-11-01), so a job pushed with a `scope` and no `origin` reads its tenant's rows. A `scope` is platform-written: `push`,
+`chain` and `batch` refuse one that is not shaped like a `ScopeRef` (`ScopeNotPlatformWrittenError`), and a scope the tree
+does not show is refused when the job runs. With no `CallIsolation` bound a job with a `scope` is dead-lettered at once
+(`JobIsolationMissingError`) instead of running with no tenant; a job with none runs as a platform call. The attempt is called with that scope
 as the call's, so the handler reads `ctx.scope`. `ctx.dispatch` queues the job in the calling
 action's scope. The scheduler pushes a cron job once per scope with that scope.
 

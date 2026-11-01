@@ -33,6 +33,8 @@ export { SandboxNotFoundError } from "#core/errors/sandbox-not-found.error";
 export { ShareTransitionInvalidError } from "#core/errors/share-transition-invalid.error";
 export { TenantMembershipMissingError } from "#core/errors/tenant-membership-missing.error";
 export { TenantRequiredError } from "#core/errors/tenant-required.error";
+export { TenantScopeMismatchError } from "#core/errors/tenant-scope-mismatch.error";
+export { TenantScopeUnresolvedError } from "#core/errors/tenant-scope-unresolved.error";
 export { TenantSwitchRefusedError } from "#core/errors/tenant-switch-refused.error";
 export { TransferRefusedError } from "#core/errors/transfer-refused.error";
 export { isTenantId } from "#core/functions/is-tenant-id.function";

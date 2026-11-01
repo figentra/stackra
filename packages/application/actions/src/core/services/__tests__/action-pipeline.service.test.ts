@@ -2733,6 +2733,41 @@ describe("ActionPipeline call isolation (ADR 0495)", () => {
     expect(isolation.runs).toEqual([["usr_1", scope, true]]);
   });
 
+  it("hands the isolation the actor the transport verified and the scope it resolved, whatever the input names (ADR 0098, STA-1823)", async () => {
+    const seen: [Actor, ScopeRef | readonly ScopeRef[] | undefined][] = [];
+    class Recording extends Driver(CallIsolation) {
+      async run<T>(
+        actor: Actor,
+        scope: ScopeRef | readonly ScopeRef[] | undefined,
+        work: () => Promise<T>,
+      ): Promise<T> {
+        seen.push([actor, scope]);
+        return work();
+      }
+    }
+    const { pipeline } = setup([[CallIsolation, new Recording()]]);
+    const named = {
+      scopeId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w9",
+      tenantId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w9",
+      scope: { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w9", path: "platform.other" },
+      actor: { kind: ActorKind.User, id: "usr_9", scopeId: "scp_01j9z3k4m5n6p7q8r9s0t1v2w9" },
+    };
+    await pipeline.execute(
+      GetOrderQuery,
+      { orderId: "ord_1", ...named },
+      { actor: customer, scope: SCOPE },
+    );
+    // a caller with no tenant stays one: nothing in the input gives it one
+    const staff: Actor = { kind: ActorKind.User, id: "usr_2", realm: Realm.Staff };
+    await pipeline.execute(GetOrderQuery, { orderId: "ord_1", ...named }, { actor: staff });
+    expect(seen).toHaveLength(2);
+    expect(seen[0]?.[0]).toBe(customer);
+    expect(seen[0]?.[1]).toBe(SCOPE);
+    expect(seen[1]?.[0]).toBe(staff);
+    expect(seen[1]?.[0].scopeId).toBeUndefined();
+    expect(seen[1]?.[1]).toBeUndefined();
+  });
+
   it("does not run the isolation for a call the tenancy check refuses", async () => {
     class Suspended extends Driver(TenancyCheck) {
       async check(): Promise<void> {

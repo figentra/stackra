@@ -17,11 +17,13 @@
  *           store bound fails its attempt rather than run unthrottled.
  *           With a `CallIsolation` bound (ADR 0495) the pipeline isolates each attempt as the job's actor in its scope,
  *           and the `onDeadLetter` hook runs in it too (a job stored with no actor runs as a platform call); with none
- *           bound a job runs in `Database.withScope` as before.
+ *           bound a job with a scope is refused (`JobIsolationMissingError`, dead-lettered at once, since nothing could
+ *           set its tenant) and a job with none runs as a platform call.
  * Runtime: node
- * Governing contract: ADR 0148 (decisions 1, 2 and 3); ADR 0305 (rules 28 and 30); ADR 0138 (as amended: the pipeline);
- *                     ADR 0136 (decision 3: jobs derive their Idempotency-Keys); ADR 0260 (decision 4); ADR 0327
- *                     (decisions 6 and 9: the call's scope, the scope session).
+ * Governing contract: ADR 0495 (decision 2 and the note of 2026-11-01); ADR 0148 (decisions 1, 2 and 3); ADR 0305
+ *                     (rules 28 and 30); ADR 0138 (as amended: the pipeline); ADR 0136 (decision 3: jobs derive their
+ *                     Idempotency-Keys); ADR 0260 (decision 4); ADR 0327 (decisions 6 and 9: the call's scope, the
+ *                     scope session).
  */
 import { ActionPipeline } from "@stackra/actions";
 import type { Action, Resolver } from "@stackra/actions";
@@ -35,7 +37,6 @@ import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import { backoffDelay, Duration, Logger } from "@stackra/contracts";
 import type { Actor, Clock } from "@stackra/contracts";
-import { Database } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
 
 import type { QueueDriver, JobError, QueuedJob } from "#contracts/index";
@@ -45,6 +46,7 @@ import { JOB_TYPES } from "#core/constants/job-types.constant";
 import { buildJob } from "#core/functions/build-job.function";
 import { QUEUE_LOG_EVENTS } from "#core/constants/queue-log-events.constant";
 import { JobOutcome } from "#core/enums/job-outcome.enum";
+import { JobIsolationMissingError } from "#core/errors/job-isolation-missing.error";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
 import { readJob } from "#core/functions/read-job.function";
@@ -189,7 +191,7 @@ export class QueueWorkerService extends Service {
       // once, so no outer scope session wraps it: one would hold the commit past the call's after-commit work.
       output = this.connected().resolver.has(CallIsolation)
         ? await this.attempt(type, plan, job)
-        : await this.inScope(job, () => this.attempt(type, plan, job));
+        : await this.unisolated(job, () => this.attempt(type, plan, job));
       await this.driver.remove(job.id);
     } catch (error) {
       return this.failed(type, plan, job, now, error);
@@ -360,7 +362,7 @@ export class QueueWorkerService extends Service {
         ? resolver
             .get(CallIsolation)
             .run(this.actorOf(plan, job), job.scope, work, { readOnly: false })
-        : this.inScope(job, work));
+        : this.unisolated(job, work));
     } catch (error) {
       this.logger()?.error(QUEUE_LOG_EVENTS.deadLetterHookFailed, {
         jobId: job.id,
@@ -382,9 +384,17 @@ export class QueueWorkerService extends Service {
     });
   }
 
-  /** Runs `work` in the job's scope session, or as it is for a platform job. */
-  private inScope<T>(job: QueuedJob, work: () => Promise<T>): Promise<T> {
-    return job.scope === undefined ? work() : Database.current().withScope(job.scope, work);
+  /**
+   * Runs `work` as it is for a platform job; refuses a scoped one, since with no `CallIsolation` bound nothing sets its
+   * tenant and a scope session alone would read zero rows of every tenant-owned table. The tenant rule lives in
+   * `@stackra/tenancy`'s driver, so it is refused here rather than repeated.
+   *
+   * @throws JobIsolationMissingError when `job` has a scope.
+   */
+  private unisolated<T>(job: QueuedJob, work: () => Promise<T>): Promise<T> {
+    if (job.scope !== undefined)
+      return Promise.reject(JobIsolationMissingError.create({ key: job.key }));
+    return work();
   }
 
   /** What a stored job keeps of `error`. */

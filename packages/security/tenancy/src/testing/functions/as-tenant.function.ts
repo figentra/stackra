@@ -5,21 +5,28 @@
  *          pipeline and every background unit run, so a test proves row isolation instead of filling a column.
  * Boundary: test helper over `Database.current()` (a test's `usePostgres()` or the memory database) and the same
  *           `CallIsolationDriver` the pipeline binds; it needs a connected database, unlike `runAsTenant`, which has
- *           none. `undefined` runs `work` as a platform call (`app.tenant_id = ''`, which matches no tenant row). It
+ *           none. `undefined` runs `work` as a platform call (`app.tenant_id = ''`, which matches no tenant row; a staff
+ *           user, so a scope option needs no tree). The driver gets an empty scope tree, so a scope option never
+ *           disagrees with the tenant given: the scope rules of `CallIsolationDriver` are proven in its own tests. It
  *           sets nothing about the database role: a test that proves a policy runs as a role without `BYPASSRLS` itself.
  * Runtime: node
  * Governing contract: ADR 0495 (decision 5); ADR 0269 (testing entries); ADR 0239; ADR 0182 (integration tier).
  */
-import { ActorKind } from "@stackra/contracts";
+import { ActorKind, Realm } from "@stackra/contracts";
 import type { Actor, PublicId, ScopeRef } from "@stackra/contracts";
 import { Database } from "@stackra/database";
+import { MemoryScopeTreeDriver } from "@stackra/scope";
 
 import { CallIsolationDriver } from "#node/drivers/call-isolation.driver";
 import { TenantIsolationService } from "#node/services/tenant-isolation.service";
 import { tenantActor } from "#testing/functions/tenant-actor.function";
 
-/** A caller acting in no tenant. */
-const PLATFORM: Actor = { kind: ActorKind.System, id: "sys_00000000000000000000000000" };
+/** A staff user acting in no tenant: a platform call that, unlike a system actor, needs no tree to hold a scope. */
+const PLATFORM: Actor = {
+  kind: ActorKind.User,
+  id: "usr_00000000000000000000000000",
+  realm: Realm.Staff,
+};
 
 /**
  * Runs `work` in `tenantId`'s isolation on the current database; `options.scope` sets the scope settings (none by
@@ -38,10 +45,12 @@ export function asTenant<T>(
   } = {},
 ): Promise<T> {
   const database = Database.current();
-  return new CallIsolationDriver(database, new TenantIsolationService(database)).run(
-    tenantId === undefined ? PLATFORM : tenantActor(tenantId),
-    options.scope,
-    work,
-    { readOnly: options.readOnly ?? false },
-  );
+  // An empty tree: the helper proves row isolation, so a scope option names no tenant of its own to disagree with.
+  return new CallIsolationDriver(
+    database,
+    new TenantIsolationService(database),
+    new MemoryScopeTreeDriver(),
+  ).run(tenantId === undefined ? PLATFORM : tenantActor(tenantId), options.scope, work, {
+    readOnly: options.readOnly ?? false,
+  });
 }
