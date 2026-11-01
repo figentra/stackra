@@ -16,6 +16,7 @@ describe("@stackra/data-maintenance/node", () => {
       "CreateSynonymAction",
       "CreateSynonymInput",
       "CreateSynonymOutput",
+      "DATA_MAINTENANCE_ENTITIES",
       "DatabaseSynonymSourceDriver",
       "DeleteSynonymAction",
       "DeleteSynonymInput",

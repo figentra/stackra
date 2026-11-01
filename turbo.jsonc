@@ -107,6 +107,7 @@
         "{apps,services,workers}/*/{src,assets}/**",
         "{apps,services,workers}/*/{stackra.config.ts,package.json,tsconfig.json,*.config.ts,*.extend.ts,stackra.manifest.json}",
         "packages/*/*/{src,assets}/**",
+        "!packages/*/*/src/node/entities.gen.ts",
         "packages/*/*/{stackra.config.ts,package.json,tsconfig.json,*.config.ts,*.extend.ts,stackra.manifest.json}",
       ],
       "outputs": [
@@ -114,6 +115,8 @@
         "{apps,services,workers}/*/stackra.manifest.json",
         "packages/*/*/.stackra/**",
         "packages/*/*/stackra.manifest.json",
+        // a package's committed entity list (STA-1874): gen writes it, so it is an output, not a hashed input
+        "packages/*/*/src/node/entities.gen.ts",
       ],
     },
     // `stackra gen` in one member (services/*, workers/*: the shapes that carry the script). The root pass above skips a
@@ -124,6 +127,8 @@
       "dependsOn": ["@stackra/cli#build", "//#gen:workspace"],
       "inputs": [
         "src/**",
+        // a package's committed entity list is gen's own output (STA-1874), so it never feeds gen's hash
+        "!src/node/entities.gen.ts",
         "assets/**",
         "stackra.config.ts",
         "package.json",
@@ -132,7 +137,7 @@
         "*.extend.ts",
         "runway.yaml",
       ],
-      "outputs": [".stackra/**", "stackra.manifest.json"],
+      "outputs": [".stackra/**", "stackra.manifest.json", "src/node/entities.gen.ts"],
     },
     "format": {
       "description": "Rewrite files in place with oxfmt. Never cached: its job is to mutate the tree.",

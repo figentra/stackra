@@ -254,6 +254,10 @@ test("isInScope governs src files of packages, services, apps and workers only",
   assert.equal(isInScope("apps/mobile/src/app.tsx"), true);
   assert.equal(isInScope("packages/foundation/fixture/src/__tests__/index.test.ts"), false);
   assert.equal(isInScope("packages/foundation/fixture/src/types.d.ts"), false);
+  // A committed file gen writes (STA-1874) is not hand-documented.
+  assert.equal(isInScope("packages/security/access-log/src/node/entities.gen.ts"), false);
+  // Only that path: a hand-written `*.gen.ts` is still documented.
+  assert.equal(isInScope("packages/security/access-log/src/node/other.gen.ts"), true);
   assert.equal(isInScope("services/x/src/encore.gen/api.ts"), false);
   assert.equal(isInScope("tools/scripts/doc-standard.mjs"), false);
   assert.equal(isInScope("apps/docs/src/docs.json"), false);

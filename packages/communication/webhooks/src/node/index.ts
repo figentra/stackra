@@ -24,4 +24,4 @@ export { DeliverWebhookInput } from "#node/schemas/deliver-webhook-input.schema"
 export { WebhookDeliveryService } from "#node/services/webhook-delivery.service";
 export { WebhookEndpointService } from "#node/services/webhook-endpoint.service";
 // The entity list gen writes for the module, which a hosting service registers (STA-1793).
-export { WEBHOOKS_ENTITIES } from "#stackra/entities/webhooks";
+export { WEBHOOKS_ENTITIES } from "#node/entities.gen";

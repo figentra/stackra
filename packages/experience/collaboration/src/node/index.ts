@@ -20,4 +20,4 @@ export { CommentThread } from "#node/models/comment-thread.model";
 export { RoomPublishInput } from "#node/schemas/room-publish-input.schema";
 export { CommentService } from "#node/services/comment.service";
 // The entity list gen writes for the module, which a hosting service registers (STA-1793).
-export { COLLABORATION_ENTITIES } from "#stackra/entities/collaboration";
+export { COLLABORATION_ENTITIES } from "#node/entities.gen";

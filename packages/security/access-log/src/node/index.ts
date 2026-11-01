@@ -33,4 +33,4 @@ export { ExportAuditOutput } from "#node/schemas/export-audit-output.schema";
 export { PurgeAccessLogInput } from "#node/schemas/purge-access-log-input.schema";
 export { PurgeAccessLogOutput } from "#node/schemas/purge-access-log-output.schema";
 // The entity list gen writes for the module, which a hosting service registers (STA-1793).
-export { ACCESS_LOG_ENTITIES } from "#stackra/entities/access_log";
+export { ACCESS_LOG_ENTITIES } from "#node/entities.gen";

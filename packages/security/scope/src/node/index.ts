@@ -13,4 +13,4 @@ export { ScopeMoved } from "#node/events/scope-moved.event";
 export { ScopeNode } from "#node/models/scope-node.model";
 export { ScopeNodeService } from "#node/services/scope-node.service";
 // The entity list gen writes for the module, which a hosting service registers (STA-1793).
-export { SCOPE_ENTITIES } from "#stackra/entities/scope";
+export { SCOPE_ENTITIES } from "#node/entities.gen";
