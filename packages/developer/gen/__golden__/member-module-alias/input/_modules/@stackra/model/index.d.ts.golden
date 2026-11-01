@@ -1,0 +1,16 @@
+export declare abstract class ModelBase { protected readonly "~kind": "model"; }
+export interface Trait<F extends object> { readonly "~fields"?: F; }
+type Fields<T extends readonly unknown[]> = T extends readonly [infer Head, ...infer Rest]
+  ? (Head extends Trait<infer F> ? F : unknown) & Fields<Rest>
+  : unknown;
+export declare const Model: {
+  with<T extends readonly Trait<object>[]>(...traits: T): abstract new () => ModelBase & Fields<T>;
+};
+export declare function HasPublicId<P extends string>(prefix: P): Trait<{ id: string }>;
+export declare const Timestamps: Trait<{ createdAt: Date; updatedAt: Date }>;
+export declare class Collection<T extends object> { constructor(owner: object); readonly "~items"?: T; }
+export type Ref<T extends object> = T & { readonly "~ref": true };
+export type Link<T extends object> = { readonly "~link"?: T; readonly id: string };
+type ModelClass<M> = abstract new (...args: never[]) => M;
+export declare function ManyToOne<M extends object>(target: () => ModelClass<M>, options?: { readonly onDelete?: string }): (target: object, key: string) => void;
+export declare function OneToMany<M extends object>(target: () => ModelClass<M>, inverse: (item: M) => unknown, options?: { readonly orphanRemoval?: boolean }): (target: object, key: string) => void;
