@@ -6,16 +6,18 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0208 (decision 2, as amended by 0294).
  */
-import type { AnyClass } from "@stackra/container";
+import {
+  type AnyClass,
+  PERMISSION_REGISTRY,
+  Permissions,
+  registerPermissions,
+} from "@stackra/container";
+import { Permission } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
-import { Permissions } from "#core/bases/permissions.base";
 import { type Role as RoleInstance, Role } from "#core/bases/role.base";
-import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
 import { ROLE_REGISTRY } from "#core/constants/role-registry.constant";
-import { registerPermissions } from "#core/functions/register-permissions.function";
 import { registerRoles } from "#core/functions/register-roles.function";
-import { Permission } from "#core/values/permission.value";
 
 class OrderPermissions extends Permissions {
   static readonly read = Permission.L0;

@@ -83,6 +83,8 @@ describe("@stackra/container", () => {
       "Explorer",
       "Lifetime",
       "Module",
+      "PERMISSION_REGISTRY",
+      "Permissions",
       "Replaces",
       "Service",
       "SystemClockDriver",
@@ -92,7 +94,9 @@ describe("@stackra/container", () => {
       "createKind",
       "kindOf",
       "named",
+      "permissionKey",
       "registerKind",
+      "registerPermissions",
     ]);
   });
 

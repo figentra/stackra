@@ -10,11 +10,11 @@
  * Governing contract: ADR 0294 (decisions 10, 20 and 22); ADR 0132 (decision 2); the actions precedent
  *                     (`registerActions`).
  */
-import { kindOf } from "@stackra/container";
+import { Permission } from "@stackra/contracts";
 
 import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
+import { kindOf } from "#core/functions/kind-of.function";
 import type { PermissionRegistration } from "#core/types/permission-registration.type";
-import { Permission } from "#core/values/permission.value";
 
 /** `<module>.<model>.<verb>`, each segment snake_case. */
 const KEY = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;

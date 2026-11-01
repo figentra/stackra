@@ -12,9 +12,9 @@
  *                     3).
  */
 import { createKind } from "@stackra/container";
+import { Permission } from "@stackra/contracts";
 
 import type { RoleOptions } from "#core/types/role-options.type";
-import { Permission } from "#core/values/permission.value";
 
 /** The instance side of every role class. */
 export interface Role {

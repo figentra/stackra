@@ -6,12 +6,11 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0208 (decision 2 and the 0294 note).
  */
-import { kindOf } from "@stackra/container";
+import { kindOf, Permissions } from "@stackra/container";
+import { Permission } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { Permissions } from "#core/bases/permissions.base";
 import { Role } from "#core/bases/role.base";
-import { Permission } from "#core/values/permission.value";
 import type { RoleOptions } from "#core/types/role-options.type";
 
 class OrderPermissions extends Permissions {

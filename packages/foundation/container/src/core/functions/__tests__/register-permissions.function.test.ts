@@ -6,13 +6,13 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0294 (decisions 20 and 22); ADR 0132 (decision 2).
  */
+import { Permission } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { Permissions } from "#core/bases/permissions.base";
 import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
 import { registerPermissions } from "#core/functions/register-permissions.function";
 import type { PermissionRegistration } from "#core/types/permission-registration.type";
-import { Permission } from "#core/values/permission.value";
 
 class OrderPermissions extends Permissions {
   static readonly read = Permission.L0;

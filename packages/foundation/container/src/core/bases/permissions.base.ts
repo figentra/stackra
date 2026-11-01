@@ -8,7 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0132 (as amended by 0294); ADR 0294 (decisions 16 and 20); ADR 0208 (decision 6).
  */
-import { registerKind } from "@stackra/container";
+import { registerKind } from "#core/functions/register-kind.function";
 
 /**
  * The permission set kind base.

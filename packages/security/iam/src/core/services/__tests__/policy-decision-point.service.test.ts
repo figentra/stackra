@@ -16,11 +16,12 @@
  *                     bound); ADR 0132 (decision 5); ADR 0333 (decisions 2, 3 and 7, as amended by ADR 0462: no segment
  *                     audience); ADR 0331 (decisions 6 and 11).
  */
-import { Driver } from "@stackra/container";
+import { Driver, PERMISSION_REGISTRY, Permissions, registerPermissions } from "@stackra/container";
 import {
   type Actor,
   ActorKind,
   Clock,
+  Permission,
   type PublicId,
   Realm,
   type ScopeRef,
@@ -31,22 +32,18 @@ import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { Capability, DimensionValues, FieldAccess } from "#contracts/index";
 import type { Condition } from "@stackra/rules";
-import { Permissions } from "#core/bases/permissions.base";
 import { Role } from "#core/bases/role.base";
 import { DIMENSION_REGISTRY } from "#core/constants/dimension-registry.constant";
-import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
 import { ROLE_REGISTRY } from "#core/constants/role-registry.constant";
 import { MemoryPolicySourceDriver } from "#core/drivers/memory-policy-source.driver";
 import { AccessReason } from "#core/enums/access-reason.enum";
 import { Decision } from "#core/enums/decision.enum";
 import { SystemRole } from "#core/enums/system-role.enum";
 import { registerDimensions } from "#core/functions/register-dimensions.function";
-import { registerPermissions } from "#core/functions/register-permissions.function";
 import { registerRoles } from "#core/functions/register-roles.function";
 import { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
 import type { MemoryPolicyState } from "#core/types/memory-policy-state.type";
 import type { RecordFacts } from "#core/types/record-facts.type";
-import { Permission } from "#core/values/permission.value";
 
 const NOW = new Date("2026-10-25T09:00:00Z");
 

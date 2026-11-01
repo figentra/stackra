@@ -7,12 +7,11 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0132; ADR 0407; STA-818.
  */
+import { Permissions, registerPermissions } from "@stackra/container";
+import { Permission } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
-import { Permissions } from "#core/bases/permissions.base";
-import { registerPermissions } from "#core/functions/register-permissions.function";
 import { selectsPermission } from "#core/functions/selects-permission.function";
-import { Permission } from "#core/values/permission.value";
 
 class LedgerPermissions extends Permissions {
   static readonly view = Permission.L0;

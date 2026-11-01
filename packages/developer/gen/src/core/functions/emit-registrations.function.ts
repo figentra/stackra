@@ -358,7 +358,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   }
   call(
     "registerPermissions",
-    "@stackra/iam",
+    "@stackra/container",
     [...sets.values()].map(({ entry, keys }) => {
       const type = classOf(entry);
       return type === undefined ? undefined : `{ type: ${type}, keys: { ${keys.join(", ")} } }`;

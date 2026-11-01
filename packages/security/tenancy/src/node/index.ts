@@ -9,6 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0321 (BelongsToTenant is tenancy's); the STA-347 stand-in barrel
  *                     decision.
  */
+export { ApprovalBindingPermissions } from "#node/access/approval-binding.permissions";
 export { PruneApprovalBindingsAction } from "#node/actions/prune-approval-bindings.action";
 export { TenantCreateCommand } from "#node/commands/tenant-create.command";
 export { TenantListCommand } from "#node/commands/tenant-list.command";

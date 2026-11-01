@@ -9,7 +9,7 @@
  * Governing contract: ADR 0099 (decision 1, as amended by 0294); ADR 0305 (rule 28: risk from the permission); ADR
  *                     0231 (snake_case codes).
  */
-import { Enum } from "@stackra/contracts";
+import { Enum } from "#core/bases/enum.base";
 
 /**
  * The five levels.
