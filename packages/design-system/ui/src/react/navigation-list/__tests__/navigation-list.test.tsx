@@ -181,7 +181,9 @@ describe("NavigationList (web)", () => {
     const tip = screen.getByRole("tooltip");
     expect(tip.textContent).toBe("OrdersGO");
     expect(tip.querySelector("[data-slot='tooltip-separator']")).not.toBeNull();
-    expect(tip.querySelector("[data-slot='shortcut-hint']")?.getAttribute("aria-hidden")).toBeNull();
+    expect(
+      tip.querySelector("[data-slot='shortcut-hint']")?.getAttribute("aria-hidden"),
+    ).toBeNull();
   });
 
   it("keeps the label as the name in the compact rail and shows it, with the shortcut, in a tooltip", () => {
