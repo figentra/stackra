@@ -1525,3 +1525,7 @@
   slug: permission-vocabulary-moves-to-contracts-and-container
   status: reserved
   issue: STA-1890
+"0514":
+  slug: self-hosted-docs-replace-mintlify
+  status: reserved
+  issue: STA-1920
