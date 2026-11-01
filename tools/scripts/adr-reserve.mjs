@@ -14,7 +14,7 @@
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import * as botNetwork from "./bot-token.mjs";
-import { gh } from "@figentra/cli/src/commands/pr-merge.mjs"; // pr-merge moved to the private CLI (ADR 0500)
+import { gh } from "./pr-merge.mjs";
 
 export const NUMBERS_PATH = "apps/docs/adr/numbers.yaml";
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
