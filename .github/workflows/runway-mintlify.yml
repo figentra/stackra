@@ -15,7 +15,10 @@
 #          publish: Mintlify update and smoke test; `contents: read`). The caller's job must grant `contents: write`
 #          and `id-token: write`, since a called workflow's jobs cannot exceed the caller's grant.
 # Secrets: MINTLIFY_ADMIN_KEY only, from Infisical /ci through GitHub OIDC (ADR 0299 decision 3), read by this job
-#          alone. Without an identity id or a project id the job checks, prints a notice and deploys nothing.
+#          alone. Without an identity id or a project id the job checks, prints a notice and deploys nothing. The build
+#          job also reads STACKRA_REGISTRY_TOKEN (a read token for npm.stackra.figentra.com) from /ci/registry over
+#          OIDC when the caller's org has the INFISICAL_GATE_* variables, so a product repo's install of @stackra and
+#          @figentra packages authenticates; pnpm 12 ignores a token in the repository's .npmrc.
 # Owner: release-operations
 name: Runway mintlify
 
@@ -94,7 +97,7 @@ jobs:
     environment: ${{ inputs.environment }}
     permissions:
       contents: read # checkout; the install and the build run third-party code, so this job never writes
-      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci/turbo
+      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci/turbo and /ci/registry
     env:
       INFISICAL_IDENTITY_ID: ${{ inputs.infisical-identity-id }}
       MINTLIFY_PROJECT_ID: ${{ inputs.mintlify-project-id }}
@@ -111,6 +114,31 @@ jobs:
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
           install_args: node pnpm
+
+      # A product repository installs @stackra and @figentra from the Stackra registry, which needs a read token in the
+      # user-level ~/.npmrc (pnpm 12 ignores the repository .npmrc's token). Skipped when the org has no INFISICAL_GATE_*
+      # variables (core installs its own packages from the workspace).
+      - name: Registry token (Infisical OIDC)
+        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
+        # A repository whose packages all come from its workspace installs without it, so a refused lookup must not
+        # stop the job; a product that needs the token then fails at the install with the registry's 401.
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/registry
+          secret-name: STACKRA_REGISTRY_TOKEN
+          export-type: env
+
+      - name: Registry token (user .npmrc)
+        if: env.STACKRA_REGISTRY_TOKEN != ''
+        run: |
+          umask 077
+          printf '//npm.stackra.figentra.com/:_authToken=%s\n' "$STACKRA_REGISTRY_TOKEN" >> "$HOME/.npmrc"
 
       - name: Install dependencies
         env:
