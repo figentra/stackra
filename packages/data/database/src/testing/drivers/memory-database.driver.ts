@@ -4,11 +4,15 @@
  *          in this process, so unit tests run SQL, migrations and constraints as production does without Docker. It
  *          becomes `Database.current()` when built, and before its first query it creates the approved extensions
  *          and applies the member's compiled migrations (`.stackra/migrations` under the working directory), or,
- *          when the member has none, creates the schema from the registered entities. Its statements are counted
+ *          when the member has none, creates the schema from the registered entities. With migrations, each instance
+ *          starts its own PGlite from a snapshot built once per migrations set (`pgliteSnapshot`, kept per process and
+ *          in a temp file) instead of running initdb and the migrations again; a member with no migrations keeps
+ *          the slow path, because its schema comes from entities registered after the driver is built. Its statements are counted
  *          for the query guard like production's (`observedLogger`). The events its models record reach the testing
- *          app after commit, and a rollback drops them (`RecordedEventsSubscriber`, STA-1740).
+ *          app after commit, and a rollback drops them (`RecordedEventsSubscriber`, STA-1740), on a database
+ *          restored from a snapshot too.
  * Boundary: the testing entry only, so a server never loads PGlite (ADR 0269 decision 3). PGlite, its extensions and
- *           the ORM driver are optional peers loaded on the first `orm` read (`requireTestPeer`), not on import. Built with no arguments, so
+ *           the ORM driver are optional peers loaded on the first `orm` read (`loadPglitePeers`), not on import. Built with no arguments, so
  *           the container can build it as a wiring candidate; the ORM is made on first use, so entities registered
  *           after the driver was built are still in it. One database per instance, gone on `close`. Each migration
  *           file runs as the runner would run it (a transactional file in one transaction) without the
@@ -26,10 +30,8 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import type { Extension, Extensions } from "@electric-sql/pglite";
-import type { vector } from "@electric-sql/pglite-pgvector";
+import type { PGlite } from "@electric-sql/pglite";
 import { RequestContext, TransactionContext } from "@mikro-orm/core";
-import type * as PgliteOrm from "@mikro-orm/pglite";
 import type { MikroORM, PgliteConnection } from "@mikro-orm/pglite";
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Driver } from "@stackra/container";
@@ -45,34 +47,15 @@ import { runTransaction } from "#core/functions/run-transaction.function";
 import { observedLogger } from "#node/functions/observed-logger.function";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
-import { requireTestPeer } from "#testing/functions/require-test-peer.function";
+import { bootstrapPglite } from "#testing/functions/bootstrap-pglite.function";
+import { dropSnapshot } from "#testing/functions/drop-snapshot.function";
+import { extensionsSql } from "#testing/functions/extensions-sql.function";
+import { loadPglitePeers } from "#testing/functions/load-pglite-peers.function";
+import { pgliteSnapshot } from "#testing/functions/pglite-snapshot.function";
 import { RecordedEventsSubscriber } from "#testing/orm/recorded-events.subscriber";
 
 /** Where gen writes a member's compiled migrations, relative to the member root. */
 const MIGRATIONS_FOLDER = join(".stackra", "migrations");
-
-/** The approved extensions PGlite runs: all of ADR 0160's; PostGIS (ADR 0314) is not loaded yet. */
-const EXTENSIONS = ["vector", "ltree", "pg_trgm", "citext", "pgcrypto"] as const;
-
-/** What PGlite and the ORM driver need, loaded together on first use and kept. */
-let peers: { readonly orm: typeof PgliteOrm; readonly extensions: Extensions } | undefined;
-
-/** Loads PGlite, its contrib extensions, pgvector and the ORM driver; none is loaded before a database is used. */
-function loadPeers(): NonNullable<typeof peers> {
-  peers ??= {
-    orm: requireTestPeer<typeof PgliteOrm>("@mikro-orm/pglite"),
-    extensions: {
-      vector: requireTestPeer<{ vector: typeof vector }>("@electric-sql/pglite-pgvector").vector,
-      ltree: requireTestPeer<{ ltree: Extension }>("@electric-sql/pglite/contrib/ltree").ltree,
-      pg_trgm: requireTestPeer<{ pg_trgm: Extension }>("@electric-sql/pglite/contrib/pg_trgm")
-        .pg_trgm,
-      citext: requireTestPeer<{ citext: Extension }>("@electric-sql/pglite/contrib/citext").citext,
-      pgcrypto: requireTestPeer<{ pgcrypto: Extension }>("@electric-sql/pglite/contrib/pgcrypto")
-        .pgcrypto,
-    },
-  };
-  return peers;
-}
 
 /**
  * The in-process Postgres database of the unit tier.
@@ -86,6 +69,9 @@ export class MemoryDatabaseDriver extends Driver(Database) {
   /** The ORM, made on first use. */
   private instance: MikroORM | undefined;
 
+  /** The PGlite this instance started from the migrations snapshot (it owns it and closes it). */
+  private pglite: Promise<PGlite> | undefined;
+
   /** The schema setup, run once before the first query. */
   private prepared: Promise<void> | undefined;
 
@@ -97,7 +83,7 @@ export class MemoryDatabaseDriver extends Driver(Database) {
 
   /** The MikroORM instance on PGlite. */
   get orm(): MikroORM {
-    const { orm, extensions } = loadPeers();
+    const { orm, extensions } = loadPglitePeers();
     this.instance ??= new orm.MikroORM({
       // PGlite reads an in-memory data directory from the database name.
       dbName: "memory://",
@@ -111,8 +97,11 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       discovery: { inferDefaultValues: false, warnWhenNoEntities: false },
       allowGlobalContext: false,
       ensureDatabase: false,
+      // A member with migrations starts each instance from the shared snapshot; one without creates its schema.
       // reason: PGlite's Extensions and the ORM driver's option type come from separately versioned packages
-      driverOptions: { extensions: extensions as never },
+      driverOptions: (existsSync(join(process.cwd(), MIGRATIONS_FOLDER))
+        ? { pglite: () => this.startFromSnapshot() }
+        : { extensions }) as never,
       // Kysely opens PGlite's one connection on the first query and awaits this before running it.
       onCreateConnection: () => this.prepare(),
     });
@@ -166,33 +155,42 @@ export class MemoryDatabaseDriver extends Driver(Database) {
     const orm = this.instance;
     this.instance = undefined;
     this.prepared = undefined;
+    const pglite = this.pglite;
+    this.pglite = undefined;
     await orm?.close(true);
+    await (await pglite)?.close();
   }
 
-  /** Creates the extensions and the schema once, on PGlite itself, so it never waits on the connection it serves. */
+  /**
+   * A fresh PGlite of this instance's own, started from the migrations snapshot (one initdb and migration run per
+   * migrations set and machine). A snapshot that will not load is dropped and the instance boots the slow way.
+   */
+  private startFromSnapshot(): Promise<PGlite> {
+    this.pglite ??= (async () => {
+      const files = readMigrationFiles(join(process.cwd(), MIGRATIONS_FOLDER));
+      const { PGlite, extensions } = loadPglitePeers();
+      try {
+        const loadDataDir = await pgliteSnapshot(files);
+        return await PGlite.create({ extensions, loadDataDir });
+      } catch {
+        await dropSnapshot(files);
+        const pglite = await PGlite.create({ extensions });
+        await bootstrapPglite(pglite, files);
+        return pglite;
+      }
+    })();
+    return this.pglite;
+  }
+
+  /** Creates the extensions and the entity schema once (a member with no migrations), on PGlite itself. */
   private prepare(): Promise<void> {
     this.prepared ??= (async () => {
+      if (existsSync(join(process.cwd(), MIGRATIONS_FOLDER))) return;
       const connection = this.orm.em.getConnection() as unknown as PgliteConnection;
       const pglite = await connection.getNativeClient();
-      // raw-sql: extensions and compiled migrations are DDL the schema owns, not queries a model makes
-      await pglite.exec(
-        EXTENSIONS.map((name) => `create extension if not exists ${name};`).join("\n"),
-      );
-      const folder = join(process.cwd(), MIGRATIONS_FOLDER);
-      if (!existsSync(folder)) {
-        await pglite.exec(await this.orm.schema.getCreateSchemaSQL());
-        return;
-      }
-      for (const file of readMigrationFiles(folder))
-        try {
-          if (file.transactional) await pglite.transaction((tx) => tx.exec(file.sql));
-          else await pglite.exec(file.sql);
-        } catch (error) {
-          throw new Error(
-            `${file.name} failed: ${error instanceof Error ? error.message : String(error)}`,
-            { cause: error },
-          );
-        }
+      // raw-sql: extensions are DDL the schema owns, not a query a model makes
+      await pglite.exec(extensionsSql());
+      await pglite.exec(await this.orm.schema.getCreateSchemaSQL());
     })();
     return this.prepared;
   }
