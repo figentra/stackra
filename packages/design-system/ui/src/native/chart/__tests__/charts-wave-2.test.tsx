@@ -58,10 +58,11 @@ vi.mock("react-native-reanimated", () => ({
   useAnimatedReaction: () => undefined,
   runOnJS: (callback: unknown) => callback,
 }));
-// loadSkia requires the optional peer lazily, which vi.mock cannot reach: route it to the Skia mock (STA-1791).
+// loadSkia requires the optional peer lazily, which vi.mock cannot reach: route it to the Skia mock (STA-1791). A plain
+// copy, because the charts destructure names at load that this test never draws, and a vi.mock module throws on those.
 vi.mock("#native/skia/load-skia.function", async () => {
   const skia = await import("@shopify/react-native-skia");
-  return { loadSkia: () => skia };
+  return { loadSkia: () => ({ ...skia }) };
 });
 
 vi.mock("@shopify/react-native-skia", () => ({
@@ -75,10 +76,11 @@ vi.mock("@shopify/react-native-skia", () => ({
   DashPathEffect: () => null,
 }));
 vi.mock("react-native-svg", () => ({ default: () => null, Path: () => null, Line: () => null }));
-// loadVictoryNative requires the optional peer lazily, which vi.mock cannot reach: route it to the mock (STA-1791).
+// loadVictoryNative requires the optional peer lazily, which vi.mock cannot reach: route it to the mock (STA-1791),
+// copied for the same reason as loadSkia.
 vi.mock("#native/skia/load-victory-native.function", async () => {
   const victory = await import("victory-native");
-  return { loadVictoryNative: () => victory };
+  return { loadVictoryNative: () => ({ ...victory }) };
 });
 
 vi.mock("victory-native", () => ({
