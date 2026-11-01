@@ -21,3 +21,5 @@ export { ServiceAckService } from "#node/services/service-ack.service";
 export type { AutomationRevision } from "#node/types/automation-revision.type";
 export type { TriggeredAutomation } from "#node/types/triggered-automation.type";
 export { WorkflowExplorer } from "#node/workflow.explorer";
+// The entity list gen writes for the module, which a hosting service registers (STA-1793).
+export { WORKFLOW_ENTITIES } from "#stackra/entities/workflow";

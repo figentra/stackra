@@ -21,6 +21,7 @@ describe("@stackra/workflow/node", () => {
       "PostgresWorkflowJournalDriver",
       "ServiceAckService",
       "ServiceAckSet",
+      "WORKFLOW_ENTITIES",
       "WorkflowExplorer",
     ]);
   });

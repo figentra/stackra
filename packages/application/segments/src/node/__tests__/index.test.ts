@@ -16,6 +16,7 @@ describe("@stackra/segments/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "RecomputeSegmentsAction",
       "RecomputeSegmentsInput",
+      "SEGMENTS_ENTITIES",
       "Segment",
       "SegmentFactProviderDriver",
       "SegmentMembership",

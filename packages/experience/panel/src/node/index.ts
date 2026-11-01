@@ -20,3 +20,5 @@ export { ExportOutput } from "#node/schemas/export-output.schema";
 export { ExportRunner } from "#node/services/export-runner.service";
 export { StoredViewService } from "#node/services/stored-view.service";
 export type { ExportSource } from "#node/types/export-source.type";
+// The entity list gen writes for the module, which a hosting service registers (STA-1793).
+export { PANEL_ENTITIES } from "#stackra/entities/panel";

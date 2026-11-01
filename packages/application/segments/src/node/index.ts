@@ -21,3 +21,5 @@ export { RecomputeSegmentsInput } from "#node/schemas/recompute-segments-input.s
 export { SegmentService } from "#node/services/segment.service";
 export { SegmentMembershipService } from "#node/services/segment-membership.service";
 export { SubjectChangeService } from "#node/services/subject-change.service";
+// The entity list gen writes for the module, which a hosting service registers (STA-1793).
+export { SEGMENTS_ENTITIES } from "#stackra/entities/segments";

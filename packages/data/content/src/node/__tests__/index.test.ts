@@ -14,6 +14,7 @@ import * as node from "#node/index";
 describe("@stackra/content/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "CONTENT_ENTITIES",
       "ContentModule",
       "CustomField",
       "CustomFieldLimitEntitlement",

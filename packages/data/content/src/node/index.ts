@@ -22,3 +22,5 @@ export { HasRevisions } from "#node/traits/has-revisions.trait";
 export { Publishable } from "#node/traits/publishable.trait";
 export { Schedulable } from "#node/traits/schedulable.trait";
 export { Sluggable } from "#node/traits/sluggable.trait";
+// The entity list gen writes for the module, which a hosting service registers (STA-1793).
+export { CONTENT_ENTITIES } from "#stackra/entities/content";
