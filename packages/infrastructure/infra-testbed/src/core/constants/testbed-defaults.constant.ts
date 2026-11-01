@@ -16,8 +16,11 @@ export const TESTBED_DEFAULTS = {
   securityGroup: "stackra-testbed",
   keyPair: "academorix-ci",
   keyFile: "~/.ssh/academorix-ci.pem",
-  /** The SSM parameter the Image Builder distribution writes the newest AMI id to. */
-  amiParameter: "/stackra/testbed/ami",
+  /**
+   * The SSM parameter the Image Builder distribution writes the newest AMI id to. Image Builder's service-linked role
+   * may write only parameters under `/imagebuilder/`, so the name keeps that prefix.
+   */
+  amiParameter: "/imagebuilder/stackra-testbed/ami",
   /** Canonical's public parameter for the Ubuntu 24.04 amd64 AMI the recipe starts from. */
   baseImageParameter:
     "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id",

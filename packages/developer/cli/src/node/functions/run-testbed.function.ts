@@ -104,6 +104,7 @@ export async function runTestbed(
     if (ranges.includes(me)) return;
     const rule = (verb: string, cidr: string): Promise<ToolOutput> =>
       aws([
+        "ec2",
         `${verb}-security-group-ingress`,
         "--group-name",
         TESTBED_CLI_DEFAULTS.securityGroup,

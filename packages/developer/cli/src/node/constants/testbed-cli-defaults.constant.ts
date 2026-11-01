@@ -20,7 +20,7 @@ export const TESTBED_CLI_DEFAULTS = {
   /** The security group whose port 22 rule the CLI swaps to this machine. */
   securityGroup: "stackra-testbed",
   /** The SSM parameter holding the newest AMI id. */
-  imageParameter: "/stackra/testbed/ami",
+  imageParameter: "/imagebuilder/stackra-testbed/ami",
   /** The Auto Scaling group name before the slot kind (`heavy`, `light`). */
   groupPrefix: "stackra-testbed-",
   /** The instance tag whose value names the box group. */

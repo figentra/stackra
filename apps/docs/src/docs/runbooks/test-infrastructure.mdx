@@ -243,7 +243,7 @@ environment.
 2. **action** `up`, same inputs. Creates the state bucket on the first run, then the pipeline. No instance runs yet.
 3. **action** `build-image`. Starts the pipeline once: 30 to 60 minutes on one build instance that stops when done. Its
    log is in the Image Builder console under `stackra-testbed`. When it succeeds, the SSM parameter
-   `/stackra/testbed/ami` holds the AMI id.
+   `/imagebuilder/stackra-testbed/ami` holds the AMI id.
 4. **action** `preview`, **groups** ticked, heavy `1`, light `0`: the two Auto Scaling groups appear.
 5. **action** `up`, same inputs. One heavy box starts (about $280 a month from here). `stackra testbed status` should
    list it healthy within about five minutes.
