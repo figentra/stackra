@@ -13,7 +13,8 @@ import { Port } from "@stackra/contracts";
 import type { ListenerContext } from "@stackra/events";
 
 /**
- * Tells whether a delivery came from the store's service.
+ * Tells whether a delivery came from the store's service. Interim: a verified producer on the envelope replaces this
+ * port (STA-1792).
  *
  * @example
  * export class BrokerApprovalGrantOriginDriver extends Driver(ApprovalGrantOrigin) {

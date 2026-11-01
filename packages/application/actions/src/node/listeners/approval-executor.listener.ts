@@ -11,8 +11,10 @@
  *           run as the binding's actor with `approvalId` set, so the key is forced to `approval:<id>` and the whole
  *           pipeline re-checks permission, preconditions, entitlement and flag. `settle` is a compare-and-set. A refusal
  *           settles `failed` with its code, except the in-flight answers (`idempotency_key_reused`, `approval_consumed`),
- *           which settle nothing, and a retryable refusal (an identity outage), which is rethrown for the retry and leaves
- *           the request `executing`; an error that is not a refusal is rethrown the same way. A request still `executing`
+ *           which settle nothing, and a transient infrastructure error (a retryable refusal such as an identity outage, or a
+ *           connection or timeout error that is not a refusal), which is rethrown for the listener's backoff and leaves
+ *           the request `executing`; any other error that is not a refusal is logged and left `executing` for the 24 hour
+ *           backstop, never retried. A request still `executing`
  *           24 hours after its grant settles `unknown` and is never retried. A delivery it cannot place (an action this
  *           service does not own, a tenant with no binding) is dropped and logged by id only. Runs after commit like every
  *           listener, on a worker queue with retries. Call `connect(resolver)` once the container is booted.
@@ -49,10 +51,36 @@ const EXECUTOR_ACTOR_ID = "sys_approval_executor";
 /** Answers that mean "another run holds it", which never settle `failed`. */
 const IN_FLIGHT: ReadonlySet<string> = new Set(["idempotency_key_reused", "approval_consumed"]);
 
+/** Connection and timeout failures that are not refusals: the infrastructure, not the call, failed. */
+const TRANSIENT_CODES: ReadonlySet<string> = new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "EPIPE",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "UND_ERR_CONNECT_TIMEOUT",
+]);
+const TRANSIENT_NAMES: ReadonlySet<string> = new Set(["TimeoutError", "AbortError"]);
+const TRANSIENT_MESSAGE = /\b(connection|connect|timed? ?out|timeout|socket)\b/i;
+
+/** Whether `error` is a transient infrastructure failure that a later retry may clear. */
+function isTransient(error: unknown): boolean {
+  if (isRefusal(error)) return error.retryable;
+  if (!(error instanceof Error)) return false;
+  const code = (error as { code?: unknown }).code;
+  return (
+    (typeof code === "string" && TRANSIENT_CODES.has(code)) ||
+    TRANSIENT_NAMES.has(error.name) ||
+    TRANSIENT_MESSAGE.test(error.message)
+  );
+}
+
 /** What the executor writes to the log: ids only, never input, voters or the hash. */
 const LOG = {
   dropped: "approval.executor.dropped",
   unknown: "approval.executor.unknown",
+  unclassified: "approval.executor.unclassified",
 } as const;
 
 /**
@@ -127,8 +155,7 @@ export class ApprovalExecutor extends Listener({
    * Executes the granted request `event` names, once.
    *
    * @throws ApprovalMismatchError when the stored actor does not own its scope, or the store's row or snapshot does not
-   *         fit the binding; ApprovalNotGrantedError when the request is still pending; a retryable refusal or any
-   *         error that is not a refusal, which leaves the request `executing` for the retry.
+   *         fit the binding; ApprovalNotGrantedError when the request is still pending; a transient infrastructure error, which leaves the request `executing` for the retry.
    * @throws Error before `connect`.
    */
   async handle(event: ApprovalGranted, ctx: ListenerContext): Promise<void> {
@@ -184,7 +211,13 @@ export class ApprovalExecutor extends Listener({
         ...(binding.assurance === undefined ? {} : { assurance: binding.assurance }),
       });
     } catch (error) {
-      if (!isRefusal(error) || error.retryable) throw error;
+      // transient infrastructure: rethrow for the listener's backoff; `approval:<id>` stops a double run
+      if (isTransient(error)) throw error;
+      if (!isRefusal(error)) {
+        // an unclassified bug is not retried; the request stays `executing` and the 24 hour `unknown` backstop settles it
+        this.logger.error(LOG.unclassified, { approvalId, key });
+        return;
+      }
       if (IN_FLIGHT.has(error.code)) return;
       await this.gate.settle(approvalId, { status: "failed", code: error.code });
       return;

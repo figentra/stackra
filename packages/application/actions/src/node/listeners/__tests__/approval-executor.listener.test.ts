@@ -477,6 +477,32 @@ describe(ApprovalExecutor, () => {
     expect(await statusOf(built, approvalId)).toBe("executed");
   });
 
+  it("retries a connection-style error and leaves the request executing", async () => {
+    const built = build();
+    const { approvalId, event } = await granted(built);
+    behaviour.next = async () => {
+      throw Object.assign(new Error("read failed"), { code: "ECONNRESET" });
+    };
+    await expect(built.executor.handle(event, ctxOf())).rejects.toThrow("read failed");
+    expect(await statusOf(built, approvalId)).toBe("executing");
+  });
+
+  it("does not retry an unclassified error or a domain refusal", async () => {
+    const built = build();
+    const { approvalId, event } = await granted(built);
+    behaviour.next = async () => {
+      throw new RangeError("a bug");
+    };
+    await expect(built.executor.handle(event, ctxOf())).resolves.toBeUndefined();
+    expect(await statusOf(built, approvalId)).toBe("executing");
+
+    const refused = build();
+    const second = await granted(refused);
+    refused.access.denied = true;
+    await expect(refused.executor.handle(second.event, ctxOf())).resolves.toBeUndefined();
+    expect(await statusOf(refused, second.approvalId)).toBe("failed");
+  });
+
   it("settles a request still executing 24 hours after its grant unknown, and never runs it", async () => {
     const built = build(new Date(NOW.getTime() + 25 * 3_600_000));
     const { approvalId, event } = await granted(built);
