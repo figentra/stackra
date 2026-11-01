@@ -59,6 +59,7 @@ import { checkSurfaces } from "#core/functions/check-surfaces.function";
 import { formatJson } from "#core/functions/format-json.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
+import { emitEncoreSqldbTypes } from "#core/functions/emit-encore-sqldb-types.function";
 import { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitClientTools } from "#core/functions/emit-client-tools.function";
@@ -211,6 +212,8 @@ export function generateMember(
   const optional: readonly (readonly [string, string | undefined])[] = [
     [".stackra/gen/registrations.ts", emitRegistrations(ir, manifest)],
     [".stackra/gen/boot.ts", emitBoot(ir, manifest)],
+    // Boot imports the generated Encore database file; its types stand in for encore.dev here (STA-1795).
+    [".stackra/gen/encore-sqldb.d.ts", emitEncoreSqldbTypes(ir)],
     [".stackra/gen/webhooks.ts", emitWebhooks(ir)],
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
