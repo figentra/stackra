@@ -110,7 +110,9 @@ describe("EVENTS_TESTING_PLUGIN", () => {
     registerWiring({
       member: "fixture",
       root: FixtureModule,
-      bindings: [{ module: "fixture", provide: NeedsMissingListener, deps: [Missing] }],
+      // In a module the app does not boot, as SendWebhooksListener in a webhooks fixture: a booted module's singleton
+      // is built at compile, so its unbound dependency fails the compile before the plugin runs.
+      bindings: [{ module: "elsewhere", provide: NeedsMissingListener, deps: [Missing] }],
     });
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const app = await createTestingModule(FixtureModule).compile();
