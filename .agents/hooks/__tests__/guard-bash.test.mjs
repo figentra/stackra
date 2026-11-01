@@ -2749,6 +2749,13 @@ test("STA-400: a command the guard cannot read is a deny with the reason and the
   assert.match(UNATTENDED_HINT, /bash -c.*sh -c.*eval/);
 });
 
+/** The guard's decision for `c` in a QA/release session (`STACKRA_ROLE=qa-release`). */
+const qaDecision = (c, cwd, agentType, agentId) =>
+  run(
+    { tool_input: { command: c }, cwd, agent_type: agentType, agent_id: agentId },
+    { STACKRA_ROLE: "qa-release" },
+  ).permissionDecision;
+
 test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagent; mixed with another ask, a deny", () => {
   const { main, worktree, done } = repoWithWorktree();
   const human = {
@@ -2775,14 +2782,9 @@ test("STA-400: HUMAN_ASKS (deletes, deploys, releases) ask from main and subagen
   };
   assert.deepEqual([...HUMAN_ASKS].sort(), Object.keys(human).sort());
   // The QA/release role changes only the deploy rules, so every ask is read in that session.
-  const asQa = (c, cwd, agentType, agentId) =>
-    run(
-      { tool_input: { command: c }, cwd, agent_type: agentType, agent_id: agentId },
-      { STACKRA_ROLE: "qa-release" },
-    ).permissionDecision;
   for (const [c, cwd] of Object.values(human)) {
-    assert.equal(asQa(c, cwd), "ask", c);
-    assert.equal(asQa(c, cwd, "Explore", "a1"), "ask", c);
+    assert.equal(qaDecision(c, cwd), "ask", c);
+    assert.equal(qaDecision(c, cwd, "Explore", "a1"), "ask", c);
   }
   for (const c of ["wrangler deploy; cat x | sh", "eas submit; $CMD x"]) {
     assert.equal(decision(c, worktree), "deny", c);
