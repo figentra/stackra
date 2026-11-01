@@ -7,7 +7,9 @@
  * Boundary: a platform service over the `QueueDriver` port and the `Clock`; it runs nothing (the worker does). The
  *           callers are the `JobDispatcher` driver behind `ctx.dispatch`, a transport that received a queued call
  *           (`Prefer: respond-async`, sent by @stackra/clients' `queue(...)`), and the scheduler. A unique job is
- *           unique per scope: the scope's id, else the scope the caller acts in, else platform-wide.
+ *           unique per scope: the scope's id, else the scope the caller acts in, else platform-wide. A `scope` is
+ *           platform-written (ADR 0098), so every entry point refuses one that is not shaped like a `ScopeRef`
+ *           (`ScopeNotPlatformWrittenError`); whether the node exists is checked when the job runs.
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decisions 1 and 2: unique jobs, batches, chains, priority, the dead-letter queue with
  *                     replay); ADR 0305 (rule 28);
@@ -19,6 +21,7 @@ import type { AnyClass } from "@stackra/container";
 import type { Clock, PublicId } from "@stackra/contracts";
 
 import type { JobBatch, QueuedJob, QueueDriver } from "#contracts/index";
+import { assertPlatformScope } from "#core/functions/assert-platform-scope.function";
 import { buildJob } from "#core/functions/build-job.function";
 import { mintJobId } from "#core/functions/mint-job-id.function";
 import { readJob } from "#core/functions/read-job.function";
@@ -55,6 +58,7 @@ export class QueueService extends Service {
    *
    * @returns the job's id, or `undefined` when a unique job of the same scope already waits or runs.
    * @throws TypeError when `type` is not an action, or declares no `job` option and `options.origin` is absent.
+   * @throws ScopeNotPlatformWrittenError when `options.scope` is not shaped like a platform `ScopeRef`.
    */
   async push<C extends AnyClass<Action>>(
     type: C,
@@ -62,7 +66,7 @@ export class QueueService extends Service {
     options: PushOptions = {},
   ): Promise<PublicId<"job"> | undefined> {
     const plan = this.planOf({ type, input }, options);
-    this.checkPriority(options);
+    this.checkOptions(options);
     const job = buildJob(plan, input, options, this.clock.now());
     return (await this.driver.push(job)) ? job.id : undefined;
   }
@@ -83,7 +87,7 @@ export class QueueService extends Service {
     if (first === undefined) throw new TypeError("A job chain needs at least one link");
     const plan = this.planOf(first, options);
     const chain = rest.map((link) => ({ key: this.planOf(link, options).key, input: link.input }));
-    this.checkPriority(options);
+    this.checkOptions(options);
     const job = buildJob(plan, first.input, options, this.clock.now(), { chain });
     return (await this.driver.push(job)) ? job.id : undefined;
   }
@@ -101,7 +105,7 @@ export class QueueService extends Service {
   ): Promise<{ readonly id: string; readonly jobs: readonly (PublicId<"job"> | undefined)[] }> {
     if (links.length === 0) throw new TypeError("A job batch needs at least one job");
     const planned = links.map((link) => ({ link, plan: this.planOf(link, options) }));
-    this.checkPriority(options);
+    this.checkOptions(options);
     const id = `jbt_${mintJobId().slice("job_".length)}`;
     await this.driver.openBatch({ id, total: links.length, done: 0, failed: 0 });
     const now = this.clock.now();
@@ -151,11 +155,13 @@ export class QueueService extends Service {
   }
 
   /**
-   * Checks the priority of `options`.
+   * Checks `options`: the scope is a platform `ScopeRef` and the priority a whole number.
    *
-   * @throws RangeError when it is not a whole number.
+   * @throws ScopeNotPlatformWrittenError when `options.scope` is not shaped like a platform `ScopeRef`.
+   * @throws RangeError when the priority is not a whole number.
    */
-  private checkPriority(options: PushOptions): void {
+  private checkOptions(options: PushOptions): void {
+    assertPlatformScope(options.scope);
     if (options.priority !== undefined && !Number.isInteger(options.priority))
       throw new RangeError(`priority is a whole number, got ${options.priority}`);
   }

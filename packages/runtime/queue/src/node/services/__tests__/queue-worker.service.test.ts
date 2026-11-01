@@ -5,7 +5,7 @@
  *          attempt with one `onDeadLetter` call; a refusal that is not retryable ends the job at once; a job without a
  *          dead letter is dropped and logged; a queued call runs as its caller under its Idempotency-Key; a job
  *          derives its own key when a store is bound; an attempt past its timeout is aborted and retried; an unknown
- *          key is dead-lettered; a scoped job runs in its scope session with its scope as the call's (`ctx.scope`);
+ *          key is dead-lettered; a scoped job runs through the bound `CallIsolation` with its scope as the call's (`ctx.scope`) and is dead-lettered at once, its hook not run, when none is bound (`job_isolation_missing`);
  *          `work` loops until aborted; a throttled job waits for its next token without counting the attempt (and fails
  *          its attempt when no `RateLimitStore` is bound); a chain runs its links in order; a batch counts done and
  *          failed jobs.
@@ -30,7 +30,6 @@ import {
 } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
 import { type Actor, ActorKind, Backoff, Clock, Duration, Logger, Realm } from "@stackra/contracts";
-import { Database } from "@stackra/database";
 import { ErrorKind, isRefusal, Refusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -38,6 +37,7 @@ import { vi } from "vitest";
 import { JobStatus } from "#contracts/index";
 import { MemoryQueueDriver } from "#core/drivers/memory-queue.driver";
 import { JobOutcome } from "#core/enums/job-outcome.enum";
+import { JobIsolationMissingError } from "#core/errors/job-isolation-missing.error";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
 import { QueueService } from "#core/services/queue.service";
@@ -255,31 +255,22 @@ describe(QueueWorkerService, () => {
         return work();
       }
     }
-    const withScope = vi.fn(async (_scope: unknown, work: () => Promise<unknown>) => work());
-    const current = vi
-      .spyOn(Database, "current")
-      .mockReturnValue({ withScope } as unknown as Database);
-    try {
-      const { queue, worker, deliver } = setup([[CallIsolation, new Recording()]]);
-      deliver.outcome = "gone";
-      const scope = { id: "scp_1", path: "platform.acme" } as const;
-      const id = await queue.push(
-        DeliverMessageAction,
-        { messageId: "msg_1" },
-        { origin: caller, scope },
-      );
-      await worker.drain();
-      const expected = { kind: ActorKind.System, id, scopeId: "org_1", onBehalfOf: caller };
-      // the first run is the pipeline's own isolation of the attempt, the second the worker's of the hook
-      expect(runs).toEqual([
-        [expected, scope, false],
-        [expected, scope, false],
-      ]);
-      expect(deliver.failed).toEqual([{ messageId: "msg_1" }]);
-      expect(withScope).not.toHaveBeenCalled();
-    } finally {
-      current.mockRestore();
-    }
+    const { queue, worker, deliver } = setup([[CallIsolation, new Recording()]]);
+    deliver.outcome = "gone";
+    const scope = { id: "scp_1", path: "platform.acme" } as const;
+    const id = await queue.push(
+      DeliverMessageAction,
+      { messageId: "msg_1" },
+      { origin: caller, scope },
+    );
+    await worker.drain();
+    const expected = { kind: ActorKind.System, id, scopeId: "org_1", onBehalfOf: caller };
+    // the first run is the pipeline's own isolation of the attempt, the second the worker's of the hook
+    expect(runs).toEqual([
+      [expected, scope, false],
+      [expected, scope, false],
+    ]);
+    expect(deliver.failed).toEqual([{ messageId: "msg_1" }]);
   });
 
   it("drops a failed job without a dead letter and logs it, running it as the job actor it lists", async () => {
@@ -352,22 +343,55 @@ describe(QueueWorkerService, () => {
     ]);
   });
 
-  it("runs a scoped job in its scope session, with its scope as the call's", async () => {
-    const withScope = vi.fn(async (_scope: unknown, work: () => Promise<unknown>) => work());
-    const current = vi
-      .spyOn(Database, "current")
-      .mockReturnValue({ withScope } as unknown as Database);
-    try {
-      const { queue, worker, deliver } = setup();
-      const scope = { id: "scp_1", path: "platform.acme" } as const;
-      await queue.push(DeliverMessageAction, { messageId: "msg_1" }, { scope });
-      const [run] = await worker.drain();
-      expect(run?.outcome).toBe(JobOutcome.Done);
-      expect(withScope).toHaveBeenCalledWith(scope, expect.any(Function));
-      expect(deliver.contexts[0]?.scope).toEqual(scope);
-    } finally {
-      current.mockRestore();
+  it("runs a scoped job through the bound CallIsolation, with its scope as the call's, even with no origin", async () => {
+    const runs: [Actor, unknown][] = [];
+    class Recording extends Driver(CallIsolation) {
+      run<T>(actor: Actor, scope: unknown, work: () => Promise<T>): Promise<T> {
+        runs.push([actor, scope]);
+        return work();
+      }
     }
+    const { queue, worker, deliver } = setup([[CallIsolation, new Recording()]]);
+    const scope = { id: "scp_1", path: "platform.acme" } as const;
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" }, { scope });
+    const [run] = await worker.drain();
+    expect(run?.outcome).toBe(JobOutcome.Done);
+    expect(deliver.contexts[0]?.scope).toEqual(scope);
+    // no tenant is written here: the isolation driver derives it from the scope (`@stackra/tenancy`)
+    expect(runs[0]?.[0]).toMatchObject({ kind: ActorKind.System });
+    expect(runs[0]?.[0]?.scopeId).toBeUndefined();
+    expect(runs[0]?.[1]).toEqual(scope);
+  });
+
+  it("dead-letters a scoped job at once when no CallIsolation is bound, instead of running it with no tenant", async () => {
+    const { driver, queue, worker, deliver } = setup();
+    const scope = { id: "scp_1", path: "platform.acme" } as const;
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" }, { scope });
+    const [run] = await worker.drain();
+    expect(run).toMatchObject({ outcome: JobOutcome.DeadLettered, job: { attempts: 1 } });
+    expect(isRefusal(run?.error, JobIsolationMissingError)).toBe(true);
+    expect(deliver.contexts).toEqual([]);
+    expect(await driver.deadLetters(undefined, 10)).toMatchObject([
+      { lastError: { code: "job_isolation_missing" } },
+    ]);
+  });
+
+  it("does not run the dead-letter hook of a scoped job when no CallIsolation is bound, and logs it", async () => {
+    const { queue, worker, deliver, logger } = setup();
+    deliver.outcome = "gone";
+    const scope = { id: "scp_1", path: "platform.acme" } as const;
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" }, { scope });
+    await worker.drain();
+    expect(deliver.failed).toEqual([]);
+    expect(logger.errors).toEqual(["queue.dead_letter_hook_failed"]);
+  });
+
+  it("still runs a job with no scope as a platform call when no CallIsolation is bound", async () => {
+    const { queue, worker, deliver } = setup();
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    const [run] = await worker.drain();
+    expect(run?.outcome).toBe(JobOutcome.Done);
+    expect(deliver.contexts[0]?.scope).toBeUndefined();
   });
 
   it("processes a job the caller reserved", async () => {
