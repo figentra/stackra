@@ -151,7 +151,8 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
       '  const poolMax = Number(process.env["DATABASE_POOL_MAX"] ?? "");',
       "  await PostgresDatabaseDriver.connect({",
-      "    url: databaseUrl(),",
+      "    // The seed entry passes the direct url (STA-1709); a server reads the one Encore provided (STA-1652).",
+      "    url: options.url ?? databaseUrl(),",
       "    replicas,",
       "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
       "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
@@ -214,9 +215,11 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     );
   if (outbox)
     steps.push(
-      "  const relay = container.get(OutboxRelayService);",
-      "  relay.connect(container);",
-      "  void relay.work({ signal: options.signal });",
+      "  if (options.relay !== false) {",
+      "    const relay = container.get(OutboxRelayService);",
+      "    relay.connect(container);",
+      "    void relay.work({ signal: options.signal });",
+      "  }",
     );
 
   const header = generatedHeader({
@@ -249,7 +252,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     "/** Connects the legal holds and the database, then the services that resolve classes from the container (the bus and inbox until shutdown), then the relay. */",
     "export async function boot(",
     "  container: Container,",
-    "  options: { readonly signal: AbortSignal },",
+    "  options: { readonly signal: AbortSignal; readonly url?: string; readonly relay?: boolean },",
     "): Promise<void> {",
     "  if (options.signal.aborted) return;",
     ...steps,

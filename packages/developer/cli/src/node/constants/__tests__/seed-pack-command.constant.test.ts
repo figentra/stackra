@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `SEED_PACK_COMMAND`: `--check` reports each profile without loading a runner; a run plans the
  *          profile against the runner's state and writes only new and changed seed-owned records, never a record a
- *          tenant changed; a missing product is a usage error.
+ *          tenant changed, then runs the member's seeders of the profile (STA-1709); a missing product is a usage error.
  * Boundary: test only; a throwaway pack in the OS temp directory and a fake runner, so no database is touched.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0325 (decision 7); config-model section 6.
@@ -107,6 +107,8 @@ describe("SEED_PACK_COMMAND", () => {
       "brand-kit:demo",
     ]);
     expect(output()).toContain("2 new, 0 updated, 0 current, 1 kept");
+    // then the member's seeders of the same profile (STA-1709); this member has none
+    expect(output()).toContain("db seed (preview): no seeders");
   });
 
   it("refuses a missing product", async () => {

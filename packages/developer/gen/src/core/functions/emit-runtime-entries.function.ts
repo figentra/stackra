@@ -6,7 +6,10 @@
  *          exports the result. A service gets `server`; an app gets `browser` (web, PWA, the desktop renderer) and
  *          `native` (iOS and Android). A service's server entry hands `createApp` its `#stackra/boot` when gen writes
  *          one, so the bus, inbox and relay connect at service start. The native entry of an app with web and native
- *          targets takes `nativeWiring`, whose follow-the-system ports default to the native drivers.
+ *          targets takes `nativeWiring`, whose follow-the-system ports default to the native drivers. A service with
+ *          seeders and a boot also gets `seed`, which `stackra db seed` runs: it boots the container, connects the
+ *          database over `directDatabaseUrl()` without the relay loop, hands `runSeedEntry` its seeders (key, module,
+ *          profile and class, in module order) and the command's arguments, then disconnects (STA-1709).
  * Boundary: pure; no logic in an entry (boot order, signals and readiness belong to `createApp`). A package gets no
  *           runtime entry; a host imports its module. A worker's and the desktop main process's entries need their
  *           tool facts (the React Router server build, the crash page, the renderer and preload paths), which come
@@ -44,44 +47,103 @@ export function emitRuntimeEntries(
   const root = rootModuleOf(ir);
   if (root === undefined) return [];
   const runtimes = ir.layout === "service" ? ["server"] : clientRuntimes(ir);
-  return runtimes.map((runtime) => {
-    const loads = (
-      runtime === "server" ? ["registrations"] : [`routes/${runtime}`, `blocks/${runtime}`]
-    )
-      .filter((name) => generated.includes(`.stackra/gen/${name}.ts`))
-      .map((name) => `import "#stackra/${name}";`);
-    const boots = runtime === "server" && generated.includes(".stackra/gen/boot.ts");
-    const call =
-      runtime === "browser"
-        ? "await createApp(wiring)"
-        : runtime === "native"
-          ? `createApp(${root.name}, { wiring })`
-          : `await createApp(${root.name}, { wiring${boots ? ", boot" : ""} })`;
-    const header = generatedHeader({
-      from: `stackra.config.ts, the root module and #stackra/wiring`,
-      purpose: `the ${runtime} runtime entry of ${ir.package}: builds the app from the root module and the generated wiring.`,
-      boundary:
-        "no logic; `createApp` owns boot order, signals, readiness and shutdown. Top-level await: a boot error fails the " +
-        "process.",
-      runtime: runtime === "server" ? "node" : "isomorphic",
-    });
-    return {
-      path: `.stackra/entry/${runtime}.ts`,
-      content: [
-        header,
-        ...loads,
-        ...(boots ? ['import { boot } from "#stackra/boot";'] : []),
-        `import { createApp } from "@stackra/app/${runtime}";`,
-        ...(runtime === "browser" ? [] : [`import { ${root.name} } from "${root.from}";`]),
-        // A web-and-native app's shared wiring takes memory; its native entry takes the native drivers.
-        runtime === "native" && runtimes.length > 1
-          ? 'import { nativeWiring as wiring } from "#stackra/wiring";'
-          : 'import { wiring } from "#stackra/wiring";',
-        "",
-        `/** ${RETURNS[runtime] ?? "The app of this runtime."} */`,
-        `export const app = ${call};`,
-        "",
-      ].join("\n"),
-    };
+  const seed = ir.layout === "service" ? seedEntry(ir, generated) : undefined;
+  return [
+    ...runtimes.map((runtime) => {
+      const loads = (
+        runtime === "server" ? ["registrations"] : [`routes/${runtime}`, `blocks/${runtime}`]
+      )
+        .filter((name) => generated.includes(`.stackra/gen/${name}.ts`))
+        .map((name) => `import "#stackra/${name}";`);
+      const boots = runtime === "server" && generated.includes(".stackra/gen/boot.ts");
+      const call =
+        runtime === "browser"
+          ? "await createApp(wiring)"
+          : runtime === "native"
+            ? `createApp(${root.name}, { wiring })`
+            : `await createApp(${root.name}, { wiring${boots ? ", boot" : ""} })`;
+      const header = generatedHeader({
+        from: `stackra.config.ts, the root module and #stackra/wiring`,
+        purpose: `the ${runtime} runtime entry of ${ir.package}: builds the app from the root module and the generated wiring.`,
+        boundary:
+          "no logic; `createApp` owns boot order, signals, readiness and shutdown. Top-level await: a boot error fails the " +
+          "process.",
+        runtime: runtime === "server" ? "node" : "isomorphic",
+      });
+      return {
+        path: `.stackra/entry/${runtime}.ts`,
+        content: [
+          header,
+          ...loads,
+          ...(boots ? ['import { boot } from "#stackra/boot";'] : []),
+          `import { createApp } from "@stackra/app/${runtime}";`,
+          ...(runtime === "browser" ? [] : [`import { ${root.name} } from "${root.from}";`]),
+          // A web-and-native app's shared wiring takes memory; its native entry takes the native drivers.
+          runtime === "native" && runtimes.length > 1
+            ? 'import { nativeWiring as wiring } from "#stackra/wiring";'
+            : 'import { wiring } from "#stackra/wiring";',
+          "",
+          `/** ${RETURNS[runtime] ?? "The app of this runtime."} */`,
+          `export const app = ${call};`,
+          "",
+        ].join("\n"),
+      };
+    }),
+    ...(seed === undefined ? [] : [seed]),
+  ];
+}
+
+/** The seed entry of a service with seeders and a boot, or undefined (STA-1709). */
+function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | undefined {
+  const root = rootModuleOf(ir);
+  const seeders = ir.classes.filter((declared) => declared.kind === "seeder");
+  if (root === undefined || seeders.length === 0 || !generated.includes(".stackra/gen/boot.ts"))
+    return undefined;
+  const rows = seeders.map((declared) => {
+    const profile = /([a-z]+)\.seeder\.ts$/.exec(declared.file)?.[1] ?? "minimal";
+    return `  { key: ${JSON.stringify(`${declared.module}.${profile}`)}, module: ${JSON.stringify(declared.module)}, profile: ${JSON.stringify(profile)}, type: ${declared.name} },`;
   });
+  const header = generatedHeader({
+    from: "stackra.config.ts, the root module, #stackra/wiring and the seeders under src/",
+    purpose: `the seed entry of ${ir.package}: boots the container and runs the seeders \`stackra db seed\` asks for.`,
+    boundary:
+      "run by `stackra db seed` from the member's build; connects over the direct database url, starts no relay loop, " +
+      "and disconnects when the seeders end. The exit code is the run's.",
+    runtime: "node",
+  });
+  return {
+    path: ".stackra/entry/seed.ts",
+    content: [
+      header,
+      ...(generated.includes(".stackra/gen/registrations.ts")
+        ? ['import "#stackra/registrations";']
+        : []),
+      'import { bootApp } from "@stackra/app";',
+      'import { Database } from "@stackra/database";',
+      'import { directDatabaseUrl, runSeedEntry } from "@stackra/database/node";',
+      'import { boot } from "#stackra/boot";',
+      'import { wiring } from "#stackra/wiring";',
+      `import { ${root.name} } from "${root.from}";`,
+      ...seeders.map((declared) => `import { ${declared.name} } from "${declared.importPath}";`),
+      "",
+      `const { container } = await bootApp(wiring, { roots: [${root.name}], env: process.env });`,
+      "const shutdown = new AbortController();",
+      "await boot(container, { signal: shutdown.signal, url: directDatabaseUrl(), relay: false });",
+      "try {",
+      "  process.exitCode = await runSeedEntry({",
+      "    container,",
+      `    member: ${JSON.stringify(ir.member)},`,
+      "    seeders: [",
+      ...rows.map((row) => `    ${row}`),
+      "    ],",
+      "    argv: process.argv.slice(2),",
+      "  });",
+      "} finally {",
+      "  shutdown.abort();",
+      "  await Database.current().close();",
+      "  await container.close();",
+      "}",
+      "",
+    ].join("\n"),
+  };
 }

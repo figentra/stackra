@@ -10,7 +10,8 @@
  *          `tools/scripts` (doctor, eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs
  *          and `validate --repository`).
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
- *           are never added here (ADR 0282 decision 4); `stackra db diff` and `seed` land with
+ *           are never added here (ADR 0282 decision 4); `stackra db seed` runs the member's seeders (STA-1709);
+ *           `stackra db diff` lands with
  *           `@stackra/database`; infra is `stackra runway infra`, not a command here (ADR 0352).
  * Runtime: node
  * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows).
@@ -25,6 +26,7 @@ import { CATALOGUE_COMPLETENESS_COMMAND } from "#node/constants/catalogue-comple
 import { CONSOLE_COMMAND } from "#node/constants/console-command.constant";
 import { DB_MIGRATE_COMMAND } from "#node/constants/db-migrate-command.constant";
 import { DB_ROLLBACK_COMMAND } from "#node/constants/db-rollback-command.constant";
+import { DB_SEED_COMMAND } from "#node/constants/db-seed-command.constant";
 import { DOC_STANDARD_COMMAND } from "#node/constants/doc-standard-command.constant";
 import { GEN_COMMAND } from "#node/constants/gen-command.constant";
 import { LS_COMMAND } from "#node/constants/ls-command.constant";
@@ -92,6 +94,7 @@ export const COMMANDS: readonly CliCommand[] = [
   ),
   DB_MIGRATE_COMMAND,
   DB_ROLLBACK_COMMAND,
+  DB_SEED_COMMAND,
   SEED_PACK_COMMAND,
   SETTINGS_DIFF_COMMAND,
   SETTINGS_APPLY_COMMAND,

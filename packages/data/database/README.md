@@ -392,6 +392,16 @@ hash, pack version, profile and owner. `applySeed` writes product defaults in on
 row whose owner is `tenant`; the owning package flips the owner when someone edits the product default. The
 connection is `directDatabaseUrl()`, as for `stackra db migrate`, which runs first (see Connection pool).
 
+`stackra db seed [--profile minimal|demo|test] [--module <key>] [--again]` runs a service's `Seeder` classes. Gen writes
+the service's `.stackra/entry/seed.ts`, which boots its container, connects over `directDatabaseUrl()` without the
+relay loop and calls `runSeedEntry`. `runSeeders` runs `minimal`, then the chosen profile. Each seeder is built by the
+container, so the services it injects are there, and runs in its own transaction with its ledger row (pack
+`seeder:<member>`, kind `seeder`, key `<module>.<profile>`, the SHA-256 of the class source as `hash`). A seeder whose
+source is unchanged is skipped, so a seeder upserts by its `static ids`; `--again` runs every one. On `production`,
+`demo`, `test` and `--again` need `--allow-production`, and the run records who ran it. `stackra seed-pack` runs the
+same step after its records. No tenant is opened yet: a tenant-owned write is refused by row-level security until
+seeding runs inside the tenant's isolation context.
+
 ## Record visibility
 
 A declaring model's reads carry visibility conditions on top of row-level security, never instead of it (ADR 0333
