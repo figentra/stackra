@@ -62,7 +62,9 @@ describe("migration 0006: figentra/os publishes @figentra", () => {
     expect(publishers.map((row) => row.repository).sort()).toEqual([
       "figentra/brand",
       "figentra/commerce",
+      "figentra/invoicing",
       "figentra/os",
+      "figentra/pay",
     ]);
   });
 });
