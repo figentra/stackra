@@ -1251,6 +1251,77 @@ test("keeper rule: an import asks the owner each run; prod, gate and registry ar
     assert.equal(decision(c), "allow", c);
 });
 
+// ADR 0500 (STA-1748): the private CLI's forms of the guarded wrappers, typed directly or through a runner, get the
+// rules the pnpm aliases get: the keeper rule, the bot-git options, the reviewer identity, the token and STA-303.
+test("figentra CLI: the keeper rule holds for `figentra secrets import` in every form", () => {
+  for (const c of [
+    "figentra secrets import STACKRA_X --confirm abc",
+    "figentra secrets import --env prod STACKRA_X",
+    "figentra secrets import --env=production STACKRA_X",
+    "figentra secrets import --path /ci/gate STACKRA_X",
+    "figentra secrets import --path=/ci/registry REGISTRY_SIGNING_KEY",
+    "pnpm exec figentra secrets import STACKRA_X --env prod",
+    "npx figentra secrets import STACKRA_X --confirm abc",
+    "npx @figentra/cli secrets import STACKRA_X --confirm abc",
+    "mise exec -- figentra secrets import STACKRA_X --env prod",
+  ])
+    assert.equal(decision(c), "deny", c);
+  for (const c of ["figentra secrets import STACKRA_X", "pnpm exec figentra secrets import STACKRA_X"])
+    assert.equal(decision(c), "ask", c);
+  for (const c of [
+    "figentra secrets import --list",
+    "figentra secrets import --dry-run STACKRA_X",
+    'grep -rn "figentra secrets import --confirm" .agents',
+  ])
+    assert.equal(decision(c), "allow", c);
+});
+test("figentra CLI: `figentra bot git|review|gh` get the bot-git, reviewer and token rules", () => {
+  for (const c of [
+    "figentra bot git -- fetch --upload-pack=x origin",
+    "npx figentra bot git -- -c core.sshCommand=x clone -u y z",
+    "figentra bot git -- push origin main",
+    "figentra bot git credential fill",
+    "figentra bot gh -- auth status",
+    "figentra bot review auth token",
+  ])
+    assert.equal(decision(c), "deny", c);
+  for (const c of ["figentra bot review -- pr view 12", "npx figentra bot review pr diff 12"]) {
+    assert.equal(decision(c), "deny", c);
+    assert.equal(decision(c, undefined, "package-builder"), "deny", c);
+    assert.equal(decision(c, undefined, "code-reviewer"), "allow", c);
+  }
+});
+for (const c of [
+  "figentra linear mine; ps aux",
+  "figentra pr merge 1 & pgrep -af node",
+  "npx figentra bot gh pr view 1 & top -l 1",
+  "pnpm exec figentra bot git -- fetch origin; pgrep -l node",
+  "figentra secrets import --list; cat /proc/self/cmdline",
+])
+  test(`deny (STA-303, figentra CLI): ${c}`, () => assert.equal(decision(c), "deny"));
+test("figentra CLI: the settings floor denies secrets import and bot token when the hook fails open", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { deny } = JSON.parse(await readFile(join(root, ".claude", "settings.json"), "utf8")).permissions;
+  const globs = deny
+    .filter((r) => r.startsWith("Bash("))
+    .map((r) => new RegExp(`^${r.slice(5, -1).replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`));
+  for (const c of [
+    "figentra secrets import X --confirm abc",
+    "figentra secrets import X --env prod",
+    "pnpm exec figentra secrets import X --confirm abc",
+    "npx figentra secrets import X --env prod",
+    "mise exec -- figentra secrets import X --confirm abc",
+    "node node_modules/@figentra/cli/src/commands/secrets-import.mjs X --confirm abc",
+    "figentra bot token",
+    "npx figentra bot token",
+  ])
+    assert.ok(
+      globs.some((g) => g.test(c)),
+      c,
+    );
+  assert.ok(!globs.some((g) => g.test("figentra secrets import --list")));
+});
+
 // Productivity: a pattern, a message or history that names a guarded command is prose, not a command.
 for (const c of [
   'grep -rn "git push origin main" apps/docs',

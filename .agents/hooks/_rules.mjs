@@ -728,7 +728,7 @@ function readGitCommands(text, cwd) {
         at[next] === subAt && words[next].startsWith(m[2])
           ? words.slice(next + 1)
           : argWords(src.slice(subAt + m[2].length));
-      const bot = /\bbot:git\b|\bbot-gh\.mjs\s+git\b/.test(src);
+      const bot = /\bbot:git\b|\bbot-gh\.mjs\s+git\b|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+git\b/.test(src);
       const gitDir = target === null || target.some((w) => /^--(?:git-dir|bare)\b/.test(w));
       for (const dir of dirs)
         out.push({
@@ -1369,7 +1369,7 @@ const PM_VALUE = /^(?:-C|-F|--filter|--dir|--prefix|-w|--workspace|--cwd)$/;
  * `$(…)`; STA-330 review), or `bot-gh.mjs review` directly. One pass over the words.
  */
 const runsBotReview = (t) =>
-  /\bbot-gh\.mjs\s+review\b/.test(t) ||
+  /\bbot-gh\.mjs\s+review\b|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+review\b/.test(t) ||
   simpleCommands(t).some(({ words }) => {
     let script = false; // the word may be the script a package manager before it runs
     for (let k = 0; k < words.length; k++) {
@@ -1408,15 +1408,21 @@ const listsProcessEnv = (c) =>
   );
 /** `/proc/<pid>/environ`: another process's environment, read by any command (STA-303). */
 const PROC_ENVIRON = /\/proc\/[^\s;&|()<>]*\/environ\b/;
+/** The private CLI (`@figentra/cli`, ADR 0500) running a command whose alias injects /agents values. */
+const FIGENTRA_SECRET_COMMAND = new RegExp(
+  String.raw`(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?(?:bot|pr\s+merge|linear|secrets)\b`,
+);
 /** The scripts that run their program inside `infisical run` with every /agents value (package.json). */
 const SECRET_SCRIPT = /^(?:linear|spec:linear|pr:merge|bot:\S+|secrets:\S+)$/;
 /**
  * A text that injects secrets into a child: `infisical run`, `mcp.sh`, or a package manager running a script of
- * `SECRET_SCRIPT` (`pnpm [options] [run] linear`), the walk `runsBotReview` makes.
+ * `SECRET_SCRIPT` (`pnpm [options] [run] linear`), the walk `runsBotReview` makes, or the private CLI's form of
+ * those scripts (`figentra bot|pr merge|linear|secrets …`), bare or through a runner.
  */
 const injectsSecrets = (t) =>
   infisicalCommands(t).some((x) => x.sub === "run") ||
   /(?:^|[\s/;&|(])mcp\.sh\b/.test(t) ||
+  FIGENTRA_SECRET_COMMAND.test(t) ||
   simpleCommands(t).some(({ words }) => {
     let script = false;
     for (let k = 0; k < words.length; k++) {
@@ -1542,8 +1548,8 @@ const EAS_DEPLOY = atName(
 const PUBLISH = atName(String.raw`(?:${CLI("(?:npm|pnpm|yarn|changeset)")})?publish` + END);
 /** `pnpm runway deploy|promote`, the `runway` binary or its `runway.mjs` build (STA-268) without `--dry-run`; `plan` is a read. */
 const RUNWAY_DEPLOY = /\brunway(?:\.mjs)?\s+(?:--\s+)?(?:deploy|promote)\b(?![^|;&\n]*--dry-run)/;
-/** `pnpm secrets:import`, or its script run directly. */
-const SECRETS_IMPORT = String.raw`\bsecrets(?::import|-import(?:\.mjs)?)\b`;
+/** `pnpm secrets:import`, its script run directly, or the private CLI's `figentra secrets import` (ADR 0500). */
+const SECRETS_IMPORT = String.raw`\bsecrets(?::import|-import(?:\.mjs)?|\s+import)\b`;
 /** An import that writes: not `--list`, not `--dry-run` (the owner's keeper rule of 2026-10-31). */
 const SECRETS_IMPORT_WRITE = new RegExp(
   String.raw`${SECRETS_IMPORT}(?![^|;&\n]*\s--(?:list|dry-run)\b)`,
@@ -1782,7 +1788,7 @@ const RULES = [
   {
     // STA-303 incident: a `ps` beside `pnpm linear` printed the injected TURBO_TOKEN into the transcript.
     rx: (c) => runnable(c).some(injectsSecrets) && runsQuoted(c, listsProcesses),
-    why: "Secrets guard: a process listing (`ps`, `pgrep -a|-l`, `procs`, `top`, `lsof`, `/proc/…`) in the same command as `infisical run`, `pnpm linear`, `pnpm bot:*`, `pnpm secrets:*` or `mcp.sh` can print the arguments or environment of the child that holds the injected secrets (STA-303). Run the listing as its own command, after the wrapper has exited.",
+    why: "Secrets guard: a process listing (`ps`, `pgrep -a|-l`, `procs`, `top`, `lsof`, `/proc/…`) in the same command as `infisical run`, `pnpm linear`, `pnpm bot:*`, `pnpm secrets:*`, `figentra bot|pr merge|linear|secrets` or `mcp.sh` can print the arguments or environment of the child that holds the injected secrets (STA-303). Run the listing as its own command, after the wrapper has exited.",
   },
 
   // --- Encore and deploys: the environment-touching subcommands ---------------------------------
@@ -2054,6 +2060,8 @@ const RULES = [
         c,
         new RegExp(
           String.raw`\bbot:(?:gh|review)\s+(?:--\s+)?auth\b|\bbot:git\s+(?:--\s+)?(?:\S+\s+)*?credential\b|` +
+            // The private CLI's bot modes (`figentra bot gh|review auth`, `figentra bot git credential`).
+            String.raw`\bfigentra\s+(?:--\s+)?bot\s+(?:(?:gh|review)\s+(?:--\s+)?auth\b|git\s+(?:--\s+)?(?:\S+\s+)*?credential\b)|` +
             // STA-214: `git credential fill` and `git credential-<helper> get` answer with the owner's token.
             // `man git-credential` and similar read-only help is not a credential call (STA-216).
             String.raw`(?<!\b(?:man|help|which|whereis|type)\s+(?:-\S+\s+)*)\bgit(?:-|\s+(?:--\s+)?` +

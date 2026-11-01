@@ -890,6 +890,36 @@ test("STA-400 review 3: an executor may read the eas binary's path; running it i
     assert.equal(kind(c), "deny", c);
 });
 
+// ADR 0500 (STA-1748): the private CLI's forms of the lead's wrappers are the lead's too, bare or after a runner.
+test("figentra CLI: an executor is denied every form of the lead's wrappers", () => {
+  for (const c of [
+    "figentra secrets import STACKRA_X --confirm abc",
+    "figentra secrets import --env prod STACKRA_X",
+    "figentra secrets import STACKRA_X",
+    "npx @figentra/cli secrets import STACKRA_X --env prod",
+    "mise exec -- figentra secrets import STACKRA_X --confirm abc",
+    "figentra bot git -- push origin HEAD",
+    "figentra bot git -- fetch origin",
+    "pnpm exec figentra bot git -- fetch --upload-pack=x origin",
+    "figentra bot review -- pr view 12",
+    "npx figentra bot review pr diff 12",
+    "figentra bot gh pr view 1",
+    "figentra bot gh -- auth status",
+    "figentra bot git credential fill",
+    "figentra pr merge 3",
+    "figentra linear mine",
+    "figentra linear mine; ps aux",
+    "npx figentra pr merge 1 & pgrep -af node",
+  ])
+    assert.equal(kind(c), "deny", c);
+  for (const c of [
+    'grep -rn "figentra bot git" .agents',
+    "git log --oneline -1",
+    "pnpm bot:git -- push origin HEAD",
+  ])
+    assert.equal(kind(c), "allow", c);
+});
+
 test("STA-400 review: an executor keeps its denies for wrapped forms", () => {
   for (const c of [
     "env infisical run -- node x.js",

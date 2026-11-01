@@ -149,6 +149,14 @@ const BOT_SCRIPT = /^(?:bot:\S+|pr:merge|linear|spec:linear)$/;
  */
 const EXECUTOR_BOT_GIT =
   /^pnpm bot:git (?:-- )?(?:fetch origin(?: [\w./-]+)?|push (?:--force-with-lease )?origin HEAD)$/;
+/**
+ * The private CLI (`@figentra/cli`, ADR 0500) running what `BOT_SCRIPT` and `secrets:*` run: `figentra bot …`,
+ * `pr merge`, `linear`, `secrets …`, bare or after any runner (`pnpm exec`, `npx`, `mise exec --`). All the lead's;
+ * the executor's one push stays the exact `pnpm bot:git` form above. A quoted mention (`grep "figentra bot"`) is not
+ * at a word start and stays allowed.
+ */
+const FIGENTRA_LEAD =
+  /(?:^|[\s/])(?:figentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?(?:bot|pr\s+merge|linear|secrets)\b/;
 
 /** Executors run unattended: anything that leaves the worktree, ships, or destroys local data is the lead's. */
 function denyExecutor(cmd: string, args: string[], exact: boolean): Decision {
@@ -192,6 +200,10 @@ function denySub(sub: string, exact: boolean): Decision {
 
   const executor = denyExecutor(cmd, args, exact);
   if (executor.kind === "deny") return executor;
+  if (FIGENTRA_LEAD.test(sub))
+    return deny(
+      "`figentra bot`, `pr merge`, `linear` and `secrets` run with the /agents values or move a secret; they are the lead's, as `pnpm bot:*`, `pr:merge`, `linear` and `secrets:*` are.",
+    );
 
   for (const t of tokens(sub))
     if (isSecretPath(t)) return deny(`${t} holds secret values; never read, copy or print it.`);

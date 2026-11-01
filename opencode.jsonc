@@ -103,6 +103,10 @@
     // The same two through the private CLI (@figentra/cli), under any runner.
     { "action": "shell", "resource": "*figentra secrets import*", "effect": "deny" },
     { "action": "shell", "resource": "*figentra bot token*", "effect": "deny" },
+    // The private CLI's forms of the wrappers above (`*pnpm *bot:*`, `pr:merge`, `linear`): the lead's.
+    { "action": "shell", "resource": "*figentra bot *", "effect": "deny" },
+    { "action": "shell", "resource": "*figentra pr merge*", "effect": "deny" },
+    { "action": "shell", "resource": "*figentra linear*", "effect": "deny" },
     { "action": "shell", "resource": "printenv*", "effect": "deny" },
     { "action": "shell", "resource": "env", "effect": "deny" },
     { "action": "shell", "resource": "security *", "effect": "deny" },
