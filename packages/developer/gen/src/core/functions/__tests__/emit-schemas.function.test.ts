@@ -222,8 +222,12 @@ describe("emitSchemas", () => {
     };
     const content = emitSchemas(ir, "orders");
     expect(content).toContain("export const DraftOrder$ = OrderView$.extend({");
-    expect(content).toMatch(/lines: OrderLineView\$|lines: z\.lazy\(\(\) => OrderLineView\$\)/);
-    expect(content).toContain("z.lazy(() => DraftOrder$)");
+    expect(content).toMatch(/lines: OrderLineView\$|get lines\(\) \{\n {4}return OrderLineView\$;/);
+    // The cycle back to DraftOrder, declared later, is a getter (STA-1683).
+    expect(content).toMatch(
+      / {2}get draft\(\) \{\n {4}return DraftOrder\$\.exactOptional\(\);\n {2}\},/,
+    );
+    expect(content).not.toContain("z.lazy(");
     expect(content).toContain('import { CustomerView$ } from "./customers";');
     expect(content).toContain(
       'import { LoyaltyKitConfig$ as BaseLoyaltyKitConfig$ } from "@acme/loyalty-kit";',
@@ -231,6 +235,50 @@ describe("emitSchemas", () => {
     expect(content).toContain(
       "  maxRedeemPercent: BaseLoyaltyKitConfig$.shape.maxRedeemPercent.default(30),",
     );
+  });
+
+  it("emits a self-recursive shape with a getter, so no hand registration is needed (STA-1683)", () => {
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      shapes: [
+        {
+          name: "ExploreGroupView",
+          kind: "schema",
+          module: "orders",
+          file: "src/modules/orders/schemas/explore-group-view.schema.ts",
+          importPath: "#modules/orders/schemas/explore-group-view.schema",
+          fields: [
+            {
+              name: "count",
+              optional: false,
+              nullable: false,
+              type: { kind: "number" },
+              rules: [{ name: "Int", options: { min: 0 } }],
+            },
+            {
+              name: "groups",
+              optional: true,
+              nullable: false,
+              type: {
+                kind: "array",
+                element: { kind: "schema", name: "ExploreGroupView", module: "orders" },
+              },
+              rules: [],
+            },
+          ],
+          relations: [],
+        },
+      ],
+      enums: [],
+      classes: [],
+    };
+    const content = emitSchemas(ir, "orders");
+    expect(content).toContain("export const ExploreGroupView$ = z.object({");
+    expect(content).toMatch(
+      / {2}get groups\(\) \{\n {4}return z\.array\(ExploreGroupView\$\)[^\n]*;\n {2}\},/,
+    );
+    expect(content).not.toContain("z.lazy(");
+    expect(content).toContain("  [ExploreGroupView, ExploreGroupView$],");
   });
 
   it("links each change to its subject beside the schemas", () => {
