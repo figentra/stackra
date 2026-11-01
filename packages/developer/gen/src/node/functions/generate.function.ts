@@ -27,6 +27,8 @@
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
  *           stackra-248) and removes any `.sql` file there it did not produce; `--check` reports a stale, missing or
  *           leftover one.
+ *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
+ *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
@@ -42,6 +44,7 @@ import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
+import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -49,6 +52,7 @@ import { compileMigrations } from "#node/functions/compile-migrations.function";
 import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
+import { hasIntTests } from "#node/functions/has-int-tests.function";
 import { runwayQueues } from "#node/functions/runway-queues.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
 
@@ -247,6 +251,9 @@ export async function generate(
       : [];
   const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];
   let files = [...result.files, ...encore.files, ...migrations.files];
+  // A member with an `.int.test.ts` gets the integration-tier config beside the unit one (`stackra test --tier int`).
+  if (files.some((file) => file.path === ".stackra/vitest.config.ts") && hasIntTests(root))
+    files.push(emitIntTierConfig(ir.package));
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
     if (

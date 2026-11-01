@@ -66,7 +66,7 @@ export const COMMANDS: readonly CliCommand[] = [
   BUILD_COMMAND,
   toolCommand("start", "Generate, then preview an app's web build"),
   toolCommand("typecheck", "Generate, then type-check the member"),
-  toolCommand("test", "Generate, then run the member's tests (--tier unit|e2e)"),
+  toolCommand("test", "Generate, then run the member's tests (--tier unit, int or e2e)"),
   toolCommand("lint", "Lint the member with oxlint"),
   checkCommand(
     "check",
