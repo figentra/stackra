@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `DbSeedCommand`, `db:seed --pack <pack>`: reports the records of a seed pack the seed ledger holds, by kind
- *          and owner, through `seedState`.
+ * Purpose: `SeedPackStatusCommand`, `seed-pack:status --pack <pack>`: reports the records of a seed pack the seed
+ *          ledger holds, by kind and owner, through `seedState`. Not `db:seed`: `stackra db seed` runs a service's
+ *          seeders (STA-1852).
  * Boundary: reads `database.seed_records` only. Planning and writing a pack's records (`applySeed`) needs the pack's
  *           declared records, which `stackra seed-pack` plans, so this command writes nothing. Audited.
  * Runtime: node
@@ -15,8 +16,8 @@ import { Str } from "@stackra/validation";
 import type { DatabaseRunner } from "#node/services/database-runner.service";
 
 /** Shows a seed pack's stored records. */
-export class DbSeedCommand extends Command({
-  name: "db:seed",
+export class SeedPackStatusCommand extends Command({
+  name: "seed-pack:status",
   description: "Show the stored records of a seed pack",
   audit: true,
 }) {
