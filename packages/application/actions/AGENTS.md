@@ -60,6 +60,10 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   binding's actor in its own fresh run. The inbox's actor reaches no call. `settle` is a compare-and-set; only a
   non-retryable refusal other than `idempotency_key_reused` and `approval_consumed` settles `failed`, and an identity
   outage, any other error and an in-flight answer never do. `ApprovalOutcome` has `unknown` for a stuck request.
+- An `ApprovalCondition` takes no constructor dependency: `needed(input, ctx, settings)` gets a reader limited to its
+  static `reads`, over the `ApprovalSettingsSource` port of `@stackra/contracts` (driver `SettingsApprovalSourceDriver`
+  in `@stackra/settings`). `reads` with no source bound refuses `approval_settings_unavailable`; never read it as "not
+  needed".
 - Approval, the live-configuration guard and meters decide nothing in code: the gate's rules, the environment and the
   usage quotas are data the drivers read. A `structural` action or a `meter` without its port bound is an error.
 - A plan-sized area bucket comes from the bound `RateLimitBudget` (a value entitlement), never from code; its answer

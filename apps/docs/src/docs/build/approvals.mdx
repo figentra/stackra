@@ -41,7 +41,11 @@ export class CreateCouponAction extends Action({
 ```
 
 The threshold is data the condition reads from a setting marked `approval`; the comparison is code. A condition takes no
-constructor dependencies.
+constructor dependencies; `needed(input, ctx, settings)` gets a reader limited to the keys in its static `reads`.
+
+The reader sits over the `ApprovalSettingsSource` port of `@stackra/contracts`, and `@stackra/settings` ships its driver,
+`SettingsApprovalSourceDriver`. A condition that declares `reads` while no source is bound refuses the call with
+`approval_settings_unavailable` (503, not retryable) rather than reading it as "not needed".
 
 ## What happens to a call
 

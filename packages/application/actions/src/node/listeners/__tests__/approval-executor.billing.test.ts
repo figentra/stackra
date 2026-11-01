@@ -5,7 +5,7 @@
  *          a call under the threshold runs, one above it is parked, the requester cannot approve it, an approver can, and
  *          `ApprovalExecutor` then runs it once as the requester.
  * Boundary: test only. It needs the three-argument `ApprovalCondition.needed(input, ctx, settings)` and the
- *           `ApprovalSettingsSource` port of the stage's build branch; it builds no billing code.
+ *           `ApprovalSettingsSource` port of `@stackra/contracts`; it builds no billing code.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0509; STA-1724 (P-017, FR-020).
  */
@@ -14,6 +14,7 @@ import type { AnyClass } from "@stackra/container";
 import {
   type Actor,
   ActorKind,
+  ApprovalSettingsSource,
   AssuranceLevel,
   Clock,
   type Email,
@@ -39,7 +40,6 @@ import {
   ScopeOwnership,
 } from "#contracts/index";
 import { Effect } from "#contracts/enums/effect.enum";
-import { ApprovalSettingsSource } from "#contracts/ports/approval-settings-source.port";
 import { Action } from "#core/bases/action.base";
 import { ApprovalCondition } from "#core/bases/approval-condition.base";
 import { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";
