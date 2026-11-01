@@ -23,7 +23,7 @@ import {
   type Wiring,
   type WiringDriver,
 } from "#core/index";
-import { MemoryLoggerDriver } from "#testing/drivers/memory-logger.driver";
+import { MemoryLoggerFake } from "#testing/fakes/memory-logger.fake";
 import { REGISTERED_WIRINGS } from "#testing/constants/registered-wirings.constant";
 import { TESTING_PLUGINS } from "#testing/constants/testing-plugins.constant";
 import { loadMemberSchemas } from "#testing/functions/load-member-schemas.function";
@@ -184,7 +184,7 @@ export class TestingModuleBuilder {
           driver.selectedBy === undefined &&
           pickedFor(driver, choice) === undefined,
       );
-      if (loggers.length === 0) overrides.set(Logger, new MemoryLoggerDriver());
+      if (loggers.length === 0) overrides.set(Logger, new MemoryLoggerFake());
       else if (unchosen && names.size > 1 && names.has("memory")) byPort[Logger.name] = "memory";
     }
     const container = await Container.create([...picked, ...wirings], {

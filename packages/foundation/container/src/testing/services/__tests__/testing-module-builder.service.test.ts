@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { Driver, Module, named, Service, type Wiring } from "#core/index";
 import { REGISTERED_WIRINGS } from "#testing/constants/registered-wirings.constant";
 import { TESTING_PLUGINS } from "#testing/constants/testing-plugins.constant";
-import { MemoryLoggerDriver } from "#testing/drivers/memory-logger.driver";
+import { MemoryLoggerFake } from "#testing/fakes/memory-logger.fake";
 import { registerWiring } from "#testing/functions/register-wiring.function";
 import { TestingModuleBuilder } from "#testing/services/testing-module-builder.service";
 
@@ -108,9 +108,9 @@ describe("TestingModuleBuilder", () => {
   it("binds a memory Logger when no wiring lists a Logger driver, and keeps an override or a wiring's (STA-1805)", async () => {
     const app = await new TestingModuleBuilder([ReportingModule]).compile();
     const logger = app.get(Logger);
-    expect(logger).toBeInstanceOf(MemoryLoggerDriver);
+    expect(logger).toBeInstanceOf(MemoryLoggerFake);
     logger.info("ledger.read", { rows: 2 });
-    expect((logger as MemoryLoggerDriver).lines).toEqual([
+    expect((logger as MemoryLoggerFake).lines).toEqual([
       { level: "info", event: "ledger.read", fields: { rows: 2 } },
     ]);
 
@@ -136,14 +136,14 @@ describe("TestingModuleBuilder", () => {
         {
           port: Logger,
           candidates: {
-            memory: () => Promise.resolve(MemoryLoggerDriver),
+            memory: () => Promise.resolve(MemoryLoggerFake),
             silent: () => Promise.resolve(SilentLoggerDriver),
           },
         },
       ],
     });
     const listed = await new TestingModuleBuilder([ReportingModule]).compile();
-    expect(listed.get(Logger)).toBeInstanceOf(MemoryLoggerDriver);
+    expect(listed.get(Logger)).toBeInstanceOf(MemoryLoggerFake);
     const chosen = await new TestingModuleBuilder([ReportingModule])
       .useDrivers({ Logger: "silent" })
       .compile();
