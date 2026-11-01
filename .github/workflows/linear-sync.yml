@@ -5,7 +5,9 @@
 # Secrets: LINEAR_AGENT_CLIENT_ID / LINEAR_AGENT_CLIENT_SECRET (the "Stackra Agent" app; the script mints a
 #          client_credentials token), LINEAR_API_KEY as fallback. Read from the environment only; never printed.
 #          STA-1822: the stackra-bot App's id and key come from Infisical prod `/ci/release` over OIDC (STA-1747), the
-#          path runway-npm.yml uses, and mint a read-only installation token for the figentra org, so the reconcile
+#          path runway-npm.yml uses, read inside the `linear-sync` environment (main only, no reviewer; the owner adds
+#          `repo:figentra@314302700/stackra@1425140001:environment:linear-sync` as a trusted OIDC subject of the CI
+#          identity), and mint a read-only installation token for the figentra org, so the reconcile
 #          reads every repo in tools/scripts/linear-reconcile.repos.yaml. Without a token the job uses github.token,
 #          reads this repo only and lists the others as skipped.
 name: Linear sync
@@ -32,6 +34,9 @@ concurrency:
 jobs:
   reconcile:
     name: Reconcile Linear
+    # Production secrets are read only inside a named environment: `linear-sync` (main branch only, no reviewer) is the
+    # OIDC subject the CI identity trusts for `/ci/release` (STA-1822).
+    environment: linear-sync
     runs-on: ubuntu-latest
     continue-on-error: true
     timeout-minutes: 10
