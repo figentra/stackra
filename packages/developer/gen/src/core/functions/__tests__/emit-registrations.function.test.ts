@@ -21,6 +21,7 @@ import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { CONNECTOR_PACKAGES } from "#core/__tests__/fixtures/connector-packages.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
 /** The registrations of `ir` against its own derived manifest. */
@@ -106,6 +107,23 @@ describe("emitRegistrations", () => {
       registrationsOf({ ...BILLING_IR, classes: [...BILLING_IR.classes, paypal] }) ?? "";
     expect(content).toContain("integration: StripeIntegration");
     expect(content).not.toContain("PaypalIntegration");
+  });
+
+  it("registers the connections of the connector packages it declares, imported from each package", () => {
+    const hosting = registrationsOf({
+      ...BILLING_IR,
+      dependencies: [...BILLING_IR.dependencies, ...CONNECTOR_PACKAGES],
+    });
+    expect(hosting).toContain(
+      '{ connection: WalletConnection, integration: WalletIntegration, key: "connector_wallet.wallet" },',
+    );
+    expect(hosting).toContain(
+      '{ connection: PaylinkConnection, integration: PaylinkIntegration, key: "connector_paylink.paylink" },',
+    );
+    expect(hosting).toMatch(
+      /import \{[^}]*WalletConnection[^}]*WalletIntegration[^}]*\} from "@figentra\/connector-wallet\/node";/,
+    );
+    expect(hosting).toMatch(/\} from "@figentra\/connector-paylink\/node";/);
   });
 
   it("registers connections, webhook events, sequences and searchable models", () => {
