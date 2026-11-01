@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: rule tests of `stackra/no-empty-decorator`: `@X()` and `@X({})` are reported without an autofix; a bare
- *          decorator and a decorator with options pass.
+ *          decorator, a decorator with options, and an empty call of a factory that must be called (`@Setting()`)
+ *          pass.
  * Boundary: test only; runs the rule through oxlint's RuleTester with the runner from @stackra/testing.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing).
@@ -27,6 +28,11 @@ tester.run(
       "class Order {\n  @Int({ min: 0 })\n  total = 0;\n}",
       "@Searchable\nclass Order {}",
       '@Index(["tenantId", "status"])\nclass Order {}',
+      "class Settings {\n  @Setting()\n  limit = 10;\n}",
+      "class Settings {\n  @Setting({})\n  limit = 10;\n}",
+      "class Billing {\n  @Step({})\n  async charge() {}\n}",
+      "@Journaled({})\nclass Entry {}",
+      "@Visibility({})\nclass Order {}",
     ],
     invalid: [
       {
@@ -34,8 +40,8 @@ tester.run(
         errors: [{ messageId: "emptyDecorator", data: { name: "Trim" } }],
       },
       {
-        code: "class Settings {\n  @Setting({})\n  limit = 10;\n}",
-        errors: [{ messageId: "emptyDecorator", data: { name: "Setting" } }],
+        code: "@Auditable({})\nclass Order {}",
+        errors: [{ messageId: "emptyDecorator", data: { name: "Auditable" } }],
       },
     ],
   },
