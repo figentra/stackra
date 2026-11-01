@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "json": {
+    "data": [
+      {
+        "id": "C0",
+        "attributes": {
+          "capabilityType": "IN_APP_PURCHASE"
+        }
+      }
+    ]
+  }
+}

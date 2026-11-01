@@ -7,7 +7,12 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0305 (one declaration per file); STA-1371.
  */
 import type { ReactElement, ReactNode } from "react";
-import { type ChartBounds, CartesianChart, type PointsArray } from "victory-native";
+import type { ChartBounds, PointsArray } from "victory-native";
+
+import { loadVictoryNative } from "#native/skia/load-victory-native.function";
+
+// victory-native is an optional peer (on Skia), required on first use (STA-1791).
+const { CartesianChart } = loadVictoryNative();
 
 /** Victory's chart with loose row typing. */
 export const LooseCartesianChart = CartesianChart as unknown as (props: {

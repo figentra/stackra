@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "bac77d51d79cfceb",
+    "hash": "0afed429b16dba4c",
     "propsFiles": ["ui/src/native/data-table/data-table.props.ts"]
   },
   "importLine": "import { DataTable } from \"@stackra/ui/native\";",
@@ -148,6 +148,13 @@
         {
           "description": "True to give each header the column tools: a menu (sort, add to sort, filter, pin, hide, group, summary, resize,\nmove), a resize handle and drag to reorder.",
           "name": "hasColumnTools",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
+          "name": "ai",
           "required": false,
           "source": "stackra",
           "type": "boolean"

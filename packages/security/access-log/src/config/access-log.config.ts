@@ -27,5 +27,5 @@ import { AccessLogOptions } from "#core/schemas/access-log-options.schema";
  */
 export class AccessLogConfig extends Config({
   schema: AccessLogOptions,
-  env: { sink: "STACKRA_ACCESS_LOG_SINK" },
+  env: { sink: "STACKRA_ACCESS_LOG_SINK", commandAuditScope: "STACKRA_COMMAND_AUDIT_SCOPE" },
 }) {}

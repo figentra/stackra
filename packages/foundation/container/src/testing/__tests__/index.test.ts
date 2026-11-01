@@ -15,6 +15,7 @@ import type { ModuleRecord, TestingApp, TestingPlugin } from "#testing/index";
 describe("@stackra/container/testing", () => {
   it("exports the testing module and its registration functions", () => {
     expect(Object.keys(testing).sort()).toEqual([
+      "MemoryLoggerFake",
       "TestingApp",
       "TestingModuleBuilder",
       "createTestingModule",

@@ -10,7 +10,7 @@
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0305 (rules 1 and 14); registry v3.1 G1;
- *                     ADR 0162; ADR 0222; STA-1365 (`I18nKey`).
+ *                     ADR 0162; ADR 0222; STA-1365 (`I18nKey`); STA-1826 (a settings section is prefaulted).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -63,10 +63,62 @@ describe("emitSchemas", () => {
     );
   });
 
+  it("augments a shape with initializers by its defaulted field names, and no other (STA-1694)", () => {
+    expect(orders).toContain(
+      'declare module "#modules/orders/schemas/list-orders-input.schema" {\n' +
+        "  interface ListOrdersInput {\n" +
+        '    readonly "~defaults"?: "limit";\n',
+    );
+    expect(orders).not.toContain("interface CancelOrderInput");
+  });
+
+  it("omits a driver-name field from the check and still augments it as defaulted (STA-1694, STA-1805)", () => {
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      shapes: [
+        {
+          name: "ChargeInput",
+          kind: "schema",
+          module: "orders",
+          file: "src/modules/orders/schemas/charge-input.schema.ts",
+          importPath: "#modules/orders/schemas/charge-input.schema",
+          fields: [
+            {
+              name: "gateway",
+              optional: false,
+              nullable: false,
+              type: { kind: "driver_name", port: "PaymentGateway", values: ["stripe"] },
+              rules: [],
+              default: { value: "stripe", code: '"stripe"', imports: [] },
+            },
+            {
+              name: "retries",
+              optional: false,
+              nullable: false,
+              type: { kind: "number", integer: true },
+              rules: [],
+              default: { value: 3, code: "3", imports: [] },
+            },
+          ],
+          relations: [],
+        } as ShapeIR,
+      ],
+    };
+    const out = emitSchemas(ir, "orders");
+    expect(out).toContain(
+      'export type ChargeInput$Check = Assert<Same<Omit<z.output<typeof ChargeInput$>, "gateway">, Omit<Fields<ChargeInput>, "gateway">>>;',
+    );
+    expect(out).toContain('readonly "~defaults"?: "gateway" | "retries";');
+  });
+
   it("aliases a config to its schema", () => {
     const commerce = emitSchemas(COMMERCE_IR, "commerce");
     expect(commerce).toContain('  gateway: z.enum(["stripe"]).default("stripe"),');
     expect(commerce).toContain("export const CommerceConfig$ = CommerceOptions$;");
+    // a driver-name field is left out of the check on both sides: DriverName<P> widens without a `~key` brand (STA-1805)
+    expect(commerce).toContain(
+      'export type CommerceOptions$Check = Assert<Same<Omit<z.output<typeof CommerceOptions$>, "gateway">, Omit<Fields<CommerceOptions>, "gateway">>>;',
+    );
   });
 
   it("declares no config alias the member ships itself, so a hatch importing it reads the shipped one", () => {
@@ -170,8 +222,12 @@ describe("emitSchemas", () => {
     };
     const content = emitSchemas(ir, "orders");
     expect(content).toContain("export const DraftOrder$ = OrderView$.extend({");
-    expect(content).toMatch(/lines: OrderLineView\$|lines: z\.lazy\(\(\) => OrderLineView\$\)/);
-    expect(content).toContain("z.lazy(() => DraftOrder$)");
+    expect(content).toMatch(/lines: OrderLineView\$|get lines\(\) \{\n {4}return OrderLineView\$;/);
+    // The cycle back to DraftOrder, declared later, is a getter (STA-1683).
+    expect(content).toMatch(
+      / {2}get draft\(\) \{\n {4}return DraftOrder\$\.exactOptional\(\);\n {2}\},/,
+    );
+    expect(content).not.toContain("z.lazy(");
     expect(content).toContain('import { CustomerView$ } from "./customers";');
     expect(content).toContain(
       'import { LoyaltyKitConfig$ as BaseLoyaltyKitConfig$ } from "@acme/loyalty-kit";',
@@ -179,6 +235,92 @@ describe("emitSchemas", () => {
     expect(content).toContain(
       "  maxRedeemPercent: BaseLoyaltyKitConfig$.shape.maxRedeemPercent.default(30),",
     );
+  });
+
+  it("emits a self-recursive shape with a getter, so no hand registration is needed (STA-1683)", () => {
+    const ir: MemberIR = {
+      ...COMMERCE_IR,
+      shapes: [
+        {
+          name: "ExploreGroupView",
+          kind: "schema",
+          module: "orders",
+          file: "src/modules/orders/schemas/explore-group-view.schema.ts",
+          importPath: "#modules/orders/schemas/explore-group-view.schema",
+          fields: [
+            {
+              name: "count",
+              optional: false,
+              nullable: false,
+              type: { kind: "number" },
+              rules: [{ name: "Int", options: { min: 0 } }],
+            },
+            {
+              name: "groups",
+              optional: true,
+              nullable: false,
+              type: {
+                kind: "array",
+                element: { kind: "schema", name: "ExploreGroupView", module: "orders" },
+              },
+              rules: [],
+            },
+          ],
+          relations: [],
+        },
+      ],
+      enums: [],
+      classes: [],
+    };
+    const content = emitSchemas(ir, "orders");
+    expect(content).toContain("export const ExploreGroupView$ = z.object({");
+    expect(content).toMatch(
+      / {2}get groups\(\) \{\n {4}return z\.array\(ExploreGroupView\$\)[^\n]*;\n {2}\},/,
+    );
+    expect(content).not.toContain("z.lazy(");
+    expect(content).toContain("  [ExploreGroupView, ExploreGroupView$],");
+  });
+
+  it("keeps an array default's codes literal, with a fresh array per parse (STA-1695)", () => {
+    const settings: ShapeIR = {
+      name: "SdksSettings",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/sdks-settings.schema.ts",
+      importPath: "#modules/orders/schemas/sdks-settings.schema",
+      fields: [
+        {
+          name: "languages",
+          optional: false,
+          nullable: false,
+          type: {
+            kind: "array",
+            element: { kind: "enum", name: "SdkLanguage", values: ["typescript", "python", "php"] },
+          },
+          rules: [],
+          default: {
+            value: ["typescript", "python"],
+            code: '["typescript","python"]',
+            imports: [],
+          },
+        },
+        {
+          name: "limits",
+          optional: false,
+          nullable: false,
+          type: { kind: "record", value: { kind: "number" } },
+          rules: [],
+          default: { value: {}, code: "{}", imports: [] },
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [settings], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain('.default(() => [...(["typescript","python"] as const)])');
+    expect(content).toContain(".default(() => ({}))");
   });
 
   it("links each change to its subject beside the schemas", () => {
@@ -513,5 +655,68 @@ describe("emitSchemas", () => {
       "orders",
     );
     expect(content).toContain('import { type RouteKey, Routes } from "#stackra/routes";');
+  });
+
+  it("gives a settings section a prefault, so a missing section parses its own defaults (STA-1826)", () => {
+    const section: ShapeIR = {
+      name: "RoutingSettings",
+      kind: "schema",
+      module: "gateway",
+      file: "src/modules/gateway/schemas/routing-settings.schema.ts",
+      importPath: "#modules/gateway/schemas/routing-settings.schema",
+      fields: [
+        {
+          name: "strictInRegion",
+          optional: false,
+          nullable: false,
+          type: { kind: "boolean" },
+          rules: [],
+          default: { value: false, code: "false", imports: [] },
+        },
+      ],
+      relations: [],
+    };
+    const settings: ShapeIR = {
+      name: "GatewaySettings",
+      kind: "settings",
+      module: "gateway",
+      file: "src/modules/gateway/gateway.settings.ts",
+      importPath: "#modules/gateway/gateway.settings",
+      fields: [
+        {
+          name: "escalationHours",
+          optional: false,
+          nullable: false,
+          type: { kind: "number" },
+          rules: [],
+          default: { value: 24, code: "24", imports: [] },
+        },
+        {
+          name: "routing",
+          optional: false,
+          nullable: false,
+          type: { kind: "schema", name: "RoutingSettings", module: "gateway" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [section, settings], enums: [], classes: [] },
+      "gateway",
+    );
+    expect(content).toContain("  strictInRegion: z.boolean().default(false),");
+    expect(content).toContain("  routing: RoutingSettings$.prefault(() => ({})),");
+    // a section of any other kind stays required: a missing one is an error
+    const plain = emitSchemas(
+      {
+        ...COMMERCE_IR,
+        shapes: [section, { ...settings, kind: "schema" }],
+        enums: [],
+        classes: [],
+      },
+      "gateway",
+    );
+    expect(plain).toContain("  routing: RoutingSettings$,");
   });
 });

@@ -15,6 +15,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decisions 2 to 6); ADR 0263 (a class is its own token).
  */
+import type { Json } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
@@ -101,6 +102,21 @@ describe("emitClients", () => {
     expect(content.indexOf("const OrderView$")).toBeLessThan(
       content.indexOf("const ListOrdersOutput$"),
     );
+  });
+
+  it("leaves out an enum's schema constant that nothing reads (STA-1751)", () => {
+    const producer = {
+      ...PRODUCER,
+      schemas: {
+        ...(PRODUCER.schemas as Readonly<Record<string, Json>>),
+        "orders.Unread": { type: "string", enum: ["a", "b"] },
+      },
+    };
+    const unread =
+      emitClients(consumer({ services: [{ member: "commerce", manifest: producer }] })).files[0]
+        ?.content ?? "";
+    expect(unread).toContain("export const Unread = Enum.of({");
+    expect(unread).not.toContain("const Unread$");
   });
 
   it("writes a client module per producer module and a permission set per Permissions class (STA-1296)", () => {
@@ -299,5 +315,38 @@ describe("the passes that break a cycle between services", () => {
     );
     expect(errors).toEqual([]);
     expect(files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
+  });
+});
+
+describe("emitClients for a service read from a contract package (STA-1820)", () => {
+  const remote: NonNullable<MemberIR["services"]> = [
+    { member: "commerce", package: "@acme/commerce-contract", manifest: PRODUCER },
+  ];
+
+  it("still writes the client", () => {
+    const { files, errors } = emitClients(consumer({ services: remote }));
+    expect(errors).toEqual([]);
+    expect(files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
+  });
+
+  it("refuses a listener of its event: cross-app events have no transport yet", () => {
+    const refused = emitClients(consumer({ classes: [listenerOf("OrderPaid")], services: remote }));
+    expect(refused.files).toEqual([]);
+    expect(refused.errors.map((error) => [error.code, error.subject])).toEqual([
+      ["client_event_remote_transport", "SyncOnOrderPaidListener.handle"],
+    ]);
+  });
+
+  it("names both remedies when the service is unknown", () => {
+    const [error] = emitClients(consumer({ services: [] })).errors;
+    expect(error?.fix).toContain("run `stackra gen` in the commerce service");
+    expect(error?.fix).toContain("@figentra/commerce-contract");
+  });
+
+  it("does not find a service among the dependencies by member name", () => {
+    const refused = emitClients(
+      consumer({ services: [], dependencies: [{ package: "@acme/commerce", manifest: PRODUCER }] }),
+    );
+    expect(refused.errors.map((error) => error.code)).toEqual(["client_service_unknown"]);
   });
 });

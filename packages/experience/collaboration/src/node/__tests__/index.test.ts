@@ -13,6 +13,7 @@ import * as node from "#node/index";
 describe("@stackra/collaboration/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "COLLABORATION_ENTITIES",
       "Comment",
       "CommentMention",
       "CommentRevision",

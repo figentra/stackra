@@ -41,6 +41,8 @@ export type EntryNode =
       readonly columns: readonly string[];
       /** The record path of the currency a `…Minor` column is in when its item has no `currency` of its own. */
       readonly currency?: string;
+      /** Per column, the label key of each enum code (`{ status: I18n.orders.enums.line_status }`). */
+      readonly labels?: Readonly<Record<string, Readonly<Record<string, I18nKey>>>>;
     }
   | {
       /** A titled group of entries. */

@@ -42,6 +42,14 @@ describe("emitEncoreCronJobs", () => {
     expect(content).toContain("api({ expose: false }");
   });
 
+  it("loads the Encore database first, ahead of the server app (STA-1652)", () => {
+    const content =
+      emitEncoreCronJobs(BILLING_IR, buildManifest(BILLING_IR).manifest)?.content ?? "";
+    const lines = content.split("\n").filter((line) => line.startsWith("import "));
+    expect(lines[0]).toBe('import "./database";');
+    expect(lines.indexOf('import "./database";')).toBeLessThan(lines.indexOf(ENCORE_APP_IMPORT));
+  });
+
   it("writes nothing for a package, an app or a service that schedules nothing", () => {
     expect(
       emitEncoreCronJobs(LOYALTY_KIT_IR, buildManifest(LOYALTY_KIT_IR).manifest),

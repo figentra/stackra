@@ -35,6 +35,7 @@ export const FREE_DATE_PICKER: ComponentEntry = {
     { id: "controlled", platforms: ["native"] },
     { id: "hijri" },
     { id: "presets" },
+    { id: "tamo", platforms: ["react"] },
   ],
   related: ["free/date-field"],
   tokens: ["color.accent", "radius.field", "color.surface"],

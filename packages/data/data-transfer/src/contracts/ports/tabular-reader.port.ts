@@ -21,7 +21,7 @@ import type { TabularSource } from "#contracts/types/tabular-source.type";
  */
 export abstract class TabularReader extends Port {
   /** Type-only port key, so `DriverName<TabularReader>` narrows to this port's drivers. */
-  declare readonly "~key": "data-transfer.TabularReader";
+  declare readonly "~key": "data_transfer.TabularReader";
 
   /**
    * The rows of `source`, sheet by sheet, header first.

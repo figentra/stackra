@@ -16,7 +16,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
 import type { TextAreaContractProps } from "#contracts/types/text-area-contract-props.type";
+import type { TamoSlot } from "#contracts/types/tamo-slot.type";
 import { TextArea } from "#native/text-area/text-area";
+import { TamoContext } from "#react/hooks/tamo-context";
 import type { TextAreaProps } from "#native/text-area/text-area.props";
 
 /** The props each stand-in was last handed, by name, as the real component would receive them. */
@@ -45,6 +47,23 @@ vi.mock("heroui-native", async () => {
 });
 
 const propsOf = (name: string) => received.props[name] ?? {};
+
+vi.mock("#native/tamo-field-assist/tamo-field-assist", async () => {
+  const { createElement: h } = await import("react");
+  return {
+    TamoFieldAssist: (props: Record<string, unknown>) => {
+      received.props["assist"] = props;
+      return h("div", { "data-testid": "assist" }, props["children"] as ReactNode);
+    },
+  };
+});
+
+/** A Tamo slot that is on everywhere, as the AI module would provide it. */
+const SLOT: TamoSlot = {
+  isEnabled: () => true,
+  run: () => Promise.reject(new Error("not run")),
+  panel: { isOpen: false, question: undefined, open: () => {}, close: () => {} },
+};
 
 describe("TextArea (native)", () => {
   beforeEach(() => {
@@ -137,5 +156,13 @@ describe("TextArea (native)", () => {
     createElement(TextArea, { fullWidth: true });
     // @ts-expect-error `onChange` receives the text, so `onChangeText` is not a second way
     createElement(TextArea, { onChangeText: () => undefined });
+  });
+  it("puts Tamo round the area with Continue writing once the slot is on", () => {
+    render(
+      <TamoContext value={SLOT}>
+        <TextArea label="Notes" name="notes" />
+      </TamoContext>,
+    );
+    expect(propsOf("assist")).toMatchObject({ field: "notes", text: "", hasContinue: true });
   });
 });

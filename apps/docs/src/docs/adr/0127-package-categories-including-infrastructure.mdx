@@ -1,6 +1,6 @@
 ---
 title: "0127 — Package categories, including infrastructure and commerce"
-description: "Accepted, amended by 0282, 0286, 0294, 0302, 0327, 0331, 0332, 0345 · 2026-10-20 · amended 2026-10-24 (STA-348, STA-428), 2026-10-26 (STA-1265)"
+description: "Accepted, amended by 0282, 0286, 0294, 0302, 0327, 0331, 0332, 0345, 0506 · 2026-10-20 · amended 2026-10-24 (STA-348, STA-428), 2026-10-26 (STA-1265), 2026-10-31 (STA-1730)"
 ---
 
 <Note>
@@ -10,6 +10,16 @@ description: "Accepted, amended by 0282, 0286, 0294, 0302, 0327, 0331, 0332, 034
   source file. The first is `TurnstileCaptchaVerifierDriver` of `@stackra/platform`, which a Node
   service (OS security-center, OS-366) binds from `@stackra/platform/node`; `./worker` keeps it
   unchanged. Every other symbol stays on one entry, and the entry set is unchanged.
+</Note>
+
+<Note>
+  Amended 2026-10-31 (STA-1730) by [0506](/adr/0506-console-command-kind): the 2026-10-24 (STA-348)
+  note folds `console` into `cli`, because a Command is a CLI command only (0294 decision 23). That
+  fold is reversed for the command framework. `console` is `@stackra/console`
+  (`packages/developer/console`), its own package in `developer`: the framework and the terminal
+  look of the CLIs of 0500. `cli` keeps its `CliCommand` data shape until it moves onto
+  `@stackra/console`, as `.agents/specs/sta-1730-console/adoption.md` plans. The developer row gains
+  `console`; the other rows stand.
 </Note>
 
 <Note>
@@ -265,3 +275,11 @@ recorded with the package-map changes (pwa and network move into platform, route
 templates package). Mail code renders mail through `@stackra/mail`. Forms and notifications are settled in decision 12 of
 [0270](/adr/0270-builder-architecture-one-editor-kernel-document-kinds-and-collaboration-levels). The row keeps webhooks,
 versioning, integrations and mail.
+
+## Amendment 2026-10-31: the `connectors` category (STA-1719)
+
+A product puts each provider's connector in its own package, `packages/connectors/<provider>` (Figentra Pay first, then
+the OS for the non-payment providers). `connectors` is a package category, tier `lib`: one provider per package, holding
+that provider's `Integration` and `Connection` classes (ADR 0308) and nothing a second provider shares. Shared
+integration code stays in `communication` (`@stackra/integrations`). `CATEGORIES` in `@stackra/repo-checks`,
+`StackraCategory` in `@stackra/skills`, the scaffold, the registry browser and the structure page list it.

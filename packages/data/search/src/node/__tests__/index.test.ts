@@ -18,7 +18,10 @@ describe("@stackra/search/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "HttpEmbedderDriver",
+      "HttpRecommenderDriver",
+      "HttpRerankerDriver",
       "PgvectorVectorIndexDriver",
+      "PostgresRecommenderDriver",
       "PostgresSearchDriver",
       "PostgresSearchQueryLogDriver",
       "RelatedChangeService",

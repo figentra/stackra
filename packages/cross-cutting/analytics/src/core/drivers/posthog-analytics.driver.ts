@@ -5,8 +5,10 @@
  * Boundary: plain `fetch`, no vendor SDK, no cookie and no storage. `AnalyticsClient` keeps the consent gate and the
  *           bounded queue and calls `send` only once the category is granted. The driver makes no id of its own: the
  *           delivery's `userId` (once identified) or else `anonymousId` is the `distinct_id`, its `sessionId` the
- *           `$session_id`, its `eventId` the `$insert_id`, its page path the `$pathname` and its groups `$groups`; an
- *           `identify` delivery is PostHog's `$identify` (with `$anon_distinct_id`, which merges the two) and a `group`
+ *           `$session_id`, its `eventId` the `$insert_id`, its page path the `$pathname`, its groups `$groups`, its
+ *           coarse `appVersion` and `device` `$app_version`, `$os`, `$os_version`, `$app_build` and `$device_type`
+ *           (ADR 0483); on a server (the analytics service's fan-out, the action relay) GeoIP is off, since the request
+ *           address is the service's; an `identify` delivery is PostHog's `$identify` (with `$anon_distinct_id`, which merges the two) and a `group`
  *           delivery its `$groupidentify`. Only an identified visitor's events build a person profile
  *           (`$process_person_profile`). Each delivery's capture time is its `timestamp`. A missing
  *           key or an error status rejects, and the client's delivery engine retries the batch (the driver never
@@ -17,7 +19,7 @@
  *           by the personal API key secret; a missing key or project id rejects as a configuration error, never a
  *           silent success, and a person already gone (404) counts as deleted, so a redelivery completes.
  * Runtime: isomorphic
- * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0071 (no identifier before consent); ADR 0294 (decisions 16
+ * Governing contract: ADR 0298 (decisions 1 and 5); ADR 0483 (decision 6); ADR 0071 (no identifier before consent); ADR 0294 (decisions 16
  *                     and 17); ADR 0266 (one option, one driver); ADR 0189 (decision 2:
  *                     erasure reaches every copy).
  */
@@ -28,11 +30,29 @@ import { AnalyticsDriver } from "#contracts/ports/analytics-driver.port";
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
 import { AnalyticsDeliveryKind } from "#contracts/enums/analytics-delivery-kind.enum";
 
+// shortcut: a Node runtime (a service or a Worker with Node compatibility) is taken as a server send, whose request
+// address is the service's and must not feed GeoIP; pass it in from the host if a client ever runs on Node.
+const ON_SERVER =
+  typeof (globalThis as { readonly process?: { readonly versions?: { readonly node?: unknown } } })
+    .process?.versions?.node === "string";
+
 /** One PostHog batch item. */
 interface PosthogEvent {
   readonly event: string;
   readonly timestamp: string;
   readonly properties: Readonly<Record<string, unknown>>;
+}
+
+/** PostHog's device properties from the delivery's coarse context (ADR 0483 decision 6); none that is unset. */
+function devicePropertiesOf(delivery: AnalyticsDelivery): Readonly<Record<string, string>> {
+  const { appVersion, device } = delivery.context;
+  return {
+    ...(appVersion === undefined ? {} : { $app_version: appVersion }),
+    ...(device === undefined ? {} : { $os: device.os }),
+    ...(device?.osVersion === undefined ? {} : { $os_version: device.osVersion }),
+    ...(device?.build === undefined ? {} : { $app_build: device.build }),
+    ...(device?.type === undefined ? {} : { $device_type: device.type }),
+  };
 }
 
 /**
@@ -48,6 +68,8 @@ function posthogEventOf(delivery: AnalyticsDelivery): PosthogEvent {
     $insert_id: delivery.eventId,
     ...(delivery.context.page ? { $pathname: delivery.context.page.path } : {}),
     ...(delivery.groups ? { $groups: delivery.groups } : {}),
+    ...devicePropertiesOf(delivery),
+    ...(ON_SERVER ? { $geoip_disable: true } : {}),
     $process_person_profile: delivery.userId !== undefined,
   };
   if (kind === AnalyticsDeliveryKind.Identify)

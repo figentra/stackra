@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "json": {
+    "data": [
+      {
+        "id": "OTHER",
+        "attributes": {
+          "identifier": "com.example.app.widget"
+        }
+      }
+    ]
+  }
+}

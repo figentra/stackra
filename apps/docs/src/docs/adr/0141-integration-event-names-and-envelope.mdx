@@ -88,6 +88,13 @@ fix is the name without the prefix. Default applied 2026-10-27 (stackra-124); th
 Enforcement of this note: automated — `buildManifest` in `packages/developer/gen` (`event_name_prefixed`), with
 `build-manifest.function.test.ts`.
 
+## Amendment 2026-11-01: two cross-app fields
+
+Written with `0511` (`adr/0511-cross-repo-service-contracts-and-cross-app-events`), which amends decision 2 for an integration
+event that crosses apps. Two fields join the envelope: `envelopeVersion`, the version of the envelope, and `producer`, the
+verified producer service. The relay sets `producer` from the verified identity of the sending service (STA-1792), never
+from a value the producer writes. Decision 2's other fields, decision 1 and the name form stand.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0078](/adr/0078-messaging-layer-eight-packages) decision 3, [0117](/adr/0117-contracts-placement-and-decorator-ownership)

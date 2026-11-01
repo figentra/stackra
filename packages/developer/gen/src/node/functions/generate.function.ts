@@ -22,9 +22,13 @@
  *           `.stackra/site/`, and its manifest pass writes nothing. A service's full run also writes
  *           `.stackra/encore/encore.app` from the root runway's `providers.encore.app` (`encore_app_missing` without
  *           it), and any run refuses an `encore.app` at the member or repository root (`encore_app_stray`, STA-1322).
+ *           A service's full run also refuses a job queue its `runway.yaml` leaves out of an environment
+ *           (`queue_unprovisioned`, STA-1727).
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
  *           stackra-248) and removes any `.sql` file there it did not produce; `--check` reports a stale, missing or
  *           leftover one.
+ *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
+ *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
@@ -40,6 +44,8 @@ import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
+import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
+import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -47,6 +53,8 @@ import { compileMigrations } from "#node/functions/compile-migrations.function";
 import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
+import { hasIntTests } from "#node/functions/has-int-tests.function";
+import { runwayQueues } from "#node/functions/runway-queues.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
 
 /** The committed manifest at the member root. */
@@ -232,13 +240,37 @@ export async function generate(
     root,
     ir.layout === "service" && ir.authoredMain !== true && options.pass === undefined,
   );
-  // The compiled migrations of a service, its declared packages' included (ADR 0159, stackra-248).
+  // The compiled migrations of a service, its declared packages' included (ADR 0159, stackra-248). A package with
+  // migrations of its own gets them too, with what they build on, beside the generated check that applies, reverts and
+  // re-applies them (STA-1689); not in `.stackra/migrations`, so its tests' memory database still builds from entities.
+  const ownMigrations = join(root, "src/node/database/migrations");
+  const checked =
+    ir.layout === "package" &&
+    existsSync(ownMigrations) &&
+    readdirSync(ownMigrations).some((name) => name.endsWith(".migration.ts"));
   const migrations =
-    ir.layout === "service" && options.pass === undefined
+    (ir.layout === "service" || checked) && options.pass === undefined
       ? await compileMigrations(root, ir)
       : { files: [], errors: [] };
-  const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors];
-  let files = [...result.files, ...encore.files, ...migrations.files];
+  // Every job queue but `default` is provisioned in each environment of the service's runway (STA-1727).
+  const queues =
+    ir.layout === "service" && options.pass === undefined
+      ? runwayQueues(root, result.manifest)
+      : [];
+  const migrationFiles = checked
+    ? [
+        ...migrations.files.map((file) => ({
+          ...file,
+          path: file.path.replace(`${MIGRATIONS_DIR}/`, ".stackra/tests/migrations/"),
+        })),
+        ...(migrations.files.length > 0 ? emitMigrationsCheck(ir) : []),
+      ]
+    : migrations.files;
+  const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];
+  let files = [...result.files, ...encore.files, ...migrationFiles];
+  // A member with an `.int.test.ts` gets the integration-tier config beside the unit one (`stackra test --tier int`).
+  if (files.some((file) => file.path === ".stackra/vitest.config.ts") && hasIntTests(root))
+    files.push(emitIntTierConfig(ir.package));
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
     if (

@@ -17,7 +17,7 @@ export default mergeConfig(
   withCoverage({
     root: fileURLToPath(new URL("..", import.meta.url)),
     test: {
-      include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
+      include: ["src/**/__tests__/**/*.test.{ts,tsx}", ".stackra/tests/**/*.test.{ts,tsx}"],
       exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],
       setupFiles: [".stackra/vitest.setup.ts"],
     },

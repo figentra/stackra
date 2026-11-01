@@ -40,6 +40,13 @@ planned — `stackra audit:verify` in CI against a sample tenant; the outbox tes
 
 1. Volume budget and batching window for read audits, and whether a failed read audit blocks the read (register D-11). The owner decides.
 
+## Note 2026-11-02: the code constant
+
+Decision 6's thirteen months is the code constant `AUDIT_HOT_RETENTION` in `@stackra/contracts`, `Duration.days(397)`
+(`Duration` refuses months; 397 days is the longest any thirteen consecutive calendar months can run, so nothing is
+pruned early). The approval binding prune (ADR 0509) reads it. The access log's `auditRetentionDays` stays the owner's
+stated number with no code default.
+
 ## Supersedes and sources
 
 Supersedes: [0047](/adr/0047-audit-service-via-events). Sources: owner audit answers AU1–AU8 (`stackra-decisions-2026-10-19.md` L644–653, 2026-10-20); SC8 (L552). Closes gap C43 (audit part).

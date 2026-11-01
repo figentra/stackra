@@ -41,7 +41,16 @@
     "count": "{count, plural, one {# record} other {# records}}",
     "count_capped": "{count, plural, other {#+ records}}",
     "yes": "Ja",
-    "no": "Nee"
+    "no": "Nee",
+    "add_item": "Toevoegen",
+    "remove_item": "Item {number} verwijderen",
+    "invalid_json": "Dit is geen geldige JSON.",
+    "record_key": "Sleutel {number}",
+    "record_value": "Waarde {number}",
+    "date_part": "Datum",
+    "hour": "Uur",
+    "minute": "Minuut",
+    "time_zone": "Tijden in {zone}."
   },
   "plan_catalogue": {
     "history": "Versies",

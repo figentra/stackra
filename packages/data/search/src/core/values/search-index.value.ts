@@ -23,11 +23,15 @@
  *           finds nothing from the indexed words the caller may see. A filter may name several values (any of them holds), a range
  *           field may be bounded and sortable fields order the rows before relevance, on a driver whose `fieldKinds`
  *           says it applies them; a row the facet's `when` refuses is removed instead of indexed.
+ *           A read the request or the facet's `rerank` asks for puts the first `Reranker.topN` fused candidates (their raw
+ *           text, never folded) through the reranker and pages from that order; with no reranker, or one that fails, the
+ *           fused order stands. A tenant's data synonym sets (`SynonymSource`) join the setting's, and in an Arabic locale
+ *           any Latin word also gets its Arabizi spelling.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1, 2, 3 and 7); ADR 0294 (decision 6: `@Searchable` is a class facet);
  *                     cursor pagination in the HTTP conventions; ADR 0327 (decision 9: isolation in the database); ADR 0333
  *                     (amendment); ADR 0341 (decision 2); OS-173; ADR 0404 (facets); ADR 0403 (per-language synonyms);
- *                     ADR 0307 (rules 22 to 24); STA-1251 (the per-query Arabizi switch); ADR 0089 (decision 6:
+ *                     ADR 0307 (rules 22 to 24); STA-1251 (the per-query Arabizi switch); ADR 0492 (decisions 4 and 5); ADR 0089 (decision 6:
  *                     every query scoped); stackra-301 (the vector lane, `similar`); stackra-303
  *                     (versioned rebuild and swap); stackra-302 (field kinds);
  *                     stackra-326 (ranking rules, query log, suggest).
@@ -43,6 +47,7 @@ import { z } from "zod";
 
 import type {
   Embedder,
+  Reranker,
   SearchDriver,
   SearchFacets,
   SearchFilterValue,
@@ -52,6 +57,7 @@ import type {
   SearchSort,
   SearchTable,
   SearchVector,
+  SynonymSource,
 } from "#contracts/index";
 import { SEMANTIC_SOURCE } from "#core/constants/semantic-source.constant";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
@@ -59,6 +65,7 @@ import { arabiziOf } from "#core/functions/arabizi-of.function";
 import { searchDocumentOf } from "#core/functions/search-document-of.function";
 import { searchPathsOf } from "#core/functions/search-paths-of.function";
 import { searchPhraseWithheld } from "#core/functions/search-phrase-withheld.function";
+import { searchRerankTextOf } from "#core/functions/search-rerank-text-of.function";
 import { searchRulesOf } from "#core/functions/search-rules-of.function";
 import { searchSnippetOf } from "#core/functions/search-snippet-of.function";
 import { searchSynonymsOf } from "#core/functions/search-synonyms-of.function";
@@ -154,6 +161,12 @@ export class SearchIndex<M extends object> {
   /** The query log sampled reads and clicks go to, and completions come from; none when absent. */
   private readonly queries: SearchQueryLog | undefined;
 
+  /** The reranker a `rerank` read puts the fused candidates through; fused order when absent. */
+  private readonly reranker: Reranker | undefined;
+
+  /** The tenant's synonym sets kept as data, added to the setting's; none when absent. */
+  private readonly synonyms: SynonymSource | undefined;
+
   /**
    * @param driver - the engine.
    * @param database - the connected database.
@@ -161,6 +174,8 @@ export class SearchIndex<M extends object> {
    * @param settings - the reader `SearchSettings` (synonyms, ranking rules, query sample) is read through; none apply
    *   without one.
    * @param queries - the query log; no read is logged and no completion offered without one.
+   * @param reranker - the reranker; a read keeps fused order without one.
+   * @param synonyms - the source of the tenant's synonym sets; only the setting applies without one.
    * @throws TypeError when the model has no `@Searchable` facet.
    */
   constructor(
@@ -169,6 +184,8 @@ export class SearchIndex<M extends object> {
     model: AnyClass<M>,
     settings?: SettingsReader,
     queries?: SearchQueryLog,
+    reranker?: Reranker,
+    synonyms?: SynonymSource,
   ) {
     const facet = Searchable.on(model);
     if (facet === undefined)
@@ -179,6 +196,8 @@ export class SearchIndex<M extends object> {
     this.facet = facet;
     this.settings = settings;
     this.queries = queries;
+    this.reranker = reranker;
+    this.synonyms = synonyms;
   }
 
   /**
@@ -240,7 +259,12 @@ export class SearchIndex<M extends object> {
     const { filters, anyOf, ranges } = this.narrowingOf(options);
     const visible = await visibleKeysQuery(this.model);
     const settings = await this.settingsOf();
-    const { words, alternatives } = this.wordsOf(phrase, options.locale, options.arabizi, settings);
+    const { words, alternatives } = await this.wordsOf(
+      phrase,
+      options.locale,
+      options.arabizi,
+      settings,
+    );
     const scopePaths = await this.scopePaths();
     return this.driver.facets(this.shape().table, {
       words,
@@ -458,7 +482,12 @@ export class SearchIndex<M extends object> {
     const limit = this.limitOf(options.limit);
     const narrowing = this.narrowingOf(options);
     const settings = await this.settingsOf();
-    const { words, alternatives } = this.wordsOf(phrase, options.locale, options.arabizi, settings);
+    const { words, alternatives } = await this.wordsOf(
+      phrase,
+      options.locale,
+      options.arabizi,
+      settings,
+    );
     if (words.length === 0) return { items: [], hasMore: false };
     const rules = this.rulesOf(words, settings);
     const vector =
@@ -468,17 +497,26 @@ export class SearchIndex<M extends object> {
     const visible = await visibleKeysQuery(this.model);
     const scopePaths = await this.scopePaths();
     const { table, key } = this.shape();
-    const ids = await this.driver.search(table, {
+    const reranker = (options.rerank ?? this.facet.rerank === true) ? this.reranker : undefined;
+    // A rerank reads the first `topN` fused candidates from the top, so a page past them keeps fused order.
+    const found = await this.driver.search(table, {
       words: semantic ? [] : words,
       ...narrowing,
-      offset,
-      limit: limit + 1,
+      offset: reranker === undefined ? offset : 0,
+      limit: reranker === undefined ? limit + 1 : Math.max(reranker.topN, offset + limit + 1),
       ...(vector === undefined ? {} : { vector }),
       ...(Object.keys(alternatives).length === 0 ? {} : { alternatives }),
       ...(visible === undefined ? {} : { visible }),
       ...(scopePaths === undefined ? {} : { scopePaths }),
       ...rules,
     });
+    const ids =
+      reranker === undefined
+        ? found
+        : (await this.rerank(reranker, phrase, found, options.locale, key)).slice(
+            offset,
+            offset + limit + 1,
+          );
     const items = await this.load(ids.slice(0, limit), key, options.populate);
     await this.log(phrase, words, settings, {
       hits: items.length,
@@ -626,20 +664,21 @@ export class SearchIndex<M extends object> {
    * Arabizi and `arabizi` is not `false`, and the other words of the index's synonym sets in `locale`'s language
    * (every language when absent).
    */
-  private wordsOf(
+  private async wordsOf(
     phrase: string,
     locale: string | undefined,
     arabizi: boolean | undefined,
     settings: SearchSettings | undefined,
-  ): {
+  ): Promise<{
     readonly words: readonly string[];
     readonly alternatives: Readonly<Record<string, readonly string[]>>;
-  } {
+  }> {
     const words = [...new Set(searchWordsOf(phrase))].slice(0, MAX_WORDS);
-    const synonyms = this.synonymsOf(words, locale, settings);
+    const synonyms = await this.synonymsOf(words, locale, settings);
+    const isArabic = locale?.split("-")[0]?.toLowerCase() === "ar";
     const alternatives = Object.fromEntries(
       words.flatMap((word) => {
-        const arabic = arabizi === false ? undefined : arabiziOf(word);
+        const arabic = arabizi === false ? undefined : arabiziOf(word, isArabic);
         const others = [
           ...new Set([...(arabic === undefined ? [] : [arabic]), ...(synonyms.get(word) ?? [])]),
         ];
@@ -649,18 +688,56 @@ export class SearchIndex<M extends object> {
     return { words, alternatives };
   }
 
-  /** The synonym sets of this index in `locale`'s language; none without settings or a word. */
-  private synonymsOf(
+  /**
+   * The synonym sets of this index in `locale`'s language: the `search.synonyms` setting's lines and the tenant's
+   * data sets, one equivalence each; none without a word or either source.
+   */
+  private async synonymsOf(
     words: readonly string[],
     locale: string | undefined,
     settings: SearchSettings | undefined,
-  ): ReadonlyMap<string, readonly string[]> {
-    if (settings === undefined || settings.synonyms === "" || words.length === 0) return new Map();
-    return searchSynonymsOf(
-      settings.synonyms,
-      this.indexNames(),
-      locale?.split("-")[0]?.toLowerCase(),
-    );
+  ): Promise<ReadonlyMap<string, readonly string[]>> {
+    if (words.length === 0) return new Map();
+    const language = locale?.split("-")[0]?.toLowerCase();
+    // shortcut: the data sets are read on every read; cache them per scope once a tenant keeps thousands.
+    const sets = (await this.synonyms?.setsOf(this.indexNames(), language)) ?? [];
+    const text = [
+      settings?.synonyms ?? "",
+      ...sets.map((set) => `${set.index} ${set.language}: ${set.terms.join(", ")}`),
+    ]
+      .filter((line) => line !== "")
+      .join("\n");
+    return text === "" ? new Map() : searchSynonymsOf(text, this.indexNames(), language);
+  }
+
+  /**
+   * `ids` with its first `reranker.topN` put in the reranker's order; the rest keep their fused order. A reranker that
+   * fails leaves the fused order: a search never fails for the reranking of it.
+   */
+  private async rerank(
+    reranker: Reranker,
+    phrase: string,
+    ids: readonly string[],
+    locale: string | undefined,
+    key: string,
+  ): Promise<readonly string[]> {
+    const head = ids.slice(0, reranker.topN);
+    if (head.length < 2) return ids;
+    try {
+      const rows = await this.load(head, key, undefined);
+      const candidates = rows.map((row) => ({
+        id: String(this.keyOf(row, key)),
+        text: searchRerankTextOf(row, this.facet, locale),
+      }));
+      const hits = await reranker.rerank(phrase.trim(), candidates, candidates.length);
+      const known = new Set(candidates.map((candidate) => candidate.id));
+      const reranked = hits.map((hit) => hit.id).filter((id) => known.has(id));
+      const placed = new Set(reranked);
+      return [...reranked, ...head.filter((id) => !placed.has(id)), ...ids.slice(head.length)];
+    } catch {
+      // shortcut: the failure is dropped; count it in telemetry once a metrics port exists.
+      return ids;
+    }
   }
 
   /** The search settings of the running scope; `undefined` without a settings reader. */

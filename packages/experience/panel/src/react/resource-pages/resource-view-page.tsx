@@ -85,6 +85,7 @@ function Entries({
                   kind={currency === undefined ? "value" : "money"}
                   value={valueAt(item, column.id)}
                   currency={currency}
+                  labels={entry.labels?.[column.id]}
                 />
               );
             }}

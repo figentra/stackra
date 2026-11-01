@@ -127,6 +127,13 @@ const SNAPSHOT: Readonly<
     "chart-3": ["oklch(0.4 0.15 300)", "oklch(0.6 0.17 300)"],
     "chart-4": ["oklch(0.65 0.15 55)", "oklch(0.8 0.14 60)"],
     "chart-5": ["oklch(0.54 0.18 355)", "oklch(0.68 0.17 355)"],
+    "tamo-glow-start": ["oklch(0.915 0.04 188.7)", "oklch(0.423 0.073 192.1)"],
+    "tamo-glow-mid": ["oklch(0.661 0.114 191.8)", "oklch(0.661 0.114 191.8)"],
+    "tamo-glow-end": ["oklch(0.423 0.073 192.1)", "oklch(0.756 0.116 191.4)"],
+    "tamo-shimmer": ["oklch(0.986 0.008 186.9)", "oklch(0.756 0.116 191.4)"],
+    "tamo-mark": ["oklch(0.661 0.114 191.8)", "oklch(0.661 0.114 191.8)"],
+    "tamo-mark-eyes": ["oklch(0.229 0.03 191.6)", "oklch(0.229 0.03 191.6)"],
+    "tamo-name": ["oklch(0.423 0.073 192.1)", "oklch(0.756 0.116 191.4)"],
   },
 };
 

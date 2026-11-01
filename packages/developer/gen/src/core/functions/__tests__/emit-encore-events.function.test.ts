@@ -190,6 +190,20 @@ describe("emitEncoreEvents", () => {
     expect(files.map((file) => file.path)).toEqual([".stackra/encore/webhooks/relay.ts"]);
   });
 
+  it("emits no sibling-path topic import for a service read from a contract package (STA-1820)", () => {
+    const ir: MemberIR = {
+      ...SHIPPING_IR,
+      services: [
+        {
+          member: "commerce",
+          package: "@acme/commerce-contract",
+          manifest: buildManifest(COMMERCE_IR).manifest,
+        },
+      ],
+    };
+    expect(emitEncoreEvents(ir, buildManifest(ir).manifest)).toEqual([]);
+  });
+
   it("writes nothing for a package, an app, a quiet service or a relay with no topic to hear", () => {
     expect(emitEncoreEvents(LOYALTY_KIT_IR, buildManifest(LOYALTY_KIT_IR).manifest)).toEqual([]);
     expect(emitEncoreEvents(WEB_APP_IR, buildManifest(WEB_APP_IR).manifest)).toEqual([]);

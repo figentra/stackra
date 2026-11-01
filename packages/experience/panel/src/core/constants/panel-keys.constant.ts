@@ -4,7 +4,9 @@
  *          states, the range picker and its periods, the trend and target lines, and the action runner's dialog and
  *          toasts, and the plan-catalogue admin's versions, decisions and proposal form,
  *          and the onboarding checklist, and the generic resource pages (search, create, view, edit, delete, save, the
- *          load failure, the empty list, the trashed filter, the row count and a flag's yes or no), and the search palette.
+ *          load failure, the empty list, the trashed filter, the row count, a flag's yes or no, a list field's add and
+ *          remove, a JSON field's parse error, a map's key and value, a date and time's parts and time zone), and the
+ *          search palette.
  * Boundary: internal: the web and native entries import it by path; no entry exports it. Each key exists in every base
  *           locale this package ships (ar, en, fr, de, es, it, nl).
  * Runtime: isomorphic
@@ -37,6 +39,15 @@ export const PANEL_KEYS = keys({
       "count_capped",
       "yes",
       "no",
+      "add_item",
+      "remove_item",
+      "invalid_json",
+      "record_key",
+      "record_value",
+      "date_part",
+      "hour",
+      "minute",
+      "time_zone",
     ],
     search_palette: ["label", "placeholder", "empty", "loading", "failed"],
     checklist: [

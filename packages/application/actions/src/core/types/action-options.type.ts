@@ -15,7 +15,7 @@
  *                     ADR 0138 (as amended); ADR 0252 (decision 2); ADR 0338 (decision 5); ADR 0337 (decisions 4
  *                     and 5); ADR 0359 (decisions 3 and 5); ADR 0216 (decisions 1 and 2); ADR 0360 (decision 4:
  *                     the tool default); ADR 0099 (decision 2: effect tags); ADR 0397 as amended by STA-813
- *                     (`approval`); ADR 0406 (`stepUp`); STA-1512 (`analytics`).
+ *                     (`approval`; ADR 0509 for the declared stage); ADR 0406 (`stepUp`); STA-1512 (`analytics`).
  */
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea, AssuranceLevel, Duration } from "@stackra/contracts";
@@ -23,6 +23,7 @@ import type { ActorKind, ApiArea, AssuranceLevel, Duration } from "@stackra/cont
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
 import type { Idempotency } from "#core/enums/idempotency.enum";
+import type { ActionApproval } from "#core/types/action-approval.type";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionEffects } from "#core/types/action-effects.type";
 import type { ActionMeter } from "#core/types/action-meter.type";
@@ -92,10 +93,12 @@ export interface ActionOptions {
   readonly meter?: ActionMeter;
 
   /**
-   * Every call must pass an `ApprovalGate`: with none bound the call fails closed. When absent, the approval step runs
-   * only when a gate is bound (which rules decide), and an app with no gate has no approvals.
+   * `true`: every call must pass an `ApprovalGate`; with none bound the call fails closed. An `ActionApproval`: a
+   * declared stage, a floor of distinct approvers that tenant rules may raise and never lower, and the call runs as the
+   * requester when the last one approves. When absent, the approval step runs only when a gate is bound (which rules
+   * decide), and an app with no gate has no approvals.
    */
-  readonly approval?: boolean;
+  readonly approval?: boolean | ActionApproval;
 
   /**
    * The assurance level the caller's last authentication must reach, recently enough (`StepUpCheck` decides); the

@@ -149,7 +149,7 @@
       },
     ],
     // TSDoc tags (ADR 0007, amended 2026-10-21). oxlint 1.86 has no jsdoc/no-types, so the `{type}`
-    // ban lives in tools/scripts/doc-standard.mjs.
+    // ban lives in @stackra/repo-checks (stackra doc-standard).
     "jsdoc/check-tag-names": [
       "error",
       {
@@ -175,6 +175,14 @@
     ],
   },
   "overrides": [
+    {
+      // STA-1654: a two-way relation is a value import each way (`@ManyToOne(() => Order)` in order-line.model.ts,
+      // `@OneToMany(() => OrderLine)` in order.model.ts), which the ORM's thunks resolve at run time, so a cycle
+      // among a module's models is the relation itself. The rule is off in the model files only: a cycle that runs
+      // through any other file (a model importing a service that imports it back) still fails at that file.
+      "files": ["**/src/**/models/*.ts"],
+      "rules": { "import/no-cycle": "off" },
+    },
     {
       // B-7: only a published package has a module boundary worth spelling. Apps, workers, repo tools, agent hooks,
       // editor plugins, a package's build scripts, tests, stories and e2e specs export nothing a consumer types against.
@@ -370,6 +378,30 @@
           },
         ],
       },
+    },
+    {
+      // STA-1655: a component may be a class whose hook fields (`i18n = useTranslation()`) gen compiles into hook
+      // calls (ADR 0305 rules 37 and 38; Commerce's AGENTS.md R7 makes every component a class). Rule 41 runs the
+      // hooks lint on gen's compiled output, so the source rule is off for .tsx files in the component homes; it stays
+      // on for hook files, every .ts file and tests. The `hooks` phase of `stackra check` lints the compiled output of these
+      // homes with react/rules-of-hooks (STA-1671, ADR 0305 rule 41), so a function component here is still checked.
+      "files": [
+        "**/src/components/**/*.tsx",
+        "**/src/blocks/**/*.tsx",
+        "**/src/routes/**/*.tsx",
+        "**/src/react/**/*.tsx",
+        "**/src/native/**/*.tsx",
+        "**/*.mail.tsx",
+      ],
+      "plugins": ["react"],
+      "rules": { "react/rules-of-hooks": "off" },
+    },
+    {
+      // STA-1655: a hook file and a test keep the source rule inside the component homes. Test files only, never a
+      // whole `__tests__/` folder: a lint fixture under it is a component home of its own.
+      "files": ["**/use-*.tsx", "**/__tests__/*.test.tsx"],
+      "plugins": ["react"],
+      "rules": { "react/rules-of-hooks": "error" },
     },
     {
       // B-6 and B-8: a test, story or e2e spec renders fixture text and anonymous stand-in components (vi.mock

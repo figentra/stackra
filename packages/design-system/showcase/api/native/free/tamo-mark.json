@@ -1,0 +1,45 @@
+{
+  "generatedFrom": {
+    "hash": "756e4758031002c0",
+    "propsFiles": ["ui/src/native/tamo-mark/tamo-mark.props.ts"]
+  },
+  "importLine": "import { TamoMark } from \"@stackra/ui/native\";",
+  "key": "free/tamo-mark",
+  "parts": [
+    {
+      "name": "TamoMark",
+      "props": [
+        {
+          "description": "The mark's spoken name; left out, the mark is hidden from assistive technology.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "idle",
+          "description": "`working` scans the eyes (still under reduced motion), `error` flattens them. Defaults to `idle`.",
+          "name": "status",
+          "required": false,
+          "source": "stackra",
+          "type": "\"error\" | \"idle\" | \"ready\" | \"working\""
+        },
+        {
+          "description": "`sm` 16, `md` 20 (the default), `lg` 28.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "Classes added to the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

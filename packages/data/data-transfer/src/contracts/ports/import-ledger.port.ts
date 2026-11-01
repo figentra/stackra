@@ -28,7 +28,7 @@ import type { ImportRunRecord } from "#contracts/types/import-run-record.type";
  */
 export abstract class ImportLedger extends Port {
   /** Type-only port key, so `DriverName<ImportLedger>` narrows to this port's drivers. */
-  declare readonly "~key": "data-transfer.ImportLedger";
+  declare readonly "~key": "data_transfer.ImportLedger";
 
   /** The run `runId`, created `running` with cursor `0` when the ledger has none. */
   abstract open(runId: string): Promise<ImportRunRecord>;

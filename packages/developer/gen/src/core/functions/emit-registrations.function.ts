@@ -2,12 +2,17 @@
  * Stackra file contract:
  * Purpose: `emitRegistrations`, the member's `#stackra/registrations` (`.stackra/gen/registrations.ts`): it loads the
  *          generated entity and schemas files, then makes every registration call the platform packages wait for,
- *          from the identities the manifest locked: the hosted packages' entity lists, the model partners of each
+ *          from the identities the manifest locked: the hosted packages' entities (the service's own files written from
+ *          their manifests, STA-1667, or an older manifest's entity list), the model partners of each
  *          `CrudService<M>` (and of a platform one it injects, from `PLATFORM_PARTNERS`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the change consumers with the models their `@ConsumesChanges` names, the outbound webhooks, the job actions for the queue
  *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
- *          the `@Searchable` models, and each report with its source model (`registerReportSources`, ADR 0470).
+ *          the `@Searchable` models, each report with its source model (`registerReportSources`, ADR 0470), and the
+ *          locked key of every `Permission` static and module role, the hosted packages' included (`registerPermissions`,
+ *          then `registerRoles`; without
+ *          them the decision point cannot tell a system or restricted permission, and a module role holds nothing,
+ *          STA-1702).
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
  *           the entry that exports each file); a package registers its own. A call with no row is not written, and a
@@ -22,9 +27,11 @@
  *                     cdc2 (`@ConsumesChanges` replaces hand `registerChangeConsumers` calls).
  */
 import type { StackraManifest } from "@stackra/contracts";
+import { camelCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { PLATFORM_PARTNERS } from "#core/constants/platform-partners.constant";
+import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -107,12 +114,21 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     ...schemaModules(ir).map((module) => `import "#stackra/schemas/${module}";`),
   ];
 
-  // The hosted packages' entity lists; a package's own entity files register themselves.
+  // The hosted packages' entities: the service's own files written from their manifests (STA-1667), which register
+  // themselves when loaded; a package whose manifest records no entity facts keeps its `<MODULE>_ENTITIES` import.
   if (ir.layout === "service") {
+    const hosted = emitHostedEntities(ir).map((file) => file.path);
+    loads.push(
+      ...hosted.map(
+        (path) => `import "#stackra/${path.slice(".stackra/gen/".length, -".ts".length)}";`,
+      ),
+    );
+    const covered = new Set(hosted.map((path) => path.split("/")[4]));
     const lists = ir.dependencies
       .filter(
         ({ manifest: dependency }) =>
           dependency.kind !== "app" &&
+          !covered.has(dependency.member) &&
           (dependency.models ?? []).some((model) => model["from"] === undefined),
       )
       .map(({ package: name, manifest: dependency }) =>
@@ -239,6 +255,8 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     "registerConnections",
     "@stackra/integrations",
     integrations.map((entry) => {
+      // classOf imports what it names: an integration without a connection is not registered, so not imported (STA-1803)
+      if (typeof entry["connection"] !== "string") return undefined;
       const connection = classOf(entry, "connection", "connectionFile");
       const integration = classOf(entry);
       return connection === undefined || integration === undefined
@@ -322,6 +340,40 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       ),
   );
 
+  // Every Permission static by its locked key, own and hosted packages' (the manifest merges both), then each module
+  // role, whose grants resolve through those keys, so `registerPermissions` is written first (STA-1702, STA-1710).
+  const sets = new Map<string, { readonly entry: Entry; readonly keys: string[] }>();
+  for (const entry of (manifest.permissions ?? []) as readonly Entry[]) {
+    const id = `${String(entry["from"] ?? "")}#${String(entry["class"])}`;
+    const key = String(entry["key"]);
+    // a manifest written before STA-1710 has no `member`: the static is the key's verb in camelCase
+    const member =
+      typeof entry["member"] === "string"
+        ? entry["member"]
+        : camelCase(key.split(".").at(-1) ?? "");
+    const set = sets.get(id) ?? { entry, keys: [] };
+    set.keys.push(`${member}: ${JSON.stringify(key)}`);
+    sets.set(id, set);
+  }
+  call(
+    "registerPermissions",
+    "@stackra/iam",
+    [...sets.values()].map(({ entry, keys }) => {
+      const type = classOf(entry);
+      return type === undefined ? undefined : `{ type: ${type}, keys: { ${keys.join(", ")} } }`;
+    }),
+  );
+  call(
+    "registerRoles",
+    "@stackra/iam",
+    ((manifest["roles"] ?? []) as readonly Entry[]).map((entry) => {
+      const type = classOf(entry);
+      return type === undefined
+        ? undefined
+        : `{ type: ${type}, key: ${JSON.stringify(entry["key"])} }`;
+    }),
+  );
+
   if (loads.length === 0 && calls.length === 0) return undefined;
   const header = generatedHeader({
     from: "stackra.manifest.json and the kind classes under src/",
@@ -329,7 +381,8 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       `the registrations of ${ir.package}: loads the generated entity and schemas files, then names each class the ` +
       "platform packages look up by its locked identity (entities, model partners, event wire names, listeners, relays, " +
       "change consumers, jobs, cached queries, " +
-      "connections, webhook events, outbound webhooks, sequences, entitlements, searchable models and report sources).",
+      "connections, webhook events, outbound webhooks, sequences, entitlements, searchable models, report sources, " +
+      "permissions and module roles).",
     boundary:
       "imported by the server entry and the generated test setup before the container boots; every row comes from " +
       "the committed identities, so a hand edit is overwritten.",

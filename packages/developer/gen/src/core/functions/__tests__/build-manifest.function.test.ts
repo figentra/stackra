@@ -25,6 +25,10 @@ import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import {
+  CONNECTOR_PACKAGES,
+  connectorPackage,
+} from "#core/__tests__/fixtures/connector-packages.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
@@ -43,6 +47,22 @@ function withBase(baseUrl: string): MemberIR {
       candidate.name === "StripeIntegration"
         ? { ...candidate, options: { ...candidate.options, baseUrl } }
         : candidate,
+    ),
+  };
+}
+
+/** The billing service with one Stripe Integration per written key, the second and later renamed. */
+function keyed(...keys: unknown[]): MemberIR {
+  return {
+    ...BILLING_IR,
+    classes: BILLING_IR.classes.flatMap((candidate) =>
+      candidate.name === "StripeIntegration"
+        ? keys.map((key, index) => ({
+            ...candidate,
+            name: index === 0 ? candidate.name : `Stripe${index}Integration`,
+            options: { ...candidate.options, key },
+          }))
+        : [candidate],
     ),
   };
 }
@@ -82,10 +102,32 @@ describe("buildManifest", () => {
     expect(manifest.$comment).toBe(MANIFEST_NOTICE);
     expect(manifest.member).toBe("commerce");
     expect(manifest.permissions).toEqual([
-      { key: "orders.order.read", risk: "L0", class: "OrderPermissions" },
-      { key: "orders.order.create", risk: "L1", class: "OrderPermissions" },
-      { key: "orders.order.cancel", risk: "L2", class: "OrderPermissions" },
+      {
+        key: "orders.order.read",
+        risk: "L0",
+        class: "OrderPermissions",
+        module: "orders",
+        member: "read",
+        file: "src/modules/orders/access/order.permissions.ts",
+      },
+      {
+        key: "orders.order.create",
+        risk: "L1",
+        class: "OrderPermissions",
+        module: "orders",
+        member: "create",
+        file: "src/modules/orders/access/order.permissions.ts",
+      },
+      {
+        key: "orders.order.cancel",
+        risk: "L2",
+        class: "OrderPermissions",
+        module: "orders",
+        member: "cancel",
+        file: "src/modules/orders/access/order.permissions.ts",
+      },
     ]);
+    expect(manifest["roles"]).toEqual([]);
     expect(manifest.events).toEqual([
       {
         name: "orders.order.paid.v1",
@@ -241,6 +283,54 @@ describe("buildManifest", () => {
       key: "loyalty_kit.loyalty_account.redeem",
       from: "@acme/loyalty-kit",
     });
+  });
+
+  it("hosts the Integrations of two connector packages with egress, once each, and refuses one key from two", () => {
+    const wallet = connectorPackage("wallet");
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      dependencies: [
+        ...BILLING_IR.dependencies,
+        ...CONNECTOR_PACKAGES,
+        // a hosted member that already merged the wallet connector: the same Integration, kept once
+        {
+          package: "@acme/wallets",
+          manifest: {
+            member: "wallets",
+            package: "@acme/wallets",
+            version: "0.1.0",
+            integrations: (
+              wallet.manifest["integrations"] as readonly Record<string, unknown>[]
+            ).map((entry) => ({ ...entry, from: wallet.package })),
+          },
+        },
+      ],
+    };
+    const built = buildManifest(ir);
+    expect(built.errors).toEqual([]);
+    expect(built.manifest["integrations"]).toEqual([
+      expect.objectContaining({ key: "billing.stripe" }),
+      expect.objectContaining({
+        key: "connector_wallet.wallet",
+        connection: "WalletConnection",
+        egress: { origin: "https://api.wallet.example" },
+        from: "@figentra/connector-wallet",
+      }),
+      expect.objectContaining({
+        key: "connector_paylink.paylink",
+        egress: { origin: "https://api.paylink.example" },
+        from: "@figentra/connector-paylink",
+      }),
+    ]);
+
+    const fork = { ...wallet, package: "@acme/wallet-fork" };
+    const clash = buildManifest({
+      ...BILLING_IR,
+      dependencies: [...BILLING_IR.dependencies, wallet, fork],
+    });
+    expect(clash.errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
+      "identity_collision @acme/wallet-fork",
+    ]);
   });
 
   it("derives integration, sequence, searchable and job identities", () => {
@@ -559,6 +649,22 @@ describe("buildManifest", () => {
     expect(unkeyed.errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
       "identity_missing BarePass",
     ]);
+  });
+
+  it("takes an Integration's written key, refuses a malformed one and a collision (STA-1739)", () => {
+    expect(buildManifest(keyed("connectors.stripe")).manifest["integrations"]).toEqual([
+      expect.objectContaining({ key: "connectors.stripe", class: "StripeIntegration" }),
+    ]);
+    expect(
+      buildManifest(keyed("Connectors.Stripe")).errors.map(
+        (error) => `${error.code} ${error.subject}`,
+      ),
+    ).toEqual(["integration_key_invalid StripeIntegration"]);
+    expect(
+      buildManifest(keyed("connectors.stripe", "connectors.stripe")).errors.map(
+        (error) => error.code,
+      ),
+    ).toContain("identity_collision");
   });
 
   it("locks an Integration's egress entry, a {field} host kept as data, and refuses a base URL it cannot call", () => {

@@ -20,6 +20,7 @@ describe("ACCESS_LOG_CONFIG_SCHEMA", () => {
       failClosed: ["financial", "health", "regulated"],
       exportUrl: "",
       exportToken: "",
+      commandAuditScope: "",
     });
   });
 

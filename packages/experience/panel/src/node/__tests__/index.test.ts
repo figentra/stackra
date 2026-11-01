@@ -19,6 +19,7 @@ describe("@stackra/panel/node", () => {
       "ExportOptions",
       "ExportOutput",
       "ExportRunner",
+      "PANEL_ENTITIES",
       "StoredView",
       "StoredViewService",
       "ViewPermissions",

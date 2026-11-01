@@ -3,7 +3,7 @@
  * Purpose: unit tests of `SettingsFake`: seeded values (a section's fields included) resolve through the real cascade
  *          and schema with every other field at its default, and each page write is recorded as `{ page, scope,
  *          values }` and stored, even when the reader then refuses it; `set` changes values mid-test without
- *          recording a write.
+ *          recording a write; an array value reads back as the array (STA-1700).
  * Boundary: test only; the schema is registered by hand, as gen's schemas file registers it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0307 (rules 22 and 24).
@@ -42,6 +42,12 @@ registerSchemas([
     }),
   ],
 ]);
+
+class ShippingSettings extends Settings({ scopes: [SettingScope.Platform] }) {
+  countries: string[] = ["SA"];
+}
+
+registerSchemas([[ShippingSettings, z.object({ countries: z.array(z.string()).default(["SA"]) })]]);
 
 settingKeys({
   orders: {
@@ -93,5 +99,10 @@ describe(SettingsFake, () => {
     expect(fake.set(OrdersSettings, { acceptingOrders: true })).toBe(fake);
     expect((await fake.get(OrdersSettings)).acceptingOrders).toBe(true);
     expect(fake.writes).toEqual([]);
+  });
+
+  it("reads an array value back as the array", async () => {
+    const fake = new SettingsFake().set(ShippingSettings, { countries: ["SA", "AE"] });
+    expect((await fake.get(ShippingSettings)).countries).toEqual(["SA", "AE"]);
   });
 });

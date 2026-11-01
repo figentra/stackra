@@ -45,7 +45,7 @@ if (dirty) lines.push("Working tree:", dirty);
 // Best-effort: today's OpenCode spend against the cap; any failure (no opencode, slow stats) just omits the line.
 try {
   const { costOf, evaluate, fetchStats, formatLine, loadBudget } =
-    await import("../../tools/scripts/ai-spend.mjs");
+    await import("@figentra/cli/src/commands/ai-spend.mjs");
   const budget = loadBudget(`${root}/.agents/routing.yaml`);
   const today = costOf(fetchStats(0, { timeout: 4000 }));
   lines.push(
@@ -57,10 +57,10 @@ try {
 
 // Best-effort: open Linear work (In Progress + owner steps). Offline, no vault login or no key → nothing, within ~3s.
 try {
-  const script = `${root}/tools/scripts/linear.mjs`;
+  const script = `${root}/node_modules/@figentra/cli/bin/figentra.mjs`;
   const hasKey = process.env.LINEAR_AGENT_TOKEN || process.env.LINEAR_API_KEY;
   const [cmd, args] = hasKey
-    ? [process.execPath, [script, "digest"]]
+    ? [process.execPath, [script, "linear", "digest"]]
     : [
         "infisical",
         [
@@ -71,6 +71,7 @@ try {
           "--",
           process.execPath,
           script,
+          "linear",
           "digest",
         ],
       ];

@@ -7,23 +7,36 @@
  *           (ADR 0078 decisions 1 and 2). It runs each delivery once: retries and queues belong to the queue driver
  *           behind a queued listener. It never writes to the outbox and never deduplicates; the inbox does that by
  *           event id. `connect` subscribes the listeners gen registered, resolved from a container; `disconnect` (the
- *           boot calls it on shutdown) removes exactly those, leaving direct `subscribe` calls in place.
+ *           boot calls it on shutdown) removes exactly those, leaving direct `subscribe` calls in place. When the
+ *           container binds a `ListenerAuditTrail`, every delivery that ended writes one audit entry, as every action
+ *           call does (STA-1715): the system actor `sys_listener` handled it, the event's id is the correlation, the
+ *           event's actor is `causedBy`, and the fields are what the listener added with `ctx.audit`. The entry is
+ *           written in the delivery, so inside the inbox's transaction; a listener that threw is not audited.
  * Runtime: isomorphic
  * Governing contract: ADR 0078 (decisions 1 to 4); ADR 0294 (decisions 4 and 27); ADR 0305 (rule 21); ADR 0263 (connected after the
  *                     container is ready, disconnected on shutdown).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
-import type { Clock } from "@stackra/contracts";
+import { ActorKind } from "@stackra/contracts";
+import type { Actor, Clock, Json, PublicId } from "@stackra/contracts";
 
+import { ListenerAuditTrail } from "#contracts/ports/listener-audit-trail.port";
 import type { EventMeta } from "#contracts/types/event-meta.type";
 import type { RecordedEvent } from "#contracts/types/recorded-event.type";
 import type { Event } from "#core/bases/event.base";
 import type { Listener } from "#core/bases/listener.base";
+import { EVENT_NAMES } from "#core/constants/event-names.constant";
 import { LISTENER_REGISTRY } from "#core/constants/listener-registry.constant";
 import { newEventId } from "#core/functions/new-event-id.function";
 import type { ListenerContext } from "#core/types/listener-context.type";
 import type { ListenerDelivery } from "#core/types/listener-delivery.type";
+
+/** The actor every listener audit entry names: the platform handled the event, not the one who caused it. */
+const LISTENER_ACTOR: Actor = Object.freeze({
+  kind: ActorKind.System,
+  id: "sys_listener" as PublicId,
+});
 
 /** One listener subscribed to one event class. */
 interface Subscription {
@@ -58,6 +71,9 @@ export class EventBus extends Service {
   /** Every delivery made, oldest first. */
   private readonly history: ListenerDelivery[] = [];
 
+  /** Where each delivery's audit entry goes; set by `connect` when the container binds one. */
+  private trail: ListenerAuditTrail | undefined;
+
   /**
    * @param clock - the Clock port.
    */
@@ -84,6 +100,7 @@ export class EventBus extends Service {
     has: (type: AnyClass) => boolean;
     get: <T extends object>(type: AnyClass<T>) => T;
   }): void {
+    if (container.has(ListenerAuditTrail)) this.trail = container.get(ListenerAuditTrail);
     for (const [type, listeners] of LISTENER_REGISTRY)
       for (const listener of listeners) {
         if (!container.has(listener)) continue;
@@ -165,9 +182,29 @@ export class EventBus extends Service {
   /** Runs one delivery and records how it ended. */
   private async run(listener: Listener, record: RecordedEvent<Event>): Promise<ListenerDelivery> {
     const { id, ...meta } = record.meta;
-    const context: ListenerContext = { ...meta, eventId: id, now: () => this.clock.now() };
+    const fields: Record<string, Json> = {};
+    const context: ListenerContext = {
+      ...meta,
+      eventId: id,
+      now: () => this.clock.now(),
+      audit: (added) => {
+        Object.assign(fields, added);
+      },
+    };
     try {
       await listener.handle(record.event as never, context);
+      await this.trail?.record({
+        listener: listener.constructor.name,
+        event:
+          EVENT_NAMES.names.get(record.event.constructor as AnyClass<Event>) ??
+          record.event.constructor.name,
+        eventId: id,
+        actor: LISTENER_ACTOR,
+        ...(meta.actor === undefined ? {} : { causedBy: meta.actor }),
+        ...(meta.scopeId === undefined ? {} : { scopeId: meta.scopeId }),
+        at: this.clock.now(),
+        fields: Object.freeze({ ...fields }),
+      });
       return Object.freeze({ listener, record });
     } catch (error) {
       return Object.freeze({ listener, record, error });

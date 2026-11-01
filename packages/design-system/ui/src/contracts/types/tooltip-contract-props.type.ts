@@ -24,4 +24,6 @@ export interface TooltipContractProps extends OpenStateContractProps, PlacementC
   readonly content: string;
   /** True to draw an arrow from the tooltip to the element. Web only; native draws no tooltip. Defaults to false. */
   readonly hasArrow?: boolean | undefined;
+  /** A key binding (`mod+s`) drawn after the words as a key hint, so a tooltip shows how to run the action. Web only. */
+  readonly shortcut?: string | undefined;
 }

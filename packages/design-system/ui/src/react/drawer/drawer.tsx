@@ -32,6 +32,8 @@
  *           `DRAWER_MAX_DEPTH`; a deeper drawer still opens, with a development warning. `Drawer.ViewStack` drills
  *           into views inside one drawer; each view carries its own header, body and footer, so the title moves with
  *           its view, and the header's back button pops the view.
+ *           Drawer or Sheet (decision, STA-1371, 2026-10-31): Drawer is the side panel for a task; a bottom or snap
+ *           sheet that is swiped away is `Sheet` (HeroUI's Sheet), not a bottom Drawer with `snapPoints`.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312 (decisions 1 and 2); ADR 0165 (HeroUI v3
  *          on web); ADR 0060 (right-to-left); WCAG 2.2 SC 2.1.2, 2.4.3 and 4.1.2.
@@ -58,6 +60,7 @@ import type { DrawerLayer } from "#react/drawer/drawer-layer.type";
 import { DrawerSubHeader } from "#react/drawer/drawer-sub-header";
 import { DrawerTitle } from "#react/drawer/drawer-title";
 import type { DrawerProps } from "#react/drawer/drawer.props";
+import { ModalShortcuts } from "#react/modal/modal-shortcuts";
 import { ViewStack } from "#react/view-stack/view-stack";
 import { ViewStackContext } from "#react/view-stack/view-stack-context";
 
@@ -165,6 +168,8 @@ function DrawerRoot({
   isExpandable = false,
   style,
   className,
+  onConfirm,
+  confirmShortcut,
   ...rest
 }: DrawerProps): ReactElement {
   const edge = EDGE[placement];
@@ -239,7 +244,9 @@ function DrawerRoot({
         // The page is already dimmed by the bottom layer; an upper layer dims the layer under it instead.
         {...(depth > 1 ? { variant: "transparent" as const } : {})}
       >
-        <HeroDrawer.Content placement={edge}>
+        {/* HeroUI 3.2.7 slides the content in with a keyframe on the physical edge; the panel's own slide (logical,
+            mirrored in right-to-left, motion-level aware) is the only one, so that keyframe is turned off. */}
+        <HeroDrawer.Content placement={edge} className="animate-none">
           <HeroDrawer.Dialog
             {...rest}
             className={panelClassName}
@@ -289,7 +296,12 @@ function DrawerRoot({
             ) : null}
             {/* A view stack of the page around the drawer is not this drawer's: its back button must not pop it. */}
             <ViewStackContext value={null}>
-              <DrawerLayerContext value={layer}>{children}</DrawerLayerContext>
+              <DrawerLayerContext value={layer}>
+                {/* The topmost overlay scope while open: page shortcuts pause, Mod+Enter confirms (ADR 0508). */}
+                <ModalShortcuts onConfirm={onConfirm} confirmShortcut={confirmShortcut}>
+                  {children}
+                </ModalShortcuts>
+              </DrawerLayerContext>
             </ViewStackContext>
           </HeroDrawer.Dialog>
         </HeroDrawer.Content>

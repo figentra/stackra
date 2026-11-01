@@ -6,10 +6,11 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0305 (one declaration per file); WCAG 2.2 SC 2.5.3.
  */
-import { Dropdown, Kbd } from "@heroui/react";
+import { Dropdown } from "@heroui/react";
 import type { ReactElement } from "react";
 
 import type { MenuLeafItem } from "#contracts/types/menu-leaf-item.type";
+import { ShortcutHint } from "#react/shortcut-hint/shortcut-hint";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 
 /** The content of one action: its icon, its label with a second line, its shortcut hint and the selection mark. */
@@ -36,11 +37,7 @@ export function MenuItemContent({
           </span>
         ) : null}
       </div>
-      {item.shortcut ? (
-        <Kbd>
-          <Kbd.Content>{item.shortcut}</Kbd.Content>
-        </Kbd>
-      ) : null}
+      {item.shortcut ? <ShortcutHint keys={item.shortcut} isDecorative /> : null}
     </>
   );
 }

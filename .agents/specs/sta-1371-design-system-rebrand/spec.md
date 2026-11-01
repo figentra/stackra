@@ -17,7 +17,7 @@
 spec is written after the build, at the coordinator's direction, so the feat commits of the c6 landing reach a spec
 (ADR 0120 D4).
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: `apps/playground` (the web showcase), `apps/mobile` (the mobile showcase), `apps/docs` (brand kit and ADRs)
 - **Services touched**: none

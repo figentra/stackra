@@ -22,6 +22,7 @@ import { Module } from "#core/bases/module.base";
 import { Service } from "#core/bases/service.base";
 import { Lifetime } from "#core/decorators/lifetime.decorator";
 import { SystemClockDriver } from "#core/drivers/system-clock.driver";
+import { UnboundTokenError } from "#core/errors/unbound-token.error";
 import { UnresolvedPortError } from "#core/errors/unresolved-port.error";
 import { named } from "#core/functions/named.function";
 import { Container } from "#core/services/container.service";
@@ -154,6 +155,7 @@ describe("Container", () => {
       class Unbound extends Service {}
       const container = await Container.create([points()]);
       expect(() => container.get(Unbound)).toThrow(/Nothing binds Unbound/);
+      expect(() => container.get(Unbound)).toThrow(UnboundTokenError);
     });
   });
 

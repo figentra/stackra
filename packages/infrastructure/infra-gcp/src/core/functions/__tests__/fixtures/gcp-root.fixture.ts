@@ -50,7 +50,7 @@ export function gcpRoot(change: (root: Record<string, unknown>) => void = () => 
         cloud: { name: "gcp", account: "nonprod" },
         shared: {
           buckets: { versioning: true, lifecycle: { expireNoncurrentDays: 30 } },
-          database: { tier: "db-custom-1-3840", version: "POSTGRES_17" },
+          database: { tier: "db-custom-1-3840", version: "POSTGRES_18" },
         },
         defaults: { service: { config: { filesystem: { disk: "s3" } } } },
       },
@@ -60,7 +60,7 @@ export function gcpRoot(change: (root: Record<string, unknown>) => void = () => 
         shared: {
           database: {
             tier: "db-custom-2-7680",
-            version: "POSTGRES_17",
+            version: "POSTGRES_18",
             highAvailability: true,
             backups: { retentionDays: 35, pitr: true, pitrDays: 7 },
           },

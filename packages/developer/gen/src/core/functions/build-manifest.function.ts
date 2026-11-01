@@ -31,6 +31,8 @@
  *          `addition_base_source`, `addition_target_missing` and `addition_key_collision` (ADR 0336, stackra-64).
  *          It lists each `Report` in `reports` (`reportsOf`: key, source, dimensions, measures, permission, generated
  *          query key) with its refusals (ADR 0470, stackra-389).
+ *          It lists each console `Command` in `commands` (`commandsOf`, own then hosted, `from`) with `kind_path`,
+ *          `command_collision` and `identity_missing` (ADR 0506, STA-1731).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -51,6 +53,7 @@ import { camelCase, snakeCase } from "@stackra/support";
 import { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 import { GENERATED_QUERY_SCHEMAS } from "#core/constants/generated-query-schemas.constant";
 import { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
+import { PERMISSION_LEVEL } from "#core/constants/permission-level.constant";
 import { MANIFEST_NOTICE } from "#core/constants/manifest-notice.constant";
 import { PUBLIC_ID_PREFIXES } from "#core/constants/public-id-prefixes.constant";
 import { REPLICA_PAGE_SCHEMA } from "#core/constants/replica-page-schema.constant";
@@ -66,11 +69,14 @@ import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { eventName } from "#core/functions/event-name.function";
 import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
+import { modelEntityFacts } from "#core/functions/model-entity-facts.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { permissionKey } from "#core/functions/permission-key.function";
+import { roleKey } from "#core/functions/role-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
+import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
@@ -90,6 +96,9 @@ import type { RegexValue } from "#core/types/regex-value.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
 import type { TokenRef } from "#core/types/token-ref.type";
 
+/** A written Integration key: two snake_case parts joined by a dot (STA-1739). */
+const INTEGRATION_KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+
 /** A manifest entry under construction. */
 type Entry = { [key: string]: Json };
 
@@ -107,10 +116,8 @@ const MERGED_SECTIONS = [
   "agents",
   "passes",
   "entitlements",
+  "roles",
 ] as const;
-
-/** `Permission.L2` or `Permission.L2.system()`: the risk level and the system-only marker. */
-const PERMISSION_LEVEL = /^Permission\.(L[0-4])(\.system\(\))?$/;
 
 /** Whether `value` is a class written as a value. */
 function isClassValue(value: unknown): value is ClassValue {
@@ -180,14 +187,27 @@ export function buildManifest(ir: MemberIR): {
       claim(key, declared);
       risks.set(key, level[1] ?? "L0");
       // `class` lets a consumer's generated client name the set as the producer does (`ReviewPermissions`, STA-1296).
+      // `module`, `member` and `file` let a host import the set and register the key at boot (STA-1710).
       permissions.push({
         key,
         risk: level[1] ?? "L0",
         class: declared.name,
-        ...(level[2] ? { system: true } : {}),
+        module: declared.module,
+        member: verb,
+        file: declared.file,
+        ...(level[2] === ".system()" ? { system: true } : {}),
       });
     }
   }
+  // Module roles by their derived key, so a host registers its hosted packages' roles too (STA-1710).
+  const moduleRoles: Entry[] = ir.classes
+    .filter((declared) => declared.kind === "role")
+    .map((declared) => ({
+      key: roleKey(declared.module, declared.name),
+      class: declared.name,
+      module: declared.module,
+      file: declared.file,
+    }));
   for (const dependency of ir.dependencies)
     for (const permission of dependency.manifest.permissions ?? [])
       risks.set(permission.key, permission.risk);
@@ -450,6 +470,12 @@ export function buildManifest(ir: MemberIR): {
   const hostedKeys = new Map<string, string>();
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "model")) {
     const key = modelKey(declared.module, declared.name);
+    const shape = ir.shapes.find(
+      (candidate) =>
+        candidate.kind === "model" &&
+        candidate.name === declared.name &&
+        candidate.module === declared.module,
+    );
     claim(key, declared);
     const publicId = declared.traits.find((trait) => trait.name === "HasPublicId")?.args[0];
     let hosts: string | undefined;
@@ -501,6 +527,8 @@ export function buildManifest(ir: MemberIR): {
       ...(declared.facets.some((facet) => facet.name === "Searchable" && facet.target === "class")
         ? { searchable: true }
         : {}),
+      // What a hosting service writes this model's EntitySchema from (STA-1667).
+      ...(shape === undefined ? {} : { entity: jsonOf(modelEntityFacts(shape)) }),
     });
   }
   if (ir.layout !== "package")
@@ -548,7 +576,17 @@ export function buildManifest(ir: MemberIR): {
   // Integrations: the key, the connection typed against each, and the webhook path (ADR 0308 rules 16 and 19).
   const integrations: Entry[] = [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "integration")) {
-    const key = integrationKey(declared.module, declared.name);
+    // A written key (`connectors.stripe`) wins: stored connection rows name it (STA-1739).
+    const written = declared.options["key"];
+    if (written !== undefined && (typeof written !== "string" || !INTEGRATION_KEY.test(written)))
+      fail(
+        declared,
+        "integration_key_invalid",
+        `the written key ${JSON.stringify(written)} is not two snake_case parts joined by a dot`,
+        "write it as `<group>.<name>` in snake_case, such as `connectors.stripe`, or leave it out to derive it",
+      );
+    const key =
+      typeof written === "string" ? written : integrationKey(declared.module, declared.name);
     claim(`integration:${key}`, declared);
     const connection = ir.classes.find(
       (candidate) => candidate.kind === "connection" && candidate.partner?.name === declared.name,
@@ -861,6 +899,17 @@ export function buildManifest(ir: MemberIR): {
       };
     drivers.set(key, entry);
   }
+  // A published package's services with their constructor tokens, so a host's wiring binds one it injects
+  // (`AppApprovalService` of @stackra/identity) without gen keeping a hand-written table of it (STA-1686).
+  const services: Entry[] = published
+    ? ir.classes
+        .filter((candidate) => candidate.kind === "service" && candidate.abstract !== true)
+        .map((declared) => ({
+          class: declared.name,
+          from: packageSpecifier(ir.package, declared.file),
+          ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
+        }))
+    : [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
     const schema = declared.options["schema"];
     const shape = isClassValue(schema) ? shapeNamed(schema.$class) : undefined;
@@ -982,16 +1031,38 @@ export function buildManifest(ir: MemberIR): {
     agents,
     passes,
     entitlements,
+    roles: moduleRoles,
   };
+  // An Integration reached twice (a connector package declared directly and by a hosted member) is kept once; one key
+  // from two packages is refused, since registerConnections and egress would serve only one of them (STA-1712).
+  const integrationFrom = new Map<unknown, unknown>(
+    integrations.map((entry) => [entry["key"], undefined]),
+  );
   if (ir.layout !== "package")
     for (const dependency of ir.dependencies) {
       if (dependency.manifest["kind"] === "app") continue;
       for (const section of MERGED_SECTIONS)
-        for (const item of (dependency.manifest[section] ?? []) as unknown as readonly Entry[])
-          sections[section].push({
-            ...(rehome(item, dependency.package) as Entry),
-            from: item["from"] ?? dependency.package,
-          });
+        for (const item of (dependency.manifest[section] ?? []) as unknown as readonly Entry[]) {
+          const from = item["from"] ?? dependency.package;
+          if (section === "integrations") {
+            if (integrationFrom.has(item["key"])) {
+              const other = integrationFrom.get(item["key"]);
+              if (other !== from)
+                errors.push({
+                  code: "identity_collision",
+                  file: "package.json",
+                  line: 0,
+                  column: 0,
+                  subject: String(from),
+                  message: `the integration key \`${String(item["key"])}\` of ${String(from)} is also derived by ${other === undefined ? "this member" : String(other)}`,
+                  fix: "declare only one of the two connector packages, or rename one Integration",
+                });
+              continue;
+            }
+            integrationFrom.set(item["key"], from);
+          }
+          sections[section].push({ ...(rehome(item, dependency.package) as Entry), from });
+        }
     }
 
   // A package's config classes, so a host's wiring writes a config row for exactly these (STA-1308).
@@ -1054,6 +1125,10 @@ export function buildManifest(ir: MemberIR): {
   const reports = reportsOf(ir);
   errors.push(...reports.errors);
 
+  // The console commands, own then hosted, with their refusals (ADR 0506, STA-1731).
+  const commands = commandsOf(ir);
+  errors.push(...commands.errors);
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1067,6 +1142,7 @@ export function buildManifest(ir: MemberIR): {
     ...(replaces.length > 0 ? { replaces } : {}),
     ...sections,
     ...(configs.length > 0 ? { config: configs } : {}),
+    ...(services.length > 0 ? { services } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
     ...(slots.length > 0 ? { slots } : {}),
     ...(fills.length > 0 ? { fills } : {}),
@@ -1075,6 +1151,7 @@ export function buildManifest(ir: MemberIR): {
       ? { additions: additions.additions as unknown as Json }
       : {}),
     ...(reports.reports.length > 0 ? { reports: [...reports.reports] } : {}),
+    ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

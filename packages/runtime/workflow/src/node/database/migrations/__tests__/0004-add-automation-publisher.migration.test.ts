@@ -22,4 +22,18 @@ describe("AddAutomationPublisherMigration", () => {
     expect(sql).toMatch(/"pause_reason" varchar\(63\) null/);
     expect(sql).toContain("paused_at is null");
   });
+
+  it("replaces 0003's index of the same name, and puts it back on the way down (STA-1689)", () => {
+    const steps = compileMigration(AddAutomationPublisherMigration, { schema: "workflow" }).steps;
+    const sql = steps.flatMap((step) => step.sql);
+    const drop = sql.findIndex((statement) => statement.startsWith("drop index concurrently"));
+    const create = sql.findIndex((statement) =>
+      statement.startsWith('create index concurrently "idx_automations_trigger"'),
+    );
+    expect(drop).toBeGreaterThanOrEqual(0);
+    expect(drop).toBeLessThan(create);
+    expect(steps.flatMap((step) => (step.inverse === false ? [] : step.inverse))).toContain(
+      'create index concurrently if not exists "idx_automations_trigger" on "workflow"."automations" ("trigger") where published_revision is not null',
+    );
+  });
 });

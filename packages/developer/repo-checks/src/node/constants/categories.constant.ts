@@ -22,6 +22,11 @@ export const CATEGORIES = Object.freeze([
   },
   { name: "commerce", reason: "money, ledger and pricing primitives", adr: "0127" },
   {
+    name: "connectors",
+    reason: "one provider's Integration and Connection classes per package",
+    adr: "0127",
+  },
+  {
     name: "cross-cutting",
     reason: "concerns that span layers (settlement Q3.1)",
     adr: "0127",

@@ -26,6 +26,12 @@ export interface TerminalRequest {
   /** The provider's id of the terminal. */
   readonly terminalId: string;
 
+  /**
+   * The Connection the terminal is paired with; required when more than one connected provider of the Market can
+   * serve the terminal, so a terminal id never reaches another provider.
+   */
+  readonly connectionId?: string;
+
   /** The amount before any tip. */
   readonly amount: Money;
 

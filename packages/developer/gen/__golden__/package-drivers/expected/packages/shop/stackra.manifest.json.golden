@@ -140,6 +140,33 @@
       "from": "@golden/shop"
     }
   ],
+  "services": [
+    {
+      "class": "ShopService",
+      "from": "@golden/shop",
+      "deps": [
+        {
+          "class": {
+            "name": "Clock",
+            "from": "@stackra/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "PaymentGateway",
+            "from": "@golden/shop/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "PaymentGateway",
+            "from": "@golden/shop/contracts"
+          },
+          "named": "fallback"
+        }
+      ]
+    }
+  ],
   "schemas": {
     "shop.OrderStatus": {
       "type": "string",

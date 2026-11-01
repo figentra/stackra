@@ -3,7 +3,7 @@
 //          its script (dist/main.mjs, built by tsdown), the R2, D1 and KV bindings, the custom domain and every limit
 //          as a Worker var (ADR 0453 decision 19).
 // Owner: release-operations · Secrets: REGISTRY_SIGNING_KEY is a Worker secret set by CI from Infisical `prod`
-//        `/registry` (ADR 0173); CI passes CLOUDFLARE_API_TOKEN from Infisical in the environment. No secret is in this file.
+//        `/ci/registry` (ADR 0173); CI passes CLOUDFLARE_API_TOKEN from Infisical in the environment. No secret is in this file.
 // Deploy: CI only, .github/workflows/deploy-registry.yml (runbook in README.md).
 // Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
 {
@@ -54,6 +54,11 @@
     // listed: a JSON array of { "key": "<SPKI DER, base64>", "expires": "<ISO date>" }.
     "REGISTRY_SIGNING_KEY_EXPIRES": "",
     "REGISTRY_RETIRED_KEYS": "[]",
+    // The OIDC audiences a publish may use, a JSON array; "" means only `npm:<REGISTRY_HOST>` (STA-1733: both hosts
+    // during the move to registry.figentra.com).
+    "REGISTRY_OIDC_AUDIENCES": "",
+    // "true" refuses every write with 503 while reads go on: set during a data move only (STA-1733).
+    "REGISTRY_READ_ONLY": "",
   },
   // Workers Logs (STA-1573): every request of the registry every buyer installs from is kept, so an install failure can
   // be traced. Billed per log line above the plan's included volume; lower head_sampling_rate before dropping logs.

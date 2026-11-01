@@ -19,4 +19,6 @@ export interface ToastUndoOptions {
   readonly description?: string | undefined;
   /** Called when the toast closes without an undo: timed out or dismissed. The change can be made final here. */
   readonly onCommit?: (() => void) | undefined;
+  /** The binding that undoes while the toast shows; `mod+z` by default, `false` for none. Web only (ADR 0508). */
+  readonly undoShortcut?: string | false | undefined;
 }

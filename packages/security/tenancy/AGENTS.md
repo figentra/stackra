@@ -43,10 +43,15 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
 - `CallIsolationDriver` (`./node`, the pipeline's and every background unit's `CallIsolation`, ADR 0495) composes
   `Database.withScope` and `withTenant` and writes no SQL of its own; a read-only call opens one read-only
   transaction around both, unless one is already running; inside a running transaction set to another tenant it
-  refuses (`TenantSwitchRefusedError`), so the relay and the inbox give each unit a transaction of its own.
+  refuses (`TenantSwitchRefusedError`), so the relay and the inbox give each unit a transaction of its own. For a
+  single scope the driver resolves the tenant through the `ScopeTree` first (STA-1823, ADR 0495 note of 2026-11-01): a
+  `job` or `system` actor takes the tenant of its platform-written scope (`tenantOf`, a branch resolves to its parent
+  tenant; a scope the tree does not show is refused, `TenantScopeUnresolvedError`); any other actor keeps its own
+  `scopeId` and is refused (`TenantScopeMismatchError`) when the scope's tenant differs. The tree is read in a session
+  over the root label of the scope's path, because row security hides a branch's tenant ancestor from the branch's own.
   `TenantScopeOwnershipDriver` is the `ScopeOwnership` the inbox and the automation service use to distrust an actor
   whose tenant does not own the scope it comes with. `pnpm validate` refuses a session-level `app.*` setting
-  anywhere else (`tools/scripts/session-settings.mjs`).
+  anywhere else (`stackra validate --repository`).
 - Raw SQL lives only in `TenantIsolationService.withTenant` (one parameterised `set_config`), with a `// raw-sql:`
   comment (ADR 0160).
 - A sandbox or a share is never a grant and never a tree position. Transfer rules, sandbox allowances and the terms of

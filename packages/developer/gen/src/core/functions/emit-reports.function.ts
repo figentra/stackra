@@ -12,6 +12,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0470 (decisions 1 and 3); ADR 0294 (decisions 16 and 20); ADR 0155 (queries are MCP tools).
  */
+import { pascalCase } from "@stackra/support";
+
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { reportQueriesOf } from "#core/functions/report-queries-of.function";
@@ -30,6 +32,7 @@ export function emitReports(ir: MemberIR): string | undefined {
   if (reports.length === 0) return undefined;
   const imports = new Map<string, Map<string, boolean>>([
     ["@stackra/actions", new Map([["Query", false]])],
+    ["@stackra/contracts", new Map([["ActorKind", false]])],
     [
       "@stackra/reports",
       new Map([
@@ -55,6 +58,8 @@ export function emitReports(ir: MemberIR): string | undefined {
       ...(permission !== undefined
         ? [`permission: ${permission.$class}.${permission.member}`]
         : []),
+      // `reportQueriesOf` always sets them: the report's, or user and agent (STA-1690).
+      `actors: [${(query.options["actors"] as readonly string[]).map((actor) => `ActorKind.${pascalCase(actor)}`).join(", ")}]`,
     ];
     return [
       `/** The generated query of report \`${declared.module}.${written}\` (${declared.name}). */`,

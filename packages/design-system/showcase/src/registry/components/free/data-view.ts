@@ -31,6 +31,7 @@ export const FREE_DATA_VIEW: ComponentEntry = {
     { id: "board", platforms: ["react"] },
     { id: "mobile-cards", platforms: ["react"] },
     { id: "orders", platforms: ["native"] },
+    { id: "tamo", platforms: ["react"] },
   ],
   related: ["free/data-table", "free/collection-engine", "free/data-grid"],
   tokens: ["color.surface", "color.border", "radius.container"],

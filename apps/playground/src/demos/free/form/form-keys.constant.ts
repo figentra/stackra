@@ -31,5 +31,13 @@ export const FORM_KEYS = keys({
     "not_sent",
     "refused",
     "sent",
+    "tamo_form",
+    "tamo_name",
+    "tamo_company",
+    "tamo_city",
+    "tamo_notes",
+    "tamo_paste",
+    "tamo_sample",
+    "tamo_screen",
   ],
 });

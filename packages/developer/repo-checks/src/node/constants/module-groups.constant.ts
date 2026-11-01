@@ -26,7 +26,15 @@ export const MODULE_GROUPS = structureGroups(
     ["workflows", ["workflow", "signal"], "durable runs and the signals they wait for"],
     [
       "access",
-      ["permissions", "policy", "role", "entitlement", "precondition", "flag"],
+      [
+        "permissions",
+        "policy",
+        "role",
+        "entitlement",
+        "precondition",
+        "approval-condition",
+        "flag",
+      ],
       "who may do what, and when",
     ],
     ["services", ["service", "repository"], "services; a repository only for named reads"],

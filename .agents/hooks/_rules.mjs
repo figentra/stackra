@@ -728,7 +728,7 @@ function readGitCommands(text, cwd) {
         at[next] === subAt && words[next].startsWith(m[2])
           ? words.slice(next + 1)
           : argWords(src.slice(subAt + m[2].length));
-      const bot = /\bbot:git\b|\bbot-gh\.mjs\s+git\b/.test(src);
+      const bot = /\bbot:git\b|\bbot-gh\.mjs\s+git\b|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+git\b/.test(src);
       const gitDir = target === null || target.some((w) => /^--(?:git-dir|bare)\b/.test(w));
       for (const dir of dirs)
         out.push({
@@ -1206,6 +1206,12 @@ function stashRefusal(c, ctx) {
 }
 
 /**
+ * The bot's gh wrapper: `pnpm bot:gh`, or the private CLI's `figentra bot gh` (ADR 0500), bare or after a runner
+ * (`pnpm exec`, `npx`, `npx @figentra/cli`, `mise exec --`). Every `bot:gh` rule below reads both.
+ */
+const BOT_GH = String.raw`(?:\bbot:gh|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+gh)\b`;
+const BOT_GH_WORD = new RegExp(BOT_GH);
+/**
  * `pnpm bot:gh` merging or moving a branch outside `pr:merge`: `pr merge`, `api …/pulls/<n>/merge` (any method),
  * `api repos/<o>/<r>/merges`, and the GraphQL merge, enqueue, commit-on-branch and ref mutations.
  */
@@ -1235,7 +1241,7 @@ const botMerges = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
     segments(t).some(
       (s) =>
-        /\bbot:gh\b/.test(blank(s)) &&
+        BOT_GH_WORD.test(blank(s)) &&
         (MERGE.test(s) || MERGE.test(s.replaceAll(/\S+/g, normalizeWord))),
     ),
   );
@@ -1321,20 +1327,22 @@ const LABEL_MUTATION =
   /\b(?:add|remove|replace|clear)Labels\w*Labelable\b|\b(?:create|update|delete)Label\b/;
 const botLabelMutation = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
-    segments(t).some((s) => /\bbot:gh\b/.test(blank(s)) && LABEL_MUTATION.test(s)),
+    segments(t).some((s) => BOT_GH_WORD.test(blank(s)) && LABEL_MUTATION.test(s)),
   );
 /**
  * A `pnpm bot:gh` release or delete: `release create|edit|delete|upload`, `<noun> delete` (`repo`, `variable`,
  * `secret`, `issue`, `label`, `run`, `cache`), and `api` with a `DELETE` method in any spelling (`-X DELETE`,
  * `-X=DELETE`, `-vX DELETE`, `--method=DELETE`). Workflow dispatches are the deploy rules' (`deployTarget`).
  */
-const BOT_GH_RELEASE_DELETE =
-  /\bbot:gh\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:release\s+(?:create|edit|delete|upload)\b|[\w-]+\s+delete\b|api\b[^|;&\n]*(?:\s-[a-zA-Z]*X(?:=|\s*)DELETE\b|\s--method(?:=|\s+)DELETE\b))/i;
+const BOT_GH_RELEASE_DELETE = new RegExp(
+  String.raw`${BOT_GH}\s+(?:--\s+)?(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:release\s+(?:create|edit|delete|upload)\b|[\w-]+\s+delete\b|api\b[^|;&\n]*(?:\s-[a-zA-Z]*X(?:=|\s*)DELETE\b|\s--method(?:=|\s+)DELETE\b))`,
+  "i",
+);
 /** A GraphQL `delete…` mutation through `pnpm bot:gh` (the query is a quoted value, so the raw text is read). */
 const botGraphqlDelete = (c) =>
   [dropMessages(c), ...runnable(c)].some((t) =>
     segments(t).some(
-      (s) => /\bbot:gh\b/.test(blank(s)) && /\bmutation\b[^]*\bdelete[A-Z]\w*/.test(s),
+      (s) => BOT_GH_WORD.test(blank(s)) && /\bmutation\b[^]*\bdelete[A-Z]\w*/.test(s),
     ),
   );
 /**
@@ -1369,7 +1377,7 @@ const PM_VALUE = /^(?:-C|-F|--filter|--dir|--prefix|-w|--workspace|--cwd)$/;
  * `$(…)`; STA-330 review), or `bot-gh.mjs review` directly. One pass over the words.
  */
 const runsBotReview = (t) =>
-  /\bbot-gh\.mjs\s+review\b/.test(t) ||
+  /\bbot-gh\.mjs\s+review\b|(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+review\b/.test(t) ||
   simpleCommands(t).some(({ words }) => {
     let script = false; // the word may be the script a package manager before it runs
     for (let k = 0; k < words.length; k++) {
@@ -1408,15 +1416,21 @@ const listsProcessEnv = (c) =>
   );
 /** `/proc/<pid>/environ`: another process's environment, read by any command (STA-303). */
 const PROC_ENVIRON = /\/proc\/[^\s;&|()<>]*\/environ\b/;
+/** The private CLI (`@figentra/cli`, ADR 0500) running a command whose alias injects /agents values. */
+const FIGENTRA_SECRET_COMMAND = new RegExp(
+  String.raw`(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?(?:bot|pr\s+merge|linear|secrets)\b`,
+);
 /** The scripts that run their program inside `infisical run` with every /agents value (package.json). */
 const SECRET_SCRIPT = /^(?:linear|spec:linear|pr:merge|bot:\S+|secrets:\S+)$/;
 /**
  * A text that injects secrets into a child: `infisical run`, `mcp.sh`, or a package manager running a script of
- * `SECRET_SCRIPT` (`pnpm [options] [run] linear`), the walk `runsBotReview` makes.
+ * `SECRET_SCRIPT` (`pnpm [options] [run] linear`), the walk `runsBotReview` makes, or the private CLI's form of
+ * those scripts (`figentra bot|pr merge|linear|secrets …`), bare or through a runner.
  */
 const injectsSecrets = (t) =>
   infisicalCommands(t).some((x) => x.sub === "run") ||
   /(?:^|[\s/;&|(])mcp\.sh\b/.test(t) ||
+  FIGENTRA_SECRET_COMMAND.test(t) ||
   simpleCommands(t).some(({ words }) => {
     let script = false;
     for (let k = 0; k < words.length; k++) {
@@ -1542,8 +1556,8 @@ const EAS_DEPLOY = atName(
 const PUBLISH = atName(String.raw`(?:${CLI("(?:npm|pnpm|yarn|changeset)")})?publish` + END);
 /** `pnpm runway deploy|promote`, the `runway` binary or its `runway.mjs` build (STA-268) without `--dry-run`; `plan` is a read. */
 const RUNWAY_DEPLOY = /\brunway(?:\.mjs)?\s+(?:--\s+)?(?:deploy|promote)\b(?![^|;&\n]*--dry-run)/;
-/** `pnpm secrets:import`, or its script run directly. */
-const SECRETS_IMPORT = String.raw`\bsecrets(?::import|-import(?:\.mjs)?)\b`;
+/** `pnpm secrets:import`, its script run directly, or the private CLI's `figentra secrets import` (ADR 0500). */
+const SECRETS_IMPORT = String.raw`\bsecrets(?::import|-import(?:\.mjs)?|\s+import)\b`;
 /** An import that writes: not `--list`, not `--dry-run` (the owner's keeper rule of 2026-10-31). */
 const SECRETS_IMPORT_WRITE = new RegExp(
   String.raw`${SECRETS_IMPORT}(?![^|;&\n]*\s--(?:list|dry-run)\b)`,
@@ -1562,8 +1576,9 @@ const STACKRA_DEPLOY = /\bstackra\s+(?:--\s+)?deploy\b(?![^|;&\n]*--dry-run)/;
  * `gh` or `pnpm bot:gh` dispatching a workflow: `workflow run <file>` or `api … /dispatches` (raw text: the fields are
  * quoted values).
  */
-const WORKFLOW_DISPATCH =
-  /(?:\bbot:gh\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:workflow\s+run\b|api\b[^|;&\n]*\/dispatches\b)/;
+const WORKFLOW_DISPATCH = new RegExp(
+  String.raw`(?:${BOT_GH}\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?(?:workflow\s+run\b|api\b[^|;&\n]*\/dispatches\b)`,
+);
 /** The only role that may start a deploy (owner decision 2026-10-31); its session's settings set `STACKRA_ROLE`. */
 export const DEPLOY_ROLE = "qa-release";
 /** Environments a deploy reaches without asking the owner (owner decision 2026-10-31); any other one is production. */
@@ -1627,7 +1642,9 @@ const PRODUCTION_FORBIDDEN = [
     CLI("wrangler") + String.raw`(?:r2\s+object|kv\s+(?:key|bulk))\s+delete\b(?![^|;&\n]*--local)`,
   ),
   /\bdns_records\b|\bflarectl\s+dns\b/,
-  /(?:\bbot:gh\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?secret\s+(?:set|delete)\b/,
+  new RegExp(
+    String.raw`(?:${BOT_GH}\s+(?:--\s+)?|(?:^|[\s;&|(])gh\s+)(?:(?:-R|--repo)(?:=|\s+)\S+\s+)?secret\s+(?:set|delete)\b`,
+  ),
 ];
 /**
  * The rules, in order. A rule denies unless it says `decision: "ask"`; any deny wins over any ask. `rx` is a regex
@@ -1782,7 +1799,7 @@ const RULES = [
   {
     // STA-303 incident: a `ps` beside `pnpm linear` printed the injected TURBO_TOKEN into the transcript.
     rx: (c) => runnable(c).some(injectsSecrets) && runsQuoted(c, listsProcesses),
-    why: "Secrets guard: a process listing (`ps`, `pgrep -a|-l`, `procs`, `top`, `lsof`, `/proc/…`) in the same command as `infisical run`, `pnpm linear`, `pnpm bot:*`, `pnpm secrets:*` or `mcp.sh` can print the arguments or environment of the child that holds the injected secrets (STA-303). Run the listing as its own command, after the wrapper has exited.",
+    why: "Secrets guard: a process listing (`ps`, `pgrep -a|-l`, `procs`, `top`, `lsof`, `/proc/…`) in the same command as `infisical run`, `pnpm linear`, `pnpm bot:*`, `pnpm secrets:*`, `figentra bot|pr merge|linear|secrets` or `mcp.sh` can print the arguments or environment of the child that holds the injected secrets (STA-303). Run the listing as its own command, after the wrapper has exited.",
   },
 
   // --- Encore and deploys: the environment-touching subcommands ---------------------------------
@@ -1879,7 +1896,8 @@ const RULES = [
   },
   {
     executor: true,
-    rx: (c) => executorRuns(c, /\bsecrets(?::import|-import(?:\.mjs)?)\b[^|;&\n]*\s--confirm\b/),
+    rx: (c) =>
+      executorRuns(c, /\bsecrets(?::import|-import(?:\.mjs)?|\s+import)\b[^|;&\n]*\s--confirm\b/),
     why: "`secrets:import … --confirm` writes a production secret; executors never run it (ADR 0257).",
   },
 
@@ -2017,7 +2035,7 @@ const RULES = [
       [dropMessages(c), ...runnable(c)].some((t) =>
         segments(t).some(
           (s) =>
-            /\bbot:gh\b/.test(blank(s)) &&
+            BOT_GH_WORD.test(blank(s)) &&
             (/\balias\s+(?:set|import|delete)\b/.test(s) ||
               (/\bapi\s+(?:-\S+\s+)*graphql\b/.test(s) && /=@|--input\b|\$\(|`/.test(s))),
         ),
@@ -2047,10 +2065,14 @@ const RULES = [
         scanShell(dropMessages(c)).literal,
       ) ||
       runs(c, /(?:^|\s)(?:\S*\/)?(?:node|bun|deno|tsx)\b[^|;&\n]*(?:\s|\/)bot-token\.mjs\b/) ||
+      // The private CLI's form (`figentra bot token`), bare or through any runner (`pnpm exec`, `npx`, `mise exec --`).
+      runs(c, /(?:\bfigentra(?:\.mjs)?|@figentra\/cli(?:@\S*)?)\s+(?:--\s+)?bot\s+token\b/) ||
       runs(
         c,
         new RegExp(
           String.raw`\bbot:(?:gh|review)\s+(?:--\s+)?auth\b|\bbot:git\s+(?:--\s+)?(?:\S+\s+)*?credential\b|` +
+            // The private CLI's bot modes (`figentra bot gh|review auth`, `figentra bot git credential`).
+            String.raw`\bfigentra\s+(?:--\s+)?bot\s+(?:(?:gh|review)\s+(?:--\s+)?auth\b|git\s+(?:--\s+)?(?:\S+\s+)*?credential\b)|` +
             // STA-214: `git credential fill` and `git credential-<helper> get` answer with the owner's token.
             // `man git-credential` and similar read-only help is not a credential call (STA-216).
             String.raw`(?<!\b(?:man|help|which|whereis|type)\s+(?:-\S+\s+)*)\bgit(?:-|\s+(?:--\s+)?` +
@@ -2058,7 +2080,7 @@ const RULES = [
             String.raw`)credential\b`,
         ),
       ),
-    why: "A token is never printed, read or handed to `gh auth`: `pnpm bot:token`, running `bot-token.mjs`, `$GH_TOKEN` (any `$…_TOKEN`, `$…_API_KEY`, `$…_SECRET`), `bot:gh -- auth …`, and `git credential …` or `git credential-<helper> …` (bare or through `bot:git`) are denied. Use `pnpm bot:gh -- <args>`, which keeps the token in its child process.",
+    why: "A token is never printed, read or handed to `gh auth`: `pnpm bot:token`, running `bot-token.mjs` or `figentra bot token`, `$GH_TOKEN` (any `$…_TOKEN`, `$…_API_KEY`, `$…_SECRET`), `bot:gh -- auth …`, and `git credential …` or `git credential-<helper> …` (bare or through `bot:git`) are denied. Use `pnpm bot:gh -- <args>`, which keeps the token in its child process.",
   },
   // ADR 0230: an agent never speaks for the owner, and only the reviewer identity posts verdicts. A tripwire, not
   // the control: pr-merge checks the verdict's author.

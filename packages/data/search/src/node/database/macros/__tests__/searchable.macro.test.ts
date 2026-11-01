@@ -82,6 +82,14 @@ describe(SearchableMacro, () => {
     expect(sql).not.toContain('"search_text" ');
   });
 
+  it("writes the Arabic stemmer lane as a versioned `ar` shadow vector beside a plain live vector (ADR 0492)", () => {
+    const sql = compiled({ text: ["title"], locales: ["ar"], version: 2 }, false).join("\n");
+    expect(sql).toContain(
+      'alter table "audit"."entries" add column "search_vector_ar__v2" tsvector null',
+    );
+    expect(sql).not.toContain('"search_vector" ');
+  });
+
   it("refuses a version that is not a whole number from 2 to 999", () => {
     for (const version of [1, 0, 2.5, 1000])
       expect(() => compiled({ text: ["title"], version }, false)).toThrow(TypeError);

@@ -21,7 +21,6 @@ import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { IconButton } from "#react/icon-button/icon-button";
 import { Text } from "#react/text/text";
-import type { TextProps } from "#react/text/text.props";
 import type { PropertyListProps } from "#react/property-list/property-list.props";
 
 /**
@@ -39,9 +38,6 @@ const COPIED_MILLISECONDS = 2000;
 
 /** True for a value with nothing to show: missing, empty or `false`; `0` is a value. */
 const isEmpty = (value: ReactNode) => value == null || value === "" || value === false;
-
-/** Draws Text as a `span`: it sits beside the copy button in a row, and a `dt` or `dd` is not a paragraph. */
-const renderSpan: NonNullable<TextProps["render"]> = (domProps) => <span {...domProps} />;
 
 /**
  * Label and value pairs. Pass `columns={2}` for two columns of rows on a wide screen, `emptyValue` for what an empty
@@ -82,18 +78,18 @@ export function PropertyList<TItem extends PropertyListItem = PropertyListItem>(
         return (
           <div key={item.id} data-slot="property-list-row" className="grid min-w-0 gap-1">
             <dt>
-              <Text type="small" tone="muted" render={renderSpan}>
+              <Text type="small" tone="muted" elementType="span">
                 {item.label}
               </Text>
             </dt>
             <dd className="flex min-w-0 items-center gap-1">
               <span className="min-w-0 break-words">
                 {isEmpty(item.value) ? (
-                  <Text tone="muted" render={renderSpan}>
+                  <Text tone="muted" elementType="span">
                     {emptyValue}
                   </Text>
                 ) : typeof item.value === "string" || typeof item.value === "number" ? (
-                  <Text render={renderSpan}>{item.value}</Text>
+                  <Text elementType="span">{item.value}</Text>
                 ) : (
                   item.value
                 )}

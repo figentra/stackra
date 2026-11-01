@@ -21,7 +21,6 @@ import { motion, useReducedMotion } from "motion/react";
 import type { ReactElement } from "react";
 import {
   Button as AriaButton,
-  DropIndicator,
   GridList,
   GridListItem,
   useDragAndDrop,
@@ -36,6 +35,7 @@ import type { ColumnEditorProps } from "#react/column-chooser/column-editor.prop
 import { COLLECTION_ICONS } from "#react/data-table/collection-icons.constant";
 import { useColumnEditorState } from "#react/hooks/use-column-editor-state";
 import { useUiText } from "#react/hooks/use-ui-text";
+import { useLiveDrag } from "#react/hooks/use-live-drag";
 import { Icon } from "#react/icon/icon";
 import { IconButton } from "#react/icon-button/icon-button";
 import { NumberField } from "#react/number-field/number-field";
@@ -63,7 +63,9 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
   const { columns } = collection;
   const labelOf = (id: unknown) => columns.find((column) => column.id === id)?.label ?? "";
 
+  const { follower: liveFollower, attach: liveAttach, ...live } = useLiveDrag();
   const { dragAndDropHooks } = useDragAndDrop({
+    ...live.options,
     getItems: (keys) => [...keys].map((key) => ({ "text/plain": labelOf(key) })),
     onReorder: ({ keys, target }) => {
       const moved = [...keys].map(String);
@@ -71,20 +73,7 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
       const at = rest.indexOf(String(target.key)) + (target.dropPosition === "after" ? 1 : 0);
       collection.reorderColumns([...rest.slice(0, at), ...moved, ...rest.slice(at)]);
     },
-    renderDropIndicator: (target) => (
-      <DropIndicator
-        target={target}
-        className="h-0.5 bg-accent opacity-0 data-[drop-target]:opacity-100"
-      />
-    ),
-    renderDragPreview: (dragged) => (
-      <div
-        className="scale-[1.02] bg-overlay px-4 py-2 text-foreground shadow-overlay"
-        style={{ borderRadius: "var(--radius-control)" }}
-      >
-        {dragged[0]?.["text/plain"]}
-      </div>
-    ),
+    renderDropIndicator: (target) => live.renderDropIndicator(target),
   });
 
   return (
@@ -92,6 +81,7 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
       <div className="grid w-full gap-3" data-slot="column-editor">
         <p className="m-0 text-sm text-muted">{t(K.editor_hint)}</p>
         <GridList
+          ref={liveAttach}
           aria-label={name}
           items={columns}
           // No grid selection: React Aria drags every selected row, so visibility is each row's own checkbox and a
@@ -162,6 +152,7 @@ export function ColumnEditorPanel<TItem extends CollectionItem = CollectionItem>
             </GridListItem>
           )}
         </GridList>
+        {liveFollower}
         {open ? (
           <fieldset
             className="m-0 grid gap-3 rounded-[var(--radius-container)] border border-separator p-3"

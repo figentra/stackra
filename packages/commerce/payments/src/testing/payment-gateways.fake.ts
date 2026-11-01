@@ -35,10 +35,16 @@ export class PaymentGatewaysFake extends PaymentGateways {
     return fake;
   }
 
-  /** The first gateway that has every capability in `needs`. */
-  async forMarket(market: string, needs: readonly PaymentCapability[]): Promise<PaymentGateway> {
-    const found = this.gateways.find((gateway) =>
-      needs.every((need) => gateway.capabilities.includes(need)),
+  /** The first gateway that has every capability in `needs`, or gateway `connectionId` when given. */
+  async forMarket(
+    market: string,
+    needs: readonly PaymentCapability[],
+    connectionId?: string,
+  ): Promise<PaymentGateway> {
+    const found = this.gateways.find(
+      (gateway) =>
+        (connectionId === undefined || gateway.id === connectionId) &&
+        needs.every((need) => gateway.capabilities.includes(need)),
     );
     if (found === undefined)
       throw NoPaymentProviderError.create({ market, needs: needs.join(",") });

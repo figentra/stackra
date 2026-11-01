@@ -1,0 +1,6 @@
+{
+  "label": "Orders",
+  "screen": "Orders",
+  "hint": "Select a few rows, then press Ask Tamo to summarise them, fill a column or filter in words.",
+  "filled": "{count, plural, one {Tamo filled # cell.} other {Tamo filled # cells.}}"
+}

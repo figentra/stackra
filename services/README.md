@@ -25,6 +25,6 @@ container and action packages land.
 - A service never imports another service: integration events (`@OnEvent`) or typed clients only
   ([module boundary](../.agents/rules/module-boundary.md)).
 - Read [the service checklist](../.agents/rules/service-checklist.md) before touching a file here.
-- Add a service with `pnpm new service <name> --description "<one sentence>"`.
+- Add a service with `stackra new service <name> --area app --summary "<when an agent reaches for it>"` (`pnpm new service ...` is its alias), then `pnpm install` and, in the service, `stackra gen && stackra test`. `--data` adds an example module with a model, migration and unit and integration tests.
 
 Standards: [services](../apps/docs/src/docs/standards/services.mdx).

@@ -52,6 +52,21 @@ describe("generate", () => {
     expect(readFileSync(join(root, ".stackra/gen/wiring.ts"), "utf8")).toBe("// edited by hand\n");
   });
 
+  it("writes the integration-tier config only for a member with an .int.test.ts (STA-1819)", async () => {
+    const root = writeFixtureMember("shop", SHOP_SOURCES);
+    await generate(root);
+    expect(existsSync(join(root, ".stackra/vitest.int.config.ts"))).toBe(false);
+    const test = join(root, "src/node/__tests__/orders.int.test.ts");
+    mkdirSync(dirname(test), { recursive: true });
+    writeFileSync(test, "");
+    const result = await generate(root);
+    expect(result.errors).toEqual([]);
+    expect(result.changed).toContain(".stackra/vitest.int.config.ts");
+    expect(readFileSync(join(root, ".stackra/vitest.int.config.ts"), "utf8")).toContain(
+      "export default intTier(config);",
+    );
+  });
+
   it("refuses a changed identity without @Renamed", async () => {
     const root = writeFixtureMember("shop", SHOP_SOURCES);
     await generate(root);

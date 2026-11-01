@@ -44,6 +44,8 @@ describe("COMMANDS", () => {
         "agents check",
         "db migrate",
         "db rollback",
+        "db seed",
+        "db diff",
         "new",
         "seed-pack",
         "settings:diff",
@@ -56,6 +58,26 @@ describe("COMMANDS", () => {
         "add",
         "publish",
         "testbed",
+        "consumer-gate",
+      ]),
+    );
+  });
+
+  it("covers the repository commands moved from tools/scripts", () => {
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "doctor",
+        "eas-preflight",
+        "structure",
+        "architecture-map",
+        "doc-standard",
+        "catalogue-completeness",
+        "cycles",
+        "app-native-deps",
+        "duplicate-exports",
+        "any-ratchet",
+        "duplication",
+        "skill-licences",
       ]),
     );
   });

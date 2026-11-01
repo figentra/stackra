@@ -235,18 +235,20 @@ Every `toResource(Resources.Order)` route renders a generic page, Filament-style
   `fieldErrors` show on their fields; a done run opens the record's View page (else the list). Edit starts from the
   record, its id under the input's id key.
 - **Relation managers** (`RelationManager`): the related list query's table, its input bound from the record.
+  `actions` on a relation are row actions of the related model, with the bound inputs filled in.
 - **Actions**: placed actions follow ADR 0307 rule 3 (`placementsAt`): a record action on the row, View and Edit, and in
   the bulk bar with `.bulk()` (one run per selected record); an action without a record in the list header. View and
   edit links, the create link and delete (`operations.delete`) are derived. Every run goes through `useActionRunner`.
-  A record action whose input has a required field besides the record id opens a modal form over that input (one for
-  a whole bulk selection), with the id pre-filled, the declared confirm copy and the server's field errors.
+  An action whose input has any field besides the record id (optional ones included) opens a modal form over that
+  input (one for a whole bulk selection, once for a List header action), with the id pre-filled, the declared confirm
+  copy and the server's field errors.
 - **Values**: a flag shows as a localised yes or no; an enum code shows its label `<module>::enums.<model>_<field>.<code>`
   (else `<module>::enums.<field>.<code>`, else the code). An enum whose label the convention misses, such as one another
   module declares, is named on its column or entry: `c.from("mode").labels(I18n.commerce_packs.enums.provider_mode)`.
   A list entry's `…Minor` cells are money in the item's own `currency`, else the record's at
   `e.list("customs", ["sku", "valueMinor"], { currency: "currency" })`.
 - **Labels** are derived: `<module>::resources.<model>.title`, `.columns.<path>`, `.filters.<path>`, `.entries.<path>`,
-  `.sections.<name>`, `.fields.<path>`, `.steps.<name>`, `.relations.<model>` and `.actions.<verb>` (paths in
+  `.sections.<name>`, `.fields.<path>`, `.steps.<name>`, `.relations.<model>` and `.actions.<verb>` (`.actions.<model>_<verb>` for another model's action) (paths in
   snake_case).
 
 The generated web entry calls `registerResources({ "orders.order": tree })` with the trees gen records; a resource with

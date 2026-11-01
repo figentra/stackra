@@ -8,6 +8,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decision 3); the STA-347 stand-in barrel decision.
  */
+export { MemoryLoggerFake } from "#testing/fakes/memory-logger.fake";
 export { createTestingModule } from "#testing/functions/create-testing-module.function";
 export { loadMemberSchemas } from "#testing/functions/load-member-schemas.function";
 export { registerTestingPlugin } from "#testing/functions/register-testing-plugin.function";

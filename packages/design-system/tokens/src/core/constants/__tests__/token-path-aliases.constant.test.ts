@@ -87,6 +87,13 @@ const PUBLISHED: Readonly<Record<string, readonly string[]>> = {
     "chart-3",
     "chart-4",
     "chart-5",
+    "tamo-glow-start",
+    "tamo-glow-mid",
+    "tamo-glow-end",
+    "tamo-shimmer",
+    "tamo-mark",
+    "tamo-mark-eyes",
+    "tamo-name",
   ],
   fontFamily: ["sans", "mono", "arabic"],
   typography: [
@@ -138,6 +145,7 @@ const PUBLISHED: Readonly<Record<string, readonly string[]>> = {
     "overlay-out",
     "toast-in",
     "toast-out",
+    "tamo-shimmer",
   ],
   typeScale: ["sizes", "weights", "tracking", "leading", "numeric", "arabic"],
   layout: [

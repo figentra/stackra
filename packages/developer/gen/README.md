@@ -116,6 +116,16 @@ the cache drivers its tokens reach), so an invalidating event forgets the cached
 `per: principal` and the scope's otherwise), each route subscribed on the bus for its registered event class and sent
 through `RealtimeRelay` when bound, else `RealtimeBroadcaster`.
 
+The approval stage (ADR 0509, STA-1724; `checkApproval`, full pass only) has seven refusals:
+
+- `approval_not_constant`: an `approval` option gen cannot read as a constant.
+- `approval_on_query`: `approval` on a query.
+- `approval_window_too_long`: an `expiresAfter` above 30 days (`"720h"`).
+- `approval_actor_not_allowed`: `actors` with a kind other than `user`, `agent` or `external_agent`, or not constant.
+- `approval_credential_input`: `approval` on an action whose input has a `credential` field.
+- `approval_condition_dependency`: an `ApprovalCondition` with any constructor dependency.
+- `approval_condition_reads_unmarked`: a condition `reads` key that is not a setting marked `approval`.
+
 A service with a `reads: "replica"` query (STA-1504), its own or one a hosted package's manifest records (`buildManifest`
 writes a query's `reads`), reaches the `ReplicaReads` port (`replicaReadsPorts`), which the
 pipeline resolves optionally, so its wiring writes the port's table from the declared packages' manifests:
@@ -313,6 +323,7 @@ OpenAPI document and the generated clients type it. Any other output is `action_
 | `.stackra/gen/wiring.ts`, `module.ts`                                     | every member                                          | the container wiring (with `repositoryOf(M)`, `journalOf(M)`, the platform services gen binds and, in a service, the `OriginGuard`/`CsrfGuard` request guards with `app.cors`/`app.csrf` and the health indicator drivers of its declared packages; in a host, the `SystemAccessibility`, `SystemSettings` and `SystemPermissions` tables defaulting to `accessibility_info`, `expo` and the app's own driver on an Expo-only app and to `memory` elsewhere, and the `AppLock`, `Passkeys`, `LiveActivities`, `DeviceSearchIndex`, `IncomingShare` and `AppIcon` tables with their config rows defaulting to `expo` the same way; a web-and-native app's native entry takes `nativeWiring`, with the native drivers as those defaults) and the member module |
 | `.stackra/gen/registrations.ts`                                           | package, service                                      | `registerEntities` (hosted), `registerModelPartners`, `registerEventNames`, `registerChangeConsumers` (each `@ConsumesChanges` service with its models), `registerJobs`, `registerScheduledJobs`, `registerConnections`, `registerWebhookEvents`, `registerOutboundWebhooks`, `registerSequences`, `registerSearchableModels`, `registerCachedQueries`                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `.stackra/gen/boot.ts`                                                    | service                                               | `boot(container, { signal })`: the database (at the Encore database's url, the `DATABASE_REPLICA_URLS` replicas, the `DatabaseConfig` timeouts and pool, `DATABASE_POOL_MAX` over its max) with the hold, stamp and outbox writer subscribers, `segments.connect`, `EventBus#connect` and `InboxService#connect` (disconnected when `signal` aborts), the live queries' refresh routes, the relay; nothing when `signal` has already aborted                                                                                                                                                                                                                                                                                                                 |
+| `.stackra/gen/encore-sqldb.d.ts`                                          | service with a database                               | the ambient `encore.dev/storage/sqldb` types boot's import of the Encore database file needs, so the service typechecks without `encore.dev`; the Encore program keeps the real types (STA-1795)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `.stackra/gen/webhooks.ts`                                                | service                                               | `InboundWebhooksController` on `/webhooks/<module>/<name>/:connectionId`, raw body and decoded query to `WebhookReceiver`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `.stackra/gen/clients/<service>.ts`                                       | a client consumer                                     | the producer's enums, shapes, refusals and integration events, one `remoteAction`/`remoteQuery` per call, `<Service>Client`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `.stackra/gen/settings.ts`                                                | members with a settings class and `@stackra/settings` | `Settings = settingKeys({...})`: one key per setting field of each settings class, by module (stackra-209); `Settings.pick([...])` forms compile in `#stackra/schemas`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -349,8 +360,11 @@ export class StorefrontService extends Service {
   even before the file exists, so it never raises `token_not_a_class`. The wiring binds it with one dependency, the
   `ClientTransport` the topology picks (`@stackra/clients/contracts`).
 - **Source.** Discovery reads the producer's committed `stackra.manifest.json` from the folder beside the member
-  (`services/catalogue` next to `services/channels`), or from a dependency that ships one. Never the producer's
-  source. An app (`apps/<app>`) also reads the repo's `services/<service>`. A consumed service without a manifest is
+  (`services/catalogue` next to `services/channels`), or, for a producer in another repository, from a dependency whose
+  `package.json` has `"stackra": { "kind": "contract" }` and whose manifest `member` is the service (published as
+  `@figentra/<service>-contract`: manifest, OpenAPI and lang, no source; STA-1820). A service is never matched to an
+  ordinary dependency by member name. A listener of an event of a contract-package service is
+  `client_event_remote_transport` until the event-transport ADR. Never the producer's source. An app (`apps/<app>`) also reads the repo's `services/<service>`. A consumed service without a manifest is
   `client_service_unknown`, and a client imported under another name than `<Service>Client` is `client_name_mismatch`.
 - **Consumers.** A service is consumed by an injected client, a listener of one of its events, or any own file
   (tests included) importing from `#stackra/clients/<service>`, so an app's route that reads a query gets the client.
@@ -459,6 +473,11 @@ in `.stackra/encore` (what `stackra dev` starts) finds its app (ADR 0091 decisio
 `providers.encore.app` (the `runway.yaml` beside `pnpm-workspace.yaml`); without it gen refuses with
 `encore_app_missing` rather than invent one. Any run refuses an `encore.app` at the member root or the repository root
 (`encore_app_stray`, ADR 0029): gen writes the only one (STA-1322).
+
+A service's full run also refuses `queue_unprovisioned` when an environment under `environments` in its `runway.yaml`
+has no `queues.<name>` entry for a queue its job actions run on (`default` aside, the shared pool), so a job never runs
+on a queue without its visibility timeout and dead-letter queue. A member with no runway file or no environment is not
+deployed, so nothing is refused (STA-1727).
 
 For a service, gen writes the first parts of the Encore app (ADR 0148): `.stackra/encore/<member>/cron.ts` holds one
 `CronJob` per action whose `job` has a `cron` (its endpoint calls `SchedulerService.fire(<locked key>)`; ids by

@@ -40,7 +40,7 @@ const PLAN: RuntimePlan = {
       resource: "main-db",
       name: "academorix-production-main-db",
       engine: "rds",
-      version: "17",
+      version: "18",
       instanceClass: "db.r7g.large",
       multiAz: true,
       storageGb: 100,

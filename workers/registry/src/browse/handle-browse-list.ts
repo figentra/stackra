@@ -111,5 +111,6 @@ ${sections.join("\n")}`;
     path: query === "" ? "/" : `/?q=${encodeURIComponent(query)}`,
     status: 200,
     headers: publicCache(deps),
+    host: deps.settings.host,
   });
 }

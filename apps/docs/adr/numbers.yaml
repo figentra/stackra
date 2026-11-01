@@ -1429,6 +1429,9 @@
 "0479":
   slug: stripe-terminal-the-first-card-terminal-acquirer-sdk-in-native-card-terminal
   status: proposed
+"0480":
+  slug: api-first-release-and-vault-keeper-agents
+  status: proposed
 "0481":
   slug: template-lines-release-as-registry-packages-and-runway-checks-them-out
   status: proposed
@@ -1476,7 +1479,7 @@
   issue: STA-1721
 "0503":
   slug: figentra-flow-runs-the-development-workflow
-  status: proposed
+  status: accepted
   owner: Figentra Flow (figentra/sta-1729-vellum-workflow-adr)
   issue: STA-1729
 "0504":
@@ -1494,19 +1497,20 @@
   issue: STA-1730
 "0507":
   slug: ask-tamo-ai-slots-in-the-design-system
-  status: proposed
+  status: accepted
   owner: c6 design system (feat/c6-tamo-ai)
 "0508":
   slug: every-action-is-shortcut-aware
-  status: proposed
+  status: accepted
   owner: c6 design system (feat/c6-shortcuts)
 "0509":
   slug: the-approval-stage-a-declared-floor-of-distinct-approvers-checked-in-core-executed-as-the-requester
   status: reserved
+  owner: core AI everywhere (figentra/sta-1724-approval-stage)
   issue: STA-1724
 "0510":
   slug: flow-replaces-spec-kit
-  status: reserved
+  status: accepted
   issue: STA-1729
 "0511":
   slug: cross-repo-service-contracts-and-cross-app-events

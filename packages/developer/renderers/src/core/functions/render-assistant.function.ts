@@ -4,7 +4,8 @@
  *          them) written into one assistant's layout. The files come sorted by path, so the same documents always give
  *          the same output, and two documents that would write one path are refused.
  * Boundary: pure; reads and writes nothing. Paths are relative to the assistant's root, which the caller picks: user
- *           level for `stackra agents setup`, the project for `sync` (ADR 0282 decision 10), or Vellum's own.
+ *           level for `stackra agents setup`, the project for `sync` (ADR 0282 decision 10),
+ *           or Figentra Flow's own.
  * Runtime: isomorphic
  * Governing contract: ADR 0282 (decisions 2, 3 and 10); ADR 0286 (decision 6: the renderer layer is Stackra's).
  */

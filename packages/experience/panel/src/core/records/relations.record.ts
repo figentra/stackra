@@ -24,14 +24,18 @@ export class RelationsRecord<R> implements Relations<R> {
   table<Q extends AnyClass>(
     query: Q,
     build: (column: ColumnFactory<QueryRow<Q>>) => readonly ColumnBuilder[],
-    options: { readonly bind?: Readonly<Record<string, Path<R>>> } = {},
+    options: {
+      readonly bind?: Readonly<Record<string, Path<R>>>;
+      readonly actions?: readonly AnyClass[];
+    } = {},
   ): Built<RelationNode> {
     const columns = build(new ColumnsRecord<QueryRow<Q>>());
-    const bind = options.bind;
+    const { bind, actions } = options;
     return {
       toNode: () =>
         Relation.table(query, {
           columns: columns.map((column) => column.toNode()),
+          ...(actions === undefined ? {} : { actions }),
           ...(bind === undefined
             ? {}
             : {

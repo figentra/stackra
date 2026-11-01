@@ -13,6 +13,7 @@
  *          SC 2.1.2, 4.1.2.
  */
 import { Popover as HeroPopover } from "@heroui/react";
+import { ShortcutOverlayScope } from "@stackra/shortcuts/react";
 import type { ReactElement } from "react";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
@@ -56,7 +57,8 @@ export function Popover({
           {title === undefined ? null : (
             <HeroPopover.Heading level={2}>{title}</HeroPopover.Heading>
           )}
-          {children}
+          {/* The topmost overlay scope while open, so page shortcuts pause (ADR 0508). */}
+          <ShortcutOverlayScope>{children}</ShortcutOverlayScope>
         </HeroPopover.Dialog>
       </HeroPopover.Content>
     </HeroPopover>

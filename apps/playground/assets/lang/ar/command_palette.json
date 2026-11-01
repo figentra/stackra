@@ -8,5 +8,7 @@
   "product": "منتج جديد",
   "discount": "خصم جديد",
   "sales_words": "مبيعات، فواتير",
-  "ran": "نفّذت: {command}"
+  "ran": "نفّذت: {command}",
+  "tamo_open": "افتح اللوحة واكتب سؤالًا",
+  "tamo_screen": "لوحة التحكم"
 }

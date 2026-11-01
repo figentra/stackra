@@ -16,7 +16,7 @@
 pipeline, queries and the background units set at most `app.scope_*`. Make every call and every background unit run in
 one transaction whose settings are transaction-local, and forbid session-level settings." Decision: ADR 0495.
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none
 - **Services touched**: none

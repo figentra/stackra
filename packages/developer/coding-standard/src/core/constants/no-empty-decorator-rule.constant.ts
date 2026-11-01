@@ -3,13 +3,21 @@
  * Purpose: the `stackra/no-empty-decorator` rule: a decorator is never called with nothing (`@Trim()`) or an empty
  *          object (`@Setting({})`); it is written bare (`@Trim`), as the template writes `@Int` and `@Trim`, or
  *          dropped when the folder, suffix, base class or type already says it.
- * Boundary: a bare decorator (`@Searchable`) passes. No autofix: whether to write it bare or drop it depends on the
- *           decorator, and dropping a facet such as `@Auditable()` silently would lose behaviour.
+ * Boundary: a bare decorator (`@Searchable`) passes, and so does an empty call of a factory that must be called and
+ *           whose options are all optional (`@Setting()`, `@Step({})`): written bare it does not typecheck (TS1329).
+ *           No autofix: whether to write it bare or drop it depends on the decorator, and dropping a facet such as
+ *           `@Auditable()` silently would lose behaviour.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (rule R6, empty decorators are banned; the decorator test).
  */
 import { rootIdentifier } from "../functions/root-identifier.function.ts";
 import type { Rule } from "#core/types/rule.type";
+
+/**
+ * Core decorators that are factories with only optional options, so they must be called even with none: `Setting`
+ * (`options = {}`), and `Journaled`, `Step` and `Visibility`, whose options type has no required field (STA-1651).
+ */
+const MUST_BE_CALLED = new Set(["Journaled", "Setting", "Step", "Visibility"]);
 
 /** Refuses decorators called with no arguments or an empty object. */
 export const NO_EMPTY_DECORATOR_RULE: Rule = {
@@ -37,12 +45,9 @@ export const NO_EMPTY_DECORATOR_RULE: Rule = {
           (args.length === 1 &&
             first?.type === "ObjectExpression" &&
             (first.properties ?? []).length === 0);
-        if (!isEmpty) return;
-        context.report({
-          node,
-          messageId: "emptyDecorator",
-          data: { name: rootIdentifier(call) ?? "" },
-        });
+        const name = rootIdentifier(call) ?? "";
+        if (!isEmpty || MUST_BE_CALLED.has(name)) return;
+        context.report({ node, messageId: "emptyDecorator", data: { name } });
       },
     };
   },

@@ -59,6 +59,7 @@ describe("shellReleaseOf", () => {
     expect(shellReleaseOf(checkout, "https://assets.example.com/")).toEqual({
       version: "3.1.0",
       entry: "https://assets.example.com/shells/console/3/3.1.0/assets/main.abc123.js",
+      css: ["https://assets.example.com/shells/console/3/3.1.0/assets/main.def456.css"],
       importMap: {
         imports: {
           react: "https://assets.example.com/shells/console/3/3.1.0/shared/react.1a.js",

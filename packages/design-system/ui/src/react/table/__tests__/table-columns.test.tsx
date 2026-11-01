@@ -4,8 +4,8 @@
  *          boxes) and end with their offsets and cast a shadow only while rows scroll under them; a header's grip
  *          drags a column onto another header's half and reports the move, mirrored in RTL, and a cancelled,
  *          secondary-button or self drop moves nothing.
- * Boundary: jsdom with real HeroUI and React Aria; jsdom has no layout, so `elementFromPoint`, the header boxes and
- *           the scroll sizes are stubbed, and pointer capture is a no-op.
+ * Boundary: jsdom with real HeroUI and React Aria; jsdom has no layout, so the header boxes and the scroll sizes are
+ *           stubbed, and pointer capture is a no-op.
  * Runtime: browser
  * Governing contract: ADR 0022 (test placement).
  */
@@ -25,16 +25,14 @@ const header = (name: string) => screen.getByRole("columnheader", { name }) as H
 const gripOf = (name: string) =>
   header(name).querySelector<HTMLElement>("span.cursor-grab") as HTMLElement;
 
-/** Points `elementFromPoint` at `target` and gives it a 100-wide box at 0. */
+/** Gives `target` (and no other header) a 100-wide box at 0; the drag measures the headers when it starts. */
 const aimAt = (target: HTMLElement | null) => {
-  Object.defineProperty(document, "elementFromPoint", {
-    value: () => target,
-    configurable: true,
-  });
+  vi.restoreAllMocks();
   if (target)
     vi.spyOn(target, "getBoundingClientRect").mockReturnValue({
       left: 0,
       width: 100,
+      right: 100,
     } as DOMRect);
 };
 
@@ -54,7 +52,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  Reflect.deleteProperty(document, "elementFromPoint");
+  vi.restoreAllMocks();
 });
 
 describe("Table columns (web)", () => {
@@ -103,16 +101,17 @@ describe("Table columns (web)", () => {
     const onColumnMove = vi.fn();
     render(<Table label="Orders" items={ITEMS} columns={columns} onColumnMove={onColumnMove} />);
     const grip = gripOf("Customer");
+    aimAt(header("Total"));
     fireEvent.pointerDown(grip, { button: 0, pointerId: 1, clientX: 0 });
     expect(grip.hasAttribute("data-dragging")).toBe(true);
-    aimAt(header("Total"));
     fireEvent.pointerMove(grip, { clientX: 80, clientY: 5 });
-    expect(header("Total").className).toContain("shadow-[inset_-2px_0_0_var(--accent)]");
+    // The held column stays behind dimmed as its placeholder.
+    expect(header("Customer").className).toContain("opacity-(--opacity-dimmed)");
     fireEvent.pointerUp(grip, { clientX: 80, clientY: 5 });
     // After Total: the end of the order without Customer.
     expect(onColumnMove).toHaveBeenLastCalledWith("customer", 2);
-    fireEvent.pointerDown(gripOf("Total"), { button: 0, pointerId: 1, clientX: 0 });
     aimAt(header("Customer"));
+    fireEvent.pointerDown(gripOf("Total"), { button: 0, pointerId: 1, clientX: 0 });
     fireEvent.pointerUp(gripOf("Total"), { clientX: 20, clientY: 5 });
     expect(onColumnMove).toHaveBeenLastCalledWith("total", 0);
   });
@@ -124,8 +123,8 @@ describe("Table columns (web)", () => {
         <Table label="Orders" items={ITEMS} columns={columns} onColumnMove={onColumnMove} />
       </I18nProvider>,
     );
-    fireEvent.pointerDown(gripOf("Customer"), { button: 0, pointerId: 1, clientX: 0 });
     aimAt(header("City"));
+    fireEvent.pointerDown(gripOf("Customer"), { button: 0, pointerId: 1, clientX: 0 });
     fireEvent.pointerUp(gripOf("Customer"), { clientX: 20, clientY: 5 });
     // The left half is the logical end in right to left: after City.
     expect(onColumnMove).toHaveBeenLastCalledWith("customer", 1);
@@ -138,17 +137,17 @@ describe("Table columns (web)", () => {
     fireEvent.pointerDown(grip, { button: 2, pointerId: 1 });
     expect(grip.hasAttribute("data-dragging")).toBe(false);
     fireEvent.pointerMove(grip, { clientX: 10 });
-    fireEvent.pointerDown(grip, { button: 0, pointerId: 1 });
     aimAt(header("Total"));
+    fireEvent.pointerDown(grip, { button: 0, pointerId: 1 });
     fireEvent.pointerMove(grip, { clientX: 10, clientY: 5 });
     fireEvent.pointerCancel(grip);
     expect(grip.hasAttribute("data-dragging")).toBe(false);
-    fireEvent.pointerDown(grip, { button: 0, pointerId: 1 });
     aimAt(header("City"));
+    fireEvent.pointerDown(grip, { button: 0, pointerId: 1 });
     fireEvent.pointerMove(grip, { clientX: 10, clientY: 5 });
     fireEvent.pointerUp(grip, { clientX: 10, clientY: 5 });
-    fireEvent.pointerDown(grip, { button: 0, pointerId: 1 });
     aimAt(null);
+    fireEvent.pointerDown(grip, { button: 0, pointerId: 1 });
     fireEvent.pointerUp(grip, { clientX: 10, clientY: 5 });
     expect(onColumnMove).not.toHaveBeenCalled();
   });

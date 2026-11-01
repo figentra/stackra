@@ -21,6 +21,7 @@ export { MemorySettingEntitlementSourceDriver } from "#core/drivers/memory-setti
 export { MemorySettingFloorSourceDriver } from "#core/drivers/memory-setting-floor-source.driver";
 export { MemorySettingRevisionStoreDriver } from "#core/drivers/memory-setting-revision-store.driver";
 export { MemorySettingValueStoreDriver } from "#core/drivers/memory-setting-value-store.driver";
+export { SettingsApprovalSourceDriver } from "#core/drivers/settings-approval-source.driver";
 export { SettingsPromotableDriver } from "#core/drivers/settings-promotable.driver";
 export { SettingScope } from "#core/enums/setting-scope.enum";
 export { SettingType } from "#core/enums/setting-type.enum";

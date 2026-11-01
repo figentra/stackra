@@ -57,6 +57,7 @@ export class CreateChangesMigration extends Migration {
       ["scope_id", "The scope node of the transaction that wrote the change."],
       ["scope_path", "That node's path, from the transaction's scope settings."],
     ] as const)
+      // A comment is a string literal: its quotes doubled (`model''s`), or Postgres refuses the statement (STA-1664).
       schema.sql(`comment on column outbox.changes.${column} is '${text.replaceAll("'", "''")}'`, {
         inverse: false,
       });

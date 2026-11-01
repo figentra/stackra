@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "bb7d4caddd30052c",
+    "propsFiles": ["ui/src/native/tamo-ghost-text/tamo-ghost-text.props.ts"]
+  },
+  "importLine": "import { TamoGhostText } from \"@stackra/ui/native\";",
+  "key": "free/tamo-ghost-text",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the text plus the suggestion (Tab).",
+          "name": "onAccept",
+          "required": true,
+          "source": "stackra",
+          "type": "(next: string) => void"
+        },
+        {
+          "description": "Called when the suggestion is dismissed (Escape, or typing on).",
+          "name": "onDismiss",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "TamoGhostText",
+      "props": [
+        {
+          "description": "The field the suggestion is drawn under.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The field's current text.",
+          "name": "value",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "What Tamo suggests next; empty draws nothing.",
+          "name": "suggestion",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Classes added to the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

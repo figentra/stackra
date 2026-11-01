@@ -55,12 +55,18 @@ export function Button({
   startIcon,
   endIcon,
   label,
-  onPress,
-  children,
+  onPress: pressed,
+  children: given,
   className,
   accessibilityState,
+  // Shortcut props are accepted and draw nothing on native yet: hardware-keyboard hints are a later step (ADR 0508).
+  shortcut: _shortcut,
+  shortcutId: _shortcutId,
+  action,
   ...rest
 }: ButtonProps): ReactElement {
+  const onPress = pressed ?? action?.run;
+  const children = given ?? action?.label;
   const labelColor = useThemeColor(LABEL_COLOR[variant]);
   const glass = useGlassButton(variant, isDisabled);
   const isBlocked = isDisabled || isLoading;

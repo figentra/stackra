@@ -264,6 +264,14 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `cache.invalidateOn`; the evictor binding is a `SERVER_CONTRIBUTIONS` row; the live queries' refresh is written into
   `emitBoot` (which now takes the manifest) and resolves each wire name through `EVENT_NAMES`, so a name the
   registrations never registered fails at boot, never silently.
+- `checkApproval` (core, full pass only, STA-1724, ADR 0509), one code each:
+  - `approval_not_constant`: an `approval` option gen cannot read as a constant.
+  - `approval_on_query`: `approval` on a query.
+  - `approval_window_too_long`: an `expiresAfter` above 30 days (`"720h"`).
+  - `approval_actor_not_allowed`: `actors` with a kind other than `user`, `agent` or `external_agent`, or not constant.
+  - `approval_credential_input`: `approval` on an action whose input has a `credential` field.
+  - `approval_condition_dependency`: an `ApprovalCondition` with any constructor dependency.
+  - `approval_condition_reads_unmarked`: a condition `reads` key that is not a setting marked `approval`.
 - `checkModelScope` (core, full pass only, stackra-258): `model_tenancy_missing` for a service running
   `@stackra/tenancy` only (packages' platform tables are not checked). `emitIsolationTest` writes
   `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.
@@ -281,7 +289,7 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `@Searchable` text (in order) or filters (as a set) differing from the latest `t.searchable` literals of its table
   (`MemberIR.searchableColumns`, `readSearchableColumns`, a text scan of the member's own migrations; paths compared in
   snake case). A table with no literals is not judged.
-- The reader: `kind_base_name_reserved` (a model named after a `KIND_BASES` name), `secret_name_missing` (`@Secret`
+- The reader: `port_key_mismatch` (a `~key` brand that is not `<member>.<Port>`, STA-1810), `kind_base_name_reserved` (a model named after a `KIND_BASES` name), `secret_name_missing` (`@Secret`
   without a SCREAMING_SNAKE literal) and `partner_mismatch` for `Resource`, `Factory`, `StateMachine` and `Facts`
   (same-stem subject; `CrudService` keeps its own subject, as many services name a domain word).
 - `checkI18n`: `i18n_key_missing` also for a derived enum label `<module>::enums.<enum>.<code>` missing from a
@@ -294,6 +302,9 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `providers.encore.app`, refused as `encore_app_missing` without it (never a default id); an `encore.app` at the member
   or repository root is `encore_app_stray`. The root runway is read by a block-YAML lookup because gen does not depend
   on `@stackra/runway`; move to `readRunway` once it does.
+- `runwayQueues` (STA-1727): a service's full run refuses `queue_unprovisioned` for each job queue (`default` aside)
+  that an environment of the member's `runway.yaml` leaves out of `queues`; the file is read with `yamlKeyTree`, a
+  block-YAML key reader, for the same reason as `encoreApp`.
 - `compileMigrations` (stackra-248, ADR 0159): a service's full run imports each migration file (Node 24 strips the
   types) and compiles it with the member's own `@stackra/database` `compileMigration`, so the classes and the compiler
   share one kind registry. Own migrations are `src/modules/<key>/database/migrations/`; a declared package's are its

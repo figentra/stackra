@@ -47,17 +47,22 @@
  *                     a package below the container is built by hand, so its constructor is not read; `I18nKey` of a
  *                     `@stackra/*` package reads as the `i18n_key` brand, a string).
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import type { StackraManifest } from "@stackra/contracts";
 import { refusalCode } from "@stackra/errors";
-import { snakeCase } from "@stackra/support";
+import { pascalCase, snakeCase } from "@stackra/support";
 
 import { BELOW_CONTAINER_PACKAGES } from "#core/constants/below-container-packages.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
+import { entryOf } from "#core/functions/entry-of.function";
+import { enumCodesOf } from "#core/functions/enum-codes-of.function";
 import { folderKey } from "#core/functions/folder-key.function";
+import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
+import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { shippedSpecifier } from "#core/functions/shipped-specifier.function";
 import type { ClassRef } from "#core/types/class-ref.type";
@@ -81,6 +86,9 @@ import { NOT_CONSTANT } from "#node/constants/not-constant.constant";
 import { RELATION_TYPES } from "#node/constants/relation-types.constant";
 import { SHAPE_DECORATORS } from "#node/constants/shape-decorators.constant";
 import { SHAPE_KINDS } from "#node/constants/shape-kinds.constant";
+import { dependencyPath } from "#node/functions/dependency-path.function";
+import { readDependencyManifests } from "#node/functions/read-dependency-manifests.function";
+import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 import type { MemberFacts } from "#node/types/member-facts.type";
 import type { SourceReader } from "#node/types/source-reader.type";
 import type { TsHost } from "#node/types/ts-host.type";
@@ -191,6 +199,18 @@ const BASE_LINT_DISABLED =
 
 /** A `.service.ts` file of a package's testing entry: its base-less classes are harnesses, never bindings (lint `TESTING_ENTRY`). */
 const TESTING_HARNESS = /(?:^|\/)src\/testing\/(?:.*\/)?[^/]+\.service\.ts$/;
+
+/** The enum `name` among a manifest's schemas (`<module>.<Name>`, or module-prefixed as a client prints a clash). */
+function enumIn(manifest: StackraManifest | undefined, name: string): TypeDesc | undefined {
+  const schemas = (manifest?.schemas ?? {}) as Readonly<Record<string, unknown>>;
+  for (const [key, schema] of Object.entries(schemas)) {
+    const [module = "", last = key] = key.split(".");
+    const values = (schema as { readonly enum?: unknown } | null)?.enum;
+    if ((last === name || pascalCase(module) + last === name) && Array.isArray(values))
+      return { kind: "enum", name, values: values.map(String) };
+  }
+  return undefined;
+}
 
 /** Whether a path is a test file or sits in a `__tests__` folder. */
 function isTest(path: string): boolean {
@@ -339,7 +359,8 @@ export function createSourceReader(
       facts.layout === "service" &&
       parts[1] === "modules" &&
       parts.length > 3 &&
-      parts[2] !== undefined
+      parts[2] !== undefined &&
+      isModuleFolder(parts[2])
     )
       return folderKey(parts[2]);
     return facts.member;
@@ -365,6 +386,13 @@ export function createSourceReader(
 
   // Imports per file: local name to module specifier.
   const importCache = new Map<string, Map<string, string>>();
+  /** A consumed service's committed manifest, read once per run (the source of its client, STA-1663). */
+  const serviceManifests = new Map<string, StackraManifest | undefined>();
+  const serviceManifestOf = (service: string): StackraManifest | undefined => {
+    if (!serviceManifests.has(service))
+      serviceManifests.set(service, readServiceManifests(facts.root, [service])[0]?.manifest);
+    return serviceManifests.get(service);
+  };
   const importsOf = (path: string): Map<string, string> => {
     const cached = importCache.get(path);
     if (cached !== undefined) return cached;
@@ -626,6 +654,25 @@ export function createSourceReader(
         } satisfies ClassValue;
       }
     }
+    // A case of an enum a consumed service exports through its client (`ChannelKind.Till` from `#stackra/clients/sales`):
+    // its code from the service's committed manifest, where the client names each case by its code (STA-1697).
+    if (
+      kindOf(node) === "PropertyAccessExpression" &&
+      node.expression !== undefined &&
+      node.name !== undefined
+    ) {
+      const owner = nameOf(node.expression);
+      const specifier = importsOf(host.fileName(node)).get(owner);
+      if (specifier?.startsWith(CLIENTS_SPECIFIER) === true) {
+        const type = enumIn(serviceManifestOf(specifier.slice(CLIENTS_SPECIFIER.length)), owner);
+        const member = nameOf(node.name);
+        const code =
+          type?.kind === "enum"
+            ? type.values.find((value) => pascalCase(value) === member)
+            : undefined;
+        if (code !== undefined) return code;
+      }
+    }
     const value = host.literal(host.typeAt(node));
     if (value !== undefined) return value;
     // A shared constant (`export const TENANT_SCOPE_LEVEL: ScopeLevel = Object.freeze({ ... })`) is its initializer's
@@ -661,6 +708,8 @@ export function createSourceReader(
               : NOT_CONSTANT;
       const name = nameOf(property.name);
       if (!hasNonConstant(value)) options[name] = value;
+      // ADR 0509: an unreadable `approval` is recorded so `approval_not_constant` refuses it, not skipped.
+      if (name === "approval" && hasNonConstant(value)) options["approvalNotConstant"] = true;
       // ADR 0360 d4: `tool: false` carries its reason as a `// reason:` line, as `@Field(zod)` does.
       // A trailing `tool: false, // reason: …` counts too (owner decisions 2026-10-26, round 3).
       if (name === "tool" && value === false) {
@@ -805,6 +854,7 @@ export function createSourceReader(
         /(^|[^\w])Decorator\s*</.test(host.text(declaration.type)));
     if (!made) return undefined;
     const value = use.args[0] === undefined ? undefined : constant(use.args[0]);
+    const rest = use.args.slice(1).map((argument) => constant(argument));
     // `@Classify(Class)` carries its data class's effects, so a check can read `ai` without the class (STA-1251).
     const effects = use.name === "Classify" ? dataClassOf(use.args[0]) : undefined;
     return {
@@ -818,6 +868,7 @@ export function createSourceReader(
           ? value
           : { ...value, dataClass: effects },
       from: refOf(use.local, symbol).from,
+      ...(rest.length > 0 && !rest.some(hasNonConstant) ? { rest } : {}),
     };
   };
 
@@ -910,8 +961,13 @@ export function createSourceReader(
         ...(isOwn(path) ? { module: moduleOf(path) } : {}),
       };
     }
-    if (at === undefined || declaration === undefined || !isStackra(host.fileName(declaration)))
-      return undefined;
+    if (at === undefined || declaration === undefined) return undefined;
+    // An `Enum.of` read through a declaration file (a workspace package's or a sibling's build) carries `Enum.Of`'s
+    // type-only `~enum`, so a shared enum stays single-source wherever it is declared (STA-1663).
+    const isEnum = host
+      .properties(host.typeOfSymbol(symbol))
+      .some((property) => host.symbolName(property) === "~enum");
+    if (!isEnum && !isStackra(host.fileName(declaration))) return undefined;
     // A published enum without its initializer: its codes from the checker (sorted, the alias order is lost).
     const members = host.unionMembers(host.typeAt(at)) ?? [];
     const values = members
@@ -1221,9 +1277,60 @@ export function createSourceReader(
     );
   };
 
+  // An enum of a consumed service, by its `#stackra/clients/<service>` import: its codes from the service's committed
+  // manifest, the client's own source, whether or not this member's gen has written that client yet (ADR 0260
+  // decision 3; STA-1663). Reading the client would be circular: only this member's clean gen writes it.
+  const clientEnum = (node: TsNode): TypeDesc | undefined => {
+    if (node.typeName === undefined) return undefined;
+    const name = nameOf(node.typeName);
+    const specifier = importsOf(host.fileName(node)).get(name);
+    if (specifier?.startsWith(CLIENTS_SPECIFIER) !== true) return undefined;
+    const service = specifier.slice(CLIENTS_SPECIFIER.length);
+    return enumIn(serviceManifestOf(service), name);
+  };
+
+  // An enum a declared package exports from an entry that does not resolve yet (a workspace package whose `.` is its
+  // gen-written `.stackra/entry/index.ts`, before its own gen ran): its codes from the package's committed
+  // manifest, as for a client (STA-1663). A resolvable import is read from its source as before.
+  const dependencyManifests = new Map<string, StackraManifest | undefined>();
+  const packageEnum = (node: TsNode): TypeDesc | undefined => {
+    if (node.typeName === undefined) return undefined;
+    const name = nameOf(node.typeName);
+    const specifier = importsOf(host.fileName(node)).get(name);
+    if (specifier === undefined || specifier.startsWith("#") || specifier.startsWith("."))
+      return undefined;
+    const parts = specifier.split("/");
+    const pkg = specifier.startsWith("@") ? parts.slice(0, 2).join("/") : (parts[0] ?? specifier);
+    if (!dependencyManifests.has(pkg))
+      dependencyManifests.set(pkg, readDependencyManifests(facts.root, [pkg])[0]?.manifest);
+    const manifest = dependencyManifests.get(pkg);
+    if (manifest !== undefined) return enumIn(manifest, name);
+    // No committed manifest either: the `Enum.of` in the package's source folders of that entry (`.` is src/core and
+    // src/config), as gen's own entry barrel would export it.
+    const json = dependencyPath(facts.root, pkg, "package.json");
+    if (json === undefined) return undefined;
+    const entry = specifier === pkg ? "index" : specifier.slice(pkg.length + 1);
+    const src = join(dirname(json), "src");
+    if (!existsSync(src)) return undefined;
+    for (const file of readdirSync(src, { recursive: true, encoding: "utf8" }))
+      if (
+        file.endsWith(".enum.ts") &&
+        !file.includes("__tests__") &&
+        entryOf(`src/${file}`) === entry
+      ) {
+        const values = enumCodesOf(readFileSync(join(src, file), "utf8"), name);
+        if (values !== undefined) return { kind: "enum", name, values };
+      }
+    return undefined;
+  };
+
   const readTypeReference = (node: TsNode, subject: string, quiet: boolean): TypeDesc => {
+    const fromClient = clientEnum(node);
+    if (fromClient !== undefined) return fromClient;
     const symbol = node.typeName === undefined ? undefined : host.symbolAt(node.typeName);
-    if (symbol === undefined) return unknownType(node, subject, quiet);
+    // An unresolved import de-aliases to the checker's `unknown` symbol, which has no declaration.
+    if (symbol === undefined || host.declarations(symbol).length === 0)
+      return packageEnum(node) ?? unknownType(node, subject, quiet);
     const name = host.symbolName(symbol);
     const args = node.typeArguments ?? [];
     const declaration = host.declarations(symbol)[0];
@@ -2074,9 +2181,18 @@ export function createSourceReader(
       // Trait fields come from `Model.with(...)` mixins: their declarations are generic, so the checker types them.
       const declared = new Set([...fields.map((field) => field.name), ...relations]);
       const traitFields: string[] = [];
+      let authoredOptional = false;
       for (const property of host.properties(host.typeAt(node.name))) {
         const propertyName = host.symbolName(property);
         const declaration = host.declarations(property)[0];
+        // An `[OptionalProps]` the member writes beside its model wins: a generated one would redeclare it (TS2717).
+        if (
+          propertyName.startsWith("__@OptionalProps@") &&
+          host
+            .declarations(property)
+            .some((written) => rel(host.fileName(written)).startsWith("src/"))
+        )
+          authoredOptional = true;
         if (
           declared.has(propertyName) ||
           !host.symbolHas(property, "Property") ||
@@ -2109,7 +2225,10 @@ export function createSourceReader(
         ...head,
         fields,
         relations,
-        entity: entityOf(name, info.chain, relations, traitFields),
+        entity: {
+          ...entityOf(name, info.chain, relations, traitFields),
+          ...(authoredOptional ? { optional: [] } : {}),
+        },
       };
     }
     return { ...head, fields, relations };
@@ -2421,6 +2540,27 @@ export function createSourceReader(
         "`Event` is the abstract base of the four event kinds",
         "extend DomainEvent, IntegrationEvent, WebhookEvent or AnalyticsEvent",
       );
+    // A hand-written `declare readonly "~key": "<lit>"` brand must be the derived port key (STA-1810, ADR 0294 d20).
+    if (info.kind === "port" && isAbstract && path.endsWith(".port.ts"))
+      for (const brand of node.members ?? []) {
+        if (host.kind(brand) !== "PropertyDeclaration" || nameOf(brand.name) !== "~key") continue;
+        const written =
+          brand.type !== undefined &&
+          host.kind(brand.type) === "LiteralType" &&
+          brand.type.literal !== undefined &&
+          host.kind(brand.type.literal) === "StringLiteral"
+            ? nameOf(brand.type.literal)
+            : undefined;
+        const derived = portKey(facts.member, name);
+        if (written !== undefined && written !== derived)
+          fail(
+            brand,
+            name,
+            "port_key_mismatch",
+            `the \`~key\` brand of ${name} is "${written}", but its port key is "${derived}"`,
+            `write \`declare readonly "~key": "${derived}"\`, or delete the brand: gen derives the key`,
+          );
+      }
     // Kind base names are reserved: a model named `Policy` would shadow the base (ADR 0305 rule 4, STA-1306).
     if (info.kind === "model" && KIND_BASES[name] !== undefined)
       fail(

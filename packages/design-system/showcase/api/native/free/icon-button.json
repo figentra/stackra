@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "aafd8c24249db334",
+    "hash": "65879c31ad518ef7",
     "propsFiles": ["ui/src/native/icon-button/icon-button.props.ts"]
   },
   "importLine": "import { IconButton } from \"@stackra/ui/native\";",
@@ -61,6 +61,28 @@
           "required": false,
           "source": "stackra",
           "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
+          "name": "action",
+          "required": false,
+          "source": "stackra",
+          "type": "ShortcutAction"
+        },
+        {
+          "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "keys:<binding>",
+          "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
+          "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "Animation configuration for scale and highlight feedback",

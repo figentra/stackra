@@ -159,7 +159,10 @@ test("a shortcut shows in a tooltip on keyboard focus and hides on Escape", asyn
   await list.getByRole("link", { name: "Home" }).focus();
   await page.keyboard.press("Tab");
   await expect(list.getByRole("link", { name: "Orders" })).toBeFocused();
-  await expect(tooltip(page)).toHaveText("G then O");
+  // The label, a rule, then the keys, each its own part so they never run together.
+  await expect(tooltip(page)).toContainText("Orders");
+  await expect(tooltip(page).locator('[data-slot="tooltip-separator"]')).toHaveCount(1);
+  await expect(tooltip(page).locator('[data-slot="shortcut-hint"]')).toHaveText("G then O");
   await page.keyboard.press("Escape");
   await expect(tooltip(page)).toHaveCount(0);
 });

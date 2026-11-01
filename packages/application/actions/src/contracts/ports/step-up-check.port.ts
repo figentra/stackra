@@ -8,7 +8,7 @@
  *           `@stackra/identity`'s `requireAssurance`. An action that declares `stepUp` with no driver bound fails
  *           closed. A leaf file.
  * Runtime: isomorphic
- * Governing contract: ADR 0207 (decision 1); ADR 0406; STA-814.
+ * Governing contract: ADR 0207 (decision 1); ADR 0406; STA-814; ADR 0509 (`at`, FR-016 (b)).
  */
 import { type AssuranceLevel, Port } from "@stackra/contracts";
 
@@ -36,11 +36,14 @@ export abstract class StepUpCheck extends Port {
 
   /**
    * Resolves when `assurance` meets `level` for `call`; rejects with a `step_up_required` refusal otherwise (no
-   * assurance, a weaker level, or an authentication older than the configured window).
+   * assurance, a weaker level, or an authentication older than the configured window). `at` is the moment the
+   * window is measured at: the clock's now when absent, a parked call's `requestedAt` when the pipeline executes an
+   * approved call (ADR 0509, FR-016 (b)); a driver that ignores it measures against now.
    */
   abstract require(
     call: CallDescriptor,
     assurance: CallAssurance | undefined,
     level: AssuranceLevel,
+    at?: Date,
   ): Promise<void>;
 }

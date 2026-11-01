@@ -1220,6 +1220,8 @@ test("deny (runner bypass, STA-400 review): pnpm exec infisical run -- pnpm buil
 for (const c of [
   "pnpm exec node tools/scripts/secrets-import.mjs --confirm abc-123",
   "pnpm secrets:import STACKRA_X --env prod --path /ci --confirm abc-123",
+  "figentra secrets import STACKRA_X --env prod --path /ci --confirm abc-123",
+  "pnpm exec figentra secrets import --confirm abc-123",
 ])
   test(`deny (keeper rule of 2026-10-31, production import): ${c}`, () =>
     assert.equal(decision(c), "deny"));
@@ -1249,9 +1251,116 @@ test("keeper rule: an import asks the owner each run; prod, gate and registry ar
     assert.equal(decision(c), "allow", c);
 });
 
+// ADR 0500 (STA-1748): the private CLI's forms of the guarded wrappers, typed directly or through a runner, get the
+// rules the pnpm aliases get: the keeper rule, the bot-git options, the reviewer identity, the token and STA-303.
+test("figentra CLI: the keeper rule holds for `figentra secrets import` in every form", () => {
+  for (const c of [
+    "figentra secrets import STACKRA_X --confirm abc",
+    "figentra secrets import --env prod STACKRA_X",
+    "figentra secrets import --env=production STACKRA_X",
+    "figentra secrets import --path /ci/gate STACKRA_X",
+    "figentra secrets import --path=/ci/registry REGISTRY_SIGNING_KEY",
+    "pnpm exec figentra secrets import STACKRA_X --env prod",
+    "npx figentra secrets import STACKRA_X --confirm abc",
+    "npx @figentra/cli secrets import STACKRA_X --confirm abc",
+    "mise exec -- figentra secrets import STACKRA_X --env prod",
+  ])
+    assert.equal(decision(c), "deny", c);
+  for (const c of ["figentra secrets import STACKRA_X", "pnpm exec figentra secrets import STACKRA_X"])
+    assert.equal(decision(c), "ask", c);
+  for (const c of [
+    "figentra secrets import --list",
+    "figentra secrets import --dry-run STACKRA_X",
+    'grep -rn "figentra secrets import --confirm" .agents',
+  ])
+    assert.equal(decision(c), "allow", c);
+});
+test("figentra CLI: `figentra bot git|review|gh` get the bot-git, reviewer and token rules", () => {
+  for (const c of [
+    "figentra bot git -- fetch --upload-pack=x origin",
+    "npx figentra bot git -- -c core.sshCommand=x clone -u y z",
+    "figentra bot git -- push origin main",
+    "figentra bot git credential fill",
+    "figentra bot gh -- auth status",
+    "figentra bot review auth token",
+  ])
+    assert.equal(decision(c), "deny", c);
+  for (const c of ["figentra bot review -- pr view 12", "npx figentra bot review pr diff 12"]) {
+    assert.equal(decision(c), "deny", c);
+    assert.equal(decision(c, undefined, "package-builder"), "deny", c);
+    assert.equal(decision(c, undefined, "code-reviewer"), "allow", c);
+  }
+});
+for (const c of [
+  "figentra linear mine; ps aux",
+  "figentra pr merge 1 & pgrep -af node",
+  "npx figentra bot gh pr view 1 & top -l 1",
+  "pnpm exec figentra bot git -- fetch origin; pgrep -l node",
+  "figentra secrets import --list; cat /proc/self/cmdline",
+])
+  test(`deny (STA-303, figentra CLI): ${c}`, () => assert.equal(decision(c), "deny"));
+// The `bot:gh` rules read `figentra bot gh` too (merge, label writes, release and delete, GraphQL, workflow dispatch,
+// secret set), bare and after each runner, with the decision the `pnpm bot:gh` form gets.
+const BOT_GH_GUARDED = [
+  "pr merge 3",
+  "api -X PUT repos/figentra/stackra/pulls/12/merge",
+  "pr edit 3 --add-label owner-approved",
+  "api graphql -f query='mutation { addLabelsToLabelable(input: {}) { clientMutationId } }'",
+  "api graphql -f query='mutation { mergePullRequest(input: {}) { clientMutationId } }'",
+  "release create v1",
+  "repo delete figentra/x --yes",
+  "variable delete X",
+  "api -X DELETE repos/figentra/stackra/git/refs/tags/x",
+  "api graphql -f query='mutation { deleteIssue(input: {issueId: \"x\"}) { clientMutationId } }'",
+  "api graphql -F query=@q.graphql",
+  "workflow run deploy-static.yml -f environment=staging",
+  "api -X POST repos/figentra/stackra/actions/workflows/deploy.yml/dispatches -f ref=main",
+  "secret set X",
+];
+const FIGENTRA_BOT_GH = [
+  "figentra bot gh",
+  "figentra bot gh --",
+  "pnpm exec figentra bot gh",
+  "npx figentra bot gh",
+  "npx @figentra/cli bot gh",
+  "mise exec -- figentra bot gh",
+];
+for (const v of BOT_GH_GUARDED)
+  test(`figentra CLI: \`bot gh ${v}\` gets the \`pnpm bot:gh\` decision in every form`, () => {
+    const want = decision(`pnpm bot:gh -- ${v}`, root);
+    assert.notEqual(want, "allow", v);
+    for (const f of FIGENTRA_BOT_GH) assert.equal(decision(`${f} ${v}`, root), want, `${f} ${v}`);
+  });
+test("figentra CLI: a read through `figentra bot gh` stays allowed", () => {
+  for (const f of FIGENTRA_BOT_GH) assert.equal(decision(`${f} pr view 1`, root), "allow", f);
+});
+test("figentra CLI: the settings floor denies secrets import and bot token when the hook fails open", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { deny } = JSON.parse(await readFile(join(root, ".claude", "settings.json"), "utf8")).permissions;
+  const globs = deny
+    .filter((r) => r.startsWith("Bash("))
+    .map((r) => new RegExp(`^${r.slice(5, -1).replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`));
+  for (const c of [
+    "figentra secrets import X --confirm abc",
+    "figentra secrets import X --env prod",
+    "pnpm exec figentra secrets import X --confirm abc",
+    "npx figentra secrets import X --env prod",
+    "mise exec -- figentra secrets import X --confirm abc",
+    "node node_modules/@figentra/cli/src/commands/secrets-import.mjs X --confirm abc",
+    "figentra bot token",
+    "npx figentra bot token",
+  ])
+    assert.ok(
+      globs.some((g) => g.test(c)),
+      c,
+    );
+  assert.ok(!globs.some((g) => g.test("figentra secrets import --list")));
+});
+
 // Productivity: a pattern, a message or history that names a guarded command is prose, not a command.
 for (const c of [
   'grep -rn "git push origin main" apps/docs',
+  'grep -rn "figentra bot token" .agents',
   "rg 'DROP SCHEMA' services",
   'git log --grep "push origin main" --oneline',
   'git grep -n "git reset --hard"',
@@ -1312,6 +1421,15 @@ for (const c of [
   // tokens
   "node tools/scripts/bot-token.mjs",
   "infisical run -- node tools/scripts/bot-token.mjs",
+  // the private CLI's form, bare and through each runner (wave 4: the scripts moved into @figentra/cli)
+  "figentra bot token",
+  "figentra bot token reviewer",
+  "pnpm exec figentra bot token",
+  "npx figentra bot token",
+  "npx @figentra/cli bot token",
+  "mise exec -- figentra bot token",
+  "node node_modules/@figentra/cli/bin/figentra.mjs bot token",
+  "node node_modules/@figentra/cli/src/commands/bot-token.mjs",
   // the shared stash stack
   "git stash pop",
   "git stash clear",

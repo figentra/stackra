@@ -49,6 +49,7 @@ describe("@stackra/settings", () => {
       "SettingType",
       "SettingValueInvalidError",
       "Settings",
+      "SettingsApprovalSourceDriver",
       "SettingsChange$",
       "SettingsLockedError",
       "SettingsMode",

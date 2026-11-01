@@ -8,13 +8,17 @@ The add-on that holds the data layer's system jobs and their system-held permiss
 
 ## Where code goes
 
-| You are writing…                     | It goes in…                                 |
-| ------------------------------------ | ------------------------------------------- |
-| A `Permissions` class                | `src/core/access/<model>.permissions.ts`    |
-| A job (action), its input and output | `src/node/{actions,schemas}/`               |
-| A CLI runner half                    | `src/node/functions/`                       |
-| A port driver that names a job       | `src/node/drivers/`                         |
-| A test                               | `__tests__/<name>.<kind>.test.ts` beside it |
+| You are writing…                         | It goes in…                                                                 |
+| ---------------------------------------- | --------------------------------------------------------------------------- |
+| A `Permissions` class                    | `src/core/access/<model>.permissions.ts`                                    |
+| A job (action), its input and output     | `src/node/{actions,schemas}/`                                               |
+| A CLI runner half                        | `src/node/functions/`                                                       |
+| A port driver that names a job           | `src/node/drivers/`                                                         |
+| The synonym model, actions, query        | `src/node/{models,actions,queries}/`                                        |
+| Its texts (labels, success, confirm)     | `assets/lang/<locale>/data_maintenance.json`                                |
+| The tenant synonym model, actions, query | `src/node/{models,actions,queries}/` (permissions in `src/core/access/`)    |
+| Their texts (labels, success, confirm)   | `assets/lang/<locale>/data_maintenance.json`, in ar, de, en, es, fr, it, nl |
+| A test                                   | `__tests__/<name>.<kind>.test.ts` beside it                                 |
 
 ## Entries and barrels
 
@@ -32,8 +36,13 @@ The add-on that holds the data layer's system jobs and their system-held permiss
 - This package depends on `@stackra/iam`, `@stackra/database`, `@stackra/search` and `@stackra/outbox`; none of them may
   ever depend on it.
 - Every action declares its permission in a `Permissions` class here, system-held (`Permission.Lx.system()`): L4 when
-  the job drops or deletes data, lower only for derived data. Never weaken gen's `permission_unknown`.
+  the job drops or deletes data, lower only for derived data. Never weaken gen's `permission_unknown`. The synonym actions are the exception: a tenant's own
+  edits, so `SynonymPermissions` is not system-held.
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
+
+- The tenant's search synonyms (`data_maintenance.synonym.*`, ADR 0492 d5) live here, not in @stackra/search: they need iam and tenancy, and
+  search must stay below iam. `DatabaseSynonymSourceDriver` implements search's `SynonymSource` port; the table
+  `data_maintenance.synonyms` is this package's migration 0001.
 
 ## Rules that fail the build
 

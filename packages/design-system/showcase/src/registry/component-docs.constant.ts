@@ -15,6 +15,15 @@ const TWO = { do: 2, dont: 2 } as const;
 
 /** The extras of each documented entry. */
 export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
+  "free/command-palette": {
+    keyboard: [{ keys: ["Mod+K"], action: "open_palette" }],
+  },
+  "free/keyboard-shortcuts": {
+    keyboard: [
+      { keys: ["?"], action: "open_cheat_sheet" },
+      { keys: ["Mod"], action: "hold_reveal" },
+    ],
+  },
   "free/button": {
     keyboard: ACTIVATE,
     anatomy: ["container", "start_icon", "label", "end_icon"],
@@ -142,6 +151,7 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
       { keys: ["←", "→"], action: "move" },
       { keys: ["Home", "End"], action: "first_last" },
       { keys: ["Delete"], action: "close" },
+      { keys: ["Mod+1", "Mod+9"], action: "go_to_tab" },
     ],
     anatomy: ["list", "tab", "indicator", "panel"],
     alternatives: ["free/mode-switch", "free/accordion"],
@@ -181,7 +191,11 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     rules: TWO,
   },
   "free/modal": {
-    keyboard: [{ keys: ["Tab"], action: "cycle_focus" }, DISMISS],
+    keyboard: [
+      { keys: ["Tab"], action: "cycle_focus" },
+      DISMISS,
+      { keys: ["Mod+Enter"], action: "confirm" },
+    ],
     anatomy: ["backdrop", "dialog", "title", "body", "close"],
     alternatives: ["free/drawer", "free/alert-dialog", "free/popover"],
     rules: { do: 3, dont: 3 },
@@ -193,9 +207,19 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     rules: { do: 3, dont: 3 },
   },
   "free/drawer": {
-    keyboard: [{ keys: ["Tab"], action: "cycle_focus" }, DISMISS],
+    keyboard: [
+      { keys: ["Tab"], action: "cycle_focus" },
+      DISMISS,
+      { keys: ["Mod+Enter"], action: "confirm" },
+    ],
     anatomy: ["backdrop", "panel", "back", "header", "sub_header", "body", "footer"],
-    alternatives: ["free/modal", "free/route-overlay"],
+    alternatives: ["free/sheet", "free/modal", "free/route-overlay"],
+    rules: TWO,
+  },
+  "free/sheet": {
+    keyboard: [{ keys: ["Tab"], action: "cycle_focus" }, DISMISS],
+    anatomy: ["backdrop", "handle", "header", "title", "body", "footer", "close"],
+    alternatives: ["free/drawer", "free/action-menu"],
     rules: TWO,
   },
   "free/popover": {
@@ -228,6 +252,7 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     keyboard: [
       { keys: ["F6"], action: "jump_region" },
       { keys: ["Esc"], action: "dismiss" },
+      { keys: ["Mod+Z"], action: "undo" },
     ],
     anatomy: ["region", "icon", "title", "description", "action", "close"],
     alternatives: ["free/alert", "free/system-banner"],
@@ -255,6 +280,8 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     keyboard: [
       { keys: ["Tab"], action: "move_focus" },
       { keys: ["Space", "Enter"], action: "activate" },
+      { keys: ["T"], action: "today" },
+      { keys: ["Mod+←", "Mod+→"], action: "previous_next_period" },
     ],
     anatomy: ["header", "actions", "list", "item"],
     alternatives: ["free/calendar", "free/timeline-chart"],
@@ -300,6 +327,7 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
       { keys: ["↑", "↓", "←", "→"], action: "move" },
       { keys: ["Space"], action: "select_row" },
       { keys: ["Enter"], action: "row_action" },
+      { keys: ["Mod+A"], action: "select_all" },
     ],
     anatomy: ["toolbar", "header", "row", "cell", "pagination"],
     alternatives: ["free/table", "free/list"],
@@ -325,6 +353,7 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     keyboard: [
       { keys: ["Tab"], action: "move_focus" },
       { keys: ["Space", "Enter"], action: "activate" },
+      { keys: ["Alt+←", "Alt+→"], action: "page_previous_next" },
     ],
     anatomy: ["value", "item", "action"],
     alternatives: ["free/cursor-pagination"],
@@ -335,6 +364,8 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
       { keys: ["←", "→", "↑", "↓"], action: "move" },
       { keys: ["PageUp", "PageDown"], action: "step_large" },
       { keys: ["Enter"], action: "choose" },
+      { keys: ["T"], action: "today" },
+      { keys: ["Mod+←", "Mod+→"], action: "previous_next_period" },
     ],
     anatomy: ["header", "calendar", "cell"],
     alternatives: ["free/date-picker", "free/range-calendar"],

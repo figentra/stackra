@@ -2,12 +2,12 @@
  * Stackra file contract:
  * Purpose: `@Searchable(options)`, the class facet that declares a model's hybrid search index: the text fields, the
  *          filter, sortable and range fields, text weights (`boost`), the presence condition (`when`) and the
- *          `semantic` switch. `stackra db diff` writes its columns and the Postgres search driver keeps it in step
+ *          `semantic` and `rerank` switches. `stackra db diff` writes its columns and the Postgres search driver keeps it in step
  *          with the unit of work.
  * Boundary: made with `createDecorator`, so it records metadata only; one per model. Paths are checked by gen. It may
  *           mark the model kinds only.
  * Runtime: isomorphic
- * Governing contract: ADR 0221 (Postgres hybrid search); ADR 0294 (decision 6); ADR 0380 (`semantic` and the
+ * Governing contract: ADR 0221 (Postgres hybrid search); ADR 0294 (decision 6); ADR 0492 (decision 4: `rerank`); ADR 0380 (`semantic` and the
  *                     `ai: never` floor); STA-1326; data-layer gap se9 (stackra-302: facet field kinds).
  */
 import { createDecorator, DecoratorTarget } from "@stackra/container";
@@ -72,6 +72,7 @@ export function Searchable(options: SearchableOptions): DecoratorFunction {
             ),
           }),
       ...(options.semantic === undefined ? {} : { semantic: options.semantic }),
+      ...(options.rerank === undefined ? {} : { rerank: options.rerank }),
     }),
   );
 }

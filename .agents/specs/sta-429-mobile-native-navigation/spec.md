@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: STA-429: on iOS 26 the system tab bar can set a search tab apart beside the bar and minimize while the
 content scrolls. The mobile app's tab bar does neither. The web glass bar's scroll behaviour is the web session's part.

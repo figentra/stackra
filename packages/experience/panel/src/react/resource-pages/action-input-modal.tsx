@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: `ActionInputModal`, the modal form of a record action whose input needs more than the record id: the
- *          action's label as title, its declared confirm copy, one field per input key drawn by `ResourceFormField`,
- *          validated by the action's input schema with the record id pre-filled; submit runs the action once per
- *          record with the same values, and a refusal keeps the form open with the server's field errors and only the
- *          refused records left.
+ * Purpose: `ActionInputModal`, the modal form of an action whose input has fields besides the record id: the action's
+ *          label as title, its declared confirm copy, one field per input key drawn by `ResourceFormField`, validated by
+ *          the action's input schema, the record id and the record's own values for those keys pre-filled; submit runs
+ *          the action once per record (or once without one) with the same values, and a refusal keeps the form open
+ *          with the server's field errors and only the refused records left.
  * Boundary: internal to the resource pages. Registers the input schema under the action ref so `@stackra/ui`'s schema
  *           form reads it. The modal is the confirmation, so the runner skips its own dialog. Focus trap, focus return
  *           and Escape are the ui `Modal`'s (React Aria); Enter in a field submits the form.
@@ -17,17 +17,18 @@ import { registerSchemas } from "@stackra/validation";
 import { useState, type ReactElement } from "react";
 
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
-import { resourceLabel } from "#core/functions/resource-label.function";
+import { actionLabelKey } from "#core/functions/action-label-key.function";
+import { valueAt } from "#core/functions/value-at.function";
 import { ActionRunStatus } from "#react/action-runner/action-run-status.enum";
 import { useActionRunner } from "#react/action-runner/use-action-runner";
 import type { ActionInputModalProps } from "#react/resource-pages/action-input-modal.props";
 import { ResourceFormField } from "#react/resource-pages/resource-form-field";
 
-/** The verb of an action key (`orders.order.cancel@1` is `cancel`). */
-const verbOf = (key: string): string => key.replace(/@\d+$/, "").split(".").pop() ?? key;
+/** No bound inputs; one stable object, so a default prop does not change every render. */
+const NOTHING_BOUND: Readonly<Record<string, unknown>> = Object.freeze({});
 
 /**
- * The modal form of `action` over `ids`.
+ * The modal form of `action` over `ids`, or run once without a record when `idKey` is absent.
  *
  * @example
  * <ActionInputModal resourceKey="reviews.review" action={ModerateReviewAction} idKey="reviewId" ids={["rev_1"]}
@@ -38,27 +39,44 @@ export function ActionInputModal({
   action,
   idKey,
   ids,
+  record,
+  bound = NOTHING_BOUND,
   keys,
   onClose,
 }: ActionInputModalProps): ReactElement {
   const { t } = useTranslation();
   const run = useActionRunner();
-  const [left, setLeft] = useState(ids);
+  // An action without a record runs once, with no id.
+  const [left, setLeft] = useState<readonly (string | undefined)[]>(
+    idKey === undefined || ids === undefined ? [undefined] : ids,
+  );
   const [serverErrors, setServerErrors] = useState<Readonly<Record<string, string>>>({});
   // The ref's input is its schema; the schema form reads schemas by class, so record it under the ref.
   useState(() => registerSchemas([[action, action.input]]));
+  // A key the record holds starts from its value (a drafted reply), so staff confirm rather than retype it.
+  const prefill = Object.fromEntries(
+    keys.flatMap((key) => {
+      const value = record === undefined ? undefined : valueAt(record, key);
+      return value === undefined || value === null ? [] : [[key, value]];
+    }),
+  );
   const form = useSchemaForm(action as unknown as abstract new () => Record<string, unknown>, {
     // The id field is not drawn; it is filled so the schema validates, and replaced per record on submit.
-    defaultValues: { [idKey]: ids[0] },
+    defaultValues:
+      idKey === undefined || ids?.[0] === undefined
+        ? { ...bound, ...prefill }
+        : { ...bound, ...prefill, [idKey]: ids[0] },
     serverErrors,
   });
   const ask = action.texts.confirm;
   const submit = async (values: Readonly<Record<string, unknown>>) => {
-    const refused: string[] = [];
+    const refused: (string | undefined)[] = [];
     let errors: Readonly<Record<string, string>> = {};
     // A bulk run fans out per record, so the policy decides each one (ADR 0307 rule 3).
     for (const id of left) {
-      const done = await run(action, { ...values, [idKey]: id } as never, { confirmed: true });
+      const filled = { ...values, ...bound };
+      const input = idKey === undefined || id === undefined ? filled : { ...filled, [idKey]: id };
+      const done = await run(action, input as never, { confirmed: true });
       if (done.status === ActionRunStatus.Refused) {
         refused.push(id);
         errors = done.error.fieldErrors ?? errors;
@@ -77,7 +95,7 @@ export function ActionInputModal({
     >
       <Form form={form} submit={submit} className="contents">
         <Modal.Header>
-          <Modal.Title>{t(resourceLabel(resourceKey, "actions", verbOf(action.key)))}</Modal.Title>
+          <Modal.Title>{t(actionLabelKey(resourceKey, action.key))}</Modal.Title>
           {ask === undefined ? null : <Text>{t(typeof ask === "object" ? ask.text : ask)}</Text>}
         </Modal.Header>
         <Modal.Body>
@@ -86,6 +104,8 @@ export function ActionInputModal({
               key={key}
               resourceKey={resourceKey}
               schema={action.input}
+              enumOwner={action.key.slice(0, action.key.lastIndexOf("."))}
+              record={record}
               node={{ kind: "value", key }}
             />
           ))}

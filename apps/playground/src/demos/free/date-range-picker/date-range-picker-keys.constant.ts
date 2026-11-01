@@ -9,5 +9,9 @@ import { keys } from "@stackra/i18n";
 
 /** The demos' keys. */
 export const DATE_RANGE_PICKER_KEYS = keys({
-  date_range_picker: { basics: ["label", "hint", "button"], hijri: ["label", "button"] },
+  date_range_picker: {
+    tamo: ["label", "hint", "screen"],
+    basics: ["label", "hint", "button"],
+    hijri: ["label", "button"],
+  },
 });

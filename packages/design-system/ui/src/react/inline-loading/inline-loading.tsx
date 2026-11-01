@@ -21,12 +21,8 @@ import { Icon } from "#react/icon/icon";
 import { Spinner } from "#react/spinner/spinner";
 import { Text } from "#react/text/text";
 import type { InlineLoadingProps } from "#react/inline-loading/inline-loading.props";
-import type { TextProps } from "#react/text/text.props";
 
 const FAST = motionTiming(STACKRA_THEME, "fast");
-
-/** Draws Text as a `span`, since the whole component sits inside a sentence or a row. */
-const renderSpan: NonNullable<TextProps["render"]> = (domProps) => <span {...domProps} />;
 
 /** How each icon enters and leaves: a small scale with a fade, so the spinner seems to turn into the check. */
 const HIDDEN = { opacity: 0, scale: 0.6 } as const;
@@ -81,7 +77,7 @@ export function InlineLoading({
             <Text
               type="small"
               tone={status === "error" ? "danger" : status === "success" ? "success" : "muted"}
-              render={renderSpan}
+              elementType="span"
             >
               {text}
             </Text>

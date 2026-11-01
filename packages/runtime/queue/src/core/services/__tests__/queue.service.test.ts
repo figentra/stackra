@@ -5,7 +5,8 @@
  *          (the scope's id, else the caller's, else platform-wide); a queued call of an action without a `job` option
  *          needs its caller; `deadLetters` and `redrive` reach the driver's dead letters; a push's priority overrides
  *          the action's; `chain` stores the rest of the chain on its first job; `batch` opens a batch, tags its jobs
- *          and counts a skipped unique job as done; `progress` reads the batch.
+ *          and counts a skipped unique job as done; `progress` reads the batch; `push`, `chain` and `batch` refuse a
+ *          scope that is not shaped like a platform `ScopeRef` and store nothing.
  * Boundary: test only; the memory driver and a fixed clock.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0148 (decision 1); ADR 0260 (decision 4); ADR 0327 (`ScopeRef`).
@@ -14,8 +15,11 @@ import { Action } from "@stackra/actions";
 import { type Actor, ActorKind, Clock, Duration, Realm, type ScopeRef } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import { isRefusal } from "@stackra/errors";
+
 import { JobStatus } from "#contracts/index";
 import { MemoryQueueDriver } from "#core/drivers/memory-queue.driver";
+import { ScopeNotPlatformWrittenError } from "#core/errors/scope-not-platform-written.error";
 import { QueueService } from "#core/services/queue.service";
 
 const NOON = new Date(Date.UTC(2026, 9, 24, 12));
@@ -171,5 +175,43 @@ describe(QueueService, () => {
     expect(await driver.reserve(undefined, NOON)).toMatchObject({ batchId: id });
     await expect(queue.batch([])).rejects.toThrow(TypeError);
     expect(await queue.progress("jbt_missing")).toBeUndefined();
+  });
+
+  it("refuses a scope that is not a platform ScopeRef at push, chain and batch, and stores nothing", async () => {
+    const forged: unknown[] = [
+      "scp_1",
+      "platform.acme",
+      ["scp_1"],
+      null,
+      {},
+      { id: "scp_1" },
+      { path: "platform.acme" },
+      { id: "usr_1", path: "platform.acme" },
+      { id: "scp_1", path: "platform.acme; select 1" },
+      { id: "scp_1", path: "platform..acme" },
+      { id: 1, path: "platform.acme" },
+    ];
+    for (const value of forged) {
+      const { driver, queue } = setup();
+      const options = { scope: value as ScopeRef };
+      const link = { type: ExpireUnpaidOrdersAction, input: { batchSize: 1 } };
+      for (const attempt of [
+        () => queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 }, options),
+        () => queue.chain([link], options),
+        () => queue.batch([link], options),
+      ]) {
+        const refused = await attempt().catch((error: unknown) => error);
+        expect(isRefusal(refused, ScopeNotPlatformWrittenError)).toBe(true);
+      }
+      expect(await driver.reserve(undefined, NOON)).toBeUndefined();
+    }
+  });
+
+  it("accepts a push with no scope and one shaped like a ScopeRef", async () => {
+    const { queue } = setup();
+    expect(await queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 })).toMatch(/^job_/);
+    expect(await queue.push(ExpireUnpaidOrdersAction, { batchSize: 1 }, { scope })).toMatch(
+      /^job_/,
+    );
   });
 });

@@ -207,7 +207,14 @@ jobs:
       - name: wrangler deploy
         if: env.INFISICAL_IDENTITY_ID != '' && env.DETACH_DRY_RUN != 'true'
         working-directory: workers/registry
-        run: pnpm exec wrangler deploy
+        # REGISTRY_READ_ONLY comes from the environment, not wrangler.jsonc, so a push during the Figentra Registry move
+        # (STA-1733) redeploys without unfreezing; empty means writable.
+        env:
+          READ_ONLY: ${{ vars.REGISTRY_READ_ONLY }}
+        run: |
+          [[ "$READ_ONLY" = "" || "$READ_ONLY" = "true" ]] || {
+            echo "::error title=REGISTRY_READ_ONLY::must be empty or true"; exit 1; }
+          pnpm exec wrangler deploy --var "REGISTRY_READ_ONLY:${READ_ONLY}"
 
       # Fetched only now, so the key is in no earlier step's environment.
       - name: Signing key (Infisical OIDC)

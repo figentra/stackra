@@ -18,6 +18,7 @@
  *                     are sent), STA-1477.
  */
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
+import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -50,6 +51,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
     path: `.stackra/encore/${ir.member}/http.ts`,
     content: [
       header,
+      ...encoreDatabaseImport(ir),
       'import { apiCacheControl, CorsConfig, corsHeaders } from "@stackra/app/server";',
       'import type { Container } from "@stackra/container";',
       ...(errors

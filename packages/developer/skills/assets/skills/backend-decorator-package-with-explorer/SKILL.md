@@ -11,7 +11,7 @@ Each package owns its decorators and its kind bases (ADR 0117). A package that s
 proves the two agree. Decorators are TypeScript's legacy decorators over the container's own metadata store; there is
 no global metadata polyfill (ADR 0005).
 
-This is the v3 target (ADR 0294, 0144 as amended). `@stackra/container` does not ship yet; its docs win once it does.
+This is the v3 shape (ADR 0294, 0144 as amended) that `@stackra/container` implements; its docs win where they differ.
 
 ## First: decorator or base class?
 

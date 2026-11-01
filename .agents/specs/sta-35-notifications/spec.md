@@ -23,7 +23,7 @@
 
 **Input**: User description: "A full enterprise-grade, production-ready notifications framework package, @stackra/notifications, MIT. The whole engine; channels email (Resend + SMTP), SMS, WhatsApp, push (Expo push, FCM and APNs direct), in-app (database-backed inbox with read/unread/archive, delivered live via realtime); templates (file-based, i18n, per-tenant overrides, layouts/partials, preview); digests; timezone-aware quiet hours and do-not-disturb; user and tenant preferences with mandatory categories; delivery tracking via provider webhooks; retries, dead-letter, idempotency, rate limits, suppression lists, RFC 8058 one-click unsubscribe; audit and PII redaction. Pro (out of scope, seams only): visual template editor, delivery analytics dashboard, multi-provider failover. Sits on the locked messaging layer (events, outbox, queue, scheduler, realtime, webhooks) and never re-implements it."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: apps/docs only (the package design ADR required by ADR 0018 and a package guide page). apps/console and apps/mobile: none; wiring the headless hooks into them is a separate follow-up spec.
 - **Services touched**: none in this repo. Per ADR 0270 decision 12 the engine is the OS service `@figentra/service-notifications` in `figentra/figentra-os` (ADRs 0075 and 0200 stand). This spec stays here as a design note and moves with the service.
@@ -518,7 +518,7 @@ The same Host code runs SaaS, on-prem and air-gapped; switching to a hosted Fige
 
 All owner questions are answered; the decisions are recorded under Clarifications and applied above. Linear: project Notifications, spec issue STA-35.
 
-1. **ADRs before `/speckit.plan`.** The ADRs listed under Impact (package design, ADR 0015 amendment, runtime/codegen in PR #16, settings and connections) should be accepted before the plan relies on them.
+1. **ADRs before `/flow-plan`.** The ADRs listed under Impact (package design, ADR 0015 amendment, runtime/codegen in PR #16, settings and connections) should be accepted before the plan relies on them.
 
 ## Status history
 

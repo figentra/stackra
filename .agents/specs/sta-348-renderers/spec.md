@@ -1,4 +1,4 @@
-# Feature Specification: `@stackra/renderers` wave 2, the renderer layer shared with Vellum
+# Feature Specification: `@stackra/renderers` wave 2, the renderer layer shared with Figentra Flow
 
 **Feature Branch**: `figentra/sta-348-framework`
 
@@ -15,9 +15,9 @@
 **Clarifications status**: complete
 
 **Input**: Build `@stackra/renderers` for real: pure functions that write the neutral agent documents of
-`@stackra/skills` into each assistant's layout, ported from the assistant dialects of `@vellum/renderers`. Vellum's
-spec-status, CLI, JSON and context renderers stay in Vellum: they render Vellum's own engine types, and a public
-Stackra package does not depend on Vellum (ADR 0286 decision 6).
+`@stackra/skills` into each assistant's layout, ported from the assistant dialects of `@vellum/renderers`. Figentra Flow's
+spec-status, CLI, JSON and context renderers stay in Figentra Flow: they render Figentra Flow's own engine types, and a public
+Stackra package does not depend on Figentra Flow (ADR 0286 decision 6).
 
 ## Impact
 

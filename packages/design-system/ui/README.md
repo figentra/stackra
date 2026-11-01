@@ -387,7 +387,9 @@ Stackra draws its own charts (STA-1371): Recharts on web, Victory Native and Ski
   numbers are also a captioned data table (web) or the spoken value (native). A sparkline speaks its values after its
   label.
 - `recharts` (web) and `victory-native` with `@shopify/react-native-skia` (native) are optional peers: an app that draws
-  a chart installs them.
+  a chart installs them. The native entry loads without them: its charts, maps and chart export reach them through
+  `loadSkia()` and `loadVictoryNative()`, lazy `require`s the build keeps for Metro, and draw nothing where they are
+  missing (STA-1791).
 
 ## Data primitives
 

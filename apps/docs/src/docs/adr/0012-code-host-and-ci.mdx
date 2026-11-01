@@ -1,7 +1,19 @@
 ---
 title: "0012 — Code host and CI"
-description: "Accepted · 2026-10-19"
+description: "Accepted, amended by 0468 · 2026-10-19 · amended 2026-10-28"
 ---
+
+{/* Stackra file contract. Purpose: ADR 0012, the code host and CI rules (one host, one required check, deploy and release jobs apart). Boundary: decision text; the 2026-10-28 note records the deploy model of ADR 0468 (stackra-244, STA-1395). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468. */}
+
+<Note>
+  Amended 2026-10-28 (STA-1395) by
+  [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval),
+  owner decision of that date: rule 7 applies to production only. Deploy and release jobs stay
+  separate workflows. A job that deploys or publishes to production runs in a GitHub Environment the
+  owner approves, and that approval is the only one a release needs. Dev and staging deploys and
+  prereleases need no approval, and an agent may start them. Rule 6 (break-glass from a machine)
+  stays a human's. The other rules stand.
+</Note>
 
 <Note>
   Amended by [0166](/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix) (runners,

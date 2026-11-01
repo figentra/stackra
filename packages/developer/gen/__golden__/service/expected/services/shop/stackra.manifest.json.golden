@@ -103,7 +103,23 @@
       "file": "src/node/models/customer.model.ts",
       "table": "shop.customers",
       "publicId": "cus",
-      "traits": ["HasPublicId"]
+      "traits": ["HasPublicId"],
+      "entity": {
+        "module": "shop",
+        "fields": [
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": ["id"],
+        "computed": []
+      }
     },
     {
       "key": "shop.order_line",
@@ -111,7 +127,50 @@
       "file": "src/node/models/order-line.model.ts",
       "table": "shop.order_lines",
       "publicId": "oln",
-      "traits": ["HasPublicId"]
+      "traits": ["HasPublicId"],
+      "entity": {
+        "module": "shop",
+        "fields": [
+          {
+            "name": "note",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          }
+        ],
+        "relations": [
+          {
+            "name": "order",
+            "kind": "m:1",
+            "target": "Order",
+            "targetModule": "shop",
+            "nullable": false,
+            "ref": true,
+            "options": {}
+          },
+          {
+            "name": "customer",
+            "kind": "link",
+            "target": "Customer",
+            "targetModule": "shop",
+            "nullable": true,
+            "ref": false,
+            "options": {}
+          }
+        ],
+        "optional": ["id"],
+        "computed": []
+      }
     },
     {
       "key": "shop.order",
@@ -119,7 +178,61 @@
       "file": "src/node/models/order.model.ts",
       "table": "shop.orders",
       "publicId": "ord",
-      "traits": ["HasPublicId", "Timestamps"]
+      "traits": ["HasPublicId", "Timestamps"],
+      "entity": {
+        "module": "shop",
+        "fields": [
+          {
+            "name": "status",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            },
+            "default": "pending"
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "createdAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "updatedAt",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          }
+        ],
+        "relations": [
+          {
+            "name": "lines",
+            "kind": "1:m",
+            "target": "OrderLine",
+            "targetModule": "shop",
+            "nullable": false,
+            "ref": false,
+            "inverse": "order",
+            "options": {
+              "orphanRemoval": true
+            }
+          }
+        ],
+        "optional": ["createdAt", "id", "lines", "status", "updatedAt"],
+        "computed": ["isOpen"]
+      }
     }
   ],
   "drivers": [

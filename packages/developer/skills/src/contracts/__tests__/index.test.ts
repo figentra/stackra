@@ -36,9 +36,18 @@ describe("@stackra/skills/contracts", () => {
     ]);
   });
 
-  it("lists the five kinds of ADR 0453", () => {
-    expect(Enum.values(StackraKind)).toEqual(["package", "skill", "agent", "mcp", "plugin"]);
-    expectTypeOf<StackraKind>().toEqualTypeOf<"package" | "skill" | "agent" | "mcp" | "plugin">();
+  it("lists the kinds of ADR 0453 and its contract amendment", () => {
+    expect(Enum.values(StackraKind)).toEqual([
+      "package",
+      "skill",
+      "agent",
+      "mcp",
+      "plugin",
+      "contract",
+    ]);
+    expectTypeOf<StackraKind>().toEqualTypeOf<
+      "package" | "skill" | "agent" | "mcp" | "plugin" | "contract"
+    >();
   });
 
   it("lists the tiers, the package categories and the header runtimes", () => {
@@ -47,6 +56,7 @@ describe("@stackra/skills/contracts", () => {
       "application",
       "commerce",
       "communication",
+      "connectors",
       "cross-cutting",
       "data",
       "design-system",

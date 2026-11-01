@@ -123,6 +123,13 @@ Transcribe is not offered in me-central-1, only in me-south-1 (Bahrain), so it c
 processes outside the tenant's region, pending the owner's answer and a catalog entry. Creating the Azure account and
 its Connection is an owner step.
 
+## Note 2026-10-30: where synonyms live (decision 5)
+
+`@stackra/search` sits below `@stackra/iam` (0462 decision 1), so it cannot declare permissions or own a tenant
+model with actions. It keeps the `SynonymSource` port, its memory driver and the query expansion. The synonym model,
+its permissions (`data_maintenance.synonym.*`), its actions and its table `data_maintenance.synonyms` live in
+`@stackra/data-maintenance`, which implements the port (STA-1636).
+
 ## Supersedes and sources
 
 `Supersedes: none`. Sources: the leader's brief and the owner's message of 2026-10-30 (STA-1629); os

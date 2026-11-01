@@ -2,6 +2,9 @@
  * Stackra file contract:
  * Purpose: the base vitest preset every workspace extends. Globals on (describe/it/expect without imports),
  *          `passWithNoTests` OFF so an empty suite is a finding, not a pass, and the v8 coverage provider.
+ *          Service tests boot PGlite, so it sets the `forks` pool, `maxWorkers` at half the CPUs (override with
+ *          `STACKRA_TEST_MAX_WORKERS`), `testTimeout` 30 s and `hookTimeout` 60 s; the int tier keeps its own
+ *          `fileParallelism: false`.
  *          The coverage thresholds themselves live in the repo root `vitest.shared.ts` (`withCoverage`), so one
  *          place owns the gate. Resolution prefers the `@stackra/source` export condition (ADR 0025), so a test reads a
  *          workspace package's source, not its built dist; the rest of each list is Vite's default, except that SSR
@@ -15,6 +18,10 @@
  * Owner: release-operations · Secrets: forbidden
  */
 import { defineConfig } from "vitest/config";
+
+import { HOOK_TIMEOUT_MS } from "./constants/hook-timeout.constant.ts";
+import { TEST_TIMEOUT_MS } from "./constants/test-timeout.constant.ts";
+import { testMaxWorkers } from "./functions/test-max-workers.function.ts";
 
 /**
  * Base vitest preset used by all workspace members.
@@ -30,6 +37,10 @@ export const stackraVitest = defineConfig({
     globals: true,
     passWithNoTests: false,
     environment: "node",
+    pool: "forks",
+    maxWorkers: testMaxWorkers(),
+    testTimeout: TEST_TIMEOUT_MS,
+    hookTimeout: HOOK_TIMEOUT_MS,
     coverage: { provider: "v8", reporter: ["text", "json", "html"] },
   },
 });

@@ -242,9 +242,11 @@ export class SettingsResolver extends Service {
   }
 
   /**
-   * Applies `change` to `group` at `target` now and records it, for a promotion or a pack apply. Floors and locks
-   * apply; the live and approval checks are the promotion action's.
+   * Applies `change` to `group` at `target` now and records it, for a promotion, a pack apply or a break-glass action
+   * that has no page. Floors and locks apply; the live and approval checks are the promotion action's, so there is
+   * no live read-only check to bypass. `meta.breakGlass` is recorded on the revision (ADR 0359 decision 9).
    *
+   * @throws TypeError when a break-glass change has no reason; nothing is written.
    * @throws EntitlementRequiredError when a written key or value is gated by an entitlement the holder lacks.
    * @throws SettingBelowFloorError when a value crosses a legal floor; nothing is written.
    * @throws SettingsLockedError when a holder above the target locks a written key.
@@ -253,8 +255,11 @@ export class SettingsResolver extends Service {
     group: string,
     target: SettingTarget,
     change: SettingChangeSet,
-    meta: Pick<SettingWriteOptions, "author" | "reason" | "environment">,
+    meta: Pick<SettingWriteOptions, "author" | "reason" | "environment" | "breakGlass">,
   ): Promise<SettingRevision> {
+    const breakGlass = meta.breakGlass === true;
+    if (breakGlass && (meta.reason ?? "").trim() === "")
+      throw new TypeError("A break-glass settings change needs a reason");
     const keys = SETTING_KEY_REGISTRY.get(group) ?? [];
     refuseUnentitledSettings(
       change.values,
@@ -279,7 +284,7 @@ export class SettingsResolver extends Service {
       author: meta.author,
       reason: meta.reason ?? null,
       environment: meta.environment,
-      breakGlass: false,
+      breakGlass,
       status: SettingRevisionStatus.Applied,
       effectiveAt: now,
       createdAt: now,

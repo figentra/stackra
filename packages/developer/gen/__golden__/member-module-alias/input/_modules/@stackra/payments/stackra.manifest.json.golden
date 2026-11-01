@@ -1,0 +1,14 @@
+{
+  "member": "payments",
+  "package": "@stackra/payments",
+  "version": "0.2.1",
+  "modules": [
+    {
+      "key": "payments",
+      "class": "PaymentsModule",
+      "file": "src/node/payments.module.ts",
+      "exports": [],
+      "dependsOn": []
+    }
+  ]
+}

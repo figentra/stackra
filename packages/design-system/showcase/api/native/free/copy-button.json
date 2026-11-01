@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "d316622f97b4e394",
+    "hash": "29e243e73fc1054e",
     "propsFiles": ["ui/src/native/copy-button/copy-button.props.ts"]
   },
   "importLine": "import { CopyButton } from \"@stackra/ui/native\";",
@@ -61,6 +61,28 @@
           "required": false,
           "source": "stackra",
           "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
+          "name": "action",
+          "required": false,
+          "source": "stackra",
+          "type": "ShortcutAction"
+        },
+        {
+          "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "keys:<binding>",
+          "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
+          "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "Animation configuration for scale and highlight feedback",

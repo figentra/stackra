@@ -37,6 +37,10 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
+    ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
@@ -107,19 +111,23 @@
     "lint": "oxlint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:int": "vitest run --config vitest.int.config.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/integrations": "workspace:*",
     "@stackra/market-packs": "workspace:*",
     "@stackra/money": "workspace:*",
     "@stackra/ui": "workspace:*",
-    "@stackra/validation": "workspace:*"
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",

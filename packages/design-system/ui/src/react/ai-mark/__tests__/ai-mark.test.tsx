@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web AiMark draws the sparkles icon named by its label when the label is hidden, shows the label
+ * Purpose: proves the web AiMark draws Tamo's mark (ADR 0507) named by its label when the label is hidden, shows the label
  *          as text with a decorative icon when asked, and records its kind.
- * Boundary: jsdom with real lucide-react through the package's own icon registry.
+ * Boundary: jsdom; the mark is the package's own SVG.
  * Runtime: browser
- * Governing contract: ADR 0360 (decision 11); WCAG 2.2 SC 1.1.1; ADR 0022 (test placement).
+ * Governing contract: ADR 0360 (decision 11); ADR 0507 (decision 4); WCAG 2.2 SC 1.1.1; ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
@@ -15,7 +15,7 @@ describe("AiMark (web)", () => {
   it("names the icon with the label when the label is hidden", () => {
     const { container } = render(<AiMark kind="capable" label="Your assistant can do this" />);
     const icon = screen.getByRole("img", { name: "Your assistant can do this" });
-    expect(icon.classList.contains("lucide-sparkles")).toBe(true);
+    expect(icon.getAttribute("data-slot")).toBe("tamo-mark");
     expect(container.querySelector('[data-slot="ai-mark"]')?.getAttribute("data-kind")).toBe(
       "capable",
     );

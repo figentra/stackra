@@ -18,6 +18,7 @@
  *          `deployProduct`, `workspacePackages`).
  *          Mobile onboarding (`onboardMobile`, `easJsonOf`, `toolVersionOf`, and the real and memory drivers of its
  *          App Store Connect, Play, Expo, Google Cloud, Firebase, Sentry and Infisical ports, ADR 0482).
+ *          The local edge for a built surface (`previewServe`, `LocalEdgeKvDriver`, `renderShellPage`, STA-1676).
  * Boundary: names each re-export and declares nothing. Node only: it reads files. Imports `.` internals one way
  *           (ADR 0294 decision 15); exports none of `.`'s symbols.
  * Runtime: node
@@ -40,6 +41,7 @@ export { NeonPreviewDatabaseDriver } from "#node/drivers/neon-preview-database.d
 export { PlaywrightSmokeDriver } from "#node/drivers/playwright-smoke.driver";
 export { WranglerEdgeKvDriver } from "#node/drivers/wrangler-edge-kv.driver";
 export { DryRunEdgeKvDriver } from "#node/drivers/dry-run-edge-kv.driver";
+export { LocalEdgeKvDriver } from "#node/drivers/local-edge-kv.driver";
 export { MemoryAppleDeveloperDriver } from "#node/drivers/memory-apple-developer.driver";
 export { MemoryExpoProjectsDriver } from "#node/drivers/memory-expo-projects.driver";
 export { MemoryFirebaseDriver } from "#node/drivers/memory-firebase.driver";
@@ -57,6 +59,7 @@ export { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.c
 export { MOBILE_DEV_SETTINGS } from "#node/constants/mobile-dev-settings.constant";
 export { MOBILE_ONBOARD_SETTINGS } from "#node/constants/mobile-onboard-settings.constant";
 export { PRODUCT_BUILD_SETTINGS } from "#node/constants/product-build-settings.constant";
+export { PREVIEW_SERVE_SETTINGS } from "#node/constants/preview-serve-settings.constant";
 export { buildProduct } from "#node/functions/build-product.function";
 export { bundleSurfaces } from "#node/functions/bundle-surfaces.function";
 export { canaryVerdict } from "#node/functions/canary-verdict.function";
@@ -74,12 +77,15 @@ export { deployProduct } from "#node/functions/deploy-product.function";
 export { devServer } from "#node/functions/dev-server.function";
 export { platformRows } from "#node/functions/platform-rows.function";
 export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
+export { previewServe } from "#node/functions/preview-serve.function";
 export { promoteCanary } from "#node/functions/promote-canary.function";
 export { publishProduct } from "#node/functions/publish-product.function";
 export { publishShell } from "#node/functions/publish-shell.function";
 export { readBundles } from "#node/functions/read-bundles.function";
 export { launchCheckJob } from "#node/functions/launch-check-job.function";
 export { readRunway } from "#node/functions/read-runway.function";
+export { releaseOf } from "#node/functions/release-of.function";
+export { renderShellPage } from "#node/functions/render-shell-page.function";
 export { runCommand } from "#node/functions/run-command.function";
 export { runBrandStep } from "#node/functions/run-brand-step.function";
 export { runLaunchCheck } from "#node/functions/run-launch-check.function";
@@ -107,6 +113,8 @@ export type { EdgeShellRelease } from "#node/types/edge-shell-release.type";
 export type { EdgeShellRow } from "#node/types/edge-shell-row.type";
 export type { OnboardStep } from "#node/types/onboard-step.type";
 export type { OpsReview } from "#node/types/ops-review.type";
+export type { PreviewServer } from "#node/types/preview-server.type";
+export type { PreviewServeRequest } from "#node/types/preview-serve-request.type";
 export type { ProductPublishRequest } from "#node/types/product-publish-request.type";
 export type { ProductPublishResult } from "#node/types/product-publish-result.type";
 export type { ShellPublishRequest } from "#node/types/shell-publish-request.type";

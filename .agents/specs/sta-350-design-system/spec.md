@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Owner decisions of 2026-10-23, recorded in ADR 0302 in the same pull request. The umbrella name is "Stackra
 Design System". Source decisions: ADR 0165 (web client stack, UI contract, form adapters), ADR 0128 (no Storybook), ADR

@@ -36,17 +36,17 @@ describe("memberNaming", () => {
   });
 
   it("uses the root runway product key and the stackra catalog", () => {
-    writeFileSync(join(root, "runway.yaml"), "version: 3\nproduct:\n  key: beautilon\n");
+    writeFileSync(join(root, "runway.yaml"), "version: 3\nproduct:\n  key: velora\n");
     writeFileSync(join(root, "pnpm-workspace.yaml"), "catalogs:\n  stackra: {}\n");
     expect(memberNaming(root, "service", "salon")).toEqual({
-      packageName: "@figentra/beautilon-service-salon",
+      packageName: "@figentra/velora-service-salon",
       stackraVersion: "catalog:stackra",
     });
-    expect(memberNaming(root, "package", "rules").packageName).toBe("@figentra/beautilon-rules");
+    expect(memberNaming(root, "package", "rules").packageName).toBe("@figentra/velora-rules");
   });
 
   it("lets --scope win", () => {
-    writeFileSync(join(root, "runway.yaml"), "version: 3\nproduct:\n  key: beautilon\n");
+    writeFileSync(join(root, "runway.yaml"), "version: 3\nproduct:\n  key: velora\n");
     expect(memberNaming(root, "service", "orders", "commerce").packageName).toBe(
       "@figentra/commerce-service-orders",
     );

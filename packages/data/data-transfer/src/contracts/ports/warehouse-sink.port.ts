@@ -23,7 +23,7 @@ import type { WarehouseWriteOptions } from "#contracts/types/warehouse-write-opt
  */
 export abstract class WarehouseSink extends Port {
   /** Type-only port key, so `DriverName<WarehouseSink>` narrows to this port's drivers. */
-  declare readonly "~key": "data-transfer.WarehouseSink";
+  declare readonly "~key": "data_transfer.WarehouseSink";
 
   /**
    * Writes `batch`, replacing what an earlier write of the same batch left.

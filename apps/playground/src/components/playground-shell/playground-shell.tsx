@@ -47,6 +47,7 @@ import { SHOWCASE_NUMERALS } from "#src/components/playground-shell/showcase-num
 import type { ShowcaseNumerals } from "#src/components/playground-shell/showcase-numerals.type";
 import { SITE_LINKS } from "#src/components/playground-shell/site-links.constant";
 import { SiteFooter } from "#src/components/playground-shell/site-footer";
+import { ShellShortcuts } from "#src/components/playground-shell/shell-shortcuts";
 import { ThemeColorSync } from "#src/components/playground-shell/theme-color-sync";
 import { TopBar } from "#src/components/playground-shell/top-bar";
 import { rememberRecent } from "#src/components/recent-chips";
@@ -216,27 +217,6 @@ function Shell({ pages }: PlaygroundShellProps) {
     isFocusPending.current = false;
   };
 
-  // ⌘K or Ctrl+K anywhere, and `/` outside a text field, open the palette.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      // A key pressed with nothing focused targets the document, which is not an element.
-      const target = event.target instanceof Element ? event.target : null;
-      const isTyping = target?.closest("input, textarea, select, [contenteditable='true']");
-      const isCommandK = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
-      // A sample's own open dialog keeps the keys: the palette never opens over it.
-      const isDialogOpen = document.querySelector(
-        'dialog[open]:not(.command-palette), [role="dialog"][aria-modal="true"], [role="alertdialog"]',
-      );
-      if (!isDialogOpen && (isCommandK || (event.key === "/" && !isTyping))) {
-        event.preventDefault();
-        openPalette();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- the listener is added once on mount; openPalette only sets refs and state
-  }, []);
-
   const context: ShellContext = { openPalette };
 
   // A route whose handle says `fullscreen: true` (the Theme Studio workspace) draws the whole window itself.
@@ -301,6 +281,7 @@ function Shell({ pages }: PlaygroundShellProps) {
         defaultTransition={readThemeTransition()}
       >
         <ThemeColorSync />
+        <ShellShortcuts label={t(K.search)} onSearch={openPalette} />
         {isFullscreen ? (
           <>
             <Outlet context={context} />

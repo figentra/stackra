@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `compileMigrations`, the node half of the migration target: finds a service's own migrations
- *          (`src/modules/<key>/database/migrations/NNNN-<name>.migration.ts`) and those its declared packages ship
+ *          (`src/modules/<key>/database/migrations/NNNN-<name>.migration.ts`), a package's own
+ *          (`src/node/database/migrations/`, for its migration check, STA-1689) and those its declared packages ship
  *          (`src/node/database/migrations/`), compiles each with the member's own `@stackra/database`
  *          `compileMigration` (macros: the member's `database/macros/*.macro.ts` and every `Macro` a declared package
  *          exports from its `./node` entry), orders them across members (`orderMigrations`, `Migration({ after })`
@@ -17,14 +18,15 @@
  * Governing contract: ADR 0159 (decisions 1 to 3, as amended 2026-10-23 and 2026-10-24); ADR 0294 (decision 20: a
  *                     Postgres schema per module); ADR 0220 and data-layer gap db5 (the append-only revoke, stackra-256).
  */
-import { existsSync, readdirSync, realpathSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { checkAppendOnly } from "#core/functions/check-append-only.function";
 import { emitMigrations } from "#core/functions/emit-migrations.function";
 import { folderKey } from "#core/functions/folder-key.function";
+import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import { migrationId } from "#core/functions/migration-id.function";
 import { orderMigrations } from "#core/functions/order-migrations.function";
 import type { GenError } from "#core/types/gen-error.type";
@@ -83,10 +85,12 @@ function filesOf(directory: string, suffix: string): string[] {
 
 /** The module folders of a service, each with its key. */
 const modulesOf = (root: string): { readonly key: string; readonly dir: string }[] =>
-  filesOf(join(root, "src/modules"), "").map((folder) => ({
-    key: folderKey(folder),
-    dir: join(root, "src/modules", folder),
-  }));
+  filesOf(join(root, "src/modules"), "")
+    .filter((folder) => isModuleFolder(folder))
+    .map((folder) => ({
+      key: folderKey(folder),
+      dir: join(root, "src/modules", folder),
+    }));
 
 /** Imports a file by its real path, so a workspace package linked under node_modules loads from its folder. */
 const load = async (path: string): Promise<Record<string, unknown>> =>
@@ -107,7 +111,8 @@ export async function compileMigrations(
 ): Promise<{ readonly files: readonly GeneratedFile[]; readonly errors: readonly GenError[] }> {
   const found: FoundMigration[] = [];
   const macroFiles: string[] = [];
-  const macroPackages: string[] = [];
+  // Each package whose `./node` macros the compiler needs, with the folder it resolves from.
+  const macroPackages: { readonly name: string; readonly base: string }[] = [];
   for (const module of modulesOf(root)) {
     const dir = join(module.dir, "database/migrations");
     for (const name of filesOf(dir, ".migration.ts")) {
@@ -125,6 +130,26 @@ export async function compileMigrations(
     const macros = join(module.dir, "database/macros");
     macroFiles.push(...filesOf(macros, ".macro.ts").map((name) => join(macros, name)));
   }
+  // A package's own migrations, keyed as a host keys them (`@stackra/ai` is `ai`), for its migration check (STA-1689).
+  if (ir.layout === "package") {
+    const module = folderKey(ir.package.slice(ir.package.lastIndexOf("/") + 1));
+    const dir = join(root, "src/node/database/migrations");
+    for (const name of filesOf(dir, ".migration.ts")) {
+      const id = migrationId(module, name);
+      if (id !== undefined)
+        found.push({
+          id,
+          module,
+          owner: "member",
+          path: join(dir, name),
+          file: relative(root, join(dir, name)),
+        });
+    }
+    // Its own macros through its built `./node` entry, as a host loads them: from source their extensionless
+    // `#node/types/*` imports do not resolve (STA-1689).
+    if (existsSync(join(root, "src/node/database/macros")))
+      macroPackages.push({ name: ir.package, base: root });
+  }
   for (const name of ir.packages ?? []) {
     const module = folderKey(name.slice(name.lastIndexOf("/") + 1));
     const dir = dependencyPath(root, name, "src/node/database/migrations");
@@ -139,8 +164,25 @@ export async function compileMigrations(
           file: `${name}/src/node/database/migrations/${file}`,
         });
     }
-    if (dependencyPath(root, name, "src/node/database/macros") !== undefined)
-      macroPackages.push(name);
+    if (
+      !macroPackages.some((known) => known.name === name) &&
+      dependencyPath(root, name, "src/node/database/macros") !== undefined
+    )
+      macroPackages.push({ name, base: root });
+    // A package's migrations use the macros of the packages it declares (ai's `t.belongsToTenant()` is tenancy's),
+    // which the member may not declare itself: resolved from that package's folder (STA-1689).
+    const json = dir === undefined ? undefined : dependencyPath(root, name, "package.json");
+    if (json === undefined) continue;
+    const base = dirname(realpathSync(json));
+    const declared = JSON.parse(readFileSync(json, "utf8")) as {
+      readonly dependencies?: Readonly<Record<string, string>>;
+    };
+    for (const dependency of Object.keys(declared.dependencies ?? {}))
+      if (
+        !macroPackages.some((known) => known.name === dependency) &&
+        dependencyPath(base, dependency, "src/node/database/macros") !== undefined
+      )
+        macroPackages.push({ name: dependency, base });
   }
   if (found.length === 0) return { files: [], errors: [] };
 
@@ -181,9 +223,10 @@ export async function compileMigrations(
       );
     }
   }
-  for (const name of macroPackages) {
+  for (const { name, base } of macroPackages) {
     try {
-      macros.push(...Object.values(await load(require.resolve(`${name}/node`))).filter(isMacro));
+      const resolve = createRequire(join(base, "package.json")).resolve;
+      macros.push(...Object.values(await load(resolve(`${name}/node`))).filter(isMacro));
     } catch (error) {
       errors.push(
         refusal(

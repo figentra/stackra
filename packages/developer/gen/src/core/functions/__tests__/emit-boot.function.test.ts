@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `emitBoot`: a service that runs the database, the outbox and segments connects them in order
- *          (the bound legal-hold registry and sequence time zone, the database at the Encore database's url with the
+ *          (the bound legal-hold registry and sequence time zone, the database at the url the Encore database provides with the
  *          replicas of `DATABASE_REPLICA_URLS`, the bound config's timeouts and pool with `DATABASE_POOL_MAX` over its max (ADR 0473), and the hold, stamp, append-only (stackra-256) and outbox writer
  *          subscribers (stackra-250), then segments, then the bus and inbox connected until the shutdown signal,
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
@@ -25,11 +25,14 @@ describe("emitBoot", () => {
   it("connects the database, segments and the relay in order", () => {
     const boot = emitBoot(BILLING_IR) ?? "";
     expect(boot).toContain('import type { Container } from "@stackra/container";');
-    expect(boot).toContain('import { PostgresDatabaseDriver } from "@stackra/database/node";');
+    expect(boot).toContain(
+      'import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";',
+    );
     expect(boot).toContain(
       'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
     );
-    expect(boot).toContain('import { database } from "../encore/billing/database";');
+    // The service program never reaches `.stackra/encore` (STA-1652).
+    expect(boot).not.toContain("../encore/");
     expect(boot).toContain(
       'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',
     );
@@ -42,7 +45,7 @@ describe("emitBoot", () => {
       [
         "export async function boot(",
         "  container: Container,",
-        "  options: { readonly signal: AbortSignal },",
+        "  options: { readonly signal: AbortSignal; readonly url?: string; readonly relay?: boolean },",
         "): Promise<void> {",
         "  if (options.signal.aborted) return;",
         "  connectHoldRegistry(container.has(HoldRegistry) ? container.get(HoldRegistry) : undefined);",
@@ -54,7 +57,8 @@ describe("emitBoot", () => {
         "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
         '  const poolMax = Number(process.env["DATABASE_POOL_MAX"] ?? "");',
         "  await PostgresDatabaseDriver.connect({",
-        "    url: database.connectionString,",
+        "    // The seed entry passes the direct url (STA-1709); a server reads the one Encore provided (STA-1652).",
+        "    url: options.url ?? databaseUrl(),",
         "    replicas,",
         "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
         "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
@@ -71,9 +75,11 @@ describe("emitBoot", () => {
         "  };",
         "  if (options.signal.aborted) disconnect();",
         '  else options.signal.addEventListener("abort", disconnect, { once: true });',
-        "  const relay = container.get(OutboxRelayService);",
-        "  relay.connect(container);",
-        "  void relay.work({ signal: options.signal });",
+        "  if (options.relay !== false) {",
+        "    const relay = container.get(OutboxRelayService);",
+        "    relay.connect(container);",
+        "    void relay.work({ signal: options.signal });",
+        "  }",
         "}",
       ].join("\n"),
     );

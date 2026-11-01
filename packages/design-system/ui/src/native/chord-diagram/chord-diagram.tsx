@@ -8,7 +8,6 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); WCAG 2.2 SC 1.1.1 and 1.4.11; STA-1371.
  */
-import { Canvas, Path } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { View } from "react-native";
 
@@ -21,7 +20,11 @@ import { useCanvasSize } from "#native/chart/use-canvas-size";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { ChordDiagramProps } from "#native/chord-diagram/chord-diagram.props";
+import { loadSkia } from "#native/skia/load-skia.function";
 import { Text } from "#native/text/text";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Canvas, Path } = loadSkia();
 
 /** The room kept round the ring for the groups' names, and a name's width. */
 const LABEL_ROOM = 56;

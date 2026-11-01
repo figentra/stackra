@@ -26,9 +26,15 @@ describe("@stackra/actions/testing", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(testing).sort()).toEqual([
       "ACTIONS_TESTING_PLUGIN",
+      "ApproverRefusedError",
       "MemoryAccessControlDriver",
+      "MemoryActorStatusCheckDriver",
+      "MemoryApprovalBindingStoreDriver",
+      "MemoryApprovalGateDriver",
       "RecordingAuditTrailDriver",
       "denyPermission",
+      "describeApprovalBindingStoreConformance",
+      "describeApprovalGateConformance",
       "expectScopeCacheSafe",
       "extension",
       "fakeActionContext",

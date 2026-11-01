@@ -194,6 +194,31 @@ function importable(ir: MemberIR, from: string): boolean {
 }
 
 /**
+ * The services the declared packages' manifests list (`services`), by `<package>#<class>`: their constructor tokens,
+ * so a host binds one it injects (STA-1686). A service with a token the member cannot import is left out, as a driver
+ * candidate's tokens are; a manifest that predates `services` contributes nothing.
+ */
+function dependencyServices(ir: MemberIR): Map<string, readonly TokenRef[]> {
+  const services = new Map<string, readonly TokenRef[]>();
+  for (const { package: name, manifest } of ir.dependencies) {
+    if (manifest.kind === "app" || !Array.isArray(manifest["services"])) continue;
+    for (const entry of manifest["services"] as unknown[]) {
+      const { class: type, deps } = (entry ?? {}) as Record<string, unknown>;
+      if (typeof type !== "string") continue;
+      const tokens = (Array.isArray(deps) ? deps : [])
+        .map(tokenOf)
+        .filter((dep): dep is TokenRef => dep !== undefined);
+      const reachable = tokens.every(
+        (dep) =>
+          importable(ir, dep.class.from) && (dep.of === undefined || importable(ir, dep.of.from)),
+      );
+      if (reachable) services.set(`${name}#${type}`, tokens);
+    }
+  }
+  return services;
+}
+
+/**
  * The driver tables the declared packages' manifests record, by port key: each candidate's class, entry and tokens
  * (`classes`) and the config that selects one. The manifest is the one source (gen's AGENTS.md); a package whose
  * manifest predates `classes` contributes nothing. A candidate with a token from a library the member does not
@@ -351,14 +376,26 @@ export function emitWiring(ir: MemberIR): string {
         `${type !== undefined ? `, type: ${type}` : ""} },`,
     );
   }
+  // A dependency whose member key is one of the member's own module keys (an OS `payments` service over
+  // `@stackra/payments`) is keyed by its package name, so the graph never holds one key twice (STA-1666).
+  const dependencyKeys = new Map(
+    ir.dependencies.map(({ package: name, manifest }) => [
+      manifest.member,
+      ir.modules.includes(manifest.member) ? name : manifest.member,
+    ]),
+  );
   for (const { package: name, manifest } of ir.dependencies) {
     const entry = manifest.modules?.find((candidate) => candidate.key === manifest.member);
     // A module class without its `file` is generated inside the dependency and exported by no entry.
     if (entry?.class === undefined || typeof entry["file"] !== "string" || manifest.kind === "app")
       continue;
     const type = ref({ name: entry.class, from: packageSpecifier(name, entry["file"]) });
+    const key = dependencyKeys.get(manifest.member) ?? manifest.member;
+    const dependencyEdges = entry.dependsOn.map((edge) =>
+      JSON.stringify(dependencyKeys.get(edge) ?? edge),
+    );
     moduleLines.push(
-      `    ${manifest.member}: { exports: [], dependsOn: ${list(entry.dependsOn.map((edge) => JSON.stringify(edge)))}, ` +
+      `    ${key === manifest.member ? key : JSON.stringify(key)}: { exports: [], dependsOn: ${list(dependencyEdges)}, ` +
         `from: ${JSON.stringify(name)}, type: ${type} },`,
     );
   }
@@ -553,6 +590,7 @@ export function emitWiring(ir: MemberIR): string {
     if (config !== undefined) used.push({ module: ir.member, dep: { class: config } });
   }
   const added = new Set<string>();
+  const packageServices = dependencyServices(ir);
   // The array iterator reads the live length, so the links pushed below are walked too.
   for (const { module, dep } of used) {
     for (const next of link(dep)) used.push({ module, dep: next });
@@ -564,7 +602,8 @@ export function emitWiring(ir: MemberIR): string {
               candidate.factory.name === factory.name && candidate.factory.from === factory.from,
           )?.deps
         : dep.named === undefined
-          ? platformDeps(dep.class)
+          ? (platformDeps(dep.class) ??
+            packageServices.get(`${packageOf(dep.class.from)}#${dep.class.name}`))
           : undefined;
     const key = `${factory?.name ?? ""}:${dep.class.from}#${dep.class.name}`;
     if (deps === undefined || added.has(key)) continue;
@@ -586,6 +625,7 @@ export function emitWiring(ir: MemberIR): string {
 
   const driverLines: string[] = [];
   const registry: string[] = [];
+  const portRegistry: string[] = [];
   for (const { port, key, candidates, own: owned, selectedBy } of ports.values()) {
     const selected = selectors.get(port.name);
     const select = selected?.selectedBy ?? selectedBy;
@@ -632,10 +672,12 @@ export function emitWiring(ir: MemberIR): string {
     // A package's own port names are its `DriverRegistry` augmentation; the member augments only its own drivers.
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const driverNames = [...new Set(owned)].sort();
-    if (driverNames.length > 0)
+    if (driverNames.length > 0) {
       registry.push(
         `    ${JSON.stringify(key)}: ${driverNames.map((name) => JSON.stringify(name)).join(" | ")};`,
       );
+      portRegistry.push(`    ${JSON.stringify(key)}: typeof ${ref(port)};`);
+    }
   }
 
   // Replacements and partners.
@@ -665,6 +707,10 @@ export function emitWiring(ir: MemberIR): string {
           'declare module "@stackra/container" {',
           "  interface DriverRegistry {",
           ...registry,
+          "  }",
+          "  /** The port class of each key above; `DriverName<Port>` finds its names by the class. */",
+          "  interface PortRegistry {",
+          ...portRegistry,
           "  }",
           "}",
           "",

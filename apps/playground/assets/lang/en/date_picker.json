@@ -25,5 +25,8 @@
     "label": "Contract date",
     "hint": "Shown in the Umm al-Qura calendar; saved as a Gregorian date.",
     "button": "Choose the contract date"
-  }
+  },
+  "tamo_label": "Delivery day",
+  "tamo_hint": "Open the calendar and write: next Friday",
+  "tamo_screen": "Order 2048"
 }

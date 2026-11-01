@@ -10,8 +10,7 @@ import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, Dat
 import { EventBus } from "@stackra/events";
 import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";
 import { InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";
-import { PostgresDatabaseDriver } from "@stackra/database/node";
-import { database } from "../encore/shop/database";
+import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";
 
 /** Connects the legal holds and the database, then the services that resolve classes from the container (the bus and inbox until shutdown), then the relay. */
 export async function boot(
@@ -28,7 +27,7 @@ export async function boot(
   // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.
   const poolMax = Number(process.env["DATABASE_POOL_MAX"] ?? "");
   await PostgresDatabaseDriver.connect({
-    url: database.connectionString,
+    url: databaseUrl(),
     replicas,
     ...(config === undefined ? {} : { timeouts: config.timeouts }),
     pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },

@@ -5,7 +5,8 @@
  * Boundary: internal; a tool absent from the map makes the Kiro render throw, so a new tool forces a decision here
  *           instead of vanishing from Kiro.
  * Runtime: isomorphic
- * Governing contract: ADR 0286 (decisions 6 and 16: ported from the Vellum renderer layer, Kiro untested).
+ * Governing contract: ADR 0286 (decisions 6 and 16: ported from the Figentra Flow renderer layer,
+ *                     Kiro untested).
  */
 
 /** Neutral tool name to Kiro tool name. */

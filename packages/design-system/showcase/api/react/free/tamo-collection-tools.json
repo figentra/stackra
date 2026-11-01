@@ -1,0 +1,46 @@
+{
+  "generatedFrom": {
+    "hash": "8ea21d532a6017b9",
+    "propsFiles": ["ui/src/react/tamo-collection-tools/tamo-collection-tools.props.ts"]
+  },
+  "importLine": "import { TamoCollectionTools } from \"@stackra/ui/react\";",
+  "key": "free/tamo-collection-tools",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Writes Tamo's column fill once applied, by row id then column id; left out, \"Fill a column\" is not offered.",
+          "name": "onFill",
+          "required": false,
+          "source": "stackra",
+          "type": "(changes: Readonly<Record<string, Readonly<Record<string, DataGridValue>>>>) => void | Promise<void>"
+        },
+        {
+          "description": "Writes one filled cell, as a DataTable's inline edit does; used when `onFill` is left out.",
+          "name": "onCellEdit",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: TItem, columnId: string, value: DataGridValue) => void | Promise<void>"
+        }
+      ],
+      "name": "TamoCollectionTools",
+      "props": [
+        {
+          "description": "The engine Tamo filters, sorts, summarises and fills.",
+          "name": "collection",
+          "required": true,
+          "source": "stackra",
+          "type": "CollectionController<TItem>"
+        },
+        {
+          "description": "The records' name (\"Orders\"), for the popover's title.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

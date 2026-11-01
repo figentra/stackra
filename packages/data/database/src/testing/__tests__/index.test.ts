@@ -41,6 +41,7 @@ describe("@stackra/database/testing", () => {
       "Factory",
       "MemoryDatabaseDriver",
       "assertRowSecurity",
+      "checkMigrations",
       "strictLoading",
       "usePostgres",
     ]);

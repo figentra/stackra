@@ -19,6 +19,7 @@ describe("@stackra/webhooks/node", () => {
       "ModelWebhookEndpointStoreDriver",
       "S3WebhookObjectSinkDriver",
       "SendWebhooksListener",
+      "WEBHOOKS_ENTITIES",
       "WebhookDelivery",
       "WebhookDeliveryPermissions",
       "WebhookDeliveryService",

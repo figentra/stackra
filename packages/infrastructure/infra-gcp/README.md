@@ -82,7 +82,7 @@ environments:
     shared:
       database:
         tier: db-custom-2-7680
-        version: POSTGRES_17
+        version: POSTGRES_18
         highAvailability: true
         backups: { retentionDays: 35, pitr: true, pitrDays: 7 }
       network:

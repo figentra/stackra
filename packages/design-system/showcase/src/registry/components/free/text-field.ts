@@ -39,6 +39,7 @@ export const FREE_TEXT_FIELD: ComponentEntry = {
     { id: "kinds" },
     { id: "width" },
     { id: "live" },
+    { id: "tamo", platforms: ["react"] },
   ],
   related: ["free/text-area", "free/search-field", "free/number-field"],
   tokens: ["color.field", "radius.field", "color.focus"],

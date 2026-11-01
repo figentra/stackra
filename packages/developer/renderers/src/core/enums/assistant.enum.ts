@@ -3,7 +3,7 @@
  * Purpose: the assistants the renderers write for: Claude Code, OpenCode, Kiro, Cursor, and `AGENTS.md`, the one file
  *          Codex, Gemini and the other assistants read.
  * Boundary: an `Enum.of` value plus the type of the same name. Where each assistant's root sits (project or user level)
- *           is the caller's (`stackra agents`, Vellum), not this package's.
+ *           is the caller's (`stackra agents`, Figentra Flow), not this package's.
  * Runtime: isomorphic
  * Governing contract: ADR 0282 (decisions 2 and 10); ADR 0286 (decisions 6 and 16); ADR 0231 (snake_case codes).
  */

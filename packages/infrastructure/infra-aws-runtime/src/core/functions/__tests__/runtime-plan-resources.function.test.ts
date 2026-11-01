@@ -61,7 +61,7 @@ describe("runtimePlan resources and workloads", () => {
         resource: "main-db",
         name: "academorix-dev-main-db",
         engine: "rds",
-        version: "17",
+        version: "18",
         instanceClass: "db.t4g.micro",
         multiAz: false,
         storageGb: 20,

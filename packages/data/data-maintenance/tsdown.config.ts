@@ -19,8 +19,11 @@ const generated = existsSync(url) ? (await import(url.href)).default : {};
 
 export default {
   ...generated,
-  ...library({
-    index: "src/core/index.ts",
-    node: "src/node/index.ts",
-  }),
+  ...library(
+    {
+      index: "src/core/index.ts",
+      node: "src/node/index.ts",
+    },
+    { decorators: true },
+  ),
 };

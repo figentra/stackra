@@ -25,7 +25,7 @@ export type SidebarMenuItemProps = Omit<ComponentPropsWithRef<"li">, "children" 
   readonly isDisabled?: boolean | undefined;
   /** A count or short flag after the label; a dot on the icon in the rail. `0` and an empty string draw nothing. */
   readonly badge?: string | number | undefined;
-  /** A shortcut to show after the label as text to read (`G O`); a hint only, the app binds the key. */
+  /** The key binding (`g o`, `mod+1`) that follows the row while it is mounted, drawn after the label (ADR 0508). */
   readonly shortcut?: string | undefined;
   /** A control at the end of the row, for example an ActionMenu; it shows on hover and focus. Hidden in the rail. */
   readonly action?: ReactNode;

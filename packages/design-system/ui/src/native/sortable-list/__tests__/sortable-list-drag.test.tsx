@@ -126,6 +126,7 @@ describe("SortableList drag (native)", () => {
     expect(translateOf("C")).toEqual({ spring: -40 });
 
     first["onPanResponderRelease"]?.();
+    expect(state.played).toEqual(["impact", "selection", "impact"]);
     expect(onReorder.mock.lastCall?.[0].map((item: { id: string }) => item.id)).toEqual([
       "b",
       "c",

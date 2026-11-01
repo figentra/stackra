@@ -18,7 +18,7 @@
 
 **Input**: User description: "Port `@figentra-os/logger` to `packages/foundation/logger` as `@stackra/logger` (port + adapt, ADR 0084). Keep CloudWatch; add Encore log, Sentry and Better Stack reporters behind one driver contract with a conformance suite (ADR 0085, Round 8 F6). Roadmap W1.2: depends on container and config."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none (apps adopt the logger in later waves)
 - **Services touched**: none (the generated Encore app passes the Encore logger in from Phase 3, ADR 0091)

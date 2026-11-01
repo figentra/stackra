@@ -7,9 +7,10 @@
  *          `registerChanges` call linking each `Change<Subject>` class to its subject (ADR 0118, 0141 notes).
  * Boundary: pure. Names are qualified by the file (one file per module), so a class name used in two modules never
  *           collides; zod is imported only when the file builds a schema. A `@Hidden` field is left out of `X$` and of `X$Check` (stackra-260); `@Lowercase` compiles to
- *           `.toLowerCase()` after `.trim()`. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
+ *           `.toLowerCase()` after `.trim()`. A settings section field is `.prefault(() => ({}))` (STA-1826). `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
  *           to its codes in source order; a member base is `.extend`ed and a package base's shipped `X$` gets only new
- *           defaults. A reference to a shape declared later in the file is `z.lazy`, so a cycle still loads. A
+ *           defaults. A field naming a shape declared later in the file (itself, or a cycle) is a zod getter, so a
+ *           cycle still loads and its type is inferred (STA-1683). A
  *           `Translated` field is a locale map decoded through `Translated.of` (`TranslatedStrings` to `{ values }`),
  *           its `@Str` rules on each text; an `Upload<Bucket>` field is `@stackra/media`'s `Upload.schema`. A bare
  *           `PublicId` checks the format with any prefix; a prefix union is a union of `publicId(prefix)`. A `@stackra/*` type with a shipped `X$` imports that schema
@@ -17,6 +18,8 @@
  *           source uses, and a nullable field is `.nullable()` once, even when the hatch already says it (STA-1293). A
  *           form over a consumed shape of `#stackra/clients/<service>` extends that class's `schema` static (aliased
  *           `Remote<Name>`), picked, omitted or made partial first when it derives from it (STA-1363).
+ *          A shape with initializers also gets a `declare module "<its import path>"` augmentation naming them in the
+ *          type-only `~defaults` brand, so `CallInput` makes them optional (STA-1694).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1;
  *                     ADR 0162 (decision 2); ADR 0222 (decision 2); ADR 0260 (decision 2: remote shapes); STA-1365
@@ -199,8 +202,12 @@ function elementOf(context: Context, type: TypeDesc, rules: readonly FieldRule[]
   return zodOf(context, type, rules, []);
 }
 
-/** The zod expression of one field, with its nullability, default or optionality. */
-function fieldOf(context: Context, field: FieldIR): string {
+/**
+ * The zod expression of one field, with its nullability, default or optionality. A section of a settings class
+ * (a schema-typed field with no initializer) is `.prefault(() => ({}))`, so a section nothing stored parses its own
+ * field defaults; `.default` would skip the parse, and a stored non-object still fails.
+ */
+function fieldOf(context: Context, field: FieldIR, shape: ShapeIR): string {
   const own = field.rules.filter((rule) => rule.options["each"] !== true);
   const each = field.rules.filter((rule) => rule.options["each"] === true);
   let expression = zodOf(context, field.type, own, each);
@@ -210,12 +217,19 @@ function fieldOf(context: Context, field: FieldIR): string {
     for (const [name, from] of field.default.imports) use(context.imports, from, name);
     const value = field.default.value;
     // A literal object or array default gets a factory, so two parses never share one instance; a platform
-    // constructor's value (Money) is immutable.
-    expression +=
-      typeof value === "object" && value !== null && field.default.imports.length === 0
-        ? `.default(() => (${field.default.code}))`
-        : `.default(${field.default.code})`;
-  } else if (field.optional) expression += ".exactOptional()";
+    // constructor's value (Money) is immutable. An array spreads its `as const` literal, so its codes keep their literal
+    // type through zod's overloads instead of widening to `string[]` (TS2769, STA-1695).
+    // shortcut: an object default's nested codes still widen, add a typed factory when a shape needs one.
+    const literal =
+      typeof value === "object" && value !== null && field.default.imports.length === 0;
+    expression += !literal
+      ? `.default(${field.default.code})`
+      : Array.isArray(value)
+        ? `.default(() => [...(${field.default.code} as const)])`
+        : `.default(() => (${field.default.code}))`;
+  } else if (shape.kind === "settings" && field.type.kind === "schema" && !field.optional)
+    expression += ".prefault(() => ({}))";
+  else if (field.optional) expression += ".exactOptional()";
   return expression;
 }
 
@@ -251,13 +265,29 @@ function ordered(shapes: readonly ShapeIR[], module: string): ShapeIR[] {
   return out;
 }
 
+/** A union of quoted keys (`"a" | "b"`) for an `Omit<>`. */
+function quotedKeys(names: readonly string[]): string {
+  return names.map((name) => JSON.stringify(name)).join(" | ");
+}
+
+/** A reference to a schema not declared yet, as `reference` writes it. */
+const LAZY = /z\.lazy\(\(\) => (\w+\$)\)/;
+const LAZY_ALL = new RegExp(LAZY.source, "g");
+
 /** The `X$` declaration of one shape and its `X$Check`. */
 function shapeOf(context: Context, shape: ShapeIR): string[] {
   const lines = [`/** ${shape.kind} \`${shape.name}\` (${shape.file}). */`];
   // A `@Hidden` field never goes out on the wire: no `X$` key, and `X$Check` omits it like a relation (stackra-260).
   const wire = shape.fields.filter((field) => field.hidden !== true);
   const hidden = shape.fields.filter((field) => field.hidden === true).map((field) => field.name);
-  const body = wire.map((field) => `  ${field.name}: ${fieldOf(context, field)},`);
+  const body = wire.map((field) => {
+    const expression = fieldOf(context, field, shape);
+    // A shape not declared yet (this one, or a later one in a cycle) is read through a getter, which zod 4 infers and
+    // evaluates only when parsing; `z.lazy` inside the object initializer is TS7022 (implicit any, STA-1683).
+    return LAZY.test(expression)
+      ? `  get ${field.name}() {\n    return ${expression.replaceAll(LAZY_ALL, "$1")};\n  },`
+      : `  ${field.name}: ${expression},`;
+  });
   const base = shape.base;
   if (base?.kind === "package") {
     const alias = `Base${base.name}$`;
@@ -292,15 +322,38 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
     lines.push(`export const ${shape.name}$ = ${alias}.schema${derived}.extend({`, ...body, "});");
   } else lines.push(`export const ${shape.name}$ = z.object({`, ...body, "});");
   context.declared.add(shape.name);
-  const omitted = [...shape.relations, ...hidden];
+  // A driver-name field is `z.enum` of the names gen found, while `DriverName<P>` widens to every registered name
+  // unless the port carries a `~key` brand: the check leaves it out on both sides (STA-1805).
+  const drivers = wire
+    .filter(
+      (field) =>
+        field.type.kind === "driver_name" ||
+        (field.type.kind === "record" && field.type.value.kind === "driver_name"),
+    )
+    .map((field) => field.name);
+  const omitted = [...shape.relations, ...hidden, ...drivers];
   const fields =
     omitted.length > 0
-      ? `Omit<Fields<${shape.name}>, ${omitted.map((name) => JSON.stringify(name)).join(" | ")}>`
+      ? `Omit<Fields<${shape.name}>, ${quotedKeys(omitted)}>`
       : `Fields<${shape.name}>`;
-  lines.push(
-    `export type ${shape.name}$Check = Assert<Same<z.output<typeof ${shape.name}$>, ${fields}>>;`,
-    "",
-  );
+  const output =
+    drivers.length > 0
+      ? `Omit<z.output<typeof ${shape.name}$>, ${quotedKeys(drivers)}>`
+      : `z.output<typeof ${shape.name}$>`;
+  lines.push(`export type ${shape.name}$Check = Assert<Same<${output}, ${fields}>>;`, "");
+  // A type cannot see an initializer: tell it which fields are defaulted, so `CallInput` makes them optional (STA-1694).
+  const defaulted = shape.fields.filter((field) => field.default !== undefined);
+  if (shape.kind !== "config" && defaulted.length > 0)
+    lines.splice(
+      -1,
+      0,
+      `declare module ${JSON.stringify(shape.importPath)} {`,
+      `  interface ${shape.name} {`,
+      `    readonly "~defaults"?: ${defaulted.map((field) => JSON.stringify(field.name)).join(" | ")};`,
+      "  }",
+      "}",
+      "",
+    );
   return lines;
 }
 

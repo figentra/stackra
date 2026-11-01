@@ -37,6 +37,20 @@ const retired = (env: RegistryEnv): RetiredKey[] => {
   });
 };
 
+/** The OIDC audiences var: a JSON array of strings, or `npm:<host>` when unset or empty. */
+const audiences = (env: RegistryEnv, host: string): string[] => {
+  const raw = env.REGISTRY_OIDC_AUDIENCES;
+  if (raw === undefined || raw === "") return [`npm:${host}`];
+  const list: unknown = JSON.parse(String(raw));
+  if (
+    !Array.isArray(list) ||
+    list.length === 0 ||
+    !list.every((a) => typeof a === "string" && a !== "")
+  )
+    throw new RangeError("REGISTRY_OIDC_AUDIENCES must be a JSON array of audiences");
+  return list as string[];
+};
+
 /**
  * The registry's settings from its vars.
  *
@@ -46,8 +60,11 @@ const retired = (env: RegistryEnv): RetiredKey[] => {
  */
 export function readSettings(env: RegistryEnv): RegistrySettings {
   const expires = env.REGISTRY_SIGNING_KEY_EXPIRES;
+  const host = text(env, "HOST");
   return {
-    host: text(env, "HOST"),
+    host,
+    oidcAudiences: audiences(env, host),
+    readOnly: env.REGISTRY_READ_ONLY === "true",
     maxTarballBytes: count(env, "MAX_TARBALL_BYTES"),
     maxUnpackedBytes: count(env, "MAX_UNPACKED_BYTES"),
     publishTokenSeconds: count(env, "PUBLISH_TOKEN_SECONDS"),

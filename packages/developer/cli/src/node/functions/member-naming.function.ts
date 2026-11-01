@@ -36,7 +36,7 @@ function readYaml(root: string, file: string): Record<string, unknown> | undefin
  * @param name - the kebab-case member name.
  * @param scope - the `--scope` value: `@<npm-scope>` or a product key, already checked.
  * @example
- * memberNaming("/repo", "service", "salon"); // { packageName: "@figentra/beautilon-service-salon", ... } when runway has product.key beautilon
+ * memberNaming("/repo", "service", "salon"); // { packageName: "@figentra/velora-service-salon", ... } when runway has product.key velora
  */
 export function memberNaming(
   root: string,

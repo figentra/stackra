@@ -9,8 +9,8 @@ MikroORM is the one ORM, it runs only on the server, and only `@stackra/database
 0097). You write model classes whose TypeScript types are the columns; `stackra gen` emits the MikroORM `EntitySchema`
 and orders the SQL migrations (ADR 0294 rule R4).
 
-This is the v3 target. `@stackra/model`, `@stackra/database` and gen do not ship yet, and no member holds a model today
-(the conversion is STA-344); the package docs win once they ship.
+This is the v3 shape that `@stackra/model`, `@stackra/database` and gen implement; the package docs win where they
+differ.
 
 ## Worked example: an order line
 
@@ -71,8 +71,9 @@ of tenant A and an unscoped query returns zero rows.
 
 ## Migrations (ADR 0159)
 
-`stackra db diff` writes each migration to the module's `database/migrations/NNNN-<name>.migration.ts`, numbered per
-module from `0001` with no gaps, as a class that extends `Migration`; it changes only that module's schema. Gen orders
+Write each migration by hand (`stackra db diff`, which will write them, is not built yet: STA-1808) to the module's
+`database/migrations/NNNN-<name>.migration.ts`, numbered per module from `0001` with no gaps (see
+`packages/runtime/workflow/src/node/database/migrations/`), as a class that extends `Migration`; it changes only that module's schema. Gen orders
 the streams, including migrations shipped in packages, into the host's ordered SQL (modules in dependency order, then by
 number); Encore's runner applies them in SaaS, a pre-upgrade job on-prem. A migration has **no `down()`** (ADR 0159 as
 amended).

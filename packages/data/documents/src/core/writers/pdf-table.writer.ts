@@ -36,7 +36,7 @@ export class PdfTableWriter implements TabularWriter {
   declare readonly "~kind": "port";
 
   /** The port key of `TabularWriter`, type-only. */
-  declare readonly "~key": "data-transfer.TabularWriter";
+  declare readonly "~key": "data_transfer.TabularWriter";
 
   /** The media type of the written file, `application/pdf`. */
   readonly mediaType = "application/pdf";

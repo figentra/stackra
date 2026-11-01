@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "synonym": {
+      "read": "View synonym sets",
+      "create": "Add a synonym set",
+      "update": "Change a synonym set",
+      "delete": "Remove a synonym set"
+    }
+  },
+  "actions": {
+    "synonym": {
+      "create": {
+        "success": "Synonym set added."
+      },
+      "update": {
+        "success": "Synonym set updated."
+      },
+      "delete": {
+        "confirm": "Remove this synonym set? Searches will stop treating these terms as the same.",
+        "success": "Synonym set removed."
+      }
+    }
+  }
+}

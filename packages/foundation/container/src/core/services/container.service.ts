@@ -23,6 +23,7 @@ import { Clock, Port } from "@stackra/contracts";
 import { Explorer } from "#core/bases/explorer.base";
 import { Lifetime } from "#core/decorators/lifetime.decorator";
 import { SystemClockDriver } from "#core/drivers/system-clock.driver";
+import { UnboundTokenError } from "#core/errors/unbound-token.error";
 import { UnresolvedPortError } from "#core/errors/unresolved-port.error";
 import { kindOf } from "#core/functions/kind-of.function";
 import { named } from "#core/functions/named.function";
@@ -433,9 +434,7 @@ export class Container {
         token as AnyClass<Port>,
         "no wiring lists a driver for it, and nothing overrides or replaces it",
       );
-    throw new Error(
-      `Nothing binds ${token.name}: it is not in the wiring, not exported by a booted module and not overridden`,
-    );
+    throw new UnboundTokenError(token);
   }
 
   /** The recipe of a class: its wiring row, else its `@Lifetime` and no dependencies. */

@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: The owner's platform-targets plan (2026-10-24): Apple's foldable iPhone Duo went on sale 2026-10-23, so the
 iOS target takes any size and rotation: no orientation lock, no full-screen request, the scene lifecycle (needed for

@@ -13,6 +13,7 @@ import * as node from "#node/index";
 describe("@stackra/achievements/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "ACHIEVEMENTS_ENTITIES",
       "Award",
       "AwardKind",
       "AwardKindService",

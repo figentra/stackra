@@ -6,8 +6,9 @@
  *          through its modal form) plus the derived operations (view and edit links, delete, the create link).
  * Boundary: internal to the resource pages. Reads the recorded placements (`placementsAt`) and the resource's
  *           operation refs; every run goes through `useActionRunner`, so the declared confirmation, the cache refresh
- *           and the toasts are the runner's. The page draws `modal`, the open `ActionInputModal`. Export and import
- *           placements are not drawn (their queued pipelines are not built).
+ *           and the toasts are the runner's. The page draws `modal`, the open `ActionInputModal`. `bound` inputs (a
+ *           relation manager's parent id) go into every run and are never asked for. Export and import placements are
+ *           not drawn (their queued pipelines are not built).
  * Runtime: browser
  * Governing contract: ADR 0307 (rules 3 and 4); ADR 0139 (declared confirmation).
  */
@@ -21,19 +22,16 @@ import { useState } from "react";
 import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { ActionPlace } from "#core/enums/action-place.enum";
 import { actionFormKeys } from "#core/functions/action-form-keys.function";
+import { actionLabelKey } from "#core/functions/action-label-key.function";
 import { idOf } from "#core/functions/id-of.function";
 import { placementsAt } from "#core/functions/placements-at.function";
 import { recordIdKey } from "#core/functions/record-id-key.function";
-import { resourceLabel } from "#core/functions/resource-label.function";
 import type { ResourceRoutes } from "#core/types/resource-routes.type";
 import type { ResourceTree } from "#core/types/resource-tree.type";
 import type { PageRef } from "#core/types/page-ref.type";
 import { useActionRunner } from "#react/action-runner/use-action-runner";
 import { ActionInputModal } from "#react/resource-pages/action-input-modal";
 import type { ResourceActions } from "#react/resource-pages/resource-actions.type";
-
-/** The verb of an action key (`orders.order.cancel@1` is `cancel`). */
-const verbOf = (key: string): string => key.replace(/@\d+$/, "").split(".").pop() ?? key;
 
 /** The resource page refs, read loosely (each exists only when the resource declares it). */
 type Pages = { readonly view?: PageRef; readonly edit?: PageRef; readonly create?: PageRef };
@@ -48,6 +46,7 @@ type Pages = { readonly view?: PageRef; readonly edit?: PageRef; readonly create
 export function useResourceActions(
   resource: ResourceRoutes,
   tree: Partial<ResourceTree>,
+  bound: Readonly<Record<string, unknown>> = {},
 ): ResourceActions {
   const { t } = useTranslation();
   const run = useActionRunner();
@@ -58,7 +57,13 @@ export function useResourceActions(
   const removeRef = typeof remove === "function" ? (remove as ActionRef) : undefined;
   const placed = tree.actions ?? [];
   const [pending, setPending] = useState<
-    | { readonly action: ActionRef; readonly idKey: string; readonly ids: readonly string[] }
+    | {
+        readonly action: ActionRef;
+        readonly idKey: string | undefined;
+        readonly ids: readonly string[] | undefined;
+        readonly record: object | undefined;
+        readonly keys: readonly string[];
+      }
     | undefined
   >();
 
@@ -67,22 +72,28 @@ export function useResourceActions(
     action: ActionRef,
     ids: readonly string[] | undefined,
     id: string,
+    record?: object,
   ): ResourceAction => ({
     id,
-    label: t(resourceLabel(resource.key, "actions", verbOf(action.key))),
+    label: t(actionLabelKey(resource.key, action.key)),
     onPress: async () => {
-      const key = idKey(action);
-      if (ids === undefined || key === undefined) {
-        await run(action, {} as never);
+      const key = ids === undefined ? undefined : idKey(action);
+      // An input that needs more than the id opens one modal form for every record, or once without a record
+      // (ADR 0307 rule 3).
+      // A bound input (a relation's parent id) is filled in, never asked for.
+      const keys = actionFormKeys(action.input, key).filter(
+        (field) => !Object.hasOwn(bound, field),
+      );
+      if (keys.length > 0) {
+        setPending({ action, idKey: key, ids, record, keys });
         return;
       }
-      // An input that needs more than the id opens one modal form for every record (ADR 0307 rule 3).
-      if (actionFormKeys(action.input, key).length > 0) {
-        setPending({ action, idKey: key, ids });
+      if (ids === undefined || key === undefined) {
+        await run(action, bound as never);
         return;
       }
       // A bulk run fans out per record, so the policy decides each one (ADR 0307 rule 3).
-      for (const recordId of ids) await run(action, { [key]: recordId } as never);
+      for (const recordId of ids) await run(action, { ...bound, [key]: recordId } as never);
     },
   });
 
@@ -100,7 +111,9 @@ export function useResourceActions(
           action={pending.action}
           idKey={pending.idKey}
           ids={pending.ids}
-          keys={actionFormKeys(pending.action.input, pending.idKey)}
+          record={pending.record}
+          bound={bound}
+          keys={pending.keys}
           onClose={() => setPending(undefined)}
         />
       ),
@@ -126,7 +139,8 @@ export function useResourceActions(
         (node, index) => {
           if (node.kind === "create" && pages.create !== undefined)
             out.push(link("create", t(PANEL_KEYS.panel.resources.create), pages.create));
-          if (node.kind === "run") out.push(runner(node.action as ActionRef, ids, `run_${index}`));
+          if (node.kind === "run")
+            out.push(runner(node.action as ActionRef, ids, `run_${index}`, record));
         },
       );
       if (

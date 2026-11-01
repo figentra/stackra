@@ -235,6 +235,7 @@ const EXECUTOR_DENIED = [
   "./node_modules/.bin/eas build",
   "node tools/scripts/secrets-import.mjs X --env prod --confirm abc",
   "pnpm secrets:import X --env prod --confirm abc",
+  "figentra secrets import X --env prod --confirm abc",
 ];
 test("differential: an OpenCode executor is denied the categorical asks under every wrapper", () => {
   const out = [];

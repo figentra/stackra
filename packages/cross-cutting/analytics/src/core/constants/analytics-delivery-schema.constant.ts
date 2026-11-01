@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `ANALYTICS_DELIVERY_SCHEMA`, the zod schema of one kept `AnalyticsDelivery`, which the storage offline queue
- *          checks each stored item against before the client sends it again.
+ * Purpose: `ANALYTICS_DELIVERY_SCHEMA`, the zod schema of one `AnalyticsDelivery` from outside the code: the storage
+ *          offline queue checks each stored item against it before the client sends it again, and the ingest action
+ *          checks each relayed delivery (ADR 0483 decision 3).
  * Boundary: internal. A stored value comes from outside the code (another version wrote it, the device edited it), so
  *           it is checked at the trust boundary; an item that fails is skipped, never sent. Mirrors the envelope v2
  *           type with `kind` and `groups`; a change to the type changes this in the same commit.
  * Runtime: isomorphic
- * Governing contract: ADR 0298 (decision 5); ADR 0095 as amended (Zod at the boundary).
+ * Governing contract: ADR 0298 (decision 5); ADR 0483 (decision 3); ADR 0095 as amended (Zod at the boundary).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -30,6 +31,14 @@ export const ANALYTICS_DELIVERY_SCHEMA = z.object({
     screen: z.object({ name: z.string() }).optional(),
     locale: z.string().optional(),
     appVersion: z.string().optional(),
+    device: z
+      .object({
+        os: z.string(),
+        osVersion: z.string().optional(),
+        build: z.string().optional(),
+        type: z.string().optional(),
+      })
+      .optional(),
     region: z.string().optional(),
   }),
 });

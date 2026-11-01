@@ -156,6 +156,8 @@ Every limit is a Worker var in `wrangler.jsonc` (`src/settings/read-settings.ts`
 | `REGISTRY_LICENCE_DOCS_URL`       | —                              | where `npm login` is pointed                  |
 | `REGISTRY_SIGNING_KEY_EXPIRES`    | —                              | `""` (none)                                   |
 | `REGISTRY_RETIRED_KEYS`           | —                              | `[]`                                          |
+| `REGISTRY_OIDC_AUDIENCES`         | —                              | `""` (only `npm:<REGISTRY_HOST>`)             |
+| `REGISTRY_READ_ONLY`              | —                              | `""` (`"true"`: every write answers 503)      |
 
 Secret: `REGISTRY_SIGNING_KEY`, the PKCS#8 PEM of the ECDSA P-256 key (Infisical `prod` `/ci/registry`). To rotate, move
 the old key's SPKI (base64, from `/-/npm/v1/keys`) into `REGISTRY_RETIRED_KEYS` with its `expires`, then set the new

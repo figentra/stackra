@@ -19,5 +19,10 @@
   "live_label": "Message",
   "live_description": "Keep it short.",
   "live_error": "The message is over 40 characters.",
-  "live_count": "{count} of 40 characters"
+  "live_count": "{count} of 40 characters",
+  "tamo_reply_label": "Reply",
+  "tamo_reply": "thanks for your order, we will send it asap",
+  "tamo_empty_label": "Product description",
+  "tamo_empty_hint": "Empty: Tamo offers a first draft.",
+  "tamo_screen": "Customer messages"
 }

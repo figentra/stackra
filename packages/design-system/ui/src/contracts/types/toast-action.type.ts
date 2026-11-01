@@ -12,4 +12,6 @@ export interface ToastAction {
   readonly label: string;
   /** Called when the action is pressed, by pointer, touch or keyboard. */
   readonly onPress: () => void;
+  /** A key binding that runs the action while the toast shows, from anywhere (`mod+z` for an undo); web only (ADR 0508). */
+  readonly shortcut?: string | undefined;
 }

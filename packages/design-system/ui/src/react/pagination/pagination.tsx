@@ -11,8 +11,11 @@ import { Pagination as HeroPagination, cn } from "@heroui/react";
 import { useState, type ReactElement } from "react";
 
 import { DISPLAY_KEYS } from "#core/constants/display-keys.constant";
+import { STANDARD_SHORTCUTS } from "@stackra/shortcuts";
+
 import { pageItemsOf } from "#core/functions/page-items-of.function";
 import { Button } from "#react/button/button";
+import { useActionShortcut } from "#react/hooks/use-action-shortcut";
 import { usePaginationState } from "#react/hooks/use-pagination-state";
 import { useNumberFormat } from "#react/hooks/use-number-format";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -39,6 +42,25 @@ export function Pagination(props: PaginationProps): ReactElement {
   const format = useNumberFormat();
   const { current, size, pageCount, from, to, go, resize } = usePaginationState(props);
   const [jump, setJump] = useState<number | null>(null);
+  // Previous and next page answer their keys on the page, mirrored right to left (ADR 0508).
+  const previous = useActionShortcut({
+    shortcutId: "pagination.previous",
+    shortcut: STANDARD_SHORTCUTS["pagination.previous"],
+    label: t(K.previous),
+    run: () => go(current - 1),
+    isDisabled: current <= 1,
+    isDirectional: true,
+    canInline: false,
+  });
+  const next = useActionShortcut({
+    shortcutId: "pagination.next",
+    shortcut: STANDARD_SHORTCUTS["pagination.next"],
+    label: t(K.next),
+    run: () => go(current + 1),
+    isDisabled: current >= pageCount,
+    isDirectional: true,
+    canInline: false,
+  });
   return (
     <div
       data-slot="pagination"
@@ -54,6 +76,7 @@ export function Pagination(props: PaginationProps): ReactElement {
           <HeroPagination.Item>
             <HeroPagination.Previous
               aria-label={t(K.previous)}
+              ref={previous.attach()}
               isDisabled={current <= 1}
               onPress={() => go(current - 1)}
             >
@@ -79,6 +102,7 @@ export function Pagination(props: PaginationProps): ReactElement {
           <HeroPagination.Item>
             <HeroPagination.Next
               aria-label={t(K.next)}
+              ref={next.attach()}
               isDisabled={current >= pageCount}
               onPress={() => go(current + 1)}
             >

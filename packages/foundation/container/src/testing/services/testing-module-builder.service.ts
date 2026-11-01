@@ -9,6 +9,7 @@
  * Runtime: node
  * Governing contract: ADR 0263 (decision 12); ADR 0269 (decision 3).
  */
+import { Logger } from "@stackra/contracts";
 import type { Port } from "@stackra/contracts";
 
 import {
@@ -22,6 +23,7 @@ import {
   type Wiring,
   type WiringDriver,
 } from "#core/index";
+import { MemoryLoggerFake } from "#testing/fakes/memory-logger.fake";
 import { REGISTERED_WIRINGS } from "#testing/constants/registered-wirings.constant";
 import { TESTING_PLUGINS } from "#testing/constants/testing-plugins.constant";
 import { loadMemberSchemas } from "#testing/functions/load-member-schemas.function";
@@ -163,14 +165,32 @@ export class TestingModuleBuilder {
   async compile(): Promise<TestingApp> {
     await loadMemberSchemas();
     const wirings = [...REGISTERED_WIRINGS.values()];
-    const drivers: DriverChoice =
-      this.fallback === undefined
-        ? { byPort: { ...this.byPort } }
-        : { fallback: this.fallback, byPort: { ...this.byPort } };
-    const container = await Container.create([...pickedDrivers(drivers), ...wirings], {
+    const byPort = { ...this.byPort };
+    const choice: DriverChoice =
+      this.fallback === undefined ? { byPort } : { fallback: this.fallback, byPort };
+    const picked = pickedDrivers(choice);
+    const overrides = new Map(this.overrides);
+    // A driver that logs boots whatever the wirings say of Logger (STA-1805): with no Logger row it takes the memory
+    // driver; with several candidates of which none is a default, selected by config or picked by the test, it takes
+    // `memory`. One candidate is the container's to take, and a row it cannot settle without memory still refuses.
+    const loggers = [...picked, ...wirings].flatMap((wiring) =>
+      (wiring.drivers ?? []).filter((driver) => driver.port === Logger),
+    );
+    if (!overrides.has(Logger)) {
+      const names = new Set(loggers.flatMap((driver) => Object.keys(driver.candidates)));
+      const unchosen = loggers.every(
+        (driver) =>
+          driver.default === undefined &&
+          driver.selectedBy === undefined &&
+          pickedFor(driver, choice) === undefined,
+      );
+      if (loggers.length === 0) overrides.set(Logger, new MemoryLoggerFake());
+      else if (unchosen && names.size > 1 && names.has("memory")) byPort[Logger.name] = "memory";
+    }
+    const container = await Container.create([...picked, ...wirings], {
       roots: this.roots,
-      overrides: new Map(this.overrides),
-      drivers,
+      overrides,
+      drivers: choice,
     });
     const app = new TestingApp(container, recordsOf(this.roots, wirings));
     for (const plugin of TESTING_PLUGINS.values())

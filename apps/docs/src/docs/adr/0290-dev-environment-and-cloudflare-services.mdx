@@ -100,7 +100,7 @@ alternative is named.
 16. **npflared stays until every consumer has moved (CF8, owner-only).** The `npm-registry` Worker keeps serving
     `npm.figentra.com` until every consumer has migrated. The home for private `@figentra/*` packages is revisited then, and
     the GitHub Packages option that the question proposed is not chosen. This keeps the retirement rule of
-    [0177](/adr/0177-package-distribution-npmjs-and-keygen). Vellum no longer depends on it, because it publishes publicly
+    [0177](/adr/0177-package-distribution-npmjs-and-keygen). Figentra Flow no longer depends on it, because it publishes publicly
     ([0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution) decision 7).
 17. **The `npm.stackra.figentra.com` name is deleted after the migration (CF9, owner's choice).** The name is deleted once
     the npflared consumers have moved. The Keygen custom domain gets its own name when the first `@stackra-pro` package

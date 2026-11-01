@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Framework build-out, wave 1a (STA-348): build `@stackra/testing` with its `.` entry only, merged first in
 wave 1a so `@stackra/contracts` and `@stackra/support` test through it. Source of truth: ADR 0269 (entries, what `.`

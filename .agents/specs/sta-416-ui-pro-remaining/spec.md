@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Owner, 2026-10-23: wrap every HeroUI Pro component in `@stackra/ui-pro`, not only the first thirteen of STA-403.
 The main design-system session agreed the scope the same day: every Pro component the free HeroUI packages do not have,

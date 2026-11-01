@@ -47,6 +47,7 @@ export class StackraDocsConfig extends DocsConfig {
             "guides/workflow",
             "guides/definition-of-done",
             "guides/scaffolding",
+            "guides/console",
             "guides/standards",
             "guides/catalogs",
             "guides/testing",

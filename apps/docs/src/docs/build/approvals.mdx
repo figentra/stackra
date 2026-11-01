@@ -1,0 +1,97 @@
+---
+title: "Approvals"
+description: "Declare a second approver on an action: what the stage checks, who runs the call after the last vote, and what a service has to bind."
+icon: "user-check"
+---
+
+An action that needs a second person before it runs says so in its options
+([ADR 0509](/adr/0509-the-approval-stage-a-declared-floor-of-distinct-approvers-checked-in-core-executed-as-the-requester)).
+You write no pending state, no approver check and no expiry.
+
+```typescript
+// src/modules/billing/access/coupon-above-threshold.approval-condition.ts
+export class CouponAboveThresholdCondition extends ApprovalCondition {
+  static override readonly reads = ["billing.coupon.approvalThreshold"] as const;
+
+  async needed(
+    input: CreateCouponInput,
+    _ctx: ActionContext,
+    settings: ApprovalSettingsReader,
+  ): Promise<boolean> {
+    return input.percent > Number(await settings.get("billing.coupon.approvalThreshold"));
+  }
+}
+```
+
+```typescript
+// src/modules/billing/actions/create-coupon.action.ts
+export class CreateCouponAction extends Action({
+  key: "coupon.create",
+  actors: [ActorKind.User],
+  approval: {
+    approvals: 1,
+    permission: CouponPermissions.approve,
+    when: CouponAboveThresholdCondition,
+  },
+}) {
+  async handle(input: CreateCouponInput): Promise<CreateCouponOutput> {
+    // runs only when no approval is needed, or after the last vote
+  }
+}
+```
+
+The threshold is data the condition reads from a setting marked `approval`; the comparison is code. A condition takes no
+constructor dependencies; `needed(input, ctx, settings)` gets a reader limited to the keys in its static `reads`.
+
+The reader sits over the `ApprovalSettingsSource` port of `@stackra/contracts`, and `@stackra/settings` ships its driver,
+`SettingsApprovalSourceDriver`. A condition that declares `reads` while no source is bound refuses the call with
+`approval_settings_unavailable` (503, not retryable) rather than reading it as "not needed".
+
+## What happens to a call
+
+1. The call passes permission, preconditions, entitlement, flag and validation. The approval step then asks the
+   condition, asks the tenant's rules (`ApprovalGate.decide`, which may only add) and keeps the larger requirement.
+2. A call that needs approval is refused `approval_required` with `approvalId`, `approvalsRequired` and `expiresAt`. The
+   owning service writes its own binding (who, where, which action, input hash, assurance, times) and the store parks
+   the request, after the refused call's transaction rolled back.
+3. Approvers vote in the store. Each is a different person, none is the requester's person or in the requester's chain,
+   and none is an agent. At the last vote the store re-checks every voter and publishes `ApprovalGranted`.
+4. `ApprovalExecutor`, in the owning service, runs the call as the requester under the key `approval:<id>`. The pipeline
+   checks permission, preconditions, entitlement and flag again, and `verifyApproval` compares the call with the binding
+   and the store's row before `handle` runs.
+
+A request parked only by the tenant's rules, with no declaration on the action, is resubmitted by the requester with
+`CallOptions.approvalId` instead of running on grant.
+
+## What a service binds
+
+| Port                   | Why                                                                              |
+| ---------------------- | -------------------------------------------------------------------------------- |
+| `ApprovalGate`         | the store: `decide`, `park`, `find`, `begin`, `settle` (OS tasks-approvals)      |
+| `ApprovalBindingStore` | the service's own binding table, shipped by `@stackra/tenancy`                   |
+| `ActorStatusCheck`     | the requester is still active and their sessions are unchanged                   |
+| `IdentityResolver`     | one person with several ids counts once                                          |
+| `ApprovalGrantOrigin`  | the executor acts only on a grant the store's service published                  |
+| `ScopeOwnership`       | the stored actor owns the stored scope                                           |
+| `CallIsolation`        | the binding is read as the tenant's system actor; the call runs as the requester |
+
+A declared stage fails closed when any of the first three is missing, and with `OpenApprovalGateDriver`. Call
+`executor.connect(container)` after boot.
+
+## Failure and retry
+
+| Outcome of the execution                                               | The request                                               |
+| ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| the call ran                                                           | `executed`                                                |
+| the pipeline refused it (permission lost, precondition, a validation)  | `failed` with the refusal's code                          |
+| `idempotency_key_reused` or `approval_consumed` (another run holds it) | stays `executing`, nothing settles                        |
+| identity could not answer, or any error that is not a refusal          | stays `executing`, the listener retries with the same key |
+| `executing` 24 hours after the grant                                   | `unknown`, shown to operators, never retried              |
+
+## Test it
+
+`@stackra/actions/testing` ships `MemoryApprovalGateDriver` (votes, grant, reject, withdraw, expiry, the pending cap),
+`MemoryApprovalBindingStoreDriver` and `MemoryActorStatusCheckDriver`, and `describeApprovalGateConformance` and
+`describeApprovalBindingStoreConformance` for a real store's driver. The billing case in the executor's tests is the
+pattern: park above the threshold, refuse the requester as approver, grant with another person, deliver the event twice,
+and assert the handler ran once.

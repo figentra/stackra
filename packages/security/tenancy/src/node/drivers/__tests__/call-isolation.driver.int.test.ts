@@ -27,6 +27,7 @@ import { compileMigration, Migration } from "@stackra/database";
 import type { Blueprint, SchemaBuilder } from "@stackra/database";
 import { DatabaseUnitOfWorkDriver } from "@stackra/database/node";
 import { usePostgres } from "@stackra/database/testing";
+import { MemoryScopeTreeDriver } from "@stackra/scope";
 import { beforeAll, describe, expect, it } from "@stackra/testing";
 
 import { BelongsToTenantMacro } from "#node/database/macros/belongs-to-tenant.macro";
@@ -263,7 +264,15 @@ function pipelineOf(): ActionPipeline {
   const bound = new Map<AnyClass, object>([
     [AccessControl, new AllowAll()],
     [UnitOfWork, new DatabaseUnitOfWorkDriver()],
-    [CallIsolation, new CallIsolationDriver(database, new TenantIsolationService(database))],
+    [
+      CallIsolation,
+      // no tree rows: these calls are users with no scope, which never read it (`queue-tenant-from-scope.int.test.ts` does)
+      new CallIsolationDriver(
+        database,
+        new TenantIsolationService(database),
+        new MemoryScopeTreeDriver(),
+      ),
+    ],
     [ListTicketsQuery, new ListTicketsQuery()],
     [WriteFromQueryQuery, new WriteFromQueryQuery()],
     [BackendQuery, new BackendQuery()],

@@ -20,6 +20,7 @@ stackra/
 │   ├── application/        # Actions, AI, IR, registry
 │   ├── commerce/           # Money, ledger and pricing primitives
 │   ├── communication/      # Webhooks, versioning, integrations, notifications
+│   ├── connectors/         # One provider's Integration and Connection classes per package
 │   ├── cross-cutting/      # Concerns that span layers
 │   ├── data/               # Model, database, content, media, search, state machine, assets, filesystem, storage
 │   ├── design-system/      # Stackra Design System: tokens, ui, icons
@@ -65,7 +66,7 @@ After the tier tag come `category:<c>` (packages only) and one `runtime:<r>` per
 
 The programming model v3 (ADR 0294, 0295) is the target shape below. Today's members predate it: the console, mobile
 app, example and health services and the static Worker still have an authored `src/main.ts`, and
-`validate-repository.mjs` (`checkService`) accepts a service in that shape (with a `stackra.module` field) or in the v3
+`stackra validate --repository` (`checkService`) accepts a service in that shape (with a `stackra.module` field) or in the v3
 shape that `pnpm new` writes until STA-344 converts them. Convert nothing by hand ahead of the codemod (STA-344); write
 new code in the v3 shape where the member already allows it.
 
@@ -144,10 +145,10 @@ new code in the v3 shape where the member already allows it.
 ## Enforcement
 
 - `turbo boundaries` checks dependency direction
-- `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
+- `stackra validate --repository` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
 - `packages/tooling/oxlint/src/boundaries.jsonc` enforces layer rules
 - planned — STA-338: the `kind-path` check of the v3 group tables; STA-339: the `member-root`, `tool-configs`, `manifest` and `runway` checks; STA-340: the other v3 validator rows (ADR 0294 to 0296)
-- Repo-owned YAML is block style: no flow mappings (`{ a: b }`, empty `{}` aside), flow sequences only for short scalar lists on one line, trailing comments only while the line stays within 100 characters; `checkYamlFlowMaps` in `validate-repository.mjs` enforces it (STA-299)
+- Repo-owned YAML is block style: no flow mappings (`{ a: b }`, empty `{}` aside), flow sequences only for short scalar lists on one line, trailing comments only while the line stays within 100 characters; `checkYamlFlowMaps` in `stackra validate --repository` enforces it (STA-299)
 
 ## See Also
 

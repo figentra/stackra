@@ -66,4 +66,6 @@ export interface DataViewContractProps<TItem extends CollectionItem = Collection
   readonly renderLayout?: Partial<Record<CollectionLayout, () => ReactNode>> | undefined;
   /** What shows when there are no rows at all. */
   readonly emptyState?: ReactNode;
+  /** False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507). */
+  readonly ai?: boolean | undefined;
 }

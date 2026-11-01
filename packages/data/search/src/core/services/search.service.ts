@@ -5,20 +5,20 @@
  *          `search.across([...])` fuses several models' results for a global search, each model with its own filters.
  * Boundary: a platform service with no state of its own: it holds the configured `SearchDriver`, the connected
  *           `Database`, the `SettingsReader` the synonym sets and ranking rules come from and the optional
- *           `SearchQueryLog`, and each `in(...)` call builds a fresh index
+ *           `SearchQueryLog`, `Reranker` and `SynonymSource`, and each `in(...)` call builds a fresh index
  *           value. Which driver runs is config `search.driver`;
  *           callers never name one. The class name is the injected platform name the template uses (as `GraphQuery`
  *           is @stackra/database's), so it carries no `Service` suffix.
  * Runtime: node
  * Governing contract: ADR 0221 (decisions 1 and 9: one interface over the engines); ADR 0294 (decisions 16 and 17:
- *                     dependencies by constructor type); ADR 0263; ADR 0307 (synonyms are settings); STA-1251 (`across` filters); stackra-326 (the query log).
+ *                     dependencies by constructor type); ADR 0263; ADR 0307 (synonyms are settings); STA-1251 (`across` filters); stackra-326 (the query log); ADR 0492 (decisions 4 and 5).
  */
 import { Service } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import type { Database } from "@stackra/database";
 import type { SettingsReader } from "@stackra/settings";
 
-import type { SearchDriver, SearchQueryLog } from "#contracts/index";
+import type { Reranker, SearchDriver, SearchQueryLog, SynonymSource } from "#contracts/index";
 import type { SearchAcrossOptions } from "#core/types/search-across-options.type";
 import type { SearchHit } from "#core/types/search-hit.type";
 import { SearchIndex } from "#core/values/search-index.value";
@@ -50,24 +50,36 @@ export class Search extends Service {
   /** The query log; reads are not logged and no completion is offered without one. */
   private readonly queries: SearchQueryLog | undefined;
 
+  /** The reranker a `rerank` read uses; fused order when absent. */
+  private readonly reranker: Reranker | undefined;
+
+  /** The tenant's data synonym sets; only the setting's apply when absent. */
+  private readonly synonyms: SynonymSource | undefined;
+
   /**
    * @param driver - the engine config `search.driver` picks.
    * @param database - the connected database whose running context each read and write joins.
    * @param settings - the settings reader each read takes its index's synonym sets, ranking rules and query sample
    *   from.
    * @param queries - the query log sampled reads and clicks go to (`search.queries` through a job on Postgres).
+   * @param reranker - the reranker (`HttpRerankerDriver`); a read keeps fused order without one.
+   * @param synonyms - where the tenant's synonym sets are read from (`search.synonym` rows).
    */
   constructor(
     driver: SearchDriver,
     database: Database,
     settings: SettingsReader,
     queries?: SearchQueryLog,
+    reranker?: Reranker,
+    synonyms?: SynonymSource,
   ) {
     super();
     this.driver = driver;
     this.database = database;
     this.settings = settings;
     this.queries = queries;
+    this.reranker = reranker;
+    this.synonyms = synonyms;
   }
 
   /**
@@ -76,7 +88,15 @@ export class Search extends Service {
    * @throws TypeError when the model has no `@Searchable` facet.
    */
   in<M extends object>(model: AnyClass<M>): SearchIndex<M> {
-    return new SearchIndex(this.driver, this.database, model, this.settings, this.queries);
+    return new SearchIndex(
+      this.driver,
+      this.database,
+      model,
+      this.settings,
+      this.queries,
+      this.reranker,
+      this.synonyms,
+    );
   }
 
   /**

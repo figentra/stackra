@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `readIntegrationOptions`, the check `Integration({ ... })` runs when a class is declared: a provider code,
+ * Purpose: `readIntegrationOptions`, the check `Integration({ ... })` runs when a class is declared: a written key of
+ *          two snake_case parts when given (STA-1739), a provider code,
  *          a known category, known levels, a complete `auth` for its type, an http(s) base URL (or an https one with
  *          placeholders, or one `{field}` that is the whole URL), lowercase extra headers and OAuth token headers, known roles and connector kinds, well-formed
  *          rate limits, retries, health schedule and webhooks. It returns the options to record, `multiple` defaulted.
@@ -23,6 +24,9 @@ import type { IntegrationOptions } from "#core/types/integration-options.type";
 
 /** A provider code: lowercase words joined by `-` or `_`. */
 const PROVIDER = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/;
+
+/** A written Integration key: two snake_case parts (`connectors.stripe`). */
+const KEY = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*\.[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
 
 /** The JWT algorithms the managed client signs with. */
 const JWT_ALGORITHMS: ReadonlySet<string> = new Set(["HS256", "RS256", "ES256"]);
@@ -84,6 +88,11 @@ export function readIntegrationOptions(
   options: IntegrationOptions,
 ): Readonly<Record<string, unknown>> {
   const { provider, category, levels, auth } = options ?? ({} as IntegrationOptions);
+  ensure(
+    options?.key === undefined || (isText(options.key) && KEY.test(options.key)),
+    "key",
+    "needs two snake_case parts joined by a dot (`connectors.stripe`)",
+  );
   ensure(
     isText(provider) && PROVIDER.test(provider),
     "provider",

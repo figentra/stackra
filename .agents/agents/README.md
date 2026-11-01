@@ -35,7 +35,7 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 5. Tier to model lives in `models.yaml`; change a model there, not in an agent. OpenCode has rows only for the
    steward and executor tiers, so reviewers, guardians and the lead are never projected there; add
    `assistants: [claude]` to keep an executor or steward off OpenCode too (ADR 0258).
-6. Run `node tools/scripts/agents-sync.mjs --lint`, then `pnpm agents:sync`.
+6. Run `pnpm exec figentra agents sync --lint`, then `pnpm agents:sync`.
 
 ## Roster in this folder
 
@@ -55,6 +55,8 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 | test-engineer             | executor | no (the gate blocks)     | both       |
 | spec-writer               | executor | no                       | claude     |
 | secret-manager            | executor | no                       | claude     |
+| releaser                  | executor | no                       | claude     |
+| vault-keeper              | executor | no                       | claude     |
 | code-reviewer             | reviewer | no (verdict gates merge) | claude     |
 | api-contract-reviewer     | reviewer | no                       | claude     |
 | accessibility-reviewer    | reviewer | no (axe in e2e blocks)   | claude     |
@@ -77,7 +79,7 @@ decisions. Full detail and skill lists: `apps/docs/src/docs/agents/plugins.mdx`.
 | Work                                            | Use                                                                         | Not                                                            |
 | ----------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | Code review of a diff                           | `code-reviewer` + the AI-REVIEW gate                                        | `engineering:code-review`, `/review`                           |
-| Specs, plans, tasks                             | spec-kit (`speckit-*`) + `spec-writer`                                      | `product-management:write-spec`                                |
+| Specs, plans, tasks                             | Figentra Flow (`flow-*`) + `spec-writer`                                    | `product-management:write-spec`                                |
 | Architecture decisions                          | ADRs through `docs-adr-steward` (`docs-adr`)                                | `engineering:architecture` (draft input only)                  |
 | Incidents                                       | `incident-commander`                                                        | `engineering:incident-response`, `/incident`                   |
 | Tests, security, deploy                         | `test-engineer`, `security-tenancy-reviewer`, `release-operations`          | `engineering:testing-strategy`, `engineering:deploy-checklist` |

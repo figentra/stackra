@@ -8,11 +8,11 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 | `apps/console`                                             | `@figentra/console` — Vite web app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                        | `tier:app`     |
 | `apps/mobile`                                              | `@figentra/mobile` — Expo app; authored `src/main.ts` until v3 generates the entry (ADR 0295)                                                             | `tier:app`     |
 | `apps/docs`                                                | `@figentra/docs` — Mintlify; pages in `src/docs/` (ADRs in `src/docs/adr`), site config `src/config/docs.config.ts`                                       | `tier:app`     |
-| `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
+| `packages/<category>/<name>`                               | `@stackra/<name>`, flat inside one category: foundation, application, communication, connectors, cross-cutting, data, developer, experience, runtime, security, state | `tier:lib`     |
 | `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown,commitlint}-config`, exactly five presets (ADR 0300)                                                           | `tier:config`  |
 | `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`); root module `src/<key>.module.ts` (ADR 0294)                                   | `tier:service` |
 | `workers/<name>`                                           | `@figentra/worker-<name>` — Cloudflare Worker members (`static`: `stackra-static`, static.stackra.figentra.com), `wrangler.jsonc`, ADR 0284               | `tier:app`     |
-| `tools/scripts`                                            | `validate-repository.mjs` (+ test); `scaffold.mjs` (+ test) — `pnpm new <kind> <name>`, templates in `tools/scaffold`                                     | —              |
+| `tools/scripts`                                            | repo helpers (Linear, bots, spec gates, runway); the checks and `pnpm new` are `stackra` commands, templates in `tools/scaffold`                          | —              |
 | `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc` | agent hooks and config                                                                                                                                    | —              |
 | `.notes`                                                   | private owner-only submodule (`git submodule update --init .notes`); CI and agents never need it; never reference its contents from public docs           | —              |
 
@@ -27,12 +27,12 @@ Rules every member follows (`pnpm validate` enforces them):
 - Every test file sits directly in a `__tests__/` folder beside its subject (`src/**/__tests__/<name>.test.ts`), anywhere in the repo; no root `tests/`, no `.spec`. App e2e lives in the app. ADR 0022, enforced by `pnpm validate`.
 - A package never imports an app, a service or `encore.dev`, nor another package's `src/`.
 - A JSON config is `.jsonc` (comments welcome) when its tool reads JSONC; tsconfig files keep `.json` and take comments.
-  The files that must stay strict `.json`, with the reason, are `MUST_STAY_JSON` in `tools/scripts/validate-repository.mjs`.
+  The files that must stay strict `.json`, with the reason, are `MUST_STAY_JSON` in `@stackra/repo-checks`.
 
 The programming model v3 is the target for new code (ADR 0294, 0295, 0296): a class declares its kind by its base
 class, each file sits in its kind's one home group, identities are derived and locked in `stackra.manifest.json`, and
 nobody writes `main.ts` or a tool config. No member is converted yet (STA-344) and its checks are planned (STA-338,
-STA-339, STA-340), so today's code and `validate-repository.mjs` still show the older shapes.
+STA-339, STA-340), so today's code and `stackra validate --repository` still show the older shapes.
 
 Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue STA-n` lands it in
 `apps/docs/adr/numbers.yaml` on main first (STA-1732); never take "the highest on disk plus one" from a branch.
@@ -40,6 +40,12 @@ Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue S
 Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
 
 Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
+
+Deploys (owner decision 2026-10-28, ADR 0468): agents develop and deploy end to end. Dev and staging deploys and
+prereleases run without the owner; production (a deploy, promote, rollback or package release) runs in CI and waits on
+the owner's one GitHub Environment approval, which an agent may start. Secret values stay with the owner, main changes
+only through a merged pull request, and a workstation `encore deploy` stays denied. Until the owner applies the guard
+and settings edits listed on STA-1395, the guard still asks before staging deploys.
 
 <!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->
 
@@ -76,7 +82,7 @@ amended). This applies in Stackra, OS, Commerce and every product.
 - `ToolSource` is a closed enum (`packages/application/ai/src/core/enums/tool-source.enum.ts`).
 - planned — STA-1631: gen refuses client tool collisions, a `.prefill` of an action that is `tool: false`, and an
   undeclared anchor.
-- planned — STA-1637: `validate-repository.mjs` refuses a `.py` file outside the tools-stack images.
+- planned — STA-1637: `stackra validate --repository` refuses a `.py` file outside the tools-stack images.
 
 #### See Also
 
@@ -131,8 +137,8 @@ Never cross boundaries without explicit handoff.
 
 Some files are shared (read-only for all but one agent):
 
-- `pnpm-workspace.yaml` - Only the owner (or the agent the owner assigns)
-- `turbo.jsonc` - Only the owner (or the agent the owner assigns)
+- `pnpm-workspace.yaml` - One agent at a time: the round's integration batch, or the batch that owns it (ADR 0468)
+- `turbo.jsonc` - One agent at a time: the round's integration batch, or the batch that owns it (ADR 0468)
 - `.agents/rules/*` - Only one agent at a time
 
 ##### Communication
@@ -188,8 +194,8 @@ an action or a query class (ADR 0098 as amended by 0294), and `stackra gen` emit
 gitignored `.stackra/encore/` (ADR 0091, 0124). The rules below are what the generated endpoints must satisfy, so they
 shape how you author actions.
 
-The programming model v3 (ADR 0294) is the target. `@stackra/actions` and gen do not ship yet, so the shapes below are
-the contract they will implement, not code that runs today; the package docs win once they ship.
+The programming model v3 (ADR 0294) is what `@stackra/actions` and gen implement (shipped since 0.3.0); the package
+docs win where they differ. Core's own `services/example` and `services/health` keep the older shape until STA-344.
 
 #### Action or query
 
@@ -333,7 +339,7 @@ Never build HTTP responses by hand and never import `APIError` in a service.
 
 #### Enforcement
 
-- `validate-repository.mjs` (`checkService`) refuses Encore files in a service (ADR 0124)
+- `stackra validate --repository` (`checkService`) refuses Encore files in a service (ADR 0124)
 - planned — STA-340: the gen checks for an endpoint collision, GET on an action or non-GET on a query, a query above
   L1, `cache` on an action and a precondition on a query; until gen ships, review (`api-contract-reviewer`) checks this
   rule
@@ -373,9 +379,9 @@ state.** Every agent, including subagents and OpenCode executors without the Lin
 
 #### Enforcement
 
-`.commitlintrc.yaml` (`refs-issue-key`, lefthook and the Quality Gate over the PR range); `linear.mjs check-pr`
-in the Quality Gate; `requireIssue` in `tools/scripts/delegate.mjs`; `.github/workflows/linear-sync.yml`
-(`tools/scripts/linear-reconcile.mjs`) moves states, closes decided ADR issues and labels stale work.
+`.commitlintrc.yaml` (`refs-issue-key`, lefthook and the Quality Gate over the PR range); `figentra linear check-pr`
+in the Quality Gate; `requireIssue` in `figentra delegate`; `.github/workflows/linear-sync.yml`
+(`figentra linear reconcile`) moves states, closes decided ADR issues and labels stale work.
 
 <!-- source: .agents/rules/module-boundary.md -->
 
@@ -455,7 +461,7 @@ authored `src/main.ts`, and older pages still name `app-manifest.json`; the conv
 
 - `turbo boundaries` enforces tier direction
 - `packages/tooling/oxlint/src/boundaries.jsonc` blocks forbidden imports
-- `tools/scripts/validate-repository.mjs` checks tier tags
+- `stackra validate --repository` checks tier tags
 - planned — STA-340: the `contracts`-is-a-leaf and sibling-module boundary rules in `boundaries.jsonc`; STA-339: the `entries` validator check
 
 #### See Also
@@ -546,7 +552,7 @@ means not yet. A row changes only by a new ADR. Full table with revival triggers
 | A microVM tier for tenant code or other untrusted code                                                      | Deferred | the sandboxed code step and its WASM pool (`/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step`)                                                                                                                                                                 |
 | A second non-TypeScript runtime for services                                                                | Deferred | TypeScript service members (`/adr/0010-services-are-independent-workspace-members`)                                                                                                                                                                                    |
 
-Enforcement: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` (eslint, prettier, jest, nest,
+Enforcement: `FORBIDDEN_DEPENDENCIES` in `@stackra/repo-checks` (`stackra validate --repository`) (eslint, prettier, jest, nest,
 reflect-metadata, prisma, drizzle, express, fastify, typeorm, knex, expo-router, zustand, @tanstack/store, i18next,
 react-i18next, class-validator, class-transformer, meilisearch, @opensearch-project/opensearch); `boundaries.jsonc` bans `encore.dev` in packages.
 Planned: extend `FORBIDDEN_DEPENDENCIES` with `next`, `better-auth`, `xstate`, `@storybook/*` and `graphql` (0227).
@@ -599,7 +605,7 @@ agent's raw `infisical run` asks the owner (ADR 0293). A new flow that needs a t
 **CI/CD:**
 
 A CI job logs in to Infisical by GitHub OIDC for one step and reads `/ci` only (ADR 0009 D2); no token is a repository
-secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). The Encore deploy stays denied: `encore deploy` is blocked by `guard-bash` and settings until the deploy spike STA-136 (DP2) settles the Encore path.
+secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). A workstation `encore deploy` stays denied (`guard-bash` and settings): Encore deploys run from a CI workflow, staging on a merge to main and production behind the owner's Environment approval, once a repository ships an Encore app (ADR 0468 decision 6).
 
 **MCP servers:**
 Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
@@ -619,7 +625,7 @@ In Infisical `/ci` (CI/CD):
 - `TURBO_TOKEN` - Turborepo remote cache
 - `UNIWIND_AUTH_TOKEN` - Uniwind Pro CI/CD licence for the Quality Gate install (ADR 0310)
 - `CLOUDFLARE_API_TOKEN` - Cloudflare Worker deploys from CI (ADR 0284, ADR 0289)
-- `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
+- `ENCORE_API_KEY` - Encore deployment from CI, once a repository ships an Encore app (ADR 0468)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)
 
 #### 3. The secrets inbox (secret-manager flow, ADR 0257)
@@ -651,8 +657,9 @@ file holding just that value; there is no `--value` flag.
 - `guard-bash.mjs` (rules in `.agents/hooks/_rules.mjs`, shared with the OpenCode guard, ADR 0293): blocks
   `infisical export`, `infisical secrets get` in every form (`--silent` still prints the value), `infisical secrets set`,
   a bare `infisical secrets` (lists values), `infisical run -- env|printenv`, `env`/`printenv`, process-environment
-  listings (`ps -E`, `ps eww`, `launchctl procinfo`) and running `bot-token.mjs`, also behind `pnpm exec`, `npx` and
-  `mise exec --`. Raw `infisical run`, `infisical secrets delete` and `secrets:import … --confirm` ask the owner.
+  listings (`ps -E`, `ps eww`, `launchctl procinfo`) and running `bot-token.mjs` or `figentra bot token`, also behind
+  `pnpm exec`, `npx` and `mise exec --`. Raw `infisical run`, `infisical secrets delete` and `secrets:import … --confirm`
+  (or `figentra secrets import … --confirm`) ask the owner.
 - `guard-bash.mjs` (matcher `.agents/hooks/_inbox.mjs`, shared with the OpenCode guard): blocks any command in which
   a word, after unquoting, names `Secrets-inbox` (any case) or the import confirm key. Two kinds of word are exempt: a
   grep/rg/ag pattern, and a `--title`/`--body`/`--message`/`-m` value with no `$(` or backtick. Program text
@@ -675,7 +682,7 @@ Each article below is bound to a check:
 2. **No .env files** → `guard-paths` hook
 3. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
 4. **Production values reach runtimes by Infisical sync** (ADR 0173, decision 1), and only the `secret-manager` agent writes values through `pnpm secrets:import` (ADR 0173, decision 7; ADR 0257). Review checks the sync, not a manual copy.
-5. **Nobody reads a value; the inbox flow writes blind** → `tools/scripts/secrets-import.mjs` (+ its test, which
+5. **Nobody reads a value; the inbox flow writes blind** → `figentra secrets import` (`@figentra/cli`, + its test, which
    asserts no canary value reaches output, audit log or argv), `guard-bash` / `guard-paths` inbox rules
 
 #### Setup
@@ -713,7 +720,7 @@ Stackra versions come from **one of two sources**, never a third:
 
 #### Enforcement
 
-- `tools/scripts/validate-repository.mjs` checks catalog references
+- `stackra validate --repository` checks catalog references
 - `pnpm install` fails on invalid catalog: entries (`catalogMode: strict`)
 - Turborepo's `globalDependencies` includes `mise.toml` and `pnpm-workspace.yaml`
 
@@ -745,6 +752,7 @@ stackra/
 │   ├── application/        # Actions, AI, IR, registry
 │   ├── commerce/           # Money, ledger and pricing primitives
 │   ├── communication/      # Webhooks, versioning, integrations, notifications
+│   ├── connectors/         # One provider's Integration and Connection classes per package
 │   ├── cross-cutting/      # Concerns that span layers
 │   ├── data/               # Model, database, content, media, search, state machine, assets, filesystem, storage
 │   ├── design-system/      # Stackra Design System: tokens, ui, icons
@@ -790,7 +798,7 @@ After the tier tag come `category:<c>` (packages only) and one `runtime:<r>` per
 
 The programming model v3 (ADR 0294, 0295) is the target shape below. Today's members predate it: the console, mobile
 app, example and health services and the static Worker still have an authored `src/main.ts`, and
-`validate-repository.mjs` (`checkService`) accepts a service in that shape (with a `stackra.module` field) or in the v3
+`stackra validate --repository` (`checkService`) accepts a service in that shape (with a `stackra.module` field) or in the v3
 shape that `pnpm new` writes until STA-344 converts them. Convert nothing by hand ahead of the codemod (STA-344); write
 new code in the v3 shape where the member already allows it.
 
@@ -869,10 +877,10 @@ new code in the v3 shape where the member already allows it.
 #### Enforcement
 
 - `turbo boundaries` checks dependency direction
-- `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
+- `stackra validate --repository` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
 - `packages/tooling/oxlint/src/boundaries.jsonc` enforces layer rules
 - planned — STA-338: the `kind-path` check of the v3 group tables; STA-339: the `member-root`, `tool-configs`, `manifest` and `runway` checks; STA-340: the other v3 validator rows (ADR 0294 to 0296)
-- Repo-owned YAML is block style: no flow mappings (`{ a: b }`, empty `{}` aside), flow sequences only for short scalar lists on one line, trailing comments only while the line stays within 100 characters; `checkYamlFlowMaps` in `validate-repository.mjs` enforces it (STA-299)
+- Repo-owned YAML is block style: no flow mappings (`{ a: b }`, empty `{}` aside), flow sequences only for short scalar lists on one line, trailing comments only while the line stays within 100 characters; `checkYamlFlowMaps` in `stackra validate --repository` enforces it (STA-299)
 
 #### See Also
 

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `StoredCacheDriver`, the base every `Cache` driver of this package extends: it builds `storedCache` over the
- *          `CacheEntryStore` its subclass passes and answers the five port methods from it.
+ *          `CacheEntryStore` its subclass passes and answers the six port methods from it.
  * Boundary: abstract and internal to the package: a driver is a subclass whose own constructor takes the dependencies
  *           (gen reads them there) and passes its store, namespace, clock and settings to `super`. It holds no store of
  *           its own. A subclass names its port as the type argument (`extends StoredCacheDriver<Cache>`): gen reads a
@@ -84,5 +84,10 @@ export abstract class StoredCacheDriver<P extends Cache> extends Driver(Cache) {
   /** Drops every entry of this namespace carrying `tag`; a tagged load in flight is not stored. */
   forgetTag(tag: CacheKey): Promise<void> {
     return this.cache.forgetTag(tag);
+  }
+
+  /** Drops every entry of this namespace. */
+  override flush(): Promise<void> {
+    return this.cache.flush();
   }
 }

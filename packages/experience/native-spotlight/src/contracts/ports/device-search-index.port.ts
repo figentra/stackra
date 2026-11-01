@@ -24,7 +24,7 @@ import type { DeviceSearchItem } from "#contracts/types/device-search-item.type"
  */
 export abstract class DeviceSearchIndex extends Port {
   /** Type-only port key, so `DriverName<DeviceSearchIndex>` narrows to this port's drivers. */
-  declare readonly "~key": "native-spotlight.DeviceSearchIndex";
+  declare readonly "~key": "native_spotlight.DeviceSearchIndex";
 
   /** Adds or replaces `items`, matched by their link. */
   abstract index(items: readonly DeviceSearchItem[]): Promise<void>;

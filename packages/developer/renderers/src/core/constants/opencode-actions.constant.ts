@@ -4,7 +4,8 @@
  *          tool grant, so every action here that a sub-agent's tools do not reach is denied for it.
  * Boundary: internal; read-only tools are absent because OpenCode allows reading by default.
  * Runtime: isomorphic
- * Governing contract: ADR 0286 (decisions 6 and 16: ported from the Vellum renderer layer, OpenCode tested).
+ * Governing contract: ADR 0286 (decisions 6 and 16: ported from the Figentra Flow renderer layer,
+ *                     OpenCode tested).
  */
 
 /** Neutral tool name to OpenCode permission action. */

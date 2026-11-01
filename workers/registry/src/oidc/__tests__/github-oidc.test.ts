@@ -35,7 +35,7 @@ describe("verifyGithubToken", () => {
     const registry = await createTestRegistry();
     const options = {
       issuer: ISSUER,
-      audience: `npm:${HOST}`,
+      audiences: [`npm:${HOST}`],
       now: NOW,
       keys: registry.deps.oidcKeys,
     };
@@ -51,7 +51,7 @@ describe("verifyGithubToken", () => {
     const registry = await createTestRegistry();
     const options = {
       issuer: ISSUER,
-      audience: `npm:${HOST}`,
+      audiences: [`npm:${HOST}`],
       now: NOW,
       keys: registry.deps.oidcKeys,
     };
@@ -62,6 +62,27 @@ describe("verifyGithubToken", () => {
       verifyGithubToken(await registry.idToken(STACKRA_CLAIMS, "gh-2"), options),
     ).rejects.toThrow("key is unknown");
     await expect(verifyGithubToken("not-a-jwt", options)).rejects.toThrow(OidcError);
+  });
+});
+
+describe("verifyGithubToken audiences (STA-1733)", () => {
+  it("accepts a token for any listed audience and refuses one outside the list", async () => {
+    const registry = await createTestRegistry();
+    const options = {
+      issuer: ISSUER,
+      audiences: ["npm:registry.figentra.com", `npm:${HOST}`],
+      now: NOW,
+      keys: registry.deps.oidcKeys,
+    };
+    const newHost = { ...STACKRA_CLAIMS, aud: "npm:registry.figentra.com" };
+    expect(await verifyGithubToken(await registry.idToken(newHost), options)).toEqual(newHost);
+    expect(await verifyGithubToken(await registry.idToken(), options)).toEqual(STACKRA_CLAIMS);
+    await expect(
+      verifyGithubToken(
+        await registry.idToken({ ...STACKRA_CLAIMS, aud: "npm:registry.npmjs.org" }),
+        options,
+      ),
+    ).rejects.toThrow("audience is wrong");
   });
 });
 

@@ -79,9 +79,9 @@ The validator rejects a manifest that depends on a package the architecture reje
 
 | Rule                                                       | Check                                                                                          | Status |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ |
-| Only `catalog:` or `workspace:*` specifiers (peers exempt) | `validate-repository.mjs`                                                                      | Yes    |
+| Only `catalog:` or `workspace:*` specifiers (peers exempt) | `stackra validate --repository`                                                                | Yes    |
 | New versions come from a catalog                           | `catalogMode: strict`                                                                          | Yes    |
-| No forbidden dependency                                    | `validate-repository.mjs` (`FORBIDDEN_DEPENDENCIES`)                                           | Yes    |
+| No forbidden dependency                                    | `stackra validate --repository` (`FORBIDDEN_DEPENDENCIES`)                                     | Yes    |
 | Install scripts reviewed                                   | `allowBuilds` (install fails otherwise)                                                        | Yes    |
 | Dead catalog entry visible                                 | `knip` (`catalog: warn`)                                                                       | Yes    |
 | Release age set explicitly (one day)                       | planned: `minimumReleaseAge` in `pnpm-workspace.yaml`; only the exclude list is declared today | No     |

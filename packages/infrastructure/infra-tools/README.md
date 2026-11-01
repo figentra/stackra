@@ -73,7 +73,7 @@ v1.9.0, Nominatim 4.5, LibreTranslate v1.6.2, Chatwoot v4.1.0) were far behind a
 | `recommend`      | `ghcr.io/figentra/tools-recommend:1.0.0`                 | built from `images/recommend` (implicit 0.7.3), not yet pushed                                                     |
 | `speech`         | `ghcr.io/figentra/tools-speech:1.0.0`                    | built from `images/speech` (faster-whisper 1.2.1, `large-v3` revision `edaa852e`), not yet pushed                  |
 | `chatwoot`       | `chatwoot/chatwoot:v4.18.0`                              | needs `pg_trgm`, `pgcrypto`, `pg_stat_statements`, `vector`                                                        |
-| database task    | `postgres:17.6-alpine`                                   | psql only                                                                                                          |
+| database task    | `postgres:18.6-alpine`                                   | psql only                                                                                                          |
 
 ## The images Figentra builds
 

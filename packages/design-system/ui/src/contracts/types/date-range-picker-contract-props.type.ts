@@ -32,4 +32,6 @@ export interface DateRangePickerContractProps
   readonly calendar?: CalendarSystem | undefined;
   /** The spoken name of the button that opens the calendar; defaults to the `ui` catalogue's phrase. */
   readonly calendarButtonLabel?: string | undefined;
+  /** False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507). */
+  readonly ai?: boolean | undefined;
 }

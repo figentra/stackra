@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "cf6a084ee69ff81c",
+    "hash": "24a49ebdc66e9d11",
     "propsFiles": [
       "ui/src/react/data-view/collection-filter-editor.props.ts",
       "ui/src/react/data-view/collection-sort-editor.props.ts",
@@ -129,6 +129,13 @@
           "required": false,
           "source": "stackra",
           "type": "readonly ResourceAction[]"
+        },
+        {
+          "description": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
+          "name": "ai",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "description": "What a card shows.",

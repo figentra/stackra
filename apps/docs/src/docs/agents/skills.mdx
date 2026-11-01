@@ -8,15 +8,15 @@ A skill teaches an agent **how**: patterns, gotchas and the order to decide thin
 
 ## Three kinds, and where each lives
 
-| Kind                                | Lives in                                                                                                                       | Managed by                                                         | Edit it?                                           |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ | -------------------------------------------------- |
-| Spec engine commands                | spec-kit, `.claude/skills/speckit-*` and `.opencode/commands/speckit.*`, plus the Stackra preset in `.specify/presets/stackra` | `specify` (pinned in `mise.toml`), `pnpm speckit:sync`             | Only the preset. The rendered copies are generated |
-| Upstream skills the repository uses | `.agents/skills/<upstream-name>`                                                                                               | `npx skills add`, `update`, `remove`, pinned in `skills-lock.json` | No. Never in place                                 |
-| House skills                        | `.agents/skills/<category>-<name>`                                                                                             | A normal change                                                    | Yes                                                |
+| Kind                                | Lives in                                                                                                    | Managed by                                                             | Edit it?                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------- |
+| Spec engine commands                | Figentra Flow's `flow-*` skills, rendered into `.agents/skills/flow-*` and projected into `.claude/skills/` | `pnpm spec:sync` (`figentra-flow sync`), recorded in `.flow/lock.json` | No. Override in `.flow/overrides/` |
+| Upstream skills the repository uses | `.agents/skills/<upstream-name>`                                                                            | `npx skills add`, `update`, `remove`, pinned in `skills-lock.json`     | No. Never in place                 |
+| House skills                        | `.agents/skills/<category>-<name>`                                                                          | A normal change                                                        | Yes                                |
 
 ### The spec engine
 
-The spec flow is GitHub spec-kit, described on [Spec lifecycle](/agents/spec-lifecycle). The `sdlc` plugin no longer applies in this repository ([ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear) D3). Its `failure-loop` and `durable-findings` skills and eight of its roles are being ported into `.agents/` under MIT (D2, D9); until they land, the procedures on [Spec lifecycle](/agents/spec-lifecycle) are the reference.
+The spec flow is Figentra Flow ([ADR 0510](/adr/0510-flow-replaces-spec-kit)), described on [Spec lifecycle](/agents/spec-lifecycle). The `sdlc` plugin no longer applies in this repository ([ADR 0121](/adr/0121-sdlc-tooling-roles-and-linear) D3). Its `failure-loop` and `durable-findings` skills and eight of its roles are being ported into `.agents/` under MIT (D2, D9); until they land, the procedures on [Spec lifecycle](/agents/spec-lifecycle) are the reference.
 
 ### Vendored upstream skills
 
@@ -64,7 +64,7 @@ Each is grounded in the ADRs it cites, uses a worked example (most use the order
 | `db-models-and-migrations`                | Typed models, relations, RLS equality, `database/` migrations, factories and seeders        | 0014, 0097, 0133, 0134, 0159, 0160, 0238, 0294 |
 | `ai-mcp-tools`                            | Which actions become MCP tools, approvals, the `Facts`, `Skill` and `Prompt` kinds          | 0098, 0155, 0156, 0245, 0294                   |
 | `code-naming-and-casing`                  | The naming table, the dictionary, `#` imports, `Enum.of`, classes, components               | 0006, 0007, 0128, 0231, 0233, 0294             |
-| `docs-spec-flow`                          | Lanes, change risk, spec-kit order, Linear, traceability, merge                             | 0065, 0067, 0119, 0120, 0198                   |
+| `docs-spec-flow`                          | Lanes, change risk, Flow command order, Linear, traceability, merge                         | 0065, 0510, 0119, 0120, 0198                   |
 | `mobile-eas-setup`                        | EAS profiles, channels, environments, fingerprint policy, `.easignore`                      | 0061, 0180                                     |
 | `mobile-release`                          | Binary or OTA, gates, staged rollout, minimum version, rollback, human-only steps           | 0180                                           |
 | `mobile-store-listing`                    | Store metadata, privacy answers, screenshots, demo accounts                                 | 0134, 0180, 0190                               |
@@ -93,11 +93,11 @@ The rule behind the table: this repository must not presume a product domain, a 
 
 ### The rejected-technology check
 
-`pnpm agents:check` (and `node tools/scripts/agents-sync.mjs --lint`) scans every skill in `.agents/skills/` for technology the [not-built-yet list](/adr/0227-rejected-and-deferred-technologies-refreshed) rejects: other ORMs, Nest, `reflect-metadata`, `encore.dev`, expo-router, Next.js, Jest, ESLint, Prettier, Zustand, i18next, class-validator, Express, Fastify, Sanity, Tauri, Better Auth, XState, Storybook, GraphQL, and `.spec` test files or a root `tests/` folder. A hit fails the check unless `SKILL_TECH_ALLOWED` in `tools/scripts/agents-sync.mjs` records why the mention is harmless, for example turborepo's example task names. A vendored skill is never edited in place, so the exception lives in the script, with its reason.
+`pnpm agents:check` (and `pnpm exec figentra agents sync --lint`) scans every skill in `.agents/skills/` for technology the [not-built-yet list](/adr/0227-rejected-and-deferred-technologies-refreshed) rejects: other ORMs, Nest, `reflect-metadata`, `encore.dev`, expo-router, Next.js, Jest, ESLint, Prettier, Zustand, i18next, class-validator, Express, Fastify, Sanity, Tauri, Better Auth, XState, Storybook, GraphQL, and `.spec` test files or a root `tests/` folder. A hit fails the check unless `SKILL_TECH_ALLOWED` in `tools/scripts/agents-sync.mjs` records why the mention is harmless, for example turborepo's example task names. A vendored skill is never edited in place, so the exception lives in the script, with its reason.
 
 ### The licence check
 
-Every skill folder under `.agents/skills/` and `.agents/reference/`, and every plugin enabled in `.claude/settings.json`, records its SPDX licence in `.agents/skills/.licences.yaml` (house skills carry the repository's MIT). `tools/scripts/skill-licences.mjs` fails `pnpm validate` when a skill or plugin has no record, when its licence is not on the allowlist (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC), when a licence file in the skill folder reads as noncommercial, or when a record names a skill or plugin that is gone. A noncommercial or source-available skill (PolyForm Noncommercial and similar) cannot ship in commercial work, so it is never vendored or enabled.
+Every skill folder under `.agents/skills/` and `.agents/reference/`, and every plugin enabled in `.claude/settings.json`, records its SPDX licence in `.agents/skills/.licences.yaml` (house skills carry the repository's MIT). `stackra skill-licences` (and its test in @stackra/cli) fails when a skill or plugin has no record, when its licence is not on the allowlist (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC), when a licence file in the skill folder reads as noncommercial, or when a record names a skill or plugin that is gone. A noncommercial or source-available skill (PolyForm Noncommercial and similar) cannot ship in commercial work, so it is never vendored or enabled.
 
 ## Adding a skill
 

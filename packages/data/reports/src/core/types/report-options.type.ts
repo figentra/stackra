@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0470 (decisions 1 and 2); ADR 0154 (no tenant code or SQL).
  */
-import type { Json } from "@stackra/contracts";
+import type { ActorKind, Json } from "@stackra/contracts";
 
 import type { ReportDimension } from "#core/types/report-dimension.type";
 import type { ReportMeasure } from "#core/types/report-measure.type";
@@ -29,4 +29,10 @@ export interface ReportOptions<S = Record<string, unknown>> {
 
   /** A `Permissions` static (`OrderPermissions.report`) that reads the report; gen records its key. */
   readonly permission?: unknown;
+
+  /**
+   * Who may run the report's generated query; `[ActorKind.User, ActorKind.Agent]` when left out, since a report reads
+   * only and is an MCP tool by default (STA-1690).
+   */
+  readonly actors?: readonly ActorKind[];
 }

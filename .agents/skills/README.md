@@ -2,8 +2,8 @@
 
 Invocable skills, one folder per skill with a `SKILL.md` (Agent Skills format: `name` and `description` frontmatter,
 then the instructions). `pnpm agents:sync` symlinks each folder into `.claude/skills/`; OpenCode reads this folder
-directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them into `.claude/skills/` and
-`.opencode/commands/` (see [`../speckit`](../speckit)).
+directly. The Figentra Flow skills (`flow-*`) are here too, but rendered by `pnpm spec:sync` (`figentra-flow sync`) and
+recorded in `.flow/lock.json`: never edit them in place; override in `.flow/overrides/` (ADR 0510).
 
 | Family                 | Skills                                                                                                                      |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -20,12 +20,12 @@ directly. The spec-kit skills (`speckit-*`) are not here: spec-kit renders them 
   a house skill beside it. Upstream licence files stay in the skill folder.
 - Every skill folder and every enabled plugin records its licence in [`.licences.yaml`](./.licences.yaml); a missing or
   non-allowed licence (anything but MIT, Apache-2.0, BSD or ISC) fails `pnpm validate`
-  (`tools/scripts/skill-licences.mjs`, STA-272).
+  (`stackra skill-licences`, STA-272).
 - The Encore skills are not here. They teach hand-written Encore.ts, which this repository rejects for authors (Encore
   is only the generated target in `.stackra/encore/`, [ADR 0124](../../apps/docs/src/docs/adr/0124-encore-is-the-generated-runtime-target.mdx)),
   so they are fenced in [`../reference/encore`](../reference/encore), read only by `compiler-engineer` (ADR 0258).
 - A skill that names rejected technology fails `pnpm agents:check` unless `SKILL_TECH_ALLOWED` in
-  `tools/scripts/agents-sync.mjs` records why the mention is harmless (ADR 0258). Where a skill and
+  `figentra agents sync` (@figentra/cli) records why the mention is harmless (ADR 0258). Where a skill and
   [`AGENTS.md`](../../AGENTS.md) disagree, `AGENTS.md` wins.
 - oxfmt and oxlint skip this folder and `../reference` (`.oxfmtrc.jsonc`, `.oxlintrc.jsonc`, `lefthook.yml`).
 - Retired (ADR 0258): `encore-getting-started`, `encore-migrate`, `encore-frontend`, `sanity-best-practices` (Sanity is

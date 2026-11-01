@@ -14,11 +14,11 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: pending <!-- /speckit.clarify sets this to "complete" when nothing is open -->
+**Clarifications status**: pending <!-- /flow-clarify sets this to "complete" when nothing is open -->
 
 **Input**: User description: "Port and adapt `@figentra-os/contracts` as `@stackra/contracts` (roadmap W1.1, STA-74): PublicId, Actor, EventEnvelope, Page and cursor, the error kinds with STK codes, the diagnostics catalogue with the STK prefix, and ApiVersion. Zero runtime dependencies."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none
 - **Services touched**: none

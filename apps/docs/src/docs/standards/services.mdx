@@ -102,13 +102,13 @@ feature module; `src/modules/README.md` lists the module groups.
 
 ## What enforces this
 
-| Rule                                                                                                                                  | Check                                                     | Status  |
-| ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------- |
-| Member files, PII heading, `tier:service` tag, catalog versions                                                                       | `validate-repository.mjs`                                 | Yes     |
-| A package or app never imports a service                                                                                              | `turbo boundaries`, oxlint `boundaries.jsonc`             | Yes     |
-| A service's `internal/`, `entities/` and `db` are private                                                                             | oxlint `boundaries.jsonc` (`services/**` rule)            | Yes     |
-| v3: `stackra.config.ts` and the root module exist; v2 (until STA-344): `src/main.ts` and an existing `stackra.module`; no Encore file | `validate-repository.mjs` (`checkService`, `isV2Service`) | Yes     |
-| One `api()` per operation, `auth: true` default                                                                                       | planned: lint rule when Encore lands                      | No      |
-| Generated client has not drifted                                                                                                      | planned: `gen:client:check` in `pnpm verify`              | No      |
-| Tenant isolation (RLS audit, `isolation.test.ts`)                                                                                     | planned: from the first tenant-owned table                | No      |
-| Application secrets declared, never valued                                                                                            | [Secrets](/constitution/secrets) checks (partly planned)  | Partial |
+| Rule                                                                                                                                  | Check                                                           | Status  |
+| ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------- |
+| Member files, PII heading, `tier:service` tag, catalog versions                                                                       | `stackra validate --repository`                                 | Yes     |
+| A package or app never imports a service                                                                                              | `turbo boundaries`, oxlint `boundaries.jsonc`                   | Yes     |
+| A service's `internal/`, `entities/` and `db` are private                                                                             | oxlint `boundaries.jsonc` (`services/**` rule)                  | Yes     |
+| v3: `stackra.config.ts` and the root module exist; v2 (until STA-344): `src/main.ts` and an existing `stackra.module`; no Encore file | `stackra validate --repository` (`checkService`, `isV2Service`) | Yes     |
+| One `api()` per operation, `auth: true` default                                                                                       | planned: lint rule when Encore lands                            | No      |
+| Generated client has not drifted                                                                                                      | planned: `gen:client:check` in `pnpm verify`                    | No      |
+| Tenant isolation (RLS audit, `isolation.test.ts`)                                                                                     | planned: from the first tenant-owned table                      | No      |
+| Application secrets declared, never valued                                                                                            | [Secrets](/constitution/secrets) checks (partly planned)        | Partial |

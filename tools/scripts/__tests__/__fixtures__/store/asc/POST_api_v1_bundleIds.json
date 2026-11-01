@@ -1,0 +1,9 @@
+{
+  "status": 201,
+  "json": {
+    "data": {
+      "id": "BUNDLE1",
+      "type": "bundleIds"
+    }
+  }
+}

@@ -10,6 +10,7 @@ import { keys } from "@stackra/i18n";
 /** The filter_bar namespace's keys. */
 export const FILTER_BAR_KEYS = keys({
   filter_bar: {
+    tamo: ["label", "search", "hint", "screen"],
     _: [
       "basics_search",
       "basics_placeholder",

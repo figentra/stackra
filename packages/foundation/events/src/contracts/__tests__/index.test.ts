@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: it exports exactly the `EventOutbox` and `RegionBus`
+ * Purpose: the consumer contract of the `./contracts` entry: it exports exactly the `EventOutbox`, `ListenerAuditTrail` and `RegionBus`
  *          ports, and the `EventMeta` and `RecordedEvent` types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -12,8 +12,8 @@ import * as contracts from "#contracts/index";
 import type { EventMeta, RecordedEvent } from "#contracts/index";
 
 describe("@stackra/events/contracts", () => {
-  it("exports exactly EventOutbox and RegionBus", () => {
-    expect(Object.keys(contracts)).toEqual(["EventOutbox", "RegionBus"]);
+  it("exports exactly EventOutbox, ListenerAuditTrail and RegionBus", () => {
+    expect(Object.keys(contracts)).toEqual(["EventOutbox", "ListenerAuditTrail", "RegionBus"]);
   });
 
   it("resolves its types", () => {

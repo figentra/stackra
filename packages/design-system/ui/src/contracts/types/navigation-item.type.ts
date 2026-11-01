@@ -30,7 +30,7 @@ export interface NavigationItem extends CollectionItem {
   readonly children?: readonly NavigationItem[] | undefined;
   /** True to show the entry but refuse it, by pointer, touch and keyboard. */
   readonly isDisabled?: boolean | undefined;
-  /** A shortcut shown in the entry's tooltip, as text to read (`G then O`); a hint only, the app binds the key. */
+  /** The key binding (`g o`, `mod+1`) that follows the entry while it is mounted, shown in its tooltip (ADR 0508). */
   readonly shortcut?: string | undefined;
   /** Called when the entry is chosen, before `href` is followed; an entry with only this is a press-only link. */
   readonly onPress?: (() => void) | undefined;

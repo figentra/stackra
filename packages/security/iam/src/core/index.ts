@@ -17,6 +17,7 @@ export { Role } from "#core/bases/role.base";
 export { IamAccessControlDriver } from "#core/drivers/iam-access-control.driver";
 export { IamGrantedScopesDriver } from "#core/drivers/iam-granted-scopes.driver";
 export { IamRolesAtNodeDriver } from "#core/drivers/iam-roles-at-node.driver";
+export { MemoryDimensionValuesDriver } from "#core/drivers/memory-dimension-values.driver";
 export { MemoryPolicySnapshotStoreDriver } from "#core/drivers/memory-policy-snapshot-store.driver";
 export { MemoryPolicySourceDriver } from "#core/drivers/memory-policy-source.driver";
 export { StorePolicySourceDriver } from "#core/drivers/store-policy-source.driver";
@@ -48,6 +49,7 @@ export type { DimensionRegistration } from "#core/types/dimension-registration.t
 export type { FieldPermissions } from "#core/types/field-permissions.type";
 export type { MemoryPolicyState } from "#core/types/memory-policy-state.type";
 export type { PermissionRegistration } from "#core/types/permission-registration.type";
+export type { PolicyClass } from "#core/types/policy-class.type";
 export type { PolicyOptions } from "#core/types/policy-options.type";
 export type { PolicyRegistration } from "#core/types/policy-registration.type";
 export type { PolicySnapshotEvent } from "#core/types/policy-snapshot-event.type";

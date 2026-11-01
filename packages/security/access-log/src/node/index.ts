@@ -19,6 +19,7 @@ export { ExportAuditAction } from "#node/actions/export-audit.action";
 export { PurgeAccessLogAction } from "#node/actions/purge-access-log.action";
 export { DataClassificationMacro } from "#node/database/macros/data-classification.macro";
 export { HttpsAuditExportSinkDriver } from "#node/drivers/https-audit-export-sink.driver";
+export { AuditTrailCommandAuditDriver } from "#node/drivers/audit-trail-command-audit.driver";
 export { PostgresAccessLogSinkDriver } from "#node/drivers/postgres-access-log-sink.driver";
 export { PostgresAuditTrailDriver } from "#node/drivers/postgres-audit-trail.driver";
 export { AccessLogEntry } from "#node/models/access-log-entry.model";
@@ -31,3 +32,5 @@ export { ExportAuditInput } from "#node/schemas/export-audit-input.schema";
 export { ExportAuditOutput } from "#node/schemas/export-audit-output.schema";
 export { PurgeAccessLogInput } from "#node/schemas/purge-access-log-input.schema";
 export { PurgeAccessLogOutput } from "#node/schemas/purge-access-log-output.schema";
+// The entity list gen writes for the module, which a hosting service registers (STA-1793).
+export { ACCESS_LOG_ENTITIES } from "#stackra/entities/access_log";

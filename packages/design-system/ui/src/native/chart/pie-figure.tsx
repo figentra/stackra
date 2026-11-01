@@ -10,7 +10,6 @@
  */
 import type { ReactElement } from "react";
 import { View } from "react-native";
-import { Pie, PolarChart } from "victory-native";
 
 import { chartTableOf } from "#core/functions/chart-table-of.function";
 import { chartTextOf } from "#core/functions/chart-text-of.function";
@@ -21,6 +20,10 @@ import { RingCentre } from "#native/chart/ring-centre";
 import { sliceColorsOf } from "#native/chart/slice-colors-of.function";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
+import { loadVictoryNative } from "#native/skia/load-victory-native.function";
+
+// victory-native is an optional peer (on Skia), required on first use (STA-1791).
+const { Pie, PolarChart } = loadVictoryNative();
 
 /** A pie or donut. */
 export function PieFigure(props: PieFigureProps): ReactElement {

@@ -86,7 +86,19 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     "stackra gen writes each member's committed OpenAPI contract as strict JSON (ADR 0294 R10)",
   ],
   [/(^|\/)(app|eas)\.json$/, "Expo/EAS: fixed names, rewritten by the expo/eas CLIs"],
-  [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
+  [
+    /^tools\/lines\/(expected|fixture)\/[\w.-]+\.json$/,
+    "fixtures of the lines tool's JSON output, compared byte for byte with what it writes (STA-1794)",
+  ],
+  [
+    /^apps\/[\w-]+\/capabilities\.json$/,
+    "Runway's capabilityConfig reads an app's capabilities.json by this fixed name as strict JSON (STA-1794)",
+  ],
+  [
+    /^workers\/[\w-]+\/edge\.json$/,
+    "the edge worker's scripts JSON.parse its edge.json (STA-1794)",
+  ],
+  [/^\.flow\//, "Figentra Flow's lock and spec pointer, read back with JSON.parse (ADR 0510)"],
   [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],
   [
     /^packages\/foundation\/market-packs\/assets\/data\/packs\/[\w-]+\.json$/,
@@ -101,7 +113,15 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     "landing page documents: stackra dev seeds the os/landing shell with the content folder's .json (ADR 0441)",
   ],
   [
+    /(^|\/)assets\/seeds\/(?:[\w-]+\/)*[\w-]+\.json$/,
+    "seed data: a member's seeders load assets/seeds/<group>/<name>.json as JSON documents (STA-1825)",
+  ],
+  [
     /^figentra-flow\.config\.json$/,
     "Figentra Flow reads its configuration by this fixed name with JSON.parse (ADR 0503, STA-1729)",
+  ],
+  [
+    /^tools\/scripts\/__tests__\/__fixtures__\/store\//,
+    "recorded App Store Connect, Play and review API payloads, replayed byte-for-byte by store-http.mjs (ADR 0480)",
   ],
 ];

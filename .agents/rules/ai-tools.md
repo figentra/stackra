@@ -30,7 +30,7 @@ amended). This applies in Stackra, OS, Commerce and every product.
 - `ToolSource` is a closed enum (`packages/application/ai/src/core/enums/tool-source.enum.ts`).
 - planned — STA-1631: gen refuses client tool collisions, a `.prefill` of an action that is `tool: false`, and an
   undeclared anchor.
-- planned — STA-1637: `validate-repository.mjs` refuses a `.py` file outside the tools-stack images.
+- planned — STA-1637: `stackra validate --repository` refuses a `.py` file outside the tools-stack images.
 
 ## See Also
 

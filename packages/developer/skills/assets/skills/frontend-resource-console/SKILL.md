@@ -10,8 +10,8 @@ its widgets and documents in `resources/<model>/`; gen and the registry publish 
 `@stackra/ui`, draws them on web and native. Coded screens are the exception. Panels: platform admin, product
 operator, tenant admin, customer portal.
 
-This is the v3 target. `@stackra/panel` and gen do not ship yet, and the console is still a hello-world entry (the
-conversion is STA-344); the package docs win once they ship.
+This is the v3 shape that `@stackra/panel` and gen implement; the console is still a hello-world entry until STA-344
+converts it. The package docs win where they differ.
 
 ## Decide first
 

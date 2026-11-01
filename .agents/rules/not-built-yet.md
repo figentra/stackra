@@ -54,7 +54,7 @@ means not yet. A row changes only by a new ADR. Full table with revival triggers
 | A microVM tier for tenant code or other untrusted code                                                      | Deferred | the sandboxed code step and its WASM pool (`/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step`)                                                                                                                                                                 |
 | A second non-TypeScript runtime for services                                                                | Deferred | TypeScript service members (`/adr/0010-services-are-independent-workspace-members`)                                                                                                                                                                                    |
 
-Enforcement: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` (eslint, prettier, jest, nest,
+Enforcement: `FORBIDDEN_DEPENDENCIES` in `@stackra/repo-checks` (`stackra validate --repository`) (eslint, prettier, jest, nest,
 reflect-metadata, prisma, drizzle, express, fastify, typeorm, knex, expo-router, zustand, @tanstack/store, i18next,
 react-i18next, class-validator, class-transformer, meilisearch, @opensearch-project/opensearch); `boundaries.jsonc` bans `encore.dev` in packages.
 Planned: extend `FORBIDDEN_DEPENDENCIES` with `next`, `better-auth`, `xstate`, `@storybook/*` and `graphql` (0227).

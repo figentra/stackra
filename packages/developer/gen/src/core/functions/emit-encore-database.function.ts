@@ -3,7 +3,8 @@
  * Purpose: `emitEncoreDatabase`, a service's Encore database declaration (`.stackra/encore/<member>/database.ts`):
  *          one `SQLDatabase` named after the member (snake case), whose migrations are the compiled
  *          `.stackra/migrations` folder (`MIGRATIONS_DIR`, stackra-248), so Encore provisions the service's own logical
- *          database and applies its migrations. `#stackra/boot` connects with its `connectionString`.
+ *          database and applies its migrations. It hands its `connectionString` to `provideDatabaseUrl`, which
+ *          `#stackra/boot` reads through `databaseUrl()` without importing this file (STA-1652).
  * Boundary: pure; written only for a service with a database (`usesDatabase`). The connection string is Encore's at
  *           run time, never read or logged here. Replicas are not an Encore declaration: the boot reads them from the
  *           runtime (`DATABASE_REPLICA_URLS`).
@@ -31,14 +32,15 @@ export function emitEncoreDatabase(ir: MemberIR): GeneratedFile | undefined {
     from: "package.json and the models under src/",
     purpose: `the logical database of ${ir.package}, provisioned by Encore with the compiled migrations.`,
     boundary:
-      "the one database of this service (ADR 0238); `#stackra/boot` connects with its connection string, and no " +
-      "other service reads it.",
+      "the one database of this service (ADR 0238); it provides its connection string to `#stackra/boot`, and " +
+      "no other service reads it.",
     runtime: "node",
   });
   return {
     path: `.stackra/encore/${ir.member}/database.ts`,
     content: [
       header,
+      'import { provideDatabaseUrl } from "@stackra/database/node";',
       'import { SQLDatabase } from "encore.dev/storage/sqldb";',
       "",
       "/** The service's own database; Encore applies the `.up.sql` files in order. */",
@@ -46,6 +48,9 @@ export function emitEncoreDatabase(ir: MemberIR): GeneratedFile | undefined {
       // Relative to this file, two folders under the member root.
       `  migrations: ${JSON.stringify(`../../${MIGRATIONS_DIR.slice(".stackra/".length)}`)},`,
       "});",
+      "",
+      "// `#stackra/boot` reads it at connect; every generated Encore file imports this one first.",
+      "provideDatabaseUrl(database.connectionString);",
       "",
     ].join("\n"),
   };

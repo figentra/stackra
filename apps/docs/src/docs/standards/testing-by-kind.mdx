@@ -1,12 +1,12 @@
 ---
 title: "Testing by file kind"
-description: "Which test each kind of source file needs, and the file name that test takes. Must match tools/scripts/structure.mjs."
+description: "Which test each kind of source file needs, and the file name that test takes. Must match the structure tables of @stackra/repo-checks."
 icon: "vial"
 ---
 
 Every source file of a known kind needs one test, placed in a `__tests__/` folder beside it (ADR 0022). The test's tier is set by its
 file-name infix (ADR 0182). This page is the file-kind to test table. The data behind it is `KIND_FOLDERS`, `ROOT_MODULE` and
-`TEST_TIERS` in `tools/scripts/structure.mjs`. The two must match: if this table and the script disagree, the script is right and this
+`TEST_TIERS` in `@stackra/repo-checks`. The two must match: if this table and the script disagree, the script is right and this
 page is stale. The generated [repository structure](/standards/structure) page carries the same table.
 
 ## Test name

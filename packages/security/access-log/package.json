@@ -87,7 +87,8 @@
       "@stackra/source": "./src/testing/index.ts",
       "types": "./dist/testing.d.mts",
       "default": "./dist/testing.mjs"
-    }
+    },
+    "./assets/*": "./assets/*"
   },
   "publishConfig": {
     "access": "public",
@@ -106,6 +107,7 @@
   "dependencies": {
     "@stackra/actions": "workspace:*",
     "@stackra/config": "workspace:*",
+    "@stackra/console": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/database": "workspace:*",

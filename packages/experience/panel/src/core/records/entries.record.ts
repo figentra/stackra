@@ -5,6 +5,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 1).
  */
+import type { I18nKey } from "@stackra/i18n";
+
 import { Entry } from "#core/constants/entry.constant";
 import { EntryRecord } from "#core/records/entry.record";
 import { SectionRecord } from "#core/records/section.record";
@@ -36,9 +38,27 @@ export class EntriesRecord<R> implements EntryFactory<R> {
   list<K extends Path<R>>(
     key: K,
     columns: readonly Path<ElementOf<NonNullable<PathValue<R, K>>>>[],
-    options?: { readonly currency: Path<R> },
+    options?: {
+      readonly currency?: Path<R>;
+      readonly labels?: Readonly<
+        Partial<
+          Record<Path<ElementOf<NonNullable<PathValue<R, K>>>>, Readonly<Record<string, I18nKey>>>
+        >
+      >;
+    },
   ): Built<EntryNode> {
-    return { toNode: () => Entry.list(key, { columns, ...options }) };
+    const { currency, labels } = options ?? {};
+    return {
+      toNode: () =>
+        Entry.list(key, {
+          columns,
+          ...(currency === undefined ? {} : { currency }),
+          // A Partial map of item paths: every key present holds a label map.
+          ...(labels === undefined
+            ? {}
+            : { labels: labels as Readonly<Record<string, Readonly<Record<string, I18nKey>>>> }),
+        }),
+    };
   }
 
   /** Groups entries into a named section. */

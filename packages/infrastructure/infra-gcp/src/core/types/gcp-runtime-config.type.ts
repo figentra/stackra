@@ -22,7 +22,7 @@ export type GcpRuntimeConfig = GcpDeployment & {
   readonly database: {
     /** The Cloud SQL machine tier (`db-custom-2-7680`). */
     readonly tier: string;
-    /** The Cloud SQL Postgres version (`POSTGRES_17`). */
+    /** The Cloud SQL Postgres version (`POSTGRES_18`). */
     readonly version: string;
     /** A standby in a second zone. */
     readonly highAvailability: boolean;

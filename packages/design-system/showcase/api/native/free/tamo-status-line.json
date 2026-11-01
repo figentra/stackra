@@ -1,0 +1,60 @@
+{
+  "generatedFrom": {
+    "hash": "13538d515520bac1",
+    "propsFiles": ["ui/src/native/tamo-status-line/tamo-status-line.props.ts"]
+  },
+  "importLine": "import { TamoStatusLine } from \"@stackra/ui/native\";",
+  "key": "free/tamo-status-line",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Shown while working, with Stop.",
+          "name": "onStop",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Shown on error, with Try again.",
+          "name": "onRetry",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "TamoStatusLine",
+      "props": [
+        {
+          "description": "The task's state.",
+          "name": "status",
+          "required": true,
+          "source": "stackra",
+          "type": "\"error\" | \"idle\" | \"ready\" | \"working\""
+        },
+        {
+          "description": "The error's words; defaults to the catalogue's.",
+          "name": "errorMessage",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The working words; defaults to \"Tamo is working…\".",
+          "name": "workingLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Classes added to the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

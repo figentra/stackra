@@ -109,7 +109,10 @@ export function emitToolConfigs(
     "  withCoverage({",
     '    root: fileURLToPath(new URL("..", import.meta.url)),',
     "    test: {",
-    '      include: ["src/**/__tests__/**/*.test.{ts,tsx}"],',
+    // A package's generated migration check sits in `.stackra/tests` (STA-1689); `.int.test.ts` stays excluded below.
+    ir.layout === "package"
+      ? '      include: ["src/**/__tests__/**/*.test.{ts,tsx}", ".stackra/tests/**/*.test.{ts,tsx}"],'
+      : '      include: ["src/**/__tests__/**/*.test.{ts,tsx}"],',
     // A member fresh from `stackra new` has no source and so no tests; one with source and no tests still fails.
     ...(ir.files.length === 0 ? ["      passWithNoTests: true,"] : []),
     '      exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],',

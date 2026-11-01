@@ -39,6 +39,13 @@ export interface IntegrationOptions {
   /** The provider's code, lowercase words joined by `-` or `_` (`resend`, `google-calendar`). */
   readonly provider: string;
 
+  /**
+   * The Integration's key, written once when stored data names it (`connectors.stripe`, `<snake>.<snake>`); gen derives
+   * `<module>.<snake(class)>` when left out (STA-1739). Connection rows and OAuth apps are stored under it, so it never
+   * changes once data exists.
+   */
+  readonly key?: string;
+
   /** The marketplace shelf. */
   readonly category: IntegrationCategory;
 

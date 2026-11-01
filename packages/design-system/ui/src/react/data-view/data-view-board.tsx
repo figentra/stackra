@@ -18,7 +18,6 @@ import { cn as heroCn } from "@heroui/react";
 import { useState, type ReactElement, type ReactNode } from "react";
 import {
   Button as AriaButton,
-  DropIndicator,
   GridList,
   GridListItem,
   ListLayout,
@@ -35,6 +34,7 @@ import { dataViewFieldsOf } from "#core/functions/data-view-fields-of.function";
 import { ActionMenu } from "#react/action-menu/action-menu";
 import type { DataViewBoardProps } from "#react/data-view/data-view-board.props";
 import { useUiText } from "#react/hooks/use-ui-text";
+import { useLiveDrag } from "#react/hooks/use-live-drag";
 import { Icon } from "#react/icon/icon";
 
 /** HeroUI's class joiner, always a string (its type allows `undefined`). */
@@ -78,7 +78,9 @@ function Lane<TItem extends CollectionItem>({
     );
     onDrop(ids, lane.value);
   };
+  const { follower: liveFollower, attach: liveAttach, ...live } = useLiveDrag();
   const { dragAndDropHooks } = useDragAndDrop({
+    ...live.options,
     getItems: (keys) =>
       [...keys].map((key) => {
         const item = lane.items.find((entry) => entry.id === key);
@@ -88,15 +90,12 @@ function Lane<TItem extends CollectionItem>({
     getDropOperation: () => "move",
     onInsert: (event) => void take(event.items),
     onRootDrop: (event) => void take(event.items),
-    renderDropIndicator: (target) => (
-      <DropIndicator
-        target={target}
-        className="h-0.5 rounded-[var(--radius-pill)] bg-transparent data-[drop-target]:bg-accent"
-      />
-    ),
+    // The lane's row gap is taken back, so the gap is the card's height and its two gaps.
+    renderDropIndicator: (target) => live.renderDropIndicator(target, "-mb-2"),
   });
   const list = (
     <GridList
+      ref={liveAttach}
       aria-label={t(K.board_column, { label, column: lane.name })}
       items={lane.items}
       dragAndDropHooks={dragAndDropHooks}
@@ -160,6 +159,7 @@ function Lane<TItem extends CollectionItem>({
       ) : (
         list
       )}
+      {liveFollower}
     </section>
   );
 }

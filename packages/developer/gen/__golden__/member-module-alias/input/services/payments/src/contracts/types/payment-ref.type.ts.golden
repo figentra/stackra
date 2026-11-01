@@ -1,0 +1,2 @@
+/** A payment reference; the fixture needs one source file. */
+export type PaymentRef = string;

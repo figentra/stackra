@@ -114,14 +114,14 @@ describe("renderEdgeDocument", () => {
   });
 
   it("sends a placeholder for a product block and a query-backed block", () => {
-    const product = { block: "beautilon.booking", props: { x: '"><script>' } };
+    const product = { block: "velora.booking", props: { x: '"><script>' } };
     const result = renderEdgeDocument(
       [product, { block: "landing.testimonials", input: { type: "testimonial" } }],
       OPTIONS,
     );
     expect(result.ok).toBe(true);
     const html = result.ok ? result.html : "";
-    expect(html).toContain('data-stackra-block="beautilon.booking" data-stackra-path="0"');
+    expect(html).toContain('data-stackra-block="velora.booking" data-stackra-path="0"');
     expect(html).toContain(`data-stackra-node="${escapeHtml(JSON.stringify(product))}"`);
     expect(html).not.toContain("<script>");
     expect(html).toContain('data-stackra-block="landing.testimonials" data-stackra-path="1"');

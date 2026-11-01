@@ -1,9 +1,15 @@
 # Stackra file contract:
-# Purpose: keep Linear team STA in line with GitHub and the ADRs (tools/scripts/linear-reconcile.mjs).
+# Purpose: keep Linear team STA in line with GitHub and the ADRs (`figentra linear reconcile`, @figentra/cli).
 #          ADR 0065 rule 7: a separate, non-blocking job. It is not a required check and never fails the run.
 # Owner: release-operations
 # Secrets: LINEAR_AGENT_CLIENT_ID / LINEAR_AGENT_CLIENT_SECRET (the "Stackra Agent" app; the script mints a
 #          client_credentials token), LINEAR_API_KEY as fallback. Read from the environment only; never printed.
+#          STA-1822: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (the stackra-bot App, the same repository secrets
+#          release.yml passes today), given only to this job in the `linear-sync` environment (main only, no reviewer),
+#          mint a read-only installation token for the figentra org, so the reconcile
+#          reads every repo in tools/scripts/linear-reconcile.repos.yaml. Without a token the job uses github.token,
+#          reads this repo only and lists the others as skipped. STA-1827 moves the key to Infisical prod `/ci/release`
+#          for release.yml and this file together (STA-1747).
 name: Linear sync
 
 on:
@@ -27,6 +33,8 @@ concurrency:
 jobs:
   reconcile:
     name: Reconcile Linear
+    # The bot App key is given only inside a named environment: `linear-sync` (main branch only, no reviewer).
+    environment: linear-sync
     runs-on: ubuntu-latest
     continue-on-error: true
     timeout-minutes: 10
@@ -44,11 +52,27 @@ jobs:
         with:
           install_args: node
 
+      # Read-only, every repo the App is installed on in the org; revoked when the job ends.
+      - name: App token
+        id: bot
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
+          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+          owner: figentra
+          permission-contents: read
+          permission-pull-requests: read
+
       - name: Reconcile
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
           LINEAR_AGENT_CLIENT_ID: ${{ secrets.LINEAR_AGENT_CLIENT_ID }}
           LINEAR_AGENT_CLIENT_SECRET: ${{ secrets.LINEAR_AGENT_CLIENT_SECRET }}
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
           DRY_RUN: ${{ inputs.dry-run && '--dry-run' || '' }}
-        run: node tools/scripts/linear-reconcile.mjs ${DRY_RUN:+"$DRY_RUN"}
+        # No workspace install here: the private CLI comes straight from the Stackra registry (ADR 0453), at the
+        # version the root catalog pins for @figentra/cli; bump both together.
+        run: >-
+          npm exec --yes --registry=https://npm.stackra.figentra.com/ --package=@figentra/cli@0.1.0 --
+          figentra linear reconcile ${DRY_RUN:+"$DRY_RUN"}

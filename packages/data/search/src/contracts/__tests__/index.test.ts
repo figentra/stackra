@@ -7,10 +7,15 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
  */
+import type { ScopeRef } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as contracts from "#contracts/index";
 import type {
+  RecommendOptions,
+  Recommendation,
+  RerankCandidate,
+  RerankHit,
   SearchBoost,
   SearchDocument,
   SearchFacetRequest,
@@ -23,6 +28,7 @@ import type {
   SearchRequest,
   SearchSort,
   SearchTable,
+  SynonymSet,
   VectorHit,
   VectorItem,
   VectorQueryOptions,
@@ -32,8 +38,11 @@ describe("@stackra/search/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "Embedder",
+      "Recommender",
+      "Reranker",
       "SearchDriver",
       "SearchQueryLog",
+      "SynonymSource",
       "VectorIndex",
     ]);
   });
@@ -55,5 +64,10 @@ describe("@stackra/search/contracts", () => {
     expectTypeOf<VectorItem["vector"]>().toEqualTypeOf<readonly number[]>();
     expectTypeOf<VectorHit["score"]>().toEqualTypeOf<number>();
     expectTypeOf<VectorQueryOptions["topK"]>().toEqualTypeOf<number>();
+    expectTypeOf<RerankCandidate["text"]>().toEqualTypeOf<string>();
+    expectTypeOf<RerankHit["score"]>().toEqualTypeOf<number>();
+    expectTypeOf<Recommendation["id"]>().toEqualTypeOf<string>();
+    expectTypeOf<RecommendOptions["scope"]>().toEqualTypeOf<ScopeRef | undefined>();
+    expectTypeOf<SynonymSet["terms"]>().toEqualTypeOf<readonly string[]>();
   });
 });

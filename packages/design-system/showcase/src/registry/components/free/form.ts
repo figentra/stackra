@@ -30,6 +30,7 @@ export const FREE_FORM: ComponentEntry = {
     { id: "description", card: true },
     { id: "field-error" },
     { id: "live" },
+    { id: "tamo", platforms: ["react"] },
   ],
   related: ["free/form-field", "free/form-section", "free/input-group"],
   tokens: ["color.field", "radius.field", "color.focus"],

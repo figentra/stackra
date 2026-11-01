@@ -14,6 +14,7 @@ import * as node from "#node/index";
 describe("@stackra/access-log/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "ACCESS_LOG_ENTITIES",
       "AccessLogEntry",
       "AccessLogEntryPermissions",
       "AccessLogExplorer",
@@ -24,6 +25,7 @@ describe("@stackra/access-log/node", () => {
       "AuditQuery",
       "AuditQueryInput",
       "AuditQueryOutput",
+      "AuditTrailCommandAuditDriver",
       "DataClassificationMacro",
       "ExportAuditAction",
       "ExportAuditInput",

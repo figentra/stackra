@@ -19,5 +19,10 @@
   "live_label": "الرسالة",
   "live_description": "اجعلها قصيرة.",
   "live_error": "الرسالة تتجاوز 40 حرفًا.",
-  "live_count": "{count} من 40 حرفًا"
+  "live_count": "{count} من 40 حرفًا",
+  "tamo_reply_label": "الرد",
+  "tamo_reply": "شكرا لطلبك سنرسله قريبا",
+  "tamo_empty_label": "وصف المنتج",
+  "tamo_empty_hint": "فارغ: يقترح تامو مسودة أولى.",
+  "tamo_screen": "رسائل العملاء"
 }

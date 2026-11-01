@@ -13,7 +13,8 @@
  * Boundary: pure. The client is a class, so it is its own DI token (`emitWiring` binds it with the `ClientTransport`
  *           the topology picks); a consumer never imports the producer's source. A consumed service without a manifest,
  *           a client imported under another name, or an event the producer does not publish as an integration event
- *           (`client_event_unknown`), is a refusal, so nothing is written. An event is subscribed to by importing its
+ *           (`client_event_unknown`), is a refusal, so nothing is written; so is a listener of an event of a service that came from a
+ *           `contract` package, which has no cross-app transport yet (`client_event_remote_transport`, STA-1820); its client still emits. An event is subscribed to by importing its
  *           class; there is no wire-name subscription. In the manifest pass the services of the same workspace are
  *           `pending` and skipped, so a cycle between services never blocks a manifest.
  * Runtime: isomorphic
@@ -137,7 +138,6 @@ function clientFile(service: string, manifest: StackraManifest): string {
   };
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const key of Object.keys(schemas).sort()) visit(key);
-  if (declarations.length > 0) use("zod", "z");
 
   // Refusals the producer declares.
   const refusals: string[] = [];
@@ -227,6 +227,16 @@ function clientFile(service: string, manifest: StackraManifest): string {
     if (!members.has(verb)) members.set(verb, entry.class);
     groups.set(group, members);
   }
+  // An enum's schema constant nothing reads is left out: a consumer's noUnusedLocals refuses it (STA-1751).
+  const readers = [...declarations, ...eventLines, ...calls].join("\n");
+  const kept = declarations.filter((declaration) => {
+    const name = /^const (\w+)\$ = z\.enum\(/.exec(declaration)?.[1];
+    return (
+      name === undefined ||
+      new RegExp(`(?<![\\w$])${name}\\$(?![\\w$])`).test(readers.replace(declaration, ""))
+    );
+  });
+  if (kept.some((declaration) => declaration.includes("z."))) use("zod", "z");
   const body = [...groups].map(
     ([group, members]) =>
       `  readonly ${group} = {\n${[...members].map(([verb, name]) => `    ${verb}: this.member(${name}),`).join("\n")}\n  };`,
@@ -247,7 +257,7 @@ function clientFile(service: string, manifest: StackraManifest): string {
     header,
     ...importLines(imports),
     "",
-    ...declarations,
+    ...kept,
     ...(refusals.length > 0 ? [...refusals, ""] : []),
     ...(eventLines.length > 0 ? [...eventLines, ""] : []),
     ...(access.length > 0 ? [...access, ""] : []),
@@ -333,6 +343,18 @@ export function emitClients(
           message: `the ${service} service publishes no integration event \`${listener.name}\``,
           fix: `import an integration event the ${service} service declares, or run \`stackra gen\` in it first`,
         });
+    // A service read from a contract package lives in another app: its events have no transport until the event ADR.
+    if (ir.services?.find((candidate) => candidate.member === service)?.package !== undefined)
+      for (const listener of subscribed.get(service) ?? [])
+        errors.push({
+          code: "client_event_remote_transport",
+          file: listener.file,
+          line: 0,
+          column: 0,
+          subject: listener.subject,
+          message: `the ${service} service is consumed from a contract package, so its event \`${listener.name}\` has no transport to this app yet`,
+          fix: "cross-app events follow the event-transport ADR; call the service through its client until then, or host the listener beside the producer",
+        });
     if (manifest === undefined) {
       errors.push({
         code: "client_service_unknown",
@@ -341,7 +363,7 @@ export function emitClients(
         column: 0,
         subject: at.subject,
         message: `no committed stackra.manifest.json of a service \`${service}\` was found`,
-        fix: `run \`stackra gen\` in the ${service} service first, or fix the ${CLIENTS_SPECIFIER}${service} import`,
+        fix: `run \`stackra gen\` in the ${service} service beside this member, or add its contract package (\`@figentra/${service}-contract\`, stackra.kind contract) as a devDependency through the catalog; or fix the ${CLIENTS_SPECIFIER}${service} import`,
       });
       continue;
     }

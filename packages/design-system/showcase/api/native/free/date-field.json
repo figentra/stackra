@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "f27b214741ac7a15",
+    "hash": "5dd07cd65dde8de7",
     "propsFiles": [
       "ui/src/native/date-field/date-field.props.ts",
       "ui/src/native/date-field/date-input-picker.props.ts",
@@ -211,6 +211,13 @@
           "required": false,
           "source": "stackra",
           "type": "CalendarDate"
+        },
+        {
+          "description": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
+          "name": "ai",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "default": "primary",

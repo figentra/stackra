@@ -4,15 +4,21 @@
  *          once per drain with its context; a failing listener is recorded and never stops the others or the drain;
  *          an event dispatched by a listener runs in the same drain; `deliver` queues without publishing; metadata
  *          given is kept and the rest defaulted; subscriptions are kept once; `connect` subscribes the registered
- *          listeners a container binds; `disconnect` removes only those.
+ *          listeners a container binds; `disconnect` removes only those; with a bound `ListenerAuditTrail` every
+ *          delivery that ended writes one audit entry with what the listener added through `ctx.audit`, a failed one
+ *          none (STA-1715).
  * Boundary: test only; a fixed clock stands in for the Clock port.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0078 (decisions 1 to 4); ADR 0294 (decision 4).
  */
+import { Driver } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
+import { ActorKind, Realm } from "@stackra/contracts";
 import type { Clock } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { ListenerAuditTrail } from "#contracts/ports/listener-audit-trail.port";
+import type { ListenerAuditEntry } from "#contracts/types/listener-audit-entry.type";
 import { DomainEvent } from "#core/bases/domain-event.base";
 import { Listener } from "#core/bases/listener.base";
 import { LISTENER_REGISTRY } from "#core/constants/listener-registry.constant";
@@ -41,6 +47,25 @@ class RecordingListener extends Listener {
 class FailingListener extends Listener {
   async handle(_event: StockLow): Promise<void> {
     throw new RangeError("ledger offline");
+  }
+}
+
+/** A listener that writes (issues a credential) and audits what it issued. */
+class IssueCredentialListener extends Listener {
+  readonly issued = new Map<string, string>();
+
+  async handle(_event: StockLow, ctx: ListenerContext): Promise<void> {
+    const credentialId = `crd_${this.issued.size + 1}`;
+    this.issued.set(credentialId, ctx.eventId);
+    ctx.audit({ credentialId });
+  }
+}
+
+class RecordingTrail extends Driver(ListenerAuditTrail) {
+  readonly entries: ListenerAuditEntry[] = [];
+
+  async record(entry: ListenerAuditEntry): Promise<void> {
+    this.entries.push(entry);
   }
 }
 
@@ -173,5 +198,51 @@ describe(EventBus, () => {
     const deliveries = await bus.drain();
 
     expect(deliveries.map((delivery) => delivery.listener)).toEqual([direct]);
+  });
+
+  it("audits each delivery that ended with what the listener added, never a failed one", async () => {
+    const issuer = new IssueCredentialListener();
+    const failing = new FailingListener();
+    const trail = new RecordingTrail();
+    registerListeners([
+      [StockLow, IssueCredentialListener],
+      [StockLow, FailingListener],
+    ]);
+    const container = {
+      has: (type: AnyClass) =>
+        type === IssueCredentialListener || type === FailingListener || type === ListenerAuditTrail,
+      get: <T extends object>(type: AnyClass<T>): T =>
+        (type === ListenerAuditTrail ? trail : type === FailingListener ? failing : issuer) as T,
+    };
+    const bus = new EventBus(clock);
+    bus.connect(container);
+    const owner = { kind: ActorKind.User, id: "usr_1", realm: Realm.Customer } as const;
+    const record = bus.dispatch(new StockLow(), { scopeId: "ten_1", actor: owner });
+
+    const deliveries = await bus.drain();
+
+    expect(deliveries.map((delivery) => delivery.error !== undefined)).toEqual([false, true]);
+    expect(issuer.issued.get("crd_1")).toBe(record.meta.id);
+    expect(trail.entries).toEqual([
+      {
+        listener: "IssueCredentialListener",
+        event: "StockLow",
+        eventId: record.meta.id,
+        actor: { kind: ActorKind.System, id: "sys_listener" },
+        causedBy: owner,
+        scopeId: "ten_1",
+        at: NOW,
+        fields: { credentialId: "crd_1" },
+      },
+    ]);
+  });
+
+  it("audits nothing without a bound trail", async () => {
+    const issuer = new IssueCredentialListener();
+    const bus = new EventBus(clock);
+    bus.subscribe(StockLow, issuer);
+    bus.dispatch(new StockLow());
+    expect((await bus.drain())[0]?.error).toBeUndefined();
+    expect(issuer.issued.size).toBe(1);
   });
 });

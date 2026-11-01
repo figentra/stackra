@@ -17,36 +17,23 @@ import { EdgeKvPrefix } from "@stackra/app/contracts";
 
 import type { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
+import { checkHosts } from "#core/functions/check-hosts.function";
+import { resolveHost } from "#core/functions/resolve-host.function";
 import type { RootRunway } from "#core/types/root-runway.type";
 import type { RunwayIssue } from "#core/types/runway-issue.type";
 import { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
 import type { AppLinkKeys } from "#node/types/app-link-keys.type";
 import type { EdgeHostRow } from "#node/types/edge-host-row.type";
 
-/** A lower-case DNS name of two labels or more. */
-const HOSTNAME =
-  /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
-
 /** An Apple team id. */
 const TEAM_ID = /^[A-Z0-9]{10}$/;
-
-/** The host `name` resolves to under `zone`, or `undefined` when it cannot. */
-function resolveHost(name: string, zone: string | undefined): string | undefined {
-  const host = name.endsWith(".")
-    ? name.slice(0, -1)
-    : zone === undefined
-      ? undefined
-      : name === zone || name.endsWith(`.${zone}`)
-        ? name
-        : `${name}.${zone}`;
-  return host !== undefined && HOSTNAME.test(host) ? host : undefined;
-}
 
 /**
  * The platform rows, KV key → JSON text: hosts first, then well-known files.
  *
  * @param options.region - the home region; the environment's first region when absent.
- * @throws RunwayInvalidError listing every host, region or app-link key that cannot be resolved.
+ * @throws RunwayInvalidError listing every host, region or app-link key that cannot be resolved, and every host two
+ *         surfaces share (`host_collision`, STA-1796).
  * @example
  * for (const [key, value] of Object.entries(platformRows(root, "production", {}))) await kv.put(key, value);
  */
@@ -78,6 +65,11 @@ export function platformRows(
       });
     return resolved ?? name;
   };
+
+  // A second surface on a host would overwrite the first one's row (STA-1796).
+  for (const collision of checkHosts(root))
+    if (collision.environment === environment)
+      issues.push({ path: collision.path, message: collision.message });
 
   const rows: Record<string, string> = {};
   const { hostStatus, defaultRealm, realms } = EDGE_PUBLISH_SETTINGS;

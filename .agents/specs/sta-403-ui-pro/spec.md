@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Owner decisions of 2026-10-23 for `@stackra/ui-pro`, recorded in ADR 0310 in the same pull request. Source
 decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (HeroUI Pro only in our own apps), ADR 0302

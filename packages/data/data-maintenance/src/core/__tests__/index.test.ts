@@ -21,6 +21,7 @@ describe("@stackra/data-maintenance", () => {
       "PartitionPermissions",
       "QueryPermissions",
       "RecordPermissions",
+      "SynonymPermissions",
       "TimeseriesPermissions",
     ]);
   });

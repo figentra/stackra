@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/database until `stackra gen` writes the entry barrels
- *          (STA-339): `PostgresDatabaseDriver`, which gen's boot calls to connect, and `DatabaseUnitOfWorkDriver`, the
+ *          (STA-339): `PostgresDatabaseDriver`, which gen's boot calls to connect with `databaseUrl()`, the url the
+ *          generated Encore database hands `provideDatabaseUrl` (STA-1652), and `DatabaseUnitOfWorkDriver`, the
  *          action pipeline's unit of work on it, and `DatabaseReplicaReadsDriver`, its replica reads (STA-1504); the
  *          durable Postgres drivers of `@stackra/actions`' idempotency and rate-limit ports; `ServiceHoldRegistryDriver`,
- *          the `HoldRegistry` every service binds over its `HoldChannel`; `migrate` and `rollback`, the runner
- *          `stackra db` calls; and `seedState` and `applySeed`, the runner `stackra seed-pack` calls;
+ *          the `HoldRegistry` every service binds over its `HoldChannel`; `DatabaseRunner` and the four `db:*` commands (`DbMigrateCommand`, `DbRollbackCommand`, `DbStatusCommand`, `DbSeedCommand`, STA-1731); `migrate` and `rollback`, the runner
+ *          `stackra db` calls; `seedState` and `applySeed`, the runner `stackra seed-pack` calls; `runSeeders`,
+ *          `runSeedEntry` and `seederLedger`, the seeder runner a service's generated seed entry calls (STA-1709);
  *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `PrimaryConnectionResolverDriver`, the free one-pool
  *          `ConnectionResolver` (stackra-310); `DatabaseQueryBudgetDriver`, the action pipeline's `QueryBudget` (N+1
  *          guard), and `LoggerQueryObserverDriver`, the slow-statement log (stackra-282). The partition upkeep,
@@ -17,6 +19,11 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note; ADR 0396; the STA-347 stand-in barrel decision.
  */
+export { DatabaseRunner } from "#node/services/database-runner.service";
+export { DbMigrateCommand } from "#node/commands/db-migrate.command";
+export { DbRollbackCommand } from "#node/commands/db-rollback.command";
+export { DbSeedCommand } from "#node/commands/db-seed.command";
+export { DbStatusCommand } from "#node/commands/db-status.command";
 export { DatabaseHealthIndicatorDriver } from "#node/drivers/database-health-indicator.driver";
 export { DatabaseQueryBudgetDriver } from "#node/drivers/database-query-budget.driver";
 export { DatabaseReplicaReadsDriver } from "#node/drivers/database-replica-reads.driver";
@@ -28,7 +35,15 @@ export { PostgresRateLimitStoreDriver } from "#node/drivers/postgres-rate-limit-
 export { PrimaryConnectionResolverDriver } from "#node/drivers/primary-connection-resolver.driver";
 export { ServiceHoldRegistryDriver } from "#node/drivers/service-hold-registry.driver";
 export { applySeed } from "#node/functions/apply-seed.function";
+export { databaseUrl } from "#node/functions/database-url.function";
 export { directDatabaseUrl } from "#node/functions/direct-database-url.function";
 export { migrate } from "#node/functions/migrate.function";
+export { provideDatabaseUrl } from "#node/functions/provide-database-url.function";
+export { readMigratedSchema } from "#node/functions/read-migrated-schema.function";
+export type { SeedLedger } from "#node/types/seed-ledger.type";
+export type { SeederEntry } from "#node/types/seeder-entry.type";
 export { rollback } from "#node/functions/rollback.function";
+export { runSeedEntry } from "#node/functions/run-seed-entry.function";
+export { runSeeders } from "#node/functions/run-seeders.function";
 export { seedState } from "#node/functions/seed-state.function";
+export { seederLedger } from "#node/functions/seeder-ledger.function";

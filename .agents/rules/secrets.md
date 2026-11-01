@@ -49,7 +49,7 @@ agent's raw `infisical run` asks the owner (ADR 0293). A new flow that needs a t
 **CI/CD:**
 
 A CI job logs in to Infisical by GitHub OIDC for one step and reads `/ci` only (ADR 0009 D2); no token is a repository
-secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). The Encore deploy stays denied: `encore deploy` is blocked by `guard-bash` and settings until the deploy spike STA-136 (DP2) settles the Encore path.
+secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). A workstation `encore deploy` stays denied (`guard-bash` and settings): Encore deploys run from a CI workflow, staging on a merge to main and production behind the owner's Environment approval, once a repository ships an Encore app (ADR 0468 decision 6).
 
 **MCP servers:**
 Token-based MCP servers launch through the `tools/scripts/mcp.sh` vault wrapper (reads from `/agents`). This is a
@@ -69,7 +69,7 @@ In Infisical `/ci` (CI/CD):
 - `TURBO_TOKEN` - Turborepo remote cache
 - `UNIWIND_AUTH_TOKEN` - Uniwind Pro CI/CD licence for the Quality Gate install (ADR 0310)
 - `CLOUDFLARE_API_TOKEN` - Cloudflare Worker deploys from CI (ADR 0284, ADR 0289)
-- `ENCORE_API_KEY` - Encore deployment, once a deploy path exists (DP2)
+- `ENCORE_API_KEY` - Encore deployment from CI, once a repository ships an Encore app (ADR 0468)
 - `SENTRY_AUTH_TOKEN` - Sentry releases (optional)
 
 ## 3. The secrets inbox (secret-manager flow, ADR 0257)
@@ -101,8 +101,9 @@ file holding just that value; there is no `--value` flag.
 - `guard-bash.mjs` (rules in `.agents/hooks/_rules.mjs`, shared with the OpenCode guard, ADR 0293): blocks
   `infisical export`, `infisical secrets get` in every form (`--silent` still prints the value), `infisical secrets set`,
   a bare `infisical secrets` (lists values), `infisical run -- env|printenv`, `env`/`printenv`, process-environment
-  listings (`ps -E`, `ps eww`, `launchctl procinfo`) and running `bot-token.mjs`, also behind `pnpm exec`, `npx` and
-  `mise exec --`. Raw `infisical run`, `infisical secrets delete` and `secrets:import … --confirm` ask the owner.
+  listings (`ps -E`, `ps eww`, `launchctl procinfo`) and running `bot-token.mjs` or `figentra bot token`, also behind
+  `pnpm exec`, `npx` and `mise exec --`. Raw `infisical run`, `infisical secrets delete` and `secrets:import … --confirm`
+  (or `figentra secrets import … --confirm`) ask the owner.
 - `guard-bash.mjs` (matcher `.agents/hooks/_inbox.mjs`, shared with the OpenCode guard): blocks any command in which
   a word, after unquoting, names `Secrets-inbox` (any case) or the import confirm key. Two kinds of word are exempt: a
   grep/rg/ag pattern, and a `--title`/`--body`/`--message`/`-m` value with no `$(` or backtick. Program text
@@ -125,7 +126,7 @@ Each article below is bound to a check:
 2. **No .env files** → `guard-paths` hook
 3. **CI secrets from OIDC** → GitHub Actions OIDC (Phase 2)
 4. **Production values reach runtimes by Infisical sync** (ADR 0173, decision 1), and only the `secret-manager` agent writes values through `pnpm secrets:import` (ADR 0173, decision 7; ADR 0257). Review checks the sync, not a manual copy.
-5. **Nobody reads a value; the inbox flow writes blind** → `tools/scripts/secrets-import.mjs` (+ its test, which
+5. **Nobody reads a value; the inbox flow writes blind** → `figentra secrets import` (`@figentra/cli`, + its test, which
    asserts no canary value reaches output, audit log or argv), `guard-bash` / `guard-paths` inbox rules
 
 ## Setup
