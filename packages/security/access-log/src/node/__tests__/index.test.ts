@@ -25,6 +25,7 @@ describe("@stackra/access-log/node", () => {
       "AuditQuery",
       "AuditQueryInput",
       "AuditQueryOutput",
+      "AuditTrailCommandAuditDriver",
       "DataClassificationMacro",
       "ExportAuditAction",
       "ExportAuditInput",

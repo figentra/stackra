@@ -4,7 +4,7 @@
  *          (STA-339): `PostgresDatabaseDriver`, which gen's boot calls to connect, and `DatabaseUnitOfWorkDriver`, the
  *          action pipeline's unit of work on it, and `DatabaseReplicaReadsDriver`, its replica reads (STA-1504); the
  *          durable Postgres drivers of `@stackra/actions`' idempotency and rate-limit ports; `ServiceHoldRegistryDriver`,
- *          the `HoldRegistry` every service binds over its `HoldChannel`; `migrate` and `rollback`, the runner
+ *          the `HoldRegistry` every service binds over its `HoldChannel`; `DatabaseRunner` and the four `db:*` commands (`DbMigrateCommand`, `DbRollbackCommand`, `DbStatusCommand`, `DbSeedCommand`, STA-1731); `migrate` and `rollback`, the runner
  *          `stackra db` calls; and `seedState` and `applySeed`, the runner `stackra seed-pack` calls;
  *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `PrimaryConnectionResolverDriver`, the free one-pool
  *          `ConnectionResolver` (stackra-310); `DatabaseQueryBudgetDriver`, the action pipeline's `QueryBudget` (N+1
@@ -17,6 +17,11 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note; ADR 0396; the STA-347 stand-in barrel decision.
  */
+export { DatabaseRunner } from "#node/services/database-runner.service";
+export { DbMigrateCommand } from "#node/commands/db-migrate.command";
+export { DbRollbackCommand } from "#node/commands/db-rollback.command";
+export { DbSeedCommand } from "#node/commands/db-seed.command";
+export { DbStatusCommand } from "#node/commands/db-status.command";
 export { DatabaseHealthIndicatorDriver } from "#node/drivers/database-health-indicator.driver";
 export { DatabaseQueryBudgetDriver } from "#node/drivers/database-query-budget.driver";
 export { DatabaseReplicaReadsDriver } from "#node/drivers/database-replica-reads.driver";

@@ -16,7 +16,7 @@ import { BelongsToTenantOrPlatform } from "#node/traits/belongs-to-tenant-or-pla
 import { BelongsToTenant } from "#node/traits/belongs-to-tenant.trait";
 
 describe("@stackra/tenancy/node", () => {
-  it("exports exactly the traits, the macro, the service, the isolation driver, the approval binding model with its store driver and the prune job", () => {
+  it("exports exactly the traits, the macro, the service, the isolation driver, the approval binding model with its store driver, the prune job and the commands", () => {
     expect(Object.keys(node).sort()).toEqual([
       "ApprovalBinding",
       "BelongsToTenant",
@@ -25,7 +25,9 @@ describe("@stackra/tenancy/node", () => {
       "CallIsolationDriver",
       "PostgresApprovalBindingStoreDriver",
       "PruneApprovalBindingsAction",
+      "TenantCreateCommand",
       "TenantIsolationService",
+      "TenantListCommand",
     ]);
     expect(node.BelongsToTenant).toBe(BelongsToTenant);
     expect(node.BelongsToTenantMacro).toBe(BelongsToTenantMacro);
