@@ -9,12 +9,34 @@
 /** The control kind of one form field. */
 export type InputKind =
   | {
-      /** Text, a number or a switch. */
-      readonly kind: "text" | "number" | "boolean";
+      /**
+       * Text, a number, a switch, a calendar day (`z.iso.date()`, `YYYY-MM-DD`), an instant (`Date`, the ISO 8601
+       * codec, `z.iso.datetime()`), any JSON value (`z.json()`, `unknown`) edited as JSON text, or `missing` when the
+       * schema has no such path (drawn as text).
+       */
+      readonly kind: "text" | "number" | "boolean" | "date" | "datetime" | "json" | "missing";
     }
   | {
       /** A choice of the enum's codes. */
       readonly kind: "enum";
       /** The codes, in the schema's order. */
       readonly options: readonly string[];
+    }
+  | {
+      /** A nested object, drawn as a titled group of its keys. */
+      readonly kind: "object";
+      /** Its keys, in the schema's order. */
+      readonly keys: readonly string[];
+    }
+  | {
+      /** A list, drawn as rows to add and remove; each row is an object's group or one field. */
+      readonly kind: "list";
+      /** Whether an item is an object (a group per row) or a single value. */
+      readonly item: "object" | "value";
+    }
+  | {
+      /** A map of string keys (`z.record(z.string(), v)`), drawn as key and value rows. */
+      readonly kind: "record";
+      /** Whether a value is a number or text. */
+      readonly value: "number" | "text";
     };

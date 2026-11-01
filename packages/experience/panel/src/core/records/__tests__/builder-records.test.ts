@@ -93,4 +93,19 @@ describe("builder records", () => {
     expect(columns.from("status").labels(labels).toNode()).toMatchObject({ key: "status", labels });
     expect(entries.from("status").labels(labels).toNode()).toMatchObject({ key: "status", labels });
   });
+
+  it("records a list entry's per-column enum labels and currency", () => {
+    const labels = { packed: "orders::enums.line_status.packed" as I18nKey };
+    const entries = new EntriesRecord<{ currency: string; lines: { status: string }[] }>();
+    expect(
+      entries
+        .list("lines", ["status"], { currency: "currency", labels: { status: labels } })
+        .toNode(),
+    ).toMatchObject({
+      kind: "list",
+      key: "lines",
+      currency: "currency",
+      labels: { status: labels },
+    });
+  });
 });

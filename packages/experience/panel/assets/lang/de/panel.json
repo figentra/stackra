@@ -41,7 +41,16 @@
     "count": "{count, plural, one {# Datensatz} other {# Datensätze}}",
     "count_capped": "{count, plural, other {#+ Datensätze}}",
     "yes": "Ja",
-    "no": "Nein"
+    "no": "Nein",
+    "add_item": "Hinzufügen",
+    "remove_item": "Eintrag {number} entfernen",
+    "invalid_json": "Das ist kein gültiges JSON.",
+    "record_key": "Schlüssel {number}",
+    "record_value": "Wert {number}",
+    "date_part": "Datum",
+    "hour": "Stunde",
+    "minute": "Minute",
+    "time_zone": "Zeiten in {zone}."
   },
   "plan_catalogue": {
     "history": "Versionen",

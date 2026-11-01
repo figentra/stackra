@@ -23,4 +23,10 @@ export interface RelationNode {
 
   /** The query inputs bound from the record (`{ orderId: "record.id" }`); gen fills them. */
   readonly bind?: Readonly<Record<string, string>>;
+
+  /**
+   * Record actions on each related row (`ReleaseHoldAction` on an order's holds): the row's id under the related
+   * model's id key, the bound inputs filled in.
+   */
+  readonly actions?: readonly AnyClass[];
 }

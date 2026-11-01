@@ -35,11 +35,11 @@ vi.mock("@stackra/navigation/react", () => ({ useNavigate: () => spies.navigate 
 vi.mock("#react/resource-pages/action-input-modal", async () => {
   const { createElement } = await import("react");
   return {
-    ActionInputModal: (props: { ids: string[]; keys: string[]; idKey: string }) =>
+    ActionInputModal: (props: { ids?: string[]; keys: string[]; idKey?: string }) =>
       createElement(
         "dialog",
         { open: true },
-        `${props.idKey}:${props.ids.join(",")}:${props.keys.join(",")}`,
+        `${props.idKey ?? "-"}:${(props.ids ?? []).join(",")}:${props.keys.join(",")}`,
       ),
   };
 });
@@ -141,6 +141,10 @@ const UpdateOrderAction = actionRef("orders.order.update@1", {
 });
 const CancelOrderAction = actionRef("orders.order.cancel@1", {
   input: z.object({ orderId: z.string() }),
+  output: z.object({}),
+});
+const PauseOrderingAction = actionRef("orders.order.pause_ordering@1", {
+  input: z.object({ until: z.string(), reason: z.string().optional() }),
   output: z.object({}),
 });
 const HoldOrderAction = actionRef("orders.order.hold@1", {
@@ -281,6 +285,26 @@ describe("ResourceListPage", () => {
     expect(spies.run).toHaveBeenNthCalledWith(1, CancelOrderAction, { orderId: "ord_1" });
     expect(spies.run).toHaveBeenNthCalledWith(2, CancelOrderAction, { orderId: "ord_2" });
     expect(bulk.textContent).toContain("panel::resources.delete");
+    dispose();
+  });
+
+  it("opens the input modal without a record for a List header action that takes input", async () => {
+    const dispose = registerResources({
+      "orders.order": {
+        options: { area: ApiArea.Admin, operations: { list: true } },
+        actions: [{ kind: "run", action: PauseOrderingAction }],
+      },
+    });
+    spies.useQuery.mockReturnValue({
+      data: { items: rows, hasMore: false },
+      error: null,
+      isPending: false,
+      refetch: vi.fn(),
+    });
+    render(<ResourceListPage resource={Orders} />);
+    press("orders::resources.order.actions.pause_ordering");
+    await vi.waitFor(() => expect(screen.getByText("-::until,reason")).toBeTruthy());
+    expect(spies.run).not.toHaveBeenCalled();
     dispose();
   });
 

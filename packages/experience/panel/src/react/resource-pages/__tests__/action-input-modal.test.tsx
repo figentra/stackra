@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ActionInputModal`: it draws the action's label, its confirm copy and one field per key, starts
  *          the form with the record id, submits the values once per record without a second confirmation and closes;
- *          a refusal keeps it open with the server's field errors and retries only the refused records.
+ *          a refusal keeps it open with the server's field errors and retries only the refused records; the record's own
+ *          values pre-fill its keys.
  * Boundary: unit tier, jsdom; the action runner and the schema form are spies, the web kit is DOM stand-ins,
  *           translation returns the key.
  * Runtime: node (vitest)
@@ -132,6 +133,26 @@ describe("ActionInputModal", () => {
     });
   });
 
+  it("starts the form keys from the record's own values", () => {
+    render(
+      <ActionInputModal
+        resourceKey="reviews.review"
+        action={ModerateReviewAction}
+        idKey="reviewId"
+        ids={["rev_1"]}
+        record={{ id: "rev_1", note: "Thanks for the review!", decision: null, rating: 4 }}
+        keys={["decision", "note"]}
+        onClose={vi.fn()}
+      />,
+    );
+    // A null value and a key the form does not ask for start nothing.
+    expect(spies.useSchemaForm.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        defaultValues: { reviewId: "rev_1", note: "Thanks for the review!" },
+      }),
+    );
+  });
+
   it("runs once per record with the same values, confirmed, then closes", async () => {
     spies.run.mockResolvedValue({ status: "done", data: {} });
     spies.values = { reviewId: "rev_1", decision: "reject" };
@@ -176,6 +197,29 @@ describe("ActionInputModal", () => {
   it("closes when dismissed", () => {
     const onClose = open(["rev_1"]);
     fireEvent.click(screen.getByText("x"));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("runs once without a record id when the action takes no record", async () => {
+    spies.run.mockResolvedValue({ status: "done", data: {} });
+    spies.values = { decision: "approve" };
+    const onClose = vi.fn();
+    render(
+      <ActionInputModal
+        resourceKey="reviews.review"
+        action={ModerateReviewAction}
+        keys={["decision", "note"]}
+        onClose={onClose}
+      />,
+    );
+    expect(spies.useSchemaForm.mock.calls[0]?.[1]).toMatchObject({ defaultValues: {} });
+    await act(async () => fireEvent.click(screen.getByText("submit")));
+    expect(spies.run).toHaveBeenCalledTimes(1);
+    expect(spies.run).toHaveBeenCalledWith(
+      ModerateReviewAction,
+      { decision: "approve" },
+      { confirmed: true },
+    );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

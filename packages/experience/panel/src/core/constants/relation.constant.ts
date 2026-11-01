@@ -24,6 +24,7 @@ export const Relation = Object.freeze({
     options: {
       readonly columns: readonly ColumnNode[];
       readonly bind?: Readonly<Record<string, string>>;
+      readonly actions?: readonly AnyClass[];
     },
   ): RelationNode =>
     Object.freeze({
@@ -31,5 +32,6 @@ export const Relation = Object.freeze({
       query,
       columns: Object.freeze([...options.columns]),
       ...(options.bind === undefined ? {} : { bind: Object.freeze({ ...options.bind }) }),
+      ...(options.actions === undefined ? {} : { actions: Object.freeze([...options.actions]) }),
     }),
 });

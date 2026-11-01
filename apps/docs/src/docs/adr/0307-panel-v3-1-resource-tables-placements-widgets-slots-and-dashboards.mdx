@@ -1,7 +1,15 @@
 ---
 title: "0307 — Panel v3.1: resource tables as server contracts, placements by input, metric widgets, typed slots, dashboards and settings"
-description: "Accepted, amended by 0326, 0334, 0336, 0350, 0359 · 2026-10-23 · amended 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0326, 0334, 0336, 0350, 0359 · 2026-10-23 · amended 2026-10-24 (STA-428) · amended 2026-10-30 (STA-1639)"
 ---
+
+<Note>
+  Amended 2026-10-30 (STA-1639, owner): in rule 3, any input field besides the record id opens the
+  modal form, not only a required one. An action whose other fields are all optional or defaulted
+  (an import run, a reason) still shows its form and its confirmation instead of running at once; an
+  action that takes the record id alone runs at once as before. A List header or empty-state action
+  with input fields opens the same form, run once.
+</Note>
 
 <Note>
   Amended 2026-10-28 (STA-1478) by
@@ -88,12 +96,12 @@ query (ADR 0305 rule 31), and the panel only presents it.
    table.
 3. Every button runs an Action class. A placed action's default places follow its input:
 
-   | Input of the action                         | Default places                                        |
-   | ------------------------------------------- | ----------------------------------------------------- |
-   | has the record id only                      | Row, View header, Edit header                         |
-   | has the record id and other required fields | the same, and the button opens a modal form           |
-   | has `selection: Selection<"ord">`           | Bulk bar (and View header, as a one-record selection) |
-   | has neither                                 | List header                                           |
+   | Input of the action                | Default places                                        |
+   | ---------------------------------- | ----------------------------------------------------- |
+   | has the record id only             | Row, View header, Edit header                         |
+   | has the record id and other fields | the same, and the button opens a modal form           |
+   | has `selection: Selection<"ord">`  | Bulk bar (and View header, as a one-record selection) |
+   | has neither                        | List header                                           |
 
    `.in(...)` narrows the places. `.bulk()` adds the Bulk bar to a record action, and fans out with the policy per
    record. Derived operations place themselves: create in the List header and the empty state, update as Edit on

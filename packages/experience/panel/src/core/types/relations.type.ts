@@ -27,11 +27,15 @@ import type { RelationNode } from "#core/types/relation-node.type";
 export interface Relations<R> {
   /**
    * A table of the rows `query` lists for the record. `bind` maps a query input to a record path when gen cannot
-   * derive it (the record id input is derived).
+   * derive it (the record id input is derived). `actions` are record actions on each row, keyed by the related model
+   * (a child-keyed action such as releasing an order's hold sits on the order this way).
    */
   table: <Q extends AnyClass>(
     query: Q,
     build: (column: ColumnFactory<QueryRow<Q>>) => readonly ColumnBuilder[],
-    options?: { readonly bind?: Readonly<Record<string, Path<R>>> },
+    options?: {
+      readonly bind?: Readonly<Record<string, Path<R>>>;
+      readonly actions?: readonly AnyClass[];
+    },
   ) => Built<RelationNode>;
 }

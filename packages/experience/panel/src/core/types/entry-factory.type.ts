@@ -5,6 +5,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 1).
  */
+import type { I18nKey } from "@stackra/i18n";
+
 import type { Built } from "#core/types/built.type";
 import type { ElementOf } from "#core/types/element-of.type";
 import type { EntryBuilder } from "#core/types/entry-builder.type";
@@ -26,12 +28,20 @@ export interface EntryFactory<R> {
 
   /**
    * A list field as a small table of the item paths `columns`. A `…Minor` column is money in its item's own `currency`,
-   * else in the record's currency at `options.currency`.
+   * else in the record's currency at `options.currency`. `options.labels` names a column's enum labels
+   * (`{ status: I18n.orders.enums.line_status }`) where the derived key misses.
    */
   list: <K extends Path<R>>(
     key: K,
     columns: readonly Path<ElementOf<NonNullable<PathValue<R, K>>>>[],
-    options?: { readonly currency: Path<R> },
+    options?: {
+      readonly currency?: Path<R>;
+      readonly labels?: Readonly<
+        Partial<
+          Record<Path<ElementOf<NonNullable<PathValue<R, K>>>>, Readonly<Record<string, I18nKey>>>
+        >
+      >;
+    },
   ) => Built<EntryNode>;
 
   /** A titled group of entries. */

@@ -41,7 +41,16 @@
     "count": "{count, plural, zero {لا سجلات} one {سجل واحد} two {سجلان} few {# سجلات} many {# سجلًا} other {# سجل}}",
     "count_capped": "{count, plural, other {أكثر من # سجل}}",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "add_item": "إضافة",
+    "remove_item": "إزالة العنصر {number}",
+    "invalid_json": "هذا ليس JSON صالحًا.",
+    "record_key": "المفتاح {number}",
+    "record_value": "القيمة {number}",
+    "date_part": "التاريخ",
+    "hour": "الساعة",
+    "minute": "الدقيقة",
+    "time_zone": "الأوقات بتوقيت {zone}."
   },
   "plan_catalogue": {
     "history": "الإصدارات",

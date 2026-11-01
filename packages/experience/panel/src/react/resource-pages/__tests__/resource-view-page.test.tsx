@@ -3,7 +3,7 @@
  * Purpose: unit tests of `ResourceViewPage`: the get query read with the record id under its input key, the recorded
  *          entries and sections, the header actions (edit, a placed record action run with the id, delete), the
  *          relation managers with their bound input, the derived entries without a tree, a list entry's minor units as
- *          money in the item's or the record's currency, and the error state.
+ *          money in the item's or the record's currency, a list column's named enum labels, and the error state.
  * Boundary: unit tier, jsdom; `useQuery`, the action runner and navigation are spies, the relation manager and the web
  *           kit are DOM stand-ins, translation returns the key.
  * Runtime: node (vitest)
@@ -12,6 +12,7 @@
 // @vitest-environment jsdom
 import { actionRef, queryRef } from "@stackra/clients";
 import { ApiArea } from "@stackra/contracts";
+import type { I18nKey } from "@stackra/i18n";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
@@ -205,7 +206,13 @@ describe("ResourceViewPage", () => {
         options: { area: ApiArea.Admin, operations: { get: true } },
         infolist: {
           entries: [
-            { kind: "list", key: "customs", columns: ["sku", "valueMinor"], currency: "currency" },
+            {
+              kind: "list",
+              key: "customs",
+              columns: ["sku", "valueMinor", "status"],
+              currency: "currency",
+              labels: { status: { packed: "orders::enums.line_status.packed" as I18nKey } },
+            },
           ],
         },
       },
@@ -215,7 +222,7 @@ describe("ResourceViewPage", () => {
         id: "ord_1",
         currency: "SAR",
         customs: [
-          { sku: "SKU-1", valueMinor: 1250 },
+          { sku: "SKU-1", valueMinor: 1250, status: "packed" },
           { sku: "SKU-2", valueMinor: 99, currency: "EUR" },
         ],
       },
@@ -227,6 +234,8 @@ describe("ResourceViewPage", () => {
     expect(screen.getByText("SKU-1")).toBeTruthy();
     expect(screen.getByText("SAR 1250")).toBeTruthy();
     expect(screen.getByText("EUR 99")).toBeTruthy();
+    // The named label wins over the derived `orders::enums.order_status.packed`.
+    expect(screen.getByText("orders::enums.line_status.packed")).toBeTruthy();
     dispose();
   });
 });
