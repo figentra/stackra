@@ -8,6 +8,8 @@
  */
 export type { ArgumentOptions } from "#contracts/types/argument-options.type";
 export { CommandAudit } from "#contracts/ports/command-audit.port";
+export { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
+export type { BreakGlassSession } from "#contracts/types/break-glass-session.type";
 export type { CommandAuditEntry } from "#contracts/types/command-audit-entry.type";
 export type { CommandOptions } from "#contracts/types/command-options.type";
 export type { ConsoleSignal } from "#contracts/types/console-signal.type";

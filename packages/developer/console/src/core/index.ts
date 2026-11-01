@@ -12,6 +12,7 @@ export { EXIT_CODE } from "#core/constants/exit-code.constant";
 export { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 export { Argument } from "#core/decorators/argument.decorator";
 export { Option } from "#core/decorators/option.decorator";
+export { BreakGlassRequiredError } from "#core/errors/break-glass-required.error";
 export { CommandAuditMissingError } from "#core/errors/command-audit-missing.error";
 export { CommandNotAuditedError } from "#core/errors/command-not-audited.error";
 export { ConsoleDeclarationError } from "#core/errors/console-declaration.error";

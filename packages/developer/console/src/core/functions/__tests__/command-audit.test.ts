@@ -6,7 +6,7 @@
  * Runtime: node
  * Governing contract: STA-1731 spec FR-015 to FR-017; ADR 0022 (test placement).
  */
-// @covers sta-1731:FR-015 sta-1731:FR-016 sta-1731:FR-017
+// @covers sta-1731:FR-015 sta-1731:FR-016 sta-1731:FR-017 sta-1731:FR-018
 import { Str } from "@stackra/validation";
 
 import { Command } from "#core/bases/command.base";
@@ -15,6 +15,7 @@ import { Option } from "#core/decorators/option.decorator";
 import { auditValues } from "#core/functions/audit-values.function";
 import { readCommand } from "#core/functions/read-command.function";
 import { MemoryCommandAuditDriver } from "#testing/drivers/memory-command-audit.driver";
+import { MemoryOperatorBreakGlassDriver } from "#testing/drivers/memory-operator-break-glass.driver";
 import { runCommandForTest } from "#testing/functions/run-command-for-test.function";
 
 /** Records whether its handler ran. */
@@ -145,6 +146,62 @@ describe("command audit", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stdout).toContain("[redacted]");
     expect(result.stdout + result.stderr).not.toContain('"12"');
+  });
+
+  describe("in production", () => {
+    const PRODUCTION = { STACKRA_ENVIRONMENT: "production", STACKRA_OPERATOR: "ada" };
+
+    it("refuses an audited run before its handler with no break-glass binding", async () => {
+      const audit = new MemoryCommandAuditDriver();
+      const result = await runCommandForTest([SeedCommand], ["acct:seed", "acme"], {
+        audit,
+        env: PRODUCTION,
+      });
+      expect(result.exitCode).toBe(1);
+      expect(ran).toBe(false);
+      expect(result.stderr).toContain("no OperatorBreakGlass is bound");
+    });
+
+    it("refuses when the operator has no open session, or only one that has ended", async () => {
+      const audit = new MemoryCommandAuditDriver();
+      for (const breakGlass of [
+        new MemoryOperatorBreakGlassDriver(),
+        new MemoryOperatorBreakGlassDriver().open("ada", -1000),
+        new MemoryOperatorBreakGlassDriver().open("grace", 60_000),
+      ]) {
+        const result = await runCommandForTest([SeedCommand], ["acct:seed", "acme"], {
+          audit,
+          breakGlass,
+          env: PRODUCTION,
+        });
+        expect(result.exitCode).toBe(1);
+      }
+      expect(ran).toBe(false);
+      expect(audit.entries).toHaveLength(0);
+    });
+
+    it("runs inside an open session and records its id", async () => {
+      const audit = new MemoryCommandAuditDriver();
+      const breakGlass = new MemoryOperatorBreakGlassDriver().open("ada", 60_000, "incident 42");
+      const result = await runCommandForTest([SeedCommand], ["acct:seed", "acme"], {
+        audit,
+        breakGlass,
+        env: PRODUCTION,
+      });
+      expect(result.exitCode).toBe(0);
+      expect(ran).toBe(true);
+      expect(audit.entries[0]).toMatchObject({ operator: "ada", breakGlass: "bg_1" });
+    });
+
+    it("needs no session outside production", async () => {
+      const audit = new MemoryCommandAuditDriver();
+      const result = await runCommandForTest([SeedCommand], ["acct:seed", "acme"], {
+        audit,
+        env: { STACKRA_ENVIRONMENT: "staging" },
+      });
+      expect(result.exitCode).toBe(0);
+      expect(audit.entries[0]?.breakGlass).toBeUndefined();
+    });
   });
 
   it("reads audit, bin and secret from the declaration", () => {

@@ -6,6 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { MemoryOperatorBreakGlassDriver } from "#testing/drivers/memory-operator-break-glass.driver";
 export { MemoryCommandAuditDriver } from "#testing/drivers/memory-command-audit.driver";
 export { manualSignals } from "#testing/functions/manual-signals.function";
 export { memoryText } from "#testing/functions/memory-text.function";

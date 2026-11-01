@@ -30,4 +30,7 @@ export interface CommandIo {
 
   /** Output is drawn live on a colour terminal (spinners spin, bars redraw). */
   readonly animate: boolean;
+
+  /** Who runs the command: `STACKRA_OPERATOR`, else the login the environment names; passed on to registries. */
+  readonly operator: string;
 }

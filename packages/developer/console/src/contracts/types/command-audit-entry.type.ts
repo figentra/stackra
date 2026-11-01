@@ -26,4 +26,7 @@ export interface CommandAuditEntry {
 
   /** The run's exit code. */
   readonly exitCode: number;
+
+  /** The break-glass session the run used (a production run always has one). */
+  readonly breakGlass?: string;
 }

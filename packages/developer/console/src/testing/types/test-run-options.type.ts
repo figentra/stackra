@@ -7,6 +7,7 @@
  * Governing contract: STA-1730 spec FR-027.
  */
 import type { CommandAudit } from "#contracts/ports/command-audit.port";
+import type { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
 import type { ConsoleSignal } from "#contracts/types/console-signal.type";
 import type { PromptAnswer } from "#contracts/types/prompt-answer.type";
 import type { ConsoleConfig } from "#core/types/console-config.type";
@@ -30,6 +31,9 @@ export interface TestRunOptions {
 
   /** The `CommandAudit` an audited command records to; served beside `container`, or by a stand-in without one. */
   readonly audit?: CommandAudit;
+
+  /** The `OperatorBreakGlass` a production run of an audited command needs; served like `audit`. */
+  readonly breakGlass?: OperatorBreakGlass;
 
   /** Sent on the next tick after the run starts, to test interruption. */
   readonly signal?: ConsoleSignal;

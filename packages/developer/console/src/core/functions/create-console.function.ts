@@ -140,6 +140,7 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
           bidi: mode.bidi === "visual" ? visualBidi : (text) => text,
         })
       : defaultsPrompter();
+    const operator = operatorOf(ports.env);
     const outcome = await runCommand(
       entry,
       parsed.values,
@@ -153,9 +154,11 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
         json: mode.json,
         interactive: mode.interactive,
         animate: mode.animate,
+        operator,
       }),
       codeOf,
-      operatorOf(ports.env),
+      operator,
+      ports.env["STACKRA_ENVIRONMENT"] === "production",
     );
     if (outcome.data !== undefined && data === undefined) data = outcome.data;
     return finish(outcome.code, outcome.error);

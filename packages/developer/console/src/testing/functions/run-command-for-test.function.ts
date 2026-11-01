@@ -8,6 +8,7 @@
  * Governing contract: STA-1730 spec FR-027 and FR-028; spec 030 Requirement 8.
  */
 import { CommandAudit } from "#contracts/ports/command-audit.port";
+import { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
 import type { ConsoleContainer } from "#core/types/console-container.type";
 import { createConsole } from "#core/functions/create-console.function";
 import type { CommandClass } from "#core/types/command-class.type";
@@ -18,21 +19,21 @@ import { scriptedPrompter } from "#testing/functions/scripted-prompter.function"
 import type { TestRunOptions } from "#testing/types/test-run-options.type";
 import type { TestRunResult } from "#testing/types/test-run-result.type";
 
-/** `factory`'s container (or a stand-in that builds classes with no arguments) that also serves `audit`. */
-function withAudit(
+/** `factory`'s container (or a stand-in that builds classes with no arguments) that also serves `ports`. */
+function withPorts(
   factory: ConsoleConfig["container"],
-  audit: CommandAudit,
+  ports: ReadonlyMap<unknown, object>,
 ): NonNullable<ConsoleConfig["container"]> {
   return async () => {
     const inner = await factory?.();
     const container: ConsoleContainer = {
       get: <T extends object>(type: abstract new (...args: never[]) => T): T =>
-        type === (CommandAudit as unknown)
-          ? (audit as unknown as T)
+        ports.has(type)
+          ? (ports.get(type) as T)
           : inner === undefined
             ? (Reflect.construct(type, []) as T)
             : inner.get(type),
-      has: (type) => type === CommandAudit || inner?.has?.(type) === true,
+      has: (type) => ports.has(type) || inner?.has?.(type) === true,
       close: async () => {
         await inner?.close();
       },
@@ -56,8 +57,10 @@ export async function runCommandForTest(
   const base: ConsoleConfig = Array.isArray(commands)
     ? { name: "app", version: "0.0.0", commands: commands as readonly CommandClass[] }
     : (commands as ConsoleConfig);
-  const audit = options.audit;
-  const container = audit === undefined ? options.container : withAudit(options.container, audit);
+  const ports = new Map<unknown, object>();
+  if (options.audit !== undefined) ports.set(CommandAudit, options.audit);
+  if (options.breakGlass !== undefined) ports.set(OperatorBreakGlass, options.breakGlass);
+  const container = ports.size === 0 ? options.container : withPorts(options.container, ports);
   const config = container === undefined ? base : { ...base, container };
   const stdout = memoryText();
   const stderr = memoryText();
