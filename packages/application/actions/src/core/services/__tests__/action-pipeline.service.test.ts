@@ -792,9 +792,9 @@ describe(ActionPipeline, () => {
         { actor: customer, idempotencyKey: "k-joined" },
       ),
     ).toEqual({ orderId: "ord_1", key: "k-joined" });
-    // a call without a key never needs the store, joined or not
+    // a call without a key (an action that declares no idempotency) never needs the store, joined or not
     await expect(
-      refused.pipeline.execute(CreateOrderAction, { quantity: 1 }, { actor: customer }),
+      refused.pipeline.execute(InspectAction, {}, { actor: customer }),
     ).resolves.toBeDefined();
   });
 

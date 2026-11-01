@@ -59,6 +59,7 @@ describe("@stackra/actions", () => {
       "IdMinting",
       "Idempotency",
       "IdempotencyKeyRequiredError",
+      "IdempotencyStoreNotTransactionalError",
       "InputInvalidError",
       "Interceptor",
       "MemoryDeviceSequenceStoreDriver",
