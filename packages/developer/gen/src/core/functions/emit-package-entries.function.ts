@@ -145,5 +145,21 @@ export function emitPackageEntries(ir: MemberIR): GeneratedFile[] {
     });
     files.push({ path: `.stackra/entry/${entry}.ts`, content: [header, ...body, ""].join("\n") });
   }
+  // A package with nothing to export yet (a skeleton) still gets its `.` entry, empty: without one tsdown falls back to
+  // `src/index.ts` and fails the build (STA-1753).
+  if (files.length === 0)
+    files.push({
+      path: ".stackra/entry/index.ts",
+      content: [
+        generatedHeader({
+          from: "src/config and src/core (nothing exported yet)",
+          purpose: `the \`.\` entry of ${ir.package}, empty until a folder exports something, so its build succeeds.`,
+          boundary: 'package.json `exports["."]` points here.',
+          runtime: "isomorphic",
+        }),
+        "export {};",
+        "",
+      ].join("\n"),
+    });
   return files;
 }
