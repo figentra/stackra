@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: hold `stackra doctor`'s checks to their contract: missing mise tools, an active Infisical session, the AWS
- *          identity without echoing it, the spec-kit pin, and a report that fails only on a required check.
+ *          identity without echoing it, and a report that fails only on a required check.
  * Boundary: pure functions on injected command output; runs no command.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
@@ -15,8 +15,6 @@ import { doctorExitCode } from "#node/doctor/functions/doctor-exit-code.function
 import { infisicalLoggedIn } from "#node/doctor/functions/infisical-logged-in.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
 import { renderDoctor } from "#node/doctor/functions/render-doctor.function";
-import { speckitMatches } from "#node/doctor/functions/speckit-matches.function";
-import { speckitPin } from "#node/doctor/functions/speckit-pin.function";
 import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 
 test("missingMiseTools lists tools with an uninstalled version", () => {

@@ -18,7 +18,10 @@ pre-commit:
       # --check, not --write: stage_fixed made lefthook stash unstaged work, which conflicts while the loop
       # edits other members mid-commit (see apps/docs/src/docs/agents/concurrent-sessions.mdx); the gate formats a member before it passes.
       # oxfmt exits 2 when every staged file is on its ignore list (pnpm-lock.yaml alone): that is not a finding.
-      run: sh -c 'pnpm exec oxfmt --check "$@"; s=$?; [ $s -eq 2 ] && exit 0; exit $s' -- {staged_files}
+      # The mise-pinned oxfmt runs without a workspace install; pnpm's is the fallback where mise is missing (STA-1865).
+      run: >-
+        sh -c 'if command -v mise >/dev/null 2>&1; then mise exec -- oxfmt --check "$@"; else pnpm exec oxfmt --check "$@"; fi;
+        s=$?; [ $s -eq 2 ] && exit 0; exit $s' -- {staged_files}
     - name: shfmt
       glob: "*.sh"
       exclude:
@@ -35,7 +38,8 @@ pre-commit:
       exclude:
         - ".agents/skills/**"
         - ".agents/reference/**"
-      run: pnpm exec oxlint {staged_files}
+      # The mise-pinned oxlint runs without a workspace install; pnpm's is the fallback where mise is missing (STA-1865).
+      run: sh -c 'if command -v mise >/dev/null 2>&1; then exec mise exec -- oxlint "$@"; fi; exec pnpm exec oxlint "$@"' -- {staged_files}
     - name: gitleaks
       run: |
         if command -v gitleaks >/dev/null 2>&1; then
@@ -47,8 +51,15 @@ pre-commit:
 commit-msg:
   jobs:
     # The preset builds to dist for its tarball; a commit reads its src instead, so it needs no build (ADR 0025).
+    # commitlint reads the workspace preset, so it needs an install; without one it is advisory here, as shfmt and
+    # gitleaks are, and the Quality Gate checks every commit of the pull request (STA-1865).
     - name: commitlint
-      run: NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --edit {1}
+      run: |
+        if [ -x node_modules/.bin/commitlint ]; then
+          NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --edit {1}
+        else
+          echo "commitlint not installed (pnpm install) — the Quality Gate checks the pull request's commits"
+        fi
 
 pre-push:
   jobs:
