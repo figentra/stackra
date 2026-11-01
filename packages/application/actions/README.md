@@ -224,13 +224,28 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
 
 ## Governance in the pipeline
 
-- **Approval** (stage `approval`, before idempotency): a bound `ApprovalGate` decides from the tenant's approval rules
-  whether a call needs an approval; it parks a request and refuses `approval_required` with its `approvalId`, and the
-  call resubmitted with `CallOptions.approvalId` runs once the request is granted. Which calls need approval is data,
-  never code. A second approver (billing's ad-hoc coupons, OS-381) is this stage with an `ApproverRule` of
-  `notRequester: true`: the gate's driver checks a grant with `approverRefusal(rule, approver, call.actor)`, which
-  refuses the requester and the human an agent acts for, so a service needs no two-step request and approve of its
-  own.
+- **Approval** (stage `approval`, before idempotency; ADR 0509): an action declares `approval: true` or
+  `approval: { approvals, permission, expiresAfter, when }`, and the tenant's rules (`ApprovalGate.decide`) may only add
+  to it: the call needs `max(declared, decided)`. A call that needs approval is refused `approval_required` (with
+  `approvalId`, `approvalsRequired` and `expiresAt`, never input); the pipeline then writes the owning service's
+  `ApprovalBinding` and parks the request in a fresh isolation run, after the refused call's transaction rolled back.
+  A call naming `CallOptions.approvalId` is verified in core (`verifyApproval`) against the binding, the store's row and
+  its snapshot, the window, and distinct people who are not the requester's person; the key is forced to
+  `approval:<id>`, so a caller may not send one. A declared stage fails closed with the open gate, or without an
+  `ApprovalBindingStore`, an `ActorStatusCheck` or an `IdentityResolver` bound.
+  - `when` names an `ApprovalCondition`: the threshold is data it reads through its limited settings reader, the
+    comparison is code.
+  - **Execute on grant.** The store publishes `ApprovalGranted` (`actions.approval.granted.v1`, ids only). In the
+    owning service `ApprovalExecutor` (`./node`, call `connect(container)` after boot) reads the binding in a read-only
+    run as the tenant's system actor, checks `ScopeOwnership` and the snapshot hash, moves the store
+    `granted → executing` by compare-and-set, and runs the whole pipeline as the stored requester under
+    `approval:<id>`, so a duplicate delivery runs `handle` once. A refusal settles `failed` with its code; an in-flight
+    answer, an identity outage or any other error settles nothing and retries; `executing` 24 hours after the grant
+    settles `unknown`. It acts only on a delivery `ApprovalGrantOrigin` trusts, and the approver's authority is never
+    lent.
+  - A request parked only by the tenant's rules keeps resubmission (`on_resubmit`); the executor never runs it.
+  - `./testing` ships `MemoryApprovalGateDriver`, `MemoryApprovalBindingStoreDriver`, `MemoryActorStatusCheckDriver` and
+    the two port conformance suites; the store itself (votes, sweep) lives in OS tasks-approvals behind `ApprovalGate`.
 - **Effect tags**: `Effect` (`financial`, `security`, `pii`, `external_communication`, `irreversible`, `bulk`) travel
   with the permission in `registerActions` and reach every port on `CallDescriptor.effects`.
 - **Live configuration**: an action declared `structural: true` runs only where the bound `LiveConfigurationGuard`
