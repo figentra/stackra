@@ -26,9 +26,10 @@ body lost the trailer is never seen, so those STA issues stay open after their w
   `.github/workflows/linear-sync.yml`)
 - **Cross-service events**: none
 - **Tenancy and data**: none
-- **Secrets**: the workflow reads the stackra-bot App id and key from Infisical prod `/ci/release` over OIDC
-  (STA-1747), as `runway-npm.yml` does, and mints a read-only installation token for the `figentra` org; no
-  repository secret and no value in git. Without a token the job runs on `github.token` and reports the other repos
+- **Secrets**: the workflow passes the stackra-bot App id and key (the repository secrets `STACKRA_BOT_APP_ID` /
+  `STACKRA_BOT_PRIVATE_KEY` that release.yml uses today) only to its job in the `linear-sync` environment, and mints a
+  read-only installation token for the `figentra` org; no value in git. STA-1827 moves the key to Infisical prod
+  `/ci/release` for release.yml and this workflow together (STA-1747). Without a token the job runs on `github.token` and reports the other repos
   as skipped.
 - **ADR needed**: no (ADR 0065 rule 7 and ADR 0121 D14 already govern the reconcile; ADR 0500 moves it later)
 - **New dependencies**: none (`yaml` is already a root dev dependency)
@@ -60,9 +61,9 @@ body lost the trailer is never seen, so those STA issues stay open after their w
   feat/fix commit carries `Refs: STA-n` (commitlint `refs-issue-key`), so it is the only signal outside core branch
   names. A title mention and `Part of STA-n` stay mentions (leader correction, 2026-11-01).
 - Q: Which repos? → A: the 19 of `gh repo list figentra` except `.github` and `academorix-legacy` (leader, 2026-11-01).
-- Q: Which credential reads the other repos? → A: the stackra-bot App, its key read from Infisical prod
-  `/ci/release` over OIDC exactly as `runway-npm.yml` reads it; bot secrets never come from repository secrets
-  (owner rule, STA-1747).
+- Q: Which credential reads the other repos? → A: the stackra-bot App, with the same repository secrets release.yml
+  passes today, given only inside the `linear-sync` environment; the figentra-ci-deploy identity is the shared deploy
+  identity and is not reused. Moving both workflows to Infisical prod `/ci/release` is STA-1827 (leader, 2026-11-01).
 - Q: Where is the cursor kept? → A: nowhere; it is a lookback window (`--since`). Idempotency comes from the markers,
   so overlapping nightly windows repeat nothing.
 - Q: Can the repo list live in `figentra-flow.config.json`? → A: not now; that file's schema is Flow's. Proposed to
