@@ -56,9 +56,11 @@ test("a set_config whose third argument is not the literal true is a finding", (
 });
 
 test("the third argument is found across lines, commas in strings and nested calls", () => {
-  const text = ["await em.execute(", `  \`select ${SC}('a,b', coalesce(?, ''), false)\`,`, ");"].join(
-    "\n",
-  );
+  const text = [
+    "await em.execute(",
+    `  \`select ${SC}('a,b', coalesce(?, ''), false)\`,`,
+    ");",
+  ].join("\n");
   assert.deepEqual(
     settingProblems(text).map(({ line }) => line),
     [2],

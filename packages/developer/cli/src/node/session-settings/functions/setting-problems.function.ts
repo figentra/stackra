@@ -80,7 +80,10 @@ export function settingProblems(
       });
     const name = (args[0] ?? "").trim();
     const literal = /^(['"`])([^'"`]*)\1$/.exec(name);
-    if (outsideAllowed && (literal === null || (literal[2] ?? "").toLowerCase().startsWith(`${APP}.`)))
+    if (
+      outsideAllowed &&
+      (literal === null || (literal[2] ?? "").toLowerCase().startsWith(`${APP}.`))
+    )
       problems.push({
         line: lineOf(match.index),
         text: `set_config of an ${APP}.* setting (or of a name that is not a literal) outside the isolation driver; use CallIsolation`,

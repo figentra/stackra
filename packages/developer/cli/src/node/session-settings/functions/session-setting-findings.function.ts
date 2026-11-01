@@ -67,7 +67,11 @@ export function sessionSettingFindings(
   const findings: DirFinding[] = [];
   for (const area of SCANNED)
     for (const path of sources(root, area)) {
-      const outsideAllowed = !(isTest(path) || isTestingHelper(path) || Object.hasOwn(allowed, path));
+      const outsideAllowed = !(
+        isTest(path) ||
+        isTestingHelper(path) ||
+        Object.hasOwn(allowed, path)
+      );
       for (const { line, text } of settingProblems(readFileSync(join(root, path), "utf8"), {
         outsideAllowed,
       }))

@@ -37,11 +37,11 @@ a box (stackra-8a).
 
 ## Deploy modes
 
-| Mode       | Behaviour                                 |
-| ---------- | ----------------------------------------- |
-| SaaS       | unchanged; repository tooling only        |
-| On-prem    | unchanged; nothing ships in a bundle      |
-| Air-gapped | unchanged; the checks read local files    |
+| Mode       | Behaviour                              |
+| ---------- | -------------------------------------- |
+| SaaS       | unchanged; repository tooling only     |
+| On-prem    | unchanged; nothing ships in a bundle   |
+| Air-gapped | unchanged; the checks read local files |
 
 ## Correctness properties
 
