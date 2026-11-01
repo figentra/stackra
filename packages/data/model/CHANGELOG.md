@@ -1,5 +1,23 @@
 # @stackra/model
 
+## 0.3.0
+
+### Minor Changes
+
+- 23e556c: Adds `CredentialDataClass` (ai never, support hidden, search no_snippet, export excluded) and `ExportLabel.Excluded` (STA-1677, ADR 0494).
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/events@0.3.0
+  - @stackra/money@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

@@ -1,5 +1,24 @@
 # @stackra/builder
 
+## 0.3.0
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [4a6abd7]
+- Updated dependencies [a60f4e9]
+  - @stackra/collaboration@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/experience@0.3.0
+  - @stackra/rules@0.3.0
+  - @stackra/validation@0.3.0
+  - @stackra/workflow@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

@@ -1,5 +1,37 @@
 # @stackra/actions
 
+## 0.3.0
+
+### Minor Changes
+
+- a60f4e9: Run every call in one isolation transaction (STA-1699, ADR 0495): add the `CallIsolation` port (`run(actor, scope, work,
+  { readOnly })`), and the pipeline runs everything after the tenancy step inside it when one is bound, an action writable
+  and a query read-only. The unit of work is a savepoint of that transaction, so `afterCommit` work, the idempotency
+  completion, the offline cap record and the read-your-writes mark now run after the real commit, and a refused query's
+  usage event is written after its read-only transaction ends. With none bound a call runs as before.
+- c4443b5: Refuse a keyed call that joined a running transaction when the idempotency store cannot join it (STA-1699, ADR 0495
+  note of 2026-11-01): `IdempotencyStore.joinsTransaction` (true for the Postgres store), `UnitOfWork.inTransaction()`
+  (answered by the database unit of work) and the new `IdempotencyStoreNotTransactionalError`
+  (`idempotency_store_not_transactional`), thrown before anything is claimed or run.
+- b00096a: Add the `DeviceStatusReader` port (with `MemoryDeviceStatusReaderDriver`) and `DeviceRevokedError`: with a reader bound,
+  the pipeline refuses a call from a revoked device (`device_revoked`, 403) before device order, so nothing runs and its
+  sequence is not settled. With no reader bound nothing changes.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+  - @stackra/cache@0.3.0
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/events@0.3.0
+  - @stackra/testing@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

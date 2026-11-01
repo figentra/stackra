@@ -1,5 +1,41 @@
 # @stackra/runway
 
+## 0.3.0
+
+### Minor Changes
+
+- ae08e09: Add the `runway` binary (`plan`, `deploy`, `promote`, `--dry-run`), moved unchanged from the repository's
+  `pnpm runway` script; `pnpm runway` is now its alias.
+- 4ed7315: Add the smoke step after a preview deploy (STA-265): `smokePreview` checks every web surface at its canonical preview
+  host and every mobile app on each platform it has a build for, through the `SmokeDriver` port, and throws
+  `RunwaySmokeFailedError` with every result when one fails, so promotion is blocked; `only` keeps the targets one CI job checks. Drivers: `PlaywrightSmokeDriver`
+  (the page loads, renders its first screen, raises no console or page error and no critical axe violation; Playwright
+  and axe are optional peers from `catalog:e2e`), `MaestroSmokeDriver` (the mobile launch check) and the placeholder
+  `ElectronSmokeDriver` for desktop. The mobile launch check: `launchCheckJob` installs a Release simulator build on
+  the iOS simulator or the Android emulator and runs the template line's Maestro flows with the app's store id as
+  `APP_ID`, writing a JUnit report and screenshots to `.stackra/launch-check/<app>/<platform>/`; `runLaunchCheck` runs
+  that list and fails at the first failing flow. Defaults live in `LAUNCH_CHECK_DEFAULTS`. `easJsonOf` adds a
+  `simulator` build profile, shared by the launch check and the capture job.
+- d53babc: Add `resources` and `workloads` to the root runway, `environments.<env>.limits.monthly`, and `uses` on service runways
+  (STA-1641, ADR 0493). A resource is `postgres` (RDS or Aurora, a major version), `queue`, `topic`, `cache` or `bucket`
+  with a size per environment; Kafka, OpenSearch and SES are reserved and refused. A workload is a container pinned by
+  digest with a port, health path, `internal` or `public` exposure, the resources it uses, public env, secret names, a
+  size and task count per environment, and a required reason; a `uses` that names no resource is refused. Adds the
+  `ResourceKind` and `ResourceSize` enums and the canonical schema copies.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [d5b5411]
+  - @stackra/app@0.3.0
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

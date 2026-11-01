@@ -1,5 +1,54 @@
 # @stackra/ui
 
+## 0.3.0
+
+### Minor Changes
+
+- 9ed272a: One data family (ADR 0505, breaking): nine public data components on the `useCollection` engine, `Table`,
+  `DataTable`, `DataGrid`, `List`, `DataView`, `ColumnEditor`, `FilterBar`, `FilterPanel` and `SavedViews`
+  (`variant` `menu`, `tabs` or `chips`). `CollectionColumn` is the one column type (`type` text, number, choice,
+  date or boolean, with `isEditable`, `isReadOnly`, `isRequired`, `min`, `max` and `validate`); `CollectionFilter`
+  is the one filter model (new operators `in`, `not_in`, `between`, `before`, `after`, `is_true`, `is_false`).
+  `DataTable` and `DataGrid` take `collection` or the shorthand `items` and `columns`; DataGrid's `rows`, `height` and
+  `frozenColumns` became `items`, `maxHeight` and a column's `pin`; Table's `sortDescriptor` became `sort[]`.
+  Removed: `ColumnChooser`, `SavedViewsMenu`, `ResourceQuery`, `ResourceQueryContractProps`, `FilterState`, the ui
+  `SavedView`, `DataGridColumn`, `DataGridCellType`, `DataGridOption`, `SortOption`, `FacetOption`, and the
+  `query`, `onQueryChange`, `filters`, `hiddenColumns`, `groupBy`, `aggregates`, `editableColumns`, `gridColumns`,
+  `onNext` and `onPrevious` props. No longer exported: `ColumnEditorPanel`, `ColumnMenu`, `CollectionFilterEditor`,
+  `CollectionSortEditor`, `DataViewCards`, `DataViewBoard` and `CollectionRowPanel`.
+  
+  A column's `filter` sets its quick filter's editor: `placeholder` (text), `step` and `formatOptions` (number, a
+  currency say), `trueLabel` and `falseLabel` (yes or no) and `isDisabled` (listed but refused). The native
+  `DataTable` honours `hasColumnTools` with a `ColumnEditor` beside the filter bar.
+  
+  `FilterBar` takes `unappliedIds`: the conditions and groups the data source does not apply are drawn as warning
+  chips, led by a warning button whose name and tooltip are the `ui` catalogue's "Not applied on the server".
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- 895a526: <!-- Purpose: release note for `optionalRequires`. Boundary: changelog text only. Runtime: none. Governing contract: ADR 0025; STA-1722. -->
+  
+  `library({ optionalRequires })` rewrites a native entry's shimmed `__require("expo-…")` of a listed optional peer back
+  to a literal `require` call, so Metro sees and bundles the peer; 0.2.0's `native.mjs` called it through the
+  `__require` shim, which Metro never resolves, so haptics, clipboard, pickers, video and Apple sign-in stayed off. Any
+  other `require` in a chunk fails the build.
+- 6484453: <!-- Purpose: release note for the ui require-shim fix: react-dom stays external and no dist may carry rolldown's __require shim. Boundary: changelog text only. Runtime: none. Governing contract: ADR 0025; STA-1722. -->
+  
+  `@stackra/ui` declares `react-dom` as an optional peer, so it is no longer bundled: 0.2.0 inlined CommonJS react-dom,
+  whose `require("react")` became rolldown's `__require` shim and threw for every ESM consumer. `library()` in
+  `@stackra/tsdown-config` now fails a build whose output calls `__require(...)`, naming the chunk and the module.
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/i18n@0.3.0
+  - @stackra/icons@0.3.0
+  - @stackra/tokens@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

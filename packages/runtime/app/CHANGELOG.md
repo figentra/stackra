@@ -1,5 +1,29 @@
 # @stackra/app
 
+## 0.3.0
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- d5b5411: The `react-router` peer is `^7.18.4` instead of the exact `7.18.4`, so a consumer can take react-router's later 7.x
+  security fixes without an override (STA-1736).
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [4a6abd7]
+- Updated dependencies [895a526]
+- Updated dependencies [ccc0b0f]
+- Updated dependencies [d5b5411]
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/csp@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/i18n@0.3.0
+  - @stackra/identity@0.3.0
+  - @stackra/navigation@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

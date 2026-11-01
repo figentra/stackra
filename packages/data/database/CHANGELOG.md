@@ -1,5 +1,34 @@
 # @stackra/database
 
+## 0.3.0
+
+### Patch Changes
+
+- c4443b5: Refuse a keyed call that joined a running transaction when the idempotency store cannot join it (STA-1699, ADR 0495
+  note of 2026-11-01): `IdempotencyStore.joinsTransaction` (true for the Postgres store), `UnitOfWork.inTransaction()`
+  (answered by the database unit of work) and the new `IdempotencyStoreNotTransactionalError`
+  (`idempotency_store_not_transactional`), thrown before anything is claimed or run.
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- be75ede: The Postgres idempotency store joins the running transaction instead of opening its own (STA-1699, ADR 0495 note of
+  2026-11-01). A call that joined an outer transaction whose commit then fails no longer leaves a completed key, so its
+  retry runs again instead of replaying a success that never committed.
+- Updated dependencies [a60f4e9]
+- Updated dependencies [c4443b5]
+- Updated dependencies [b00096a]
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+  - @stackra/actions@0.3.0
+  - @stackra/cache@0.3.0
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/model@0.3.0
+  - @stackra/testing@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

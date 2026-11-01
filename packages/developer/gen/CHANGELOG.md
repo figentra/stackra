@@ -1,5 +1,44 @@
 # @stackra/gen
 
+## 0.3.0
+
+### Minor Changes
+
+- 23e556c: New check `credential_field_not_encrypted`: a `@Classified(DataClassification.Credential)` field must be named by `HasEncryptedFields` (STA-1677, ADR 0494).
+- ccc0b0f: Add the client tool target (STA-1631, ADR 0490): `emitClientTools` writes `#stackra/client-tools` for an app from its
+  routes, the panel resources of its dependency manifests, placed action prefills, theming previews, tours and anchors,
+  grouped by declaring module. Refuses `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared` and
+  `context_record_not_public_id`. Adds `anchors` and `anchorReferences` to `MemberIR`, read by `readAnchors`.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- d0569d2: A service's generated `boot` connects `AutomationService` to the container when the service runs `@stackra/workflow`
+  (STA-1699, ADR 0495), so publishing an automation checks its principal's scope through `ScopeOwnership`.
+- 4bdb23b: `gen --check` passes on a clean clone: a generated file that is missing is drift only when the member commits it
+  (`stackra.manifest.json`, `openapi.json`), so gitignored `.stackra/` output and root shims no longer fail the check
+  before gen has run (STA-1742).
+- d05f876: `egressOf` accepts a `baseUrl` that is exactly one camelCase `{field}` (STA-1665): the egress entry is
+  `{ origin: "{field}", fields: ["field"] }`, and the managed client checks the resolved URL at run time. Every other
+  refusal is unchanged.
+- c9296d9: A class whose shipped `.d.mts` base is typed `import("@stackra/config").ConfigClass<…>` keeps its kind: the reader
+  takes the import type's qualifier when the base has no type name (STA-1738).
+- 8dead7a: <!-- Purpose: release note for the typed queue registry. Boundary: changelog text only. Runtime: none. Governing contract: ADR 0148; STA-1723. -->
+  
+  Gen writes `#stackra/queues` for a service with a job action: `Queues`, built with `queues()` of `@stackra/queue` over
+  the queues its job actions name and `default`, so a job writes `queue: Queues.Billing` and a queue no job names any
+  more is a type error. The reader reads `Queues.<Name>` before the file exists.
+- 499effb: A service's generated `.stackra/tsdown.config.ts` annotates its default export `ReturnType<typeof library>`, like a
+  package's already does, so it no longer fails typecheck with TS2883 when tsdown is not the service's own dependency
+  (STA-1743).
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+  - @stackra/contracts@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/money@0.3.0
+  - @stackra/support@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

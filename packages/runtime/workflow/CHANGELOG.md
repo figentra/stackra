@@ -1,5 +1,37 @@
 # @stackra/workflow
 
+## 0.3.0
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- a60f4e9: The native runner runs each step and each undo through the bound `CallIsolation` as the actor stored in the run's
+  `origin`, in the run's scope, inside the journal's transaction (STA-1699, ADR 0495). With none bound it runs as before.
+- Updated dependencies [a60f4e9]
+- Updated dependencies [c4443b5]
+- Updated dependencies [b00096a]
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+- Updated dependencies [be75ede]
+- Updated dependencies [a60f4e9]
+- Updated dependencies [a60f4e9]
+  - @stackra/actions@0.3.0
+  - @stackra/database@0.3.0
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/content@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/events@0.3.0
+  - @stackra/locking@0.3.0
+  - @stackra/model@0.3.0
+  - @stackra/outbox@0.3.0
+  - @stackra/queue@0.3.0
+  - @stackra/rules@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

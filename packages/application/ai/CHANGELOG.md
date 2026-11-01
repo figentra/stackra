@@ -1,5 +1,54 @@
 # @stackra/ai
 
+## 0.3.0
+
+### Minor Changes
+
+- ccc0b0f: Add client tools and page context (STA-1631, ADR 0490): `ToolSource.Client`, the `ClientToolKind` and `SurfaceKind`
+  enums, the `ClientToolRow`, `ClientToolTable`, `SurfaceDescriptor`, `ClientToolPart`, `ClientToolAnswer` and
+  `ClientToolPending` types, `offerClientTools`, and `PromptCall.surface`, `clientTools` and `onClientTool`.
+  `AgentRuntime` parks a run on a client tool call (`RunStatus.WaitingClientTool`, `RunRecord.clientPending`), emits the
+  part to that surface only, and resumes through `resolveClientTool` or, after 30 seconds, `expireClientTool`
+  (`client_unavailable`); a repeat answer is refused with `ClientToolNotPendingError`. Adds the `ClientResultInput`
+  schema with `CLIENT_RESULT_ACTION` (`PUT /runs/:runId/client-result`), the `PageContext` schema and
+  `resolvePageContext` (unreadable ids dropped, `Facts` lookups, field allow-list, token budget), and migration 0004
+  (three nullable park columns on `ai.runs`; the run status and tool call outcome checks widened). The `ToolSource`
+  docblock now states the ADR 0360 decision 4 default.
+- 23e556c: `routeModel` refuses a `credential` request and `allowFields` lets no `credential` field through (STA-1677, ADR 0494).
+- 4a6abd7: Add the module UI kits (ADR 0504): each module's `./react` entry ships its domain blocks on `@stackra/ui`, every word
+  and value in props. `@stackra/ai/react`: `ChatSurface`. `@stackra/pricing/react`: `PricingTable`.
+  `@stackra/payments/react`: `Cart` and `Checkout`. `@stackra/identity/react`: `SignIn`. `@stackra/experience/react`:
+  `FeatureSection` and `CtaSection`.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- Updated dependencies [a60f4e9]
+- Updated dependencies [c4443b5]
+- Updated dependencies [b00096a]
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+- Updated dependencies [be75ede]
+- Updated dependencies [895a526]
+- Updated dependencies [a60f4e9]
+- Updated dependencies [a60f4e9]
+- Updated dependencies [9ed272a]
+- Updated dependencies [6484453]
+  - @stackra/actions@0.3.0
+  - @stackra/database@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/events@0.3.0
+  - @stackra/model@0.3.0
+  - @stackra/outbox@0.3.0
+  - @stackra/search@0.3.0
+  - @stackra/tenancy@0.3.0
+  - @stackra/ui@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

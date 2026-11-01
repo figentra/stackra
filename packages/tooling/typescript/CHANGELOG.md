@@ -1,5 +1,20 @@
 # @stackra/typescript-config
 
+## 0.3.0
+
+### Minor Changes
+
+- 12920dc: The base preset, and so every preset, sets `experimentalDecorators: true` (and keeps `emitDecoratorMetadata: false`):
+  a member typechecks the decorated source of the workspace packages it imports through `@stackra/source`, so one on the
+  `library` or `node` preset no longer fails with TS1240 and TS1270 at core's option schemas and cursor and table inputs.
+- 4b591e4: Every preset's `lib` is ES2023 (Expo keeps ESNext), so `toSorted`, `toReversed`, `toSpliced`, `with` and `findLast` typecheck
+  in services and libraries without `@types/node`; `target` stays ES2022.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+
 ## 0.2.0
 
 No changes in this release.
