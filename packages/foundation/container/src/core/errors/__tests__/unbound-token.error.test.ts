@@ -18,7 +18,8 @@ describe("UnboundTokenError", () => {
     expect(error.name).toBe("UnboundTokenError");
     expect(error.token).toBe(QueueService);
     expect(error.message).toBe(
-      "Nothing binds QueueService: it is not in the wiring, not exported by a booted module and not overridden",
+      "Nothing binds QueueService: it is not in the wiring, not exported by a booted module and not overridden " +
+        "(in a test, run `stackra gen` first: its setup registers the member's wiring)",
     );
     expect("code" in error).toBe(false);
   });

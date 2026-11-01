@@ -9,8 +9,8 @@ AI and MCP are in every package and service from the start, and all of it is fre
 principal: it acts through the same actions, the same pipeline and the same permissions as a human, as an agent actor
 on behalf of the user (ADR 0098). Tools are **generated** from actions and queries, never hand-written (ADR 0245).
 
-This is the v3 target (ADR 0294, 0155 and 0245 as amended). `@stackra/ai` and gen do not ship yet; the package docs win
-once they ship.
+This is the v3 shape (ADR 0294, 0155 and 0245 as amended) that `@stackra/ai` and gen implement; the package docs win
+where they differ.
 
 ## What becomes a tool (ADR 0155 as amended)
 

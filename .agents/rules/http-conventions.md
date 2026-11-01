@@ -11,8 +11,8 @@ an action or a query class (ADR 0098 as amended by 0294), and `stackra gen` emit
 gitignored `.stackra/encore/` (ADR 0091, 0124). The rules below are what the generated endpoints must satisfy, so they
 shape how you author actions.
 
-The programming model v3 (ADR 0294) is the target. `@stackra/actions` and gen do not ship yet, so the shapes below are
-the contract they will implement, not code that runs today; the package docs win once they ship.
+The programming model v3 (ADR 0294) is what `@stackra/actions` and gen implement (shipped since 0.3.0); the package
+docs win where they differ. Core's own `services/example` and `services/health` keep the older shape until STA-344.
 
 ## Action or query
 

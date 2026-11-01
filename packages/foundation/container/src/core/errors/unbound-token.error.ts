@@ -19,7 +19,8 @@ export class UnboundTokenError extends Error {
    */
   constructor(token: AnyClass) {
     super(
-      `Nothing binds ${token.name}: it is not in the wiring, not exported by a booted module and not overridden`,
+      `Nothing binds ${token.name}: it is not in the wiring, not exported by a booted module and not overridden ` +
+        "(in a test, run `stackra gen` first: its setup registers the member's wiring)",
     );
     this.name = "UnboundTokenError";
     this.token = token;
