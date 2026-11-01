@@ -323,12 +323,12 @@ Figentra Flow is MIT, so it cannot publish to `@figentra`, which is `internal` w
 added an open scope for Figentra's open products (migration `0005_figentra_oss.sql`); this amendment is the ADR decision
 10 asks for before another scope is added. The scope rows are now:
 
-| Scope           | Read rule  | Licence rule  | Trusted publishers (environment)                                     |
-| --------------- | ---------- | ------------- | -------------------------------------------------------------------- |
-| `@stackra`      | `open`     | `open-source` | `figentra/stackra` (`release`)                                       |
-| `@stackra-pro`  | `licensed` | `commercial`  | `figentra/stackra-pro` (`release`)                                   |
-| `@figentra`     | `internal` | `commercial`  | `figentra/brand` (`brand-registry`), `figentra/commerce` (`release`) |
-| `@figentra-oss` | `open`     | `open-source` | `figentra/flow` (`release`)                                          |
+| Scope           | Read rule  | Licence rule  | Trusted publishers (environment)                                                                |
+| --------------- | ---------- | ------------- | ----------------------------------------------------------------------------------------------- |
+| `@stackra`      | `open`     | `open-source` | `figentra/stackra` (`release`)                                                                  |
+| `@stackra-pro`  | `licensed` | `commercial`  | `figentra/stackra-pro` (`release`)                                                              |
+| `@figentra`     | `internal` | `commercial`  | `figentra/brand` (`brand-registry`), `figentra/commerce` (`release`), `figentra/os` (`release`) |
+| `@figentra-oss` | `open`     | `open-source` | `figentra/flow` (`release`)                                                                     |
 
 Every publisher uses `.github/workflows/release.yml` on `refs/heads/main` and is matched on its numeric repository and
 owner ids (decision 6).
@@ -348,6 +348,17 @@ Written with `0511` (`adr/0511-cross-repo-service-contracts-and-cross-app-events
   it. Its fields in the `stackra` object are set by the schema change that adds the kind.
 
 The other decisions stand.
+
+## Amendment 2026-11-01 (owner decision): sources in an internal scope
+
+Decision 7's ban on `src` and source maps comes from [0316](/adr/0316-open-core-distribution) decision 2, which keeps
+sources out of what customers install. It now applies only to a commercial scope whose read rule is `licensed`
+(`@stackra-pro`). An `internal` scope (`@figentra`) may publish `src/` and `.map` files, because only a Figentra
+internal licence reads it. The template lines of [0481](/adr/0481-template-lines-release-as-registry-packages-and-runway-checks-them-out)
+are their sources: `@figentra/os-mobile` ships the Expo project EAS builds from. Every other commercial check still
+applies there: the scope's licence string and a LICENSE file. The read rule is the scope row's own, so a per-name
+`internal` rule inside `@stackra-pro` (`@stackra-pro/ui`) keeps the ban. The OS release workflow publishes those lines
+as a trusted publisher of `@figentra` (migration `0006_figentra_os.sql`, decision 10). Linear STA-1828.
 
 ## Supersedes and sources
 

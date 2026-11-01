@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `checkPublish`: the kinds and their naming, both licence rules (commercial, open-source
- *          with NOTICE), version and name mismatches, semver, and the client digests.
+ * Purpose: unit tests of `checkPublish`: the kinds and their naming, both licence rules (commercial, with sources
+ *          allowed only in an internal scope; open-source with NOTICE), version and name mismatches, semver, and the
+ *          client digests.
  * Boundary: pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0453 (decisions 7 and 11).
@@ -99,5 +100,34 @@ describe("checkPublish", () => {
       reasons: ["src/ must not be published", "source maps must not be published"],
     });
     expect(pro(["package.json"])).toEqual({ ok: false, reasons: ["LICENSE file is missing"] });
+  });
+
+  it("lets an internal commercial scope ship sources and maps, and nothing else", () => {
+    const FIGENTRA: ScopeRow = { ...PRO, scope: "@figentra", read_rule: "internal" };
+    const pkg = {
+      name: "@figentra/os-mobile",
+      version: "3.0.0",
+      license: "SEE LICENSE IN LICENSE",
+    };
+    const line = (files: string[], packageJson: Record<string, unknown> = pkg) =>
+      checkPublish(
+        candidate(packageJson, {
+          name: "@figentra/os-mobile",
+          version: "3.0.0",
+          scope: FIGENTRA,
+          contents: { files, packageJson },
+        }),
+      );
+    expect(line(["package.json", "LICENSE", "src/main.ts", "dist/index.mjs.map"])).toEqual({
+      ok: true,
+      kind: "package",
+    });
+    expect(line(["package.json", "src/main.ts"], { ...pkg, license: "UNLICENSED" })).toEqual({
+      ok: false,
+      reasons: [
+        '@figentra packages must name the licence "SEE LICENSE IN LICENSE"',
+        "LICENSE file is missing",
+      ],
+    });
   });
 });

@@ -42,6 +42,7 @@ function fake(options: {
   readonly boxes: string;
   readonly agent?: (box: string, command: string) => { code: number; stdout: string };
   readonly jobRun?: number[];
+  readonly ip?: string;
 }): Fake {
   const calls: string[] = [];
   const streams: string[] = [];
@@ -51,6 +52,9 @@ function fake(options: {
       calls.push(`${command} ${args.join(" ")}`);
       if (command === "aws" && args.includes("describe-instances")) {
         return { code: 0, stdout: options.boxes, stderr: "" };
+      }
+      if (command === "aws" && args.includes("describe-security-groups")) {
+        return { code: 0, stdout: "203.0.113.7/32\n", stderr: "" };
       }
       if (command === "ssh") {
         const box = String(args.at(-2)).split("@")[1] ?? "";
@@ -69,7 +73,7 @@ function fake(options: {
     now: () => 1_000_000,
     pid: 42,
     isAlive: () => true,
-    publicIp: async () => undefined,
+    publicIp: async () => options.ip,
     claimRoot,
   };
   return { deps, calls, streams };
@@ -96,6 +100,10 @@ const request = (overrides: Partial<TestbedRequest>): TestbedRequest => ({
   ...overrides,
 });
 
+/** One `aws ec2` call of the SSH allowlist swap, as the fake records it. */
+const rule = (verb: string, cidr: string): string =>
+  `aws --profile p --region r ec2 ${verb}-security-group-ingress --group-name stackra-testbed --protocol tcp --port 22 --cidr ${cidr}`;
+
 describe("runTestbed run", () => {
   it("refuses a command that calls ci-box or stackra testbed with exit 2", async () => {
     const { deps, streams } = fake({ boxes: "[]" });
@@ -121,6 +129,17 @@ describe("runTestbed run", () => {
     const { deps, streams } = fake({ boxes: instances(["i-1", "heavy", "2026-10-30T00:00:00Z"]) });
     expect(await runTestbed(request({ onDemand: true }), deps, captureIo().io)).toBe(0);
     expect(streams[1]).toContain(" heavy 'me work' 'app' -- 'pnpm lint'");
+  });
+
+  it("swaps the SSH allowlist to this machine's IP through the ec2 commands", async () => {
+    const { deps, calls } = fake({
+      boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]),
+      ip: "198.51.100.9",
+    });
+    const { io } = captureIo();
+    expect(await runTestbed(request({}), deps, io)).toBe(0);
+    expect(calls).toContain(rule("authorize", "198.51.100.9/32"));
+    expect(calls).toContain(rule("revoke", "203.0.113.7/32"));
   });
 
   it("picks another box when the first answers 75", async () => {

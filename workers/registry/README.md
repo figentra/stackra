@@ -122,14 +122,15 @@ API grants only `licensed` scopes, so the owner also inserts an internal scope's
 
 Only the release workflows publish (`publishers` rows: `figentra/stackra` for `@stackra`, `figentra/stackra-pro` for
 `@stackra-pro`, workflow `.github/workflows/release.yml`, ref `refs/heads/main`, environment `release`;
-`figentra/brand` and `figentra/commerce` for `@figentra`, same workflow and ref, environments `brand-registry` and
-`release`; `figentra/flow` for `@figentra-oss`, same workflow and ref, environment `release`; matched on the numeric
+`figentra/brand`, `figentra/commerce` and `figentra/os` for `@figentra`, same workflow and ref, environments
+`brand-registry`, `release` and `release`; `figentra/flow` for `@figentra-oss`, same workflow and ref, environment `release`; matched on the numeric
 repository and owner ids too). A publisher covers its whole scope, not single names. The job asks GitHub for an ID token with audience
 `npm:npm.stackra.figentra.com` and exchanges it for a `stkp_` publish token bound to one package for
 `REGISTRY_PUBLISH_TOKEN_SECONDS`. A publish is refused when the version exists, the tarball is over the size limit,
 package.json's name or version differs from the request, `stackra.kind` is unknown or a non-package item is not named
-`@<scope>/<kind>-<name>`, the scope's licence rule fails (commercial: the scope's licence string, a LICENSE file, no
-`src/`, no `.map`; open-source: MIT, or another open licence with a NOTICE), the client's integrity or shasum differs,
+`@<scope>/<kind>-<name>`, the scope's licence rule fails (commercial: the scope's licence string, a LICENSE file, and
+in a `licensed` scope no `src/` and no `.map`, which an `internal` scope such as `@figentra` may ship; open-source: MIT,
+or another open licence with a NOTICE), the client's integrity or shasum differs,
 or the Sigstore bundle is missing, is for another digest or was signed by another workflow. A brand kit (`@figentra`, commercial)
 therefore names `"license": "SEE LICENSE IN LICENSE"` and ships a LICENSE file beside its assets. Each version is signed
 (ECDSA P-256 over `<name>@<version>:<integrity>`); every publish, tag change, deprecation and token exchange is an
@@ -164,26 +165,26 @@ secret.
 
 ## Layout
 
-| Path                      | Holds                                                                                                                                                          |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                                                                         |
-| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss` |
-| `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                                                                       |
-| `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                                                                     |
-| `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                                                                                 |
-| `src/publish/`            | publish and dist-tag writes, publish auth, tarball reader, digests, content checks                                                                             |
-| `src/oidc/`               | GitHub OIDC verification, the key set, publisher matching, the token exchange                                                                                  |
-| `src/access/`             | the `LicenceCheck` port, the edge-cache wrapper, the read rule (`gate`, `readAccess`)                                                                          |
-| `src/licence/`            | the licence API, `LicenceStore`, `D1LicenceCheck`, token minting, grant folding                                                                                |
-| `src/signing/`            | the ECDSA P-256 signer, keyids, DER signatures                                                                                                                 |
-| `src/catalogue/`          | the catalogue API and entitlements                                                                                                                             |
-| `src/browse/`             | the browser: list and package pages, the page shell, Markdown, README and provenance readers                                                                   |
-| `src/store/`              | `RegistryStore`, every D1 query                                                                                                                                |
-| `src/settings/`           | the vars parsed into settings                                                                                                                                  |
-| `src/bytes/`              | base64, base64url, hex, SHA-256 of a token                                                                                                                     |
-| `src/constants/`          | Cache-Control values, the kinds list, the publish token prefix                                                                                                 |
-| `src/interfaces/`         | one shape per file: bindings, env, settings, catalogue, D1 rows, verdicts                                                                                      |
-| `src/__tests__/fixtures/` | D1 over node:sqlite with the migrations, R2/KV/cache/licence fakes, tarballs, a registry                                                                       |
+| Path                      | Holds                                                                                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                                                                                               |
+| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss`, `0006` `figentra/os` |
+| `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                                                                                             |
+| `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                                                                                           |
+| `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                                                                                                       |
+| `src/publish/`            | publish and dist-tag writes, publish auth, tarball reader, digests, content checks                                                                                                   |
+| `src/oidc/`               | GitHub OIDC verification, the key set, publisher matching, the token exchange                                                                                                        |
+| `src/access/`             | the `LicenceCheck` port, the edge-cache wrapper, the read rule (`gate`, `readAccess`)                                                                                                |
+| `src/licence/`            | the licence API, `LicenceStore`, `D1LicenceCheck`, token minting, grant folding                                                                                                      |
+| `src/signing/`            | the ECDSA P-256 signer, keyids, DER signatures                                                                                                                                       |
+| `src/catalogue/`          | the catalogue API and entitlements                                                                                                                                                   |
+| `src/browse/`             | the browser: list and package pages, the page shell, Markdown, README and provenance readers                                                                                         |
+| `src/store/`              | `RegistryStore`, every D1 query                                                                                                                                                      |
+| `src/settings/`           | the vars parsed into settings                                                                                                                                                        |
+| `src/bytes/`              | base64, base64url, hex, SHA-256 of a token                                                                                                                                           |
+| `src/constants/`          | Cache-Control values, the kinds list, the publish token prefix                                                                                                                       |
+| `src/interfaces/`         | one shape per file: bindings, env, settings, catalogue, D1 rows, verdicts                                                                                                            |
+| `src/__tests__/fixtures/` | D1 over node:sqlite with the migrations, R2/KV/cache/licence fakes, tarballs, a registry                                                                                             |
 
 One exported declaration per file, named after it (ADR 0305 rules 10 to 13).
 

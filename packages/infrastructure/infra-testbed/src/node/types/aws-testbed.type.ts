@@ -17,8 +17,8 @@ export type AwsTestbed = {
   readonly securityGroupId: pulumi.Output<string>;
   /** The ARN of the box instance role, the principal the Infisical AWS Auth trusts. */
   readonly instanceRoleArn: pulumi.Output<string>;
-  /** The id of the launch template both groups start boxes from. */
-  readonly launchTemplateId: pulumi.Output<string>;
+  /** The id of the launch template both groups start boxes from; absent, like `groups`, before the first image. */
+  readonly launchTemplateId?: pulumi.Output<string>;
   /** The name of the bucket holding the image build inputs. */
   readonly buildBucket: pulumi.Output<string>;
   /** The ARN of the weekly image pipeline, which `apply-testbed.yml` starts by hand. */

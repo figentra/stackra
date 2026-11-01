@@ -8,7 +8,8 @@
  *          the instance policy limits Auto Scaling calls to groups by tag; the Image Builder recipe version is derived
  *          from the inputs, no component keeps a placeholder, the distribution writes the AMI parameter and the
  *          pipeline is weekly; the job Dockerfile's defaults equal the pins; a given VPC and subnets are used and
- *          `groups: false` declares no Auto Scaling group; a plan without a project writes an empty identity.
+ *          `groups: false` declares no Auto Scaling group and no launch template; a plan without a project writes an
+ *          empty identity.
  * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`). Reads the repository's
  *           `pnpm-lock.yaml` as the lockfile input.
  * Runtime: node (vitest)
@@ -112,7 +113,8 @@ describe("awsTestbed", () => {
 
   it("launches from the SSM parameter with IMDSv2, two gp3 disks deleted with the instance", () => {
     const template = resource("ec2/launchTemplate:LaunchTemplate", "testbed").inputs;
-    expect(template.imageId).toBe("resolve:ssm:/stackra/testbed/ami");
+    expect(template.imageId).toBe("resolve:ssm:/imagebuilder/stackra-testbed/ami");
+    expect(template.keyName).toBe("academorix-ci");
     expect(template.metadataOptions).toMatchObject({ httpTokens: "required" });
     expect(template.blockDeviceMappings).toEqual([
       expect.objectContaining({
@@ -217,7 +219,9 @@ describe("awsTestbed", () => {
       "imagebuilder/distributionConfiguration:DistributionConfiguration",
       "testbed",
     );
-    expect(JSON.stringify(distribution.inputs.distributions)).toContain("/stackra/testbed/ami");
+    expect(JSON.stringify(distribution.inputs.distributions)).toContain(
+      "/imagebuilder/stackra-testbed/ami",
+    );
     expect(
       resource("imagebuilder/imagePipeline:ImagePipeline", "testbed").inputs.schedule,
     ).toMatchObject({
@@ -264,6 +268,9 @@ describe("awsTestbed with a given network and no groups", () => {
     ).toMatchObject({ subnetId: "subnet-9" });
     expect(later("autoscaling/group:Group")).toEqual([]);
     expect(bare.groups).toBeUndefined();
+    // EC2 refuses a launch template whose AMI parameter does not exist yet (before the first image build).
+    expect(later("ec2/launchTemplate:LaunchTemplate")).toEqual([]);
+    expect(bare.launchTemplateId).toBeUndefined();
   });
 
   it("writes an empty identity and no grants for a plan without a project", () => {

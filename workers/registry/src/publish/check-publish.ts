@@ -34,13 +34,20 @@ function licenceReasons(candidate: PublishCandidate): string[] {
   const licence = contents.packageJson.license;
   const files = contents.files;
   if (scope.licence_rule === "commercial") {
+    // Sources stay out of what customers read (licensed scopes); an internal scope such as @figentra may ship them,
+    // because a template line is its sources (ADR 0453 amendment of 2026-11-01).
+    const sourcesBanned = scope.read_rule !== "internal";
     return [
       ...(licence === scope.commercial_licence
         ? []
         : [`${scope.scope} packages must name the licence "${scope.commercial_licence}"`]),
       ...(files.some((file) => LICENCE_FILE.test(file)) ? [] : ["LICENSE file is missing"]),
-      ...(files.some((file) => file.startsWith("src/")) ? ["src/ must not be published"] : []),
-      ...(files.some((file) => file.endsWith(".map")) ? ["source maps must not be published"] : []),
+      ...(sourcesBanned && files.some((file) => file.startsWith("src/"))
+        ? ["src/ must not be published"]
+        : []),
+      ...(sourcesBanned && files.some((file) => file.endsWith(".map"))
+        ? ["source maps must not be published"]
+        : []),
     ];
   }
   if (typeof licence !== "string" || licence === "") return ["license is missing"];
