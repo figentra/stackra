@@ -58,6 +58,12 @@ vi.mock("react-native-reanimated", () => ({
   useAnimatedReaction: () => undefined,
   runOnJS: (callback: unknown) => callback,
 }));
+// loadSkia requires the optional peer lazily, which vi.mock cannot reach: route it to the Skia mock (STA-1791).
+vi.mock("#native/skia/load-skia.function", async () => {
+  const skia = await import("@shopify/react-native-skia");
+  return { loadSkia: () => skia };
+});
+
 vi.mock("@shopify/react-native-skia", () => ({
   Skia: { Color: () => [0.2, 0.4, 0.6, 1] },
   TextAlign: { Center: 2 },
@@ -69,6 +75,12 @@ vi.mock("@shopify/react-native-skia", () => ({
   DashPathEffect: () => null,
 }));
 vi.mock("react-native-svg", () => ({ default: () => null, Path: () => null, Line: () => null }));
+// loadVictoryNative requires the optional peer lazily, which vi.mock cannot reach: route it to the mock (STA-1791).
+vi.mock("#native/skia/load-victory-native.function", async () => {
+  const victory = await import("victory-native");
+  return { loadVictoryNative: () => victory };
+});
+
 vi.mock("victory-native", () => ({
   CartesianChart: (props: Record<string, unknown>) => {
     state.charts.push(props);

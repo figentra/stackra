@@ -109,6 +109,12 @@ vi.mock("#react/hooks/use-ui-text", () => ({
       values === undefined ? key : `${key} ${JSON.stringify(values)}`,
 }));
 vi.mock("uniwind", () => ({ useCSSVariable: (names: string[]) => names.map(() => "#336699") }));
+// loadSkia requires the optional peer lazily, which vi.mock cannot reach: route it to the Skia mock (STA-1791).
+vi.mock("#native/skia/load-skia.function", async () => {
+  const skia = await import("@shopify/react-native-skia");
+  return { loadSkia: () => skia };
+});
+
 vi.mock("@shopify/react-native-skia", async () => {
   const { createElement } = await import("react");
   const mark = (name: string) => (props: Record<string, unknown>) => {
@@ -124,6 +130,12 @@ vi.mock("@shopify/react-native-skia", async () => {
 });
 // The column path of BarChart is not drawn here; its imports only need to load.
 vi.mock("react-native-reanimated", () => ({}));
+// loadVictoryNative requires the optional peer lazily, which vi.mock cannot reach: route it to the mock (STA-1791).
+vi.mock("#native/skia/load-victory-native.function", async () => {
+  const victory = await import("victory-native");
+  return { loadVictoryNative: () => victory };
+});
+
 vi.mock("victory-native", () => ({ CartesianChart: () => null }));
 vi.mock("react-native-svg", async () => {
   const { createElement } = await import("react");

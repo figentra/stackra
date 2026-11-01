@@ -58,6 +58,12 @@ vi.mock("#native/chart/use-canvas-size", () => ({
 
 vi.mock("uniwind", () => ({ useCSSVariable: (names: string[]) => names.map(() => "#336699") }));
 
+// loadSkia requires the optional peer lazily, which vi.mock cannot reach: route it to the Skia mock (STA-1791).
+vi.mock("#native/skia/load-skia.function", async () => {
+  const skia = await import("@shopify/react-native-skia");
+  return { loadSkia: () => skia };
+});
+
 vi.mock("@shopify/react-native-skia", async () => {
   const { createElement } = await import("react");
   return {

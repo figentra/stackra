@@ -72,6 +72,12 @@ vi.mock("react-native-reanimated", () => ({
   runOnJS: (callback: unknown) => callback,
 }));
 
+// loadSkia requires the optional peer lazily, which vi.mock cannot reach: route it to the Skia mock (STA-1791).
+vi.mock("#native/skia/load-skia.function", async () => {
+  const skia = await import("@shopify/react-native-skia");
+  return { loadSkia: () => skia };
+});
+
 vi.mock("@shopify/react-native-skia", () => {
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- vi.mock is hoisted above the module scope
   const path = () => ({
@@ -98,6 +104,12 @@ vi.mock("@shopify/react-native-skia", () => {
 vi.mock("heroui-native", () => ({ useThemeColor: () => "#ffffff" }));
 
 vi.mock("#native/haptics/haptics", () => ({ haptics: { play: () => undefined } }));
+
+// loadVictoryNative requires the optional peer lazily, which vi.mock cannot reach: route it to the mock (STA-1791).
+vi.mock("#native/skia/load-victory-native.function", async () => {
+  const victory = await import("victory-native");
+  return { loadVictoryNative: () => victory };
+});
 
 vi.mock("victory-native", () => ({
   CartesianChart: (props: Record<string, unknown>) => {

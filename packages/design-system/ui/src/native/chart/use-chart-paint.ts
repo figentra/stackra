@@ -11,7 +11,6 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0340 (decision 9); STA-1371.
  */
-import { Skia } from "@shopify/react-native-skia";
 import { use } from "react";
 import { useCSSVariable } from "uniwind";
 
@@ -19,7 +18,11 @@ import type { ChartColor } from "#contracts/enums/chart-color.enum";
 import { chartRampOf } from "#core/functions/chart-ramp-of.function";
 import { alphaOf } from "#native/chart/alpha-of.function";
 import type { ChartPaint } from "#native/chart/chart-paint.type";
+import { loadSkia } from "#native/skia/load-skia.function";
 import { DesignSystemContext } from "#native/design-system-provider/design-system-context";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Skia } = loadSkia();
 
 /** The roles the chrome reads, then the five ramp overrides a theme may define. */
 const ROLES = ["muted", "foreground", "surface", "accent", "field-border"] as const;

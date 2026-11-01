@@ -9,11 +9,9 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0060 (right-to-left); WCAG 2.2 SC 1.1.1 and 1.4.1; STA-1371.
  */
-import { Group, Line, Rect, vec } from "@shopify/react-native-skia";
 import { type ReactElement, useState } from "react";
 import { View } from "react-native";
 import { runOnJS, useAnimatedReaction } from "react-native-reanimated";
-import { useChartPressState } from "victory-native";
 
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { formatChartCategory } from "#core/functions/format-chart-category.function";
@@ -27,6 +25,13 @@ import { LooseCartesianChart } from "#native/chart/loose-cartesian-chart";
 import { useAxisLabels } from "#native/chart/use-axis-labels";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
+import { loadSkia } from "#native/skia/load-skia.function";
+import { loadVictoryNative } from "#native/skia/load-victory-native.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Group, Line, Rect, vec } = loadSkia();
+// victory-native is an optional peer (on Skia), required on first use (STA-1791).
+const { useChartPressState } = loadVictoryNative();
 
 /** Candles of open, high, low and close, with volume. */
 export function CandlestickChart({

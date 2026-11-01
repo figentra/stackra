@@ -8,7 +8,6 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); RFC 7946; WCAG 2.2 SC 1.1.1 and 1.4.11; STA-1371.
  */
-import { Canvas, Path } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { View } from "react-native";
 
@@ -25,6 +24,10 @@ import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { ChoroplethMapProps } from "#native/choropleth-map/choropleth-map.props";
 import { Text } from "#native/text/text";
+import { loadSkia } from "#native/skia/load-skia.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Canvas, Path } = loadSkia();
 
 /** Regions shaded by value. */
 export function ChoroplethMap({

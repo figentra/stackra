@@ -6,7 +6,6 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); WCAG 2.2 SC 1.1.1 and 1.4.11; STA-1371.
  */
-import { Canvas, Path } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { View } from "react-native";
 
@@ -18,7 +17,11 @@ import { sunburstLayoutOf } from "#core/functions/sunburst-layout-of.function";
 import { RingCentre } from "#native/chart/ring-centre";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import { useChartLocale } from "#native/chart/use-chart-locale";
+import { loadSkia } from "#native/skia/load-skia.function";
 import type { SunburstChartProps } from "#native/sunburst-chart/sunburst-chart.props";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Canvas, Path } = loadSkia();
 
 /** Nested shares as rings. */
 export function SunburstChart({

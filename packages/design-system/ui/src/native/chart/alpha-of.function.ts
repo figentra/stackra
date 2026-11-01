@@ -5,7 +5,11 @@
  * Runtime: react-native
  * Governing contract: ADR 0305 (rules 10 and 12: one declaration per file); ADR 0302 (decision 3); STA-1371.
  */
-import { Skia } from "@shopify/react-native-skia";
+
+import { loadSkia } from "#native/skia/load-skia.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Skia } = loadSkia();
 
 /** `color` at `alpha` as a CSS rgba string. */
 export function alphaOf(color: string, alpha: number): string {

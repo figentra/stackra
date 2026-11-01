@@ -10,7 +10,6 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0307 (decisions 14 to 18); WCAG 2.2 SC 4.1.2; STA-1371 (gap wave,
  *          2026-10-31).
  */
-import { makeImageFromView } from "@shopify/react-native-skia";
 import { type ReactElement, useState } from "react";
 import { Share, View } from "react-native";
 
@@ -21,6 +20,10 @@ import { chartCsvOf } from "#core/functions/chart-csv-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { ActionMenu } from "#native/action-menu/action-menu";
 import type { ChartExportProps } from "#native/chart-export/chart-export.props";
+import { loadSkia } from "#native/skia/load-skia.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { makeImageFromView } = loadSkia();
 
 /** The chart words' keys. */
 const K = UI_KEYS.ui.chart;
