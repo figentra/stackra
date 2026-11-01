@@ -10,8 +10,8 @@ Governing contract: ADR 0282 (decision 3); ADR 0007; ADR 0022; ADR 0294; ADR 040
 
 The repository checks every Stackra repo runs through `stackra check`, as typed functions over the git file list. They
 were core-only scripts (`tools/scripts/validate-repository.mjs`, `doc-standard.mjs`, `catalogue-completeness.mjs` and
-the tables of `structure.mjs`); they live here so a product gets them with `@stackra/cli` instead of copying them. Core
-keeps thin wrappers in `tools/scripts`, so `pnpm validate` still runs them with plain `node`.
+the tables of `structure.mjs`); they live here so a product gets them with `@stackra/cli` instead of copying them.
+`pnpm validate` runs them through `stackra validate --repository` and `stackra doc-standard`.
 
 **Tier:** `tier:lib` (`packages/developer/repo-checks`). One entry, `./node`. Depends on `yaml` and `typescript6` (the
 TypeScript 6 compiler API the doc standard parses with).

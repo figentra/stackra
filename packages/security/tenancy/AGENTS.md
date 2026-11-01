@@ -46,7 +46,7 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   refuses (`TenantSwitchRefusedError`), so the relay and the inbox give each unit a transaction of its own.
   `TenantScopeOwnershipDriver` is the `ScopeOwnership` the inbox and the automation service use to distrust an actor
   whose tenant does not own the scope it comes with. `pnpm validate` refuses a session-level `app.*` setting
-  anywhere else (`tools/scripts/session-settings.mjs`).
+  anywhere else (`stackra validate --repository`).
 - Raw SQL lives only in `TenantIsolationService.withTenant` (one parameterised `set_config`), with a `// raw-sql:`
   comment (ADR 0160).
 - A sandbox or a share is never a grant and never a tree position. Transfer rules, sandbox allowances and the terms of

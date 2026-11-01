@@ -23,7 +23,7 @@ Stackra versions come from **one of two sources**, never a third:
 
 ## Enforcement
 
-- `tools/scripts/validate-repository.mjs` checks catalog references
+- `stackra validate --repository` checks catalog references
 - `pnpm install` fails on invalid catalog: entries (`catalogMode: strict`)
 - Turborepo's `globalDependencies` includes `mise.toml` and `pnpm-workspace.yaml`
 

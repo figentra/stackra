@@ -24,7 +24,7 @@ One version of everything, from one place, with a known licence. You are the one
 ## Rules
 
 1. Versions are exact pins in a catalog; members reference `catalog:<name>` or `workspace:*` only.
-2. Nothing on the rejected list (`FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs`).
+2. Nothing on the rejected list (`FORBIDDEN_DEPENDENCIES` in `@stackra/repo-checks` (`stackra validate --repository`)).
 3. Licences: MIT, Apache-2.0, BSD or ISC for vendored code and skills; anything else goes to the owner.
 4. A vendored skill is installed and updated with `npx skills`, recorded in `skills-lock.json`, never edited in place; a
    skill that teaches rejected technology is fenced or not vendored (ADR 0258).

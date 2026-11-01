@@ -149,7 +149,7 @@
       },
     ],
     // TSDoc tags (ADR 0007, amended 2026-10-21). oxlint 1.86 has no jsdoc/no-types, so the `{type}`
-    // ban lives in tools/scripts/doc-standard.mjs.
+    // ban lives in @stackra/repo-checks (stackra doc-standard).
     "jsdoc/check-tag-names": [
       "error",
       {

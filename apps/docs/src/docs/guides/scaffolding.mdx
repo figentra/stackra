@@ -80,7 +80,7 @@ After scaffolding:
 
 ## Changing a template
 
-Edit the template under `tools/scaffold/templates/`, then run `node --test tools/scripts/__tests__/scaffold.test.mjs` (or `pnpm validate`). The test renders every kind into a temporary directory and fails if a token is left in a path or a file, if a rendered `.json` file does not parse, or if the rendered member fails the validator's member, service and exports checks. It asserts the v3 tree of every kind (no authored `main.ts` or barrel in packages and services, exports naming existing files, runway v3, route folders), and covers the optional entries, `--data`, the required `--description` (no TODO in any rendered file), the JSON escaping, the target repo's `LICENSE`, port allocation and `--dry-run`.
+Edit the template under `tools/scaffold/templates/`, then run the scaffold test of @stackra/cli (`pnpm --filter @stackra/cli test`). The test renders every kind into a temporary directory and fails if a token is left in a path or a file, if a rendered `.json` file does not parse, or if the rendered member fails the validator's member, service and exports checks. It asserts the v3 tree of every kind (no authored `main.ts` or barrel in packages and services, exports naming existing files, runway v3, route folders), and covers the optional entries, `--data`, the required `--description` (no TODO in any rendered file), the JSON escaping, the target repo's `LICENSE`, port allocation and `--dry-run`.
 
 When you add a kind, add a row to the test's case list and to `tools/scaffold/README.md`.
 
@@ -96,12 +96,12 @@ Moving or renaming a file or folder means rewriting every import and link that p
 
 ## Checks that back this page
 
-| Rule                                                                                                                               | Check                                                     | State             |
-| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ----------------- |
-| Every template renders with no token left                                                                                          | `tools/scripts/__tests__/scaffold.test.mjs`               | Live              |
-| Every rendered member passes the validator's member, service and exports checks                                                    | Scaffold test                                             | Live              |
-| A service holds no Encore file, and is v2 (`src/main.ts`, `stackra.module`) or v3 (`stackra.config.ts`, root module) until STA-344 | `validate-repository.mjs` (`checkService`, `isV2Service`) | Live              |
-| The v3 member root of every member (`member-root`)                                                                                 | `validate-repository.mjs`                                 | Planned (STA-339) |
-| Moves are scripted                                                                                                                 | Move codemod                                              | Not built         |
+| Rule                                                                                                                               | Check                                                           | State             |
+| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- |
+| Every template renders with no token left                                                                                          | `@stackra/cli` `scaffold.test.ts`                               | Live              |
+| Every rendered member passes the validator's member, service and exports checks                                                    | Scaffold test                                                   | Live              |
+| A service holds no Encore file, and is v2 (`src/main.ts`, `stackra.module`) or v3 (`stackra.config.ts`, root module) until STA-344 | `stackra validate --repository` (`checkService`, `isV2Service`) | Live              |
+| The v3 member root of every member (`member-root`)                                                                                 | `stackra validate --repository`                                 | Planned (STA-339) |
+| Moves are scripted                                                                                                                 | Move codemod                                                    | Not built         |
 
 See also [Structure](/guides/structure), [Packages](/guides/packages) and [Definition of done](/guides/definition-of-done).

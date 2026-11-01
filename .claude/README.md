@@ -18,7 +18,7 @@ What Claude Code reads in this repository. Most of it is projected from [`.agent
 ## Rules
 
 - `settings.json` and `launch.json` stay strict `.json`: Claude Code reads fixed names (`MUST_STAY_JSON` in
-  `tools/scripts/validate-repository.mjs`).
+  `@stackra/repo-checks`).
 - `pnpm agents:check` (in `pnpm validate` and CI) fails on drift between `.agents/` and this folder.
 - No secret goes in `settings.json`; MCP servers that need a token start through `tools/scripts/mcp.sh`, which reads
   the Infisical vault ([secrets rule](../.agents/rules/secrets.md)).

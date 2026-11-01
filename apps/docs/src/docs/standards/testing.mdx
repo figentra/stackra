@@ -79,11 +79,11 @@ An app's e2e suite is a set of journeys run across axes, not a single configurat
 
 ## What enforces this
 
-| Rule                                                      | Check                                                                                                               | Status |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------ |
-| Empty suite fails                                         | vitest presets (`passWithNoTests: false`)                                                                           | Yes    |
-| Coverage floor on packages                                | `withCoverage` in `pnpm test:coverage`                                                                              | Yes    |
-| Script tests and the scaffold render every template kind  | `node --test tools/scripts/__tests__/*.test.mjs` in `pnpm validate`                                                 | Yes    |
-| Every test file sits directly in `__tests__/`; no `.spec` | `checkTestPlacement` in `tools/scripts/validate-repository.mjs` ([ADR 0022](/adr/0022-tests-live-in-tests-folders)) | Yes    |
-| Template output is validated, not only rendered           | planned: scaffold test also runs the validator on each kind                                                         | No     |
-| E2E matrix and screenshot baselines                       | planned: per-app Playwright config when the first flow lands                                                        | No     |
+| Rule                                                      | Check                                                                                                                                | Status |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| Empty suite fails                                         | vitest presets (`passWithNoTests: false`)                                                                                            | Yes    |
+| Coverage floor on packages                                | `withCoverage` in `pnpm test:coverage`                                                                                               | Yes    |
+| Script tests and the scaffold render every template kind  | `node --test tools/scripts/__tests__/*.test.mjs` in `pnpm validate`                                                                  | Yes    |
+| Every test file sits directly in `__tests__/`; no `.spec` | `checkTestPlacement` in `@stackra/repo-checks` (`stackra validate --repository`) ([ADR 0022](/adr/0022-tests-live-in-tests-folders)) | Yes    |
+| Template output is validated, not only rendered           | planned: scaffold test also runs the validator on each kind                                                                          | No     |
+| E2E matrix and screenshot baselines                       | planned: per-app Playwright config when the first flow lands                                                                         | No     |

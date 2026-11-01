@@ -80,7 +80,7 @@ authored `src/main.ts`, and older pages still name `app-manifest.json`; the conv
 
 - `turbo boundaries` enforces tier direction
 - `packages/tooling/oxlint/src/boundaries.jsonc` blocks forbidden imports
-- `tools/scripts/validate-repository.mjs` checks tier tags
+- `stackra validate --repository` checks tier tags
 - planned — STA-340: the `contracts`-is-a-leaf and sibling-module boundary rules in `boundaries.jsonc`; STA-339: the `entries` validator check
 
 ## See Also

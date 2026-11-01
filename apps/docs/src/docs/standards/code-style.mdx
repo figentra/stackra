@@ -196,14 +196,14 @@ A rejected promise or listener failure is reported through the package's logger 
 | Rule                                                                         | Check                                                               | Status |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------ |
 | Formatting                                                                   | `oxfmt --check`, `shfmt -d` (`format:check`, lefthook pre-commit)   | Yes    |
-| No flow mappings in repo-owned YAML                                          | `checkYamlFlowMaps` in `validate-repository.mjs`                    | Yes    |
+| No flow mappings in repo-owned YAML                                          | `checkYamlFlowMaps` in `stackra validate --repository`              | Yes    |
 | No `any`, no non-null assertion, no unused code, no cycles                   | oxlint base preset                                                  | Yes    |
 | `import type` for type-only imports                                          | oxlint `typescript/consistent-type-imports` (off in decorators)     | Yes    |
 | No deep import of `@stackra/*/src/*`                                         | oxlint `boundaries.jsonc`                                           | Yes    |
 | Kebab-case names, one export per file, barrel shape                          | planned: validator check                                            | No     |
 | No extension or `/index` in relative specifiers                              | planned: import-style check in the validator                        | No     |
 | `#` subpath imports instead of `../` climbs; `imports` map drift             | planned: validator check                                            | No     |
-| File contract header, TSDoc on exports, members and tokens, no types in tags | `tools/scripts/doc-standard.mjs` in `pnpm validate`                 | Yes    |
+| File contract header, TSDoc on exports, members and tokens, no types in tags | `stackra doc-standard` in `pnpm validate`                           | Yes    |
 | Typed errors with `code` and `hint`                                          | review (`code-standards-steward`, planned role) until a lint exists | No     |
 
 The planned `code-standards-steward` splits, renames and moves files to meet the naming and barrel rules without changing behaviour; see the [agent roster](/agents/roster).

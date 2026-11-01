@@ -82,7 +82,7 @@ A port that diverges from its origin does so openly: in `ORIGIN.md`, not silentl
 | Entries never import entries                                   | planned: oxlint `boundaries.jsonc` per entry folder               | No     |
 | No import of an app, service or `encore.dev` from a package    | oxlint `boundaries.jsonc` + `turbo boundaries`                    | Yes    |
 | No deep import of `@stackra/*/src/*`                           | oxlint `boundaries.jsonc`                                         | Yes    |
-| `exports` dist + `@stackra/source` shape, `sideEffects: false` | `validate-repository.mjs`                                         | Yes    |
+| `exports` dist + `@stackra/source` shape, `sideEffects: false` | `stackra validate --repository`                                   | Yes    |
 | Unused files and exports                                       | `knip`                                                            | Yes    |
 | Entry folders match `exports` and `tsdown.config.ts`           | planned: validator check                                          | No     |
 | No product literal or `process.env` in a package               | planned: validator check                                          | No     |

@@ -156,7 +156,7 @@ Never build HTTP responses by hand and never import `APIError` in a service.
 
 ## Enforcement
 
-- `validate-repository.mjs` (`checkService`) refuses Encore files in a service (ADR 0124)
+- `stackra validate --repository` (`checkService`) refuses Encore files in a service (ADR 0124)
 - planned — STA-340: the gen checks for an endpoint collision, GET on an action or non-GET on a query, a query above
   L1, `cache` on an action and a precondition on a query; until gen ships, review (`api-contract-reviewer`) checks this
   rule

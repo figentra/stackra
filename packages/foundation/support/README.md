@@ -8,7 +8,7 @@ tokens), `oneTimeCode` (single-use codes stored as a peppered HMAC), `canonicalJ
 `restrictedGtin` (GS1 restricted-circulation numbers), `code128` (a Code 128 and GS1-128 encoder), the encoding
 helpers `base64url`, `decodeBase64` and `crc32`, the markup helpers `escapeHtml`, `escapeXml` and `htmlToText`, the
 guard `isRecord`, the case helpers `snakeCase`, `kebabCase`, `camelCase` and `pascalCase`, and `ageOn`. Every one has a
-single home here: a package imports it and never keeps a copy (`tools/scripts/duplicate-exports.mjs` fails `pnpm
+single home here: a package imports it and never keeps a copy (`stackra duplicate-exports` fails `pnpm
 validate` on a second definition). Other string, array, async and object helpers are added when a package first needs
 them, not before.
 
