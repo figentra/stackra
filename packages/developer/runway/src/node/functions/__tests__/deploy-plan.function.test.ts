@@ -28,7 +28,7 @@ describe("deployPlan", () => {
     ]);
     expect(p.ci).toEqual(["CLOUDFLARE_API_TOKEN"]);
     expect(p.sync).toEqual([
-      { member: "web", kind: "secret", name: "SENTRY_AUTH", path: "/runtime" },
+      { member: "web", kind: "secret", name: "SENTRY_AUTH", path: "/runtime/web" },
       { member: "web", kind: "var", name: "VITE_API_ORIGIN" },
     ]);
     expect(JSON.stringify(p).includes("api.acme.example")).toBe(false);

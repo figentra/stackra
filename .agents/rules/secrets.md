@@ -33,10 +33,13 @@ const stripeSecretKey = secret("STRIPE_SECRET_KEY");
 
 All other secrets through Infisical:
 
-### Vault Layout
+### Vault Layout (ADR 0512: one project per reader)
 
-- dev: `/agents` - Developer and agent tokens (local dev, MCP servers)
-- staging|prod: `/ci` - CI/CD deployment secrets
+- `figentra-agents` dev `/agents` - Developer and agent tokens (local dev, MCP servers); every repo's `.infisical.yaml`
+- `figentra-ci` prod `/ci`, `/ci/turbo`, `/ci/registry` - read-only build tokens (every CI job, PR checks, testbed)
+- `figentra-ci-deploy` prod `/ci`, `/ci/release`, `/ci/store`, `/ci/observability` - deploy and release credentials
+- `figentra-registry` prod `/ci`, `/ci/registry` and `figentra-flow-gate` prod `/ci/gate` - one reader each
+- `<product>` `/runtime/<member>` - a product's runtime secrets, synced by runway; no shared token is copied there
 
 ### How to Use
 
@@ -76,7 +79,8 @@ In Infisical `/ci` (CI/CD):
 
 The owner drops one file per secret into `~/Secrets-inbox/` (outside every repo, never synced). The file name is
 the secret name (`SCREAMING_SNAKE`, one extension stripped: `STACKRA_REVIEWER_PRIVATE_KEY.pem`); an optional
-`<NAME>.target.yaml` sets `env` (default `dev`) and `path` (default `/agents`). A non-file value (an App ID) is a
+`<NAME>.target.yaml` sets `project`, `env` (default `dev`) and `path` (default `/agents`, in `figentra-agents`); a `/ci`
+path must name its project (ADR 0512). A non-file value (an App ID) is a
 file holding just that value; there is no `--value` flag.
 
 - `pnpm secrets:import --list | --dry-run | <import>` is the only way in. It never prints, logs or passes a value

@@ -3,7 +3,7 @@
  * Purpose: `deployPlan(env, runways)`, what a deploy of `env` does, from the runways (`runway plan`).
  * Boundary: pure; names only, never a value (a member var's value is never copied).
  * Runtime: node
- * Governing contract: ADR 0170; STA-268 (the secret sync is STA-606).
+ * Governing contract: ADR 0170; ADR 0512 (`/runtime/<member>`); STA-268 (the secret sync is STA-606).
  */
 import type { DeployPlan } from "#node/types/deploy-plan.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
@@ -21,6 +21,8 @@ export function deployPlan(env: string, { root, members }: DeployRunways): Deplo
   const destinations = new Set(Object.values(environment.destinations ?? {}));
   const infisical = root.providers?.infisical ?? {};
   const defaultPath = root.secrets?.defaultPath;
+  // ADR 0512: each member's runtime secrets sit in their own folder, `<runtime path>/<member>`.
+  const base = defaultPath === undefined ? undefined : infisical.paths?.[defaultPath];
   return {
     environment: env,
     infisicalEnvironment: infisical.environments?.[env] ?? null,
@@ -39,7 +41,7 @@ export function deployPlan(env: string, { root, members }: DeployRunways): Deplo
           member,
           kind: "secret" as const,
           name,
-          path: (defaultPath === undefined ? undefined : infisical.paths?.[defaultPath]) ?? null,
+          path: base === undefined ? null : `${base.replace(/\/$/, "")}/${member}`,
         })),
         ...Object.keys(own.vars ?? {}).map((name) => ({ member, kind: "var" as const, name })),
       ];
