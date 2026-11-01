@@ -9,6 +9,7 @@
  * Runtime: node
  * Governing contract: ADR 0263 (decision 12); ADR 0269 (decision 3).
  */
+import { Logger } from "@stackra/contracts";
 import type { Port } from "@stackra/contracts";
 
 import {
@@ -22,6 +23,7 @@ import {
   type Wiring,
   type WiringDriver,
 } from "#core/index";
+import { MemoryLoggerDriver } from "#testing/drivers/memory-logger.driver";
 import { REGISTERED_WIRINGS } from "#testing/constants/registered-wirings.constant";
 import { TESTING_PLUGINS } from "#testing/constants/testing-plugins.constant";
 import { loadMemberSchemas } from "#testing/functions/load-member-schemas.function";
@@ -167,9 +169,19 @@ export class TestingModuleBuilder {
       this.fallback === undefined
         ? { byPort: { ...this.byPort } }
         : { fallback: this.fallback, byPort: { ...this.byPort } };
-    const container = await Container.create([...pickedDrivers(drivers), ...wirings], {
+    const picked = pickedDrivers(drivers);
+    const overrides = new Map(this.overrides);
+    // A driver that logs boots even where no wiring lists a Logger driver (no @stackra/logger dependency, STA-1805).
+    if (
+      !overrides.has(Logger) &&
+      ![...picked, ...wirings].some((wiring) =>
+        (wiring.drivers ?? []).some((driver) => driver.port === Logger),
+      )
+    )
+      overrides.set(Logger, new MemoryLoggerDriver());
+    const container = await Container.create([...picked, ...wirings], {
       roots: this.roots,
-      overrides: new Map(this.overrides),
+      overrides,
       drivers,
     });
     const app = new TestingApp(container, recordsOf(this.roots, wirings));
