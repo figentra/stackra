@@ -68,6 +68,7 @@ describe("check phases", () => {
       "structure",
       "docs",
       "lint",
+      "hooks",
       "gen",
       "typecheck",
       "catalogues",

@@ -12,6 +12,7 @@ import { CONFIG_PHASE } from "#node/constants/config-phase.constant";
 import { DOCS_PHASE } from "#node/constants/docs-phase.constant";
 import { FORMAT_PHASE } from "#node/constants/format-phase.constant";
 import { GEN_PHASE } from "#node/constants/gen-phase.constant";
+import { HOOKS_PHASE } from "#node/constants/hooks-phase.constant";
 import { LINT_PHASE } from "#node/constants/lint-phase.constant";
 import { SECRETS_PHASE } from "#node/constants/secrets-phase.constant";
 import { SPEC_PHASE } from "#node/constants/spec-phase.constant";
@@ -30,6 +31,7 @@ export const CHECK_PHASES: readonly CheckPhase[] = [
   STRUCTURE_PHASE,
   DOCS_PHASE,
   LINT_PHASE,
+  HOOKS_PHASE,
   GEN_PHASE,
   TYPECHECK_PHASE,
   CATALOGUES_PHASE,
