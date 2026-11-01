@@ -6,7 +6,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); STA-1731 spec FR-001 and FR-015.
  */
-// @covers sta-1731:FR-001 sta-1731:FR-015
+// @covers sta-1731:FR-001 sta-1731:FR-015 sta-1731:FR-018
 import { MemoryCommandAuditDriver, runCommandForTest } from "@stackra/console/testing";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -26,7 +26,7 @@ describe("tenant commands", () => {
   it("creates a tenant, lists it, and audits both runs", async () => {
     const directory = new MemoryTenantDirectoryDriver();
     const audit = new MemoryCommandAuditDriver();
-    const options = { audit, container: serving(directory) };
+    const options = { audit, container: serving(directory), env: { STACKRA_OPERATOR: "ada" } };
     const created = await runCommandForTest(
       [TenantCreateCommand, TenantListCommand],
       ["tenant:create", "Acme", "--json"],
@@ -41,6 +41,8 @@ describe("tenant commands", () => {
     );
     expect(listed.json).toMatchObject({ ok: true, data: { tenants: [{ name: "Acme" }] } });
     expect(audit.entries.map((entry) => entry.command)).toEqual(["tenant:create", "tenant:list"]);
+    // The operator reaches the registry, which authorises and attributes each call.
+    expect(directory.calls).toEqual(["create:ada", "list:ada"]);
   });
 
   it("refuses to run with no CommandAudit bound", async () => {

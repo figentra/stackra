@@ -8,17 +8,20 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; STA-1731 spec FR-015 to FR-017.
  */
-// @covers sta-1731:FR-015 sta-1731:FR-016 sta-1731:FR-017
+// @covers sta-1731:FR-018 sta-1731:FR-015 sta-1731:FR-016 sta-1731:FR-017
 import type { AuditEntry, AuditTrail } from "@stackra/actions/contracts";
 import { buildConfig } from "@stackra/config";
 import { Command } from "@stackra/console";
 import { CommandAudit } from "@stackra/console/contracts";
 import type { CommandAuditEntry } from "@stackra/console/contracts";
 import { runCommandForTest } from "@stackra/console/testing";
+import type { PublicId } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
+import { MemoryTenantDirectoryDriver } from "@stackra/tenancy";
 import { describe, expect, it } from "@stackra/testing";
 
 import { AccessLogConfig } from "#config/access-log.config";
+import { CommandAuditScopeInvalidError } from "#core/errors/command-audit-scope-invalid.error";
 import { CommandAuditScopeMissingError } from "#core/errors/command-audit-scope-missing.error";
 import { AuditTrailCommandAuditDriver } from "#node/drivers/audit-trail-command-audit.driver";
 
@@ -33,8 +36,11 @@ const entry: CommandAuditEntry = {
   exitCode: 0,
 };
 
-/** The driver over a recording trail and a config with `commandAuditScope`. */
-function driverWith(commandAuditScope: string) {
+/** The driver over a recording trail, a config with `commandAuditScope`, and a registry marking `operations`. */
+function driverWith(
+  commandAuditScope: string,
+  operations: string | null = commandAuditScope === "" ? null : commandAuditScope,
+) {
   const recorded: AuditEntry[] = [];
   const trail = {
     record: async (item: AuditEntry) => {
@@ -42,10 +48,11 @@ function driverWith(commandAuditScope: string) {
     },
   } as unknown as AuditTrail;
   const config = buildConfig(AccessLogConfig, { values: { commandAuditScope } });
-  return { driver: new AuditTrailCommandAuditDriver(trail, config), recorded };
+  const directory = new MemoryTenantDirectoryDriver();
+  if (operations !== null) directory.markOperations(operations as PublicId<"scp">);
+  return { driver: new AuditTrailCommandAuditDriver(trail, config, directory), recorded };
 }
 
-/** An audited command that does nothing. */
 /** Whether `PingCommand`'s handler ran. */
 let pinged = false;
 
@@ -103,6 +110,24 @@ describe("AuditTrailCommandAuditDriver", () => {
     expect(result.exitCode).toBe(1);
     expect(pinged).toBe(false);
     expect(recorded).toHaveLength(0);
+  });
+
+  it("refuses before the handler when the scope is not the registry's operations tenant", async () => {
+    pinged = false;
+    for (const operations of ["scp_01JCUSTOMER0000000000000000", null]) {
+      const { driver, recorded } = driverWith(SCOPE, operations);
+      const refused = await driver.ready().catch((error: unknown) => error);
+      expect(isRefusal(refused, CommandAuditScopeInvalidError)).toBe(true);
+      const result = await runCommandForTest([PingCommand], ["ping"], { audit: driver });
+      expect(result.exitCode).toBe(1);
+      expect(recorded).toHaveLength(0);
+    }
+    expect(pinged).toBe(false);
+  });
+
+  it("is ready when the scope is the registry's operations tenant", async () => {
+    const { driver } = driverWith(SCOPE);
+    await expect(driver.ready()).resolves.toBeUndefined();
   });
 
   it("lets a run through only when a CommandAudit is bound", async () => {

@@ -18,6 +18,7 @@ export { MemoryAccessLogSinkDriver } from "#core/drivers/memory-access-log-sink.
 export { OutboxAccessLogSinkDriver } from "#core/drivers/outbox-access-log-sink.driver";
 export { AccessLogWriteFailedError } from "#core/errors/access-log-write-failed.error";
 export { AuditExportFailedError } from "#core/errors/audit-export-failed.error";
+export { CommandAuditScopeInvalidError } from "#core/errors/command-audit-scope-invalid.error";
 export { CommandAuditScopeMissingError } from "#core/errors/command-audit-scope-missing.error";
 export { AccessRecorded } from "#core/events/access-recorded.event";
 export { findAuditChainBreak } from "#core/functions/find-audit-chain-break.function";

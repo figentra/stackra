@@ -36,7 +36,9 @@ export class TenantCreateCommand extends Command({
     const name = this.name.trim();
     if (name === "" || name.length > 200)
       throw new UsageError("<name> must be 1 to 200 characters");
-    const tenant = await io.output.task(`Creating ${name}`, () => this.directory.create({ name }));
+    const tenant = await io.output.task(`Creating ${name}`, () =>
+      this.directory.create({ name }, io.operator),
+    );
     io.output.success(`Created ${tenant.name} (${tenant.id})`);
     return { tenant };
   }

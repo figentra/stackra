@@ -108,6 +108,12 @@ look and the standalone path `createConsole({ commands })`. Today the `stackra` 
 - **FR-017** THE `@stackra/access-log` package SHALL provide the `CommandAudit` driver that stores each entry in its
   write-audit store (ADR 0465 decision 4), and `@stackra/console/testing` SHALL provide a memory `CommandAudit` for
   tests.
+- **FR-018** WHILE `STACKRA_ENVIRONMENT` is `production`, THE Console Kernel SHALL run an audited command only inside
+  the operator's open, unexpired break-glass session read through the `OperatorBreakGlass` port (opened, time-limited
+  and audited by the host's IAM service), SHALL refuse it before its handler otherwise, and SHALL record the session's
+  id in the audit entry; THE `TenantDirectory` calls SHALL carry the operator, and THE `CommandAudit` driver SHALL
+  refuse before the handler unless `STACKRA_COMMAND_AUDIT_SCOPE` is the tenant the registry marks as the platform's
+  operations tenant (the owner's S4 and S5 decisions, 2026-11-01).
 
 ## Inventory (for review; FR-011)
 
@@ -168,10 +174,8 @@ A service's own modules add theirs in their `commands/` group (`projection:rebui
   (review B1); a run whose entry fails says it was not audited (S1); an interrupted audited run is recorded after its
   handler settles, up to 30 seconds (S2); a secret value is never echoed in a usage error (S3).
 - Command audit entries go in the chain of an operations tenant named by `STACKRA_COMMAND_AUDIT_SCOPE`, because
-  `AuditLogEntry` is tenant-owned. Follow-ups for the owner: (S4) refuse a scope the registry does not mark as the
-  platform operations tenant, or give the write audit a platform-scope chain (data-engineer); (S5) pass the operator
-  as an actor into `TenantDirectory`, and require a break-glass grant for audited commands in production (ADR 0188
-  SC12). Consider: audit `queue:retry` and `cache:clear` too (C2); move `MemoryTenantDirectoryDriver` to `./testing`
+  `AuditLogEntry` is tenant-owned. The owner approved S4 and S5 on 2026-11-01, and both are built (FR-018); a
+  platform-scope chain for the write audit comes later. Consider: audit `queue:retry` and `cache:clear` too (C2); move `MemoryTenantDirectoryDriver` to `./testing`
   (C4).
 
 ## Out of scope

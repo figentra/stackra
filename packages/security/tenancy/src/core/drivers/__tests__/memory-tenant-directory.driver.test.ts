@@ -17,9 +17,21 @@ describe("MemoryTenantDirectoryDriver", () => {
   it("creates and lists tenants", async () => {
     const directory = new MemoryTenantDirectoryDriver();
     expect(directory).toBeInstanceOf(TenantDirectory);
-    const acme = await directory.create({ name: "Acme" });
-    await directory.create({ name: "Globex" });
+    const acme = await directory.create({ name: "Acme" }, "ada");
+    await directory.create({ name: "Globex" }, "ada");
     expect(isTenantId(acme.id)).toBe(true);
-    expect((await directory.list()).map((tenant) => tenant.name)).toEqual(["Acme", "Globex"]);
+    expect((await directory.list("grace")).map((tenant) => tenant.name)).toEqual([
+      "Acme",
+      "Globex",
+    ]);
+    expect(directory.calls).toEqual(["create:ada", "create:ada", "list:grace"]);
+  });
+
+  it("names the operations tenant only once one is marked", async () => {
+    const directory = new MemoryTenantDirectoryDriver();
+    expect(await directory.operationsTenant()).toBeUndefined();
+    const operations = await directory.create({ name: "Platform operations" }, "ada");
+    directory.markOperations(operations.id);
+    expect(await directory.operationsTenant()).toBe(operations.id);
   });
 });

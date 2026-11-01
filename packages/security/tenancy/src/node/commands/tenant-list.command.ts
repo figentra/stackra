@@ -29,7 +29,7 @@ export class TenantListCommand extends Command({
 
   /** Lists the tenants and returns them. */
   async handle(io: CommandIo): Promise<Readonly<Record<string, unknown>>> {
-    const tenants = await this.directory.list();
+    const tenants = await this.directory.list(io.operator);
     io.output.table(
       ["Id", "Name", "Created"],
       tenants.map((tenant) => [tenant.id, tenant.name, tenant.createdAt.toISOString()]),
