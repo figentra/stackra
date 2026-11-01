@@ -145,6 +145,17 @@ planned — a boundaries rule bans imports of another service's package or path,
 committed `app-manifest.json`; `stackra gen --check` fails when the committed `openapi.json` is not the projection of the manifest; and the
 conformance test of [0144](/adr/0144-metadata-registry-and-explorers) checks that the event map matches the manifest.
 
+## Amendment 2026-11-01: contracts and cross-app events
+
+Written with `0511` (`adr/0511-cross-repo-service-contracts-and-cross-app-events`), which amends decisions 2 to 4 as follows.
+Decisions 2 and 3: where no sibling folder holds a producer, the manifest a consumer reads is the one in its
+`@figentra/<service>-contract` package, pinned through the catalog, and a manifest is never matched by member name. Decision 4
+does not carry an event across apps: that transport is decided by `0511` decisions 9 to 15 (clients first, then HTTP push
+from the producer's outbox to idempotent consumer inboxes), and sharing a contract never implies sharing a bus. The envelope
+fields that the decision 4 note above names as `scope` and `meta` are corrected to those of
+[0141](/adr/0141-integration-event-names-and-envelope) decision 2: `tenant`, `actor`, `onBehalfOf`, `correlation` and
+`causation`. The other decisions stand.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0078](/adr/0078-messaging-layer-eight-packages), [0117](/adr/0117-contracts-placement-and-decorator-ownership),
