@@ -333,6 +333,17 @@ added an open scope for Figentra's open products (migration `0005_figentra_oss.s
 Every publisher uses `.github/workflows/release.yml` on `refs/heads/main` and is matched on its numeric repository and
 owner ids (decision 6).
 
+## Amendment 2026-11-01 (owner decision): sources in an internal scope
+
+Decision 7's ban on `src` and source maps comes from [0316](/adr/0316-open-core-distribution) decision 2, which keeps
+sources out of what customers install. It now applies only to a commercial scope whose read rule is `licensed`
+(`@stackra-pro`). An `internal` scope (`@figentra`) may publish `src/` and `.map` files, because only a Figentra
+internal licence reads it. The template lines of [0481](/adr/0481-template-lines-release-as-registry-packages-and-runway-checks-them-out)
+are their sources: `@figentra/os-mobile` ships the Expo project EAS builds from. Every other commercial check still
+applies there: the scope's licence string and a LICENSE file. The read rule is the scope row's own, so a per-name
+`internal` rule inside `@stackra-pro` (`@stackra-pro/ui`) keeps the ban. The OS release workflow publishes those lines
+as a trusted publisher of `@figentra` (migration `0006_figentra_os.sql`, decision 10). Linear STA-1828.
+
 ## Supersedes and sources
 
 Supersedes: [0177](/adr/0177-package-distribution-npmjs-and-keygen) decisions 1 to 3 and decisions 1 to 3 of its
