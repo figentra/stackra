@@ -37,7 +37,12 @@ export function ShortcutHint({
   if (!isBinding(keys))
     // An older caller's ready-made text (`⌘E`): drawn as given.
     return (
-      <Kbd dir="ltr" className={cn("shrink-0", className) ?? ""} aria-hidden={isDecorative}>
+      <Kbd
+        dir="ltr"
+        data-slot="shortcut-hint"
+        className={cn("shrink-0", className) ?? ""}
+        aria-hidden={isDecorative}
+      >
         <Kbd.Content>{keys}</Kbd.Content>
       </Kbd>
     );
