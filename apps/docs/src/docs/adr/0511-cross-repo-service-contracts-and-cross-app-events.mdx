@@ -1,13 +1,13 @@
 ---
-title: "NNNN — Cross-repo service contracts and cross-app events"
+title: "0511 — Cross-repo service contracts and cross-app events"
 description: "Proposed · 2026-11-01"
 ---
 
-{/* Stackra file contract. Purpose: ADR NNNN, cross-repo service contracts and cross-app events: the `@figentra/<service>-contract` packages that carry a producer's committed manifest and OpenAPI document to consumers in other repositories, the `contract` kind, release and trusted publishing per producer repository, prerelease builds for branches, the first contracts from the OS handover, and the transport of integration events that cross apps (HTTP push from the producer's outbox to idempotent consumer inboxes, with a broker driver deferred). Boundary: decision text only; the gen changes, the registry rows, the kind's schema and the relay are built by their own issues. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0260, 0453, 0141, 0349, 0294, 0142. */}
+{/* Stackra file contract. Purpose: ADR 0511, cross-repo service contracts and cross-app events: the `@figentra/<service>-contract` packages that carry a producer's committed manifest and OpenAPI document to consumers in other repositories, the `contract` kind, release and trusted publishing per producer repository, prerelease builds for branches, the first contracts from the OS handover, and the transport of integration events that cross apps (HTTP push from the producer's outbox to idempotent consumer inboxes, with a broker driver deferred). Boundary: decision text only; the gen changes, the registry rows, the kind's schema and the relay are built by their own issues. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0260, 0453, 0141, 0349, 0294, 0142. */}
 
 <Note>
   Proposed 2026-11-01 (STA-1821). The number is reserved by the testing session; until then this
-  page uses `NNNN` in its name and text. It amends
+  page uses `0511` in its name and text. It amends
   [0260](/adr/0260-cross-service-calls-through-injected-clients-and-events) (decisions 2 to 4),
   [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
   (decisions 6, 10 and 11) and [0141](/adr/0141-integration-event-names-and-envelope) (decision 2),

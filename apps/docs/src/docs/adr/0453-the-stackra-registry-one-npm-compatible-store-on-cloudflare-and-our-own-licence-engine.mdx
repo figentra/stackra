@@ -335,16 +335,16 @@ owner ids (decision 6).
 
 ## Amendment 2026-11-01: contracts, the `contract` kind and branch prerelease
 
-Written with `NNNN` (`adr/NNNN-cross-repo-service-contracts-and-cross-app-events`), which amends decisions 6, 10 and 11 as follows.
+Written with `0511` (`adr/0511-cross-repo-service-contracts-and-cross-app-events`), which amends decisions 6, 10 and 11 as follows.
 
 - **Decision 6 (publishers).** A publisher row names one producer repository, its workflow `.github/workflows/release.yml`
   and environment `release`, so a scope may hold one row per repository, as the `@figentra` rows of the 2026-10-31 table do.
   A contract name's row admits a prerelease version from any ref of that workflow, and a stable version only from
   `refs/heads/main`.
 - **Decision 10 (read rules).** The `@figentra` row of the 2026-10-31 table is the `internal` read rule that contracts are
-  read through. Its publishers are the producer repositories of `NNNN` decision 5.
+  read through. Its publishers are the producer repositories of `0511` decision 5.
 - **Decision 11 (kinds).** The kinds are exactly `package`, `skill`, `agent`, `mcp`, `plugin` and `contract`. A contract is
-  named `@figentra/<service>-contract` (`NNNN` decision 1), not `@<scope>/contract-<name>`, and `stackra add` does not install
+  named `@figentra/<service>-contract` (`0511` decision 1), not `@<scope>/contract-<name>`, and `stackra add` does not install
   it. Its fields in the `stackra` object are set by the schema change that adds the kind.
 
 The other decisions stand.
