@@ -28,6 +28,7 @@
     "search",
     "vendor",
     "assets",
+    "stackra.manifest.json",
     "README.md"
   ],
   "type": "module",
