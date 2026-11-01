@@ -20,12 +20,19 @@ import {
   type Resolver,
 } from "@stackra/actions";
 import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
-import { type AnyClass, Driver } from "@stackra/container";
+import {
+  type AnyClass,
+  Driver,
+  PERMISSION_REGISTRY,
+  Permissions,
+  registerPermissions,
+} from "@stackra/container";
 import {
   type Actor,
   ActorKind,
   ApiArea,
   Clock,
+  Permission,
   type PublicId,
   Realm,
   type ScopeRef,
@@ -36,19 +43,15 @@ import { type FactField, FieldType, Operator } from "@stackra/rules/contracts";
 import { MemoryScopeTreeDriver } from "@stackra/scope";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
-import { Permissions } from "#core/bases/permissions.base";
 import { Policy } from "#core/bases/policy.base";
-import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
 import { POLICY_REGISTRY } from "#core/constants/policy-registry.constant";
 import { IamAccessControlDriver } from "#core/drivers/iam-access-control.driver";
 import { MemoryPolicySourceDriver } from "#core/drivers/memory-policy-source.driver";
 import { Decision } from "#core/enums/decision.enum";
 import { connectPolicies } from "#core/functions/connect-policies.function";
-import { registerPermissions } from "#core/functions/register-permissions.function";
 import { registerPolicies } from "#core/functions/register-policies.function";
 import { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
 import type { MemoryPolicyState } from "#core/types/memory-policy-state.type";
-import { Permission } from "#core/values/permission.value";
 
 /** Always 2026-10-25 09:00 UTC. */
 class FixedClockDriver extends Driver(Clock) {

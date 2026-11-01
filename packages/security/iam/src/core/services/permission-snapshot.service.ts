@@ -9,11 +9,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0208 (decision 6: permission names); ADR 0132 (decision 5); ADR 0294 (decision 17).
  */
-import { Service } from "@stackra/container";
+import { permissionKey, Service } from "@stackra/container";
+import type { Permission } from "@stackra/contracts";
 
 import { coversPermission } from "#core/functions/covers-permission.function";
-import { permissionKey } from "#core/functions/permission-key.function";
-import type { Permission } from "#core/values/permission.value";
 
 /**
  * The held permission keys, as a store `useSyncExternalStore` reads.

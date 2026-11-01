@@ -6,9 +6,9 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0099 (decision 1).
  */
-import { Enum } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import { Enum } from "#core/bases/enum.base";
 import { Risk } from "#core/enums/risk.enum";
 
 describe("Risk", () => {

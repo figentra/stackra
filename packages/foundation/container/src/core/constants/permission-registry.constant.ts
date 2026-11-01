@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 20 and 22).
  */
-import type { Permission } from "#core/values/permission.value";
+import type { Permission } from "@stackra/contracts";
 
 /** Locked key to its `Permission` static. */
 export const PERMISSION_REGISTRY = new Map<string, Permission>();

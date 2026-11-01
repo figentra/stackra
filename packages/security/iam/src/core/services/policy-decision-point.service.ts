@@ -26,9 +26,10 @@
  *                     (decisions 2, 3 and 7, as amended by ADR 0462); ADR 0099 (as amended by 0294); ADR 0098 (the actor chain); ADR 0351
  *                     (decisions 3 and 4); STA-595 (field rules, break-glass, restricted permissions).
  */
-import { Service } from "@stackra/container";
+import { PERMISSION_REGISTRY, permissionKey, Service } from "@stackra/container";
 import {
   type Clock,
+  type Permission,
   type Actor,
   ActorKind,
   Enum,
@@ -50,20 +51,17 @@ import type {
   PolicySource,
 } from "#contracts/index";
 import { DIMENSION_REGISTRY } from "#core/constants/dimension-registry.constant";
-import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
 import { ROLE_REGISTRY } from "#core/constants/role-registry.constant";
 import { AccessReason } from "#core/enums/access-reason.enum";
 import { Decision } from "#core/enums/decision.enum";
 import { SystemRole } from "#core/enums/system-role.enum";
 import { conditionFields } from "#core/functions/condition-fields.function";
 import { coversPermission } from "#core/functions/covers-permission.function";
-import { permissionKey } from "#core/functions/permission-key.function";
 import type { AccessExplanation } from "#core/types/access-explanation.type";
 import type { CheckOptions } from "#core/types/check-options.type";
 import type { FieldPermissions } from "#core/types/field-permissions.type";
 import type { RecordFacts } from "#core/types/record-facts.type";
 import type { VisibleConditionOptions } from "#core/types/visible-condition-options.type";
-import type { Permission } from "#core/values/permission.value";
 
 /** The built-in role codes, which may hold a wildcard. */
 const SYSTEM_ROLES: ReadonlySet<string> = new Set(Enum.values(SystemRole));

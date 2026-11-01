@@ -6,12 +6,11 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0132 (as amended by 0294); ADR 0294 (decision 16).
  */
-import { kindOf } from "@stackra/container";
+import { Permission, Risk } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { Permissions } from "#core/bases/permissions.base";
-import { Risk } from "#core/enums/risk.enum";
-import { Permission } from "#core/values/permission.value";
+import { kindOf } from "#core/functions/kind-of.function";
 
 class OrderPermissions extends Permissions {
   static readonly read = Permission.L0;

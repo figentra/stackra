@@ -7,9 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (rules 5 to 7); ADR 0132 (as amended by 0294).
  */
-import type { AnyClass } from "@stackra/container";
-
-import type { Permissions } from "#core/bases/permissions.base";
+import type { AnyClass, Permissions } from "@stackra/container";
 
 /** The options of a policy class. */
 export interface PolicyOptions {

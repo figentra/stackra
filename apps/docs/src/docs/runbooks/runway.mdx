@@ -30,11 +30,11 @@ Core's root runway declares only `dev` and `production`: Stackra deploys only it
 
 Each provider is a `workflow_call` workflow in `.github/workflows/`. Its job takes its GitHub environment from an input, so the environment's protection, its OIDC subject and GitHub's deployment record apply to every deploy. Each job reads one credential per step from Infisical `/ci` over GitHub OIDC, and without an identity id it builds, checks, prints a notice and deploys nothing.
 
-| Provider                        | Caller here         | Does                                                                                                                                                    |
-| ------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `runway-cloudflare-workers.yml` | `deploy-static.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt                             |
-| `runway-npm.yml`                | `release.yml`       | Trivy scan of the lockfile, version PR or trusted publish with provenance, the OP2 bootstrap token on request, a cosign-signed SBOM on each new release |
-| `runway-mintlify.yml`           | `deploy-docs.yml`   | `mint validate`, `broken-links` and `a11y`, a Mintlify update polled to its end, a smoke test of the pages                                              |
+| Provider                        | Caller here         | Does                                                                                                                                                                                  |
+| ------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runway-cloudflare-workers.yml` | `deploy-static.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt                                                           |
+| `runway-npm.yml`                | `release.yml`       | Trivy scan of the lockfile, version PR or trusted publish with provenance, the OP2 bootstrap token on request, a cosign-signed SBOM on each new release                               |
+| `runway-mintlify.yml`           | `deploy-docs.yml`   | `mint validate`, `broken-links` and `a11y`, publishes `.stackra/site` to the `docs-site` branch (`site-branch` input), a Mintlify update polled to its end, a smoke test of the pages |
 
 npm checks the calling workflow, not the reusable one, so each package's trusted publisher names `release.yml`.
 
@@ -161,7 +161,7 @@ Agents cannot do these (STA-605):
 
 1. Restrict the `static` environment to `main` and `schemas@*` tags, and add the required reviewers `runway.yaml` lists for `static`, `registry` and `release` (`figentra-usr` until a second maintainer joins).
 2. Create the `docs` environment (main only), and add Infisical OIDC trusts for the `docs` and `release` environments.
-3. Put `MINTLIFY_ADMIN_KEY` into Infisical `/ci` through the [secrets inbox](/runbooks/secrets#the-secrets-inbox), set the repository variable `MINTLIFY_PROJECT_ID`, and switch off the Mintlify GitHub-app deploy after the first CI deploy.
+3. Put `MINTLIFY_ADMIN_KEY` into Infisical `/ci` through the [secrets inbox](/runbooks/secrets#the-secrets-inbox), set the repository variable `MINTLIFY_PROJECT_ID`, and switch off the Mintlify GitHub-app deploy after the first CI deploy. In the Mintlify dashboard (Git settings) set the branch to `docs-site` and the root path to `/`; CI creates the branch on its first publish, so run the deploy once before saving the setting.
 4. Apply `.github/rulesets/release-tags.json` to the `release-tags` ruleset.
 5. After the merge, tag `runway-v1` on the merge commit.
 6. The first npm publish (OP2): a 7-day publish-only token as `NPM_BOOTSTRAP_TOKEN` in `/ci`, dispatch `release.yml` with `bootstrap`, add a trusted publisher naming `release.yml` for each package, revoke the token.

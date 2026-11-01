@@ -423,7 +423,14 @@ describe("emitRegistrations for permissions and roles (STA-1702)", () => {
         "]);",
       ].join("\n"),
     );
-    expect(content).toMatch(/import \{[^}]*registerPermissions[^}]*\} from "@stackra\/iam";/);
+    expect(content).toMatch(/import \{[^}]*registerPermissions[^}]*\} from "@stackra\/container";/);
+    expect(content).toMatch(/import \{[^}]*registerRoles[^}]*\} from "@stackra\/iam";/);
+  });
+
+  it("imports nothing from @stackra/iam for a member that declares permissions but no roles (ADR 0513)", () => {
+    const withoutRoles = registrationsOf(COMMERCE_IR) ?? "";
+    expect(withoutRoles).toContain("registerPermissions([");
+    expect(withoutRoles).not.toContain("@stackra/iam");
   });
 
   it("registers each module role by its derived key, after the permissions its grants name", () => {

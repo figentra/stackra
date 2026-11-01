@@ -7,7 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0208 (decision 2, as amended by 0294); ADR 0132 (decision 5).
  */
-import type { Permission } from "#core/values/permission.value";
+import type { Permission } from "@stackra/contracts";
 
 /** The options of a role class. */
 export interface RoleOptions {

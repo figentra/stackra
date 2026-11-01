@@ -12,8 +12,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0132 (decisions 2 and 5); ADR 0099 (the risk levels); ADR 0407; STA-818.
  */
-import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
-import { Risk } from "#core/enums/risk.enum";
+import { PERMISSION_REGISTRY } from "@stackra/container";
+import { Risk } from "@stackra/contracts";
 
 /** `[<prefix>.]@read` or `[<prefix>.]@risk:<level>`. */
 const SELECTOR = /^(?:((?:[a-z][a-z0-9_]*\.){1,2}))?@(?:(read)|risk:(l[0-4]))$/;
