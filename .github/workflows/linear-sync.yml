@@ -52,7 +52,8 @@ jobs:
         with:
           install_args: node
 
-      # Read-only, every repo the App is installed on in the org; revoked when the job ends.
+      # Read-only, scoped to the repos the reconcile reads (tools/scripts/linear-reconcile.repos.yaml; keep the two lists
+      # in step), never the whole org; revoked when the job ends.
       - name: App token
         id: bot
         continue-on-error: true
@@ -61,6 +62,26 @@ jobs:
           app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
           private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
           owner: figentra
+          repositories: |
+            stackra
+            stackra-pro
+            stackra-template
+            stackra-notes
+            billing
+            pay
+            invoicing
+            tamo
+            os
+            juristra
+            figentra
+            flow
+            brand
+            commerce
+            organza
+            velora
+            academorix
+            jute
+            mezzora
           permission-contents: read
           permission-pull-requests: read
 
