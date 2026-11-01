@@ -142,6 +142,33 @@ describe("handleRequest", () => {
     });
   });
 
+  describe("read-only (STA-1733)", () => {
+    it("answers every write with 503 while reads keep working", async () => {
+      const writable = await createTestRegistry();
+      expect((await writable.publish(CORE)).status).toBe(201);
+      const frozen = await createTestRegistry({ readOnly: true });
+      const refused = await frozen.request(
+        "/-/npm/v1/oidc/token/exchange/package/@stackra%2fcore",
+        {
+          method: "POST",
+          token: await frozen.idToken(),
+        },
+      );
+      expect(refused.status).toBe(503);
+      expect(refused.headers.get("retry-after")).toBe("3600");
+      expect((await body(refused)).error).toMatch(/^registry_read_only/);
+      for (const [path, method] of [
+        ["/@stackra%2fcore", "PUT"],
+        ["/-/package/@stackra/core/dist-tags/next", "PUT"],
+        ["/-/package/@stackra/core/dist-tags/next", "DELETE"],
+        ["/-/stackra/v1/licences", "POST"],
+      ] as const)
+        expect((await frozen.request(path, { method, body: {} })).status).toBe(503);
+      for (const path of ["/-/ping", "/-/npm/v1/keys", "/@stackra%2fcore", "/"])
+        expect((await frozen.request(path)).status).not.toBe(503);
+    });
+  });
+
   describe("publish", () => {
     it("publishes, signs and serves a version", async () => {
       const published = await registry.publish(CORE);

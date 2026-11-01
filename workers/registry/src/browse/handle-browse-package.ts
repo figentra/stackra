@@ -110,9 +110,10 @@ export async function handleBrowsePackage(
     deps.store.package(name),
     resolveAccess(deps, request, name),
   ]);
-  if (pkg === null || resolved === null) return browseNotFound(locale, path);
+  if (pkg === null || resolved === null) return browseNotFound(locale, path, deps.settings.host);
   const { scope, access } = resolved;
-  if (scope.read_rule === "internal" && !access.allowed) return browseNotFound(locale, path);
+  if (scope.read_rule === "internal" && !access.allowed)
+    return browseNotFound(locale, path, deps.settings.host);
   const full = access.allowed;
 
   const [versions, distTags] = await Promise.all([
@@ -231,5 +232,6 @@ ${releases}
     path,
     status: 200,
     headers: scope.read_rule === "open" ? publicCache(deps) : PRIVATE,
+    host: deps.settings.host,
   });
 }

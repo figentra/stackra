@@ -30,12 +30,18 @@ import { writeDistTag } from "#src/publish/write-dist-tag";
 
 /** 405 with the allowed methods. */
 const notAllowed = (allow: string): Response => failure(405, "method not allowed", { allow });
+/** The answer to a write while the registry is read-only. */
+const READ_ONLY =
+  "registry_read_only: the registry is being moved; publishing, dist-tag and licence changes are paused, reads work";
 
 /** Dispatches one request. */
 async function dispatch(request: Request, deps: RegistryDeps): Promise<Response> {
   const url = new URL(request.url);
   const route = parsePath(url.pathname);
   const method = request.method === "HEAD" ? "GET" : request.method;
+  // A data move (REGISTRY_READ_ONLY): reads go on, every write waits, so no row is lost between export and switch.
+  if (deps.settings.readOnly && method !== "GET")
+    return failure(503, READ_ONLY, { "retry-after": "3600" });
   switch (route.kind) {
     case "browseList": {
       return method === "GET" ? handleBrowseList(deps, url, route.locale) : notAllowed("GET");

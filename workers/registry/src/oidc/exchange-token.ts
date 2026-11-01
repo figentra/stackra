@@ -38,7 +38,7 @@ export async function exchangeToken(
   try {
     claims = await verifyGithubToken(idToken, {
       issuer: deps.settings.oidcIssuer,
-      audience: `npm:${deps.settings.host}`,
+      audiences: deps.settings.oidcAudiences,
       now,
       keys: deps.oidcKeys,
     });

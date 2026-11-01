@@ -16,9 +16,13 @@ import type { BrowseLocale } from "#src/interfaces/browse-locale.type";
  * The browser's HTML 404.
  *
  * @example
- * await browseNotFound("en", "/package/@stackra/unknown"); // 404 text/html
+ * await browseNotFound("en", "/package/@stackra/unknown", "npm.stackra.figentra.com"); // 404 text/html
  */
-export async function browseNotFound(locale: BrowseLocale, path: string): Promise<Response> {
+export async function browseNotFound(
+  locale: BrowseLocale,
+  path: string,
+  host: string,
+): Promise<Response> {
   const text = BROWSE_MESSAGES[locale];
   return browsePage({
     locale,
@@ -30,5 +34,6 @@ export async function browseNotFound(locale: BrowseLocale, path: string): Promis
     path,
     status: 404,
     headers: { "cache-control": PRIVATE_NO_STORE, vary: "authorization" },
+    host,
   });
 }
