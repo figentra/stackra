@@ -5,7 +5,7 @@
  *          app's `I18n.orders.*` resolves to the commerce service's `orders` namespace, as the template promises
  *          ("gen merges consumed services' lang into .stackra/lang/", STA-1363).
  * Boundary: reads only the `assets/lang` of a consumed service found beside the member, or for an app in the repo's
- *           `services/` (the folders `readServiceManifests` matched); writes nothing. Each set carries the service's
+ *           `services/` (the folders `readServiceManifests` matched), or of its contract package in `node_modules`; writes nothing. Each set carries the service's
  *           package name as its owner and its lang folder relative to the member root, which the catalogue loaders
  *           import from `.stackra/gen/i18n.ts`. A service without the folder is skipped; an invalid catalogue throws.
  * Runtime: node
@@ -16,6 +16,7 @@ import { existsSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 
 import type { MemberIR } from "#core/types/member-ir.type";
+import { dependencyPath } from "#node/functions/dependency-path.function";
 import { readCatalogues } from "#node/functions/read-catalogues.function";
 
 /**
@@ -37,9 +38,19 @@ export function readServiceCatalogues(
   for (const service of [...services].sort((left, right) =>
     left.member.localeCompare(right.member),
   )) {
-    const folder = parents
-      .map((parent) => join(parent, service.folder ?? service.member))
-      .find((candidate) => existsSync(join(candidate, "stackra.manifest.json")));
+    // A contract package carries its lang beside its manifest, in node_modules (STA-1820).
+    const contract =
+      service.package === undefined
+        ? undefined
+        : dependencyPath(root, service.package, "stackra.manifest.json");
+    const folder =
+      service.package === undefined
+        ? parents
+            .map((parent) => join(parent, service.folder ?? service.member))
+            .find((candidate) => existsSync(join(candidate, "stackra.manifest.json")))
+        : contract === undefined
+          ? undefined
+          : dirname(contract);
     const catalogues = folder === undefined ? undefined : readCatalogues(folder);
     if (folder === undefined || catalogues === undefined) continue;
     found.push({

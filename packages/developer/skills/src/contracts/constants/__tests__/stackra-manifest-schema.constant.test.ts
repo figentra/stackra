@@ -17,7 +17,7 @@ describe("STACKRA_MANIFEST_SCHEMA", () => {
   });
 
   it("parses each kind", () => {
-    for (const kind of ["package", "skill", "agent", "plugin"]) {
+    for (const kind of ["package", "skill", "agent", "plugin", "contract"]) {
       expect(STACKRA_MANIFEST_SCHEMA.parse({ kind })).toEqual({ kind });
     }
     expect(STACKRA_MANIFEST_SCHEMA.parse({ kind: "mcp", mcp: { command: "npx" } })).toEqual({
@@ -35,6 +35,12 @@ describe("STACKRA_MANIFEST_SCHEMA", () => {
       summary: "Reach for it to track events.",
     };
     expect(STACKRA_MANIFEST_SCHEMA.parse({ ...field, module: "./src/a.module.ts" })).toEqual(field);
+  });
+
+  it("reads a contract package's field as its kind alone, with no tier or runtimes required", () => {
+    expect(STACKRA_MANIFEST_SCHEMA.parse({ kind: "contract", tier: "lib" })).toEqual({
+      kind: "contract",
+    });
   });
 
   it("refuses an mcp item without its entry and an unknown kind", () => {

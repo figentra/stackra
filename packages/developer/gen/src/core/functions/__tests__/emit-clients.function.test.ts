@@ -317,3 +317,36 @@ describe("the passes that break a cycle between services", () => {
     expect(files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
   });
 });
+
+describe("emitClients for a service read from a contract package (STA-1820)", () => {
+  const remote: NonNullable<MemberIR["services"]> = [
+    { member: "commerce", package: "@acme/commerce-contract", manifest: PRODUCER },
+  ];
+
+  it("still writes the client", () => {
+    const { files, errors } = emitClients(consumer({ services: remote }));
+    expect(errors).toEqual([]);
+    expect(files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
+  });
+
+  it("refuses a listener of its event: cross-app events have no transport yet", () => {
+    const refused = emitClients(consumer({ classes: [listenerOf("OrderPaid")], services: remote }));
+    expect(refused.files).toEqual([]);
+    expect(refused.errors.map((error) => [error.code, error.subject])).toEqual([
+      ["client_event_remote_transport", "SyncOnOrderPaidListener.handle"],
+    ]);
+  });
+
+  it("names both remedies when the service is unknown", () => {
+    const [error] = emitClients(consumer({ services: [] })).errors;
+    expect(error?.fix).toContain("run `stackra gen` in the commerce service");
+    expect(error?.fix).toContain("@figentra/commerce-contract");
+  });
+
+  it("does not find a service among the dependencies by member name", () => {
+    const refused = emitClients(
+      consumer({ services: [], dependencies: [{ package: "@acme/commerce", manifest: PRODUCER }] }),
+    );
+    expect(refused.errors.map((error) => error.code)).toEqual(["client_service_unknown"]);
+  });
+});

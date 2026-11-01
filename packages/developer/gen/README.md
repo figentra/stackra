@@ -360,8 +360,11 @@ export class StorefrontService extends Service {
   even before the file exists, so it never raises `token_not_a_class`. The wiring binds it with one dependency, the
   `ClientTransport` the topology picks (`@stackra/clients/contracts`).
 - **Source.** Discovery reads the producer's committed `stackra.manifest.json` from the folder beside the member
-  (`services/catalogue` next to `services/channels`), or from a dependency that ships one. Never the producer's
-  source. An app (`apps/<app>`) also reads the repo's `services/<service>`. A consumed service without a manifest is
+  (`services/catalogue` next to `services/channels`), or, for a producer in another repository, from a dependency whose
+  `package.json` has `"stackra": { "kind": "contract" }` and whose manifest `member` is the service (published as
+  `@figentra/<service>-contract`: manifest, OpenAPI and lang, no source; STA-1820). A service is never matched to an
+  ordinary dependency by member name. A listener of an event of a contract-package service is
+  `client_event_remote_transport` until the event-transport ADR. Never the producer's source. An app (`apps/<app>`) also reads the repo's `services/<service>`. A consumed service without a manifest is
   `client_service_unknown`, and a client imported under another name than `<Service>Client` is `client_name_mismatch`.
 - **Consumers.** A service is consumed by an injected client, a listener of one of its events, or any own file
   (tests included) importing from `#stackra/clients/<service>`, so an app's route that reads a query gets the client.

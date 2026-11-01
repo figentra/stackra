@@ -87,6 +87,19 @@ describe("checkMemberMetadata", () => {
     ]);
   });
 
+  it("asks a contract package only for its kind and its manifest, not tier, runtimes or tags", () => {
+    const contract = {
+      dir: "packages/data/orders-contract",
+      pkg: { name: "c", stackra: { kind: "contract" } },
+    };
+    expect(
+      checkMemberMetadata({ ...contract, files: ["package.json", "stackra.manifest.json"] }),
+    ).toEqual([]);
+    expect(checkMemberMetadata({ ...contract, files: ["package.json"] })).toEqual([
+      "a contract package must hold stackra.manifest.json at its root",
+    ]);
+  });
+
   it("requires the kind written out", () => {
     expect(
       checkMemberMetadata({ ...storage, pkg: { ...storage.pkg, stackra: undefined } }),

@@ -42,6 +42,32 @@ describe("readServiceCatalogues", () => {
     ]);
   });
 
+  it("reads a contract package's lang from node_modules (STA-1820)", () => {
+    const root = writeFixtureMember("console-contract", {
+      "node_modules/@acme/commerce-contract/stackra.manifest.json": JSON.stringify(
+        manifestOf("commerce"),
+      ),
+      "node_modules/@acme/commerce-contract/assets/lang/en/orders.json": JSON.stringify({
+        title: "Orders",
+      }),
+    });
+    expect(
+      readServiceCatalogues(root, [
+        {
+          member: "commerce",
+          package: "@acme/commerce-contract",
+          manifest: manifestOf("commerce"),
+        },
+      ]),
+    ).toEqual([
+      {
+        package: "@acme/service-commerce",
+        from: "node_modules/@acme/commerce-contract/assets/lang",
+        catalogues: { en: { orders: { title: "Orders" } } },
+      },
+    ]);
+  });
+
   it("reads nothing for a service with no folder", () => {
     const root = writeFixtureMember("lonely", {});
     expect(

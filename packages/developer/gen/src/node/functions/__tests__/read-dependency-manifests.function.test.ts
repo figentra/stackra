@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `readDependencyManifests`: a dependency's committed manifest found through node_modules, in
  *          package.json order and once each, a dependency without one skipped, none above the repository root (the
- *          folder holding `pnpm-workspace.yaml`), and an invalid manifest refused.
+ *          folder holding `pnpm-workspace.yaml`), a service `contract` package never returned (it is not hosted, STA-1820),
+ *          and an invalid manifest refused.
  * Boundary: test only; writes small fixtures under `.cache/`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 25).
@@ -37,6 +38,19 @@ describe("readDependencyManifests", () => {
     expect(readDependencyManifests(outer, ["@acme/errors"])).toEqual([
       { package: "@acme/errors", manifest },
     ]);
+  });
+
+  it("never returns a contract package, which is not hosted (STA-1820)", () => {
+    const root = writeFixtureMember("consumer", {
+      "node_modules/@acme/commerce-contract/package.json": JSON.stringify({
+        name: "@acme/commerce-contract",
+        stackra: { kind: "contract" },
+      }),
+      "node_modules/@acme/commerce-contract/stackra.manifest.json": JSON.stringify({
+        member: "commerce",
+      }),
+    });
+    expect(readDependencyManifests(root, ["@acme/commerce-contract"])).toEqual([]);
   });
 
   it("refuses an invalid manifest", () => {

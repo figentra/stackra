@@ -3,7 +3,8 @@
  * Purpose: `readDependencyManifests`, the committed `stackra.manifest.json` of each dependency that has one, found
  *          through the `node_modules` folders from the member root upward, in package.json order: how gen learns a
  *          dependency's kinds, identities, drivers and modules without reading its `.d.ts`.
- * Boundary: reads files only; a dependency without a manifest is skipped (it ships no kind classes). A manifest that
+ * Boundary: reads files only; a dependency without a manifest is skipped (it ships no kind classes), and so is a
+ *           service `contract` package (`stackra.kind`), which is never hosted (STA-1820). A manifest that
  *           is not valid JSON fails the run, since a host cannot be wired from it.
  * Runtime: node
  * Governing contract: ADR 0294 (decision 25: a dependency's options come from its committed manifest); ADR 0127
@@ -16,6 +17,7 @@ import type { StackraManifest } from "@stackra/contracts";
 
 import type { MemberIR } from "#core/types/member-ir.type";
 import { dependencyPath } from "#node/functions/dependency-path.function";
+import { isContractPackage } from "#node/functions/is-contract-package.function";
 
 /**
  * The manifests of `dependencies`.
@@ -33,7 +35,8 @@ export function readDependencyManifests(
   const found: { package: string; manifest: StackraManifest }[] = [];
   for (const dependency of new Set(dependencies)) {
     const path = dependencyPath(root, dependency, "stackra.manifest.json");
-    if (path === undefined) continue;
+    // A service contract package is read for its client, never hosted: its kinds are not this member's (STA-1820).
+    if (path === undefined || isContractPackage(root, dependency)) continue;
     try {
       found.push({
         package: dependency,

@@ -136,7 +136,7 @@ export async function discoverMember(
       facts.layout === "service" && classes.some((declared) => declared.handle?.relay === true)
         ? readPublisherManifests(facts.root)
         : [];
-    const services = readServiceManifests(facts.root, consumed);
+    const services = readServiceManifests(facts.root, consumed, facts.dependencies);
     // The lang of each service it consumes through a client, after its packages' (STA-1363).
     const packageCatalogues = [
       ...shippedCatalogues,

@@ -33,7 +33,10 @@ import type { CatalogueClient } from "#node/types/catalogue-client.type";
 import type { CliCommand } from "#node/types/cli-command.type";
 import type { RegistryAccess } from "#node/types/registry-access.type";
 
-const KINDS: readonly string[] = Enum.values(StackraKind);
+// A contract package is a consumer's devDependency that gen reads, never an item `stackra add` installs.
+const KINDS: readonly string[] = Enum.values(StackraKind).filter(
+  (kind) => kind !== StackraKind.Contract,
+);
 
 /**
  * The `stackra add` command over the client `createClient` builds.

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `readServiceManifests`: a consumed service's committed manifest found in the folder beside
  *          the member (by key or kebab-case folder), once each and sorted, a folder whose manifest names another
- *          member skipped, a service without one left out, an app's service found in the repo's `services/`, and an invalid
+ *          member skipped, a service without one left out, a contract package (`stackra.kind`) supplying a service with no
+ *          folder by kind and manifest member, never by package name or an ordinary dependency (STA-1820), an app's service found in the repo's `services/`, and an invalid
  *          manifest refused.
  * Boundary: test only; writes small fixtures under `.cache/`.
  * Runtime: node (vitest)
@@ -80,5 +81,64 @@ describe("readServiceManifests", () => {
     const root = writeFixtureMember("sales", {});
     sibling(root, "broken", "{ nope");
     expect(() => readServiceManifests(root, ["broken"])).toThrow(/is not valid JSON/);
+  });
+});
+
+/** An installed package with this `stackra` field and manifest. */
+const installed = (
+  name: string,
+  kind: string | undefined,
+  manifest: object,
+): Record<string, string> => ({
+  [`node_modules/${name}/package.json`]: JSON.stringify({
+    name,
+    ...(kind === undefined ? {} : { stackra: { kind } }),
+  }),
+  [`node_modules/${name}/stackra.manifest.json`]: JSON.stringify(manifest),
+});
+
+describe("readServiceManifests from a contract package (STA-1820)", () => {
+  const commerce = { member: "commerce", package: "@acme/service-commerce", version: "1.2.0" };
+  it("resolves a service from a contract dependency by kind and manifest member, whatever its name", () => {
+    const root = writeFixtureMember("console", installed("@acme/orders-api", "contract", commerce));
+    expect(readServiceManifests(root, ["commerce"], ["@acme/orders-api"])).toEqual([
+      { member: "commerce", package: "@acme/orders-api", manifest: commerce },
+    ]);
+  });
+
+  it("prefers a sibling folder over a contract package", () => {
+    const root = writeFixtureMember(
+      "console2",
+      installed("@acme/commerce-contract", "contract", commerce),
+    );
+    sibling(root, "commerce", JSON.stringify(commerce));
+    expect(readServiceManifests(root, ["commerce"], ["@acme/commerce-contract"])).toEqual([
+      { member: "commerce", folder: "commerce", manifest: commerce },
+    ]);
+  });
+
+  it("does not resolve a service from a package that is not a contract, even one named for it", () => {
+    const root = writeFixtureMember("console3", {
+      ...installed("@acme/commerce-contract", undefined, commerce),
+      ...installed("@stackra/tenancy", "package", {
+        member: "tenancy",
+        package: "@stackra/tenancy",
+      }),
+    });
+    expect(
+      readServiceManifests(
+        root,
+        ["commerce", "tenancy"],
+        ["@acme/commerce-contract", "@stackra/tenancy"],
+      ),
+    ).toEqual([]);
+  });
+
+  it("skips a contract whose manifest names another service", () => {
+    const root = writeFixtureMember(
+      "console4",
+      installed("@acme/billing-contract", "contract", { member: "billing" }),
+    );
+    expect(readServiceManifests(root, ["commerce"], ["@acme/billing-contract"])).toEqual([]);
   });
 });
