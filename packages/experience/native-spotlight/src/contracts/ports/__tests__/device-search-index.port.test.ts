@@ -19,6 +19,6 @@ describe("DeviceSearchIndex", () => {
   });
 
   it("is keyed native-spotlight.DeviceSearchIndex", () => {
-    expectTypeOf<DeviceSearchIndex["~key"]>().toEqualTypeOf<"native-spotlight.DeviceSearchIndex">();
+    expectTypeOf<DeviceSearchIndex["~key"]>().toEqualTypeOf<"native_spotlight.DeviceSearchIndex">();
   });
 });

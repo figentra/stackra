@@ -20,7 +20,7 @@ import type { SignedPack } from "#core/types/signed-pack.type";
  */
 export abstract class PackStore extends Port {
   /** Type-only port key. */
-  declare readonly "~key": "market-packs.PackStore";
+  declare readonly "~key": "market_packs.PackStore";
 
   /** The signed pack stored under `hash`, unparsed; `null` when there is none. */
   abstract get(hash: string): Promise<unknown>;
