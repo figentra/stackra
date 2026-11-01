@@ -15,18 +15,13 @@ import { fileURLToPath } from "node:url";
 
 import { test } from "@stackra/testing";
 
-import { parse } from "yaml";
-
 import {
   CATEGORY_NAMES,
   ENTRY_NAMES,
-  MODULE_GROUPS,
   OPTIONAL_ENTRY_NAMES,
   checkMember as check,
   checkExports,
   checkMemberMetadata,
-  checkService,
-  checkYamlFlowMaps,
   stripJsonc,
   type PackageManifest,
 } from "@stackra/repo-checks/node";
@@ -59,7 +54,6 @@ const json = <T = Pkg>(dest: string, f: string): T =>
   JSON.parse(stripJsonc(readFileSync(join(dest, f), "utf8"))) as T;
 
 const cases: [string, string, object][] = [
-  ["service", "notes", {}],
   ["package", "billing-core", { category: "data" }],
   ["package", "cache", { category: "runtime", entries: OPTIONAL_ENTRY_NAMES, data: true }],
   ["package", "tokens", { category: "design-system", entries: OPTIONAL_ENTRY_NAMES }],
@@ -100,7 +94,6 @@ for (const [kind, name, extra] of cases)
       [],
       "the npm metadata, stackra field and turbo tags pnpm validate requires",
     );
-    if (kind === "service") assert.deepEqual(checkService({ dir: rel, pkg, paths: files }), []);
     if (kind === "package") assert.deepEqual(checkExports(pkg.exports), []);
   });
 
@@ -184,44 +177,6 @@ const assertV3Root = (files: readonly string[]): void => {
   assert.ok(!files.some((f) => /(^|\/)index\.tsx?$/.test(f)), "authored barrel");
   assert.ok(!files.includes("stackra.manifest.json"), "gen writes the manifest");
 };
-
-// @covers sta-347:FR-002 sta-347:P-001
-test("a service is the v3 shape: config, root module, modules, runway v3, no main.ts or Encore file", () => {
-  const { dest, rel, files } = render("service", "notes");
-  const pkg = json(dest, "package.json");
-  assert.equal(pkg.name, "@figentra/service-notes");
-  // v3: no `stackra.module` (ADR 0090); the field holds only the ADR 0453 decision 11 metadata.
-  assert.equal(pkg.stackra?.module, undefined);
-  assert.deepEqual(pkg.stackra?.runtimes, ["node"]);
-  assert.equal(pkg.scripts?.["start"], undefined);
-  assertV3Root(files);
-  for (const f of [
-    "runway.yaml",
-    "src/notes.module.ts",
-    "src/__tests__/notes.module.test.ts",
-    "src/config/notes.config.ts",
-    "src/config/__tests__/notes.config.test.ts",
-    "src/contracts/README.md",
-    "src/modules/README.md",
-  ])
-    assert.ok(files.includes(f), `${f} missing`);
-  assert.deepEqual(checkService({ dir: rel, pkg, paths: files }), []);
-  assert.ok(!files.some((f) => /encore/.test(f)));
-  const ts = files.filter((f) => f.endsWith(".ts"));
-  assert.ok(!ts.some((f) => readFileSync(join(dest, f), "utf8").includes("encore.dev")));
-
-  const runway = parse(readFileSync(join(dest, "runway.yaml"), "utf8")) as Record<string, unknown>;
-  assert.equal(runway.version, 3);
-  assert.deepEqual(Object.keys(runway), ["version", "requires", "secrets", "environments"]);
-  assert.deepEqual(
-    checkYamlFlowMaps("runway.yaml", readFileSync(join(dest, "runway.yaml"), "utf8")),
-    [],
-  );
-
-  const groups = readFileSync(join(dest, "src/modules/README.md"), "utf8");
-  for (const { group } of MODULE_GROUPS.filter((g) => g.group))
-    assert.ok(groups.includes(`\`${group}/\``), `modules/README.md lacks ${group}/`);
-});
 
 // @covers sta-347:FR-001 sta-347:FR-003 sta-347:P-001 sta-347:P-002
 test("a package is the v3 shape: entries by folder, exports naming files, no barrels", () => {
@@ -406,7 +361,7 @@ test("description is JSON-escaped and the target repo's LICENSE is copied", () =
   });
   assert.equal(readFileSync(join(other.dest, "LICENSE"), "utf8"), "Proprietary.\n");
   const svc = scaffold({
-    kind: "service",
+    kind: "app:console",
     name: "billing",
     description: "Billing.",
     summary: "Reach for it in tests.",
@@ -441,14 +396,14 @@ test("next free port skips taken ones", () => {
 test("dry run writes nothing", () => {
   const root = tmp();
   const { dest, files } = scaffold({
-    kind: "service",
+    kind: "app:console",
     name: "dry",
     description: "Dry.",
     summary: "Reach for it in tests.",
     root,
     dryRun: true,
   });
-  assert.ok(files.includes("src/dry.module.ts"));
+  assert.ok(files.includes("package.json"));
   assert.ok(!existsSync(dest));
 });
 
@@ -458,7 +413,7 @@ test("rejections", () => {
     assert.throws(
       () =>
         scaffold({
-          kind: "service",
+          kind: "app:console",
           name: "ok",
           root,
           format: false,
@@ -472,17 +427,17 @@ test("rejections", () => {
   bad({ kind: "package", name: "ok" }, /--category is required/);
   bad({ kind: "package", name: "ok", category: "nope" }, /--category/);
   bad({ kind: "package", name: "ok", category: "data", entries: "web" }, /unknown entry/);
-  bad({ kind: "service", name: "ok", data: true }, /--data applies to package only/);
+  bad({ kind: "app:console", name: "ok", data: true }, /--data applies to package only/);
   bad({ kind: "nope", name: "ok" }, /unknown kind/);
   bad({ kind: "app-next", name: "ok" }, /unknown kind/);
   bad({ kind: "app:mobile", name: "my-app" }, /hyphens/);
-  bad({ kind: "service", name: "ok", root: join(root, "missing") }, /not a directory/);
+  bad({ kind: "app:console", name: "ok", root: join(root, "missing") }, /not a directory/);
   // No placeholder description: every kind needs one sentence (no TODO in generated output).
   for (const description of [undefined, "", "  "])
-    bad({ kind: "service", name: "ok", description }, /--description is required/);
+    bad({ kind: "app:console", name: "ok", description }, /--description is required/);
   bad({ kind: "package", name: "ok", category: "data", description: undefined }, /--description/);
   scaffold({
-    kind: "service",
+    kind: "app:console",
     name: "dup",
     description: "Dup.",
     summary: "Use it.",
@@ -490,8 +445,8 @@ test("rejections", () => {
     format: false,
   });
   for (const summary of [undefined, " ", "Ok."])
-    bad({ kind: "service", name: "ok", summary }, /--summary is required/);
-  bad({ kind: "service", name: "dup" }, /already exists/);
+    bad({ kind: "app:console", name: "ok", summary }, /--summary is required/);
+  bad({ kind: "app:console", name: "dup" }, /already exists/);
   // The 13 categories (settlement Q3.2, ADR 0302 adds design-system); tooling is a separate tier, not a category.
   assert.equal(CATEGORY_NAMES.length, 13);
 });

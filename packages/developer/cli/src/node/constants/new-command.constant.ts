@@ -12,8 +12,7 @@
  *          `ApiArea`.
  * Boundary: writes only inside the one member folder; never installs, formats or runs gen (the next steps say to).
  *           `--over` never touches `CHANGELOG.md` or an existing `runway.yaml` (its ports and sizes are authored), and
- *           the templates write nothing under `src/`, so `src/modules/` and an authored root module are never
- *           touched. A package gets the workspace LICENSE when it has none yet. The template kinds (`tooling`,
+ *           writes nothing under `src/`, so `src/modules/`, an authored root module and its tests are never touched. A package gets the workspace LICENSE when it has none yet. The template kinds (`tooling`,
  *           `app:console`, `app:mobile`, `app:desktop`, `app:docs`) render from `tools/scaffold/templates` through
  *           `scaffold` (was `tools/scripts/scaffold.mjs`, `pnpm new`): `--description` and `--summary` required,
  *           `--keywords`, `--title`, `--port`, `--repo <path>` and `--dry-run`, then oxfmt formats the member. A
@@ -41,8 +40,10 @@ import { lineDiff } from "#node/functions/line-diff.function";
 import { memberNaming } from "#node/functions/member-naming.function";
 import { packageTemplate } from "#node/functions/package-template.function";
 import { seedPackTemplate } from "#node/functions/seed-pack-template.function";
+import { cliVersion } from "#node/functions/cli-version.function";
 import { serviceTemplate } from "#node/functions/service-template.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
+import { workspaceTemplate } from "#node/functions/workspace-template.function";
 import { SCAFFOLD_KINDS } from "#node/scaffold/constants/scaffold-kinds.constant";
 import { scaffold } from "#node/scaffold/functions/scaffold.function";
 import type { CliCommand } from "#node/types/cli-command.type";
@@ -70,7 +71,7 @@ export const NEW_COMMAND: CliCommand = {
   summary:
     "Create a package, service, seed pack, tooling preset or app in the v3 shape, or regenerate one with --over",
   usage:
-    "stackra new <package|service|seed-pack|tooling|app:console|app:mobile|app:desktop|app:docs> <name> [--category <c>] [--area <a>] [--description <text>] [--summary <text>] [--scope <product|@npm-scope>] [--over] [--keywords a,b] [--title <t>] [--port <n>] [--repo <path>] [--dry-run] [--entries react,native|none] [--data]",
+    "stackra new <package|service|seed-pack|tooling|app:console|app:mobile|app:desktop|app:docs> <name> [--category <c>] [--area <a>] [--description <text>] [--summary <text>] [--scope <product|@npm-scope>] [--over] [--keywords a,b] [--title <t>] [--port <n>] [--repo <path>] [--dry-run] [--entries react,native|none] [--data]  (a service takes --area, --summary, --repo and --data)",
   options: {
     category: { type: "string" },
     area: { type: "string" },
@@ -131,7 +132,10 @@ export const NEW_COMMAND: CliCommand = {
     if (scope !== undefined && !KEBAB.test(scope.replace(/^@/, "")))
       throw new CliUsageError("--scope takes a product key (beautilon) or an npm scope (@acme)");
     const over = values["over"] === true;
-    const root = workspaceRoot(cwd);
+    const repo = text(values["repo"]);
+    const root = repo === undefined ? workspaceRoot(cwd) : resolve(cwd, repo);
+    // A service into a folder with no workspace gets a minimal one, so its `@stackra/*` versions resolve.
+    const freshWorkspace = kind === "service" && !existsSync(join(root, "pnpm-workspace.yaml"));
     const pascal = name.replaceAll(/(^|-)([a-z0-9])/g, (_match, _dash: string, letter: string) =>
       letter.toUpperCase(),
     );
@@ -178,8 +182,10 @@ export const NEW_COMMAND: CliCommand = {
         pascal,
         description,
         area: area.charAt(0).toUpperCase() + area.slice(1),
+        data: values["data"] === true,
         ...summary,
         ...memberNaming(root, "service", name, scope),
+        ...(freshWorkspace && { stackraVersion: "catalog:stackra" }),
       });
     } else {
       folder = join(root, "seed-packs", name);
@@ -189,7 +195,27 @@ export const NEW_COMMAND: CliCommand = {
     const where = relative(root, folder);
     if (existsSync(folder) && !over)
       throw new CliUsageError(`${where} already exists; pass --over to regenerate over it`);
+    if (freshWorkspace) {
+      const manifest = JSON.parse(
+        files.find((file) => file.path === "package.json")?.content ?? "{}",
+      ) as {
+        dependencies?: Record<string, string>;
+        devDependencies?: Record<string, string>;
+      };
+      for (const file of workspaceTemplate({
+        cliVersion: cliVersion(),
+        dependencies: { ...manifest.dependencies, ...manifest.devDependencies },
+      })) {
+        const target = join(root, file.path);
+        if (existsSync(target)) continue;
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, file.content);
+        io.out(`wrote ${file.path}\n`);
+      }
+    }
     for (const file of files) {
+      // `src/` is written on create only: `--over` neither writes nor diffs it.
+      if (over && file.path.startsWith("src/")) continue;
       const target = join(folder, file.path);
       if (existsSync(target)) {
         if (KEEP_OVER.has(file.path)) continue;
@@ -213,7 +239,9 @@ export const NEW_COMMAND: CliCommand = {
     io.out(
       kind === "seed-pack"
         ? `${over ? "regenerated" : "created"} ${where}\nnext: add records under profiles/, then \`stackra seed-pack ${name} --check\`\n`
-        : `${over ? "regenerated" : "created"} ${where}\nnext: \`pnpm install\`, then \`stackra gen\` in ${where}\n`,
+        : kind === "service"
+          ? `${over ? "regenerated" : "created"} ${where}\nnext, in ${where}: \`pnpm install && stackra gen && stackra test\`\n`
+          : `${over ? "regenerated" : "created"} ${where}\nnext: \`pnpm install\`, then \`stackra gen\` in ${where}\n`,
     );
     return 0;
   },
