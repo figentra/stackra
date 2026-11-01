@@ -7,7 +7,7 @@
  *          `registerChanges` call linking each `Change<Subject>` class to its subject (ADR 0118, 0141 notes).
  * Boundary: pure. Names are qualified by the file (one file per module), so a class name used in two modules never
  *           collides; zod is imported only when the file builds a schema. A `@Hidden` field is left out of `X$` and of `X$Check` (stackra-260); `@Lowercase` compiles to
- *           `.toLowerCase()` after `.trim()`. `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
+ *           `.toLowerCase()` after `.trim()`. A settings section field is `.prefault(() => ({}))` (STA-1826). `?:` compiles to `.exactOptional()`, `Date` to the ISO 8601 codec, `Money` to its codec, an enum
  *           to its codes in source order; a member base is `.extend`ed and a package base's shipped `X$` gets only new
  *           defaults. A reference to a shape declared later in the file is `z.lazy`, so a cycle still loads. A
  *           `Translated` field is a locale map decoded through `Translated.of` (`TranslatedStrings` to `{ values }`),
@@ -199,8 +199,12 @@ function elementOf(context: Context, type: TypeDesc, rules: readonly FieldRule[]
   return zodOf(context, type, rules, []);
 }
 
-/** The zod expression of one field, with its nullability, default or optionality. */
-function fieldOf(context: Context, field: FieldIR): string {
+/**
+ * The zod expression of one field, with its nullability, default or optionality. A section of a settings class
+ * (a schema-typed field with no initializer) is `.prefault(() => ({}))`, so a section nothing stored parses its own
+ * field defaults; `.default` would skip the parse, and a stored non-object still fails.
+ */
+function fieldOf(context: Context, field: FieldIR, shape: ShapeIR): string {
   const own = field.rules.filter((rule) => rule.options["each"] !== true);
   const each = field.rules.filter((rule) => rule.options["each"] === true);
   let expression = zodOf(context, field.type, own, each);
@@ -215,7 +219,9 @@ function fieldOf(context: Context, field: FieldIR): string {
       typeof value === "object" && value !== null && field.default.imports.length === 0
         ? `.default(() => (${field.default.code}))`
         : `.default(${field.default.code})`;
-  } else if (field.optional) expression += ".exactOptional()";
+  } else if (shape.kind === "settings" && field.type.kind === "schema" && !field.optional)
+    expression += ".prefault(() => ({}))";
+  else if (field.optional) expression += ".exactOptional()";
   return expression;
 }
 
@@ -262,7 +268,7 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
   // A `@Hidden` field never goes out on the wire: no `X$` key, and `X$Check` omits it like a relation (stackra-260).
   const wire = shape.fields.filter((field) => field.hidden !== true);
   const hidden = shape.fields.filter((field) => field.hidden === true).map((field) => field.name);
-  const body = wire.map((field) => `  ${field.name}: ${fieldOf(context, field)},`);
+  const body = wire.map((field) => `  ${field.name}: ${fieldOf(context, field, shape)},`);
   const base = shape.base;
   if (base?.kind === "package") {
     const alias = `Base${base.name}$`;

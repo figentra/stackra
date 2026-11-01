@@ -10,7 +10,7 @@
  * Boundary: test only; asserts on the generated source text.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26); ADR 0305 (rules 1 and 14); registry v3.1 G1;
- *                     ADR 0162; ADR 0222; STA-1365 (`I18nKey`).
+ *                     ADR 0162; ADR 0222; STA-1365 (`I18nKey`); STA-1826 (a settings section is prefaulted).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -517,5 +517,68 @@ describe("emitSchemas", () => {
       "orders",
     );
     expect(content).toContain('import { type RouteKey, Routes } from "#stackra/routes";');
+  });
+
+  it("gives a settings section a prefault, so a missing section parses its own defaults (STA-1826)", () => {
+    const section: ShapeIR = {
+      name: "RoutingSettings",
+      kind: "schema",
+      module: "gateway",
+      file: "src/modules/gateway/schemas/routing-settings.schema.ts",
+      importPath: "#modules/gateway/schemas/routing-settings.schema",
+      fields: [
+        {
+          name: "strictInRegion",
+          optional: false,
+          nullable: false,
+          type: { kind: "boolean" },
+          rules: [],
+          default: { value: false, code: "false", imports: [] },
+        },
+      ],
+      relations: [],
+    };
+    const settings: ShapeIR = {
+      name: "GatewaySettings",
+      kind: "settings",
+      module: "gateway",
+      file: "src/modules/gateway/gateway.settings.ts",
+      importPath: "#modules/gateway/gateway.settings",
+      fields: [
+        {
+          name: "escalationHours",
+          optional: false,
+          nullable: false,
+          type: { kind: "number" },
+          rules: [],
+          default: { value: 24, code: "24", imports: [] },
+        },
+        {
+          name: "routing",
+          optional: false,
+          nullable: false,
+          type: { kind: "schema", name: "RoutingSettings", module: "gateway" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [section, settings], enums: [], classes: [] },
+      "gateway",
+    );
+    expect(content).toContain("  strictInRegion: z.boolean().default(false),");
+    expect(content).toContain("  routing: RoutingSettings$.prefault(() => ({})),");
+    // a section of any other kind stays required: a missing one is an error
+    const plain = emitSchemas(
+      {
+        ...COMMERCE_IR,
+        shapes: [section, { ...settings, kind: "schema" }],
+        enums: [],
+        classes: [],
+      },
+      "gateway",
+    );
+    expect(plain).toContain("  routing: RoutingSettings$,");
   });
 });
