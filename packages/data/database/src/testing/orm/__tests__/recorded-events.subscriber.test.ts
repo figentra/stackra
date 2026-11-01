@@ -47,7 +47,7 @@ class FixtureModule extends Module {}
 const notes = () => Reflect.construct(repositoryOf(Note), []) as Repository<Note>;
 
 /** Creates a note that records `event`. */
-function write(id: string, event: DomainEvent): void {
+function write(id: Note["id"], event: DomainEvent): void {
   notes().create({ id, body: "hello" }).record(event);
 }
 
