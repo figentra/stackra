@@ -37,6 +37,7 @@ export type { DriverClass } from "#core/types/driver-class.type";
 export type { DriverOptions } from "#core/types/driver-options.type";
 export type { DriverName } from "#core/types/driver-name.type";
 export type { DriverRegistry } from "#core/types/driver-registry.type";
+export type { PortRegistry } from "#core/types/port-registry.type";
 export type { KindRecord } from "#core/types/kind-record.type";
 export type { ModuleClass } from "#core/types/module-class.type";
 export type { ModuleOptions } from "#core/types/module-options.type";

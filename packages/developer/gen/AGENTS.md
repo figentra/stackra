@@ -289,7 +289,7 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `@Searchable` text (in order) or filters (as a set) differing from the latest `t.searchable` literals of its table
   (`MemberIR.searchableColumns`, `readSearchableColumns`, a text scan of the member's own migrations; paths compared in
   snake case). A table with no literals is not judged.
-- The reader: `kind_base_name_reserved` (a model named after a `KIND_BASES` name), `secret_name_missing` (`@Secret`
+- The reader: `port_key_mismatch` (a `~key` brand that is not `<member>.<Port>`, STA-1810), `kind_base_name_reserved` (a model named after a `KIND_BASES` name), `secret_name_missing` (`@Secret`
   without a SCREAMING_SNAKE literal) and `partner_mismatch` for `Resource`, `Factory`, `StateMachine` and `Facts`
   (same-stem subject; `CrudService` keeps its own subject, as many services name a domain word).
 - `checkI18n`: `i18n_key_missing` also for a derived enum label `<module>::enums.<enum>.<code>` missing from a

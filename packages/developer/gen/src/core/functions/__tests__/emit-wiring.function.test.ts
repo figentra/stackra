@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitWiring`: the root module, the module graph in dependency order, the platform set, each
  *          binding with its lifetime and constructor tokens (named instances through `named`), the config entry, the
- *          driver table with its selecting field and lazy candidate, the `DriverRegistry` augmentation, replacements,
+ *          driver table with its selecting field and lazy candidate, the `DriverRegistry` and `PortRegistry` augmentations, replacements,
  *          partners and dependency modules marked `from`, the bindings gen adds (per-model tokens with their
  *          dependencies, an Integration's runtime, the inbound webhook route, the platform services it injects, the rules node with its revisions repository), a
  *          projection as a binding, the declared packages' driver tables of the ports the bindings reach (with
@@ -77,6 +77,10 @@ describe("emitWiring", () => {
     );
     expect(wiring).toContain('      deps: { "stripe": [CommerceConfig] },');
     expect(wiring).toContain('    "commerce.PaymentGateway": "stripe";');
+    expect(wiring).toContain("  interface PortRegistry {");
+    expect(wiring).toContain('    "commerce.PaymentGateway": typeof PaymentGateway;');
+    expect(wiring).not.toContain("~key");
+    expect(wiring.match(/declare module /g)).toHaveLength(1);
     expect(wiring.trimEnd().endsWith("} satisfies Wiring;")).toBe(true);
   });
 
