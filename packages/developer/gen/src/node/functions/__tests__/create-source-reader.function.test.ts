@@ -43,7 +43,8 @@
  *                     (rules 6, 13 and 19); ADR 0097 (decision 3); ADR 0162 (decision 2); ADR 0222 (decision 2);
  *                     ADR 0260 (decision 4).
  */
-import { join } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import { describe, expect, it } from "@stackra/testing";
 
@@ -596,6 +597,226 @@ describe("createSourceReader on a driver over its package's own base", async () 
 
   it("still marks the base abstract, so it is never a candidate itself", () => {
     expect(declared("NetworkPrinterDriver")).toMatchObject({ kind: "driver", abstract: true });
+  });
+});
+
+/** A field typed with an `Enum.of` that a workspace package declares, read through its build (STA-1663). */
+const SHARED_ENUM_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@acme/shared/package.json": JSON.stringify({
+    name: "@acme/shared",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@acme/shared/index.d.ts": [
+    'import type { Enum } from "@stackra/contracts";',
+    'export declare const ChannelKind: Enum.Of<{ readonly Online: "online"; readonly Pos: "pos" }>;',
+    "export type ChannelKind = Enum.Value<typeof ChannelKind>;",
+    "",
+  ].join("\n"),
+  "src/core/schemas/order-channel.schema.ts": [
+    'import { ChannelKind } from "@acme/shared";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class OrderChannel extends Schema {",
+    "  channelKind!: ChannelKind;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on an enum from a workspace package", async () => {
+  const root = writeFixtureMember("shared-enum", SHARED_ENUM_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads its codes instead of refusing it as an unknown type", () => {
+    expect(shapes.find((shape) => shape.name === "OrderChannel")?.fields[0]?.type).toEqual({
+      kind: "enum",
+      name: "ChannelKind",
+      values: ["online", "pos"],
+    });
+    expect(codes).not.toContain("shape_unknown_type");
+  });
+});
+
+/** A field typed with an enum of a consumed service, imported from its client before gen writes it (STA-1663). */
+const CLIENT_ENUM_SOURCES: Readonly<Record<string, string>> = {
+  "src/core/schemas/resolved-barcode.schema.ts": [
+    'import type { WeighedKind } from "#stackra/clients/catalogue";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class ResolvedBarcode extends Schema {",
+    "  weighed!: WeighedKind;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on an enum of a consumed service", async () => {
+  // A client this member's earlier gen wrote, now stale: the manifest, not the client, is the source.
+  const root = writeFixtureMember("sales", {
+    ...CLIENT_ENUM_SOURCES,
+    ".stackra/gen/clients/catalogue.ts": [
+      'import { Enum } from "@stackra/contracts";',
+      'export const WeighedKind = Enum.of({ Weight: "weight" });',
+      "export type WeighedKind = Enum.Value<typeof WeighedKind>;",
+      "",
+    ].join("\n"),
+  });
+  // The catalogue service's committed manifest beside the member; no client is generated yet.
+  mkdirSync(join(dirname(root), "catalogue"), { recursive: true });
+  writeFileSync(
+    join(dirname(root), "catalogue", "stackra.manifest.json"),
+    JSON.stringify({
+      member: "catalogue",
+      package: "@fixture/catalogue",
+      version: "1.0.0",
+      schemas: { "catalogue.WeighedKind": { type: "string", enum: ["weight", "count"] } },
+    }),
+  );
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads its codes from the service's committed manifest, over a stale client", () => {
+    expect(shapes.find((shape) => shape.name === "ResolvedBarcode")?.fields[0]?.type).toEqual({
+      kind: "enum",
+      name: "WeighedKind",
+      values: ["weight", "count"],
+    });
+    expect(codes).not.toContain("shape_unknown_type");
+  });
+});
+
+/** An enum of a workspace package whose `.` entry is its own gen's barrel, not written yet (STA-1663). */
+const UNBUILT_PACKAGE_ENUM_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@acme/packs/package.json": JSON.stringify({
+    name: "@acme/packs",
+    exports: { ".": "./.stackra/entry/index.ts" },
+  }),
+  "node_modules/@acme/packs/stackra.manifest.json": JSON.stringify({
+    member: "packs",
+    package: "@acme/packs",
+    version: "0.1.0",
+    schemas: { "setup.SetupSeedKind": { type: "string", enum: ["reason_code", "role_preset"] } },
+  }),
+  "src/core/schemas/setup-record.schema.ts": [
+    'import type { SetupSeedKind } from "@acme/packs";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class SetupRecord extends Schema {",
+    "  kind!: SetupSeedKind;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on an enum of a package whose entry is not generated yet", async () => {
+  const root = writeFixtureMember("catalogue", UNBUILT_PACKAGE_ENUM_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads its codes from the package's committed manifest", () => {
+    expect(shapes.find((shape) => shape.name === "SetupRecord")?.fields[0]?.type).toEqual({
+      kind: "enum",
+      name: "SetupSeedKind",
+      values: ["reason_code", "role_preset"],
+    });
+    expect(codes).not.toContain("shape_unknown_type");
+  });
+});
+
+/** The same, for a package that commits no manifest either: its `Enum.of` source under `src/core` (STA-1663). */
+const UNBUILT_PACKAGE_SOURCE_ENUM: Readonly<Record<string, string>> = {
+  "node_modules/@acme/commerce-packs/package.json": JSON.stringify({
+    name: "@acme/commerce-packs",
+    exports: { ".": "./.stackra/entry/index.ts" },
+  }),
+  "node_modules/@acme/commerce-packs/src/contracts/types/provider-mode.type.ts":
+    'export type ProviderMode = "live" | "test";\n',
+  "node_modules/@acme/commerce-packs/src/core/enums/provider-mode.enum.ts": [
+    'import { Enum } from "@stackra/contracts";',
+    "",
+    "export const ProviderMode = Enum.of({",
+    "  /** Real money. */",
+    '  Live: "live",',
+    '  Test: ["test", { label: "Sandbox: no money" }],',
+    "});",
+    "",
+  ].join("\n"),
+  "src/core/schemas/card-terminal.schema.ts": [
+    'import type { ProviderMode } from "@acme/commerce-packs";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class CardTerminal extends Schema {",
+    "  mode!: ProviderMode;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on an enum of a package with neither its entry nor a manifest", async () => {
+  const root = writeFixtureMember("sales", UNBUILT_PACKAGE_SOURCE_ENUM);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads its codes from the Enum.of in the package's source for that entry", () => {
+    expect(shapes.find((shape) => shape.name === "CardTerminal")?.fields[0]?.type).toEqual({
+      kind: "enum",
+      name: "ProviderMode",
+      values: ["live", "test"],
+    });
+    expect(codes).not.toContain("shape_unknown_type");
+  });
+});
+
+/** A default naming the cases of a consumed service's enum, imported from its client before gen writes it (STA-1697). */
+const CLIENT_ENUM_CASE_SOURCES: Readonly<Record<string, string>> = {
+  "src/core/schemas/loyalty-settings-view.schema.ts": [
+    'import { ChannelKind } from "#stackra/clients/sales";',
+    'import { Schema } from "@stackra/validation";',
+    "",
+    "export class LoyaltySettingsView extends Schema {",
+    "  earnChannels: ChannelKind[] = [ChannelKind.Till, ChannelKind.Online];",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a default naming a consumed service's enum cases", async () => {
+  const root = writeFixtureMember("customers", CLIENT_ENUM_CASE_SOURCES);
+  mkdirSync(join(dirname(root), "sales"), { recursive: true });
+  writeFileSync(
+    join(dirname(root), "sales", "stackra.manifest.json"),
+    JSON.stringify({
+      member: "sales",
+      package: "@fixture/sales",
+      version: "1.0.0",
+      schemas: {
+        "orders.ChannelKind": { type: "string", enum: ["till", "online", "marketplace"] },
+      },
+    }),
+  );
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const codes = reader.errors.map((error) => error.code);
+  host.close();
+
+  it("reads each case's code from the service's committed manifest", () => {
+    const field = shapes.find((shape) => shape.name === "LoyaltySettingsView")?.fields[0];
+    expect(field?.default?.value).toEqual(["till", "online"]);
+    expect(codes).not.toContain("shape_default_not_constant");
   });
 });
 
