@@ -2,20 +2,20 @@
 
 **Spec**: `spec.md` · **Linear**: STA-1813 · **Branch**: `figentra/sta-1813-product-gate`
 
-This Mac runs only oxfmt and oxlint. The runner and its test run on a testbed box through the testing session
+This Mac runs only oxfmt and oxlint. The command and its tests run on a testbed box through the testing session
 (stackra-8a); nothing here pushes, deploys or touches a cloud resource.
 
 ## Constitution Check
 
-| Law                       | Result | Note                                                                                   |
-| ------------------------- | ------ | -------------------------------------------------------------------------------------- |
-| Boundaries (ADR 0003)     | PASS   | a script under `tools/scripts`; it imports no package and no product source            |
-| Tenancy                   | N/A    | no tenant data; product tests use their own Postgres                                   |
-| Secrets (ADR 0173)        | PASS   | none in files or argv; names only (`STACKRA_BOT_APP_ID`, `INFISICAL_GATE_IDENTITY_ID`) |
-| Security                  | PASS   | no network in the script; a workflow (step 4) is SHA-pinned, least permissions (0166)  |
-| Not built yet (ADR 0227)  | PASS   | no new technology; `yaml` is already a catalog dependency                              |
-| Test placement (ADR 0022) | PASS   | `tools/scripts/__tests__/product-gate.test.mjs`                                        |
-| Versions and catalogs     | PASS   | no catalog change; the script reads the product's catalog but never edits one in core  |
+| Law                       | Result | Note                                                                                     |
+| ------------------------- | ------ | ---------------------------------------------------------------------------------------- |
+| Boundaries (ADR 0003)     | PASS   | a command of `@stackra/cli` (tier lib); it imports no product source and no `encore.dev` |
+| Tenancy                   | N/A    | no tenant data; product tests use their own Postgres                                     |
+| Secrets (ADR 0173)        | PASS   | none in files or argv; names only (`STACKRA_BOT_APP_ID`, `INFISICAL_GATE_IDENTITY_ID`)   |
+| Security                  | PASS   | no network in the script; a workflow (step 4) is SHA-pinned, least permissions (0166)    |
+| Not built yet (ADR 0227)  | PASS   | no new technology; `yaml` is already a dependency of `@stackra/cli`                      |
+| Test placement (ADR 0022) | PASS   | `packages/developer/cli/src/node/consumer-gate/functions/__tests__/` (vitest)            |
+| Versions and catalogs     | PASS   | no catalog change; the script reads the product's catalog but never edits one in core    |
 
 ## Deploy modes
 
@@ -27,14 +27,14 @@ This Mac runs only oxfmt and oxlint. The runner and its test run on a testbed bo
 
 ## Build order
 
-| Step | What                                                                                                           | Gate                               |
-| ---- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| 1    | Spec, plan, `product-gate.mjs`, matrix, empty allow-list, test (this change)                                   | `pnpm validate` on a box           |
-| 2    | Dry run on a box: `--dry-run` for each product, then one real run (billing) against `land/031-stack`           | summary reviewed by the leader     |
-| 3    | Testbed wrapper: `stackra testbed run "<session> product-gate <product>" <dir> "<command>"` per product, below | one matrix run, all three products |
-| 4    | `.github/workflows/product-gate.yml` (manual dispatch, sketch below), posting the `product-gate` commit status | **leader review** (R2, CI policy)  |
-| 5    | Runbook section in `release.mdx`; the status becomes a required check on the version PR and the train PR       | **owner**: branch protection       |
-| 6    | A prerelease run after the version PR merges, against the published `next` version (open question 3)           | later; separate issue              |
+| Step | What                                                                                                           | Gate                              |
+| ---- | -------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| 1    | Spec, plan, `stackra consumer-gate`, matrix, empty allow-list, tests (this change)                             | `pnpm verify` on a box            |
+| 2    | Dry run on a box: `--dry-run` for each product, then one real run (billing) against `land/031-stack`           | summary reviewed by the leader    |
+| 3    | Testbed wrapper: `stackra testbed run "<session> product-gate <product>" <dir> "<command>"` per product, below | one matrix run, all four products |
+| 4    | `.github/workflows/product-gate.yml` (manual dispatch, sketch below), posting the `product-gate` commit status | **leader review** (R2, CI policy) |
+| 5    | Runbook section in `release.mdx`; the status becomes a required check on the version PR and the train PR       | **owner**: branch protection      |
+| 6    | A prerelease run after the version PR merges, against the published `next` version (open question 3)           | later; separate issue             |
 
 ## Design notes
 
@@ -46,11 +46,12 @@ This Mac runs only oxfmt and oxlint. The runner and its test run on a testbed bo
   product's own committed lockfile (and its `--frozen-lockfile` and supply-chain check) is the product's gate, not ours,
   and is never rewritten. `--config.trust-policy=off` and `--config.strict-dep-builds=false` are the flags the hand-run
   gates used because a linked core has no registry provenance; the products carry their own `allowBuilds`.
-- **Pins.** `product-gate.matrix.yaml` pins a SHA per product. The seed SHAs are the tips the 2026-11-01 hand-run gates
-  ended on (billing `c605e78`, pay `ae59928`, invoicing `3c00e82`), since billing and invoicing hold nothing on their
-  `main` yet. A pin moves by a reviewed pull request, normally the testing session's, when the product merges. The
+- **Pins.** `tools/consumer-gate/matrix.yaml` pins a SHA per product, or per service (`pins`) when a product's services sit on
+  separate pull requests. The seed SHAs are the tips the 2026-11-01 hand-run gates ended on (billing `1139925` /
+  `c605e78` / `aacd450` for billing / entitlements / usage, pay `58528f4`, invoicing `30310f9`, tamo `0c52fd6`), since the
+  products hold nothing on their `main` yet. Services with different pins are gated one pin at a time (`--services`). A pin moves by a reviewed pull request, normally the testing session's, when the product merges. The
   runner refuses a checkout that is not at the pin.
-- **Allow-list.** `product-gate.allow.yaml` starts empty. One entry per known product-side or tracked failure:
+- **Allow-list.** `tools/consumer-gate/allow.yaml` starts empty. One entry per known product-side or tracked failure:
   `product`, `step` (`typecheck`, or `test:int/billing`), `match` (a substring of the failure line, such as
   `TS2589` or `recorded []`), `issue` (STA-n), `added`, `expires` (at most 30 days later), `reason`. A step is excused
   only if every failure line it printed is covered, so a new failure in an excused step still turns it RED. An expired
@@ -73,9 +74,9 @@ The caller clones; the script does not. Product read access is the `stackra-bot`
 file or argv of the script.
 
 ```sh
-stackra testbed run "stackra-8a product-gate billing" "$PWD" \
-  "timeout 90m node tools/scripts/product-gate.mjs --core . --checkout ../billing --product billing \
-   --overlays ../overlays --out ../gate-out"
+stackra testbed run "stackra-8a consumer-gate billing" "$PWD" \
+  "timeout 90m stackra consumer-gate --core . --checkout ../billing --product billing \
+   --services billing --overlays ../overlays --out ../gate-out"
 ```
 
 ## Workflow sketch (step 4, for review, not committed)
@@ -108,7 +109,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        product: [billing, pay, invoicing]
+        product: [billing, pay, invoicing, tamo]
     steps:
       - name: Checkout core at the train ref
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -150,7 +151,7 @@ jobs:
       - name: Gate
         env:
           PRODUCT: ${{ matrix.product }}
-        run: node tools/scripts/product-gate.mjs --core . --checkout product --product "$PRODUCT" --out gate-out
+        run: pnpm exec stackra consumer-gate --core . --checkout product --product "$PRODUCT" --out gate-out
       - name: Upload summaries
         if: always()
         uses: actions/upload-artifact@<pin at review>
@@ -160,7 +161,7 @@ jobs:
 ```
 
 Open for review: the `pin` step, the exact Infisical project variable, the `<pin>` of `upload-artifact`, and the final job
-that aggregates the three results into one `product-gate` status.
+that aggregates the four results into one `product-gate` status.
 
 ## Properties
 

@@ -5,7 +5,7 @@
  *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy and mobile onboard
  *          commands (ADR 0482), the db commands, the seed-pack
  *          command, the settings pack commands, the search reindex and status commands, the offline audit check, the operator bootstrap (`ops
- *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the local MCP and agent-file commands,
+ *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the consumer gate (`consumer-gate`, ADR 0500), the local MCP and agent-file commands,
  *          the registry item commands (add, publish; ADR 0453), and the repository commands moved from
  *          `tools/scripts` (doctor, eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs
  *          and `validate --repository`).
@@ -40,6 +40,7 @@ import { SETTINGS_APPLY_COMMAND } from "#node/constants/settings-apply-command.c
 import { SETTINGS_DIFF_COMMAND } from "#node/constants/settings-diff-command.constant";
 import { TESTBED_COMMAND } from "#node/constants/testbed-command.constant";
 import { VALIDATE_COMMAND } from "#node/constants/validate-command.constant";
+import { CONSUMER_GATE_COMMAND } from "#node/consumer-gate/constants/consumer-gate-command.constant";
 import { CYCLES_COMMAND } from "#node/cycles/constants/cycles-command.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
 import { DOCTOR_COMMAND } from "#node/doctor/constants/doctor-command.constant";
@@ -101,6 +102,7 @@ export const COMMANDS: readonly CliCommand[] = [
   OPS_BOOTSTRAP_OPERATOR_COMMAND,
   LS_COMMAND,
   TESTBED_COMMAND,
+  CONSUMER_GATE_COMMAND,
   MCP_COMMAND,
   MCP_SYNC_COMMAND,
   MCP_EXEC_COMMAND,

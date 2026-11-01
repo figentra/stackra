@@ -1,5 +1,5 @@
 # Stackra file contract:
-# Purpose: the failures `product-gate.mjs` excuses (STA-1813). One entry per known failure: `product`, `step`
+# Purpose: the failures `stackra consumer-gate` excuses (STA-1813). One entry per known failure: `product`, `step`
 #          (`typecheck`, or one service's `test:int/billing`), `match` (a substring of the failure line), `issue` (the
 #          STA key that fixes it), `added`, `expires` (at most 30 days after `added`) and `reason`. A step is excused
 #          only when every failure line it printed is covered; an expired entry excuses nothing. Core-side findings

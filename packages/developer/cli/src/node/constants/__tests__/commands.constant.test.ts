@@ -56,6 +56,7 @@ describe("COMMANDS", () => {
         "add",
         "publish",
         "testbed",
+        "consumer-gate",
       ]),
     );
   });

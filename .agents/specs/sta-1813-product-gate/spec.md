@@ -22,8 +22,10 @@ them. The hand-run scripts are in the notes handover folders `billing-gates-2026
 
 Before a core train (`land/<ver>-stack`) can be released, a small fixed matrix of real product services is generated,
 typechecked and tested against it, automatically, on a testbed box. Core is linked into a scratch copy of each pinned
-product (the mechanism the hand-run gates used), never published for the purpose. The runner is one dependency-free
-script, `tools/scripts/product-gate.mjs`; the matrix and the allow-list are two YAML files beside it. Cloning stays
+product (the mechanism the hand-run gates used), never published for the purpose. The runner is a command of the `stackra` CLI,
+`stackra consumer-gate` in `@stackra/cli` (ADR 0500 decision 3: no new `tools/scripts` commands; the command is generic,
+so it sits next to `stackra testbed`); the matrix and the allow-list are the repository's own data,
+`tools/consumer-gate/matrix.yaml` and `allow.yaml`. Cloning stays
 outside the script. A known product-side failure is excused only by an allow-list entry that names an STA issue and
 expires within 30 days, so the gate cannot be argued green and left that way.
 
@@ -31,11 +33,10 @@ expires within 30 days, so the gate cannot be argued green and left that way.
 
 - **Apps touched**: `apps/docs` (a section in `runbooks/release.mdx`, plan step 5)
 - **Services touched**: none (the gate reads product services in other repositories)
-- **Packages touched**: none
+- **Packages touched**: `packages/developer/cli` (the `consumer-gate` command, `src/node/consumer-gate/`; changeset)
 - **Workflows touched**: plan step 4 only: a new manual-trigger `.github/workflows/product-gate.yml`, sketched in
   plan.md, not written yet; `release.yml` is not edited
-- **Tools touched**: new `tools/scripts/product-gate.mjs`, `product-gate.matrix.yaml`, `product-gate.allow.yaml` and a
-  test in `tools/scripts/__tests__/`
+- **Tools touched**: `tools/consumer-gate/matrix.yaml` and `allow.yaml` (data only; nothing new in `tools/scripts`)
 - **Cross-service events**: none
 - **Tenancy and data**: none (no tenant data; the product test suites use their own Docker Postgres)
 - **Secrets**: none in files or argv. Product repository read access uses the existing `stackra-bot` GitHub App token
@@ -44,18 +45,22 @@ expires within 30 days, so the gate cannot be argued green and left that way.
   licence tokens a product install needs (`UNIWIND_AUTH_TOKEN`) come the same way. Names only; no value in git.
 - **ADR needed**: no (amends the use of ADR 0484 and ADR 0166 CI2; if the leader wants the Version Packages block as a
   required check, a short ADR amendment of 0166 follows, see Open questions)
-- **New dependencies**: none (`yaml` is already a root catalog dependency, used by `adr-reserve.mjs`)
+- **New dependencies**: none (`yaml` is already a dependency of `@stackra/cli`)
 - **Deploy modes**: internal CI tooling only; not shipped to tenants
 - **Licence tier**: free (internal tooling, MIT like the rest)
-- **Docs to update**: `runbooks/release.mdx`, `tools/scripts/README.md`, `.agents/skills/test-infra/SKILL.md` (one row)
+- **Docs to update**: `runbooks/release.mdx`, `packages/developer/cli/README.md`, `.agents/skills/test-infra/SKILL.md` (one row)
 - **Lane**: full
 - **Change risk**: R2 (CI policy; a gate that can block a release; no cloud resource, no credential path of its own)
 
 ## Requirements
 
 - **FR-001** A matrix file pins each product: repository, a ref (a commit SHA), the services to gate, the services whose
-  manifests are overlaid, and optionally a narrower step list. The seed matrix is billing (billing, entitlements), pay
-  (payments) and invoicing (invoicing).
+  manifests are overlaid, and optionally a narrower step list. A product has one `ref`, or `pins`, a commit per
+  service, when its services sit on separate pull requests; services with different pins are gated one pin at a time
+  with `--services`, and a run whose services disagree is a setup error. The seed matrix is billing (services billing,
+  entitlements, usage; pins `1139925`, `c605e78`, `aacd450`; overlays tenancy, invoicing, payments), pay (payments,
+  payments-ledger; pin `58528f4`; overlays tenancy, integrations), invoicing (invoicing; pin `30310f9`; overlay
+  tenancy) and tamo (tamo; pin `0c52fd6`; overlay identity).
 - **FR-002** The runner works only on a scratch copy of the product checkout: it drops the copy's `pnpm-lock.yaml`,
   links every `@stackra/*` package of the core tree through the catalog and `overrides:` of `pnpm-workspace.yaml`, and
   copies an overlay `stackra.manifest.json` for each listed service the product does not hold. The checkout and the
@@ -64,7 +69,7 @@ expires within 30 days, so the gate cannot be argued green and left that way.
   service), `typecheck`, `test`, `test:int` (per service that has the script) and `validate` (when the product has the
   script). Unless the core tree is already built, core is installed and built first. A failed install or core build
   skips the rest; any other failure lets later steps run, as the hand-run gates did.
-- **FR-004** A product run is GREEN when every step passed or is excused, and RED otherwise. The runner exits 0, 1 or
+- **FR-004** A product run is GREEN when every step passed or is excused, and RED otherwise. `stackra consumer-gate` exits 0, 1 or
   2 (setup error: unknown product, checkout not at the pinned SHA, missing overlay manifest).
 - **FR-005** The allow-list excuses a failing step only when every failure line of that step matches a live entry. An
   entry names product, step, a `match` substring, an STA issue, `added`, `expires` and a reason; `expires` is at most
@@ -72,7 +77,7 @@ expires within 30 days, so the gate cannot be argued green and left that way.
   run RED.
 - **FR-006** The runner writes `summary-<product>.json`, `summary-<product>.md` and one log per step under `--out`, and
   prints the markdown. The summary carries the core SHA, the product SHA and each step's status.
-- **FR-007** The script never fetches, clones or reads a secret; the caller provides the two trees and the environment.
+- **FR-007** The command never fetches, clones or reads a secret; the caller provides the two trees and the environment.
   A pinned SHA the checkout is not at is a setup error, not a silent run.
 - **FR-008** A manual-trigger workflow and a testbed invocation run the matrix for a pushed train ref and report one
   commit status, `product-gate`, on its head. (Plan steps 3 and 4; the script alone does not satisfy it.)
@@ -83,7 +88,7 @@ expires within 30 days, so the gate cannot be argued green and left that way.
 
 Each has a proposed answer; the plan assumes the proposal until told otherwise.
 
-1. **Matrix size and runtime.** Proposal: three products, four services (billing, entitlements, payments, invoicing).
+1. **Matrix size and runtime.** Proposal: four products, nine services (billing, entitlements, usage, payments, payments-ledger, invoicing, tamo).
    The hand-run rounds took about 25 minutes per product on a warm box, so the budget is 90 minutes for the matrix, one
    product per box in parallel (about 35 minutes wall time), against the 3-hour testbed timeout.
 2. **Where it runs.** Proposal: the testbed (`stackra testbed run`), because the product tests need Docker (`test:int`,
@@ -101,7 +106,7 @@ Each has a proposed answer; the plan assumes the proposal until told otherwise.
    head, and the leader adds it to the required checks for the train's PR to main (the `figentra-flow/gate` or CI
    rule, STA-1729). The Version Packages PR is created by `release.yml` on main from that merged code, so the status is
    also re-posted on its head by one more dispatch before the owner merges it.
-6. **Pin bumps.** Proposal: the pins move only by a reviewed pull request to `product-gate.matrix.yaml`, opened by the
+6. **Pin bumps.** Proposal: the pins move only by a reviewed pull request to `tools/consumer-gate/matrix.yaml`, opened by the
    testing session when a product merges to its main; a stale pin more than 14 days behind the product's main is
    reported, not enforced.
 7. **Who owns the products' red steps.** Proposal: the product's own team fixes it, an allow entry is added by the
@@ -113,3 +118,4 @@ Each has a proposed answer; the plan assumes the proposal until told otherwise.
 ## Status history
 
 - 2026-11-01 → Clarified (leader brief; open questions carry proposed answers)
+- 2026-11-01 → Placement changed: the runner is `stackra consumer-gate` (ADR 0500 decision 3), the matrix is corrected from the hand-run gates (per-service pins; usage, payments-ledger, tamo added)

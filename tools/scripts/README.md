@@ -24,11 +24,6 @@ One line per script. Each file's docblock is the full contract; the tests are in
 | `mcp.sh`               | `.mcp.yaml`                                        | launches an MCP server with its secrets injected from the vault, never from `.mcp.json`                                                              |
 | `guard-port.mjs`       | `node tools/scripts/guard-port.mjs <dir> <repo>`   | vendors `.agents/hooks` into figentra/os, muslin or juristra (`<dir>` its `.agents/hooks`) with the port hunks (STA-449)                             |
 
-`product-gate.mjs` (`node tools/scripts/product-gate.mjs --core <dir> --checkout <dir> --product <name> --out <dir>`)
-links core into a scratch copy of a pinned product (`product-gate.matrix.yaml`), runs gen, typecheck, test and
-`test:int`, writes JSON and markdown summaries, and excuses known failures only through `product-gate.allow.yaml`
-(an STA issue and an expiry of at most 30 days per entry; STA-1813).
-
 The repository checks, `pnpm new`, `pnpm doctor`, `pnpm eas:preflight`, the structure page and the architecture map
 are `stackra` commands of `@stackra/cli` (`stackra --help`); their data files stay here (`any-ratchet.baseline.yaml`,
 `duplication-baseline.yaml`).
