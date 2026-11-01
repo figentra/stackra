@@ -22,8 +22,8 @@ One formatter per file type, the same in the editor, the pre-commit hook and CI:
 - oxfmt formats whole files only: VS Code "Format Selection" is not supported, so save formats the whole file
   (`.vscode/settings.json`). Even Better TOML stays for TOML schemas and validation, not formatting.
 - `pnpm format` writes, `pnpm format:check` checks (CI runs it; `pnpm verify` starts with it). lefthook checks
-  staged files on commit. `.oxfmtrc.jsonc` ignores generated and vendored paths only; `.specify/**` is skipped
-  by both tools as spec-kit upstream content.
+  staged files on commit. `.oxfmtrc.jsonc` ignores generated and vendored paths only; `.flow/**` is skipped
+  by both tools as Figentra Flow output.
 - Another file type gets a formatter only when oxfmt cannot format it, and is added to this table.
 
 ## Merging

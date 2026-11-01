@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Lead request (STA-347): "`pnpm new <kind> <name>` produces members in the programming model v3 shape, and
 `tools/scripts/structure.mjs` carries the v3 group table, so every package built from now on comes out of the tool

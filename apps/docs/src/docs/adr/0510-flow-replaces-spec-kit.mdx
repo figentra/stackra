@@ -1,0 +1,67 @@
+---
+title: "0510 — Figentra Flow replaces spec-kit"
+description: "Accepted · 2026-11-01"
+---
+
+## Context
+
+ADR 0067 made GitHub spec-kit the SDLC, and ADR 0121 D15 pinned its CLI. ADRs 0282 and 0286 planned a
+Stackra-owned SDLC tool to replace it only if spike STA-298 met a bar, for example at most 15 extra minutes per
+issue. That spike measured the legacy tool's signed approvals and ledger, which are now dropped. Since then Figentra
+Flow (`@figentra-oss/flow`, binary `figentra-flow`) wraps spec-kit: it installs `.specify/`, composes our preset into
+spec-kit's command texts, renders them with the `specify` binary and polices the result with a tripwire. Our
+templates already replace spec-kit's; the wrap mostly guards against an upstream we do not need. On 2026-11-01 the
+owner decided that Flow replaces spec-kit entirely and that the name "Vellum" is removed everywhere, and accepted
+every recommendation of the questionnaire (the owner's questionnaire).
+
+## Decision
+
+1. **The spike bar is waived.** The replacement keeps today's commands, documents and gates; only who owns the
+   files changes, so there is nothing new to measure. STA-298 closes on this ADR.
+2. **Flow owns the whole workflow.** Nothing runs the `specify` binary. Flow ships the templates, the presets
+   (`neutral`, `stackra`), the eight command texts and the work the spec-kit scripts did, as CLI subcommands
+   (`figentra-flow spec paths|setup-plan|setup-tasks|template`).
+3. **Names.** `.specify/` becomes `.flow/`; the presets folder `speckit/` becomes `flow/` inside the package; the
+   `speckit-*` skills and commands become `flow-*` (`/flow-specify`, `/flow-clarify`, `/flow-plan`, `/flow-tasks`,
+   `/flow-analyze`, `/flow-checklist`, `/flow-implement`, `/flow-converge`), spelled with a hyphen in every tool.
+   `taskstoissues` folds into `flow-tasks`; `constitution` is dropped. `.agents/specs/` stays. "Vellum" is retired
+   as a name.
+4. **`.flow/` holds only what the repository owns:** `README.md`, `constitution.md`, optional `overrides/`,
+   `lock.json` (the Flow version, the preset and a hash of every rendered file) and the git-ignored `current.json`.
+   Presets live only in the package; a repository chooses one with `preset` in `figentra-flow.config.json`.
+5. **Bug specs** live in `.agents/specs/bugs/<key>-<slug>/` (configurable as `specs.bugsDir`).
+6. **Rendering.** `figentra-flow sync` writes neutral skill and command documents for the repository's projector;
+   `sync --direct` renders Claude Code skills and OpenCode commands itself. Rendered files are committed.
+7. **The install check replaces the tripwire.** `figentra-flow gate ci` fails when a rendered file differs from
+   `lock.json`, when `lock.json` names another Flow version than the installed one, or when `.specify/`,
+   `.agents/speckit/` or a `speckit-*` file remains.
+8. **Migration.** `figentra-flow migrate [--dry-run]` rewrites the mechanical files of a repository that used
+   spec-kit. After it, nothing reads `.specify/`.
+9. **Attribution.** spec-kit is MIT-licensed by GitHub. The package carries spec-kit's notice in
+   `THIRD_PARTY_NOTICES.md`; every template or command derived from spec-kit carries
+   `derived-from: github/spec-kit 1.0.10 (MIT)` until it is rewritten from scratch.
+10. **Release and rollout.** The replacement ships as `@figentra-oss/flow` `0.2.0`, after the `0.1.0` wrap. Core
+    switches on one train with waves W2 and W2b, then brand, os and the template follow; stackra-8a gates each step.
+
+## Consequences
+
+- No pinned Python tool (`pipx:specify-cli`) and no bash scripts in any repository; the spec workflow is one npm
+  package.
+- Flow's team owns texts that upstream used to maintain. Upstream improvements are no longer picked up
+  automatically; that is the point.
+- Core's 24 docs pages, live specs, hooks (`prompt-hints`, `_rules.mjs`) and the `spec-writer` agent change in the
+  switch; open branches re-run `figentra-flow migrate` after a short freeze.
+- ADR 0067's spec-kit and ADR 0121 D15's pin are history.
+
+## Enforcement
+
+- `figentra-flow gate ci` (the install check, decision 7) in every repository that runs the gate.
+- planned — `@stackra/repo-checks`: `.flow/` replaces `.specify/` in the format rules (core phase 2).
+- planned — `doctor.mjs` drops the `specify` pin check; `mise.toml` loses `pipx:specify-cli` (core phase 2).
+
+## Supersedes and sources
+
+`Supersedes: 0067`, and decision D15 of `0121`. Amends `0500` decision 10 (`.specify/` stays), `0282` decisions 12
+to 14 and `0286` (the STA-298 spike bar, waived), and `0120` (the bug-lane path).
+
+Sources: the owner's questionnaire and `plan.md`; STA-1729 (figentra/flow); STA-298.

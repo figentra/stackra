@@ -14,14 +14,14 @@
 
 **Linear project**: Data layer (W2.2, STA-56)
 
-**Clarifications status**: pending <!-- /speckit.clarify sets this to "complete" when nothing is open -->
+**Clarifications status**: pending <!-- /flow-clarify sets this to "complete" when nothing is open -->
 
 **Input**: User description: "Draft the specify-stage spec for `packages/data/database` (roadmap W2.2, STA-86): the only
 `@mikro-orm/*` importer; `EntitySchema` from gen, the cursor paginator, the rich CRUD API behind `@Crud`, `@Link` and
 `query.graph`, factories, seeders and migrations as SQL files, with the nestjs-orm feature list and its five additions
 (ADRs 0097, 0014, 0104, 0105)."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none
 - **Services touched**: none (services consume it later; the first is the reference service of FW10)

@@ -18,7 +18,7 @@
 
 **Input**: User description: "Port `@figentra-os/support` to `@stackra/support` (roadmap W1.1, ADR 0084 row: port + adapt). Add Laravel-style helpers now, keep it dependency-free, and docblock every file and export (owner decision Round 8 F2)."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none
 - **Services touched**: none

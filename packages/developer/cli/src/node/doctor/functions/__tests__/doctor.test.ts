@@ -55,11 +55,3 @@ test("render shows fixes for failures only; warn does not fail the run", () => {
   assert.equal(doctorExitCode(results), 1);
   assert.equal(doctorExitCode([...results.slice(0, 1), ...results.slice(2)]), 0);
 });
-
-test("spec-kit must match its exact mise pin", () => {
-  const pin = speckitPin('node = "24"\n"pipx:specify-cli" = "1.0.10"\n');
-  assert.equal(pin, "1.0.10");
-  assert.ok(speckitMatches("specify 1.0.10\n", pin));
-  assert.ok(!speckitMatches("specify 1.2.1\n", pin));
-  assert.ok(!speckitMatches("specify 1.0.10\n", speckitPin("[tools]\n")));
-});

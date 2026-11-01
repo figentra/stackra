@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Owner decision (chat, 2026-10-25, `ai-chain-plan.md` "Owner answers", Enforcement): "no development
 without an answered questionnaire and a plan, in every repository, by ADR plus a local hook that refuses code edits

@@ -37,8 +37,8 @@
     // fenced upstream Encore skills, read only by compiler-engineer (ADR 0258)
     ".agents/reference/**",
     ".claude/skills/**",
-    // spec-kit scaffold (CLI-generated) and the constitution agents-sync generates from the docs laws
-    ".specify/**",
+    // Figentra Flow output (lock, README) and the constitution agents-sync generates from the docs laws
+    ".flow/**",
     ".opencode/commands/**",
     // private owner-only notes submodule (STA-178); never part of this repo's checks
     ".notes/**",

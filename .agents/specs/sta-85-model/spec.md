@@ -14,13 +14,13 @@
 
 **Linear project**: Data layer (W2.1, STA-55)
 
-**Clarifications status**: pending <!-- /speckit.clarify sets this to "complete" when nothing is open -->
+**Clarifications status**: pending <!-- /flow-clarify sets this to "complete" when nothing is open -->
 
 **Input**: User description: "Draft the specify-stage spec for `packages/data/model` (roadmap W2.1, STA-85): `@Model`, fields on
 `@stackra/validation`, relations as metadata, scopes, eager loads, a state machine, `createTrait` and the trait registry; it
 imports no ORM (ADRs 0097, 0096, 0046, 0082)."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none
 - **Services touched**: none

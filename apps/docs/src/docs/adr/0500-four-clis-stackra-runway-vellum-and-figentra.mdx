@@ -1,7 +1,13 @@
 ---
 title: "0500 — Four CLIs: stackra, runway, vellum, figentra"
-description: "Accepted · 2026-10-31"
+description: "Accepted, amended 2026-10-31 (decision 12), amended by 0510 · 2026-10-31"
 ---
+
+<Note>
+  Amended 2026-11-01 by [0510](/adr/0510-flow-replaces-spec-kit): decision 10's `.specify/` folder
+  becomes `.flow/`, and the spec-workflow CLI is Figentra Flow (`figentra-flow`); the name "Vellum"
+  is retired.
+</Note>
 
 {/* Stackra file contract. Purpose: ADR 0500, the four CLIs (`stackra`, `runway`, `vellum`, `figentra`): each CLI's scope, visibility, home repository and registry, the map of all 33 `tools/scripts` commands, the alias rule for `package.json` scripts, the move rules (behaviour kept, secret guards in the same commit), Vellum's `.specify/` folder, no Claude Code plugin, and the rollout order. Boundary: decision text only; the moves are built per CLI on their own branches after Stackra 0.1.1 publishes. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0282, 0453, 0461; plan notes/plans/clis-and-vellum.md. */}
 
@@ -14,6 +20,13 @@ description: "Accepted · 2026-10-31"
   ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
   decision 10). Number: 0500, chosen clear of 0494 (used on two open branches) and of the gap 0495
   to 0499.
+</Note>
+
+<Note>
+  Amended 2026-10-31 (owner decision D2 of the Vellum final plan): decision 12 now reads that there
+  is no `stackra spec` command. `stackra check`'s spec phase calls `vellum gate ci` and `vellum
+  trace ci` when Vellum is installed. The earlier text kept `stackra spec` as a thin alias until the
+  owner decided.
 </Note>
 
 ## Context
@@ -129,8 +142,8 @@ installed like any dependency, with `package.json` scripts as aliases and Turbor
 11. **No Claude Code plugin for now.** `vellum sync` writes skills and commands into `.agents/`, and the repository's
     agent projection (`figentra agents sync` here, `stackra agents sync` in a customer project) renders them into
     `.claude/` and `.opencode/`, so both agents work. A plugin can come later, for outside users, through its own ADR.
-12. **`stackra spec` stays a thin alias** that calls `vellum` with the same arguments, until the owner decides to keep
-    or remove it.
+12. **No `stackra spec` command** (amended 2026-10-31). `stackra check`'s spec phase calls `vellum gate ci` and
+    `vellum trace ci` when Vellum is installed; every other spec command is `vellum`'s alone.
 
 ### Rollout
 

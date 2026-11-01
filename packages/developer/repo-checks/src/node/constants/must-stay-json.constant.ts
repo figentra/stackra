@@ -98,7 +98,7 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /^workers\/[\w-]+\/edge\.json$/,
     "the edge worker's scripts JSON.parse its edge.json (STA-1794)",
   ],
-  [/^\.specify\//, "spec-kit CLI output, read by its scripts with jq / python json"],
+  [/^\.flow\//, "Figentra Flow's lock and spec pointer, read back with JSON.parse (ADR 0510)"],
   [/^\.(agents|claude)\/skills\//, "vendored skills: upstream content"],
   [
     /^packages\/foundation\/market-packs\/assets\/data\/packs\/[\w-]+\.json$/,

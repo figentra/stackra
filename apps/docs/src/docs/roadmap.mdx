@@ -80,18 +80,18 @@ Delivery is SaaS first ([0248](/adr/0248-delivery-scope-saas-first-on-prem-kept-
 
 Other agents own this phase right now; this plan only lists it so Phase 1 can wait for it. Nothing in Phase 1 starts until these land.
 
-| Item                                                                    | Issue                                  | Why Phase 1 waits                                             |
-| ----------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------- |
-| SDLC Phase 0: stage-aware spec gate, `.agents/specs` wrap, retire sdlc  | STA-39                                 | Every package spec runs through the gate                      |
-| MIT `LICENSE`, validator licence and exports rules (0024, 0025)         | STA-46                                 | The first package must validate as MIT with compiled exports  |
-| Catalog hygiene: exact pins, drop expo-router, forbidden list           | STA-47                                 | New packages add catalog entries                              |
-| CI hardening: SHA pins, permissions, mise                               | STA-48                                 | Runway builds on the hardened workflow                        |
-| Encore as the generated runtime target (amend 0010, supersede 0011 row) | STA-49                                 | Phase 3 emits an Encore app                                   |
-| Constitution amendments to match Accepted ADRs                          | STA-50                                 | `/speckit.analyze` treats a constitution conflict as critical |
-| Stale docs, rules and code sweep                                        | STA-51                                 | Agents read the rules                                         |
-| Settle the remaining Proposed ADRs (OR1)                                | STA-134                                | Phase 1 relies on 0044, 0076, 0077, 0079–0089                 |
-| Package entries layout and scaffold templates (FW1, FW2)                | STA-135                                | The scaffold must match before the first port                 |
-| Apps and services move to `@figentra/*` (0083)                          | in flight (`chore/figentra-app-scope`) | Frees the `@stackra/console` name for W3.1                    |
+| Item                                                                    | Issue                                  | Why Phase 1 waits                                            |
+| ----------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------ |
+| SDLC Phase 0: stage-aware spec gate, `.agents/specs` wrap, retire sdlc  | STA-39                                 | Every package spec runs through the gate                     |
+| MIT `LICENSE`, validator licence and exports rules (0024, 0025)         | STA-46                                 | The first package must validate as MIT with compiled exports |
+| Catalog hygiene: exact pins, drop expo-router, forbidden list           | STA-47                                 | New packages add catalog entries                             |
+| CI hardening: SHA pins, permissions, mise                               | STA-48                                 | Runway builds on the hardened workflow                       |
+| Encore as the generated runtime target (amend 0010, supersede 0011 row) | STA-49                                 | Phase 3 emits an Encore app                                  |
+| Constitution amendments to match Accepted ADRs                          | STA-50                                 | `/flow-analyze` treats a constitution conflict as critical   |
+| Stale docs, rules and code sweep                                        | STA-51                                 | Agents read the rules                                        |
+| Settle the remaining Proposed ADRs (OR1)                                | STA-134                                | Phase 1 relies on 0044, 0076, 0077, 0079–0089                |
+| Package entries layout and scaffold templates (FW1, FW2)                | STA-135                                | The scaffold must match before the first port                |
+| Apps and services move to `@figentra/*` (0083)                          | in flight (`chore/figentra-app-scope`) | Frees the `@stackra/console` name for W3.1                   |
 
 ## Phase 1: Foundation kernel
 

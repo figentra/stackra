@@ -14,11 +14,11 @@
 
 **Linear project**: Foundation kernel
 
-**Clarifications status**: pending <!-- /speckit.clarify sets this to "complete" when nothing is open -->
+**Clarifications status**: pending <!-- /flow-clarify sets this to "complete" when nothing is open -->
 
 **Input**: User description: "Port `@figentra-os/config` to `packages/foundation/config` as `@stackra/config` (port + adapt, roadmap W1.2). Keep namespaced, typed, validated configuration with the environment passed in and secrets boxed; add Laravel-style package defaults in `config/<pkg>.config.ts`, publish into a host and override per host; config holds secret references only (FW3)."
 
-## Impact _(mandatory, answer every line before /speckit.clarify completes)_
+## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none (apps adopt the package later; the console and mobile entries stay hello-world in this change)
 - **Services touched**: none

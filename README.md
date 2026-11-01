@@ -55,7 +55,7 @@ Apps and services are minimal entries. The ordered plan is the
 ## Quickstart
 
 ```bash
-mise install    # Node, pnpm, gitleaks, the Infisical CLI, uv, Maestro and spec-kit, pinned in mise.toml
+mise install    # Node, pnpm, gitleaks, the Infisical CLI, uv and Maestro, pinned in mise.toml
 pnpm install    # also installs the lefthook git hooks
 pnpm verify     # the full gate: what "done" means
 pnpm docs       # the documentation site on http://localhost:3333
@@ -78,10 +78,10 @@ says what is missing. Full steps: [quickstart](apps/docs/src/docs/quickstart.mdx
 | [`services/`](services)                          | `@figentra/service-<name>` reference services (`example`, `health`), plain TypeScript                   |
 | [`tools/scripts/`](tools/scripts)                | the repository scripts behind `pnpm validate`, `pnpm new`, `pnpm linear`, the spec gates and agent sync |
 | [`tools/scaffold/`](tools/scaffold)              | the templates `pnpm new` renders                                                                        |
-| [`.agents/`](.agents)                            | the source of every AI artifact: rules, agents, hooks, skills, specs and the spec-kit preset            |
+| [`.agents/`](.agents)                            | the source of every AI artifact: rules, agents, hooks, skills and specs                                 |
 | [`.claude/`](.claude), [`.opencode/`](.opencode) | what Claude Code and OpenCode read, mostly projected from `.agents/` by `pnpm agents:sync`              |
-| [`.specify/`](.specify)                          | the spec-kit install: templates, scripts, the installed Stackra preset and the generated constitution   |
-| [`.agents/specs/`](.agents/specs)                | spec-kit specs, one folder per Linear issue (`sta-<n>-<slug>/`)                                         |
+| [`.flow/`](.flow)                                | the Figentra Flow install: the generated constitution, `lock.json` and optional `overrides/`            |
+| [`.agents/specs/`](.agents/specs)                | Figentra Flow specs, one folder per Linear issue (`sta-<n>-<slug>/`)                                    |
 | [`.github/`](.github)                            | CI (the `Quality Gate`), release and Linear sync workflows, the PR template, CODEOWNERS                 |
 | [`.changeset/`](.changeset)                      | pending changesets for package releases                                                                 |
 | `.notes/`                                        | a private git submodule for the owner only; excluded from every check                                   |
@@ -137,7 +137,7 @@ The rules in full, and what enforces each one, are in [`AGENTS.md`](AGENTS.md).
 | `pnpm secrets:scan`                          | gitleaks over the whole history                                                       |
 | `pnpm doctor`                                | fresh-machine checklist                                                               |
 | `pnpm agents:sync` / `pnpm agents:check`     | project `.agents/` into `.claude/` and `.opencode/`, or check for drift               |
-| `pnpm speckit:sync`                          | install the Stackra spec-kit preset into `.specify/`                                  |
+| `pnpm spec:sync`                             | render the Figentra Flow `flow-*` skills and record them in `.flow/lock.json`         |
 | `pnpm spec:gate` / `pnpm spec:trace`         | spec stage gates and requirement-to-test traceability                                 |
 | `pnpm linear <command>`                      | keep the Linear issue current: `start`, `review`, `done`, `comment`, `create`, `mine` |
 | `pnpm delegate <task-type> "<brief>"`        | hand a task to the executor `.agents/routing.yaml` names (`--issue STA-n` required)   |
@@ -152,8 +152,8 @@ script: [`tools/scripts`](tools/scripts).
    ([ADR 0065](apps/docs/src/docs/adr/0065-linear-gate-is-checked-offline.mdx)).
 2. **Lane and spec.** The change picks a lane: bug, chore, lite or full
    ([ADR 0120](apps/docs/src/docs/adr/0120-sdlc-spec-location-lanes-and-change-risk.mdx)). Lite and full work starts as a
-   spec-kit spec in `.agents/specs/sta-<n>-<slug>/` (`/speckit.specify` → clarify → plan → tasks → implement); the
-   plan step refuses until the spec gate passes ([ADR 0067](apps/docs/src/docs/adr/0067-spec-kit-is-the-sdlc.mdx)).
+   Figentra Flow spec in `.agents/specs/sta-<n>-<slug>/` (`/flow-specify` → clarify → plan → tasks → implement); the
+   plan step refuses until the spec gate passes ([ADR 0510](apps/docs/src/docs/adr/0510-flow-replaces-spec-kit.mdx)).
 3. **Branch.** The branch is Linear's name, `figentra/sta-<n>-<slug>`; `pnpm linear start STA-n` moves the issue to
    In Progress. Commits are conventional, and `feat`, `fix`, `refactor` and `perf` commits carry `Refs: STA-n`.
 4. **Pull request.** `pnpm verify` is green, the PR follows the template, and `pnpm linear review STA-n <url>` moves

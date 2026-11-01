@@ -4,16 +4,16 @@ What Claude Code reads in this repository. Most of it is projected from [`.agent
 `pnpm agents:sync`; edit the source there, never the projection. Claude reads the repository rules through
 `CLAUDE.md` → `@AGENTS.md`, so there is no `.claude/rules/`.
 
-| Path               | Holds                                                                                        | Edit here?                                           |
-| ------------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `settings.json`    | permissions (allow, ask, deny), enabled plugins and the hook wiring to `.agents/hooks/*.mjs` | yes                                                  |
-| `launch.json`      | the dev-server launch configuration (the docs site on port 3333)                             | yes                                                  |
-| `commands/`        | slash commands: `/sync` (agents sync and check) and `/verify` (the repo gate)                | yes                                                  |
-| `agents/`          | subagents generated from `.agents/agents/*.md` with Claude's frontmatter and model tier      | no: `guard-paths` refuses it; edit `.agents/agents`  |
-| `hooks/`           | symlinks to `.agents/hooks/*`                                                                | no: edit `.agents/hooks`                             |
-| `skills/<name>`    | symlinks to `.agents/skills/<name>`                                                          | no: edit `.agents/skills`                            |
-| `skills/speckit-*` | the spec-kit skills, rendered by `specify` with the Stackra preset                           | no: edit `.agents/speckit`, then `pnpm speckit:sync` |
-| `worktrees/`       | agent worktrees, local and gitignored                                                        | —                                                    |
+| Path            | Holds                                                                                        | Edit here?                                                |
+| --------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `settings.json` | permissions (allow, ask, deny), enabled plugins and the hook wiring to `.agents/hooks/*.mjs` | yes                                                       |
+| `launch.json`   | the dev-server launch configuration (the docs site on port 3333)                             | yes                                                       |
+| `commands/`     | slash commands: `/sync` (agents sync and check) and `/verify` (the repo gate)                | yes                                                       |
+| `agents/`       | subagents generated from `.agents/agents/*.md` with Claude's frontmatter and model tier      | no: `guard-paths` refuses it; edit `.agents/agents`       |
+| `hooks/`        | symlinks to `.agents/hooks/*`                                                                | no: edit `.agents/hooks`                                  |
+| `skills/<name>` | symlinks to `.agents/skills/<name>`                                                          | no: edit `.agents/skills`                                 |
+| `skills/flow-*` | symlinks to the Figentra Flow skills that `pnpm spec:sync` renders into `.agents/skills/`    | no: override in `.flow/overrides/`, then `pnpm spec:sync` |
+| `worktrees/`    | agent worktrees, local and gitignored                                                        | —                                                         |
 
 ## Rules
 

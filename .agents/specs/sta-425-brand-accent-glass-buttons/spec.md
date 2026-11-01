@@ -12,7 +12,7 @@
 
 **Clarifications status**: complete
 
-**Analyze**: — <!-- lite lane: /speckit.analyze not run -->
+**Analyze**: — <!-- lite lane: /flow-analyze not run -->
 
 **Input**: Owner, in chat, looking at the web Button page: "why web buttons like this!?"; from the options offered the owner chose "Accent + glass": the brand's steel blue as the accent, the quiet button variants on the glass material.
 

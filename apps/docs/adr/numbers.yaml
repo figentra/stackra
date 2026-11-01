@@ -1479,7 +1479,7 @@
   issue: STA-1721
 "0503":
   slug: figentra-flow-runs-the-development-workflow
-  status: proposed
+  status: accepted
   owner: Figentra Flow (figentra/sta-1729-vellum-workflow-adr)
   issue: STA-1729
 "0504":
@@ -1510,7 +1510,7 @@
   issue: STA-1724
 "0510":
   slug: flow-replaces-spec-kit
-  status: reserved
+  status: accepted
   issue: STA-1729
 "0511":
   slug: cross-repo-service-contracts-and-cross-app-events
