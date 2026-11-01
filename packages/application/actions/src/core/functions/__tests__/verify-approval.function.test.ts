@@ -220,6 +220,20 @@ describe(verifyApproval, () => {
     });
   });
 
+  it("measures the execution window by the owning clock: open at exactly 24 hours, a pending request expired by its binding", async () => {
+    await expect(verify({ now: new Date("2026-11-02T09:45:00.000Z") })).resolves.toBeUndefined();
+    await expect(
+      verify({
+        record: { status: ApprovalStatus.Pending },
+        now: new Date("2026-11-04T09:00:00.001Z"),
+      }),
+    ).rejects.toMatchObject({ code: "approval_expired" });
+    // a granted request outlives its own voting window until 24 hours after the grant
+    await expect(
+      verify({ binding: { expiresAt: new Date("2026-11-01T09:50:00.000Z") } }),
+    ).resolves.toBeUndefined();
+  });
+
   it("counts distinct people: too few, the same person twice, the requester's person, other realms", async () => {
     await expect(verify({ record: { votes: [] } })).rejects.toMatchObject({
       code: "approval_not_granted",
