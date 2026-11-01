@@ -1500,3 +1500,7 @@
   slug: every-action-is-shortcut-aware
   status: proposed
   owner: c6 design system (feat/c6-shortcuts)
+"0509":
+  slug: flow-replaces-spec-kit
+  status: reserved
+  issue: STA-1729
