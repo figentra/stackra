@@ -122,8 +122,8 @@ API grants only `licensed` scopes, so the owner also inserts an internal scope's
 
 Only the release workflows publish (`publishers` rows: `figentra/stackra` for `@stackra`, `figentra/stackra-pro` for
 `@stackra-pro`, workflow `.github/workflows/release.yml`, ref `refs/heads/main`, environment `release`;
-`figentra/brand` and `figentra/commerce` for `@figentra`, same workflow and ref, environments `brand-registry` and
-`release`; `figentra/flow` for `@figentra-oss`, same workflow and ref, environment `release`; matched on the numeric
+`figentra/brand`, `figentra/commerce` and `figentra/os` for `@figentra`, same workflow and ref, environments
+`brand-registry`, `release` and `release`; `figentra/flow` for `@figentra-oss`, same workflow and ref, environment `release`; matched on the numeric
 repository and owner ids too). A publisher covers its whole scope, not single names. The job asks GitHub for an ID token with audience
 `npm:npm.stackra.figentra.com` and exchanges it for a `stkp_` publish token bound to one package for
 `REGISTRY_PUBLISH_TOKEN_SECONDS`. A publish is refused when the version exists, the tarball is over the size limit,
@@ -165,7 +165,7 @@ secret.
 | Path                      | Holds                                                                                                                                                          |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                                                                         |
-| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss` |
+| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss`, `0006` `figentra/os` |
 | `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                                                                       |
 | `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                                                                     |
 | `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                                                                                 |
