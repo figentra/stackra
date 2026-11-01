@@ -278,4 +278,41 @@ describe(SettingsResolver, () => {
       },
     ]);
   });
+
+  it("records break-glass on an applied change when it has a reason", async () => {
+    const { resolver } = setup();
+    const revision = await resolver.applyChange(
+      "returns",
+      { scope: ACME },
+      { values: { windowDays: 30 }, removed: [] },
+      { ...LIVE, breakGlass: true, reason: "incident 42" },
+    );
+    expect(revision).toMatchObject({ breakGlass: true, reason: "incident 42" });
+  });
+
+  it("refuses a break-glass change without a reason and writes nothing", async () => {
+    const { values, revisions, resolver } = setup();
+    for (const reason of [undefined, "", "   "])
+      await expect(
+        resolver.applyChange(
+          "returns",
+          { scope: ACME },
+          { values: { windowDays: 30 }, removed: [] },
+          { ...LIVE, breakGlass: true, ...(reason === undefined ? {} : { reason }) },
+        ),
+      ).rejects.toThrow(TypeError);
+    await expect(values.layers("returns", { scope: ACME })).resolves.toEqual([]);
+    await expect(revisions.list("returns", { scope: ACME })).resolves.toEqual([]);
+  });
+
+  it("records break-glass false on a change without the flag", async () => {
+    const { resolver } = setup();
+    const revision = await resolver.applyChange(
+      "returns",
+      { scope: ACME },
+      { values: { windowDays: 30 }, removed: [] },
+      LIVE,
+    );
+    expect(revision.breakGlass).toBe(false);
+  });
 });
