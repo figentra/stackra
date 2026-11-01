@@ -4,7 +4,8 @@
  *          (STA-339): `Factory` and `Faker` for `database/factories/`, the `usePostgres()` fixture, the PGlite
  *          `MemoryDatabaseDriver` of the unit tier, and the plugin that connects it and adds `.seed(...)`,
  *          `app.transaction(...)` and `app.repository(...)` to the testing module, and `strictLoading`, the N+1 guard of
- *          a test (stackra-282).
+ *          a test (stackra-282), and `checkMigrations`, the apply, revert and re-apply check of a compiled migrations
+ *          folder (STA-1689).
  * Boundary: names each re-export and declares nothing; the plugin registers itself when its module loads, and
  *           `sideEffects` stays `false` because only tests load `./testing` and never tree-shake it. The only entry that
  *           imports Faker, Testcontainers or PGlite, so a runtime entry never loads them (ADR 0269 decision 3).
@@ -15,9 +16,11 @@ export { Factory } from "#testing/bases/factory.base";
 export { DATABASE_TESTING_PLUGIN } from "#testing/constants/database-testing-plugin.constant";
 export { MemoryDatabaseDriver } from "#testing/drivers/memory-database.driver";
 export { assertRowSecurity } from "#testing/functions/assert-row-security.function";
+export { checkMigrations } from "#testing/functions/check-migrations.function";
 export { strictLoading } from "#testing/functions/strict-loading.function";
 export type { Counted } from "#testing/types/counted.type";
 export type { Faker } from "#testing/types/faker.type";
+export type { MigrationTarget } from "#testing/types/migration-target.type";
 export type { PostgresFixture } from "#testing/types/postgres-fixture.type";
 export type { RowSecurityOptions } from "#testing/types/row-security-options.type";
 export type { StrictLoadingOptions } from "#testing/types/strict-loading-options.type";

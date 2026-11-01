@@ -35,7 +35,7 @@ export interface SchemaBuilder {
    */
   sql: (statement: string, options: { readonly inverse: string | false }) => void;
 
-  /** Creates one of the approved extensions, if the database does not have it. */
+  /** Creates one of the approved extensions, if the database does not have it; a down keeps it, since it is shared. */
   createExtension: (extension: Extension) => void;
 
   /**

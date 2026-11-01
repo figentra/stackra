@@ -42,6 +42,7 @@ import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
+import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -235,9 +236,16 @@ export async function generate(
     root,
     ir.layout === "service" && ir.authoredMain !== true && options.pass === undefined,
   );
-  // The compiled migrations of a service, its declared packages' included (ADR 0159, stackra-248).
+  // The compiled migrations of a service, its declared packages' included (ADR 0159, stackra-248). A package with
+  // migrations of its own gets them too, with what they build on, beside the generated check that applies, reverts and
+  // re-applies them (STA-1689); not in `.stackra/migrations`, so its tests' memory database still builds from entities.
+  const ownMigrations = join(root, "src/node/database/migrations");
+  const checked =
+    ir.layout === "package" &&
+    existsSync(ownMigrations) &&
+    readdirSync(ownMigrations).some((name) => name.endsWith(".migration.ts"));
   const migrations =
-    ir.layout === "service" && options.pass === undefined
+    (ir.layout === "service" || checked) && options.pass === undefined
       ? await compileMigrations(root, ir)
       : { files: [], errors: [] };
   // Every job queue but `default` is provisioned in each environment of the service's runway (STA-1727).
@@ -245,8 +253,17 @@ export async function generate(
     ir.layout === "service" && options.pass === undefined
       ? runwayQueues(root, result.manifest)
       : [];
+  const migrationFiles = checked
+    ? [
+        ...migrations.files.map((file) => ({
+          ...file,
+          path: file.path.replace(`${MIGRATIONS_DIR}/`, ".stackra/tests/migrations/"),
+        })),
+        ...(migrations.files.length > 0 ? emitMigrationsCheck(ir) : []),
+      ]
+    : migrations.files;
   const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];
-  let files = [...result.files, ...encore.files, ...migrations.files];
+  let files = [...result.files, ...encore.files, ...migrationFiles];
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
     if (
