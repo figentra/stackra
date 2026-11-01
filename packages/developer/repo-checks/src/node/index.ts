@@ -67,6 +67,7 @@ export { checkRunwayFiles } from "#node/functions/check-runway-files.function";
 export { checkRunwaySchemas } from "#node/functions/check-runway-schemas.function";
 export { checkService } from "#node/functions/check-service.function";
 export { checkTestPlacement } from "#node/functions/check-test-placement.function";
+export { checkToolPins } from "#node/functions/check-tool-pins.function";
 export { checkWindowSizing } from "#node/functions/check-window-sizing.function";
 export { checkYamlFlowMaps } from "#node/functions/check-yaml-flow-maps.function";
 export { configFindings } from "#node/functions/config-findings.function";
