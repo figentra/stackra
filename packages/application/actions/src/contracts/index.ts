@@ -19,6 +19,7 @@ export { AccessControl } from "#contracts/ports/access-control.port";
 export { ActorStatusCheck } from "#contracts/ports/actor-status-check.port";
 export { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 export { ApprovalGate } from "#contracts/ports/approval-gate.port";
+export { ApprovalSettingsSource } from "#contracts/ports/approval-settings-source.port";
 export { AuditTrail } from "#contracts/ports/audit-trail.port";
 export { CallIsolation } from "#contracts/ports/call-isolation.port";
 export { ConsentCheck } from "#contracts/ports/consent-check.port";

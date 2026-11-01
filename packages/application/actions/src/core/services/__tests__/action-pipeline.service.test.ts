@@ -81,6 +81,7 @@ import {
   ActorStatusCheck,
   ApprovalBindingStore,
   ApprovalGate,
+  ApprovalSettingsSource,
   AuditTrail,
   CallIsolation,
   ConsentCheck,
@@ -154,6 +155,7 @@ import { RequestContext } from "#core/services/request-context.service";
 import type { RuleEvaluation } from "#core/types/rule-evaluation.type";
 import type { RuleEvaluator } from "#core/types/rule-evaluator.type";
 import type { ActionContext } from "#core/types/action-context.type";
+import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
 import type { QueryContext } from "#core/types/query-context.type";
 import type { ReplicaPage } from "#core/types/replica-page.type";
 import type { Resolver } from "#core/types/resolver.type";
@@ -2811,6 +2813,57 @@ class AboveFiveCondition extends ApprovalCondition {
 
 const APPROVE = "billing.coupon.approve";
 
+/** A condition that reads its threshold through its limited reader. */
+class ThresholdCondition extends ApprovalCondition {
+  static override readonly reads = ["billing.coupon.maxPercent"] as const;
+
+  async needed(
+    input: { readonly percent: number },
+    _ctx: ActionContext,
+    settings: ApprovalSettingsReader,
+  ): Promise<boolean> {
+    return input.percent > Number(await settings.get("billing.coupon.maxPercent"));
+  }
+}
+
+/** A condition that reads a key it never declared. */
+class GreedyCondition extends ApprovalCondition {
+  async needed(
+    _input: unknown,
+    _ctx: ActionContext,
+    settings: ApprovalSettingsReader,
+  ): Promise<boolean> {
+    return Boolean(await settings.get("billing.other"));
+  }
+}
+
+class ThresholdAction extends Action({
+  key: "coupon.threshold",
+  actors: [ActorKind.User],
+  approval: { permission: APPROVE, when: ThresholdCondition },
+}) {
+  async handle(): Promise<string> {
+    return "ok";
+  }
+}
+
+class GreedyAction extends Action({
+  key: "coupon.greedy",
+  actors: [ActorKind.User],
+  approval: { permission: APPROVE, when: GreedyCondition },
+}) {
+  async handle(): Promise<string> {
+    return "ok";
+  }
+}
+
+/** A settings source over a map. */
+class MapSettings extends Driver(ApprovalSettingsSource) {
+  async get(key: string): Promise<unknown> {
+    return { "billing.coupon.maxPercent": 20, "billing.other": true }[key];
+  }
+}
+
 class CouponAction extends Action({
   key: "coupon.update",
   actors: [ActorKind.User, ActorKind.Agent],
@@ -2959,6 +3012,28 @@ describe("ActionPipeline approval stage (ADR 0509)", () => {
       code: "approval_required",
       fields: { approvalId, inputHash },
     });
+  });
+
+  it("hands a condition a reader limited to its reads, over the bound settings source", async () => {
+    const { pipeline } = stage({}, [
+      [ApprovalSettingsSource, new MapSettings()],
+      [ThresholdCondition, new ThresholdCondition()],
+      [ThresholdAction, new ThresholdAction()],
+      [GreedyCondition, new GreedyCondition()],
+      [GreedyAction, new GreedyAction()],
+    ]);
+    await expect(
+      pipeline.execute(ThresholdAction, { percent: 30 }, { actor: customer }),
+    ).rejects.toMatchObject({
+      code: "approval_required",
+    });
+    await expect(
+      pipeline.execute(ThresholdAction, { percent: 10 }, { actor: customer }),
+    ).resolves.toBe("ok");
+    // a key the condition did not declare throws: the call fails and is never read as "not needed"
+    await expect(pipeline.execute(GreedyAction, {}, { actor: customer })).rejects.toThrow(
+      RangeError,
+    );
   });
 
   it("runs a call whose condition is false, and parks nothing", async () => {

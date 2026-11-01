@@ -98,6 +98,7 @@ import { AccessControl } from "#contracts/ports/access-control.port";
 import { ActorStatusCheck } from "#contracts/ports/actor-status-check.port";
 import { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
+import { ApprovalSettingsSource } from "#contracts/ports/approval-settings-source.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
 import { CallIsolation } from "#contracts/ports/call-isolation.port";
 import { ConsentCheck } from "#contracts/ports/consent-check.port";
@@ -130,6 +131,7 @@ import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import type { Action } from "#core/bases/action.base";
+import type { ApprovalCondition } from "#core/bases/approval-condition.base";
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
 import type { Query } from "#core/bases/query.base";
@@ -158,6 +160,7 @@ import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
+import { limitedSettingsReader } from "#core/functions/limited-settings-reader.function";
 import { mergeApprovalRequirements } from "#core/functions/merge-approval-requirements.function";
 import { periodOf } from "#core/functions/period-of.function";
 import { queryCacheKey } from "#core/functions/query-cache-key.function";
@@ -166,6 +169,7 @@ import { verifyApproval } from "#core/functions/verify-approval.function";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionApproval } from "#core/types/action-approval.type";
+import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
 import type { ActionContext } from "#core/types/action-context.type";
 import type { ActionDraft } from "#core/types/action-draft.type";
 import type { ActionEffects } from "#core/types/action-effects.type";
@@ -609,7 +613,9 @@ export class ActionPipeline {
     if (declaration === undefined) return undefined;
     if (
       declaration.when !== undefined &&
-      !(await this.resolver.get(declaration.when).needed(input as never, call.ctx as ActionContext))
+      !(await this.resolver
+        .get(declaration.when)
+        .needed(input as never, call.ctx as ActionContext, this.settingsFor(declaration.when)))
     )
       return undefined;
     // shortcut: a Permissions static is its string until @stackra/iam ships the kind; read its name then.
@@ -618,6 +624,17 @@ export class ActionPipeline {
       permission: String(declaration.permission),
       expiresAfter: declaration.expiresAfter ?? "72h",
     };
+  }
+
+  /** The reader a condition receives: limited to its static `reads`, over the bound settings source (read lazily). */
+  private settingsFor(condition: AnyClass<ApprovalCondition>): ApprovalSettingsReader {
+    const { reads = [] } = condition as unknown as { readonly reads?: readonly string[] };
+    return limitedSettingsReader(reads, (key) =>
+      this.required(
+        ApprovalSettingsSource,
+        `${condition.name} reads ${key}, so bind a source (the settings package)`,
+      ).get(key),
+    );
   }
 
   /** Verifies the call's approval id and records who approved on the audit entry. */

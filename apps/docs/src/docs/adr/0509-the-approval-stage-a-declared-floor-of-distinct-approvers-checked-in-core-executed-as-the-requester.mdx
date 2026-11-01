@@ -40,12 +40,12 @@ anyone, so the owning service keeps its own binding; a per-service MAC key was t
    boot); `when` names an `ApprovalCondition` class. Without `when` every call needs approval. Gen refuses `approval`
    unless every entry of `actors` is `User`, `Agent` or `ExternalAgent` (an allow-list), and the runtime refuses to
    park a call whose `onBehalfOf` chain does not end at a user.
-2. **`ApprovalCondition` is a kind.** `extends ApprovalCondition` with `needed(input, ctx): Promise<boolean>`, in
+2. **`ApprovalCondition` is a kind.** `extends ApprovalCondition` with `needed(input, ctx, settings): Promise<boolean>`, in
    `access/<name>.approval-condition.ts`, wired by gen. A threshold is data the condition reads (a setting, a plan
    value); the comparison is code. A condition that throws fails the call. Every setting it reads is listed in its
    static `reads` and must itself be a key marked `approval`. The condition receives a settings reader limited to
-   that list, which throws on any other key; its only other dependencies may be platform plan and entitlement values,
-   and gen refuses any other constructor dependency.
+   that list as an argument, which throws on any other key; it receives the limited reader as an argument and takes no
+   constructor dependencies, and gen refuses any constructor dependency.
 3. **Place.** The stage keeps its place after validation and before idempotency, rate limit, interceptors, the unit of
    work and `handle`. Under 0495 it runs inside `CallIsolation.run`. Actions only. A park takes a token from the
    action's rate-limit bucket before the binding is inserted, and the store caps pending requests per requester per action.
@@ -131,8 +131,7 @@ a declared call, that the binding and the request survive the rollback under `Ca
 store row is refused; the `verifyApproval`, `actorChainOverlaps` and `actorsSharePerson` tests; the port conformance
 suite in `@stackra/actions/testing` (states, compare-and-set, pending cap); the binding driver's real-Postgres
 isolation test in `@stackra/tenancy`; gen refusing `approval` on a query, on an action no user or agent may call, on
-any actor kind other than `User`, `Agent` or `ExternalAgent`, on a condition dependency other than its limited
-settings reader and plan and entitlement values, on a `credential` input field, on an `expiresAfter` above 30 days and on a
+any actor kind other than `User`, `Agent` or `ExternalAgent`, on a condition constructor dependency, on a `credential` input field, on an `expiresAfter` above 30 days and on a
 condition reading a key not marked `approval`. Nothing checks this rule yet.
 
 ## Decided questions

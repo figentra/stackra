@@ -142,14 +142,14 @@ coupon changes, as the requester, without the requester coming back.
   see L-01). `permission` is a `Permissions` static the approver must hold in the request's scope. `expiresAfter` is
   a duration string (`"72h"`), default `"72h"`, at most 30 days (`"720h"`) (L-03). `Action()` refuses any other shape, and an
   `expiresAfter` above the maximum, at definition time (boot); gen refuses the same.
-- **FR-002** `ApprovalCondition` is a new kind base: `extends ApprovalCondition` with `needed(input, ctx):
+- **FR-002** `ApprovalCondition` is a new kind base: `extends ApprovalCondition` with `needed(input, ctx, settings):
 Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-condition.ts`. The threshold is data, the
   comparison is code. No condition means every call needs approval. A condition that throws fails the call (it is not
   read as "not needed"). A condition lists the settings keys it reads in a static `reads` array, and each must itself
   be a key marked `approval` (S9), so a threshold cannot be lowered without a second person. It receives a settings
-  reader limited to that list, which throws on any key not listed (N2). Its only other dependencies may be the
-  platform's plan and entitlement values; gen refuses any other constructor dependency and any `reads` key not marked
-  `approval`.
+  reader limited to that list as an argument, `needed(input, ctx, settings)`, which throws on any key not listed (N2); it
+  takes no constructor dependencies, and gen refuses any constructor dependency and any `reads` key not marked
+  `approval` (an allow-list for platform plan and entitlement values opens when those classes exist).
 - **FR-003** Gen refuses an `expiresAfter` above 30 days, as `Action()` does at boot (L-03). A declared action needs
   effect tags and a permission like any action. Gen refuses `approval` on a query, on an action whose input schema has
   a field of the `credential` data class (ADR 0494), and unless every entry of `actors` is `User`, `Agent` or

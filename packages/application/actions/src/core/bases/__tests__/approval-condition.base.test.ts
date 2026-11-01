@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `ApprovalCondition`: the bare kind is registered as `approval_condition`, a subclass
- *          declares the settings keys it reads in a static `reads` (none by default), gets its limited reader through
- *          its constructor and answers `needed`, and `needed` must be implemented.
+ *          declares the settings keys it reads in a static `reads` (none by default), takes no constructor dependencies,
+ *          receives its limited reader as an argument and answers `needed`, and `needed` must be implemented.
  * Boundary: test only; the condition is billing's coupon threshold.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0509; STA-1724 FR-002.
@@ -18,15 +18,12 @@ import type { ApprovalSettingsReader } from "#core/types/approval-settings-reade
 class CouponAboveThresholdCondition extends ApprovalCondition {
   static override readonly reads = ["billing.coupon.maxPercent"] as const;
 
-  private readonly settings: ApprovalSettingsReader;
-
-  constructor(settings: ApprovalSettingsReader) {
-    super();
-    this.settings = settings;
-  }
-
-  async needed(input: { readonly percent: number }, _ctx: ActionContext): Promise<boolean> {
-    return input.percent > Number(await this.settings.get("billing.coupon.maxPercent"));
+  async needed(
+    input: { readonly percent: number },
+    _ctx: ActionContext,
+    settings: ApprovalSettingsReader,
+  ): Promise<boolean> {
+    return input.percent > Number(await settings.get("billing.coupon.maxPercent"));
   }
 }
 
@@ -48,9 +45,9 @@ describe("ApprovalCondition", () => {
 
   it("compares the input with a threshold read through its limited reader", async () => {
     const settings = limitedSettingsReader(CouponAboveThresholdCondition.reads, async () => 20);
-    const condition = new CouponAboveThresholdCondition(settings);
+    const condition = new CouponAboveThresholdCondition();
     const ctx = {} as ActionContext;
-    await expect(condition.needed({ percent: 40 }, ctx)).resolves.toBe(true);
-    await expect(condition.needed({ percent: 5 }, ctx)).resolves.toBe(false);
+    await expect(condition.needed({ percent: 40 }, ctx, settings)).resolves.toBe(true);
+    await expect(condition.needed({ percent: 5 }, ctx, settings)).resolves.toBe(false);
   });
 });
