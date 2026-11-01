@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf` and `brandsOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
- *          check, the duplicate dev port check (`checkPorts`, STA-863), the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
+ *          check, the duplicate dev port check (`checkPorts`, STA-863), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
@@ -37,6 +37,7 @@ export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
 export { brandsOf } from "#core/functions/brands-of.function";
 export { checkPlacement } from "#core/functions/check-placement.function";
+export { checkHosts } from "#core/functions/check-hosts.function";
 export { checkPorts } from "#core/functions/check-ports.function";
 export { checkRegions } from "#core/functions/check-regions.function";
 export { deploy } from "#core/functions/deploy.function";
@@ -78,6 +79,7 @@ export type { ExpoCredentials } from "#core/types/expo-credentials.type";
 export type { MobileIds } from "#core/types/mobile-ids.type";
 export type { PlacementIssue } from "#core/types/placement-issue.type";
 export type { PlayApp } from "#core/types/play-app.type";
+export type { HostIssue } from "#core/types/host-issue.type";
 export type { PortIssue } from "#core/types/port-issue.type";
 export type { PreviewDatabase } from "#core/types/preview-database.type";
 export type { Product } from "#core/types/product.type";

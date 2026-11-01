@@ -61,6 +61,7 @@ describe("@stackra/runway", () => {
       "VaultWriter",
       "baseUrlOf",
       "brandsOf",
+      "checkHosts",
       "checkPlacement",
       "checkPorts",
       "checkRegions",
