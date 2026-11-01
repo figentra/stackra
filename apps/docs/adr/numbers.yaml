@@ -1516,3 +1516,8 @@
   slug: cross-repo-service-contracts-and-cross-app-events
   status: reserved
   issue: STA-1821
+"0512":
+  slug: one-infisical-layout-projects-by-reader-agents-and-product-runtimes
+  status: reserved
+  owner: claude
+  issue: STA-1867
