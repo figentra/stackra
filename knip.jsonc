@@ -101,6 +101,11 @@
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": ["@stackra/outbox", "@stackra/queue", "@stackra/scheduler"],
     },
+    "packages/data/data-maintenance": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["@stackra/scheduler"],
+    },
     "packages/communication/notifications": {
       "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"],

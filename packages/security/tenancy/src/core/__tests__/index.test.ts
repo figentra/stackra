@@ -25,6 +25,7 @@ describe("@stackra/tenancy", () => {
     expect(Object.keys(core).sort()).toEqual([
       "MemorySandboxTenantsDriver",
       "MemoryTenantBillingContactsDriver",
+      "MemoryTenantDirectoryDriver",
       "MemoryTenantPlacementDriver",
       "MemoryTenantSharesDriver",
       "MemoryTenantTokensDriver",
@@ -41,6 +42,7 @@ describe("@stackra/tenancy", () => {
       "TenancyCronScopesDriver",
       "TenancyScopes",
       "TenantBillingContacts",
+      "TenantDirectory",
       "TenantEnvironment",
       "TenantMembershipMissingError",
       "TenantPlacement",

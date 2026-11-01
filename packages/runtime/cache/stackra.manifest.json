@@ -306,5 +306,17 @@
       "from": "@stackra/cache"
     }
   ],
+  "commands": [
+    {
+      "name": "cache:clear",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": false,
+      "class": "CacheClearCommand",
+      "file": "src/node/commands/cache-clear.command.ts",
+      "entry": "node"
+    }
+  ],
   "schemas": {}
 }

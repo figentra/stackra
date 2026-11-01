@@ -152,7 +152,7 @@ const ENVIRONMENT = z.looseObject({
           highAvailability: z.boolean().optional(),
           version: z
             .string()
-            .regex(/^POSTGRES_\d+$/, "Expected a Cloud SQL Postgres version such as POSTGRES_17")
+            .regex(/^POSTGRES_\d+$/, "Expected a Cloud SQL Postgres version such as POSTGRES_18")
             .optional(),
           backups: BACKUPS.optional(),
           pgaudit: PGAUDIT.optional(),

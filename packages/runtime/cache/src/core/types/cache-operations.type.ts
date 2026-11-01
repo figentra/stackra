@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `CacheOperations`, the five calls of the `Cache` port as `storedCache` returns them, for a driver to
+ * Purpose: `CacheOperations`, the six calls of the `Cache` port as `storedCache` returns them, for a driver to
  *          delegate to.
  * Boundary: a type only, internal to the package.
  * Runtime: isomorphic
@@ -8,5 +8,8 @@
  */
 import type { Cache } from "#contracts/ports/cache.port";
 
-/** `get`, `put`, `remember`, `forget` and `forgetTag` of a cache. */
-export type CacheOperations = Pick<Cache, "get" | "put" | "remember" | "forget" | "forgetTag">;
+/** `get`, `put`, `remember`, `forget`, `forgetTag` and `flush` of a cache. */
+export type CacheOperations = Pick<
+  Cache,
+  "get" | "put" | "remember" | "forget" | "forgetTag" | "flush"
+>;

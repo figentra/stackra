@@ -10,13 +10,14 @@
  * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 2, 28 and 30); ADR 0098 (actions are the
  *                     unit); ADR 0136; ADR 0138 (as amended); ADR 0338 (decision 5: `offline.cap`); ADR 0337
  *                     (decisions 4 and 5: `accepts`); ADR 0360 (decision 4: the tool default); ADR 0099 (decision 2:
- *                     `effects`); STA-813 (`approval`); ADR 0406 (`stepUp`).
+ *                     `effects`); STA-813 (`approval`; ADR 0509 for the declared stage); ADR 0406 (`stepUp`).
  */
 import { createKind } from "@stackra/container";
-import { ActorKind, AssuranceLevel, Enum, MeterKind } from "@stackra/contracts";
+import { ActorKind, AssuranceLevel, Duration, Enum, MeterKind } from "@stackra/contracts";
 import { duration } from "@stackra/validation";
 
 import { Effect } from "#contracts/enums/effect.enum";
+import { ApprovalCondition } from "#core/bases/approval-condition.base";
 import { Precondition } from "#core/bases/precondition.base";
 import { RULE_VERSION_PATTERN } from "#core/constants/rule-version-pattern.constant";
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
@@ -25,6 +26,7 @@ import { IdMinting } from "#core/enums/id-minting.enum";
 import { OfflineMode } from "#core/enums/offline-mode.enum";
 import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 import { readCallOptions } from "#core/functions/read-call-options.function";
+import type { ActionApproval } from "#core/types/action-approval.type";
 import type { ActionClass } from "#core/types/action-class.type";
 import type { ActionContext } from "#core/types/action-context.type";
 import type { ActionOptions } from "#core/types/action-options.type";
@@ -59,6 +61,47 @@ function checkDuration(option: string, text: unknown): void {
       `Action({ ${option} }) must be a duration such as "2m", got ${JSON.stringify(text)}`,
     );
   }
+}
+
+/** The longest an approval request may live: 30 days (ADR 0509, L-03). */
+const MAX_APPROVAL_WINDOW = Duration.days(30);
+
+/** Checks `approval` and, for a declared stage, applies its defaults (one approver, 72 hours). */
+function readApproval(options: ActionOptions): boolean | ActionApproval | undefined {
+  const { approval } = options;
+  if (approval === undefined || typeof approval === "boolean") return approval;
+  const shape = (problem: string): never => {
+    throw new TypeError(`Action({ approval }) ${problem} (${options.key})`);
+  };
+  if (typeof approval !== "object" || approval === null)
+    return shape(`is true, false or an ActionApproval, got ${JSON.stringify(approval)}`);
+  const approvals = approval.approvals ?? 1;
+  if (!Number.isInteger(approvals) || approvals < 1)
+    shape(`needs approvals as a whole number from 1, got ${JSON.stringify(approval.approvals)}`);
+  if (
+    approval.permission === undefined ||
+    approval.permission === null ||
+    approval.permission === ""
+  )
+    shape("needs the permission each approver holds");
+  const expiresAfter = approval.expiresAfter ?? "72h";
+  let window: Duration;
+  try {
+    window = duration(String(expiresAfter));
+  } catch {
+    return shape(
+      `needs expiresAfter as a duration such as "72h", got ${JSON.stringify(expiresAfter)}`,
+    );
+  }
+  if (Duration.toMilliseconds(window) > Duration.toMilliseconds(MAX_APPROVAL_WINDOW))
+    shape(`needs expiresAfter of at most 720h (30 days), got ${JSON.stringify(expiresAfter)}`);
+  const { when } = approval;
+  if (
+    when !== undefined &&
+    (typeof when !== "function" || !(when.prototype instanceof ApprovalCondition))
+  )
+    shape("needs `when` to be a class that extends ApprovalCondition");
+  return Object.freeze({ ...approval, approvals, expiresAfter });
 }
 
 /** Checks the options of an action and applies their defaults. */
@@ -179,10 +222,7 @@ function read(options: ActionOptions) {
     throw new RangeError(
       `Action({ effects }) lists distinct Effect tags (${options.key}), got ${JSON.stringify(effects)}`,
     );
-  if (options.approval !== undefined && typeof options.approval !== "boolean")
-    throw new TypeError(
-      `Action({ approval }) is true or false, got ${JSON.stringify(options.approval)}`,
-    );
+  const approval = readApproval(options);
   if (options.stepUp !== undefined && !Enum.values(AssuranceLevel).includes(options.stepUp))
     throw new RangeError(
       `Action({ stepUp }) takes an AssuranceLevel, got ${JSON.stringify(options.stepUp)}`,
@@ -214,6 +254,7 @@ function read(options: ActionOptions) {
     // ADR 0360 d4, as gen derives it: an action a user can perform is a tool unless it says `tool: false`.
     tool: options.tool ?? options.actors.includes(ActorKind.User),
     ...(effects === undefined ? {} : { effects: Object.freeze([...effects]) }),
+    ...(approval === undefined ? {} : { approval }),
     intent: options.intent ?? false,
     structural: options.structural ?? false,
   };

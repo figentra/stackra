@@ -24,7 +24,7 @@ describe("gcpRuntimeConfig", () => {
     expect(config.region).toBe("me-central2");
     expect(config.database).toEqual({
       tier: "db-custom-2-7680",
-      version: "POSTGRES_17",
+      version: "POSTGRES_18",
       highAvailability: true,
       retainedBackups: 35,
       pitr: { days: 7 },
@@ -37,7 +37,7 @@ describe("gcpRuntimeConfig", () => {
   it("keeps backups on with Cloud SQL's defaults when the runway does not size them", () => {
     expect(gcpRuntimeConfig(gcpRoot(), "staging").database).toEqual({
       tier: "db-custom-1-3840",
-      version: "POSTGRES_17",
+      version: "POSTGRES_18",
       highAvailability: false,
       retainedBackups: null,
       pitr: false,

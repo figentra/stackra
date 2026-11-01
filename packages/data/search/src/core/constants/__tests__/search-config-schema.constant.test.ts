@@ -22,6 +22,8 @@ describe("SEARCH_CONFIG_SCHEMA", () => {
         passageCharacters: 2000,
         passageOverlap: 200,
       },
+      reranker: { url: null, tokenSecret: null, topN: 50 },
+      recommender: { url: null, tokenSecret: null, limit: 10, cooccurrence: null },
       health: { timeout: "PT2S", critical: true, table: "", primaryKey: "id" },
     });
   });
@@ -32,6 +34,18 @@ describe("SEARCH_CONFIG_SCHEMA", () => {
     expect(
       SEARCH_CONFIG_SCHEMA.parse({ embedder: { ...embedder, passageOverlap: 50 } }).embedder,
     ).toMatchObject({ passageCharacters: 500, passageOverlap: 50 });
+  });
+
+  it("takes the reranker and recommender settings and refuses a bad table name", () => {
+    expect(SEARCH_CONFIG_SCHEMA.parse({ reranker: { topN: 20 } }).reranker.topN).toBe(20);
+    expect(
+      SEARCH_CONFIG_SCHEMA.parse({ recommender: { cooccurrence: "shop.pairs" } }).recommender,
+    ).toMatchObject({ cooccurrence: "shop.pairs", limit: 10 });
+    expect(
+      SEARCH_CONFIG_SCHEMA.safeParse({ recommender: { cooccurrence: "pairs; drop table x" } })
+        .success,
+    ).toBe(false);
+    expect(SEARCH_CONFIG_SCHEMA.safeParse({ reranker: { topN: 0 } }).success).toBe(false);
   });
 
   it("takes the shipped drivers and refuses others", () => {

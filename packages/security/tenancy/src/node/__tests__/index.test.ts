@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: pins the exports of the `./node` entry of @stackra/tenancy: the trait and its nullable form, their macro and the isolation service;
+ * Purpose: pins the exports of the `./node` entry of @stackra/tenancy: the trait and its nullable form, their macro, the isolation service and driver, the approval binding model with its Postgres store driver and the prune job;
  *          no setting name and no tenant storage.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -16,13 +16,18 @@ import { BelongsToTenantOrPlatform } from "#node/traits/belongs-to-tenant-or-pla
 import { BelongsToTenant } from "#node/traits/belongs-to-tenant.trait";
 
 describe("@stackra/tenancy/node", () => {
-  it("exports exactly the traits, the macro, the service and the isolation driver", () => {
+  it("exports exactly the traits, the macro, the service, the isolation driver, the approval binding model with its store driver, the prune job and the commands", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "ApprovalBinding",
       "BelongsToTenant",
       "BelongsToTenantMacro",
       "BelongsToTenantOrPlatform",
       "CallIsolationDriver",
+      "PostgresApprovalBindingStoreDriver",
+      "PruneApprovalBindingsAction",
+      "TenantCreateCommand",
       "TenantIsolationService",
+      "TenantListCommand",
     ]);
     expect(node.BelongsToTenant).toBe(BelongsToTenant);
     expect(node.BelongsToTenantMacro).toBe(BelongsToTenantMacro);

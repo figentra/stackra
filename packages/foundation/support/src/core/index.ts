@@ -12,6 +12,7 @@ export { base64url } from "#core/constants/base64url.constant";
 export { oneTimeCode } from "#core/constants/one-time-code.constant";
 export { signedToken } from "#core/constants/signed-token.constant";
 export { time } from "#core/constants/time.constant";
+export { addCalendarMonths } from "#core/functions/add-calendar-months.function";
 export { ageOn } from "#core/functions/age-on.function";
 export { camelCase } from "#core/functions/camel-case.function";
 export { canonicalHash } from "#core/functions/canonical-hash.function";

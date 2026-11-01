@@ -76,9 +76,11 @@ type EntryTypes = [
 describe("@stackra/contracts", () => {
   it("exports exactly the runtime vocabulary", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "AUDIT_HOT_RETENTION",
       "ActorKind",
       "AesGcmFieldCipherDriver",
       "ApiArea",
+      "ApprovalSettingsSource",
       "AssuranceLevel",
       "AwsKmsKeyProviderDriver",
       "AwsKmsSignerDriver",
@@ -113,6 +115,8 @@ describe("@stackra/contracts", () => {
       "Target",
       "Tone",
       "Tracer",
+      "actorChainOverlaps",
+      "actorsSharePerson",
       "backoffDelay",
       "brand",
       "capabilityGuard",

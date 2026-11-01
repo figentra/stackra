@@ -157,6 +157,13 @@
       "category": "unavailable",
       "module": "access_log",
       "class": "AuditExportFailedError"
+    },
+    {
+      "code": "command_audit_scope_missing",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "access_log",
+      "class": "CommandAuditScopeMissingError"
     }
   ],
   "models": [
@@ -232,6 +239,31 @@
       "config": {
         "class": "AccessLogConfig",
         "from": "@stackra/access-log"
+      }
+    },
+    {
+      "port": "CommandAudit",
+      "key": "console.CommandAudit",
+      "candidates": ["audit_trail"],
+      "classes": {
+        "audit_trail": {
+          "class": "AuditTrailCommandAuditDriver",
+          "from": "@stackra/access-log/node",
+          "deps": [
+            {
+              "class": {
+                "name": "AuditTrail",
+                "from": "@stackra/actions/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "AccessLogConfig",
+                "from": "@stackra/access-log"
+              }
+            }
+          ]
+        }
       }
     },
     {

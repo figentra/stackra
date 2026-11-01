@@ -62,6 +62,12 @@ export class AccessLogOptions extends Schema {
 
   /** The HTTPS endpoint the `https` audit export sink posts NDJSON to; empty until runway sets it. */
   exportUrl = "";
+
+  /**
+   * The tenant id (`scp_…`) whose audit chain stores console command entries, the platform's own operations tenant;
+   * empty until runway sets it, and an audited command is then refused (the write audit is tenant-owned).
+   */
+  commandAuditScope = "";
 }
 
 registerSchemas([[AccessLogOptions, ACCESS_LOG_CONFIG_SCHEMA]]);

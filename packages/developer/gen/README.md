@@ -116,6 +116,16 @@ the cache drivers its tokens reach), so an invalidating event forgets the cached
 `per: principal` and the scope's otherwise), each route subscribed on the bus for its registered event class and sent
 through `RealtimeRelay` when bound, else `RealtimeBroadcaster`.
 
+The approval stage (ADR 0509, STA-1724; `checkApproval`, full pass only) has seven refusals:
+
+- `approval_not_constant`: an `approval` option gen cannot read as a constant.
+- `approval_on_query`: `approval` on a query.
+- `approval_window_too_long`: an `expiresAfter` above 30 days (`"720h"`).
+- `approval_actor_not_allowed`: `actors` with a kind other than `user`, `agent` or `external_agent`, or not constant.
+- `approval_credential_input`: `approval` on an action whose input has a `credential` field.
+- `approval_condition_dependency`: an `ApprovalCondition` with any constructor dependency.
+- `approval_condition_reads_unmarked`: a condition `reads` key that is not a setting marked `approval`.
+
 A service with a `reads: "replica"` query (STA-1504), its own or one a hosted package's manifest records (`buildManifest`
 writes a query's `reads`), reaches the `ReplicaReads` port (`replicaReadsPorts`), which the
 pipeline resolves optionally, so its wiring writes the port's table from the declared packages' manifests:

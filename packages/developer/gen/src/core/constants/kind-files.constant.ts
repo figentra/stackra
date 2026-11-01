@@ -18,12 +18,14 @@ export const KIND_FILES: Readonly<
   Record<string, { readonly file: string; readonly suffix: string }>
 > = Object.freeze({
   action: { file: "action", suffix: "Action" },
+  approval_condition: { file: "approval-condition", suffix: "ApprovalCondition" },
   agent: { file: "agent", suffix: "Agent" },
   analytics_event: { file: "analytics-event", suffix: "" },
   block: { file: "block", suffix: "Block" },
   bridge: { file: "bridge", suffix: "Bridge" },
   bucket: { file: "bucket", suffix: "Bucket" },
   change: { file: "change", suffix: "Change" },
+  command: { file: "command", suffix: "Command" },
   config: { file: "config", suffix: "Config" },
   connection: { file: "connection", suffix: "Connection" },
   controller: { file: "controller", suffix: "Controller" },

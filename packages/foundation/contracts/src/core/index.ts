@@ -8,6 +8,7 @@
  */
 export { Enum } from "#core/bases/enum.base";
 export { Port } from "#core/bases/port.base";
+export { AUDIT_HOT_RETENTION } from "#core/constants/audit-hot-retention.constant";
 export { Duration } from "#core/constants/duration.constant";
 export { AesGcmFieldCipherDriver } from "#core/drivers/aes-gcm-field-cipher.driver";
 export { AwsKmsKeyProviderDriver } from "#core/drivers/aws-kms-key-provider.driver";
@@ -33,6 +34,8 @@ export { Rounding } from "#core/enums/rounding.enum";
 export { SortDirection } from "#core/enums/sort-direction.enum";
 export { Target } from "#core/enums/target.enum";
 export { Tone } from "#core/enums/tone.enum";
+export { actorChainOverlaps } from "#core/functions/actor-chain-overlaps.function";
+export { actorsSharePerson } from "#core/functions/actors-share-person.function";
 export { backoffDelay } from "#core/functions/backoff-delay.function";
 export { brand } from "#core/functions/brand.function";
 export { capabilityGuard } from "#core/functions/capability-guard.function";
@@ -43,6 +46,7 @@ export { defineWorker } from "#core/functions/define-worker.function";
 export { mintPublicId } from "#core/functions/mint-public-id.function";
 export { verifySignature } from "#core/functions/verify-signature.function";
 export { wrapScopeKey } from "#core/functions/wrap-scope-key.function";
+export { ApprovalSettingsSource } from "#core/ports/approval-settings-source.port";
 export { Clock } from "#core/ports/clock.port";
 export { FieldCipher } from "#core/ports/field-cipher.port";
 export { HealthIndicator } from "#core/ports/health-indicator.port";

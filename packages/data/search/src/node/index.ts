@@ -8,7 +8,8 @@
  *          `reindexSemantic` (the jobs that run them live in @stackra/data-maintenance, ADR 0462 decision 1), the
  *          `search:status` runner (`searchStatus`) the CLI loads, `SearchForgetService`, which an erasure uses to drop
  *          rows from every index (stackra-275), and `SearchQuery`, the base of the search query gen writes per
- *          `@Searchable` model, with its input, output and hit shapes (stackra-305), until `stackra gen` writes the
+ *          `@Searchable` model, with its input, output and hit shapes (stackra-305), the `HttpRerankerDriver` and the `Recommender`
+ *          drivers (`PostgresRecommenderDriver`, `HttpRecommenderDriver`), until `stackra gen` writes the
  *          entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Server only: all of it reaches Postgres through
  *           @stackra/database. Migrations are found by their path, as every migration is, so none is re-exported; the
@@ -20,7 +21,10 @@
 export { SearchQuery } from "#node/bases/search-query.base";
 export { SearchableMacro } from "#node/database/macros/searchable.macro";
 export { HttpEmbedderDriver } from "#node/drivers/http-embedder.driver";
+export { HttpRecommenderDriver } from "#node/drivers/http-recommender.driver";
+export { HttpRerankerDriver } from "#node/drivers/http-reranker.driver";
 export { PgvectorVectorIndexDriver } from "#node/drivers/pgvector-vector-index.driver";
+export { PostgresRecommenderDriver } from "#node/drivers/postgres-recommender.driver";
 export { PostgresSearchQueryLogDriver } from "#node/drivers/postgres-search-query-log.driver";
 export { PostgresSearchDriver } from "#node/drivers/postgres-search.driver";
 export { registerSearchableModels } from "#node/functions/register-searchable-models.function";

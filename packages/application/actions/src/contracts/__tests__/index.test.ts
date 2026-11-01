@@ -37,7 +37,13 @@ describe("@stackra/actions/contracts", () => {
   it("exports exactly its ports and its enum", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "AccessControl",
+      "ActorStatusCheck",
+      "ApprovalBindingStore",
+      "ApprovalExecution",
       "ApprovalGate",
+      "ApprovalGrantOrigin",
+      "ApprovalGranted",
+      "ApprovalStatus",
       "ApproverRefusal",
       "AuditTrail",
       "CALL_HEADERS",

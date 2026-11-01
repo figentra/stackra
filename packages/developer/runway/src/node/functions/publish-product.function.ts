@@ -24,27 +24,13 @@ import { checkOpsReview } from "#node/functions/check-ops-review.function";
 import { platformRows } from "#node/functions/platform-rows.function";
 import { readBundles } from "#node/functions/read-bundles.function";
 import { readRunway } from "#node/functions/read-runway.function";
+import { releaseOf } from "#node/functions/release-of.function";
 import { runCommand } from "#node/functions/run-command.function";
 import { uploadBundle } from "#node/functions/upload-bundle.function";
-import type { EdgeBundle } from "#node/types/edge-bundle.type";
 import type { EdgeCanary } from "#node/types/edge-canary.type";
 import type { EdgeRelease } from "#node/types/edge-release.type";
 import type { ProductPublishRequest } from "#node/types/product-publish-request.type";
 import type { ProductPublishResult } from "#node/types/product-publish-result.type";
-
-/** The release row of `bundle` served from `origin`. */
-function releaseOf(bundle: EdgeBundle, product: string, origin: string): EdgeRelease {
-  const { manifest } = bundle;
-  const base = `${origin.replace(/\/+$/, "")}/${product}/${bundle.surface}/${manifest.version}/`;
-  return {
-    version: manifest.version,
-    url: `${base}${manifest.entry}`,
-    base,
-    targets: manifest.targets,
-    modulepreload: manifest.modulepreload.map((file) => `${base}${file}`),
-    css: manifest.css.map((file) => `${base}${file}`),
-  };
-}
 
 /**
  * What the publish uploaded and wrote.

@@ -3072,6 +3072,9 @@ importers:
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../developer/console
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -4173,6 +4176,49 @@ importers:
       '@stackra/testing':
         specifier: workspace:*
         version: link:../testing
+      '@stackra/tsdown-config':
+        specifier: workspace:*
+        version: link:../../tooling/tsdown
+      '@stackra/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@stackra/vitest-config':
+        specifier: workspace:*
+        version: link:../../tooling/vitest
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+      '@vitest/coverage-v8':
+        specifier: catalog:quality
+        version: 5.0.3(vitest@5.0.5)
+      oxfmt:
+        specifier: catalog:quality
+        version: 0.71.0
+      oxlint:
+        specifier: catalog:quality
+        version: 1.86.0
+      tsdown:
+        specifier: catalog:build
+        version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
+      typescript:
+        specifier: catalog:build
+        version: 7.0.2
+      vitest:
+        specifier: catalog:quality
+        version: 5.0.5(@opentelemetry/api@1.10.0)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.3(@noble/hashes@1.8.0))(vite@8.3.4(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  packages/developer/console:
+    dependencies:
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../foundation/container
+      '@stackra/contracts':
+        specifier: workspace:*
+        version: link:../../foundation/contracts
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
+    devDependencies:
       '@stackra/tsdown-config':
         specifier: workspace:*
         version: link:../../tooling/tsdown
@@ -7325,6 +7371,9 @@ importers:
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../developer/console
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -7590,6 +7639,9 @@ importers:
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../developer/console
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -7946,6 +7998,9 @@ importers:
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../developer/console
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
@@ -8717,6 +8772,9 @@ importers:
       '@stackra/actions':
         specifier: workspace:*
         version: link:../../application/actions
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../../developer/console
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container

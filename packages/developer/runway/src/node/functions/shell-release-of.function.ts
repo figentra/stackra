@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `shellReleaseOf(checkout, origin)`, the edge release of a checked-out web shell line: reads its built
  *          `dist/shell.json`, checks it is the line's surface and major at the checked-out version, and answers the
- *          `EdgeShellRelease` (`publishShell`'s `next`) with the entry and every import map module as URLs on the
+ *          `EdgeShellRelease` (`publishShell`'s `next`) with the entry, its stylesheets (STA-1681) and every import map
+ *          module as URLs on the
  *          asset store, under `<origin>/shells/<surface>/<major>/<version>/`.
  * Boundary: reads one file. Uploading the shell's `dist/` there is the OS deploy's; the import map it answers is the
  *           one product bundles build against (`bundleConfig`) and the compatibility gate reads.
@@ -66,6 +67,7 @@ export function shellReleaseOf(checkout: LineCheckout, origin: string): EdgeShel
   return {
     version: manifest.version,
     entry: `${base}${manifest.entry}`,
+    css: manifest.css.map((sheet) => `${base}${sheet}`),
     importMap: {
       imports: Object.fromEntries(
         Object.entries(manifest.importMap.imports).map(([specifier, path]) => [

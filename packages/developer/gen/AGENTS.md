@@ -264,6 +264,14 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `cache.invalidateOn`; the evictor binding is a `SERVER_CONTRIBUTIONS` row; the live queries' refresh is written into
   `emitBoot` (which now takes the manifest) and resolves each wire name through `EVENT_NAMES`, so a name the
   registrations never registered fails at boot, never silently.
+- `checkApproval` (core, full pass only, STA-1724, ADR 0509), one code each:
+  - `approval_not_constant`: an `approval` option gen cannot read as a constant.
+  - `approval_on_query`: `approval` on a query.
+  - `approval_window_too_long`: an `expiresAfter` above 30 days (`"720h"`).
+  - `approval_actor_not_allowed`: `actors` with a kind other than `user`, `agent` or `external_agent`, or not constant.
+  - `approval_credential_input`: `approval` on an action whose input has a `credential` field.
+  - `approval_condition_dependency`: an `ApprovalCondition` with any constructor dependency.
+  - `approval_condition_reads_unmarked`: a condition `reads` key that is not a setting marked `approval`.
 - `checkModelScope` (core, full pass only, stackra-258): `model_tenancy_missing` for a service running
   `@stackra/tenancy` only (packages' platform tables are not checked). `emitIsolationTest` writes
   `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.

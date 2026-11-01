@@ -1,7 +1,15 @@
 ---
 title: "0294 — Programming model v3: grammar, group folders, derived identities and naming"
-description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456) · amended 2026-10-24 (STA-469) · amended 2026-10-24 (STA-479) · amended 2026-10-27 (showcase registry)"
+description: "Accepted · 2026-10-22 · amended 2026-10-23 (STA-349, STA-406) and 2026-10-24 (STA-428) · amended 2026-10-24 (STA-456) · amended 2026-10-24 (STA-469) · amended 2026-10-24 (STA-479) · amended 2026-10-27 (showcase registry) · amended 2026-10-31 (STA-1730)"
 ---
+
+<Note>
+  Amended 2026-10-31 (STA-1730) by [0506](/adr/0506-console-command-kind): the kind table of decision 16 gains
+  `Command` (`extends Command({ name, description, hidden?, aliases? })`, a binding, with `@Argument` and `@Option` as
+  field decorators of decision 6), and the module table of decision 13 and the app table of decision 14 gain
+  `commands/`, holding `.command.ts` files. Decision 23 stands: `Command` means a CLI command only. The other
+  decisions are unchanged.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-479) by
@@ -253,6 +261,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | `drivers/`                           | `.driver.ts`                                                                                                 |
     | `extensions/`                        | `.extension-point.ts`, `.extension.ts`, `.interceptor.ts`                                                    |
     | `raw/`                               | `.controller.ts`, in a service only ([0130](/adr/0130-module-layout-by-semantic-kind) decision 3)            |
+    | `commands/`                          | `.command.ts`, a CLI command ([0506](/adr/0506-console-command-kind))                                        |
     | `resources/<model>/`                 | `.resource.ts`, `.widget.ts`, `.document.ts`, `.notification.ts`, `.mail.tsx`                                |
     | `database/migrations/`               | `NNNN-<name>.migration.ts`, numbered per module                                                              |
     | `database/factories/`                | `<model>.factory.ts`                                                                                         |
@@ -282,6 +291,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | `hooks/`                                                                                       | `use-<name>.ts`, only with two or more importers                                                                                                                |
     | `overrides/<owner>/`                                                                           | `<block-or-widget>.override.tsx`                                                                                                                                |
     | `providers/<name>/`                                                                            | only for the `Module({ wrap })` escape hatch                                                                                                                    |
+    | `commands/`                                                                                    | `.command.ts`, a CLI command ([0506](/adr/0506-console-command-kind))                                                                                           |
     | `enums/`, `types/`, `styles/`                                                                  | `.enum.ts`, `.type.ts`, `.css`                                                                                                                                  |
 
 15. **Package entry folders.** A package's `src/` holds `contracts/` (the leaf: `ports/`, `enums/`, `types/`), `config/`
@@ -331,6 +341,7 @@ in the separate records of this wave: [0295](/adr/0295-build-and-entry-stackra-c
     | Prompt, skill, facts                                         | `extends Prompt({...})`, `extends Skill({...})`, `extends Facts(Model)`                                                                                        | yes      |
     | Route, layout                                                | `extends Route({ path, ... })` or `Layout({...})`, with `loader`, `submit` and `meta`                                                                          | yes      |
     | Panel, menu, shortcut, store, analytics event, bridge, block | `extends Panel({...})`, `Menu({ kind })`, `Shortcut({ keys })`, `Store({ persist })`, `AnalyticsEvent({ name })`, `Bridge({...})`, `Block({ category, icon })` | per kind |
+    | Command                                                      | `extends Command({ name, description, hidden?, aliases? })`, with `@Argument` and `@Option` fields and `handle(io)` ([0506](/adr/0506-console-command-kind))   | yes      |
     | Config                                                       | `extends Config`, or a subclass of a package's config class                                                                                                    | token    |
 
     A menu builds its items in `items(m)` from a closed set of item verbs and options, with no CSS

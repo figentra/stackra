@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, the member tool commands (`dev`
+ * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
- *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy and mobile onboard
- *          commands (ADR 0482), the db commands, the seed-pack
+ *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy, mobile onboard and
+ *          preview serve commands (ADR 0482, STA-1676), the db commands, the seed-pack
  *          command, the settings pack commands, the search reindex and status commands, the offline audit check, the operator bootstrap (`ops
  *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the local MCP and agent-file commands,
  *          the registry item commands (add, publish; ADR 0453), and the repository commands moved from
@@ -22,6 +22,7 @@ import { APP_NATIVE_DEPS_COMMAND } from "#node/app-native-deps/constants/app-nat
 import { ARCHITECTURE_MAP_COMMAND } from "#node/architecture-map/constants/architecture-map-command.constant";
 import { AUDIT_VERIFY_COMMAND } from "#node/constants/audit-verify-command.constant";
 import { CATALOGUE_COMPLETENESS_COMMAND } from "#node/constants/catalogue-completeness-command.constant";
+import { CONSOLE_COMMAND } from "#node/constants/console-command.constant";
 import { DB_MIGRATE_COMMAND } from "#node/constants/db-migrate-command.constant";
 import { DB_ROLLBACK_COMMAND } from "#node/constants/db-rollback-command.constant";
 import { DOC_STANDARD_COMMAND } from "#node/constants/doc-standard-command.constant";
@@ -50,6 +51,7 @@ import { BUILD_COMMAND } from "#node/product/constants/build-command.constant";
 import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant";
 import { MOBILE_ONBOARD_COMMAND } from "#node/product/constants/mobile-onboard-command.constant";
 import { SMOKE_COMMAND } from "#node/product/constants/smoke-command.constant";
+import { PREVIEW_SERVE_COMMAND } from "#node/product/constants/preview-serve-command.constant";
 import { addCommand } from "#node/functions/add-command.function";
 import { checkCommand } from "#node/functions/check-command.function";
 import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
@@ -62,6 +64,7 @@ import type { CliCommand } from "#node/types/cli-command.type";
 export const COMMANDS: readonly CliCommand[] = [
   NEW_COMMAND,
   GEN_COMMAND,
+  CONSOLE_COMMAND,
   DEV_COMMAND,
   BUILD_COMMAND,
   toolCommand("start", "Generate, then preview an app's web build"),
@@ -98,6 +101,7 @@ export const COMMANDS: readonly CliCommand[] = [
   DEPLOY_COMMAND,
   MOBILE_ONBOARD_COMMAND,
   SMOKE_COMMAND,
+  PREVIEW_SERVE_COMMAND,
   OPS_BOOTSTRAP_OPERATOR_COMMAND,
   LS_COMMAND,
   TESTBED_COMMAND,

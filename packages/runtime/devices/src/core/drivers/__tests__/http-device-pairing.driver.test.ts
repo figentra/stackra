@@ -84,11 +84,29 @@ describe("HttpDevicePairingDriver", () => {
     );
     const status = await driver(storage).check(PAIRING);
     expect(status).toEqual({ state: "paired", deviceId: "dev_1" });
-    expect(seen[0]?.url).toBe("https://hub.test/device-pairings/pr_1");
+    expect(seen[0]?.url).toMatch(/^https:\/\/hub\.test\/device-pairings\/pr_1\?deviceId=/);
     expect(await new StoredDeviceCredentialDriver(storage).token()).toBe("device-token");
 
     await driver(storage).forget();
     expect(await new StoredDeviceCredentialDriver(storage).token()).toBeUndefined();
+  });
+
+  it("checks with the install id that begin sent, encoded", async () => {
+    const storage = new MemoryStorageDriver();
+    const id = await new StoredDeviceIdentityDriver(storage).id();
+    const begun = stubFetch(() =>
+      Response.json({ pairingId: "pr_1", code: "K7Q4M2XR", expiresAt: "2026-10-25T10:10:00Z" }),
+    );
+    await driver(storage).begin();
+    const checks = stubFetch(() =>
+      Response.json({ state: "pending", deviceId: null, token: null }),
+    );
+    await driver(storage).check(PAIRING);
+    const url = new URL(checks[0]?.url ?? "");
+    expect(url.pathname).toBe("/device-pairings/pr_1");
+    expect(url.search).toBe(`?deviceId=${encodeURIComponent(id)}`);
+    expect(url.searchParams.get("deviceId")).toBe(id);
+    expect(await begun[0]?.json()).toEqual({ deviceId: id });
   });
 
   it("throws on a malformed answer", async () => {

@@ -17,6 +17,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { Effect } from "#contracts/enums/effect.enum";
 import { Action } from "#core/bases/action.base";
+import { ApprovalCondition } from "#core/bases/approval-condition.base";
 import { Interceptor } from "#core/bases/interceptor.base";
 import { Precondition } from "#core/bases/precondition.base";
 import { ConflictResolution } from "#core/enums/conflict-resolution.enum";
@@ -262,5 +263,55 @@ describe("Action", () => {
       { offline: { ...OFFLINE, cap: { count: 1, amountField: "", window: "24h" } } },
     ])
       expect(() => Action({ ...base, ...(options as object) })).toThrow();
+  });
+
+  it("records approval as true or a declared stage with its defaults", () => {
+    class AboveThresholdCondition extends ApprovalCondition {
+      async needed(): Promise<boolean> {
+        return true;
+      }
+    }
+    expect(kindOf(Action({ ...base, approval: true }))?.options).toMatchObject({ approval: true });
+    expect(
+      kindOf(Action({ ...base, approval: { permission: "billing.coupon.approve" } }))?.options,
+    ).toMatchObject({
+      approval: { approvals: 1, expiresAfter: "72h", permission: "billing.coupon.approve" },
+    });
+    expect(
+      kindOf(
+        Action({
+          ...base,
+          approval: {
+            approvals: 2,
+            permission: "billing.coupon.approve",
+            expiresAfter: "720h",
+            when: AboveThresholdCondition,
+          },
+        }),
+      )?.options,
+    ).toMatchObject({
+      approval: { approvals: 2, expiresAfter: "720h", when: AboveThresholdCondition },
+    });
+  });
+
+  it("refuses a malformed approval stage", () => {
+    class NotACondition {
+      async needed(): Promise<boolean> {
+        return true;
+      }
+    }
+    const permission = "billing.coupon.approve";
+    for (const approval of [
+      "yes",
+      { permission: undefined },
+      { permission: "" },
+      { permission, approvals: 0 },
+      { permission, approvals: 1.5 },
+      { permission, expiresAfter: "a while" },
+      { permission, expiresAfter: "721h" },
+      { permission, expiresAfter: "31d" },
+      { permission, when: NotACondition },
+    ])
+      expect(() => Action({ ...base, approval: approval as never })).toThrow(/approval/);
   });
 });

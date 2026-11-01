@@ -11,7 +11,7 @@
 - [ ] T011 [lane 2, STA-1631] runtime client-tool park, `ai.run.client_result`, timeout, generated handlers — covers: FR-205, FR-206
 - [ ] T012 [lane 2, STA-1631] `PageContext` schema, route `context`, panel publishing, server resolution — covers: FR-207, FR-208
 - [ ] T020 [lane 7, STA-1636] `Reranker` port and drivers, `rerank` option — covers: FR-701
-- [ ] T021 [lane 7, STA-1636] Arabic stemmer lane, Arabizi, `search.synonym`, evaluation `test:int` — covers: FR-702 to FR-704
+- [ ] T021 [lane 7, STA-1636] Arabic stemmer lane, Arabizi, synonyms (port in search, model in data-maintenance), evaluation `test:int` — covers: FR-702 to FR-704
 - [ ] T030 [lane 8, STA-1637] `tools-retrieval` entry, GPU capacity provider, `.py` placement check — covers: FR-801, FR-806
 - [ ] T031 [lane 8, STA-1637] forecast image, `Forecaster` port and driver — covers: FR-802
 - [ ] T032 [lane 8, STA-1637] `Recommender` port, Postgres driver, recommend image and driver — covers: FR-803, FR-804

@@ -9,6 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0127 2026-10-24 note (runtime-target entries); the STA-347 stand-in
  *                     barrel decision.
  */
+export { CacheClearCommand } from "#node/commands/cache-clear.command";
 export { PostgresCacheDriver } from "#node/drivers/postgres-cache.driver";
 export { ValkeyCacheDriver } from "#node/drivers/valkey-cache.driver";
 export { postgresCacheTables } from "#node/functions/postgres-cache-tables.function";

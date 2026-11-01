@@ -70,4 +70,12 @@ export abstract class Cache extends Port {
    * that carries the tag still answers its callers but is not stored.
    */
   abstract forgetTag(tag: CacheKey): Promise<void>;
+
+  /**
+   * Drops every entry of the current namespace (`cache:clear`). A load in flight still answers its callers but is not
+   * stored. A driver that cannot enumerate its entries leaves this default, which rejects.
+   */
+  flush(): Promise<void> {
+    return Promise.reject(new TypeError(`${this.constructor.name} does not support flush`));
+  }
 }

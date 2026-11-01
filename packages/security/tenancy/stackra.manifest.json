@@ -90,6 +90,17 @@
       }
     },
     {
+      "port": "TenantDirectory",
+      "key": "tenancy.TenantDirectory",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryTenantDirectoryDriver",
+          "from": "@stackra/tenancy"
+        }
+      }
+    },
+    {
       "port": "TenantPlacement",
       "key": "tenancy.TenantPlacement",
       "candidates": ["memory"],
@@ -273,6 +284,28 @@
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "commands": [
+    {
+      "name": "tenant:create",
+      "aliases": [],
+      "hidden": false,
+      "audit": true,
+      "bin": false,
+      "class": "TenantCreateCommand",
+      "file": "src/node/commands/tenant-create.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "tenant:list",
+      "aliases": [],
+      "hidden": false,
+      "audit": true,
+      "bin": false,
+      "class": "TenantListCommand",
+      "file": "src/node/commands/tenant-list.command.ts",
+      "entry": "node"
+    }
+  ],
   "schemas": {
     "tenancy.RevokedCopy": {
       "type": "string",

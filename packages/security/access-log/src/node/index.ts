@@ -19,6 +19,7 @@ export { ExportAuditAction } from "#node/actions/export-audit.action";
 export { PurgeAccessLogAction } from "#node/actions/purge-access-log.action";
 export { DataClassificationMacro } from "#node/database/macros/data-classification.macro";
 export { HttpsAuditExportSinkDriver } from "#node/drivers/https-audit-export-sink.driver";
+export { AuditTrailCommandAuditDriver } from "#node/drivers/audit-trail-command-audit.driver";
 export { PostgresAccessLogSinkDriver } from "#node/drivers/postgres-access-log-sink.driver";
 export { PostgresAuditTrailDriver } from "#node/drivers/postgres-audit-trail.driver";
 export { AccessLogEntry } from "#node/models/access-log-entry.model";

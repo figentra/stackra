@@ -56,8 +56,8 @@ const DATABASE_ID_LIMIT = 63;
 /** The longest ECS service name we use (a target group name, its tightest user, allows 32). */
 const SERVICE_NAME_LIMIT = 32;
 
-/** The Postgres major version a resource gets when it names none. */
-const POSTGRES_VERSION = "17";
+/** The Postgres major a resource gets when it names none: production's major (ADR 0238, amendment of 2026-10-31). */
+const POSTGRES_VERSION = "18";
 
 /** Days of automated backups, the point-in-time window of ADR 0186 decision 1. */
 const BACKUP_DAYS = 14;

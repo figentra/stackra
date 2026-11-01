@@ -4,7 +4,7 @@
  *          each entry kept with the instant it stops being fresh (and, with a stale window, the instant it stops being
  *          served) on the `Clock`, lifetimes shortened at random by up to `jitter`, one `remember` load per key at a
  *          time in this process, stale-while-revalidate, one load across instances through `CacheLock`, `forget` of a
- *          key and every key it covers, `forgetTag` of every entry carrying a tag, and hit, miss, load and evict
+ *          key and every key it covers, `forgetTag` of every entry carrying a tag, `flush` of every entry of the namespace, and hit, miss, load and evict
  *          metrics per key owner.
  * Boundary: internal to the package; a driver hands it a `CacheEntryStore` (`memoryEntryStore`, or `textEntryStore`
  *           over an outside store) and delegates the five port methods. The entry's instants decide what is served;
@@ -50,6 +50,9 @@ const DEFAULT_FILL = Object.freeze({ wait: Duration.seconds(5), poll: Duration.p
 
 /** The index set of the keys `scoped` covers (stores without `keys` only). */
 const coveredSet = (scoped: string): string => `k/${scoped}`;
+
+/** The index set of every key of the namespace prefix `space` (stores without `keys` only). */
+const allSet = (space: string): string => `a/${space}`;
 
 /** The set of the keys carrying the namespaced tag `scopedTag`. */
 const tagSet = (scopedTag: string): string => `t/${scopedTag}`;
@@ -144,7 +147,10 @@ export function storedCache(
     const sets = [
       ...tags.map((tag) => tagSet(at.space + tag)),
       ...(store.keys === undefined
-        ? keyAncestors(at.key).map((ancestor) => coveredSet(at.space + ancestor))
+        ? [
+            allSet(at.space),
+            ...keyAncestors(at.key).map((ancestor) => coveredSet(at.space + ancestor)),
+          ]
         : []),
     ];
     await Promise.all(sets.map((set) => store.add(set, at.scoped, keep)));
@@ -315,6 +321,17 @@ export function storedCache(
       await Promise.all([...names].map((name) => store.delete(name)));
       await store.clear(set);
       record("evict", tag, names.size);
+    },
+
+    async flush(): Promise<void> {
+      const { space } = target("" as CacheKey);
+      ground((scoped) => scoped.startsWith(space));
+      const names =
+        store.keys === undefined
+          ? await store.members(allSet(space))
+          : (await store.keys(space)).filter((name) => name.startsWith(space));
+      await Promise.all(names.map((name) => store.delete(name)));
+      if (store.keys === undefined) await store.clear(allSet(space));
     },
   };
 }

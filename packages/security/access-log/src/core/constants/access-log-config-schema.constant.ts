@@ -33,4 +33,5 @@ export const ACCESS_LOG_CONFIG_SCHEMA = z.object({
   auditRetentionDays: z.number().int().min(1).exactOptional(),
   exportUrl: z.union([z.url({ protocol: /^https$/ }), z.literal("")]).default(""),
   exportToken: z.string().default(""),
+  commandAuditScope: z.union([z.string().regex(/^scp_[0-9a-z]{26}$/), z.literal("")]).default(""),
 });

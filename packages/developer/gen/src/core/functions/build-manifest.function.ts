@@ -31,6 +31,8 @@
  *          `addition_base_source`, `addition_target_missing` and `addition_key_collision` (ADR 0336, stackra-64).
  *          It lists each `Report` in `reports` (`reportsOf`: key, source, dimensions, measures, permission, generated
  *          query key) with its refusals (ADR 0470, stackra-389).
+ *          It lists each console `Command` in `commands` (`commandsOf`, own then hosted, `from`) with `kind_path`,
+ *          `command_collision` and `identity_missing` (ADR 0506, STA-1731).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -71,6 +73,7 @@ import { permissionKey } from "#core/functions/permission-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
+import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
@@ -1067,6 +1070,10 @@ export function buildManifest(ir: MemberIR): {
   const reports = reportsOf(ir);
   errors.push(...reports.errors);
 
+  // The console commands, own then hosted, with their refusals (ADR 0506, STA-1731).
+  const commands = commandsOf(ir);
+  errors.push(...commands.errors);
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1088,6 +1095,7 @@ export function buildManifest(ir: MemberIR): {
       ? { additions: additions.additions as unknown as Json }
       : {}),
     ...(reports.reports.length > 0 ? { reports: [...reports.reports] } : {}),
+    ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

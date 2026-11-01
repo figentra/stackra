@@ -69,9 +69,11 @@ import { kindOf, type AnyClass } from "@stackra/container";
 import {
   ActorKind,
   type ApiArea,
-  type AssuranceLevel,
+  ApprovalSettingsSource,
+  AssuranceLevel,
   Clock,
   Duration,
+  IdentityResolver,
   type Json,
   Logger,
   MeterKind,
@@ -90,9 +92,12 @@ import { EventOutbox } from "@stackra/events/contracts";
 import { duration, schemaOf, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
+import { ApprovalExecution } from "#contracts/enums/approval-execution.enum";
 import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
+import { ActorStatusCheck } from "#contracts/ports/actor-status-check.port";
+import { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
 import { CallIsolation } from "#contracts/ports/call-isolation.port";
@@ -117,18 +122,23 @@ import { StepUpCheck } from "#contracts/ports/step-up-check.port";
 import { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 import { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 import { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
+import type { ApprovalBinding } from "#contracts/types/approval-binding.type";
+import type { ApprovalDraft } from "#contracts/types/approval-draft.type";
+import type { ApprovalRequirement } from "#contracts/types/approval-requirement.type";
 import type { AuditEntry } from "#contracts/types/audit-entry.type";
 import type { CallConsent } from "#contracts/types/call-consent.type";
 import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import type { Action } from "#core/bases/action.base";
+import type { ApprovalCondition } from "#core/bases/approval-condition.base";
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { Precondition } from "#core/bases/precondition.base";
 import type { Query } from "#core/bases/query.base";
 import { ACTION_CALLED_EVENT } from "#core/constants/action-called-event.constant";
 import { ACTION_REGISTRY } from "#core/constants/action-registry.constant";
 import { AFTER_COMMIT_FAILED } from "#core/constants/after-commit-failed.constant";
+import { APPROVAL_PARK_FAILED } from "#core/constants/approval-park-failed.constant";
 import { ANALYTICS_CONSENT_CATEGORY } from "#core/constants/analytics-consent-category.constant";
 import { ANALYTICS_SKIPPED } from "#core/constants/analytics-skipped.constant";
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
@@ -136,8 +146,11 @@ import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
 import { PROPOSAL_METER } from "#core/constants/proposal-meter.constant";
 import { RATE_LIMITED_METER } from "#core/constants/rate-limited-meter.constant";
 import { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
+import { OpenApprovalGateDriver } from "#core/drivers/open-approval-gate.driver";
 import { CacheScope } from "#core/enums/cache-scope.enum";
 import { Idempotency } from "#core/enums/idempotency.enum";
+import { ApprovalRequiredError } from "#core/errors/approval-required.error";
+import { ApprovalSettingsUnavailableError } from "#core/errors/approval-settings-unavailable.error";
 import { DeviceRevokedError } from "#core/errors/device-revoked.error";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
@@ -148,11 +161,16 @@ import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
+import { limitedSettingsReader } from "#core/functions/limited-settings-reader.function";
+import { mergeApprovalRequirements } from "#core/functions/merge-approval-requirements.function";
 import { periodOf } from "#core/functions/period-of.function";
 import { queryCacheKey } from "#core/functions/query-cache-key.function";
 import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
+import { verifyApproval } from "#core/functions/verify-approval.function";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
+import type { ActionApproval } from "#core/types/action-approval.type";
+import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
 import type { ActionContext } from "#core/types/action-context.type";
 import type { ActionDraft } from "#core/types/action-draft.type";
 import type { ActionEffects } from "#core/types/action-effects.type";
@@ -184,7 +202,7 @@ interface Recorded {
   readonly structural?: boolean;
   readonly meter?: ActionMeter;
   readonly effects?: ActionEffects;
-  readonly approval?: boolean;
+  readonly approval?: boolean | ActionApproval;
   readonly stepUp?: AssuranceLevel;
   readonly timeout?: Duration;
   readonly cache?: QueryCache;
@@ -214,6 +232,8 @@ interface CallState {
   readonly startedMs: number;
   /** `ctx.memo`'s answers by key, kept for the call only. */
   readonly memo: Map<string, Promise<unknown>>;
+  /** Set when the approval stage refused the call and its request is still to be written, after the transaction ends. */
+  parking: { readonly binding: ApprovalBinding; readonly draft: ApprovalDraft } | undefined;
 }
 
 /** Everything one call carries through the steps. */
@@ -268,7 +288,7 @@ export class ActionPipeline {
     input: CallInput<InstanceType<C>>,
     request: CallOptions,
   ): Promise<OutputOf<InstanceType<C>>> {
-    const call = this.prepare(type, request);
+    const call = this.prepare(type, this.keyed(request));
     const work = () =>
       this.traced(call, call.kind, () =>
         this.audited(call, () =>
@@ -395,6 +415,7 @@ export class ActionPipeline {
       unmetered: false,
       startedMs: globalThis.performance.now(),
       memo: new Map(),
+      parking: undefined,
     };
     const ctx = this.contextOf(descriptor, request, at, state);
     return { type, kind: record.kind, options, registration, descriptor, request, at, state, ctx };
@@ -431,10 +452,12 @@ export class ActionPipeline {
     } catch (error) {
       if (taken.claim !== undefined && "held" in taken.claim)
         await this.required(IdempotencyStore, "").release(taken.claim.held);
+      // a parked request is a write the refusal's rollback would undo, so it is written after the transaction ends
+      const failure = call.state.parking === undefined ? error : await this.parked(call, error);
       // a refused call's usage event is a write its rollback would undo, so it waits for the transaction to end
       if (call.state.unmetered)
         await this.metered(call, { name: RATE_LIMITED_METER, kind: MeterKind.Count }, undefined);
-      throw error;
+      throw failure;
     }
     const { claim, amount } = taken;
     if (claim !== undefined && "replay" in claim) return output;
@@ -481,14 +504,206 @@ export class ActionPipeline {
   }
 
   /**
-   * The approval step of an action: a bound `ApprovalGate` decides every call; with none bound the step does not run,
-   * except for an action that declares `approval: true`, which fails closed.
+   * The approval step of an action (ADR 0509). A call naming an approval id is verified against the owning service's
+   * binding and the store's request (`verifyApproval`) and runs when it passes. Otherwise the declared requirement (when
+   * the action's condition says so) and the gate's decision are merged, the larger wins, and a call that needs approval
+   * is refused with its request still to be written after the isolation transaction (`parked`). With no gate bound the
+   * step does not run, except for an action that declares `approval`, which fails closed.
    */
   private async approved(call: Call, input: unknown): Promise<void> {
+    const { descriptor, options } = call;
     const gate = this.optional(ApprovalGate);
-    if (gate !== undefined) return gate.check(call.descriptor, input, call.request.approvalId);
-    if (call.options.approval === true)
-      throw new Error(`ApprovalGate is not bound: ${call.descriptor.key} ${APPROVALS}`);
+    const declaration = typeof options.approval === "object" ? options.approval : undefined;
+    if (gate === undefined) {
+      if (options.approval !== undefined && options.approval !== false)
+        throw new Error(`ApprovalGate is not bound: ${descriptor.key} ${APPROVALS}`);
+      return;
+    }
+    if (declaration !== undefined) {
+      if (gate instanceof OpenApprovalGateDriver)
+        throw new Error(
+          `${descriptor.key} declares an approval stage, which OpenApprovalGateDriver cannot park`,
+        );
+      this.stageParts(descriptor.key);
+    }
+    const { approvalId } = call.request;
+    if (approvalId !== undefined) return this.verified(call, gate, input, approvalId);
+    const declared = await this.declared(call, declaration, input);
+    const decided = await gate.decide(descriptor, input, declared);
+    const merged = mergeApprovalRequirements(declared, decided);
+    if (merged === undefined) return;
+    // the approver's step-up floor: an action's own `stepUp`, and every L3 or L4 action, whatever the tenant's rule says
+    const floor =
+      options.stepUp ??
+      (descriptor.risk === "L3" || descriptor.risk === "L4" ? AssuranceLevel.Aal2 : undefined);
+    const need =
+      floor === undefined
+        ? merged
+        : (mergeApprovalRequirements(merged, {
+            approvals: merged.approvals,
+            expiresAfter: merged.expiresAfter,
+            approverLevel: floor,
+          }) ?? merged);
+    // an agent's chain must end at a person who can be held to a vote (S8)
+    let root = descriptor.actor;
+    while (root.onBehalfOf !== undefined) root = root.onBehalfOf;
+    if (root.kind !== ActorKind.User) throw ForbiddenError.create();
+    const id = mintPublicId("apr", call.at.getTime());
+    const inputHash = await fingerprintOf(descriptor.key, input);
+    const expiresAt = new Date(
+      call.at.getTime() + Duration.toMilliseconds(duration(need.expiresAfter)),
+    );
+    const execute =
+      declared === undefined ? ApprovalExecution.OnResubmit : ApprovalExecution.OnGrant;
+    const scopeId = descriptor.scopeId ?? descriptor.actor.scopeId;
+    if (scopeId === undefined) throw ForbiddenError.create();
+    call.state.parking = {
+      binding: {
+        approvalId: id,
+        scopeId,
+        ...(descriptor.scope === undefined ? {} : { scope: descriptor.scope }),
+        requester: descriptor.actor,
+        key: descriptor.key,
+        inputHash,
+        ...(call.request.assurance === undefined ? {} : { assurance: call.request.assurance }),
+        requestedAt: call.at,
+        expiresAt,
+        approvals: need.approvals,
+        ...(need.permission === undefined ? {} : { permission: need.permission }),
+        ...(need.approverLevel === undefined ? {} : { approverLevel: need.approverLevel }),
+        confirm: need.confirm === true,
+        execute,
+      },
+      draft: {
+        approvalId: id,
+        key: descriptor.key,
+        scopeId,
+        ...(descriptor.scope === undefined ? {} : { scope: descriptor.scope }),
+        requester: descriptor.actor,
+        snapshot: input,
+        requirement: need,
+        expiresAt,
+        execute,
+      },
+    };
+    call.state.audit.approvalId = id;
+    call.state.audit.inputHash = inputHash;
+    throw ApprovalRequiredError.create({
+      approvalId: id,
+      approvalsRequired: need.approvals,
+      expiresAt: expiresAt.toISOString(),
+    });
+  }
+
+  /** The ports the approval stage cannot run without: a declared stage with any unbound fails closed (EC-007). */
+  private stageParts(key: string) {
+    const hint = `${key} declares an approval stage, which fails closed without it`;
+    return {
+      bindings: this.required(ApprovalBindingStore, hint),
+      actors: this.required(ActorStatusCheck, hint),
+      identity: this.required(IdentityResolver, hint),
+    };
+  }
+
+  /** The requirement the action declared when its condition says this call needs it, else `undefined`. */
+  private async declared(
+    call: Call,
+    declaration: ActionApproval | undefined,
+    input: unknown,
+  ): Promise<ApprovalRequirement | undefined> {
+    if (declaration === undefined) return undefined;
+    if (
+      declaration.when !== undefined &&
+      !(await this.resolver
+        .get(declaration.when)
+        .needed(input as never, call.ctx as ActionContext, this.settingsFor(declaration.when)))
+    )
+      return undefined;
+    // shortcut: a Permissions static is its string until @stackra/iam ships the kind; read its name then.
+    return {
+      approvals: declaration.approvals ?? 1,
+      permission: String(declaration.permission),
+      expiresAfter: declaration.expiresAfter ?? "72h",
+    };
+  }
+
+  /** The reader a condition receives: limited to its static `reads`, over the bound settings source (read lazily). */
+  private settingsFor(condition: AnyClass<ApprovalCondition>): ApprovalSettingsReader {
+    const { reads = [] } = condition as unknown as { readonly reads?: readonly string[] };
+    const source = this.optional(ApprovalSettingsSource);
+    // fail closed before `needed()` runs: a condition that cannot read its threshold is never "not needed"
+    if (reads.length > 0 && source === undefined) throw ApprovalSettingsUnavailableError.create();
+    return limitedSettingsReader(reads, (key) =>
+      source === undefined
+        ? Promise.reject(ApprovalSettingsUnavailableError.create())
+        : source.get(key),
+    );
+  }
+
+  /** Verifies the call's approval id and records who approved on the audit entry. */
+  private async verified(
+    call: Call,
+    gate: ApprovalGate,
+    input: unknown,
+    approvalId: string,
+  ): Promise<void> {
+    const { descriptor } = call;
+    const { bindings, actors, identity } = this.stageParts(descriptor.key);
+    const record = await gate.find(approvalId);
+    const binding = await bindings.find(approvalId);
+    await verifyApproval({
+      call: descriptor,
+      inputHash: await fingerprintOf(descriptor.key, input),
+      binding,
+      record,
+      executionKey: `approval:${approvalId}`,
+      now: call.at,
+      identity,
+      actors,
+    });
+    call.state.audit.approvalId = approvalId;
+    call.state.audit.voters = (record?.votes ?? []).map((vote) => vote.voter.id);
+  }
+
+  /**
+   * After the isolation transaction ended on the approval refusal: takes a token from the action's buckets (so a refused
+   * token writes nothing), then inserts the binding and parks the request in a fresh run for the same actor and scope.
+   * Resolves to the error to throw: the original refusal, or what failed (logged by id, key and code only, never input).
+   */
+  private async parked(call: Call, refusal: unknown): Promise<unknown> {
+    const parking = call.state.parking;
+    if (parking === undefined) return refusal;
+    const { descriptor } = call;
+    try {
+      await this.isolated(call, async () => {
+        await this.limit(call);
+        await this.required(
+          ApprovalBindingStore,
+          `${descriptor.key} parks an approval request, which needs a binding store (@stackra/tenancy)`,
+        ).insert(parking.binding);
+        await this.required(ApprovalGate, "").park(parking.draft);
+      });
+      return refusal;
+    } catch (error) {
+      this.optional(Logger)?.error(APPROVAL_PARK_FAILED, {
+        approvalId: parking.binding.approvalId,
+        key: descriptor.key,
+        code: isRefusal(error) ? error.code : "unexpected",
+      });
+      return error;
+    }
+  }
+
+  /** The request with the key an approved call runs under: `approval:<id>`, whatever the caller sent (C1, S1). */
+  private keyed(request: CallOptions): CallOptions {
+    if (request.approvalId !== undefined)
+      return { ...request, idempotencyKey: `approval:${request.approvalId}` };
+    if (request.idempotencyKey?.startsWith("approval:") === true)
+      throw InputInvalidError.create(
+        {},
+        { fieldErrors: { idempotencyKey: "a key that does not start with approval:" } },
+      );
+    return request;
   }
 
   /**
@@ -499,11 +714,14 @@ export class ActionPipeline {
     if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
     await this.required(AccessControl, IAM).require(descriptor);
     const level = kind === "action" ? options.stepUp : undefined;
-    if (level !== undefined)
+    if (level !== undefined) {
+      // an approved call stands on the assurance its binding recorded, measured at the request (ADR 0509, FR-016)
+      const bound = await this.bindingOf(call);
       await this.required(
         StepUpCheck,
         `${descriptor.key} declares stepUp; bind a StepUpCheck driver over @stackra/identity's requireAssurance`,
-      ).require(descriptor, call.request.assurance, level);
+      ).require(descriptor, bound?.assurance ?? call.request.assurance, level, bound?.requestedAt);
+    }
     if (kind === "action")
       for (const type of options.preconditions ?? []) await this.resolver.get(type).check(ctx);
     await this.optional(EntitlementCheck)?.check(descriptor);
@@ -512,6 +730,13 @@ export class ActionPipeline {
     const cursor = (input as { readonly cursor?: unknown } | null | undefined)?.cursor;
     if (kind === "query" && typeof cursor === "string") call.state.replicaCursor = cursor;
     return input;
+  }
+
+  /** The binding of the approval id the call names, when it names one and a store is bound. */
+  private async bindingOf(call: Call): Promise<ApprovalBinding | undefined> {
+    const { approvalId } = call.request;
+    if (approvalId === undefined || call.kind !== "action") return undefined;
+    return this.optional(ApprovalBindingStore)?.find(approvalId);
   }
 
   /** The input checked against the registered input schema, when gen registered one. */

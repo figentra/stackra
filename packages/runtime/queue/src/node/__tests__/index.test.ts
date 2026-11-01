@@ -14,6 +14,9 @@ describe("@stackra/queue/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "BrokerQueueDriver",
       "PostgresQueueDriver",
+      "QueueFailedCommand",
+      "QueueRetryCommand",
+      "QueueWorkCommand",
       "QueueWorkerService",
       "ValkeyBrokerPublisherDriver",
     ]);

@@ -34,6 +34,7 @@ and `yaml`.
 | `stackra build --product [--dry-run]`        | a product's surface bundles and mobile EAS builds, and `dist/product/build.json`                                              |
 | `stackra deploy --product --env <e>`         | publish a built product: bundles and host rows to the edge, mobile builds to the stores                                       |
 | `stackra mobile onboard [--app <key>]`       | take a product's mobile app from nothing to store-ready (ADR 0482); `--check`, `--live` in CI                                 |
+| `stackra preview serve --surface <s>`        | serve a built surface on 127.0.0.1 as the edge would, with an `--api` proxy (STA-1676)                                        |
 | `stackra smoke --env <e> [--only <targets>]` | after a preview deploy: Playwright on each web surface, Maestro on the given mobile builds; exit 1 blocks promotion (STA-265) |
 | `stackra start`                              | gen, then `vite preview` of an app's web build                                                                                |
 | `stackra typecheck`                          | gen, then `tsc --noEmit`                                                                                                      |

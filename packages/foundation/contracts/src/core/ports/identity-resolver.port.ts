@@ -7,7 +7,7 @@
  *           and the fake. Only verified addresses and phone numbers are answered: an unverified one resolves to nobody
  *           and is never returned.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 16 and 17), ADR 0206 (identity is provider-neutral), ADR 0134 (personal
+ * Governing contract: ADR 0509 (decision on one person, several ids: `personOf`); ADR 0294 (decisions 16 and 17), ADR 0206 (identity is provider-neutral), ADR 0134 (personal
  *                     data is resolved, not copied); ADR 0414 (decision 1).
  */
 import { Port } from "#core/bases/port.base";
@@ -34,4 +34,16 @@ export abstract class IdentityResolver extends Port {
 
   /** The principal whose verified address is `email` (compared case-insensitively), or `null` when none is. */
   abstract principalByVerifiedEmail(email: Email): Promise<VerifiedPrincipal | null>;
+
+  /**
+   * A stable key for the human behind `principalId`: equal keys mean one person holding several `usr_` ids. `null`
+   * (the default) means this driver has no person link, and `actorsSharePerson` falls back to a verified email or
+   * phone match. Identity overrides it once the person link exists (STA-1741).
+   *
+   * @throws when identity cannot answer; callers treat that as a refusal (fail closed).
+   */
+  async personOf(principalId: PublicId<"usr">): Promise<string | null> {
+    void principalId;
+    return null;
+  }
 }

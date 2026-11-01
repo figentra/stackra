@@ -1503,6 +1503,7 @@
 "0509":
   slug: the-approval-stage-a-declared-floor-of-distinct-approvers-checked-in-core-executed-as-the-requester
   status: reserved
+  owner: core AI everywhere (figentra/sta-1724-approval-stage)
   issue: STA-1724
 "0510":
   slug: flow-replaces-spec-kit

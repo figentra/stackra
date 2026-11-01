@@ -15,6 +15,17 @@ Everything is day one; the order only follows what each lane consumes.
 Lanes in one wave touch disjoint packages and run as parallel worktrees. Each lane is one commit (amended), handed
 to the tester stackra-f4 as a bundle; nothing is pushed.
 
+## Lane checklist (before a bundle goes to the tester)
+
+1. Rebase the lane on the docs branch; the plan gate (`spec-gate plan`) exits 0 on the lane branch.
+2. The diff touches only the lane's packages and `.changeset/`.
+3. **No workspace dependency cycle**: walk every `package.json` `dependencies` and `peerDependencies` with
+   `workspace:` at the lane ref; `pnpm validate` runs `tools/scripts/package-cycles.mjs` on the box, but lane 7 showed
+   it must be checked before the gate. A package below iam (search, ADR 0462) never gains `@stackra/iam`; persistence
+   that needs permissions moves to a package above it.
+4. New workspace dependencies are listed for the tester (lockfile).
+5. The bundle verifies against `origin/main`.
+
 ## Design notes per lane
 
 - **Lane 2.** The client tool table is a sibling of the server tool table: same row shape (`key`, `name`, `from`,

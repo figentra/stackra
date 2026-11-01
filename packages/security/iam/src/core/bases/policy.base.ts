@@ -9,36 +9,41 @@
  *           by gen and never constructed by an author (ADR 0328 decision 5). A method is pure (no writes, no network)
  *           and runs inside `handle` through `ctx.authorize(record)`, after the permission step passed. `@Policy` is
  *           retired. `PolicyBase` is the file-local instance base; the file exports `Policy`, the type and the kind
- *           of one name.
+ *           of one name; the called form returns `PolicyClass`, which is nameable in declaration emit.
  * Runtime: isomorphic
  * Governing contract: ADR 0132 (as amended by 0294 and 0263); ADR 0305 (rules 2, 5 to 7 and 44); ADR 0294 (decisions
  *                     16 and 25).
  */
 import { createKind, kindOf, type WithPartner } from "@stackra/container";
 
+import type { PolicyClass } from "#core/types/policy-class.type";
 import type { PolicyOptions } from "#core/types/policy-options.type";
 
-/** The instance side every policy shares. */
-abstract class PolicyBase<M extends object> {
+/** A policy instance of model `M`; an exported interface so declaration emit can name it, as it does `Role`. */
+export interface Policy<M extends object = object> {
   /** Type-only kind brand, so a class of another kind cannot stand in for a policy. */
-  declare protected readonly "~kind": "policy";
+  readonly "~kind": "policy";
 
   /** Type-only: the model the policy judges, so `Policy<Order>` and `Policy<Product>` stay distinct. */
-  declare protected readonly "~model"?: M;
+  readonly "~model"?: M;
 }
 
-/** A policy instance of model `M`. */
-export type Policy<M extends object = object> = PolicyBase<M>;
+/** The instance side every policy shares. */
+abstract class PolicyBase<M extends object> implements Policy<M> {
+  declare readonly "~kind": "policy";
+
+  declare readonly "~model"?: M;
+}
 
 /** The two forms: bare with the model as type argument, or called with options. */
-type PolicyKind = (abstract new <M extends object>() => PolicyBase<M>) &
+type PolicyKind = (abstract new <M extends object>() => Policy<M>) &
   (<M extends object = never>(
     options: WithPartner<
       M,
       PolicyOptions,
       "Name the model as a type argument: Policy<Order>({ permissions })"
     >,
-  ) => abstract new () => PolicyBase<M>);
+  ) => PolicyClass<M>);
 
 /**
  * Checks the options of the called form.

@@ -15,6 +15,7 @@ export const SHAPE_KINDS: readonly string[] = Object.freeze([
   "analytics_event",
   "block",
   "change",
+  "command",
   "config",
   "domain_event",
   "integration_event",

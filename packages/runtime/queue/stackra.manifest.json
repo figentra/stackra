@@ -180,6 +180,38 @@
       "from": "@stackra/queue"
     }
   ],
+  "commands": [
+    {
+      "name": "queue:failed",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": false,
+      "class": "QueueFailedCommand",
+      "file": "src/node/commands/queue-failed.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "queue:retry",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": false,
+      "class": "QueueRetryCommand",
+      "file": "src/node/commands/queue-retry.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "queue:work",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": false,
+      "class": "QueueWorkCommand",
+      "file": "src/node/commands/queue-work.command.ts",
+      "entry": "node"
+    }
+  ],
   "schemas": {
     "queue.JobStatus": {
       "type": "string",

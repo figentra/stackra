@@ -22,4 +22,11 @@ describe(arabiziOf, () => {
     expect(arabiziOf("2026")).toBeUndefined();
     expect(arabiziOf("مرحبا")).toBeUndefined();
   });
+
+  it("takes any Latin word in an Arabic locale, and still leaves Arabic and numbers", () => {
+    expect(arabiziOf("habibi", true)).toBe("هبيبي");
+    expect(arabiziOf("habibi")).toBeUndefined();
+    expect(arabiziOf("2026", true)).toBeUndefined();
+    expect(arabiziOf("مرحبا", true)).toBeUndefined();
+  });
 });

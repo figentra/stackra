@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `SearchableOptions`, what `@Searchable` declares: the fields of the full-text document, the fields a
  *          search may filter on, sort by or bound by a range, the weight of a text field, the presence condition of a
- *          row, and whether the text fields are also embedded for semantic search.
+ *          row, whether the text fields are also embedded for semantic search, and whether searches rerank their fused
+ *          candidates.
  * Boundary: a type only. Paths are model keys or keys of a populated relation (`variants.sku`), checked by gen; the
  *           Postgres search driver keeps the index in step with the unit of work. A sortable or range field holds a
  *           number, or a date stored as its ISO 8601 string; a sort reads a row's first value of the path. `boost`
@@ -13,7 +14,7 @@
  *           carry a data class whose `ai` is `never`: gen refuses it (`searchable_semantic_ai_never`) and search refuses
  *           it again at index time.
  * Governing contract: ADR 0221 (Postgres hybrid search); ADR 0294 (decision 6: `@Searchable` is a class facet);
- *                     ADR 0380 (the `ai: never` floor); STA-1326; data-layer gap se9 (stackra-302: facet field kinds).
+ *                     ADR 0492 (decision 4: `rerank`); ADR 0380 (the `ai: never` floor); STA-1326; data-layer gap se9 (stackra-302: facet field kinds).
  */
 
 import type { SearchWeight } from "#core/types/search-weight.type";
@@ -44,4 +45,10 @@ export interface SearchableOptions {
 
   /** Whether the text fields are also embedded into the vector index for semantic search; off when absent. */
   readonly semantic?: boolean;
+
+  /**
+   * Whether a search of this model puts its fused candidates through the `Reranker` of @stackra/search (a cross-encoder
+   * that reorders the best 50), as a request may also ask; off when absent. A product catalogue sets it.
+   */
+  readonly rerank?: boolean;
 }

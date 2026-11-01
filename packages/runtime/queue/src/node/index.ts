@@ -10,6 +10,9 @@
  *                     the STA-347 stand-in barrel decision.
  */
 export { BrokerQueueDriver } from "#node/drivers/broker-queue.driver";
+export { QueueFailedCommand } from "#node/commands/queue-failed.command";
+export { QueueRetryCommand } from "#node/commands/queue-retry.command";
+export { QueueWorkCommand } from "#node/commands/queue-work.command";
 export { PostgresQueueDriver } from "#node/drivers/postgres-queue.driver";
 export { ValkeyBrokerPublisherDriver } from "#node/drivers/valkey-broker-publisher.driver";
 export { QueueWorkerService } from "#node/services/queue-worker.service";

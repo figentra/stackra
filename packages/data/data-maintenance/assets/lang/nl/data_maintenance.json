@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "synonym": {
+      "read": "Synoniemgroepen bekijken",
+      "create": "Een synoniemgroep toevoegen",
+      "update": "Een synoniemgroep wijzigen",
+      "delete": "Een synoniemgroep verwijderen"
+    }
+  },
+  "actions": {
+    "synonym": {
+      "create": {
+        "success": "Synoniemgroep toegevoegd."
+      },
+      "update": {
+        "success": "Synoniemgroep bijgewerkt."
+      },
+      "delete": {
+        "confirm": "Deze synoniemgroep verwijderen? Zoekopdrachten behandelen deze termen dan niet meer als gelijk.",
+        "success": "Synoniemgroep verwijderd."
+      }
+    }
+  }
+}

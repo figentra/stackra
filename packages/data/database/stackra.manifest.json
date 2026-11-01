@@ -332,6 +332,48 @@
       "from": "@stackra/database"
     }
   ],
+  "commands": [
+    {
+      "name": "db:migrate",
+      "aliases": [],
+      "hidden": false,
+      "audit": true,
+      "bin": false,
+      "class": "DbMigrateCommand",
+      "file": "src/node/commands/db-migrate.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "db:rollback",
+      "aliases": [],
+      "hidden": false,
+      "audit": true,
+      "bin": false,
+      "class": "DbRollbackCommand",
+      "file": "src/node/commands/db-rollback.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "db:seed",
+      "aliases": [],
+      "hidden": false,
+      "audit": true,
+      "bin": false,
+      "class": "DbSeedCommand",
+      "file": "src/node/commands/db-seed.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "db:status",
+      "aliases": [],
+      "hidden": false,
+      "audit": true,
+      "bin": false,
+      "class": "DbStatusCommand",
+      "file": "src/node/commands/db-status.command.ts",
+      "entry": "node"
+    }
+  ],
   "schemas": {
     "database.Disposal": {
       "type": "string",

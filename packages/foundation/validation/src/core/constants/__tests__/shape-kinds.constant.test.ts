@@ -26,6 +26,7 @@ describe("SHAPE_KINDS", () => {
       expect.arrayContaining([
         "block",
         "change",
+        "command",
         "domain_event",
         "integration_event",
         "model",

@@ -42,18 +42,23 @@ import { type AnyClass, Driver } from "@stackra/container";
 import {
   type Actor,
   ActorKind,
+  type Email,
+  ApprovalSettingsSource,
   AssuranceLevel,
   Clock,
   Duration,
   Enum,
+  IdentityResolver,
   Logger,
   MeterKind,
   Realm,
+  type PublicId,
   type ScopeRef,
   type TraceAttributes,
   type TraceCarrier,
   type TraceSpan,
   Tracer,
+  type VerifiedPrincipal,
 } from "@stackra/contracts";
 import {
   ErrorKind,
@@ -74,6 +79,8 @@ import { z } from "zod";
 import { RateLimitConfig } from "#config/rate-limit.config";
 import {
   AccessControl,
+  ActorStatusCheck,
+  ApprovalBindingStore,
   ApprovalGate,
   AuditTrail,
   CallIsolation,
@@ -100,6 +107,10 @@ import {
   WorkflowRunner,
 } from "#contracts/index";
 import type {
+  ApprovalBinding,
+  ApprovalDraft,
+  ApprovalRecord,
+  ApprovalRequirement,
   AuditEntry,
   CallAssurance,
   CallConsent,
@@ -128,7 +139,6 @@ import { Idempotency } from "#core/enums/idempotency.enum";
 import { IdMinting } from "#core/enums/id-minting.enum";
 import { OfflineMode } from "#core/enums/offline-mode.enum";
 import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
-import { ApprovalRequiredError } from "#core/errors/approval-required.error";
 import { DeviceRevokedError } from "#core/errors/device-revoked.error";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
@@ -145,10 +155,18 @@ import { RequestContext } from "#core/services/request-context.service";
 import type { RuleEvaluation } from "#core/types/rule-evaluation.type";
 import type { RuleEvaluator } from "#core/types/rule-evaluator.type";
 import type { ActionContext } from "#core/types/action-context.type";
+import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
 import type { QueryContext } from "#core/types/query-context.type";
 import type { ReplicaPage } from "#core/types/replica-page.type";
 import type { Resolver } from "#core/types/resolver.type";
 import { AsyncContextStorageDriver } from "#node/drivers/async-context-storage.driver";
+import { ApprovalCondition } from "#core/bases/approval-condition.base";
+import { fingerprintOf } from "#core/functions/fingerprint-of.function";
+import { APPROVAL_PARK_FAILED } from "#core/constants/approval-park-failed.constant";
+import { MemoryApprovalGateDriver } from "#testing/drivers/memory-approval-gate.driver";
+import type { MemoryApprover } from "#testing/types/memory-approver.type";
+import { MemoryActorStatusCheckDriver } from "#testing/drivers/memory-actor-status-check.driver";
+import { MemoryApprovalBindingStoreDriver } from "#testing/drivers/memory-approval-binding-store.driver";
 
 const NOW = new Date("2026-10-24T10:00:00.000Z");
 const customer: Actor = {
@@ -1332,15 +1350,51 @@ registerActions([
   },
 ]);
 
-/** Parks every call unless it names the granted approval. */
+/** Parks every call: the rules always ask for one approval. */
 class Approvals extends Driver(ApprovalGate) {
-  readonly seen: [string, unknown, string | undefined][] = [];
+  readonly seen: [string, unknown, ApprovalRequirement | undefined][] = [];
 
-  async check(call: CallDescriptor, input: unknown, approvalId: string | undefined): Promise<void> {
+  readonly parked: ApprovalDraft[] = [];
+
+  async decide(
+    call: CallDescriptor,
+    input: unknown,
+    declared: ApprovalRequirement | undefined,
+  ): Promise<ApprovalRequirement | undefined> {
     log.push("approval");
-    this.seen.push([call.key, input, approvalId]);
-    if (approvalId !== "apr_granted")
-      throw ApprovalRequiredError.create({ approvalId: "apr_parked" });
+    this.seen.push([call.key, input, declared]);
+    return { approvals: 1, expiresAfter: "72h" };
+  }
+
+  async park(draft: ApprovalDraft): Promise<void> {
+    this.parked.push(draft);
+  }
+
+  async find(): Promise<ApprovalRecord | undefined> {
+    return undefined;
+  }
+
+  async begin(): Promise<boolean> {
+    return false;
+  }
+
+  async settle(): Promise<boolean> {
+    return false;
+  }
+}
+
+/** An identity that knows everyone by a unique verified email. */
+class SilentIdentity extends IdentityResolver {
+  async emailOf(id: PublicId<"usr">): Promise<Email> {
+    return `${id}@acme.example`;
+  }
+
+  async principalOf(id: PublicId<"usr">): Promise<VerifiedPrincipal> {
+    return { id, email: `${id}@acme.example`, locale: "en" };
+  }
+
+  async principalByVerifiedEmail(): Promise<VerifiedPrincipal | null> {
+    return null;
   }
 }
 
@@ -1365,26 +1419,54 @@ class Outbox extends Driver(EventOutbox) {
 }
 
 describe("ActionPipeline governance additions", () => {
-  it("parks a call at the approval step, before idempotency, and runs it with a granted approval", async () => {
+  it("parks a call at the approval step, before idempotency, with its binding written after the refusal", async () => {
     const approvals = new Approvals();
-    const { pipeline } = setup([[ApprovalGate, approvals]]);
-    await expect(
-      pipeline.execute(
+    const bindings = new MemoryApprovalBindingStoreDriver();
+    const { pipeline } = setup([
+      [ApprovalGate, approvals],
+      [ApprovalBindingStore, bindings],
+    ]);
+    const refused = await pipeline
+      .execute(
         CreateOrderAction,
         { quantity: 1 },
         { actor: customer, idempotencyKey: "k-approval" },
-      ),
-    ).rejects.toMatchObject({ code: "approval_required", approvalId: "apr_parked" });
+      )
+      .catch((error: unknown) => error);
+    expect(refused).toMatchObject({ code: "approval_required", approvalsRequired: 1 });
+    const { approvalId } = refused as { approvalId: string };
+    expect(approvalId).toMatch(/^apr_/);
     expect(log.indexOf("approval")).toBeGreaterThan(log.indexOf("flag"));
     expect(log).not.toContain("handle");
+    expect(approvals.parked).toHaveLength(1);
+    expect(approvals.parked[0]).toMatchObject({
+      approvalId,
+      key: "order.create",
+      snapshot: { quantity: 1 },
+      execute: "on_resubmit",
+    });
+    expect(await bindings.find(approvalId)).toMatchObject({
+      approvalId,
+      key: "order.create",
+      execute: "on_resubmit",
+      requester: customer,
+    });
+  });
+
+  it("refuses a resubmission naming an approval the store does not have", async () => {
+    const { pipeline } = setup([
+      [ApprovalGate, new Approvals()],
+      [ApprovalBindingStore, new MemoryApprovalBindingStoreDriver()],
+      [ActorStatusCheck, new MemoryActorStatusCheckDriver()],
+      [IdentityResolver, new SilentIdentity()],
+    ]);
     await expect(
       pipeline.execute(
         CreateOrderAction,
         { quantity: 1 },
-        { actor: customer, idempotencyKey: "k-approval", approvalId: "apr_granted" },
+        { actor: customer, approvalId: "apr_none" },
       ),
-    ).resolves.toMatchObject({ orderId: "ord_1" });
-    expect(approvals.seen.at(-1)).toEqual(["order.create", { quantity: 1 }, "apr_granted"]);
+    ).rejects.toMatchObject({ code: "approval_mismatch" });
   });
 
   it("never parks a query", async () => {
@@ -1640,12 +1722,14 @@ describe("ActionPipeline remainder (STA-765)", () => {
     const approvals = new Approvals();
     const { pipeline } = setup([
       [ApprovalGate, approvals],
+      [ApprovalBindingStore, new MemoryApprovalBindingStoreDriver()],
       [ApprovedRefundAction, new ApprovedRefundAction()],
     ]);
     await expect(
       pipeline.execute(ApprovedRefundAction, {}, { actor: customer }),
     ).rejects.toMatchObject({ code: "approval_required" });
     expect(approvals.seen.at(-1)?.[0]).toBe("order.refund");
+    expect(approvals.seen.at(-1)?.[2]).toBeUndefined();
   });
 
   it("reserves the limit around the unit of work, and runs no handle when it is full", async () => {
@@ -2717,5 +2801,524 @@ describe("ActionPipeline call isolation (ADR 0495)", () => {
       meter: "actions.rate_limited",
       key: "message.send",
     });
+  });
+});
+
+/** A coupon update needs approval above 5 percent. */
+class AboveFiveCondition extends ApprovalCondition {
+  async needed(input: { readonly percent: number }): Promise<boolean> {
+    return input.percent > 5;
+  }
+}
+
+const APPROVE = "billing.coupon.approve";
+
+/** A condition that reads its threshold through its limited reader. */
+class ThresholdCondition extends ApprovalCondition {
+  static override readonly reads = ["billing.coupon.maxPercent"] as const;
+
+  async needed(
+    input: { readonly percent: number },
+    _ctx: ActionContext,
+    settings: ApprovalSettingsReader,
+  ): Promise<boolean> {
+    return input.percent > Number(await settings.get("billing.coupon.maxPercent"));
+  }
+}
+
+/** A condition that reads a key it never declared. */
+class GreedyCondition extends ApprovalCondition {
+  async needed(
+    _input: unknown,
+    _ctx: ActionContext,
+    settings: ApprovalSettingsReader,
+  ): Promise<boolean> {
+    return Boolean(await settings.get("billing.other"));
+  }
+}
+
+class ThresholdAction extends Action({
+  key: "coupon.threshold",
+  actors: [ActorKind.User],
+  approval: { permission: APPROVE, when: ThresholdCondition },
+}) {
+  async handle(): Promise<string> {
+    return "ok";
+  }
+}
+
+class GreedyAction extends Action({
+  key: "coupon.greedy",
+  actors: [ActorKind.User],
+  approval: { permission: APPROVE, when: GreedyCondition },
+}) {
+  async handle(): Promise<string> {
+    return "ok";
+  }
+}
+
+/** A settings source over a map. */
+class MapSettings extends Driver(ApprovalSettingsSource) {
+  async get(key: string): Promise<unknown> {
+    return { "billing.coupon.maxPercent": 20, "billing.other": true }[key];
+  }
+}
+
+class CouponAction extends Action({
+  key: "coupon.update",
+  actors: [ActorKind.User, ActorKind.Agent],
+  approval: { permission: APPROVE, when: AboveFiveCondition },
+}) {
+  async handle(input: { percent: number }): Promise<{ percent: number }> {
+    log.push("handle");
+    return { percent: input.percent };
+  }
+}
+
+class LimitedCouponAction extends Action({
+  key: "coupon.limited",
+  actors: [ActorKind.User],
+  approval: { permission: APPROVE },
+  rateLimit: { perMinute: 1 },
+}) {
+  async handle(): Promise<string> {
+    return "ok";
+  }
+}
+
+class SteppedCouponAction extends Action({
+  key: "coupon.rotate",
+  actors: [ActorKind.User],
+  stepUp: AssuranceLevel.Aal2,
+  approval: { permission: APPROVE },
+}) {
+  async handle(): Promise<string> {
+    log.push("handle");
+    return "rotated";
+  }
+}
+
+/** A gate whose answers a test may tamper with, as a writer of the store's table could. */
+class TamperedGate extends MemoryApprovalGateDriver {
+  tamper: ((record: ApprovalRecord) => ApprovalRecord) | undefined;
+
+  override async find(approvalId: string): Promise<ApprovalRecord | undefined> {
+    const record = await super.find(approvalId);
+    return record !== undefined && this.tamper !== undefined ? this.tamper(record) : record;
+  }
+}
+
+class CountingBindings extends MemoryApprovalBindingStoreDriver {
+  inserts = 0;
+
+  override async insert(binding: ApprovalBinding): Promise<void> {
+    this.inserts += 1;
+    return super.insert(binding);
+  }
+}
+
+class RecordingStepUp extends Driver(StepUpCheck) {
+  readonly calls: [CallAssurance | undefined, AssuranceLevel, Date | undefined][] = [];
+
+  async require(
+    _call: CallDescriptor,
+    assurance: CallAssurance | undefined,
+    level: AssuranceLevel,
+    at?: Date,
+  ): Promise<void> {
+    this.calls.push([assurance, level, at]);
+  }
+}
+
+const approver = (id: `usr_${string}`, extra: Partial<MemoryApprover> = {}): MemoryApprover => ({
+  actor: { kind: ActorKind.User, id, realm: Realm.Staff, scopeId: "ten_1" },
+  realm: Realm.Staff,
+  permissions: [APPROVE],
+  assurance: AssuranceLevel.Aal2,
+  steppedUp: true,
+  ...extra,
+});
+
+/** A pipeline with the whole approval stage bound over the memory drivers. */
+function stage(
+  options: { cap?: number; decide?: () => ApprovalRequirement | undefined } = {},
+  extra: readonly (readonly [AnyClass, object])[] = [],
+) {
+  const identity = new SilentIdentity();
+  const gate = new TamperedGate({ identity, clock: new FixedClock(), ...options });
+  const bindings = new CountingBindings();
+  const actors = new MemoryActorStatusCheckDriver();
+  const built = setup([
+    [ApprovalGate, gate],
+    [ApprovalBindingStore, bindings],
+    [ActorStatusCheck, actors],
+    [IdentityResolver, identity],
+    [AboveFiveCondition, new AboveFiveCondition()],
+    [CouponAction, new CouponAction()],
+    [LimitedCouponAction, new LimitedCouponAction()],
+    [SteppedCouponAction, new SteppedCouponAction()],
+    ...extra,
+  ]);
+  return { ...built, gate, bindings, actors, identity };
+}
+
+/** One recorded staff vote of `id`. */
+const vote = (id: `usr_${string}`) => ({
+  voter: { kind: ActorKind.User, id, realm: Realm.Staff } as Actor,
+  realm: Realm.Staff,
+  at: NOW,
+});
+
+/** The refusal of a call, or throws when it ran. */
+async function refusal(work: Promise<unknown>): Promise<Record<string, unknown>> {
+  const refused = await work.then(
+    () => undefined,
+    (error: unknown) => error,
+  );
+  if (refused === undefined) throw new Error("the call ran");
+  return refused as Record<string, unknown>;
+}
+
+describe("ActionPipeline approval stage (ADR 0509)", () => {
+  it("parks a call whose condition is true: refused with the id, count and expiry, binding and request written", async () => {
+    const { pipeline, gate, bindings, trail } = stage();
+    const refused = await refusal(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+    );
+    expect(refused).toMatchObject({
+      code: "approval_required",
+      approvalsRequired: 1,
+      expiresAt: new Date(NOW.getTime() + 72 * 3_600_000).toISOString(),
+    });
+    const approvalId = refused.approvalId as string;
+    expect(log).not.toContain("handle");
+    expect(await gate.find(approvalId)).toMatchObject({
+      status: "pending",
+      key: "coupon.update",
+      snapshot: { percent: 40 },
+      execute: "on_grant",
+    });
+    const inputHash = await fingerprintOf("coupon.update", { percent: 40 });
+    expect(await bindings.find(approvalId)).toMatchObject({
+      key: "coupon.update",
+      inputHash,
+      requestedAt: NOW,
+      approvals: 1,
+      permission: APPROVE,
+      execute: "on_grant",
+    });
+    expect(trail.entries.at(-1)).toMatchObject({
+      outcome: "refused",
+      code: "approval_required",
+      fields: { approvalId, inputHash },
+    });
+  });
+
+  it("hands a condition a reader limited to its reads, over the bound settings source", async () => {
+    const { pipeline } = stage({}, [
+      [ApprovalSettingsSource, new MapSettings()],
+      [ThresholdCondition, new ThresholdCondition()],
+      [ThresholdAction, new ThresholdAction()],
+      [GreedyCondition, new GreedyCondition()],
+      [GreedyAction, new GreedyAction()],
+    ]);
+    await expect(
+      pipeline.execute(ThresholdAction, { percent: 30 }, { actor: customer }),
+    ).rejects.toMatchObject({
+      code: "approval_required",
+    });
+    await expect(
+      pipeline.execute(ThresholdAction, { percent: 10 }, { actor: customer }),
+    ).resolves.toBe("ok");
+    // a key the condition did not declare throws: the call fails and is never read as "not needed"
+    await expect(pipeline.execute(GreedyAction, {}, { actor: customer })).rejects.toThrow(
+      RangeError,
+    );
+  });
+
+  it("refuses a condition that declares reads when no settings source is bound, before needed() runs", async () => {
+    const { pipeline, bindings } = stage({}, [
+      [ThresholdCondition, new ThresholdCondition()],
+      [ThresholdAction, new ThresholdAction()],
+    ]);
+    await expect(
+      pipeline.execute(ThresholdAction, { percent: 30 }, { actor: customer }),
+    ).rejects.toMatchObject({ code: "approval_settings_unavailable", retryable: false });
+    expect(bindings.inserts).toBe(0);
+    // a condition with no reads needs no source
+    await expect(
+      pipeline.execute(CouponAction, { percent: 3 }, { actor: customer }),
+    ).resolves.toEqual({
+      percent: 3,
+    });
+  });
+
+  it("runs a call whose condition is false, and parks nothing", async () => {
+    const { pipeline, bindings } = stage();
+    await expect(
+      pipeline.execute(CouponAction, { percent: 3 }, { actor: customer }),
+    ).resolves.toEqual({ percent: 3 });
+    expect(log).toContain("handle");
+    expect(bindings.inserts).toBe(0);
+  });
+
+  it("raises the requirement when the rules ask for more, and keeps the floor when they ask for none", async () => {
+    const more = stage({ decide: () => ({ approvals: 3, expiresAfter: "24h" }) });
+    expect(
+      await refusal(more.pipeline.execute(CouponAction, { percent: 40 }, { actor: customer })),
+    ).toMatchObject({
+      approvalsRequired: 3,
+      expiresAt: new Date(NOW.getTime() + 24 * 3_600_000).toISOString(),
+    });
+    const none = stage({ decide: () => undefined });
+    expect(
+      await refusal(none.pipeline.execute(CouponAction, { percent: 40 }, { actor: customer })),
+    ).toMatchObject({ code: "approval_required", approvalsRequired: 1 });
+  });
+
+  it("fails closed with the open gate, and with no binding store, status check or identity bound", async () => {
+    const open = setup([
+      [CouponAction, new CouponAction()],
+      [AboveFiveCondition, new AboveFiveCondition()],
+    ]);
+    await expect(
+      open.pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+    ).rejects.toThrow(/cannot park/);
+    const identity = new SilentIdentity();
+    const gate = new MemoryApprovalGateDriver({ identity, clock: new FixedClock() });
+    const parts: [AnyClass, object][] = [
+      [ApprovalBindingStore, new MemoryApprovalBindingStoreDriver()],
+      [ActorStatusCheck, new MemoryActorStatusCheckDriver()],
+      [IdentityResolver, identity],
+    ];
+    for (const missing of parts) {
+      const { pipeline } = setup([
+        [ApprovalGate, gate],
+        [CouponAction, new CouponAction()],
+        [AboveFiveCondition, new AboveFiveCondition()],
+        ...parts.filter((part) => part !== missing),
+      ]);
+      await expect(
+        pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+      ).rejects.toThrow(/is not bound/);
+    }
+  });
+
+  it("refuses a chain whose root is not a user before parking, and parks an agent acting for a user", async () => {
+    const { pipeline, bindings } = stage();
+    await expect(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: agent }),
+    ).rejects.toMatchObject({ code: "forbidden" });
+    expect(bindings.inserts).toBe(0);
+    await expect(
+      pipeline.execute(
+        CouponAction,
+        { percent: 40 },
+        { actor: { ...agent, onBehalfOf: customer } },
+      ),
+    ).rejects.toMatchObject({ code: "approval_required" });
+    expect(bindings.inserts).toBe(1);
+  });
+
+  it("writes the request after the isolation transaction rolled back, in a fresh run", async () => {
+    const isolation = new LoggingIsolation();
+    const { pipeline, gate } = stage({}, [[CallIsolation, isolation]]);
+    const refused = await refusal(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+    );
+    expect(log.filter((entry) => entry.startsWith("isolation"))).toEqual([
+      "isolation:write",
+      "isolation:rollback",
+      "isolation:write",
+      "isolation:commit",
+    ]);
+    expect((await gate.find(refused.approvalId as string))?.status).toBe("pending");
+  });
+
+  it("takes a rate-limit token before the binding insert, so a refused token writes nothing", async () => {
+    const { pipeline, bindings } = stage();
+    await expect(
+      pipeline.execute(LimitedCouponAction, {}, { actor: customer }),
+    ).rejects.toMatchObject({ code: "approval_required" });
+    expect(bindings.inserts).toBe(1);
+    await expect(
+      pipeline.execute(LimitedCouponAction, {}, { actor: customer }),
+    ).rejects.toMatchObject({ code: "rate_limited" });
+    expect(bindings.inserts).toBe(1);
+  });
+
+  it("surfaces a failed park, logging the id, key and code and never the input", async () => {
+    const { pipeline, lines } = stage({ cap: 0 });
+    await expect(
+      pipeline.execute(CouponAction, { percent: 41 }, { actor: customer }),
+    ).rejects.toMatchObject({ code: "approval_pending_limit" });
+    const line = lines.errors.find(([event]) => event === APPROVAL_PARK_FAILED);
+    expect(line?.[1]).toMatchObject({ key: "coupon.update", code: "approval_pending_limit" });
+    expect(JSON.stringify(line)).not.toContain("41");
+  });
+
+  it("runs a granted on_grant request once, through the executor's begin, and records the voters", async () => {
+    const { pipeline, gate, trail } = stage();
+    const parked = await refusal(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+    );
+    const approvalId = parked.approvalId as string;
+    const resubmit = () =>
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer, approvalId });
+    await expect(resubmit()).rejects.toMatchObject({ code: "approval_not_granted" });
+    await gate.approve(approvalId, approver("usr_a"));
+    // the requester resubmitting an on_grant request is refused: only the executor runs it (FR-013)
+    await expect(resubmit()).rejects.toMatchObject({ code: "approval_consumed" });
+    expect(await gate.begin(approvalId, `approval:${approvalId}`)).toBe(true);
+    await expect(resubmit()).resolves.toEqual({ percent: 40 });
+    await expect(resubmit()).resolves.toEqual({ percent: 40 });
+    expect(log.filter((entry) => entry === "handle")).toHaveLength(1);
+    expect(trail.entries.at(-1)).toMatchObject({
+      outcome: "ok",
+      fields: { approvalId, voters: ["usr_a"] },
+    });
+  });
+
+  it("forces the key approval:<id> and refuses a caller's approval: key", async () => {
+    const { pipeline, gate } = stage();
+    const parked = await refusal(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+    );
+    const approvalId = parked.approvalId as string;
+    await gate.approve(approvalId, approver("usr_a"));
+    await gate.begin(approvalId, `approval:${approvalId}`);
+    await expect(
+      pipeline.execute(
+        CouponAction,
+        { percent: 40 },
+        { actor: customer, idempotencyKey: "approval:x" },
+      ),
+    ).rejects.toMatchObject({ code: "input_invalid" });
+    // whatever key the caller sent, the run is under approval:<id>, so the second run replays the first
+    await pipeline.execute(
+      CouponAction,
+      { percent: 40 },
+      { actor: customer, approvalId, idempotencyKey: "mine" },
+    );
+    await pipeline.execute(
+      CouponAction,
+      { percent: 40 },
+      { actor: customer, approvalId, idempotencyKey: "other" },
+    );
+    expect(log.filter((entry) => entry === "handle")).toHaveLength(1);
+  });
+
+  it("refuses every tampered binding or store row with approval_mismatch", async () => {
+    const { pipeline, gate } = stage();
+    const parked = await refusal(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+    );
+    const approvalId = parked.approvalId as string;
+    await gate.approve(approvalId, approver("usr_a"));
+    await gate.begin(approvalId, `approval:${approvalId}`);
+    const run = (input: { percent: number }, actor: Actor = customer) =>
+      pipeline.execute(CouponAction, input, { actor, approvalId });
+    // another input, another requester
+    await expect(run({ percent: 41 })).rejects.toMatchObject({ code: "approval_mismatch" });
+    await expect(run({ percent: 40 }, { ...customer, id: "usr_2" })).rejects.toMatchObject({
+      code: "approval_mismatch",
+    });
+    // a writer of the store's table: a changed snapshot, requester, key or tenant
+    const tampers: ((record: ApprovalRecord) => ApprovalRecord)[] = [
+      (record) => ({ ...record, snapshot: { percent: 99 } }),
+      (record) => ({ ...record, snapshot: undefined }),
+      (record) => ({ ...record, requester: { ...record.requester, id: "usr_2" } as Actor }),
+      (record) => ({ ...record, key: "coupon.other" }),
+      (record) => ({ ...record, scopeId: "ten_2" }),
+    ];
+    for (const tamper of tampers) {
+      gate.tamper = tamper;
+      await expect(run({ percent: 40 })).rejects.toMatchObject({ code: "approval_mismatch" });
+    }
+    expect(log).not.toContain("handle");
+  });
+
+  it("refuses a granted request after 24 hours, by the owning service's clock", async () => {
+    const { pipeline, gate } = stage();
+    const parked = await refusal(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+    );
+    const approvalId = parked.approvalId as string;
+    await gate.approve(approvalId, approver("usr_a"));
+    await gate.begin(approvalId, `approval:${approvalId}`);
+    gate.tamper = (record) => ({ ...record, grantedAt: new Date(NOW.getTime() - 25 * 3_600_000) });
+    await expect(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer, approvalId }),
+    ).rejects.toMatchObject({ code: "approval_expired" });
+  });
+
+  it("counts a person once, ignores a customer-realm vote, and refuses a vote by the requester's person", async () => {
+    const { pipeline, gate } = stage();
+    const parked = await refusal(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+    );
+    const approvalId = parked.approvalId as string;
+    await gate.approve(approvalId, approver("usr_a"));
+    await gate.begin(approvalId, `approval:${approvalId}`);
+    const run = () =>
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer, approvalId });
+    gate.tamper = (record) => ({ ...record, votes: [] });
+    await expect(run()).rejects.toMatchObject({ code: "approval_not_granted" });
+    gate.tamper = (record) => ({
+      ...record,
+      votes: [vote("usr_b"), vote("usr_b"), { ...vote("usr_c"), realm: Realm.Customer }],
+    });
+    await expect(run()).resolves.toEqual({ percent: 40 });
+    gate.tamper = (record) => ({ ...record, votes: [vote("usr_1")] });
+    await expect(run()).rejects.toMatchObject({ code: "approval_mismatch" });
+  });
+
+  it("refuses retryably while identity cannot answer, and refuses an inactive requester or revoked sessions", async () => {
+    const { pipeline, gate, actors } = stage();
+    const parked = await refusal(
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer }),
+    );
+    const approvalId = parked.approvalId as string;
+    await gate.approve(approvalId, approver("usr_a"));
+    await gate.begin(approvalId, `approval:${approvalId}`);
+    const run = () =>
+      pipeline.execute(CouponAction, { percent: 40 }, { actor: customer, approvalId });
+    actors.setOutage(true);
+    await expect(run()).rejects.toMatchObject({
+      code: "approval_identity_unavailable",
+      retryable: true,
+    });
+    actors.setOutage(false);
+    actors.markChanged(customer.id, new Date(NOW.getTime() + 3_600_000));
+    await expect(run()).rejects.toMatchObject({ code: "step_up_required" });
+    actors.deactivate(customer.id);
+    await expect(run()).rejects.toMatchObject({ code: "forbidden" });
+    expect(log).not.toContain("handle");
+  });
+
+  it("measures an approved call's step-up on the binding's assurance and request time, and sets the approver level", async () => {
+    const stepUp = new RecordingStepUp();
+    const { pipeline, gate } = stage({}, [[StepUpCheck, stepUp]]);
+    const assurance: CallAssurance = {
+      amr: ["pwd", "otp"],
+      authTime: new Date(NOW.getTime() - 3_600_000),
+      level: AssuranceLevel.Aal2,
+    };
+    const parked = await refusal(
+      pipeline.execute(SteppedCouponAction, {}, { actor: customer, assurance }),
+    );
+    const approvalId = parked.approvalId as string;
+    expect(stepUp.calls.at(-1)).toEqual([assurance, AssuranceLevel.Aal2, undefined]);
+    // an approver of a stepUp action must step up, whatever the tenant's rule says (N6)
+    await expect(
+      gate.approve(approvalId, approver("usr_a", { assurance: AssuranceLevel.Aal1 })),
+    ).rejects.toMatchObject({ refusal: "step_up_required" });
+    await gate.approve(approvalId, approver("usr_a"));
+    await gate.begin(approvalId, `approval:${approvalId}`);
+    // the execution carries no live assurance: the binding's stands in, measured at the request
+    await expect(
+      pipeline.execute(SteppedCouponAction, {}, { actor: customer, approvalId }),
+    ).resolves.toBe("rotated");
+    expect(stepUp.calls.at(-1)).toEqual([assurance, AssuranceLevel.Aal2, NOW]);
   });
 });

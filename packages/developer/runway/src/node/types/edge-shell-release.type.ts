@@ -4,7 +4,7 @@
  *          the import map the shell gives every product bundle.
  * Boundary: type only; the OS deploy builds it, `publishShell` and `promoteCanary` write it.
  * Runtime: node
- * Governing contract: ADR 0436 (decision 4: the import map); app-shells 4.1 (step 4) and 5.3.
+ * Governing contract: ADR 0436 (decision 4: the import map); app-shells 4.1 (step 4) and 5.3; STA-1681 (css).
  */
 
 /** A shell release. */
@@ -13,6 +13,8 @@ export type EdgeShellRelease = {
   readonly version: string;
   /** The shell entry's URL. */
   readonly entry: string;
+  /** The shell's own stylesheet URLs, rendered before the bundle's; absent in a row written before STA-1681. */
+  readonly css?: readonly string[];
   /** The import map the shell serves to bundles. */
   readonly importMap: { readonly imports: Readonly<Record<string, string>> };
 };

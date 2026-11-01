@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the HTTP driver of the `DevicePairing` port: `POST /device-pairings` with the install id for a code to show,
- *          `GET /device-pairings/:pairingId` until a person has entered it, and, once paired, the hub's token kept in
+ *          `GET /device-pairings/:pairingId?deviceId=` (this install's id, the one that opened it) until a person has
+ *          entered it, and, once paired, the hub's token kept in
  *          the `secrets` area where `StoredDeviceCredentialDriver` reads it.
  * Boundary: calls through `hubSender` with the bound `DeviceCredential`, which answers no token before pairing. Bodies
  *           come from outside and are parsed with `PAIRING_CODE_SCHEMA` and `PAIRING_STATUS_SCHEMA` (a malformed body
@@ -65,7 +66,8 @@ export class HttpDevicePairingDriver extends Driver(DevicePairing) {
 
   /** The pairing's state; when paired, keeps the token and flushes storage first. */
   async check(pairing: PairingCode): Promise<PairingStatus> {
-    const response = await this.send(DEVICE_HUB_PATHS.pairing(pairing.pairingId));
+    const query = new URLSearchParams({ deviceId: await this.identity.id() });
+    const response = await this.send(`${DEVICE_HUB_PATHS.pairing(pairing.pairingId)}?${query}`);
     const { state, deviceId, token } = PAIRING_STATUS_SCHEMA.parse(await response.json());
     if (token !== null) {
       this.storage.secrets.set(DEVICE_STORAGE_KEYS.token, token);

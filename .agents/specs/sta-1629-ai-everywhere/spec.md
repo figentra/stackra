@@ -48,7 +48,7 @@ hybrid search with Arabic, speech behind a port, one runtime and gateway, everyt
 - **Cross-service events**: none new in core; Commerce's order, payment and fulfilment integration events feed its
   `order_timeline` projection (ADR 0491 d3); the payments module emits the payer-confirmed event the approval gate reads
 - **Tenancy and data**: new tenant-owned tables `panel.dashboard_layouts`, `settings.user_settings` (if not covered
-  by `stored_settings` at user scope; lane 3 decides from the code), `experience.tour_progress`, `search.synonyms`;
+  by `stored_settings` at user scope; lane 3 decides from the code), `experience.tour_progress`, `data_maintenance.synonyms` (synonym persistence lives above iam, ADR 0462);
   all `BelongsToTenant`, forced RLS; the run store gains a client-tool park reason
 - **Secrets**: names only; reranker and embedder tokens follow `search.embedder.tokenSecret`; speech provider keys
   through Connection credential references; WhatsApp `META_APP_SECRET` (existing); no value read
@@ -133,12 +133,12 @@ hybrid search with Arabic, speech behind a port, one runtime and gateway, everyt
 
 ### Lane 7 — hybrid search quality (STA-1636)
 
-| Id     | Requirement                                                                                           | Source   |
-| ------ | ----------------------------------------------------------------------------------------------------- | -------- |
-| FR-701 | `Reranker` port; `HttpRerankerDriver` (TEI `/rerank`), memory driver; `rerank` on request and model   | 0492 d4  |
-| FR-702 | Arabic Snowball stemmer lane for Arabic locales, via the versioned index swap                         | 0492 d5  |
-| FR-703 | Arabizi query mapping; `search.synonym` model with actions; query expansion                           | 0492 d5  |
-| FR-704 | Evaluation fixture catalogue and query set (Arabic, English, mixed); NDCG@10 and recall@50 `test:int` | 0492 enf |
+| Id     | Requirement                                                                                                           | Source   |
+| ------ | --------------------------------------------------------------------------------------------------------------------- | -------- |
+| FR-701 | `Reranker` port; `HttpRerankerDriver` (TEI `/rerank`), memory driver; `rerank` on request and model                   | 0492 d4  |
+| FR-702 | Arabic Snowball stemmer lane for Arabic locales, via the versioned index swap                                         | 0492 d5  |
+| FR-703 | Arabizi query mapping; `SynonymSource` port and expansion in search; the `data_maintenance.synonym` model and actions | 0492 d5  |
+| FR-704 | Evaluation fixture catalogue and query set (Arabic, English, mixed); NDCG@10 and recall@50 `test:int`                 | 0492 enf |
 
 ### Lane 8 — ML workers and speech (STA-1637)
 
