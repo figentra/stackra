@@ -749,8 +749,10 @@ Docker needed); the CI Quality Gate runs every member's `test:int` (STA-1570).
 On both tiers a model's recorded events (`model.record(event)`) reach the testing app once the outermost transaction
 commits, as the outbox writer hands them on in production: an integration event to the app's outbox, any other on its
 bus, so `run()` results and `app.events.published()` hold them. A rollback drops them, and a released savepoint's
-events wait for the transaction around it (`RecordedEventsSubscriber`, STA-1740). The testing entry needs
-`@stackra/events` for this, an optional peer.
+events wait for the transaction around it (`RecordedEventsSubscriber`, STA-1740). An integration event carries the
+running call's actor, id and scope, and `drainOutbox()` delivers each one as the inbox does: in a new transaction, as
+that actor in that scope through the app's `CallIsolation` (`withScope` without one), the platform for an event with no
+actor (`deliverInIsolation`, STA-1789). The testing entry needs `@stackra/events` for this, an optional peer.
 
 `assertRowSecurity(database, { column, setting, role, probe })` checks a migrated database: every table holding
 `column` has row-level security enabled and forced with the policy `pol_<table>_<column>`, `role` is neither a

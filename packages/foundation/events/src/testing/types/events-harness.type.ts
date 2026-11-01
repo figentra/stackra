@@ -7,7 +7,8 @@
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0078 (decision 4: inbox dedup by event id).
  */
-import type { Clock } from "@stackra/contracts";
+import type { TestingApp } from "@stackra/container/testing";
+import type { Clock, ScopeRef } from "@stackra/contracts";
 
 import type { EventMeta, EventOutbox } from "#contracts/index";
 import type { Event, EventBus } from "#core/index";
@@ -28,4 +29,10 @@ export interface EventsHarness {
 
   /** The ids the inbox has delivered, so a redelivery runs no listener. */
   readonly seen: Set<string>;
+
+  /** The app, which a delivery scope resolves its isolation from (STA-1789). */
+  readonly app: TestingApp;
+
+  /** The scope each written event's transaction ran in, by event id, for its delivery (STA-1789). */
+  readonly scopes: Map<string, ScopeRef>;
 }

@@ -21,6 +21,7 @@ describe("@stackra/events/testing", () => {
       "OutboxFake",
       "RegionBusFake",
       "commitEvents",
+      "deliverEventsIn",
       "deliverRemoteEvent",
       "dispatch",
       "drainEvents",

@@ -62,7 +62,15 @@ export const EVENTS_TESTING_PLUGIN: TestingPlugin = {
     const bus = app.has(EventBus) ? app.get(EventBus) : new EventBus(clock);
     bus.connect(app);
     const outbox = app.has(EventOutbox) ? app.get(EventOutbox) : new OutboxFake();
-    const harness: EventsHarness = { bus, outbox, clock, inbox: [], seen: new Set() };
+    const harness: EventsHarness = {
+      bus,
+      outbox,
+      clock,
+      inbox: [],
+      seen: new Set(),
+      app,
+      scopes: new Map(),
+    };
     CURRENT_HARNESS.value = harness;
     return {
       events: { published: () => publishedEvents(harness) },
