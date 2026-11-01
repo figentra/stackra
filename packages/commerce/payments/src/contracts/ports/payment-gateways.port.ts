@@ -24,11 +24,18 @@ export abstract class PaymentGateways extends Port {
   declare readonly "~key": "payments.PaymentGateways";
 
   /**
-   * The gateway for `market` that has every capability in `needs`.
+   * The gateway for `market` that has every capability in `needs`: Connection `connectionId` when given (it must be
+   * one of the Market's and serve `needs`), the first that serves otherwise.
    *
-   * @throws NoPaymentProviderError when no provider of the Market has them all.
+   * @throws NoPaymentProviderError when no provider of the Market has them all, or `connectionId` is not one that does.
+   * @throws TerminalConnectionRequiredError when `needs` has `terminal`, no `connectionId` is given and more than one
+   *         Connection serves.
    */
-  abstract forMarket(market: string, needs: readonly PaymentCapability[]): Promise<PaymentGateway>;
+  abstract forMarket(
+    market: string,
+    needs: readonly PaymentCapability[],
+    connectionId?: string,
+  ): Promise<PaymentGateway>;
 
   /**
    * The gateway of connection `connectionId` of `provider`: the one that served the payment, so a capture, refund or

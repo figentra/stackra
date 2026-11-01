@@ -2117,12 +2117,18 @@ importers:
 
   packages/commerce/payments:
     dependencies:
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/database':
+        specifier: workspace:*
+        version: link:../../data/database
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
@@ -2141,6 +2147,9 @@ importers:
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@stackra/testing':
         specifier: workspace:*

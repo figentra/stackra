@@ -26,6 +26,7 @@ export { RestrictedTenderPrograms } from "#contracts/ports/restricted-tender-pro
 export { SoftPos } from "#contracts/ports/soft-pos.port";
 export { StripeTerminalBridge } from "#contracts/ports/stripe-terminal-bridge.port";
 export { TenderEligibility } from "#contracts/ports/tender-eligibility.port";
+export type { ConnectedAccountLimitsChange } from "#contracts/types/connected-account-limits-change.type";
 export type { AgentCheckoutRequest } from "#contracts/types/agent-checkout-request.type";
 export type { AgentConfirmation } from "#contracts/types/agent-confirmation.type";
 export type { BalancePart } from "#contracts/types/balance-part.type";

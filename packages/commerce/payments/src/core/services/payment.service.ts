@@ -282,18 +282,23 @@ export class PaymentService extends Service {
    * @throws PaymentUnknownError when the reference's last answer was lost (and when this one is).
    * @throws InvalidPaymentTransitionError when the reference is in use.
    * @throws PreVerificationCapExceededError when an unverified connected account would take more than its cap.
+   * @throws TerminalConnectionRequiredError when the request names no Connection and more than one serves.
    */
   async startTerminal(market: string, request: TerminalRequest): Promise<TerminalSession> {
     const existing = await this.records.find(request.reference);
     if (existing !== null) this.assert(existing, "start_terminal", REOPENABLE);
-    const gateway = await this.gateways.forMarket(market, [
-      PaymentCapability.Terminal,
-      ...(request.tipPrompt === undefined ? [] : [PaymentCapability.TerminalTips]),
-      ...(request.captureLater === true ? [PaymentCapability.Capture] : []),
-      ...(request.tender === TenderKind.Restricted ? [PaymentCapability.RestrictedTender] : []),
-      ...(request.pinEntry === true ? [PaymentCapability.TerminalPin] : []),
-      ...(request.softPos === true ? [PaymentCapability.SoftPos] : []),
-    ]);
+    const gateway = await this.gateways.forMarket(
+      market,
+      [
+        PaymentCapability.Terminal,
+        ...(request.tipPrompt === undefined ? [] : [PaymentCapability.TerminalTips]),
+        ...(request.captureLater === true ? [PaymentCapability.Capture] : []),
+        ...(request.tender === TenderKind.Restricted ? [PaymentCapability.RestrictedTender] : []),
+        ...(request.pinEntry === true ? [PaymentCapability.TerminalPin] : []),
+        ...(request.softPos === true ? [PaymentCapability.SoftPos] : []),
+      ],
+      request.connectionId,
+    );
     const terminal = this.capable(gateway, PaymentCapability.Terminal);
     await this.withinCap(gateway, request.reference, request.amount);
     const record = await this.save({

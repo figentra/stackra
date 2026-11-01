@@ -2,14 +2,24 @@
  * Stackra file contract:
  * Purpose: unit tests of `ConnectionPaymentGatewaysDriver`: the tenant's own Connection wins when it has every
  *          capability, the Market's platform Connection serves otherwise, a provider without the capability or
- *          without a driver is skipped, and a stored connection is reloaded by id.
+ *          without a driver is skipped, a terminal routes by its Connection (refused unnamed when two serve), and a
+ *          stored connection is reloaded by id.
  * Boundary: test only; a minimal `ConnectionStore` and two test connection classes stand in for the store and the
  *           host's vendor map (the vendor Connections live in the OS integrations service).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0356 (decisions 2 and 3).
  */
 import { refusal } from "@stackra/errors/testing";
-import { ConnectedAccount, Connection, ConnectionStore } from "@stackra/integrations";
+import {
+  AuthType,
+  ConnectedAccount,
+  Connection,
+  ConnectionLevel,
+  ConnectionStore,
+  Integration,
+  IntegrationCategory,
+  registerConnections,
+} from "@stackra/integrations";
 import type { ConnectionClass, ProviderDrivers } from "@stackra/integrations";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -17,6 +27,7 @@ import { PaymentCapability } from "#contracts/enums/payment-capability.enum";
 import type { PaymentGateway } from "#contracts/types/payment-gateway.type";
 import { ConnectionPaymentGatewaysDriver } from "#core/drivers/connection-payment-gateways.driver";
 import { NoPaymentProviderError } from "#core/errors/no-payment-provider.error";
+import { TerminalConnectionRequiredError } from "#core/errors/terminal-connection-required.error";
 import { MarketPaymentDefaultsFake } from "#testing/market-payment-defaults.fake";
 
 /** A gateway connection that only declares its capabilities; the vendor ones live in OS integrations. */
@@ -40,16 +51,36 @@ class VoucherConnection extends Gateway {
   }
 }
 
+/** A terminal provider. */
+class TillConnection extends Gateway {
+  get capabilities(): readonly PaymentCapability[] {
+    return [PaymentCapability.Terminal];
+  }
+}
+/** Another terminal provider in the same Market. */
+class PadConnection extends Gateway {
+  get capabilities(): readonly PaymentCapability[] {
+    return [PaymentCapability.Terminal];
+  }
+}
+
 /** The host's map, as the OS integrations service passes it. */
 const DRIVERS = {
   card: CardConnection,
   voucher: VoucherConnection,
+  till: TillConnection,
+  pad: PadConnection,
 } as unknown as ProviderDrivers<PaymentGateway>;
 
 /** A bare instance of `type`; the driver reads only its class and capabilities. */
 const instance = <C extends Gateway>(type: { readonly prototype: C }): C =>
   Object.create(type.prototype) as C;
 const cardOwn = instance(CardConnection);
+/** A bare instance of `type` with connection id `id`. */
+const withId = <C extends Gateway>(type: { readonly prototype: C }, id: string): C =>
+  Object.defineProperty(instance(type), "id", { value: id });
+const tillOwn = withId(TillConnection, "conn_till");
+const padOwn = withId(PadConnection, "conn_pad");
 const cardPlatform = instance(CardConnection);
 const voucherPlatform = instance(VoucherConnection);
 const PLATFORM = new Map<string, Connection>([
@@ -100,7 +131,37 @@ class TestPaymentGatewaysDriver extends ConnectionPaymentGatewaysDriver {
   protected override readonly drivers = DRIVERS;
 }
 
+/** A payments Integration a package registers, as the OS vendor ones are (STA-1703). */
+class WalletIntegration extends Integration({
+  provider: "wallet",
+  category: IntegrationCategory.Payments,
+  levels: [ConnectionLevel.Scope],
+  auth: { type: AuthType.None },
+}) {}
+/** Its Connection, with checkout. */
+class WalletConnection extends Connection<WalletIntegration> {
+  get capabilities(): readonly PaymentCapability[] {
+    return [PaymentCapability.Checkout];
+  }
+
+  async check(): Promise<ConnectedAccount> {
+    return ConnectedAccount.create({ id: "wallet" });
+  }
+}
+
 describe("ConnectionPaymentGatewaysDriver", () => {
+  it("serves the registered payments Connections with no host subclass (STA-1703)", async () => {
+    registerConnections([
+      { connection: WalletConnection, integration: WalletIntegration, key: "payments.wallet" },
+    ]);
+    const own = Object.create(WalletConnection.prototype) as WalletConnection;
+    const gateways = new ConnectionPaymentGatewaysDriver(
+      new TestStore([own]),
+      MarketPaymentDefaultsFake.with({ m4: [{ provider: "wallet" }] }),
+    );
+    expect(await gateways.forMarket("m4", [PaymentCapability.Checkout])).toBe(own);
+  });
+
   it("takes the tenant's own Connection when it serves the call", async () => {
     const gateways = new TestPaymentGatewaysDriver(new TestStore([cardOwn]), defaults);
     expect(await gateways.forMarket("m1", [PaymentCapability.Capture])).toBe(cardOwn);
@@ -127,6 +188,22 @@ describe("ConnectionPaymentGatewaysDriver", () => {
     await expect(none.forMarket("m3", [PaymentCapability.Checkout])).rejects.toRefuseWith(
       refusal(NoPaymentProviderError, { market: "m3", needs: "checkout" }),
     );
+  });
+
+  it("routes a terminal by its Connection and refuses a terminal that names none when two serve (STA-1718)", async () => {
+    const terminals = MarketPaymentDefaultsFake.with({
+      m5: [{ provider: "till" }, { provider: "pad" }],
+    });
+    const two = new TestPaymentGatewaysDriver(new TestStore([tillOwn, padOwn]), terminals);
+    await expect(two.forMarket("m5", [PaymentCapability.Terminal])).rejects.toRefuseWith(
+      refusal(TerminalConnectionRequiredError, { market: "m5", connections: "conn_till,conn_pad" }),
+    );
+    expect(await two.forMarket("m5", [PaymentCapability.Terminal], "conn_pad")).toBe(padOwn);
+    await expect(
+      two.forMarket("m5", [PaymentCapability.Terminal], "conn_other"),
+    ).rejects.toRefuseWith(refusal(NoPaymentProviderError, { market: "m5", needs: "terminal" }));
+    const one = new TestPaymentGatewaysDriver(new TestStore([tillOwn]), terminals);
+    expect(await one.forMarket("m5", [PaymentCapability.Terminal])).toBe(tillOwn);
   });
 
   it("reloads the connection that served a payment", async () => {
