@@ -37,9 +37,14 @@ providers:
         reviewers: [figentra-usr]
       docs:
         branches: [main]
+      # The one owner approval per package release (ADR 0468 decision 3): only the version PR's squash merge runs here.
       release:
         branches: [main]
         reviewers: [figentra-usr]
+      # Every other release.yml run (opening the version PR, nothing new to publish, a dry run): no reviewer, and the
+      # registry never accepts a publish from it (ADR 0468 decision 3).
+      release-pr:
+        branches: [main]
       # deploy-registry.yml; its variables hold the D1 and KV ids and the Infisical identity (ADR 0453).
       registry:
         branches: [main]
@@ -57,6 +62,8 @@ providers:
       production: prod
     paths:
       ci: /ci
+      # The Turborepo remote cache (STA-1393), read by its own identity INFISICAL_TURBO_IDENTITY_ID.
+      turbo: /ci/turbo
       agents: /agents
   # The deploy reads the repository variable MINTLIFY_PROJECT_ID until the stacks repository holds it.
   mintlify:
@@ -159,6 +166,12 @@ secrets:
     - CLOUDFLARE_API_TOKEN
     - MINTLIFY_ADMIN_KEY
     - UNIWIND_AUTH_TOKEN
+    # From `/ci/turbo` (paths.turbo, STA-1393): ci.yml and release.yml export them for turbo; deploy-turbo-cache.yml
+    # sets TURBO_TOKEN as the Worker's TURBO_CACHE_TOKEN.
+    - TURBO_API
+    - TURBO_TOKEN
+    - TURBO_TEAM
+    - TURBO_REMOTE_CACHE_SIGNATURE_KEY
 
 # ── Release policy (ADR 0170) ────────────────────────────────────────────────────────────────────────
 release:

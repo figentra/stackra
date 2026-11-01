@@ -1,3 +1,5 @@
+<!-- Stackra file contract. Purpose: the index of core's GitHub workflows and their rules. Boundary: one row per workflow file in this folder; the files are the source. Runtime: documentation. Governing contract: ADR 0012, ADR 0019, ADR 0468. -->
+
 # `.github/workflows/`
 
 | Workflow                  | Runs on                                                                                             | Does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
