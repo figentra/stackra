@@ -62,7 +62,6 @@
     "@changesets/cli": "catalog:release",
     "@commitlint/cli": "catalog:release",
     "@figentra-oss/flow": "catalog:",
-    "@figentra/cli": "catalog:",
     "@stackra/commitlint-config": "workspace:*",
     "@types/node": "catalog:",
     "jscpd": "catalog:quality",
