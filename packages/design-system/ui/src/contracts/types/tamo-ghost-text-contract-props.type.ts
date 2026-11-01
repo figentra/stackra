@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 
 /** Props shared by the web and native `TamoGhostText`. */
 export interface TamoGhostTextContractProps {
-  /** The field the suggestion is drawn over. */
+  /** The field the suggestion is drawn under. */
   readonly children: ReactNode;
   /** The field's current text. */
   readonly value: string;

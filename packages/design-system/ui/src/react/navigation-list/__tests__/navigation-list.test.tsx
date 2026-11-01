@@ -177,8 +177,11 @@ describe("NavigationList (web)", () => {
     render(<NavigationList items={ITEMS} />);
     expect(screen.queryByRole("tooltip")).toBeNull();
     focusByKeyboard(screen.getByRole("link", { name: /^Orders/ }));
-    // The label, then the keys in HeroUI's Kbd (ADR 0508).
-    expect(screen.getByRole("tooltip").textContent).toBe("OrdersGO");
+    // The label, a rule, then the keys in HeroUI's Kbd (ADR 0508), spoken rather than hidden.
+    const tip = screen.getByRole("tooltip");
+    expect(tip.textContent).toBe("OrdersGO");
+    expect(tip.querySelector("[data-slot='tooltip-separator']")).not.toBeNull();
+    expect(tip.querySelector("[data-slot='shortcut-hint']")?.getAttribute("aria-hidden")).toBeNull();
   });
 
   it("keeps the label as the name in the compact rail and shows it, with the shortcut, in a tooltip", () => {

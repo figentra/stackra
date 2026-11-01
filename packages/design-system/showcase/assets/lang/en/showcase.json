@@ -1636,7 +1636,7 @@
       },
       "tamo_ghost_text": {
         "title": "Tamo ghost text",
-        "description": "Tamo's suggestion drawn after the text: Tab accepts it, Escape dismisses it; on a phone, Accept and Dismiss.",
+        "description": "Tamo's suggestion drawn under the field: Tab accepts it, Escape dismisses it; on a phone, Accept and Dismiss.",
         "keywords": "ai, tamo, autocomplete, suggestion, ghost text, continue writing"
       },
       "tamo_draft_review": {
@@ -8696,7 +8696,7 @@
         },
         "tamo_ghost_text": {
           "headline": "Tamo finishes the thought; you decide.",
-          "intro": "The suggestion waits after the caret in a muted colour. Tab takes it, Escape or typing on drops it.",
+          "intro": "The suggestion waits under the field in a muted colour. Tab takes it, Escape or typing on drops it.",
           "tags": "AI · Autocomplete · Keyboard",
           "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
           "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",

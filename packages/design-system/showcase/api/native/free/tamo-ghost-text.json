@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "09eae1d6241b1be6",
+    "hash": "bb7d4caddd30052c",
     "propsFiles": ["ui/src/native/tamo-ghost-text/tamo-ghost-text.props.ts"]
   },
   "importLine": "import { TamoGhostText } from \"@stackra/ui/native\";",
@@ -26,7 +26,7 @@
       "name": "TamoGhostText",
       "props": [
         {
-          "description": "The field the suggestion is drawn over.",
+          "description": "The field the suggestion is drawn under.",
           "name": "children",
           "required": true,
           "source": "stackra",
