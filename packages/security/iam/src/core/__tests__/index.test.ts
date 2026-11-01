@@ -36,6 +36,7 @@ describe("@stackra/iam", () => {
       "IamAccessControlDriver",
       "IamGrantedScopesDriver",
       "IamRolesAtNodeDriver",
+      "MemoryDimensionValuesDriver",
       "MemoryPolicySnapshotStoreDriver",
       "MemoryPolicySourceDriver",
       "Permission",

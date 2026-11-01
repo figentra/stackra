@@ -9,7 +9,9 @@
  *          numbers), `SettingsReader` with the market floor source, so the default reader of every service lifts a
  *          value below a legal floor, `SettingsResolver`, and `RuleSetService` over content's revisions repository, so
  *          a service that injects it gets the rules node without wiring it by hand, and `MediaLibrary` over the
- *          `FileSystem` disk and its config (STA-1297; ADR 0465 folded `MediaDisk` into `FileSystem`).
+ *          `FileSystem` disk and its config (STA-1297; ADR 0465 folded `MediaDisk` into `FileSystem`), and the workflow
+ *          node's `AutomationService`, `ChecklistService` and `ServiceAckService` (the waiting side of the cross-service
+ *          ack a provisioning workflow injects; STA-1708).
  * Boundary: a frozen map keyed by `<package>#<Class>`; each value lists the constructor tokens in parameter order:
  *           a class, or a per-model token (`{ class: Model, of: repositoryOf }`) that gen binds through `MODEL_TOKENS`.
  *           A binding the dependency's own wiring also writes is the same row, so the host's copy changes nothing.
@@ -78,6 +80,21 @@ export const PLATFORM_BINDINGS: Readonly<Record<string, readonly (ClassRef | Tok
       { name: "SettingRevisionStore", from: "@stackra/settings/contracts" },
       { name: "Clock", from: "@stackra/contracts" },
     ],
+    // the workflow node's CrudServices over their own models (`PLATFORM_PARTNERS`, STA-1708)
+    "@stackra/workflow#AutomationService": [
+      {
+        class: { name: "Revision", from: "@stackra/content/node" },
+        of: { name: "repositoryOf", from: "@stackra/database" },
+      },
+      { name: "PublisherAccess", from: "@stackra/workflow" },
+    ],
+    "@stackra/workflow#ChecklistService": [
+      {
+        class: { name: "ChecklistProgress", from: "@stackra/workflow/node" },
+        of: { name: "repositoryOf", from: "@stackra/database" },
+      },
+    ],
+    "@stackra/workflow#ServiceAckService": [],
     "@stackra/webhooks#WebhookReceiver": [
       { name: "ConnectionStore", from: "@stackra/integrations" },
       { name: "SecretStore", from: "@stackra/config/contracts" },

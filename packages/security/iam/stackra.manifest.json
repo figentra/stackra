@@ -93,6 +93,17 @@
       }
     },
     {
+      "port": "DimensionValues",
+      "key": "iam.DimensionValues",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryDimensionValuesDriver",
+          "from": "@stackra/iam"
+        }
+      }
+    },
+    {
       "port": "PolicySnapshotStore",
       "key": "iam.PolicySnapshotStore",
       "candidates": ["memory", "postgres"],
