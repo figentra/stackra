@@ -15,4 +15,9 @@ export const SECRET_FIELD_SUFFIXES: readonly string[] = Object.freeze([
   "key",
   "credential",
   "credentials",
+  "passphrase",
+  "pwd",
+  "dsn",
+  "url",
+  "cookie",
 ]);

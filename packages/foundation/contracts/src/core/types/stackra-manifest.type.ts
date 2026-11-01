@@ -89,6 +89,26 @@ export type StackraManifest = {
     readonly key: string;
     readonly [field: string]: unknown;
   }[];
+  /** The console commands the member declares, and those its hosted packages contribute (`from`); absent when none. */
+  readonly commands?: readonly {
+    /** The command name, `db:migrate`. */
+    readonly name: string;
+    readonly aliases: readonly string[];
+    readonly hidden: boolean;
+    /** Whether each run is recorded through `CommandAudit`. */
+    readonly audit: boolean;
+    /** A package's own binary command, never merged into a host. */
+    readonly bin: boolean;
+    readonly class: string;
+    /** The source file, relative to the member root (or to the package that contributes it). */
+    readonly file: string;
+    /** The entry that exports the class (`node` for a package's `./node`). */
+    readonly entry: string;
+    /** The module key it sits in, when it sits in one. */
+    readonly module?: string;
+    /** The package that contributes it, on a host's row. */
+    readonly from?: string;
+  }[];
   /** JSON Schemas of the member's shapes, by module-qualified name. */
   readonly schemas?: Json;
   /** The sections other targets add (`ui`, `settings`, `migrations`, `infra`, …). */

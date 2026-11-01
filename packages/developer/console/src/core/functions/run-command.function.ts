@@ -15,10 +15,21 @@ import type { SignalSource } from "#contracts/types/signal-source.type";
 import { EXIT_CODE } from "#core/constants/exit-code.constant";
 import type { Command } from "#core/bases/command.base";
 import { CommandAuditMissingError } from "#core/errors/command-audit-missing.error";
+import { CommandNotAuditedError } from "#core/errors/command-not-audited.error";
 import { auditValues } from "#core/functions/audit-values.function";
 import type { CommandEntry } from "#core/types/command-entry.type";
 import type { CommandIo } from "#core/types/command-io.type";
 import type { ConsoleConfig } from "#core/types/console-config.type";
+
+/** How long an interrupted audited command's handler may take to settle before its entry is written. */
+const AUDIT_SETTLE_MS = 30_000;
+
+/** Resolves after `ms`, without keeping the process alive. */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms).unref?.();
+  });
+}
 
 /** What one dispatch ended with. */
 interface Outcome {
@@ -55,23 +66,24 @@ export async function runCommand(
   let container: Awaited<ReturnType<NonNullable<ConsoleConfig["container"]>>> | undefined;
   let outcome: Outcome;
   let audit: CommandAudit | undefined;
+  let handling: Promise<unknown> | undefined;
   try {
     container = await config.container?.();
     if (entry.structure.audit) {
       // Fail closed: an audited command never runs without somewhere to record it.
       if (container?.has?.(CommandAudit) !== true)
         throw new CommandAuditMissingError(entry.structure.name);
-      audit = container.get(CommandAudit);
+      const sink = container.get(CommandAudit);
+      await sink.ready();
+      audit = sink;
     }
     const command: Command =
       container === undefined
         ? (Reflect.construct(entry.type, []) as Command)
         : container.get(entry.type as unknown as abstract new () => Command);
     Object.assign(command, values);
-    const result = await Promise.race([
-      Promise.resolve().then(() => command.handle(io(controller.signal))),
-      interrupted,
-    ]);
+    handling = Promise.resolve().then(() => command.handle(io(controller.signal)));
+    const result = await Promise.race([handling, interrupted]);
     // A handler that returns on abort still ends with the signal's code.
     if (result === "stopped" || stopped !== undefined)
       outcome = { code: stopped ?? EXIT_CODE.interrupted };
@@ -85,6 +97,10 @@ export async function runCommand(
   } finally {
     off();
   }
+  // An interrupted audited command is recorded once its handler has settled (or after the grace), so the entry never
+  // says "cancelled" while a migration it started is still running.
+  if (audit !== undefined && stopped !== undefined && handling !== undefined)
+    await Promise.race([handling.catch(() => undefined), delay(AUDIT_SETTLE_MS)]);
   if (audit !== undefined)
     try {
       await audit.record({
@@ -101,7 +117,10 @@ export async function runCommand(
         exitCode: outcome.code,
       });
     } catch (error) {
-      if (outcome.code === EXIT_CODE.success) outcome = { code: EXIT_CODE.failure, error };
+      outcome = {
+        code: outcome.code === EXIT_CODE.success ? EXIT_CODE.failure : outcome.code,
+        error: new CommandNotAuditedError(entry.structure.name, error, outcome.error),
+      };
     }
   try {
     await container?.close();

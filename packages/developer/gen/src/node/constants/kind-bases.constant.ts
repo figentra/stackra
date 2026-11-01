@@ -23,6 +23,7 @@ export const KIND_BASES: Readonly<Record<string, string>> = Object.freeze({
   Bridge: "bridge",
   Bucket: "bucket",
   Change: "change",
+  Command: "command",
   Config: "config",
   Connection: "connection",
   Controller: "controller",

@@ -6,6 +6,7 @@
   "modules": [
     {
       "key": "console",
+      "class": "ConsoleModule",
       "exports": [],
       "dependsOn": []
     }
@@ -15,12 +16,46 @@
   "permissions": [],
   "errors": [],
   "models": [],
-  "drivers": [],
+  "drivers": [
+    {
+      "port": "CommandAudit",
+      "key": "console.CommandAudit",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryCommandAuditDriver",
+          "from": "@stackra/console/testing"
+        }
+      }
+    }
+  ],
   "integrations": [],
   "sequences": [],
   "outcomes": [],
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "commands": [
+    {
+      "name": "create",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "CreateCommand",
+      "file": "src/node/commands/create.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "demo",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DemoCommand",
+      "file": "src/node/commands/demo.command.ts",
+      "entry": "node"
+    }
+  ],
   "schemas": {}
 }

@@ -46,6 +46,20 @@ class SeedCommand extends Command({
   }
 }
 
+class ShortPinCommand extends Command({
+  name: "acct:pin",
+  description: "Pin",
+  audit: true,
+}) {
+  @Option({ secret: true })
+  @Str({ min: 4 })
+  pin = "0000";
+
+  handle(): number {
+    return 0;
+  }
+}
+
 describe("command audit", () => {
   beforeEach(() => {
     ran = false;
@@ -101,6 +115,36 @@ describe("command audit", () => {
     );
     expect(JSON.stringify(audit.entries)).not.toMatch(/9876|k-123/);
     expect(result.stdout).not.toMatch(/9876|k-123/);
+  });
+
+  it("refuses the run before the handler when the sink is not ready", async () => {
+    const audit = new MemoryCommandAuditDriver().notReady(new Error("no operations scope"));
+    const result = await runCommandForTest([SeedCommand], ["acct:seed", "acme"], { audit });
+    expect(result.exitCode).toBe(1);
+    expect(ran).toBe(false);
+    expect(audit.entries).toHaveLength(0);
+    expect(result.stderr).toContain("no operations scope");
+  });
+
+  it("says a failed run was not audited when its entry cannot be written", async () => {
+    const audit = new MemoryCommandAuditDriver().failWith(new Error("sink down"));
+    const result = await runCommandForTest([SeedCommand], ["acct:seed", "acme", "--fail"], {
+      audit,
+    });
+    expect(result.exitCode).toBe(3);
+    expect(result.stderr).toContain("NOT audited");
+  });
+
+  it("never echoes a secret value in a usage error", async () => {
+    const audit = new MemoryCommandAuditDriver();
+    const result = await runCommandForTest(
+      [ShortPinCommand],
+      ["acct:pin", "--pin", "12", "--json"],
+      { audit },
+    );
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toContain("[redacted]");
+    expect(result.stdout + result.stderr).not.toContain('"12"');
   });
 
   it("reads audit, bin and secret from the declaration", () => {

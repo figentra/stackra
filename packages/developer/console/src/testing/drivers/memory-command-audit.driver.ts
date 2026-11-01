@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `MemoryCommandAuditDriver`, the in-memory `CommandAudit`: keeps each entry in `entries`, for tests of
  *          audited commands.
- * Boundary: process memory only; `failWith` makes the next records throw, to test a sink that is down.
+ * Boundary: process memory only; `failWith` makes the next records throw (a sink that is down), and `notReady`
+ *           makes `ready` reject (a sink that is not configured).
  * Runtime: isomorphic
  * Governing contract: STA-1731 spec FR-017.
  */
@@ -26,10 +27,24 @@ export class MemoryCommandAuditDriver extends Driver(CommandAudit) {
   /** The error every record throws while set. */
   private failure: Error | undefined;
 
+  /** The error `ready` rejects with while set. */
+  private unready: Error | undefined;
+
   /** Makes every later record throw `error`; returns this driver. */
   failWith(error: Error): this {
     this.failure = error;
     return this;
+  }
+
+  /** Makes `ready` reject with `error`, as a sink that is not configured; returns this driver. */
+  notReady(error: Error): this {
+    this.unready = error;
+    return this;
+  }
+
+  /** Implements `CommandAudit.ready`, documented there. */
+  override async ready(): Promise<void> {
+    if (this.unready !== undefined) throw this.unready;
   }
 
   /** Implements `CommandAudit.record`, documented there. */

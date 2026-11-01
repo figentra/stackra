@@ -13,6 +13,7 @@ export { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 export { Argument } from "#core/decorators/argument.decorator";
 export { Option } from "#core/decorators/option.decorator";
 export { CommandAuditMissingError } from "#core/errors/command-audit-missing.error";
+export { CommandNotAuditedError } from "#core/errors/command-not-audited.error";
 export { ConsoleDeclarationError } from "#core/errors/console-declaration.error";
 export { DuplicateCommandError } from "#core/errors/duplicate-command.error";
 export { NonInteractivePromptError } from "#core/errors/non-interactive-prompt.error";

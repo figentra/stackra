@@ -25,6 +25,7 @@ export const KIND_FILES: Readonly<
   bridge: { file: "bridge", suffix: "Bridge" },
   bucket: { file: "bucket", suffix: "Bucket" },
   change: { file: "change", suffix: "Change" },
+  command: { file: "command", suffix: "Command" },
   config: { file: "config", suffix: "Config" },
   connection: { file: "connection", suffix: "Connection" },
   controller: { file: "controller", suffix: "Controller" },

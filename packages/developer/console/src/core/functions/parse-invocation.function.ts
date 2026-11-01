@@ -8,6 +8,7 @@
  * Runtime: isomorphic (`node:util` is in every runtime Stackra targets for a CLI)
  * Governing contract: STA-1730 spec FR-009, FR-010 and FR-015; spec 030 Requirement 3.
  */
+import { isSecret } from "#core/functions/is-secret.function";
 import { parseArgs } from "node:util";
 import type { ParseArgsConfig } from "node:util";
 
@@ -33,19 +34,21 @@ function optionsOf(fields: readonly CommandField[]): NonNullable<ParseArgsConfig
 /** One token converted to the field's kind and checked against its bounds. */
 function convert(field: CommandField, token: string): unknown {
   const name = field.role === "option" ? `--${field.flag}` : `<${field.flag}>`;
+  // A secret value is never echoed: the message reaches stderr and `--json`.
+  const shown = isSecret(field) ? "[redacted]" : `"${token}"`;
   if (field.kind === "string") {
     if (field.min !== undefined && token.length < field.min)
-      throw new UsageError(`${name} must be at least ${field.min} characters, got "${token}"`);
+      throw new UsageError(`${name} must be at least ${field.min} characters, got ${shown}`);
     if (field.max !== undefined && token.length > field.max)
-      throw new UsageError(`${name} must be at most ${field.max} characters, got "${token}"`);
+      throw new UsageError(`${name} must be at most ${field.max} characters, got ${shown}`);
     if (field.pattern !== undefined && !new RegExp(field.pattern, "u").test(token))
-      throw new UsageError(`${name} does not match /${field.pattern}/, got "${token}"`);
+      throw new UsageError(`${name} does not match /${field.pattern}/, got ${shown}`);
     return token;
   }
   const value = token.trim() === "" ? Number.NaN : Number(token);
   if (!Number.isFinite(value) || (field.kind === "integer" && !Number.isInteger(value)))
     throw new UsageError(
-      `${name} must be ${field.kind === "integer" ? "a whole number" : "a number"}, got "${token}"`,
+      `${name} must be ${field.kind === "integer" ? "a whole number" : "a number"}, got ${shown}`,
     );
   if (field.min !== undefined && value < field.min)
     throw new UsageError(`${name} must be at least ${field.min}, got ${value}`);

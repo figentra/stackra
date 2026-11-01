@@ -8,7 +8,8 @@
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, its client tool table (`#stackra/client-tools`, ADR 0490), the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
  *          (the setting keys of its settings classes, stackra-209), `#stackra/reports` (one query per report,
- *          ADR 0470), `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6; both
+ *          ADR 0470), `#stackra/commands` and `.stackra/entry/console.ts` (the console commands, ADR 0506, STA-1731),
+ *          `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6; both
  *          kinds of generated query are declared beside the authored ones, so each gets its manifest entry, endpoint,
  *          MCP tool and wiring, STA-1459), `#stackra/i18n` from
  *          the lang catalogues and those of the declared `@stackra/*` packages, the package entries or runtime entries, the tool configs, an app's Expo config and the
@@ -75,6 +76,8 @@ import { emitI18n } from "#core/functions/emit-i18n.function";
 import { emitMemberModule } from "#core/functions/emit-member-module.function";
 import { emitPackageEntries } from "#core/functions/emit-package-entries.function";
 import { emitPrefixes } from "#core/functions/emit-prefixes.function";
+import { emitCommands } from "#core/functions/emit-commands.function";
+import { emitConsoleEntry } from "#core/functions/emit-console-entry.function";
 import { emitReports } from "#core/functions/emit-reports.function";
 import { emitSearchQueries } from "#core/functions/emit-search-queries.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
@@ -222,6 +225,7 @@ export function generateMember(
     [".stackra/gen/client-tools.ts", clientTools.content],
     [".stackra/gen/queues.ts", emitQueues(ir, manifest)],
     [".stackra/gen/settings.ts", emitSettings(ir)],
+    [".stackra/gen/commands.ts", emitCommands(ir, manifest)],
     [".stackra/gen/reports.ts", emitReports(authored)],
     [".stackra/gen/search.ts", emitSearchQueries(authored)],
     [".stackra/tests/tenant-isolation.int.test.ts", emitIsolationTest(ir)],
@@ -236,6 +240,12 @@ export function generateMember(
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
   files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir), ...expo.files);
+  // The console entry, for a member with commands; a v2 service's authored main does not stop it (ADR 0506).
+  const consoleEntry = emitConsoleEntry(
+    ir,
+    files.map((file) => file.path),
+  );
+  if (consoleEntry !== undefined) files.push(consoleEntry);
   // A v2 service runs from its authored src/main.ts and configs, so it gets no entry or tool config (STA-344).
   if (ir.authoredMain !== true) {
     const entries = [

@@ -22,6 +22,7 @@ export const KIND_BASES: Readonly<Record<string, readonly string[]>> = Object.fr
   bridge: ["Bridge"],
   bucket: ["Bucket"],
   change: ["Change"],
+  command: ["Command"],
   config: ["Config"],
   connection: ["Connection"],
   controller: ["Controller"],
