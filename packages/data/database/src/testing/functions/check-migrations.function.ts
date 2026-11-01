@@ -11,11 +11,10 @@
  * Governing contract: ADR 0159 (decision 2: up and down files, the transactional header); ADR 0160 (decision 2);
  *                     ADR 0269 (decision 3); STA-1689.
  */
-import { PGlite } from "@electric-sql/pglite";
-
 import type { MigrationFile } from "#node/types/migration-file.type";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
-import { PGLITE_EXTENSIONS } from "#testing/constants/pglite-extensions.constant";
+import { extensionsSql } from "#testing/functions/extensions-sql.function";
+import { loadPglitePeers } from "#testing/functions/load-pglite-peers.function";
 import type { MigrationTarget } from "#testing/types/migration-target.type";
 
 /**
@@ -29,8 +28,9 @@ import type { MigrationTarget } from "#testing/types/migration-target.type";
  */
 export async function checkMigrations(directory: string, target?: MigrationTarget): Promise<void> {
   const files = readMigrationFiles(directory);
-  const made =
-    target === undefined ? await PGlite.create({ extensions: PGLITE_EXTENSIONS }) : undefined;
+  // PGlite and its extensions are optional peers, loaded only when no target is given (STA-1853).
+  const peers = target === undefined ? loadPglitePeers() : undefined;
+  const made = peers ? await peers.PGlite.create({ extensions: peers.extensions }) : undefined;
   const database: MigrationTarget = target ?? (made as MigrationTarget);
   const run = async (file: MigrationFile, sql: string, step: string): Promise<void> => {
     try {
@@ -45,11 +45,7 @@ export async function checkMigrations(directory: string, target?: MigrationTarge
     }
   };
   try {
-    await database.exec(
-      Object.keys(PGLITE_EXTENSIONS)
-        .map((name) => `create extension if not exists ${name};`)
-        .join("\n"),
-    );
+    await database.exec(extensionsSql());
     for (const file of files) await run(file, file.sql, "up");
     const reverted: MigrationFile[] = [];
     // oxlint-disable-next-line unicorn/no-array-reverse -- reverses a copy built here; toReversed is ES2023 and the base lib is ES2022
