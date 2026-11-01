@@ -162,8 +162,8 @@ expect(app.events.published()).toRecord(OrderPaid, { orderId });
 ```
 
 On compile the plugin connects each registered listener the app can build. One whose dependency nothing binds (a
-listener of a module the test did not boot) is skipped with a `console.warn` naming the listener and the unbound class, so `app.listeners.calls(X)` stays empty; any other error building
-a listener fails the compile (STA-1740).
+listener of a module the test did not boot) is skipped with a `console.warn` naming the listener and the unbound class, so `app.listeners.calls(X)` stays empty and `app.listeners.skipped()` lists each skip as `{ listener, missing }`; any other
+error building a listener fails the compile (STA-1740).
 
 `drainOutbox()` works through `OutboxFake`, the in-memory `EventOutbox`, so this package never depends on the outbox. With
 `@stackra/database`'s testing entry loaded, each event is delivered as the production inbox receives it: on its own, in

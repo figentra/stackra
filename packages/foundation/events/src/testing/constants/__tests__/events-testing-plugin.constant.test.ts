@@ -118,6 +118,7 @@ describe("EVENTS_TESTING_PLUGIN", () => {
       "events testing: skipped NeedsMissingListener: nothing binds Missing",
     );
     warn.mockRestore();
+    expect(app.listeners.skipped()).toEqual([{ listener: NeedsMissingListener, missing: Missing }]);
     await dispatch(new StockLow());
     await drainEvents();
     expect(app.listeners.calls(NeedsMissingListener)).toHaveLength(0);
@@ -133,7 +134,8 @@ describe("EVENTS_TESTING_PLUGIN", () => {
   });
 
   it("falls back to its own bus and an OutboxFake", async () => {
-    await createTestingModule(FixtureModule).compile();
+    const app = await createTestingModule(FixtureModule).compile();
+    expect(app.listeners.skipped()).toEqual([]);
     expect(currentHarness().bus).toBeInstanceOf(EventBus);
     expect(currentHarness().outbox).toBeInstanceOf(OutboxFake);
   });
