@@ -23,4 +23,4 @@ export { VerifyAwardOutput } from "#node/schemas/verify-award-output.schema";
 export { AwardService } from "#node/services/award.service";
 export { AwardKindService } from "#node/services/award-kind.service";
 // The entity list gen writes for the module, which a hosting service registers (STA-1793).
-export { ACHIEVEMENTS_ENTITIES } from "#stackra/entities/achievements";
+export { ACHIEVEMENTS_ENTITIES } from "#node/entities.gen";

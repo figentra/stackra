@@ -1,0 +1,99 @@
+---
+title: "0512 — One Infisical layout: projects by reader, one agents vault, product runtimes"
+description: "Proposed · 2026-11-01"
+---
+
+{/* Stackra file contract. Purpose: ADR 0512, the one Infisical layout every Figentra repository follows: a project per reader for shared CI, deploy, registry and gate secrets, one `figentra-agents` vault for agents and developers, and a project per product holding only `/runtime/<member>`; names, environments, folders, bindings and the writers' project targeting. Boundary: decision text only; the values are the owner's, moved by hand. Runtime: documentation. Governing contract: ADR template; ADR 0009, 0173, 0257, 0371, 0484, 0493. */}
+
+<Note>
+  Proposed 2026-11-01 (STA-1867), from the owner's audit of the Figentra Technologies org on
+  eu.infisical.com. It extends
+  [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) (decision 5, CI) and
+  [0371](/adr/0371-secret-store-drivers-which-deploy-mode-binds-which-and-how-the-bootstrap-credential-arrives)
+  (decision 3, bootstrap identities), and restates the vault layout of
+  [0009](/adr/0009-secrets-two-mechanisms) per project.
+</Note>
+
+## Context
+
+The audit found the following:
+
+- **Shared tokens were copied into many places.**
+  - `TURBO_TOKEN` was in nine places.
+  - `CLOUDFLARE_API_TOKEN` was in four projects.
+  - `REGISTRY_SIGNING_KEY` was in two projects.
+- **Projects that no CI identity can read.** The stackra project held `/ci` folders that no CI identity reaches.
+- **Workflows that read paths which do not exist:**
+  - figentra's turbo step points at a project its identity cannot read;
+  - `install:pro` reads `/install`, which no project has;
+  - the observability, Mintlify and release paths are missing.
+- **Writers that land in the wrong project.** `pnpm secrets:import` writes to whatever `.infisical.yaml` binds, which is
+  stackra, while the workflow reads another project.
+- **No binding in the product repositories.** They had no `.infisical.yaml`, so their agent and MCP scripts had no
+  project.
+- **Two models had grown apart:**
+  - the template expected one project per product, holding `/runtime`, `/ci` and `/agents`;
+  - CI used shared projects split by reader.
+
+The owner chose a hybrid of the two.
+
+## Decision
+
+1. **One project per reader.** A value has one home. A second reader either reads that home, or gets a differently
+   scoped token with its own name.
+
+   | Project              | Envs                                | Folders                                                | Reader                                                                            |
+   | -------------------- | ----------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
+   | `figentra-ci`        | `prod`                              | `/ci`, `/ci/turbo`, `/ci/registry`                     | `figentra-ci-gate`: every CI job and PR check (OIDC), testbed sandboxes (AWS)     |
+   | `figentra-ci-deploy` | `prod`                              | `/ci`, `/ci/release`, `/ci/store`, `/ci/observability` | `figentra-ci-deploy`: OIDC, branch-protected GitHub environments only             |
+   | `figentra-registry`  | `prod`                              | `/ci`, `/ci/registry`                                  | `figentra-registry`: the registry repository's `registry` environment             |
+   | `figentra-flow-gate` | `prod`                              | `/ci/gate`                                             | `figentra-flow-box`: universal auth from the box                                  |
+   | `figentra-agents`    | `dev`                               | `/agents`                                              | people and agents through `.infisical.yaml`; no CI identity                       |
+   | `stackra`            | `prod`                              | `/ci/registry`, `/ci/box-gate`                         | the owner only: values carried by hand (the issuer token, the Flow box bootstrap) |
+   | `<product>`          | `dev`, `preview`, `staging`, `prod` | `/runtime/<member>`, `/runtime/<resource>`             | runway sync, and a 0371 bootstrap identity per environment and member             |
+
+2. **Only build tokens in `figentra-ci`.** A pull request can reach `figentra-ci`, so it holds no credential that can
+   write or deploy.
+3. **Fixed folder names.**
+   - `/ci` and `/ci/<purpose>` for CI.
+   - `/agents` for people and agents.
+   - `/runtime/<member>` for runtimes. This is the folder `deployPlan` gives each member, and the one ADR 0493's
+     resource secrets already use.
+   - No other top-level folders.
+4. **Frontends hold no secret** (0371 decision 1).
+   - Public build values (`VITE_*`, `EXPO_PUBLIC_*`, DSNs, analytics keys) are runway `vars`.
+   - A Worker's server-side secret goes in `/runtime/<app>`.
+   - Non-secret ids and URLs are not stored in Infisical. The one exception is `TURBO_API` and `TURBO_TEAM`, which go
+     in `/ci/turbo` beside the token their step exports.
+5. **Names.**
+   - `SCREAMING_SNAKE_CASE`, vendor first.
+   - The same value has the same name everywhere.
+   - App Store keys are `ASC_API_KEY_ID`, `ASC_API_ISSUER_ID` and `ASC_API_PRIVATE_KEY`.
+   - Retired names do not return: `NPM_FIGENTRA_*` and `NPFLARED_AUTH_TOKEN`.
+6. **Bindings.**
+   - A workflow takes project and identity ids only from the org variables (`INFISICAL_GATE_*`, `INFISICAL_TURBO_*`,
+     `INFISICAL_CI_IDENTITY_ID`, `INFISICAL_DEPLOY_PROJECT_ID`, `INFISICAL_REGISTRY_*`), never as a literal.
+   - Every repository's `.infisical.yaml` binds `figentra-agents` `dev`.
+   - A product's `runway.yaml` names only its own runtime workspace and the `runtime` path.
+7. **Writers name the project.**
+   - `pnpm secrets:import` and `pnpm vault` take `project` from the sidecar or `--project`.
+   - `/agents` defaults to `figentra-agents`; a `/ci` target without a project is refused.
+   - The confirm token binds the project.
+
+## Consequences
+
+- **Each identity reads one project, and each value has one copy,** so a rotation is one edit.
+- **The owner moves the values once:** `/agents` to `figentra-agents`, and the store, release and observability
+  names to `figentra-ci-deploy`. Then they delete the stackra and Academorix copies. The Academorix project is
+  archived.
+- **Product runtime projects are created at a product's first runtime secret,** together with runway sync (STA-606).
+- **Enforcement:**
+  - `secrets-import` and `vault-keeper` refuse an unbound `/ci` target.
+  - `deployPlan` emits `/runtime/<member>`.
+  - Planned: a repo check that no workflow carries an Infisical project id literal.
+
+## Alternatives
+
+- **Per-product projects for everything** (the template's model). Every shared token is copied into each product,
+  and each copy can drift.
+- **One project with path-scoped roles.** Custom roles are not on the plan, and one leak exposes everything.

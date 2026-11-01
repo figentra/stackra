@@ -25,6 +25,8 @@
     ".mcp.json",
     // `encore gen client` output; compared byte-for-byte in CI
     "packages/*/api-client/src/generated/**",
+    // a package's committed entity list, written by `stackra gen`; `gen --check` compares it byte-for-byte (STA-1874)
+    "packages/*/*/src/node/entities.gen.ts",
     // scaffold templates hold {{TOKENS}}, so they are not valid TS; the generator formats what it renders
     "tools/scaffold/templates/**",
     // @stackra/tokens: theme CSS its tests compare byte-for-byte with the renderers, and brand-kit files vendored

@@ -14,19 +14,18 @@ import { z } from "zod";
 import type { AnalyticsDelivery } from "#contracts/types/analytics-delivery.type";
 import { ANALYTICS_DELIVERY_SCHEMA } from "#core/constants/analytics-delivery-schema.constant";
 
-/** The most deliveries one batch may hold. */
-const BATCH_LIMIT = 100;
-
-/** The deliveries of one relayed batch. */
-const DELIVERIES = z.array(ANALYTICS_DELIVERY_SCHEMA).min(1).max(BATCH_LIMIT);
-
 /** One batch of relayed analytics deliveries. */
 export class IngestAnalyticsBatchInput extends Schema {
   /** The deliveries, in the order the client captured them. */
   // reason: the envelope is a package interface with no `X$`; its zod schema already holds its rules
-  @Field(DELIVERIES)
+  @Field(z.array(ANALYTICS_DELIVERY_SCHEMA).min(1).max(100))
   deliveries!: AnalyticsDelivery[];
 }
 
 // shortcut: registered here until gen writes the package's #stackra/schemas registration (STA-339).
-registerSchemas([[IngestAnalyticsBatchInput, z.object({ deliveries: DELIVERIES })]]);
+registerSchemas([
+  [
+    IngestAnalyticsBatchInput,
+    z.object({ deliveries: z.array(ANALYTICS_DELIVERY_SCHEMA).min(1).max(100) }),
+  ],
+]);

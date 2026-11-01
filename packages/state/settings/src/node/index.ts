@@ -19,4 +19,4 @@ export { StoredSetting } from "#node/models/stored-setting.model";
 export { StoredSettingRevisionService } from "#node/services/stored-setting-revision.service";
 export { StoredSettingService } from "#node/services/stored-setting.service";
 // The entity list gen writes for the module, which a hosting service registers (STA-1793).
-export { SETTINGS_ENTITIES } from "#stackra/entities/settings";
+export { SETTINGS_ENTITIES } from "#node/entities.gen";

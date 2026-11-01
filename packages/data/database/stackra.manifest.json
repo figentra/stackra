@@ -354,16 +354,6 @@
       "entry": "node"
     },
     {
-      "name": "db:seed",
-      "aliases": [],
-      "hidden": false,
-      "audit": true,
-      "bin": false,
-      "class": "DbSeedCommand",
-      "file": "src/node/commands/db-seed.command.ts",
-      "entry": "node"
-    },
-    {
       "name": "db:status",
       "aliases": [],
       "hidden": false,
@@ -371,6 +361,16 @@
       "bin": false,
       "class": "DbStatusCommand",
       "file": "src/node/commands/db-status.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "seed-pack:status",
+      "aliases": [],
+      "hidden": false,
+      "audit": true,
+      "bin": false,
+      "class": "SeedPackStatusCommand",
+      "file": "src/node/commands/seed-pack-status.command.ts",
       "entry": "node"
     }
   ],

@@ -4,6 +4,16 @@ description: "Accepted, amended by 0265, 0294, 0295 · 2026-10-21"
 ---
 
 <Note>
+  Amended 2026-11-01 (STA-1874) by
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rule R10, as amended
+  that day): the committed artefacts are now `stackra.manifest.json` and `openapi.json` at the
+  member root, and a package's `src/node/entities.gen.ts` (0294 R10 as amended 2026-11-01,
+  STA-1874). Its build order is recorded in
+  [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries). The other
+  decisions stand.
+</Note>
+
+<Note>
   Amended by [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) and
   [0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries): the outputs
   of decision 1 include `schemas` (`#stackra/schemas`, one Zod schema per shape class). The

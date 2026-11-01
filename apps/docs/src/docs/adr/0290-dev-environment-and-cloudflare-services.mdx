@@ -6,6 +6,17 @@ description: "Accepted, amended by 0453 · 2026-10-22"
 {/* Stackra file contract. Purpose: ADR 0290, Dev environment and Cloudflare services: zones, tunnels, Access, Turnstile, email and npm names. Boundary: decision text only; later decisions reach it as amendment notes, newest first. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0453 (amendment note added by stackra-90, 2026-10-28). */}
 
 <Note>
+  2026-11-01 (owner decision, STA-1889): product surfaces follow
+  [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks) and the OS edge built from it, not
+  decisions 1 and 2. A non-production environment serves a product's surface hosts under its label
+  under figentra.com (`console.pay.dev.figentra.com`, `console.pay.staging.figentra.com`), and
+  production unlabelled (`console.pay.figentra.com`). A product's root runway states it as
+  `environments.<env>.domains.zone` (`dev.figentra.com`, `preview.figentra.com`,
+  `staging.figentra.com`, `figentra.com`). figentra.cloud stays the zone for tunnels and dev machines
+  (decisions 1, 2 and 4).
+</Note>
+
+<Note>
   Decisions 16 and 17 amended 2026-10-27 (STA-1333) by
   [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
   decisions 1 and 17: decision 17 is reversed, and `npm.stackra.figentra.com` stays as the host of
