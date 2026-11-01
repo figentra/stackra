@@ -1,6 +1,6 @@
 # @stackra/renderers
 
-The renderer layer that Stackra and Vellum share (ADR 0286 decision 6). It takes the neutral agent documents of
+The renderer layer that Stackra and Figentra Flow share (ADR 0286 decision 6). It takes the neutral agent documents of
 `@stackra/skills` (skills, rules, sub-agents, commands and hooks, each written once as Markdown with frontmatter)
 and writes them into each assistant's own layout. It is pure: no file is read or written, and the same documents
 always give the same bytes.
@@ -38,7 +38,7 @@ beside its `SKILL.md` are the caller's to copy.
 - `hooks/hooks.json` has the shape of the `hooks` key of a Claude Code settings file, grouped by event.
 - Every Markdown file carries a provenance comment naming the generator and the document, never a path.
 - Two documents that would write one path (a skill and a rule read on request with the same name) are refused.
-- Claude Code and OpenCode are tested in the Vellum spike; Kiro and Cursor are kept and untested (ADR 0286 decision 16).
+- Claude Code and OpenCode are tested in the Figentra Flow spike; Kiro and Cursor are kept and untested (ADR 0286 decision 16).
 
 ## API
 

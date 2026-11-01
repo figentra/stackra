@@ -130,7 +130,7 @@ export const NEW_COMMAND: CliCommand = {
     if (extra.length > 0) throw new CliUsageError(`unexpected argument: ${extra[0]}`);
     const scope = typeof values["scope"] === "string" ? values["scope"] : undefined;
     if (scope !== undefined && !KEBAB.test(scope.replace(/^@/, "")))
-      throw new CliUsageError("--scope takes a product key (beautilon) or an npm scope (@acme)");
+      throw new CliUsageError("--scope takes a product key (velora) or an npm scope (@acme)");
     const over = values["over"] === true;
     const repo = text(values["repo"]);
     const root = repo === undefined ? workspaceRoot(cwd) : resolve(cwd, repo);

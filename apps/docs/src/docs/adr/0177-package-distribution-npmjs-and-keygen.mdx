@@ -58,7 +58,7 @@ npmjs with provenance and the Pro packages to Keygen Cloud. Railway is no longer
 ## Decision
 
 1. **Free packages (PK1).** `@stackra/*` publishes openly to npmjs with provenance, from CI with the bot token through OIDC. The changesets `access` setting is `public`.
-2. **Pro packages (PK2 and PK3).** Keygen Cloud serves the `@stackra-pro` packages and images. The Cloudflare Worker `npm-registry` is retired after `@figentra/cli` and vellum have migrated. `npm.figentra.com` stays up until then.
+2. **Pro packages (PK2 and PK3).** Keygen Cloud serves the `@stackra-pro` packages and images. The Cloudflare Worker `npm-registry` is retired after `@figentra/cli` and figentra-flow have migrated. `npm.figentra.com` stays up until then.
 3. **Migration.** Delete `npm.figentra.com` only after Academorix and the release job have switched, and after the tarballs have migrated.
 4. **Release checks (PK4).** A full verify, `publint`, `attw`, and a packed-tarball smoke test in Node, Vite and Metro. A changeset is required. The owner merges the version pull request.
 5. **Versions (PK5 and PK7).** One fixed version for all `@stackra/*`. Pro follows the same major and minor, and ships within a week.
@@ -92,7 +92,7 @@ planned — the release workflow publishes with provenance, and `publint` and `a
 **Decision.** This amendment replaces decision 1's mechanism; the rest stands.
 
 1. **Registry.** `@stackra/*` publishes to `https://registry.npmjs.org/`, public. `npm.figentra.com` is no longer the
-   `@stackra` registry; the Worker keeps serving `@figentra/cli` and vellum until decision 3 is done.
+   `@stackra` registry; the Worker keeps serving `@figentra/cli` and figentra-flow until decision 3 is done.
 2. **No long-lived npm token.** The release job uses npm trusted publishing: GitHub OIDC (`id-token: write`). Changesets runs
    pnpm 12's native publish, which does the OIDC exchange and provenance itself; the npm CLI is not the publisher. No `NPM_FIGENTRA_TOKEN`, no Infisical step for npm.
 3. **Provenance.** The workflow sets `NPM_CONFIG_PROVENANCE=true`; every `tier:lib` package carries a `repository` field (npm provenance needs it to match this

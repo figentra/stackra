@@ -7,7 +7,8 @@
  *           rules are skipped (OpenCode reads them from `AGENTS.md`), and so are hooks (OpenCode hooks are code
  *           plugins). A command's argument hint is dropped: OpenCode has no field for it.
  * Runtime: isomorphic
- * Governing contract: ADR 0282 (decision 2); ADR 0286 (decisions 6 and 16: ported from Vellum, OpenCode tested).
+ * Governing contract: ADR 0282 (decision 2); ADR 0286 (decisions 6 and 16:
+ *                     ported from Figentra Flow, OpenCode tested).
  */
 import type { AgentDocument } from "@stackra/skills";
 

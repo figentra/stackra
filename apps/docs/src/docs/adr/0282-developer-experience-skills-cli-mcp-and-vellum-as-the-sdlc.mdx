@@ -1,5 +1,5 @@
 ---
-title: "0282 — Developer experience: @stackra/skills, @stackra/cli, @stackra/mcp and Vellum as the SDLC"
+title: "0282 — Developer experience: @stackra/skills, @stackra/cli, @stackra/mcp and Figentra Flow as the SDLC"
 description: "Accepted, amended by 0286, 0334, 0500, 0510 · 2026-10-22 · note 2026-10-30 (STA-1669, owner-approved 2026-10-30)"
 ---
 
@@ -11,10 +11,10 @@ description: "Accepted, amended by 0286, 0334, 0500, 0510 · 2026-10-22 · note 
 
 <Note>
   Amended 2026-10-31 (owner decision) by
-  [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra): Vellum becomes the spec workflow
-  with no spike gate, rebuilt fresh, and the Figentra-internal operations move into the private
-  `figentra` CLI. Decisions 4, 11, 13, 14, 15 and 16 are read with the amendment of 2026-10-31
-  below.
+  [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra): Figentra Flow becomes the spec
+  workflow with no spike gate, rebuilt fresh, and the Figentra-internal operations move into the
+  private `figentra` CLI. Decisions 4, 11, 13, 14, 15 and 16 are read with the amendment of
+  2026-10-31 below.
 </Note>
 
 <Note>
@@ -38,9 +38,10 @@ description: "Accepted, amended by 0286, 0334, 0500, 0510 · 2026-10-22 · note 
 <Note>
   Amended by [0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution):
   decision 1 gains `@stackra/renderers` (four developer packages); decision 2 moves the renderer
-  layer to `@stackra/renderers`, which Vellum depends on from npmjs; decision 12 splits the Stackra
-  preset between `@stackra/skills` and `.agents/`; decision 16 tracks Vellum work in Linear team STA
-  with the `vellum` label. Decisions 11 and 14 gain the spike conditions set in 0286.
+  layer to `@stackra/renderers`, which Figentra Flow depends on from npmjs; decision 12 splits the
+  Stackra preset between `@stackra/skills` and `.agents/`; decision 16 tracks Figentra Flow work in
+  Linear team STA with the `flow` label. Decisions 11 and 14 gain the spike conditions set
+  in 0286.
 </Note>
 
 <Note>
@@ -60,7 +61,7 @@ an agent kit committed into every project drifts and gives away the know-how. [0
 `@stackra/cli` as the `stackra` binary, [0199](/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs) installs
 an agent kit through `stackra agents sync`, and [0217](/adr/0217-api-surfaces-mcp-first-plus-rest-sdks-and-rate-limits) defines the
 product MCP gateway that exposes tenant actions. The SDLC is spec-kit ([0067](/adr/0067-spec-kit-is-the-sdlc), pinned by D15 of
-[0121](/adr/0121-sdlc-tooling-roles-and-linear)). Vellum (figentra/vellum, `@vellum/*`) is a separate product that already has protocol,
+[0121](/adr/0121-sdlc-tooling-roles-and-linear)). Figentra Flow (figentra/flow, `@vellum/*`) is a separate product that already has protocol,
 engine, storage, renderers, method, plugins, CLI and MCP packages with tests. The owner decided the package split, the distribution model
 and the SDLC path in chat on 2026-10-22.
 
@@ -75,9 +76,9 @@ and the SDLC path in chat on 2026-10-22.
 2. **`@stackra/skills` is the agent-neutral source.** Every Stackra skill, rule, sub-agent, command and hook is written once in one neutral
    format: Markdown with frontmatter, like `@vellum/method`. Renderers write it into each tool's layout: Claude Code (`.claude/`), OpenCode
    (`.opencode/`), Kiro (`.kiro/`), Cursor (`.cursor/rules`), and `AGENTS.md` for Codex, Gemini and others. The renderer layer is shared with
-   Vellum (`@vellum/renderers`), not duplicated. Projects pin a version through the catalog; updates arrive through changesets and Renovate.
+   Figentra Flow (`@vellum/renderers`), not duplicated. Projects pin a version through the catalog; updates arrive through changesets and Renovate.
 3. **`@stackra/cli` (`stackra`) runs every operation.** `new` (package, service, app and their kinds), `gen`, `validate`, `verify`, `doctor`,
-   `db diff`, `structure`, `agents setup|sync|check` and `spec` (which wraps Vellum). The `agents` commands run the skills renderers, install
+   `db diff`, `structure`, `agents setup|sync|check` and `spec` (which wraps Figentra Flow). The `agents` commands run the skills renderers, install
    the guard hooks and render `.mcp.json` from `.mcp.yaml`; decision 10 says which command writes where. Root `package.json` scripts call it. The scaffold templates live inside it.
 4. **Figentra-internal operations stay here.** Linear, the bot identities, the merge gate, the secrets inbox, delegation and the spend meter
    stay in this repository's `tools/scripts` and are not part of the published CLI.
@@ -111,24 +112,24 @@ and the SDLC path in chat on 2026-10-22.
 
 ### SDLC
 
-11. **Vellum becomes the SDLC if the spike passes.** If the Phase T spike (STA-298) passes, Vellum is Stackra's SDLC: the method, signed
-    approvals, recorded task evidence, a tamper-evident ledger, `vellum verify` in the Quality Gate, and a read-only MCP. A follow-up ADR then
+11. **Figentra Flow becomes the SDLC if the spike passes.** If the Phase T spike (STA-298) passes, Figentra Flow is Stackra's SDLC: the method, signed
+    approvals, recorded task evidence, a tamper-evident ledger, `figentra-flow verify` in the Quality Gate, and a read-only MCP. A follow-up ADR then
     supersedes [0067](/adr/0067-spec-kit-is-the-sdlc) and D15 of [0121](/adr/0121-sdlc-tooling-roles-and-linear), the existing specs in
     `.agents/specs` migrate, and spec-kit (the `specify-cli` pin) is removed.
 12. **The `figentra/sdlc` Claude plugin is retired.** Its method lives in `@vellum/method`. Stackra's additions (the Impact questionnaire,
-    the Linear key, the risk and lane rules) become a Vellum preset.
+    the Linear key, the risk and lane rules) become a Figentra Flow preset.
 13. **Until the spike.** spec-kit stays and [0067](/adr/0067-spec-kit-is-the-sdlc) is unchanged. The spec-kit skills move into
     `@stackra/skills` and the spec gate into `@stackra/cli` as those packages are built.
-14. **If the spike fails.** spec-kit stays, and Vellum is added only as the approval and evidence layer.
+14. **If the spike fails.** spec-kit stays, and Figentra Flow is added only as the approval and evidence layer.
 15. **Where SDLC pieces go.** Method, prompts and templates go to skills. Deterministic checks (the spec gate, lint, evidence, the Linear
-    link) go to the CLI and the Quality Gate. Read-only spec status goes to the MCP. Approvals and the ledger stay in Vellum.
-16. **Vellum is continued, not rewritten.** Gaps such as `vellum sync` and the doctor categories are Vellum issues, filed in figentra/vellum.
+    link) go to the CLI and the Quality Gate. Read-only spec status goes to the MCP. Approvals and the ledger stay in Figentra Flow.
+16. **Figentra Flow is continued, not rewritten.** Gaps such as `figentra-flow sync` and the doctor categories are Figentra Flow issues, filed in figentra/flow.
 
 ## Consequences
 
 - A project carries three small files instead of an agent tree, so an upgrade is a version bump and nothing drifts in the repository.
 - The know-how in layer 2 is not on disk, which protects it, but it is unavailable offline; layer 1 and the open CLI still work offline.
-- The renderer layer has two consumers (Stackra and Vellum), so a change to `@vellum/renderers` must keep both working.
+- The renderer layer has two consumers (Stackra and Figentra Flow), so a change to `@vellum/renderers` must keep both working.
 - `tools/scripts` splits in two: operations that move into `@stackra/cli` and Figentra-internal operations that stay. Each script needs a
   home before the CLI ships.
 - Three more packages carry release checks and changesets; they move with the one fixed `@stackra/*` version, so a release bumps them
@@ -151,7 +152,7 @@ planned — each of the following, none of which exists yet:
   `.claude/hooks` or an OpenCode skill folder.
 - `stackra agents check` fails on drift between `.mcp.yaml` and `.mcp.json`, as `pnpm agents:check` does in this repository today.
 - Tests of `@stackra/mcp` assert that local writes go through the CLI command core and that hosted writes refuse without approval.
-- If STA-298 passes, `vellum verify` runs in the Quality Gate.
+- If STA-298 passes, `figentra-flow verify` runs in the Quality Gate.
 
 ## Open details
 
@@ -161,33 +162,33 @@ The owner did not give these; the conservative default below applies until an AD
    `packages/developer/skills`, and Figentra-internal agents and rules stay in `.agents/`.
 2. **Offline layer 2.** A signed-out or offline session gets layer 1 only. Nothing from layer 2 is cached on disk.
 
-## Amendment 2026-10-31 (owner decision): Vellum is the spec workflow, with no spike gate
+## Amendment 2026-10-31 (owner decision): Figentra Flow is the spec workflow, with no spike gate
 
-The owner decided on 2026-10-31 that Vellum becomes the spec workflow now, without waiting for the Phase T spike
+The owner decided on 2026-10-31 that Figentra Flow becomes the spec workflow now, without waiting for the Phase T spike
 (STA-298), and that every operation moves into one of four CLIs
 ([0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra)). The following replace the matching decisions above:
 
 1. **Decision 4.** Figentra-internal operations (Linear, the bot identities, the merge gate, the secrets inbox,
    delegation, the spend meter) leave `tools/scripts` for the private `figentra` CLI, `@figentra/cli` in
    figentra/figentra `packages/cli`. They stay out of `@stackra/cli`.
-2. **Decisions 11 and 14.** There is no spike gate: Vellum is the spec workflow by owner decision. Decision 14 (the
+2. **Decisions 11 and 14.** There is no spike gate: Figentra Flow is the spec workflow by owner decision. Decision 14 (the
    fallback if the spike fails) no longer applies.
-3. **Decision 16.** Vellum is rebuilt, not continued. The current `figentra/vellum` `main` is tagged
+3. **Decision 16.** Figentra Flow is rebuilt, not continued. The current `figentra/flow` `main` is tagged
    `legacy-2026-10-30`, which keeps the old packages (`@vellum/*` protocol, engine, storage, renderers, method,
-   plugins, CLI, MCP) readable at that tag; `main` is replaced by one package, `@stackra/vellum`, with one binary, `vellum`. The legacy
+   plugins, CLI, MCP) readable at that tag; `main` is replaced by one package, `@stackra/vellum`, with one binary, `figentra-flow`. The legacy
    content is not developed further.
-4. **Decisions 13 and 15.** The spec gate, trace, parse and Linear link go to `vellum`, not to `@stackra/cli`; the
-   speckit skills and the Stackra preset move into Vellum, and core runs `vellum sync`. `stackra spec` calls `vellum`.
-5. **spec-kit stays underneath for now.** Vellum keeps the `.specify/` folder and wraps spec-kit, so
+4. **Decisions 13 and 15.** The spec gate, trace, parse and Linear link go to `figentra-flow`, not to `@stackra/cli`; the
+   speckit skills and the Stackra preset move into Figentra Flow, and core runs `figentra-flow sync`. `stackra spec` calls `figentra-flow`.
+5. **spec-kit stays underneath for now.** Figentra Flow keeps the `.specify/` folder and wraps spec-kit, so
    [0067](/adr/0067-spec-kit-is-the-sdlc), D15 of [0121](/adr/0121-sdlc-tooling-roles-and-linear) and the
-   `specify-cli` pin stay in force until a later `vellum migrate` moves repositories to `.vellum/` and an ADR retires
+   `specify-cli` pin stay in force until a later `figentra-flow migrate` moves repositories to `.figentra-flow/` and an ADR retires
    spec-kit.
-6. **Channel.** Vellum publishes to the Stackra registry only
+6. **Channel.** Figentra Flow publishes to the Stackra registry only
    ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)), never
    npmjs; this replaces "from npmjs" in decision 2 and the npm channel of decision 1 for the developer packages.
 
-The other decisions stand. The Enforcement line "If STA-298 passes, `vellum verify` runs in the Quality Gate" now reads:
-planned — `vellum gate` runs in the Quality Gate once core switches to `vellum sync`.
+The other decisions stand. The Enforcement line "If STA-298 passes, `figentra-flow verify` runs in the Quality Gate" now reads:
+planned — `figentra-flow gate` runs in the Quality Gate once core switches to `figentra-flow sync`.
 
 ## Supersedes and sources
 

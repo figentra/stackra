@@ -20,7 +20,7 @@ export type TemplateOptions = {
   /** The one-line description written into package.json and the README. */
   readonly description: string;
 
-  /** The published package name (`@figentra/beautilon-service-salon`, `@stackra/loyalty-kit`). */
+  /** The published package name (`@figentra/velora-service-salon`, `@stackra/loyalty-kit`). */
   readonly packageName: string;
 
   /** How a member depends on `@stackra/*`: `catalog:stackra` in a product repository, `workspace:*` here. */

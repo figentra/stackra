@@ -51,7 +51,7 @@ content hash; an e-signature port. Conflict 4 of that file is settled here: the 
 
 1. **A receipt in two languages (P1).** Commerce renders `commerce:print:receipt` with an order: the PDF shows Arabic
    and English side by side, the total in words in both languages, the tax QR and the lines.
-2. **A consent form signed on a tablet (P1).** Beautilon renders the consent template with the client's drawn
+2. **A consent form signed on a tablet (P1).** Velora renders the consent template with the client's drawn
    signature; the PDF, its content hash and the signature hash are stored by OS files.
 3. **A Word draft (P2).** Juristra renders an engagement letter to DOCX for editing, right-to-left paragraphs intact.
 4. **An e-signature envelope (P2).** Juristra sends a PDF to the tenant's e-signature provider and downloads the

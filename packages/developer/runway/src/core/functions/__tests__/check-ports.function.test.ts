@@ -19,7 +19,7 @@ const D1 = {
   organza: 2,
   jute: 3,
   mezzora: 4,
-  beautilon: 5,
+  velora: 5,
   juristra: 6,
   academorix: 7,
 };
