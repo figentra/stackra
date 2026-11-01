@@ -21,57 +21,78 @@ and `yaml`.
 
 ## Commands
 
-| Command                                      | Does                                                                                                                          |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `stackra new <kind> <name>`                  | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                       |
-| `stackra new <tooling\|app:*> <name>`        | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                   |
-| `stackra gen [--check] [--manifests]`        | gen-core on the member or every workspace member: manifests first, then the rest                                              |
-| `stackra dev [--target <t>]`                 | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify                                             |
-| `stackra dev --surface <surface>`            | a product surface in its real shell (published or `--os` checkout), Vite with hot reload                                      |
-| `stackra dev --mobile <app> --os <c>`        | a product mobile app from its template line, Release build on the iOS simulator (`--device`)                                  |
-| `stackra dev --product --os <c>`             | every surface and mobile app of the root runway at once                                                                       |
-| `stackra build [--target <t>]`               | gen, then build: tsdown (package), Vite (web), `expo export` (native), Wrangler dry run                                       |
-| `stackra build --product [--dry-run]`        | a product's surface bundles and mobile EAS builds, and `dist/product/build.json`                                              |
-| `stackra deploy --product --env <e>`         | publish a built product: bundles and host rows to the edge, mobile builds to the stores                                       |
-| `stackra mobile onboard [--app <key>]`       | take a product's mobile app from nothing to store-ready (ADR 0482); `--check`, `--live` in CI                                 |
-| `stackra preview serve --surface <s>`        | serve a built surface on 127.0.0.1 as the edge would, with an `--api` proxy (STA-1676)                                        |
-| `stackra smoke --env <e> [--only <targets>]` | after a preview deploy: Playwright on each web surface, Maestro on the given mobile builds; exit 1 blocks promotion (STA-265) |
-| `stackra start`                              | gen, then `vite preview` of an app's web build                                                                                |
-| `stackra typecheck`                          | gen, then `tsc --noEmit`                                                                                                      |
-| `stackra test [--tier unit\|e2e]`            | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)                                             |
-| `stackra lint`                               | `oxlint .`                                                                                                                    |
-| `stackra check [flags]`                      | the quality gate: every check phase in order at the workspace root (see below)                                                |
-| `stackra validate`                           | `check --only config,structure,docs,catalogues,spec`                                                                          |
-| `stackra validate --repository`              | the repository-shape gate of `pnpm validate`: repo checks, cycles, native deps, ratchets, map, Python, session settings       |
-| `stackra verify`                             | `check --with-tests`                                                                                                          |
-| `stackra code:check` / `code:fix`            | `check --only format,lint` (`code:fix` adds `--fix`)                                                                          |
-| `stackra seed-pack <product>`                | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants                                      |
-| `stackra settings:diff <pack.yaml>`          | what a settings pack would change at a scope node (`--scope-id`, `--scope-path`)                                              |
-| `stackra settings:apply <pack.yaml>`         | apply a settings pack to a sandbox node as revisions (`--author`, `--reason`)                                                 |
-| `stackra search:reindex [Model]`             | queue a resumable search reindex job (`--scope-id`/`--scope-path`, `--since`, `--semantic`)                                   |
-| `stackra search:status`                      | each search index's state, document count and rebuild progress                                                                |
-| `stackra ops bootstrap-operator`             | give an environment's first operator a role, once, through its API (`--email`, `--dry-run`)                                   |
-| `stackra ls [section]`                       | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…)                                      |
-| `stackra mcp`                                | the local developer MCP over stdio; its tools run these commands in-process                                                   |
-| `stackra mcp sync`                           | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                                                                |
-| `stackra mcp exec [--env] [--path] --`       | start an MCP server with its secrets, expanded by its own shell under `infisical run`                                         |
-| `stackra agents sync`                        | write the project's generated agent files (`.mcp.json`)                                                                       |
-| `stackra agents check`                       | fail when `.mcp.json` drifted from `.mcp.yaml`                                                                                |
-| `stackra add <kind> <name>[@version]`        | install a registry skill, agent, MCP server, plugin or package (see below)                                                    |
-| `stackra publish [--dry-run]`                | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry                                       |
-| `stackra testbed <verb>`                     | the shared test boxes: `run`, `status`, `unlock`, `ip`, `ssh`, `sync`, `scale`, `image` (below)                               |
-| `stackra doctor`                             | fresh-machine checklist: toolchain, install, Infisical login, CLIs, agent sync                                                |
-| `stackra eas-preflight check\|record`        | before a local EAS build: clean tree, deployed sha, free disk; `record` logs the build id                                     |
-| `stackra structure [--write-docs]`           | print or write the generated repository structure standards page                                                              |
-| `stackra architecture-map [--check]`         | write the docs architecture map (archify), or fail when it drifted                                                            |
-| `stackra doc-standard`                       | contract headers and TSDoc of every source file (ADR 0007)                                                                    |
-| `stackra catalogue-completeness`             | every lang catalogue has English's keys and placeholders (ADR 0403)                                                           |
-| `stackra cycles`                             | fail on any workspace package cycle, printing its path                                                                        |
-| `stackra app-native-deps`                    | fail when an Expo app lacks a native library its dependency closure needs                                                     |
-| `stackra duplicate-exports`                  | fail when one exported name is declared in two packages                                                                       |
-| `stackra any-ratchet`                        | fail when a package has more `no-explicit-any` disables than its baseline                                                     |
-| `stackra duplication [--update]`             | jscpd ratchet over each member's `src/` against `tools/scripts/duplication-baseline.yaml`                                     |
-| `stackra skill-licences`                     | every agent skill and enabled plugin carries an allowed licence                                                               |
+| Command                                                   | Does                                                                                                                            |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `stackra new <kind> <name>`                               | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                         |
+| `stackra new <tooling\|app:*> <name>`                     | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                     |
+| `stackra gen [--check] [--manifests]`                     | gen-core on the member or every workspace member: manifests first, then the rest                                                |
+| `stackra dev [--target <t>]`                              | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify                                               |
+| `stackra dev --surface <surface>`                         | a product surface in its real shell (published or `--os` checkout), Vite with hot reload                                        |
+| `stackra dev --mobile <app> --os <c>`                     | a product mobile app from its template line, Release build on the iOS simulator (`--device`)                                    |
+| `stackra dev --product --os <c>`                          | every surface and mobile app of the root runway at once                                                                         |
+| `stackra build [--target <t>]`                            | gen, then build: tsdown (package), Vite (web), `expo export` (native), Wrangler dry run                                         |
+| `stackra build --product [--dry-run]`                     | a product's surface bundles and mobile EAS builds, and `dist/product/build.json`                                                |
+| `stackra deploy --product --env <e>`                      | publish a built product: bundles and host rows to the edge, mobile builds to the stores                                         |
+| `stackra mobile onboard [--app <key>]`                    | take a product's mobile app from nothing to store-ready (ADR 0482); `--check`, `--live` in CI                                   |
+| `stackra preview serve --surface <s>`                     | serve a built surface on 127.0.0.1 as the edge would, with an `--api` proxy (STA-1676)                                          |
+| `stackra smoke --env <e> [--only <targets>]`              | after a preview deploy: Playwright on each web surface, Maestro on the given mobile builds; exit 1 blocks promotion (STA-265)   |
+| `stackra start`                                           | gen, then `vite preview` of an app's web build                                                                                  |
+| `stackra typecheck`                                       | gen, then `tsc --noEmit`                                                                                                        |
+| `stackra test [--tier unit\|e2e]`                         | gen, then vitest (unit), Playwright (web and desktop e2e) or Maestro (native e2e)                                               |
+| `stackra lint`                                            | `oxlint .`                                                                                                                      |
+| `stackra check [flags]`                                   | the quality gate: every check phase in order at the workspace root (see below)                                                  |
+| `stackra validate`                                        | `check --only config,structure,docs,catalogues,spec`                                                                            |
+| `stackra validate --repository`                           | the repository-shape gate of `pnpm validate`: repo checks, cycles, native deps, ratchets, map, Python, session settings         |
+| `stackra verify`                                          | `check --with-tests`                                                                                                            |
+| `stackra code:check` / `code:fix`                         | `check --only format,lint` (`code:fix` adds `--fix`)                                                                            |
+| `stackra seed-pack <product>`                             | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants                                        |
+| `stackra settings:diff <pack.yaml>`                       | what a settings pack would change at a scope node (`--scope-id`, `--scope-path`)                                                |
+| `stackra settings:apply <pack.yaml>`                      | apply a settings pack to a sandbox node as revisions (`--author`, `--reason`)                                                   |
+| `stackra search:reindex [Model]`                          | queue a resumable search reindex job (`--scope-id`/`--scope-path`, `--since`, `--semantic`)                                     |
+| `stackra search:status`                                   | each search index's state, document count and rebuild progress                                                                  |
+| `stackra ops bootstrap-operator`                          | give an environment's first operator a role, once, through its API (`--email`, `--dry-run`)                                     |
+| `stackra ls [section]`                                    | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…)                                        |
+| `stackra mcp`                                             | the local developer MCP over stdio; its tools run these commands in-process                                                     |
+| `stackra mcp sync`                                        | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                                                                  |
+| `stackra mcp exec [--env] [--path] --`                    | start an MCP server with its secrets, expanded by its own shell under `infisical run`                                           |
+| `stackra agents sync`                                     | write the project's generated agent files (`.mcp.json`)                                                                         |
+| `stackra agents check`                                    | fail when `.mcp.json` drifted from `.mcp.yaml`                                                                                  |
+| `stackra add <kind> <name>[@version]`                     | install a registry skill, agent, MCP server, plugin or package (see below)                                                      |
+| `stackra publish [--dry-run]`                             | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry                                         |
+| `stackra testbed <verb>`                                  | the shared test boxes: `run`, `status`, `unlock`, `ip`, `ssh`, `sync`, `scale`, `image` (below)                                 |
+| `stackra consumer-gate --core --checkout --product --out` | run a consumer product's services against a core tree: link or pack core, gen, typecheck, test; summaries under `--out` (below) |
+| `stackra doctor`                                          | fresh-machine checklist: toolchain, install, Infisical login, CLIs, agent sync                                                  |
+| `stackra eas-preflight check\|record`                     | before a local EAS build: clean tree, deployed sha, free disk; `record` logs the build id                                       |
+| `stackra structure [--write-docs]`                        | print or write the generated repository structure standards page                                                                |
+| `stackra architecture-map [--check]`                      | write the docs architecture map (archify), or fail when it drifted                                                              |
+| `stackra doc-standard`                                    | contract headers and TSDoc of every source file (ADR 0007)                                                                      |
+| `stackra catalogue-completeness`                          | every lang catalogue has English's keys and placeholders (ADR 0403)                                                             |
+| `stackra cycles`                                          | fail on any workspace package cycle, printing its path                                                                          |
+| `stackra app-native-deps`                                 | fail when an Expo app lacks a native library its dependency closure needs                                                       |
+| `stackra duplicate-exports`                               | fail when one exported name is declared in two packages                                                                         |
+| `stackra any-ratchet`                                     | fail when a package has more `no-explicit-any` disables than its baseline                                                       |
+| `stackra duplication [--update]`                          | jscpd ratchet over each member's `src/` against `tools/scripts/duplication-baseline.yaml`                                       |
+| `stackra skill-licences`                                  | every agent skill and enabled plugin carries an allowed licence                                                                 |
+
+`stackra consumer-gate` (ADR 0500, STA-1813) is the product gate on every core train. Build core first (it never
+writes the core tree; exit 2 names the build command if `packages/*/*/dist` is missing). It copies a pinned product
+checkout into `<out>/work/<product>@<pin>`, drops its lockfile and points every `@stackra/*` package at `--core`:
+`--mode link` (default) with `link:` rows, or `--mode pack` with `file:` rows to tarballs of every publishable core
+package packed under `<out>/tarballs`, as a registry install would see them. It overlays the manifests of services the
+product does not hold (`--overlays <dir>`), then installs, (pack mode) runs the `leak` check, builds, runs
+`stackra gen` (and records gen drift in `gen-drift-<product>@<pin>.txt`), typecheck, lint, build, test, `test:int`,
+and the repo-own `format`, `spell` and `validate` with the product's own workspace and lockfile (overlay-only services
+moved aside). `leak` fails when an installed `@stackra/*` file resolves into the core tree, or an `exports` entry
+under the `@stackra/source` condition names a `./src/` file the tarball lacks; it is never allow-listed. It writes
+`summary-<product>@<pin>.json` and `.md` (with an environment record: core commit, product ref, mode, node, pnpm,
+both lockfile hashes, gen version, overlay hashes and a `reproduce` command) and a log per step. It reads the
+repository's `tools/consumer-gate/matrix.yaml` (products, a `ref` or a `pins` commit per service, services, overlays;
+a `kind: scaffold` entry is a reference app made from core's scaffold, not yet supported: exit 2) and `allow.yaml`
+(excused failures: a `class` of `product`, `flaky`, `environment` or `known-core`, an STA issue and an expiry of at
+most 30 days each; a `security`, `tenant-isolation`, `data-integrity` or `leak` class, or none, is refused with exit
+2). `--matrix` and `--allow` override the paths. Services pinned to different commits are gated one pin at a time with
+`--services`. `--steps`, `--dry-run` and `--today` narrow or fake a run. Exit 0 green, 1 red, 2 setup or usage error.
+It never fetches: the caller clones the product at its pin.
 
 `stackra testbed` (ADR 0484) replaces the Mac script `ci-box`; it starts `aws`, `ssh`, `rsync` and `gh` without a shell
 and never prints or passes a secret value. Defaults: AWS profile `academorix`, region `eu-west-1`, key

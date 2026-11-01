@@ -5,4 +5,10 @@
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
   "tags": ["tier:lib", "category:developer", "runtime:node"],
+  // The consumer-gate tests read the committed matrix and allow-list.
+  "tasks": {
+    "test": {
+      "inputs": ["$TURBO_DEFAULT$", "../../../tools/consumer-gate/*.yaml"],
+    },
+  },
 }

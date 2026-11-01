@@ -1,0 +1,57 @@
+# Stackra file contract:
+# Purpose: the products `stackra consumer-gate` gates every core train against (STA-1813): repository, a pinned commit SHA,
+#          the services to gate, and the services whose manifests are overlaid from the caller's `--overlays` directory
+#          because the product does not hold them. A pin moves only by a reviewed pull request.
+#          A product has `ref` (one commit for all its services) or `pins` (a commit per service, when the services sit
+#          on separate pull requests); services with different pins are gated one pin at a time with `--services`.
+#          A `kind: scaffold` entry is not a product repository: a reference app made from core's own scaffold plus
+#          the `fixture` folder (an action, a model with a migration, a test), gated in `mode` (pack). It has no `repo`,
+#          `ref` or `pins`; the runner does not support it yet and exits 2 (STA-1813).
+# Boundary: data only; the command never fetches, so the caller clones each repository at its pin.
+# Owner: release-operations · Secrets: forbidden
+# Seed pins are the tips the 2026-11-01 hand-run gates ended on; the products hold nothing on main yet.
+products:
+  billing:
+    repo: figentra/billing
+    pins:
+      billing: "1139925"
+      entitlements: c605e78
+      usage: aacd450
+    services:
+      - billing
+      - entitlements
+      - usage
+    overlays:
+      - tenancy
+      - invoicing
+      - payments
+      - entitlements # usage consumes it (client_service_unknown entitlements) when it is not gated with billing
+  pay:
+    repo: figentra/pay
+    ref: 58528f4
+    services:
+      - payments
+      - payments-ledger
+    overlays:
+      - tenancy
+      - integrations
+  invoicing:
+    repo: figentra/invoicing
+    ref: 30310f9
+    services:
+      - invoicing
+    overlays:
+      - tenancy
+  tamo:
+    repo: figentra/tamo
+    ref: 0c52fd6
+    services:
+      - tamo
+    overlays:
+      - identity
+  scaffold:
+    kind: scaffold
+    mode: pack
+    fixture: tools/consumer-gate/scaffold-fixture
+    services:
+      - gate-example
