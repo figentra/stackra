@@ -11,7 +11,10 @@
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
 # Runtime: GitHub Actions
 # Secrets: the GitHub App id and key the version PR is pushed with (a PR pushed with GITHUB_TOKEN would not trigger
-#          the caller's gate), passed by the caller. No registry token exists: per package the job exchanges its
+#          the caller's gate). A caller that passes neither gets them from Infisical `prod` `/ci/release`
+#          (STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY) over GitHub OIDC with the org variables
+#          INFISICAL_CI_IDENTITY_ID and INFISICAL_DEPLOY_PROJECT_ID, so no repository holds them (STA-1747).
+#          No registry token exists: per package the job exchanges its
 #          GitHub ID token (audience `npm:<registry host>`) at the registry's OIDC endpoint for a publish token bound to
 #          that one name (ADR 0453 decision 6, the workflow-run form), masks it and passes it as NODE_AUTH_TOKEN;
 #          `~/.npmrc` names the variable, never the value. The registry matches the CALLING workflow, ref and
@@ -47,11 +50,11 @@ on:
         default: https://npm.stackra.figentra.com/
     secrets:
       app-id:
-        description: The GitHub App id the version PR and the tags are pushed as.
-        required: true
+        description: The GitHub App id the version PR and the tags are pushed as; unset, it comes from Infisical.
+        required: false
       app-private-key:
-        description: That App's private key.
-        required: true
+        description: That App's private key; unset, it comes from Infisical.
+        required: false
     outputs:
       published:
         description: "`true` when the run published at least one package."
@@ -75,15 +78,31 @@ jobs:
     outputs:
       published: ${{ steps.changesets.outputs.published }}
       packages: ${{ steps.changesets.outputs.publishedPackages }}
+    env:
+      # A step's `if` cannot read `secrets`, so only whether the caller passed the App key is carried, never a value.
+      HAS_APP_SECRETS: ${{ secrets.app-id != '' && secrets.app-private-key != '' }}
 
     steps:
+      # STA-1747: a caller that passes no App secrets gets them from Infisical; the action masks and exports both.
+      - name: Bot App key (Infisical OIDC)
+        if: env.HAS_APP_SECRETS != 'true'
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/release
+          export-type: env
+
       # Scoped to what this job needs; revoked when the job ends.
       - name: App token
         id: bot
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.app-id }}
-          private-key: ${{ secrets.app-private-key }}
+          app-id: ${{ secrets.app-id || env.STACKRA_BOT_APP_ID }}
+          private-key: ${{ secrets.app-private-key || env.STACKRA_BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
 
