@@ -26,9 +26,10 @@ body lost the trailer is never seen, so those STA issues stay open after their w
   `.github/workflows/linear-sync.yml`)
 - **Cross-service events**: none
 - **Tenancy and data**: none
-- **Secrets**: the workflow mints a read-only installation token of the stackra-bot App for the `figentra` org from
-  the existing repository secrets `STACKRA_BOT_APP_ID` / `STACKRA_BOT_PRIVATE_KEY`, as `release.yml` does; no new
-  secret and no value in git. Without a token the job runs on `github.token` and reports the other repos as skipped.
+- **Secrets**: the workflow reads the stackra-bot App id and key from Infisical prod `/ci/release` over OIDC
+  (STA-1747), as `runway-npm.yml` does, and mints a read-only installation token for the `figentra` org; no
+  repository secret and no value in git. Without a token the job runs on `github.token` and reports the other repos
+  as skipped.
 - **ADR needed**: no (ADR 0065 rule 7 and ADR 0121 D14 already govern the reconcile; ADR 0500 moves it later)
 - **New dependencies**: none (`yaml` is already a root dev dependency)
 - **Deploy modes**: all, no change (CI tooling only)
@@ -59,9 +60,9 @@ body lost the trailer is never seen, so those STA issues stay open after their w
   feat/fix commit carries `Refs: STA-n` (commitlint `refs-issue-key`), so it is the only signal outside core branch
   names. A title mention and `Part of STA-n` stay mentions (leader correction, 2026-11-01).
 - Q: Which repos? → A: the 19 of `gh repo list figentra` except `.github` and `academorix-legacy` (leader, 2026-11-01).
-- Q: Which credential reads the other repos? → A: the stackra-bot App, through the repository secrets
-  `STACKRA_BOT_APP_ID` / `STACKRA_BOT_PRIVATE_KEY` as `release.yml` uses them; no new Infisical path. Both follow
-  `release.yml` to Infisical `/ci/release` when the owner moves the key (STA-1747).
+- Q: Which credential reads the other repos? → A: the stackra-bot App, its key read from Infisical prod
+  `/ci/release` over OIDC exactly as `runway-npm.yml` reads it; bot secrets never come from repository secrets
+  (owner rule, STA-1747).
 - Q: Where is the cursor kept? → A: nowhere; it is a lookback window (`--since`). Idempotency comes from the markers,
   so overlapping nightly windows repeat nothing.
 - Q: Can the repo list live in `figentra-flow.config.json`? → A: not now; that file's schema is Flow's. Proposed to
