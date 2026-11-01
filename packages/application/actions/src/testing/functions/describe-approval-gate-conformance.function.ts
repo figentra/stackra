@@ -127,6 +127,19 @@ export function describeApprovalGateConformance(
       });
     });
 
+    it("settles a stuck execution unknown, once, and deletes the snapshot", async () => {
+      const { gate, grant } = await make();
+      const draft = draftOf();
+      await gate.park(draft);
+      await grant(draft.approvalId);
+      await gate.begin(draft.approvalId, "approval:a");
+      await expect(gate.settle(draft.approvalId, { status: "unknown" })).resolves.toBe(true);
+      await expect(gate.settle(draft.approvalId, { status: "executed" })).resolves.toBe(false);
+      const done = await gate.find(draft.approvalId);
+      expect(done?.status).toBe(ApprovalStatus.Unknown);
+      expect(done?.snapshot).toBeUndefined();
+    });
+
     it("rejects and withdraws only a pending request, which then never begins", async () => {
       const { gate, reject, withdraw, grant } = await make();
       const rejected = draftOf();

@@ -41,6 +41,8 @@ describe("@stackra/actions/contracts", () => {
       "ApprovalBindingStore",
       "ApprovalExecution",
       "ApprovalGate",
+      "ApprovalGrantOrigin",
+      "ApprovalGranted",
       "ApprovalSettingsSource",
       "ApprovalStatus",
       "ApproverRefusal",

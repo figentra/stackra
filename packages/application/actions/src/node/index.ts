@@ -9,5 +9,6 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { AsyncContextStorageDriver } from "#node/drivers/async-context-storage.driver";
+export { ApprovalExecutor } from "#node/listeners/approval-executor.listener";
 export { ValkeyIdempotencyStoreDriver } from "#node/drivers/valkey-idempotency-store.driver";
 export { ValkeyRateLimitStoreDriver } from "#node/drivers/valkey-rate-limit-store.driver";

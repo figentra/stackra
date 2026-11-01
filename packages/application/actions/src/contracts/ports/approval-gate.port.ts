@@ -6,7 +6,7 @@
  * Boundary: an abstract class that is its own token, keyed `actions.ApprovalGate`. The pipeline, not the driver,
  *           compares a request with the call (`verifyApproval`) and enforces `max(declared, decided)`, so a driver
  *           that answers "no approval" for a declared call cannot let it through. `begin` and `settle` are
- *           compare-and-set (`granted → executing`, `executing → executed | failed`), and `begin` also answers true
+ *           compare-and-set (`granted → executing`, `executing → executed | failed | unknown`), and `begin` also answers true
  *           for a request already `executing` under the same key, so an execution retry is safe. The step runs only
  *           when a gate is bound; an action that declares `approval` fails closed with none bound, with
  *           `OpenApprovalGateDriver`, or with no `ApprovalBindingStore`. Actions only; a query is never parked. A leaf

@@ -136,12 +136,16 @@ export class MemoryApprovalGateDriver extends Driver(ApprovalGate) {
     return true;
   }
 
-  /** `executing → executed | failed` by compare-and-set. */
+  /** `executing → executed | failed | unknown` by compare-and-set. */
   async settle(approvalId: string, outcome: ApprovalOutcome): Promise<boolean> {
     const row = this.rows.get(approvalId);
     if (row === undefined || row.record.status !== ApprovalStatus.Executing) return false;
     row.record.status =
-      outcome.status === "executed" ? ApprovalStatus.Executed : ApprovalStatus.Failed;
+      outcome.status === "executed"
+        ? ApprovalStatus.Executed
+        : outcome.status === "unknown"
+          ? ApprovalStatus.Unknown
+          : ApprovalStatus.Failed;
     if (outcome.status === "failed") row.record.failureCode = outcome.code;
     this.finish(row);
     return true;
