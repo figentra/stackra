@@ -23,5 +23,5 @@ rules:
       # Local reusable-workflow calls stay `./.github/workflows/…` (ADR 0168, called by SHA from other repositories);
       # the `$/…` form is not adopted until a run on GitHub has proven it for these three callers.
       - deploy-docs.yml:40
-      - deploy-static.yml:52
+      - deploy-static.yml:54
       - release.yml:110
