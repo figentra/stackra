@@ -38,7 +38,7 @@
     ".agents/reference/**",
     ".claude/skills/**",
     // spec-kit scaffold (CLI-generated) and the constitution agents-sync generates from the docs laws
-    ".specify/**",
+    ".flow/**",
     ".opencode/commands/**",
     // private owner-only notes submodule (STA-178); never part of this repo's checks
     ".notes/**",

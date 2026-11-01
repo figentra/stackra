@@ -10,7 +10,6 @@
 const YAML_NOT_OWNED = [
   /^pnpm-lock\.yaml$/,
   /^pnpm-workspace\.yaml$/,
-  /^\.specify\//,
   /^\.(agents|claude)\/(skills|reference)\//,
   /^\.old\//,
 ];

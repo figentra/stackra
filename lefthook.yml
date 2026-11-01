@@ -22,7 +22,7 @@ pre-commit:
     - name: shfmt
       glob: "*.sh"
       exclude:
-        - ".specify/**"
+        - ".flow/**"
       # oxfmt has no shell support; shfmt reads .editorconfig. Same advisory fallback as gitleaks.
       run: |
         if command -v shfmt >/dev/null 2>&1; then

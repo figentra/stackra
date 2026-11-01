@@ -2,7 +2,7 @@
 /**
  * Stackra file contract:
  * Purpose: fresh-machine checklist (`pnpm doctor`) — mise tools, pnpm install, Infisical login, AWS `bedrock`
- *   profile, claude/opencode CLIs, the pinned spec-kit `specify`, `pnpm agents:check`, .mcp.json. Prints what is missing and how to fix it.
+ *   profile, claude/opencode CLIs, `pnpm agents:check`, .mcp.json. Prints what is missing and how to fix it.
  * Boundary: runs read-only status commands and prints what is missing; installs and changes nothing.
  * Runtime: node
  * Governing contract: ADR 0027 (CLI tools pinned in mise); ADR 0121 (SDLC tooling roles).
@@ -11,7 +11,7 @@
  *   their output is parsed, never printed.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 /** Tools from `mise ls --current --json` that are requested but not installed. */
@@ -33,13 +33,6 @@ export function awsIdentityOk(status, stdout) {
     return false;
   }
 }
-
-/** The exact spec-kit version `mise.toml` pins (`"pipx:specify-cli" = "x.y.z"`), or undefined. */
-export const speckitPin = (miseToml) => miseToml.match(/^"pipx:specify-cli"\s*=\s*"([^"]+)"/m)?.[1];
-
-/** `specify --version` prints `specify x.y.z`; it matches when that equals the pin. */
-export const speckitMatches = (stdout, pin) =>
-  Boolean(pin) && stdout.match(/\bspecify\s+(\S+)/)?.[1] === pin;
 
 /** result: { name, status: "ok" | "fail" | "warn", detail?, fix? } */
 export const exitCode = (results) => (results.some((r) => r.status === "fail") ? 1 : 0);
@@ -132,14 +125,6 @@ function checks() {
     has("opencode") ? "ok" : "fail",
     undefined,
     "https://opencode.ai/install (v2; not pinned by mise)",
-  );
-  const pin = speckitPin(existsSync("mise.toml") ? readFileSync("mise.toml", "utf8") : "");
-  const specify = has("specify") ? (sh("specify", ["--version"]).stdout ?? "") : "";
-  add(
-    `spec-kit ${pin ?? "(unpinned)"}`,
-    speckitMatches(specify, pin) ? "ok" : "fail",
-    specify ? specify.trim() : "specify not on PATH",
-    "mise install (pinned as pipx:specify-cli in mise.toml)",
   );
   add(
     "encore CLI",

@@ -935,12 +935,12 @@ function demoteHeadings(body, by = "##") {
 }
 
 // ---------------------------------------------------------------------------
-// CONSTITUTION — spec-kit reads `.specify/memory/constitution.md`; its single source is the
+// CONSTITUTION — Figentra Flow's `flow-*` commands read `.flow/constitution.md` (ADR 0510); its single source is the
 // docs laws in apps/docs/src/docs/constitution/*.mdx. Generated whole, drift-checked like the rest.
 // ---------------------------------------------------------------------------
 
 const CONSTITUTION_SRC = "apps/docs/src/docs/constitution";
-const CONSTITUTION_OUT = ".specify/memory/constitution.md";
+const CONSTITUTION_OUT = ".flow/constitution.md";
 
 function renderConstitution(files) {
   const laws = files.map((f) => {
