@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "json": {
+    "image": {
+      "id": "IMG",
+      "sha256": "x"
+    }
+  }
+}

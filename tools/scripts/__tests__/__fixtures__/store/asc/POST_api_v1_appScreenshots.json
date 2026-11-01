@@ -1,0 +1,50 @@
+[
+  {
+    "status": 201,
+    "json": {
+      "data": {
+        "id": "SHOT1",
+        "attributes": {
+          "uploadOperations": [
+            {
+              "method": "PUT",
+              "url": "https://store-upload.example.com/u/1",
+              "offset": 0,
+              "length": 8,
+              "requestHeaders": [
+                {
+                  "name": "Content-Type",
+                  "value": "image/png"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "status": 201,
+    "json": {
+      "data": {
+        "id": "SHOT2",
+        "attributes": {
+          "uploadOperations": [
+            {
+              "method": "PUT",
+              "url": "https://store-upload.example.com/u/2",
+              "offset": 0,
+              "length": 8,
+              "requestHeaders": [
+                {
+                  "name": "Content-Type",
+                  "value": "image/png"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "json": {
+    "data": [
+      {
+        "id": "AIL1",
+        "attributes": {
+          "locale": "en-US"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "json": {
+    "data": [
+      {
+        "id": "G1",
+        "attributes": {
+          "name": "Internal",
+          "isInternalGroup": true
+        }
+      },
+      {
+        "id": "G2",
+        "attributes": {
+          "name": "Public Beta",
+          "isInternalGroup": false
+        }
+      }
+    ]
+  }
+}

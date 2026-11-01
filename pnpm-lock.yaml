@@ -744,6 +744,9 @@ importers:
       oxlint:
         specifier: catalog:quality
         version: 1.86.0
+      sharp:
+        specifier: catalog:media
+        version: 0.35.5(@types/node@26.6.4)
       turbo:
         specifier: catalog:build
         version: 2.11.9

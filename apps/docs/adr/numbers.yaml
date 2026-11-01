@@ -1429,6 +1429,9 @@
 "0479":
   slug: stripe-terminal-the-first-card-terminal-acquirer-sdk-in-native-card-terminal
   status: proposed
+"0480":
+  slug: api-first-release-and-vault-keeper-agents
+  status: proposed
 "0481":
   slug: template-lines-release-as-registry-packages-and-runway-checks-them-out
   status: proposed

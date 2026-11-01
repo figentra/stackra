@@ -116,4 +116,8 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /^figentra-flow\.config\.json$/,
     "Figentra Flow reads its configuration by this fixed name with JSON.parse (ADR 0503, STA-1729)",
   ],
+  [
+    /^tools\/scripts\/__tests__\/__fixtures__\/store\//,
+    "recorded App Store Connect, Play and review API payloads, replayed byte-for-byte by store-http.mjs (ADR 0480)",
+  ],
 ];
