@@ -54,7 +54,7 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   field with the owning service's `ApprovalBinding`, and an execution is built from the binding, never from the store
   or the event. A declared stage fails closed without its ports. Never update a binding, never take an assurance,
   actor or scope from the store, and never let a caller send an `approval:` key.
-- `ApprovalExecutor` (`./node`) is the only thing that runs a granted request. Keep its order: trusted origin and the
+- `ApprovalExecutorListener` (`./node`) is the only thing that runs a granted request. Keep its order: trusted origin and the
   event's own tenant, the binding read in a read-only run as the tenant's system actor (never a platform read or
   `BYPASSRLS`), `ScopeOwnership`, the snapshot hash, `begin` (compare-and-set), then `ActionPipeline.execute` as the
   binding's actor in its own fresh run. The inbox's actor reaches no call. `settle` is a compare-and-set; only a

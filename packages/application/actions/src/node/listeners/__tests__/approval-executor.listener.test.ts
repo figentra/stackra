@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ApprovalExecutor` over the memory gate and binding store and the real `ActionPipeline`: a grant
+ * Purpose: unit tests of `ApprovalExecutorListener` over the memory gate and binding store and the real `ActionPipeline`: a grant
  *          runs the call once as the stored requester and settles `executed`; the binding is read as the tenant's system
  *          actor in a read-only run and the call runs in a fresh run as the binding's actor; a duplicate and a
  *          concurrent delivery run `handle` once; an untrusted origin, a tenant mismatch, an unknown key, a missing
@@ -51,7 +51,7 @@ import { ApprovalConsumedError } from "#core/errors/approval-consumed.error";
 import { registerActions } from "#core/functions/register-actions.function";
 import { ActionPipeline } from "#core/services/action-pipeline.service";
 import type { Resolver } from "#core/types/resolver.type";
-import { ApprovalExecutor } from "#node/listeners/approval-executor.listener";
+import { ApprovalExecutorListener } from "#node/listeners/approval-executor.listener";
 import { MemoryActorStatusCheckDriver } from "#testing/drivers/memory-actor-status-check.driver";
 import { MemoryApprovalBindingStoreDriver } from "#testing/drivers/memory-approval-binding-store.driver";
 import { MemoryApprovalGateDriver } from "#testing/drivers/memory-approval-gate.driver";
@@ -263,7 +263,7 @@ function build(executorClock: Date = NOW) {
     get: <T extends object>(token: AnyClass<T>): T => map.get(token) as T,
   };
   const pipeline = new ActionPipeline(resolver);
-  const executor = new ApprovalExecutor(
+  const executor = new ApprovalExecutorListener(
     gate,
     bindings,
     origin,
@@ -314,7 +314,7 @@ async function granted(
 const statusOf = async (built: Built, approvalId: string) =>
   (await built.gate.find(approvalId))?.status;
 
-describe(ApprovalExecutor, () => {
+describe(ApprovalExecutorListener, () => {
   it("runs the granted call once as the stored requester and settles executed", async () => {
     const built = build();
     const { approvalId, event } = await granted(built);
@@ -525,7 +525,7 @@ describe(ApprovalExecutor, () => {
   it("refuses to run before it is connected", async () => {
     const built = build();
     const { event } = await granted(built);
-    const loose = new ApprovalExecutor(
+    const loose = new ApprovalExecutorListener(
       built.gate,
       built.bindings,
       built.origin,

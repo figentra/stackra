@@ -86,7 +86,7 @@ const approverOf = (id: `usr_${string}`, extra: Partial<MemoryApprover> = {}): M
 function setup(options: { cap?: number } = {}) {
   const clock = new TestClock();
   const identity = new TestIdentity();
-  const gate = new MemoryApprovalGateDriver({ identity, clock, ...options });
+  const gate = MemoryApprovalGateDriver.of({ identity, clock, ...options });
   return { clock, identity, gate };
 }
 
@@ -125,7 +125,7 @@ describeApprovalGateConformance("MemoryApprovalGateDriver", () => {
 describe(MemoryApprovalGateDriver, () => {
   it("is an ApprovalGate and answers decide from its rules", async () => {
     const identity = new TestIdentity();
-    const gate = new MemoryApprovalGateDriver({
+    const gate = MemoryApprovalGateDriver.of({
       identity,
       clock: new TestClock(),
       decide: () => ({ approvals: 3, expiresAfter: "24h" }),

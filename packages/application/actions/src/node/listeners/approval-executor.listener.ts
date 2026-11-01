@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `ApprovalExecutor`, the listener in the service that owns a declared action: on `approval.granted` it runs the
+ * Purpose: `ApprovalExecutorListener`, the listener in the service that owns a declared action: on `approval.granted` it runs the
  *          parked call as the stored requester, once, and settles the request with how it ended.
  * Boundary: acts only on a delivery `ApprovalGrantOrigin` trusts, for the event's own tenant, and never lets the inbox's
  *           actor reach a call: the binding is read in a `CallIsolation.run` for that tenant as the scope's system actor
@@ -90,7 +90,7 @@ const LOG = {
  * // the generated subscription of the owning service delivers each approval.granted envelope here
  * await executor.handle(ApprovalGranted.create({ approvalId, key: "coupon.update@1", service: "billing", scopeId }), ctx);
  */
-export class ApprovalExecutor extends Listener({
+export class ApprovalExecutorListener extends Listener({
   queue: "default",
   retry: { attempts: 8, base: Duration.seconds(30), max: Duration.minutes(30) },
 }) {
@@ -161,7 +161,9 @@ export class ApprovalExecutor extends Listener({
   async handle(event: ApprovalGranted, ctx: ListenerContext): Promise<void> {
     const resolver = this.resolver;
     if (resolver === undefined)
-      throw new Error("ApprovalExecutor is not connected: call connect(container) after boot");
+      throw new Error(
+        "ApprovalExecutorListener is not connected: call connect(container) after boot",
+      );
     const { approvalId, key } = event;
     if (
       !(await this.origin.trusts(ctx)) ||
