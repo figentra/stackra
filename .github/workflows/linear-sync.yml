@@ -4,6 +4,9 @@
 # Owner: release-operations
 # Secrets: LINEAR_AGENT_CLIENT_ID / LINEAR_AGENT_CLIENT_SECRET (the "Stackra Agent" app; the script mints a
 #          client_credentials token), LINEAR_API_KEY as fallback. Read from the environment only; never printed.
+#          STA-1822: the bot App's id and key from Infisical /ci/linear-sync (OIDC) mint a read-only installation
+#          token for the figentra org, so the reconcile reads every repo in tools/scripts/linear-reconcile.repos.yaml.
+#          Without them the job uses github.token, reads this repo only and lists the others as skipped.
 name: Linear sync
 
 on:
@@ -19,6 +22,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  id-token: write # Infisical OIDC for the bot App key (STA-1822)
 
 concurrency:
   group: linear-sync
@@ -44,9 +48,34 @@ jobs:
         with:
           install_args: node
 
+      - name: Bot App key (Infisical OIDC)
+        continue-on-error: true
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
+          domain: https://eu.infisical.com
+          project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
+          env-slug: prod
+          secret-path: /ci/linear-sync
+          export-type: env
+
+      # Read-only, every repo the App is installed on in the org; revoked when the job ends.
+      - name: App token
+        id: bot
+        if: env.STACKRA_BOT_APP_ID != ''
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ env.STACKRA_BOT_APP_ID }}
+          private-key: ${{ env.STACKRA_BOT_PRIVATE_KEY }}
+          owner: figentra
+          permission-contents: read
+          permission-pull-requests: read
+
       - name: Reconcile
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.bot.outputs.token || github.token }}
           LINEAR_AGENT_CLIENT_ID: ${{ secrets.LINEAR_AGENT_CLIENT_ID }}
           LINEAR_AGENT_CLIENT_SECRET: ${{ secrets.LINEAR_AGENT_CLIENT_SECRET }}
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}

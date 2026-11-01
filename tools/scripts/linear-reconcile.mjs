@@ -2,7 +2,7 @@
 /**
  * Stackra file contract:
  * Purpose: bring Linear team STA back in line with GitHub and the ADRs (ADR 0065 rule 7: a separate, non-blocking job).
- *   (a) issues referenced by a merged PR → Done      (b) issues with an open PR → In Review
+ *   (a) issues referenced by merged work in any figentra repo → Done   (b) issues with an open PR → In Review
  *   (c) "Decide ADR NNNN" closed once ADR NNNN is Accepted/Superseded
  *   (d) In Progress with no branch/PR activity for 3 days → `stale` label + comment (label removed when active again)
  *   (e) Backlog/Todo issues whose title names an ADR that is now Accepted → comment
@@ -13,17 +13,23 @@
  * Governing contract: ADR 0065 (rule 7: Linear sync never blocks); ADR 0121 (SDLC tooling roles and Linear).
  * Idempotent: every comment carries a `linear-reconcile (<tag>)` marker and an action whose marker is already on the
  * issue is skipped, so a human who reopens an issue is not overridden. `--dry-run` writes nothing.
- * Inputs: `gh pr list` (GH_TOKEN in CI), `git for-each-ref refs/remotes/origin`, apps/docs/src/docs/adr/*.mdx.
+ * Inputs: for every repo in linear-reconcile.repos.yaml (or `--repos a,b`): `gh pr list` (merged since `--since`,
+ *   default 14 days back, and open) and `gh api …/commits?sha=main` (their `Refs:`/`Fixes:` trailers), each capped at
+ *   `--max-pages` pages of 100 (GH_TOKEN in CI); `git for-each-ref refs/remotes/origin`, apps/docs/src/docs/adr/*.mdx.
+ *   A repo the token cannot read is reported and skipped, never failed.
  * Secrets: LINEAR_AGENT_TOKEN or LINEAR_API_KEY from the environment only (see linear.mjs); never printed.
  */
 import { execFileSync } from "node:child_process";
 import { appendFileSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { parse as parseYaml } from "yaml";
 import { client, linear, TEAM } from "./linear.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const REPO = "figentra/stackra";
+const CORE = REPO.split("/")[1];
+const LOOKBACK_DAYS = 14;
 const ADR_DIR = "apps/docs/src/docs/adr";
 const STALE_MS = 3 * 24 * 3600 * 1000;
 const MARK = (tag) => `linear-reconcile (${tag})`;
@@ -38,16 +44,17 @@ const keysAfter = (body, words) =>
   ].flatMap((m) => keysIn(m[1]));
 
 /**
- * STA keys a PR references, as Linear's GitHub integration reads them. `closes`: the branch name and
- * Fixes/Closes/Resolves (merge → Done). `mentions`: those plus the title and Refs/Part of/Linear lines (open → In Review).
+ * STA keys merged work references. `closes` (merge → Done): the branch name, the title and Refs/Fixes/Closes/Resolves
+ * lines; every feat/fix commit carries `Refs: STA-n` (commitlint `refs-issue-key`). `mentions` (open → In Review):
+ * those plus Part of/Linear lines. `Part of STA-n` is how partial work avoids closing its issue.
  */
 export function prKeys({ title = "", headRefName = "", body = "" }) {
-  const closes = new Set([...keysIn(headRefName), ...keysAfter(body, "Fixes|Closes|Resolves")]);
-  const mentions = new Set([
-    ...closes,
+  const closes = new Set([
+    ...keysIn(headRefName),
     ...keysIn(title),
-    ...keysAfter(body, "Refs|Part of|Linear"),
+    ...keysAfter(body, "Fixes|Closes|Resolves|Refs"),
   ]);
+  const mentions = new Set([...closes, ...keysAfter(body, "Part of|Linear")]);
   return { closes: [...closes], mentions: [...mentions] };
 }
 
@@ -68,13 +75,16 @@ const adrUrl = (file) => `https://github.com/${REPO}/blob/main/${ADR_DIR}/${file
 /**
  * Pure: the actions that reconcile `issues` (open STA issues) with GitHub and the ADRs.
  * issue: { identifier, title, state:{name,type}, labels:[name], comments:[body], links?:[attachment url] }
- * pr: { number, url, title, headRefName, body, updatedAt }; branches: [{ name, at: ms }].
+ * pr: { number, url, title, headRefName, body, updatedAt, ref? } — a commit on main is the same shape with its
+ * message as `body`; `ref` names it in marker tags (`#12` in the core repo, `billing#12`, `billing@abc1234`).
+ * branches: [{ name, at: ms }].
  */
 const refs = (prs, kind) => {
   const m = new Map();
   for (const pr of prs) for (const k of prKeys(pr)[kind]) m.set(k, [...(m.get(k) ?? []), pr]);
   return m;
 };
+const refOf = (pr) => pr.ref ?? `#${pr.number}`;
 const day = (ms) => new Date(ms).toISOString().slice(0, 10);
 
 export function plan({ issues, mergedPrs, openPrs, branches, adrs, now }) {
@@ -94,16 +104,21 @@ export function plan({ issues, mergedPrs, openPrs, branches, adrs, now }) {
     // (b) before (a): an issue with any PR still open is not finished.
     if (prsOpen) {
       const pr = prsOpen[0];
-      const tag = `review:#${pr.number}`;
+      const tag = `review:${refOf(pr)}`;
       if (name !== "In Review" && !hasMark(issue, tag))
         act(issue, "b", { state: "In Review", link: pr.url, comment: `In review: ${pr.url}`, tag });
       continue;
     }
     if (prsMerged) {
       const pr = prsMerged[0];
-      const tag = `done:#${pr.number}`;
-      if (!hasMark(issue, tag))
-        act(issue, "a", { state: "Done", link: pr.url, comment: `Merged: ${pr.url}`, tag });
+      // Any merged item's marker means a human reopened the issue after a run; the next item must not override them.
+      if (!prsMerged.some((p) => hasMark(issue, `done:${refOf(p)}`)))
+        act(issue, "a", {
+          state: "Done",
+          link: pr.url,
+          comment: `Merged: ${pr.url}`,
+          tag: `done:${refOf(pr)}`,
+        });
       continue;
     }
 
@@ -217,22 +232,72 @@ async function fetchIssues(gql) {
 
 const sh = (cmd, args) =>
   execFileSync(cmd, args, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20 });
-const prs = (state) =>
-  JSON.parse(
-    sh("gh", [
-      "pr",
-      "list",
-      "-R",
-      REPO,
-      "--state",
-      state,
-      "--limit",
-      "100",
-      "--json",
-      "number,url,title,headRefName,body,updatedAt,isCrossRepository",
-    ]),
-    // The repo is public: a fork PR saying "Fixes STA-n" must not drive Linear state as the app.
-  ).filter((pr) => !pr.isCrossRepository);
+const PR_FIELDS = "number,url,title,headRefName,body,updatedAt,isCrossRepository";
+
+/**
+ * Merged and open PRs, and commits on main, of every repo since `since` (YYYY-MM-DD), each read capped at `maxPages`
+ * pages of 100. `gh(args)` runs gh and returns its parsed JSON (injected by tests). Merged PRs come before commits,
+ * so an issue links its PR when both reference it. A repo that fails any read is skipped whole and reported.
+ */
+export function gather({ org, repos, since, maxPages, gh }) {
+  const out = { mergedPrs: [], openPrs: [], skipped: [] };
+  for (const repo of repos) {
+    const full = `${org}/${repo}`;
+    const ref = (s) => (repo === CORE ? s : `${repo}${s}`);
+    try {
+      const list = (...filter) =>
+        gh([
+          "pr",
+          "list",
+          "-R",
+          full,
+          ...filter,
+          "--limit",
+          String(maxPages * 100),
+          "--json",
+          PR_FIELDS,
+        ])
+          // The repos are public: a fork PR saying "Fixes STA-n" must not drive Linear state as the app.
+          .filter((pr) => !pr.isCrossRepository)
+          .map((pr) => ({ ...pr, ref: ref(`#${pr.number}`) }));
+      const open = list("--state", "open");
+      const merged = list("--state", "merged", "--search", `merged:>=${since}`);
+      const commits = [];
+      for (let page = 1; page <= maxPages; page++) {
+        const batch = gh([
+          "api",
+          `repos/${full}/commits?sha=main&since=${since}T00:00:00Z&per_page=100&page=${page}`,
+        ]);
+        for (const c of batch)
+          commits.push({
+            ref: ref(`@${c.sha.slice(0, 7)}`),
+            url: c.html_url,
+            body: c.commit.message,
+          });
+        if (batch.length < 100) break;
+      }
+      out.openPrs.push(...open);
+      out.mergedPrs.push(...merged, ...commits);
+    } catch (error) {
+      out.skipped.push(`${full}: ${String(error.message).split("\n")[0]}`);
+    }
+  }
+  return out;
+}
+
+/** The repo list: `--repos a,b` or linear-reconcile.repos.yaml beside this script. */
+export function readRepos(argv, text) {
+  const { org, repos } = parseYaml(text);
+  const cli = flag(argv, "repos");
+  return { org, repos: cli ? cli.split(",").filter(Boolean) : repos };
+}
+
+const flag = (argv, name) => {
+  const i = argv.findIndex((a) => a === `--${name}` || a.startsWith(`--${name}=`));
+  if (i < 0) return undefined;
+  return argv[i].includes("=") ? argv[i].slice(argv[i].indexOf("=") + 1) : argv[i + 1];
+};
+
 function remoteBranches() {
   return sh("git", [
     "for-each-ref",
@@ -261,7 +326,19 @@ async function main(argv) {
     comments: i.comments.nodes.map((n) => n.body),
     links: i.attachments.nodes.map((n) => n.url),
   }));
-  const openPrs = prs("open");
+  const { org, repos } = readRepos(
+    argv,
+    readFileSync(join(ROOT, "tools/scripts/linear-reconcile.repos.yaml"), "utf8"),
+  );
+  const since = flag(argv, "since") ?? day(Date.now() - LOOKBACK_DAYS * 24 * 3600 * 1000);
+  const maxPages = Number(flag(argv, "max-pages") ?? 5);
+  const { mergedPrs, openPrs, skipped } = gather({
+    org,
+    repos,
+    since,
+    maxPages,
+    gh: (args) => JSON.parse(sh("gh", args)),
+  });
   const branchList = remoteBranches();
   for (const pr of openPrs) branchList.push({ name: pr.headRefName, at: Date.parse(pr.updatedAt) });
   const adrs = adrStatuses(
@@ -272,7 +349,7 @@ async function main(argv) {
   const actions = plan({
     issues,
     openPrs,
-    mergedPrs: prs("merged"),
+    mergedPrs,
     branches: branchList,
     adrs,
     now: Date.now(),
@@ -287,9 +364,13 @@ async function main(argv) {
   );
   const lines = [
     `## Linear reconcile${dry ? " (dry run)" : ""}`,
-    `${issues.length} open ${TEAM} issues, ${openPrs.length} open PRs. ` +
+    `${issues.length} open ${TEAM} issues; ${repos.length - skipped.length}/${repos.length} repos since ${since}: ` +
+      `${openPrs.length} open PRs, ${mergedPrs.length} merged PRs and main commits. ` +
       `Done ${counts.a}, In Review ${counts.b}, ADR closed ${counts.c}, stale ${counts.d}, ADR-accepted ${counts.e}` +
       (failed ? `, ${failed} failed` : ""),
+    ...(skipped.length
+      ? ["", "Skipped (the token cannot read them):", ...skipped.map((s) => `- ${s}`)]
+      : []),
     "",
     ...actions.map((a) => `- ${describe(a)}`),
   ];

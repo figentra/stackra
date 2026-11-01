@@ -1,0 +1,20 @@
+# Stackra file contract:
+# Purpose: the GitHub repos `linear-reconcile.mjs` reads merged and open PRs and main commits from (STA-1822). A repo
+#          the token cannot read is reported in the run summary and skipped. `--repos a,b` overrides the list.
+#          Proposed home once the command moves to `figentra linear reconcile` (ADR 0500): Flow's `tracker.repos`.
+# Owner: release-operations · Secrets: forbidden
+org: figentra
+repos:
+  - stackra
+  - stackra-pro
+  - billing
+  - pay
+  - pay-connectors-regional
+  - invoicing
+  - tamo
+  - os
+  - juristra
+  - figentra
+  - flow
+  - vellum
+  - brand

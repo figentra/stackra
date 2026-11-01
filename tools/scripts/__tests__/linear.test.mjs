@@ -238,30 +238,30 @@ test("check-pr: key in title or branch, or an exempt lane", () => {
   assert.ok(!prCarriesKey({ title: "feat: x", branch: "feature/x" }).ok);
 });
 
-test("prKeys: branch and Fixes/Closes close; title, Refs and Linear only mention", () => {
+test("prKeys: branch, title, Refs and Fixes/Closes close; Part of and Linear only mention", () => {
   assert.deepEqual(
     prKeys({
       title: "chore: after STA-10 shipped",
       headRefName: "figentra/sta-4-a",
-      body: "Fixes STA-1, STA-2 and STA-3\nRefs: STA-11\nsee STA-6\nLinear: STA-8",
+      body: "Fixes STA-1, STA-2 and STA-3\nRefs: STA-11\nsee STA-6\nPart of STA-9\nLinear: STA-8",
     }),
     {
-      closes: ["STA-4", "STA-1", "STA-2", "STA-3"],
-      mentions: ["STA-4", "STA-1", "STA-2", "STA-3", "STA-10", "STA-11", "STA-8"],
+      closes: ["STA-4", "STA-10", "STA-1", "STA-2", "STA-3", "STA-11"],
+      mentions: ["STA-4", "STA-10", "STA-1", "STA-2", "STA-3", "STA-11", "STA-9", "STA-8"],
     },
   );
 });
 
-test("a merged PR that only mentions an issue does not close it", () => {
+test("a merged PR that is only part of an issue does not close it", () => {
   const actions = plan({
     issues: [iss("STA-10", "In Progress", "started", { startedAt: new Date(NOW).toISOString() })],
     mergedPrs: [
       {
         number: 3,
         url: "pr3",
-        title: "chore: after STA-10",
+        title: "chore: groundwork",
         headRefName: "x",
-        body: "Refs: STA-10",
+        body: "Part of STA-10",
       },
     ],
     openPrs: [],
