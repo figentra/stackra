@@ -39,7 +39,7 @@ This Mac runs only oxfmt and oxlint. The command and its tests run on a testbed 
 ## Design notes
 
 - **The overlay is what gate.sh did**, no more. Copy the product (without `node_modules`, `.git`, `.stackra`, `.turbo`);
-  delete `pnpm-lock.yaml`; rewrite every `@stackra/*` catalog entry in `pnpm-workspace.yaml` to `link:<core>/packages/...`
+  delete `pnpm-lock.yaml`; rewrite every `@stackra/*` catalog entry in `pnpm-workspace.yaml` to `link:<core>/packages/...` (`--mode pack`: `file:` tarballs packed under `--out`, then a `leak` check)
   and add the same rows under `overrides:` (an override also covers a transitive `@stackra/*` dependency); copy overlay
   manifests for services the product lacks; `git init` and commit, because turbo hashes through git.
 - **Lockfile strategy.** The scratch copy installs with `--no-frozen-lockfile` from the registry, core linked. The
@@ -51,6 +51,18 @@ This Mac runs only oxfmt and oxlint. The command and its tests run on a testbed 
   `c605e78` / `aacd450` for billing / entitlements / usage, pay `58528f4`, invoicing `30310f9`, tamo `0c52fd6`), since the
   products hold nothing on their `main` yet. Services with different pins are gated one pin at a time (`--services`). A pin moves by a reviewed pull request, normally the testing session's, when the product merges. The
   runner refuses a checkout that is not at the pin.
+- **Core is never written.** The caller builds core first (`pnpm install --frozen-lockfile && pnpm exec turbo run build
+--filter=./packages/**` in the core tree); the command exits 2 if no `dist` is there, and packs with `--pack-destination`
+  under `--out`. It has no in-tool core install or build.
+- **Repo-own window.** `format`, `spell` and `validate` judge the product's own repository, so each runs with the
+  checkout's own workspace and lockfile back in and the overlay-only services moved aside (restored in a `finally`).
+- **Pack mode and the leak check** (FR-010): a registry install is what consumers get, so `--mode pack` installs tarballs
+  of every non-private package under `packages/`. The leak check reads the installed tree (it resolves each
+  `node_modules/@stackra/*` package and its top-level entries; deeper symlinks are not followed) and the
+  `@stackra/source` targets of each `exports`. Never allow-listed.
+- **Environment record** (FR-012) in the summary, so a red can be reproduced from the record alone.
+- **Scaffold consumer** (FR-013): the matrix entry and the fixture are in place; running it needs a temp pnpm workspace
+  around `stackra new service`, which is not built (exit 2 until then). A later step.
 - **Allow-list.** `tools/consumer-gate/allow.yaml` starts empty. One entry per known product-side or tracked failure:
   `product`, `step` (`typecheck`, or `test:int/billing`), `match` (a substring of the failure line, such as
   `TS2589` or `recorded []`), `issue` (STA-n), `added`, `expires` (at most 30 days later), `reason`. A step is excused
@@ -172,4 +184,6 @@ that aggregates the four results into one `product-gate` status.
 - **P-005**: An entry excuses a step only when every failure line matches a live entry of that product and step; an expired entry excuses nothing and is named; an entry over 30 days or without an STA key is refused — Validates: FR-005
 - **P-006**: A run writes `summary-<product>.json` and `.md` with both SHAs and one log per step — Validates: FR-006
 - **P-007**: The workflow runs only by dispatch, posts one status, and holds no secret value — Validates: FR-008
+- **P-009**: In pack mode the rows are `file:` tarball paths, a core path in `node_modules/@stackra` or a missing `@stackra/source` target fails `leak`, and the summary carries the environment record — Validates: FR-010, FR-012
+- **P-010**: An allow entry of class `security`, `tenant-isolation`, `data-integrity`, `leak` or no class is refused (exit 2) — Validates: FR-005, FR-011
 - **P-008**: Branch protection names `product-gate` for the version PR and the train PR — Validates: FR-009

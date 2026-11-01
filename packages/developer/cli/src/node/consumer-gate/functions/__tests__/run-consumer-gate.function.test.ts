@@ -42,6 +42,7 @@ const allowOf = (...lines: string[]) =>
 const ALLOW_TS6133 = JSON.stringify({
   product: "billing",
   step: "typecheck",
+  class: "product",
   match: "TS6133",
   issue: "STA-1",
   added: "2026-10-30",
@@ -53,7 +54,7 @@ describe("loadConsumerGateMatrix", () => {
     const matrix = loadConsumerGateMatrix(
       readFileSync(join(REPOSITORY_ROOT, "tools/consumer-gate/matrix.yaml"), "utf8"),
     );
-    expect(Object.keys(matrix)).toEqual(["billing", "pay", "invoicing", "tamo"]);
+    expect(Object.keys(matrix)).toEqual(["billing", "pay", "invoicing", "tamo", "scaffold"]);
     expect(matrix["billing"]?.pins).toEqual({
       billing: "1139925",
       entitlements: "c605e78",
@@ -128,6 +129,7 @@ function fixture() {
   const dir = mkdtempSync(join(tmpdir(), "consumer-gate-"));
   dirs.push(dir);
   write(join(dir, "core/packages/data/model/package.json"), '{"name":"@stackra/model"}');
+  write(join(dir, "core/packages/data/model/dist/index.js"), "");
   write(join(dir, "checkout/pnpm-workspace.yaml"), 'catalog:\n  "@stackra/model": 0.3.0\n');
   write(join(dir, "checkout/pnpm-lock.yaml"), "lock\n");
   write(join(dir, "checkout/package.json"), '{"scripts":{"validate":"x"}}');
@@ -150,7 +152,6 @@ function fixture() {
     allow: allowOf(),
     overlays: join(dir, "overlays"),
     today: TODAY,
-    coreBuilt: true,
   };
   return { dir, options };
 }
@@ -201,7 +202,7 @@ describe("runConsumerGate", () => {
     const { dir, options } = fixture();
     const red = runConsumerGate(options, { exec: failTypecheck, head });
     expect(red.code).toBe(1);
-    const work = join(options.out, "work/billing");
+    const work = join(options.out, "work/billing@abc1234");
     expect(existsSync(join(work, "pnpm-lock.yaml"))).toBe(false);
     expect(existsSync(join(work, "node_modules"))).toBe(false);
     expect(readFileSync(join(work, "pnpm-workspace.yaml"), "utf8")).toMatch(
@@ -209,15 +210,17 @@ describe("runConsumerGate", () => {
     );
     expect(existsSync(join(work, "services/tenancy/stackra.manifest.json"))).toBe(true);
     expect(readFileSync(join(dir, "checkout/pnpm-lock.yaml"), "utf8")).toBe("lock\n");
-    const json = JSON.parse(readFileSync(join(options.out, "summary-billing.json"), "utf8"));
+    const json = JSON.parse(
+      readFileSync(join(options.out, "summary-billing@abc1234.json"), "utf8"),
+    );
     expect(json.checkout.sha).toBe("abc1234ffff");
     expect(json.core.sha).toBe("core0000");
     expect(json.ref).toBe("abc1234");
     expect(json.steps.find((step: { id: string }) => step.id === "typecheck").status).toBe("fail");
-    expect(readFileSync(join(options.out, "summary-billing.md"), "utf8")).toMatch(
+    expect(readFileSync(join(options.out, "summary-billing@abc1234.md"), "utf8")).toMatch(
       /\| typecheck \| FAIL \|/,
     );
-    expect(existsSync(join(options.out, "logs/billing/typecheck.log"))).toBe(true);
+    expect(existsSync(join(options.out, "logs/billing@abc1234/typecheck.log"))).toBe(true);
     const green = runConsumerGate(
       { ...options, allow: allowOf(ALLOW_TS6133) },
       { exec: failTypecheck, head },

@@ -7,6 +7,7 @@
  * Governing contract: ADR 0500 (decision 3); STA-1813.
  */
 import type { ConsumerGateAllowList } from "#node/consumer-gate/types/consumer-gate-allow-list.type";
+import type { ConsumerGateMode } from "#node/consumer-gate/types/consumer-gate-mode.type";
 import type { ConsumerGateProduct } from "#node/consumer-gate/types/consumer-gate-product.type";
 
 /** The input of one gate run. */
@@ -20,7 +21,8 @@ export type ConsumerGateOptions = {
   readonly overlays?: string;
   readonly services?: readonly string[];
   readonly steps?: readonly string[];
-  readonly coreBuilt?: boolean;
+  readonly mode?: ConsumerGateMode;
+  readonly reproduce?: string;
   readonly dryRun?: boolean;
   readonly today: string;
 };

@@ -4,6 +4,9 @@
 #          because the product does not hold them. A pin moves only by a reviewed pull request.
 #          A product has `ref` (one commit for all its services) or `pins` (a commit per service, when the services sit
 #          on separate pull requests); services with different pins are gated one pin at a time with `--services`.
+#          A `kind: scaffold` entry is not a product repository: a reference app made from core's own scaffold plus
+#          the `fixture` folder (an action, a model with a migration, a test), gated in `mode` (pack). It has no `repo`,
+#          `ref` or `pins`; the runner does not support it yet and exits 2 (STA-1813).
 # Boundary: data only; the command never fetches, so the caller clones each repository at its pin.
 # Owner: release-operations · Secrets: forbidden
 # Seed pins are the tips the 2026-11-01 hand-run gates ended on; the products hold nothing on main yet.
@@ -22,6 +25,7 @@ products:
       - tenancy
       - invoicing
       - payments
+      - entitlements # usage consumes it (client_service_unknown entitlements) when it is not gated with billing
   pay:
     repo: figentra/pay
     ref: 58528f4
@@ -45,3 +49,9 @@ products:
       - tamo
     overlays:
       - identity
+  scaffold:
+    kind: scaffold
+    mode: pack
+    fixture: tools/consumer-gate/scaffold-fixture
+    services:
+      - gate-example

@@ -1,7 +1,10 @@
 # Stackra file contract:
 # Purpose: the failures `stackra consumer-gate` excuses (STA-1813). One entry per known failure: `product`, `step`
-#          (`typecheck`, or one service's `test:int/billing`), `match` (a substring of the failure line), `issue` (the
-#          STA key that fixes it), `added`, `expires` (at most 30 days after `added`) and `reason`. A step is excused
+#          (`typecheck`, or one service's `test:int/billing`), `class` (required: `product`, `flaky`, `environment` or
+#          `known-core`; an entry whose class is `security`, `tenant-isolation`, `data-integrity` or `leak`, or has none, is
+#          refused and the run exits 2: such a failure is never excused), `match` (a substring of the failure line, at
+#          least 12 characters or holding a `TS` code or an `ERR_` token), `issue` (the
+#          STA key that fixes it), `added` (not in the future), `expires` (1 to 30 days after `added`) and `reason`. A step is excused
 #          only when every failure line it printed is covered; an expired entry excuses nothing. Core-side findings
 #          are never listed here: they fix the train.
 # Boundary: data only.

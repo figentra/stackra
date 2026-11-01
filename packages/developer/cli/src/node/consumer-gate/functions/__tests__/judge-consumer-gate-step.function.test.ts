@@ -19,6 +19,7 @@ const TODAY = "2026-11-01";
 const entry = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
   product: "billing",
   step: "typecheck",
+  class: "product",
   match: "TS6133",
   issue: "STA-1",
   added: "2026-10-30",
@@ -79,6 +80,55 @@ describe("loadConsumerGateAllow", () => {
   });
 
   it("loads an empty list", () => {
-    expect(loadConsumerGateAllow("allow: []\n", TODAY)).toEqual({ entries: [], problems: [] });
+    expect(loadConsumerGateAllow("allow: []\n", TODAY)).toEqual({
+      entries: [],
+      problems: [],
+      refused: [],
+    });
+  });
+
+  it("refuses a missing or never-allowed class, listing it as refused", () => {
+    for (const cls of [
+      "security",
+      "tenant-isolation",
+      "data-integrity",
+      "leak",
+      undefined,
+      "other",
+    ]) {
+      const { entries, refused } = allowOf(entry({ class: cls }));
+      expect(entries).toEqual([]);
+      expect(refused).toHaveLength(1);
+    }
+    expect(allowOf(entry({ class: "leak" })).refused[0]).toMatch(/leak can never be allow-listed/);
+    for (const cls of ["product", "flaky", "environment", "known-core"]) {
+      expect(allowOf(entry({ class: cls })).entries).toHaveLength(1);
+    }
+  });
+
+  it("refuses loose matches, future and malformed dates, and a non-list", () => {
+    expect(allowOf(entry({ match: "Error" })).problems).toHaveLength(1);
+    expect(allowOf(entry({ match: "AssertionError: x" })).entries).toHaveLength(1);
+    expect(allowOf(entry({ match: "ERR_X" })).entries).toHaveLength(1);
+    expect(allowOf(entry({ added: "2026-11-02", expires: "2026-11-10" })).problems[0]).toMatch(
+      /future/,
+    );
+    expect(allowOf(entry({ added: "10/30/2026" })).problems).toHaveLength(1);
+    expect(() => loadConsumerGateAllow("allow: nope\n", TODAY)).toThrow(/must be a list/);
+    expect(() => loadConsumerGateAllow("allow: []\n", "yesterday")).toThrow(/YYYY-MM-DD/);
+  });
+});
+
+describe("consumerGateSignatures under turbo", () => {
+  it("strips the pkg:task prefix so anchored lines match, and keeps one entry from excusing everything", () => {
+    const log =
+      "@p/billing:test: FAIL  src/a.test.ts > a\n@p/billing:test: Error: expected 1 to be 2\nbilling:typecheck: a.ts(1,1): error TS6133 'A'\n";
+    expect(consumerGateSignatures(log)).toEqual([
+      "FAIL  src/a.test.ts > a",
+      "Error: expected 1 to be 2",
+      "a.ts(1,1): error TS6133 'A'",
+    ]);
+    const only = allowOf(entry({ step: "test", match: "Error: expected" })).entries;
+    expect(judgeConsumerGateStep(1, log, "billing", "test", only).status).toBe("fail");
   });
 });

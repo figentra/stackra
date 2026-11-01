@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `planConsumerGateSteps({ root, services, steps })`, the ordered step plan read from the scratch copy
  *          (service package names, `test:int` and `validate` scripts): install, build-deps, gen per service,
- *          typecheck, test, test:int per service, validate. A step the product has no script for is planned with a
+ *          typecheck, lint, build, test, test:int per service, then the repo-own format, spell and validate (plus `leak`
+ *          after install in pack mode). A step the product has no script for is planned with a
  *          skip reason.
  * Boundary: reads `package.json` files under `root`; starts nothing.
  * Runtime: node
@@ -12,9 +13,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { CONSUMER_GATE_INSTALL_FLAGS } from "#node/consumer-gate/constants/consumer-gate-install-flags.constant";
+import type { ConsumerGateMode } from "#node/consumer-gate/types/consumer-gate-mode.type";
+import type { ConsumerGatePackageJson } from "#node/consumer-gate/types/consumer-gate-package-json.type";
 import type { ConsumerGateStepPlan } from "#node/consumer-gate/types/consumer-gate-step-plan.type";
-
-type PackageJson = { readonly name?: string; readonly scripts?: Record<string, string> };
 
 /**
  * Plans the steps.
@@ -27,10 +28,11 @@ export function planConsumerGateSteps(input: {
   readonly root: string;
   readonly services: readonly string[];
   readonly steps: readonly string[];
+  readonly mode?: ConsumerGateMode;
 }): ConsumerGateStepPlan[] {
-  const { root, services, steps } = input;
-  const read = (dir: string): PackageJson =>
-    JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8")) as PackageJson;
+  const { root, services, steps, mode = "link" } = input;
+  const read = (dir: string): ConsumerGatePackageJson =>
+    JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8")) as ConsumerGatePackageJson;
   const names = services.map((service) => read(`services/${service}`).name ?? service);
   const own = names.map((name) => `--filter=${name}`);
   const turbo = (task: string): string[] => [
@@ -50,6 +52,8 @@ export function planConsumerGateSteps(input: {
     }
   };
   add("install", ["pnpm", ...CONSUMER_GATE_INSTALL_FLAGS]);
+  // The leak check reads the installed tree itself; it has no process, so `argv` is empty.
+  if (mode === "pack") add("leak", []);
   add("build-deps", [
     "pnpm",
     "exec",
@@ -65,7 +69,13 @@ export function planConsumerGateSteps(input: {
       `services/${service}`,
     );
   }
+  const anyScript = (script: string): boolean =>
+    services.some((service) => Boolean(read(`services/${service}`).scripts?.[script]));
+  const turboIf = (task: string): void =>
+    add(task, turbo(task), ".", anyScript(task) ? undefined : `no ${task} script`);
   add("typecheck", turbo("typecheck"));
+  turboIf("lint");
+  turboIf("build");
   add("test", turbo("test"));
   for (const service of services) {
     const has = Boolean(read(`services/${service}`).scripts?.["test:int"]);
@@ -76,7 +86,11 @@ export function planConsumerGateSteps(input: {
       has ? undefined : "no test:int script",
     );
   }
-  const hasValidate = Boolean(read(".").scripts?.["validate"]);
-  add("validate", ["pnpm", "run", "validate"], ".", hasValidate ? undefined : "no validate script");
+  const rootScripts = read(".").scripts ?? {};
+  const rootStep = (id: string, script: string): void =>
+    add(id, ["pnpm", "run", script], ".", rootScripts[script] ? undefined : `no ${script} script`);
+  rootStep("format", "format:check");
+  rootStep("spell", "spell");
+  rootStep("validate", "validate");
   return plan;
 }

@@ -24,6 +24,14 @@ export function loadConsumerGateMatrix(text: string): Record<string, ConsumerGat
     ?.products;
   if (!products || typeof products !== "object") throw new Error("matrix: `products` is missing");
   for (const [name, product] of Object.entries(products)) {
+    if (product.kind === "scaffold") {
+      if (typeof product.fixture !== "string" || !Array.isArray(product.services)) {
+        throw new TypeError(
+          `matrix: ${name} (scaffold) needs a fixture folder and a services list`,
+        );
+      }
+      continue;
+    }
     const hasRef = typeof product.ref === "string";
     const hasPins = product.pins !== undefined && typeof product.pins === "object";
     if (typeof product.repo !== "string" || hasRef === hasPins) {

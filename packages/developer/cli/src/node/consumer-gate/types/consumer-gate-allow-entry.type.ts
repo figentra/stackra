@@ -10,6 +10,7 @@
 export type ConsumerGateAllowEntry = {
   readonly product: string;
   readonly step: string;
+  readonly class: string;
   readonly match: string;
   readonly issue: string;
   readonly added: string;

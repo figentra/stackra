@@ -14,4 +14,7 @@ export type ConsumerGateAllowList = {
 
   /** One line per malformed entry; any makes the run RED. */
   readonly problems: readonly string[];
+
+  /** The problems that are a missing or never-allowed `class`: the run is refused (exit 2), not just RED. */
+  readonly refused: readonly string[];
 };

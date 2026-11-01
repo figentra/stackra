@@ -7,10 +7,22 @@
  * Governing contract: ADR 0500 (decision 3); ADR 0484; STA-1813.
  */
 
-/** One product the gate runs against a core tree. Exactly one of `ref` and `pins` is set. */
+/**
+ * One consumer the gate runs against a core tree. A `product` has a `repo` and exactly one of `ref` and `pins`; a
+ * `scaffold` has neither (it is made from core's own scaffold and the `fixture` folder).
+ */
 export type ConsumerGateProduct = {
+  /** `product` (default, a checkout of a product repository) or `scaffold` (a reference app made from core). */
+  readonly kind?: "product" | "scaffold";
+
+  /** The mode a run takes when `--mode` is not given; a scaffold is `pack`. */
+  readonly mode?: "link" | "pack";
+
+  /** A scaffold's fixture folder (an action, a model with a migration and a test), relative to the repository. */
+  readonly fixture?: string;
+
   /** The product repository, `owner/name`. */
-  readonly repo: string;
+  readonly repo?: string;
 
   /** The commit every service of the product is pinned to. */
   readonly ref?: string;
