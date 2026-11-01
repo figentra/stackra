@@ -17,6 +17,8 @@ on:
     paths:
       - "workers/static/**"
       - "tools/schemas/**"
+      # Named although `workers/static/**` covers it: moving a brand pin redeploys the host.
+      - "workers/static/brand-pins.yaml"
       - ".github/workflows/deploy-static.yml"
       - ".github/workflows/runway-cloudflare-workers.yml"
     # A schema release (`schemas@1.4.0`) adds an immutable /schemas/1.4.0/ tree and moves /schemas/v1/.
@@ -64,3 +66,9 @@ jobs:
       infisical-identity-id: ${{ vars.INFISICAL_CI_IDENTITY_ID }}
       infisical-project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}
       smoke-url: https://static.stackra.figentra.com/schemas/index.json
+      # The figentra/brand kit images the README banners use (STA-1898), pulled at the pinned refs before the build.
+      brand-pins: brand-pins.yaml
+    # Only the stackra-bot App credentials, for a read-only figentra/brand token; not `secrets: inherit`.
+    secrets:
+      STACKRA_BOT_APP_ID: ${{ secrets.STACKRA_BOT_APP_ID }}
+      STACKRA_BOT_PRIVATE_KEY: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}

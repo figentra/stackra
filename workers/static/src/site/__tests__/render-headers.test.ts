@@ -14,12 +14,13 @@ describe("renderHeaders", () => {
     const text = renderHeaders([]);
     expect(text).toContain("/*\n  Access-Control-Allow-Origin: *\n");
     expect(text).toContain("\n/\n  Cache-Control: public, max-age=300\n");
-    expect(text.match(/Cache-Control/g)).toHaveLength(1);
+    expect(text.match(/Cache-Control/g)).toHaveLength(2);
+    expect(text).toContain("/brand/*\n  Cache-Control: public, max-age=31536000, immutable\n");
   });
 
   it("gives each release tree its own immutable rule", () => {
     const text = renderHeaders(["1.4.0", "1.3.2"]);
-    expect(text.match(/Cache-Control: public, max-age=31536000, immutable/g)).toHaveLength(2);
+    expect(text.match(/Cache-Control: public, max-age=31536000, immutable/g)).toHaveLength(3);
     expect(text).toContain("/schemas/1.4.0/*\n");
     expect(text).toContain("/schemas/1.3.2/*\n");
   });
@@ -27,6 +28,6 @@ describe("renderHeaders", () => {
   it("refuses more rules than Cloudflare allows", () => {
     const versions = Array.from({ length: 100 }, (_, i) => `0.0.${i}`);
     expect(() => renderHeaders(versions)).toThrow(/Cloudflare allows 100/);
-    expect(() => renderHeaders(versions.slice(2))).not.toThrow();
+    expect(() => renderHeaders(versions.slice(3))).not.toThrow();
   });
 });

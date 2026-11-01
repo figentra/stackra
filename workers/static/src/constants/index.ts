@@ -5,6 +5,7 @@
  * Runtime: node
  * Governing contract: ADR 0006 (explicit barrels), ADR 0233 (subpath imports).
  */
+export { BRAND_PATH } from "./brand-path.constant";
 export { IMMUTABLE_CACHE_CONTROL } from "./immutable-cache-control.constant";
 export { PAGE_CACHE_CONTROL } from "./page-cache-control.constant";
 export { SCHEMA_TAG_PREFIX } from "./schema-tag-prefix.constant";

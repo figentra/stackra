@@ -32,12 +32,47 @@ legal footer): at `/`, and as the 404 body for any unknown path (`not_found_hand
 schema, runs no script and makes no request: the wordmark, colours and type of the stackra theme are inlined
 (`src/site/render-page.ts`).
 
+## Brand kit images (`/brand/`)
+
+Product READMEs show a banner from the figentra/brand kits. That repository is private, so GitHub's image proxy cannot
+fetch from it; this host serves the released files instead (STA-1898, ADR 0284 note of 2026-11-01). Nothing is
+committed here (the brand is pulled, never copied, brand ADR 0001): `brand-pins.yaml` lists each kit with its brand
+ref, and the deploy pulls the files at those refs into `.brand/` (gitignored), which the build copies to
+`dist/site/brand`.
+
+| Path                                      | Content                                                           | Cache-Control                         |
+| ----------------------------------------- | ----------------------------------------------------------------- | ------------------------------------- |
+| `/brand/<kit>/<ref>/logo/<file>.svg`      | the kit's logo SVGs at that ref (`brands/<kit>/logo/*.svg`)       | `public, max-age=31536000, immutable` |
+| `/brand/<kit>/<ref>/3d/stills/<file>.png` | the kit's English Open Graph stills (`*-og-light-en`, `-dark-en`) | `public, max-age=31536000, immutable` |
+
+`<ref>` is the pin, written as in the file: a release tag `brand-<kit>@x.y.z`, or a 40-character commit SHA where the
+kit has no tag yet. Only the globs under `include:` in `brand-pins.yaml` are served, not the whole repository.
+
+URL the README step writes into `.flow/readme.yml`:
+
+```
+https://static.stackra.figentra.com/brand/<kit>/<ref>/<path in the kit>
+https://static.stackra.figentra.com/brand/organza/brand-organza@1.0.2/3d/stills/organza-3d-og-light-en.png
+https://static.stackra.figentra.com/brand/invoicing/069bb209e8f2b79fe8378c8845030ec767da04c7/logo/invoicing-horizontal.light.en.svg
+```
+
+**Add or move a pin.** Edit one line under `kits:` in `brand-pins.yaml` (a new kit adds a line; a move changes the ref),
+merge it, and let `deploy-static` run. Then set the same ref in the product's `.flow/readme.yml`. A pin names a tag that
+exists in figentra/brand; a kit that matches no `include` glob fails the deploy. An old ref stops being served once its
+pin moves, so move the README in the same step. To serve another file type, add a glob to `include:`.
+
+The pull needs the org secrets `STACKRA_BOT_APP_ID` and `STACKRA_BOT_PRIVATE_KEY` (the stackra-bot App, which must be
+installed on figentra/brand). `deploy-static.yml` passes just those two; the provider
+(`runway-cloudflare-workers.yml`, input `brand-pins`) mints a token with `repositories: brand` and
+`permission-contents: read`, and only the pull step reads it.
+
 ## Layout
 
 | Path                  | Holds                                                                                            |
 | --------------------- | ------------------------------------------------------------------------------------------------ |
 | `wrangler.jsonc`      | Worker name, account, pinned compatibility date, assets folder, the custom domain                |
-| `src/main.ts`         | build entry: read, plan, write `dist/site`                                                       |
+| `brand-pins.yaml`     | the figentra/brand kits and refs served under `/brand/` (CI pulls the files; none are committed) |
+| `src/main.ts`         | build entry: read, plan, write `dist/site`, copy the pulled `.brand/` to `dist/site/brand`       |
 | `src/site/`           | the builder: readers (working tree, git tags), `planSite`, `renderHeaders`, `renderPage`, writer |
 | `src/constants/`      | host, `/schemas` prefix, schemas folder, tag prefix, Cache-Control values, logo                  |
 | `src/interfaces/`     | the shapes passed between the builder's steps                                                    |

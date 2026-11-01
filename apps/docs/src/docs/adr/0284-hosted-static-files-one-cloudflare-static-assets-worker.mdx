@@ -16,6 +16,15 @@ description: "Accepted · 2026-10-22"
   hand-written `wrangler.jsonc`.
 </Note>
 
+<Note>
+  Note of 2026-11-01 (owner decision, STA-1898): the host gains a second kind of file, `/brand/`, the released
+  figentra/brand kit images that product READMEs show as their banner (figentra/brand is private, so GitHub's image
+  proxy cannot read it from there). Nothing is committed: `workers/static/brand-pins.yaml` pins each kit at a release
+  tag or a commit, and the deploy pulls the files at those refs with a read-only token for figentra/brand alone, so the
+  brand stays "pulled, never copied" (brand ADR 0001). Paths are `/brand/<kit>/<ref>/<path in the kit>`, immutable like
+  an exact schema version. Decisions 1 to 8 are unchanged; `workers/static/README.md` has the details.
+</Note>
+
 ## Context
 
 Stackra needs public, stable URLs for files it publishes, starting with the JSON Schemas of its config files

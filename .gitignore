@@ -35,6 +35,8 @@ apps/*/app.config.ts
 
 # Wrangler local state (`wrangler dev`): miniflare storage and temporary bundles
 .wrangler/
+# Brand kit files CI pulls for workers/static (brand-pins.yaml): pulled, never committed.
+workers/static/.brand/
 
 # Playwright
 test-results/

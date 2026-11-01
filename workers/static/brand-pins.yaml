@@ -1,0 +1,35 @@
+# Stackra file contract:
+# Purpose: the figentra/brand kit images the static host serves (ADR 0284, STA-1898): each kit with the brand ref it is
+#          pinned at. CI pulls the files at deploy time (runway-cloudflare-workers.yml) and nothing is committed here:
+#          the brand is pulled, never copied (figentra/brand ADR 0001).
+# Served at: https://static.stackra.figentra.com/brand/<kit>/<ref>/<path in the kit>. A pin never changes its URL, so
+#            the files are cached as immutable. Move a pin by editing its line, and move the README (`.flow/readme.yml`)
+#            that names the old URL in the same step.
+# Ref: a release tag `brand-<kit>@x.y.z` where one exists, otherwise a full commit SHA (40 hex characters).
+# Owner: release-operations
+
+# The repository the files come from; the deploy token is scoped to it alone, read-only.
+repository: figentra/brand
+
+# Paths inside `brands/<kit>/` that are served, as shell globs that do not cross a slash. Only what a README banner
+# needs: the logo SVGs and the English Open Graph stills. A kit that matches none of them fails the deploy.
+include:
+  - logo/*.svg
+  - 3d/stills/*-og-*-en.png
+
+kits:
+  academorix: brand-academorix@1.0.3
+  billing: 069bb209e8f2b79fe8378c8845030ec767da04c7
+  commerce: brand-commerce@1.0.3
+  figentra: brand-figentra@1.0.3
+  flow: 069bb209e8f2b79fe8378c8845030ec767da04c7
+  invoicing: 069bb209e8f2b79fe8378c8845030ec767da04c7
+  juristra: brand-juristra@1.0.3
+  jute: brand-jute@1.0.3
+  mezzora: brand-mezzora@1.0.3
+  organza: brand-organza@1.0.2
+  os: brand-os@1.0.3
+  pay: brand-pay@1.0.3
+  stackra: brand-stackra@1.0.2
+  tamo: brand-tamo@1.0.3
+  velora: brand-velora@1.0.3

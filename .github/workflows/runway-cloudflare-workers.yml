@@ -7,7 +7,8 @@
 #          `figentra/stackra/.github/workflows/runway-cloudflare-workers.yml@<sha> # runway-v<n>` (runbooks/runway).
 # Secrets: CLOUDFLARE_API_TOKEN only, from Infisical `/ci` through GitHub OIDC, exported for the deploy step and
 #          blanked for the smoke step. No repository secret. Without an identity id the job builds, tests, prints a
-#          notice and deploys nothing.
+#          notice and deploys nothing. With `brand-pins`, the org secrets STACKRA_BOT_APP_ID and
+#          STACKRA_BOT_PRIVATE_KEY mint a read-only token for figentra/brand alone, held by one step (STA-1898).
 # Owner: release-operations
 name: Runway cloudflare-workers
 
@@ -62,6 +63,19 @@ on:
         description: A URL that must answer 200 after the deploy. Empty skips the smoke test.
         type: string
         default: ""
+      brand-pins:
+        description: >-
+          A YAML file in the member (`brand-pins.yaml`) pinning figentra/brand kits; their files are pulled into
+          `<member>/.brand/` before the build. Empty pulls nothing and needs no secret.
+        type: string
+        default: ""
+    secrets:
+      STACKRA_BOT_APP_ID:
+        description: The stackra-bot App id; used only to mint a read-only figentra/brand token when `brand-pins` is set.
+        required: false
+      STACKRA_BOT_PRIVATE_KEY:
+        description: The stackra-bot App private key; used only for that token.
+        required: false
     outputs:
       sha:
         description: The deployed commit.
@@ -144,6 +158,50 @@ jobs:
           env-slug: prod
           secret-path: /ci/turbo
           export-type: env
+
+      # figentra/brand is private and its images are pulled, never copied (brand ADR 0001): a token for that one
+      # repository, read-only, revoked when the job ends. Only the next step sees it.
+      - name: Brand token (stackra-bot App)
+        id: brand-token
+        if: inputs.brand-pins != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
+          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+          owner: figentra
+          repositories: brand
+          permission-contents: read
+
+      # Pulls each pinned kit's tarball at its ref and keeps only the `include` globs, into
+      # <member>/.brand/<kit>/<ref>/<path in the kit>; the member's build copies that to the assets folder. A kit
+      # with no matching file fails the job, so a wrong pin never deploys as a silent 404.
+      - name: Pull brand kits
+        if: inputs.brand-pins != ''
+        env:
+          GH_TOKEN: ${{ steps.brand-token.outputs.token }}
+          MEMBER: ${{ inputs.member }}
+          PINS: ${{ inputs.brand-pins }}
+        run: |
+          set -euo pipefail
+          pins="$MEMBER/$PINS"
+          repo="$(yq '.repository' "$pins")"
+          dest="$MEMBER/.brand"
+          rm -rf "$dest"
+          globs=()
+          while read -r glob; do globs+=("*/brands/KIT/$glob"); done < <(yq '.include[]' "$pins")
+          while read -r kit ref; do
+            out="$dest/$kit/$ref"
+            tmp="$(mktemp -d)"
+            gh api "repos/$repo/tarball/${ref//@/%40}" > "$tmp/kit.tgz"
+            patterns=("${globs[@]//KIT/$kit}")
+            mkdir -p "$out"
+            # A glob with no match makes tar exit 2 after extracting the rest; the count below is the check.
+            tar -xzf "$tmp/kit.tgz" -C "$out" --strip-components=3 --wildcards --no-wildcards-match-slash "${patterns[@]}" || true
+            count="$(find "$out" -type f | wc -l)"
+            [ "$count" -gt 0 ] || { echo "::error title=Brand kit empty::$kit at $ref matched no file in $pins"; exit 1; }
+            echo "::notice title=Brand kit::$kit at $ref: $count files"
+            rm -rf "$tmp"
+          done < <(yq '.kits | to_entries | .[] | .key + " " + .value' "$pins")
 
       # A caller's own Quality Gate runs in a separate workflow this one cannot wait on, so the member is tested here
       # and a broken build never reaches Cloudflare.

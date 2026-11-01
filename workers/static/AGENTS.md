@@ -19,6 +19,9 @@ entry is `src/main.ts`, which writes the assets to `dist/site`. Read `README.md`
 - Never move or delete a `schemas@*` tag: the exact-version paths are immutable because their tags are.
 - Set `Cache-Control` only in `src/site/render-headers.ts`, on the `/` rule and the exact-version rules. Cloudflare
   joins the values of every matching `_headers` rule, so a Cache-Control on `/*` produces a broken header.
+- Never commit a brand image: `/brand/` is pulled by CI from figentra/brand at the refs in `brand-pins.yaml` (brand
+  ADR 0001, STA-1898). A pin is a release tag `brand-<kit>@x.y.z` or a full commit SHA, never a branch. The `/brand/*`
+  rule in `_headers` is immutable because refs are; a mutable ref there would be cached for a year.
 - The HTML page (`src/site/render-page.ts`) stays self-contained: no script, no external request, no schema listing.
 - A new kind of hosted file gets its own first path segment (like `/schemas/`), not a new member or Worker.
 - `wrangler.jsonc` is hand-written under ADR 0284's carve-out until `stackra gen` emits Workers config (ADR 0168).

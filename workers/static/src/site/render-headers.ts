@@ -6,7 +6,12 @@
  * Runtime: node
  * Governing contract: ADR 0284 (hosted static files, decision 4); Cloudflare Workers static assets `_headers`.
  */
-import { IMMUTABLE_CACHE_CONTROL, PAGE_CACHE_CONTROL, SCHEMAS_PATH } from "#src/constants";
+import {
+  BRAND_PATH,
+  IMMUTABLE_CACHE_CONTROL,
+  PAGE_CACHE_CONTROL,
+  SCHEMAS_PATH,
+} from "#src/constants";
 
 /** Cloudflare's cap on rules in one `_headers` file. */
 const MAX_RULES = 100;
@@ -19,7 +24,7 @@ const MAX_RULES = 100;
  * - `/` (the landing page; a rule without a splat matches that path only) gets {@link PAGE_CACHE_CONTROL}.
  * - Each `/schemas/<version>/*` gets {@link IMMUTABLE_CACHE_CONTROL}. Cache-Control is set only on these rules, never on
  *   `/*`, because Cloudflare joins the values of every matching rule with a comma, which would yield a contradictory
- *   header. Moving paths and 404s keep Cloudflare's default (`max-age=0, must-revalidate` plus an ETag).
+ *   header. `/brand/*` is immutable too (its refs are pinned). Moving paths and 404s keep Cloudflare's default (`max-age=0, must-revalidate` plus an ETag).
  *
  * shortcut: one rule per release against a 100-rule cap (98 releases); when a release nears it, move old versions
  * behind one prefix rule or add a Worker script that sets the header.
@@ -29,7 +34,7 @@ const MAX_RULES = 100;
  * @throws Error when the rules would exceed Cloudflare's cap, so a deploy never silently drops the cache rule.
  */
 export function renderHeaders(versions: readonly string[]): string {
-  const count = versions.length + 2;
+  const count = versions.length + 3;
   if (count > MAX_RULES)
     throw new Error(`_headers would hold ${count} rules; Cloudflare allows ${MAX_RULES}`);
   const rules = [
@@ -39,6 +44,9 @@ export function renderHeaders(versions: readonly string[]): string {
     "  X-Content-Type-Options: nosniff",
     "/",
     `  Cache-Control: ${PAGE_CACHE_CONTROL}`,
+    // Brand kit files sit at /brand/<kit>/<ref>/..., and a ref is a release tag or a commit: every URL is immutable.
+    `${BRAND_PATH}/*`,
+    `  Cache-Control: ${IMMUTABLE_CACHE_CONTROL}`,
     ...versions.flatMap((version) => [
       `${SCHEMAS_PATH}/${version}/*`,
       `  Cache-Control: ${IMMUTABLE_CACHE_CONTROL}`,
