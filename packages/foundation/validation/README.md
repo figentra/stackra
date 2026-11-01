@@ -29,6 +29,7 @@ Depends on `@stackra/contracts`, `@stackra/container` and `zod`; one-time codes 
 | `validate`, `schemaOf`, `registerSchemas`                           | check input; read a class's schema; the registry generated schemas fill            |
 | `publicId`, `isoDateTime`, `json`, `url`, `duration`, `tableInput`  | the runtime helpers generated schemas and clients import                           |
 | `Assert`, `Fields`, `Same`                                          | the types of each generated `X$Check`                                              |
+| `InputFields`                                                       | `Fields` with the defaulted fields optional: what a caller passes (`CallInput`)    |
 | `FieldDecorator`, `ShapeClass`                                      | the types behind a field decorator and a derived shape class                       |
 | `Address$`, `ScopeRef$`, `Actor$`, `Signature$`, `SignerPublicKey$` | the shipped schemas of `Address` and of the contracts types a shape field may name |
 
