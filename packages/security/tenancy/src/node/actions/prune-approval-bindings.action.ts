@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `PruneApprovalBindingsAction`, `tenancy.approval_binding.prune@1`: the daily job that deletes the approval
- *          bindings whose `expiresAt` + the 24-hour execution tail + the audit retention window has passed.
+ *          bindings whose `expiresAt` + the 24-hour execution tail + `AUDIT_HOT_RETENTION` has passed.
  * Boundary: a job is an action with a `job` surface: unique per tenant, five minutes at most, dispatched at 04:15 UTC
  *           once per tenant on the default queue. The only actor is the system, so it gets no endpoint and no tool. It
  *           is the only delete of the insert-only binding table; the tenant's policy limits it to that tenant's rows.
@@ -15,9 +15,7 @@
 import { Action } from "@stackra/actions";
 import type { ActionContext } from "@stackra/actions";
 import type { ApprovalBindingStore } from "@stackra/actions/contracts";
-import { ActorKind, Duration } from "@stackra/contracts";
-
-import { APPROVAL_BINDING_RETENTION } from "#node/constants/approval-binding-retention.constant";
+import { ActorKind, AUDIT_HOT_RETENTION, Duration } from "@stackra/contracts";
 
 /** The execution tail: a granted request may run until 24 hours after its grant, whatever its window. */
 const EXECUTION_TAIL = Duration.hours(24);
@@ -57,7 +55,7 @@ export class PruneApprovalBindingsAction extends Action({
     ctx: ActionContext,
   ): Promise<{ readonly deleted: number }> {
     const kept =
-      Duration.toMilliseconds(EXECUTION_TAIL) + Duration.toMilliseconds(APPROVAL_BINDING_RETENTION);
+      Duration.toMilliseconds(EXECUTION_TAIL) + Duration.toMilliseconds(AUDIT_HOT_RETENTION);
     const cutoff = new Date(ctx.now().getTime() - kept);
     return { deleted: await this.bindings.prune(cutoff) };
   }

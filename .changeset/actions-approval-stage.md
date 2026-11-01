@@ -13,4 +13,11 @@ an `IdentityResolver`. New refusals: `approval_mismatch`, `approval_expired`, `a
 `approver_not_permitted`, and `approverRefusal` uses `actorChainOverlaps`. `./testing` ships `MemoryApprovalGateDriver`,
 `MemoryApprovalBindingStoreDriver`, `MemoryActorStatusCheckDriver` and the two port conformance suites.
 
-Breaking for `ApprovalGate` implementers: `check` is replaced by the four methods above.
+### Breaking
+
+- `ApprovalGate.check` is removed. The gate is now `decide`, `park`, `find`, `begin` and `settle`.
+- A park from tenant approval rules alone (no declared `approval` stage) now needs an `ApprovalBindingStore` bound.
+- Who must act before upgrading: today only OS tasks-approvals implements the gate, on unmerged branches
+  (`ServiceApprovalGateDriver` and `RecordsApprovalGateDriver`), and OS content, webhooks and workflow-automations plan to
+  bind it in their specs. Commerce binds none. Each must port to the new port shape and bind the binding store (the
+  Postgres driver in `@stackra/tenancy/node`) before moving to the release that carries this.

@@ -76,6 +76,7 @@ type EntryTypes = [
 describe("@stackra/contracts", () => {
   it("exports exactly the runtime vocabulary", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "AUDIT_HOT_RETENTION",
       "ActorKind",
       "AesGcmFieldCipherDriver",
       "ApiArea",

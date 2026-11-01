@@ -183,8 +183,8 @@ Promise<boolean>`, a binding wired by gen, file `access/<name>.approval-conditio
     and `expiresAt` by the owning service's clock, the required approvals, approver permission and approver assurance
     level (N6), any `confirm` requirement and the execution mode. It is the only source of who, where, what and when
     for an execution. It is insert-only (N7): the pipeline inserts it, and only `PruneApprovalBindingsAction`
-    (`approval_binding.prune`, a daily job in `@stackra/tenancy`) deletes it, a binding after its request's final state
-    plus the audit retention window (ADR 0212) and an orphan after its `expiresAt`. Nothing updates it, and nothing but
+    (`approval_binding.prune`, a daily job in `@stackra/tenancy`) deletes it, a binding once its `expiresAt` + 24
+    hours (the execution tail) + `AUDIT_HOT_RETENTION` (`@stackra/contracts`, ADR 0212's thirteen months) has passed. Nothing updates it, and nothing but
     the pipeline, the executor and that job reads or writes it. The actor chain and the input hash are listed in the
     owning service's PII table and in the model's docs.
   - The **draft**, in the store, through `gate.park`: the same approval id, key, tenant, scope and requester for

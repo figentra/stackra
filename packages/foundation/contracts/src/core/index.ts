@@ -8,6 +8,7 @@
  */
 export { Enum } from "#core/bases/enum.base";
 export { Port } from "#core/bases/port.base";
+export { AUDIT_HOT_RETENTION } from "#core/constants/audit-hot-retention.constant";
 export { Duration } from "#core/constants/duration.constant";
 export { AesGcmFieldCipherDriver } from "#core/drivers/aes-gcm-field-cipher.driver";
 export { AwsKmsKeyProviderDriver } from "#core/drivers/aws-kms-key-provider.driver";

@@ -57,8 +57,8 @@ anyone, so the owning service keeps its own binding; a per-service MAC key was t
    owning service also writes its own **binding** through the `ApprovalBindingStore` port: approval id, tenant, scope,
    the requester's whole chain, key and version, input hash, the requester's assurance, `requestedAt`, `expiresAt`,
    approvals, permission and the approver assurance level. It is insert-only: the pipeline inserts, and only the
-   daily `approval_binding.prune` job deletes (after the request's final state plus the audit retention window, or an
-   orphan after `expiresAt`); its actor chain and input hash are in the owning service's PII table. It is a
+   daily `approval_binding.prune` job deletes (once `expiresAt` + 24 hours (the execution tail) + `AUDIT_HOT_RETENTION` of
+   `@stackra/contracts`, ADR 0212's thirteen months, has passed); its actor chain and input hash are in the owning service's PII table. It is a
    tenant-owned table with forced RLS in every owning service, shipped by
    `@stackra/tenancy` (model and migration) because actions sits below tenancy. The comparison of a call with its
    binding and the store's row (identity, scope, key, input hash, snapshot hash, status, window by the binding's clock,
