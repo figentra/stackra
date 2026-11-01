@@ -1521,3 +1521,7 @@
   status: reserved
   owner: claude
   issue: STA-1867
+"0513":
+  slug: permission-vocabulary-moves-to-contracts-and-container
+  status: reserved
+  issue: STA-1890
