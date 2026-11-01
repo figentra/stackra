@@ -123,6 +123,7 @@ import { FREE_INLINE_LOADING } from "#src/registry/components/free/inline-loadin
 import { FREE_INLINE_SELECT } from "#src/registry/components/free/inline-select";
 import { FREE_INPUT_GROUP } from "#src/registry/components/free/input-group";
 import { FREE_ITEM_CARD } from "#src/registry/components/free/item-card";
+import { FREE_KEYBOARD_SHORTCUTS } from "#src/registry/components/free/keyboard-shortcuts";
 import { FREE_KIOSK_SURFACE } from "#src/registry/components/free/kiosk-surface";
 import { FREE_KPI } from "#src/registry/components/free/kpi";
 import { FREE_LAYOUT } from "#src/registry/components/free/layout";
@@ -218,6 +219,7 @@ import { FREE_SETTINGS_CELL } from "#src/registry/components/free/settings-cell"
 import { FREE_SETTING_ROW } from "#src/registry/components/free/setting-row";
 import { FREE_SETUP_GUIDE } from "#src/registry/components/free/setup-guide";
 import { FREE_SHARE_BUTTON } from "#src/registry/components/free/share-button";
+import { FREE_SHEET } from "#src/registry/components/free/sheet";
 import { FREE_SHIMMER } from "#src/registry/components/free/shimmer";
 import { FREE_SIDEBAR } from "#src/registry/components/free/sidebar";
 import { FREE_SIDE_PANEL } from "#src/registry/components/free/side-panel";
@@ -247,6 +249,15 @@ import { FREE_TABS } from "#src/registry/components/free/tabs";
 import { FREE_TAB_BAR } from "#src/registry/components/free/tab-bar";
 import { FREE_TAG_GROUP } from "#src/registry/components/free/tag-group";
 import { FREE_TAG_INPUT } from "#src/registry/components/free/tag-input";
+import { FREE_TAMO_ASK_BOX } from "#src/registry/components/free/tamo-ask-box";
+import { FREE_TAMO_BUTTON } from "#src/registry/components/free/tamo-button";
+import { FREE_TAMO_COLLECTION_TOOLS } from "#src/registry/components/free/tamo-collection-tools";
+import { FREE_TAMO_DRAFT_REVIEW } from "#src/registry/components/free/tamo-draft-review";
+import { FREE_TAMO_GHOST_TEXT } from "#src/registry/components/free/tamo-ghost-text";
+import { FREE_TAMO_LAUNCHER } from "#src/registry/components/free/tamo-launcher";
+import { FREE_TAMO_MARKER } from "#src/registry/components/free/tamo-marker";
+import { FREE_TAMO_MENU } from "#src/registry/components/free/tamo-menu";
+import { FREE_TAMO_STATUS_LINE } from "#src/registry/components/free/tamo-status-line";
 import { FREE_TASK_TRAY } from "#src/registry/components/free/task-tray";
 import { FREE_TEXT_AREA } from "#src/registry/components/free/text-area";
 import { FREE_TEXT_AREA_FIELD } from "#src/registry/components/free/text-area-field";
@@ -304,6 +315,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_COPY_BUTTON,
   FREE_FAB,
   FREE_ICON_BUTTON,
+  FREE_KEYBOARD_SHORTCUTS,
   FREE_MORPH_BUTTON,
   FREE_OVERFLOW_TOOLBAR,
   FREE_PROGRESS_BUTTON,
@@ -530,6 +542,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_POPCONFIRM,
   FREE_POPOVER,
   FREE_ROUTE_OVERLAY,
+  FREE_SHEET,
   FREE_TOOLTIP,
   FREE_USE_CONFIRMATION,
   FREE_APP_HEADER,
@@ -674,5 +687,30 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_REASONING,
   FREE_SHIMMER,
   FREE_SOURCES,
+  FREE_TAMO_ASK_BOX,
+  FREE_TAMO_BUTTON,
+  FREE_TAMO_COLLECTION_TOOLS,
+  FREE_TAMO_DRAFT_REVIEW,
+  FREE_TAMO_GHOST_TEXT,
+  FREE_TAMO_LAUNCHER,
+  FREE_TAMO_MARKER,
+  FREE_TAMO_MENU,
+  // KIT_TAMO_PROVIDER: @stackra/ai, from its showcase/tamo-provider.json
+  {
+    slug: "tamo-provider",
+    tier: "free",
+    category: "ai",
+    platforms: ["react"],
+    packageName: "@stackra/ai",
+    exportName: "TamoProvider",
+    parts: ["TamoProvider"],
+    hero: {},
+    examples: [{ id: "settings", card: true, minHeight: 360 }],
+    related: ["free/tamo-launcher", "free/tamo-menu"],
+    tokens: ["color.tamo-mark", "color.tamo-glow-mid"],
+    keywords: ["ai", "tamo", "provider", "settings", "kit", "mock"],
+    status: "new",
+  },
+  FREE_TAMO_STATUS_LINE,
   FREE_VOICE_INPUT,
 ]);

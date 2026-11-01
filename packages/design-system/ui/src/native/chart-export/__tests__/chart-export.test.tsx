@@ -31,6 +31,12 @@ vi.mock("react-native", async () => {
   };
 });
 
+// loadSkia requires the optional peer lazily, which vi.mock cannot reach: route it to the Skia mock (STA-1791).
+vi.mock("#native/skia/load-skia.function", async () => {
+  const skia = await import("@shopify/react-native-skia");
+  return { loadSkia: () => skia };
+});
+
 vi.mock("@shopify/react-native-skia", () => ({
   makeImageFromView: async () => ({ encodeToBase64: () => "AAAA" }),
 }));

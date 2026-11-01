@@ -1,0 +1,37 @@
+{
+  "generatedFrom": {
+    "hash": "df0c503e610a7fc8",
+    "propsFiles": ["ui/src/native/tamo-marker/tamo-marker.props.ts"]
+  },
+  "importLine": "import { TamoMarker } from \"@stackra/ui/native\";",
+  "key": "free/tamo-marker",
+  "parts": [
+    {
+      "name": "TamoMarker",
+      "props": [
+        {
+          "description": "True for a field Tamo filled that the person has not checked yet (\"Filled by Tamo, check it\").",
+          "name": "needsReview",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The words; default \"Made with Tamo\", or the review words.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Classes added to the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

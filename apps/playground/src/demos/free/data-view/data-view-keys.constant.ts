@@ -152,5 +152,7 @@ export const DATA_VIEW_KEYS = keys({
     "grid_virtual_hint",
     "list_virtual_label",
     "list_virtual_hint",
+    "tamo_label",
+    "tamo_screen",
   ],
 });

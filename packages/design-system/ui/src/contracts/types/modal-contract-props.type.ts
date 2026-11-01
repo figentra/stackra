@@ -42,4 +42,11 @@ export interface ModalContractProps extends OverlayContractProps {
   readonly motion?: OverlayMotion | undefined;
   /** The accessible name for a modal that has no `Modal.Title`; with a title, the title names it. */
   readonly label?: string | undefined;
+  /**
+   * The modal's primary action, run by `confirmShortcut` (Mod+Enter by default) while this is the topmost overlay, so
+   * a person confirms without reaching for the mouse. Page shortcuts pause while any modal is open (ADR 0508).
+   */
+  readonly onConfirm?: (() => void) | undefined;
+  /** The binding of `onConfirm`. Defaults to `mod+enter`. */
+  readonly confirmShortcut?: string | undefined;
 }

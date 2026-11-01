@@ -55,5 +55,8 @@ export const DATA_TABLE_KEYS = keys({
     "view_unpaid",
     "views_tabs_label",
     "views_chips_label",
+    "tamo_label",
+    "tamo_screen",
+    "tamo_hint",
   ],
 });

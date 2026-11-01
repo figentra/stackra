@@ -8,7 +8,7 @@
  * Governing contract: ADR 0126 (scaffold templates); ADR 0296; the YAML standard (STA-299).
  */
 
-/** The sample value of each token `tools/scripts/scaffold.mjs` replaces (its `TOKEN_RE`). */
+/** The sample value of each token `stackra new` replaces in a template kind (`scaffold`'s `TOKEN_RE`). */
 const SAMPLE_TOKENS: Readonly<Record<string, string>> = {
   NAME: "sample",
   PASCAL: "Sample",

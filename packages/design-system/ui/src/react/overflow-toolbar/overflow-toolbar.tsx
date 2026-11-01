@@ -24,6 +24,7 @@ import { ActionMenu } from "#react/action-menu/action-menu";
 import { Button } from "#react/button/button";
 import { IconButton } from "#react/icon-button/icon-button";
 import type { OverflowToolbarProps } from "#react/overflow-toolbar/overflow-toolbar.props";
+import { ShortcutHint } from "#react/shortcut-hint/shortcut-hint";
 
 const FAST = motionTiming(STACKRA_THEME, "fast");
 const TRANSITION = { duration: FAST.durationMs / 1000, ease: FAST.bezier ?? "easeOut" } as const;
@@ -95,6 +96,8 @@ export function OverflowToolbar({
           {items.map((item) => (
             <Button key={item.id} {...shared} {...omitUndefined({ startIcon: item.icon })}>
               {item.label}
+              {/* Measured with its hint, so the fit never clips one; in hidden mode it only overestimates. */}
+              {item.shortcut ? <ShortcutHint keys={item.shortcut} className="ms-1" /> : null}
             </Button>
           ))}
           <IconButton icon="ellipsis" label={moreLabel} {...shared} />
@@ -117,7 +120,13 @@ export function OverflowToolbar({
                   item.onPress?.();
                   onAction?.(item.id);
                 }}
-                {...omitUndefined({ startIcon: item.icon, isDisabled: item.isDisabled })}
+                // A visible action binds its key as a button, an overflowing one through the "more" menu (ADR 0508).
+                {...omitUndefined({
+                  startIcon: item.icon,
+                  isDisabled: item.isDisabled,
+                  shortcut: item.shortcut,
+                  shortcutId: item.shortcut === undefined ? undefined : item.id,
+                })}
               >
                 {item.label}
               </Button>

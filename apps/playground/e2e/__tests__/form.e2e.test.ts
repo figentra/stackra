@@ -148,15 +148,17 @@ test("Enter still adds a line in the text area and presses the focused button", 
   page,
 }) => {
   await open(page, "light", "en");
-  const notes = page.getByRole("textbox", { name: "Notes" });
+  // Scoped to the live demo: the Ask Tamo demo has a Notes field too.
+  const live = example(page, "live");
+  const notes = live.getByRole("textbox", { name: "Notes" });
   await notes.fill("one");
   await notes.press("Enter");
   await notes.pressSequentially("two");
   await expect(notes).toHaveValue("one\ntwo");
   await expect(page.getByTestId("submit-state")).toHaveText("Nothing sent yet.");
   // A keyboard user reaches the button and presses it with Enter: the switch must not take that key.
-  await page.getByRole("textbox", { name: "Email" }).fill("ada@example.com");
-  await page.getByRole("button", { name: "Send" }).focus();
+  await live.getByRole("textbox", { name: "Email" }).fill("ada@example.com");
+  await live.getByRole("button", { name: "Send" }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("submit-state")).toHaveText("Sent 1 time, to ada@example.com.");
 });

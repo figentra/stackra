@@ -12,6 +12,7 @@
  *           dialog, hides the page behind it from assistive technology and returns focus to the element that opened
  *           it. A footer button with `slot="close"` closes the modal without any state. A route-bound modal and the
  *           stack of overlays are `@stackra/navigation`'s.
+ *           While open it is the topmost shortcut scope (page shortcuts pause) and `onConfirm` runs on Mod+Enter (ADR 0508).
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI v3 on web); owner
  *          decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 2.1.2, 2.4.3 and 4.1.2.
@@ -30,6 +31,7 @@ import { ModalTitle } from "#react/modal/modal-title";
 import type { ModalProps } from "#react/modal/modal.props";
 import { useMotion } from "#react/design-system-provider/use-motion";
 import { ModalEscapeContext } from "#react/modal/modal-escape-context";
+import { ModalShortcuts } from "#react/modal/modal-shortcuts";
 
 /** Where each motion sits: HeroUI's placement, and the container's and the dialog's classes. */
 const LAYOUT: Readonly<
@@ -80,6 +82,8 @@ function ModalRoot({
   motion,
   label,
   className,
+  onConfirm,
+  confirmShortcut,
   ...rest
 }: ModalProps): ReactElement {
   const level = useMotion();
@@ -101,7 +105,11 @@ function ModalRoot({
               : {})}
             {...(label ? { "aria-label": label } : {})}
           >
-            <ModalEscapeContext value={!isKeyboardDismissDisabled}>{children}</ModalEscapeContext>
+            <ModalEscapeContext value={!isKeyboardDismissDisabled}>
+              <ModalShortcuts onConfirm={onConfirm} confirmShortcut={confirmShortcut}>
+                {children}
+              </ModalShortcuts>
+            </ModalEscapeContext>
           </HeroModal.Dialog>
         </HeroModal.Container>
       </HeroModal.Backdrop>

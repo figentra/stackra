@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "d3385790b92f0b99",
+    "hash": "4e09a0f264d55a3f",
     "propsFiles": ["ui/src/react/command-palette/command-palette.props.ts"]
   },
   "importLine": "import { CommandPalette } from \"@stackra/ui/react\";",
@@ -40,11 +40,25 @@
           "type": "string"
         },
         {
-          "description": "The key that opens it with Cmd or Ctrl (web); `k` by default, `false` for none.",
+          "description": "The key that opens it: one letter means Cmd or Ctrl with it (`k`, the default), or a whole binding (`mod+shift+p`);\n`false` for none. On web it is registered with the shortcut registry (ADR 0508), so a person can remap it.",
           "name": "hotkey",
           "required": false,
           "source": "stackra",
           "type": "string | false"
+        },
+        {
+          "description": "False leaves out the \"Actions\" section, which lists every action the shortcut registry holds. Defaults to true.",
+          "name": "hasRegisteredActions",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to leave out the \"Ask Tamo\" entry (shown with the AI module installed and on for the screen, ADR 0507).",
+          "name": "ai",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",

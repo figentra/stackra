@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./testing` entry of @stackra/events (`dispatch`, `drainEvents`, `drainOutbox`,
+ * Purpose: Stand-in barrel: the `./testing` entry of @stackra/events (`dispatch`, `commitEvents`, `drainEvents`, `drainOutbox`,
  *          `deliverRemoteEvent`, the `OutboxFake` and `RegionBusFake`, the `toEmit` and `toRecord` matchers and the
  *          testing-module plugin) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Importing it registers the matchers with `expect` and the
@@ -11,6 +11,8 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decision 3); the STA-347 stand-in barrel decision.
  */
 export { EVENTS_TESTING_PLUGIN } from "#testing/constants/events-testing-plugin.constant";
+export { commitEvents } from "#testing/functions/commit-events.function";
+export { deliverEventsIn } from "#testing/functions/deliver-events-in.function";
 export { deliverRemoteEvent } from "#testing/functions/deliver-remote-event.function";
 export { dispatch } from "#testing/functions/dispatch.function";
 export { drainEvents } from "#testing/functions/drain-events.function";
@@ -19,4 +21,6 @@ export { OutboxFake } from "#testing/outbox.fake";
 export { RegionBusFake } from "#testing/region-bus.fake";
 export { toEmit } from "#testing/to-emit.matcher";
 export { toRecord } from "#testing/to-record.matcher";
+export type { CommittingCall } from "#testing/types/committing-call.type";
+export type { DeliveryScope } from "#testing/types/delivery-scope.type";
 export type { PublishedEvents } from "#testing/types/published-events.type";

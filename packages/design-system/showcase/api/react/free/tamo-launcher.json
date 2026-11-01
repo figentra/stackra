@@ -1,0 +1,49 @@
+{
+  "generatedFrom": {
+    "hash": "7434b0dc41fa8d16",
+    "propsFiles": ["ui/src/react/tamo-launcher/tamo-launcher.props.ts"]
+  },
+  "importLine": "import { TamoLauncher } from \"@stackra/ui/react\";",
+  "key": "free/tamo-launcher",
+  "parts": [
+    {
+      "name": "TamoLauncher",
+      "props": [
+        {
+          "default": "Mod+J",
+          "description": "The launcher's shortcut, as `Mod+J` (Cmd on Apple, Ctrl elsewhere); bound on web. Defaults to `Mod+J`.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The launcher's words. Defaults to \"Ask Tamo\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to draw only the mark.",
+          "name": "isIconOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Classes added to the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "TamoPanel",
+      "props": []
+    }
+  ],
+  "platform": "react"
+}

@@ -1,0 +1,44 @@
+{
+  "generatedFrom": {
+    "hash": "a209c51de3f432db",
+    "propsFiles": ["ui/src/react/shortcut-hint/shortcut-hint.props.ts"]
+  },
+  "importLine": "import { ShortcutHint } from \"@stackra/ui/react\";",
+  "key": "free/shortcut-hint",
+  "parts": [
+    {
+      "name": "ShortcutHint",
+      "props": [
+        {
+          "description": "The binding (`mod+k`, `g s`); nothing is drawn when it does not parse.",
+          "name": "keys",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True: drawn as a small badge centred above the action (the hold-Mod reveal).",
+          "name": "isBadge",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True: hidden from screen readers; otherwise read as its spoken form (\"Command K\").",
+          "name": "isDecorative",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Extra classes on the Kbd.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

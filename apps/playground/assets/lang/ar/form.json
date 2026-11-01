@@ -19,5 +19,13 @@
   "mod_enter": "الإرسال بـ Cmd أو Ctrl مع Enter",
   "not_sent": "لم يُرسل شيء بعد.",
   "refused": "لم يُرسل: البريد الإلكتروني غير صالح.",
-  "sent": "{count, plural, zero {لم يُرسل إلى {email}.} one {أُرسل مرة واحدة إلى {email}.} two {أُرسل مرتين إلى {email}.} few {أُرسل # مرات إلى {email}.} many {أُرسل # مرة إلى {email}.} other {أُرسل # مرة إلى {email}.}}"
+  "sent": "{count, plural, zero {لم يُرسل إلى {email}.} one {أُرسل مرة واحدة إلى {email}.} two {أُرسل مرتين إلى {email}.} few {أُرسل # مرات إلى {email}.} many {أُرسل # مرة إلى {email}.} other {أُرسل # مرة إلى {email}.}}",
+  "tamo_form": "عميل جديد",
+  "tamo_name": "الاسم الكامل",
+  "tamo_company": "الشركة",
+  "tamo_city": "المدينة",
+  "tamo_notes": "ملاحظات",
+  "tamo_paste": "اضغط «عبّئ من نص» والصق:",
+  "tamo_sample": "سارة الحربي\nالشركة: تجارة النخيل\nالمدينة: الرياض",
+  "tamo_screen": "العملاء"
 }

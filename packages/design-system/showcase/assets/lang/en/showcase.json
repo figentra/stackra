@@ -1613,6 +1613,66 @@
         "title": "Rich text editor",
         "description": "A document field with a formatting toolbar, on TipTap; packages add actions and panels through contributions.",
         "keywords": "rich text, editor, wysiwyg, formatting, document, description"
+      },
+      "sheet": {
+        "title": "Sheet",
+        "description": "A swipeable panel from the edge of the screen that rests at snap points.",
+        "keywords": "bottom sheet, swipe, snap points, detents"
+      },
+      "keyboard_shortcuts": {
+        "title": "Keyboard shortcuts",
+        "description": "Every action carries its keys: a hint beside it or in its tooltip, a ? cheat sheet, and remapping for each person.",
+        "keywords": "keyboard shortcuts, hotkeys, kbd, cheat sheet, remap"
+      },
+      "tamo_button": {
+        "title": "Tamo button",
+        "description": "The Ask Tamo action button: a brand-gradient glow border, a shimmer while Tamo works, three sizes and an icon-only form for fields.",
+        "keywords": "ai, tamo, ask tamo, assistant, glow, button"
+      },
+      "tamo_menu": {
+        "title": "Tamo menu",
+        "description": "Tamo's text actions: rewrite, shorten, expand, fix grammar, translate between English and Arabic, tone, and the actions modules add.",
+        "keywords": "ai, tamo, rewrite, translate, tone, grammar"
+      },
+      "tamo_ghost_text": {
+        "title": "Tamo ghost text",
+        "description": "Tamo's suggestion drawn under the field: Tab accepts it, Escape dismisses it; on a phone, Accept and Dismiss.",
+        "keywords": "ai, tamo, autocomplete, suggestion, ghost text, continue writing"
+      },
+      "tamo_draft_review": {
+        "title": "Tamo draft review",
+        "description": "The text before and Tamo's draft after, with Accept, Edit and Discard; nothing changes until the person accepts.",
+        "keywords": "ai, tamo, draft, review, accept, diff"
+      },
+      "tamo_ask_box": {
+        "title": "Tamo ask box",
+        "description": "Ask in words, get a structured proposal: the person writes what they want, Tamo proposes, Apply or Discard.",
+        "keywords": "ai, tamo, natural language, ask in words, proposal"
+      },
+      "tamo_marker": {
+        "title": "Tamo marker",
+        "description": "The AI-made marker: Made with Tamo on content, or Filled by Tamo, check it on a field awaiting the person's check.",
+        "keywords": "ai, tamo, provenance, generated, review, label"
+      },
+      "tamo_status_line": {
+        "title": "Tamo status",
+        "description": "The one working, Stop, error and Try again line every Tamo part shares, read out politely.",
+        "keywords": "ai, tamo, loading, stop, retry, error"
+      },
+      "tamo_launcher": {
+        "title": "Tamo launcher",
+        "description": "The Ask Tamo button with its shortcut, and the side panel that knows the screen you are on.",
+        "keywords": "ai, tamo, assistant, side panel, copilot, shortcut"
+      },
+      "tamo_collection_tools": {
+        "title": "Tamo collection tools",
+        "description": "Tamo on a table: filter and sort in words, summarise the selected rows, fill a column, each previewed before it applies.",
+        "keywords": "ai, tamo, table, summarise, fill column, filter in words"
+      },
+      "tamo_provider": {
+        "title": "Tamo provider",
+        "description": "The AI kit's Tamo provider: it fills every Tamo part on a screen through a client, with per-workspace settings and an offline mock.",
+        "keywords": "ai, tamo, provider, settings, kit, mock"
       }
     }
   },
@@ -1755,6 +1815,9 @@
         },
         "live": {
           "title": "Try it"
+        },
+        "tamo": {
+          "title": "Ask Tamo"
         }
       },
       "form_field": {
@@ -1862,6 +1925,9 @@
         },
         "live": {
           "title": "Try it"
+        },
+        "tamo": {
+          "title": "Ask Tamo"
         }
       },
       "text_field": {
@@ -1882,6 +1948,9 @@
         },
         "live": {
           "title": "Try it"
+        },
+        "tamo": {
+          "title": "Ask Tamo"
         }
       },
       "checkbox": {
@@ -2064,6 +2133,9 @@
         },
         "presets": {
           "title": "Quick dates"
+        },
+        "tamo": {
+          "title": "Ask Tamo"
         }
       },
       "accordion": {
@@ -2258,6 +2330,9 @@
         },
         "virtual": {
           "title": "Ten thousand rows"
+        },
+        "tamo": {
+          "title": "Ask Tamo"
         }
       },
       "filter_bar": {
@@ -2278,6 +2353,9 @@
         },
         "refused": {
           "title": "A refused filter"
+        },
+        "tamo": {
+          "title": "Ask Tamo"
         }
       },
       "list": {
@@ -4021,6 +4099,9 @@
       "command_palette": {
         "launcher": {
           "title": "Go to and create"
+        },
+        "tamo": {
+          "title": "Ask Tamo"
         }
       },
       "toc_rail": {
@@ -4081,6 +4162,9 @@
         },
         "hijri": {
           "title": "Hijri calendar"
+        },
+        "tamo": {
+          "title": "Ask Tamo"
         }
       },
       "year_picker": {
@@ -4569,6 +4653,9 @@
         },
         "mobile_cards": {
           "title": "Cards on a narrow screen"
+        },
+        "tamo": {
+          "title": "Ask Tamo"
         }
       },
       "period_picker": {
@@ -5041,6 +5128,108 @@
         "contributions": {
           "title": "Contributed action and panel"
         }
+      },
+      "sheet": {
+        "basic": {
+          "title": "Basic"
+        },
+        "snap": {
+          "title": "Snap points"
+        },
+        "sequential": {
+          "title": "Several snap points"
+        },
+        "placement": {
+          "title": "Placement"
+        },
+        "backdrop": {
+          "title": "Backdrop"
+        },
+        "dismissal": {
+          "title": "Not dismissable"
+        },
+        "scrollable": {
+          "title": "Scrollable content"
+        },
+        "detached": {
+          "title": "Detached"
+        },
+        "controlled": {
+          "title": "Controlled"
+        },
+        "handle": {
+          "title": "Drag by the handle"
+        },
+        "nested": {
+          "title": "Nested sheets"
+        }
+      },
+      "keyboard_shortcuts": {
+        "toolbar": {
+          "title": "A shortcut-aware toolbar"
+        },
+        "modes": {
+          "title": "Keys visible or in tooltips"
+        },
+        "reveal": {
+          "title": "Hold Mod to reveal"
+        },
+        "cheat_sheet": {
+          "title": "The cheat sheet"
+        },
+        "settings": {
+          "title": "Shortcut settings"
+        }
+      },
+      "tamo_button": {
+        "states": {
+          "title": "States"
+        }
+      },
+      "tamo_menu": {
+        "actions": {
+          "title": "Actions"
+        }
+      },
+      "tamo_ghost_text": {
+        "continue": {
+          "title": "Continue writing"
+        }
+      },
+      "tamo_draft_review": {
+        "review": {
+          "title": "Review"
+        }
+      },
+      "tamo_ask_box": {
+        "dates": {
+          "title": "Dates in words"
+        }
+      },
+      "tamo_marker": {
+        "kinds": {
+          "title": "Kinds"
+        }
+      },
+      "tamo_status_line": {
+        "states": {
+          "title": "States"
+        }
+      },
+      "tamo_launcher": {
+        "panel": {
+          "title": "Panel"
+        }
+      },
+      "tamo_collection_tools": {
+        "orders": {
+          "title": "Orders"
+        }
+      },
+      "tamo_provider": {
+        "settings": {
+          "title": "Settings"
+        }
       }
     }
   },
@@ -5135,7 +5324,17 @@
       "fullscreen": "Enter or leave full screen",
       "next_view": "Go from the hours to the minutes",
       "previous_view": "Go back to the hours",
-      "resize": "Resize"
+      "resize": "Resize",
+      "confirm": "Confirm",
+      "go_to_tab": "Go to the first to ninth tab",
+      "page_previous_next": "Go to the previous or next page",
+      "today": "Go to today",
+      "previous_next_period": "Go to the previous or next period",
+      "select_all": "Select all rows",
+      "undo": "Undo",
+      "open_palette": "Open the command palette",
+      "open_cheat_sheet": "Show every keyboard shortcut",
+      "hold_reveal": "Hold to show the keys of every action"
     },
     "anatomy": {
       "container": "Container",
@@ -5906,7 +6105,8 @@
           "dont_2": "Do not put whole workflows in a drawer.",
           "alternative": {
             "modal": "For short, focused tasks.",
-            "route_overlay": "When the drawer should have its own URL."
+            "route_overlay": "When the drawer should have its own URL.",
+            "sheet": "For a swipeable panel from the bottom with snap points."
           }
         },
         "drop_zone": {
@@ -8452,6 +8652,111 @@
             "text_area": "For plain text with no formatting.",
             "code_block": "For showing code, not editing a document."
           }
+        },
+        "sheet": {
+          "headline": "A quick task, a swipe away.",
+          "intro": "A panel that slides up from the bottom, rests at a peek or the full height, and is swiped away. Open one sheet from another to stack them.",
+          "tags": "Swipe · Snap points · Nesting",
+          "what": "A swipeable panel from the edge of the screen, by default the bottom.",
+          "when": "Use it for a quick pick, a peek at details or a short form, above all on a phone.",
+          "rtl": "Start and end sheets follow the reading direction, so an end sheet comes from the left in Arabic; the close button sits in the top reading-end corner.",
+          "when_not": "For a task with steps, sizes or views beside the page; use a drawer.",
+          "do_1": "Give every sheet a close control or a footer button; the swipe is not the only way out.",
+          "do_2": "Start at a peek with snap points when the content is long.",
+          "dont_1": "Do not stack more than three sheets.",
+          "dont_2": "Do not put a whole workflow in a sheet.",
+          "alternative": {
+            "drawer": "For a task panel on the side, with sizes, resizing and views.",
+            "action_menu": "For a short list of actions."
+          }
+        },
+        "keyboard_shortcuts": {
+          "headline": "Every action, one keystroke away.",
+          "intro": "Define an action once and its button, menu item, tooltip, palette entry and cheat sheet row all show the same keys, and the keys run it.",
+          "tags": "Kbd · Remap · Cheat sheet",
+          "what": "Key hints on HeroUI's Kbd, a registry of the actions on screen, a ? reference and a settings panel.",
+          "when": "Use it on any action people repeat: saving, creating, moving between records, filtering.",
+          "rtl": "Keys stay Latin and read left to right in Arabic; next and previous arrows swap sides."
+        },
+        "tamo_button": {
+          "headline": "Tamo's button, in Tamo's colours.",
+          "intro": "One button for every AI action: the brand gradient glows round it, and a shimmer runs while Tamo works.",
+          "tags": "AI · Brand gradient · Shimmer",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "tamo_menu": {
+          "headline": "Better words, one menu away.",
+          "intro": "Rewrite, shorten, expand, fix the grammar, translate or change the tone; each result comes back as a draft to review.",
+          "tags": "AI · Text actions · English and Arabic",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "tamo_ghost_text": {
+          "headline": "Tamo finishes the thought; you decide.",
+          "intro": "The suggestion waits under the field in a muted colour. Tab takes it, Escape or typing on drops it.",
+          "tags": "AI · Autocomplete · Keyboard",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "tamo_draft_review": {
+          "headline": "See the change before it lands.",
+          "intro": "The text before and Tamo's draft side by side; accept it, edit it first, or discard it.",
+          "tags": "AI · Review · Undo",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "tamo_ask_box": {
+          "headline": "Say it in words; review the result.",
+          "intro": "People write what they want, Tamo turns it into chips, values or a date, and nothing applies until they press Apply.",
+          "tags": "AI · Natural language · Proposal",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "tamo_marker": {
+          "headline": "Always clear what Tamo made.",
+          "intro": "Content Tamo wrote carries Tamo's mark, and a field Tamo filled asks for a check until the person keeps it.",
+          "tags": "AI · Provenance · Review",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "tamo_status_line": {
+          "headline": "One way to wait, stop and retry.",
+          "intro": "Every Tamo part says it is working the same way, offers Stop, and offers Try again when something fails.",
+          "tags": "AI · Status · Live region",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "tamo_launcher": {
+          "headline": "Ask Tamo about the screen you are on.",
+          "intro": "The launcher opens a side panel that knows the current screen; the command palette can open it with a question.",
+          "tags": "AI · Side panel · Mod+J",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "tamo_collection_tools": {
+          "headline": "Ask your table in plain words.",
+          "intro": "Filter and sort by saying it, summarise what you selected, or fill a column; every result is previewed first.",
+          "tags": "AI · Data · Preview first",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "tamo_provider": {
+          "headline": "Tamo for a whole screen, switched by settings.",
+          "intro": "The AI module's provider fills every Tamo part on the screen; whether Tamo is on is the workspace's setting, not code.",
+          "tags": "AI kit · Provider · Settings",
+          "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
+          "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
+          "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
         }
       }
     }

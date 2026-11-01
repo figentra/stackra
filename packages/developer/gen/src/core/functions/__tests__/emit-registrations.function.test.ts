@@ -86,6 +86,27 @@ describe("emitRegistrations", () => {
     expect(billing).not.toContain("@stackra/outbox");
   });
 
+  it("neither registers nor imports an integration that has no connection (STA-1803)", () => {
+    const paypal: DeclaredClass = {
+      name: "PaypalIntegration",
+      kind: "integration",
+      module: "billing",
+      file: "src/modules/billing/integrations/paypal.integration.ts",
+      importPath: "#modules/billing/integrations/paypal.integration",
+      options: {},
+      deps: [],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    };
+    const content =
+      registrationsOf({ ...BILLING_IR, classes: [...BILLING_IR.classes, paypal] }) ?? "";
+    expect(content).toContain("integration: StripeIntegration");
+    expect(content).not.toContain("PaypalIntegration");
+  });
+
   it("registers connections, webhook events, sequences and searchable models", () => {
     expect(billing).toContain(
       'registerConnections([\n  { connection: StripeConnection, integration: StripeIntegration, key: "billing.stripe" },\n]);',

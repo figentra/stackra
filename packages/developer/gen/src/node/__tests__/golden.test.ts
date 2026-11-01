@@ -63,6 +63,7 @@ const FIXTURES: readonly GoldenFixture[] = [
   { name: "docs", members: ["apps/handbook"] },
   { name: "consumer", members: ["services/catalogue", "services/channels"] },
   { name: "i18n-packages", members: ["packages/customers"] },
+  { name: "member-module-alias", members: ["services/payments"] },
   { name: "refusal-reader", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-shim-authored", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-tool-reason", base: "package-drivers", members: ["packages/shop"] },

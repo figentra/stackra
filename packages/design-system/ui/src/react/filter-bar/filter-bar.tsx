@@ -20,9 +20,10 @@
  *           words come from the `ui` catalogue in the active locale.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0318 (decisions 1 to 4); ADR 0505 (one filter
- *          model); ADR 0165 (HeroUI v3 on
+ *          model); ADR 0507 (Ask Tamo: ask in words, proposed chips); ADR 0165 (HeroUI v3 on
  *          web); owner decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 1.3.1, 2.1.1, 2.4.3, 2.5.8, 4.1.2, 4.1.3.
  */
+import { STANDARD_SHORTCUTS } from "@stackra/shortcuts";
 import { useRef, useState, type ReactElement } from "react";
 import { useLocale } from "react-aria-components";
 
@@ -34,6 +35,7 @@ import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
 import { quickFilterIdOf } from "#core/functions/quick-filter-id-of.function";
 import { isFilterValueEmpty } from "#core/functions/is-filter-value-empty.function";
 import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useActionShortcut } from "#react/hooks/use-action-shortcut";
 import { useQuickFilters } from "#react/hooks/use-quick-filters";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { CollectionFilterEditor } from "#react/data-view/collection-filter-editor";
@@ -47,6 +49,10 @@ import { Menu } from "#react/menu/menu";
 import { Popover } from "#react/popover/popover";
 import { SearchField } from "#react/search-field/search-field";
 import { Tooltip } from "#react/tooltip/tooltip";
+import { TAMO_KEYS } from "#core/constants/tamo-keys.constant";
+import { TamoFilterAsk } from "#react/filter-bar/tamo-filter-ask";
+import { useTamo } from "#react/hooks/use-tamo";
+import { TamoButton } from "#react/tamo-button/tamo-button";
 import type { FilterBarProps } from "#react/filter-bar/filter-bar.props";
 
 /** The props of one chip, which is one filter shown as a button that opens its editor and a button that removes it. */
@@ -142,12 +148,15 @@ export function FilterBar<TItem extends CollectionItem = CollectionItem>({
   searchLabel,
   searchPlaceholder,
   unappliedIds = NONE,
+  ai,
   "aria-label": ariaLabel,
   ...rest
 }: FilterBarProps<TItem>): ReactElement {
   const t = useUiText();
   const { locale } = useLocale();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const tamo = useTamo({}, ai !== false);
+  const [isAsking, setAsking] = useState(false);
   const addButton = useRef<HTMLButtonElement>(null);
   const { definitions, definitionOf, valueOf, appliedIds, others, setValue, clearAll } =
     useQuickFilters(collection);
@@ -165,6 +174,15 @@ export function FilterBar<TItem extends CollectionItem = CollectionItem>({
       isDisabled: filter.isDisabled,
     }));
 
+  // F opens the add-filter menu: a click on its trigger, so the menu opens as a press would (ADR 0508).
+  const addKeys = useActionShortcut({
+    shortcut: STANDARD_SHORTCUTS["filter.add"],
+    shortcutId: "filter.add",
+    label: t(UI_KEYS.ui.filter_bar.add),
+    run: () => addButton.current?.click(),
+    isDisabled: addable.length === 0,
+  });
+
   const focusAddButton = () => requestAnimationFrame(() => addButton.current?.focus());
 
   return (
@@ -180,6 +198,7 @@ export function FilterBar<TItem extends CollectionItem = CollectionItem>({
         value={collection.state.search}
         onChange={collection.setSearch}
         className="min-w-56 flex-1"
+        shortcut={STANDARD_SHORTCUTS["search.focus"]}
         {...(searchPlaceholder === undefined ? {} : { placeholder: searchPlaceholder })}
       />
       <Menu
@@ -195,13 +214,16 @@ export function FilterBar<TItem extends CollectionItem = CollectionItem>({
         align="start"
       >
         <Button
-          ref={addButton}
+          ref={addKeys.attach(addButton)}
           variant="outline"
           size="sm"
           startIcon="plus"
           isDisabled={addable.length === 0}
+          {...(addKeys.badge === null ? {} : { className: "relative overflow-visible" })}
         >
           {t(UI_KEYS.ui.filter_bar.add)}
+          {addKeys.hint}
+          {addKeys.badge}
         </Button>
       </Menu>
       <Popover
@@ -218,6 +240,20 @@ export function FilterBar<TItem extends CollectionItem = CollectionItem>({
           <CollectionFilterEditor collection={collection} label={searchLabel} />
         </div>
       </Popover>
+      {tamo ? (
+        <Popover
+          title={t(TAMO_KEYS.ui.tamo.ask_filter)}
+          isOpen={isAsking}
+          onOpenChange={setAsking}
+          placement="bottom"
+          align="start"
+          trigger={<TamoButton size="sm" />}
+        >
+          <div className="w-[min(32rem,calc(100vw-2rem))]">
+            <TamoFilterAsk slot={tamo} collection={collection} onDone={() => setAsking(false)} />
+          </div>
+        </Popover>
+      ) : null}
       {chipIds.map((id) => {
         const definition = definitionOf(id);
         if (definition === undefined) return null;

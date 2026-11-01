@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "2e8bb6cfc38e489b",
+    "hash": "03297ba3e81dcca6",
     "heroDoc": "vendor/heroui/react/tabs.json",
     "propsFiles": ["ui/src/react/tabs/tabs.props.ts"]
   },
@@ -63,6 +63,13 @@
           "required": false,
           "source": "stackra",
           "type": "\"menu\" | \"scroll\""
+        },
+        {
+          "description": "True binds Mod+1 to Mod+9 to the first nine usable tabs while the page has no overlay open (ADR 0508). Off by\ndefault: browsers use Mod+1 to Mod+9 to switch their own tabs, and a page with several tab rows would bind them\nall; turn it on for the one main tab row of a page. Native ignores it.",
+          "name": "hasNumberShortcuts",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
         },
         {
           "description": "The items, in order. The collection never sorts or filters them: the query that fetched them did.",

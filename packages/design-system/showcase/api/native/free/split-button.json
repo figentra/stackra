@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "256e0465beb7874c",
+    "hash": "164c62b73d385120",
     "propsFiles": ["ui/src/native/split-button/split-button.props.ts"]
   },
   "importLine": "import { SplitButton } from \"@stackra/ui/native\";",
@@ -118,6 +118,21 @@
           "required": false,
           "source": "stackra",
           "type": "\"center\" | \"start\" | \"end\""
+        },
+        {
+          "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "keys:<binding>",
+          "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
+          "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "Used to reference react managed views from native code.",

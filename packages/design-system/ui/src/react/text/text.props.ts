@@ -14,4 +14,7 @@ import type { TextContractProps } from "#contracts/types/text-contract-props.typ
  * HeroUI's `color` and `truncate` are the contract's `tone` and `isTruncated`, so the type refuses them.
  */
 export type TextProps = TextContractProps &
-  Omit<TypographyRootProps, keyof TextContractProps | "color" | "truncate">;
+  Omit<TypographyRootProps, keyof TextContractProps | "color" | "truncate"> & {
+    /** The element drawn: `p` (the default) for a paragraph, `span` inside a sentence or a row, `div` for a block. */
+    readonly elementType?: "p" | "span" | "div";
+  };

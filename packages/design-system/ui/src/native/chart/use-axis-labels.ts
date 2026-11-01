@@ -6,11 +6,16 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); arabic rendering rules (Skia text through Paragraph); STA-1371.
  */
-import { Skia, TextAlign } from "@shopify/react-native-skia";
 import { useMemo } from "react";
-import { createParagraphLabelRenderer } from "victory-native";
 
+import { loadSkia } from "#native/skia/load-skia.function";
 import { THEME_PX } from "#core/constants/theme-px.constant";
+import { loadVictoryNative } from "#native/skia/load-victory-native.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Skia, TextAlign } = loadSkia();
+// victory-native is an optional peer (on Skia), required on first use (STA-1791).
+const { createParagraphLabelRenderer } = loadVictoryNative();
 
 /** The width allowed per character of an axis label at 10 points. */
 const LABEL_CHAR_WIDTH = 6.5;

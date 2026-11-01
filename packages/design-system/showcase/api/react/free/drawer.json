@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "996ed449e6a385d5",
+    "hash": "3346df9cc889538b",
     "heroDoc": "vendor/heroui/react/drawer.json",
     "propsFiles": [
       "ui/src/react/drawer/drawer-back.props.ts",
@@ -17,6 +17,13 @@
   "parts": [
     {
       "events": [
+        {
+          "description": "The drawer's primary action, run by `confirmShortcut` (Mod+Enter by default) while it is the topmost overlay. Page\nshortcuts pause while any drawer is open (ADR 0508). Web only today.",
+          "name": "onConfirm",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
         {
           "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
           "name": "onOpenChange",
@@ -67,6 +74,14 @@
           "description": "The accessible name for a drawer that has no `Drawer.Title`; with a title, the title names it.",
           "name": "label",
           "replaces": "aria-label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "mod+enter",
+          "description": "The binding of `onConfirm`. Defaults to `mod+enter`.",
+          "name": "confirmShortcut",
           "required": false,
           "source": "stackra",
           "type": "string"

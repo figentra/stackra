@@ -99,6 +99,12 @@ vi.mock("react-native-reanimated", async () => {
     runOnJS: (callback: unknown) => callback,
   };
 });
+// loadSkia requires the optional peer lazily, which vi.mock cannot reach: route it to the Skia mock (STA-1791).
+vi.mock("#native/skia/load-skia.function", async () => {
+  const skia = await import("@shopify/react-native-skia");
+  return { loadSkia: () => skia };
+});
+
 vi.mock("@shopify/react-native-skia", async () => {
   const { createElement } = await import("react");
   const mark = (name: string) => (props: Record<string, unknown>) => {
@@ -128,6 +134,12 @@ vi.mock("@shopify/react-native-skia", async () => {
     Paint: mark("Paint"),
   };
 });
+// loadVictoryNative requires the optional peer lazily, which vi.mock cannot reach: route it to the mock (STA-1791).
+vi.mock("#native/skia/load-victory-native.function", async () => {
+  const victory = await import("victory-native");
+  return { loadVictoryNative: () => victory };
+});
+
 vi.mock("victory-native", async () => {
   const { createElement } = await import("react");
   const mark = (name: string) => (props: Record<string, unknown>) => {

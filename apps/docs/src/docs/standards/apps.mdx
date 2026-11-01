@@ -59,9 +59,9 @@ Local-only scripts (`dev`, `start`, `preview`, `ios`, `android`, `doctor`, `a11y
 
 | Rule                                                                  | Check                                                  | Status |
 | --------------------------------------------------------------------- | ------------------------------------------------------ | ------ |
-| `tier:app` tag; no app depends on a service; no lib depends on an app | `validate-repository.mjs`, `turbo boundaries`          | Yes    |
-| Member files and PII table                                            | `validate-repository.mjs`                              | Yes    |
-| Catalog versions only (`catalog:mobile`, `catalog:frontend`)          | `validate-repository.mjs`, `catalogMode: strict`       | Yes    |
+| `tier:app` tag; no app depends on a service; no lib depends on an app | `stackra validate --repository`, `turbo boundaries`    | Yes    |
+| Member files and PII table                                            | `stackra validate --repository`                        | Yes    |
+| Catalog versions only (`catalog:mobile`, `catalog:frontend`)          | `stackra validate --repository`, `catalogMode: strict` | Yes    |
 | Bundle budget on the built web output                                 | planned: a per-app budget script chained after `build` | No     |
 | No fixture or demo markers in `dist`                                  | planned: a per-app scan script chained after `build`   | No     |
 | Physical-direction classes (RTL)                                      | planned: see [i18n and RTL](/standards/i18n-rtl)       | No     |

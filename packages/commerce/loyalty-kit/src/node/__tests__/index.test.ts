@@ -38,6 +38,7 @@ describe("@stackra/loyalty-kit/node", () => {
       "FreezeAccountOutput",
       "GetBalanceInput",
       "GetBalanceQuery",
+      "LOYALTY_KIT_ENTITIES",
       "LedgerEntriesAccountIdIndexMigration",
       "LedgerEntry",
       "LedgerReconcilerService",

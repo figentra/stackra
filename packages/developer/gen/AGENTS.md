@@ -294,6 +294,9 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `providers.encore.app`, refused as `encore_app_missing` without it (never a default id); an `encore.app` at the member
   or repository root is `encore_app_stray`. The root runway is read by a block-YAML lookup because gen does not depend
   on `@stackra/runway`; move to `readRunway` once it does.
+- `runwayQueues` (STA-1727): a service's full run refuses `queue_unprovisioned` for each job queue (`default` aside)
+  that an environment of the member's `runway.yaml` leaves out of `queues`; the file is read with `yamlKeyTree`, a
+  block-YAML key reader, for the same reason as `encoreApp`.
 - `compileMigrations` (stackra-248, ADR 0159): a service's full run imports each migration file (Node 24 strips the
   types) and compiles it with the member's own `@stackra/database` `compileMigration`, so the classes and the compiler
   share one kind registry. Own migrations are `src/modules/<key>/database/migrations/`; a declared package's are its

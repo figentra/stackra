@@ -135,7 +135,8 @@ test("each bar is a named search landmark with a named search box", async ({ pag
   const live = liveBar(page);
   await expect(live).toBeVisible();
   await expect(live.getByRole("searchbox", { name: "Search the live orders" })).toBeVisible();
-  await expect(page.getByRole("search")).toHaveCount(6);
+  // Six bars plus the Ask Tamo demo's, each named on its own.
+  await expect(page.getByRole("search")).toHaveCount(7);
 });
 
 test("the add-filter menu opens from the keyboard and lists only the filters not applied", async ({

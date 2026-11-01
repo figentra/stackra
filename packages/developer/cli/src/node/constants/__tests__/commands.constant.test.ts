@@ -60,6 +60,25 @@ describe("COMMANDS", () => {
     );
   });
 
+  it("covers the repository commands moved from tools/scripts", () => {
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "doctor",
+        "eas-preflight",
+        "structure",
+        "architecture-map",
+        "doc-standard",
+        "catalogue-completeness",
+        "cycles",
+        "app-native-deps",
+        "duplicate-exports",
+        "any-ratchet",
+        "duplication",
+        "skill-licences",
+      ]),
+    );
+  });
+
   it("registers check and the check aliases products already call (validate, verify, code:check, code:fix)", () => {
     expect(names).toEqual(
       expect.arrayContaining(["check", "validate", "verify", "code:check", "code:fix"]),

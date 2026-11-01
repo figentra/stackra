@@ -7,5 +7,10 @@
   "hijri": {
     "label": "Campaign dates",
     "button": "Choose the campaign dates"
+  },
+  "tamo": {
+    "label": "Report period",
+    "hint": "Open the calendar and write: last month",
+    "screen": "Reports"
   }
 }

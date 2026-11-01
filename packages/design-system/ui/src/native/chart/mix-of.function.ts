@@ -7,7 +7,11 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3: one API on web and native); STA-1371.
  */
-import { Skia } from "@shopify/react-native-skia";
+
+import { loadSkia } from "#native/skia/load-skia.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Skia } = loadSkia();
 
 /** `color` with `share` (0 to 1) of `other` mixed in. */
 export function mixOf(color: string, other: string, share: number): string {

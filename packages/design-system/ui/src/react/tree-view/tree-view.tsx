@@ -22,7 +22,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState, type ReactElement } from "react";
 import {
   Button as AriaButton,
-  DropIndicator,
   Tree,
   TreeItem,
   TreeItemContent,
@@ -38,6 +37,7 @@ import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { propagateTreeSelection } from "#core/functions/propagate-tree-selection.function";
 import { treeCheckStateOf } from "#core/functions/tree-check-state-of.function";
 import { useUiText } from "#react/hooks/use-ui-text";
+import { useLiveDrag } from "#react/hooks/use-live-drag";
 import { Icon } from "#react/icon/icon";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 import { Spinner } from "#react/spinner/spinner";
@@ -139,7 +139,9 @@ export function TreeView({
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- reason: loads follow the expanded set only; the tree and the loading set change as a result
   }, [expanded, onLoadChildren]);
 
+  const { follower: liveFollower, attach: liveAttach, ...live } = useLiveDrag();
   const { dragAndDropHooks } = useDragAndDrop({
+    ...live.options,
     getItems: (keys) =>
       [...keys].map((key) => ({
         "text/plain": rows.find((row) => row.id === key)?.label ?? String(key),
@@ -149,12 +151,7 @@ export function TreeView({
         id: String(event.target.key),
         position: event.target.dropPosition === "on" ? "inside" : event.target.dropPosition,
       }),
-    renderDropIndicator: (target) => (
-      <DropIndicator
-        target={target}
-        className="h-0.5 rounded-[var(--radius-pill)] outline-none data-[drop-target]:bg-accent"
-      />
-    ),
+    renderDropIndicator: (target) => live.renderDropIndicator(target),
   });
 
   const checked = new Set(selected);
@@ -247,24 +244,28 @@ export function TreeView({
   );
 
   return (
-    <Tree
-      {...rest}
-      aria-label={label}
-      selectionMode={selectionMode}
-      className={cn("flex flex-col outline-none", className) ?? ""}
-      expandedKeys={expanded}
-      onExpandedChange={(keys) => setExpanded(keysOf(keys, order))}
-      selectedKeys={selected}
-      onSelectionChange={(keys) => {
-        const next = keysOf(keys, order);
-        setSelected(isPropagated ? propagateTreeSelection(tree, selected, next) : next);
-      }}
-      {...omitUndefined({
-        onAction: onAction && ((key: string | number) => onAction(String(key))),
-        dragAndDropHooks: onMove ? dragAndDropHooks : undefined,
-      })}
-    >
-      {tree.map(renderNode)}
-    </Tree>
+    <>
+      <Tree
+        {...rest}
+        ref={liveAttach}
+        aria-label={label}
+        selectionMode={selectionMode}
+        className={cn("flex flex-col outline-none", className) ?? ""}
+        expandedKeys={expanded}
+        onExpandedChange={(keys) => setExpanded(keysOf(keys, order))}
+        selectedKeys={selected}
+        onSelectionChange={(keys) => {
+          const next = keysOf(keys, order);
+          setSelected(isPropagated ? propagateTreeSelection(tree, selected, next) : next);
+        }}
+        {...omitUndefined({
+          onAction: onAction && ((key: string | number) => onAction(String(key))),
+          dragAndDropHooks: onMove ? dragAndDropHooks : undefined,
+        })}
+      >
+        {tree.map(renderNode)}
+      </Tree>
+      {liveFollower}
+    </>
   );
 }

@@ -14,6 +14,7 @@ describe("@stackra/ai/node", () => {
   it("exports exactly its models and stores", () => {
     expect(Object.keys(node).sort()).toEqual([
       "A2aTask",
+      "AI_ENTITIES",
       "Conversation",
       "Message",
       "PostgresConversationStoreDriver",

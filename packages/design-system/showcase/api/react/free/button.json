@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "0fa6f72989ada7c3",
+    "hash": "5237a2ce80746979",
     "heroDoc": "vendor/heroui/react/button.json",
     "propsFiles": ["ui/src/react/button/button.props.ts"]
   },
@@ -178,6 +178,28 @@
           "required": false,
           "source": "stackra",
           "type": "string"
+        },
+        {
+          "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "keys:<binding>",
+          "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
+          "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
+          "name": "action",
+          "required": false,
+          "source": "stackra",
+          "type": "ShortcutAction"
         },
         {
           "description": "Overrides the default DOM element with a custom render function.",

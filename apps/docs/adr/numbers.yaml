@@ -1494,11 +1494,11 @@
   issue: STA-1730
 "0507":
   slug: ask-tamo-ai-slots-in-the-design-system
-  status: proposed
+  status: accepted
   owner: c6 design system (feat/c6-tamo-ai)
 "0508":
   slug: every-action-is-shortcut-aware
-  status: proposed
+  status: accepted
   owner: c6 design system (feat/c6-shortcuts)
 "0509":
   slug: the-approval-stage-a-declared-floor-of-distinct-approvers-checked-in-core-executed-as-the-requester

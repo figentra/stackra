@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "c39b7d64c3932d8b",
+    "hash": "4c5b3bebf1ba4b59",
     "propsFiles": ["ui/src/react/fab/fab.props.ts"]
   },
   "importLine": "import { Fab } from \"@stackra/ui/react\";",
@@ -105,6 +105,21 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "keys:<binding>",
+          "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
+          "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "",

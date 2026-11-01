@@ -97,7 +97,7 @@ The rule behind the table: this repository must not presume a product domain, a 
 
 ### The licence check
 
-Every skill folder under `.agents/skills/` and `.agents/reference/`, and every plugin enabled in `.claude/settings.json`, records its SPDX licence in `.agents/skills/.licences.yaml` (house skills carry the repository's MIT). `tools/scripts/skill-licences.mjs` fails `pnpm validate` when a skill or plugin has no record, when its licence is not on the allowlist (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC), when a licence file in the skill folder reads as noncommercial, or when a record names a skill or plugin that is gone. A noncommercial or source-available skill (PolyForm Noncommercial and similar) cannot ship in commercial work, so it is never vendored or enabled.
+Every skill folder under `.agents/skills/` and `.agents/reference/`, and every plugin enabled in `.claude/settings.json`, records its SPDX licence in `.agents/skills/.licences.yaml` (house skills carry the repository's MIT). `stackra skill-licences` (and its test in @stackra/cli) fails when a skill or plugin has no record, when its licence is not on the allowlist (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC), when a licence file in the skill folder reads as noncommercial, or when a record names a skill or plugin that is gone. A noncommercial or source-available skill (PolyForm Noncommercial and similar) cannot ship in commercial work, so it is never vendored or enabled.
 
 ## Adding a skill
 

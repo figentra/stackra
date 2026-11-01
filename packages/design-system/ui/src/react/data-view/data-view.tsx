@@ -62,6 +62,7 @@ import { ImportDialog } from "#react/import-dialog/import-dialog";
 import { Menu } from "#react/menu/menu";
 import { Popover } from "#react/popover/popover";
 import { SavedViews } from "#react/saved-views/saved-views";
+import { TamoCollectionTools } from "#react/tamo-collection-tools/tamo-collection-tools";
 import { SearchField } from "#react/search-field/search-field";
 import { SegmentedControl } from "#react/segmented-control/segmented-control";
 
@@ -108,6 +109,7 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
   isVirtualized = false,
   cardsBelow = NARROW,
   board,
+  ai,
   className,
   ...rest
 }: DataViewProps<TItem>): ReactElement {
@@ -319,9 +321,19 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
       />
     ) : null;
 
+  const tamoTools =
+    ai === false ? null : (
+      <TamoCollectionTools
+        collection={collection}
+        label={label}
+        onFill={onGridSave}
+        onCellEdit={onCellEdit}
+      />
+    );
   const toolbar = isNarrow ? (
     <div className="flex items-center gap-2">
       <div className="min-w-0 flex-1">{search}</div>
+      {tamoTools}
       <Drawer placement="bottom" trigger={filterTrigger} label={t(K.filter_title, { label })}>
         <Drawer.Header>
           <Drawer.Title>{t(K.filter_title, { label })}</Drawer.Title>
@@ -397,6 +409,7 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
       {importButton}
       {refreshButton}
       {fullscreenButton}
+      {tamoTools}
     </div>
   );
 
@@ -479,6 +492,7 @@ export function DataView<TItem extends CollectionItem = CollectionItem>({
       <DataTable
         label={label}
         collection={collection}
+        ai={false}
         hasColumnTools
         isStickyHeader
         isVirtualized={isVirtualized}

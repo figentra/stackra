@@ -9,8 +9,9 @@
  *          with a polite count, offer all matching for a fully selected page, and a failing bulk action leaves the
  *          selection while a successful one clears it and moves focus on; the filter bar slot narrows the rows; the
  *          empty, no-results, first-load, reload and error states are shown; the cursor pager walks forward and back; the
- *          live table searches, shows a failed load and recovers; every press target is at least 24 px; and the first
- *          column sits at the reading-start side in both directions.
+ *          live table searches, shows a failed load and recovers; every press target is at least 24 px; the first
+ *          column sits at the reading-start side in both directions; and on a fresh page a mouse drag from a row's grip
+ *          reorders the rows.
  * Boundary: the production build under `vite preview`; Chromium only. React Aria hides everything outside an open
  *           overlay from the accessibility tree, so sections are found by CSS, and role queries are used only inside the
  *           open menu or while no overlay is open.
@@ -80,12 +81,21 @@ for (const scheme of SCHEMES)
       // In right to left, an Arabic amount in a column pinned to the end sits over the scrolled cells beneath its
       // opaque sticky cell, and axe 4.14 cannot settle that background ("partially overlaps"); the test below measures
       // every pinned amount against its cell instead.
+      // Likewise a row scrolled under a table's sticky totals row is a smaller target only until it scrolls out from
+      // under it; axe names the totals cell (`data-table-summary:`) as the neighbour and leaves it for review.
+      const isUnderTotals = (node: (typeof incomplete)[number]["nodes"][number]) =>
+        node.any.some((check) =>
+          check.relatedNodes?.some((related) =>
+            related.html.includes('data-key="data-table-summary:'),
+          ),
+        );
       expect(
         incomplete
           .filter(
             (finding) =>
-              finding.id !== "color-contrast" ||
-              finding.nodes.some((node) => !node.html.includes('data-slot="money-value"')),
+              (finding.id !== "color-contrast" ||
+                finding.nodes.some((node) => !node.html.includes('data-slot="money-value"'))) &&
+              (finding.id !== "target-size" || !finding.nodes.every(isUnderTotals)),
           )
           .map((finding) => finding.id),
         "axe checks left for review",
@@ -447,4 +457,25 @@ test("the density control sets the row height: 32, 44 and 56 px", async ({ page 
       .poll(() => rows.first().evaluate((row) => row.getBoundingClientRect().height))
       .toBe(height);
   }
+});
+
+// Regression: React Aria moved focus to the grip mid-press, which cancelled a fresh page's first drag by the grip.
+test("a mouse drag from a row's grip on a fresh page reorders the rows", async ({ page }) => {
+  await open(page, "light", "en");
+  const section = example(page, "row-reorder");
+  const order = section.locator("p[role=status]");
+  const before = await order.textContent();
+  const grip = section.getByRole("button", { name: "Drag #24001" });
+  await grip.scrollIntoViewIfNeeded();
+  const from = await grip.boundingBox();
+  const target = await section.getByRole("row").nth(4).boundingBox();
+  if (!from || !target) throw new Error("a box is missing");
+  const x = from.x + from.width / 2;
+  const y = from.y + from.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let step = 1; step <= 8; step++)
+    await page.mouse.move(x, y + ((target.y + target.height - 6 - y) * step) / 8);
+  await page.mouse.up();
+  await expect(order).not.toHaveText(before ?? "");
 });

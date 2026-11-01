@@ -20,6 +20,12 @@ vi.mock("#native/chart/mix-of.function", () => ({
   mixOf: (color: string, other: string, share: number) => `mix(${color},${other},${share})`,
 }));
 vi.mock("react-native", () => ({ StyleSheet: { absoluteFill: { position: "absolute" } } }));
+// loadSkia requires the optional peer lazily, which vi.mock cannot reach: route it to the Skia mock (STA-1791).
+vi.mock("#native/skia/load-skia.function", async () => {
+  const skia = await import("@shopify/react-native-skia");
+  return { loadSkia: () => skia };
+});
+
 vi.mock("@shopify/react-native-skia", async () => {
   const { createElement } = await import("react");
   const mark =

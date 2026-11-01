@@ -69,6 +69,9 @@ export function Fab({
   onOpenChange,
   style,
   className,
+  // Shortcut props draw nothing on native yet: hardware-keyboard hints are a later step (ADR 0508).
+  shortcut: _shortcut,
+  shortcutId: _shortcutId,
   ...rest
 }: FabProps): ReactElement {
   const hasDial = actions !== undefined && actions.length > 0;

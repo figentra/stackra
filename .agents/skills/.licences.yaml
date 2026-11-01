@@ -1,7 +1,7 @@
 # Stackra file contract:
 # Purpose: the SPDX licence of every skill folder under .agents/skills and .agents/reference (keyed by its path
 #          under .agents) and of every plugin enabled in .claude/settings.json. House skills carry the repository
-#          licence, MIT. tools/scripts/skill-licences.mjs fails pnpm validate on a missing or non-allowed licence.
+#          licence, MIT. `stackra skill-licences` (and its test in @stackra/cli) fails on a missing or non-allowed licence.
 # Owner: dependency-steward · Secrets: forbidden
 skills:
   skills/accessibility: MIT

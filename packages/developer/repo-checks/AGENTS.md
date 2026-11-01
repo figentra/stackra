@@ -29,9 +29,7 @@ The repository checks `stackra check` runs (ADR 0282 decision 3). Member at `pac
 - A missing or broken git never crashes a phase: `readRepoContext` falls back to `walkRepoFiles` (a walk honouring
   `.gitignore`).
 - A check that changes behaviour changes its test in the same commit; the cases moved from `tools/scripts` stay.
-- Erasable TypeScript only (no enums, namespaces or parameter properties): core's wrappers in `tools/scripts` load
-  this source with plain `node` (type stripping plus a `#` resolve hook in `tools/scripts/repo-checks.mjs`). Every
-  type-only import is `import type`.
+- Erasable TypeScript only (no enums, namespaces or parameter properties). Every type-only import is `import type`.
 - No test source holds an import string the `imports` check would flag; build such strings with a quote variable.
 - `RAW_SQL_BASELINE` is a ratchet: lower a file's count when its raw SQL calls get their `// raw-sql:` reasons, never
   raise one or add a file; a new call gets its reason instead (ADR 0160, stackra-288).

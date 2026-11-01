@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "b1e27537ced28977",
+    "hash": "ac48af92ff1a2423",
     "propsFiles": [
       "ui/src/react/file-trigger/file-trigger.props.ts",
       "ui/src/react/file-trigger/upload-list.props.ts"
@@ -172,6 +172,13 @@
           "type": "\"sm\" | \"md\" | \"lg\""
         },
         {
+          "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
+          "name": "action",
+          "required": false,
+          "source": "stackra",
+          "type": "ShortcutAction"
+        },
+        {
           "description": "True to stretch the button to the full width of its container.",
           "name": "isFullWidth",
           "required": false,
@@ -191,6 +198,21 @@
           "required": false,
           "source": "stackra",
           "type": "IconSlot"
+        },
+        {
+          "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "keys:<binding>",
+          "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
+          "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",

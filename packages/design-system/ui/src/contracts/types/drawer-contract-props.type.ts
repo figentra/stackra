@@ -46,4 +46,11 @@ export interface DrawerContractProps
   readonly inset?: boolean | undefined;
   /** The accessible name for a drawer that has no `Drawer.Title`; with a title, the title names it. */
   readonly label?: string | undefined;
+  /**
+   * The drawer's primary action, run by `confirmShortcut` (Mod+Enter by default) while it is the topmost overlay. Page
+   * shortcuts pause while any drawer is open (ADR 0508). Web only today.
+   */
+  readonly onConfirm?: (() => void) | undefined;
+  /** The binding of `onConfirm`. Defaults to `mod+enter`. */
+  readonly confirmShortcut?: string | undefined;
 }

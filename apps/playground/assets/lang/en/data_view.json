@@ -138,5 +138,7 @@
   "grid_virtual_label": "Ten thousand stock lines",
   "grid_virtual_hint": "10,000 editable rows: the arrows, Page Up and Page Down walk them, and only the rows in view are drawn.",
   "list_virtual_label": "Ten thousand customers",
-  "list_virtual_hint": "Only the rows in view are drawn; the arrow keys walk all of them."
+  "list_virtual_hint": "Only the rows in view are drawn; the arrow keys walk all of them.",
+  "tamo_label": "Orders with Ask Tamo",
+  "tamo_screen": "Orders"
 }

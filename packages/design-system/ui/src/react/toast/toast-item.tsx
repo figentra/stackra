@@ -23,11 +23,15 @@
  */
 import type { Tone } from "@stackra/contracts";
 import { Toast as HeroToast, toast as heroToast } from "@heroui/react";
-import { useEffect, useRef, type ReactElement } from "react";
+import { useEffect, useRef, type ReactElement, type ReactNode } from "react";
 
 import type { ToastVariant } from "#contracts/enums/toast-variant.enum";
 import { liveRegionOf } from "#core/functions/live-region-of.function";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useMotion } from "#react/design-system-provider/use-motion";
+import { plainTextOf } from "#react/hooks/plain-text-of.function";
+import { useActionShortcut } from "#react/hooks/use-action-shortcut";
+import { useUiText } from "#react/hooks/use-ui-text";
 import { FeedbackIcon } from "#react/feedback-icon/feedback-icon";
 import { Spinner } from "#react/spinner/spinner";
 import type { ToastItemProps } from "#react/toast/toast-item.props";
@@ -103,6 +107,19 @@ export function ToastItem({
     isLoading,
   } = toast.content;
   const motion = useMotion();
+  // An action's `data-shortcut` (set by `toast`) is registered app-wide while the toast shows (ADR 0508).
+  const { "data-shortcut": shortcut, ...action } = (actionProps ?? {}) as NonNullable<
+    typeof actionProps
+  > & { readonly "data-shortcut"?: string };
+  const t = useUiText();
+  const keys = useActionShortcut({
+    shortcut,
+    shortcutId: "toast.undo",
+    scope: "app",
+    label: plainTextOf(action.children as ReactNode) ?? t(UI_KEYS.ui.shortcuts.undo),
+    // The handlers `toast` writes ignore the press event.
+    run: action.onPress === undefined ? undefined : () => (action.onPress as () => void)(),
+  });
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const element = ref.current;
@@ -168,7 +185,15 @@ export function ToastItem({
         {description ? <HeroToast.Description>{description}</HeroToast.Description> : null}
       </HeroToast.Content>
       {actionProps?.children ? (
-        <HeroToast.ActionButton {...actionProps} className="mt-0 self-center sm:mt-0" />
+        // HeroUI 3.2.7 places the action by column (under the text below `sm`); pinned to this card's own four columns.
+        <HeroToast.ActionButton
+          {...action}
+          ref={keys.attach()}
+          className={`mt-0 row-start-2 justify-self-start sm:col-start-3 sm:row-start-1 sm:self-center ${indicator === null ? "col-start-1" : "col-start-2"}`}
+        >
+          {actionProps.children as ReactNode}
+          {keys.hint}
+        </HeroToast.ActionButton>
       ) : null}
       <HeroToast.CloseButton aria-label={dismissLabel} className={DISMISS_CLASS_NAME} />
     </HeroToast>

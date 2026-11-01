@@ -1,0 +1,21 @@
+{
+  "slug": "tamo-provider",
+  "tier": "free",
+  "category": "ai",
+  "platforms": ["react"],
+  "packageName": "@stackra/ai",
+  "exportName": "TamoProvider",
+  "parts": ["TamoProvider"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "settings",
+      "card": true,
+      "minHeight": 360
+    }
+  ],
+  "related": ["free/tamo-launcher", "free/tamo-menu"],
+  "tokens": ["color.tamo-mark", "color.tamo-glow-mid"],
+  "keywords": ["ai", "tamo", "provider", "settings", "kit", "mock"],
+  "status": "new"
+}

@@ -13,9 +13,10 @@ import type { ReactNode } from "react";
 import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import type { Size } from "#contracts/enums/size.enum";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
+import type { ShortcutContractProps } from "#contracts/types/shortcut-contract-props.type";
 
-/** Props shared by the web and native `Button`. */
-export interface ButtonContractProps {
+/** Props shared by the web and native `Button`; `shortcut` or `action` make it shortcut-aware (ADR 0508). */
+export interface ButtonContractProps extends ShortcutContractProps {
   /** The visible label, usually a string; it is also the accessible name unless `label` is given. */
   readonly children?: ReactNode;
   /** The emphasis and colour of the button. Defaults to `primary`. */

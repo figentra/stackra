@@ -251,6 +251,11 @@ function ordered(shapes: readonly ShapeIR[], module: string): ShapeIR[] {
   return out;
 }
 
+/** A union of quoted keys (`"a" | "b"`) for an `Omit<>`. */
+function quotedKeys(names: readonly string[]): string {
+  return names.map((name) => JSON.stringify(name)).join(" | ");
+}
+
 /** The `X$` declaration of one shape and its `X$Check`. */
 function shapeOf(context: Context, shape: ShapeIR): string[] {
   const lines = [`/** ${shape.kind} \`${shape.name}\` (${shape.file}). */`];
@@ -292,15 +297,25 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
     lines.push(`export const ${shape.name}$ = ${alias}.schema${derived}.extend({`, ...body, "});");
   } else lines.push(`export const ${shape.name}$ = z.object({`, ...body, "});");
   context.declared.add(shape.name);
-  const omitted = [...shape.relations, ...hidden];
+  // A driver-name field is `z.enum` of the names gen found, while `DriverName<P>` widens to every registered name
+  // unless the port carries a `~key` brand: the check leaves it out on both sides (STA-1805).
+  const drivers = wire
+    .filter(
+      (field) =>
+        field.type.kind === "driver_name" ||
+        (field.type.kind === "record" && field.type.value.kind === "driver_name"),
+    )
+    .map((field) => field.name);
+  const omitted = [...shape.relations, ...hidden, ...drivers];
   const fields =
     omitted.length > 0
-      ? `Omit<Fields<${shape.name}>, ${omitted.map((name) => JSON.stringify(name)).join(" | ")}>`
+      ? `Omit<Fields<${shape.name}>, ${quotedKeys(omitted)}>`
       : `Fields<${shape.name}>`;
-  lines.push(
-    `export type ${shape.name}$Check = Assert<Same<z.output<typeof ${shape.name}$>, ${fields}>>;`,
-    "",
-  );
+  const output =
+    drivers.length > 0
+      ? `Omit<z.output<typeof ${shape.name}$>, ${quotedKeys(drivers)}>`
+      : `z.output<typeof ${shape.name}$>`;
+  lines.push(`export type ${shape.name}$Check = Assert<Same<${output}, ${fields}>>;`, "");
   return lines;
 }
 

@@ -27,8 +27,11 @@ describe(publishedEvents, () => {
     const harness: EventsHarness = {
       bus: new EventBus(clock),
       outbox: new OutboxFake(),
+      clock,
       inbox: [],
       seen: new Set(),
+      app: {} as never,
+      scopes: new Map(),
     };
     const low = new StockLow();
     const paid = new OrderPaid();

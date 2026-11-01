@@ -34,6 +34,15 @@ describe("formatShortcutKeys", () => {
     });
   });
 
+  it("draws Shift with a printable key as the character it types, and keeps Shift on letters", () => {
+    expect(formatShortcutKeys("shift+/", true)).toEqual({ steps: ["?"], spoken: "?" });
+    expect(formatShortcutKeys("mod+shift+1", false)).toEqual({
+      steps: ["Ctrl+!"],
+      spoken: "Control !",
+    });
+    expect(formatShortcutKeys("shift+l", true).steps).toEqual(["⇧L"]);
+  });
+
   it("throws on a binding that is not one", () => {
     expect(() => formatShortcutKeys("mod+", true)).toThrow(RangeError);
   });

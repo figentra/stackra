@@ -16,18 +16,6 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303; ADR 0060 (right-to-left); WCAG 2.2 SC 1.1.1, 1.4.11 and 2.3.3; STA-1371.
  */
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
-import {
-  Circle,
-  DashPathEffect,
-  Group,
-  LinearGradient,
-  Line as SkiaLine,
-  Paint,
-  Rect,
-  Skia,
-  TextAlign,
-  vec,
-} from "@shopify/react-native-skia";
 import { Fragment, type ReactElement, type ReactNode, useMemo, useState } from "react";
 import { View } from "react-native";
 import {
@@ -36,21 +24,7 @@ import {
   useDerivedValue,
   useReducedMotion,
 } from "react-native-reanimated";
-import {
-  Area,
-  Bar,
-  BarGroup,
-  CartesianChart,
-  type ChartBounds,
-  type ChartPressState,
-  type PointsArray,
-  createParagraphLabelRenderer,
-  Line,
-  Scatter,
-  StackedArea,
-  StackedBar,
-  useChartPressState,
-} from "victory-native";
+import type { ChartBounds, ChartPressState, PointsArray } from "victory-native";
 
 import { THEME_PX } from "#core/constants/theme-px.constant";
 import { chartColorOf } from "#core/functions/chart-color-of.function";
@@ -74,7 +48,36 @@ import { ChartReadout } from "#native/chart/chart-readout";
 import { CHART_CONTEXT_SHARE } from "#core/constants/chart-context-share.constant";
 import { mixOf } from "#native/chart/mix-of.function";
 import { useChartLocale } from "#native/chart/use-chart-locale";
+import { loadSkia } from "#native/skia/load-skia.function";
 import { useChartPaint } from "#native/chart/use-chart-paint";
+import { loadVictoryNative } from "#native/skia/load-victory-native.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const {
+  Circle,
+  DashPathEffect,
+  Group,
+  LinearGradient,
+  Line: SkiaLine,
+  Paint,
+  Rect,
+  Skia,
+  TextAlign,
+  vec,
+} = loadSkia();
+// victory-native is an optional peer (on Skia), required on first use (STA-1791).
+const {
+  Area,
+  Bar,
+  BarGroup,
+  CartesianChart,
+  createParagraphLabelRenderer,
+  Line,
+  Scatter,
+  StackedArea,
+  StackedBar,
+  useChartPressState,
+} = loadVictoryNative();
 
 /** The series drawing in: the theme's slow step. */
 const SLOW = motionTiming(STACKRA_THEME, "slow");

@@ -12,9 +12,11 @@ import type { Size } from "#contracts/enums/size.enum";
 import type { FabAction } from "#contracts/types/fab-action.type";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
 import type { OpenStateContractProps } from "#contracts/types/open-state-contract-props.type";
+import type { ShortcutContractProps } from "#contracts/types/shortcut-contract-props.type";
 
 /** Props shared by the web and native `Fab`. The open state is the speed dial's. */
-export interface FabContractProps extends OpenStateContractProps {
+export interface FabContractProps
+  extends OpenStateContractProps, Pick<ShortcutContractProps, "shortcut" | "shortcutId"> {
   /** The accessible name, also shown beside the icon when `isExtended`, for example "New order". */
   readonly label: string;
   /** The icon. Defaults to `plus`; with `actions` it turns into a close mark while open. */

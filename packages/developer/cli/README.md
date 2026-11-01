@@ -24,6 +24,7 @@ and `yaml`.
 | Command                                      | Does                                                                                                                          |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `stackra new <kind> <name>`                  | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                       |
+| `stackra new <tooling\|app:*> <name>`        | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                   |
 | `stackra gen [--check] [--manifests]`        | gen-core on the member or every workspace member: manifests first, then the rest                                              |
 | `stackra dev [--target <t>]`                 | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify                                             |
 | `stackra dev --surface <surface>`            | a product surface in its real shell (published or `--os` checkout), Vite with hot reload                                      |
@@ -40,6 +41,7 @@ and `yaml`.
 | `stackra lint`                               | `oxlint .`                                                                                                                    |
 | `stackra check [flags]`                      | the quality gate: every check phase in order at the workspace root (see below)                                                |
 | `stackra validate`                           | `check --only config,structure,docs,catalogues,spec`                                                                          |
+| `stackra validate --repository`              | the repository-shape gate of `pnpm validate`: repo checks, cycles, native deps, ratchets, map, Python, session settings       |
 | `stackra verify`                             | `check --with-tests`                                                                                                          |
 | `stackra code:check` / `code:fix`            | `check --only format,lint` (`code:fix` adds `--fix`)                                                                          |
 | `stackra seed-pack <product>`                | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants                                      |
@@ -57,6 +59,18 @@ and `yaml`.
 | `stackra add <kind> <name>[@version]`        | install a registry skill, agent, MCP server, plugin or package (see below)                                                    |
 | `stackra publish [--dry-run]`                | check the member's `stackra.kind` and name, then `pnpm publish` to the Stackra registry                                       |
 | `stackra testbed <verb>`                     | the shared test boxes: `run`, `status`, `unlock`, `ip`, `ssh`, `sync`, `scale`, `image` (below)                               |
+| `stackra doctor`                             | fresh-machine checklist: toolchain, install, Infisical login, CLIs, agent sync                                                |
+| `stackra eas-preflight check\|record`        | before a local EAS build: clean tree, deployed sha, free disk; `record` logs the build id                                     |
+| `stackra structure [--write-docs]`           | print or write the generated repository structure standards page                                                              |
+| `stackra architecture-map [--check]`         | write the docs architecture map (archify), or fail when it drifted                                                            |
+| `stackra doc-standard`                       | contract headers and TSDoc of every source file (ADR 0007)                                                                    |
+| `stackra catalogue-completeness`             | every lang catalogue has English's keys and placeholders (ADR 0403)                                                           |
+| `stackra cycles`                             | fail on any workspace package cycle, printing its path                                                                        |
+| `stackra app-native-deps`                    | fail when an Expo app lacks a native library its dependency closure needs                                                     |
+| `stackra duplicate-exports`                  | fail when one exported name is declared in two packages                                                                       |
+| `stackra any-ratchet`                        | fail when a package has more `no-explicit-any` disables than its baseline                                                     |
+| `stackra duplication [--update]`             | jscpd ratchet over each member's `src/` against `tools/scripts/duplication-baseline.yaml`                                     |
+| `stackra skill-licences`                     | every agent skill and enabled plugin carries an allowed licence                                                               |
 
 `stackra testbed` (ADR 0484) replaces the Mac script `ci-box`; it starts `aws`, `ssh`, `rsync` and `gh` without a shell
 and never prints or passes a secret value. Defaults: AWS profile `academorix`, region `eu-west-1`, key

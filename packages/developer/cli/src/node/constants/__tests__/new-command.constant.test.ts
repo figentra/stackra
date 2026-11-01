@@ -4,7 +4,7 @@
  *          with its API area, a seed pack with its three profile folders, the product-scoped and `--scope` names with
  *          `catalog:stackra` versions, `--over` (writes only missing files, diffs authored ones, keeps runway.yaml and
  *          CHANGELOG.md), and the refusals of an unknown kind, a bad name or scope, a missing category or area, and
- *          a folder that exists without `--over`.
+ *          a folder that exists without `--over`; a template kind (`app:docs`) rendered from tools/scaffold/templates.
  * Boundary: test only; writes a throwaway workspace in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (consequences); ADR 0294 (rule R12); ADR 0349; STA-1210.
@@ -179,5 +179,32 @@ describe("NEW_COMMAND", () => {
     );
     await run(["seed-pack", "commerce"]).code;
     await expect(run(["seed-pack", "commerce"]).code).rejects.toThrow(CliUsageError);
+  });
+
+  it("renders a template kind from tools/scaffold/templates, and refuses one without a description", async () => {
+    const core = join(import.meta.dirname, "../../../../../../..");
+    const scaffold = (values: CliContext["values"]) => {
+      const { io, output } = captureIo();
+      const code = NEW_COMMAND.run({
+        cwd: core,
+        io,
+        values,
+        positionals: ["app:docs", "handbook"],
+        rest: [],
+        cli: async () => 0,
+      });
+      return { code, output };
+    };
+    const made = scaffold({
+      description: "A handbook site.",
+      summary: "Use it for the handbook.",
+      "dry-run": true,
+    });
+    expect(await made.code).toBe(0);
+    expect(made.output()).toMatch(/^Would create apps\/handbook:\n {2}\S/);
+    expect(made.output()).toContain("  src/config/docs.config.ts\n");
+    const refused = scaffold({ "dry-run": true });
+    expect(await refused.code).toBe(1);
+    expect(refused.output()).toMatch(/^--description is required/);
   });
 });

@@ -1,0 +1,123 @@
+---
+title: "0507 — Ask Tamo: AI slots in the design system, filled by the AI module, branded Tamo"
+description: "Accepted · 2026-10-31"
+---
+
+{/* Stackra file contract: Purpose: the decision record for the AI layer of @stackra/ui: where AI appears, how it previews and applies, the one-way slot that @stackra/ai/react fills, the Tamo brand and token family, the runtime switch, and the editor contribution that plugs in later. Boundary: decision text only. Runtime: docs. Governing contract: ADR template; ADR 0021, 0360, 0466, 0490, 0501, 0504, 0505; owner answers 2026-10-31 (design-system session c6, STA-1371). */}
+
+<Note>
+  Accepted 2026-10-31 by the owner: "Accept both" (asked directly in design-system session c6,
+  STA-1371). Proposed The owner's answers that day (design-system session c6, STA-1371): icons in
+  fields "On focus/hover"; the glow is the "Brand gradient"; on naming, "as tamo as all things
+  should be tamo branded event the glowing one", so everything, the glow included, is Tamo's; wave 1
+  is "Filter bar ask-in-words, Rich Text Editor AI, Text fields + text area, Data table + command
+  palette, all of them check if we need more and recommend". The recommended additions (an Ask Tamo
+  launcher and side panel, form fill from pasted text, natural-language dates) are built with wave
+  1.
+</Note>
+
+## Context
+
+The products need AI inside ordinary screens, not only in a chat: tidying a note, filtering a table in words, filling a
+form from an email, picking "next Friday". Each component was about to grow its own AI button, its own loading state and
+its own idea of when a result is applied. @stackra/ui must stay free of model calls (it runs on web and native, offline,
+in every product, AI module installed or not), and an AI write must never land without the person's say
+([0021](/adr/0021-ai-engine-and-agent-write-safety)). Figentra's assistant is Tamo, with its own brand kit
+(`figentra/brand brands/tamo`).
+
+## Decision
+
+### 1. AI only where it saves real work
+
+Tamo appears on free text (TextField of type `text`, TextArea, the rich text editor), on collections (FilterBar,
+DataTable, DataView), in the CommandPalette, on a Form with a schema handle, on the date pickers, and in the Ask Tamo
+panel. It never appears on a password, OTP, PIN, money, number, phone, email or URL input, a checkbox, a switch, a slider
+or a rating; a form fill only reaches plain text inputs and text areas unless the app lists the fields.
+
+### 2. AI drafts, the person applies
+
+Every action previews, and nothing changes until the person says so ([0021](/adr/0021-ai-engine-and-agent-write-safety)):
+
+| Where                 | Preview                                     | Apply                                      | Undo                           |
+| --------------------- | ------------------------------------------- | ------------------------------------------ | ------------------------------ |
+| Text actions          | `TamoDraftReview`: before and Tamo's draft  | Accept (or Edit, then Accept); Discard     | Undo beside the AI-made marker |
+| Continue writing      | `TamoGhostText` after the caret             | Tab (web) or Accept (native); Escape       | the field's own undo           |
+| First draft           | `TamoAskBox`: the person's words, the draft | Apply; Discard                             | Undo                           |
+| Filter and sort       | proposed chips (dashed)                     | Apply puts them on the engine              | remove the chip; Clear all     |
+| Summary of rows       | the summary, marked as Tamo's               | nothing is written                         | —                              |
+| Fill a column         | the value per row                           | Apply writes through `onFill`/`onCellEdit` | the app's own undo             |
+| Form fill             | label and value per field                   | Apply; each field marked for review        | Undo puts back every value     |
+| Natural-language date | the day or range, in full                   | Apply picks it                             | the picker                     |
+
+One state set serves every part: idle, working (the shimmer and Stop), ready (the preview), error (the message and Try
+again), through `useTamoTask` and `TamoStatusLine`.
+
+### 3. @stackra/ui exposes a slot; @stackra/ai/react fills it
+
+@stackra/ui declares the contribution point and draws the parts; it never calls a model:
+
+- `TamoSlot` (`./contracts`): `isEnabled(scope)`, one task runner `run(task, input, signal)` over the typed `TamoTasks`
+  (`transform`, `continue`, `draft`, `filter`, `summarise`, `fill_column`, `fill_form`, `date`, `ask`), the contributed
+  `actions`, the screen's name and the panel's state.
+- `TamoContext` and `useTamo(scope)` (the shared React layer, web and native). With no slot (the AI module not
+  installed) no Tamo part draws. Components take `ai={false}` to opt out where a slot would otherwise show.
+- The parts: `TamoMark`, `TamoButton`, `TamoMenu`, `TamoGhostText`, `TamoDraftReview`, `TamoAskBox`, `TamoMarker`,
+  `TamoStatusLine`, `TamoLauncher`, `TamoPanel`, and `TamoCollectionTools`, on web and native.
+
+@stackra/ai/react ([0504](/adr/0504-module-ui-kits-domain-blocks-live-in-their-module-and-gen-aggregates-them-into-the-showcase))
+fills it: `TamoProvider` (and `useTamoSlot` for a host that draws its own context, such as a native app) takes a
+`TamoClient`, the tenant's settings, the screen and the page context
+([0490](/adr/0490-ai-everywhere-client-tools-from-frontend-declarations-page-context-personalisation-as-actions-and-tours-as-data)),
+and draws the panel once. A `TamoClient` is the host's transport to the AI service, where the prompts, `decide()` and the
+agent runtime run with the model's credentials; the browser never holds a key. `createMockTamoClient()` is a
+deterministic offline client for the playground and tests. The dependency runs one way: @stackra/ai uses @stackra/ui,
+never the reverse.
+
+### 4. Tamo is the brand of every AI surface
+
+The words are "Ask Tamo" and «اسأل تامو»; the AI mark is Tamo's tile mark (`AiMark` now draws `TamoMark`). Tokens v2
+([0501](/adr/0501-tokens-v2-one-theme-schema-drives-every-visual-value-on-web-and-native)) gain a `tamo` family, seeded
+from the brand kit's `color.json` and `motion.json` (read only; the brand session owns the values): `tamo-glow-start`,
+`tamo-glow-mid`, `tamo-glow-end` (the glow gradient), `tamo-shimmer`, `tamo-mark`, `tamo-mark-eyes`, `tamo-name`, and the
+`tamo-shimmer` motion step. A tenant overrides them from the dashboard like any palette token (white-label); the
+defaults are Tamo's. The shimmer and the mark's eye scan stop under reduced motion.
+
+### 5. Whether Tamo is on is configuration, not code
+
+`TamoSettings` is dashboard data per tenant, per screen and per field, each level lockable; `resolveTamoEnabled` reads
+it: a locked tenant level wins, then a locked screen, then the field's own setting, then the screen's, then the
+tenant's. The default is on wherever a slot exists, once the AI module is installed.
+
+### 6. Icons in fields appear on hover or focus
+
+Inside a text field Tamo's icon-only button appears on hover or focus (on native, on focus) and stays while a task runs
+or its menu is open. On the FilterBar, the collection toolbars and the editor's toolbar it is always shown.
+
+### 7. The rich text editor plugs in later
+
+The editor ([0466](/adr/0466-the-document-editor-is-tiptap-v3-core-and-packages-extend-it-through-editor-contributions))
+lives on its own branch. Its AI is an editor contribution that reads the same `TamoContext`: a toolbar and bubble-menu
+`TamoMenu` (always shown), the selection sent to `run("transform", …)` with the same actions and the slot's contributed
+ones, `TamoDraftReview` before the result is applied as one undoable transaction, and `continue` as ghost text at the
+caret. No editor code lands in @stackra/ui's Tamo parts for it.
+
+### 8. Shortcuts
+
+`TamoLauncher` takes `shortcut` (default `Mod+J`), shown and announced (`aria-keyshortcuts`), and binds it through the
+shortcut registry as the `ai.ask` action ([ADR 0508](/adr/0508-every-action-is-shortcut-aware)), so a person can remap it.
+
+## Consequences
+
+- Every AI surface looks, sounds and behaves the same, and a product without the AI module ships no AI UI.
+- A new AI capability is a new task in `TamoTasks` (a contract change) plus the service's answer; a module's own text
+  action is a contributed `TamoActionItem` and needs no change here.
+- The text fields keep their own value when uncontrolled once Tamo is on, so an accepted draft can land in them.
+- `@stackra/ai/react` imports @stackra/ui's web entry; a native host builds the slot with `useTamoSlot` and puts it in
+  @stackra/ui/native's `TamoContext`.
+
+## Enforcement
+
+- @stackra/ui's tests cover each part and each wired component with a stand-in slot; @stackra/ai's tests cover the
+  resolver, the mock client and the provider.
+- `stackra/no-literal-*` lint keeps the parts on tokens; the token tests freeze the tamo family.
+- Planned: a lint that refuses a Tamo slot on the excluded input kinds.

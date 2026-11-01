@@ -16,6 +16,7 @@
  *                     first); ADR 0145 and ADR 0294 (classes are the only tokens).
  */
 import { registerTestingPlugin } from "@stackra/container/testing";
+import { deliverEventsIn } from "@stackra/events/testing";
 import type { TestingModuleBuilder, TestingPlugin } from "@stackra/container/testing";
 import type { AnyClass } from "@stackra/container";
 
@@ -24,7 +25,9 @@ import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { repositoryOf } from "#core/functions/repository-of.function";
 import { Database } from "#core/ports/database.port";
 import type { Repository } from "#core/types/repository.type";
+import { CURRENT_TESTING_APP } from "#testing/constants/current-testing-app.constant";
 import { MemoryDatabaseDriver } from "#testing/drivers/memory-database.driver";
+import { deliverInIsolation } from "#testing/functions/deliver-in-isolation.function";
 
 declare module "@stackra/container/testing" {
   interface TestingModuleBuilder {
@@ -75,6 +78,7 @@ export const DATABASE_TESTING_PLUGIN: TestingPlugin = {
   },
   app: (app) => {
     connectDatabase();
+    CURRENT_TESTING_APP.value = app;
     return {
       transaction: <T>(work: () => Promise<T>): Promise<T> => Database.current().transaction(work),
       repository: <M extends object>(model: AnyClass<M>): Repository<M> => {
@@ -86,3 +90,5 @@ export const DATABASE_TESTING_PLUGIN: TestingPlugin = {
 };
 
 registerTestingPlugin(DATABASE_TESTING_PLUGIN);
+// `drainOutbox()` delivers each event as the production inbox receives it (STA-1789).
+deliverEventsIn(deliverInIsolation);

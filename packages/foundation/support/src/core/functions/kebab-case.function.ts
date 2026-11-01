@@ -5,7 +5,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (one declaration per file); ADR 0231 (URL paths and files are kebab-case);
  *                     stackra-224 (one copy, was gen; coding-standard keeps its own, see
- *                     tools/scripts/duplicate-exports.mjs).
+ *                     stackra duplicate-exports).
  */
 import { snakeCase } from "#core/functions/snake-case.function";
 

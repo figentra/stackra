@@ -10,7 +10,6 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303; WCAG 2.2 SC 1.1.1 and 1.4.11;
  *          STA-1371 (wave D, owner approval 2026-10-30).
  */
-import { Canvas, Circle, Path } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { View } from "react-native";
 
@@ -26,6 +25,10 @@ import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { PolarChartProps } from "#native/polar-chart/polar-chart.props";
 import { Text } from "#native/text/text";
+import { loadSkia } from "#native/skia/load-skia.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Canvas, Circle, Path } = loadSkia();
 
 /** The grid's rings, and the room left round the plot for the sector names. */
 const STEPS = 4;

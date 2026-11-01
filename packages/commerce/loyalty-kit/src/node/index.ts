@@ -70,3 +70,5 @@ export { AccountService } from "#node/services/account.service";
 export { LedgerReconcilerService } from "#node/services/ledger-reconciler.service";
 export { RedeemPointsWorkflow } from "#node/workflows/redeem-points.workflow";
 export { RedemptionConfirmed } from "#node/workflows/redemption-confirmed.signal";
+// The entity list gen writes for the module, which a hosting service registers (STA-1793).
+export { LOYALTY_KIT_ENTITIES } from "#stackra/entities/loyalty_kit";

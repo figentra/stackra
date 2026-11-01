@@ -1,0 +1,517 @@
+/**
+ * Stackra file contract:
+ * Purpose: hold `scaffold` (the template kinds of `stackra new`, was `scaffold.mjs`) to its templates' contract: each member kind renders the v3 shape with no token
+ *          left, the entries and data flags, and the files copied byte for byte.
+ * Boundary: renders into temp directories; never writes this checkout.
+ * Runtime: node (vitest)
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). ADR 0126 (member shapes and
+ *                     scaffold templates).
+ */
+import assert from "node:assert/strict";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { test } from "@stackra/testing";
+
+import { parse } from "yaml";
+
+import {
+  CATEGORY_NAMES,
+  ENTRY_NAMES,
+  MODULE_GROUPS,
+  OPTIONAL_ENTRY_NAMES,
+  checkMember as check,
+  checkExports,
+  checkMemberMetadata,
+  checkService,
+  checkYamlFlowMaps,
+  stripJsonc,
+  type PackageManifest,
+} from "@stackra/repo-checks/node";
+
+import { BINARY_RE } from "#node/scaffold/constants/binary-re.constant";
+import { parseEntries } from "#node/scaffold/functions/parse-entries.function";
+import { scaffold } from "#node/scaffold/functions/scaffold.function";
+
+const TOKENS = /\{\{\s*(NAME|PASCAL|TITLE|DESCRIPTION|PORT|CATEGORY|ENTRIES)\s*\}\}/;
+const tmp = () => mkdtempSync(join(tmpdir(), "scaffold-"));
+/** A parsed package.json as the assertions read it. */
+type Pkg = PackageManifest & {
+  readonly scripts?: Readonly<Record<string, string>>;
+  readonly imports?: Readonly<Record<string, unknown>>;
+};
+/** A parsed turbo.jsonc or tsconfig.json. */
+type Config = { readonly extends?: string; readonly tags?: readonly string[] };
+
+const render = (kind: string, name: string, extra: object = {}): ReturnType<typeof scaffold> =>
+  scaffold({
+    kind,
+    name,
+    root: tmp(),
+    format: false,
+    description: 'Say "hi".',
+    summary: "Reach for it in tests.",
+    ...extra,
+  });
+const json = <T = Pkg>(dest: string, f: string): T =>
+  JSON.parse(stripJsonc(readFileSync(join(dest, f), "utf8"))) as T;
+
+const cases: [string, string, object][] = [
+  ["service", "notes", {}],
+  ["package", "billing-core", { category: "data" }],
+  ["package", "cache", { category: "runtime", entries: OPTIONAL_ENTRY_NAMES, data: true }],
+  ["package", "tokens", { category: "design-system", entries: OPTIONAL_ENTRY_NAMES }],
+  ["tooling", "sample", {}],
+  ["app:console", "admin", {}],
+  ["app:mobile", "sample", {}],
+  ["app:desktop", "studio", {}],
+  ["app:docs", "handbook", {}],
+];
+
+for (const [kind, name, extra] of cases)
+  test(`renders ${kind} ${name} as a conforming member`, () => {
+    const { dest, rel, files } = render(kind, name, extra);
+    assert.ok(files.length > 3);
+    for (const f of files) {
+      assert.ok(!TOKENS.test(f), `token left in path ${f}`);
+      const text = readFileSync(join(dest, f), "utf8");
+      assert.ok(!TOKENS.test(text), `token left in ${f}`);
+      assert.ok(!/\bTODO\b/.test(text), `TODO in ${f}`);
+      assert.ok(!/\benum\s+\w+\s*\{/.test(text), `enum in ${f}`);
+      // tsc and the .jsonc tools take comments; every other .json stays strict.
+      if (/\.jsonc$|tsconfig\.json$/.test(f)) JSON.parse(stripJsonc(text));
+      else if (f.endsWith(".json")) JSON.parse(text);
+    }
+    for (const f of ["README.md", "AGENTS.md", "CHANGELOG.md", "package.json"])
+      assert.ok(files.includes(f), `${f} missing`);
+    assert.equal(files.includes("LICENSE"), kind === "package" || kind === "tooling");
+    const pkg = json(dest, "package.json");
+    const findings = check({
+      dir: rel,
+      pkg,
+      turbo: json<Config>(dest, "turbo.jsonc"),
+      tsconfig: files.includes("tsconfig.json") ? json<Config>(dest, "tsconfig.json") : undefined,
+    });
+    assert.deepEqual(findings, []);
+    assert.deepEqual(
+      checkMemberMetadata({ dir: rel, pkg, turbo: json<Config>(dest, "turbo.jsonc") }),
+      [],
+      "the npm metadata, stackra field and turbo tags pnpm validate requires",
+    );
+    if (kind === "service") assert.deepEqual(checkService({ dir: rel, pkg, paths: files }), []);
+    if (kind === "package") assert.deepEqual(checkExports(pkg.exports), []);
+  });
+
+const readText = (dest: string, f: string): string => readFileSync(join(dest, f), "utf8");
+
+const tokenRefs = (text: string): string[] =>
+  [...text.matchAll(/@stackra\/tokens\/[^"'\s)]+/g)].map((m) => m[0]);
+
+// @covers sta-173:FR-003 sta-173:P-003 sta-350:FR-005
+test("app templates take their theme from @stackra/tokens and ship their own copy of the app icons", () => {
+  const TOKENS_DIR = fileURLToPath(
+    new URL("../../../../../../../../packages/design-system/tokens/", import.meta.url),
+  );
+  const BRAND = fileURLToPath(
+    new URL("../../../../../../../../apps/docs/src/assets/brand/", import.meta.url),
+  );
+  const wildcards = Object.entries(
+    (
+      JSON.parse(readFileSync(join(TOKENS_DIR, "package.json"), "utf8")) as {
+        exports: Record<string, string>;
+      }
+    ).exports,
+  ).filter(([key]) => key.endsWith("/*"));
+  // Resolves `@stackra/tokens/<subpath>` through the package's wildcard exports, as Tailwind and Metro do.
+  const tokensFile = (ref: string): void => {
+    const sub = `./${ref.slice("@stackra/tokens/".length)}`;
+    const [key, target] = wildcards.find(([k]) => sub.startsWith(k.slice(0, -1))) ?? [];
+    assert.ok(key, `no @stackra/tokens export for ${ref}`);
+    // Node substitutes every `*` in an export target, not only the first.
+    const file = join(TOKENS_DIR, (target ?? "").replaceAll("*", sub.slice(key.length - 1)));
+    assert.ok(existsSync(file), `tokens file missing: ${ref}`);
+  };
+  const sameBytes = (dest: string, f: string, original: string): void =>
+    assert.ok(readFileSync(join(dest, f)).equals(readFileSync(join(BRAND, original))), f);
+
+  const web = render("app:console", "admin").dest;
+  assert.equal(json(web, "package.json").dependencies?.["@stackra/tokens"], "workspace:*");
+  const styles = readText(web, "src/styles/app.css");
+  assert.deepEqual(tokenRefs(styles), [
+    "@stackra/tokens/fonts/fonts.css",
+    "@stackra/tokens/themes/stackra/web.css",
+  ]);
+  tokenRefs(styles).forEach(tokensFile);
+  assert.ok(existsSync(join(web, "public/favicon.svg")));
+
+  const mobile = render("app:mobile", "sample").dest;
+  assert.equal(json(mobile, "package.json").dependencies?.["@stackra/tokens"], "workspace:*");
+  const global = readText(mobile, "src/styles/global.css");
+  assert.deepEqual(tokenRefs(global), ["@stackra/tokens/themes/stackra/native.css"]);
+  tokenRefs(global).forEach(tokensFile);
+  const icons = [...readText(mobile, "app.json").matchAll(/"\.\/(assets\/[^"]+)"/g)].map(
+    (m) => m[1] ?? "",
+  );
+  assert.equal(icons.length, 4); // icon, adaptive foreground, light and dark splash
+  for (const icon of icons) {
+    const original = icon.includes("st-tile") ? "splash" : "app-icon";
+    sameBytes(mobile, icon, `${original}/${icon.slice("assets/".length)}`);
+  }
+
+  const desktop = render("app:desktop", "studio").dest;
+  assert.equal(json(desktop, "package.json").devDependencies?.["@stackra/tokens"], "workspace:*");
+  const builder = readText(desktop, "electron-builder.yml");
+  assert.equal([...builder.matchAll(/icon: assets\/app-icon-1024\.png/g)].length, 3); // mac, win, linux
+  sameBytes(desktop, "assets/app-icon-1024.png", "app-icon/app-icon-light-1024.png");
+
+  const docs = render("app:docs", "handbook").dest;
+  assert.match(readText(docs, "src/config/docs.config.ts"), /primary: "#0B0D0F"/);
+  assert.equal(
+    readText(docs, "src/assets/logo/light.svg"),
+    readFileSync(join(BRAND, "logos/stackra-wordmark-light.svg"), "utf8"),
+  );
+  for (const dest of [web, mobile, desktop, docs])
+    for (const f of ["package.json", "README.md"])
+      assert.ok(!readText(dest, f).includes("@stackra/brand"), f);
+});
+
+/** The v3 member root (ADR 0294 R12): no authored entry, barrel or generated contract in what the scaffold writes. */
+const assertV3Root = (files: readonly string[]): void => {
+  assert.ok(files.includes("stackra.config.ts"), "stackra.config.ts missing");
+  assert.ok(!files.some((f) => /(^|\/)main\.tsx?$/.test(f)), "authored main.ts");
+  assert.ok(!files.some((f) => /(^|\/)index\.tsx?$/.test(f)), "authored barrel");
+  assert.ok(!files.includes("stackra.manifest.json"), "gen writes the manifest");
+};
+
+// @covers sta-347:FR-002 sta-347:P-001
+test("a service is the v3 shape: config, root module, modules, runway v3, no main.ts or Encore file", () => {
+  const { dest, rel, files } = render("service", "notes");
+  const pkg = json(dest, "package.json");
+  assert.equal(pkg.name, "@figentra/service-notes");
+  // v3: no `stackra.module` (ADR 0090); the field holds only the ADR 0453 decision 11 metadata.
+  assert.equal(pkg.stackra?.module, undefined);
+  assert.deepEqual(pkg.stackra?.runtimes, ["node"]);
+  assert.equal(pkg.scripts?.["start"], undefined);
+  assertV3Root(files);
+  for (const f of [
+    "runway.yaml",
+    "src/notes.module.ts",
+    "src/__tests__/notes.module.test.ts",
+    "src/config/notes.config.ts",
+    "src/config/__tests__/notes.config.test.ts",
+    "src/contracts/README.md",
+    "src/modules/README.md",
+  ])
+    assert.ok(files.includes(f), `${f} missing`);
+  assert.deepEqual(checkService({ dir: rel, pkg, paths: files }), []);
+  assert.ok(!files.some((f) => /encore/.test(f)));
+  const ts = files.filter((f) => f.endsWith(".ts"));
+  assert.ok(!ts.some((f) => readFileSync(join(dest, f), "utf8").includes("encore.dev")));
+
+  const runway = parse(readFileSync(join(dest, "runway.yaml"), "utf8")) as Record<string, unknown>;
+  assert.equal(runway.version, 3);
+  assert.deepEqual(Object.keys(runway), ["version", "requires", "secrets", "environments"]);
+  assert.deepEqual(
+    checkYamlFlowMaps("runway.yaml", readFileSync(join(dest, "runway.yaml"), "utf8")),
+    [],
+  );
+
+  const groups = readFileSync(join(dest, "src/modules/README.md"), "utf8");
+  for (const { group } of MODULE_GROUPS.filter((g) => g.group))
+    assert.ok(groups.includes(`\`${group}/\``), `modules/README.md lacks ${group}/`);
+});
+
+// @covers sta-347:FR-001 sta-347:FR-003 sta-347:P-001 sta-347:P-002
+test("a package is the v3 shape: entries by folder, exports naming files, no barrels", () => {
+  const { dest, files } = render("package", "billing-core", { category: "data" });
+  assertV3Root(files);
+  for (const f of [
+    "src/config/billing-core.config.ts",
+    "src/config/__tests__/billing-core.config.test.ts",
+    "src/contracts/README.md",
+    "src/core/README.md",
+    "src/node/billing-core.module.ts",
+    "src/node/__tests__/billing-core.module.test.ts",
+    "src/testing/README.md",
+    "assets/public/.gitkeep",
+    "assets/lang/.gitkeep",
+  ])
+    assert.ok(files.includes(f), `${f} missing`);
+  for (const absent of ["src/react", "src/native", "src/node/database", "config/", "resources/"])
+    assert.ok(!files.some((f) => f.startsWith(absent)), `${absent} written without asking`);
+
+  const pkg = json(dest, "package.json");
+  // `.` exports the config class so a host can subclass it (ADR 0294 d19, the STA-347 decision).
+  assert.deepEqual(pkg.exports, {
+    ".": {
+      "@stackra/source": "./src/config/billing-core.config.ts",
+      types: "./dist/index.d.mts",
+      default: "./dist/index.mjs",
+    },
+    "./node": {
+      "@stackra/source": "./src/node/billing-core.module.ts",
+      types: "./dist/node.d.mts",
+      default: "./dist/node.mjs",
+    },
+    "./assets/*": "./assets/*",
+  });
+  for (const target of Object.values(pkg.exports as Record<string, unknown>).filter(
+    (t): t is Record<string, string> => typeof t === "object",
+  ))
+    assert.ok(
+      files.includes((target["@stackra/source"] ?? "").slice(2)),
+      "an export names a missing file",
+    );
+  assert.deepEqual(Object.keys(pkg.imports ?? {}), [
+    "#contracts/*",
+    "#config/*",
+    "#core/*",
+    "#node/*",
+    "#testing/*",
+    "#stackra/*",
+  ]);
+  assert.equal(pkg.sideEffects, false);
+  for (const f of ["dist", "assets", "stackra.manifest.json"])
+    assert.ok(pkg.files?.includes(f), `files lacks ${f}`);
+  assert.match(
+    readFileSync(join(dest, "tsdown.config.ts"), "utf8"),
+    /\{ "index": "src\/config\/billing-core\.config\.ts", "node": "src\/node\/billing-core\.module\.ts" \}/,
+  );
+  assert.equal(
+    json<Config>(dest, "tsconfig.json").extends,
+    "@stackra/typescript-config/decorators",
+  );
+});
+
+// @covers sta-347:FR-003 sta-347:P-002
+test("--entries adds react and native folders and aliases; --data adds the module's database folders", () => {
+  const { dest, files } = render("package", "cache", {
+    category: "runtime",
+    entries: "native,contracts,react",
+    data: true,
+  });
+  for (const f of [
+    "src/react/README.md",
+    "src/native/README.md",
+    "src/node/database/migrations/README.md",
+    "src/node/database/factories/README.md",
+    "src/node/database/seeders/README.md",
+  ])
+    assert.ok(files.includes(f), `${f} missing`);
+  const pkg = json(dest, "package.json");
+  assert.deepEqual(Object.keys(pkg.exports as object), [".", "./node", "./assets/*"]);
+  assert.ok("#react/*" in (pkg.imports ?? {}) && "#native/*" in (pkg.imports ?? {}));
+});
+
+// @covers sta-347:FR-004 sta-347:P-003
+test("apps come out in the v3 shape: config, root module, route folders, config classes; docs has no module", () => {
+  const appFiles: Record<string, string[]> = {
+    "app:console": [
+      "src/admin.module.ts",
+      "src/__tests__/admin.module.test.ts",
+      "src/routes/home/home.route.ts",
+      "src/routes/home/home.tsx",
+      "src/routes/home/__tests__/home.test.tsx",
+      "src/components/panel-shell/index.ts",
+      "src/styles/app.css",
+    ],
+    "app:mobile": [
+      "src/sample.module.ts",
+      "src/config/chrome.config.ts",
+      "src/routes/home/home.route.ts",
+      "src/routes/item/item.tsx",
+      "src/routes/settings/settings.route.ts",
+      "src/components/screen/index.ts",
+      "src/styles/global.css",
+    ],
+    "app:desktop": ["src/studio.module.ts", "src/__tests__/studio.module.test.ts"],
+  };
+  const names: Record<string, string> = {
+    "app:console": "admin",
+    "app:mobile": "sample",
+    "app:desktop": "studio",
+  };
+  for (const [kind, expected] of Object.entries(appFiles)) {
+    const { dest, files } = render(kind, names[kind] ?? "");
+    for (const f of ["stackra.config.ts", ...expected])
+      assert.ok(files.includes(f), `${kind}: ${f}`);
+    for (const retired of [
+      "src/screens/",
+      "src/components/ui/",
+      // Content never sits on glass (STA-457); the native header and tabs carry it.
+      "src/components/glass/",
+      "src/routes.tsx",
+      "src/styles.css",
+    ])
+      assert.ok(!files.some((f) => f.startsWith(retired)), `${kind}: ${retired}`);
+    // No glass panel means no blur and no glass view in the app's own dependencies (STA-457).
+    const { dependencies = {} } = json(dest, "package.json");
+    for (const glass of ["expo-blur", "expo-glass-effect"])
+      assert.ok(!(glass in dependencies), `${kind}: ${glass}`);
+    // Beside the root module, src/ holds only the stand-ins gen replaces; the entry is marked (ADR 0294 d14).
+    const STAND_INS = new Set([
+      "src/main.ts",
+      "src/main.tsx",
+      "src/app.tsx",
+      "src/window-options.ts",
+    ]);
+    for (const f of files.filter((file) => /^src\/[^/]+(?<!\.d)\.tsx?$/.test(file)))
+      assert.ok(f === `src/${names[kind]}.module.ts` || STAND_INS.has(f), `${kind}: ${f}`);
+    const entry = files.find((f) => /^src\/main\.tsx?$/.test(f));
+    // Accepted stand-in: the removal trigger is STA-339, when gen writes the entries.
+    assert.match(
+      readFileSync(join(dest, entry ?? ""), "utf8"),
+      /shortcut: authored until stackra gen writes[^\n]*STA-339/,
+    );
+  }
+  // The docs app (ADR 0002, 2026-10-27 amendment): member files at the root, pages in src/docs, no docs.json, no module.
+  const docs = render("app:docs", "handbook").files;
+  for (const f of ["stackra.config.ts", "src/config/docs.config.ts", "src/docs/index.mdx"])
+    assert.ok(docs.includes(f), `app:docs: ${f}`);
+  assert.ok(
+    !docs.some(
+      (f) => f.endsWith(".module.ts") || f.endsWith("docs.json") || /^src\/.*README\.md$/.test(f),
+    ),
+  );
+});
+
+test("parseEntries", () => {
+  assert.deepEqual(parseEntries("none"), []);
+  assert.deepEqual(parseEntries(""), []);
+  assert.deepEqual(parseEntries("native, contracts, react"), ["react", "native"]);
+  assert.deepEqual(parseEntries(ENTRY_NAMES), OPTIONAL_ENTRY_NAMES);
+  assert.throws(() => parseEntries("ui"), /unknown entry "ui"/);
+  assert.throws(() => parseEntries("devtools"), /unknown entry "devtools"/);
+});
+
+test("description is JSON-escaped and the target repo's LICENSE is copied", () => {
+  const { dest } = render("package", "esc", { category: "data" });
+  assert.equal(json(dest, "package.json").description, 'Say "hi".');
+  assert.deepEqual(
+    readFileSync(join(dest, "LICENSE")),
+    readFileSync(new URL("../../../../../../../../LICENSE", import.meta.url)),
+  );
+  const root = tmp();
+  writeFileSync(join(root, "LICENSE"), "Proprietary.\n");
+  const other = scaffold({
+    kind: "package",
+    name: "billing",
+    category: "data",
+    description: "Billing.",
+    summary: "Reach for it in tests.",
+    root,
+    format: false,
+  });
+  assert.equal(readFileSync(join(other.dest, "LICENSE"), "utf8"), "Proprietary.\n");
+  const svc = scaffold({
+    kind: "service",
+    name: "billing",
+    description: "Billing.",
+    summary: "Reach for it in tests.",
+    root,
+    format: false,
+  });
+  assert.ok(!existsSync(join(svc.dest, "LICENSE")));
+});
+
+test("next free port skips taken ones", () => {
+  const root = tmp();
+  const a = scaffold({
+    kind: "app:console",
+    name: "one",
+    description: "One.",
+    summary: "Reach for it in tests.",
+    root,
+    format: false,
+  });
+  assert.match(readFileSync(join(a.dest, "package.json"), "utf8"), /--port 3710/);
+  const b = scaffold({
+    kind: "app:console",
+    name: "two",
+    description: "Two.",
+    summary: "Reach for it in tests.",
+    root,
+    format: false,
+  });
+  assert.match(readFileSync(join(b.dest, "package.json"), "utf8"), /--port 3711/);
+});
+
+test("dry run writes nothing", () => {
+  const root = tmp();
+  const { dest, files } = scaffold({
+    kind: "service",
+    name: "dry",
+    description: "Dry.",
+    summary: "Reach for it in tests.",
+    root,
+    dryRun: true,
+  });
+  assert.ok(files.includes("src/dry.module.ts"));
+  assert.ok(!existsSync(dest));
+});
+
+test("rejections", () => {
+  const root = tmp();
+  const bad = (o: object, re: RegExp): void =>
+    assert.throws(
+      () =>
+        scaffold({
+          kind: "service",
+          name: "ok",
+          root,
+          format: false,
+          description: "Ok.",
+          summary: "Use it.",
+          ...o,
+        }),
+      re,
+    );
+  bad({ kind: "package", name: "Bad_Name", category: "data" }, /invalid name/);
+  bad({ kind: "package", name: "ok" }, /--category is required/);
+  bad({ kind: "package", name: "ok", category: "nope" }, /--category/);
+  bad({ kind: "package", name: "ok", category: "data", entries: "web" }, /unknown entry/);
+  bad({ kind: "service", name: "ok", data: true }, /--data applies to package only/);
+  bad({ kind: "nope", name: "ok" }, /unknown kind/);
+  bad({ kind: "app-next", name: "ok" }, /unknown kind/);
+  bad({ kind: "app:mobile", name: "my-app" }, /hyphens/);
+  bad({ kind: "service", name: "ok", root: join(root, "missing") }, /not a directory/);
+  // No placeholder description: every kind needs one sentence (no TODO in generated output).
+  for (const description of [undefined, "", "  "])
+    bad({ kind: "service", name: "ok", description }, /--description is required/);
+  bad({ kind: "package", name: "ok", category: "data", description: undefined }, /--description/);
+  scaffold({
+    kind: "service",
+    name: "dup",
+    description: "Dup.",
+    summary: "Use it.",
+    root,
+    format: false,
+  });
+  for (const summary of [undefined, " ", "Ok."])
+    bad({ kind: "service", name: "ok", summary }, /--summary is required/);
+  bad({ kind: "service", name: "dup" }, /already exists/);
+  // The 13 categories (settlement Q3.2, ADR 0302 adds design-system); tooling is a separate tier, not a category.
+  assert.equal(CATEGORY_NAMES.length, 13);
+});
+
+test("copies images, fonts and documents byte for byte, and fills every other template file", () => {
+  for (const file of [
+    "a.png",
+    "a.jpg",
+    "a.JPEG",
+    "a.gif",
+    "a.webp",
+    "a.avif",
+    "a.ico",
+    "a.woff",
+    "a.woff2",
+    "a.ttf",
+    "a.otf",
+    "a.pdf",
+  ])
+    assert.ok(BINARY_RE.test(file), file);
+  for (const file of ["a.svg", "a.ts", "a.json", "a.css", "pdf.md"])
+    assert.ok(!BINARY_RE.test(file), file);
+});

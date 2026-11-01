@@ -1,0 +1,10 @@
+{
+  "before": "thanks for your order, we will send it asap",
+  "after": "Thank you for your order. We will send it as soon as possible.",
+  "accepted": "In the field: {text}",
+  "again": "Show the draft again",
+  "working": "While Tamo works",
+  "working_title": "Tamo's draft, in progress",
+  "error": "When it fails",
+  "error_title": "Tamo's draft, not made"
+}

@@ -33,6 +33,8 @@
  */
 import { cn } from "@heroui/react";
 import { IconRegistryProvider } from "@stackra/icons/react";
+import { STANDARD_SHORTCUTS } from "@stackra/shortcuts";
+import { useShortcutActions } from "@stackra/shortcuts/react";
 import {
   useContext,
   useEffect,
@@ -72,6 +74,8 @@ import { EmptyState } from "#react/empty-state/empty-state";
 import { ErrorState } from "#react/error-state/error-state";
 import { PageSkeleton } from "#react/page-skeleton/page-skeleton";
 import { Table } from "#react/table/table";
+import { TamoCollectionTools } from "#react/tamo-collection-tools/tamo-collection-tools";
+import { useTamo } from "#react/hooks/use-tamo";
 import type { DataTableProps } from "#react/data-table/data-table.props";
 
 /** The id of the row menus' column: the app's columns never use it. */
@@ -96,6 +100,10 @@ const K = COLLECTION_KEYS.ui.collection;
 /** The classes of the total row: it sticks to the bottom of the scroll area, on the header's ground. */
 const TOTAL_ROW_CLASS =
   "sticky bottom-0 z-[calc(var(--z-pinned)+1)] font-medium [&_td]:bg-surface-secondary [&_td]:border-t [&_td]:border-separator";
+
+/** Whether focus is in a text field, where Mod+A selects the text, not the rows. */
+const isTyping = () =>
+  document.activeElement?.matches("input, textarea, select, [contenteditable=true]") ?? false;
 
 /**
  * A resource index on the contract of the web `Table`: the rows, the query that fetched them, the actions on a row and
@@ -143,10 +151,12 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
   renderRowPanel,
   onCellEdit,
   isVirtualized = false,
+  ai,
   className,
   ...rest
 }: DataTableProps<TItem>): ReactElement {
   const t = useUiText();
+  const tamo = useTamo({}, ai !== false);
   const { locale } = useLocale();
 
   const isPagerOwned = useContext(CollectionPagerContext);
@@ -278,6 +288,62 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
         onPress: () => run(key, action.onPress),
       };
     });
+
+  // The keyboard layer (ADR 0508), live only while focus is inside the table: Mod+A selects the page, Space opens the
+  // focused row, and a row action with a `shortcut` runs on the focused row.
+  const focusedItem = () => {
+    const id = document.activeElement
+      ?.closest<HTMLElement>("[role=row][data-key]")
+      ?.getAttribute("data-key");
+    return id === null || id === undefined || isSynthetic(id) ? undefined : itemOf(id);
+  };
+  const S = UI_KEYS.ui.shortcuts;
+  useShortcutActions(
+    [
+      ...(selectionMode === "multiple"
+        ? [
+            {
+              id: "collection.select_all",
+              label: t(S.select_all),
+              shortcut: STANDARD_SHORTCUTS["collection.select_all"],
+              when: () => !isTyping(),
+              run: () => collection.setSelection(items.map((item) => item.id)),
+            },
+          ]
+        : []),
+      // Space selects a row when rows are selectable, so the preview key is only bound without selection.
+      ...(isOpenable && selectionMode === "none"
+        ? [
+            {
+              id: "collection.preview",
+              label: t(S.preview),
+              shortcut: STANDARD_SHORTCUTS["collection.preview"],
+              when: () => focusedItem() !== undefined,
+              run: () => {
+                const item = focusedItem();
+                if (!item) return;
+                onRowOpen?.(item);
+                if (renderRowPanel) setOpenId(item.id);
+              },
+            },
+          ]
+        : []),
+      ...(firstItem && rowActions ? rowActions(firstItem) : [])
+        .filter((action) => action.shortcut !== undefined)
+        .map((action) => ({
+          id: `row.${action.id}`,
+          label: action.label,
+          shortcut: action.shortcut,
+          when: () => focusedItem() !== undefined,
+          run: () => {
+            const item = focusedItem();
+            const found = item && menuItemsOf(item).find((one) => one.id === action.id);
+            if (found && !found.isDisabled) found.onPress?.();
+          },
+        })),
+    ],
+    { within: container },
+  );
 
   const cellOf = (item: TItem, column: TableColumn) => {
     if (layout.isSummary(item.id)) {
@@ -490,6 +556,11 @@ export function DataTable<TItem extends CollectionItem = CollectionItem>({
         className={cn("grid min-w-0 gap-3 outline-none", className) ?? ""}
       >
         {filterBar}
+        {tamo ? (
+          <div className="flex justify-end">
+            <TamoCollectionTools collection={collection} label={label} onCellEdit={onCellEdit} />
+          </div>
+        ) : null}
         {selectionMode === "multiple" ? (
           <BulkActionBar
             // `contents` keeps the always-present wrapper out of the grid, so an idle bar adds no gap.

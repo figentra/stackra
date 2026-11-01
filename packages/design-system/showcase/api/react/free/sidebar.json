@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "4146998cbbc9942e",
+    "hash": "143146d37d399bfb",
     "propsFiles": [
       "ui/src/react/sidebar/sidebar-content.props.ts",
       "ui/src/react/sidebar/sidebar-footer.props.ts",
@@ -809,7 +809,7 @@
           "type": "string | number"
         },
         {
-          "description": "A shortcut to show after the label as text to read (`G O`); a hint only, the app binds the key.",
+          "description": "The key binding (`g o`, `mod+1`) that follows the row while it is mounted, drawn after the label (ADR 0508).",
           "name": "shortcut",
           "required": false,
           "source": "stackra",
@@ -1239,6 +1239,13 @@
         {
           "description": "The spoken name of the clear button, for example \"Clear the order search\". Defaults to \"Clear search\".",
           "name": "clearLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A key binding that moves focus to the field from anywhere on the page (`/`), shown as a key hint. Web only (ADR 0508).",
+          "name": "shortcut",
           "required": false,
           "source": "stackra",
           "type": "string"
@@ -1735,6 +1742,28 @@
           "required": false,
           "source": "stackra",
           "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
+          "name": "action",
+          "required": false,
+          "source": "stackra",
+          "type": "ShortcutAction"
+        },
+        {
+          "description": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "keys:<binding>",
+          "description": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
+          "name": "shortcutId",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",

@@ -127,6 +127,16 @@ export const STACKRA_THEME = defineTheme({
     "chart-3": color("oklch(0.4 0.15 300)", "oklch(0.6 0.17 300)"),
     "chart-4": color("oklch(0.65 0.15 55)", "oklch(0.8 0.14 60)"),
     "chart-5": color("oklch(0.54 0.18 355)", "oklch(0.68 0.17 355)"),
+    // ADR 0507, the tamo family: Tamo's glow, its working shimmer and its mark, seeded from figentra/brand
+    // brands/tamo/tokens/color.json (palette mist-200, tamo, deep, paper; character eyes and dark name). Read by
+    // @stackra/ui's Tamo parts as `var(--tamo-*)`; a tenant theme layer may override them (white-label).
+    "tamo-glow-start": color("oklch(0.915 0.04 188.7)", "oklch(0.423 0.073 192.1)"),
+    "tamo-glow-mid": color("oklch(0.661 0.114 191.8)", "oklch(0.661 0.114 191.8)"),
+    "tamo-glow-end": color("oklch(0.423 0.073 192.1)", "oklch(0.756 0.116 191.4)"),
+    "tamo-shimmer": color("oklch(0.986 0.008 186.9)", "oklch(0.756 0.116 191.4)"),
+    "tamo-mark": color("oklch(0.661 0.114 191.8)", "oklch(0.661 0.114 191.8)"),
+    "tamo-mark-eyes": color("oklch(0.229 0.03 191.6)", "oklch(0.229 0.03 191.6)"),
+    "tamo-name": color("oklch(0.423 0.073 192.1)", "oklch(0.756 0.116 191.4)"),
   },
   // No display stacks: they default to sans and arabic, and a brand's theme.json sets its own (brand rules §33).
   fontFamily: {
@@ -445,6 +455,8 @@ export const STACKRA_THEME = defineTheme({
     // A toast rising from its edge and leaving (HeroUI: 350ms in, 300ms kept mounted out).
     "toast-in": { duration: "350ms", easing: "cubic-bezier(0.32, 0.72, 0, 1)" },
     "toast-out": { duration: "300ms", easing: "cubic-bezier(0.4, 0, 1, 1)" },
+    // ADR 0507: one sweep of Tamo's working shimmer round its glow border; a loop, so linear to join seamlessly.
+    "tamo-shimmer": { duration: "1600ms", easing: "linear" },
   },
   // ADR 0501, the motion family: the springs keep the feel the segment thumb (snappy) and the tab indicator (bouncy)
   // already played.

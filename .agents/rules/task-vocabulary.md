@@ -33,5 +33,5 @@ format:check + lint + typecheck. `pnpm verify` is the full gate (add `validate`,
 
 A new task name goes in `turbo.jsonc` and in every member of that shape together.
 
-Enforcement: `tools/scripts/validate-repository.mjs` checks the script set per member shape; `turbo.jsonc` is the
+Enforcement: `stackra validate --repository` checks the script set per member shape; `turbo.jsonc` is the
 task graph.

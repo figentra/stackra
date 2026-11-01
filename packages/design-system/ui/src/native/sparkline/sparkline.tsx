@@ -7,18 +7,23 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303; WCAG 2.2 SC 1.1.1, 1.4.11 and 2.3.3; STA-1371.
  */
-import { LinearGradient, Skia, vec } from "@shopify/react-native-skia";
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import type { ReactElement } from "react";
 import { View } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
-import { Area, Bar, CartesianChart, Line } from "victory-native";
 
 import { formatChartNumber } from "#core/functions/format-chart-number.function";
 import { isArabic } from "#core/functions/is-arabic.function";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { SparklineProps } from "#native/sparkline/sparkline.props";
+import { loadSkia } from "#native/skia/load-skia.function";
+import { loadVictoryNative } from "#native/skia/load-victory-native.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { LinearGradient, Skia, vec } = loadSkia();
+// victory-native is an optional peer (on Skia), required on first use (STA-1791).
+const { Area, Bar, CartesianChart, Line } = loadVictoryNative();
 
 /** The line drawing in: the theme's slow step. */
 const SLOW = motionTiming(STACKRA_THEME, "slow");

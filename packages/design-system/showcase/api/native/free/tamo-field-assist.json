@@ -1,0 +1,67 @@
+{
+  "generatedFrom": {
+    "hash": "7da2a50d61f76cd8",
+    "propsFiles": ["ui/src/native/tamo-field-assist/tamo-field-assist.props.ts"]
+  },
+  "importLine": "import { TamoFieldAssist } from \"@stackra/ui/native\";",
+  "key": "free/tamo-field-assist",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Puts accepted text in the field.",
+          "name": "onAccept",
+          "required": true,
+          "source": "stackra",
+          "type": "(text: string) => void"
+        }
+      ],
+      "name": "TamoFieldAssist",
+      "props": [
+        {
+          "description": "The slot `useTamo` returned for the field.",
+          "name": "slot",
+          "required": true,
+          "source": "stackra",
+          "type": "TamoSlot"
+        },
+        {
+          "description": "The field's key, sent with each task.",
+          "name": "field",
+          "required": true,
+          "source": "stackra",
+          "type": "string | undefined"
+        },
+        {
+          "description": "The field's text now.",
+          "name": "text",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to show the Tamo button (the field has had focus: a touch screen has no hover).",
+          "name": "isShown",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to offer \"Continue writing\" (a text area).",
+          "name": "hasContinue",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The input.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

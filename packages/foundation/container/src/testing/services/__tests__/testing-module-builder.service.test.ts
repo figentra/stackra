@@ -8,12 +8,13 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3); ADR 0263 (decision 12).
  */
-import { Port } from "@stackra/contracts";
+import { Logger, Port } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { Driver, Module, named, Service, type Wiring } from "#core/index";
 import { REGISTERED_WIRINGS } from "#testing/constants/registered-wirings.constant";
 import { TESTING_PLUGINS } from "#testing/constants/testing-plugins.constant";
+import { MemoryLoggerDriver } from "#testing/drivers/memory-logger.driver";
 import { registerWiring } from "#testing/functions/register-wiring.function";
 import { TestingModuleBuilder } from "#testing/services/testing-module-builder.service";
 
@@ -50,6 +51,17 @@ class ShutGateDriver extends Driver(Gate) {
   open(): boolean {
     return false;
   }
+}
+
+/** A Logger a wiring lists, which the testing module keeps over its memory default. */
+class SilentLoggerDriver extends Driver(Logger) {
+  debug(): void {}
+
+  info(): void {}
+
+  warn(): void {}
+
+  error(): void {}
 }
 
 beforeEach(() => {
@@ -91,6 +103,51 @@ describe("TestingModuleBuilder", () => {
     expect(app.modules).toEqual([
       { key: "reporting", type: ReportingModule, exports: [Reads], dependsOn: [] },
     ]);
+  });
+
+  it("binds a memory Logger when no wiring lists a Logger driver, and keeps an override or a wiring's (STA-1805)", async () => {
+    const app = await new TestingModuleBuilder([ReportingModule]).compile();
+    const logger = app.get(Logger);
+    expect(logger).toBeInstanceOf(MemoryLoggerDriver);
+    logger.info("ledger.read", { rows: 2 });
+    expect((logger as MemoryLoggerDriver).lines).toEqual([
+      { level: "info", event: "ledger.read", fields: { rows: 2 } },
+    ]);
+
+    const own = new SilentLoggerDriver();
+    const overridden = await new TestingModuleBuilder([ReportingModule])
+      .override(Logger, own)
+      .compile();
+    expect(overridden.get(Logger)).toBe(own);
+
+    registerWiring({
+      member: "logging",
+      drivers: [
+        { port: Logger, candidates: { silent: () => Promise.resolve(SilentLoggerDriver) } },
+      ],
+    });
+    const wired = await new TestingModuleBuilder([ReportingModule]).compile();
+    expect(wired.get(Logger)).toBeInstanceOf(SilentLoggerDriver);
+
+    // listed but unselected, as @stackra/logger's memory and silent drivers with no config field: memory is taken
+    registerWiring({
+      member: "logging",
+      drivers: [
+        {
+          port: Logger,
+          candidates: {
+            memory: () => Promise.resolve(MemoryLoggerDriver),
+            silent: () => Promise.resolve(SilentLoggerDriver),
+          },
+        },
+      ],
+    });
+    const listed = await new TestingModuleBuilder([ReportingModule]).compile();
+    expect(listed.get(Logger)).toBeInstanceOf(MemoryLoggerDriver);
+    const chosen = await new TestingModuleBuilder([ReportingModule])
+      .useDrivers({ Logger: "silent" })
+      .compile();
+    expect(chosen.get(Logger)).toBeInstanceOf(SilentLoggerDriver);
   });
 
   it("leaves the registered wiring as it was", async () => {

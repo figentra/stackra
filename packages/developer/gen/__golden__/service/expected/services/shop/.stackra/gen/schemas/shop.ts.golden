@@ -23,7 +23,7 @@ export const OrderStatus$ = z.enum(["pending","paid","cancelled"]);
 export const ShopOptions$ = z.object({
   gateway: z.enum(["stripe"]).default("stripe"),
 });
-export type ShopOptions$Check = Assert<Same<z.output<typeof ShopOptions$>, Fields<ShopOptions>>>;
+export type ShopOptions$Check = Assert<Same<Omit<z.output<typeof ShopOptions$>, "gateway">, Omit<Fields<ShopOptions>, "gateway">>>;
 
 /** integration_event `OrderPaid` (src/node/events/order-paid.event.ts). */
 export const OrderPaid$ = z.object({

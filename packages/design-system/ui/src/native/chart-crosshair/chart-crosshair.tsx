@@ -10,11 +10,14 @@
  * Governing contract: ADR 0302 (decision 3: one API on web and native); chart style spec (2026-10-28) sections 3 and 6;
  *          WCAG 2.2 SC 1.4.11; STA-1371.
  */
-import { Circle, DashPathEffect, Group, Line, Rect, vec } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { useDerivedValue } from "react-native-reanimated";
 
 import type { ChartCrosshairProps } from "#native/chart-crosshair/chart-crosshair.props";
+import { loadSkia } from "#native/skia/load-skia.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Circle, DashPathEffect, Group, Line, Rect, vec } = loadSkia();
 
 /** One ringed dot on a line series at the scrubbed point. */
 function Dot({

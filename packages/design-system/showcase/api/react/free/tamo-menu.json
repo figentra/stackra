@@ -1,0 +1,95 @@
+{
+  "generatedFrom": {
+    "hash": "a9743540f50ee885",
+    "propsFiles": ["ui/src/react/tamo-menu/tamo-menu.props.ts"]
+  },
+  "importLine": "import { TamoMenu } from \"@stackra/ui/react\";",
+  "key": "free/tamo-menu",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the chosen action: a `TamoActionKind`, `continue`, `draft` or a contributed action's id.",
+          "name": "onAction",
+          "required": true,
+          "source": "stackra",
+          "type": "(action: string) => void"
+        },
+        {
+          "description": "Called when the menu opens or closes.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        }
+      ],
+      "name": "TamoMenu",
+      "props": [
+        {
+          "description": "The built-in actions offered, in order. Defaults to every `TamoActionKind`.",
+          "name": "kinds",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly (\"translate\" | \"expand\" | \"rewrite\" | \"shorten\" | \"fix_grammar\" | \"formal\" | \"friendly\")[]"
+        },
+        {
+          "description": "More actions, after the built-in ones (a module's, through the slot).",
+          "name": "actions",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly TamoActionItem[]"
+        },
+        {
+          "description": "True to offer \"Continue writing\" (ghost text).",
+          "name": "hasContinue",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The text the actions work on: empty, only \"Draft with Tamo\" is offered; Arabic letters turn Translate to English.",
+          "name": "text",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The trigger's words and name. Defaults to \"Ask Tamo\".",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to draw the trigger as the mark only.",
+          "name": "isIconOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The trigger's size.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "The task's state, shown on the trigger.",
+          "name": "status",
+          "required": false,
+          "source": "stackra",
+          "type": "\"error\" | \"idle\" | \"ready\" | \"working\""
+        },
+        {
+          "description": "Classes added to the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

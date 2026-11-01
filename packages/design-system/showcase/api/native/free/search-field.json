@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "a23e381bbfe1c53b",
+    "hash": "0f9f429288ae9fb0",
     "heroDoc": "vendor/heroui/native/search-field.json",
     "propsFiles": ["ui/src/native/search-field/search-field.props.ts"]
   },
@@ -65,6 +65,13 @@
         {
           "description": "The spoken name of the clear button, for example \"Clear the order search\". Defaults to \"Clear search\".",
           "name": "clearLabel",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "A key binding that moves focus to the field from anywhere on the page (`/`), shown as a key hint. Web only (ADR 0508).",
+          "name": "shortcut",
           "required": false,
           "source": "stackra",
           "type": "string"

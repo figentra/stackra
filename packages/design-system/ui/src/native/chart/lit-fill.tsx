@@ -7,11 +7,14 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0320 (the glass material); ADR 0165 (native); STA-1371.
  */
-import { Canvas, Fill, LinearGradient, vec } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { StyleSheet } from "react-native";
 
+import { loadSkia } from "#native/skia/load-skia.function";
 import { mixOf } from "#native/chart/mix-of.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Canvas, Fill, LinearGradient, vec } = loadSkia();
 
 /** `color` lit from the top over `height` points, filling the parent. */
 export function LitFill({

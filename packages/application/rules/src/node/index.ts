@@ -15,3 +15,5 @@ export { RuleSet } from "#node/models/rule-set.model";
 export { ConditionFieldService } from "#node/services/condition-field.service";
 export { RuleSetService } from "#node/services/rule-set.service";
 export type { RuleSetRevision } from "#node/types/rule-set-revision.type";
+// The entity list gen writes for the module, which a hosting service registers (STA-1793).
+export { RULES_ENTITIES } from "#stackra/entities/rules";

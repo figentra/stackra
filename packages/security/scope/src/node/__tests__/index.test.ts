@@ -19,6 +19,7 @@ describe("@stackra/scope/node", () => {
   it("exports exactly the model, the service, the driver, the event and the entitlement", () => {
     expect(Object.keys(node).sort()).toEqual([
       "PostgresScopeTreeDriver",
+      "SCOPE_ENTITIES",
       "ScopeDepthEntitlement",
       "ScopeMoved",
       "ScopeNode",

@@ -25,7 +25,7 @@ programming model v3.1 shape (ADR 0294, 0305).
   `object` from the Figentra OS source only then.
 - One home per helper (stackra-224): the encoding (`base64url`, `decodeBase64`, `crc32`), markup (`escapeHtml`,
   `escapeXml`, `htmlToText`), `isRecord`, case (`snakeCase`, `kebabCase`, `camelCase`, `pascalCase`) and `ageOn`
-  helpers live only here; a package imports them and never keeps a copy. `tools/scripts/duplicate-exports.mjs` fails
+  helpers live only here; a package imports them and never keeps a copy. `stackra duplicate-exports` fails
   `pnpm validate` on a second definition; an intended exception goes in its allow-list with the reason.
 - Changing a helper's output changes every importer: `snakeCase` names derived identities (gen), `htmlToText` writes
   mail text parts, `ageOn` decides guardian checks. Treat a change like a `canonicalJson` change: an ADR first.

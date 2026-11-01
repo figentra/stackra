@@ -3,8 +3,8 @@
  * Purpose: unit tests of `emitPackageEntries`: each entry holds its folders' exports and their shipped `X$` (one the
  *          member ships itself only from its own file), seeders
  *          go to `testing`, stand-in barrels are skipped, type-only names print as types, the generated module and
- *          each module's entity list go to `node`, no symbol appears in two entries, and a non-package writes no
- *          entry.
+ *          each module's entity list go to `node`, no symbol appears in two entries, a non-package writes no
+ *          entry, and a package with nothing to export gets an empty `.` entry (STA-1753).
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 15); ADR 0305 (rule 16).
@@ -141,6 +141,18 @@ describe("emitPackageEntries", () => {
       barrels.find((barrel) => barrel.path === ".stackra/entry/index.ts")?.content ?? "";
     expect(index.match(/\bregister\b/g)).toBeNull();
     expect(index).toBe(entry("index"));
+  });
+
+  it("gives a package with nothing to export an empty `.` entry, so tsdown has one (STA-1753)", () => {
+    const empty = emitPackageEntries({
+      ...LOYALTY_KIT_IR,
+      files: [],
+      shapes: [],
+      enums: [],
+      classes: [],
+    });
+    expect(empty.map((file) => file.path)).toEqual([".stackra/entry/index.ts"]);
+    expect(empty[0]?.content).toMatch(/\nexport \{\};\n$/);
   });
 
   it("writes no entry for a service", () => {

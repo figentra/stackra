@@ -1,0 +1,7 @@
+{
+  "screen": "Customer messages",
+  "label": "Reply",
+  "text": "thanks for your order, we will send it asap",
+  "switch": "Tamo on for this workspace",
+  "off": "Tamo is off here: no Tamo controls are drawn."
+}

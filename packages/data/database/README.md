@@ -746,6 +746,20 @@ every approved extension (`Extension`, PostGIS included) can be created (gap db1
 another image without the build. `pnpm turbo run test:int --filter=@stackra/database` runs the tier (`vitest.int.config.ts`,
 Docker needed); the CI Quality Gate runs every member's `test:int` (STA-1570).
 
+The unit tier's tools are optional peers: `@faker-js/faker`, `@electric-sql/pglite`, `@electric-sql/pglite-pgvector`
+and `@mikro-orm/pglite`. `@stackra/database/testing` loads each on first use (the first factory definition, the first
+memory database), never on import, so a service that has none of them can still load the entry. A member whose tests
+use them adds all four as `devDependencies` with their `catalog:` entries; a missing one throws an error naming all
+four (STA-1812).
+
+On both tiers a model's recorded events (`model.record(event)`) reach the testing app once the outermost transaction
+commits, as the outbox writer hands them on in production: an integration event to the app's outbox, any other on its
+bus, so `run()` results and `app.events.published()` hold them. A rollback drops them, and a released savepoint's
+events wait for the transaction around it (`RecordedEventsSubscriber`, STA-1740). An integration event carries the
+running call's actor, id and scope, and `drainOutbox()` delivers each one as the inbox does: in a new transaction, as
+that actor in that scope through the app's `CallIsolation` (`withScope` without one), the platform for an event with no
+actor (`deliverInIsolation`, STA-1789). The testing entry needs `@stackra/events` for this, an optional peer.
+
 `assertRowSecurity(database, { column, setting, role, probe })` checks a migrated database: every table holding
 `column` has row-level security enabled and forced with the policy `pol_<table>_<column>`, `role` is neither a
 superuser nor BYPASSRLS (created `NOLOGIN NOBYPASSRLS` when missing), and a probe as `role` with `setting` at

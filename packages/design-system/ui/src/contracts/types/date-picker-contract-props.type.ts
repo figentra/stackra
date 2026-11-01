@@ -27,4 +27,6 @@ export interface DatePickerContractProps extends DateValueContractProps, OpenSta
   readonly presets?: readonly DatePreset[] | undefined;
   /** The day the presets count from; defaults to today. */
   readonly today?: CalendarDate | undefined;
+  /** False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507). */
+  readonly ai?: boolean | undefined;
 }

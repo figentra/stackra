@@ -8,10 +8,8 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3); ADR 0060 (right-to-left); WCAG 2.2 SC 1.1.1; STA-1371.
  */
-import { DashPathEffect, Group, Line, Rect, vec } from "@shopify/react-native-skia";
 import type { ReactElement } from "react";
 import { View } from "react-native";
-import { Scatter } from "victory-native";
 
 import { chartColorOf } from "#core/functions/chart-color-of.function";
 import { chartReferenceTextOf } from "#core/functions/chart-reference-text-of.function";
@@ -24,6 +22,13 @@ import { useAxisLabels } from "#native/chart/use-axis-labels";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { ScatterChartProps } from "#native/scatter-chart/scatter-chart.props";
+import { loadSkia } from "#native/skia/load-skia.function";
+import { loadVictoryNative } from "#native/skia/load-victory-native.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { DashPathEffect, Group, Line, Rect, vec } = loadSkia();
+// victory-native is an optional peer (on Skia), required on first use (STA-1791).
+const { Scatter } = loadVictoryNative();
 
 /** The smallest and largest bubble radii, in points. */
 const RADIUS = [3, 14] as const;

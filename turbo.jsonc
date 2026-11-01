@@ -5,7 +5,7 @@
 // Owner: release-operations
 // Secrets: forbidden — TURBO_TOKEN/TURBO_TEAM come from the environment (CI: vault; local: optional).
 // Change policy: a new task name here needs the matching script in every workspace of that shape
-//                (tools/scripts/validate-repository.mjs enforces the set).
+//                (`stackra validate --repository` enforces the set).
 {
   "$schema": "https://turborepo.dev/schema.json",
 

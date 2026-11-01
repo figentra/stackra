@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "9f5edf804f772c13",
+    "hash": "30abea0832d8ce3d",
     "heroDoc": "vendor/heroui/react/separator.json",
     "propsFiles": ["ui/src/react/separator/separator.props.ts"]
   },
@@ -34,6 +34,14 @@
           "required": false,
           "source": "heroui",
           "type": "string"
+        },
+        {
+          "default": "false",
+          "description": "Whether the divider is purely visual and hidden from assistive technology.",
+          "name": "isDecorative",
+          "required": false,
+          "source": "heroui",
+          "type": "boolean"
         },
         {
           "description": "Overrides the default DOM element with a custom render function.",

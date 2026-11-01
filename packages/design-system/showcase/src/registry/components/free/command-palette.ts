@@ -17,7 +17,10 @@ export const FREE_COMMAND_PALETTE: ComponentEntry = {
   exportName: "CommandPalette",
   parts: ["CommandPalette"],
   hero: {},
-  examples: [{ id: "launcher", card: true }],
+  examples: [
+    { id: "launcher", card: true },
+    { id: "tamo", platforms: ["react"] },
+  ],
   related: ["free/search-field", "free/modal", "free/menu"],
   tokens: ["color.overlay", "shadow.overlay", "radius.lg"],
   keywords: ["command palette", "cmd k", "quick search", "launcher", "spotlight"],

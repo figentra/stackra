@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "017b2c3c3d2d3085",
+    "hash": "088d5c95aca90181",
     "propsFiles": ["ui/src/native/masked-field/masked-field.props.ts"]
   },
   "importLine": "import { MaskedField } from \"@stackra/ui/native\";",
@@ -113,6 +113,13 @@
         {
           "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
           "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
+          "name": "ai",
           "required": false,
           "source": "stackra",
           "type": "boolean"

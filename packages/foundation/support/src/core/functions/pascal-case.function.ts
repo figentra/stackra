@@ -5,7 +5,7 @@
  * Boundary: public and pure; built on `camelCase`.
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (one declaration per file, rule 16); ADR 0231 (class names); stackra-224 (one copy,
- *                     was gen; coding-standard keeps its own, see tools/scripts/duplicate-exports.mjs).
+ *                     was gen; coding-standard keeps its own, see stackra duplicate-exports).
  */
 import { camelCase } from "#core/functions/camel-case.function";
 

@@ -12,28 +12,11 @@
  *          spec (2026-10-28) section 6; WCAG 2.2 SC 1.1.1, 1.4.11 and 2.3.3; STA-1371.
  */
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
-import {
-  DashPathEffect,
-  Group,
-  Line as SkiaLine,
-  Skia,
-  TextAlign,
-  vec,
-} from "@shopify/react-native-skia";
 import { useThemeColor } from "heroui-native";
 import { type ReactElement, type ReactNode, useMemo, useState } from "react";
 import { View } from "react-native";
 import { runOnJS, useAnimatedReaction, useReducedMotion } from "react-native-reanimated";
-import {
-  Bar,
-  BarGroup,
-  CartesianChart,
-  type ChartBounds,
-  createParagraphLabelRenderer,
-  Line,
-  type PointsArray,
-  useChartPressState,
-} from "victory-native";
+import type { ChartBounds, PointsArray } from "victory-native";
 
 import { THEME_PX } from "#core/constants/theme-px.constant";
 import { chartAnnotationTextOf } from "#core/functions/chart-annotation-text-of.function";
@@ -49,7 +32,15 @@ import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
 import type { ComposedChartProps } from "#native/composed-chart/composed-chart.props";
 import { haptics } from "#native/haptics/haptics";
+import { loadSkia } from "#native/skia/load-skia.function";
 import { Text } from "#native/text/text";
+import { loadVictoryNative } from "#native/skia/load-victory-native.function";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { DashPathEffect, Group, Line: SkiaLine, Skia, TextAlign, vec } = loadSkia();
+// victory-native is an optional peer (on Skia), required on first use (STA-1791).
+const { Bar, BarGroup, CartesianChart, createParagraphLabelRenderer, Line, useChartPressState } =
+  loadVictoryNative();
 
 /** The series drawing in: the theme's slow step. */
 const SLOW = motionTiming(STACKRA_THEME, "slow");

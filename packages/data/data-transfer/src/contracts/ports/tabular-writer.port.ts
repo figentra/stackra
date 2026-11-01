@@ -20,7 +20,7 @@ import type { TabularWriteOptions } from "#contracts/types/tabular-write-options
  */
 export abstract class TabularWriter extends Port {
   /** Type-only port key, so `DriverName<TabularWriter>` narrows to this port's drivers. */
-  declare readonly "~key": "data-transfer.TabularWriter";
+  declare readonly "~key": "data_transfer.TabularWriter";
 
   /** The media type of the file it writes. */
   abstract readonly mediaType: string;

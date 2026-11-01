@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `readIntegrationOptions` for `baseUrl`: a literal http(s) URL and an https template are
- *          accepted, a single `{field}` that is the whole URL is accepted, and an http template is refused.
+ *          accepted, a single `{field}` that is the whole URL is accepted, and an http template is refused; a written
+ *          `key` of two snake_case parts is kept, any other is refused (STA-1739).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0308 (rule 6); STA-1665.
@@ -34,4 +35,29 @@ describe("readIntegrationOptions baseUrl", () => {
     expect(read("http://speech.internal:8080").baseUrl).toBe("http://speech.internal:8080");
     expect(read("https://{host}/api").baseUrl).toBe("https://{host}/api");
   });
+});
+
+const keyed = (key: string) =>
+  readIntegrationOptions({
+    key,
+    provider: "stripe",
+    category: IntegrationCategory.Other,
+    levels: [],
+    auth: { type: AuthType.None },
+  });
+
+describe("readIntegrationOptions key (STA-1739)", () => {
+  it("keeps a written key of two snake_case parts", () => {
+    expect(keyed("connectors.stripe").key).toBe("connectors.stripe");
+    expect(keyed("connectors.amazon_payment_services").key).toBe(
+      "connectors.amazon_payment_services",
+    );
+  });
+
+  it.each(["stripe", "connectors.stripe.v2", "Connectors.stripe", "connectors.noon-pay", ""])(
+    "refuses the key %j",
+    (key) => {
+      expect(() => keyed(key)).toThrow(/key/);
+    },
+  );
 });

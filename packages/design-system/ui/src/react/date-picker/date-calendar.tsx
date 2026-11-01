@@ -11,7 +11,6 @@ import { Calendar } from "@heroui/react";
 import type { ComponentProps, ReactElement } from "react";
 
 import { MONTH_BUTTON_CLASS } from "#react/date-picker/month-button-class.constant";
-import { renderAsDiv } from "#react/date-picker/render-as-div.function";
 
 /** The month grid of a date picker's popover, or of an inline calendar. */
 export function DateCalendar(
@@ -19,7 +18,7 @@ export function DateCalendar(
 ): ReactElement {
   return (
     <Calendar {...props}>
-      <Calendar.Header render={renderAsDiv}>
+      <Calendar.Header>
         <Calendar.Heading />
         <Calendar.NavButton slot="previous" className={MONTH_BUTTON_CLASS} />
         <Calendar.NavButton slot="next" className={MONTH_BUTTON_CLASS} />

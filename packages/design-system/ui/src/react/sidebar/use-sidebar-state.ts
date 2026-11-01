@@ -18,6 +18,9 @@ import { usePaneWidth } from "#react/hooks/use-pane-width";
 import type { SidebarState } from "#react/sidebar/sidebar-state.type";
 import type { SidebarStateProps } from "#react/sidebar/sidebar-state-props.type";
 import { useBreakpoint } from "#react/use-breakpoint/use-breakpoint";
+import { useShortcutActions } from "@stackra/shortcuts/react";
+import { UI_KEYS } from "#core/constants/ui-keys.constant";
+import { useUiText } from "#react/hooks/use-ui-text";
 
 /** True when the key event comes from a place the user types in. */
 function isTyping(target: EventTarget | null): boolean {
@@ -116,6 +119,26 @@ export function useSidebarState(
     outside?.focus();
   }, [collapsed, panelId]);
 
+  // The toggle key on the shortcut registry (ADR 0508): listed in the cheat sheet, remappable, consumed once.
+  const t = useUiText();
+  const hasToggleKey = keyboardShortcut !== false && (collapsible !== "none" || isMobile);
+  useShortcutActions(
+    hasToggleKey
+      ? [
+          {
+            id: "sidebar.toggle",
+            label: t(collapsed ? UI_KEYS.ui.sidebar.expand : UI_KEYS.ui.sidebar.collapse),
+            shortcut: `mod+${keyboardShortcut.toLowerCase()}`,
+            scope: "app",
+            // Cmd/Ctrl+B in a field means bold.
+            when: () => !isTyping(document.activeElement),
+            run: toggle,
+          },
+        ]
+      : [],
+  );
+
+  // Without a ShortcutProvider the window listener below still toggles; with one, the registry consumed the key first.
   useEffect(() => {
     if (keyboardShortcut === false || (collapsible === "none" && !isMobile)) return undefined;
     const key = keyboardShortcut.toLowerCase();

@@ -3,7 +3,8 @@
  * Purpose: unit tests of `platformRows`: a host row per host of every web surface (not ops) under the environment's
  *          zone, an own domain ending in `.` kept as given, every host of a surface naming its canonical one, the
  *          first region as home unless one is given; app-link files on each linked host with the Apple app id from
- *          the team map and the Android certificates; a missing zone, region, team id or certificate is listed.
+ *          the team map and the Android certificates; a missing zone, region, team id or certificate is listed; two
+ *          surfaces on one host are refused (STA-1796).
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); app-shells 5.3 and 8.3; owner decisions D2 and D9.
@@ -107,6 +108,18 @@ describe("platformRows", () => {
       "mobile.staff.identity.links.0",
       "mobile.staff.identity.ios.team",
       "mobile.staff.identity.android.package",
+    ]);
+  });
+
+  it("refuses two surfaces on one host instead of overwriting the first row (STA-1796)", () => {
+    // parseRunway refuses this root already; platformRows guards a root built another way.
+    const root = parseRunway("root", PRODUCT_ROOT);
+    // Assigned by key, so it is typed as a web surface: a spread literal cannot satisfy `ops` beside the catchall.
+    const surfaces: NonNullable<typeof root.surfaces> = root.surfaces ?? {};
+    surfaces.portal = { shell: "os/console@3", preset: "portal", host: "console.mezzora" };
+    root.surfaces = surfaces;
+    expect(issuePaths(() => platformRows(root, "production", { appLinks: APP_LINKS }))).toEqual([
+      "surfaces.portal.host",
     ]);
   });
 });

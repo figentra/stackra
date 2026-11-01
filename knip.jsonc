@@ -13,7 +13,7 @@
       "project": ["tools/scripts/*.mjs"],
       // @changesets/config: .changeset/config.json reads its schema from pnpm's hidden hoist
       // (a transitive of @changesets/cli) so VS Code needs no download; it is never imported.
-      // jscpd: tools/scripts/duplication.mjs spawns its binary by path (node_modules/.bin/jscpd), which knip does not trace.
+      // jscpd: `stackra duplication` spawns the root binary by path (node_modules/.bin/jscpd), which knip does not trace.
       "ignoreDependencies": ["@changesets/config", "jscpd"],
       // Developer-machine CLIs the root scripts shell out to (pinned outside pnpm). wrangler: the reusable
       // runway-cloudflare-workers workflow runs `pnpm exec wrangler` in the Worker member's folder, and the member
@@ -171,7 +171,7 @@
       // @babel/plugin-transform-flow-strip-types: babel.config.js resolves it through babel-preset-expo on purpose, so
       // the override runs the preset's own copy (Babel 7) and the app declares none.
       // expo-intent-launcher, expo-secure-store, expo-widgets, react-native-mmkv: native libraries of the app's packages
-      // (i18n, storage, platform), declared only so Expo autolinks them (tools/scripts/app-native-deps.mjs, STA-1544);
+      // (i18n, storage, platform), declared only so Expo autolinks them (stackra app-native-deps, STA-1544);
       // the app never imports them itself. expo-tracking-transparency: the same for platform's ExpoSystemSettingsDriver,
       // which reads the App Tracking Transparency answer; the app carries no ATT plugin since it never prompts (STA-1587).
       // expo-status-bar: the app no longer imports it, but the mobile scaffold template does through the same

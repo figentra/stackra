@@ -27,7 +27,6 @@
 import { Checkbox as HeroCheckbox, Table as HeroTable, cn as heroCn } from "@heroui/react";
 import {
   useId,
-  useRef,
   useState,
   type CSSProperties,
   type MouseEvent,
@@ -38,7 +37,6 @@ import {
 } from "react";
 import {
   Button as AriaButton,
-  DropIndicator,
   Virtualizer,
   useDragAndDrop,
   useLocale,
@@ -56,6 +54,8 @@ import { UI_KEYS } from "#core/constants/ui-keys.constant";
 import { useUiText } from "#react/hooks/use-ui-text";
 import { Icon } from "#react/icon/icon";
 import { Spinner } from "#react/spinner/spinner";
+import { useColumnDrag } from "#react/hooks/use-column-drag";
+import { useLiveDrag } from "#react/hooks/use-live-drag";
 import { PinnedTableLayout } from "#react/table/pinned-table-layout";
 import type { TableProps } from "#react/table/table.props";
 
@@ -262,13 +262,6 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
   const primarySort = sortKeys[0];
   // Live widths while a resize drags; the app's widths win once it reports the end.
   const [liveWidths, setLiveWidths] = useState<Readonly<Record<string, number>>>({});
-  const [dragged, setDragged] = useState<string | null>(null);
-  // The column being dragged, read by the drop handlers at once (state only restyles the header).
-  const draggedId = useRef<string | null>(null);
-  const [dropAt, setDropAt] = useState<{
-    readonly id: string;
-    readonly side: "start" | "end";
-  } | null>(null);
   const [scroll, setScroll] = useState({ start: false, end: false });
   const isReorderable = onReorder !== undefined;
   const isFixed = (id: unknown) => disabledKeys?.includes(String(id)) === true;
@@ -277,7 +270,10 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
     return (item && rowHeaderId ? cellTextOf(item, rowHeaderId) : "") || String(id);
   };
   // React Aria's drag and drop: the handle (or the row, by pointer) picks rows up; Enter drops them from the keyboard.
+  // The lifted row follows the pointer and the rows after the target slide aside (`useLiveDrag`).
+  const { follower: liveRowsFollower, attach: liveRowsAttach, ...liveRows } = useLiveDrag();
   const { dragAndDropHooks } = useDragAndDrop({
+    ...liveRows.options,
     getItems: (keys) =>
       [...keys].filter((key) => !isFixed(key)).map((key) => ({ "text/plain": nameOf(key) })),
     onReorder: ({ keys, target }) => {
@@ -286,12 +282,9 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
       const next = reorderItems(items, moving, target.key, target.dropPosition);
       if (next !== items) onReorder?.(next);
     },
-    renderDropIndicator: (target) => (
-      <DropIndicator
-        target={target}
-        className="outline-2 -outline-offset-1 outline-transparent data-[drop-target]:outline-accent"
-      />
-    ),
+    // The density's cell height and padding would give the indicator row a height of its own: it takes none.
+    renderDropIndicator: (target) =>
+      liveRows.renderDropIndicator(target, "[&>td]:h-0! [&>td]:py-0! [&>td]:border-0!"),
   });
   // The columns before the app's: the drag handles, then the selection boxes.
   const leadingWidth = (isReorderable ? HANDLE_WIDTH : 0) + (isMultiple ? SELECTION_WIDTH : 0);
@@ -372,61 +365,34 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
       isVirtualized ? VIRTUAL_COLUMN_CLASS : "",
       column.pin ? "bg-surface-secondary" : "",
       ALIGN_CLASS[column.align ?? "start"],
-      dragged === column.id && "opacity-(--opacity-dimmed)",
-      dropAt?.id === column.id &&
-        (dropAt.side === "start"
-          ? "shadow-[inset_2px_0_0_var(--accent)] rtl:shadow-[inset_-2px_0_0_var(--accent)]"
-          : "shadow-[inset_-2px_0_0_var(--accent)] rtl:shadow-[inset_2px_0_0_var(--accent)]"),
+      columnDrag.dragged === column.id && "opacity-(--opacity-dimmed)",
     );
 
-  // The grip drags a column with the pointer (mouse, pen or touch): it captures the pointer, the header under it is
-  // the drop target (its logical half says before or after it) and the release moves the column. It stops the press
-  // from reaching the header, whose press sorts. The keyboard moves a column from its menu or the column editor.
-  const targetOf = (event: PointerEvent<HTMLElement>) => {
-    const header = document
-      .elementFromPoint(event.clientX, event.clientY)
-      ?.closest<HTMLElement>("[role=columnheader][data-key]");
-    const id = header?.getAttribute("data-key");
-    if (!header || !id || !isMovable(id) || !columns.some((column) => column.id === id))
-      return null;
-    const box = header.getBoundingClientRect();
-    const isLeftHalf = event.clientX < box.left + box.width / 2;
-    return {
-      id,
-      side: (isLeftHalf === (direction !== "rtl") ? "start" : "end") as "start" | "end",
-    };
-  };
+  // The grip drags a column with the pointer (mouse, pen or touch): it captures the pointer, a lifted copy of the header
+  // follows it while the columns slide to make room (`useColumnDrag`), and the release moves the column. It stops the
+  // press from reaching the header, whose press sorts. The keyboard moves a column from its menu or the column editor.
+  const columnDrag = useColumnDrag({
+    order: columns.map((column) => column.id),
+    isMovable,
+    direction,
+    onMove: (id, index) => onColumnMove?.(id, index),
+  });
   const gripProps = (column: TableColumn) => ({
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
       if (event.button !== 0) return;
       event.stopPropagation();
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
-      draggedId.current = column.id;
-      setDragged(column.id);
+      const header = event.currentTarget.closest<HTMLElement>("[role=columnheader]");
+      if (header) columnDrag.begin(column.id, header, event.clientX, event.clientY);
     },
     onMouseDown: (event: MouseEvent<HTMLElement>) => event.stopPropagation(),
     onPointerMove: (event: PointerEvent<HTMLElement>) => {
-      if (draggedId.current === null) return;
-      const target = targetOf(event);
-      const next = target && target.id !== draggedId.current ? target : null;
-      if (next?.id !== dropAt?.id || next?.side !== dropAt?.side) setDropAt(next);
+      columnDrag.move(event.clientX, event.clientY);
     },
-    onPointerUp: (event: PointerEvent<HTMLElement>) => {
-      const moving = draggedId.current;
-      const target = targetOf(event);
-      draggedId.current = null;
-      setDragged(null);
-      setDropAt(null);
-      if (moving === null || !target || target.id === moving || !onColumnMove) return;
-      const order = columns.map((entry) => entry.id).filter((id) => id !== moving);
-      onColumnMove(moving, order.indexOf(target.id) + (target.side === "end" ? 1 : 0));
-    },
-    onPointerCancel: () => {
-      draggedId.current = null;
-      setDragged(null);
-      setDropAt(null);
-    },
+    onPointerUp: (event: PointerEvent<HTMLElement>) =>
+      columnDrag.finish(true, event.clientX, event.clientY),
+    onPointerCancel: () => columnDrag.finish(false),
   });
 
   const onScroll = (event: UIEvent<HTMLDivElement>) => {
@@ -453,6 +419,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
     <HeroTable.Content
       // React Aria's table reads `id` as its grid id, though its props type leaves it out.
       {...({ id: tableId } as object)}
+      ref={liveRowsAttach}
       aria-label={label}
       // Virtualised, the grid is as wide as its columns, so the container scrolls sideways (HeroUI clips it otherwise).
       {...(isVirtualized ? { style: { inlineSize: "max-content", minInlineSize: "100%" } } : {})}
@@ -534,7 +501,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
         ) : null}
         <HeroTable.Collection
           items={columns}
-          dependencies={[renderColumnMenu, renderHeader, sortKeys, liveWidths, dragged, dropAt]}
+          dependencies={[renderColumnMenu, renderHeader, sortKeys, liveWidths, columnDrag.dragged]}
         >
           {(column) => {
             const width = widthOf(column);
@@ -572,7 +539,7 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                       <span
                         aria-hidden="true"
                         className="-ms-2 inline-flex w-3 shrink-0 cursor-grab touch-none justify-center text-muted opacity-0 transition-opacity group-hover/header:opacity-100 data-[dragging]:opacity-100 motion-reduce:transition-none"
-                        data-dragging={dragged === column.id || undefined}
+                        data-dragging={columnDrag.dragged === column.id || undefined}
                         {...gripProps(column)}
                       >
                         <Icon name="grip-vertical" size="sm" className="pointer-events-none" />
@@ -651,6 +618,15 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                     {isReorderable ? (
                       <HeroTable.Cell
                         className={cn("pe-0", isVirtualized && VIRTUAL_CELL_CLASS[density])}
+                        // React Aria passes a mouse press through the grip (`pointer-events: none`) to the row's native
+                        // drag, then moves focus to the grip in an effect, which cancels a row's first drag; the grip
+                        // takes the focus at once instead.
+                        onPointerDownCapture={(event: PointerEvent<HTMLElement>) => {
+                          if (event.button === 0 && event.pointerType !== "touch")
+                            event.currentTarget
+                              .querySelector<HTMLElement>('[slot="drag"]')
+                              ?.focus({ preventScroll: true });
+                        }}
                         style={
                           startPins.length > 0 && !isVirtualized
                             ? {
@@ -661,7 +637,11 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
                             : {}
                         }
                       >
-                        {isFixed(item.id) ? null : (
+                        {isFixed(item.id) ? (
+                          // A fixed row (a total) still drags natively with its row, so React Aria wants its grip; a
+                          // disabled, invisible one stands in, out of the tab order and the accessibility tree.
+                          <AriaButton slot="drag" isDisabled className="invisible size-6" />
+                        ) : (
                           <AriaButton
                             slot="drag"
                             aria-label={t(COLLECTION_KEYS.ui.collection.row_handle, {
@@ -841,6 +821,8 @@ export function Table<TItem extends CollectionItem = CollectionItem>({
       <div role="status" className="sr-only">
         {isLoading ? loadingText : ""}
       </div>
+      {liveRowsFollower}
+      {columnDrag.follower}
     </HeroTable>
   );
 }

@@ -1,0 +1,245 @@
+{
+  "generatedFrom": {
+    "hash": "86f5f5b40a7eae00",
+    "heroDoc": "vendor/heroui/native/bottom-sheet.json",
+    "propsFiles": ["ui/src/native/sheet/sheet.props.ts"]
+  },
+  "importLine": "import { Sheet } from \"@stackra/ui/native\";",
+  "key": "free/sheet",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+          "name": "onOpenChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(isOpen: boolean) => void"
+        },
+        {
+          "description": "The drawer's primary action, run by `confirmShortcut` (Mod+Enter by default) while it is the topmost overlay. Page\nshortcuts pause while any drawer is open (ADR 0508). Web only today.",
+          "name": "onConfirm",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "extends": "BottomSheet",
+      "name": "Sheet",
+      "props": [
+        {
+          "description": "The sheet's parts, usually a header, a body and a footer; any element is allowed.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "The element that opens the sheet when pressed: a Button, or any pressable element. Leave it out for a sheet the\napp opens through `isOpen`. Focus returns to it when the sheet closes.",
+          "name": "trigger",
+          "required": false,
+          "source": "stackra",
+          "type": "ReactElement<unknown, string | JSXElementConstructor<any>>"
+        },
+        {
+          "description": "The edge it comes from: `bottom` (the default), `top`, or `start` and `end` by reading direction.",
+          "name": "placement",
+          "required": false,
+          "source": "stackra",
+          "type": "\"top\" | \"bottom\" | \"start\" | \"end\""
+        },
+        {
+          "description": "The partial sizes it rests at, smallest first: pixels (points on native) or a share as `\"50%\"`. It opens at the\nfirst, a swipe moves through them (several in one swipe) and the full size is always the last stop, so it is not\nlisted.",
+          "name": "snapPoints",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SnapPoint[]"
+        },
+        {
+          "description": "True, the default, to close on a press outside, Escape or a swipe away. False keeps it open until a close control\ninside it is pressed.",
+          "name": "isDismissable",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The backdrop's look: `opaque` (the default), `blur` or `transparent`.",
+          "name": "backdrop",
+          "required": false,
+          "source": "stackra",
+          "type": "\"transparent\" | \"opaque\" | \"blur\""
+        },
+        {
+          "description": "True to float the sheet clear of the screen's edges with every corner rounded. Defaults to false on web and true\non native (every native sheet is inset, owner decision 2026-10-24).",
+          "name": "isDetached",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The accessible name for a sheet that has no `Sheet.Title`; with a title, the title names it.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+          "name": "isOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+          "name": "defaultOpen",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "default": "mod+enter",
+          "description": "The binding of `onConfirm`. Defaults to `mod+enter`.",
+          "name": "confirmShortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Animation configuration",
+          "name": "animation",
+          "required": false,
+          "source": "heroui",
+          "type": "false | \"disabled\""
+        },
+        {
+          "description": "Additional CSS class for the background",
+          "name": "backgroundClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS class for the bottom sheet",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS class for the container",
+          "name": "containerClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS class for the content container",
+          "name": "contentContainerClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Props for the content container",
+          "name": "contentContainerProps",
+          "required": false,
+          "source": "heroui",
+          "type": "Omit<BottomSheetViewProps, \"children\">"
+        },
+        {
+          "description": "Additional CSS class for the handle",
+          "name": "handleClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "description": "Additional CSS class for the handle indicator",
+          "name": "handleIndicatorClassName",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "undefined",
+          "description": "View style to be applied to the sheet container component,\nit also could be an Animated Style.",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "any"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityProps"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsAndroid",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsAndroid"
+        },
+        {
+          "description": "",
+          "name": "...AccessibilityPropsIOS",
+          "required": false,
+          "source": "heroui",
+          "type": "AccessibilityPropsIOS"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "heroui",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...BottomSheetAnimationConfigs",
+          "required": false,
+          "source": "heroui",
+          "type": "BottomSheetAnimationConfigs"
+        },
+        {
+          "description": "",
+          "name": "...BottomSheetProps",
+          "required": false,
+          "source": "heroui",
+          "type": "BottomSheetProps"
+        },
+        {
+          "description": "",
+          "name": "...NullableAccessibilityProps",
+          "required": false,
+          "source": "heroui",
+          "type": "NullableAccessibilityProps"
+        }
+      ]
+    },
+    {
+      "name": "Sheet.Header",
+      "props": []
+    },
+    {
+      "name": "Sheet.Title",
+      "props": []
+    },
+    {
+      "name": "Sheet.Body",
+      "props": []
+    },
+    {
+      "name": "Sheet.Footer",
+      "props": []
+    },
+    {
+      "name": "Sheet.Close",
+      "props": []
+    }
+  ],
+  "platform": "native"
+}

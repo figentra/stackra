@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "6a6265a493a8dbb7",
+    "hash": "9b2a0a52b852e4fc",
     "propsFiles": ["ui/src/native/tooltip/tooltip.props.ts"]
   },
   "importLine": "import { Tooltip } from \"@stackra/ui/native\";",
@@ -38,6 +38,13 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "description": "A key binding (`mod+s`) drawn after the words as a key hint, so a tooltip shows how to run the action. Web only.",
+          "name": "shortcut",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
         },
         {
           "description": "The open state, for a controlled overlay; pair it with `onOpenChange`.",

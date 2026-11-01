@@ -77,7 +77,7 @@ jobs:
       id-token: write # the registry's OIDC exchange and the Sigstore provenance of each tarball
     outputs:
       published: ${{ steps.changesets.outputs.published }}
-      packages: ${{ steps.changesets.outputs.publishedPackages }}
+      packages: ${{ steps.changesets.outputs.published-packages }}
     env:
       # A step's `if` cannot read `secrets`, so only whether the caller passed the App key is carried, never a value.
       HAS_APP_SECRETS: ${{ secrets.app-id != '' && secrets.app-private-key != '' }}

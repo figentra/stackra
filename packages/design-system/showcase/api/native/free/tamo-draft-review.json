@@ -1,0 +1,81 @@
+{
+  "generatedFrom": {
+    "hash": "ca66fd2d3dc53066",
+    "propsFiles": ["ui/src/native/tamo-draft-review/tamo-draft-review.props.ts"]
+  },
+  "importLine": "import { TamoDraftReview } from \"@stackra/ui/native\";",
+  "key": "free/tamo-draft-review",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with the draft, as edited, to put it in the field.",
+          "name": "onAccept",
+          "required": true,
+          "source": "stackra",
+          "type": "(text: string) => void"
+        },
+        {
+          "description": "Called to drop the draft.",
+          "name": "onDiscard",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Stops the task while working.",
+          "name": "onStop",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Runs the task again after an error.",
+          "name": "onRetry",
+          "required": false,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "TamoDraftReview",
+      "props": [
+        {
+          "description": "The text as it is now; empty for a first draft.",
+          "name": "before",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Tamo's draft.",
+          "name": "after",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The task's state: `working` shows the shimmer and Stop, `error` the message and Try again.",
+          "name": "status",
+          "required": false,
+          "source": "stackra",
+          "type": "\"error\" | \"idle\" | \"ready\" | \"working\""
+        },
+        {
+          "description": "The heading; defaults to \"Tamo's draft\".",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Classes added to the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "native"
+}

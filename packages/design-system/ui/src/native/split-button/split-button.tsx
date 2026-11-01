@@ -48,6 +48,9 @@ export function SplitButton({
   defaultOpen,
   onOpenChange,
   className,
+  // Shortcut props draw nothing on native yet: hardware-keyboard hints are a later step (ADR 0508).
+  shortcut: _shortcut,
+  shortcutId: _shortcutId,
   ...rest
 }: SplitButtonProps): ReactElement {
   const [ownOpen, setOwnOpen] = useState(defaultOpen ?? false);

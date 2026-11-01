@@ -65,7 +65,7 @@ The package has the one entry `.` (ADR 0127, 2026-10-24 note). Until `stackra ge
 ### What the rules do not check
 
 - Where a file sits (`kind-path`), member roots, entries and names (`*Guard`, abbreviations): those are validator
-  checks in `validate-repository.mjs`.
+  checks in `stackra validate --repository`.
 - Whether a base resolves to a registered `@stackra/*` kind, class names (`kind_class_name`) and identities: those
   are gen checks.
 - Which kinds a decorator may target (`facet-target`): it needs gen's decorator registry.

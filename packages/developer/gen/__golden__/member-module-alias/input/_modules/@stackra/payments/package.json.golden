@@ -1,0 +1,13 @@
+{
+  "name": "@stackra/payments",
+  "version": "0.2.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts"
+    },
+    "./node": {
+      "types": "./node.d.ts"
+    }
+  }
+}

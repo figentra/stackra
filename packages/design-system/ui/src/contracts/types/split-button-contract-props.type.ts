@@ -17,9 +17,14 @@ import type { IconSlot } from "#contracts/types/icon-slot.type";
 import type { MenuSection } from "#contracts/types/menu-section.type";
 import type { OpenStateContractProps } from "#contracts/types/open-state-contract-props.type";
 import type { PlacementContractProps } from "#contracts/types/placement-contract-props.type";
+import type { ShortcutContractProps } from "#contracts/types/shortcut-contract-props.type";
 
 /** Props shared by the web and native `SplitButton`. The open state is the caret menu's. */
-export interface SplitButtonContractProps extends OpenStateContractProps, PlacementContractProps {
+export interface SplitButtonContractProps
+  extends
+    OpenStateContractProps,
+    PlacementContractProps,
+    Pick<ShortcutContractProps, "shortcut" | "shortcutId"> {
   /** The primary action's visible label, which is also its accessible name. */
   readonly children: ReactNode;
   /** Called when the primary action is pressed. */

@@ -32,7 +32,7 @@ must exist first. Reasoning: `apps/docs/src/docs/constitution/tenancy.mdx`.
    `select set_config(name, value, true)` for that transaction only; nothing sets an `app.*` setting for the session.
    `pnpm validate` refuses `set_config(` with a third argument other than `true`, `SET app.` and `SET LOCAL app.`
    outside the isolation driver, `TenantIsolationService` and the database drivers (ADR 0495,
-   `tools/scripts/session-settings.mjs`).
+   `stackra validate --repository`).
 7. **Tests.** Every service with tenant-owned tables ships `isolation.test.ts` proving tenant B gets zero rows or 404
    on tenant A's data for list/get/update/delete, and that a handler without `withTenant()` returns zero rows.
 

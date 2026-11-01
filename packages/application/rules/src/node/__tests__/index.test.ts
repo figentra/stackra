@@ -18,6 +18,7 @@ describe("@stackra/rules/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "ConditionField",
       "ConditionFieldService",
+      "RULES_ENTITIES",
       "RuleSet",
       "RuleSetService",
     ]);

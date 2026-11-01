@@ -16,6 +16,7 @@ export { Lifetime } from "#core/decorators/lifetime.decorator";
 export { Replaces } from "#core/decorators/replaces.decorator";
 export { SystemClockDriver } from "#core/drivers/system-clock.driver";
 export { DecoratorTarget } from "#core/enums/decorator-target.enum";
+export { UnboundTokenError } from "#core/errors/unbound-token.error";
 export { UnresolvedPortError } from "#core/errors/unresolved-port.error";
 export { createDecorator } from "#core/functions/create-decorator.function";
 export { createKind } from "#core/functions/create-kind.function";

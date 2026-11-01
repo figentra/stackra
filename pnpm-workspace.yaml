@@ -14,7 +14,7 @@ packages:
   - workers/*
 
 # `strict`: `pnpm add` only accepts versions that already exist in a catalog — a new dependency is added
-# here first, then referenced. tools/scripts/validate-repository.mjs enforces the same for hand edits.
+# here first, then referenced. `stackra validate --repository` enforces the same for hand edits.
 catalogMode: strict
 
 # Refuse an unsupported Node (engines). Lives here, not in .npmrc, so npm stops warning about pnpm-only keys;
@@ -93,7 +93,7 @@ catalogs:
     # tsdown run. Babel 8 ships its own types, so no @types/babel__* entries. The plugin reaches parser, traverse and
     # types through @babel/core (its `types` namespace), so they get no entries of their own.
     "@babel/core": 8.0.7
-  # Root repo tooling that loads `typescript` as a JS API (tools/scripts/doc-standard.mjs), which TypeScript 7 (native)
+  # Root repo tooling that loads `typescript` as a JS API (@stackra/repo-checks' doc-standard check), which TypeScript 7 (native)
   # does not ship yet. Members keep `tsc` from catalog:build; their own node_modules/.bin comes first on PATH.
   tooling:
     typescript: 6.0.3
@@ -106,7 +106,7 @@ catalogs:
     vitest: 5.0.5
     "@vitest/coverage-v8": 5.0.3
     knip: 6.41.0
-    # Copy-paste detector behind tools/scripts/duplication.mjs, the per-member ratchet of `pnpm validate` (rule-gap
+    # Copy-paste detector behind `stackra duplication`, the per-member ratchet of `pnpm validate` (rule-gap
     # B-9, stackra-235). 5.x is the Rust engine (platform binaries as optional dependencies); MIT.
     jscpd: 5.4.1
     # Test-only IndexedDB for @stackra/platform's share inbox. Apache-2.0.
@@ -128,17 +128,17 @@ catalogs:
     "@vitejs/plugin-react": 6.1.1
     tailwindcss: 4.3.3
     "@tailwindcss/vite": 4.3.3
-    "@heroui/react": 3.2.6
-    "@heroui/styles": 3.2.6
+    "@heroui/react": 3.2.7
+    "@heroui/styles": 3.2.7
     # React Aria's I18nProvider for @stackra/ui/react (ADR 0302, owner-approved 2026-10-23); pinned to the version
-    # @heroui/react 3.2.6 resolves its react-aria-components peer to, so both share one React Aria instance.
+    # @heroui/react 3.2.7 resolves its react-aria-components peer to, so both share one React Aria instance.
     react-aria-components: 1.22.1
     # React Aria itself for @stackra/ui/react's UNSAFE_PortalProvider, which react-aria-components does not re-export
     # (HeroUI popovers scoped inside brand preview frames; owner-approved 2026-10-29); pinned to the version
-    # react-aria-components 1.22.1 and @heroui/react 3.2.6 resolve to, so all three share one React Aria instance.
+    # react-aria-components 1.22.1 and @heroui/react 3.2.7 resolve to, so all three share one React Aria instance.
     react-aria: 3.53.1
     # Date values for @stackra/ui DateField and DatePicker (owner-approved 2026-10-24); pinned to the version
-    # react-aria-components 1.22.1 and @heroui/react 3.2.6 already resolve, so one copy serves all three.
+    # react-aria-components 1.22.1 and @heroui/react 3.2.7 already resolve, so one copy serves all three.
     "@internationalized/date": 3.12.4
     "@testing-library/react": 16.3.3
     "@testing-library/dom": 10.4.2

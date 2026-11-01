@@ -2074,9 +2074,18 @@ export function createSourceReader(
       // Trait fields come from `Model.with(...)` mixins: their declarations are generic, so the checker types them.
       const declared = new Set([...fields.map((field) => field.name), ...relations]);
       const traitFields: string[] = [];
+      let authoredOptional = false;
       for (const property of host.properties(host.typeAt(node.name))) {
         const propertyName = host.symbolName(property);
         const declaration = host.declarations(property)[0];
+        // An `[OptionalProps]` the member writes beside its model wins: a generated one would redeclare it (TS2717).
+        if (
+          propertyName.startsWith("__@OptionalProps@") &&
+          host
+            .declarations(property)
+            .some((written) => rel(host.fileName(written)).startsWith("src/"))
+        )
+          authoredOptional = true;
         if (
           declared.has(propertyName) ||
           !host.symbolHas(property, "Property") ||
@@ -2109,7 +2118,10 @@ export function createSourceReader(
         ...head,
         fields,
         relations,
-        entity: entityOf(name, info.chain, relations, traitFields),
+        entity: {
+          ...entityOf(name, info.chain, relations, traitFields),
+          ...(authoredOptional ? { optional: [] } : {}),
+        },
       };
     }
     return { ...head, fields, relations };

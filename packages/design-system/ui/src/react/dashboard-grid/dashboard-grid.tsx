@@ -23,7 +23,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { type PointerEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import {
   Button as AriaButton,
-  DropIndicator,
   GridList,
   GridListItem,
   useDragAndDrop,
@@ -39,6 +38,7 @@ import { DASHBOARD_SPAN } from "#react/dashboard-grid/dashboard-span.constant";
 import type { DashboardGridProps } from "#react/dashboard-grid/dashboard-grid.props";
 import { useDashboardLayout } from "#react/hooks/use-dashboard-layout";
 import { useUiText } from "#react/hooks/use-ui-text";
+import { useLiveDrag } from "#react/hooks/use-live-drag";
 import { Icon } from "#react/icon/icon";
 
 /** The spring a tile settles with after a move. */
@@ -152,31 +152,26 @@ export function DashboardGrid({
     scope?.querySelector<HTMLElement>(`[data-action="${pending.action}"]`)?.focus();
   });
 
+  // A wrapping grid: the gap is a tile-sized slot in the flow, and the tiles spring around it (their layout animation).
+  const live = useLiveDrag({ mode: "flow" });
+  const draggedSize = tiles.find((tile) => live.draggedKeys.has(tile.id))?.size;
   const { dragAndDropHooks } = useDragAndDrop({
+    ...live.options,
     getItems: (keys) => [...keys].map((key) => ({ "text/plain": tileLabel(String(key)) })),
     onReorder: ({ keys, target }) => {
       const next = reorderItems(tiles, keys, target.key, target.dropPosition);
       if (next !== tiles) change(next);
     },
-    // A line across the grid where the tile will land; hidden, so it takes no row, until it is the target.
-    renderDropIndicator: (target) => (
-      <DropIndicator
-        target={target}
-        className="col-span-12 hidden h-1 rounded-[var(--radius-pill)] bg-accent data-[drop-target]:block"
-      />
-    ),
-    renderDragPreview: (dragged) => (
-      <div
-        className="scale-[1.02] bg-overlay px-4 py-3 text-foreground shadow-overlay"
-        style={{ borderRadius: "var(--radius-lg)" }}
-      >
-        {dragged[0]?.["text/plain"]}
-      </div>
-    ),
+    // A slot the dragged tile's span where it will land; hidden, so it takes no cell, until it is the target.
+    renderDropIndicator: (target) =>
+      live.renderDropIndicator(
+        target,
+        cn(DASHBOARD_SPAN[draggedSize ?? "full"], "hidden data-[drop-target]:block") ?? "",
+      ),
   });
 
   const grid = cn("grid grid-cols-12 gap-4", className) ?? "";
-  const live = (
+  const liveRegion = (
     <div aria-live="polite" className="sr-only">
       {message}
     </div>
@@ -199,7 +194,7 @@ export function DashboardGrid({
               {renderTile(tile.id)}
             </motion.div>
           ))}
-          {live}
+          {liveRegion}
         </div>
       </div>
     );
@@ -302,7 +297,8 @@ export function DashboardGrid({
           );
         }}
       </GridList>
-      {live}
+      {live.follower}
+      {liveRegion}
     </div>
   );
 }

@@ -16,6 +16,7 @@ describe("@stackra/settings/node", () => {
       "PostgresSettingRevisionStoreDriver",
       "PostgresSettingValueStoreDriver",
       "RegisteredFloorGuardDriver",
+      "SETTINGS_ENTITIES",
       "StoredSetting",
       "StoredSettingRevision",
       "StoredSettingRevisionService",

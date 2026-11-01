@@ -35,11 +35,13 @@ export default {
     {
       decorators: true,
       optionalRequires: [
+        "@shopify/react-native-skia",
         "expo-clipboard",
         "expo-document-picker",
         "expo-haptics",
         "expo-image-picker",
         "expo-video",
+        "victory-native",
       ],
     },
   ),

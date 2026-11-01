@@ -427,6 +427,7 @@
     },
     "button": {
       "Button": {
+        "action": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
         "animation": "Animation configuration (shape depends on `feedbackVariant`)",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
         "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
@@ -475,6 +476,8 @@
         "preventFocusOnPress": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.",
+        "shortcut": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+        "shortcutId": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
         "size": "The height, padding and text size. Defaults to `md`.",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "startIcon": "An element drawn before the label, on the inline-start side: an icon name or any icon element.",
@@ -1103,8 +1106,10 @@
     },
     "command_palette": {
       "CommandPalette": {
+        "ai": "False to leave out the \"Ask Tamo\" entry (shown with the AI module installed and on for the screen, ADR 0507).",
         "defaultOpen": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
-        "hotkey": "The key that opens it with Cmd or Ctrl (web); `k` by default, `false` for none.",
+        "hasRegisteredActions": "False leaves out the \"Actions\" section, which lists every action the shortcut registry holds. Defaults to true.",
+        "hotkey": "The key that opens it: one letter means Cmd or Ctrl with it (`k`, the default), or a whole binding (`mod+shift+p`);\n`false` for none. On web it is registered with the shortcut registry (ADR 0508), so a person can remap it.",
         "isOpen": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
         "onAction": "Called with the id of the command chosen; the palette then closes.",
         "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
@@ -1234,6 +1239,7 @@
     },
     "copy_button": {
       "CopyButton": {
+        "action": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
         "animation": "Animation configuration for scale and highlight feedback",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
         "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
@@ -1279,6 +1285,8 @@
         "preventFocusOnPress": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "shortcut": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+        "shortcutId": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
         "size": "The height, padding and text size. Defaults to `md`.",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
@@ -1410,6 +1418,7 @@
           "onCommit": "Called with a valid value; the editor closes.",
           "row": "The row, read by the column's own rule."
         },
+        "ai": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
         "bulkActions": "The actions on the selection, drawn by the bulk bar while rows are selected (`selectionMode` `multiple`).",
         "bulkActionsLabel": "The spoken name of the bulk bar. Defaults to the table's `label` and the word \"actions\".",
         "collection": "The engine to draw from (`useCollection`): its rows, columns, sort, selection, group, totals and pages.",
@@ -1483,6 +1492,7 @@
           "onItemPress": "Called when a card is pressed.",
           "renderCell": "The content of a value; left out, the column's text."
         },
+        "ai": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
         "board": "Given, the view switcher offers the Board: cards in columns by one field, moved by drag or from a menu.",
         "bulkActions": "The actions on the selection, in the bulk bar.",
         "cards": "What a card shows.",
@@ -1567,6 +1577,7 @@
       },
       "DateInput": {
         "accessibilityLabel": "The input's accessible name when the label is not a string.",
+        "ai": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
         "calendar": "The calendar the day is shown in: `islamic-umalqura` for the Hijri calendar a Saudi market pack sets. Defaults to\n`gregory`. The value stays a Gregorian `CalendarDate` either way.",
         "calendarButtonLabel": "The spoken name of the button that opens the calendar, for example \"Choose the due date\". Defaults to the `ui` catalogue's phrase in the active locale.",
         "className": "Styles the root, as on web.",
@@ -1623,6 +1634,7 @@
     "date_picker": {
       "DatePicker": {
         "accessibilityLabel": "The field's accessible name when the label is not a string.",
+        "ai": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
         "aria-describedby": "Identifies the element (or elements) that describes the object.",
         "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
         "aria-label": "Defines a string value that labels the current element.",
@@ -1675,11 +1687,17 @@
         "validationBehavior": "Whether to use native HTML form validation to prevent form submission\nwhen the value is missing or invalid, or mark the field as required\nor invalid via ARIA.",
         "value": "The current value, for a controlled field; pair it with `onChange`.",
         "variant": "The look of the field: `primary` on the page, `secondary` on a tinted surface. Defaults to `primary`."
+      },
+      "TamoDateAsk": {
+        "isRange": "True for a range (\"last month\").",
+        "onPick": "Called with the day, or the range's ends, once applied.",
+        "today": "The day words count from."
       }
     },
     "date_range_picker": {
       "DateRangePicker": {
         "accessibilityLabel": "The field's accessible name when the label is not a string.",
+        "ai": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
         "aria-label": "The field's accessible name when there is no visible label.",
         "calendar": "The calendar the days are shown in; defaults to `gregory`. The value stays Gregorian.",
         "calendarButtonLabel": "The spoken name of the button that opens the calendar; defaults to the `ui` catalogue's phrase.",
@@ -1900,6 +1918,7 @@
         "backgroundClassName": "Additional CSS class for the background",
         "children": "The drawer's parts, usually a header, a body and a footer; any element is allowed.",
         "className": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement.",
+        "confirmShortcut": "The binding of `onConfirm`. Defaults to `mod+enter`.",
         "containerClassName": "Additional CSS class for the container",
         "contentContainerClassName": "Additional CSS class for the content container",
         "contentContainerProps": "Props for the content container",
@@ -1915,6 +1934,7 @@
         "isOpen": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
         "isResizable": "True to let a side drawer's inner edge be dragged (or arrow-keyed) to set its width, from 320 px to the screen\nless the insets. Defaults to false. Ignored on the top and bottom edges.",
         "label": "The accessible name for a drawer that has no `Drawer.Title`; with a title, the title names it.",
+        "onConfirm": "The drawer's primary action, run by `confirmShortcut` (Mod+Enter by default) while it is the topmost overlay. Page\nshortcuts pause while any drawer is open (ADR 0508). Web only today.",
         "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
         "placement": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
@@ -2174,6 +2194,8 @@
         "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
         "onPress": "Called when the Fab is pressed; without `actions` it is the Fab's action.",
         "placement": "Where it sits. Defaults to `bottom-end`, the reading end, so bottom left in Arabic.",
+        "shortcut": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+        "shortcutId": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
         "size": "The size. Defaults to `lg`.",
         "testID": "Used to locate this view in end-to-end tests.",
         "variant": "The emphasis. Defaults to `primary`."
@@ -2310,6 +2332,7 @@
     "file_trigger": {
       "FileTrigger": {
         "acceptedFileTypes": "The MIME types (`image/*`, `application/pdf`) or extensions (`.csv`) the picker offers; all when empty.",
+        "action": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
         "allowsMultiple": "True to let the user pick more than one file; the camera always takes one.",
         "animation": "Animation configuration for scale and highlight feedback",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
@@ -2358,6 +2381,8 @@
         "preventFocusOnPress": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "shortcut": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+        "shortcutId": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
         "size": "The height, padding and text size. Defaults to `md`.",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "source": "What the button opens. Defaults to `files`; `photos` and `camera` accept images only.",
@@ -2380,6 +2405,7 @@
     },
     "filter_bar": {
       "FilterBar": {
+        "ai": "False to leave Tamo out here; Tamo shows only with the AI module installed and on for the screen (ADR 0507).",
         "collection": "The engine whose search and filter the bar edits (`useCollection`).",
         "id": "Used to reference react managed views from native code.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
@@ -2392,6 +2418,9 @@
         "definition": "The filter being edited; its kind picks the editor.",
         "onChange": "Called with the whole next value, or `undefined` to drop the filter.",
         "value": "What the query holds for the filter, or `undefined` when it holds nothing."
+      },
+      "TamoFilterAsk": {
+        "onDone": "Called once the proposal is applied or discarded (a popover closes)."
       }
     },
     "filter_panel": {
@@ -2447,6 +2476,8 @@
     "form": {
       "Form": {
         "action": "The URL to submit the form data to.",
+        "ai": "False to leave out Tamo's \"Fill from text\" (offered with `form`, the AI module installed and Tamo on for the\nscreen, ADR 0507).",
+        "aiFields": "The fields Tamo may fill from text; left out, the form's plain text inputs and areas.",
         "aria-describedby": "Identifies the element (or elements) that describes the object.",
         "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
         "aria-label": "Accessibility label for the form.",
@@ -2469,10 +2500,16 @@
         "role": "An ARIA role override to apply to the form element.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement.",
         "submit": "Where a valid submit posts its values, such as a route's `useSubmit()`; needs `form`.",
+        "submitShortcut": "The binding that submits the form while focus is inside it, registered with the shortcut registry so the cheat\nsheet lists it and a person can remap it (ADR 0508). Defaults to `mod+enter` when `isSubmitOnModEnter`, else none;\n`false` registers none.",
         "target": "Where to display the response after submitting the form.",
         "testID": "Used to locate this view in end-to-end tests.",
         "validationBehavior": "Whether to use native HTML validation or ARIA validation. 'native' blocks form submission, 'aria' displays errors in realtime.",
         "validationErrors": "Server-side validation errors mapped by field name. Displayed immediately and cleared when user modifies the field."
+      },
+      "TamoFormFill": {
+        "fields": "The fields Tamo may fill; left out, the form's plain text inputs and areas, named by their labels.",
+        "onReview": "Called with the names Tamo filled, or an empty list once the person kept or undid them.",
+        "pending": "The names awaiting the person's check."
       }
     },
     "form_error_summary": {
@@ -2637,6 +2674,7 @@
     },
     "icon_button": {
       "IconButton": {
+        "action": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
         "animation": "Animation configuration for scale and highlight feedback",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
         "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
@@ -2683,6 +2721,8 @@
         "preventFocusOnPress": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "shortcut": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+        "shortcutId": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
         "size": "The height, padding and text size. Defaults to `md`.",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
@@ -2804,6 +2844,7 @@
     },
     "input_group": {
       "InputGroup": {
+        "ai": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
         "aria-activedescendant": "Identifies the currently active element when DOM focus is on a composite widget, textbox,\ngroup, or application.",
         "aria-autocomplete": "Indicates whether inputting text could trigger display of one or more predictions of the user's\nintended value for an input and specifies how predictions would be presented if they are made.",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
@@ -3159,6 +3200,7 @@
     "masked_field": {
       "MaskedField": {
         "accessibilityLabel": "The field's name for assistive technology when it has no string `label`.",
+        "ai": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
         "aria-label": "The field's name for assistive technology when it has no visible `label`.",
         "className": "Styles the root.",
         "defaultValue": "The starting value, for an uncontrolled field.",
@@ -3398,6 +3440,7 @@
         "background": "Background layer rendered behind the dialog content.\n- `undefined` (default): renders `Dialog.ContentBackground`, whose\n  content is decided by the active library theme\n- custom node: replaces the default layer entirely (wrap content in\n  `Dialog.ContentBackground` to keep the absolute-fill and clipping)\n- `null`: removes the background layer",
         "children": "The modal's parts, usually a header, a body and a footer; any element is allowed.",
         "className": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement.",
+        "confirmShortcut": "The binding of `onConfirm`. Defaults to `mod+enter`.",
         "defaultOpen": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
         "forceMount": "Whether to force mount the component in the DOM\nUseful for animation purposes when component needs to be present but hidden",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
@@ -3407,6 +3450,7 @@
         "isOpen": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
         "label": "The accessible name for a modal that has no `Modal.Title`; with a title, the title names it.",
         "motion": "How the dialog enters: `slide-up`, `stick-top` (flush with the top) or `slide-side` (from the inline-end side, full\nheight). Left out, it keeps the runtime's own entrance. A reduced motion level fades it instead.",
+        "onConfirm": "The modal's primary action, run by `confirmShortcut` (Mod+Enter by default) while this is the topmost overlay, so\na person confirms without reaching for the mouse. Page shortcuts pause while any modal is open (ADR 0508).",
         "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
         "position": "The dialog's vertical place on the screen. `auto`, the default, is the runtime's choice (centred, or at the bottom\non a narrow web screen). It is `position` and not `placement`, which ADR 0312 keeps for `Placement`.",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
@@ -3506,6 +3550,7 @@
     },
     "morph_button": {
       "MorphButton": {
+        "action": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
         "animation": "Animation configuration for scale and highlight feedback",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
         "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
@@ -3552,6 +3597,8 @@
         "preventFocusOnPress": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "shortcut": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+        "shortcutId": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
         "size": "The size. Defaults to `md`.",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "state": "The state shown. Defaults to `idle`.",
@@ -3933,6 +3980,7 @@
     },
     "password_field": {
       "PasswordField": {
+        "ai": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
         "aria-activedescendant": "Identifies the currently active element when DOM focus is on a composite widget, textbox,\ngroup, or application.",
         "aria-autocomplete": "Indicates whether inputting text could trigger display of one or more predictions of the user's\nintended value for an input and specifies how predictions would be presented if they are made.",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
@@ -4229,6 +4277,7 @@
     },
     "progress_button": {
       "ProgressButton": {
+        "action": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
         "animation": "Animation configuration for scale and highlight feedback",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
         "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
@@ -4278,6 +4327,8 @@
         "progressLabel": "What a screen reader says with the percentage, for example \"Uploading\". Defaults to the label.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "shortcut": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+        "shortcutId": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
         "size": "The height, padding and text size. Defaults to `md`.",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "startIcon": "An element drawn before the label, on the inline-start side: an icon name or any icon element.",
@@ -4833,6 +4884,7 @@
         "placeholder": "Text shown while the field is empty; it hints at what to search for and never replaces the label.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "shortcut": "A key binding that moves focus to the field from anywhere on the page (`/`), shown as a key hint. Web only (ADR 0508).",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "spellCheck": "An enumerated attribute that defines whether the element may be checked for spelling errors.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/spellcheck).",
         "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
@@ -4962,6 +5014,7 @@
         "className": "Additional CSS classes",
         "elementType": "The HTML element type that will be used to render the separator.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+        "isDecorative": "Whether the divider is purely visual and hidden from assistive technology.",
         "orientation": "The axis of the rule; a vertical one stretches to its row's height. Defaults to `horizontal`.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
         "render": "Overrides the default DOM element with a custom render function.",
@@ -5085,12 +5138,120 @@
         "variant": "The button's emphasis. Defaults to `secondary`, or `ghost` when icon only."
       }
     },
+    "sheet": {
+      "Sheet": {
+        "Close": {
+          "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
+          "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
+          "aria-describedby": "Identifies the element (or elements) that describes the object.",
+          "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "aria-disabled": "Indicates whether the element is disabled to users of assistive technology.",
+          "aria-expanded": "Indicates whether the element, or another grouping element it controls, is currently expanded\nor collapsed.",
+          "aria-haspopup": "Indicates the availability and type of interactive popup element, such as menu or dialog, that\ncan be triggered by an element.",
+          "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
+          "aria-pressed": "Indicates the current \"pressed\" state of toggle buttons.",
+          "autoFocus": "Whether the element should receive focus on render.",
+          "excludeFromTabOrder": "Whether to exclude the element from the sequential tab order. If true,\nthe element will not be focusable via the keyboard by tabbing. This should\nbe avoided except in rare scenarios where an alternative means of accessing\nthe element or its functionality via the keyboard is available.",
+          "form": "The `<form>` element to associate the button with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button#form).",
+          "formAction": "The URL that processes the information submitted by the button.\nOverrides the action attribute of the button's form owner.",
+          "formEncType": "Indicates how to encode the form data that is submitted.",
+          "formMethod": "Indicates the HTTP method used to submit the form.",
+          "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
+          "formTarget": "Overrides the target attribute of the button's form owner.",
+          "icon": "An icon in place of HeroUI's close mark: an icon name or any icon element.",
+          "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "isDisabled": "True to refuse presses and show the disabled style.",
+          "isPending": "Whether the button is in a pending state. This disables press and hover events\nwhile retaining focusability, and announces the pending state to screen readers.",
+          "label": "The accessible name in the app's language, for example \"Close\" or \"Dismiss notification\".",
+          "name": "Submitted as a pair with the button's value as part of the form data.",
+          "onBlur": "Handler that is called when the element loses focus.",
+          "onClick": "**Not recommended – use `onPress` instead.** `onClick` is an alias for `onPress`\nprovided for compatibility with other libraries. `onPress` provides\nadditional event details for non-mouse interactions.",
+          "onFocus": "Handler that is called when the element receives focus.",
+          "onFocusChange": "Handler that is called when the element's focus status changes.",
+          "onHoverChange": "Handler that is called when the hover state changes.",
+          "onHoverEnd": "Handler that is called when a hover interaction ends.",
+          "onHoverStart": "Handler that is called when a hover interaction starts.",
+          "onKeyDown": "Handler that is called when a key is pressed.",
+          "onKeyUp": "Handler that is called when a key is released.",
+          "onPress": "Called when the button is pressed, by pointer, touch or keyboard.",
+          "onPressChange": "Handler that is called when the press state changes.",
+          "onPressEnd": "Handler that is called when a press interaction ends, either\nover the target or when the pointer leaves the target.",
+          "onPressStart": "Handler that is called when a press interaction starts.",
+          "onPressUp": "Handler that is called when a press is released over the target, regardless of\nwhether it started on the target or not.",
+          "preventFocusOnPress": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
+          "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+          "type": "The behavior of the button when used in an HTML form.",
+          "value": "The value associated with the button's name when it's submitted with the form data."
+        },
+        "Title": {
+          "children": "The title's text; it is also the overlay's accessible name.",
+          "className": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement.",
+          "level": "The title's level in the outline, 1 to 6. Defaults to 2: the page keeps its own `h1`, and the overlay's title is a\nsection of it. React Native has no heading level, so native accepts and ignores it.",
+          "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate."
+        },
+        "animation": "Animation configuration",
+        "aria-describedby": "Identifies the element (or elements) that describes the object.",
+        "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+        "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
+        "backdrop": "The backdrop's look: `opaque` (the default), `blur` or `transparent`.",
+        "backgroundClassName": "Additional CSS class for the background",
+        "children": "The sheet's parts, usually a header, a body and a footer; any element is allowed.",
+        "className": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement.",
+        "confirmShortcut": "The binding of `onConfirm`. Defaults to `mod+enter`.",
+        "containerClassName": "Additional CSS class for the container",
+        "contentContainerClassName": "Additional CSS class for the content container",
+        "contentContainerProps": "Props for the content container",
+        "defaultOpen": "The starting open state, for an uncontrolled overlay. Native's own name for it is `isDefaultOpen`.",
+        "handleClassName": "Additional CSS class for the handle",
+        "handleIndicatorClassName": "Additional CSS class for the handle indicator",
+        "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+        "isDetached": "True to float the sheet clear of the screen's edges with every corner rounded. Defaults to false on web and true\non native (every native sheet is inset, owner decision 2026-10-24).",
+        "isDismissable": "True, the default, to close on a press outside, Escape or a swipe away. False keeps it open until a close control\ninside it is pressed.",
+        "isOpen": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
+        "label": "The accessible name for a sheet that has no `Sheet.Title`; with a title, the title names it.",
+        "onConfirm": "The drawer's primary action, run by `confirmShortcut` (Mod+Enter by default) while it is the topmost overlay. Page\nshortcuts pause while any drawer is open (ADR 0508). Web only today.",
+        "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
+        "placement": "The edge it comes from: `bottom` (the default), `top`, or `start` and `end` by reading direction.",
+        "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+        "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "role": "The accessibility role for the dialog.",
+        "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+        "snapPoints": "The partial sizes it rests at, smallest first: pixels (points on native) or a share as `\"50%\"`. It opens at the\nfirst, a swipe moves through them (several in one swipe) and the full size is always the last stop, so it is not\nlisted.",
+        "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement.",
+        "trigger": "The element that opens the sheet when pressed: a Button, or any pressable element. Leave it out for a sheet the\napp opens through `isOpen`. Focus returns to it when the sheet closes."
+      }
+    },
     "shimmer": {
       "Shimmer": {
         "children": "The words of the text kind, and the loading region's name for the block kind. Defaults to \"Thinking…\".",
         "className": "Styles the text or the block of lines.",
         "kind": "`text` (the default) shimmers the words; `block` draws placeholder lines.",
         "lines": "How many placeholder lines the block kind draws; defaults to 3."
+      }
+    },
+    "shortcut_cheat_sheet": {
+      "ShortcutCheatSheet": {
+        "isOpen": "Whether the sheet is open, controlled.",
+        "onOpenChange": "Called when the sheet opens or closes.",
+        "shortcut": "The binding that opens it; `false` registers none. Defaults to `shift+/` (the `?` key)."
+      }
+    },
+    "shortcut_hint": {
+      "ShortcutHint": {
+        "className": "Extra classes on the Kbd.",
+        "isBadge": "True: drawn as a small badge centred above the action (the hold-Mod reveal).",
+        "isDecorative": "True: hidden from screen readers; otherwise read as its spoken form (\"Command K\").",
+        "keys": "The binding (`mod+k`, `g s`); nothing is drawn when it does not parse."
+      }
+    },
+    "shortcut_settings_panel": {
+      "ShortcutSettingsPanel": {
+        "onChange": "Called with the whole new settings when the person changes one; persist it here.",
+        "value": "The settings in force, controlled. Defaults to the nearest provider's."
       }
     },
     "side_panel": {
@@ -5183,7 +5344,7 @@
           "onOpenChange": "Called with the new state each time the nested entries are shown or hidden.",
           "onPress": "Called when the entry is chosen, before `href` is followed.",
           "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
-          "shortcut": "A shortcut to show after the label as text to read (`G O`); a hint only, the app binds the key."
+          "shortcut": "The key binding (`g o`, `mod+1`) that follows the row while it is mounted, drawn after the label (ADR 0508)."
         },
         "MenuSkeleton": {
           "hasIcon": "False to leave out the icon placeholder. Defaults to true.",
@@ -5268,6 +5429,7 @@
           "placeholder": "Text shown while the field is empty; it hints at what to search for and never replaces the label.",
           "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
           "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "shortcut": "A key binding that moves focus to the field from anywhere on the page (`/`), shown as a key hint. Web only (ADR 0508).",
           "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
           "spellCheck": "An enumerated attribute that defines whether the element may be checked for spelling errors.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/spellcheck).",
           "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
@@ -5281,6 +5443,7 @@
           "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref)."
         },
         "Trigger": {
+          "action": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
           "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
           "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
           "aria-describedby": "Identifies the element (or elements) that describes the object.",
@@ -5322,6 +5485,8 @@
           "preventFocusOnPress": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
           "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
           "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+          "shortcut": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+          "shortcutId": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
           "size": "The height, padding and text size. Defaults to `md`.",
           "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
           "style": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
@@ -5553,6 +5718,8 @@
         "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
         "role": "An accessibility role for the group. By default, this is set to `'group'`.\nUse `'region'` when the contents of the group is important enough to be\nincluded in the page table of contents. Use `'presentation'` if the group\nis visual only and does not represent a semantic grouping of controls.",
         "sections": "The related actions the caret opens, in groups.",
+        "shortcut": "The key binding that runs this action: modifiers and one key joined by `+` (`mod+s`, `shift+/`), or a two-key\nsequence (`g o`). `mod` is Command on Apple devices and Control elsewhere.",
+        "shortcutId": "A stable id for the binding (`orders.create`), which a person's remap keys on. Defaults to `keys:<binding>`.",
         "size": "The size of both halves. Defaults to `md`.",
         "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
         "startIcon": "An icon drawn before the primary label, on the inline-start side.",
@@ -5701,6 +5868,7 @@
         "className": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement. A function may be provided to compute the class based on component state.",
         "defaultSelectedKeys": "The ids selected at the start, for an uncontrolled collection.",
         "emptyState": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
+        "hasNumberShortcuts": "True binds Mod+1 to Mod+9 to the first nine usable tabs while the page has no overlay open (ADR 0508). Off by\ndefault: browsers use Mod+1 to Mod+9 to switch their own tabs, and a page with several tab rows would bind them\nall; turn it on for the one main tab row of a page. Native ignores it.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
         "isDisabled": "True to show every tab but refuse selecting any of them.",
         "isLoading": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
@@ -5844,6 +6012,7 @@
         "className": "Additional CSS classes",
         "defaultSelectedKeys": "The ids selected at the start, for an uncontrolled collection.",
         "emptyState": "What the collection shows when `items` is empty and nothing is loading, usually an `EmptyState`.",
+        "hasNumberShortcuts": "True binds Mod+1 to Mod+9 to the first nine usable tabs while the page has no overlay open (ADR 0508). Off by\ndefault: browsers use Mod+1 to Mod+9 to switch their own tabs, and a page with several tab rows would bind them\nall; turn it on for the one main tab row of a page. Native ignores it.",
         "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
         "isDisabled": "True to show every tab but refuse selecting any of them.",
         "isLoading": "True while items load: the collection is busy, and shows its loading state in place of the empty one.",
@@ -5923,6 +6092,165 @@
         "value": "The current value, for a controlled field; pair it with `onChange`."
       }
     },
+    "tamo_ask_box": {
+      "TamoAskBox": {
+        "className": "Classes added to the root.",
+        "isAutoFocus": "True to put the focus in the box when it mounts (it opened in a popover the person asked for).",
+        "isMultiline": "True for a multi-line box (pasted text).",
+        "label": "The box's name. Defaults to \"Ask Tamo\".",
+        "onApply": "Called with the proposal when the person applies it.",
+        "onAsk": "Sends the words; resolves with the proposal, or `null` when there is nothing to propose.",
+        "onDiscard": "Called when the person discards the proposal.",
+        "placeholder": "The hint inside the empty box. Defaults to \"Ask in your own words\".",
+        "renderProposal": "Draws the proposal under the box."
+      }
+    },
+    "tamo_button": {
+      "TamoButton": {
+        "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
+        "aria-current": "Indicates whether this element represents the current item within a container or set of related\nelements.",
+        "aria-describedby": "Identifies the element (or elements) that describes the object.",
+        "aria-details": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+        "aria-disabled": "Indicates whether the element is disabled to users of assistive technology.",
+        "aria-expanded": "Indicates whether the element, or another grouping element it controls, is currently expanded\nor collapsed.",
+        "aria-haspopup": "Indicates the availability and type of interactive popup element, such as menu or dialog, that\ncan be triggered by an element.",
+        "aria-label": "Defines a string value that labels the current element.",
+        "aria-labelledby": "Identifies the element (or elements) that labels the current element.",
+        "aria-pressed": "Indicates the current \"pressed\" state of toggle buttons.",
+        "autoFocus": "Whether the element should receive focus on render.",
+        "className": "Classes added to the root.",
+        "excludeFromTabOrder": "Whether to exclude the element from the sequential tab order. If true,\nthe element will not be focusable via the keyboard by tabbing. This should\nbe avoided except in rare scenarios where an alternative means of accessing\nthe element or its functionality via the keyboard is available.",
+        "form": "The `<form>` element to associate the button with.\nThe value of this attribute must be the id of a `<form>` in the same document.\nSee [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button#form).",
+        "formAction": "The URL that processes the information submitted by the button.\nOverrides the action attribute of the button's form owner.",
+        "formEncType": "Indicates how to encode the form data that is submitted.",
+        "formMethod": "Indicates the HTTP method used to submit the form.",
+        "formNoValidate": "Indicates that the form is not to be validated when it is submitted.",
+        "formTarget": "Overrides the target attribute of the button's form owner.",
+        "id": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+        "isDisabled": "True to refuse presses.",
+        "isIconOnly": "True to draw only the mark (inside a field); the label stays its accessible name.",
+        "isPending": "Whether the button is in a pending state. This disables press and hover events\nwhile retaining focusability, and announces the pending state to screen readers.",
+        "label": "The words, and the name when icon-only. Defaults to \"Ask Tamo\".",
+        "name": "Submitted as a pair with the button's value as part of the form data.",
+        "onBlur": "Handler that is called when the element loses focus.",
+        "onClick": "**Not recommended – use `onPress` instead.** `onClick` is an alias for `onPress`\nprovided for compatibility with other libraries. `onPress` provides\nadditional event details for non-mouse interactions.",
+        "onFocus": "Handler that is called when the element receives focus.",
+        "onFocusChange": "Handler that is called when the element's focus status changes.",
+        "onHoverChange": "Handler that is called when the hover state changes.",
+        "onHoverEnd": "Handler that is called when a hover interaction ends.",
+        "onHoverStart": "Handler that is called when a hover interaction starts.",
+        "onKeyDown": "Handler that is called when a key is pressed.",
+        "onKeyUp": "Handler that is called when a key is released.",
+        "onPress": "Called on a press.",
+        "onPressChange": "Handler that is called when the press state changes.",
+        "onPressEnd": "Handler that is called when a press interaction ends, either\nover the target or when the pointer leaves the target.",
+        "onPressStart": "Handler that is called when a press interaction starts.",
+        "onPressUp": "Handler that is called when a press is released over the target, regardless of\nwhether it started on the target or not.",
+        "preventFocusOnPress": "Whether to prevent focus from moving to the button when pressing it.\n\nCaution, this can make the button inaccessible and should only be used when alternative\nkeyboard interaction is provided, such as ComboBox's MenuTrigger or a NumberField's\nincrement/decrement control.",
+        "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+        "size": "`sm`, `md` (the default) or `lg`.",
+        "slot": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+        "status": "`working` runs the shimmer round the border and marks the button busy. Defaults to `idle`.",
+        "testID": "Used to locate this view in end-to-end tests.",
+        "type": "The behavior of the button when used in an HTML form.",
+        "value": "The value associated with the button's name when it's submitted with the form data."
+      }
+    },
+    "tamo_collection_tools": {
+      "TamoCollectionTools": {
+        "collection": "The engine Tamo filters, sorts, summarises and fills.",
+        "label": "The records' name (\"Orders\"), for the popover's title.",
+        "onCellEdit": "Writes one filled cell, as a DataTable's inline edit does; used when `onFill` is left out.",
+        "onFill": "Writes Tamo's column fill once applied, by row id then column id; left out, \"Fill a column\" is not offered."
+      }
+    },
+    "tamo_draft_review": {
+      "TamoDraftReview": {
+        "after": "Tamo's draft.",
+        "before": "The text as it is now; empty for a first draft.",
+        "className": "Classes added to the root.",
+        "onAccept": "Called with the draft, as edited, to put it in the field.",
+        "onDiscard": "Called to drop the draft.",
+        "onRetry": "Runs the task again after an error.",
+        "onStop": "Stops the task while working.",
+        "status": "The task's state: `working` shows the shimmer and Stop, `error` the message and Try again.",
+        "title": "The heading; defaults to \"Tamo's draft\"."
+      }
+    },
+    "tamo_field_assist": {
+      "TamoFieldAssist": {
+        "children": "The input.",
+        "field": "The field's key, sent with each task.",
+        "hasContinue": "True to offer \"Continue writing\" (a text area).",
+        "isShown": "True to show the Tamo button (the field has had focus: a touch screen has no hover).",
+        "onAccept": "Puts accepted text in the field.",
+        "slot": "The slot `useTamo` returned for the field.",
+        "text": "The field's text now."
+      }
+    },
+    "tamo_ghost_text": {
+      "TamoGhostText": {
+        "children": "The field the suggestion is drawn under.",
+        "className": "Classes added to the root.",
+        "onAccept": "Called with the text plus the suggestion (Tab).",
+        "onDismiss": "Called when the suggestion is dismissed (Escape, or typing on).",
+        "suggestion": "What Tamo suggests next; empty draws nothing.",
+        "value": "The field's current text."
+      }
+    },
+    "tamo_launcher": {
+      "TamoLauncher": {
+        "className": "Classes added to the root.",
+        "isIconOnly": "True to draw only the mark.",
+        "label": "The launcher's words. Defaults to \"Ask Tamo\".",
+        "shortcut": "The launcher's shortcut, as `Mod+J` (Cmd on Apple, Ctrl elsewhere); bound on web. Defaults to `Mod+J`."
+      }
+    },
+    "tamo_mark": {
+      "TamoMark": {
+        "className": "Classes added to the root.",
+        "label": "The mark's spoken name; left out, the mark is hidden from assistive technology.",
+        "size": "`sm` 16, `md` 20 (the default), `lg` 28.",
+        "status": "`working` scans the eyes (still under reduced motion), `error` flattens them. Defaults to `idle`."
+      }
+    },
+    "tamo_marker": {
+      "TamoMarker": {
+        "className": "Classes added to the root.",
+        "label": "The words; default \"Made with Tamo\", or the review words.",
+        "needsReview": "True for a field Tamo filled that the person has not checked yet (\"Filled by Tamo, check it\")."
+      }
+    },
+    "tamo_menu": {
+      "TamoMenu": {
+        "actions": "More actions, after the built-in ones (a module's, through the slot).",
+        "className": "Classes added to the root.",
+        "hasContinue": "True to offer \"Continue writing\" (ghost text).",
+        "isIconOnly": "True to draw the trigger as the mark only.",
+        "kinds": "The built-in actions offered, in order. Defaults to every `TamoActionKind`.",
+        "label": "The trigger's words and name. Defaults to \"Ask Tamo\".",
+        "onAction": "Called with the chosen action: a `TamoActionKind`, `continue`, `draft` or a contributed action's id.",
+        "onOpenChange": "Called when the menu opens or closes.",
+        "size": "The trigger's size.",
+        "status": "The task's state, shown on the trigger.",
+        "text": "The text the actions work on: empty, only \"Draft with Tamo\" is offered; Arabic letters turn Translate to English."
+      }
+    },
+    "tamo_panel": {
+      "TamoPanel": {
+        "className": "Classes added to the panel's log."
+      }
+    },
+    "tamo_status_line": {
+      "TamoStatusLine": {
+        "className": "Classes added to the root.",
+        "errorMessage": "The error's words; defaults to the catalogue's.",
+        "onRetry": "Shown on error, with Try again.",
+        "onStop": "Shown while working, with Stop.",
+        "status": "The task's state.",
+        "workingLabel": "The working words; defaults to \"Tamo is working…\"."
+      }
+    },
     "task_tray": {
       "TaskTray": {
         "className": "Styles the root.",
@@ -5943,6 +6271,7 @@
         "align": "The horizontal alignment; `start` and `end` follow the text direction, `justify` is iOS-only on native. Defaults to `start`.",
         "children": "The text to show; it may hold inline elements and nested Text.",
         "className": "Additional CSS classes",
+        "elementType": "The element drawn: `p` (the default) for a paragraph, `span` inside a sentence or a row, `div` for a block.",
         "id": "Used to reference react managed views from native code.",
         "isTruncated": "True to cut the text to one line with an ellipsis; assistive technology still reads all of it.",
         "lang": "The BCP 47 language of this text when it differs from the screen's, for example `ar` inside an English page.",
@@ -5956,6 +6285,7 @@
     },
     "text_area": {
       "TextArea": {
+        "ai": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
         "aria-activedescendant": "Identifies the currently active element when DOM focus is on a composite widget, textbox,\ngroup, or application.",
         "aria-autocomplete": "Indicates whether inputting text could trigger display of one or more predictions of the user's\nintended value for an input and specifies how predictions would be presented if they are made.",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
@@ -6022,6 +6352,7 @@
     },
     "text_area_field": {
       "TextAreaField": {
+        "ai": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
         "aria-activedescendant": "Identifies the currently active element when DOM focus is on a composite widget, textbox,\ngroup, or application.",
         "aria-autocomplete": "Indicates whether inputting text could trigger display of one or more predictions of the user's\nintended value for an input and specifies how predictions would be presented if they are made.",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
@@ -6082,7 +6413,16 @@
       }
     },
     "text_field": {
+      "TamoFieldAssist": {
+        "children": "The input or text area.",
+        "field": "The field's name, for the per-field setting and the task.",
+        "isMultiline": "True for a text area: the button sits at the top end, and \"Continue writing\" is offered.",
+        "onChange": "Puts new text in the field.",
+        "slot": "The slot, already known to be on for this field.",
+        "value": "The field's text."
+      },
       "TextField": {
+        "ai": "False to leave Tamo out of this field. Tamo's actions show (on hover or focus) only on a plain `text` field, with\nthe AI module installed and Tamo on for the screen and the field (ADR 0507); never on a password, phone or email.",
         "aria-activedescendant": "Identifies the currently active element when DOM focus is on a composite widget, textbox,\ngroup, or application.",
         "aria-autocomplete": "Indicates whether inputting text could trigger display of one or more predictions of the user's\nintended value for an input and specifies how predictions would be presented if they are made.",
         "aria-controls": "Identifies the element (or elements) whose contents or presence are controlled by the current\nelement.",
@@ -6402,6 +6742,7 @@
         "isOpen": "The open state, for a controlled overlay; pair it with `onOpenChange`.",
         "onOpenChange": "Called with the new state each time the overlay opens or closes, from its trigger, a dismissal or the app.",
         "placement": "The side of the trigger it opens on, by reading direction. The runtime flips it when there is no room.",
+        "shortcut": "A key binding (`mod+s`) drawn after the words as a key hint, so a tooltip shows how to run the action. Web only.",
         "shouldCloseOnPress": "Whether the tooltip should close when the trigger is pressed.",
         "shouldSkipAnimation": "Whether to let React Aria skip the enter and exit animations while its global warmup timer is\nactive, i.e. when moving quickly from one tooltip to another.",
         "trigger": "How the tooltip is triggered"

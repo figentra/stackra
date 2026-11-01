@@ -5,8 +5,10 @@
  *          becomes `Database.current()` when built, and before its first query it creates the approved extensions
  *          and applies the member's compiled migrations (`.stackra/migrations` under the working directory), or,
  *          when the member has none, creates the schema from the registered entities. Its statements are counted
- *          for the query guard like production's (`observedLogger`).
- * Boundary: the testing entry only, so a server never loads PGlite (ADR 0269 decision 3). Built with no arguments, so
+ *          for the query guard like production's (`observedLogger`). The events its models record reach the testing
+ *          app after commit, and a rollback drops them (`RecordedEventsSubscriber`, STA-1740).
+ * Boundary: the testing entry only, so a server never loads PGlite (ADR 0269 decision 3). PGlite, its extensions and
+ *           the ORM driver are optional peers loaded on the first `orm` read (`requireTestPeer`), not on import. Built with no arguments, so
  *           the container can build it as a wiring candidate; the ORM is made on first use, so entities registered
  *           after the driver was built are still in it. One database per instance, gone on `close`. Each migration
  *           file runs as the runner would run it (a transactional file in one transaction) without the
@@ -24,14 +26,11 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { citext } from "@electric-sql/pglite/contrib/citext";
-import { ltree } from "@electric-sql/pglite/contrib/ltree";
-import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
-import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
-import { vector } from "@electric-sql/pglite-pgvector";
+import type { Extension, Extensions } from "@electric-sql/pglite";
+import type { vector } from "@electric-sql/pglite-pgvector";
 import { RequestContext, TransactionContext } from "@mikro-orm/core";
-import { MikroORM } from "@mikro-orm/pglite";
-import type { PgliteConnection } from "@mikro-orm/pglite";
+import type * as PgliteOrm from "@mikro-orm/pglite";
+import type { MikroORM, PgliteConnection } from "@mikro-orm/pglite";
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Driver } from "@stackra/container";
 import type { ScopeRef } from "@stackra/contracts";
@@ -46,12 +45,34 @@ import { runTransaction } from "#core/functions/run-transaction.function";
 import { observedLogger } from "#node/functions/observed-logger.function";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 import { readMigrationFiles } from "#node/functions/read-migration-files.function";
+import { requireTestPeer } from "#testing/functions/require-test-peer.function";
+import { RecordedEventsSubscriber } from "#testing/orm/recorded-events.subscriber";
 
 /** Where gen writes a member's compiled migrations, relative to the member root. */
 const MIGRATIONS_FOLDER = join(".stackra", "migrations");
 
 /** The approved extensions PGlite runs: all of ADR 0160's; PostGIS (ADR 0314) is not loaded yet. */
 const EXTENSIONS = ["vector", "ltree", "pg_trgm", "citext", "pgcrypto"] as const;
+
+/** What PGlite and the ORM driver need, loaded together on first use and kept. */
+let peers: { readonly orm: typeof PgliteOrm; readonly extensions: Extensions } | undefined;
+
+/** Loads PGlite, its contrib extensions, pgvector and the ORM driver; none is loaded before a database is used. */
+function loadPeers(): NonNullable<typeof peers> {
+  peers ??= {
+    orm: requireTestPeer<typeof PgliteOrm>("@mikro-orm/pglite"),
+    extensions: {
+      vector: requireTestPeer<{ vector: typeof vector }>("@electric-sql/pglite-pgvector").vector,
+      ltree: requireTestPeer<{ ltree: Extension }>("@electric-sql/pglite/contrib/ltree").ltree,
+      pg_trgm: requireTestPeer<{ pg_trgm: Extension }>("@electric-sql/pglite/contrib/pg_trgm")
+        .pg_trgm,
+      citext: requireTestPeer<{ citext: Extension }>("@electric-sql/pglite/contrib/citext").citext,
+      pgcrypto: requireTestPeer<{ pgcrypto: Extension }>("@electric-sql/pglite/contrib/pgcrypto")
+        .pgcrypto,
+    },
+  };
+  return peers;
+}
 
 /**
  * The in-process Postgres database of the unit tier.
@@ -76,18 +97,22 @@ export class MemoryDatabaseDriver extends Driver(Database) {
 
   /** The MikroORM instance on PGlite. */
   get orm(): MikroORM {
-    this.instance ??= new MikroORM({
+    const { orm, extensions } = loadPeers();
+    this.instance ??= new orm.MikroORM({
       // PGlite reads an in-memory data directory from the database name.
       dbName: "memory://",
       entities: [...REGISTERED_ENTITIES],
       filters: deleteFilters(REGISTERED_ENTITIES),
+      // What a model records reaches the testing app after commit, as the outbox writer hands it on in production.
+      subscribers: [new RecordedEventsSubscriber()],
       // Counted like production, so `strictLoading` and `DatabaseQueryBudgetDriver` see a test's statements.
       loggerFactory: (settings) => observedLogger(settings, []),
       namingStrategy: StackraNamingStrategy,
       discovery: { inferDefaultValues: false, warnWhenNoEntities: false },
       allowGlobalContext: false,
       ensureDatabase: false,
-      driverOptions: { extensions: { vector, ltree, pg_trgm, citext, pgcrypto } },
+      // reason: PGlite's Extensions and the ORM driver's option type come from separately versioned packages
+      driverOptions: { extensions: extensions as never },
       // Kysely opens PGlite's one connection on the first query and awaits this before running it.
       onCreateConnection: () => this.prepare(),
     });

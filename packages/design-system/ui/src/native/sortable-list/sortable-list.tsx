@@ -3,7 +3,8 @@
  * Purpose: the native `SortableList`: rows reordered by dragging their grip handle, or by the "Move up" and "Move
  *          down" accessibility actions VoiceOver and TalkBack offer on each row, with the new position announced. The
  *          picked-up row lifts (scale 1.02 and a shadow) and follows the finger, the rows it passes spring aside, and
- *          it settles with a spring on drop. A light impact haptic plays on pickup and a selection tick on each slot crossed.
+ *          it settles with a spring on drop. A light impact haptic plays on pickup and on drop, and a selection tick on
+ *          each slot crossed.
  * Boundary: controlled only: a move calls `onReorder` with every row in the new order. The drag is React Native's
  *           PanResponder driving Reanimated shared values; rows are assumed to be the same height (the first row's
  *           measured height). Under reduce motion the rows move without springs. Haptics go through `haptics`.
@@ -104,6 +105,7 @@ function SortableRow({
           active.set(-1);
           hover.set(-1);
           dragY.set(0);
+          haptics.play("impact");
           onMove(index, to);
         },
         onPanResponderTerminate: () => {

@@ -9,8 +9,8 @@ Behaviour in Stackra is an **action** (a write) or a **query** (a read) (ADR 009
 the CLI, jobs, the console and the generated clients (ADR 0217); `stackra gen` emits the Encore adapters (ADR 0091).
 You never write `api()`, a controller for business behaviour, or an HTTP response by hand.
 
-This is the v3 target (ADR 0294). `@stackra/actions` and gen do not ship yet, and no member uses these shapes today
-(the conversion is STA-344); the package docs win once they ship.
+This is the v3 shape (ADR 0294) that `@stackra/actions` and gen implement; core's own example and health services keep
+the older shape until STA-344. The package docs win where they differ.
 
 ## Decide first
 

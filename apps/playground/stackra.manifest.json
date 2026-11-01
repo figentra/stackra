@@ -13,10 +13,527 @@
       "dependsOn": []
     }
   ],
-  "actions": [],
-  "events": [],
-  "permissions": [],
+  "actions": [
+    {
+      "key": "identity.operator.bootstrap@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "BootstrapOperatorAction",
+      "file": "src/node/actions/bootstrap-operator.action.ts",
+      "permission": "identity.operator.bootstrap",
+      "risk": "L4",
+      "actors": ["service", "user"],
+      "area": "platform",
+      "endpoint": {
+        "method": "POST",
+        "path": "/platform/operators/bootstrap",
+        "derived": false
+      },
+      "toolOff": "handing out the platform is never an agent's call",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.BootstrapOperatorInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.BootstrapOperatorOutput"
+      },
+      "refusals": ["forbidden"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.account_deletion.cancel@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "CancelAccountDeletionAction",
+      "file": "src/node/actions/cancel-account-deletion.action.ts",
+      "permission": "identity.account_deletion.cancel",
+      "risk": "L2",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "POST",
+        "path": "/account-deletions/cancel",
+        "derived": true
+      },
+      "toolOff": "the account owner's own decision, never an agent's",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionOutput"
+      },
+      "refusals": ["forbidden"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.passkey.challenge@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "ChallengePasskeyAction",
+      "file": "src/node/actions/challenge-passkey.action.ts",
+      "permission": "identity.passkey.challenge",
+      "risk": "L0",
+      "actors": ["anonymous"],
+      "rateLimit": {
+        "perMinute": 10
+      },
+      "area": "public",
+      "toolOff": "signing a person in is the device's, never an agent's",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.ChallengePasskeyInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.ChallengePasskeyOutput"
+      },
+      "refusals": ["rate_limited"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.passkey.confirm@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "ConfirmPasskeyAction",
+      "file": "src/node/actions/confirm-passkey.action.ts",
+      "permission": "identity.passkey.confirm",
+      "risk": "L2",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "PUT",
+        "path": "/passkeys/:passkeyId/confirm",
+        "derived": true
+      },
+      "toolOff": "a passkey is created on the person's own device, never by an agent",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.ConfirmPasskeyInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.ConfirmPasskeyOutput"
+      },
+      "refusals": ["unauthenticated"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.account_deletion.request@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "DeleteMyAccountAction",
+      "file": "src/node/actions/delete-my-account.action.ts",
+      "permission": "identity.account_deletion.request",
+      "risk": "L4",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "POST",
+        "path": "/account-deletions/request",
+        "derived": true
+      },
+      "toolOff": "deleting an account is the person's own decision, never an agent's",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionOutput"
+      },
+      "refusals": ["forbidden"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.session.end_all@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "EndAllMySessionsAction",
+      "file": "src/node/actions/end-all-my-sessions.action.ts",
+      "permission": "identity.session.end_all",
+      "risk": "L2",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "POST",
+        "path": "/sessions/end-all",
+        "derived": true
+      },
+      "toolOff": "the account owner's own security settings, never an agent's",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.SessionsInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.EndedSessionsOutput"
+      },
+      "refusals": ["forbidden", "unauthenticated"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.session.end@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "EndMySessionAction",
+      "file": "src/node/actions/end-my-session.action.ts",
+      "permission": "identity.session.end",
+      "risk": "L2",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "PUT",
+        "path": "/sessions/:sessionId/end",
+        "derived": true
+      },
+      "toolOff": "the account owner's own security settings, never an agent's",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.EndMySessionInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.EndedSessionsOutput"
+      },
+      "refusals": ["forbidden", "unauthenticated", "not_found"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.session.end_user@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "EndUserSessionsAction",
+      "file": "src/node/actions/end-user-sessions.action.ts",
+      "permission": "identity.session.end_user",
+      "risk": "L3",
+      "actors": ["user", "service"],
+      "endpoint": {
+        "method": "POST",
+        "path": "/sessions/end-user",
+        "derived": true
+      },
+      "toolOff": "signing a person out is an administrator's decision, never an agent's",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.EndUserSessionsInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.EndedSessionsOutput"
+      },
+      "refusals": ["not_found"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.account_deletion.erase@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "EraseDueAccountsAction",
+      "file": "src/node/actions/erase-due-accounts.action.ts",
+      "permission": "identity.account_deletion.erase",
+      "risk": "L4",
+      "actors": ["system"],
+      "job": {
+        "unique": true,
+        "timeout": "10m",
+        "cron": {
+          "schedule": "20 * * * *",
+          "perScope": true
+        }
+      },
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.EraseDueAccountsOutput"
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.passkey.register@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "RegisterPasskeyAction",
+      "file": "src/node/actions/register-passkey.action.ts",
+      "permission": "identity.passkey.register",
+      "risk": "L2",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "POST",
+        "path": "/passkeys/register",
+        "derived": true
+      },
+      "toolOff": "a passkey is created on the person's own device, never by an agent",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.RegisterPasskeyInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.RegisterPasskeyOutput"
+      },
+      "refusals": ["unauthenticated"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.passkey.verify@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "VerifyPasskeyAction",
+      "file": "src/node/actions/verify-passkey.action.ts",
+      "permission": "identity.passkey.verify",
+      "risk": "L0",
+      "actors": ["anonymous"],
+      "rateLimit": {
+        "perMinute": 10
+      },
+      "area": "public",
+      "toolOff": "signing a person in is the device's, never an agent's",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.VerifyPasskeyInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.VerifyPasskeyOutput"
+      },
+      "refusals": ["rate_limited"],
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.session.list@1",
+      "kind": "query",
+      "module": "identity",
+      "class": "ListMySessionsQuery",
+      "file": "src/node/queries/list-my-sessions.query.ts",
+      "permission": "identity.session.list",
+      "risk": "L1",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "GET",
+        "path": "/sessions",
+        "derived": true
+      },
+      "toolOff": "the account owner's own security settings, never an agent's",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.SessionsInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.SessionsOutput"
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.account_deletion.read@1",
+      "kind": "query",
+      "module": "identity",
+      "class": "ShowAccountDeletionQuery",
+      "file": "src/node/queries/show-account-deletion.query.ts",
+      "permission": "identity.account_deletion.read",
+      "risk": "L1",
+      "actors": ["user"],
+      "endpoint": {
+        "method": "GET",
+        "path": "/account-deletions/read",
+        "derived": true
+      },
+      "toolOff": "the account owner's own settings, never an agent's",
+      "input": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionInput"
+      },
+      "output": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionOutput"
+      },
+      "from": "@stackra/identity"
+    }
+  ],
+  "events": [
+    {
+      "name": "ai.approval.requested.v1",
+      "module": "ai",
+      "class": "ApprovalRequested",
+      "file": "src/core/events/approval-requested.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/ai#/schemas/ai.ApprovalRequested"
+      },
+      "from": "@stackra/ai"
+    },
+    {
+      "name": "ai.approval.resolved.v1",
+      "module": "ai",
+      "class": "ApprovalResolved",
+      "file": "src/core/events/approval-resolved.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/ai#/schemas/ai.ApprovalResolved"
+      },
+      "from": "@stackra/ai"
+    },
+    {
+      "name": "ai.run.completed.v1",
+      "module": "ai",
+      "class": "RunCompleted",
+      "file": "src/core/events/run-completed.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/ai#/schemas/ai.RunCompleted"
+      },
+      "from": "@stackra/ai"
+    },
+    {
+      "name": "identity.account_deletion.cancelled.v1",
+      "module": "identity",
+      "class": "AccountDeletionCancelled",
+      "file": "src/core/events/account-deletion-cancelled.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionCancelled"
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "name": "identity.account_deletion.scheduled.v1",
+      "module": "identity",
+      "class": "AccountDeletionScheduled",
+      "file": "src/core/events/account-deletion-scheduled.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionScheduled"
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "name": "identity.account_deletion.started.v1",
+      "module": "identity",
+      "class": "AccountDeletionStarted",
+      "file": "src/core/events/account-deletion-started.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/identity#/schemas/identity.AccountDeletionStarted"
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "name": "identity.app_approval.approved.v1",
+      "module": "identity",
+      "class": "AppApprovalApproved",
+      "file": "src/core/events/app-approval-approved.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/identity#/schemas/identity.AppApprovalApproved"
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "name": "identity.app_approval.denied.v1",
+      "module": "identity",
+      "class": "AppApprovalDenied",
+      "file": "src/core/events/app-approval-denied.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/identity#/schemas/identity.AppApprovalDenied"
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "name": "identity.app_approval.requested.v1",
+      "module": "identity",
+      "class": "AppApprovalRequested",
+      "file": "src/core/events/app-approval-requested.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "@stackra/identity#/schemas/identity.AppApprovalRequested"
+      },
+      "from": "@stackra/identity"
+    }
+  ],
+  "permissions": [
+    {
+      "key": "identity.account_deletion.request",
+      "risk": "L4",
+      "class": "AccountDeletionPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.account_deletion.cancel",
+      "risk": "L2",
+      "class": "AccountDeletionPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.account_deletion.read",
+      "risk": "L1",
+      "class": "AccountDeletionPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.account_deletion.erase",
+      "risk": "L4",
+      "class": "AccountDeletionPermissions",
+      "system": true,
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.operator.bootstrap",
+      "risk": "L4",
+      "class": "OperatorPermissions",
+      "system": true,
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.passkey.challenge",
+      "risk": "L0",
+      "class": "PasskeyPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.passkey.verify",
+      "risk": "L0",
+      "class": "PasskeyPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.passkey.register",
+      "risk": "L2",
+      "class": "PasskeyPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.passkey.confirm",
+      "risk": "L2",
+      "class": "PasskeyPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.session.list",
+      "risk": "L1",
+      "class": "SessionPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.session.end",
+      "risk": "L2",
+      "class": "SessionPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.session.end_all",
+      "risk": "L2",
+      "class": "SessionPermissions",
+      "from": "@stackra/identity"
+    },
+    {
+      "key": "identity.session.end_user",
+      "risk": "L3",
+      "class": "SessionPermissions",
+      "from": "@stackra/identity"
+    }
+  ],
   "errors": [
+    {
+      "code": "client_tool_not_pending",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "ai",
+      "class": "ClientToolNotPendingError",
+      "from": "@stackra/ai"
+    },
+    {
+      "code": "guardrail_blocked",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "ai",
+      "class": "GuardrailBlockedError",
+      "from": "@stackra/ai"
+    },
     {
       "code": "app_draining",
       "kind": "unavailable",
@@ -58,6 +575,238 @@
       "from": "@stackra/app"
     },
     {
+      "code": "invalid_document",
+      "kind": "validation",
+      "category": "validation",
+      "module": "experience",
+      "class": "InvalidDocumentError",
+      "from": "@stackra/experience"
+    },
+    {
+      "code": "unknown_block",
+      "kind": "validation",
+      "category": "validation",
+      "module": "experience",
+      "class": "UnknownBlockError",
+      "from": "@stackra/experience"
+    },
+    {
+      "code": "api_key_rejected",
+      "kind": "unauthenticated",
+      "category": "unauthenticated",
+      "module": "identity",
+      "class": "ApiKeyRejectedError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "app_approval_rate_limited",
+      "kind": "rate_limited",
+      "category": "rate_limited",
+      "module": "identity",
+      "class": "AppApprovalRateLimitedError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "app_approval_rejected",
+      "kind": "unauthenticated",
+      "category": "unauthenticated",
+      "module": "identity",
+      "class": "AppApprovalRejectedError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "guardianship_missing",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "identity",
+      "class": "GuardianshipMissingError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "idp_admin_unavailable",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "identity",
+      "class": "IdpAdminUnavailableError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "idp_user_exists",
+      "kind": "conflict",
+      "category": "conflict",
+      "module": "identity",
+      "class": "IdpUserExistsError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "session_revoked",
+      "kind": "unauthenticated",
+      "category": "unauthenticated",
+      "module": "identity",
+      "class": "SessionRevokedError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "sign_in_cancelled",
+      "kind": "unauthenticated",
+      "category": "unauthenticated",
+      "module": "identity",
+      "class": "SignInCancelledError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "staff_pin_locked",
+      "kind": "rate_limited",
+      "category": "rate_limited",
+      "module": "identity",
+      "class": "StaffPinLockedError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "staff_pin_rejected",
+      "kind": "unauthenticated",
+      "category": "unauthenticated",
+      "module": "identity",
+      "class": "StaffPinRejectedError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "step_up_required",
+      "kind": "unauthenticated",
+      "category": "unauthenticated",
+      "module": "identity",
+      "class": "StepUpRequiredError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "verification_unavailable",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "identity",
+      "class": "VerificationUnavailableError",
+      "from": "@stackra/identity"
+    },
+    {
+      "code": "agent_confirmation_refused",
+      "kind": "forbidden",
+      "category": "forbidden",
+      "module": "payments",
+      "class": "AgentConfirmationRefusedError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "balance_exceeded",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "BalanceExceededError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "capability_unsupported",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "CapabilityUnsupportedError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "invalid_payment_transition",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "InvalidPaymentTransitionError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "merchant_initiated_not_allowed",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "MerchantInitiatedNotAllowedError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "no_eligible_lines",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "NoEligibleLinesError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "no_payment_provider",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "NoPaymentProviderError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "payment_declined",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "PaymentDeclinedError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "payment_field_required",
+      "kind": "validation",
+      "category": "validation",
+      "module": "payments",
+      "class": "PaymentFieldRequiredError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "payment_unknown",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "PaymentUnknownError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "payout_held",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "PayoutHeldError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "pre_verification_cap_exceeded",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "PreVerificationCapExceededError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "resolution_reason_required",
+      "kind": "validation",
+      "category": "validation",
+      "module": "payments",
+      "class": "ResolutionReasonRequiredError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "restricted_tender_unavailable",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "RestrictedTenderUnavailableError",
+      "from": "@stackra/payments"
+    },
+    {
+      "code": "soft_pos_unavailable",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "payments",
+      "class": "SoftPosUnavailableError",
+      "from": "@stackra/payments"
+    },
+    {
       "code": "invalid_theme",
       "kind": "validation",
       "category": "validation",
@@ -66,8 +815,251 @@
       "from": "@stackra/tokens"
     }
   ],
-  "models": [],
+  "models": [
+    {
+      "key": "ai.a2a_task",
+      "class": "A2aTask",
+      "file": "src/node/models/a2a-task.model.ts",
+      "table": "ai.a2a_tasks",
+      "publicId": "aitask",
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "from": "@stackra/ai"
+    },
+    {
+      "key": "ai.conversation",
+      "class": "Conversation",
+      "file": "src/node/models/conversation.model.ts",
+      "table": "ai.conversations",
+      "publicId": "aiconv",
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "from": "@stackra/ai"
+    },
+    {
+      "key": "ai.message",
+      "class": "Message",
+      "file": "src/node/models/message.model.ts",
+      "table": "ai.messages",
+      "publicId": "aimsg",
+      "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly", "HasEncryptedFields"],
+      "from": "@stackra/ai"
+    },
+    {
+      "key": "ai.run_approval",
+      "class": "RunApproval",
+      "file": "src/node/models/run-approval.model.ts",
+      "table": "ai.run_approvals",
+      "publicId": "aiappr",
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "from": "@stackra/ai"
+    },
+    {
+      "key": "ai.run_step",
+      "class": "RunStep",
+      "file": "src/node/models/run-step.model.ts",
+      "table": "ai.run_steps",
+      "publicId": "aistep",
+      "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly"],
+      "from": "@stackra/ai"
+    },
+    {
+      "key": "ai.run",
+      "class": "Run",
+      "file": "src/node/models/run.model.ts",
+      "table": "ai.runs",
+      "publicId": "airun",
+      "traits": ["HasPublicId", "BelongsToTenant", "Timestamps"],
+      "from": "@stackra/ai"
+    },
+    {
+      "key": "ai.tool_call",
+      "class": "ToolCall",
+      "file": "src/node/models/tool-call.model.ts",
+      "table": "ai.tool_calls",
+      "publicId": "aitool",
+      "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly"],
+      "from": "@stackra/ai"
+    }
+  ],
   "drivers": [
+    {
+      "port": "GuardrailLayer",
+      "key": "ai.GuardrailLayer",
+      "candidates": [
+        "classifier_guardrail",
+        "injection_guardrail",
+        "pattern_guardrail",
+        "pii_guardrail"
+      ],
+      "classes": {
+        "classifier_guardrail": {
+          "class": "ClassifierGuardrailDriver",
+          "from": "@stackra/ai",
+          "deps": [
+            {
+              "class": {
+                "name": "ModelProviders",
+                "from": "@stackra/ai"
+              }
+            },
+            {
+              "class": {
+                "name": "ClassifierGuardrailOptions",
+                "from": "@stackra/ai"
+              }
+            }
+          ]
+        },
+        "injection_guardrail": {
+          "class": "InjectionGuardrailDriver",
+          "from": "@stackra/ai",
+          "deps": [
+            {
+              "class": {
+                "name": "InjectionGuardrailOptions",
+                "from": "@stackra/ai"
+              }
+            }
+          ]
+        },
+        "pattern_guardrail": {
+          "class": "PatternGuardrailDriver",
+          "from": "@stackra/ai",
+          "deps": [
+            {
+              "class": {
+                "name": "PatternGuardrailOptions",
+                "from": "@stackra/ai"
+              }
+            }
+          ]
+        },
+        "pii_guardrail": {
+          "class": "PiiGuardrailDriver",
+          "from": "@stackra/ai",
+          "deps": [
+            {
+              "class": {
+                "name": "PiiGuardrailOptions",
+                "from": "@stackra/ai"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/ai"
+    },
+    {
+      "port": "PageReader",
+      "key": "ai.PageReader",
+      "candidates": ["http", "memory"],
+      "classes": {
+        "http": {
+          "class": "HttpPageReaderDriver",
+          "from": "@stackra/ai"
+        },
+        "memory": {
+          "class": "MemoryPageReaderDriver",
+          "from": "@stackra/ai"
+        }
+      },
+      "from": "@stackra/ai"
+    },
+    {
+      "port": "ConversationStore",
+      "key": "ai.ConversationStore",
+      "candidates": ["memory", "postgres"],
+      "classes": {
+        "memory": {
+          "class": "MemoryConversationStoreDriver",
+          "from": "@stackra/ai"
+        },
+        "postgres": {
+          "class": "PostgresConversationStoreDriver",
+          "from": "@stackra/ai/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Conversation",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "Message",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/ai"
+    },
+    {
+      "port": "RunStore",
+      "key": "ai.RunStore",
+      "candidates": ["memory", "postgres"],
+      "classes": {
+        "memory": {
+          "class": "MemoryRunStoreDriver",
+          "from": "@stackra/ai"
+        },
+        "postgres": {
+          "class": "PostgresRunStoreDriver",
+          "from": "@stackra/ai/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Run",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "RunStep",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "ToolCall",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "RunApproval",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/ai"
+    },
     {
       "port": "EdgeNonceStore",
       "key": "app.EdgeNonceStore",
@@ -163,6 +1155,490 @@
         }
       },
       "from": "@stackra/container"
+    },
+    {
+      "port": "Logger",
+      "key": "contracts.Logger",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryLoggerDriver",
+          "from": "@stackra/container/testing"
+        }
+      },
+      "from": "@stackra/container"
+    },
+    {
+      "port": "Renderer",
+      "key": "experience.Renderer",
+      "candidates": ["native", "react"],
+      "classes": {
+        "native": {
+          "class": "NativeRendererDriver",
+          "from": "@stackra/experience/native"
+        },
+        "react": {
+          "class": "ReactRendererDriver",
+          "from": "@stackra/experience/react"
+        }
+      },
+      "from": "@stackra/experience"
+    },
+    {
+      "port": "SessionStore",
+      "key": "identity.SessionStore",
+      "candidates": ["bff", "memory", "pkce"],
+      "classes": {
+        "bff": {
+          "class": "BffSessionStoreDriver",
+          "from": "@stackra/identity",
+          "deps": [
+            {
+              "class": {
+                "name": "IdentityConfig",
+                "from": "@stackra/identity"
+              }
+            },
+            {
+              "class": {
+                "name": "ClientsConfig",
+                "from": "@stackra/clients"
+              }
+            }
+          ]
+        },
+        "memory": {
+          "class": "MemorySessionStoreDriver",
+          "from": "@stackra/identity"
+        },
+        "pkce": {
+          "class": "PkceSessionStoreDriver",
+          "from": "@stackra/identity",
+          "deps": [
+            {
+              "class": {
+                "name": "IdentityConfig",
+                "from": "@stackra/identity"
+              }
+            },
+            {
+              "class": {
+                "name": "Storage",
+                "from": "@stackra/storage/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "SignInBrowser",
+                "from": "@stackra/identity/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "AccountDeletions",
+      "key": "identity.AccountDeletions",
+      "candidates": ["memory", "postgres"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAccountDeletionsDriver",
+          "from": "@stackra/identity"
+        },
+        "postgres": {
+          "class": "PostgresAccountDeletionsDriver",
+          "from": "@stackra/identity/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "ApiKeyStore",
+      "key": "identity.ApiKeyStore",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryApiKeyStoreDriver",
+          "from": "@stackra/identity"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "AppApprovalChallenges",
+      "key": "identity.AppApprovalChallenges",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAppApprovalChallengesDriver",
+          "from": "@stackra/identity"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "AutomationPrincipals",
+      "key": "identity.AutomationPrincipals",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAutomationPrincipalsDriver",
+          "from": "@stackra/identity"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "Guardianship",
+      "key": "identity.Guardianship",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryGuardianshipDriver",
+          "from": "@stackra/identity"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "IdentityResolver",
+      "key": "contracts.IdentityResolver",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryIdentityResolverDriver",
+          "from": "@stackra/identity"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "IdpAdmin",
+      "key": "identity.IdpAdmin",
+      "candidates": ["memory", "zitadel"],
+      "classes": {
+        "memory": {
+          "class": "MemoryIdpAdminDriver",
+          "from": "@stackra/identity"
+        },
+        "zitadel": {
+          "class": "ZitadelIdpAdminDriver",
+          "from": "@stackra/identity",
+          "deps": [
+            {
+              "class": {
+                "name": "IdpAdminConfig",
+                "from": "@stackra/identity"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "LoginDirectoryStore",
+      "key": "identity.LoginDirectoryStore",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryLoginDirectoryStoreDriver",
+          "from": "@stackra/identity"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "Passkeys",
+      "key": "identity.Passkeys",
+      "candidates": ["memory", "expo"],
+      "classes": {
+        "memory": {
+          "class": "MemoryPasskeysDriver",
+          "from": "@stackra/identity"
+        },
+        "expo": {
+          "class": "ExpoPasskeysDriver",
+          "from": "@stackra/identity/native"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "StaffPinStore",
+      "key": "identity.StaffPinStore",
+      "candidates": ["memory", "storage"],
+      "classes": {
+        "memory": {
+          "class": "MemoryStaffPinStoreDriver",
+          "from": "@stackra/identity"
+        },
+        "storage": {
+          "class": "StorageStaffPinStoreDriver",
+          "from": "@stackra/identity",
+          "deps": [
+            {
+              "class": {
+                "name": "Storage",
+                "from": "@stackra/storage/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "Verification",
+      "key": "identity.Verification",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryVerificationDriver",
+          "from": "@stackra/identity",
+          "deps": [
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "ClientSession",
+      "key": "clients.ClientSession",
+      "candidates": ["session"],
+      "classes": {
+        "session": {
+          "class": "SessionClientSessionDriver",
+          "from": "@stackra/identity",
+          "deps": [
+            {
+              "class": {
+                "name": "SessionService",
+                "from": "@stackra/identity"
+              }
+            },
+            {
+              "class": {
+                "name": "ActiveScopeService",
+                "from": "@stackra/scope"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "OfflineSession",
+      "key": "query.OfflineSession",
+      "candidates": ["session"],
+      "classes": {
+        "session": {
+          "class": "SessionOfflineSessionDriver",
+          "from": "@stackra/identity",
+          "deps": [
+            {
+              "class": {
+                "name": "SessionService",
+                "from": "@stackra/identity"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "SignInBrowser",
+      "key": "identity.SignInBrowser",
+      "candidates": ["electron", "expo"],
+      "classes": {
+        "electron": {
+          "class": "ElectronSignInBrowserDriver",
+          "from": "@stackra/identity/desktop",
+          "deps": [
+            {
+              "class": {
+                "name": "IdentityConfig",
+                "from": "@stackra/identity"
+              }
+            }
+          ]
+        },
+        "expo": {
+          "class": "ExpoSignInBrowserDriver",
+          "from": "@stackra/identity/native"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "AppleSignIn",
+      "key": "identity.AppleSignIn",
+      "candidates": ["expo"],
+      "classes": {
+        "expo": {
+          "class": "ExpoAppleSignInDriver",
+          "from": "@stackra/identity/native"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "AgentCommerceProtocols",
+      "key": "payments.AgentCommerceProtocols",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAgentCommerceProtocolsDriver",
+          "from": "@stackra/payments"
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
+      "port": "PaymentBalances",
+      "key": "payments.PaymentBalances",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryPaymentBalancesDriver",
+          "from": "@stackra/payments"
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
+      "port": "PaymentRecords",
+      "key": "payments.PaymentRecords",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryPaymentRecordsDriver",
+          "from": "@stackra/payments"
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
+      "port": "RestrictedTenderPrograms",
+      "key": "payments.RestrictedTenderPrograms",
+      "candidates": ["memory", "market_pack"],
+      "classes": {
+        "memory": {
+          "class": "MemoryRestrictedTenderProgramsDriver",
+          "from": "@stackra/payments"
+        },
+        "market_pack": {
+          "class": "MarketPackRestrictedTenderProgramsDriver",
+          "from": "@stackra/payments/node",
+          "deps": [
+            {
+              "class": {
+                "name": "PaymentPackSource",
+                "from": "@stackra/payments/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
+      "port": "SoftPos",
+      "key": "payments.SoftPos",
+      "candidates": ["memory", "stripe_tap_to_pay"],
+      "classes": {
+        "memory": {
+          "class": "MemorySoftPosDriver",
+          "from": "@stackra/payments"
+        },
+        "stripe_tap_to_pay": {
+          "class": "StripeTapToPaySoftPosDriver",
+          "from": "@stackra/payments",
+          "deps": [
+            {
+              "class": {
+                "name": "StripeTerminalBridge",
+                "from": "@stackra/payments/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
+      "port": "TenderEligibility",
+      "key": "payments.TenderEligibility",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryTenderEligibilityDriver",
+          "from": "@stackra/payments"
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
+      "port": "MarketPaymentDefaults",
+      "key": "payments.MarketPaymentDefaults",
+      "candidates": ["market_pack_payment_defaults"],
+      "classes": {
+        "market_pack_payment_defaults": {
+          "class": "MarketPackPaymentDefaultsDriver",
+          "from": "@stackra/payments/node",
+          "deps": [
+            {
+              "class": {
+                "name": "PaymentPackSource",
+                "from": "@stackra/payments/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/payments"
+    },
+    {
+      "port": "TaxProvider",
+      "key": "pricing.TaxProvider",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryTaxProviderDriver",
+          "from": "@stackra/pricing"
+        }
+      },
+      "from": "@stackra/pricing"
     }
   ],
   "integrations": [],
@@ -794,6 +2270,11 @@
       "file": "src/routes/item-card/item-card.route.ts"
     },
     {
+      "key": "keyboard_shortcuts",
+      "class": "KeyboardShortcutsRoute",
+      "file": "src/routes/keyboard-shortcuts/keyboard-shortcuts.route.ts"
+    },
+    {
       "key": "kiosk_surface",
       "class": "KioskSurfaceRoute",
       "file": "src/routes/kiosk-surface/kiosk-surface.route.ts"
@@ -1169,6 +2650,11 @@
       "file": "src/routes/result/result.route.ts"
     },
     {
+      "key": "rich_text_editor",
+      "class": "RichTextEditorRoute",
+      "file": "src/routes/rich-text-editor/rich-text-editor.route.ts"
+    },
+    {
       "key": "route_overlay",
       "class": "RouteOverlayRoute",
       "file": "src/routes/route-overlay/route-overlay.route.ts"
@@ -1257,6 +2743,11 @@
       "key": "share_button",
       "class": "ShareButtonRoute",
       "file": "src/routes/share-button/share-button.route.ts"
+    },
+    {
+      "key": "sheet",
+      "class": "SheetRoute",
+      "file": "src/routes/sheet/sheet.route.ts"
     },
     {
       "key": "shimmer",
@@ -1402,6 +2893,56 @@
       "key": "tag_input",
       "class": "TagInputRoute",
       "file": "src/routes/tag-input/tag-input.route.ts"
+    },
+    {
+      "key": "tamo_ask_box",
+      "class": "TamoAskBoxRoute",
+      "file": "src/routes/tamo-ask-box/tamo-ask-box.route.ts"
+    },
+    {
+      "key": "tamo_button",
+      "class": "TamoButtonRoute",
+      "file": "src/routes/tamo-button/tamo-button.route.ts"
+    },
+    {
+      "key": "tamo_collection_tools",
+      "class": "TamoCollectionToolsRoute",
+      "file": "src/routes/tamo-collection-tools/tamo-collection-tools.route.ts"
+    },
+    {
+      "key": "tamo_draft_review",
+      "class": "TamoDraftReviewRoute",
+      "file": "src/routes/tamo-draft-review/tamo-draft-review.route.ts"
+    },
+    {
+      "key": "tamo_ghost_text",
+      "class": "TamoGhostTextRoute",
+      "file": "src/routes/tamo-ghost-text/tamo-ghost-text.route.ts"
+    },
+    {
+      "key": "tamo_launcher",
+      "class": "TamoLauncherRoute",
+      "file": "src/routes/tamo-launcher/tamo-launcher.route.ts"
+    },
+    {
+      "key": "tamo_marker",
+      "class": "TamoMarkerRoute",
+      "file": "src/routes/tamo-marker/tamo-marker.route.ts"
+    },
+    {
+      "key": "tamo_menu",
+      "class": "TamoMenuRoute",
+      "file": "src/routes/tamo-menu/tamo-menu.route.ts"
+    },
+    {
+      "key": "tamo_provider",
+      "class": "TamoProviderRoute",
+      "file": "src/routes/tamo-provider/tamo-provider.route.ts"
+    },
+    {
+      "key": "tamo_status_line",
+      "class": "TamoStatusLineRoute",
+      "file": "src/routes/tamo-status-line/tamo-status-line.route.ts"
     },
     {
       "key": "task_tray",

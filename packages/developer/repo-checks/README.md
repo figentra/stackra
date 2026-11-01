@@ -10,8 +10,8 @@ Governing contract: ADR 0282 (decision 3); ADR 0007; ADR 0022; ADR 0294; ADR 040
 
 The repository checks every Stackra repo runs through `stackra check`, as typed functions over the git file list. They
 were core-only scripts (`tools/scripts/validate-repository.mjs`, `doc-standard.mjs`, `catalogue-completeness.mjs` and
-the tables of `structure.mjs`); they live here so a product gets them with `@stackra/cli` instead of copying them. Core
-keeps thin wrappers in `tools/scripts`, so `pnpm validate` still runs them with plain `node`.
+the tables of `structure.mjs`); they live here so a product gets them with `@stackra/cli` instead of copying them.
+`pnpm validate` runs them through `stackra validate --repository` and `stackra doc-standard`.
 
 **Tier:** `tier:lib` (`packages/developer/repo-checks`). One entry, `./node`. Depends on `yaml` and `typescript6` (the
 TypeScript 6 compiler API the doc standard parses with).
@@ -35,7 +35,7 @@ The single checks stay exported (`checkMember`, `checkMemberFiles`, `checkMember
 `stackra` field and its turbo tags of ADR 0453 decision 11, run in the Stackra repository only, with the built
 `STACKRA_MANIFEST_SCHEMA` of `@stackra/skills`), `checkExports`, `checkService`,
 `checkTestPlacement`, `checkJsonConfigs`, `checkRunwaySchemas`, `checkRunwayFiles`, `checkYamlFlowMaps`,
-`checkImports`, `checkRawSql`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`, `checkAdrNumbers`), and so
+`checkImports`, `checkRawSql`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`, `checkIgnoredGoldens` (a file under `__golden__` that git ignores), `checkAdrNumbers`), and so
 do the structure tables (`CATEGORIES`, `ENTRIES`, `MODULE_GROUPS`, `APP_GROUPS`, `PACKAGE_FOLDERS`, `MEMBER_ROOT`,
 `KIND_FOLDERS`, `BANNED_FOLDERS`, `TEST_TIERS`, …) and their lookups.
 

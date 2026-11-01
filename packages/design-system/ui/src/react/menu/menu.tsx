@@ -8,7 +8,8 @@
  * Boundary: no styling of its own; the look is HeroUI's, themed by `@stackra/tokens`. The menu is named by its trigger
  *           (React Aria points it there), so the trigger needs an accessible name. Selection is scoped to a section and
  *           the menu keeps one flat list of chosen keys. An action with an `href` is a link, and navigates through the
- *           app's React Aria `RouterProvider` when it has one. The shortcut is a visual hint only.
+ *           app's React Aria `RouterProvider` when it has one. An action's `shortcut` binding is registered while the menu
+ *           is mounted, so the key runs it with the menu closed (ADR 0508).
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0312; ADR 0165 (UI contract, HeroUI v3 on web); owner decision 6 of
  *          STA-350 (thin wrappers); WCAG 2.2 SC 2.1.1, 4.1.2.
@@ -20,6 +21,7 @@ import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { reactAriaPlacementOf } from "#core/functions/react-aria-placement-of.function";
 import { MenuBody } from "#react/menu/menu-body";
 import type { MenuProps } from "#react/menu/menu.props";
+import { useMenuShortcuts } from "#react/menu/use-menu-shortcuts";
 
 /**
  * A menu of actions that opens from its trigger. Choosing an action runs its `onPress` and then `onAction` with its key;
@@ -43,6 +45,7 @@ export function Menu({
   // The menu always runs controlled: React Aria hands back `Set`s per section, and one list of strings is the contract.
   const [own, setOwn] = useState<readonly string[]>(defaultValue ?? []);
   const selected = value ?? own;
+  useMenuShortcuts(sections, onAction);
   const hasPlacement = placement !== undefined || align !== undefined;
 
   return (

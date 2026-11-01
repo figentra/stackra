@@ -35,6 +35,10 @@ import { collectionRuleFieldsOf } from "#core/functions/collection-rule-fields-o
 import { filterChipTextOf } from "#core/functions/filter-chip-text-of.function";
 import { filterChipWordsOf } from "#core/functions/filter-chip-words-of.function";
 import { quickFilterIdOf } from "#core/functions/quick-filter-id-of.function";
+import { conditionChipTextOf } from "#core/functions/condition-chip-text-of.function";
+import { TAMO_KEYS } from "#core/constants/tamo-keys.constant";
+import { useTamo } from "#react/hooks/use-tamo";
+import type { TamoTasks } from "#contracts/types/tamo-tasks.type";
 import { Button } from "#native/button/button";
 import { CloseButton } from "#native/close-button/close-button";
 import { useDesignSystem } from "#native/design-system-provider/use-design-system";
@@ -44,6 +48,8 @@ import { FilterEditor } from "#native/filter-bar/filter-editor";
 import { IconButton } from "#native/icon-button/icon-button";
 import { RuleBuilder } from "#native/rule-builder/rule-builder";
 import { SearchField } from "#native/search-field/search-field";
+import { TamoAskBox } from "#native/tamo-ask-box/tamo-ask-box";
+import { TamoButton } from "#native/tamo-button/tamo-button";
 import { Text } from "#native/text/text";
 import { Tooltip } from "#native/tooltip/tooltip";
 import type { FilterBarProps } from "#native/filter-bar/filter-bar.props";
@@ -53,6 +59,7 @@ type Sheet =
   | { readonly mode: "add" }
   | { readonly mode: "advanced" }
   | { readonly mode: "edit"; readonly id: string }
+  | { readonly mode: "tamo" }
   | null;
 
 /** The hit area added around a small button, so a touch target is at least 24 points (WCAG 2.5.8). */
@@ -117,10 +124,29 @@ export function FilterBar<TItem extends CollectionItem = CollectionItem>({
   const editing = editingId === null ? undefined : definitionOf(editingId);
 
   const close = () => setSheet(null);
+  const tamo = useTamo();
   const title =
-    sheet?.mode === "advanced"
-      ? t(UI_KEYS.ui.filter_bar.advanced)
-      : (editing?.label ?? t(UI_KEYS.ui.filter_bar.add));
+    sheet?.mode === "tamo"
+      ? t(TAMO_KEYS.ui.tamo.ask)
+      : sheet?.mode === "advanced"
+        ? t(UI_KEYS.ui.filter_bar.advanced)
+        : (editing?.label ?? t(UI_KEYS.ui.filter_bar.add));
+  const conditionText = (condition: TamoTasks["filter"]["output"]["conditions"][number]) =>
+    conditionChipTextOf(condition, collection.columns, (operator) =>
+      t(UI_KEYS.ui.rule_operator[operator]),
+    );
+  const applyProposal = ({ conditions, sort }: TamoTasks["filter"]["output"]) => {
+    const ids = new Set(conditions.map((condition) => condition.id));
+    collection.setFilter({
+      ...topFilter,
+      conditions: [
+        ...topFilter.conditions.filter((condition) => !ids.has(condition.id)),
+        ...conditions,
+      ],
+    });
+    if (sort.length > 0) collection.setSort(sort);
+    close();
+  };
 
   const renderChip = (definition: FilterDefinition) => {
     const summary = filterChipTextOf(
@@ -176,6 +202,7 @@ export function FilterBar<TItem extends CollectionItem = CollectionItem>({
         showsHorizontalScrollIndicator={false}
         contentContainerClassName="items-center gap-2"
       >
+        {tamo ? <TamoButton size="sm" onPress={() => setSheet({ mode: "tamo" })} /> : null}
         <Button
           variant="outline"
           size="sm"
@@ -239,7 +266,59 @@ export function FilterBar<TItem extends CollectionItem = CollectionItem>({
           <Drawer.Title>{title}</Drawer.Title>
         </Drawer.Header>
         <Drawer.Body>
-          {sheet?.mode === "advanced" ? (
+          {sheet?.mode === "tamo" && tamo ? (
+            <TamoAskBox
+              placeholder={t(TAMO_KEYS.ui.tamo.filter_placeholder)}
+              isAutoFocus
+              onAsk={(text, signal) =>
+                tamo
+                  .run(
+                    "filter",
+                    {
+                      text,
+                      locale,
+                      columns: collection.columns
+                        .filter((column) => column.isFilterable !== false)
+                        .map((column) => ({
+                          id: column.id,
+                          label: column.label,
+                          type: column.type,
+                          options: column.options?.map((option) => option.id),
+                        })),
+                    },
+                    signal,
+                  )
+                  .then((proposal) =>
+                    proposal.conditions.length + proposal.sort.length === 0 ? null : proposal,
+                  )
+              }
+              renderProposal={(proposal) => (
+                <View className="flex-row flex-wrap gap-2">
+                  {proposal.conditions.map((condition) => (
+                    <Chip key={condition.id} variant="secondary">
+                      {conditionText(condition)}
+                    </Chip>
+                  ))}
+                  {proposal.sort.map((key) => (
+                    <Chip key={`sort:${key.column}`} variant="secondary">
+                      {t(TAMO_KEYS.ui.tamo.sort_by, {
+                        label:
+                          collection.columns.find((column) => column.id === key.column)?.label ??
+                          key.column,
+                        direction: t(
+                          key.direction === "descending"
+                            ? TAMO_KEYS.ui.tamo.descending
+                            : TAMO_KEYS.ui.tamo.ascending,
+                        ),
+                      })}
+                    </Chip>
+                  ))}
+                </View>
+              )}
+              onApply={applyProposal}
+              onDiscard={close}
+            />
+          ) : sheet?.mode === "advanced" ? (
             <RuleBuilder
               label={title}
               fields={collectionRuleFieldsOf(collection.columns)}

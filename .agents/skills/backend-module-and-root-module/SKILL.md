@@ -9,9 +9,9 @@ The module is the unit of contribution (ADR 0111): a feature module holds its ac
 permissions, resources and assets, and a service or app only hosts modules. Every member has **one root module** and
 `stackra.config.ts`; gen writes the wiring and the runtime entries (ADR 0294 rule R12, ADR 0295).
 
-This is the v3 target. `@stackra/container` and gen do not ship yet. Today `services/example` and `services/health`
+This is the v3 shape that `@stackra/container` and gen implement. Core's own `services/example` and `services/health`
 still have an authored `src/main.ts` and a `stackra.module` field in `package.json`, which `checkService` accepts beside
-the v3 shape that `pnpm new` writes; the conversion is STA-344. The package docs win once they ship.
+the v3 shape; the conversion is STA-344. The package docs win where they differ.
 
 ## Layout (ADR 0294 decisions 13 to 15)
 

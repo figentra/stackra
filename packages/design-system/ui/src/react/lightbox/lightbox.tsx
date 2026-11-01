@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the web `Lightbox`: a full-screen viewer over a dark scrim, one picture at a time at its whole size, with
  *          "3 of 8", a caption, previous and next buttons, a zoom toggle and a close button. The arrow keys, Home and
- *          End step through the pictures, a swipe does too, and Escape or a press on the scrim closes it.
+ *          End step through the pictures (on the shortcut registry, ADR 0508), a swipe does too, and Escape or a
+ *          press on the scrim closes it.
  * Boundary: React Aria's ModalOverlay, Modal and Dialog: focus is trapped, the page behind is hidden from assistive
  *           technology and focus goes back to what opened it. The arrows follow the reading direction, so in Arabic
  *           the left arrow goes forward. The counter is announced politely. The scrim fades only at full motion.
@@ -13,10 +14,12 @@
  */
 import { cn } from "@heroui/react";
 import { type KeyboardEvent, type ReactElement, useRef, useState } from "react";
+import { ShortcutOverlayScope } from "@stackra/shortcuts/react";
 import { Dialog, Modal, ModalOverlay, useLocale } from "react-aria-components";
 
 import { MEDIA_KEYS } from "#core/constants/media-keys.constant";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { LightboxShortcuts } from "#react/lightbox/lightbox-shortcuts";
 import { useMotion } from "#react/design-system-provider/use-motion";
 import { useNumberFormat } from "#react/hooks/use-number-format";
 import { useUiText } from "#react/hooks/use-ui-text";
@@ -76,7 +79,8 @@ export function Lightbox({
       End: () => goTo(count - 1),
     };
     const move = moves[event.key];
-    if (!move || isZoomed) return;
+    // A ShortcutProvider already answered (and stopped) these keys; this handler serves a Lightbox with none.
+    if (!move || isZoomed || event.defaultPrevented) return;
     event.preventDefault();
     move();
   };
@@ -92,92 +96,96 @@ export function Lightbox({
       }
     >
       <Modal className="h-full w-full outline-none">
-        {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- reason: React Aria's Dialog takes no key handler, so the keys of the focused dialog and its buttons are read as they bubble through this wrapper */}
-        <div className="h-full" onKeyDown={onKeyDown}>
-          <Dialog
-            aria-label={label ?? t(K.label)}
-            data-slot="lightbox"
-            className={["flex h-full flex-col text-white outline-none", className]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            {({ close }) => (
-              <>
-                <div className="flex items-center justify-between gap-3 p-3">
-                  <span aria-live="polite" className="ps-2 text-sm tabular-nums">
-                    {t(K.counter, { index: format(at + 1), count: format(count) })}
-                  </span>
-                  <div className="flex items-center gap-1">
+        {/* The topmost shortcut scope while open, so page shortcuts pause and its own keys answer (ADR 0508). */}
+        <ShortcutOverlayScope>
+          <LightboxShortcuts step={step} goTo={goTo} count={count} isZoomed={isZoomed} />
+          {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- reason: React Aria's Dialog takes no key handler, so the keys of the focused dialog and its buttons are read as they bubble through this wrapper */}
+          <div className="h-full" onKeyDown={onKeyDown}>
+            <Dialog
+              aria-label={label ?? t(K.label)}
+              data-slot="lightbox"
+              className={["flex h-full flex-col text-white outline-none", className]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {({ close }) => (
+                <>
+                  <div className="flex items-center justify-between gap-3 p-3">
+                    <span aria-live="polite" className="ps-2 text-sm tabular-nums">
+                      {t(K.counter, { index: format(at + 1), count: format(count) })}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <IconButton
+                        icon={isZoomed ? "zoom-out" : "zoom-in"}
+                        label={t(isZoomed ? K.zoom_out : K.zoom_in)}
+                        variant="ghost"
+                        className={ON_DARK}
+                        onPress={() => setZoomed(!isZoomed)}
+                      />
+                      <IconButton
+                        icon="x"
+                        label={t(K.close)}
+                        variant="ghost"
+                        className={ON_DARK}
+                        onPress={close}
+                      />
+                    </div>
+                  </div>
+                  <div
+                    className={cn(
+                      "relative flex min-h-0 flex-1 items-center justify-center px-14",
+                      isZoomed ? "overflow-auto" : "overflow-hidden",
+                    )}
+                    onPointerDown={(event) => {
+                      swipeStart.current = event.clientX;
+                    }}
+                    onPointerUp={(event) => {
+                      const start = swipeStart.current;
+                      swipeStart.current = null;
+                      if (start === null || isZoomed) return;
+                      const moved = event.clientX - start;
+                      if (Math.abs(moved) < SWIPE) return;
+                      // A swipe towards the start goes forward: leftwards in English, rightwards in Arabic.
+                      step(moved < 0 === (direction === "ltr") ? 1 : -1);
+                    }}
+                  >
+                    {image ? (
+                      <img
+                        key={image.id}
+                        src={image.src}
+                        alt={image.alt}
+                        draggable={false}
+                        className={cn(
+                          "select-none",
+                          isZoomed ? "m-auto max-w-none" : "max-h-full max-w-full object-contain",
+                        )}
+                      />
+                    ) : null}
                     <IconButton
-                      icon={isZoomed ? "zoom-out" : "zoom-in"}
-                      label={t(isZoomed ? K.zoom_out : K.zoom_in)}
+                      icon="chevron-left"
+                      label={t(K.previous)}
                       variant="ghost"
-                      className={ON_DARK}
-                      onPress={() => setZoomed(!isZoomed)}
+                      className={`absolute start-2 top-1/2 -translate-y-1/2 ${ON_DARK}`}
+                      isDisabled={at === 0}
+                      onPress={() => step(-1)}
                     />
                     <IconButton
-                      icon="x"
-                      label={t(K.close)}
+                      icon="chevron-right"
+                      label={t(K.next)}
                       variant="ghost"
-                      className={ON_DARK}
-                      onPress={close}
+                      className={`absolute end-2 top-1/2 -translate-y-1/2 ${ON_DARK}`}
+                      isDisabled={at >= count - 1}
+                      onPress={() => step(1)}
                     />
                   </div>
-                </div>
-                <div
-                  className={cn(
-                    "relative flex min-h-0 flex-1 items-center justify-center px-14",
-                    isZoomed ? "overflow-auto" : "overflow-hidden",
-                  )}
-                  onPointerDown={(event) => {
-                    swipeStart.current = event.clientX;
-                  }}
-                  onPointerUp={(event) => {
-                    const start = swipeStart.current;
-                    swipeStart.current = null;
-                    if (start === null || isZoomed) return;
-                    const moved = event.clientX - start;
-                    if (Math.abs(moved) < SWIPE) return;
-                    // A swipe towards the start goes forward: leftwards in English, rightwards in Arabic.
-                    step(moved < 0 === (direction === "ltr") ? 1 : -1);
-                  }}
-                >
-                  {image ? (
-                    <img
-                      key={image.id}
-                      src={image.src}
-                      alt={image.alt}
-                      draggable={false}
-                      className={cn(
-                        "select-none",
-                        isZoomed ? "m-auto max-w-none" : "max-h-full max-w-full object-contain",
-                      )}
-                    />
-                  ) : null}
-                  <IconButton
-                    icon="chevron-left"
-                    label={t(K.previous)}
-                    variant="ghost"
-                    className={`absolute start-2 top-1/2 -translate-y-1/2 ${ON_DARK}`}
-                    isDisabled={at === 0}
-                    onPress={() => step(-1)}
-                  />
-                  <IconButton
-                    icon="chevron-right"
-                    label={t(K.next)}
-                    variant="ghost"
-                    className={`absolute end-2 top-1/2 -translate-y-1/2 ${ON_DARK}`}
-                    isDisabled={at >= count - 1}
-                    onPress={() => step(1)}
-                  />
-                </div>
-                <p className="m-0 min-h-12 p-3 text-center text-sm text-white/80">
-                  {image?.caption ?? ""}
-                </p>
-              </>
-            )}
-          </Dialog>
-        </div>
+                  <p className="m-0 min-h-12 p-3 text-center text-sm text-white/80">
+                    {image?.caption ?? ""}
+                  </p>
+                </>
+              )}
+            </Dialog>
+          </div>
+        </ShortcutOverlayScope>
       </Modal>
     </ModalOverlay>
   );

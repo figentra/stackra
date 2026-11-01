@@ -70,6 +70,7 @@
     "@stackra/navigation": "workspace:*",
     "@stackra/payments": "workspace:*",
     "@stackra/pricing": "workspace:*",
+    "@stackra/shortcuts": "workspace:*",
     "@stackra/showcase": "workspace:*",
     "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*",

@@ -19,7 +19,8 @@
  * Governing contract: ADR 0305; ADR 0303 (decisions 1 and 7); ADR 0317 (decision 3); WCAG 2.2 SC 1.3.1, 1.4.1, 1.4.3,
  *          1.4.11, 2.4.7, 2.5.8 and 4.1.2; owner request 2026-10-29 (STA-1371).
  */
-import { cn, Kbd } from "@heroui/react";
+import { cn } from "@heroui/react";
+import { useShortcutActions } from "@stackra/shortcuts/react";
 import { use, useId, useLayoutEffect, useRef, useState, type ReactElement } from "react";
 import { Button as AriaButton, Link as AriaLink } from "react-aria-components";
 
@@ -32,6 +33,7 @@ import { Icon } from "#react/icon/icon";
 import { SidebarContext } from "#react/sidebar/sidebar-context";
 import { SidebarMenuDepthContext } from "#react/sidebar/sidebar-menu-depth-context";
 import type { SidebarMenuItemProps } from "#react/sidebar/sidebar-menu-item.props";
+import { ShortcutHint } from "#react/shortcut-hint/shortcut-hint";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 import { Tooltip } from "#react/tooltip/tooltip";
 
@@ -94,6 +96,21 @@ export function SidebarMenuItem({
   });
 
   const isLink = href !== undefined || onPress !== undefined;
+  // The key presses the row itself, so a link follows the app's router and a handler runs, as a click would (ADR 0508).
+  const linkRef = useRef<HTMLAnchorElement>(null);
+  useShortcutActions(
+    isLink && shortcut !== undefined
+      ? [
+          {
+            id: `sidebar:${href ?? label}`,
+            label,
+            shortcut,
+            isDisabled,
+            run: () => linkRef.current?.click(),
+          },
+        ]
+      : [],
+  );
   const isNested = depth > 0;
   const showBadge = hasBadge(badge);
   const rowClass = cn(
@@ -152,15 +169,7 @@ export function SidebarMenuItem({
         )
       ) : null}
       {shortcut !== undefined && !isRail && !showBadge ? (
-        // One key cap per key, so `G O` reads as two keys and not as one word.
-        <span className="flex shrink-0 gap-0.5">
-          {shortcut.split(/\s+/u).map((key, index) => (
-            // oxlint-disable-next-line react/no-array-index-key -- a shortcut may repeat a key (`G G`), so the cap's place is its identity
-            <Kbd key={index} className="text-xs">
-              <Kbd.Content>{key}</Kbd.Content>
-            </Kbd>
-          ))}
-        </span>
+        <ShortcutHint keys={shortcut} isDecorative className="text-xs" />
       ) : null}
       {hasSub && !isLink && !isRail ? (
         <Icon
@@ -180,6 +189,7 @@ export function SidebarMenuItem({
   };
   const row = isLink ? (
     <AriaLink
+      ref={linkRef}
       {...omitUndefined({
         // A disabled link is a span, which React Aria still hands the `href` attribute, so it is left off here.
         href: isDisabled ? undefined : href,

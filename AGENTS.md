@@ -12,7 +12,7 @@ global rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its cod
 | `packages/tooling/*`                                       | `@stackra/{typescript,oxlint,vitest,tsdown,commitlint}-config`, exactly five presets (ADR 0300)                                                           | `tier:config`  |
 | `services/<name>`                                          | `@figentra/service-<name>` — one member per service (`example`, `health`); root module `src/<key>.module.ts` (ADR 0294)                                   | `tier:service` |
 | `workers/<name>`                                           | `@figentra/worker-<name>` — Cloudflare Worker members (`static`: `stackra-static`, static.stackra.figentra.com), `wrangler.jsonc`, ADR 0284               | `tier:app`     |
-| `tools/scripts`                                            | `validate-repository.mjs` (+ test); `scaffold.mjs` (+ test) — `pnpm new <kind> <name>`, templates in `tools/scaffold`                                     | —              |
+| `tools/scripts`                                            | repo helpers (Linear, bots, spec gates, runway); the checks and `pnpm new` are `stackra` commands, templates in `tools/scaffold`                          | —              |
 | `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc` | agent hooks and config                                                                                                                                    | —              |
 | `.notes`                                                   | private owner-only submodule (`git submodule update --init .notes`); CI and agents never need it; never reference its contents from public docs           | —              |
 
@@ -27,12 +27,12 @@ Rules every member follows (`pnpm validate` enforces them):
 - Every test file sits directly in a `__tests__/` folder beside its subject (`src/**/__tests__/<name>.test.ts`), anywhere in the repo; no root `tests/`, no `.spec`. App e2e lives in the app. ADR 0022, enforced by `pnpm validate`.
 - A package never imports an app, a service or `encore.dev`, nor another package's `src/`.
 - A JSON config is `.jsonc` (comments welcome) when its tool reads JSONC; tsconfig files keep `.json` and take comments.
-  The files that must stay strict `.json`, with the reason, are `MUST_STAY_JSON` in `tools/scripts/validate-repository.mjs`.
+  The files that must stay strict `.json`, with the reason, are `MUST_STAY_JSON` in `@stackra/repo-checks`.
 
 The programming model v3 is the target for new code (ADR 0294, 0295, 0296): a class declares its kind by its base
 class, each file sits in its kind's one home group, identities are derived and locked in `stackra.manifest.json`, and
 nobody writes `main.ts` or a tool config. No member is converted yet (STA-344) and its checks are planned (STA-338,
-STA-339, STA-340), so today's code and `validate-repository.mjs` still show the older shapes.
+STA-339, STA-340), so today's code and `stackra validate --repository` still show the older shapes.
 
 Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue STA-n` lands it in
 `apps/docs/adr/numbers.yaml` on main first (STA-1732); never take "the highest on disk plus one" from a branch.
@@ -76,7 +76,7 @@ amended). This applies in Stackra, OS, Commerce and every product.
 - `ToolSource` is a closed enum (`packages/application/ai/src/core/enums/tool-source.enum.ts`).
 - planned — STA-1631: gen refuses client tool collisions, a `.prefill` of an action that is `tool: false`, and an
   undeclared anchor.
-- planned — STA-1637: `validate-repository.mjs` refuses a `.py` file outside the tools-stack images.
+- planned — STA-1637: `stackra validate --repository` refuses a `.py` file outside the tools-stack images.
 
 #### See Also
 
@@ -188,8 +188,8 @@ an action or a query class (ADR 0098 as amended by 0294), and `stackra gen` emit
 gitignored `.stackra/encore/` (ADR 0091, 0124). The rules below are what the generated endpoints must satisfy, so they
 shape how you author actions.
 
-The programming model v3 (ADR 0294) is the target. `@stackra/actions` and gen do not ship yet, so the shapes below are
-the contract they will implement, not code that runs today; the package docs win once they ship.
+The programming model v3 (ADR 0294) is what `@stackra/actions` and gen implement (shipped since 0.3.0); the package
+docs win where they differ. Core's own `services/example` and `services/health` keep the older shape until STA-344.
 
 #### Action or query
 
@@ -333,7 +333,7 @@ Never build HTTP responses by hand and never import `APIError` in a service.
 
 #### Enforcement
 
-- `validate-repository.mjs` (`checkService`) refuses Encore files in a service (ADR 0124)
+- `stackra validate --repository` (`checkService`) refuses Encore files in a service (ADR 0124)
 - planned — STA-340: the gen checks for an endpoint collision, GET on an action or non-GET on a query, a query above
   L1, `cache` on an action and a precondition on a query; until gen ships, review (`api-contract-reviewer`) checks this
   rule
@@ -455,7 +455,7 @@ authored `src/main.ts`, and older pages still name `app-manifest.json`; the conv
 
 - `turbo boundaries` enforces tier direction
 - `packages/tooling/oxlint/src/boundaries.jsonc` blocks forbidden imports
-- `tools/scripts/validate-repository.mjs` checks tier tags
+- `stackra validate --repository` checks tier tags
 - planned — STA-340: the `contracts`-is-a-leaf and sibling-module boundary rules in `boundaries.jsonc`; STA-339: the `entries` validator check
 
 #### See Also
@@ -546,7 +546,7 @@ means not yet. A row changes only by a new ADR. Full table with revival triggers
 | A microVM tier for tenant code or other untrusted code                                                      | Deferred | the sandboxed code step and its WASM pool (`/adr/0154-tenant-code-runs-only-in-a-sandboxed-code-step`)                                                                                                                                                                 |
 | A second non-TypeScript runtime for services                                                                | Deferred | TypeScript service members (`/adr/0010-services-are-independent-workspace-members`)                                                                                                                                                                                    |
 
-Enforcement: `FORBIDDEN_DEPENDENCIES` in `tools/scripts/validate-repository.mjs` (eslint, prettier, jest, nest,
+Enforcement: `FORBIDDEN_DEPENDENCIES` in `@stackra/repo-checks` (`stackra validate --repository`) (eslint, prettier, jest, nest,
 reflect-metadata, prisma, drizzle, express, fastify, typeorm, knex, expo-router, zustand, @tanstack/store, i18next,
 react-i18next, class-validator, class-transformer, meilisearch, @opensearch-project/opensearch); `boundaries.jsonc` bans `encore.dev` in packages.
 Planned: extend `FORBIDDEN_DEPENDENCIES` with `next`, `better-auth`, `xstate`, `@storybook/*` and `graphql` (0227).
@@ -713,7 +713,7 @@ Stackra versions come from **one of two sources**, never a third:
 
 #### Enforcement
 
-- `tools/scripts/validate-repository.mjs` checks catalog references
+- `stackra validate --repository` checks catalog references
 - `pnpm install` fails on invalid catalog: entries (`catalogMode: strict`)
 - Turborepo's `globalDependencies` includes `mise.toml` and `pnpm-workspace.yaml`
 
@@ -790,7 +790,7 @@ After the tier tag come `category:<c>` (packages only) and one `runtime:<r>` per
 
 The programming model v3 (ADR 0294, 0295) is the target shape below. Today's members predate it: the console, mobile
 app, example and health services and the static Worker still have an authored `src/main.ts`, and
-`validate-repository.mjs` (`checkService`) accepts a service in that shape (with a `stackra.module` field) or in the v3
+`stackra validate --repository` (`checkService`) accepts a service in that shape (with a `stackra.module` field) or in the v3
 shape that `pnpm new` writes until STA-344 converts them. Convert nothing by hand ahead of the codemod (STA-344); write
 new code in the v3 shape where the member already allows it.
 
@@ -869,10 +869,10 @@ new code in the v3 shape where the member already allows it.
 #### Enforcement
 
 - `turbo boundaries` checks dependency direction
-- `tools/scripts/validate-repository.mjs` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
+- `stackra validate --repository` checks tier tags, file existence, and config formats: repo-owned config is YAML; `.jsonc` only where the reader has no YAML support (`MUST_STAY_JSONC`), `.json` only where it takes no comments (`MUST_STAY_JSON`)
 - `packages/tooling/oxlint/src/boundaries.jsonc` enforces layer rules
 - planned — STA-338: the `kind-path` check of the v3 group tables; STA-339: the `member-root`, `tool-configs`, `manifest` and `runway` checks; STA-340: the other v3 validator rows (ADR 0294 to 0296)
-- Repo-owned YAML is block style: no flow mappings (`{ a: b }`, empty `{}` aside), flow sequences only for short scalar lists on one line, trailing comments only while the line stays within 100 characters; `checkYamlFlowMaps` in `validate-repository.mjs` enforces it (STA-299)
+- Repo-owned YAML is block style: no flow mappings (`{ a: b }`, empty `{}` aside), flow sequences only for short scalar lists on one line, trailing comments only while the line stays within 100 characters; `checkYamlFlowMaps` in `stackra validate --repository` enforces it (STA-299)
 
 #### See Also
 

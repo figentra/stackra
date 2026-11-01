@@ -113,6 +113,10 @@ export class ResendConnection extends Connection<ResendIntegration> {
 }
 ```
 
+Gen derives the Integration's key as `<module>.<snake(class)>` (`messages.resend`). Write `key` once when stored data
+already names a different key (`key: "connectors.stripe"`, two snake_case parts): connection rows and OAuth apps are
+stored under it, so it never changes once data exists (STA-1739).
+
 Every length of time is a `Duration` from `@stackra/contracts` (`Duration.seconds(1)`, or `Duration.parse("200ms")`
 for the short form); the `Interval` string is gone (stackra-223). `retry` is the contracts `RetryPolicy` plus
 `idempotencyHeader`: 3 attempts, `base` 200 ms doubling, `max` 30 s when left out (`backoff` and `maxDelay` became

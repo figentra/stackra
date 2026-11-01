@@ -8,7 +8,6 @@
  * Runtime: react-native
  * Governing contract: ADR 0302 (decision 3: one API on web and native); ADR 0303; WCAG 2.2 SC 1.1.1, 1.4.11 and 2.3.3; STA-1371.
  */
-import { Canvas, Path, Skia } from "@shopify/react-native-skia";
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { type ReactElement, useEffect } from "react";
 import { View } from "react-native";
@@ -23,7 +22,11 @@ import { sliceColorsOf } from "#native/chart/slice-colors-of.function";
 import { useCanvasSize } from "#native/chart/use-canvas-size";
 import { useChartLocale } from "#native/chart/use-chart-locale";
 import { useChartPaint } from "#native/chart/use-chart-paint";
+import { loadSkia } from "#native/skia/load-skia.function";
 import type { RadialBarChartProps } from "#native/radial-bar-chart/radial-bar-chart.props";
+
+// Skia is an optional peer, required on first use (STA-1791).
+const { Canvas, Path, Skia } = loadSkia();
 
 /** The bars sweeping in: twice the theme's slow step. */
 const SLOW = motionTiming(STACKRA_THEME, "slow");
