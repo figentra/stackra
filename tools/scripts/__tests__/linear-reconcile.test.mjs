@@ -103,9 +103,9 @@ test("gather: commit pages stop at a short page and at the cap", () => {
   assert.equal(short.calls.filter((a) => a[0] === "api").length, 2);
 });
 
-test("plan: work merged outside core closes its issue with a repo-qualified marker", () => {
+test("plan: work merged outside core closes its issue with a repo-qualified marker; a title never closes", () => {
   const { gh } = ghStub({
-    stackra: { merged: [pr(5, { title: "chore: unrelated" })] },
+    stackra: { merged: [pr(5, { title: "chore: after STA-7" })] },
     billing: {
       merged: [pr(5, { url: "b5", title: "feat: invoices", headRefName: "figentra/sta-2-x" })],
     },
@@ -121,7 +121,7 @@ test("plan: work merged outside core closes its issue with a repo-qualified mark
     gh,
   });
   const actions = run({
-    issues: [ISSUE("STA-2"), ISSUE("STA-3"), ISSUE("STA-4")],
+    issues: [ISSUE("STA-2"), ISSUE("STA-3"), ISSUE("STA-4"), ISSUE("STA-7")],
     mergedPrs,
     openPrs,
   });

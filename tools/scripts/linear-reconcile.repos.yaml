@@ -7,14 +7,20 @@ org: figentra
 repos:
   - stackra
   - stackra-pro
+  - stackra-template
+  - stackra-notes
   - billing
   - pay
-  - pay-connectors-regional
   - invoicing
   - tamo
   - os
   - juristra
   - figentra
   - flow
-  - vellum
   - brand
+  - commerce
+  - organza
+  - velora
+  - academorix
+  - jute
+  - mezzora

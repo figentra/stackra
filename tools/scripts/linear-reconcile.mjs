@@ -44,17 +44,16 @@ const keysAfter = (body, words) =>
   ].flatMap((m) => keysIn(m[1]));
 
 /**
- * STA keys merged work references. `closes` (merge → Done): the branch name, the title and Refs/Fixes/Closes/Resolves
- * lines; every feat/fix commit carries `Refs: STA-n` (commitlint `refs-issue-key`). `mentions` (open → In Review):
- * those plus Part of/Linear lines. `Part of STA-n` is how partial work avoids closing its issue.
+ * STA keys merged work references. `closes` (merge → Done): the branch name and Fixes/Closes/Resolves/Refs lines;
+ * every feat/fix commit carries `Refs: STA-n` (commitlint `refs-issue-key`). `mentions` (open → In Review): those plus
+ * the title and Part of/Linear lines. A title never closes, and `Part of STA-n` keeps partial work's issue open.
  */
 export function prKeys({ title = "", headRefName = "", body = "" }) {
   const closes = new Set([
     ...keysIn(headRefName),
-    ...keysIn(title),
     ...keysAfter(body, "Fixes|Closes|Resolves|Refs"),
   ]);
-  const mentions = new Set([...closes, ...keysAfter(body, "Part of|Linear")]);
+  const mentions = new Set([...closes, ...keysIn(title), ...keysAfter(body, "Part of|Linear")]);
   return { closes: [...closes], mentions: [...mentions] };
 }
 
