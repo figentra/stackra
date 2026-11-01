@@ -1,5 +1,63 @@
 # @stackra/identity
 
+## 0.3.0
+
+### Minor Changes
+
+- 4a6abd7: Add the module UI kits (ADR 0504): each module's `./react` entry ships its domain blocks on `@stackra/ui`, every word
+  and value in props. `@stackra/ai/react`: `ChatSurface`. `@stackra/pricing/react`: `PricingTable`.
+  `@stackra/payments/react`: `Cart` and `Checkout`. `@stackra/identity/react`: `SignIn`. `@stackra/experience/react`:
+  `FeatureSection` and `CtaSection`.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- 895a526: <!-- Purpose: release note for `optionalRequires`. Boundary: changelog text only. Runtime: none. Governing contract: ADR 0025; STA-1722. -->
+  
+  `library({ optionalRequires })` rewrites a native entry's shimmed `__require("expo-…")` of a listed optional peer back
+  to a literal `require` call, so Metro sees and bundles the peer; 0.2.0's `native.mjs` called it through the
+  `__require` shim, which Metro never resolves, so haptics, clipboard, pickers, video and Apple sign-in stayed off. Any
+  other `require` in a chunk fails the build.
+- Updated dependencies [a60f4e9]
+- Updated dependencies [c4443b5]
+- Updated dependencies [b00096a]
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+- Updated dependencies [be75ede]
+- Updated dependencies [e6a582a]
+- Updated dependencies [895a526]
+- Updated dependencies [a60f4e9]
+- Updated dependencies [a60f4e9]
+- Updated dependencies [f05c8e5]
+- Updated dependencies [a60f4e9]
+- Updated dependencies [9ed272a]
+- Updated dependencies [6484453]
+  - @stackra/actions@0.3.0
+  - @stackra/database@0.3.0
+  - @stackra/clients@0.3.0
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/events@0.3.0
+  - @stackra/iam@0.3.0
+  - @stackra/market-packs@0.3.0
+  - @stackra/outbox@0.3.0
+  - @stackra/privacy@0.3.0
+  - @stackra/query@0.3.0
+  - @stackra/queue@0.3.0
+  - @stackra/scheduler@0.3.0
+  - @stackra/scope@0.3.0
+  - @stackra/storage@0.3.0
+  - @stackra/support@0.3.0
+  - @stackra/tenancy@0.3.0
+  - @stackra/transport@0.3.0
+  - @stackra/ui@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

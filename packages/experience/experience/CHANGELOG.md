@@ -1,5 +1,34 @@
 # @stackra/experience
 
+## 0.3.0
+
+### Minor Changes
+
+- 4a6abd7: Add the module UI kits (ADR 0504): each module's `./react` entry ships its domain blocks on `@stackra/ui`, every word
+  and value in props. `@stackra/ai/react`: `ChatSurface`. `@stackra/pricing/react`: `PricingTable`.
+  `@stackra/payments/react`: `Cart` and `Checkout`. `@stackra/identity/react`: `SignIn`. `@stackra/experience/react`:
+  `FeatureSection` and `CtaSection`.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [895a526]
+- Updated dependencies [9ed272a]
+- Updated dependencies [6484453]
+  - @stackra/clients@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/documents@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/i18n@0.3.0
+  - @stackra/icons@0.3.0
+  - @stackra/support@0.3.0
+  - @stackra/ui@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

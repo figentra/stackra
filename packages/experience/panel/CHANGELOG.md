@@ -1,5 +1,74 @@
 # @stackra/panel
 
+## 0.3.0
+
+### Minor Changes
+
+- 23e556c: The queued export never writes a `credential` column, even when it is opted in under the L2 permission (STA-1677, ADR 0494).
+- 9ed272a: The List page and relation tables run on `@stackra/ui`'s `useCollection` engine (ADR 0505): the search, filter, sort,
+  cursor pages and selection live in the engine, the declared filters come from the columns (an enum as a choice of
+  several codes, sent as a list), and the saved and preset views are one list's engine views drawn as tabs, so a view's
+  group and totals are kept instead of dropped. `SavedViewTabs` now takes `{ collection, label }` and draws
+  `SavedViews variant="tabs"`; `ResourceTable` takes `views` and `presets` instead of one `view` or `preset`.
+  
+  The advanced filter editor's conditions reach the server too, each in its `TableFilter` wire form (equals and any of
+  as a list, comparisons, contains, between as a range, before and after, empty and not empty), one per key from a
+  filter that matches all; an any-match filter, a nested group, "does not contain" and "is none of" are not sent.
+  Those it cannot send are marked: `listFiltersOf` returns `{ values, unsent }`, and the list's filter bar draws the
+  unsent conditions as warning chips (`unappliedIds`).
+- ccc0b0f: Add `pageContextOf(listState, record, selection)` (STA-1631, ADR 0490): the AI page context a panel page publishes with
+  no declaration, as the structural `PanelPageContext` (the record id, at most 200 selected ids with the full count, and
+  the list's applied filters). Pure; it imports no AI package.
+- 7053c20: Preset views draw as tabs on the List page and can read their list query with a fixed input: `v.view("merged", {}).input({ includeMerged: true })`, typed by the query's input (`Views<R, QueryInput<typeof ListQuery>>`) and sent under the viewer's filters, sort, search and cursor.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- Updated dependencies [a60f4e9]
+- Updated dependencies [c4443b5]
+- Updated dependencies [b00096a]
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+- Updated dependencies [30c3874]
+- Updated dependencies [18ea367]
+- Updated dependencies [be75ede]
+- Updated dependencies [4a6abd7]
+- Updated dependencies [895a526]
+- Updated dependencies [ccc0b0f]
+- Updated dependencies [d5b5411]
+- Updated dependencies [a60f4e9]
+- Updated dependencies [9ed272a]
+- Updated dependencies [6484453]
+  - @stackra/actions@0.3.0
+  - @stackra/database@0.3.0
+  - @stackra/access-log@0.3.0
+  - @stackra/clients@0.3.0
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/data-transfer@0.3.0
+  - @stackra/documents@0.3.0
+  - @stackra/entitlements@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/experience@0.3.0
+  - @stackra/filesystem@0.3.0
+  - @stackra/i18n@0.3.0
+  - @stackra/iam@0.3.0
+  - @stackra/icons@0.3.0
+  - @stackra/model@0.3.0
+  - @stackra/money@0.3.0
+  - @stackra/navigation@0.3.0
+  - @stackra/pricing@0.3.0
+  - @stackra/query@0.3.0
+  - @stackra/support@0.3.0
+  - @stackra/tenancy@0.3.0
+  - @stackra/ui@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

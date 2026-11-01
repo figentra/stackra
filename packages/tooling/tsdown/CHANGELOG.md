@@ -1,5 +1,25 @@
 # @stackra/tsdown-config
 
+## 0.3.0
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- 895a526: <!-- Purpose: release note for `optionalRequires`. Boundary: changelog text only. Runtime: none. Governing contract: ADR 0025; STA-1722. -->
+  
+  `library({ optionalRequires })` rewrites a native entry's shimmed `__require("expo-…")` of a listed optional peer back
+  to a literal `require` call, so Metro sees and bundles the peer; 0.2.0's `native.mjs` called it through the
+  `__require` shim, which Metro never resolves, so haptics, clipboard, pickers, video and Apple sign-in stayed off. Any
+  other `require` in a chunk fails the build.
+- 022434d: `library()` returns `LibraryConfig`, exported by this package, so a member's `export default library(...)` typechecks
+  under `declaration: true` without `tsdown` among its own dependencies (TS2883, STA-1743).
+- 6484453: <!-- Purpose: release note for the ui require-shim fix: react-dom stays external and no dist may carry rolldown's __require shim. Boundary: changelog text only. Runtime: none. Governing contract: ADR 0025; STA-1722. -->
+  
+  `@stackra/ui` declares `react-dom` as an optional peer, so it is no longer bundled: 0.2.0 inlined CommonJS react-dom,
+  whose `require("react")` became rolldown's `__require` shim and threw for every ESM consumer. `library()` in
+  `@stackra/tsdown-config` now fails a build whose output calls `__require(...)`, naming the chunk and the module.
+
 ## 0.2.0
 
 No changes in this release.

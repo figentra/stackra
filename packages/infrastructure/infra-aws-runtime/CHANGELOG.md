@@ -1,5 +1,53 @@
 # @stackra/infra-aws-runtime
 
+## 0.3.0
+
+### Minor Changes
+
+- 67a3f52: Declare the runway's Postgres resources (STA-1643, ADR 0493). `awsRuntime` now calls `awsDatabases`: one subnet
+  group, then per database a security group admitting port 5432 only from the runtime's security groups, the RDS
+  instance or Aurora cluster (encrypted, private, 14-day backups; dev and preview without deletion protection or a final
+  snapshot), and RDS Proxy with TLS required, logging in through a Secrets Manager secret. The admin password arrives
+  per database as a Pulumi secret input (`databasePasswords`), and `network.vpcId` is required once a database exists.
+  `AwsRuntime.databases` returns each proxy endpoint and port.
+- 1c75be6: Plan the runway's `resources` and `workloads` (STA-1642, ADR 0493). `runtimePlan` now adds each Postgres resource
+  (`databases`: RDS or Aurora, the size's instance class, Multi-AZ and storage, 14 backup days, the members and workloads
+  that use it), queue, topic, cache and bucket resources beside the member-derived ones, and each container workload
+  (`workloads`: Fargate task size and count, exposure, env, secret names, uses), sized per environment from new catalogues
+  (`small` where unsized; dev Postgres is `db.t4g.micro`, single-AZ). The plan carries a monthly `cost` estimate and is
+  refused when it passes the environment's cap: `limits.monthly`, else $150 in dev and $500 in staging; production only
+  warns until it has a cap. A member that uses an undeclared resource is refused. `planForMembers` leaves the shared
+  resources and workloads to the environment's whole stack.
+- d2cd103: Resource secrets (STA-1645, ADR 0493 decision 4). `resourceVariables(resource)` names a resource's connection
+  details (`MAIN_DB_URL`, `_HOST`, `_PORT`, `_USER`, `_PASSWORD`), and `consumerVariables(plan)` lists the names each
+  member or workload gets from the resources it uses. In the deploy job, `ensureDatabasePasswords` reuses each database
+  password the job already has, or generates one and writes it blind to Infisical at `<env>:/runtime/<resource>` before
+  the program uses it; `publishResourceSecrets` writes the applied host, port, user and TLS URL there after `pulumi up`.
+  No value is logged or returned in a name.
+- af9ecb1: Declare the runway's container workloads (STA-1646, ADR 0493). `awsRuntime` now calls `awsWorkloads`: one ECS
+  cluster, private DNS namespace and log group per environment, a task execution role reading only the environment's SSM
+  parameters, and per workload a Fargate task definition (its own secrets and the variables of the resources it uses as
+  SSM references, never values), a service registered in the namespace, and CPU autoscaling between its bounds. A public
+  workload gets an ALB in the public subnets admitting HTTPS from Cloudflare's ranges only, a TLS 1.3 listener on the given
+  certificate and a target group checking its health path. One shared workload security group is created first, and the
+  databases admit it. New options `workloads.publicSubnetIds`, `workloads.certificateArn` and `workloads.logRetentionDays`;
+  `AwsRuntime.workloads` returns each service, internal host and public host.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [ae08e09]
+- Updated dependencies [4ed7315]
+- Updated dependencies [d53babc]
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/runway@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

@@ -1,5 +1,36 @@
 # @stackra/data-transfer
 
+## 0.3.0
+
+### Minor Changes
+
+- 18ea367: Add `exportSheet`: the sheet a tenant export or backup writes for one model's records, without the classified columns the
+  export does not opt in, and never a `credential` column, even opted in (ADR 0494).
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- 30c3874: The XLSX reader and writer no longer depend on exceljs, whose last release pulls uuid 8 and glob and minimatch copies
+  with open advisories (STA-1736). The writer streams the OOXML parts through the package's `writeZip`; the reader
+  reads the archive's central directory with `node:zlib` and parses the workbook, shared strings, styles (1900 and 1904
+  dates) and sheets itself. Rows, sheet names, text cells and ISO 8601 dates are as before.
+  
+  The reader treats every upload as untrusted: it refuses a zip bomb (entry count, compression ratio, part and total
+  inflated size), an absolute or climbing entry name, a DTD or entity declaration, XML nested too deep and a cell past
+  column XFD as the new `UnreadableWorkbookError` (`unreadable_workbook`, with a `reason`). `TransferLimits` gains
+  `columns` and `cellLength`, refused as `TransferLimitExceededError`. The file is held in memory, capped by
+  `limits.bytes`.
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [a60f4e9]
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/filesystem@0.3.0
+  - @stackra/outbox@0.3.0
+  - @stackra/support@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

@@ -1,5 +1,48 @@
 # @stackra/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- 7f93c10: Add `stackra smoke --env <environment> [--only web,mobile,desktop] [--app <key> --ios <.app> --android <.apk>
+  --template-dir <dir>]` (STA-265): runs Runway's smoke step after a preview deploy, prints one line per result with its
+  problems and evidence, and exits 1 when any subject failed, so a promote job that needs it does not run. Runway's
+  reusable `runway-smoke.yml` runs it per runner: web on Linux, iOS on the Mac runner, Android on an emulator.
+- 5602e63: Add `stackra testbed <verb>` (STA-1626, ADR 0484), the replacement of the Mac script `ci-box`: `run "<session> <what>"
+  <dir> "<cmd>"` runs heavy work on a free shared test box (claim, rsync, run under the slot's lock, another box on exit
+  75, one retry of a light job after a lost box, the group's desired count raised after two busy minutes), plus
+  `status`, `unlock`, `ip`, `ssh`, `sync`, `scale` and `image`. With no healthy box, `run --preset
+  verify|e2e|integration --ref <ref>` dispatches the GitHub fallback workflow; `--no-wait` exits 75 instead of waiting.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+- Updated dependencies [d0569d2]
+- Updated dependencies [4bdb23b]
+- Updated dependencies [ccc0b0f]
+- Updated dependencies [d05f876]
+- Updated dependencies [c9296d9]
+- Updated dependencies [8dead7a]
+- Updated dependencies [499effb]
+- Updated dependencies [7a2d4cc]
+- Updated dependencies [b369e36]
+- Updated dependencies [3e7699f]
+- Updated dependencies [ae08e09]
+- Updated dependencies [4ed7315]
+- Updated dependencies [d53babc]
+  - @stackra/config@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/gen@0.3.0
+  - @stackra/mcp@0.3.0
+  - @stackra/repo-checks@0.3.0
+  - @stackra/runway@0.3.0
+  - @stackra/skills@0.3.0
+  - @stackra/support@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

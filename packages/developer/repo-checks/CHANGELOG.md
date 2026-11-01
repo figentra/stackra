@@ -1,5 +1,22 @@
 # @stackra/repo-checks
 
+## 0.3.0
+
+### Minor Changes
+
+- 7a2d4cc: Add `checkAdrNumbers` and the `adr-numbers` rule in the config phase (STA-1732): when a repository keeps
+  `apps/docs/adr/numbers.yaml`, every `NNNN-<slug>.mdx` ADR page must have its number registered there with the
+  same slug, and no number may be used twice.
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- b369e36: `MUST_STAY_JSON` accepts the root `figentra-flow.config.json`: Figentra Flow reads its configuration by that fixed name
+  as strict JSON (ADR 0503).
+- 3e7699f: `json-configs` allows the committed `openapi.json` gen writes at each member root (ADR 0294 R10), and a product repo's
+  flat `assets/lang/<locale>.json` beside the `assets/lang/<locale>/<namespace>.json` form (STA-1737).
+
 ## 0.2.0
 
 ### Minor Changes

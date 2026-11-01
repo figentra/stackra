@@ -1,5 +1,41 @@
 # @stackra/navigation
 
+## 0.3.0
+
+### Minor Changes
+
+- ccc0b0f: Add `ai?: false` and `context?` to `RouteOptions` (STA-1631, ADR 0490): `ai: false` keeps a route out of the agent's
+  client tools, and `context` names the page context a route publishes with each AI turn (the record its `:param` holds,
+  and whether it publishes a selection, filters, a view and a modal).
+
+### Patch Changes
+
+- d22a5eb: The licence's copyright holder is the registered entity Figentra Technologies L.L.C. (owner decision of 2026-10-30, STA-1678);
+  the MIT terms, the package names and the product names do not change.
+- d5b5411: The `react-router` peer is `^7.18.4` instead of the exact `7.18.4`, so a consumer can take react-router's later 7.x
+  security fixes without an override (STA-1736).
+- Updated dependencies [d22a5eb]
+- Updated dependencies [23e556c]
+- Updated dependencies [23e556c]
+- Updated dependencies [895a526]
+- Updated dependencies [9ed272a]
+- Updated dependencies [6484453]
+  - @stackra/clients@0.3.0
+  - @stackra/config@0.3.0
+  - @stackra/container@0.3.0
+  - @stackra/contracts@0.3.0
+  - @stackra/errors@0.3.0
+  - @stackra/feature-flags@0.3.0
+  - @stackra/i18n@0.3.0
+  - @stackra/iam@0.3.0
+  - @stackra/icons@0.3.0
+  - @stackra/platform@0.3.0
+  - @stackra/seo@0.3.0
+  - @stackra/settings@0.3.0
+  - @stackra/testing@0.3.0
+  - @stackra/ui@0.3.0
+  - @stackra/validation@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes
