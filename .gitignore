@@ -17,6 +17,8 @@ encore.gen/
 .encore/
 **/.stackra/*
 !**/.stackra/app-manifest.json
+# Gen's golden trees commit a member's expected .stackra/ output as *.golden files (STA-1320).
+!packages/developer/gen/__golden__/**/.stackra/*
 # Gen's root Vitest shim of a package or service member (ADR 0295 decision 5; STA-1299). The authored configs that
 # merge ./.stackra/vitest.config are tracked and stay tracked; add a new authored one with `git add -f`.
 packages/*/*/vitest.config.ts
