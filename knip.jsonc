@@ -243,6 +243,9 @@
   // entry barrels import; the two names are one schema by design.
   "ignoreIssues": {
     "**/.stackra/**": ["unlisted", "duplicates"],
+    // A package's committed entity list is gen output in src/ (STA-1874): only <KEY>_ENTITIES is re-exported, so its
+    // per-model `*Schema` exports read as unused, as they did under .stackra/.
+    "packages/*/*/src/node/entities.gen.ts": ["exports"],
   },
   "ignoreBinaries": ["gitleaks", "mint"],
   "rules": {

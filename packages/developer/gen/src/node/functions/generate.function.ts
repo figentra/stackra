@@ -43,6 +43,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
+import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
@@ -120,8 +121,8 @@ function hatchErrors(root: string): GenError[] {
   return errors;
 }
 
-/** The files a member commits (ADR 0294 R10); every other generated file is gitignored output. */
-const COMMITTED = new Set([MANIFEST_FILE, "openapi.json"]);
+/** The files a member commits (ADR 0294 R10, a package's entity list since STA-1874); the rest is gitignored output. */
+const COMMITTED = new Set([MANIFEST_FILE, "openapi.json", PACKAGE_ENTITIES_FILE]);
 
 /**
  * The paths of `files` that differ from disk under `root`, written unless `check`. A check passes a missing file that

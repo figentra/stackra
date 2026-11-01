@@ -20,4 +20,4 @@ export { RunStep } from "#node/models/run-step.model";
 export { Run } from "#node/models/run.model";
 export { ToolCall } from "#node/models/tool-call.model";
 // The entity list gen writes for the module, which a hosting service registers (STA-1793).
-export { AI_ENTITIES } from "#stackra/entities/ai";
+export { AI_ENTITIES } from "#node/entities.gen";

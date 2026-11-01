@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: hold the package entity-list check of `stackra validate --repository` to its contract (STA-1793): a package
- *          with own models whose stand-in `./node` barrel exports `<MEMBER>_ENTITIES` passes; one that does not is
+ *          with own models whose stand-in `./node` barrel exports `<MEMBER>_ENTITIES` from the committed `#node/entities.gen`
+ *          passes (STA-1874; one from the gitignored `#stackra/entities` does not); one that does not export it is
  *          reported with its folder; a package with no own models (only another package's), or no stand-in barrel, is
  *          not checked; and this checkout passes.
  * Boundary: writes fixture trees into temp directories, and reads this checkout's packages for the last case.
@@ -32,13 +33,22 @@ function checkout(files: Readonly<Record<string, string>>): string {
 const manifest = (member: string, models: readonly object[]): string =>
   JSON.stringify({ member, models });
 
-test("a package with own models that re-exports its entity list passes", () => {
+test("a package with own models that re-exports its committed entity list passes", () => {
   const root = checkout({
     "packages/security/scope/stackra.manifest.json": manifest("scope", [{ class: "ScopeNode" }]),
     "packages/security/scope/src/node/index.ts":
-      'export { ScopeNode } from "#node/models/scope-node.model";\nexport { SCOPE_ENTITIES } from "#stackra/entities/scope";\n',
+      'export { ScopeNode } from "#node/models/scope-node.model";\nexport { SCOPE_ENTITIES } from "#node/entities.gen";\n',
   });
   assert.deepEqual(packageEntitiesFindings(root), []);
+});
+
+test("a re-export from the gitignored #stackra/entities is reported (STA-1874)", () => {
+  const root = checkout({
+    "packages/security/scope/stackra.manifest.json": manifest("scope", [{ class: "ScopeNode" }]),
+    "packages/security/scope/src/node/index.ts":
+      'export { SCOPE_ENTITIES } from "#stackra/entities/scope";\n',
+  });
+  assert.equal(packageEntitiesFindings(root).length, 1);
 });
 
 test("a package with own models whose barrel misses the list is reported", () => {
@@ -52,10 +62,7 @@ test("a package with own models whose barrel misses the list is reported", () =>
   const findings = packageEntitiesFindings(root);
   assert.equal(findings.length, 1);
   assert.equal(findings[0]?.dir, "packages/security/access-log");
-  assert.match(
-    findings[0]?.text ?? "",
-    /ACCESS_LOG_ENTITIES from "#stackra\/entities\/access_log"/,
-  );
+  assert.match(findings[0]?.text ?? "", /ACCESS_LOG_ENTITIES from "#node\/entities\.gen"/);
 });
 
 test("a package with no own models or no stand-in barrel is not checked", () => {

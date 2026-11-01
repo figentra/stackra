@@ -22,6 +22,24 @@ import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
+/** LOYALTY_KIT_IR (a package) with one model per listed module. */
+const packageWithModels = (...modules: string[]) => ({
+  ...LOYALTY_KIT_IR,
+  shapes: [
+    ...LOYALTY_KIT_IR.shapes,
+    ...modules.map((module, index) => ({
+      name: `LoyaltyAccount${index}`,
+      kind: "model",
+      module,
+      file: `src/node/models/loyalty-account-${index}.model.ts`,
+      importPath: `#node/models/loyalty-account-${index}.model`,
+      fields: [],
+      relations: [],
+      entity: { optional: [], relations: [], computed: [] },
+    })),
+  ],
+});
+
 describe("generateMember", () => {
   it("writes every file of a service", () => {
     const { files, errors, manifest } = generateMember(COMMERCE_IR);
@@ -222,5 +240,19 @@ describe("generateMember", () => {
       committed,
     );
     expect(accepted.errors).toEqual([]);
+  });
+
+  it("writes a package's entity list to its committed src/node/entities.gen.ts (STA-1874)", () => {
+    const { files, errors } = generateMember(packageWithModels("loyalty_kit"));
+    expect(errors).toEqual([]);
+    const paths = files.map((file) => file.path);
+    expect(paths).toContain("src/node/entities.gen.ts");
+    expect(paths.some((path) => path.startsWith(".stackra/gen/entities/"))).toBe(false);
+  });
+
+  it("refuses a package whose models span two modules, which one committed list cannot hold", () => {
+    const { files, errors } = generateMember(packageWithModels("loyalty_kit", "rewards"));
+    expect(files).toEqual([]);
+    expect(errors.map((error) => error.code)).toEqual(["package_entities_modules"]);
   });
 });

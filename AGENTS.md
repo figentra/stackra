@@ -813,7 +813,9 @@ new code in the v3 shape where the member already allows it.
   (STA-339) skips them
 - Nobody writes `main.ts`, an entry barrel or a tool config: gen writes the runtime entries to `.stackra/entry/<target>.ts`
   and every tool config into `.stackra/` (ADR 0295)
-- Committed generated contracts at the member root: `stackra.manifest.json` and `openapi.json`
+- Committed generated contracts at the member root: `stackra.manifest.json` and `openapi.json`; a package also commits
+  its entity list, `src/node/entities.gen.ts`, because its built `./node` cannot import `.stackra/` (ADR 0294 R10 and
+  ADR 0295, amended 2026-11-01, STA-1874)
 - Tests: `src/**/__tests__/` only (ADR 0022)
 
 ##### Packages (<category>/<name>)
@@ -858,8 +860,8 @@ new code in the v3 shape where the member already allows it.
 
 #### Generated Output
 
-- `stackra gen` writes real typed files to `.stackra/gen/` (`routes`, `navigation`, `i18n`, `resources`, `assets`, `clients`, `services`, `permissions`, `settings`, `capabilities`, `wiring`, `hooks`, `schemas`). Code imports them only as `#stackra/<name>`, through the member's `imports` map (ADR 0261, 0233)
-- Target: `.stackra/` is fully gitignored, and the committed contract is `stackra.manifest.json` at the member root (ADR 0294 rule R10). Today `.gitignore` still re-includes `.stackra/app-manifest.json`; STA-339 removes the exception
+- `stackra gen` writes real typed files to `.stackra/gen/` (`routes`, `navigation`, `i18n`, `resources`, `assets`, `clients`, `services`, `permissions`, `settings`, `capabilities`, `wiring`, `hooks`, `schemas`). Code imports them only as `#stackra/<name>`, through the member's `imports` map (ADR 0261, 0233); a package's entity list is the exception, the committed `src/node/entities.gen.ts` imported as `#node/entities.gen` (STA-1874)
+- Target: `.stackra/` is fully gitignored, and the committed contracts are `stackra.manifest.json` at the member root and a package's `src/node/entities.gen.ts` (ADR 0294 rule R10, amended 2026-11-01). Today `.gitignore` still re-includes `.stackra/app-manifest.json`; STA-339 removes the exception
 - DI wiring is generated into `.stackra/gen/wiring.ts`; a module is a folder, classes are the only tokens, and authors write no provider lists (ADR 0263 as amended by 0294)
 
 #### Forbidden Paths

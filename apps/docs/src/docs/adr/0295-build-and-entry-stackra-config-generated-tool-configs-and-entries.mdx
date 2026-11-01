@@ -1,7 +1,29 @@
 ---
 title: "0295 — Build and entry: stackra.config.ts, generated tool configs and entries"
-description: "Accepted, amended by 0305, 0326, 0345 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349) and 2026-10-24 (STA-428)"
+description: "Accepted, amended by 0305, 0326, 0345 · 2026-10-22 · amended 2026-10-23 (STA-347, STA-349) and 2026-10-24 (STA-428) · amended 2026-11-01 (STA-1874)"
 ---
+
+<Note>
+  Amended 2026-11-01 (STA-1874), with the amendment of the same date on
+  [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) (rule R10). The build
+  of the `stackra` CLI's own dependency closure runs before gen, which is an exception to the
+  consequence "Gen runs before any build or test". `//#gen:workspace` waits for
+  `@stackra/cli#build`, and build never waits for gen, which keeps that closure acyclic. The
+  packages in the CLI's dependency closure (four today: ai, rules, content and workflow) cannot
+  inline a gitignored generated file: their dist would be built before gen runs, and a build that
+  waited for gen would be a cycle, because gen runs the CLI. Packages outside the closure built in
+  parallel with gen, so a race decided what their dist kept (access-log, whose `dist/node.mjs` kept
+  a runtime import of `#stackra/entities/access_log`, is the case that failed). A dist cannot import
+  `.stackra/` at runtime either: that folder is not shipped, and Node takes the first target of an
+  imports map (`./.stackra/gen/*`, no extension) without falling back when the file is missing. So
+  nothing a package's built `./node` imports may exist only in `.stackra/`. Anything a dist needs
+  from gen is a committed generated contract, such as `src/node/entities.gen.ts`
+  ([0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming) rule R10, STA-1874).
+  Rejected alternatives: an entities pass before the build (it cycles for the packages in the CLI's
+  closure); a separate entities entry (it sits outside decision 15's fixed entries and still waits
+  for gen); per-package reverts or a loader hook (they fix gen but leave the dists broken). The
+  other tasks still wait for gen, and the other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-469) by
@@ -157,7 +179,7 @@ Today a member declares its build in several hand-written places. A service has 
 
 - A member's build is one file to read and, for most changes, one file to edit. A tool setting that no section covers is reached through `raw`, and a fact that already appears elsewhere is never written twice.
 - Nobody edits a tool file by hand, so the files cannot drift from the facts they were made from.
-- The cost is an ordering rule. Gen runs before any build or test, as it already must for `.stackra/gen/` ([ADR 0261](/adr/0261-generated-stackra-modules-in-stackra-gen)). A new tool version may wait for a gen change before a member can use it.
+- The cost is an ordering rule. Gen runs before any build or test (except the build of the `stackra` CLI's own dependency closure; see the note of 2026-11-01), as it already must for `.stackra/gen/` ([ADR 0261](/adr/0261-generated-stackra-modules-in-stackra-gen)). A new tool version may wait for a gen change before a member can use it.
 - Native chrome has a single home: a screen overrides it in one place, and the tab bar is one menu file.
 
 ## Enforcement

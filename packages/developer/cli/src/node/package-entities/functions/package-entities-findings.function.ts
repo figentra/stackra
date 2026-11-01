@@ -3,8 +3,8 @@
  * Purpose: `packageEntitiesFindings(root)`, the package entity-list check of `stackra validate --repository`
  *          (STA-1793): a package whose committed manifest lists models of its own must export `<MEMBER>_ENTITIES` from
  *          its `./node` entry, because gen's `.stackra/gen/registrations.ts` of every hosting service imports that name
- *          to register the package's entities. A stand-in barrel (`src/node/index.ts`) re-exports it from
- *          `#stackra/entities/<member>`, as gen's own barrels do.
+ *          to register the package's entities. A stand-in barrel (`src/node/index.ts`) re-exports it from the committed
+ *          `#node/entities.gen` (`src/node/entities.gen.ts`, written by gen), as gen's own barrels do (STA-1874).
  * Boundary: reads `packages/<category>/<name>/stackra.manifest.json` and `src/node/index.ts` only; writes nothing. A
  *           package with no own models, or with no stand-in barrel (gen writes its entries), is not checked.
  * Runtime: node
@@ -51,12 +51,17 @@ export function packageEntitiesFindings(root: string): DirFinding[] {
     const own = (manifest.models ?? []).some((model) => model.from === undefined);
     if (!own || typeof manifest.member !== "string") continue;
     const name = `${manifest.member.toUpperCase()}_ENTITIES`;
-    if (!new RegExp(`\\bexport\\s*\\{[^}]*\\b${name}\\b`).test(readFileSync(barrelPath, "utf8")))
+    // From the committed `src/node/entities.gen.ts`, never `#stackra/entities/…`: a built ./node cannot import the
+    // gitignored .stackra/ at runtime, and the build does not wait for gen (STA-1874).
+    const exported = new RegExp(
+      `\\bexport\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*from\\s*["']#node/entities\\.gen["']`,
+    );
+    if (!exported.test(readFileSync(barrelPath, "utf8")))
       findings.push({
         dir,
         text:
-          `src/node/index.ts: export ${name} from "#stackra/entities/${manifest.member}", which every hosting ` +
-          "service's generated registrations import (STA-1793)",
+          `src/node/index.ts: export ${name} from "#node/entities.gen" (the committed list gen writes), which every ` +
+          "hosting service's generated registrations import (STA-1793, STA-1874)",
       });
   }
   return findings;
