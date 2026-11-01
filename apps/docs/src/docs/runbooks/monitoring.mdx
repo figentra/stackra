@@ -56,8 +56,9 @@ other Workers: logs from inside, uptime monitors from outside.
   </Step>
   <Step title="GitHub">
     Create the `observability` environment, limited to `main`, with the owner as required reviewer.
-    Set its variables `INFISICAL_OBSERVABILITY_IDENTITY_ID` and `PULUMI_BACKEND_URL`, then the
-    repository variable `OBSERVABILITY_ENABLED` to `true`.
+    Set its variable `PULUMI_BACKEND_URL` (the job reads Infisical with the org variables
+    `INFISICAL_CI_IDENTITY_ID` and `INFISICAL_DEPLOY_PROJECT_ID`, ADR 0512), then the repository
+    variable `OBSERVABILITY_ENABLED` to `true`.
   </Step>
   <Step title="Status page host">
     Choose the subdomain or custom domain, set `customDomain` and `published: true` under
