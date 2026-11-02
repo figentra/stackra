@@ -1,0 +1,81 @@
+{
+  "$schema": "./node_modules/@figentra-oss/flow/schema/flow.config.schema.json",
+  "version": 1,
+  "preset": "stackra",
+  "tracker": {
+    "kind": "linear",
+    "team": "STA",
+    "branchPrefix": "figentra",
+    "otherBranchPrefixes": ["delegate"],
+    "token": ["LINEAR_AGENT_TOKEN", "LINEAR_API_KEY"]
+  },
+  "credentials": {
+    "kind": "wrapper",
+    "gh": ["pnpm", "bot:gh", "--"],
+    "git": ["pnpm", "bot:git", "--"]
+  },
+  "runner": {
+    "kind": "command",
+    "run": ["stackra", "testbed", "run", "{label}", "{dir}", "{command}", "{flags}"]
+  },
+  "secrets": {
+    "kind": "infisical",
+    "auth": "universal-auth",
+    "projectId": "86c297d4-ce42-4e94-b4b3-810a715812f2",
+    "env": "prod",
+    "domain": "https://eu.infisical.com",
+    "paths": {
+      "gate": "/ci/gate"
+    },
+    "bin": "~/.local/bin/infisical",
+    "envFile": "~/.ci-env"
+  },
+  "apps": {
+    "gate": {
+      "slug": "figentra-gate",
+      "login": "figentra-gate[bot]"
+    },
+    "review": {
+      "slug": "stackra-reviewer"
+    },
+    "owner": "figentra-usr"
+  },
+  "gate": {
+    "check": "pnpm verify"
+  },
+  "clean": {
+    "keep": ["g-*", "*-gate", "land-*", "tpl-core", "c6-lock*", "template-wt-lean"]
+  },
+  "baseline": {
+    "mustPass": [
+      "@stackra/tenancy#test",
+      "@stackra/identity#test",
+      "@stackra/infra-identity#test",
+      "@stackra/licensing#test",
+      "@stackra/access-log#test"
+    ],
+    "setup": [
+      {
+        "name": "Toolchain (mise)",
+        "uses": "jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7",
+        "with": {
+          "install_args": "node pnpm gitleaks shfmt aqua:rhysd/actionlint aqua:zizmorcore/zizmor aqua:google/osv-scanner"
+        }
+      },
+      {
+        "name": "Uniwind Pro token (Infisical OIDC)",
+        "uses": "Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d",
+        "with": {
+          "method": "oidc",
+          "identity-id": "${{ vars.INFISICAL_GATE_IDENTITY_ID }}",
+          "domain": "https://eu.infisical.com",
+          "project-id": "${{ vars.INFISICAL_GATE_PROJECT_ID }}",
+          "env-slug": "prod",
+          "secret-path": "/ci",
+          "secret-name": "UNIWIND_AUTH_TOKEN",
+          "export-type": "env"
+        }
+      }
+    ]
+  }
+}

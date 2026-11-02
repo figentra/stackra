@@ -84,7 +84,7 @@ jobs:
 
       - name: Prerequisites
         run: |
-          for name in ROLE_ARN SSH_CIDRS IDENTITY_ID PROJECT_ID; do
+          for name in ROLE_ARN IDENTITY_ID PROJECT_ID; do
             [ -n "${!name}" ] || { echo "::error title=$name::missing (runbook: test-infrastructure, Step 2)"; exit 1; }
           done
           mise install "$PULUMI_TOOL"
@@ -127,7 +127,8 @@ jobs:
           pulumi stack select --create "$STACK"
           pulumi config set identityId "$IDENTITY_ID"
           pulumi config set ciGateProjectId "$PROJECT_ID"
-          # TESTBED_SSH_CIDRS is a comma-separated list (the Mac's IP/32 to start; `stackra testbed` swaps it later).
+          # TESTBED_SSH_CIDRS is optional: a comma-separated port-22 allowlist for `stackra testbed --ssh-direct` only.
+          # Unset, the boxes have no inbound rule and the CLI reaches them through SSM Session Manager (STA-1953).
           i=0
           for cidr in $(printf '%s' "$SSH_CIDRS" | tr ',' ' '); do
             pulumi config set --path "sshCidrs[$i]" "$cidr"
