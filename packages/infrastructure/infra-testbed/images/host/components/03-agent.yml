@@ -31,10 +31,11 @@ phases:
           commands:
             - |
               set -eu
-              # `pnpm fetch` checks the lockfile against the workspace's catalogs and the pnpmfile's checksum, so all
-              # three come along; a copy stays in /etc/testbed/warm for the validate phase's offline check.
+              # `pnpm fetch` checks the lockfile against the workspace's catalogs and the pnpmfile's checksum, and
+              # resolves `@figentra-oss` from the scope in .npmrc (a registry name, no token), so all four come along;
+              # a copy stays in /etc/testbed/warm for the validate phase's offline check.
               mkdir -p /tmp/warm /etc/testbed/warm
-              for f in pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs; do
+              for f in pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs .npmrc; do
                 cp "/opt/testbed-build/$f" /tmp/warm/
                 cp "/opt/testbed-build/$f" /etc/testbed/warm/
               done
