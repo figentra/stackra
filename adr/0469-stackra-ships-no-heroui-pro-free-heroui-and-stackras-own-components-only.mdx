@@ -41,7 +41,7 @@ it is a redistribution path.
    It is never derived from HeroUI Pro source, including source returned by the HeroUI Pro MCP servers
    ([0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule) applies).
 3. **No Pro tooling in this repository.** No HeroUI Pro MCP server, no `heroui-pro login` install path and no
-   `HEROUI_AUTH_TOKEN` or `HEROUI_PERSONAL_TOKEN` are configured here. The free HeroUI MCP servers stay.
+   HeroUI CI/CD token or `HEROUI_PERSONAL_TOKEN` are configured here. The free HeroUI MCP servers stay.
 4. **End-user products are outside this rule.** A Figentra product app (Figentra OS, Academorix) may use HeroUI Pro
    within Figentra's plan. It imports Pro directly in the app and installs it with the product repository's own token,
    never through a Stackra package.
@@ -58,7 +58,8 @@ it is a redistribution path.
 - The showcase registry links only free HeroUI packages, and the API generator reads only free HeroUI documentation.
 - Chores for the dependency session (owner-assigned files): remove `@heroui-pro/react`, `heroui-native-pro` and their
   Pro-only peers from the `pnpm-workspace.yaml` catalogs, `packageExtensions` and `allowBuilds`; refresh
-  `pnpm-lock.yaml`; drop `HEROUI_AUTH_TOKEN` from `runway.yaml`, Infisical `/ci` and the gate identity; and remove
+  `pnpm-lock.yaml`; drop the HeroUI CI/CD token from `runway.yaml`, Infisical `/ci` and the gate identity (done in
+  STA-1903); and remove
   `@stackra-pro/ui` from `figentra/stackra-pro`.
 - Clean-room components cost build time that wrapping Pro did not.
 
