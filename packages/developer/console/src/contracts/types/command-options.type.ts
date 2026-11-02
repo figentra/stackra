@@ -26,4 +26,13 @@ export interface CommandOptions {
 
   /** The package's own bin command: gen never contributes it to a host (STA-1731 FR-004). */
   readonly bin?: boolean;
+
+  /** The heading the command list shows it under; its namespace (`tenant` of `tenant:seed`) when absent. */
+  readonly group?: string;
+
+  /** A docs link, shown at the end of the command's help and of its error screen. */
+  readonly docs?: string;
+
+  /** Complete invocations shown in the command's help, as `acme greet Ada --times 2`. */
+  readonly examples?: readonly string[];
 }
