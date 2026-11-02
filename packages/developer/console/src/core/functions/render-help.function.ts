@@ -9,8 +9,8 @@
  */
 import { GLOBAL_OPTIONS } from "#core/constants/global-options.constant";
 import { padTo } from "#core/functions/pad-to.function";
-import type { CommandField } from "#core/types/command-field.type";
-import type { CommandStructure } from "#core/types/command-structure.type";
+import type { CommandField } from "#contracts/types/command-field.type";
+import type { CommandStructure } from "#contracts/types/command-structure.type";
 import type { Painter } from "#core/types/painter.type";
 
 /** The left column of an option: `-s, --shout` or `    --times=TIMES`. */
@@ -43,6 +43,7 @@ export function renderHelp(
       const name = `<${field.flag}>${field.list ? "..." : ""}`;
       return field.required ? name : `[${name}]`;
     }),
+    ...(structure.passthrough ? ["[arguments...]"] : []),
   ].join(" ");
   const rows: [string, string][] = [
     ...structure.options.map((field): [string, string] => [optionLabel(field), describe(field)]),
