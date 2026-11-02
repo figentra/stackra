@@ -17,9 +17,9 @@ import { Argument } from "#core/decorators/argument.decorator";
 import { Option } from "#core/decorators/option.decorator";
 import { ConsoleDeclarationError } from "#core/errors/console-declaration.error";
 import type { CommandClass } from "#core/types/command-class.type";
-import type { CommandField } from "#core/types/command-field.type";
-import type { CommandStructure } from "#core/types/command-structure.type";
-import type { ValueKind } from "#core/types/value-kind.type";
+import type { CommandField } from "#contracts/types/command-field.type";
+import type { CommandStructure } from "#contracts/types/command-structure.type";
+import type { ValueKind } from "#contracts/types/value-kind.type";
 
 /** Structures already read, by class. */
 const READ = new WeakMap<CommandClass, CommandStructure>();

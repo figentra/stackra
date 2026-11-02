@@ -11,6 +11,7 @@ import type { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.p
 import type { ConsoleSignal } from "#contracts/types/console-signal.type";
 import type { PromptAnswer } from "#contracts/types/prompt-answer.type";
 import type { ConsoleConfig } from "#core/types/console-config.type";
+import type { ConsolePorts } from "#core/types/console-ports.type";
 
 /** The options of one test run. */
 export interface TestRunOptions {
@@ -37,4 +38,7 @@ export interface TestRunOptions {
 
   /** Sent on the next tick after the run starts, to test interruption. */
   readonly signal?: ConsoleSignal;
+
+  /** Makes the run's renderer, to test a driver of your own; the text driver when absent. */
+  readonly renderer?: ConsolePorts["renderer"];
 }

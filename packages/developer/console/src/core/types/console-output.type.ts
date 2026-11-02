@@ -1,15 +1,23 @@
 /**
  * Stackra file contract:
- * Purpose: `ConsoleOutput`, everything a command writes: messages, a title, key-value lines, lists, tables, boxed
- *          notes, task lines, spinners, progress bars, JSON data and the banner, in one layout for every product.
- * Boundary: a type only; `createOutput` implements it for a decided `ConsoleMode`. Warnings and errors go to standard
- *           error; under `--json` the text components write nothing.
+ * Purpose: `ConsoleOutput`, everything a command writes: messages, a title, key-value lines, lists, tables with
+ *          status cells, checklists, trees, boxed notes, the problem screen, task lines, spinners, progress bars, JSON
+ *          data, typed data presented by its shape, and the banner, in one layout for every product.
+ * Boundary: a type only; `createOutput` implements it over the run's `Renderer`. Warnings and errors go to standard
+ *           error; under `--json` the text components write nothing, and a table's or checklist's rows are the data
+ *           unless the command sets its own.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-016, FR-018, FR-021 and FR-022.
+ * Governing contract: STA-1730 spec FR-016, FR-018, FR-021 and FR-022; STA-1966 spec FR-008 to FR-011, FR-021 and
+ *                     FR-030.
  */
-import type { NoteTone } from "#core/types/note-tone.type";
-import type { Progress } from "#core/types/progress.type";
-import type { Spinner } from "#core/types/spinner.type";
+import type { ChecklistSpec } from "#contracts/types/checklist-spec.type";
+import type { ChecklistSummary } from "#contracts/types/checklist-summary.type";
+import type { NoteTone } from "#contracts/types/note-tone.type";
+import type { Problem } from "#contracts/types/problem.type";
+import type { Progress } from "#contracts/types/progress.type";
+import type { Spinner } from "#contracts/types/spinner.type";
+import type { TableSpec } from "#contracts/types/table-spec.type";
+import type { TreeNode } from "#contracts/types/tree-node.type";
 
 /** What a command writes through. */
 export interface ConsoleOutput {
@@ -37,8 +45,23 @@ export interface ConsoleOutput {
   /** A bulleted list. */
   readonly list: (items: readonly string[]) => void;
 
-  /** A table. */
-  readonly table: (headers: readonly string[], rows: readonly (readonly unknown[])[]) => void;
+  /** A table: headers and rows of cells, or a `TableSpec` with status columns and groups. */
+  readonly table: {
+    (headers: readonly string[], rows: readonly (readonly unknown[])[]): void;
+    (table: TableSpec): void;
+  };
+
+  /** Grouped status rows and the summary line; a failed row ends the run with exit code 1. */
+  readonly checklist: (checklist: ChecklistSpec) => ChecklistSummary;
+
+  /** A tree, one level of children deep unless `--verbose` (or `expanded`). */
+  readonly tree: (nodes: readonly TreeNode[], options?: { readonly expanded?: boolean }) => void;
+
+  /** The error screen for a problem the command reports without failing. */
+  readonly problem: (problem: Problem) => void;
+
+  /** Typed data by its shape: checklist rows as a checklist, records as a table, an object as key-value lines. */
+  readonly present: (data: unknown) => void;
 
   /** A boxed note. */
   readonly note: (text: string, tone?: NoteTone, title?: string) => void;

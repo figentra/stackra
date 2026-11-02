@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-001 and FR-014.
  */
-import type { CommandField } from "#core/types/command-field.type";
+import type { CommandField } from "#contracts/types/command-field.type";
 
 /** A command as the kernel sees it. */
 export interface CommandStructure {

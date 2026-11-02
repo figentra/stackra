@@ -1,179 +1,171 @@
 /**
  * Stackra file contract:
- * Purpose: `createOutput(setup)`, the `ConsoleOutput` of one run: the one layout every product shares (two-space
- *          gutter, a symbol column, dotted task lines, rounded notes), coloured by the theme at the decided depth,
- *          plain without colour or a terminal, silent but for errors under `--quiet`, and text-free under `--json`.
- * Boundary: writes only to the given streams; a spinner animates only when the mode allows it, with an unref'd timer.
+ * Purpose: `createOutput(setup)`, the `ConsoleOutput` a command writes through, over the run's `Renderer`: each
+ *          method draws through the renderer, a table's or checklist's rows become the `--json` data unless the
+ *          command sets its own, a failed checklist row is reported to the kernel, and `present` picks a component
+ *          from the shape of typed data.
+ * Boundary: draws nothing itself; the renderer gates `--json` and `--quiet`.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-016, FR-018, FR-021, FR-022 and FR-026.
+ * Governing contract: STA-1730 spec FR-016 to FR-022; STA-1966 spec FR-001, FR-008 to FR-011, FR-021 and FR-030.
  */
-import { SYMBOLS } from "#core/constants/symbols.constant";
-import { createPainter } from "#core/functions/create-painter.function";
-import { displayWidth } from "#core/functions/display-width.function";
-import { renderBanner } from "#core/functions/render-banner.function";
-import { renderBox } from "#core/functions/render-box.function";
-import { renderTable } from "#core/functions/render-table.function";
-import { stripEscapes } from "#core/functions/strip-escapes.function";
-import { visualBidi } from "#core/functions/visual-bidi.function";
+import type { CheckRow } from "#contracts/types/check-row.type";
+import type { TableSpec } from "#contracts/types/table-spec.type";
 import type { ConsoleOutput } from "#core/types/console-output.type";
-import type { NoteTone } from "#core/types/note-tone.type";
 import type { OutputSetup } from "#core/types/output-setup.type";
-import type { Progress } from "#core/types/progress.type";
-import type { Spinner } from "#core/types/spinner.type";
 
-/** Clears the current terminal line. */
-const CLEAR_LINE = "\r\u001B[2K";
+/** The statuses of a checklist row. */
+const STATUSES = new Set<unknown>(["ok", "warn", "fail", "skip", "info"]);
 
-/** A line with a symbol in the gutter. */
-const mark = (symbol: string, text: string) => `  ${symbol} ${text}`;
+/** A plain object (not an array, a date or a class instance). */
+const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
+  typeof value === "object" && value !== null && Object.getPrototypeOf(value) === Object.prototype;
+
+/** Rows that read as checklist rows: a string name and a known status each. */
+const isChecklist = (rows: readonly unknown[]): rows is readonly CheckRow[] =>
+  rows.every(
+    (row) => isRecord(row) && typeof row["name"] === "string" && STATUSES.has(row["status"]),
+  );
+
+/** A `TableSpec`, as opposed to a list of headers. */
+const isTableSpec = (value: readonly string[] | TableSpec): value is TableSpec =>
+  !Array.isArray(value);
+
+/** A cell as text: nested values as JSON. */
+const cellOf = (value: unknown) =>
+  value === undefined || value === null
+    ? ""
+    : typeof value === "object"
+      ? JSON.stringify(value)
+      : value;
 
 /** The output of one run. */
 export function createOutput(setup: OutputSetup): ConsoleOutput {
-  const { mode, theme } = setup;
-  const painter = createPainter(mode.depth, theme.accent);
-  const symbols = SYMBOLS[mode.unicode ? "unicode" : "ascii"];
-  const silent = mode.json || mode.quiet;
-  // Right-to-left text is reordered once, here, before anything measures it.
-  const bidi = mode.bidi === "visual" ? visualBidi : (text: string) => text;
-  const out = (text: string) => {
-    if (!silent) setup.stdout.write(`${text}\n`);
-  };
-  const err = (text: string) => {
-    if (!mode.json) setup.stderr.write(`${text}\n`);
-  };
-  const dots = (left: string, right: string) =>
-    painter.dim(
-      symbols.dot.repeat(Math.max(3, mode.columns - displayWidth(left) - displayWidth(right) - 4)),
-    );
-
-  const toneOf: Record<
-    NoteTone,
-    { readonly paint: (text: string) => string; readonly title: string }
-  > = {
-    info: { paint: painter.accent, title: "Note" },
-    warning: { paint: painter.warning, title: "Warning" },
-    alert: { paint: painter.error, title: "Alert" },
+  const { renderer, mode } = setup;
+  let wrote = false;
+  /** Marks the run as written to. */
+  const touch = () => {
+    if (wrote) return;
+    wrote = true;
+    setup.onWrite?.();
   };
 
-  return {
-    line: (text = "") => out(text === "" ? "" : `  ${bidi(text)}`),
-    info: (text) => out(mark(painter.accent(symbols.info), bidi(text))),
-    success: (text) => out(mark(painter.success(symbols.success), bidi(text))),
-    warn: (text) => err(mark(painter.warning(symbols.warning), bidi(text))),
-    error: (text) => err(mark(painter.error(symbols.error), bidi(text))),
-    title: (text) => out(`\n  ${painter.bold(painter.accent(bidi(text)))}\n`),
+  function table(headers: readonly string[], rows: readonly (readonly unknown[])[]): void;
+  function table(spec: TableSpec): void;
+  function table(
+    first: readonly string[] | TableSpec,
+    rows: readonly (readonly unknown[])[] = [],
+  ): void {
+    touch();
+    if (!isTableSpec(first)) {
+      renderer.table({
+        columns: first.map((header, index) => ({ header, key: String(index) })),
+        rows: rows.map((row) =>
+          Object.fromEntries(row.map((cell, index) => [String(index), cell])),
+        ),
+      });
+      return;
+    }
+    setup.onRows?.(first.rows);
+    renderer.table(first);
+  }
+
+  const output: ConsoleOutput = {
+    line: (text) => {
+      touch();
+      renderer.line(text);
+    },
+    info: (text) => {
+      touch();
+      renderer.message("info", text);
+    },
+    success: (text) => {
+      touch();
+      renderer.message("success", text);
+    },
+    warn: (text) => {
+      touch();
+      renderer.message("warn", text);
+    },
+    error: (text) => {
+      touch();
+      renderer.message("error", text);
+    },
+    title: (text) => {
+      touch();
+      renderer.title(text);
+    },
     keyValue: (entries) => {
-      for (const [name, value] of Object.entries(entries)) {
-        const key = bidi(name);
-        const right = bidi(String(value));
-        out(`  ${key} ${dots(key, right)} ${right}`);
-      }
+      touch();
+      renderer.keyValue(entries);
     },
     list: (items) => {
-      for (const item of items) out(mark(painter.dim(symbols.bullet), bidi(item)));
+      touch();
+      renderer.list(items);
     },
-    table: (headers, rows) => {
-      for (const line of renderTable(headers, rows, { unicode: mode.unicode, painter, bidi }))
-        out(line);
+    table,
+    checklist: (checklist) => {
+      touch();
+      setup.onRows?.(checklist.rows);
+      const summary = renderer.checklist(checklist);
+      if (summary.failed > 0) setup.onFailed?.();
+      return summary;
+    },
+    tree: (nodes, options) => {
+      touch();
+      renderer.tree(nodes, options?.expanded ?? mode.verbose);
+    },
+    problem: (problem) => {
+      touch();
+      renderer.problem(problem, mode.verbose);
+    },
+    present: (data) => {
+      if (Array.isArray(data) && data.length > 0 && isChecklist(data))
+        output.checklist({ rows: data });
+      else if (Array.isArray(data) && data.length > 0 && data.every(isRecord)) {
+        const keys = [...new Set(data.flatMap((row) => Object.keys(row)))];
+        output.table({
+          columns: keys.map((key) => ({
+            header: key,
+            key,
+            ...(key === "status" ? { kind: "status" as const } : {}),
+          })),
+          rows: data.map((row) => Object.fromEntries(keys.map((key) => [key, cellOf(row[key])]))),
+        });
+      } else if (
+        Array.isArray(data) &&
+        data.every((item) => typeof item !== "object" || item === null)
+      )
+        output.list(data.map(String));
+      else if (isRecord(data))
+        output.keyValue(
+          Object.fromEntries(Object.entries(data).map(([key, value]) => [key, cellOf(value)])),
+        );
+      else if (data !== undefined) output.json(data);
     },
     note: (text, tone = "info", title) => {
-      const style = toneOf[tone];
-      const lines = renderBox(bidi(text), {
-        title: title ?? style.title,
-        unicode: mode.unicode,
-        paint: style.paint,
-        width: mode.columns,
-      });
-      const write = tone === "info" ? out : err;
-      for (const line of lines) write(`  ${line}`);
+      touch();
+      renderer.box(text, tone, title);
     },
-    task: async (name, work) => {
-      const label = bidi(name);
-      const started = Date.now();
-      const finish = (status: string) => {
-        const timing = `${Date.now() - started}ms`;
-        return `  ${label} ${dots(label, `${timing} ${stripEscapes(status)}`)} ${painter.dim(timing)} ${status}`;
-      };
-      try {
-        const result = await work();
-        out(finish(painter.bold(painter.success("DONE"))));
-        return result;
-      } catch (error) {
-        err(finish(painter.bold(painter.error("FAIL"))));
-        throw error;
-      }
+    task: (label, work) => {
+      touch();
+      return renderer.task(label, work);
     },
-    spinner: (message): Spinner => {
-      let text = bidi(message);
-      let frame = 0;
-      const draw = () => {
-        if (!silent)
-          setup.stdout.write(
-            `${CLEAR_LINE}  ${painter.accent(symbols.spinner[frame % symbols.spinner.length] ?? "")} ${text}`,
-          );
-        frame += 1;
-      };
-      const timer = mode.animate && !silent ? setInterval(draw, 80) : undefined;
-      if (timer === undefined) out(mark(painter.dim(symbols.info), `${text}...`));
-      else {
-        (timer as { unref?: () => void }).unref?.();
-        draw();
-      }
-      return {
-        update: (next) => {
-          text = bidi(next);
-        },
-        stop: (final?: string, ok = true) => {
-          if (timer !== undefined) {
-            clearInterval(timer);
-            if (!silent) setup.stdout.write(CLEAR_LINE);
-          }
-          const shown = final === undefined ? text : bidi(final);
-          if (ok) out(mark(painter.success(symbols.success), shown));
-          else err(mark(painter.error(symbols.error), shown));
-        },
-      };
+    spinner: (message) => {
+      touch();
+      return renderer.spinner(message);
     },
-    progress: (total, name = ""): Progress => {
-      const label = bidi(name);
-      let done = 0;
-      let reported = -1;
-      const width = Math.max(10, Math.min(40, mode.columns - displayWidth(label) - 16));
-      const draw = () => {
-        const ratio = total <= 0 ? 1 : Math.min(1, done / total);
-        const percent = Math.floor(ratio * 100);
-        if (mode.animate) {
-          const filled = Math.round(ratio * width);
-          const bar =
-            painter.accent(symbols.fill.repeat(filled)) +
-            painter.dim(symbols.empty.repeat(width - filled));
-          if (!silent)
-            setup.stdout.write(`${CLEAR_LINE}  ${label} ${bar} ${String(percent).padStart(3)}%`);
-        } else if (Math.floor(percent / 10) > reported) {
-          reported = Math.floor(percent / 10);
-          out(`  ${label} ${percent}%`.replace(/^ {3}/, "  "));
-        }
-      };
-      draw();
-      return {
-        advance: (steps = 1) => {
-          done += steps;
-          draw();
-        },
-        finish: () => {
-          done = total;
-          draw();
-          if (mode.animate && !silent) setup.stdout.write("\n");
-        },
-      };
+    progress: (total, label) => {
+      touch();
+      return renderer.progress(total, label);
     },
     json: (data) => {
       if (mode.json) setup.onJson(data);
-      else out(JSON.stringify(data, undefined, 2));
+      else {
+        touch();
+        renderer.json(data);
+      }
     },
-    banner: () => {
-      if (silent || !mode.tty) return;
-      for (const line of renderBanner(theme, setup.version, mode)) setup.stdout.write(`${line}\n`);
-    },
+    banner: () => renderer.banner(),
   };
+  return output;
 }

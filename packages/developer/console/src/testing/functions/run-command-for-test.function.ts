@@ -79,6 +79,7 @@ export async function runCommandForTest(
     columns: options.columns ?? 80,
     signals,
     prompter: () => prompter,
+    ...(options.renderer === undefined ? {} : { renderer: options.renderer }),
   });
   if (options.signal !== undefined) {
     const signal = options.signal;

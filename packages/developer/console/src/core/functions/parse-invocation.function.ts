@@ -14,8 +14,8 @@ import type { ParseArgsConfig } from "node:util";
 
 import { GLOBAL_OPTIONS } from "#core/constants/global-options.constant";
 import { UsageError } from "#core/errors/usage.error";
-import type { CommandField } from "#core/types/command-field.type";
-import type { CommandStructure } from "#core/types/command-structure.type";
+import type { CommandField } from "#contracts/types/command-field.type";
+import type { CommandStructure } from "#contracts/types/command-structure.type";
 import type { GlobalFlags } from "#core/types/global-flags.type";
 import type { ParsedInvocation } from "#core/types/parsed-invocation.type";
 

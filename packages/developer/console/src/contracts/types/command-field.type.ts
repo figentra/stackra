@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-002 to FR-005.
  */
-import type { ValueKind } from "#core/types/value-kind.type";
+import type { ValueKind } from "#contracts/types/value-kind.type";
 
 /** One argument or option. */
 export interface CommandField {
