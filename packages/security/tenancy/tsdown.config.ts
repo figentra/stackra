@@ -21,6 +21,7 @@ export default {
   ...generated,
   ...library({
     index: "src/core/index.ts",
+    native: "src/native/index.ts",
     node: "src/node/index.ts",
     react: "src/react/index.ts",
     testing: "src/testing/index.ts",
