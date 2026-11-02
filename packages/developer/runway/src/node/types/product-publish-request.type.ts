@@ -40,6 +40,6 @@ export type ProductPublishRequest = {
   readonly review?: OpsReview;
   /** The canary start; now when absent. */
   readonly now?: Date;
-  /** The command runner; `runCommand` when absent. */
+  /** The command runner; `runProgram` when absent. */
   readonly run?: CommandRunner;
 };

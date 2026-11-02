@@ -29,7 +29,7 @@ import { RunwayProvider } from "#core/ports/runway-provider.port";
 import type { DeployRecord } from "#core/types/deploy-record.type";
 import type { DeployStep } from "#core/types/deploy-step.type";
 import type { DeployTarget } from "#core/types/deploy-target.type";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 
 /** One parsed member of `targets.cloudflare-workers.members`. */
@@ -62,8 +62,8 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   /** The runway destination this provider serves. */
   override readonly destination = "cloudflare-workers";
 
-  /** The command runner, `runCommand`; a test or a dry run replaces it. */
-  run: CommandRunner = runCommand;
+  /** The command runner, `runProgram`; a test or a dry run replaces it. */
+  run: CommandRunner = runProgram;
 
   /** The environment ids, vars and secrets are read from; a test replaces it. */
   env: Readonly<Record<string, string | undefined>> = process.env;

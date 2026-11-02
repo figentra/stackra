@@ -14,7 +14,7 @@ import { Driver } from "@stackra/container";
 
 import { PreviewDatabaseBrancher } from "#core/ports/preview-database-brancher.port";
 import type { PreviewDatabase } from "#core/types/preview-database.type";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 
 /** A preview database that is a branch. */
@@ -31,8 +31,8 @@ export class NeonPreviewDatabaseDriver extends Driver(PreviewDatabaseBrancher) {
   /** The branching service this driver serves. */
   override readonly provider = "neon";
 
-  /** The command runner, `runCommand`; a test or a dry run replaces it. */
-  run: CommandRunner = runCommand;
+  /** The command runner, `runProgram`; a test or a dry run replaces it. */
+  run: CommandRunner = runProgram;
 
   /** Creates `database.name` from its parent unless it exists. */
   override async create(database: BranchDatabase): Promise<void> {

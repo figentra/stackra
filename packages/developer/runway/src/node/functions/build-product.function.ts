@@ -30,7 +30,7 @@ import { PRODUCT_BUILD_SETTINGS } from "#node/constants/product-build-settings.c
 import { checkoutLine } from "#node/functions/checkout-line.function";
 import { dryRunCommand } from "#node/functions/dry-run-command.function";
 import { readRunway } from "#node/functions/read-runway.function";
-import { runCommand } from "#node/functions/run-command.function";
+import { runProgram } from "#node/functions/run-program.function";
 import { runMobileJob } from "#node/functions/run-mobile-job.function";
 import { exportSourceOf } from "#node/functions/export-source-of.function";
 import { workspacePackages } from "#node/functions/workspace-packages.function";
@@ -60,7 +60,7 @@ function partsOf(line: string): { owner: string; name: string; major: string } {
 export async function buildProduct(request: ProductBuildRequest): Promise<ProductBuild> {
   const repository = resolve(request.repository);
   const root = readRunway(join(repository, "runway.yaml"), "root");
-  const real = request.run ?? runCommand;
+  const real = request.run ?? runProgram;
   const sha = request.sha ?? (await real("git", ["rev-parse", "HEAD"], { cwd: repository })).trim();
   // A dry run records the EAS builds only; checkouts and the generated config are local and really written.
   const run =
