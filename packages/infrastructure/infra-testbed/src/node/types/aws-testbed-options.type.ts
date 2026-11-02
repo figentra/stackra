@@ -9,8 +9,12 @@
  */
 /** The account-specific inputs of `awsTestbed` that the plan does not carry. */
 export type AwsTestbedOptions = {
-  /** CIDRs allowed to reach port 22. The `stackra testbed` CLI swaps its own entry at run time, so changes to the live rules are ignored after creation. */
-  readonly allowedCidrs: readonly string[];
+  /**
+   * CIDRs allowed to reach port 22, only for the CLI's `--ssh-direct` fallback; absent or empty, no inbound rule exists
+   * and boxes are reached through SSM Session Manager (STA-1953). The CLI swaps its own entry at run time, so changes
+   * to the live rules are ignored after creation.
+   */
+  readonly allowedCidrs?: readonly string[];
   /** The core `pnpm-lock.yaml` the image's pnpm store is warmed from. */
   readonly lockfilePath: string;
   /** The VPC to use; the default VPC when absent. */

@@ -41,6 +41,17 @@ describe("resolveTestbedSettings", () => {
       region: "eu-west-1",
       key: "/h/.ssh/academorix-ci.pem",
       user: "ubuntu",
+      sshDirect: false,
     });
+  });
+
+  it("reaches boxes through SSM unless --ssh-direct or STACKRA_TESTBED_SSH_DIRECT=1 asks for the public IP", () => {
+    expect(resolveTestbedSettings({ "ssh-direct": true }, {}, "/h").sshDirect).toBe(true);
+    expect(resolveTestbedSettings({}, { STACKRA_TESTBED_SSH_DIRECT: "1" }, "/h").sshDirect).toBe(
+      true,
+    );
+    expect(resolveTestbedSettings({}, { STACKRA_TESTBED_SSH_DIRECT: "0" }, "/h").sshDirect).toBe(
+      false,
+    );
   });
 });

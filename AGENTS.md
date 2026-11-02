@@ -589,10 +589,13 @@ const stripeSecretKey = secret("STRIPE_SECRET_KEY");
 
 All other secrets through Infisical:
 
-##### Vault Layout
+##### Vault Layout (ADR 0512: one project per reader)
 
-- dev: `/agents` - Developer and agent tokens (local dev, MCP servers)
-- staging|prod: `/ci` - CI/CD deployment secrets
+- `agents` dev `/agents` - Developer and agent tokens (local dev, MCP servers); every repo's `.infisical.yaml`
+- `ci-build` prod `/ci`, `/ci/turbo`, `/ci/registry` - read-only build tokens (every CI job, PR checks, testbed)
+- `ci-deploy` prod `/ci`, `/ci/release`, `/ci/store`, `/ci/observability` - deploy and release credentials
+- `registry` prod `/ci`, `/ci/registry` and `flow` prod `/ci/gate` - one reader each
+- `<product>` `/runtime/<member>` - a product's runtime secrets, synced by runway; no shared token is copied there
 
 ##### How to Use
 
@@ -632,7 +635,8 @@ In Infisical `/ci` (CI/CD):
 
 The owner drops one file per secret into `~/Secrets-inbox/` (outside every repo, never synced). The file name is
 the secret name (`SCREAMING_SNAKE`, one extension stripped: `STACKRA_REVIEWER_PRIVATE_KEY.pem`); an optional
-`<NAME>.target.yaml` sets `env` (default `dev`) and `path` (default `/agents`). A non-file value (an App ID) is a
+`<NAME>.target.yaml` sets `project`, `env` (default `dev`) and `path` (default `/agents`, in `agents`); a `/ci`
+path must name its project (ADR 0512). A non-file value (an App ID) is a
 file holding just that value; there is no `--value` flag.
 
 - `pnpm secrets:import --list | --dry-run | <import>` is the only way in. It never prints, logs or passes a value
@@ -891,6 +895,39 @@ new code in the v3 shape where the member already allows it.
 - ADR-0294, ADR-0295, ADR-0296: programming model v3, build and entry, runway v3
 - ADR-0305, ADR-0306: programming model v3.1 and the overrides tree
 - Standards: members (required files per tier)
+
+<!-- source: .agents/rules/worktrees.md -->
+
+### Worktrees
+
+A repository keeps a handful of worktrees. Core once reached 153 of them and nearly filled the Mac's disk (STA-1871).
+Every worktree holds its own dependencies and builds, and stale ones hide the work that matters.
+
+#### Rules
+
+1. **One worktree per active task, only under `.claude/worktrees/<name>/`.** Never next to the repository.
+   Make it with `pnpm exec fflow start STA-n`.
+2. **`fflow land` removes it after the merge.** After an auto-merge, `land <n>` again finishes the PR.
+3. **A session removes its own worktree when it ends.**
+   - First commit and push the work.
+   - Then run `git worktree remove <path>`, never `--force`.
+   - Leave a worktree that another session is using alone.
+4. **Never leave a detached HEAD with commits.** Put the commits on a branch first: `git switch -c <branch>`.
+5. **Never delete ignored outputs without a backup.** `.env` files, `ios/` and `android/` folders, and builds you
+   cannot rebuild get archived before the worktree goes.
+
+#### The budget
+
+`clean.budget` in `flow.config.json` sets the most linked worktrees a repository should hold (default 10).
+Above it, `fflow clean` and `fflow doctor` warn.
+
+`fflow clean --budget` removes worktrees that have been idle for 24 hours or more and whose head is merged or
+pushed. Before removing one:
+
+- uncommitted work and a detached HEAD go to a new local `keep/<repo>-<name>` branch, committed with the hooks running;
+- ignored files outside the caches go into an archive under `~/Backups/fflow/`.
+
+It removes without `--force` and never deletes a branch. Run it with `--dry-run` first. `git-steward` owns it.
 
 ### Read before touching matching files
 

@@ -66,6 +66,7 @@ export const OrderSchema = new EntitySchema<Order>({
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
     lines: { kind: "1:m", entity: () => OrderLine, mappedBy: "order", orphanRemoval: true },
     isOpen: { type: "json", persist: false },
+    "~defaults": { type: "json", persist: false },
   },
 });
 
