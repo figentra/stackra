@@ -36,9 +36,13 @@ describe("anonymousSurfacesOf", () => {
   it("finds exactly today's five anonymous-callable calls in this repository", () => {
     const manifests = ["packages", "services", "apps"].flatMap((top) =>
       (top === "packages"
-        ? readdirSync(join(ROOT, top)).flatMap((category) =>
-            readdirSync(join(ROOT, top, category)).map((name) => join(ROOT, top, category, name)),
-          )
+        ? readdirSync(join(ROOT, top), { withFileTypes: true })
+            .filter((category) => category.isDirectory())
+            .flatMap((category) =>
+              readdirSync(join(ROOT, top, category.name)).map((name) =>
+                join(ROOT, top, category.name, name),
+              ),
+            )
         : readdirSync(join(ROOT, top)).map((name) => join(ROOT, top, name))
       )
         .map((dir) => join(dir, "stackra.manifest.json"))

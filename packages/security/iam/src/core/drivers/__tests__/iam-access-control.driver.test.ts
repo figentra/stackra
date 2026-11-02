@@ -315,7 +315,7 @@ describe("IamAccessControlDriver", () => {
       await expect(
         driver.authorize(callOf(stranger, "orders.order.read"), mine),
       ).resolves.toBeUndefined();
-      await expect(driver.authorize(callOf(stranger), mine)).resolves.toBeUndefined();
+      await expect(driver.authorize(callOf(stranger), mine)).rejects.toBeInstanceOf(ForbiddenError);
     });
 
     it("refuses a matching conditional deny through the model's fact source, and fails closed without one", async () => {

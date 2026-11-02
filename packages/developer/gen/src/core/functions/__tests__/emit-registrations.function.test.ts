@@ -544,7 +544,7 @@ describe("emitRegistrations of actions and queries (STA-2025)", () => {
 
   it("registers an anonymous-callable query with its permission, and flags it in the manifest", () => {
     expect(rows.find((line) => line.includes("type: GetHealthQuery"))).toBe(
-      '  { type: GetHealthQuery, key: "orders.health.get@1", permission: "orders.health.get", risk: "L0" },',
+      '  { type: GetHealthQuery, key: "orders.health.get@1", permission: "orders.health.read", risk: "L0" },',
     );
     const entries = manifest.actions ?? [];
     expect(
