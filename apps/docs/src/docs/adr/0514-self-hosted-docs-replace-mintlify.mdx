@@ -40,9 +40,15 @@ them, and would publish whatever sat on their main branch rather than what was r
 5. **The API reference is generated.** It comes from the `openapi.json` already inside the product's contract packages,
    `@figentra/<service-package>-contract` ([0511](/adr/0511-cross-repo-service-contracts-and-cross-app-events)). Nobody
    writes API reference pages by hand.
-6. **One hub at docs.figentra.com.** The hub depends on every product docs package. Its product switcher has one tab per
-   product: os, pay, billing, invoicing, commerce, tamo, organza and each product that follows.
-7. **A release rebuilds the hub.** A product release triggers a hub rebuild, and Runway deploys it.
+6. **One hub at docs.figentra.com.** The hub is a new member of the Figentra platform repository (figentra/figentra),
+   placed in its root runway as a `cloudflare-workers` member of kind `docs`. It depends on every product docs package
+   through its catalog. Its product switcher has one tab per product: os, pay, billing, invoicing, commerce, tamo,
+   organza and each product that follows.
+7. **A release rebuilds the hub through one bump pull request.** A product release opens the hub's bump pull request in
+   figentra/figentra, or updates it in place when one is open, moving that product's catalog pin. Its per-pull-request
+   preview shows the new docs before merge. When it merges, the hub's normal deploy on main rebuilds it and Runway
+   deploys it. Main is the only source of what is deployed: the hub never builds a version that is not in its
+   lockfile, and a release never dispatches another repository's deploy.
 8. **Packages, not a cross-repository checkout.** The hub reads released packages, so its docs match the released code,
    and it needs no read access to the private product repositories.
 9. **Stackra and Flow keep their own sites.** Their readers are different. Stackra's stays at docs.stackra.figentra.com,
@@ -57,13 +63,15 @@ them, and would publish whatever sat on their main branch rather than what was r
 - The checks of 0299 stay, run on the Fumadocs build: the build, broken links, accessibility, and a smoke test after
   each deploy.
 - Each product's Release grows one package, and its CI builds the docs on every pull request that touches `docs/`.
-- The hub is one more member, deployed like any Worker; its content changes only when a product releases.
+- The hub is one more member, deployed like any Worker; its content changes only when a bump pull request merges. The
+  bump pull requests are routine: they take Flow's bot-approval path once it is live, and until then they go in the
+  owner's merge batch.
 - Rolling back a product's docs is rolling back its docs package version in the hub.
 
 ## Enforcement
 
 planned — the Runway Cloudflare Workers provider (STA-1921, stackra#227) as the only deploy path; the hub member and its
-release trigger; one migration pull request per repository under STA-1920 that adds `docs/`, adds the docs package to
+release's bump pull request; one migration pull request per repository under STA-1920 that adds `docs/`, adds the docs package to
 the Release, moves the Mintlify content and removes Mintlify and its checks; a `FORBIDDEN_DEPENDENCIES` row for `mint`
 and `mintlify` in `@stackra/repo-checks` once the last repository has moved. Until then nothing checks this rule.
 
