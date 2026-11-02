@@ -19,6 +19,10 @@ describe("displayWidth", () => {
     ["مرحبا", 5],
     ["日本", 4],
     ["👍🏽", 2],
+    ["⚠", 1],
+    ["⚠\uFE0F", 2],
+    ["✓ ok", 4],
+    ["✗", 1],
     ["é", 1],
     ["\u001B[31mred\u001B[39m", 3],
     ["⁨سلام⁩", 4],
@@ -49,13 +53,18 @@ describe("padTo", () => {
 describe("renderTable", () => {
   it("renders every row of Arabic and English cells at the same display width", () => {
     const lines = renderTable(
-      ["Name", "City"],
-      [
-        ["شركة الأمل", "Riyadh"],
-        ["Acme", "الرياض"],
-        ["日本商事", "Tokyo"],
-      ],
-      { unicode: true, painter: createPainter(0, "#647384") },
+      {
+        columns: [
+          { header: "Name", key: "name" },
+          { header: "City", key: "city" },
+        ],
+        rows: [
+          { name: "شركة الأمل", city: "Riyadh" },
+          { name: "Acme", city: "الرياض" },
+          { name: "日本商事", city: "Tokyo" },
+        ],
+      },
+      { unicode: true, painter: createPainter(0, "#647384"), columns: 80 },
     );
     // Every second cell starts at the same column: gutter 2, first column 10, gap 3.
     const rows = [

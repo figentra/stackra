@@ -6,7 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-001 and FR-014.
  */
-import type { CommandField } from "#core/types/command-field.type";
+import type { CommandField } from "#contracts/types/command-field.type";
 
 /** A command as the kernel sees it. */
 export interface CommandStructure {
@@ -34,8 +34,14 @@ export interface CommandStructure {
   /** Its docs link, when it has one. */
   readonly docs?: string;
 
+  /** Its local developer MCP tool, when it is one. */
+  readonly tool?: { readonly readOnly: boolean };
+
   /** Complete invocations its help shows. */
   readonly examples: readonly string[];
+
+  /** Migration only: it takes its tokens raw in `io.rest` and declares no fields. */
+  readonly passthrough: boolean;
 
   /** Its positional fields, in order. */
   readonly arguments: readonly CommandField[];

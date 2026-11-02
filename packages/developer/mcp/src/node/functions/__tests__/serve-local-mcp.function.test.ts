@@ -4,7 +4,8 @@
  *          local tools and the Encore tools under `encore_`; `manifest` reads the committed manifests; `new`, `gen`,
  *          `validate` and `verify` run through the given CLI runner (the CLI's gates), with a failing exit marked as
  *          an error; invalid arguments are refused before anything runs; an Encore call is forwarded unprefixed; the
- *          server resolves when the client disconnects.
+ *          server resolves when the client disconnects; command tools (STA-1966) are served with their own schema and
+ *          handler, their `--json` document as the structured result.
  * Boundary: test only; in-memory streams, a fake runner, a fake Encore peer and a throwaway repository in the OS temp
  *           directory.
  * Runtime: node (vitest)
@@ -20,6 +21,7 @@ import { vi } from "vitest";
 
 import { connectMcp } from "#node/functions/connect-mcp.function";
 import { serveLocalMcp } from "#node/functions/serve-local-mcp.function";
+import type { LocalTool } from "#node/types/local-tool.type";
 import type { McpPeer } from "#node/types/mcp-peer.type";
 import type { StackraRunner } from "#node/types/stackra-runner.type";
 
@@ -44,7 +46,11 @@ afterEach(() => {
 });
 
 /** A started server with a client peer; `encore` is the upstream peer or `null`. */
-function start(run: StackraRunner, encore: McpPeer | null = null) {
+function start(
+  run: StackraRunner,
+  encore: McpPeer | null = null,
+  tools: readonly LocalTool[] = [],
+) {
   const toServer = new PassThrough();
   const toClient = new PassThrough();
   const served = serveLocalMcp({
@@ -54,6 +60,7 @@ function start(run: StackraRunner, encore: McpPeer | null = null) {
     output: toClient,
     run,
     encore,
+    tools,
   });
   const client = connectMcp(toClient, toServer);
   return { client, served, disconnect: () => toServer.end() };
@@ -211,5 +218,49 @@ describe("serveLocalMcp", () => {
     disconnect();
     await served;
     await expect(encore.closed).resolves.toBeUndefined();
+  });
+
+  it("serves command tools with their own schema and handler, replacing a built-in of the same name", async () => {
+    const doctor: LocalTool = {
+      name: "validate",
+      description: "Check the machine",
+      inputSchema: {
+        type: "object",
+        properties: { quick: { type: "boolean" } },
+        additionalProperties: false,
+      },
+      readOnly: true,
+      invoke: async (input) => ({
+        document: { ok: false, data: [{ name: "git", status: "fail", input }] },
+        exitCode: 1,
+      }),
+    };
+    const run = vi.fn<StackraRunner>();
+    const { client, served, disconnect } = start(run, null, [doctor]);
+
+    const { tools } = (await client.request("tools/list")) as {
+      tools: { name: string; description: string; annotations: unknown }[];
+    };
+    expect(tools.filter((tool) => tool.name === "validate")).toEqual([
+      expect.objectContaining({
+        description: "Check the machine",
+        annotations: { readOnlyHint: true },
+      }),
+    ]);
+    const result = await client.request("tools/call", {
+      name: "validate",
+      arguments: { quick: true },
+    });
+    expect(result).toMatchObject({
+      structuredContent: {
+        ok: false,
+        data: [{ name: "git", status: "fail", input: { quick: true } }],
+      },
+      isError: true,
+    });
+    expect(run).not.toHaveBeenCalled();
+
+    disconnect();
+    await served;
   });
 });
