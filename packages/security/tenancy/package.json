@@ -2,7 +2,7 @@
   "name": "@stackra/tenancy",
   "version": "0.5.1",
   "private": false,
-  "description": "Stackra tenancy: tenant isolation in Postgres (the BelongsToTenant trait, the t.belongsToTenant() macro with its generated equality policy on tenant_id, TenantIsolationService.withTenant), the tenant level contributed to the scope tree as data (TenancyScopes, TENANT_SCOPE_LEVEL, TENANT_SCOPE_ALIAS), the tenancy step of the scope resolver chain, and the client's TenantSwitcher with useTenant and useTenantSwitcher and the TenantMenu kit block (web and native), sandbox tenants (SandboxTenantService) and consented cross-tenant shares (TenantShareService, revocationPlan) with their ports and memory drivers, the nullable BelongsToTenantOrPlatform, tenant tokens for anonymous calls (TenantTokenService), the TenantBillingContacts port, and test helpers in ./testing",
+  "description": "Stackra tenancy: tenant isolation in Postgres (the BelongsToTenant trait, the t.belongsToTenant() macro with its generated equality policy on tenant_id, TenantIsolationService.withTenant), the tenant level contributed to the scope tree as data (TenancyScopes, TENANT_SCOPE_LEVEL, TENANT_SCOPE_ALIAS), the tenancy step of the scope resolver chain, and the client's TenantSwitcher with useTenant and useTenantSwitcher and the TenantMenu kit block (web and native), the TenantPicker, MemberPicker, OrganizationPage and MembersPage kit blocks over the TenantProfile and TenantMembers client ports (./contracts, memory drivers in ./testing), sandbox tenants (SandboxTenantService) and consented cross-tenant shares (TenantShareService, revocationPlan) with their ports and memory drivers, the nullable BelongsToTenantOrPlatform, tenant tokens for anonymous calls (TenantTokenService), the TenantBillingContacts port, and test helpers in ./testing",
   "keywords": [
     "multi-tenant",
     "postgres",
@@ -36,6 +36,11 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*/index.ts"
+    ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
@@ -75,6 +80,11 @@
       "@stackra/source": "./src/core/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./contracts": {
+      "@stackra/source": "./src/contracts/index.ts",
+      "types": "./dist/contracts.d.mts",
+      "default": "./dist/contracts.mjs"
     },
     "./node": {
       "@stackra/source": "./src/node/index.ts",

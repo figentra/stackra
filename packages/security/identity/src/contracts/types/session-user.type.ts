@@ -6,12 +6,13 @@
  *           session claims map to (ADR 0206 decision 2: provider-neutral ids and claims). Each membership is
  *           `@stackra/tenancy`'s `TenantMembership`, so the word stays tenancy's (ADR 0323); its id is the scope node's
  *           `scp_` id and its path the node's path (ADR 0327). The permissions decide what a screen shows only; the
- *           producer's pipeline still checks every call.
+ *           producer's pipeline still checks every call. `assurance` is the level the last authentication reached, for
+ *           a screen that asks for a step-up (SessionGate); the server still checks it, with its age, on every call.
  * Runtime: isomorphic
  * Governing contract: ADR 0206 (decision 2); ADR 0208 (roles and permission names); ADR 0327 (scope on the session);
  *                     ADR 0294 (decision 15).
  */
-import type { Email, PublicId, Url } from "@stackra/contracts";
+import type { AssuranceLevel, Email, PublicId, Url } from "@stackra/contracts";
 import type { TenantMembership } from "@stackra/tenancy/react";
 
 /**
@@ -46,4 +47,7 @@ export interface SessionUser {
 
   /** Every membership, in the provider's order; the tenant switcher takes them as they are. */
   readonly memberships: readonly TenantMembership[];
+
+  /** The level the last authentication reached (`assuranceOf`); absent when the token does not say. */
+  readonly assurance?: AssuranceLevel;
 }

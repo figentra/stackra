@@ -2,7 +2,7 @@
   "name": "@stackra/settings",
   "version": "0.5.1",
   "private": false,
-  "description": "Stackra settings: the Settings({ scopes, navigation }) kind and the @Setting field decorator, SettingsReader resolving a module's group through the scope cascade with locks, the SettingValueStore port with its memory and Postgres drivers and the stored-settings table, the generated-key helpers settingKeys and settingsPage, SettingsResolver with market-pack legal floors, provenance, live and sandbox keys, revisions, four-eyes approval and schedules, YAML settings packs with diff and apply, the Promotable port with its settings driver, the native SettingsForm and fakeSettings",
+  "description": "Stackra settings: the Settings({ scopes, navigation }) kind and the @Setting field decorator, SettingsReader resolving a module's group through the scope cascade with locks, the SettingValueStore port with its memory and Postgres drivers and the stored-settings table, the generated-key helpers settingKeys and settingsPage, SettingsResolver with market-pack legal floors, provenance, live and sandbox keys, revisions, four-eyes approval and schedules, YAML settings packs with diff and apply, the Promotable port with its settings driver, the SettingsForm on web and native, useSetting for one key, and fakeSettings",
   "keywords": [
     "admin-settings",
     "approvals",
@@ -57,6 +57,12 @@
       "./src/node/*.ts",
       "./src/node/*/index.ts"
     ],
+    "#react/*": [
+      "./src/react/*",
+      "./src/react/*.ts",
+      "./src/react/*.tsx",
+      "./src/react/*/index.ts"
+    ],
     "#testing/*": [
       "./src/testing/*",
       "./src/testing/*.ts",
@@ -89,6 +95,11 @@
       "@stackra/source": "./src/native/index.ts",
       "types": "./dist/native.d.mts",
       "default": "./dist/native.mjs"
+    },
+    "./react": {
+      "@stackra/source": "./src/react/index.ts",
+      "types": "./dist/react.d.mts",
+      "default": "./dist/react.mjs"
     },
     "./testing": {
       "@stackra/source": "./src/testing/index.ts",
@@ -169,6 +180,7 @@
     "runtimes": [
       "isomorphic",
       "node",
+      "browser",
       "react-native"
     ],
     "summary": "Reach for this when a module exposes runtime values that admins or users change per scope, with locks, revisions, approval and schedules; deploy-time values belong in @stackra/config and secrets never go here."
