@@ -1556,3 +1556,16 @@
   status: accepted
   owner: os-backend
   issue: STA-1964
+"0519":
+  slug: worker-settings-come-from-runway-presets
+  status: accepted
+  owner: claude
+  issue: STA-1986
+"0520":
+  slug: stackra-champagne-core-for-the-engine
+  status: accepted
+  issue: STA-2015
+"0521":
+  slug: design-system-docs-on-fumadocs-ai-first
+  status: accepted
+  issue: STA-2024

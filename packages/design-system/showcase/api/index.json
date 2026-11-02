@@ -152,7 +152,7 @@
   "free/button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 55,
+    "propsCount": 56,
     "react": true
   },
   "free/button-group": {
@@ -359,7 +359,7 @@
   "free/copy-button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 51,
+    "propsCount": 52,
     "react": true
   },
   "free/countdown": {
@@ -548,7 +548,7 @@
   "free/file-trigger": {
     "native": true,
     "partsCount": 2,
-    "propsCount": 68,
+    "propsCount": 69,
     "react": true
   },
   "free/filter-bar": {
@@ -677,7 +677,7 @@
   "free/icon-button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 52,
+    "propsCount": 53,
     "react": true
   },
   "free/image": {
@@ -892,7 +892,7 @@
   "free/morph-button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 54,
+    "propsCount": 55,
     "react": true
   },
   "free/morph-tabs": {
@@ -1071,7 +1071,7 @@
   "free/progress-button": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 56,
+    "propsCount": 57,
     "react": true
   },
   "free/progress-circle": {
@@ -1354,7 +1354,7 @@
   "free/sidebar": {
     "native": true,
     "partsCount": 14,
-    "propsCount": 274,
+    "propsCount": 275,
     "react": true
   },
   "free/single-column-layout": {
@@ -1420,7 +1420,7 @@
   "free/spinner": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 19,
+    "propsCount": 16,
     "react": true
   },
   "free/split-button": {

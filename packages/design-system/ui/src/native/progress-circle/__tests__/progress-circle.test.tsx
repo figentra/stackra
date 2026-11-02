@@ -1,19 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: proves the native ProgressCircle is one accessible progressbar (named, with its range, value and text, and
- *          busy only while indeterminate), draws a track circle and a fill arc in the theme's colours at the three sizes
- *          in HeroUI's geometry, fills the arc to its value and eases there, spins a quarter arc while indeterminate,
- *          stands still under reduced motion, draws no text, and passes the view's own props through.
- * Boundary: React Native, react-native-svg, react-native-reanimated and heroui-native do not run in vitest, so they are
- *          replaced by recording stand-ins that render plain DOM (a shared value is a recorded box, a worklet runs once
- *          per render); what the ring hands them is checked, not the animation on a device.
+ *          busy only while indeterminate), draws a 3×3 cell of dots in the tone's theme colour at the three sizes,
+ *          fills it in floor order to its value in whole steps, builds it a dot every 80 ms while indeterminate, rests
+ *          full and dimmed under reduced motion, draws no text, and passes the view's own props through.
+ * Boundary: React Native and heroui-native do not run in vitest, so `View` is a recording stand-in that renders plain
+ *          DOM (a dot carries its style as data), and the provider and the motion level are stand-ins; what the circle
+ *          hands its views is checked, not its rendering on a device.
  * Runtime: node
- * Governing contract: ADR 0302 (decision 3); ADR 0312; WCAG 2.2 SC 2.3.3 and 4.1.2; ADR 0022 (test placement).
+ * Governing contract: ADR 0302 (decision 3); ADR 0312; WCAG 2.2 SC 2.3.3 and 4.1.2; ADR 0022 (test placement);
+ *          .agents/specs/sta-2017-dot-loader/spec.md.
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-119
 import { Enum, Tone } from "@stackra/contracts";
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 
 import { Size } from "#contracts/enums/size.enum";
 import type { ProgressCircleContractProps } from "#contracts/types/progress-circle-contract-props.type";
@@ -21,18 +22,10 @@ import { PROGRESS_FILL_ROLE } from "#core/constants/progress-fill-role.constant"
 import { ProgressCircle } from "#native/progress-circle/progress-circle";
 import type { ProgressCircleProps } from "#native/progress-circle/progress-circle.props";
 
-/** The circumference of the ring: radius 16 in a 36-unit box. */
-const CIRCUMFERENCE = 2 * Math.PI * 16;
-
-/** What the stand-ins were last handed, and the knobs a test turns. */
+/** What the stand-ins were handed, and the knobs a test turns. */
 const state = vi.hoisted(() => ({
-  reduced: false,
+  motion: "full",
   views: [] as Record<string, unknown>[],
-  spinners: [] as Record<string, unknown>[],
-  svgs: [] as Record<string, unknown>[],
-  circles: [] as Record<string, unknown>[],
-  shared: [] as { value: unknown; sets: unknown[] }[],
-  cancelled: 0,
 }));
 
 vi.mock("heroui-native", () => ({
@@ -45,63 +38,15 @@ vi.mock("react-native", async () => {
   return {
     View: (props: Record<string, unknown>) => {
       state.views.push(props);
-      return createElement("div", null, props["children"] as never);
+      const style = props["style"] as Record<string, unknown> | null | undefined;
+      // A dot is the only view with a plain style that carries a colour.
+      const isDot = style != null && !Array.isArray(style) && "backgroundColor" in style;
+      return createElement(
+        "div",
+        isDot ? { "data-dot": JSON.stringify(style) } : null,
+        props["children"] as never,
+      );
     },
-  };
-});
-
-vi.mock("react-native-svg", async () => {
-  const { createElement } = await import("react");
-  return {
-    default: (props: Record<string, unknown>) => {
-      state.svgs.push(props);
-      return createElement("div", null, props["children"] as never);
-    },
-    Circle: (props: Record<string, unknown>) => {
-      state.circles.push(props);
-      return createElement("i", null);
-    },
-  };
-});
-
-vi.mock("react-native-reanimated", async () => {
-  const { createElement, useRef } = await import("react");
-  return {
-    default: {
-      View: (props: Record<string, unknown>) => {
-        state.spinners.push(props);
-        return createElement("div", null, props["children"] as never);
-      },
-    },
-    createAnimatedComponent: (component: unknown) => component,
-    useSharedValue: (initial: unknown) => {
-      const ref = useRef<{ get: () => unknown; set: (next: unknown) => void } | null>(null);
-      if (!ref.current) {
-        const box = { value: initial, sets: [] as unknown[] };
-        state.shared.push(box);
-        ref.current = {
-          get: () => box.value,
-          set: (next) => {
-            box.value = next;
-            box.sets.push(next);
-          },
-        };
-      }
-      return ref.current;
-    },
-    useAnimatedStyle: (worklet: () => unknown) => worklet(),
-    useAnimatedProps: (worklet: () => unknown) => worklet(),
-    useReducedMotion: () => state.reduced,
-    withTiming: (to: number, config: unknown) => ({ timing: to, config }),
-    withRepeat: (animation: unknown, count: number, reverse: boolean) => ({
-      repeat: animation,
-      count,
-      reverse,
-    }),
-    cancelAnimation: () => {
-      state.cancelled += 1;
-    },
-    Easing: { linear: "linear" },
   };
 });
 
@@ -109,28 +54,37 @@ vi.mock("#native/design-system-provider/use-design-system", () => ({
   useDesignSystem: () => ({ locale: "en", direction: "ltr" }),
 }));
 
+vi.mock("#native/design-system-provider/use-motion", () => ({ useMotion: () => state.motion }));
+
+interface DotStyle {
+  width: number;
+  height: number;
+  backgroundColor: string;
+  opacity: number;
+}
+
 const rootProps = () =>
   // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
   state.views.filter((props) => props["accessibilityRole"] === "progressbar").at(-1) ?? {};
-const styleOf = (props: Record<string, unknown> = {}) =>
-  props["style"] as Record<string, unknown>[] | Record<string, unknown>;
-/** The track circle has a colour and no animated props; the fill arc has both. */
-// oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
-const trackCircle = () => state.circles.filter((props) => !("animatedProps" in props)).at(-1);
-// oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
-const fillCircle = () => state.circles.filter((props) => "animatedProps" in props).at(-1);
-const dashOffset = () =>
-  ((fillCircle() ?? {})["animatedProps"] as { strokeDashoffset: number }).strokeDashoffset;
+const gridStyle = () =>
+  // oxlint-disable-next-line unicorn/prefer-array-find -- reason: findLast is ES2023 and the base lib is ES2022
+  (state.views.filter((props) => "direction" in ((props["style"] ?? {}) as object)).at(-1) ?? {})[
+    "style"
+  ] as Record<string, unknown>;
+const dotsOf = (container: HTMLElement) =>
+  [...container.querySelectorAll<HTMLElement>("[data-dot]")].map(
+    (node) => JSON.parse(node.dataset["dot"] ?? "{}") as DotStyle,
+  );
+const litOf = (container: HTMLElement) =>
+  dotsOf(container).filter((dot) => dot.opacity === 1).length;
 
 describe("ProgressCircle (native)", () => {
   beforeEach(() => {
-    state.reduced = false;
+    state.motion = "full";
     state.views = [];
-    state.spinners = [];
-    state.svgs = [];
-    state.circles = [];
-    state.shared = [];
-    state.cancelled = 0;
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("is one named, busy, indeterminate progressbar with only a label", () => {
@@ -153,78 +107,97 @@ describe("ProgressCircle (native)", () => {
   });
 
   it("holds a value to its range and speaks the caller's text", () => {
-    render(<ProgressCircle label="Syncing" value={99} maxValue={12} valueLabel="12 of 12" />);
+    const { container } = render(
+      <ProgressCircle label="Syncing" value={99} maxValue={12} valueLabel="12 of 12" />,
+    );
     expect(rootProps()).toMatchObject({
       accessibilityValue: { min: 0, max: 12, now: 12, text: "12 of 12" },
     });
-    expect(dashOffset()).toBeCloseTo(0, 6);
+    expect(litOf(container)).toBe(9);
   });
 
-  it.each(Size)("draws size %s in HeroUI's 36-unit geometry", (size) => {
-    render(<ProgressCircle label="Syncing" size={size} value={50} />);
-    const diameter = { sm: 20, md: 28, lg: 36 }[size];
-    expect(state.svgs.at(-1)).toMatchObject({
-      width: diameter,
-      height: diameter,
-      viewBox: "0 0 36 36",
-    });
-    expect(trackCircle()).toMatchObject({ cx: 18, cy: 18, r: 16, strokeWidth: 4 });
-    expect(styleOf(rootProps())).toEqual([{ width: diameter, height: diameter }, undefined]);
+  // @covers sta-2017:FR-004
+  it.each(Size)("draws size %s as a 3×3 cell at the contract's diameter", (size) => {
+    const { container } = render(<ProgressCircle label="Syncing" size={size} value={50} />);
+    const { dot, gap } = { sm: { dot: 4, gap: 4 }, md: { dot: 6, gap: 5 }, lg: { dot: 8, gap: 6 } }[
+      size
+    ];
+    // Three dots and two gaps span the contract's diameters.
+    expect(3 * dot + 2 * gap).toBe({ sm: 20, md: 28, lg: 36 }[size]);
+    expect(dotsOf(container)).toHaveLength(9);
+    expect(gridStyle()).toMatchObject({ gap });
+    for (const node of dotsOf(container)) expect(node).toMatchObject({ width: dot, height: dot });
   });
 
-  it("is a medium accent ring on the theme's track colour by default", () => {
-    render(<ProgressCircle label="Syncing" value={50} />);
-    expect(trackCircle()).toMatchObject({ stroke: "color:default" });
-    expect(fillCircle()).toMatchObject({ stroke: "color:accent", strokeLinecap: "round" });
+  it("is a medium accent cell by default", () => {
+    const { container } = render(<ProgressCircle label="Syncing" value={50} />);
+    for (const dot of dotsOf(container))
+      expect(dot).toMatchObject({ width: 6, backgroundColor: "color:accent" });
   });
 
   it.each(Enum.values(Tone))("fills tone %s in its role", (tone) => {
-    render(<ProgressCircle label="Syncing" tone={tone} value={50} />);
-    expect(fillCircle()).toMatchObject({ stroke: `color:${PROGRESS_FILL_ROLE[tone]}` });
+    const { container } = render(<ProgressCircle label="Syncing" tone={tone} value={50} />);
+    for (const dot of dotsOf(container))
+      expect(dot.backgroundColor).toBe(`color:${PROGRESS_FILL_ROLE[tone]}`);
   });
 
-  it("leaves a share of the ring unfilled that matches the value", () => {
-    render(<ProgressCircle label="Syncing" value={25} />);
-    expect(fillCircle()).toMatchObject({ strokeDasharray: CIRCUMFERENCE });
-    expect(dashOffset()).toBeCloseTo(CIRCUMFERENCE * 0.75, 6);
+  // @covers sta-2017:FR-004
+  it("fills five of nine dots in floor order at 50, the bottom row first", () => {
+    const { container } = render(<ProgressCircle label="Syncing" value={50} />);
+    expect(dotsOf(container).map((dot) => dot.opacity === 1)).toEqual([
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+    ]);
   });
 
-  it("eases to a new value, or jumps under reduced motion", () => {
-    const { rerender } = render(<ProgressCircle label="Syncing" value={10} />);
-    rerender(<ProgressCircle label="Syncing" value={60} />);
-    expect(state.shared[0]?.sets.at(-1)).toMatchObject({ timing: 60, config: { duration: 300 } });
-    state.reduced = true;
+  it("steps straight to a new value, with no tween", () => {
+    const { container, rerender } = render(<ProgressCircle label="Syncing" value={10} />);
+    expect(litOf(container)).toBe(1);
     rerender(<ProgressCircle label="Syncing" value={80} />);
-    expect(state.shared[0]?.sets.at(-1)).toBe(80);
+    expect(litOf(container)).toBe(8);
   });
 
-  it("spins a quarter arc once a second while indeterminate", () => {
-    render(<ProgressCircle label="Syncing" />);
-    expect(dashOffset()).toBeCloseTo(CIRCUMFERENCE * 0.75, 6);
-    expect(state.shared[1]?.sets.at(-1)).toMatchObject({
-      repeat: { timing: 1, config: { duration: 1000, easing: "linear" } },
-      count: -1,
-    });
-    expect(styleOf(state.spinners.at(-1))).toEqual([
-      { width: 28, height: 28 },
-      { transform: [{ rotate: "0deg" }] },
-    ]);
+  // @covers sta-2017:FR-004
+  it("builds the cell a dot every 80 ms while indeterminate, holds, then clears", () => {
+    vi.useFakeTimers();
+    const { container } = render(<ProgressCircle label="Syncing" />);
+    expect(litOf(container)).toBe(1);
+    expect(dotsOf(container)[6]?.opacity).toBe(1);
+    act(() => vi.advanceTimersByTime(80));
+    expect(litOf(container)).toBe(2);
+    act(() => vi.advanceTimersByTime(80 * 7));
+    expect(litOf(container)).toBe(9);
+    act(() => vi.advanceTimersByTime(480));
+    expect(litOf(container)).toBe(0);
+    act(() => vi.advanceTimersByTime(160));
+    expect(litOf(container)).toBe(1);
   });
 
-  it("rests as a still arc under reduced motion", () => {
-    state.reduced = true;
-    render(<ProgressCircle label="Syncing" />);
-    expect(state.shared[1]?.sets).toEqual([]);
-    expect(styleOf(state.spinners.at(-1))).toEqual([
-      { width: 28, height: 28 },
-      { transform: [{ rotate: "0deg" }] },
-    ]);
+  // @covers sta-2017:FR-007
+  it("rests full and dimmed with no timer under reduced motion", () => {
+    vi.useFakeTimers();
+    state.motion = "reduced";
+    const { container } = render(<ProgressCircle label="Syncing" />);
+    expect(litOf(container)).toBe(9);
+    expect(rootProps()["style"]).toEqual([{ opacity: 0.6 }, undefined]);
+    act(() => vi.advanceTimersByTime(1280));
+    expect(litOf(container)).toBe(9);
   });
 
-  it("stops the spin when it gets a value", () => {
-    const { rerender } = render(<ProgressCircle label="Syncing" />);
+  it("stops the build when it gets a value", () => {
+    vi.useFakeTimers();
+    const { container, rerender } = render(<ProgressCircle label="Syncing" />);
     rerender(<ProgressCircle label="Syncing" value={50} />);
-    expect(state.cancelled).toBe(1);
+    expect(litOf(container)).toBe(5);
+    act(() => vi.advanceTimersByTime(1280));
+    expect(litOf(container)).toBe(5);
   });
 
   it("draws no text", () => {
@@ -235,7 +208,7 @@ describe("ProgressCircle (native)", () => {
   it("passes the view's own props through to the root", () => {
     render(<ProgressCircle label="Syncing" testID="ring" style={{ opacity: 0.5 }} />);
     expect(rootProps()).toMatchObject({ testID: "ring" });
-    expect(styleOf(rootProps())).toEqual([{ width: 28, height: 28 }, { opacity: 0.5 }]);
+    expect(rootProps()["style"]).toEqual([null, { opacity: 0.5 }]);
   });
 
   it("types: extends the contract, needs a label and refuses the accessibility props", () => {

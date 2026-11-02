@@ -30,7 +30,9 @@
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) or a recorded resource table that sorts or filters on an unindexed path
- *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) on the full pass only. Other per-target outputs (navigation trees, the rest of the Encore app, ...)
+ *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
+ *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) on the full pass only. An app that hosts the panel
+ *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
  *           (`formatJson`, stackra-247), so the committed manifest and openapi.json pass `oxfmt --check`.
  * Runtime: isomorphic
@@ -58,6 +60,8 @@ import { checkIdentityLock } from "#core/functions/check-identity-lock.function"
 import { checkSlotFills } from "#core/functions/check-slot-fills.function";
 import { checkTableIndexes } from "#core/functions/check-table-indexes.function";
 import { checkSurfaces } from "#core/functions/check-surfaces.function";
+import { hostResourcesOf } from "#core/functions/host-resources-of.function";
+import { hostRoutesOf } from "#core/functions/host-routes-of.function";
 import { formatJson } from "#core/functions/format-json.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
@@ -84,6 +88,7 @@ import { emitConsoleEntry } from "#core/functions/emit-console-entry.function";
 import { emitReports } from "#core/functions/emit-reports.function";
 import { emitSearchQueries } from "#core/functions/emit-search-queries.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
+import { emitResources } from "#core/functions/emit-resources.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
 import { emitSchemas } from "#core/functions/emit-schemas.function";
@@ -181,6 +186,10 @@ export function generateMember(
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
     ...checkTableIndexes(ir, previous),
+    // One panel resource key recorded by two classes across the host's dependencies (STA-1947).
+    ...(ir.layout === "app" ? hostResourcesOf(ir).errors : []),
+    // One route or menu key two owners ship, or the app's own too (STA-1947).
+    ...(ir.layout === "app" ? hostRoutesOf(ir).errors : []),
   );
   // An app's Expo config, from `defineApp`, the config classes, the lang and the icon sets (ADR 0295 decision 5).
   const expo = emitExpoConfig(ir);
@@ -263,6 +272,9 @@ export function generateMember(
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
   files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir), ...expo.files);
+  // The composed panel resources' route constants, for an app that hosts the panel (STA-1947).
+  const resources = emitResources(ir);
+  if (resources !== undefined) files.push(resources);
   // The console entry, for a member with commands; a v2 service's authored main does not stop it (ADR 0506).
   const consoleEntry = emitConsoleEntry(
     ir,

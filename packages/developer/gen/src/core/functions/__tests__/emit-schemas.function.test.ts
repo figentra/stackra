@@ -625,6 +625,41 @@ describe("emitSchemas", () => {
     expect(content).toMatch(/import \{[^}]*\bcountryCode\b[^}]*\} from "@stackra\/validation";/);
   });
 
+  it("turns a hatch's trailing .optional() into .exactOptional() for a `?:` field (STA-2022)", () => {
+    const campaign: ShapeIR = {
+      name: "CampaignInput",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/campaign-input.schema.ts",
+      importPath: "#modules/orders/schemas/campaign-input.schema",
+      fields: [
+        {
+          name: "data",
+          optional: true,
+          nullable: false,
+          type: { kind: "hatch", source: "z.record(z.string(), z.number())\n      .optional()" },
+          rules: [],
+        },
+        {
+          name: "note",
+          optional: true,
+          nullable: false,
+          type: { kind: "hatch", source: "z.string()" },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [campaign], enums: [], classes: [] },
+      "orders",
+    );
+    // `.optional().exactOptional()` admits `undefined`, which `?:` under exactOptionalPropertyTypes does not (TS2344).
+    expect(content).not.toContain(".optional().exactOptional()");
+    expect(content).toContain("  data: z.record(z.string(), z.number()).exactOptional(),");
+    expect(content).toContain("  note: z.string().exactOptional(),");
+  });
+
   it("imports a hatch's type-only names as types", () => {
     const action: ShapeIR = {
       name: "HeroAction",

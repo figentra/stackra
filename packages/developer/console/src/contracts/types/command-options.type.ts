@@ -26,4 +26,27 @@ export interface CommandOptions {
 
   /** The package's own bin command: gen never contributes it to a host (STA-1731 FR-004). */
   readonly bin?: boolean;
+
+  /** The heading the command list shows it under; its namespace (`tenant` of `tenant:seed`) when absent. */
+  readonly group?: string;
+
+  /** A docs link, shown at the end of the command's help and of its error screen. */
+  readonly docs?: string;
+
+  /** Complete invocations shown in the command's help, as `acme greet Ada --times 2`. */
+  readonly examples?: readonly string[];
+
+  /**
+   * A tool of the local developer MCP (ADR 0282 decision 5) with the same schema and handler as the command; the
+   * read-only hint when `{ readOnly: true }`. Never a tenant MCP tool.
+   */
+  readonly tool?: boolean | { readonly readOnly: boolean };
+
+  /**
+   * Migration only (ADR 0500 decision 7, STA-1966): the command declares no fields, and `io.rest` holds every token
+   * after its name, raw, for a ported `run(args)` that still parses its own flags. Routing, `--help` and errors stay the
+   * kernel's. A CLI is not done while any of its commands is passthrough; its tests pin the remaining list with
+   * `passthroughCommands`.
+   */
+  readonly passthrough?: boolean;
 }

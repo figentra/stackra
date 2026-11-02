@@ -30,6 +30,7 @@ import { checkMember } from "#node/functions/check-member.function";
 import { checkNativeModules } from "#node/functions/check-native-modules.function";
 import { checkRunwayFiles } from "#node/functions/check-runway-files.function";
 import { checkRunwaySchemas } from "#node/functions/check-runway-schemas.function";
+import { checkRunwayUnreadFields } from "#node/functions/check-runway-unread-fields.function";
 import { checkService } from "#node/functions/check-service.function";
 import { checkTestPlacement } from "#node/functions/check-test-placement.function";
 import { checkWindowSizing } from "#node/functions/check-window-sizing.function";
@@ -119,7 +120,10 @@ export async function structureFindings(
   const members = listMembers(root);
 
   report("test-placement", "", checkTestPlacement(files));
-  if (existsSync(join(root, RUNWAY_DIR))) report("runway-schemas", "", checkRunwaySchemas(maybe));
+  if (existsSync(join(root, RUNWAY_DIR))) {
+    report("runway-schemas", "", checkRunwaySchemas(maybe));
+    report("runway-unread-fields", "", checkRunwayUnreadFields(maybe, files));
+  }
   const runwayFiles = files.filter(isRunwayFile);
   if (runwayFiles.length) {
     const runway = await loadRunway(root);

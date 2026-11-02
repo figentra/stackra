@@ -128,7 +128,12 @@ describe("splitInvocation", () => {
     expect(splitInvocation(["-n", "copy", "a", "--", "b"])).toEqual({
       name: "copy",
       rest: ["--no-interaction", "a", "--", "b"],
+      raw: ["-n", "a", "--", "b"],
     });
-    expect(splitInvocation(["--", "copy"])).toEqual({ name: undefined, rest: ["--", "copy"] });
+    expect(splitInvocation(["--", "copy"])).toEqual({
+      name: undefined,
+      rest: ["--", "copy"],
+      raw: ["--", "copy"],
+    });
   });
 });

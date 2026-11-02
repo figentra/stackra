@@ -35,7 +35,8 @@
  *          `command_collision` and `identity_missing` (ADR 0506, STA-1731).
  *          It lists each panel resource in `ui.resources` (`resourcesOf`: its recorded tree by `<module>.<model>`, with
  *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
- *          `resource_duplicate` (STA-1947).
+ *          `resource_duplicate`, and a package's UI-entry routes and menus in `ui.routes` and `ui.menus` (`uiRoutesOf`,
+ *          `uiMenusOf`) (STA-1947).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -90,6 +91,8 @@ import { surfacesOf } from "#core/functions/surfaces-of.function";
 import { tableName } from "#core/functions/table-name.function";
 import { toolHints } from "#core/functions/tool-hints.function";
 import { toolName } from "#core/functions/tool-name.function";
+import { uiMenusOf } from "#core/functions/ui-menus-of.function";
+import { uiRoutesOf } from "#core/functions/ui-routes-of.function";
 import { webhookPath } from "#core/functions/webhook-path.function";
 import type { ClassValue } from "#core/types/class-value.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
@@ -1137,7 +1140,14 @@ export function buildManifest(ir: MemberIR): {
   // The panel resources with their recorded trees and owning modules, own then hosted (ADR 0307, STA-1947).
   const ui = resourcesOf(ir, sections.actions);
   errors.push(...ui.errors);
-  const resources = Object.keys(ui.resources).length > 0 ? ui.resources : undefined;
+  // A package's UI-entry routes and menus, for a host's route tables (STA-1947); each section only when non-empty.
+  const uiRoutes = uiRoutesOf(ir);
+  const uiMenus = uiMenusOf(ir);
+  const uiSection: Entry = {
+    ...(Object.keys(ui.resources).length > 0 ? { resources: ui.resources } : {}),
+    ...(uiRoutes.length > 0 ? { routes: uiRoutes as unknown as Json } : {}),
+    ...(uiMenus.length > 0 ? { menus: uiMenus as unknown as Json } : {}),
+  };
 
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
@@ -1162,7 +1172,7 @@ export function buildManifest(ir: MemberIR): {
       : {}),
     ...(reports.reports.length > 0 ? { reports: [...reports.reports] } : {}),
     ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
-    ...(resources === undefined ? {} : { ui: { resources } }),
+    ...(Object.keys(uiSection).length > 0 ? { ui: uiSection } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };
