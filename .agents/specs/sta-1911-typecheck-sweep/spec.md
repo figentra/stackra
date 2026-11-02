@@ -16,7 +16,7 @@
 
 - **Apps touched**: none
 - **Services touched**: none
-- **Packages touched**: `actions`, `analytics`, `events`, `identity`, `loyalty-kit`, `skills`, `tenancy`, `console`
+- **Packages touched**: `actions`, `analytics`, `events`, `identity`, `loyalty-kit`, `skills`, `tenancy`, `console`; `contracts` (its export-list test sorts `Permission` before `Port`, from #215)
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Secrets**: none
