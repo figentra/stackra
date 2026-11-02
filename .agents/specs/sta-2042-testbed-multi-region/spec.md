@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-03
 
-**Status**: Clarified
+**Status**: Clarified — Approved by owner 2026-11-03
 
 **Tier**: big
 
@@ -229,4 +229,4 @@ None.
 ## Status history
 
 - 2026-11-03 · — → Draft · claude (TESTBED session) · created from the owner's "Multi-region testbed" decision
-- 2026-11-03 · Draft → Clarified · claude (TESTBED session) · design accepted by the leader; the gate interface added (FR-010 to FR-012)
+- 2026-11-03 · Draft → Clarified · claude (TESTBED session) · design accepted by the leader; the gate interface added (FR-010 to FR-012) — Approved by owner 2026-11-03 (question tool: "Approve")
