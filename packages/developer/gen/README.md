@@ -174,6 +174,15 @@ type stripping refuses), and a `generate` call without `loader` refuses a member
 `builder_impure`, an operation class that is no known action or query is `resource_operation_unknown`, and one key
 from two classes is `resource_duplicate`.
 
+An app that hosts `@stackra/panel` composes the resources its declared packages and consumed services record
+(`hostResourcesOf`, through the shared `contributionsOf` walk; one key from two classes is `resource_duplicate`). Its
+route tables register those trees on the browser and on native, and the browser also gets the panel's pages. It gets
+`#stackra/resources`: `Resources`, each resource's `resource(key, { base, list, view, create, update })` with the
+operation refs its consumed services' clients export (`true` reads the standard `list` or `get`), and `resourceList`
+for the shell's data routes (`...resourceList.flatMap(toResource)`). A page whose operation no client exports, the
+List page included, is left out, so no route reaches an empty page, and is recorded with its reason in
+`unboundOperations` (a `true` list or get waits on gen writing the standard reads, STA-1971).
+
 Surface targets (ADR 0436, stackra-04): a dependency whose committed manifest declares slots is the shell of the
 surfaces those slots sit on, and its major is the line the member targets there. Gen writes `surfaces` to the
 manifest (`[{ surface: "console", targets: "console@3", shell: "@os/console-shell" }]`; `surfacesOf`), which the
