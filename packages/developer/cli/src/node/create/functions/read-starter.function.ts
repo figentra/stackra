@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `readStarter(source)`, a local starter's files by POSIX path: a `.tgz` (an npm tarball, `package/`
- *          removed) through `readTarball`, or a git checkout of the template through `git ls-files` (tracked files
+ * Purpose: `readStarter(source)`, a local starter's files by POSIX path: a `.tgz` (a packed `@stackra/starter`)
+ *          through `starterTarball`, or a git checkout of the template through `git ls-files` (tracked files
  *          plus new ones git does not ignore), so a checkout's `node_modules`, build output and stray files never
  *          reach the app.
  * Boundary: reads files and runs local `git ls-files`; writes nothing. A folder that is not a git checkout is
@@ -13,7 +13,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { readTarball } from "#node/functions/read-tarball.function";
+import { starterTarball } from "#node/create/functions/starter-tarball.function";
 
 /**
  * The files of a local starter.
@@ -24,7 +24,7 @@ import { readTarball } from "#node/functions/read-tarball.function";
  * readStarter("../stackra-template").get("stackra.starter.yaml");
  */
 export function readStarter(source: string): Map<string, Uint8Array> {
-  if (!statSync(source).isDirectory()) return readTarball(readFileSync(source));
+  if (!statSync(source).isDirectory()) return starterTarball(readFileSync(source));
   let listing: string;
   try {
     listing = execFileSync(

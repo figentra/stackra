@@ -24,12 +24,12 @@ import { genTree } from "#node/create/functions/gen-tree.function";
 import { readStarter } from "#node/create/functions/read-starter.function";
 import { runStep } from "#node/create/functions/run-step.function";
 import { starterFiles } from "#node/create/functions/starter-files.function";
+import { starterTarball } from "#node/create/functions/starter-tarball.function";
 import { starterWorkspace } from "#node/create/functions/starter-workspace.function";
 import { doctorChecks } from "#node/doctor/functions/doctor-checks.function";
 import { renderDoctor } from "#node/doctor/functions/render-doctor.function";
 import { cliVersion } from "#node/functions/cli-version.function";
 import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
-import { readTarball } from "#node/functions/read-tarball.function";
 import { registryOrigin } from "#node/functions/registry-origin.function";
 
 /** A package name. */
@@ -269,6 +269,6 @@ export class CreateCommand extends Command({
     const { bytes } = await client
       .tarball(STARTER, version)
       .catch(() => client.tarball(STARTER, "latest"));
-    return readTarball(bytes);
+    return starterTarball(bytes);
   }
 }

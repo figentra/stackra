@@ -9,11 +9,13 @@
  * Governing contract: ADR 0022; ADR 0515; STA-1952 spec FR-006, FR-007, FR-010 and FR-015.
  */
 import assert from "node:assert/strict";
+import { gzipSync } from "node:zlib";
 
 import { test } from "@stackra/testing";
 
 import { genTree } from "#node/create/functions/gen-tree.function";
 import { starterFiles } from "#node/create/functions/starter-files.function";
+import { starterTarball } from "#node/create/functions/starter-tarball.function";
 import { starterWorkspace } from "#node/create/functions/starter-workspace.function";
 import { doctorNeeds } from "#node/doctor/functions/doctor-needs.function";
 
@@ -146,6 +148,44 @@ test("a starter's files describe the app's doctor workspace", () => {
   assert.deepEqual([...doctorNeeds(workspace)].sort(), ["services", "stackra"]);
 });
 
+/** A gzipped ustar archive of these files under `package/`, as npm packs one. */
+function tgz(entries: Record<string, string>): Uint8Array {
+  const blocks: Uint8Array[] = [];
+  for (const [path, body] of Object.entries(entries)) {
+    const header = new Uint8Array(512);
+    const field = (offset: number, value: string) => header.set(encoder.encode(value), offset);
+    const bytes = encoder.encode(body);
+    field(0, `package/${path}`);
+    field(100, "0000644\0");
+    field(124, `${bytes.length.toString(8).padStart(11, "0")}\0`);
+    field(156, "0");
+    field(257, "ustar\0");
+    field(148, "        ");
+    const sum = header.reduce((total, byte) => total + byte, 0);
+    field(148, `${sum.toString(8).padStart(6, "0")}\0 `);
+    const data = new Uint8Array(Math.ceil(bytes.length / 512) * 512);
+    data.set(bytes);
+    blocks.push(header, data);
+  }
+  blocks.push(new Uint8Array(1024));
+  return gzipSync(Buffer.concat(blocks));
+}
+
+test("starterTarball returns the template under template/, or the whole tarball without one", () => {
+  const packed = starterTarball(
+    tgz({
+      "package.json": '{"name":"@stackra/starter"}',
+      "template/package.json": '{"name":"acme-platform"}',
+    }),
+  );
+  assert.deepEqual([...packed.keys()], ["package.json"]);
+  assert.equal(read(packed, "package.json"), '{"name":"acme-platform"}');
+  assert.deepEqual(
+    [...starterTarball(tgz({ "stackra.starter.yaml": "version: 1\n" })).keys()],
+    ["stackra.starter.yaml"],
+  );
+});
+
 test("genTree prints one line per member and kind, with counts, and every file when verbose", () => {
   const paths = [
     "services/example/stackra.manifest.json",
@@ -161,7 +201,7 @@ test("genTree prints one line per member and kind, with counts, and every file w
   ];
   assert.deepEqual(genTree(paths), [
     "├─ apps/console",
-    "│  ├─ .stackra/gen/              routes",
+    "│  ├─ .stackra/gen/             routes",
     "│  ├─ .stackra/ (tool configs)  configs, tests, graph",
     "│  └─ member root               vitest.config.ts, tsconfig.build.json (2 files)",
     "└─ services/example",
@@ -171,5 +211,5 @@ test("genTree prints one line per member and kind, with counts, and every file w
     "   └─ .stackra/entry/node.ts    an entry",
   ]);
   const verbose = genTree(paths, true);
-  assert.ok(verbose.includes("      .stackra/encore/example/encore.service.ts"));
+  assert.ok(verbose.includes("   │     .stackra/encore/example/encore.service.ts"));
 });
