@@ -512,7 +512,7 @@
 - [0481 — Template lines release as registry packages, and Runway checks them out by line](/adr/0481-template-lines-release-as-registry-packages-and-runway-checks-them-out): Proposed · 2026-10-29
 - [0482 — Mobile onboarding is a Runway step, and EAS owns signing](/adr/0482-mobile-onboarding-is-a-runway-step-and-eas-owns-signing): Proposed · 2026-10-30
 - [0483 — Analytics relay: apps send product analytics only to the analytics service, which fans out to PostHog and GA4](/adr/0483-analytics-relay-apps-send-product-analytics-only-to-the-analytics-service): Accepted · 2026-10-30
-- [0484 — The testbed: disposable, image-built test boxes, a container per job, and secrets from Infisical](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical): Accepted · 2026-10-30
+- [0484 — The testbed: disposable, image-built test boxes, a container per job, and secrets from Infisical](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical): Accepted, amended by 0516 · 2026-10-30
 - [0485 — Analytics routing across the tenant tree: parties and organisation parents get detail, and connectors send from the integrations service](/adr/0485-analytics-routing-across-the-tenant-tree-parties-and-organisation-parents-get-detail-and-connectors-send-from-the-integrations-service): Accepted · 2026-10-30
 - [0490 — AI everywhere: client tools from frontend declarations, page context, personalisation as actions and tours as data](/adr/0490-ai-everywhere-client-tools-from-frontend-declarations-page-context-personalisation-as-actions-and-tours-as-data): Accepted · 2026-10-30
 - [0491 — Shopping assistant: shared cards on every surface, and the payer approves their own payment](/adr/0491-shopping-assistant-shared-cards-on-every-surface-and-the-payer-approves-their-own-payment): Accepted · 2026-10-30
@@ -536,6 +536,7 @@
 - [0512 — One Infisical layout: projects by reader, one agents vault, product runtimes](/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes): Proposed · 2026-11-01
 - [0513 — The permission vocabulary moves to @stackra/contracts and @stackra/container; iam keeps evaluation](/adr/0513-permission-vocabulary-moves-to-contracts-and-container): Accepted · 2026-11-01
 - [0514 — Self-hosted open-source docs: Fumadocs on a Cloudflare Worker replaces Mintlify](/adr/0514-self-hosted-docs-replace-mintlify): Accepted · 2026-11-02
+- [0516 — AWS quotas are fixed inputs: every footprint fits them, and no quota increase without the owner](/adr/0516-aws-quotas-are-fixed-inputs): Accepted · 2026-11-02
 - [ADR template](/adr/template): Copy this page, give it the next number, fill every section.
 - [Member standards](/standards/members): What every app, package and service must contain, and which check enforces each rule.
 - [Package standards](/standards/packages): The entries-first package shape, exports, barrels, and the provenance of copied code.

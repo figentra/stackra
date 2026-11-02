@@ -650,6 +650,7 @@
               "adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes",
               "adr/0513-permission-vocabulary-moves-to-contracts-and-container",
               "adr/0514-self-hosted-docs-replace-mintlify",
+              "adr/0516-aws-quotas-are-fixed-inputs",
               "adr/template"
             ]
           }
