@@ -186,6 +186,9 @@ catalogs:
     '@aws-sdk/s3-request-presigner':
       specifier: 3.1149.0
       version: 3.1149.0
+    '@clack/prompts':
+      specifier: 1.8.1
+      version: 1.8.1
     '@electric-sql/pglite':
       specifier: 0.5.8
       version: 0.5.8
@@ -4242,6 +4245,9 @@ importers:
 
   packages/developer/console:
     dependencies:
+      '@clack/prompts':
+        specifier: 'catalog:'
+        version: 1.8.1
       '@stackra/container':
         specifier: workspace:*
         version: link:../../foundation/container
