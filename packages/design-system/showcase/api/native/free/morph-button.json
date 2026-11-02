@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "893ca1c1cbd36db6",
+    "hash": "1c0c555175d410e9",
     "propsFiles": ["ui/src/native/morph-button/morph-button.props.ts"]
   },
   "importLine": "import { MorphButton } from \"@stackra/ui/native\";",
@@ -53,7 +53,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "default": "md",

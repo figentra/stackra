@@ -1534,6 +1534,11 @@
         "description": "A sign-in card with external providers, email and password.",
         "keywords": "login, sign in, log in, authentication, password"
       },
+      "tenant_menu": {
+        "title": "Tenant menu",
+        "description": "A menu of the organisations a person belongs to, the current one checked.",
+        "keywords": "tenant, organisation, workspace, account switcher, switch"
+      },
       "feature_section": {
         "title": "Feature section",
         "description": "A titled grid of features with icons for a marketing page.",
@@ -4991,6 +4996,11 @@
         }
       },
       "sign_in": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "tenant_menu": {
         "basics": {
           "title": "Basics"
         }
@@ -8461,6 +8471,14 @@
           "what": "The sign-in block of the identity module.",
           "when": "On a sign-in page or in a sign-in dialog.",
           "rtl": "The card mirrors in Arabic; email and password fields keep left-to-right input."
+        },
+        "tenant_menu": {
+          "headline": "One account, every organisation.",
+          "intro": "Lists the organisations the signed-in person belongs to and switches the whole app to the one they choose; the server still checks every switch.",
+          "tags": "Tenancy kit · Memberships · Switching",
+          "what": "The tenancy module's switcher, as a menu on the web and a list in a sheet on mobile.",
+          "when": "In a sidebar header or an app bar, for a person who belongs to more than one organisation.",
+          "rtl": "The menu mirrors in Arabic, and each organisation's name keeps its own direction."
         },
         "feature_section": {
           "headline": "Say what it does, in a grid.",
