@@ -12,7 +12,7 @@ import { StoredSetting } from "#node/models/stored-setting.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `settings.stored_setting_revision` (src/node/models/stored-setting-revision.model.ts). */
-export const StoredSettingRevisionSchema: EntitySchema<StoredSettingRevision> = new EntitySchema<StoredSettingRevision>({
+export const StoredSettingRevisionSchema = new EntitySchema<StoredSettingRevision>({
   class: StoredSettingRevision,
   schema: "settings",
   tableName: "stored_setting_revisions",
@@ -40,7 +40,7 @@ export const StoredSettingRevisionSchema: EntitySchema<StoredSettingRevision> = 
 });
 
 /** `settings.stored_setting` (src/node/models/stored-setting.model.ts). */
-export const StoredSettingSchema: EntitySchema<StoredSetting> = new EntitySchema<StoredSetting>({
+export const StoredSettingSchema = new EntitySchema<StoredSetting>({
   class: StoredSetting,
   schema: "settings",
   tableName: "stored_settings",

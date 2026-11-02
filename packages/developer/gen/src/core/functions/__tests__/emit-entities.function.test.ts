@@ -38,12 +38,13 @@ describe("emitEntities", () => {
   });
 
   it("writes one EntitySchema per model with its runtime facts", () => {
-    // Annotated, so a declaration build never has to name MikroORM's inferred type (TS2883).
-    expect(billing).toContain(
-      "export const InvoiceSchema: EntitySchema<Invoice> = new EntitySchema<Invoice>({",
-    );
-    // `Invoice` has a defaulted field, so the schemas file adds `"~defaults"`, which EntitySchema<T> requires a key for.
-    expect(billing).toContain('    "~defaults": { type: "json", persist: false },');
+    expect(billing).toContain("export const InvoiceSchema = new EntitySchema<Invoice>({");
+    // A service's `Invoice` carries the `"~defaults"` marker its schemas file adds, which EntitySchema<T> requires a
+    // key for; a package's committed list is checked without that file, so its `T` has no such key (TS2353).
+    const asService = emitEntities({ ...BILLING_IR, layout: "service" }, "billing") ?? "";
+    const asPackage = emitEntities({ ...BILLING_IR, layout: "package" }, "billing") ?? "";
+    expect(asService).toContain('    "~defaults": { type: "json", persist: false },');
+    expect(asPackage).not.toContain("~defaults");
     expect(billing).toContain('  schema: "billing",');
     expect(billing).toContain('  tableName: "invoices",');
     expect(billing).toContain('  tableName: "invoice_lines",');

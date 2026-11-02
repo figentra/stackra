@@ -32,7 +32,7 @@ declare module "#node/models/order.model" {
 }
 
 /** `shop.customer` (src/node/models/customer.model.ts). */
-export const CustomerSchema: EntitySchema<Customer> = new EntitySchema<Customer>({
+export const CustomerSchema = new EntitySchema<Customer>({
   class: Customer,
   schema: "shop",
   tableName: "customers",
@@ -42,7 +42,7 @@ export const CustomerSchema: EntitySchema<Customer> = new EntitySchema<Customer>
 });
 
 /** `shop.order_line` (src/node/models/order-line.model.ts). */
-export const OrderLineSchema: EntitySchema<OrderLine> = new EntitySchema<OrderLine>({
+export const OrderLineSchema = new EntitySchema<OrderLine>({
   class: OrderLine,
   schema: "shop",
   tableName: "order_lines",
@@ -55,7 +55,7 @@ export const OrderLineSchema: EntitySchema<OrderLine> = new EntitySchema<OrderLi
 });
 
 /** `shop.order` (src/node/models/order.model.ts). */
-export const OrderSchema: EntitySchema<Order> = new EntitySchema<Order>({
+export const OrderSchema = new EntitySchema<Order>({
   class: Order,
   schema: "shop",
   tableName: "orders",

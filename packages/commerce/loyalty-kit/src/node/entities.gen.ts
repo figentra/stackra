@@ -12,7 +12,7 @@ import { LoyaltyAccount } from "#node/models/loyalty-account.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `loyalty_kit.ledger_entry` (src/node/models/ledger-entry.model.ts). */
-export const LedgerEntrySchema: EntitySchema<LedgerEntry> = new EntitySchema<LedgerEntry>({
+export const LedgerEntrySchema = new EntitySchema<LedgerEntry>({
   class: LedgerEntry,
   schema: "loyalty_kit",
   tableName: "ledger_entries",
@@ -29,7 +29,7 @@ export const LedgerEntrySchema: EntitySchema<LedgerEntry> = new EntitySchema<Led
 });
 
 /** `loyalty_kit.loyalty_account` (src/node/models/loyalty-account.model.ts). */
-export const LoyaltyAccountSchema: EntitySchema<LoyaltyAccount> = new EntitySchema<LoyaltyAccount>({
+export const LoyaltyAccountSchema = new EntitySchema<LoyaltyAccount>({
   class: LoyaltyAccount,
   schema: "loyalty_kit",
   tableName: "loyalty_accounts",
@@ -46,7 +46,6 @@ export const LoyaltyAccountSchema: EntitySchema<LoyaltyAccount> = new EntitySche
     version: { type: "integer", version: true },
     tenantId: { type: "string" },
     canTransact: { type: "json", persist: false },
-    "~defaults": { type: "json", persist: false },
   },
 });
 

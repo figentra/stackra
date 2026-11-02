@@ -14,7 +14,7 @@
 Reproduced on the testbed against main with os's `devices` service in a core worktree: the `$Check` (TS2344), the
 tsdown TS2883, the `encore.dev` imports and the clients and wiring errors no longer occur on main (fixed by STA-1720,
 STA-1743, STA-1751, STA-1666 and the member-module alias); what remains is TS2741 in `.stackra/gen/entities` (6 per
-service) and the missing explicit annotation on each entity schema.
+service) in the service's entity file.
 
 ## Impact
 
@@ -25,8 +25,8 @@ service) and the missing explicit annotation on each entity schema.
 
 ## Requirements
 
-- **FR-001** Each `EntitySchema` is declared with an explicit `EntitySchema<Model>` type.
-- **FR-002** A model or addition with a defaulted field gets `"~defaults": { type: "json", persist: false }`.
+- **FR-001** A package's committed entity file never lists `"~defaults"` (its model type has no such key).
+- **FR-002** A service's model or addition with a defaulted field gets `"~defaults": { type: "json", persist: false }`.
 - **FR-003** The `service` preset never includes `.stackra/encore`.
 
 ## Status history

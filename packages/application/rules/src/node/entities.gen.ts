@@ -12,7 +12,7 @@ import { RuleSet } from "#node/models/rule-set.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `rules.condition_field` (src/node/models/condition-field.model.ts). */
-export const ConditionFieldSchema: EntitySchema<ConditionField> = new EntitySchema<ConditionField>({
+export const ConditionFieldSchema = new EntitySchema<ConditionField>({
   class: ConditionField,
   schema: "rules",
   tableName: "condition_fields",
@@ -26,12 +26,11 @@ export const ConditionFieldSchema: EntitySchema<ConditionField> = new EntitySche
     id: { type: "string", primary: true },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
-    "~defaults": { type: "json", persist: false },
   },
 });
 
 /** `rules.rule_set` (src/node/models/rule-set.model.ts). */
-export const RuleSetSchema: EntitySchema<RuleSet> = new EntitySchema<RuleSet>({
+export const RuleSetSchema = new EntitySchema<RuleSet>({
   class: RuleSet,
   schema: "rules",
   tableName: "rule_sets",
@@ -44,7 +43,6 @@ export const RuleSetSchema: EntitySchema<RuleSet> = new EntitySchema<RuleSet>({
     id: { type: "string", primary: true },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
-    "~defaults": { type: "json", persist: false },
   },
 });
 

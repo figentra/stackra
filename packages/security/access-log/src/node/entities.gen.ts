@@ -12,7 +12,7 @@ import { AuditLogEntry } from "#node/models/audit-log-entry.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `access_log.access_log_entry` (src/node/models/access-log-entry.model.ts). */
-export const AccessLogEntrySchema: EntitySchema<AccessLogEntry> = new EntitySchema<AccessLogEntry>({
+export const AccessLogEntrySchema = new EntitySchema<AccessLogEntry>({
   class: AccessLogEntry,
   schema: "access_log",
   tableName: "access_log_entries",
@@ -32,7 +32,7 @@ export const AccessLogEntrySchema: EntitySchema<AccessLogEntry> = new EntitySche
 });
 
 /** `access_log.audit_log_entry` (src/node/models/audit-log-entry.model.ts). */
-export const AuditLogEntrySchema: EntitySchema<AuditLogEntry> = new EntitySchema<AuditLogEntry>({
+export const AuditLogEntrySchema = new EntitySchema<AuditLogEntry>({
   class: AuditLogEntry,
   schema: "access_log",
   tableName: "audit_log_entries",

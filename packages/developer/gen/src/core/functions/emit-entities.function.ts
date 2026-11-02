@@ -117,6 +117,10 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
           candidate.target.name === owner.name,
       )?.name;
 
+  // Only a service's `T` carries the marker: its schemas file (in the typecheck program) adds it; a package's
+  // committed entity list is checked on `src` alone, where the model class has no such key (TS2353).
+  const marked = (shape: ShapeIR): boolean =>
+    ir.layout !== "package" && shape.fields.some((field) => field.default !== undefined);
   let money = false;
   /** The column properties of `fields`, given the model's `traits`. */
   const fieldProperties = (fields: readonly FieldIR[], traits: ReadonlySet<string>): string[] => {
@@ -216,12 +220,11 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
       properties.push(`    ${name}: { type: "json", persist: false },`);
     // The schemas file types a defaulted model with a `"~defaults"` marker (STA-1694); `EntitySchema<T>` names every
     // string key of `T`, so the marker is listed as not persisted, like a getter.
-    if (shape.fields.some((field) => field.default !== undefined))
-      properties.push('    "~defaults": { type: "json", persist: false },');
+    if (marked(shape)) properties.push('    "~defaults": { type: "json", persist: false },');
 
     schemas.push(
       `/** \`${modelKey(module, shape.name)}\` (${shape.file}). */`,
-      `export const ${shape.name}Schema: EntitySchema<${className}> = new EntitySchema<${className}>({`,
+      `export const ${shape.name}Schema = new EntitySchema<${className}>({`,
       `  class: ${className},`,
       `  schema: ${JSON.stringify(module)},`,
       `  tableName: ${JSON.stringify(plural(snakeCase(shape.name)))},`,
@@ -238,16 +241,14 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
     const className = ref({ name: shape.name, from: shape.importPath });
     schemas.push(
       `/** The side table of \`${modelKey(module, shape.name)}\` (${shape.file}), keyed by the base record's id. */`,
-      `export const ${shape.name}Schema: EntitySchema<${className} & { id: string }> = new EntitySchema<${className} & { id: string }>({`,
+      `export const ${shape.name}Schema = new EntitySchema<${className} & { id: string }>({`,
       `  name: ${JSON.stringify(modelKey(module, shape.name))},`,
       `  schema: ${JSON.stringify(module)},`,
       `  tableName: ${JSON.stringify(plural(snakeCase(shape.name)))},`,
       "  properties: {",
       '    id: { type: "string", primary: true },',
       ...fieldProperties(shape.fields, new Set()),
-      ...(shape.fields.some((field) => field.default !== undefined)
-        ? ['    "~defaults": { type: "json", persist: false },']
-        : []),
+      ...(marked(shape) ? ['    "~defaults": { type: "json", persist: false },'] : []),
       "  },",
       "});",
       "",
