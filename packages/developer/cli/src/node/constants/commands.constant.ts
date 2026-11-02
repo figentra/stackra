@@ -24,6 +24,7 @@ import { ARCHITECTURE_MAP_COMMAND } from "#node/architecture-map/constants/archi
 import { AUDIT_VERIFY_COMMAND } from "#node/constants/audit-verify-command.constant";
 import { CATALOGUE_COMPLETENESS_COMMAND } from "#node/constants/catalogue-completeness-command.constant";
 import { CONSOLE_COMMAND } from "#node/constants/console-command.constant";
+import { CREATE_COMMAND } from "#node/constants/create-command.constant";
 import { DB_DIFF_COMMAND } from "#node/constants/db-diff-command.constant";
 import { DB_MIGRATE_COMMAND } from "#node/constants/db-migrate-command.constant";
 import { DB_ROLLBACK_COMMAND } from "#node/constants/db-rollback-command.constant";
@@ -66,6 +67,7 @@ import type { CliCommand } from "#node/types/cli-command.type";
 
 /** The commands of `stackra`. */
 export const COMMANDS: readonly CliCommand[] = [
+  CREATE_COMMAND,
   NEW_COMMAND,
   GEN_COMMAND,
   CONSOLE_COMMAND,

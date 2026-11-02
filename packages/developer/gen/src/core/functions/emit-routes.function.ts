@@ -12,7 +12,7 @@
  *          `ui.menus`, `hostRoutesOf`) join its own, imported from `<package>/<entry>`, and every menu is registered
  *          under its key (`menuTable`, `registerMenus`), so no app hand-writes a `register()`.
  * Boundary: only an app gets route tables. A dependency's class whose name the file already uses is imported under
- *           its module's name. pure. A tree is manifest JSON, handed to `registerResources` as is (one key from two classes is refused by
+ *           its module's name. A tree is manifest JSON, handed to `registerResources` as is (one key from two classes is refused by
  *           `hostResourcesOf`); a resource with no tree still gets every page from the data. A page is bound by name beside its route (`settings.tsx`, `settings.native.tsx`); a route without a
  *           page on a runtime is still registered, so refs resolve. The data-route tree (`toRoot`) is not here: it
  *           needs the locale prefixes of `#stackra/i18n` and the router keys the booted container makes.

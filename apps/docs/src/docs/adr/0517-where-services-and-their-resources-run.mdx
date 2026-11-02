@@ -1,0 +1,164 @@
+---
+title: "0517 — Where services and their resources run"
+description: "Accepted · 2026-11-02"
+---
+
+{/* Stackra file contract. Purpose: ADR 0517, where a Stackra service and the resources it needs run in each kind of environment: Encore locally with Docker, Encore Cloud's hosted dev environment, Encore Cloud into our own AWS or GCP accounts for staging and production, a self-hosted Encore fallback built and placed by Runway, the resources Encore does not provide declared per service and placed by Runway beside Encore's, connection details as secret references, one environment as one account, region and network, Runway as the one deploy tool, and the branded surface users see. Boundary: decision text only; what is built today is in the Runway inventory of 2026-11-02 (stackra-notes plans/runway-inventory-2026-11-02), and the build follows its completion plan. Runtime: documentation. Governing contract: ADR template; ADR 0091, 0124, 0171, 0173, 0186, 0227, 0289, 0296, 0352, 0468, 0516. */}
+
+<Note>
+  Accepted by the owner on 2026-11-02 (STA-1965), with the branded surface (decisions 11 to 14). The
+  items marked **open** stay open until checked: Encore Cloud's plans, limits, region support and
+  terms, and the legal check of decision 14. Nothing here is a price. It amends
+  [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) and
+  [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups) by dated notes on those
+  pages, and relates to [0091](/adr/0091-generated-encore-app-in-stackra-folder) and
+  [0124](/adr/0124-encore-is-the-generated-runtime-target) (Encore is generated),
+  [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra) (Pulumi),
+  [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) (secrets),
+  [0186](/adr/0186-backups-and-disaster-recovery) (regions),
+  [0227](/adr/0227-rejected-and-deferred-technologies-refreshed) (deferred technologies),
+  [0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
+  (Runway is the one deploy tool),
+  [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)
+  (approvals) and [0516](/adr/0516-aws-quotas-are-fixed-inputs) (quotas).
+</Note>
+
+## Context
+
+Stackra services are plain TypeScript, and gen writes the Encore app they run as into `.stackra/encore`
+([0091](/adr/0091-generated-encore-app-in-stackra-folder),
+[0124](/adr/0124-encore-is-the-generated-runtime-target)). Runway is meant to ship them
+([0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing), [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups)).
+
+The Runway inventory of 2026-11-02 found that nothing ships a backend service today. Its evidence is the four products'
+dry runs on a ci-box, plus a read of core at `ccf4ff84`.
+
+- **dev:** every product's dev destination for services is `compose`, and no provider serves it.
+- **staging and production:** the `encore-cloud` provider (a git push to `encore://<app>`) has never run, and the
+  current CLI refuses the staging and production targets until an Encore branch is named.
+- **The fallback:** no self-hosted path exists.
+- **Resources Encore doesn't provide** (Postgres, Valkey, buckets, queues) are Pulumi components with mock tests that no
+  environment runs. Their quotas are fixed inputs ([0516](/adr/0516-aws-quotas-are-fixed-inputs)).
+- **Secrets:** values reach the runtimes only through each CI job's own Infisical export, not through Runway
+  ([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)).
+
+The web and mobile path (`stackra deploy --product`) does work, in dry runs.
+
+The owner's brief of 2026-11-02 sets where each kind of environment runs:
+
+- locally with Docker;
+- Encore Cloud's hosting for dev;
+- Encore Cloud into our own AWS (the UAE, Bahrain) and GCP (Saudi Arabia) accounts for staging and production;
+- a self-hosted fallback.
+
+It also sets that Runway places everything else and that users see Stackra, not Encore.
+
+Two alternatives were weighed.
+
+- **Running only self-hosted Encore everywhere** would give up Encore Cloud's managed provisioning for the
+  environments that matter most.
+- **Letting each product call Encore Cloud and Pulumi directly** would recreate the 71 CI steps that already bypass
+  Runway.
+
+## Decision
+
+### Where the services run
+
+1. **Locally: Encore with Docker.** `stackra dev` runs the generated Encore app (ADR 0091) with Encore's local
+   runtime; Encore's own infrastructure (Postgres, Pub/Sub, caches, cron) runs as Docker containers on the developer's
+   machine, as Encore runs it locally.
+2. **Dev: Encore Cloud's hosted environment.** The shared dev environment of a product runs on Encore Cloud's own
+   hosting. No cloud account of ours is involved. **Open:** which Encore Cloud plan this needs, its limits (apps,
+   environments, seats, resources) and whether its terms allow it for a commercial product's dev — checked against
+   Encore's current pricing page and terms before any account is opened.
+3. **Staging and production: Encore Cloud into our own cloud accounts.** Encore Cloud provisions and deploys into
+   cloud accounts we own and connect: **AWS for the UAE and Bahrain**, **GCP for Saudi Arabia**. Each such environment
+   lives in one of our accounts or projects, in the region the product's data must stay in (ADR 0186 as amended).
+   **Open:** Encore Cloud's support for each of those regions (AWS `me-central-1`, `me-south-1`; GCP
+   `me-central2`), the plan that allows bring-your-own-cloud, and its limits.
+4. **Fallback: self-hosted Encore.** When Encore Cloud cannot be used for an environment (a region, a customer's
+   own account, an air-gapped install, or a commercial reason), Runway builds the service as a Docker image with
+   Encore's self-hosting build and places it with Pulumi (ADR 0171) in that environment's account, region and
+   network, wiring the same resources Encore Cloud would. The fallback is a first-class path, kept working by a
+   deploy test, not a paper option. **Open:** which Encore features need Encore Cloud and have no self-hosted
+   equivalent (for example its dashboards and tracing UI), from Encore's self-hosting documentation.
+
+### Resources Encore does not provide
+
+5. **Declared by the service, placed by Runway.** A resource Encore's runtime does not provide is declared in the
+   service's own `runway.yaml` (ADR 0296 decision 1) by kind and size, never by provider. Runway provisions it with
+   Pulumi in the environment's account, region and network, beside the resources Encore Cloud or the self-hosted
+   path created, so the service reaches it on the private network. A kind ADR 0227 defers (Kafka, OpenSearch and the
+   rest) is accepted by the schema only after its own ADR revives it; this decision says where such a resource runs
+   once it is allowed, not that it is.
+6. **Connection details are secret references.** Runway writes each resource's endpoint and credentials into the
+   secret store (ADR 0173) under names the service declares, and the service reads them only through a typed
+   Stackra driver behind a port (ADR 0142), never by building a connection string itself. No connection detail is
+   committed or printed.
+7. **The same declaration runs locally.** Under `stackra dev`, each declared resource runs as a Docker container
+   with the same secret names filled with local values, so a service runs the same code against the same driver in
+   every environment.
+
+### Environments and the tool
+
+8. **One environment is one account, one region and one network.** An environment (dev, preview, staging,
+   production, or a customer's) maps to exactly one cloud account or project, one region and one network. Nothing
+   spans two regions (ADR 0186: two independent regions, never active-active); a second region is a second
+   environment.
+9. **Every footprint fits the quotas.** Every environment's footprint, Encore's and Runway's resources together,
+   fits the account's current quotas, and the plan states the quotas it was sized to (ADR 0516). No quota increase
+   is requested without the owner.
+10. **Runway is the one deploy tool.** Every deploy, promotion and rollback of a service and its resources goes
+    through Runway (`stackra deploy`, ADR 0289 as amended), whichever path decision 2 to 4 picks; no agent or
+    workflow calls Encore Cloud, Pulumi or a cloud provider for a deploy any other way. Production waits on the
+    owner's approval (ADR 0468). The Control Plane (draft OS ADR 0078) provisions and deploys by calling Runway, not
+    around it.
+
+### The branded surface
+
+11. **Users see Stackra and Runway, never Encore.**
+    - CLI output and errors: an Encore error is wrapped in a Stackra refusal code with a Stackra message; the
+      original is shown only under `--verbose`.
+    - `runway.yaml` uses our words, for example
+      `services: { hosting: managed | self-hosted, cloud: aws | gcp, region }`. Runway maps `managed` to Encore Cloud
+      and `self-hosted` to decision 4, so no provider name appears in a user's file.
+    - The generated runtime folder becomes `.stackra/runtime` instead of `.stackra/encore` (amending ADR 0091's
+      folder name, not its rule).
+    - Docs, the docs site, and the OS console and Control Plane screens describe the services runtime in Stackra's
+      words.
+12. **One honest credit.** "Services runtime powered by Encore" appears in About, the credits and the third-party
+    notices.
+13. **Internals stay accurate.** Encore's own packages and binaries are not renamed and not forked. Our ADRs, code
+    comments and agent instructions keep saying Encore, so maintainers and agents use Encore's documentation.
+    Licence files and notices stay untouched.
+14. **Open, for the owner and a lawyer:** Encore's licence obligations for what we ship, its trademark rules for the
+    credit line, and Encore Cloud's terms on white-labelling and on an announced collaboration — confirmed before any
+    marketing or announcement uses this surface.
+
+## Consequences
+
+- One placement story for every product: the same declaration runs locally, on Encore Cloud, in our accounts and
+  self-hosted, and the Control Plane drives the same tool.
+- Runway gains real work: an Encore Cloud provider for bring-your-own-cloud environments, the self-hosted build and
+  placement path, per-service non-Encore resources with secret-reference outputs, quota checks, and the branded
+  surface's mapping and error wrapping. The Runway inventory of 2026-11-02 lists what exists and the order of the
+  pull requests.
+- The fallback has to stay real, so it costs a deploy test and its upkeep.
+- A rename of `.stackra/encore` touches gen, the generated imports, docs and every product's ignore rules; it is its
+  own change, after the owner's and the lawyer's review.
+- The open items gate account opening and any announcement, not the design.
+
+## Enforcement
+
+- planned — the runway schema refuses a provider name in a member `runway.yaml` and a resource kind ADR 0227 defers.
+- planned — Runway's plan refuses an environment that spans two regions or networks, and a footprint over the stated
+  quotas (ADR 0516 decision 4).
+- planned — a self-hosted deploy test per release of `@stackra/runway`.
+- planned — a CLI test that no Encore string reaches non-verbose output.
+- Nothing checks decision 10 beyond the guards that deny a workstation `encore deploy` (ADR 0468) today.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: 0289 and 0296, by dated notes. Sources: the owner's brief and acceptance of 2026-11-02,
+relayed by the leader (Runway focus; the branded surface, approved the same day); the Runway inventory in
+`stackra-notes/plans/runway-inventory-2026-11-02/`.

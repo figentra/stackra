@@ -137,6 +137,20 @@ jobs:
           pulumi config set groups "$DECLARE_GROUPS"
           pulumi config set heavyMin "$HEAVY_MIN"
           pulumi config set lightMin "$LIGHT_MIN"
+          # Image Builder components and recipes are kept in AWS when replaced (retainOnDelete, STA-1953). The engine
+          # reads that flag from the state, so a version created before the flag existed gets it here once; without it,
+          # the replace asks AWS to delete a version an image uses, which AWS refuses. Idempotent: no change, no import.
+          if [ "$ACTION" = up ]; then
+            state="$RUNNER_TEMP/testbed-state.json"
+            versions='(.type == "aws:imagebuilder/component:Component" or .type == "aws:imagebuilder/imageRecipe:ImageRecipe")'
+            pulumi stack export --file "$state"
+            if jq -e "[.deployment.resources[] | select($versions and .retainOnDelete != true)] | length > 0" "$state" >/dev/null; then
+              jq "(.deployment.resources[] | select($versions)).retainOnDelete = true" "$state" > "$state.retained"
+              pulumi stack import --file "$state.retained"
+              echo "::notice title=State::kept the existing Image Builder versions in AWS on replace (retainOnDelete)"
+            fi
+            rm -f "$state" "$state.retained"
+          fi
           case "$ACTION" in
             up) pulumi up --yes --diff ;;
             preview) pulumi preview --diff ;;

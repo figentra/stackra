@@ -30,8 +30,23 @@ concurrency:
 permissions: {}
 
 jobs:
+  # ADR 0468: production waits on the owner's one approval. The `production` environment (owner: required reviewer,
+  # main only) holds no secret and grants nothing; the deploy job keeps the `docs` environment, whose name the
+  # Infisical identity trusts (STA-1968).
+  approve:
+    name: Owner approval (production)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    permissions: {}
+    steps:
+      - name: Approved
+        run: echo "production approved for ${GITHUB_SHA}"
+
   deploy:
     name: Deploy docs.stackra.figentra.com
+    needs: approve
     # Mintlify builds main; a dispatch from another branch would deploy main under that branch's checks.
     if: github.ref == 'refs/heads/main'
     permissions:
