@@ -447,8 +447,8 @@ test("rejections", () => {
   for (const summary of [undefined, " ", "Ok."])
     bad({ kind: "app:console", name: "ok", summary }, /--summary is required/);
   bad({ kind: "app:console", name: "dup" }, /already exists/);
-  // The 13 categories (settlement Q3.2, ADR 0302 adds design-system); tooling is a separate tier, not a category.
-  assert.equal(CATEGORY_NAMES.length, 13);
+  // The 14 categories (settlement Q3.2, ADR 0302 adds design-system, then connectors); tooling is a separate tier, not a category.
+  assert.equal(CATEGORY_NAMES.length, 14);
 });
 
 test("copies images, fonts and documents byte for byte, and fills every other template file", () => {

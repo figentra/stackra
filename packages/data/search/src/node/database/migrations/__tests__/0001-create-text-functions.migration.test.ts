@@ -34,10 +34,9 @@ describe("CreateTextFunctionsMigration", () => {
     expect(step?.sql[2]).toContain("U&'\\0671\\0649\\0629', U&'\\0627\\064a\\0647'");
   });
 
-  it("undoes the function, the extension and the schema, last first", () => {
+  it("undoes the function and the schema, last first, and keeps the shared extension (STA-1689)", () => {
     expect(step?.inverse).toEqual([
       "drop function if exists search.unaccent_immutable(text)",
-      'drop extension if exists "pg_trgm"',
       'drop schema if exists "search"',
     ]);
   });

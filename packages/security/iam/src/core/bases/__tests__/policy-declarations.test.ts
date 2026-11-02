@@ -54,6 +54,8 @@ beforeAll(async () => {
         outDir: join(directory, "out"),
         rootDir: "/",
         skipLibCheck: true,
+        // the preset's node and vitest/globals do not resolve from a temp dir outside the workspace; the consumer needs neither
+        types: [],
         paths: { "#core/*": [join(core, "*")] },
       },
       files: [join(directory, "consumer.ts")],
