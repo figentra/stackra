@@ -1,5 +1,88 @@
 # @stackra/cli
 
+## 0.6.0
+
+### Minor Changes
+
+- 941ae6b: `stackra doctor` checks the machine for what the workspace needs: mise tools, a running Docker engine, the network
+  (each address of each host on port 443, flagging edges that drop while sibling addresses answer, with a Cloudflare
+  WARP hint), the `@stackra` registry (and `@figentra` when used), GitHub, Encore, Pulumi, disk, free dev ports, and
+  Xcode with a simulator only for a mobile member. `--fix` offers each fix and runs it after a yes. `stackra dev` runs
+  the quick checks first and stops early with the fix when the machine is not ready.
+- e15d9c3: Gen records every panel resource in the manifest's `ui.resources`, under `<module>.<model>`: the tree its builder
+  members return, with its owning `module`, its `class` and, in a package, the `from` a host imports it from. Action
+  and query classes in the tree are written as their locked keys, and a service or app also lists its hosted packages'
+  resources. `generate` takes a `loader` to run the resource classes; `stackra gen` passes one on Vite's module runner,
+  and a run without one refuses a member that declares a resource (`resource_loader_missing`). New refusals:
+  `resource_unloadable`, `builder_impure`, `resource_operation_unknown` and `resource_duplicate` (STA-1947). The loyalty
+  kit's manifest now records its `LoyaltyAccountResource`.
+- 67dac91: `stackra deploy --env <environment>` now refuses an environment whose root `runway.yaml` declares
+  `deploy.approval` unless `--approved` is passed (as `stackra deploy --product` already does), so it ships only from
+  the CI job behind the owner's approval (ADR 0468). A dry run still plans without it. It also runs Runway's `deploy()`
+  inside `withDeployLock`, so two deploys of one environment never overlap on one host; the new `fileDeployLock(directory)`
+  in `@stackra/runway/node` is that lock (a lease file renewed while the work runs; an ended lease is taken over). Across
+  CI runners the caller workflow's `concurrency` group stays the lock (STA-1969).
+- 48c074c: `stackra deploy --env <environment>` is now the one command for a product repository: when the root `runway.yaml`
+  declares `surfaces` or `mobile`, its `web` and `mobile` kinds run the product publish (the edge KV rows, the R2
+  uploads and the EAS submits that `stackra deploy --product` runs), scoped by `--kind`, and every other kind
+  (services, desktop, docs) goes through Runway's `deploy()`, under the same approval check and deploy lock. The product
+  publish flags (`--assets-bucket`, `--served`, `--region` and the rest) pass through. A failed product publish stops
+  the run before the other kinds. `stackra deploy --product` stays as the alias products' CI already calls (STA-1972).
+- 4fcb66d: `stackra create <directory>` makes a new Stackra app in an empty folder: the banner, then the name, npm scope, edition
+  and package manager (each also a flag; `--yes` takes the defaults), the `@stackra/starter` profile from the Stackra
+  registry (or `--starter <dir|tgz>`), the doctor's checks for what the profile needs, then install, `stackra gen` shown
+  as a tree of what it wrote, type-check, tests and the first commit. `@stackra/console/node` exports `tarballSpecs`.
+- 2993840: `stackra testbed` reaches the boxes by SSH through SSM Session Manager: `ssh` and `rsync` connect to
+  `ubuntu@<instance-id>` with an `AWS-StartSSHSession` `ProxyCommand`, so the security group needs no inbound rule and
+  a changing public IP (Cloudflare WARP) no longer breaks access. `--ssh-direct` (or `STACKRA_TESTBED_SSH_DIRECT=1`)
+  keeps the public-IP path with the port-22 allowlist swap. `awsTestbed`'s `allowedCidrs` is optional: absent or empty
+  means no ingress. The Session Manager plugin is pinned in `mise.toml`.
+
+### Patch Changes
+
+- e047d03: `stackra testbed run` starts a box when the slot's group is at 0 and no box is healthy (desired 0 → 1), instead of
+  waiting for a box that never comes; with `--no-wait` it still exits 75 after raising it, so the next run finds the box.
+- 1677615: `stackra validate` findings in `@stackra/console` (STA-1966):
+  
+  - `CommandClass` takes `never[]` collaborators, so the `no-explicit-any` disable is gone.
+  - `AGENTS.md` gains its PII section.
+  - The `create` template's NodeNext imports keep their `.ts` extension without tripping ADR 0233's rule.
+  - knip sees the `stackra-console` bin entry (STA-1985).
+  - `@stackra/cli`'s duplicate-export check allows console's `Spinner`, `STACKRA_THEME`, `findCommand`, `runCommand` and
+    `shapeArabic`, each with its reason.
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [2256bf6]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [f0478cd]
+- Updated dependencies [0090b9c]
+- Updated dependencies [b98f7ea]
+- Updated dependencies [71bbf08]
+- Updated dependencies [99750d4]
+- Updated dependencies [e15d9c3]
+- Updated dependencies [e250d4f]
+- Updated dependencies [67dac91]
+- Updated dependencies [0183006]
+- Updated dependencies [a736fb5]
+- Updated dependencies [b74c373]
+- Updated dependencies [2ed03e2]
+- Updated dependencies [4fcb66d]
+  - @stackra/console@0.6.0
+  - @stackra/mcp@0.6.0
+  - @stackra/gen@0.6.0
+  - @stackra/repo-checks@0.6.0
+  - @stackra/runway@0.6.0
+  - @stackra/skills@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/support@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes
