@@ -17,4 +17,12 @@ export const OUTBOX_LOG_EVENTS = Object.freeze({
   relayFailed: "outbox.relay_failed",
   /** The inbox ran a receipt as a platform call because the envelope's actor did not belong to its scope (ADR 0495). */
   actorDowngraded: "outbox.actor_downgraded",
+  /** A cross-app delivery was refused for good or failed its last attempt and was dead-lettered (ADR 0511). */
+  deliveryDead: "outbox.delivery_dead",
+  /** A cross-app delivery was dropped because its subscriber is no longer configured. */
+  deliveryDropped: "outbox.delivery_dropped",
+  /** A cross-app relay tick failed to read or record deliveries and paused. */
+  crossAppFailed: "outbox.cross_app_failed",
+  /** The inbox refused a request whose sender it could not verify; the reason, never the body. */
+  inboxRefused: "outbox.inbox_refused",
 });

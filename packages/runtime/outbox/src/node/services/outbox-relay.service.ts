@@ -57,6 +57,7 @@ import { coalesceChanges } from "#core/functions/coalesce-changes.function";
 import { olderEnvelopes } from "#core/functions/older-envelopes.function";
 import { OUTBOX_DEFAULTS } from "#core/constants/outbox-defaults.constant";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
+import { CrossAppFanOutService } from "#node/services/cross-app-fan-out.service";
 
 /** A run of one model's changes in one scope by one actor, consecutive in the log. */
 interface Run {
@@ -367,10 +368,20 @@ export class OutboxRelayService extends Service {
       : this.database.withScope(scope ?? [], work);
   }
 
-  /** Publishes `envelope`, then each older version still published on `now` under the same id (ADR 0141). */
+  /**
+   * Publishes `envelope`, then each older version still published on `now` under the same id (ADR 0141), and writes
+   * each one's cross-app deliveries when a fan-out is bound (ADR 0511 decision 12).
+   */
   private async publish(envelope: EventEnvelope, now: Date): Promise<void> {
-    await this.publisher.publish(envelope);
-    for (const older of olderEnvelopes(envelope, now)) await this.publisher.publish(older);
+    const resolver = this.resolver;
+    const fanOut =
+      resolver?.has(CrossAppFanOutService) === true
+        ? resolver.get(CrossAppFanOutService)
+        : undefined;
+    for (const published of [envelope, ...olderEnvelopes(envelope, now)]) {
+      await this.publisher.publish(published);
+      await fanOut?.enqueue(published, now);
+    }
   }
 
   /** The wire form of an event message. */

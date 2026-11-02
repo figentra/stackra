@@ -15,12 +15,28 @@ describe("@stackra/outbox/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "ChangeFeed",
+      "DeliveryDriver",
+      "DeliveryTransport",
       "EventPublisher",
+      "EventSigner",
       "InboxDriver",
+      "InboxVerifier",
       "MessageKind",
       "OutboxDriver",
       "RowChangeKind",
+      "SubscriberSource",
     ]);
+  });
+
+  // @covers sta-1910:FR-004
+  it("types the cross-app envelope, a delivery and an inbox verdict", () => {
+    expectTypeOf<contracts.CrossAppEnvelope["envelopeVersion"]>().toEqualTypeOf<1>();
+    expectTypeOf<contracts.CrossAppEnvelope["producer"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<contracts.Delivery["envelope"]>().toEqualTypeOf<contracts.CrossAppEnvelope>();
+    expectTypeOf<contracts.Subscriber["events"]>().toEqualTypeOf<readonly string[]>();
+    expectTypeOf<
+      Extract<contracts.InboxVerdict, { verified: true }>["producer"]
+    >().toEqualTypeOf<string>();
   });
 
   it("types a stored message's failure and a consumer's input", () => {

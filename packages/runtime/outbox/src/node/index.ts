@@ -13,12 +13,16 @@
  */
 export { InboxEventPublisherDriver } from "#node/drivers/inbox-event-publisher.driver";
 export { PostgresChangeFeedDriver } from "#node/drivers/postgres-change-feed.driver";
+export { PostgresDeliveryDriver } from "#node/drivers/postgres-delivery.driver";
 export { PostgresDeviceSequenceStoreDriver } from "#node/drivers/postgres-device-sequence-store.driver";
 export { PostgresInboxDriver } from "#node/drivers/postgres-inbox.driver";
 export { PostgresOfflineCapStoreDriver } from "#node/drivers/postgres-offline-cap-store.driver";
 export { PostgresOutboxDriver } from "#node/drivers/postgres-outbox.driver";
 export { PostgresReplicaLogDriver } from "#node/drivers/postgres-replica-log.driver";
 export { ChangeFeedService } from "#node/services/change-feed.service";
+export { CrossAppFanOutService } from "#node/services/cross-app-fan-out.service";
+export { CrossAppRelayService } from "#node/services/cross-app-relay.service";
 export { InboxService } from "#node/services/inbox.service";
 export { OutboxRelayService } from "#node/services/outbox-relay.service";
 export { OutboxWriterService } from "#node/services/outbox-writer.service";
+export { RelayInboxService } from "#node/services/relay-inbox.service";

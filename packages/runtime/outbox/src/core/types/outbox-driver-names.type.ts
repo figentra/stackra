@@ -16,5 +16,15 @@ declare module "@stackra/container" {
     "outbox.InboxDriver": (typeof OUTBOX_DRIVERS)[number];
     /** The driver names of `ChangeFeed` (`postgres`, `memory`). */
     "outbox.ChangeFeed": (typeof OUTBOX_DRIVERS)[number];
+    /** The driver names of `DeliveryDriver` (`postgres`, `memory`), picked by the same `outbox.driver`. */
+    "outbox.DeliveryDriver": (typeof OUTBOX_DRIVERS)[number];
+    /** The driver of `EventSigner`: a producer's own Ed25519 key (ADR 0511 decision 16). */
+    "outbox.EventSigner": "ed25519";
+    /** The driver of `InboxVerifier`: the keys the consumer's pinned contracts list. */
+    "outbox.InboxVerifier": "contract";
+    /** The driver of `SubscriberSource`: runway's values in `CrossAppConfig`. */
+    "outbox.SubscriberSource": "config";
+    /** The driver of `DeliveryTransport`: one `fetch` per delivery. */
+    "outbox.DeliveryTransport": "fetch";
   }
 }

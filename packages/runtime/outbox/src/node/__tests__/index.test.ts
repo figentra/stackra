@@ -14,16 +14,20 @@ describe("@stackra/outbox/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
       "ChangeFeedService",
+      "CrossAppFanOutService",
+      "CrossAppRelayService",
       "InboxEventPublisherDriver",
       "InboxService",
       "OutboxRelayService",
       "OutboxWriterService",
       "PostgresChangeFeedDriver",
+      "PostgresDeliveryDriver",
       "PostgresDeviceSequenceStoreDriver",
       "PostgresInboxDriver",
       "PostgresOfflineCapStoreDriver",
       "PostgresOutboxDriver",
       "PostgresReplicaLogDriver",
+      "RelayInboxService",
     ]);
   });
 });

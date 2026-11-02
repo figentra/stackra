@@ -18,7 +18,7 @@ Small PRs in the plan's order, each with a changeset and verified on a testbed b
 - [ ] T007 [US3] `Ed25519EventSigner` and `ContractInboxVerifier` (window, listed key, rotation), verification table tests — covers: FR-002, FR-005, FR-013, FR-017, FR-019, AC-003, AC-008 — route: security — deps: T004
 - [ ] T008 [US2] `CrossAppRelayService`: own lock, per-subscriber fairness, timeout, no redirects, back-off and dead letter, 4xx handling; fake clock and transport tests — covers: FR-003, AC-005, SC-005 — route: package — deps: T006, T007
 - [ ] T009 [US1] [US3] `RelayInboxService`: verify, parse, set `producer`, `InboxService.receive`, answers 204, 401, 422; repeat runs once — covers: FR-005, FR-006, FR-007, FR-008, AC-002, AC-007, SC-002 — route: security — deps: T007
-- [ ] T010 [US2] Commands `outbox:relay-deliveries` and `outbox:relay-replay`; outbox README and AGENTS; changeset — covers: FR-014 — route: package — deps: T008, T009
+- [ ] T010 [US2] Outbox README and AGENTS; changeset (the operator commands moved to T017) — covers: FR-014 — route: package — deps: T008, T009
 
 ## PR 3 · `@stackra/gen`: lift the refusal and generate the inbox
 
@@ -31,5 +31,6 @@ Small PRs in the plan's order, each with a changeset and verified on a testbed b
 
 ## PR 4 · Docs and proof
 
-- [ ] T017 Runbook `cross-app-event-relay`; AGENTS.md "Services"; ADR 0511 Enforcement lines for decisions 11 to 15 move to automated — covers: FR-014 — route: steward-docs — deps: T016
+- [ ] T019 [US1] Runway sets `config.outbox.cross_app` (key id, subscribers) from an environment's `events` block and maps its `signingKey` secret onto `STACKRA_EVENTS_SIGNING_KEY`, when it ships a service and in `stackra dev`, with `STACKRA_ENVIRONMENT` set in both (touches `stackra dev` and the ship path: the leader is told first) — covers: FR-012, FR-015 — route: contract — deps: T010
+- [ ] T017 Commands `outbox:relay-deliveries` and `outbox:relay-replay` over `CrossAppRelayService.list` and `replay`; runbook `cross-app-event-relay`; AGENTS.md "Services"; ADR 0511 Enforcement lines for decisions 11 to 15 move to automated — covers: FR-014 — route: steward-docs — deps: T016
 - [ ] T018 Testbed end to end per `quickstart.md` (pay to billing, repeat, forgery) and gen in figentra/billing and figentra/os scheduling-calendar, cited on the PR — covers: AC-001, AC-004, SC-001, SC-004 — route: tests — deps: T016

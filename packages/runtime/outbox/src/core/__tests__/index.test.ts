@@ -16,8 +16,17 @@ describe("@stackra/outbox", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(outbox).sort()).toEqual([
       "BrokerEventPublisherDriver",
+      "ConfigSubscriberSourceDriver",
       "ConsumesChanges",
+      "ContractInboxVerifierDriver",
+      "CrossAppConfig",
+      "CrossAppConfig$",
+      "CrossAppKeyMissingError",
+      "CrossAppOptions",
+      "Ed25519EventSignerDriver",
+      "FetchDeliveryTransportDriver",
       "MemoryChangeFeedDriver",
+      "MemoryDeliveryDriver",
       "MemoryInboxDriver",
       "MemoryOutboxDriver",
       "OutboxConfig",
@@ -30,6 +39,7 @@ describe("@stackra/outbox", () => {
       "redactSubjectMessages",
       "registerChangeConsumers",
       "registerEventNames",
+      "registerProducerKeys",
       "registerRelays",
     ]);
   });

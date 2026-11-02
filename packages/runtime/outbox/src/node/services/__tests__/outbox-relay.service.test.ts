@@ -36,13 +36,17 @@ import { registerSchemas } from "@stackra/validation";
 import { Change, registerChanges } from "@stackra/versioning";
 import { z } from "zod";
 
+import type { CrossAppConfig } from "#config/cross-app.config";
 import { OutboxConfig } from "#config/outbox.config";
 import { EventPublisher, MessageKind, RowChangeKind } from "#contracts/index";
 import type { EventEnvelope, OutboxMessage, RowChange } from "#contracts/index";
+import { ConfigSubscriberSourceDriver } from "#core/drivers/config-subscriber-source.driver";
 import { MemoryChangeFeedDriver } from "#core/drivers/memory-change-feed.driver";
+import { MemoryDeliveryDriver } from "#core/drivers/memory-delivery.driver";
 import { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
 import { registerChangeConsumers } from "#core/functions/register-change-consumers.function";
 import { registerEventNames } from "#core/functions/register-event-names.function";
+import { CrossAppFanOutService } from "#node/services/cross-app-fan-out.service";
 import { OutboxRelayService } from "#node/services/outbox-relay.service";
 
 const NOON = new Date(Date.UTC(2026, 9, 25, 12));
@@ -225,6 +229,33 @@ describe(OutboxRelayService, () => {
       },
     ]);
     expect(store.stored()).toEqual([]);
+  });
+
+  // @covers sta-1910:FR-001 @covers sta-1910:FR-009 @covers sta-1910:FR-012
+  it("writes a cross-app delivery per subscriber of a published event when a fan-out is bound", async () => {
+    const deliveries = new MemoryDeliveryDriver();
+    const config = {
+      subscribers: [
+        { member: "billing", inbox: "https://billing.test", events: ["orders.order.paid.v1"] },
+        { member: "usage", inbox: "https://usage.test", events: ["orders.order.cancelled.v1"] },
+      ],
+    } as unknown as CrossAppConfig;
+    const fanOut = new CrossAppFanOutService(new ConfigSubscriberSourceDriver(config), deliveries);
+    const { relay, store, publisher } = relayOf(undefined, 0, [[CrossAppFanOutService, fanOut]]);
+    await store.write([eventMessage()]);
+    await expect(relay.relay()).resolves.toBe(1);
+    expect(publisher.published).toHaveLength(1);
+    const written = deliveries.stored();
+    expect(written.map((delivery) => delivery.subscriber)).toEqual(["billing"]);
+    expect(written[0]?.envelope).toMatchObject({ id: "evt_A", envelopeVersion: 1 });
+    expect(written[0]?.envelope).not.toHaveProperty("producer");
+  });
+
+  it("writes no delivery when no fan-out is bound", async () => {
+    const { relay, store, publisher } = relayOf();
+    await store.write([eventMessage()]);
+    await expect(relay.relay()).resolves.toBe(1);
+    expect(publisher.published).toHaveLength(1);
   });
 
   it("publishes an event again at each older version a live change serves, under the same id", async () => {

@@ -143,7 +143,9 @@ Gen writes `registerChangeConsumers([[Product, ProductIndexConsumer]])` from the
   extension), `outbox.inbox` (`outbox.0002_create_inbox`) and `outbox.changes` with `outbox.change_cursors`
   (`outbox.0004_create_changes`). The relay reads messages across scopes, so neither table
   has a row-level-security policy; a message's scope is data the relay opens for each delivery.
-- **Memory** (`.`): the three stores in process memory, with no transaction.
+  `outbox.deliveries` (`outbox.0005_create_deliveries`) holds a producer's cross-app deliveries, one row per event,
+  subscriber and wire name, deleted once delivered.
+- **Memory** (`.`): the stores in process memory, with no transaction.
 - **Transports**: `InboxEventPublisherDriver` in process; the Encore Pub/Sub and Postgres queue transports between
   services are drivers gen supplies (ADR 0142).
 
@@ -152,6 +154,25 @@ Gen writes `registerChangeConsumers([[Product, ProductIndexConsumer]])` from the
 `BrokerEventPublisherDriver` (driver name `broker`) is the cross-service `EventPublisher`: the relay publishes each
 envelope to the topic of its wire name through @stackra/queue's `BrokerPublisher`, so the broker the deployment runs
 (Encore Pub/Sub, a Valkey stream) carries it. The message id is the event id; consumers deduplicate in their inbox.
+
+## Events to other apps
+
+An event that crosses apps (ADR 0511 decisions 11 to 19) leaves only from the outbox. After `OutboxRelayService`
+publishes an event in its own app, a bound `CrossAppFanOutService` writes one delivery per subscriber that takes its wire
+name, and `CrossAppRelayService` (its own lock, `work({ signal })`) sends each as one POST to the subscriber's
+`<origin>/events/inbox`, signed by `Ed25519EventSignerDriver` with the producer's key (`webhook-id`,
+`webhook-timestamp`, `webhook-signature: v1a,<key id>,<signature>`). Subscribers come only through `SubscriberSource`;
+`ConfigSubscriberSourceDriver` reads `CrossAppConfig` (`outbox.cross_app`), which runway sets from the environment's
+`events` block. A 2xx deletes a delivery; a 5xx, 408, 429, a timeout (10 s) or a network error retries it with the
+outbox backoff; any other answer or the tenth attempt dead-letters it. Each subscriber is served in order and stops at
+its first failure in a tick, so one never holds another. `list` and `replay` serve an operator.
+
+On the consumer, `RelayInboxService.receive(request)` (gen's `/events/inbox` route) verifies the sender before it reads
+the body: `ContractInboxVerifierDriver` accepts a signature only by a key that a pinned producer's contract lists for
+`CrossAppConfig.environment` (`registerProducerKeys`, written by gen), within five minutes. It sets `producer` to that
+producer, never the body's, and hands the envelope to `InboxService`, which runs each event id once. It answers 204,
+401 (unverified), 422 (not an envelope or an unknown event) or 413; a listener's error propagates, so the producer
+retries.
 
 ## The offline queue's server stores
 
@@ -170,6 +191,8 @@ revoke and wipe are the client's (`@stackra/query`, `@stackra/storage`).
   `outbox.pruneAfterDays` (30 by default).
 - A `stackra changes:replay|resume|backfill` command and a panel for stalled cursors; `ChangeFeedService` is the API.
 - Publishing both versions of an event until a change's sunset (ADR 0141 note) waits for gen's version table.
+- Redacting a subject's payload in dead cross-app deliveries (they keep the envelope until replayed or pruned), and
+  pruning them with `pruneOutbox`, are follow-ups of STA-1910.
 
 ## Consuming another service's events
 

@@ -70,6 +70,14 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
 - Never mint an id here: message ids come from `@stackra/contracts`' `mintPublicId("evt", time)`. Never narrow the
   `evt_` check to one body form; stored ids of the older forms must keep passing (STA-1380).
 - No parameter properties and no `#private` fields: services typecheck this source under `erasableSyntaxOnly`.
+- Cross-app events (ADR 0511 decisions 11 to 19): an event leaves the producer only from the outbox, through
+  `CrossAppFanOutService` (called by the relay when bound) and `CrossAppRelayService`. Subscribers come only through
+  `SubscriberSource`; never read runway or config for them anywhere else. The inbox verifies the sender
+  (`InboxVerifier`) before it parses the body, and `producer` is always the verifying contract's, never the body's.
+  The signing key is a `@Secret` only, never logged; a public key is not a secret. `InboxVerifier` and `EventSigner`
+  are the seam STA-1792's workload identity replaces: change their drivers, not the relay or the inbox.
+- The cross-app relay records a tick's outcomes one after another, after its requests; never run store statements
+  concurrently on one entity manager.
 
 ## Rules that fail the build
 
