@@ -88,7 +88,10 @@ async function binding(overrides: Partial<ApprovalBinding> = {}): Promise<Approv
   };
 }
 
-function record(overrides: Partial<ApprovalRecord> = {}): ApprovalRecord {
+/** Overrides of a record; `undefined` removes an optional field. */
+type RecordOverrides = { [K in keyof ApprovalRecord]?: ApprovalRecord[K] | undefined };
+
+function record(overrides: RecordOverrides = {}): ApprovalRecord {
   return {
     approvalId: ID,
     status: ApprovalStatus.Executing,
@@ -101,13 +104,13 @@ function record(overrides: Partial<ApprovalRecord> = {}): ApprovalRecord {
     grantedAt: new Date("2026-11-01T09:45:00.000Z"),
     executionKey: `approval:${ID}`,
     ...overrides,
-  };
+  } as ApprovalRecord; // reason: an override of undefined drops an optional field, which exactOptionalPropertyTypes refuses
 }
 
 async function verify(
   parts: {
     binding?: Partial<ApprovalBinding> | null;
-    record?: Partial<ApprovalRecord> | null;
+    record?: RecordOverrides | null;
     call?: Partial<CallDescriptor>;
     inputHash?: string;
     actors?: MemoryActorStatusCheckDriver;

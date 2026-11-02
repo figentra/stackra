@@ -62,6 +62,7 @@ function contextOf(scopeId?: string): ListenerContext {
     occurredAt: new Date("2026-10-28T10:00:00.000Z"),
     ...(scopeId === undefined ? {} : { scopeId }),
     now: () => new Date("2026-10-28T10:00:00.000Z"),
+    audit: () => {},
   };
 }
 
