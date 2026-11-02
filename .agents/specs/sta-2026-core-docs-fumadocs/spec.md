@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-02
 
-**Status**: Draft
+**Status**: Clarified
 
 **Tier**: big
 
@@ -14,7 +14,7 @@
 
 **Linear project**: none
 
-**Clarifications status**: pending
+**Clarifications status**: complete
 
 **Analyze**: —
 
@@ -46,6 +46,13 @@ prerequisite of STA-2024 (design-system docs on Fumadocs) on 2026-11-02: core's 
   rules that say "Mintlify"; ADR 0002's superseded note already points at 0514
 - **Lane**: full
 - **Change risk**: R2 (a site rebuilt on a new framework; a dependency family added and one removed)
+
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: Is this spec a prerequisite of STA-2024 or part of it? → A: A separate prerequisite; STA-2024 builds on it (leader).
+- No other critical ambiguity: ADR 0514 decided the framework, hosting, deploy path and the Stackra site's place.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -161,3 +168,4 @@ None.
 ## Status history
 
 - 2026-11-02 · — → Draft · claude (STA-1920 session) · created as the prerequisite of STA-2024 (leader, 2026-11-02)
+- 2026-11-02 · Draft → Clarified · claude (STA-1920 session) · no open question; scope set by the leader
