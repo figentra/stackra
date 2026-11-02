@@ -10,7 +10,9 @@
  *           misspelt section fails; the targets Runway knows (`TARGETS_SCHEMA`, STA-1975), the edge, release,
  *           observability and `providers.github` (their `*-section-schema.constant.ts`, STA-1976) are closed objects
  *           that mirror their owners' keys without defaults; the other providers stay open, as their owners check them
- *           (`definesFor` reads `targets.electron-release.feed.publicOrigin` itself).
+ *           (`definesFor` reads `targets.electron-release.feed.publicOrigin` itself). Fields typed here but not read
+ *           yet say "Not read yet (<reader>)" in the JSON Schema, and repo-checks' `RUNWAY_UNREAD_FIELDS` holds them to
+ *           it (STA-2001); `environments.*.deploy.gate` is a deprecated alias of `release.gate`.
  * Runtime: isomorphic
  * Governing contract: ADR 0296; ADR 0493 (resources, workloads, limits, uses); (decision 2 and its 2026-10-24 note), ADR 0168 (decisions 1 to 3 and 6), ADR 0171
  *                     (`ref:` values), ADR 0173 (secret names only), ADR 0237 (gateway secret names), ADR 0335 (decision 2: product), ADR 0354

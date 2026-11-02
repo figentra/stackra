@@ -50,7 +50,7 @@
             "version": {
               "type": "string",
               "minLength": 1,
-              "description": "The semver range of released base manifests the edition is built against.",
+              "description": "Not read yet (STA-339). The semver range of released base manifests the edition is built against.",
               "examples": ["^1.0.0"]
             }
           }
@@ -68,7 +68,8 @@
           "required": ["contributes"],
           "properties": {
             "contributes": {
-              "$ref": "#/$defs/contribution"
+              "$ref": "#/$defs/contribution",
+              "description": "Not read yet (STA-2003). A declarative ops contribution: the package that carries it, or the package with its panels, resources and widgets over registered blocks. No component, entry or script (app-shells 16.7)."
             }
           }
         }
@@ -131,7 +132,7 @@
             },
             "ecr": {
               "type": "object",
-              "description": "Image registry: the owning account and the scan, SBOM and signing tools."
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Image registry: the owning account and the scan, SBOM and signing tools."
             },
             "budgets": {
               "type": "object",
@@ -167,7 +168,7 @@
             },
             "state": {
               "type": "object",
-              "description": "Pulumi state for the GCP stacks."
+              "description": "Not read yet (Runway plan PR 16, STA-2001). Pulumi state for the GCP stacks."
             }
           }
         },
@@ -1293,12 +1294,12 @@
           "properties": {
             "metric": {
               "type": "string",
-              "description": "Metric that drives scaling.",
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Metric that drives scaling.",
               "examples": ["cpu"]
             },
             "target": {
               "type": "number",
-              "description": "Target value of the metric, in percent for cpu."
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Target value of the metric, in percent for cpu."
             }
           }
         }
@@ -1370,32 +1371,64 @@
           "$ref": "#/$defs/resources/properties/cpu"
         },
         "memory": {
-          "$ref": "#/$defs/resources/properties/memory"
+          "$ref": "#/$defs/resources/properties/memory",
+          "description": "Not read yet (Runway plan PR 12, STA-2001). Memory per instance, in Mi or Gi."
         },
         "instances": {
-          "$ref": "#/$defs/resources/properties/instances"
+          "type": "object",
+          "description": "Instance count bounds.",
+          "required": ["min", "max"],
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Fewest instances kept running."
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Most instances scaling may add."
+            }
+          }
         },
         "scaling": {
-          "$ref": "#/$defs/resources/properties/scaling"
+          "$ref": "#/$defs/resources/properties/scaling",
+          "description": "Not read yet (Runway plan PR 12, STA-2001). Autoscaling rule."
         },
         "workers": {
           "type": "object",
-          "description": "Background work (queues, crons, the outbox relay) of this group's members.",
+          "description": "Not read yet (Runway plan PR 12, STA-2001). Background work (queues, crons, the outbox relay) of this group's members.",
           "additionalProperties": false,
           "required": ["split"],
           "properties": {
             "split": {
               "type": "boolean",
-              "description": "Run background work in its own process, which scales apart from request handling."
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Run background work in its own process, which scales apart from request handling."
             },
             "cpu": {
-              "$ref": "#/$defs/resources/properties/cpu"
+              "$ref": "#/$defs/resources/properties/cpu",
+              "description": "Not read yet (Runway plan PR 12, STA-2001). vCPUs per instance."
             },
             "memory": {
-              "$ref": "#/$defs/resources/properties/memory"
+              "$ref": "#/$defs/resources/properties/memory",
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Memory per instance, in Mi or Gi."
             },
             "instances": {
-              "$ref": "#/$defs/resources/properties/instances"
+              "description": "Not read yet (Runway plan PR 12, STA-2001). Instance count bounds.",
+              "type": "object",
+              "required": ["min", "max"],
+              "properties": {
+                "min": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Not read yet (Runway plan PR 12, STA-2001). Fewest instances kept running."
+                },
+                "max": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Most instances scaling may add."
+                }
+              }
             }
           }
         }
@@ -1440,7 +1473,7 @@
             },
             "from": {
               "type": "string",
-              "description": "Environment variable holding the lane number.",
+              "description": "Not read yet (Runway plan PR 8, STA-2001). Environment variable holding the lane number.",
               "examples": ["STACKRA_LANE"]
             },
             "repos": {
@@ -1480,7 +1513,7 @@
         },
         "proxy": {
           "type": "object",
-          "description": "Dev only: routes by Host to member dev ports; needed only for `*.localhost` or https."
+          "description": "Not read yet (Runway plan PR 8, STA-2001). Dev only: routes by Host to member dev ports; needed only for `*.localhost` or https."
         },
         "encore": {
           "type": "object",
@@ -1489,7 +1522,7 @@
         "ttl": {
           "type": "string",
           "pattern": "^[0-9]+[hd]$",
-          "description": "Preview only: how long a per-pull-request environment lives.",
+          "description": "Not read yet (Runway plan PR 16, STA-2001). Preview only: how long a per-pull-request environment lives.",
           "examples": ["7d"]
         },
         "data": {
@@ -1595,12 +1628,12 @@
             },
             "pattern": {
               "type": "string",
-              "description": "Host pattern; `${member}` and `${pr}` are expanded.",
+              "description": "Not read yet (Runway plan PR 16, STA-2001). Host pattern; `${member}` and `${pr}` are expanded.",
               "examples": ["${member}-pr-${pr}.preview", "${member}.staging"]
             },
             "tenantDomains": {
               "type": "string",
-              "description": "How tenant custom domains are served.",
+              "description": "Not read yet (Runway plan PR 16, STA-2001). How tenant custom domains are served.",
               "examples": ["cloudflare-for-saas"]
             }
           }
@@ -1615,7 +1648,7 @@
             },
             "gate": {
               "type": "string",
-              "description": "Post-deploy gate (DP24).",
+              "description": "Deprecated: an alias of `release.gate`. Not read yet (Runway plan PR 13, STA-2001). Post-deploy gate (DP24).",
               "examples": ["health"]
             },
             "approval": {
@@ -1854,7 +1887,8 @@
         "entitlement": {
           "type": "string",
           "minLength": 1,
-          "examples": ["entitlement:academorix:white-label"]
+          "examples": ["entitlement:academorix:white-label"],
+          "description": "Not read yet (STA-2002). The entitlement that turns white-labelling on for a tenant."
         },
         "modes": {
           "type": "array",
