@@ -67,7 +67,7 @@
         "uses": "Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d",
         "with": {
           "method": "oidc",
-          "identity-id": "${{ env.INFISICAL_IDENTITY_ID }}",
+          "identity-id": "${{ vars.INFISICAL_GATE_IDENTITY_ID }}",
           "domain": "https://eu.infisical.com",
           "project-id": "${{ vars.INFISICAL_GATE_PROJECT_ID }}",
           "env-slug": "prod",
