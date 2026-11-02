@@ -1,5 +1,17 @@
 # @stackra/fiscal
 
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/money@0.5.0
+  - @stackra/testing@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/market-packs@0.5.0
+  - @stackra/validation@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes
