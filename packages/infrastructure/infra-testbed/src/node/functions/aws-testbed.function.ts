@@ -8,14 +8,15 @@
  *          EC2 health checks and instance refresh that waits for protected instances; and the EC2 Image Builder
  *          pipeline (build bucket with the inputs as assets, three components, a recipe versioned by the hash of its
  *          inputs, an infrastructure configuration, a distribution that writes the AMI id to the SSM parameter, and
- *          the weekly schedule).
+ *          no schedule: the owner starts a build by hand, only while the heavy group is at 0, since the build
+ *          instance and a heavy box do not both fit the region's on-demand vCPU quota (ADR 0516)).
  * Boundary: declares resources only, inside the Pulumi program that calls it; agents only preview, the owner applies.
  *           No secret value is created or read: the box reaches Infisical through its instance role (AWS IAM auth) and
  *           the plan holds ids and paths. The first apply uses `groups: false`, builds the first image, then applies
  *           again with the groups and their launch template: EC2 refuses a template whose AMI parameter is missing.
  * Runtime: node
- * Governing contract: ADR 0484 (decisions 2 to 10); ADR 0171 (decisions 2, 3 and 5); ADR 0172 (cost tags); ADR 0173
- *                     (no secret values); ADR 0167 (OIDC, no long-lived keys).
+ * Governing contract: ADR 0484 (decisions 2 to 10); ADR 0516 (quotas); ADR 0171 (decisions 2, 3 and 5); ADR 0172
+ *                     (cost tags); ADR 0173 (no secret values); ADR 0167 (OIDC, no long-lived keys).
  */
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
@@ -319,11 +320,7 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
       imageRecipeArn: recipe.arn,
       infrastructureConfigurationArn: infrastructure.arn,
       distributionConfigurationArn: distribution.arn,
-      schedule: {
-        scheduleExpression: plan.image.schedule,
-        timezone: "UTC",
-        pipelineExecutionStartCondition: "EXPRESSION_MATCH_ONLY",
-      },
+      // No schedule (ADR 0516): `aws imagebuilder start-image-pipeline-execution`, by hand, while heavy is at 0.
       status: "ENABLED",
       tags,
     },
