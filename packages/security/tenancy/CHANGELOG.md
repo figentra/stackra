@@ -1,5 +1,22 @@
 # @stackra/tenancy
 
+## 0.5.0
+
+### Patch Changes
+
+- 104d9f4: `@stackra/tenancy/node` exports `TENANCY_ENTITIES`, the committed entity list of its `ApprovalBinding` model, which a
+  hosting service's generated registrations import (STA-1874).
+- @stackra/actions@0.5.0
+  - @stackra/database@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/console@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/scheduler@0.5.0
+  - @stackra/scope@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

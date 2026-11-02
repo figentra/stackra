@@ -60,9 +60,12 @@ describe("migration 0006: figentra/os publishes @figentra", () => {
     const { db } = sqliteD1();
     const publishers = await new RegistryStore(db).publishers("@figentra");
     expect(publishers.map((row) => row.repository).sort()).toEqual([
+      "figentra/billing",
       "figentra/brand",
       "figentra/commerce",
+      "figentra/invoicing",
       "figentra/os",
+      "figentra/pay",
     ]);
   });
 });

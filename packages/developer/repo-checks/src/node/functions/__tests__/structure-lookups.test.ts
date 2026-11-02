@@ -47,8 +47,8 @@ const twice = (table: readonly StructureGroup[]): string[] => {
   return [...new Set(seen.filter((s, i) => seen.indexOf(s) !== i))];
 };
 
-test("the category list is the 13 categories", () => {
-  assert.equal(CATEGORY_NAMES.length, 13);
+test("the category list is the 14 categories", () => {
+  assert.equal(CATEGORY_NAMES.length, 14);
 });
 
 test("every category and entry carries a reason and an ADR", () => {

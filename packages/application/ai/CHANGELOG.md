@@ -1,5 +1,24 @@
 # @stackra/ai
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [104d9f4]
+- Updated dependencies [d7f72d3]
+  - @stackra/tenancy@0.5.0
+  - @stackra/ui@0.5.0
+  - @stackra/search@0.5.0
+  - @stackra/actions@0.5.0
+  - @stackra/database@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/outbox@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes

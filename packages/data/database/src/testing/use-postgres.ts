@@ -15,7 +15,6 @@
  *                     ADR 0159; ADR 0160; ADR 0314; gap db19 (stackra-284).
  */
 import { afterAll, beforeAll } from "@stackra/testing";
-import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
 import { PostgresDatabaseDriver } from "#node/drivers/postgres-database.driver";
@@ -37,6 +36,8 @@ const BOOT_TIMEOUT_MS = 300_000;
 export function usePostgres(options: UsePostgresOptions = {}): PostgresFixture {
   const state: { container?: StartedPostgreSqlContainer; database?: PostgresDatabaseDriver } = {};
   beforeAll(async () => {
+    // An optional peer, loaded here so that importing `./testing` never needs it (STA-1950).
+    const { PostgreSqlContainer } = await import("@testcontainers/postgresql");
     state.container = await new PostgreSqlContainer(
       options.image ?? (await buildPostgresTestImage()),
     ).start();

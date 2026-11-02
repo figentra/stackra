@@ -39,6 +39,7 @@ describe("@stackra/runway/node", () => {
     expect(Object.keys(node).sort()).toEqual([
       "AscAppleDeveloperDriver",
       "BRAND_STEP_SETTINGS",
+      "CloudflareWorkersProviderDriver",
       "DryRunEdgeKvDriver",
       "EDGE_PUBLISH_SETTINGS",
       "EasProviderDriver",

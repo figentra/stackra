@@ -26,6 +26,7 @@ describe("@stackra/tenancy/node", () => {
       "CallIsolationDriver",
       "PostgresApprovalBindingStoreDriver",
       "PruneApprovalBindingsAction",
+      "TENANCY_ENTITIES",
       "TenantCreateCommand",
       "TenantIsolationService",
       "TenantListCommand",

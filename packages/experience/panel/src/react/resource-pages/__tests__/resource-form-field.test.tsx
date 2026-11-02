@@ -133,7 +133,7 @@ vi.mock("@stackra/ui/react", async () => {
           onChange: (event: { readonly target: { readonly value: string } }) =>
             props.onChange(event.target.value),
         }),
-        props.isInvalid === true ? props.errorMessage : null,
+        props.isInvalid === true ? createElement("span", null, props.errorMessage) : null,
       ),
     FormSection: (props: {
       readonly title: string;

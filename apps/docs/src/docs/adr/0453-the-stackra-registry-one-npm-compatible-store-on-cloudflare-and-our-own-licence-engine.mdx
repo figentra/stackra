@@ -329,12 +329,12 @@ Figentra Flow is MIT, so it cannot publish to `@figentra`, which is `internal` w
 added an open scope for Figentra's open products (migration `0005_figentra_oss.sql`); this amendment is the ADR decision
 10 asks for before another scope is added. The scope rows are now:
 
-| Scope           | Read rule  | Licence rule  | Trusted publishers (environment)                                                                |
-| --------------- | ---------- | ------------- | ----------------------------------------------------------------------------------------------- |
-| `@stackra`      | `open`     | `open-source` | `figentra/stackra` (`release`)                                                                  |
-| `@stackra-pro`  | `licensed` | `commercial`  | `figentra/stackra-pro` (`release`)                                                              |
-| `@figentra`     | `internal` | `commercial`  | `figentra/brand` (`brand-registry`), `figentra/commerce` (`release`), `figentra/os` (`release`) |
-| `@figentra-oss` | `open`     | `open-source` | `figentra/flow` (`release`)                                                                     |
+| Scope           | Read rule  | Licence rule  | Trusted publishers (environment)                                                                                                                                                              |
+| --------------- | ---------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@stackra`      | `open`     | `open-source` | `figentra/stackra` (`release`)                                                                                                                                                                |
+| `@stackra-pro`  | `licensed` | `commercial`  | `figentra/stackra-pro` (`release`)                                                                                                                                                            |
+| `@figentra`     | `internal` | `commercial`  | `figentra/brand` (`brand-registry`), `figentra/commerce` (`release`), `figentra/os` (`release`), `figentra/pay` (`release`), `figentra/invoicing` (`release`), `figentra/billing` (`release`) |
+| `@figentra-oss` | `open`     | `open-source` | `figentra/flow` (`release`)                                                                                                                                                                   |
 
 Every publisher uses `.github/workflows/release.yml` on `refs/heads/main` and is matched on its numeric repository and
 owner ids (decision 6).
@@ -365,6 +365,15 @@ are their sources: `@figentra/os-mobile` ships the Expo project EAS builds from.
 applies there: the scope's licence string and a LICENSE file. The read rule is the scope row's own, so a per-name
 `internal` rule inside `@stackra-pro` (`@stackra-pro/ui`) keeps the ban. The OS release workflow publishes those lines
 as a trusted publisher of `@figentra` (migration `0006_figentra_os.sql`, decision 10). Linear STA-1828.
+
+On 2026-11-01 figentra/pay and figentra/invoicing became trusted publishers of `@figentra` too (migration
+`0008_figentra_pay_invoicing.sql`), so their release workflows publish their services' contract packages
+([0511](/adr/0511-cross-repo-service-contracts-and-cross-app-events) decisions 4 and 5):
+`@figentra/pay-service-payments-contract` and `@figentra/invoicing-service-invoicing-contract`. Linear STA-1905.
+
+On 2026-11-02 figentra/billing became a trusted publisher of `@figentra` too (migration `0009_figentra_billing.sql`),
+so its release workflow publishes its services' contract packages, `@figentra/billing-service-{billing,entitlements,usage}-contract`,
+which figentra/velora's gen reads. Linear STA-1886.
 
 ## Supersedes and sources
 
