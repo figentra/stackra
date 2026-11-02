@@ -14,6 +14,7 @@
  * Governing contract: ADR 0269 (decision 3); ADR 0266 (decision 2: a fake per capability); ADR 0206.
  */
 import { buildConfig } from "@stackra/config";
+import type { AssuranceLevel } from "@stackra/contracts";
 import { PermissionSnapshotService } from "@stackra/iam";
 import { ActiveScopeService } from "@stackra/scope";
 import { TenantSwitcher } from "@stackra/tenancy";
@@ -33,8 +34,8 @@ function idBody(n: number): string {
   return String(n).padStart(26, "0");
 }
 
-/** The fake user, with `memberships` memberships. */
-function fakeUser(memberships: number): SessionUser {
+/** The fake user, with `memberships` memberships and, when given, `assurance`. */
+function fakeUser(memberships: number, assurance?: AssuranceLevel): SessionUser {
   return {
     userId: `usr_${idBody(1)}`,
     email: "user@example.test",
@@ -47,6 +48,7 @@ function fakeUser(memberships: number): SessionUser {
       role: "admin",
       roles: ["admin"],
     })),
+    ...(assurance === undefined ? {} : { assurance }),
   };
 }
 
@@ -81,7 +83,7 @@ export class SessionFake extends SessionService {
    * @returns this fake, to chain.
    */
   seed(options: FakeSessionOptions = {}): this {
-    const account = fakeUser(options.memberships ?? 1);
+    const account = fakeUser(options.memberships ?? 1, options.assurance);
     const status = options.status ?? SessionStatus.SignedOut;
     this.memory.seed(account, status === SessionStatus.SignedIn);
     this.set(

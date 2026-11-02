@@ -1,0 +1,21 @@
+{
+  "slug": "settings-form",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/settings",
+  "exportName": "SettingsForm",
+  "parts": ["SettingsForm"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 360
+    }
+  ],
+  "related": ["free/switch", "free/text-field", "free/setting-row"],
+  "tokens": ["color.surface", "color.field"],
+  "keywords": ["settings", "preferences", "form", "switch", "locked", "kit"],
+  "status": "new"
+}

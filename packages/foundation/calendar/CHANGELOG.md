@@ -1,5 +1,14 @@
 # @stackra/calendar
 
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/market-packs@0.6.1
+  - @stackra/support@0.6.1
+
 ## 0.6.0
 
 ### Patch Changes

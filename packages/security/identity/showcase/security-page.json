@@ -1,0 +1,21 @@
+{
+  "slug": "security-page",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/identity",
+  "exportName": "SecurityPage",
+  "parts": ["SecurityPage"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 720
+    }
+  ],
+  "related": ["free/page-header", "free/section", "free/chip"],
+  "tokens": ["color.surface", "color.danger"],
+  "keywords": ["security", "passkeys", "two-factor", "sessions", "password", "settings", "kit"],
+  "status": "new"
+}
