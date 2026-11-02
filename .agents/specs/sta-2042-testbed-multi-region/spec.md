@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-03
 
-**Status**: Planned — Approved by owner 2026-11-02
+**Status**: Tasked
 
 **Tier**: big
 
@@ -231,3 +231,4 @@ None.
 - 2026-11-03 · — → Draft · claude (TESTBED session) · created from the owner's "Multi-region testbed" decision
 - 2026-11-03 · Draft → Clarified · claude (TESTBED session) · design accepted by the leader; the gate interface added (FR-010 to FR-012) — Approved by owner 2026-11-03 (question tool: "Approve")
 - 2026-11-02 · Clarified → Planned · claude (TESTBED session) · plan, research, data model, contract and quickstart; four PRs (infra-testbed, workflow, CLI, docs) — Approved by owner 2026-11-02 (question tool: "Approve")
+- 2026-11-02 · Planned → Tasked · claude (TESTBED session) · 14 tasks in four PRs (A infra-testbed, B workflow, C CLI, D docs)
