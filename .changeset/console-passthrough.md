@@ -10,3 +10,6 @@
 - **No fields:** a passthrough command declares no fields.
 - **Tracking:** `passthroughCommands(commands)` in `@stackra/console/testing` lists the commands still in this
   state, so a CLI's test pins the list until it is empty.
+
+`io.stdout` and `io.stderr`, also migration only, are the run's raw streams, for a ported command whose output must
+stay byte for byte as it was.

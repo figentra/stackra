@@ -6,6 +6,7 @@
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-012 to FR-024; STA-1966 spec FR-007 and FR-029.
  */
+import type { WritableText } from "#contracts/types/writable-text.type";
 import type { ConsoleOutput } from "#core/types/console-output.type";
 import type { ConsoleProcess } from "#core/types/console-process.type";
 import type { ConsolePrompt } from "#core/types/console-prompt.type";
@@ -23,6 +24,12 @@ export interface CommandIo {
 
   /** Migration only: the raw tokens after a passthrough command's name; empty for every other command. */
   readonly rest: readonly string[];
+
+  /** Migration only: the run's standard output, for a ported command whose output must stay byte-exact. */
+  readonly stdout: WritableText;
+
+  /** Migration only: the run's standard error, as `stdout`. */
+  readonly stderr: WritableText;
 
   /** The directory the command works in; never `process.cwd()`, which a local MCP or a test does not share. */
   readonly cwd: string;

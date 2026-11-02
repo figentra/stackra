@@ -24,7 +24,7 @@ class GateCommand extends Command({
 
   handle(io: CommandIo) {
     GateCommand.seen = io.rest;
-    io.output.line(`gate ${io.rest.join(" ")}`);
+    io.stdout.write(`gate ${io.rest.join(" ")}\n`);
   }
 }
 
@@ -54,7 +54,8 @@ describe("a passthrough command", () => {
     ]);
     expect(result.exitCode).toBe(0);
     expect(GateCommand.seen).toEqual(["dir", "--slug", "x", "-n", "--json", "--", "-v"]);
-    expect(result.stdout).toContain("gate dir --slug x -n --json -- -v");
+    // Written raw, byte for byte: no gutter.
+    expect(result.stdout).toBe("gate dir --slug x -n --json -- -v\n");
   });
 
   it("prints usage for --help and help <cmd> without running", async () => {
