@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "8565553435d8ece9",
+    "hash": "3e0eeb0630149557",
     "propsFiles": ["ui/src/native/button-group/button-group.props.ts"]
   },
   "importLine": "import { ButtonGroup } from \"@stackra/ui/native\";",
@@ -43,7 +43,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "description": "True to disable every button.",

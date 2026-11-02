@@ -39,6 +39,8 @@ const LABEL_COLOR: Readonly<Record<ButtonVariant, ThemeColor>> = Object.freeze({
   danger: "danger-foreground",
   "danger-soft": "danger-soft-foreground",
   glass: "default-foreground",
+  // The core fill takes the accent's label colour: paper on light and ink on dark, as the core-foreground does.
+  core: "accent-foreground",
 });
 
 /**
@@ -48,6 +50,7 @@ const LABEL_COLOR: Readonly<Record<ButtonVariant, ThemeColor>> = Object.freeze({
  */
 export function Button({
   variant = "primary",
+  shape = "default",
   size = "md",
   isDisabled = false,
   isLoading = false,
@@ -87,13 +90,20 @@ export function Button({
       {...(glass ? { background: glass.background } : {})}
       {...rest}
       // A glass button is HeroUI Native's tertiary on Liquid Glass (`useGlassButton`), and tertiary where it is solid.
-      variant={variant === "glass" ? "tertiary" : variant}
+      variant={variant === "glass" ? "tertiary" : variant === "core" ? "primary" : variant}
       size={size}
       isDisabled={isDisabled}
       {...blocksPress}
       {...omitUndefined({
         onPress: withHaptic("impact", onPress),
-        className: cn(isFullWidth && "w-full", glass?.className, className) || undefined,
+        className:
+          cn(
+            isFullWidth && "w-full",
+            glass?.className,
+            variant === "core" && "bg-core-strong",
+            shape === "pill" && "rounded-[var(--radius-pill)]",
+            className,
+          ) || undefined,
       })}
       {...(label ? { accessibilityLabel: label } : {})}
       // Replaces HeroUI's own state whole, so the disabled flag is written again beside `busy`.

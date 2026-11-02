@@ -18,6 +18,7 @@ import { plainTextOf } from "#react/hooks/plain-text-of.function";
 import { useActionShortcut } from "#react/hooks/use-action-shortcut";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 import type { ButtonProps } from "#react/button/button.props";
+import { heroButtonVariant } from "#react/button/hero-button-variant.function";
 
 /**
  * A button on HeroUI v3. While `isLoading` the press is refused and focus stays on the button; the spinner replaces
@@ -28,6 +29,7 @@ import type { ButtonProps } from "#react/button/button.props";
 // prop arrives with @stackra/i18n, when the announcement can be translated.
 export function Button({
   variant,
+  shape,
   className,
   size,
   isDisabled,
@@ -60,12 +62,15 @@ export function Button({
       ref={keys.attach(rest.ref)}
       // A glass button is HeroUI's ghost drawn in the glass level by the material layer (`.button--glass`).
       {...omitUndefined({
-        variant: variant === "glass" ? "ghost" : variant,
+        variant: variant === undefined ? undefined : heroButtonVariant(variant),
         size,
         isDisabled,
         onPress: press,
         className: cn(
           variant === "glass" && "button--glass",
+          // The core is HeroUI's primary filled by the theme's core-strong (`.button--core`, from `@stackra/tokens`).
+          variant === "core" && "button--core",
+          shape === "pill" && "rounded-[var(--radius-pill)]",
           keys.badge !== null && "relative overflow-visible",
           className,
         ),

@@ -229,7 +229,10 @@ function fieldOf(context: Context, field: FieldIR, shape: ShapeIR): string {
         : `.default(() => (${field.default.code}))`;
   } else if (shape.kind === "settings" && field.type.kind === "schema" && !field.optional)
     expression += ".prefault(() => ({}))";
-  else if (field.optional) expression += ".exactOptional()";
+  // A hatch may already end in `.optional()`, whose output also admits `undefined`; `?:` under
+  // exactOptionalPropertyTypes does not, so the `$Check` would fail (TS2344): it becomes `.exactOptional()` (STA-2022).
+  else if (field.optional)
+    expression = `${expression.replace(/\s*\.optional\(\)\s*$/, "")}.exactOptional()`;
   return expression;
 }
 

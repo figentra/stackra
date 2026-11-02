@@ -10,6 +10,7 @@
  */
 import type { ReactNode } from "react";
 
+import type { ButtonShape } from "#contracts/enums/button-shape.enum";
 import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import type { Size } from "#contracts/enums/size.enum";
 import type { IconSlot } from "#contracts/types/icon-slot.type";
@@ -21,6 +22,8 @@ export interface ButtonContractProps extends ShortcutContractProps {
   readonly children?: ReactNode;
   /** The emphasis and colour of the button. Defaults to `primary`. */
   readonly variant?: ButtonVariant | undefined;
+  /** The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`. */
+  readonly shape?: ButtonShape | undefined;
   /** The height, padding and text size. Defaults to `md`. */
   readonly size?: Size | undefined;
   /** True to refuse presses and show the disabled style; the button leaves the tab order on web. */
