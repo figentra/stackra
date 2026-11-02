@@ -117,6 +117,10 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
           candidate.target.name === owner.name,
       )?.name;
 
+  // Only a service's `T` carries the marker: its schemas file (in the typecheck program) adds it; a package's
+  // committed entity list is checked on `src` alone, where the model class has no such key (TS2353).
+  const marked = (shape: ShapeIR): boolean =>
+    ir.layout !== "package" && shape.fields.some((field) => field.default !== undefined);
   let money = false;
   /** The column properties of `fields`, given the model's `traits`. */
   const fieldProperties = (fields: readonly FieldIR[], traits: ReadonlySet<string>): string[] => {
@@ -214,6 +218,9 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
     }
     for (const name of shape.entity?.computed ?? [])
       properties.push(`    ${name}: { type: "json", persist: false },`);
+    // The schemas file types a defaulted model with a `"~defaults"` marker (STA-1694); `EntitySchema<T>` names every
+    // string key of `T`, so the marker is listed as not persisted, like a getter.
+    if (marked(shape)) properties.push('    "~defaults": { type: "json", persist: false },');
 
     schemas.push(
       `/** \`${modelKey(module, shape.name)}\` (${shape.file}). */`,
@@ -241,6 +248,7 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
       "  properties: {",
       '    id: { type: "string", primary: true },',
       ...fieldProperties(shape.fields, new Set()),
+      ...(marked(shape) ? ['    "~defaults": { type: "json", persist: false },'] : []),
       "  },",
       "});",
       "",

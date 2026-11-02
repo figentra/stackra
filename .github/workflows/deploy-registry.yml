@@ -41,8 +41,23 @@ concurrency:
 permissions: {}
 
 jobs:
+  # ADR 0468: production waits on the owner's one approval. The `production` environment (owner: required reviewer,
+  # main only) holds no secret and grants nothing; the deploy job keeps the `registry` environment, whose name the
+  # Infisical identity trusts (STA-1968).
+  approve:
+    name: Owner approval (production)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    permissions: {}
+    steps:
+      - name: Approved
+        run: echo "production approved for ${GITHUB_SHA}"
+
   deploy:
     name: Deploy npm.stackra.figentra.com
+    needs: approve
     # workflow_dispatch can name any branch; only main deploys (ADR 0170 decision 6).
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -214,7 +229,8 @@ jobs:
         run: |
           [[ "$READ_ONLY" = "" || "$READ_ONLY" = "true" ]] || {
             echo "::error title=REGISTRY_READ_ONLY::must be empty or true"; exit 1; }
-          pnpm exec wrangler deploy --var "REGISTRY_READ_ONLY:${READ_ONLY}"
+          # The commit SHA is the deployment message, so Cloudflare's record names the commit (STA-1986, STA-1987).
+          pnpm exec wrangler deploy --var "REGISTRY_READ_ONLY:${READ_ONLY}" --message "$GITHUB_SHA"
 
       # Fetched only now, so the key is in no earlier step's environment.
       - name: Signing key (Infisical OIDC)

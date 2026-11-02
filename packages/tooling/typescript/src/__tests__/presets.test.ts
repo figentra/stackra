@@ -96,6 +96,31 @@ describe("@stackra/typescript-config presets", () => {
     }
   });
 
+  it("service checks the generated types but never the generated Encore app", () => {
+    // The Encore app imports encore.dev, which no member declares (ADR 0091, 0124); gen reads it, tsc never does.
+    const { include } = JSON.parse(
+      readFileSync(join(root, "src", "service.json"), "utf8")
+        .split("\n")
+        .filter((line) => !line.trimStart().startsWith("//"))
+        .join("\n"),
+    ) as { include: string[] };
+    expect(include).toContain("${configDir}/.stackra/gen");
+    expect(include.filter((entry) => entry.includes("encore"))).toEqual([]);
+    expect(include).not.toContain("${configDir}/.stackra");
+  });
+
+  it("only service turns declarations off", () => {
+    // A service publishes no .d.ts, and gen's entity schema types are not nameable from it (TS2883, STA-1880);
+    // packages and contract packages keep declarations from base.
+    expect(readJsonc(join(root, "src", "service.json")).compilerOptions).toMatchObject({
+      declaration: false,
+      declarationMap: false,
+    });
+    expect(readJsonc(join(root, "src", "base.json")).compilerOptions?.["declaration"]).toBe(true);
+    for (const preset of ["library.json", "decorators.json", "node.json"])
+      expect(readJsonc(join(root, "src", preset)).compilerOptions?.["declaration"]).not.toBe(false);
+  });
+
   it("base keeps the non-negotiable strictness flags", () => {
     const base = readJsonc(join(root, "src", "base.json")).compilerOptions ?? {};
     for (const flag of [

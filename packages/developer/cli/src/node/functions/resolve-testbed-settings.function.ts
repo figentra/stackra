@@ -40,5 +40,6 @@ export function resolveTestbedSettings(
       text(env["STACKRA_TESTBED_SSH_KEY"]) ??
       join(home, TESTBED_CLI_DEFAULTS.key),
     user: TESTBED_CLI_DEFAULTS.user,
+    sshDirect: values["ssh-direct"] === true || env["STACKRA_TESTBED_SSH_DIRECT"] === "1",
   };
 }

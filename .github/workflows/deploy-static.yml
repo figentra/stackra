@@ -41,8 +41,23 @@ concurrency:
 permissions: {}
 
 jobs:
+  # ADR 0468: production waits on the owner's one approval. The `production` environment (owner: required reviewer,
+  # main and schemas@* tags only) holds no secret and grants nothing; the deploy job keeps the `static` environment,
+  # whose name the Infisical identity trusts (STA-1968).
+  approve:
+    name: Owner approval (production)
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/schemas@')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    permissions: {}
+    steps:
+      - name: Approved
+        run: echo "production approved for ${GITHUB_SHA}"
+
   deploy:
     name: Deploy static.stackra.figentra.com
+    needs: approve
     # workflow_dispatch can name any branch; only main or a schema release tag deploys. The provider also refuses a
     # commit that is not on main.
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/schemas@')
