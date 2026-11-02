@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-02
 
-**Status**: Draft
+**Status**: Clarified · Approved by leader 2026-11-02
 
 **Tier**: big
 
@@ -14,7 +14,7 @@
 
 **Linear project**: none
 
-**Clarifications status**: pending
+**Clarifications status**: complete
 
 **Analyze**: —
 
@@ -90,14 +90,15 @@ and the List and View pages get routes (#266).
 
 ### Edge Cases
 
-- **EC-01**: The row differs from the model and the model has no way to present it → refused, naming the resource (Q3).
+- **EC-01**: A row field the model lacks, with no `toRow` on the service → `standard_read_row_field_missing`, naming the
+  resource and the field.
 - **EC-02**: The model's Permissions class has no `read` verb → `standard_read_permission_missing`, nothing generated.
 - **EC-03**: A resource's model lives in another module of the member → the read goes in the model's module, which owns
   its service.
 - **EC-04**: Two resources of one model (two areas) both declare `list: true` → one list read per model, shared, since
   the key is per model. If their tables differ, the reads are refused (`standard_read_table_conflict`), because
   ADR 0307 rule 2 binds a list query to one table.
-- **EC-05**: `create`, `update` or `delete: true` → out of scope here (see Out of scope). They stay unbound and are
+- **EC-05**: `create`, `update` or `delete: true` → out of scope here (STA-2007). They stay unbound and are
   recorded in `unboundOperations`.
 
 ## Requirements _(mandatory)_
@@ -113,8 +114,9 @@ and the List and View pages get routes (#266).
   operation as the read's locked key.
 - **FR-005**: IF the model's Permissions class has no `read` verb THEN THE gen SHALL refuse with
   `standard_read_permission_missing`.
-- **FR-006**: WHEN gen writes a standard read THE manifest, endpoint, MCP tool, wiring and client SHALL treat it like an
-  authored query (as the generated search query is, STA-1459).
+- **FR-006**: WHEN gen writes a standard read THE gen SHALL declare it as an ordinary query, so it gets the endpoint,
+  the client, the command and the L0/L1 MCP tool under the caller's own permissions exactly like an authored query
+  (ADR 0098, ADR 0155), as the generated search query does (STA-1459).
 - **FR-007**: IF two resources of one model declare `list: true` with different tables THEN THE gen SHALL refuse with
   `standard_read_table_conflict`.
 - **FR-008**: WHEN gen reads a resource class THE discovery SHALL record its row type argument when one is given.
@@ -131,6 +133,7 @@ and the List and View pages get routes (#266).
 - **AC-002**: WHEN a member hand-writes a `<model>.list` query THE gen SHALL generate no list read for that model
 - **AC-003**: IF the model has no `read` permission verb THEN THE gen SHALL refuse with standard_read_permission_missing
 - **AC-004**: WHEN an app consumes the service THE generated resources file SHALL bind the list and get reads
+- **AC-005**: WHEN gen writes a list read THE manifest SHALL list it as an MCP tool under the read permission
 
 ## Success Criteria _(mandatory)_
 
@@ -142,8 +145,7 @@ and the List and View pages get routes (#266).
 
 ## Out of scope
 
-- `create`, `update` and `delete: true` (writes over the model's service). They need input schemas from the form and a
-  policy story. A follow-up issue will cover them.
+- `create`, `update` and `delete: true` (writes over the model's service): STA-2007.
 - The `ListRows` map and typing table keys against the row (ADR 0307 rule 1's compile-time check).
 - Hand-written list queries: they keep working, and FR-003 leaves them alone.
 
@@ -154,22 +156,19 @@ and the List and View pages get routes (#266).
 - The generated search query (`searchQueriesOf` / `emitSearchQueries`, STA-1459) is the pattern: a kind base in a
   package, a generated subclass declared in the IR so every target treats it as authored.
 
-## Open questions for clarify
+## Clarifications
 
-- **Q1 (placement)**: where do the two kind bases live?
-  - (a) `@stackra/panel/node`, recommended: every member with a resource already depends on the panel, and `true` is a
-    panel concept.
-  - (b) `@stackra/database`, beside `CrudService`.
-  - (c) `@stackra/actions`.
-- **Q2 (list input)**: compile the full closed TableInput per resource now (ADR 0307 rule 2: the sort enum, the typed
-  filters, search when `@Searchable`)? Or ship a first cut with cursor, limit and sort over the table's sortable keys,
-  with the typed filters in a follow-up? Recommended: full, since the table already declares its filters and
-  `CrudService.table` takes them.
-- **Q3 (row ≠ model)**: how is a model row turned into the resource's row (`LoyaltyAccountView`)?
-  - (a) The model's service exposes `toRow(model)` (a `present` method), and gen refuses a resource whose row differs
-    from the model without one.
-  - (b) Gen picks the row's fields by name from the model, and refuses a row field the model lacks.
-  - Recommended: (b), with (a) as the override when a service declares it.
+### Session 2026-11-02 (leader)
+
+- Q1 → (a): the two kind bases live in `@stackra/panel/node`. Panel already depends on `@stackra/actions` and
+  `@stackra/database`, so no new dependency edge, and `true` is a panel concept.
+- Q2 → (a): the full closed TableInput now: the sortable-keys enum, the typed filters, and `search` when the model is
+  `@Searchable` (ADR 0307 rule 2).
+- Q3 → (b) with (a) as the override: the row's fields are picked by name from the model, and a row field the model
+  lacks is refused (`standard_read_row_field_missing`). A service that declares `toRow(model)` is used instead.
+- The generated reads are ordinary queries (FR-006, AC-005), with a test that a generated `<model>.list` is a tool under
+  the caller's permissions.
+- create, update and delete `true`: STA-2007.
 
 ## Amendments
 
@@ -178,3 +177,4 @@ None.
 ## Status history
 
 - 2026-11-02 · — → Draft · Claude (STA-1947 session) · created
+- 2026-11-02 · Draft → Clarified · leader · Approved by leader 2026-11-02 (Q1 a, Q2 a, Q3 b with a as override)
