@@ -223,6 +223,7 @@ const ctxOf = (scopeId: string | null = "ten_1"): ListenerContext => ({
   occurredAt: NOW,
   ...(scopeId === null ? {} : { scopeId }),
   now: () => NOW,
+  audit: () => {},
 });
 
 /** Everything bound over the memory drivers: the pipeline's resolver and the executor on it. */
@@ -230,7 +231,7 @@ function build(executorClock: Date = NOW) {
   behaviour.handled = [];
   behaviour.next = undefined;
   const identity = new SilentIdentity();
-  const gate = new TamperedGate({
+  const gate = TamperedGate.of({
     identity,
     clock: new ClockAt(NOW),
     decide: (call) =>

@@ -1,5 +1,121 @@
 # @stackra/panel
 
+## 0.4.0
+
+### Minor Changes
+
+- b5ae8a4: An action of another model than the resource's is labelled `<module>::resources.<model>.actions.<action_model>_<verb>`,
+  so two actions with one verb of different models on one page no longer share a label; the resource's own actions keep
+  `actions.<verb>`.
+- d0fa2f8: Resource forms and the action input modal draw date inputs: a calendar day (`z.iso.date()`) as a date picker held as
+  `YYYY-MM-DD` with no time zone, and an instant (`Date`, `isoDateTime()`, `z.iso.datetime()`) as a day, an hour and a
+  minute in the viewer's own time zone (named under the field) held as a UTC ISO 8601 string.
+- 2bcee04: A List header or empty-state action whose input has fields now opens the action input modal and runs once without a
+  record, instead of running with an empty input.
+- 1a3bc4d: A Json input (`json()`, `unknown`) is edited in resource forms and the action input modal as JSON text: valid text
+  submits the parsed value, and text that does not parse shows an error and blocks the submit instead of going out as a
+  string.
+- 298d942: `e.list(key, columns, { labels: { status: I18n.<module>.enums.<enum> } })` names a list column's enum labels, as
+  `.labels()` does on a column or an entry, so a list cell shows the label instead of the raw code.
+- 08bd3f9: Resource forms and the action input modal draw object inputs as a titled group of their keys and list inputs as rows to
+  add and remove (a group per row for a list of objects, one field per row for a list of values), so checkout, returns,
+  labels, counts and other actions with nested input can be entered.
+- 8f2c40a: The action input modal starts each form key from the record's own value at that key (a drafted reply), so staff confirm
+  or edit it instead of retyping it.
+- 3953e1a: A form's `currency` field is a pick of ISO 4217 codes, and a minor-unit amount beside one (a MoneyAmount's `minor`, a
+  nested or list row's `…Minor`) is entered in major units of that chosen currency; until a valid currency is chosen it
+  stays in minor units.
+- 9f48901: A `…Minor` number field in a resource form or the action input modal is entered in major units of the record's currency
+  (formatted as that currency) and still submitted in minor units; without a known currency it stays in minor units.
+- c19730d: A money object (`@stackra/money`'s `MoneyAmount`, `{ minor, currency }`) in a list cell, a table column or an entry
+  shows as money in its own currency instead of as JSON; flat `…Minor` fields with a `currency` keep working.
+- b8d8554: An action whose input has any field besides the record id now opens the action input modal, optional and defaulted
+  fields included, so it shows its form and confirmation instead of running at once (ADR 0307 rule 3, amended).
+- 5d60d4a: A Record input (`z.record(z.string(), v)`, such as an EDI field map) is edited in resource forms and the action input
+  modal as key and value rows to add and remove (a number value as a number field), instead of falling back to text.
+- a1229d0: A relation manager takes record actions for its rows (`r.table(Query, columns, { actions: [...] })`): each runs with the
+  row's id under the related model's id key and the relation's bound inputs filled in (opening the action input modal when
+  it takes more), so a child-keyed action such as releasing an order's hold sits on the parent's View page.
+- 39f8662: A form select shows each enum code by its label (the resource model's enum, else in the action input modal the action
+  model's, e.g. `commerce::enums.company_member_role.owner`) instead of the raw code.
+
+### Patch Changes
+
+- 3ce01cf: A package's entity list is a committed generated contract, `src/node/entities.gen.ts`, written by `stackra gen` and kept
+  fresh by `stackra gen --check` (ADR 0294 R10 and ADR 0295, amended 2026-11-01, STA-1874). Each package's `./node` now
+  ships its `<KEY>_ENTITIES` inlined in the build instead of importing the gitignored `.stackra/gen/entities/` at runtime,
+  which failed: the 0.3.0 builds of these packages carry that broken import until this release. `stackra validate`
+  expects the re-export from `#node/entities.gen`, and the doc standard skips `*.gen.ts` files.
+- 36dbd49: Each package with models of its own exports `<MEMBER>_ENTITIES` from `./node`, which a hosting service's generated
+  `registrations.ts` imports to register the package's entities; without it the service failed with TS2305 (STA-1793). `stackra validate --repository` refuses a package with own
+  models whose stand-in `./node` barrel misses it.
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [3ce01cf]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [4f3f1ed]
+- Updated dependencies [e070131]
+- Updated dependencies [d675b4d]
+- Updated dependencies [3df2c07]
+- Updated dependencies [2d6bb63]
+- Updated dependencies [7dc74f6]
+- Updated dependencies [d9bf3c2]
+- Updated dependencies [90f55b1]
+- Updated dependencies [1c22c33]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [bb08f25]
+- Updated dependencies [1856ee0]
+- Updated dependencies [70e6c17]
+- Updated dependencies [bc2c53e]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [36dbd49]
+- Updated dependencies [8d29426]
+- Updated dependencies [2bbc0e8]
+- Updated dependencies [58c7da9]
+- Updated dependencies [1856ee0]
+- Updated dependencies [dedaa81]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [149ca06]
+- Updated dependencies [1567384]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/access-log@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/database@0.4.0
+  - @stackra/tenancy@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/iam@0.4.0
+  - @stackra/data-transfer@0.4.0
+  - @stackra/documents@0.4.0
+  - @stackra/model@0.4.0
+  - @stackra/support@0.4.0
+  - @stackra/ui@0.4.0
+  - @stackra/clients@0.4.0
+  - @stackra/entitlements@0.4.0
+  - @stackra/query@0.4.0
+  - @stackra/pricing@0.4.0
+  - @stackra/filesystem@0.4.0
+  - @stackra/icons@0.4.0
+  - @stackra/experience@0.4.0
+  - @stackra/navigation@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/i18n@0.4.0
+  - @stackra/money@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

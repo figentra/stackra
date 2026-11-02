@@ -1,5 +1,62 @@
 # @stackra/queue
 
+## 0.4.0
+
+### Minor Changes
+
+- 9c8d108: Packages contribute console commands, and gen collects them per member (STA-1731). `@stackra/console` audits a
+  command declared `audit: true` through the `CommandAudit` port (refused before it runs when no sink is ready; secret
+  values redacted). gen records commands in the manifest, merges hosted packages' commands, refuses
+  `command_collision`, and writes `#stackra/commands` and a console entry that `stackra console <member>` runs. First
+  commands: `db:migrate`, `db:rollback`, `db:status`, `db:seed`, `tenant:list`, `tenant:create` (with a
+  `TenantDirectory` port), `cache:clear` (the `Cache` port gains `flush`), `queue:work`, `queue:failed` and
+  `queue:retry`; `@stackra/access-log` stores command audit entries (`STACKRA_COMMAND_AUDIT_SCOPE`).
+
+### Patch Changes
+
+- b970c98: `QueueService.push`, `chain` and `batch` refuse a `scope` that is not shaped like a platform `ScopeRef` with the new
+  `ScopeNotPlatformWrittenError` (`scope_not_platform_written`), and `QueueWorkerService` dead-letters a scoped job at once
+  with the new `JobIsolationMissingError` (`job_isolation_missing`) when no `CallIsolation` is bound, instead of running it
+  in a scope session that set no tenant (STA-1823, ADR 0495 note of 2026-11-01).
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [ef987d9]
+- Updated dependencies [a8c358a]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [4f3f1ed]
+- Updated dependencies [e070131]
+- Updated dependencies [d675b4d]
+- Updated dependencies [3df2c07]
+- Updated dependencies [2d6bb63]
+- Updated dependencies [7dc74f6]
+- Updated dependencies [d9bf3c2]
+- Updated dependencies [90f55b1]
+- Updated dependencies [1c22c33]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [5fc0db7]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/console@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/database@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/testing@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

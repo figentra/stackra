@@ -7,7 +7,8 @@
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); ADR 0466; ADR 0302 (decisions 3
  *          and 5); ADR 0060 (light, dark, RTL); STA-1371.
  */
-import { RichTextEditor, useCatalogueText } from "@stackra/ui/react";
+import { useCatalogueText } from "@stackra/ui/react";
+import { RichTextEditor } from "@stackra/ui/rich-text";
 import { MESSAGES } from "#src/constants/messages.constant";
 import { RICH_TEXT_EDITOR_KEYS } from "#src/demos/free/rich-text-editor/rich-text-editor-keys.constant";
 

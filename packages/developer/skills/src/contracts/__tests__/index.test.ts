@@ -92,6 +92,8 @@ describe("@stackra/skills/contracts", () => {
     expectTypeOf<CatalogueItem["stackra"]>().toEqualTypeOf<StackraPackageField>();
     expectTypeOf<CataloguePage["next"]>().toEqualTypeOf<string | null>();
     expectTypeOf<ItemsLock["lockfileVersion"]>().toEqualTypeOf<1>();
-    expectTypeOf<ItemsLockEntry["kind"]>().toEqualTypeOf<"skill" | "agent" | "mcp" | "plugin">();
+    expectTypeOf<ItemsLockEntry["kind"]>().toEqualTypeOf<
+      "skill" | "agent" | "mcp" | "plugin" | "contract"
+    >();
   });
 });

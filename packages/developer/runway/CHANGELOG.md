@@ -1,5 +1,44 @@
 # @stackra/runway
 
+## 0.4.0
+
+### Minor Changes
+
+- d065062: Add a local edge for a built web surface (STA-1676). `@stackra/runway`: `LocalEdgeKvDriver`, a file-backed
+  `EdgeKvWriter`; `previewServe`, which writes the bundle's `release:` and the shell's `shell:` rows into it with every URL
+  on its own origin and serves on 127.0.0.1 as the edge Worker does (the shell page with its import map and startup
+  record, the bundle and shell files, and an API proxy for `/api` or given prefixes); `renderShellPage`; and `releaseOf`,
+  now shared with `publishProduct`. `@stackra/cli`: `stackra preview serve --surface <key> [--port] [--api]
+  [--api-prefix] [--region]`.
+
+### Patch Changes
+
+- 1a09488: Two surfaces whose hosts resolve to one name in an environment are refused as `host_collision`, naming the host, the
+  environment and both surfaces: `checkHosts(root)`, applied by `parseRunway("root")` (so `stackra validate` and
+  `runway plan` fail) and by `platformRows`, where the second surface used to overwrite the first one's edge KV row
+  (STA-1796).
+- d63eb09: `deployPlan` gives each member's runtime secrets their own folder, `<runtime path>/<member>` (for example
+  `/runtime/web`), as ADR 0512 and ADR 0371 decision 3 require (STA-1867).
+- 2e94f1e: The shell release row now carries the shell's own stylesheets (STA-1681): `shellReleaseOf` adds `css` from
+  `dist/shell.json` as URLs on the asset store, so the edge Worker's page (and the local edge's) links them before the
+  bundle's.
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/app@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

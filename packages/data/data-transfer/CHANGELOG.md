@@ -1,5 +1,30 @@
 # @stackra/data-transfer
 
+## 0.4.0
+
+### Patch Changes
+
+- 8d29426: Six port `~key` brands name the member key (`data_transfer.TabularWriter`, `market_packs.PackStore`,
+  `native_spotlight.DeviceSearchIndex`, …) instead of the hyphenated folder name, so `DriverName<Port>` narrows to the
+  port's drivers instead of resolving to `never`.
+- Updated dependencies [9c8d108]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [58c7da9]
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/outbox@0.4.0
+  - @stackra/support@0.4.0
+  - @stackra/filesystem@0.4.0
+  - @stackra/errors@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

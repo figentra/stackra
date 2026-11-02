@@ -37,6 +37,24 @@ describe("DEV_COMMAND", () => {
     expect(DEV_COMMAND.usage).toContain("--surface <surface>");
   });
 
+  it("takes --tunnel in every mode and refuses it without the tunnel token, before any dev run", async () => {
+    expect(DEV_COMMAND.usage).toContain("--tunnel");
+    const saved = process.env["CLOUDFLARE_TUNNEL_TOKEN"];
+    delete process.env["CLOUDFLARE_TUNNEL_TOKEN"];
+    try {
+      for (const args of [
+        ["dev", "--tunnel"],
+        ["dev", "--surface", "console", "--tunnel"],
+      ]) {
+        const { io, output } = captureIo();
+        expect(await runCli(args, io, { cwd: root })).toBe(2);
+        expect(output()).toContain("--tunnel needs CLOUDFLARE_TUNNEL_TOKEN");
+      }
+    } finally {
+      if (saved !== undefined) process.env["CLOUDFLARE_TUNNEL_TOKEN"] = saved;
+    }
+  });
+
   it("refuses a surface flag without --surface", async () => {
     const { io, output } = captureIo();
     expect(await runCli(["dev", "--os", "../os"], io, { cwd: root })).toBe(2);
