@@ -9,7 +9,9 @@
  *          `StampSubscriber`, the `AppendOnlySubscriber` (stackra-256), the trait subscribers of `traitSubscribers`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` and, when bound, the `KeyProvider` its blind indexes need (when a model, own or a declared package's, has
  *          `HasEncryptedFields`; stackra-262) and the outbox writer among its subscribers,
  *          `segments.connect(container)`, `AutomationService#connect` (so a published automation's principal is checked
- *          against its scope, ADR 0495, when the service runs `@stackra/workflow`), `EventBus#connect` and
+ *          against its scope, ADR 0495, when the service runs `@stackra/workflow`), `QueueWorkerService#connect` (so a
+ *          job a generated Encore subscription delivers, or `queue:work` reserves, runs through the pipeline, when the
+ *          service runs `@stackra/queue`; STA-2046), `EventBus#connect` and
  *          `InboxService#connect` (the
  *          registered listeners and relays, disconnected when the signal aborts), the live queries' refresh (one
  *          `liveQueryRoutes` call per query with `cache.invalidateOn`, each route subscribed on the bus and sent through
@@ -17,7 +19,7 @@
  *          the relay's `work` loop until the signal aborts. A signal already aborted when `boot` starts connects
  *          nothing; one that aborts while the database connects disconnects the bus and inbox at once.
  * Boundary: pure. Each step is written only when the service runs its package (`@stackra/database` or a model,
- *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`, `@stackra/workflow`); nothing to connect means no file. The connection
+ *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`, `@stackra/workflow`, `@stackra/queue`); nothing to connect means no file. The connection
  *           strings are the runtime's (Encore's database, and `DATABASE_REPLICA_URLS` when the runtime provides
  *           one; runway does not set it for `readReplica` yet: Runway plan PR 10/11, STA-2001), never logged; `@stackra/app/server` calls `boot` once it hands the entry its container.
  * Runtime: isomorphic
@@ -121,9 +123,11 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   const outbox = uses("@stackra/outbox");
   const segments = uses("@stackra/segments");
   const workflow = uses("@stackra/workflow");
+  // The worker runs each delivered or reserved job through the container's pipeline (ADR 0148 decision 6, STA-2046).
+  const queue = uses("@stackra/queue");
   // The outbox depends on the bus, so a service with an outbox has one to connect.
   const events = outbox || uses("@stackra/events");
-  if (!database && !outbox && !segments && !workflow && !events) return undefined;
+  if (!database && !outbox && !segments && !workflow && !queue && !events) return undefined;
   // Live queries refresh their clients through realtime after each invalidating event commits (ADR 0315 decision 1).
   const live = events && uses("@stackra/realtime") ? liveQueryRows(built) : [];
 
@@ -171,6 +175,10 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   if (workflow) {
     imports.push('import { AutomationService } from "@stackra/workflow/node";');
     steps.push("  container.get(AutomationService).connect(container);");
+  }
+  if (queue) {
+    imports.push('import { QueueWorkerService } from "@stackra/queue/node";');
+    steps.push("  container.get(QueueWorkerService).connect(container);");
   }
   if (events) {
     imports.push(
