@@ -5,7 +5,8 @@
  *          (`src/node/database/migrations/`, for its migration check, STA-1689) and those its declared packages ship
  *          (`src/node/database/migrations/`), compiles each with the member's own `@stackra/database`
  *          `compileMigration` (macros: the member's `database/macros/*.macro.ts` and every `Macro` a declared package
- *          exports from its `./node` entry), orders them across members (`orderMigrations`, `Migration({ after })`
+ *          exports from its `./node` entry, recognised by `isMacroClass` whichever peer copy of `@stackra/database` it
+ *          extends, STA-2006; a compile error from a macro no one supplied names those collected, `macroHint`), orders them across members (`orderMigrations`, `Migration({ after })`
  *          resolved there) and returns the `.stackra/migrations` files (`emitMigrations`).
  * Boundary: imports the migration and macro files (Node 24 strips their types; `loadSourceModule` strips those of a
  *           package installed from the registry into `.stackra/cache`) and the member's `@stackra/database`, resolved
@@ -23,6 +24,8 @@ import { createRequire } from "node:module";
 import { dirname, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { isMacroClass } from "#core/functions/is-macro-class.function";
+import { macroHint } from "#core/functions/macro-hint.function";
 import { checkAppendOnly } from "#core/functions/check-append-only.function";
 import { emitMigrations } from "#core/functions/emit-migrations.function";
 import { folderKey } from "#core/functions/folder-key.function";
@@ -46,7 +49,6 @@ interface DatabaseEntry {
       readonly macros?: readonly unknown[];
     },
   ) => { readonly after: readonly string[]; readonly steps: MigrationUnit["steps"] };
-  readonly Macro: abstract new () => unknown;
 }
 
 /** A migration file found on disk. */
@@ -205,12 +207,10 @@ export async function compileMigrations(
     };
   }
   const errors: GenError[] = [];
-  const isMacro = (value: unknown): boolean =>
-    typeof value === "function" && value.prototype instanceof database.Macro;
   const macros: unknown[] = [];
   for (const path of macroFiles) {
     try {
-      macros.push(...Object.values(await load(path)).filter(isMacro));
+      macros.push(...Object.values(await load(path)).filter(isMacroClass));
     } catch (error) {
       errors.push(
         refusal(
@@ -226,7 +226,7 @@ export async function compileMigrations(
   for (const { name, base } of macroPackages) {
     try {
       const resolve = createRequire(join(base, "package.json")).resolve;
-      macros.push(...Object.values(await load(resolve(`${name}/node`))).filter(isMacro));
+      macros.push(...Object.values(await load(resolve(`${name}/node`))).filter(isMacroClass));
     } catch (error) {
       errors.push(
         refusal(
@@ -286,12 +286,13 @@ export async function compileMigrations(
         steps: compiled.steps,
       });
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       errors.push(
         refusal(
           "migration_compile_failed",
           migration.file,
           migration.id,
-          `${migration.id} does not compile: ${error instanceof Error ? error.message : String(error)}`,
+          `${migration.id} does not compile: ${message}${macroHint(message, macros)}`,
           "fix the migration as the message says; an applied migration is frozen, so fix it in a new one",
         ),
       );

@@ -233,6 +233,10 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     PLAYWRIGHT: pins.playwright ?? "",
     POSTGRES: pins.postgresImage ?? "",
   };
+  // A component or recipe is a version: new inputs replace it, and because its `name` stays the same the provider
+  // replaces it delete-first. AWS refuses to delete a version an image was built from, so the old versions are kept
+  // in AWS and only leave the state (STA-1953). They cost nothing and old images keep their provenance.
+  const versioned: pulumi.CustomResourceOptions = { ...opts, retainOnDelete: true };
   const components = inputs.components.map(
     (source) =>
       new aws.imagebuilder.Component(
@@ -247,7 +251,7 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
           ),
           tags,
         },
-        { ...opts, dependsOn: uploaded },
+        { ...versioned, dependsOn: uploaded },
       ),
   );
   const recipe = new aws.imagebuilder.ImageRecipe(
@@ -278,7 +282,7 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
       ],
       tags,
     },
-    opts,
+    versioned,
   );
   const infrastructure = new aws.imagebuilder.InfrastructureConfiguration(
     "testbed",

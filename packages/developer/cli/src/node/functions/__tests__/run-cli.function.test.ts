@@ -97,6 +97,26 @@ describe("runCli", () => {
     });
   });
 
+  it("hands a passthrough command its arguments untouched, --help and unknown options included", async () => {
+    const raw: CliCommand = {
+      name: "raw",
+      summary: "Raw",
+      usage: "stackra raw",
+      passthrough: true,
+      run: async ({ positionals, io }) => {
+        io.out(`${JSON.stringify(positionals)}\n`);
+        return 0;
+      },
+    };
+    const { io, output } = captureIo();
+    const code = await runCli(["raw", "--help", "--any", "x", "--", "y"], io, {
+      cwd: "/repo",
+      commands: [raw],
+    });
+    expect(code).toBe(0);
+    expect(JSON.parse(output())).toEqual(["--help", "--any", "x", "--", "y"]);
+  });
+
   it("turns any other error into 1", async () => {
     expect(await run(["fail"])).toEqual({ code: 1, output: "stackra fail: boom\n" });
   });

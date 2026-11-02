@@ -87,6 +87,7 @@ describe("@stackra/runway/node", () => {
       "dryRunCommand",
       "easJsonOf",
       "exportSourceOf",
+      "fileDeployLock",
       "launchCheckJob",
       "onboardMobile",
       "platformRows",
