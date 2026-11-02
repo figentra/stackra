@@ -7,4 +7,5 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { nodePorts } from "#node/functions/node-ports.function";
+export { tarballSpecs } from "#node/functions/tarball-specs.function";
 export { terminalPrompter } from "#node/functions/terminal-prompter.function";

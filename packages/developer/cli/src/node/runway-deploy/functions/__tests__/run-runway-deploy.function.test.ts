@@ -119,4 +119,38 @@ describe("runRunwayDeploy", () => {
       "cloudflare-workers",
     ]);
   });
+
+  it("refuses an environment whose runway declares an approval unless --approved is passed", async () => {
+    const gated = {
+      ...ROOT,
+      environments: {
+        production: {
+          ...ROOT.environments.production,
+          deploy: { on: "merge-to-main", approval: "github-environment" },
+        },
+      },
+    } as RootRunway;
+    vi.mocked(readRunway).mockReturnValue(gated);
+    await expect(run({ env: "production", sha: SHA }).code).rejects.toThrow(
+      "production deploys only after its approval (github-environment)",
+    );
+    expect(deploy).not.toHaveBeenCalled();
+    expect(await run({ env: "production", sha: SHA, approved: true }).code).toBe(0);
+    expect(deploy).toHaveBeenCalledTimes(1);
+  });
+
+  it("still plans a gated environment on a dry run without --approved", async () => {
+    const gated = {
+      ...ROOT,
+      environments: {
+        production: {
+          ...ROOT.environments.production,
+          deploy: { on: "merge-to-main", approval: "github-environment" },
+        },
+      },
+    } as RootRunway;
+    vi.mocked(readRunway).mockReturnValue(gated);
+    expect(await run({ env: "production", sha: SHA, "dry-run": true }).code).toBe(0);
+    expect(deploy).not.toHaveBeenCalled();
+  });
 });
