@@ -1,5 +1,16 @@
 # @stackra/versioning
 
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/support@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

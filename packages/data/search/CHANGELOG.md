@@ -1,5 +1,22 @@
 # @stackra/search
 
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [fb29d41]
+  - @stackra/database@0.6.0
+  - @stackra/outbox@0.6.0
+  - @stackra/settings@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/i18n@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

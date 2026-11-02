@@ -1,5 +1,14 @@
 # @stackra/native-cash-drawer
 
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/peripherals@0.6.0
+  - @stackra/platform@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

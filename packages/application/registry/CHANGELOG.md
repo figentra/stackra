@@ -1,5 +1,13 @@
 # @stackra/registry
 
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/money@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

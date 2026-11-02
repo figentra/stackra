@@ -1,5 +1,14 @@
 # @stackra/assets
 
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/filesystem@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

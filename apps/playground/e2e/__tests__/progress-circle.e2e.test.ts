@@ -2,10 +2,12 @@
  * Stackra file contract:
  * Purpose: the progress circle route's own end-to-end checks: axe finds nothing (violations or incomplete) in light,
  *          dark, left-to-right and right-to-left; every ring is a named progressbar, the determinate ones with their
- *          value and text and the indeterminate one without; the three sizes are 20, 28 and 36 px across; every tone's
- *          arc stands 3:1 from the page in light and dark (WCAG 1.4.11, which axe does not check on SVG); an arc is as
- *          long as its value; an indeterminate ring spins only without reduced motion; the ring never mirrors; and the
- *          advance-and-reset example works from the keyboard, updates the value and announces its completion.
+ *          value and text and the indeterminate one without; the three sizes draw a 3×3 cell of dots 20, 28 and 36 px
+ *          across; every tone's filled dots take the tone and stand 3:1 from the page in light and dark (WCAG 1.4.11),
+ *          the accent's leading dot in the theme's core; a value fills its share of the nine dots in floor order, each
+ *          row from the inline start in both directions; an indeterminate cell builds its dots only without reduced
+ *          motion and rests fully lit with it (STA-2017's dot loader); and the advance-and-reset example works from the
+ *          keyboard, updates the value and announces its completion.
  * Boundary: the production build under `vite preview`; Chromium only.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 5); ADR 0312; WCAG 2.2 SC 1.4.11, 2.3.3 and 4.1.2; ADR 0182 (test tiers);
@@ -23,9 +25,6 @@ const SIZES = { sm: 20, md: 28, lg: 36 } as const;
 const TONES = ["default", "accent", "success", "warning", "danger"] as const;
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
-/** The circumference of HeroUI's ring: radius 16 in a 36-unit box. */
-const CIRCUMFERENCE = 2 * Math.PI * 16;
-
 const open = async (
   page: Page,
   scheme: string,
@@ -40,7 +39,7 @@ const open = async (
 };
 
 /** A computed colour as `#rrggbb`, drawn on a canvas so any CSS colour form (oklch, `color-mix`) reads. */
-const painted = (locator: Locator, property: "backgroundColor" | "stroke") =>
+const painted = (locator: Locator, property: "backgroundColor") =>
   locator.evaluate((element, name) => {
     const context = document.createElement("canvas").getContext("2d");
     if (!context) throw new Error("no 2d canvas");
@@ -51,6 +50,28 @@ const painted = (locator: Locator, property: "backgroundColor" | "stroke") =>
     const [red = 0, green = 0, blue = 0] = context.getImageData(0, 0, 1, 1).data;
     return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
   }, property);
+
+/** A CSS colour value (a theme variable, say) resolved where `locator` sits, then painted as `#rrggbb`. */
+const paintedValue = (locator: Locator, value: string) =>
+  locator.evaluate((element, css) => {
+    const probe = document.createElement("span");
+    probe.style.color = css;
+    element.append(probe);
+    const resolved = getComputedStyle(probe).color;
+    probe.remove();
+    const context = document.createElement("canvas").getContext("2d");
+    if (!context) throw new Error("no 2d canvas");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, 1, 1);
+    context.fillStyle = resolved;
+    context.fillRect(0, 0, 1, 1);
+    const [red = 0, green = 0, blue = 0] = context.getImageData(0, 0, 1, 1).data;
+    return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+  }, value);
+
+/** The dots of a ring's cell, lit or not. */
+const dotsOf = (ring: Locator) => ring.locator('[data-slot="dot"]');
+const litOf = (ring: Locator) => ring.locator('[data-slot="dot"][data-lit]');
 
 for (const scheme of SCHEMES)
   for (const locale of LOCALES)
@@ -101,11 +122,11 @@ test("a ring draws no text of its own", async ({ page }) => {
   await expect(page.locator('section#usage [data-size="md"]')).toHaveText("");
 });
 
-test("the three sizes are 20, 28 and 36 px across", async ({ page }) => {
+test("the three sizes draw a cell 20, 28 and 36 px across", async ({ page }) => {
   await open(page, "light", "en");
   for (const [size, pixels] of Object.entries(SIZES)) {
     const box = await page
-      .locator(`section#usage [data-size="${size}"] .progress-circle__track`)
+      .locator(`section#usage [data-size="${size}"] [data-slot="dot-grid"]`)
       .boundingBox();
     if (!box) throw new Error(`no box for ${size}`);
     expect(box.width, size).toBeCloseTo(pixels, 0);
@@ -114,50 +135,79 @@ test("the three sizes are 20, 28 and 36 px across", async ({ page }) => {
 });
 
 for (const scheme of SCHEMES)
-  test(`every tone's arc stands 3:1 from the page in ${scheme}`, async ({ page }) => {
+  test(`every tone's dots stand 3:1 from the page in ${scheme}`, async ({ page }) => {
     await open(page, scheme, "en");
     const background = await painted(page.locator("body"), "backgroundColor");
     const failures: string[] = [];
     for (const tone of TONES) {
-      const arc = page.locator(`[data-tone="${tone}"] .progress-circle__fill-circle`);
-      const ratio = contrastRatio(await painted(arc, "stroke"), background);
+      // 60 per cent lights six of nine; the first lit in document order is the middle row's start, not the leading
+      // dot, so it takes the tone even where the leading dot is the core.
+      const dot = litOf(page.locator(`[data-tone="${tone}"]`)).first();
+      const color = await painted(dot, "backgroundColor");
+      expect(color, tone).toBe(
+        await paintedValue(dot, `var(--${tone === "default" ? "foreground" : tone})`),
+      );
+      const ratio = contrastRatio(color, background);
       if (ratio < 3) failures.push(`${tone} ${ratio.toFixed(2)}`);
     }
     expect(failures, `tones under 3:1 in ${scheme}: tone, ratio`).toEqual([]);
   });
 
-test("an arc is as long as its value", async ({ page }) => {
+test("the accent ring's leading dot is the theme's core, or its accent without one", async ({
+  page,
+}) => {
   await open(page, "light", "en");
-  for (const step of [0, 25, 50, 75, 100]) {
-    const offset = await page
-      .locator(`[data-value="${step}"] .progress-circle__fill-circle`)
-      .getAttribute("stroke-dashoffset");
-    expect(Number(offset), `${step}%`).toBeCloseTo(CIRCUMFERENCE * (1 - step / 100), 2);
+  // At 60 the sixth dot in floor order leads: the middle row's inline end, the third lit in document order.
+  const leading = litOf(page.locator('[data-tone="accent"]')).nth(2);
+  expect(await painted(leading, "backgroundColor")).toBe(
+    await paintedValue(leading, "var(--core, var(--accent))"),
+  );
+});
+
+test("a value fills its share of the nine dots", async ({ page }) => {
+  await open(page, "light", "en");
+  // Each value rounds up to whole dots of nine: 25 lights 3, 75 lights 7.
+  for (const [step, lit] of [
+    [0, 0],
+    [25, 3],
+    [50, 5],
+    [75, 7],
+    [100, 9],
+  ] as const) {
+    const ring = page.locator(`[data-value="${step}"]`);
+    await expect(dotsOf(ring), `${step}%`).toHaveCount(9);
+    await expect(litOf(ring), `${step}%`).toHaveCount(lit);
   }
 });
 
-test("the indeterminate ring spins, and stands still under reduced motion", async ({ page }) => {
-  const animationName = () =>
-    page
-      .locator("[data-indeterminate] .progress-circle__track")
-      .evaluate((node) => getComputedStyle(node).animationName);
+test("the indeterminate cell builds its dots, and rests fully lit under reduced motion", async ({
+  page,
+}) => {
+  const lit = () => litOf(page.locator("[data-indeterminate]")).count();
   await open(page, "light", "en", "reduce");
-  expect(await animationName()).toBe("none");
+  expect(await lit()).toBe(9);
   await open(page, "light", "en", "no-preference");
-  expect(await animationName()).not.toBe("none");
+  const first = await lit();
+  // Polled across a whole 1280 ms loop, since the 400 ms hold can repeat a count.
+  await expect.poll(lit, { timeout: 1500 }).not.toBe(first);
 });
 
-test("a ring never mirrors in right-to-left", async ({ page }) => {
-  const arc = async (locale: string) => {
+for (const locale of LOCALES)
+  test(`a row fills from the inline start in ${locale}`, async ({ page }) => {
     await open(page, "light", locale);
-    const fill = page.locator('[data-value="25"] .progress-circle__fill-circle');
-    return {
-      transform: await fill.getAttribute("transform"),
-      offset: await fill.getAttribute("stroke-dashoffset"),
-    };
-  };
-  expect(await arc("ar")).toEqual(await arc("en"));
-});
+    // At 50 the bottom row is full and the middle row has two of three lit (STA-2017 FR-006).
+    const middle = await dotsOf(page.locator('[data-value="50"]')).evaluateAll((nodes) =>
+      nodes.slice(3, 6).map((node) => ({
+        isLit: node.hasAttribute("data-lit"),
+        x: node.getBoundingClientRect().x,
+      })),
+    );
+    const lit = middle.filter((dot) => dot.isLit).map((dot) => dot.x);
+    const unlit = middle.filter((dot) => !dot.isLit).map((dot) => dot.x);
+    expect(lit).toHaveLength(2);
+    if (locale === "en") expect(Math.max(...lit)).toBeLessThan(Math.min(...unlit));
+    else expect(Math.min(...lit)).toBeGreaterThan(Math.max(...unlit));
+  });
 
 test("the example advances from the keyboard, updates the value and announces the end", async ({
   page,
