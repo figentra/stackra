@@ -12,12 +12,14 @@ import { buttonVariants, cn } from "@heroui/react";
 
 import type { ButtonVariant } from "#contracts/enums/button-variant.enum";
 import type { Size } from "#contracts/enums/size.enum";
+import { heroButtonVariant } from "#react/button/hero-button-variant.function";
 
 /** HeroUI's button classes for `variant` and `size`, glass drawn as ghost plus `button--glass`. */
 export function glassButtonClasses(variant: ButtonVariant, size?: Size): string {
   const look = buttonVariants({
-    variant: variant === "glass" ? "ghost" : variant,
+    variant: heroButtonVariant(variant),
     ...(size === undefined ? {} : { size }),
   });
-  return variant === "glass" ? (cn(look, "button--glass") ?? look) : look;
+  if (variant === "glass") return cn(look, "button--glass") ?? look;
+  return variant === "core" ? (cn(look, "button--core") ?? look) : look;
 }

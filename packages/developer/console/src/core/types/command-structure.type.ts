@@ -28,6 +28,15 @@ export interface CommandStructure {
   /** A package's own bin command, never contributed to a host. */
   readonly bin: boolean;
 
+  /** The heading of the command list it sits under, when the command names one. */
+  readonly group?: string;
+
+  /** Its docs link, when it has one. */
+  readonly docs?: string;
+
+  /** Complete invocations its help shows. */
+  readonly examples: readonly string[];
+
   /** Its positional fields, in order. */
   readonly arguments: readonly CommandField[];
 

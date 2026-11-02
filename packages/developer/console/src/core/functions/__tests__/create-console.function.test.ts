@@ -5,10 +5,12 @@
  *          error screen and `--json`.
  * Boundary: unit test in-process; no terminal.
  * Runtime: node
- * Governing contract: STA-1730 spec FR-008, FR-012 to FR-016, FR-019, FR-022, FR-023, FR-025 and SC-003; ADR 0022.
+ * Governing contract: STA-1730 spec FR-008, FR-012 to FR-016, FR-019, FR-022, FR-023, FR-025 and SC-003; STA-1966
+ *                     spec FR-013 to FR-015; ADR 0022.
  */
 // @covers sta-1730:FR-008 sta-1730:FR-012 sta-1730:FR-013 sta-1730:FR-014 sta-1730:FR-016 sta-1730:FR-019
 // @covers sta-1730:FR-022 sta-1730:FR-023 sta-1730:FR-025 sta-1730:SC-003
+// @covers sta-1966:FR-013 sta-1966:FR-014 sta-1966:FR-015
 import { Int } from "@stackra/validation";
 
 import { Command } from "#core/bases/command.base";
@@ -99,7 +101,30 @@ class CancelCommand extends Command({
   }
 }
 
-const COMMANDS = [GreetCommand, AskCommand, ExitCommand, BoomCommand, WaitCommand, CancelCommand];
+/** Counts its runs; grouped, with examples and a docs link. */
+class DoctorCommand extends Command({
+  name: "doctor",
+  description: "Check the machine",
+  group: "Machine",
+  docs: "https://stackra.dev/cli/doctor",
+  examples: ["acme doctor --json"],
+}) {
+  static runs = 0;
+
+  handle() {
+    DoctorCommand.runs += 1;
+  }
+}
+
+const COMMANDS = [
+  GreetCommand,
+  AskCommand,
+  ExitCommand,
+  BoomCommand,
+  WaitCommand,
+  CancelCommand,
+  DoctorCommand,
+];
 const run = (argv: string[], options?: Parameters<typeof runCommandForTest>[2]) =>
   runCommandForTest({ name: "acme", version: "1.2.3", commands: COMMANDS }, argv, options);
 
@@ -112,6 +137,36 @@ describe("createConsole", () => {
     expect(result.stdout).toMatch(/ ask\n\s+ask:name\s+Ask a name/);
     expect(result.stdout).not.toContain("exit");
     expect(result.stdout).not.toContain("|___/");
+  });
+
+  it("starts the list with the name and version off a terminal, and groups by group", async () => {
+    const result = await run([]);
+    expect(result.stdout.split("\n")[0]).toBe("Stackra 1.2.3");
+    expect(result.stdout).toMatch(/ Machine\n\s+doctor\s+Check the machine/);
+    expect(result.stdout).toContain('Run "acme help <command>"');
+  });
+
+  it("prints help for `help <cmd>` and `--help` without running the command", async () => {
+    DoctorCommand.runs = 0;
+    for (const argv of [
+      ["help", "doctor"],
+      ["doctor", "--help"],
+      ["doctor", "-h"],
+    ]) {
+      const result = await run(argv);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("acme doctor [options]");
+      expect(result.stdout).toContain("Examples:");
+      expect(result.stdout).toContain("acme doctor --json");
+      expect(result.stdout).toContain("Docs: https://stackra.dev/cli/doctor");
+    }
+    expect(DoctorCommand.runs).toBe(0);
+  });
+
+  it("returns 2 for `help` with an unknown name, naming the closest", async () => {
+    const result = await run(["help", "docter"]);
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Did you mean doctor?");
   });
 
   it("shows the banner on a colour terminal, in true colour", async () => {
