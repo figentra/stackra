@@ -92,8 +92,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
 
+      # Gen runs in the member only: a turbo `test` pulls in //#gen:workspace, which covers every member, and the
+      # playground left out of the install above cannot resolve its kind bases there (STA-1951). Builds need no gen.
       - name: Test and build
-        run: pnpm turbo run test build --filter=@stackra/infra-testbed
+        run: |
+          pnpm turbo run build --filter=@stackra/infra-testbed... --filter=@stackra/cli...
+          (cd packages/infrastructure/infra-testbed && node ../../developer/cli/dist/stackra.mjs gen)
+          pnpm --filter @stackra/infra-testbed test
 
       - name: AWS (GitHub OIDC)
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
