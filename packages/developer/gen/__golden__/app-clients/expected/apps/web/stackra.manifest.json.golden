@@ -26,6 +26,7 @@
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "roles": [],
   "blocks": [],
   "routes": [],
   "schemas": {}

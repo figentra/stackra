@@ -94,14 +94,24 @@
     },
     // `stackra gen` once at the root (`gen:workspace`) over every member with a stackra.config.ts. One root task, not
     // one per member: its two passes resolve the services' clients against each other's manifests, which a per-member
-    // graph cannot (a client cycle between services is allowed). It runs the built CLI, so it waits only for
-    // @stackra/cli's build (and through ^build its dependencies'); build never waits for gen, which keeps the graph
-    // acyclic for @stackra/cli, @stackra/gen and their dependencies, whose own tests still wait for gen.
+    // graph cannot (a client cycle between services is allowed). It runs the built CLI, so it waits for @stackra/cli's
+    // build (and through ^build its dependencies'). It also loads built code while compiling migrations: the
+    // `./node` entry of every package that ships migration macros and @stackra/database itself, so it waits for those
+    // builds too, or a filtered run fails with migration_load_failed. A new package with `database/macros` joins the
+    // list. Build never waits for gen, which keeps the graph acyclic (a package build reads its generated tsdown
+    // config only when present, and its own `library()` keys win); @stackra/cli's and @stackra/gen's tests wait on gen.
     // @stackra/testing keeps an authored vitest config that does not merge the generated one: the generated setup
     // imports @stackra/container/testing, which would close a dependency cycle with it (STA-1299).
     "//#gen:workspace": {
       "description": "Generate every member's .stackra/ (tool configs, wiring, schemas, entries) and manifest with the built `stackra` CLI.",
-      "dependsOn": ["@stackra/cli#build"],
+      "dependsOn": [
+        "@stackra/cli#build",
+        "@stackra/database#build",
+        "@stackra/access-log#build",
+        "@stackra/iam#build",
+        "@stackra/search#build",
+        "@stackra/tenancy#build",
+      ],
       "inputs": [
         "runway.yaml",
         "{apps,services,workers}/*/{src,assets}/**",

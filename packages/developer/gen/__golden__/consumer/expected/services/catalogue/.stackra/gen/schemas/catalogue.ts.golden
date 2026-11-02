@@ -32,6 +32,12 @@ export const PublishCatalogueOutput$ = z.object({
   status: CatalogueStatus$.default("live"),
 });
 export type PublishCatalogueOutput$Check = Assert<Same<z.output<typeof PublishCatalogueOutput$>, Fields<PublishCatalogueOutput>>>;
+declare module "#node/schemas/publish-catalogue-output.schema" {
+  interface PublishCatalogueOutput {
+    readonly "~defaults"?: "status";
+  }
+}
+
 
 /** action `PublishCatalogueAction` (src/node/actions/publish-catalogue.action.ts): the schemas of its `handle`. */
 export const PublishCatalogueAction$ = { input: PublishCatalogueInput$, output: PublishCatalogueOutput$ } as const;

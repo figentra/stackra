@@ -6,6 +6,7 @@
  *           `CorsConfig` (`app.cors`) and `apiCacheControl`, never from this file.
  * Runtime: node
  */
+import "./database";
 import { apiCacheControl, CorsConfig, corsHeaders } from "@stackra/app/server";
 import type { Container } from "@stackra/container";
 import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";
