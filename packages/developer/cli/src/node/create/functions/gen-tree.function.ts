@@ -80,17 +80,17 @@ export function genTree(paths: readonly string[]): TreeNode[] {
   }
   return sorted([...members.keys()]).map((member) => ({
     label: member,
-    children: [...(members.get(member) ?? new Map()).entries()].map(
-      ([label, { note, files }]): TreeNode => {
-        const name = NAMED[label];
-        return {
-          label,
-          note: name === undefined ? note : [...new Set(files.map(name))].join(", "),
-          ...(files.length > 1
-            ? { count: files.length, children: sorted(files).map((file) => ({ label: file })) }
-            : {}),
-        };
-      },
-    ),
+    children: [
+      ...(members.get(member) ?? new Map<string, { note: string; files: string[] }>()).entries(),
+    ].map(([label, { note, files }]): TreeNode => {
+      const name = NAMED[label];
+      return {
+        label,
+        note: name === undefined ? note : [...new Set(files.map(name))].join(", "),
+        ...(files.length > 1
+          ? { count: files.length, children: sorted(files).map((file) => ({ label: file })) }
+          : {}),
+      };
+    }),
   }));
 }

@@ -125,9 +125,9 @@ describe("runCli", () => {
   });
 
   it("refuses an unknown command with 2, naming the closest", async () => {
-    const { code, output } = await run(["ech"]);
+    const { code, output } = await run(["ecko"]);
     expect(code).toBe(2);
-    expect(output).toContain("ech");
+    expect(output).toContain("ecko");
     expect(output).toContain("echo");
   });
 
