@@ -21,6 +21,12 @@ export const ShopOptions$ = z.object({
   gateway: z.enum(["manual","stripe"]).default("stripe"),
 });
 export type ShopOptions$Check = Assert<Same<Omit<z.output<typeof ShopOptions$>, "gateway">, Omit<Fields<ShopOptions>, "gateway">>>;
+declare module "#core/schemas/shop-options.schema" {
+  interface ShopOptions {
+    readonly "~defaults"?: "gateway";
+  }
+}
+
 
 /** integration_event `OrderPaid` (src/node/events/order-paid.event.ts). */
 export const OrderPaid$ = z.object({
@@ -35,6 +41,12 @@ export const CancelOrderInput$ = z.object({
   attempts: z.number().int().min(1).max(5).default(1),
 });
 export type CancelOrderInput$Check = Assert<Same<z.output<typeof CancelOrderInput$>, Fields<CancelOrderInput>>>;
+declare module "#node/schemas/cancel-order-input.schema" {
+  interface CancelOrderInput {
+    readonly "~defaults"?: "attempts";
+  }
+}
+
 
 /** schema `CancelOrderOutput` (src/node/schemas/cancel-order-output.schema.ts). */
 export const CancelOrderOutput$ = z.object({
@@ -42,6 +54,12 @@ export const CancelOrderOutput$ = z.object({
   cancelledAt: isoDateTime().nullable(),
 });
 export type CancelOrderOutput$Check = Assert<Same<z.output<typeof CancelOrderOutput$>, Fields<CancelOrderOutput>>>;
+declare module "#node/schemas/cancel-order-output.schema" {
+  interface CancelOrderOutput {
+    readonly "~defaults"?: "status";
+  }
+}
+
 
 /** config `ShopConfig` (src/config/shop.config.ts): the schema of its `Config({ schema })`. */
 export const ShopConfig$ = ShopOptions$;

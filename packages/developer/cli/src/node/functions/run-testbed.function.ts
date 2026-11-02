@@ -3,12 +3,15 @@
  * Purpose: `runTestbed(request, deps, io)`, every `stackra testbed` verb: `run` (claim a slot, prepare the job
  *          directory, rsync into it, run the command under the box's lock, retry on exit 75, 73 and a lost light box,
  *          scale the group when every slot stays busy, dispatch the GitHub fallback), `status`, `unlock`, `ip`, `ssh`,
- *          `sync`, `scale` and `image`. It replaces the Mac script `ci-box`.
+ *          `sync`, `scale` and `image`. It replaces the Mac script `ci-box`. A box is reached by SSH through SSM
+ *          Session Manager (`ProxyCommand`, `AWS-StartSSHSession`, the instance id), so the security group needs no
+ *          inbound rule; `--ssh-direct` reaches the public IP and swaps this machine's address into the allowlist.
  * Boundary: starts only `aws`, `ssh`, `rsync` and `gh`, through `deps`, without a shell; the only text a box shell
  *           sees is single-quoted. It never reads, prints or passes a secret value (the key is a file path), and it
  *           never runs a job on the Mac.
  * Runtime: node
- * Governing contract: ADR 0484 (the testbed); the agent contract in the testbed spec; ADR 0282 (decision 3).
+ * Governing contract: ADR 0484 (the testbed); the agent contract in the testbed spec; ADR 0282 (decision 3); STA-1953
+ *                     (SSM access).
  */
 import { resolve } from "node:path";
 
@@ -83,9 +86,13 @@ export async function runTestbed(
     return out.code === 0 ? parseTestbedBoxes(out.stdout) : [];
   };
 
+  // A box is reached through SSM Session Manager by its instance id, so no inbound port 22 and no allowlist; a Mac
+  // behind WARP has no stable public IP (STA-1953). `--ssh-direct` keeps the public-IP path and its allowlist.
+  const direct = settings.sshDirect === true;
+
   // The SSH allowlist is this Mac's public IP; when it changes, swap the rule (once per run, one region).
   const allowMe = async (): Promise<void> => {
-    if (allowlisted) return;
+    if (allowlisted || !direct) return;
     allowlisted = true;
     const ip = await deps.publicIp();
     if (ip === undefined) return;
@@ -120,15 +127,17 @@ export async function runTestbed(
     say(`SSH allowlist now ${me}`);
   };
 
+  const proxy = `aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters portNumber=%p --profile ${settings.profile} --region ${settings.region}`;
   const sshArgs = [
     "-o",
     "StrictHostKeyChecking=accept-new",
     "-o",
     "ConnectTimeout=15",
+    ...(direct ? [] : ["-o", `ProxyCommand=${proxy}`]),
     "-i",
     settings.key,
   ];
-  const target = (box: TestbedBox): string => `${settings.user}@${box.ip}`;
+  const target = (box: TestbedBox): string => `${settings.user}@${direct ? box.ip : box.id}`;
   const remote = async (box: TestbedBox, command: string): Promise<ToolOutput> => {
     await allowMe();
     return (await deps.exec("ssh", [...sshArgs, target(box), command])) ?? NOT_STARTED;
@@ -229,6 +238,12 @@ export async function runTestbed(
         return { exit: await dispatch(preset) };
       }
       if (healthy === 0) {
+        // A group at 0 (its minimum since ADR 0516) has no box to answer: start one instead of waiting for none.
+        const group = await counts(slot);
+        if (group !== undefined && group.desired === 0 && group.max > 0) {
+          await setDesired(slot, 1);
+          say(`no ${slot} box running: raised the ${slot} group to 1`);
+        }
         if (request.noWait) {
           say("no healthy testbed box");
           return { exit: TESTBED_EXIT.unhealthy };
@@ -267,7 +282,7 @@ export async function runTestbed(
       "-az",
       "--delete",
       "-e",
-      `ssh -o StrictHostKeyChecking=accept-new -i ${settings.key}`,
+      `ssh -o StrictHostKeyChecking=accept-new${direct ? "" : ` -o 'ProxyCommand=${proxy}'`} -i ${settings.key}`,
       ...TESTBED_RSYNC_EXCLUDES.flatMap((pattern) => ["--exclude", pattern]),
       `${directory}/`,
       `${target(box)}:${path}/`,
