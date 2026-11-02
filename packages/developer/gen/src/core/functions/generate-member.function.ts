@@ -31,8 +31,7 @@
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) or a recorded resource table that sorts or filters on an unindexed path
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
- *           classes (`hostResourcesOf`, `resource_duplicate`) or whose list query no consumed service exports
- *           (`emitResources`, `resource_list_unbound`, STA-1947) on the full pass only. An app that hosts the panel
+ *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) on the full pass only. An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
  *           (`formatJson`, stackra-247), so the committed manifest and openapi.json pass `oxfmt --check`.
@@ -195,9 +194,6 @@ export function generateMember(
   // An app's client tools, from its routes, resources, placements, theming, tours and anchors (ADR 0490).
   const clientTools = emitClientTools(ir);
   all.push(...clientTools.errors);
-  // The composed panel resources' route constants, for an app that hosts the panel (STA-1947).
-  const resources = emitResources(ir);
-  all.push(...resources.errors);
   if (all.length > 0) return { files: [], errors: all, manifest };
 
   const files: GeneratedFile[] = [{ path: "stackra.manifest.json", content: json(manifest) }];
@@ -273,7 +269,9 @@ export function generateMember(
     if (encore !== undefined) files.push(encore);
   files.push(...emitEncoreEvents(ir, manifest));
   files.push(...clients.files, ...emitRoutes(ir), ...emitBlocks(ir), ...expo.files);
-  if (resources.file !== undefined) files.push(resources.file);
+  // The composed panel resources' route constants, for an app that hosts the panel (STA-1947).
+  const resources = emitResources(ir);
+  if (resources !== undefined) files.push(resources);
   // The console entry, for a member with commands; a v2 service's authored main does not stop it (ADR 0506).
   const consoleEntry = emitConsoleEntry(
     ir,

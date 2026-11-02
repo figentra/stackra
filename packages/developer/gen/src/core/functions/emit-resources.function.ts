@@ -2,14 +2,16 @@
  * Stackra file contract:
  * Purpose: `emitResources`, an app's `#stackra/resources` (`.stackra/gen/resources.ts`): `Resources`, the route
  *          constants of each panel resource its dependencies record (`resource(key, { base, list, view, create,
- *          update })` of `@stackra/panel`, by the model's PascalCase name), and `resourceList`, all of them for the
- *          shell's data routes (`...resourceList.flatMap(toResource)`).
+ *          update })` of `@stackra/panel`, by the model's PascalCase name); `resourceList`, all of them for the shell's
+ *          data routes (`...resourceList.flatMap(toResource)`); and `unboundOperations`, each declared page whose
+ *          operation no consumed service's client exports, with the reason, so the gap is visible and testable.
  * Boundary: pure. Only for an app that hosts the panel and composes at least one recorded resource. The base is
  *           `/<module>/<models>` in kebab case. An operation binds the descriptor the app's generated client of a
  *           consumed service exports for that action or query key (`true` names the standard `list` or `get` read);
  *           an operation no consumed service owns is left out, so its page does not exist, and nothing is imported
- *           that the client files do not export; a list operation none owns is refused (`resource_list_unbound`), since
- *           its List page would render empty (STA-1971 tracks the standard reads gen does not write yet). Two models of one name in two modules are told apart by their module.
+ *           that the client files do not export. An unbound list is left out the same way (the entry's `list` is
+ *           `undefined`, so `toResource` routes no empty List page), never refused: a `true` list or get waits on gen
+ *           writing the standard reads (STA-1971). Two models of one name in two modules are told apart by their module.
  * Runtime: isomorphic
  * Governing contract: ADR 0164 (decisions 1 and 2); ADR 0307 (rule 5; owner decision R-56, generated route keys);
  *                     ADR 0260 (clients from the producer's manifest); STA-1947.
@@ -22,7 +24,6 @@ import { hostResourcesOf } from "#core/functions/host-resources-of.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { plural } from "#core/functions/plural.function";
 import { usesPanel } from "#core/functions/uses-panel.function";
-import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -35,20 +36,17 @@ const PAGES = [
 ] as const;
 
 /**
- * The resources file of `ir` (absent when it composes none), and `resource_list_unbound` for a resource whose list
- * operation no consumed service's client exports.
+ * The resources file of `ir`, or undefined when it composes none.
  *
  * @example
- * emitResources(consoleIr).file?.path; // ".stackra/gen/resources.ts"
+ * emitResources(consoleIr)?.path; // ".stackra/gen/resources.ts"
  */
-export function emitResources(ir: MemberIR): {
-  readonly file?: GeneratedFile;
-  readonly errors: readonly GenError[];
-} {
-  if (ir.layout !== "app" || !usesPanel(ir)) return { errors: [] };
+export function emitResources(ir: MemberIR): GeneratedFile | undefined {
+  if (ir.layout !== "app" || !usesPanel(ir)) return undefined;
   const { resources } = hostResourcesOf(ir);
-  if (resources.length === 0) return { errors: [] };
-  const errors: GenError[] = [];
+  if (resources.length === 0) return undefined;
+  // The declared pages each resource could not bind, with the reason (STA-1971 for the standard reads).
+  const unbound: [string, Record<string, string>][] = [];
 
   // The descriptor each consumed service's client exports, by action or query key (a client holds only its own).
   const refs = new Map<string, { readonly service: string; readonly name: string }>();
@@ -77,42 +75,40 @@ export function emitResources(ir: MemberIR): {
       typeof operations === "object" && operations !== null
         ? (operations as Record<string, unknown>)
         : {};
+    const gaps: Record<string, string> = {};
     const bound = PAGES.flatMap(([page, operation]) => {
       const value = declared[operation];
+      if (value === undefined || value === false) return [];
       const actionKey =
         value === true ? `${key}.${operation}@1` : typeof value === "string" ? value : undefined;
       const ref = actionKey === undefined ? undefined : refs.get(actionKey);
-      // The List page is the resource's route: without its query it would render empty, so it is refused. Another
-      // page without its operation is left out, so no route reaches it.
-      if (ref === undefined && page === "list")
-        errors.push({
-          code: "resource_list_unbound",
-          file: "package.json",
-          line: 0,
-          column: 0,
-          subject: key,
-          message: `the resource \`${key}\` lists through ${actionKey === undefined ? "no query" : `\`${actionKey}\``}, which no service this app consumes exports${value === true ? " (gen does not write the standard list read yet, STA-1971)" : ""}`,
-          fix: "consume the service that owns the list query (import from #stackra/clients/<service>), or name a query it exports in the resource's `operations.list`",
-        });
-      if (ref === undefined) return [];
+      if (ref === undefined) {
+        gaps[page] =
+          value === true
+            ? `STA-1971: gen does not write the standard ${operation} read yet`
+            : `no consumed service's client exports ${actionKey ?? "it"}`;
+        return [];
+      }
       const from = `${CLIENTS_SPECIFIER}${ref.service}`;
       imports.set(from, (imports.get(from) ?? new Map<string, boolean>()).set(ref.name, false));
       return [`${page}: ${ref.name}`];
     });
+    if (Object.keys(gaps).length > 0) unbound.push([key, gaps]);
     const base = `/${kebabCase(module)}/${kebabCase(plural(model))}`;
-    return `  ${name}: resource(${JSON.stringify(key)}, { base: ${JSON.stringify(base)}${bound.map((pair) => `, ${pair}`).join("")} }),`;
+    const call = `resource(${JSON.stringify(key)}, { base: ${JSON.stringify(base)}${bound.map((pair) => `, ${pair}`).join("")} })`;
+    // `resource()` always makes a List page; an unbound one is taken back, so no route reaches an empty list.
+    return `  ${name}: ${gaps["list"] === undefined ? call : `{ ...${call}, list: undefined }`},`;
   });
 
-  if (errors.length > 0) return { errors };
-  const file: GeneratedFile = {
+  return {
     path: ".stackra/gen/resources.ts",
     content: [
       generatedHeader({
         from: "the ui.resources of the declared packages' and consumed services' manifests",
         purpose: `the panel resources ${ir.package} composes: their route constants and operation refs.`,
         boundary:
-          "an operation is bound only when a consumed service's client exports it; the shell spreads " +
-          "`resourceList.flatMap(toResource)` into its data routes.",
+          "an operation is bound only when a consumed service's client exports it, and a page without one gets no " +
+          "route; the shell spreads `resourceList.flatMap(toResource)` into its data routes.",
         runtime: "isomorphic",
       }),
       ...importLines(imports),
@@ -125,7 +121,11 @@ export function emitResources(ir: MemberIR): {
       "/** Every composed resource, for the shell's data routes. */",
       "export const resourceList = Object.values(Resources);",
       "",
+      "/** Each declared page no consumed service's client can serve, with the reason; it gets no route. */",
+      "export const unboundOperations = {",
+      ...unbound.map(([key, gaps]) => `  ${JSON.stringify(key)}: ${JSON.stringify(gaps)},`),
+      "} as const;",
+      "",
     ].join("\n"),
   };
-  return { file, errors };
 }

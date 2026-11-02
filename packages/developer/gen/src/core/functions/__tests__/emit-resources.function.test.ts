@@ -3,7 +3,8 @@
  * Purpose: unit tests of `emitResources`, `hostResourcesOf` and `contributionsOf`: an app hosting the panel gets
  *          `Resources` with each composed resource's base path and the operation refs its consumed services' clients
  *          export (`true` reads the standard `list` or `get`), an operation no client owns left out, two models of one
- *          name told apart by module; one key from two classes is `resource_duplicate`, the same resource reached
+ *          name told apart by module, a page no client serves left out (a list too) and recorded in `unboundOperations`;
+ *          one key from two classes is `resource_duplicate`, the same resource reached
  *          twice is kept once; an app without the panel or without resources gets no file.
  * Boundary: test only; runs on the web app IR fixture with hand-written dependency and service manifests.
  * Runtime: node (vitest)
@@ -75,11 +76,10 @@ const APP: MemberIR = {
 };
 
 describe("emitResources", () => {
-  const content = emitResources(APP).file?.content ?? "";
+  const content = emitResources(APP)?.content ?? "";
 
   it("writes each resource's route constants with the operations its clients export", () => {
-    expect(emitResources(APP).file?.path).toBe(".stackra/gen/resources.ts");
-    expect(emitResources(APP).errors).toEqual([]);
+    expect(emitResources(APP)?.path).toBe(".stackra/gen/resources.ts");
     expect(content).toContain('import { resource } from "@stackra/panel";');
     expect(content).toContain(
       'import { EnrollMemberAction, ListLoyaltyAccountsQuery } from "#stackra/clients/loyalty";',
@@ -89,6 +89,9 @@ describe("emitResources", () => {
       '  LoyaltyAccount: resource("loyalty_kit.loyalty_account", { base: "/loyalty-kit/loyalty-accounts", list: ListLoyaltyAccountsQuery, create: EnrollMemberAction }),',
     );
     expect(content).toContain("export const resourceList = Object.values(Resources);");
+    expect(content).toContain(
+      'export const unboundOperations = {\n  "loyalty_kit.loyalty_account": {"view":"STA-1971: gen does not write the standard get read yet"},\n} as const;',
+    );
   });
 
   it("tells two models of one name apart by their module", () => {
@@ -111,7 +114,7 @@ describe("emitResources", () => {
           }),
         },
       ],
-    }).file?.content;
+    })?.content;
     expect(twin).toContain('  LoyaltyKitLoyaltyAccount: resource("loyalty_kit.loyalty_account"');
     expect(twin).toContain(
       '  RewardsLoyaltyAccount: resource("rewards.loyalty_account", { base: "/rewards/loyalty-accounts", list: ListLoyaltyAccountsQuery }),',
@@ -119,17 +122,19 @@ describe("emitResources", () => {
   });
 
   it("writes nothing for an app without the panel or without resources", () => {
-    expect(emitResources({ ...APP, packages: [] })).toEqual({ errors: [] });
-    expect(emitResources({ ...APP, dependencies: [] })).toEqual({ errors: [] });
+    expect(emitResources({ ...APP, packages: [] })).toBeUndefined();
+    expect(emitResources({ ...APP, dependencies: [] })).toBeUndefined();
   });
 
-  it("refuses a resource whose list query no consumed service exports, rather than an empty page", () => {
-    const { file, errors } = emitResources({ ...APP, services: [] });
-    expect(file).toBeUndefined();
-    expect(errors.map((error) => [error.code, error.subject])).toEqual([
-      ["resource_list_unbound", "loyalty_kit.loyalty_account"],
-    ]);
-    expect(errors[0]?.message).toContain("STA-1971");
+  it("composes a resource whose list no client serves, with no list route and the reason recorded", () => {
+    const alone = emitResources({ ...APP, services: [] })?.content ?? "";
+    expect(alone).toContain(
+      '  LoyaltyAccount: { ...resource("loyalty_kit.loyalty_account", { base: "/loyalty-kit/loyalty-accounts" }), list: undefined },',
+    );
+    expect(alone).not.toContain("#stackra/clients");
+    expect(alone).toContain(
+      '  "loyalty_kit.loyalty_account": {"list":"STA-1971: gen does not write the standard list read yet","view":"STA-1971: gen does not write the standard get read yet","create":"no consumed service\'s client exports loyalty_kit.account.enroll@1"},',
+    );
   });
 });
 
