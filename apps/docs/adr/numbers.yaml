@@ -1542,3 +1542,8 @@
   status: accepted
   owner: claude
   issue: STA-1965
+"0518":
+  slug: owner-row-policy-own-rows-across-tenants
+  status: accepted
+  owner: os-backend
+  issue: STA-1964
