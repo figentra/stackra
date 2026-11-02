@@ -1,6 +1,6 @@
 # Data model: cross-app event relay (STA-1910)
 
-## `outbox.deliveries` (producer, new, migration 0003 of `@stackra/outbox`)
+## `outbox.deliveries` (producer, new, migration 0005 of `@stackra/outbox`)
 
 | Column         | Type        | Rule                                                        |
 | -------------- | ----------- | ----------------------------------------------------------- |

@@ -109,6 +109,19 @@ export type StackraManifest = {
     /** The package that contributes it, on a host's row. */
     readonly from?: string;
   }[];
+  /**
+   * A producer's cross-app relay facts, by environment (ADR 0511 decisions 11 to 15, amendment of 2026-11-02): the
+   * public keys a consumer's inbox verifies its deliveries with, current first, and the consumers it delivers to (no
+   * origins); absent for a service that delivers no event to another app.
+   */
+  readonly relay?: {
+    readonly keys: Readonly<
+      Record<string, readonly { readonly id: string; readonly publicKey: string }[]>
+    >;
+    readonly subscribers: Readonly<
+      Record<string, readonly { readonly member: string; readonly events: readonly string[] }[]>
+    >;
+  };
   /** JSON Schemas of the member's shapes, by module-qualified name. */
   readonly schemas?: Json;
   /** The sections other targets add (`ui`, `settings`, `migrations`, `infra`, …). */

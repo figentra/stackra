@@ -145,7 +145,7 @@ and the deploy writes `EventsRelayConfig` into the service's environment.
 - `packages/runtime/outbox/src/core/drivers/{config-subscriber-source,ed25519-event-signer,contract-inbox-verifier,memory-delivery}.driver.ts`
 - `packages/runtime/outbox/src/core/schemas/cross-app-envelope.schema.ts`
 - `packages/runtime/outbox/src/core/constants/cross-app-defaults.constant.ts`
-- `packages/runtime/outbox/src/node/database/migrations/0003-create-deliveries.migration.ts`
+- `packages/runtime/outbox/src/node/database/migrations/0005-create-deliveries.migration.ts`
 - `packages/runtime/outbox/src/node/drivers/postgres-delivery.driver.ts`
 - `packages/runtime/outbox/src/node/services/{cross-app-fan-out,cross-app-relay,relay-inbox}.service.ts`, and
   `outbox-relay.service.ts` (one call into the fan-out)
@@ -255,7 +255,7 @@ none
 
 ## Findings for the leader
 
-- **F-1**: gen binds raw controllers (the inbound webhook route among them) and writes `answerHttp`, but no emitter
+- **F-1** (filed as STA-1955): gen binds raw controllers (the inbound webhook route among them) and writes `answerHttp`, but no emitter
   writes a per-controller Encore `api.raw` adapter, so `/webhooks/*` has no Encore endpoint either. This plan adds the
   inbox's adapter only; a general controller adapter is its own issue.
 - **F-2**: `EventEnvelope` in code still names `scope` and `meta`, while ADR 0260's 2026-11-01 note says the fields are
