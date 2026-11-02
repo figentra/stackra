@@ -101,3 +101,22 @@ describe("Heading (native)", () => {
     void (<Heading>Title</Heading>);
   });
 });
+
+// @covers sta-2016:FR-003
+describe("Heading (native): the core tone", () => {
+  it("draws a large heading in the core and a small one in core-strong", () => {
+    render(
+      <Heading level={1} tone="core">
+        Engine
+      </Heading>,
+    );
+    expect(String(propsOf()["className"])).toContain("!text-core");
+    expect(String(propsOf()["className"])).not.toContain("core-strong");
+    render(
+      <Heading level={6} tone="core">
+        Engine
+      </Heading>,
+    );
+    expect(String(propsOf()["className"])).toContain("!text-core-strong");
+  });
+});
