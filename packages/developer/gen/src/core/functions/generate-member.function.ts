@@ -61,6 +61,7 @@ import { checkSlotFills } from "#core/functions/check-slot-fills.function";
 import { checkTableIndexes } from "#core/functions/check-table-indexes.function";
 import { checkSurfaces } from "#core/functions/check-surfaces.function";
 import { hostResourcesOf } from "#core/functions/host-resources-of.function";
+import { hostRoutesOf } from "#core/functions/host-routes-of.function";
 import { formatJson } from "#core/functions/format-json.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
@@ -187,6 +188,8 @@ export function generateMember(
     ...checkTableIndexes(ir, previous),
     // One panel resource key recorded by two classes across the host's dependencies (STA-1947).
     ...(ir.layout === "app" ? hostResourcesOf(ir).errors : []),
+    // One route or menu key two owners ship, or the app's own too (STA-1947).
+    ...(ir.layout === "app" ? hostRoutesOf(ir).errors : []),
   );
   // An app's Expo config, from `defineApp`, the config classes, the lang and the icon sets (ADR 0295 decision 5).
   const expo = emitExpoConfig(ir);

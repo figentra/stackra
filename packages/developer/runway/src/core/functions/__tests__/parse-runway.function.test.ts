@@ -248,6 +248,48 @@ describe("parseRunway", () => {
     expect(service.environments.staging?.config?.["actions.stores"]).toEqual(stores);
   });
 
+  it("types the known targets, refusing a misspelt key, and leaves another destination open", () => {
+    const targets = {
+      "encore-cloud": { cloud: "aws" },
+      "cloudflare-workers": {
+        compatibilityDate: "2026-10-01",
+        observability: { headSamplingRate: 0.1 },
+        workflows: { static: "deploy-static.yml" },
+      },
+      eas: {
+        buildTrigger: "fingerprint",
+        monthlyBuildCap: 60,
+        ota: {
+          rollout: { startPercent: 10, endPercent: 100, stepHours: 24 },
+          rollback: "republish-previous",
+        },
+        minimumVersion: { gate: true, supportedStoreVersions: 2 },
+      },
+      mintlify: { deployOn: "merge-to-main", branch: "docs-site", adminKey: "MINTLIFY_ADMIN_KEY" },
+      npm: { access: "public", provenance: true, trustedPublisher: "release.yml" },
+      "vite-dev": { anything: true },
+    };
+    const root = parseRunway("root", { ...ROOT, targets });
+    expect(root.targets?.["eas"]).toMatchObject({ monthlyBuildCap: 60 });
+    expect(root.targets?.["vite-dev"]).toEqual({ anything: true });
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          targets: { ...targets, eas: { ...targets.eas, ota: { rolout: { startPercent: 10 } } } },
+        }),
+      ),
+    ).toEqual(["targets.eas.ota"]);
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          targets: { ...targets, mintlify: { adminKey: "a-secret-value" } },
+        }),
+      ),
+    ).toEqual(["targets.mintlify.adminKey"]);
+  });
+
   it("refuses root keys in a member runway", () => {
     for (const key of ["member", "deployable", "isolate", "group", "cpu", "memory", "instances"]) {
       expect(() => parseRunway("service", { ...COMMERCE, [key]: "x" })).toThrow(RunwayInvalidError);

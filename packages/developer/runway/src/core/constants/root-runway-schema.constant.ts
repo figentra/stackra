@@ -7,8 +7,9 @@
  *          the edge, the secret defaults with the CI and gateway secret names, the release policy and observability.
  * Boundary: internal; `parseRunway("root", …)` and `runwayJsonSchema("root")` read it, and it accepts what the
  *           canonical `tools/schemas/runway-root.schema.json` accepts. Strict at the top and in `secrets`, so a
- *           misspelt section fails; providers, targets, the edge, release and observability stay open, as their
- *           owners check them (`definesFor` reads `targets.electron-release.feed.publicOrigin` itself).
+ *           misspelt section fails; the targets Runway knows are closed objects (`TARGETS_SCHEMA`, STA-1975), while
+ *           providers, the edge, release and observability stay open, as their owners check them (`definesFor`
+ *           reads `targets.electron-release.feed.publicOrigin` itself).
  * Runtime: isomorphic
  * Governing contract: ADR 0296; ADR 0493 (resources, workloads, limits, uses); (decision 2 and its 2026-10-24 note), ADR 0168 (decisions 1 to 3 and 6), ADR 0171
  *                     (`ref:` values), ADR 0173 (secret names only), ADR 0237 (gateway secret names), ADR 0335 (decision 2: product), ADR 0354
@@ -26,6 +27,7 @@ import { REGION_SCHEMA } from "#core/constants/region-schema.constant";
 import { RESOURCE_SCHEMA } from "#core/constants/resource-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
 import { SURFACES_SCHEMA } from "#core/constants/surfaces-schema.constant";
+import { TARGETS_SCHEMA } from "#core/constants/targets-schema.constant";
 import { WORKLOAD_SCHEMA } from "#core/constants/workload-schema.constant";
 import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 
@@ -119,7 +121,7 @@ export const ROOT_RUNWAY_SCHEMA = z
     environments: z.partialRecord(ENVIRONMENT, ROOT_ENVIRONMENT_SCHEMA),
     resources: z.record(NAME, RESOURCE_SCHEMA).optional(),
     workloads: z.record(NAME, WORKLOAD_SCHEMA).optional(),
-    targets: z.record(z.string(), OPEN_OBJECT_SCHEMA).optional(),
+    targets: TARGETS_SCHEMA.optional(),
     edge: OPEN_OBJECT_SCHEMA.optional(),
     secrets: z
       .strictObject({

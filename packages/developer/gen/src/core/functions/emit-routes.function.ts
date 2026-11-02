@@ -7,20 +7,27 @@
  *          `registerPanelPages()` call that gives navigation the panel's shell page; and on every runtime of such an
  *          app, `registerResources({...})` with the recorded resource trees of its declared packages' and consumed
  *          services' manifests (`ui.resources` by `<module>.<model>`, `hostResourcesOf`) plus `resourceLabelKeys`, the
- *          label keys those resource pages derive, for the catalogues.
- * Boundary: pure. A tree is manifest JSON, handed to `registerResources` as is (one key from two classes is refused by
+ *          label keys those resource pages derive, for the catalogues. The routes and menus its declared packages ship
+ *          in the entry that serves the runtime (`react` for the browser, `native` for native; `ui.routes` and
+ *          `ui.menus`, `hostRoutesOf`) join its own, imported from `<package>/<entry>`, and every menu is registered
+ *          under its key (`menuTable`, `registerMenus`), so no app hand-writes a `register()`.
+ * Boundary: only an app gets route tables. A dependency's class whose name the file already uses is imported under
+ *           its module's name. A tree is manifest JSON, handed to `registerResources` as is (one key from two classes is refused by
  *           `hostResourcesOf`); a resource with no tree still gets every page from the data. A page is bound by name beside its route (`settings.tsx`, `settings.native.tsx`); a route without a
  *           page on a runtime is still registered, so refs resolve. The data-route tree (`toRoot`) is not here: it
  *           needs the locale prefixes of `#stackra/i18n` and the router keys the booted container makes.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 14, 20 and 22); ADR 0297 (decision 4); the navigation package's
  *                     `registerRoutes`; ADR 0307 (the panel's route pages; rule 6: derived labels); STA-1385; ADR 0164
- *                     (decision 2: web and native); STA-1947.
+ *                     (decision 2: web and native); ADR 0111 (decisions 1, 3 and 4); STA-1947.
  */
+import { pascalCase, snakeCase } from "@stackra/support";
+
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { componentBeside } from "#core/functions/component-beside.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { hostResourcesOf } from "#core/functions/host-resources-of.function";
+import { hostRoutesOf } from "#core/functions/host-routes-of.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { resourceLabelKeys } from "#core/functions/resource-label-keys.function";
 import { routeKey } from "#core/functions/route-key.function";
@@ -35,8 +42,17 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * emitRoutes(appIr).map((file) => file.path); // [".stackra/gen/routes/browser.ts", ".stackra/gen/routes/native.ts"]
  */
 export function emitRoutes(ir: MemberIR): GeneratedFile[] {
+  if (ir.layout !== "app") return [];
   const routes = ir.classes.filter((declared) => declared.kind === "route");
-  if (routes.length === 0) return [];
+  const menus = ir.classes.filter((declared) => declared.kind === "menu");
+  const host = hostRoutesOf(ir);
+  if (
+    routes.length === 0 &&
+    host.routes.length === 0 &&
+    menus.length === 0 &&
+    host.menus.length === 0
+  )
+    return [];
   const hostsPanel = usesPanel(ir);
   return clientRuntimes(ir).map((runtime) => {
     const imports = new Map<string, Map<string, boolean>>([
@@ -45,16 +61,52 @@ export function emitRoutes(ir: MemberIR): GeneratedFile[] {
     const use = (from: string, name: string): void => {
       imports.set(from, (imports.get(from) ?? new Map<string, boolean>()).set(name, false));
     };
+    // A dependency's class keeps its name unless the file already uses it; then it is imported under its module's.
+    const taken = new Set<string>();
+    const useAs = (from: string, name: string, module: string | undefined): string => {
+      const local = taken.has(name) ? `${pascalCase(module ?? from)}${name}` : name;
+      taken.add(local);
+      use(from, local === name ? name : `${name} as ${local}`);
+      return local;
+    };
     const rows: string[] = [];
     for (const route of routes) {
       const stem = (route.file.split("/").pop() ?? "").replace(/\.route\.tsx?$/, "");
       const page = componentBeside(ir, route.file, stem, runtime);
       use(route.importPath, route.name);
-      if (page !== undefined) use(page.from, page.name);
+      taken.add(route.name);
+      if (page !== undefined) {
+        use(page.from, page.name);
+        taken.add(page.name);
+      }
       rows.push(
         `  ${routeKey(route.file)}: { route: ${route.name}${page !== undefined ? `, page: ${page.name}` : ""} },`,
       );
     }
+    // The routes and menus the dependencies ship in the entry that serves this runtime (ADR 0111 decision 4).
+    const uiEntry = runtime === "browser" ? "react" : "native";
+    for (const { entry: route, from } of host.routes) {
+      if (route.entry !== uiEntry) continue;
+      const specifier = `${from}/${uiEntry}`;
+      const name = useAs(specifier, route.class, route.module);
+      const page =
+        route.page === undefined ? undefined : useAs(specifier, route.page, route.module);
+      rows.push(
+        `  ${route.key}: { route: ${name}${page === undefined ? "" : `, page: ${page}`} },`,
+      );
+    }
+    const menuRows: string[] = [];
+    for (const menu of menus) {
+      use(menu.importPath, menu.name);
+      taken.add(menu.name);
+      menuRows.push(
+        `  ${snakeCase((menu.file.split("/").pop() ?? "").replace(/\.menu\.tsx?$/, ""))}: ${menu.name},`,
+      );
+    }
+    for (const { entry: menu, from } of host.menus)
+      if (menu.entry === uiEntry)
+        menuRows.push(`  ${menu.key}: ${useAs(`${from}/${uiEntry}`, menu.class, menu.module)},`);
+    if (menuRows.length > 0) use("@stackra/navigation", "registerMenus");
     // The panel's shell is the page `toPanel` renders, so only the browser registers it; the recorded trees are
     // registered on every runtime of a panel host (ADR 0164 decision 2), native's pages drawing them once they exist.
     const panel = runtime === "browser" && hostsPanel;
@@ -105,6 +157,17 @@ export function emitRoutes(ir: MemberIR): GeneratedFile[] {
         "",
         "registerRoutes(routeTable);",
         ...(panel ? ["registerPanelPages();"] : []),
+        ...(menuRows.length === 0
+          ? []
+          : [
+              "",
+              "/** Each menu key with its class: the app's own and those its packages ship (`useMenus` lists them). */",
+              "export const menuTable = {",
+              ...menuRows,
+              "} as const;",
+              "",
+              "registerMenus(menuTable);",
+            ]),
         ...resources,
         "",
       ].join("\n"),
