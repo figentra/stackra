@@ -51,6 +51,9 @@ instance refresh (`aws autoscaling start-instance-refresh`), which waits for box
 
 - Nothing here holds a secret value (ADR 0173): the plan and the user data carry ids and paths; the box obtains a
   short-lived Infisical token for the paths its project is granted, and the container receives it by environment.
+- AWS quotas are fixed inputs (ADR 0516): the plan fits the region's on-demand and spot vCPU quotas (8 each today),
+  counting the image build. No agent requests or suggests a quota increase without the owner's explicit
+  confirmation; reading a quota is fine.
 - Agents run `pulumi preview` against a non-production stack only. `pulumi up`, the image build and the Infisical
   change are the owner's.
 - Tool versions live in `TOOLCHAIN_PINS`; a test keeps them equal to `mise.toml`, the Playwright catalogue entry and

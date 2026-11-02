@@ -1535,5 +1535,5 @@
   issue: STA-1952
 "0516":
   slug: aws-quotas-are-fixed-inputs
-  status: reserved
+  status: accepted
   issue: STA-1953
