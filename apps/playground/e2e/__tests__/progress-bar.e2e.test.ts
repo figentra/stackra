@@ -2,10 +2,12 @@
  * Stackra file contract:
  * Purpose: the progress bar route's own end-to-end checks: axe finds nothing (violations or incomplete) in light, dark,
  *          left-to-right and right-to-left; every bar is a named progressbar, the determinate ones with their value and
- *          text and the indeterminate one without; the three sizes are 4, 8 and 12 px thick; every tone's fill stands
- *          3:1 from the page in light and dark (WCAG 1.4.11); a fill is as wide as its value and starts at the inline
- *          start in both directions; an indeterminate bar sweeps and a fill eases only without reduced motion; and the
- *          advance-and-reset example works from the keyboard, updates the value and announces its completion.
+ *          text and the indeterminate one without; the three sizes draw dots 4, 8 and 12 px thick; every tone's filled
+ *          dots take the tone and stand 3:1 from the page in light and dark (WCAG 1.4.11), the accent's leading dot in
+ *          the theme's core; a value fills its share of the dots from the inline start in both directions; an
+ *          indeterminate bar builds its dots only without reduced motion and rests fully lit with it, while a value is
+ *          drawn at once either way (STA-2017's dot loader); and the advance-and-reset example works from the
+ *          keyboard, updates the value and announces its completion.
  * Boundary: the production build under `vite preview`; Chromium only.
  * Runtime: node
  * Governing contract: ADR 0302 (decision 5); ADR 0312; WCAG 2.2 SC 1.4.11, 2.3.3 and 4.1.2; ADR 0182 (test tiers);
@@ -49,11 +51,33 @@ const painted = (locator: Locator, property: "color" | "backgroundColor") =>
     return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
   }, property);
 
+/** A CSS colour value (a theme variable, say) resolved where `locator` sits, then painted as `#rrggbb`. */
+const paintedValue = (locator: Locator, value: string) =>
+  locator.evaluate((element, css) => {
+    const probe = document.createElement("span");
+    probe.style.color = css;
+    element.append(probe);
+    const resolved = getComputedStyle(probe).color;
+    probe.remove();
+    const context = document.createElement("canvas").getContext("2d");
+    if (!context) throw new Error("no 2d canvas");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, 1, 1);
+    context.fillStyle = resolved;
+    context.fillRect(0, 0, 1, 1);
+    const [red = 0, green = 0, blue = 0] = context.getImageData(0, 0, 1, 1).data;
+    return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+  }, value);
+
 const boxOf = async (locator: Locator) => {
   const box = await locator.boundingBox();
   if (!box) throw new Error("no box");
   return box;
 };
+
+/** The dots of a bar, lit or not. */
+const dotsOf = (bar: Locator) => bar.locator('[data-slot="dot"]');
+const litOf = (bar: Locator) => bar.locator('[data-slot="dot"][data-lit]');
 
 for (const scheme of SCHEMES)
   for (const locale of LOCALES)
@@ -114,12 +138,10 @@ test("a visible label names the bar and the value text is shown and spoken", asy
   await expect(files.locator(".progress-bar__output")).toHaveText("3 of 12 files");
 });
 
-test("the three sizes are 4, 8 and 12 px thick", async ({ page }) => {
+test("the three sizes draw dots 4, 8 and 12 px thick", async ({ page }) => {
   await open(page, "light", "en");
   for (const [size, pixels] of Object.entries(SIZES)) {
-    const box = await boxOf(
-      page.locator(`section#usage [data-size="${size}"] .progress-bar__track`),
-    );
+    const box = await boxOf(dotsOf(page.locator(`section#usage [data-size="${size}"]`)).first());
     expect(box.height, size).toBeCloseTo(pixels, 0);
   }
 });
@@ -130,47 +152,71 @@ for (const scheme of SCHEMES)
     const background = await painted(page.locator("body"), "backgroundColor");
     const failures: string[] = [];
     for (const tone of TONES) {
-      const fill = page.locator(`[data-tone="${tone}"] .progress-bar__fill`);
-      const ratio = contrastRatio(await painted(fill, "backgroundColor"), background);
+      const bar = page.locator(`[data-tone="${tone}"]`);
+      // The first lit dot is the inline-start one, which takes the tone even where the leading dot is the core.
+      const dot = litOf(bar).first();
+      const color = await painted(dot, "backgroundColor");
+      expect(color, tone).toBe(
+        await paintedValue(dot, `var(--${tone === "default" ? "foreground" : tone})`),
+      );
+      const ratio = contrastRatio(color, background);
       if (ratio < 3) failures.push(`${tone} ${ratio.toFixed(2)}`);
     }
     expect(failures, `tones under 3:1 in ${scheme}: tone, ratio`).toEqual([]);
   });
 
+test("the accent bar's leading dot is the theme's core, or its accent without one", async ({
+  page,
+}) => {
+  await open(page, "light", "en");
+  // 60 of 100 over a medium bar's 16 dots lights 10; the tenth leads.
+  const leading = litOf(page.locator('[data-tone="accent"]')).nth(9);
+  expect(await painted(leading, "backgroundColor")).toBe(
+    await paintedValue(leading, "var(--core, var(--accent))"),
+  );
+});
+
 for (const locale of LOCALES)
-  test(`a fill is as wide as its value and starts at the inline start in ${locale}`, async ({
+  test(`a value fills its share of the dots from the inline start in ${locale}`, async ({
     page,
   }) => {
     await open(page, "light", locale);
     const bar = page.locator('[data-value="40"]');
-    const track = await boxOf(bar.locator(".progress-bar__track"));
-    const fill = await boxOf(bar.locator(".progress-bar__fill"));
-    expect(fill.width / track.width).toBeCloseTo(0.4, 1);
-    if (locale === "en") expect(fill.x).toBeCloseTo(track.x, 0);
-    else expect(fill.x + fill.width).toBeCloseTo(track.x + track.width, 0);
+    // A medium bar has 16 dots; 40 per cent rounds 6.4 up to 7.
+    await expect(dotsOf(bar)).toHaveCount(16);
+    await expect(litOf(bar)).toHaveCount(7);
+    const dots = await dotsOf(bar).evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        isLit: node.hasAttribute("data-lit"),
+        x: node.getBoundingClientRect().x,
+      })),
+    );
+    const lit = dots.filter((dot) => dot.isLit).map((dot) => dot.x);
+    const unlit = dots.filter((dot) => !dot.isLit).map((dot) => dot.x);
+    if (locale === "en") expect(Math.max(...lit)).toBeLessThan(Math.min(...unlit));
+    else expect(Math.min(...lit)).toBeGreaterThan(Math.max(...unlit));
   });
 
-test("the indeterminate bar sweeps, and stands still under reduced motion", async ({ page }) => {
-  const animationName = () =>
-    page
-      .locator("[data-indeterminate] .progress-bar__fill")
-      .evaluate((node) => getComputedStyle(node).animationName);
+test("the indeterminate bar builds its dots, and rests fully lit under reduced motion", async ({
+  page,
+}) => {
+  const lit = () => litOf(page.locator("[data-indeterminate]")).count();
   await open(page, "light", "en", "reduce");
-  expect(await animationName()).toBe("none");
+  expect(await lit()).toBe(16);
   await open(page, "light", "en", "no-preference");
-  expect(await animationName()).not.toBe("none");
+  const first = await lit();
+  // Polled across a whole 1840 ms loop of 16 dots, since the 400 ms hold can repeat a count.
+  await expect.poll(lit, { timeout: 2100 }).not.toBe(first);
 });
 
-test("a determinate fill eases to its value, and jumps under reduced motion", async ({ page }) => {
-  // HeroUI turns the ease off with `transition-property: none` and leaves the duration as it is.
-  const property = () =>
-    page
-      .locator('[data-value="40"] .progress-bar__fill')
-      .evaluate((node) => getComputedStyle(node).transitionProperty);
-  await open(page, "light", "en", "reduce");
-  expect(await property()).toBe("none");
-  await open(page, "light", "en", "no-preference");
-  expect(await property()).not.toBe("none");
+test("a determinate bar draws its value at once, with or without reduced motion", async ({
+  page,
+}) => {
+  // The dots step in whole dots with no tween (STA-2017), so there is nothing to ease or turn off.
+  for (const reducedMotion of ["reduce", "no-preference"] as const) {
+    await open(page, "light", "en", reducedMotion);
+    await expect(litOf(page.locator('[data-value="40"]')), reducedMotion).toHaveCount(7);
+  }
 });
 
 test("the example advances from the keyboard, updates the value and announces the end", async ({

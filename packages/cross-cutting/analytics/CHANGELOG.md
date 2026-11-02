@@ -1,5 +1,38 @@
 # @stackra/analytics
 
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/storage@0.6.1
+  - @stackra/platform@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/consent@0.6.1
+  - @stackra/iam@0.6.1
+  - @stackra/privacy@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [e250d4f]
+  - @stackra/iam@0.6.0
+  - @stackra/privacy@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/storage@0.6.0
+  - @stackra/platform@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/consent@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

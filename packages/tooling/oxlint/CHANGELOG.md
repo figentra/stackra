@@ -1,5 +1,19 @@
 # @stackra/oxlint-config
 
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/coding-standard@0.6.1
+  - @stackra/feature-flags@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/coding-standard@0.6.0
+  - @stackra/feature-flags@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

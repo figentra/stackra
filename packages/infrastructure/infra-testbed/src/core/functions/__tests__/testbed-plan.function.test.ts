@@ -53,9 +53,13 @@ describe("testbedPlan", () => {
     expect(plan.groups.light.name).toBe("stackra-testbed-light");
   });
 
-  it("plans one region, eu-west-1 by default", () => {
+  it("plans one of the four regions, eu-west-1 by default and the only home (STA-2042)", () => {
     expect(plan.region).toBe("eu-west-1");
-    expect(testbedPlan({ region: "eu-central-1" }).region).toBe("eu-central-1");
+    expect(plan.home).toBe(true);
+    for (const region of ["eu-west-2", "eu-central-1", "us-east-1"]) {
+      expect(testbedPlan({ region })).toMatchObject({ region, home: false });
+    }
+    expect(() => testbedPlan({ region: "ap-south-1" })).toThrow();
   });
 
   it("carries the guard, idle and image numbers", () => {
@@ -91,6 +95,8 @@ describe("testbedPlan", () => {
     expect(() =>
       testbedPlan({ quota: { onDemandVcpus: 16, spotVcpus: 8 }, heavy: { min: 1, max: 1 } }),
     ).not.toThrow();
+    // Only the home region builds, so a member region may keep its heavy box up.
+    expect(() => testbedPlan({ region: "eu-west-2", heavy: { min: 1, max: 1 } })).not.toThrow();
   });
 
   it("grants figentra-ci paths to the core project, ids only", () => {
@@ -117,6 +123,7 @@ describe("testbedPlan", () => {
     expect(mise).toContain(`node = "${TOOLCHAIN_PINS.node}"`);
     expect(mise).toContain(`pnpm = "${TOOLCHAIN_PINS.pnpm}"`);
     expect(mise).toContain(`"github:Infisical/cli" = "${TOOLCHAIN_PINS.infisical}"`);
+    expect(mise).toContain(`shfmt = "${TOOLCHAIN_PINS.shfmt}"`);
     expect(repoFile("pnpm-workspace.yaml")).toContain(
       `"@playwright/test": ${TOOLCHAIN_PINS.playwright}`,
     );

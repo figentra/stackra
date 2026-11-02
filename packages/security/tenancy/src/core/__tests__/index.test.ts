@@ -23,6 +23,8 @@ import { TenantBillingContacts } from "#core/ports/tenant-billing-contacts.port"
 describe("@stackra/tenancy", () => {
   it("exports exactly the switcher, sandboxes, shares, the level data, the drivers, the check and the refusals", () => {
     expect(Object.keys(core).sort()).toEqual([
+      "ExternalRoleNotAllowedError",
+      "LastOwnerRefusedError",
       "MemorySandboxTenantsDriver",
       "MemoryTenantBillingContactsDriver",
       "MemoryTenantDirectoryDriver",
