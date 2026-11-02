@@ -14,11 +14,16 @@ and MCP tool.
 
 The list input stays closed in two places, both from the same table data:
 
-- each read's input class, written by gen into `#stackra/standard-reads` with its closed zod registered through
-  `registerSchemas` (as panel's own `ExportInput` is). The list input's zod carries the sort enum of the sortable keys,
-  the declared filter keys, and `search` only for a `@Searchable` model. The get input carries `<model>Id:
-PublicId<prefix>`, which the `x.get` endpoint convention (`GET /xs/:xId`) needs;
-- the manifest's JSON Schema of that input, for tools and generated clients.
+- the manifest's JSON Schema of each read's input, which gen writes per read (a dynamic map beside
+  `GENERATED_QUERY_SCHEMAS`). The list input carries the sort enum of the sortable keys, the declared filter keys, and
+  `search` only for a `@Searchable` model; the get input carries `<model>Id: PublicId<prefix>`. Tools and generated
+  clients read this;
+- the base at runtime, which gets the same table and id field as static options and refuses an undeclared key with a
+  typed refusal. The action pipeline validates a call's input only against a schema gen registers through
+  `registerActions`, and nothing calls that today, so the base is the server-side check.
+
+The endpoint needs no input class: `deriveEndpoint` gives `x.get` → `GET /xs/:xId` and `x.list` → `GET /xs` from the
+key alone.
 
 Search is the member's own generated `Search<Model>Query` (STA-1459), injected into the list read's constructor. The
 read narrows the table to its hits, so `@stackra/panel` gains no dependency on `@stackra/search` and the lockfile does
@@ -86,8 +91,8 @@ discover ──► ir.classes (resource: partner = model, row = second type argu
               constructor(service: AccountService) { super(service); } }
 ```
 
-At runtime, the pipeline validates the input against the generated closed zod. `ResourceListQuery` asks the injected
-search query for the phrase's hits when `search` is given, and narrows the filter to their ids. It calls
+At runtime, `ResourceListQuery` refuses a sort key outside the sortable columns, a filter key outside the filters, and
+`search` on a table without it (`resource_query_input_invalid`). It asks the injected search query for the phrase's hits when `search` is given, and narrows the filter to their ids. It calls
 `service.table(input, { where })` and maps each entity to the row: `service.toRow(entity)` when the service declares it,
 otherwise the row's fields picked by name. `ResourceGetQuery` turns `<model>Id` into the uuid (`publicIdToUuid`), calls
 `service.findOneOrFail({ id })`, then maps the same way.
@@ -97,9 +102,10 @@ otherwise the row's fields picked by name. `ResourceGetQuery` turns `<model>Id` 
 - **`ResourceListQuery(Model, options)`, `ResourceGetQuery(Model, options)`** (panel `src/node/bases/`): query kind
   bases (`Query({ key, actors })` underneath, actors user, agent and service as `SearchQuery` has). The options are the
   key, the table (sortable keys, filter keys, searchable) and the row field names, all static data gen writes.
-- **Their input types** (panel `src/node/types/`): the wire form a list read takes (`{ cursor?, limit, sort?, filter?,
-search? }`, as `tableInput` sends it) and the get read's `{ [<model>Id]: string }`. The closed classes and zod are
-  gen's, per read.
+- **Their input types and options** (panel `src/node/types/`): the wire form a list read takes (`{ cursor?, limit, sort?,
+filter?, search? }`, as `tableInput` sends it), the get read's `{ [<model>Id]: string }`, and the static options gen
+  writes (the key, the sortable and filter keys, searchable, the id field, the row fields).
+- **`ResourceQueryInputInvalidError`** (panel `src/node/errors/`): the typed refusal of an undeclared input key.
 - **Discovery** (`create-source-reader`): record a resource's second type argument (`row`) beside its partner (FR-008).
 - **`standardReadsOf(ir)`** (gen core, new): for each resource operation `true`, one read per model; skip a key the member
   already declares; find the model's `CrudService` subclass. Refusals:
@@ -108,11 +114,11 @@ search? }`, as `tableInput` sends it) and the get read's `{ [<model>Id]: string 
   - `standard_read_table_conflict`
   - `standard_read_row_field_missing` (a row field the model lacks, and the service has no `toRow`)
 - **`tableInputSchemaOf(tree, searchable)`** (gen core, new): the closed JSON Schema of one list input.
-- **`emitStandardReads(ir)`** (gen core, new): `#stackra/standard-reads`. Per read: its input class and closed zod
-  (`registerSchemas`), and the query subclass with its constructor (the model's service, plus the model's search
-  query for a searchable list).
+- **`emitStandardReads(ir)`** (gen core, new): `#stackra/standard-reads`. Per read, the query subclass with its static
+  options and its constructor: the model's service, plus the model's search query for a searchable list.
 - **`generate-member`** (changed): adds the reads to the authored IR as it does the search queries, and writes the file.
-- **`build-manifest`** (changed): writes the generated input and output schemas.
+- **`build-manifest`** (changed): writes each generated read's input and output schemas from the IR's generated-schema
+  map, as it does `GENERATED_QUERY_SCHEMAS`. The output is a `Page` of a `$ref` to the row's own schema, or the row.
 - **`resourcesOf`** (changed): a `true` operation becomes the read's key (FR-004).
 
 ## Files and folders
