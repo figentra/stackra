@@ -137,11 +137,16 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # dependencies-successful runs every task whose dependencies passed instead of stopping at the first failure, so
+      # one run shows every failing member; turbo still exits 1 when any task fails (STA-1937, as os#105). Test also
+      # runs after a failed Typecheck for the same per-task picture.
       - name: Typecheck
-        run: pnpm typecheck
+        id: typecheck
+        run: pnpm exec turbo run typecheck --continue=dependencies-successful
 
       - name: Test
-        run: pnpm test
+        if: ${{ !cancelled() && steps.typecheck.outcome != 'skipped' }}
+        run: pnpm exec turbo run test --continue=dependencies-successful
 
       - name: Build
         run: pnpm build
