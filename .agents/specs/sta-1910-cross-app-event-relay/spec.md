@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-02
 
-**Status**: Draft
+**Status**: Planned
 
 **Tier**: big
 
@@ -16,7 +16,7 @@
 
 **Linear project**: none
 
-**Clarifications status**: pending
+**Clarifications status**: complete
 
 **Analyze**: —
 
@@ -33,6 +33,14 @@ Leader (for the owner's brief):
 - The inbox endpoint → a raw HTTP entry per consumer service that gen emits, in this spec's gen area (the contract and
   event checks, and the inbox generation). It sits beside STA-1947's one optional `loader` field in gen's `generate()`
   options, which this work merges around and never reshapes.
+- Q2 (how a producer learns its subscribers) → A, with one seam. The producer's runway configuration lists, per
+  environment, each consumer's inbox origin and the events it takes, and the relay reads it only through one
+  `SubscriberSource` interface, so the Control Plane (draft OS ADR 0078: projects, environments, installations) can
+  supply subscribers later without touching the relay. Gen warns when a consumer has a listener on a contract-only
+  producer's event that no producer configuration lists, so a forgotten subscription shows at gen time instead of as a
+  silent non-delivery.
+- Q3 ("in dev" for the done check) → A for Done: both apps run on a testbed box with the relay between them. B, the
+  deployed dev environment, is the owner's follow-up.
 
 Builder choices, recorded for review:
 
@@ -248,8 +256,11 @@ delivery is created for a sibling consumer.
   `client_event_remote_transport` (d15).
 - **FR-011**: IF a listener names an event that the producer's contract does not declare THEN THE gen SHALL refuse it
   with `client_event_unknown`, as today.
-- **FR-012**: THE relay SHALL deliver to a consumer only the events that consumer subscribes to. How the producer
-  learns a consumer's subscription and inbox address: [NEEDS CLARIFICATION: Q2].
+- **FR-012**: THE relay SHALL deliver to a consumer only the events that consumer subscribes to, reading the
+  subscribers and their inbox origins per environment only through one subscriber-source interface, whose first source
+  is the producer's runway configuration.
+- **FR-020**: IF a consumer listens to a contract-only producer's event that the producer's configuration does not list
+  for that consumer THEN THE gen SHALL warn, naming the consumer, the producer and the event.
 - **FR-013**: THE relay SHALL sign each delivery with its producer service's own private key, read from the secret
   store by name, and name the key's id on the request; no key SHALL appear in code, configuration values or the
   repository.
@@ -293,8 +304,9 @@ delivery is created for a sibling consumer.
 
 ## Success Criteria
 
-- **SC-001**: an event published in pay reaches billing's inbox and is handled exactly once in dev — verified by:
-  e2e (two apps in dev, Q3)
+- **SC-001**: an event published in pay reaches billing's inbox and is handled exactly once in dev, with both apps
+  running on a testbed box and the relay between them — verified by: e2e (box run, cited on the PR). The same check in
+  the deployed dev environment is the owner's follow-up
 - **SC-002**: 100% of unsigned, mis-signed, stale and wrong-producer requests are refused, and none runs a listener —
   verified by: unit (inbox verification table)
 - **SC-003**: with 1,000 deliveries replayed after a consumer outage, each event is handled once and none is lost —
@@ -330,19 +342,6 @@ delivery is created for a sibling consumer.
 - Retry defaults follow the outbox's own: exponential back-off, ten attempts, then dead letter.
 - In-app (sibling) events are untouched; only contract-only producers' events take the relay.
 
-## Open questions (for /flow-clarify)
-
-- Q1 (sender identity) is answered above.
-- **Q2 · How a producer learns its subscribers.** Options: (A) the producer's runway configuration lists, per
-  environment, each consumer's inbox origin and the events it takes, filled in by hand or by a runway step; (B) the
-  consumer's contract package declares the events it consumes, and the producer's gen reads the contracts of its
-  consumers (a reverse dependency); (C) the producer pushes every cross-app event to every listed consumer, and the
-  inbox acknowledges and drops events it has no listener for. Recommended: A, with the event list generated into the
-  consumer's contract so the producer's list can be checked against it later.
-- **Q3 · "In dev" for the done check.** Options: (A) both apps run locally (`stackra dev`) on the testbed with the
-  relay between them; (B) both apps deployed to the dev environment, which waits for the owner's deploy. Recommended: A
-  for this spec's Done, B as the owner's follow-up.
-
 ## Amendments
 
 None.
@@ -350,3 +349,6 @@ None.
 ## Status history
 
 - 2026-11-02 · — → Draft · Claude (STA-1910 session) · created
+- 2026-11-02 · Draft → Clarified · Claude (STA-1910 session) · leader answered Q1 to Q3
+- 2026-11-02 · Clarified → Planned · Claude (STA-1910 session) · plan written; waits for the owner's approval (big
+  tier, R3) before tasks

@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,7 +31,6 @@
 
 ## Notes
 
-- Q1 (sender identity) is answered by the leader (2026-11-02) and recorded under Clarifications. Two markers stay open
-  for `/flow-clarify`: Q2 (how a producer learns its subscribers, FR-012) and Q3 (what "in dev" means for SC-001).
+- Q1 to Q3 are answered by the leader (2026-11-02) and recorded under Clarifications; no marker remains.
 - The spec names the packages it touches in Impact and the envelope fields the ADR fixes (`envelopeVersion`,
   `producer`): those are the decisions being built, not implementation choices.
