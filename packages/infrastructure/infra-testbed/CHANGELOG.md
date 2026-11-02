@@ -1,5 +1,46 @@
 # @stackra/infra-testbed
 
+## 0.6.1
+
+### Patch Changes
+
+- dd1304c: The job image pins `shfmt` (from `mise.toml`, which `pnpm format:check` runs) and the Encore CLI at the products'
+  `1.58.8` through mise, instead of the Encore installer's latest release. The image's validate step checks every tool a
+  job calls at its pin and launches headless Chromium, and the host's checks the SSM agent.
+  
+  A job and the seed refresh now upload `.agents`: `pnpm validate` reads its specs, hooks, rules and skills, so a
+  `pnpm verify` on the testbed failed without it. A test keeps the agent's list equal to the contract's.
+  
+  The image's pnpm store is warmed from the lockfile and `pnpm-workspace.yaml` together (`pnpm fetch` refused the
+  lockfile alone over its catalogs, so the first build shipped an empty store), and a failed warm-up now fails the build.
+  
+  `.git` is no longer uploaded; the agent makes a fresh one-commit snapshot of the synced tree before each job, as
+  `ci-box` did, so `git ls-files`, oxfmt and knip work from a worktree whose `.git` points at the Mac.
+- @stackra/contracts@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- e047d03: The testbed fits the region's EC2 vCPU quotas (ADR 0516): `heavy` and `light` are each 0 to 1 box by default, the plan
+  carries `quota` (input, default 8 on-demand and 8 spot vCPUs), and `TESTBED_PLAN_SCHEMA` refuses a plan whose group
+  maximum exceeds its purchase option's quota, an instance type with no known vCPU count (`INSTANCE_VCPUS`), or a heavy
+  minimum that leaves no room for the image build. The Image Builder pipeline has no schedule: the owner builds by hand
+  while `heavy` is at 0. `TESTBED_DEFAULTS.imageSchedule` is gone and `TESTBED_DEFAULTS.quota` is new.
+
+### Patch Changes
+
+- c92bef9: The testbed's Image Builder components and recipe are kept in AWS when new inputs replace them (`retainOnDelete`). The
+  provider replaces a fixed-name resource delete-first, and AWS refuses to delete a version an image was built from, so
+  `pulumi up` failed with ResourceDependencyException once the inputs changed.
+- 0c31740: The testbed's job image installs `zip`: figentra/brand's hub check (`engine/_hub/build.mjs`) zips each kit's bundles.
+- 2993840: `stackra testbed` reaches the boxes by SSH through SSM Session Manager: `ssh` and `rsync` connect to
+  `ubuntu@<instance-id>` with an `AWS-StartSSHSession` `ProxyCommand`, so the security group needs no inbound rule and
+  a changing public IP (Cloudflare WARP) no longer breaks access. `--ssh-direct` (or `STACKRA_TESTBED_SSH_DIRECT=1`)
+  keeps the public-IP path with the port-22 allowlist swap. `awsTestbed`'s `allowedCidrs` is optional: absent or empty
+  means no ingress. The Session Manager plugin is pinned in `mise.toml`.
+- @stackra/contracts@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

@@ -1,5 +1,32 @@
 # @stackra/media
 
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/filesystem@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/iam@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [e250d4f]
+  - @stackra/iam@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/filesystem@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

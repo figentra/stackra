@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: unit tests of `sessionUserOf`: the Stackra claims map to a `SessionUser` whose memberships are the tenancy
  *          package's shape (the `scp_` id, the path, the first role and every role), the name falls back to the
- *          address, and a token without the user id, the address or a role is refused `unauthenticated`.
+ *          address, the assurance the methods reached is added when the config is given, and a token without the user
+ *          id, the address or a role is refused `unauthenticated`.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0206 (decision 2); ADR 0327 (decision 3).
  */
+import { AssuranceLevel } from "@stackra/contracts";
 import { UnauthenticatedError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -32,6 +34,15 @@ const CLAIMS = {
 };
 
 describe("sessionUserOf", () => {
+  it("adds the assurance the methods reached, given the config", () => {
+    const config = { assuranceByMethod: { pwd: AssuranceLevel.Aal1, otp: AssuranceLevel.Aal2 } };
+    expect(sessionUserOf({ ...CLAIMS, amr: ["pwd", "otp"] }, config).assurance).toBe(
+      AssuranceLevel.Aal2,
+    );
+    expect(sessionUserOf({ ...CLAIMS, amr: ["unknown"] }, config)).not.toHaveProperty("assurance");
+    expect(sessionUserOf({ ...CLAIMS, amr: ["pwd"] })).not.toHaveProperty("assurance");
+  });
+
   it("maps the claims to the provider-neutral user", () => {
     expect(sessionUserOf(CLAIMS)).toEqual({
       userId: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",

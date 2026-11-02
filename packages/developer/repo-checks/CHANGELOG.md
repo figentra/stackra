@@ -1,5 +1,25 @@
 # @stackra/repo-checks
 
+## 0.6.1
+
+No changes in this release.
+
+## 0.6.0
+
+### Minor Changes
+
+- e250d4f: Gen writes one `registerActions([...])` in each member's `#stackra/registrations`, a row per action and query with its
+  locked key, permission, risk, effects and input schema, so the pipeline validates input and checks the permission of
+  every call. `IamAccessControlDriver` now refuses a call with no registered permission instead of letting it through,
+  and lets an anonymous caller past `require` and `authorize` only for a class whose `actors` list `anonymous`; the
+  manifest marks such a call `anonymous: true` and its OpenAPI operation takes no security. `stackra validate` lists
+  every anonymous-callable call, and a test pins today's five (STA-2025).
+- 2ed03e2: The 32 runway fields that the repositories set but nothing reads yet now say so in their JSON Schema description, with
+  the work that will read them ("Not read yet (Runway plan PR 12, STA-2001)"); `environments.*.deploy.gate` is marked a
+  deprecated alias of `release.gate`. No field is removed and parsing is unchanged. `@stackra/repo-checks` adds the
+  `runway-unread-fields` structure check (`checkRunwayUnreadFields`, `RUNWAY_UNREAD_FIELDS`): it fails when the list and
+  the schema notes disagree, or when the runway, CLI, gen or infra sources read a field still listed as not read.
+
 ## 0.5.1
 
 No changes in this release.

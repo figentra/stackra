@@ -508,3 +508,47 @@ describe("emitRegistrations for a hosted package's permissions and roles (STA-17
     );
   });
 });
+
+describe("emitRegistrations of actions and queries (STA-2025)", () => {
+  /** A query anonymous callers may call, beside the commerce fixture's calls. */
+  const health: DeclaredClass = {
+    name: "GetHealthQuery",
+    kind: "query",
+    module: "orders",
+    file: "src/modules/orders/queries/get-health.query.ts",
+    importPath: "#modules/orders/queries/get-health.query",
+    options: { key: "health.get", actors: ["anonymous", "user"] },
+    deps: [],
+    facets: [],
+    methods: ["handle"],
+    refusals: [],
+    statics: {},
+    traits: [],
+  };
+  const ir: MemberIR = { ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, health] };
+  const manifest = buildManifest(ir).manifest;
+  const content = emitRegistrations(ir, manifest) ?? "";
+  const rows = content
+    .split("\n")
+    .filter((line) => line.startsWith("  { type: ") && line.includes(" risk: "));
+
+  it("registers every action and query with its locked key, permission, risk and input class", () => {
+    expect(content).toMatch(/import \{[^}]*registerActions[^}]*\} from "@stackra\/actions";/);
+    expect(content).toContain(
+      '  { type: CancelOrderAction, key: "orders.order.cancel@1", permission: "orders.order.cancel", risk: "L2"',
+    );
+    expect(content).toMatch(/\{ type: CancelOrderAction, [^}]*input: CancelOrderInput \}/);
+    expect(content).toContain('{ type: ListOrdersQuery, key: "orders.order.list@1"');
+    expect(rows).toHaveLength(manifest.actions?.length ?? -1);
+  });
+
+  it("registers an anonymous-callable query with its permission, and flags it in the manifest", () => {
+    expect(rows.find((line) => line.includes("type: GetHealthQuery"))).toBe(
+      '  { type: GetHealthQuery, key: "orders.health.get@1", permission: "orders.health.read", risk: "L0" },',
+    );
+    const entries = manifest.actions ?? [];
+    expect(
+      entries.filter((entry) => entry["anonymous"] === true).map((entry) => entry.key),
+    ).toEqual(["orders.health.get@1"]);
+  });
+});

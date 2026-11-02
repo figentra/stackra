@@ -9,6 +9,8 @@
  *            (hue 252, chroma 0.03 or less) with the brand's hex values.
  *          - The banners stand apart from the status colours; the accent, being near grey, carries no hue a status
  *            could be read as (ADR 0463 decision 2).
+ *          - The champagne core (ADR 0520, brand rules §39) carries the brand's hex and contrast, and no other theme
+ *            needs it.
  *          - Every hex is the sRGB of its oklch.
  *          - The fonts moved with the theme beside their OFL licences; the headings are set in the display stacks,
  *            which default to sans and arabic (STA-1386).
@@ -28,6 +30,7 @@ import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { checkSeparation } from "#core/functions/check-separation.function";
 import { checkTheme } from "#core/functions/check-theme.function";
 import { contrastRatio } from "#core/functions/contrast-ratio.function";
+import { defineTheme } from "#core/functions/define-theme.function";
 import { oklchToHex } from "#core/functions/oklch-to-hex.function";
 
 const assets = new URL("../../../../assets/", import.meta.url);
@@ -36,6 +39,9 @@ const read = (path: string) => readFileSync(new URL(path, assets), "utf8");
 const tokenOf = (name: string): ColorToken | undefined =>
   (STACKRA_THEME.colors as Readonly<Record<string, ColorToken>>)[name] ??
   STACKRA_THEME.palette[name];
+
+/** A token's light and dark hex, empty when the theme has no such token. */
+const hexes = (name: string) => [tokenOf(name)?.hexLight ?? "", tokenOf(name)?.hexDark ?? ""];
 
 /** The tokens ADR 0319 moved off the kit's neutral accent, which ADR 0463 sets to the brand's neutral steel. */
 const STEEL_ACCENT = new Set([
@@ -46,6 +52,9 @@ const STEEL_ACCENT = new Set([
   "accent-soft-foreground",
   "focus",
 ]);
+
+/** The champagne core of ADR 0520 (brand rules §39), beside the steel accent. */
+const CORE = ["core", "core-strong", "core-hover", "core-pressed", "core-soft", "core-foreground"];
 
 /** The accent family members the kit's separation report holds achromatic, which ADR 0319 and 0463 leave so. */
 const ACHROMATIC = ["accent-foreground", "link", "signal", "signal-foreground"];
@@ -112,6 +121,12 @@ const SNAPSHOT: Readonly<
     "accent-pressed": ["oklch(0.45 0.03 252)", "oklch(0.67 0.03 252)"],
     "accent-soft": ["oklch(0.94 0.012 252)", "oklch(0.29 0.015 252)"],
     "accent-soft-foreground": ["oklch(0.4 0.03 252)", "oklch(0.88 0.02 252)"],
+    core: ["oklch(0.63 0.085 85)", "oklch(0.88 0.055 96)"],
+    "core-strong": ["oklch(0.41 0.08 85)", "oklch(0.88 0.055 96)"],
+    "core-hover": ["oklch(0.37 0.074 85)", "oklch(0.83 0.055 96)"],
+    "core-pressed": ["oklch(0.33 0.066 85)", "oklch(0.78 0.052 96)"],
+    "core-soft": ["oklch(0.95 0.02 85)", "oklch(0.29 0.02 96)"],
+    "core-foreground": ["oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)"],
     signal: ["oklch(0.158 0.005 248)", "oklch(0.972 0.004 122)"],
     "signal-foreground": ["oklch(0.972 0.004 122)", "oklch(0.158 0.005 248)"],
     "amber-strong": ["oklch(0.47 0.095 75)", "oklch(0.83 0.15 82)"],
@@ -308,6 +323,32 @@ describe("STACKRA_THEME", () => {
     expect(
       contrastRatio(STACKRA_THEME.colors.focus.hexDark, background.hexDark),
     ).toBeGreaterThanOrEqual(3);
+  });
+
+  // @covers sta-2015:FR-001
+  it("gives the theme the champagne core beside the steel accent, at brand rules §39's hex (ADR 0520)", () => {
+    expect(Object.fromEntries(CORE.map((name) => [name, hexes(name)]))).toEqual({
+      core: ["#A1854A", "#E2D8AF"],
+      "core-strong": ["#5E4608", "#E2D8AF"],
+      "core-hover": ["#523C03", "#D2C89F"],
+      "core-pressed": ["#453202", "#C1B892"],
+      "core-soft": ["#F5EEE0", "#2E2B20"],
+      "core-foreground": [
+        STACKRA_THEME.palette["paper"]?.hexLight,
+        STACKRA_THEME.palette["ink"]?.hexDark,
+      ],
+    });
+    const [core = "", strong = "", paper = ""] = ["core", "core-strong", "core-foreground"].map(
+      (name) => hexes(name)[0],
+    );
+    // The ratios §39 records: `core` 3.24:1 on paper (large display text and art only), `core-strong` 8.22:1.
+    expect(contrastRatio(core, paper)).toBeCloseTo(3.24, 1);
+    expect(contrastRatio(strong, paper)).toBeCloseTo(8.22, 1);
+    // Theme-local: a theme or brand preset without the core is still a valid theme.
+    const palette = Object.fromEntries(
+      Object.entries(STACKRA_THEME.palette).filter(([name]) => !CORE.includes(name)),
+    );
+    expect(() => defineTheme({ ...STACKRA_THEME, palette })).not.toThrow();
   });
 
   // @covers sta-350:FR-005

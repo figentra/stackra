@@ -72,3 +72,5 @@ phases:
               /opt/mise/shims/node --version | grep -qx 'v@@NODE@@'
               /opt/mise/shims/pnpm --version | grep -qx '@@PNPM@@'
               /opt/mise/shims/infisical --version
+              # The CLI reaches a box only through SSM Session Manager (STA-1953); the Ubuntu AMI ships the agent.
+              systemctl list-unit-files | grep -q amazon-ssm-agent

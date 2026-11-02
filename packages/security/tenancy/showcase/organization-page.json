@@ -1,0 +1,21 @@
+{
+  "slug": "organization-page",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/tenancy",
+  "exportName": "OrganizationPage",
+  "parts": ["OrganizationPage"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 640
+    }
+  ],
+  "related": ["free/page-header", "free/form-section", "free/property-list"],
+  "tokens": ["color.surface", "color.border"],
+  "keywords": ["organization", "tenant", "profile", "settings", "legal entity", "domain", "kit"],
+  "status": "new"
+}
