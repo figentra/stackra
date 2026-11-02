@@ -30,11 +30,13 @@ phases:
         inputs:
           commands:
             - |
-              set -u
-              mkdir -p /tmp/warm && cp /opt/testbed-build/pnpm-lock.yaml /tmp/warm/
+              set -eu
+              mkdir -p /tmp/warm
+              cp /opt/testbed-build/pnpm-lock.yaml /opt/testbed-build/pnpm-workspace.yaml /tmp/warm/
               cd /tmp/warm
               export MISE_DATA_DIR=/opt/mise MISE_GLOBAL_CONFIG_FILE=/opt/mise/config.toml
-              PATH=/opt/mise/shims:$PATH pnpm fetch --store-dir /data/pnpm-store || echo "testbed: warm store incomplete, the rest is fetched at job time"
+              # A failed fetch fails the build: an image with an empty store downloads every package on each new box.
+              PATH=/opt/mise/shims:$PATH pnpm fetch --store-dir /data/pnpm-store
               chown -R ubuntu:ubuntu /data/pnpm-store
               rm -rf /tmp/warm
       - name: Clean

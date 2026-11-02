@@ -415,6 +415,8 @@ function awsTestbedHome(
     NODE: pins.node ?? "",
     PNPM: pins.pnpm ?? "",
     INFISICAL: pins.infisical ?? "",
+    SHFMT: pins.shfmt ?? "",
+    ENCORE: pins.encore ?? "",
     PLAYWRIGHT: pins.playwright ?? "",
     POSTGRES: pins.postgresImage ?? "",
   };

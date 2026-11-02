@@ -61,8 +61,8 @@ export const TESTBED_DEFAULTS = {
   /** What the Mac's rsync leaves out of a project; the agent's seed refresh leaves out the same. */
   rsyncExcludes: [
     "node_modules",
+    ".git",
     ".claude/worktrees",
-    ".agents",
     ".env*",
     "*.secrets.local.cue",
     ".mcp.json",

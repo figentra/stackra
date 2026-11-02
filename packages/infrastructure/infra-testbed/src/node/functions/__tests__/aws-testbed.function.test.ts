@@ -254,6 +254,8 @@ describe("awsTestbed", () => {
     expect(dockerfile).toContain(`ARG NODE_VERSION=${TOOLCHAIN_PINS.node}`);
     expect(dockerfile).toContain(`ARG PNPM_VERSION=${TOOLCHAIN_PINS.pnpm}`);
     expect(dockerfile).toContain(`ARG INFISICAL_VERSION=${TOOLCHAIN_PINS.infisical}`);
+    expect(dockerfile).toContain(`ARG SHFMT_VERSION=${TOOLCHAIN_PINS.shfmt}`);
+    expect(dockerfile).toContain(`ARG ENCORE_VERSION=${TOOLCHAIN_PINS.encore}`);
     expect(dockerfile).toContain(`ARG PLAYWRIGHT_VERSION=${TOOLCHAIN_PINS.playwright}`);
   });
 });

@@ -123,6 +123,7 @@ describe("testbedPlan", () => {
     expect(mise).toContain(`node = "${TOOLCHAIN_PINS.node}"`);
     expect(mise).toContain(`pnpm = "${TOOLCHAIN_PINS.pnpm}"`);
     expect(mise).toContain(`"github:Infisical/cli" = "${TOOLCHAIN_PINS.infisical}"`);
+    expect(mise).toContain(`shfmt = "${TOOLCHAIN_PINS.shfmt}"`);
     expect(repoFile("pnpm-workspace.yaml")).toContain(
       `"@playwright/test": ${TOOLCHAIN_PINS.playwright}`,
     );
