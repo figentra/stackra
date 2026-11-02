@@ -12,7 +12,8 @@
  *          locked key of every `Permission` static and module role, the hosted packages' included (`registerPermissions`,
  *          then `registerRoles`; without
  *          them the decision point cannot tell a system or restricted permission, and a module role holds nothing,
- *          STA-1702).
+ *          STA-1702), and every action and query with its locked key, permission, risk, effects and input class
+ *          (`registerActions`; without it the pipeline checks no permission and validates no input, STA-2025).
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
  *           the entry that exports each file); a package registers its own. A call with no row is not written, and a
@@ -375,6 +376,44 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }),
   );
 
+  // Every action and query with the identities the manifest locked, own and hosted, so the pipeline checks the
+  // permission and validates the input (ADR 0098, STA-2025). A public query (`auth: false`) registers no permission.
+  // shortcut: a hosted package's input class is not imported, since its manifest names the input schema but not the
+  // file that declares it; its calls are permission-checked but not validated until the manifest carries that file.
+  const inputOf = (entry: Entry): string | undefined => {
+    if (typeof entry["from"] === "string") return undefined;
+    const input = entry["input"];
+    const target = /^#\/schemas\/([^.]+)\.(.+)$/.exec(
+      typeof input === "object" && input !== null ? String((input as Entry)["$ref"] ?? "") : "",
+    );
+    const shape =
+      target === null
+        ? undefined
+        : ir.shapes.find(
+            (candidate) => candidate.module === target[1] && candidate.name === target[2],
+          );
+    return shape === undefined ? undefined : ref({ name: shape.name, from: shape.importPath });
+  };
+  call(
+    "registerActions",
+    "@stackra/actions",
+    ((manifest.actions ?? []) as readonly Entry[]).map((entry) => {
+      const type = classOf(entry);
+      if (type === undefined) return undefined;
+      const input = inputOf(entry);
+      const effects = entry["effects"];
+      const permission =
+        entry["kind"] === "query" && entry["auth"] === false
+          ? ""
+          : `, permission: ${JSON.stringify(entry["permission"])}`;
+      return (
+        `{ type: ${type}, key: ${JSON.stringify(entry["key"])}${permission}, risk: ${JSON.stringify(entry["risk"])}` +
+        `${Array.isArray(effects) && effects.length > 0 ? `, effects: ${JSON.stringify(effects)}` : ""}` +
+        `${input === undefined ? "" : `, input: ${input}`} }`
+      );
+    }),
+  );
+
   if (loads.length === 0 && calls.length === 0) return undefined;
   const header = generatedHeader({
     from: "stackra.manifest.json and the kind classes under src/",
@@ -383,7 +422,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       "platform packages look up by its locked identity (entities, model partners, event wire names, listeners, relays, " +
       "change consumers, jobs, cached queries, " +
       "connections, webhook events, outbound webhooks, sequences, entitlements, searchable models, report sources, " +
-      "permissions and module roles).",
+      "permissions, module roles, and actions and queries).",
     boundary:
       "imported by the server entry and the generated test setup before the container boots; every row comes from " +
       "the committed identities, so a hand edit is overwritten.",

@@ -5,7 +5,8 @@
  *          `ctx.authorize(record)` (the record's policy method named after the permission's verb, then the
  *          decision point again with the record, so a conditional deny is tested).
  * Boundary: refuses with `ForbiddenError` only, carrying no reason (the explanation is for the audit, never for the
- *           caller). A call with no permission (an `auth: false` query) passes. Fails closed: an unknown scope node, a
+ *           caller). A call with no permission passes only when it is a query whose class declares `auth: false`; any
+ *           other call without one was never registered, and is refused (STA-2025). Fails closed: an unknown scope node, a
  *           record whose policy cannot be resolved (`connectPolicies` not called) or a policy that answers something
  *           other than a `Decision` is an error, never an allowed call. Any deny wins; `Allow` and `Abstain` leave the
  *           permission as the answer. The node is the call's `scope`; only a call without one reads the caller's node
@@ -15,7 +16,7 @@
  *                     ADR 0132 (as amended by 0294 and 0263); ADR 0208 (decision 3); ADR 0327 (decision 7).
  */
 import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
-import { type AnyClass, Driver } from "@stackra/container";
+import { type AnyClass, Driver, kindOf } from "@stackra/container";
 import { type Actor, Enum, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import type { RuleFacts } from "@stackra/rules";
@@ -25,6 +26,16 @@ import { POLICY_REGISTRY } from "#core/constants/policy-registry.constant";
 import { Decision } from "#core/enums/decision.enum";
 import type { PolicyDecisionPointService } from "#core/services/policy-decision-point.service";
 import type { PolicyRegistration } from "#core/types/policy-registration.type";
+
+/**
+ * Whether `call` is a public query: a query whose class declares `auth: false`, the one call that carries no permission
+ * by design. Any other call without one was never registered (`registerActions`), so it is refused, never allowed
+ * (STA-2025); an action is never public, whatever its options say.
+ */
+function isPublicQuery(call: CallDescriptor): boolean {
+  const record = kindOf(call.type);
+  return record?.kind === "query" && record.options["auth"] === false;
+}
 
 /** The three answers a policy method may give. */
 const DECISIONS: ReadonlySet<unknown> = new Set(Enum.values(Decision));
@@ -97,7 +108,10 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    * @throws ForbiddenError when it does not, or when the call's scope node does not exist.
    */
   async require(call: CallDescriptor): Promise<void> {
-    if (call.permission === undefined) return;
+    if (call.permission === undefined) {
+      if (isPublicQuery(call)) return;
+      throw ForbiddenError.create();
+    }
     const scope = await this.scopeOf(call);
     if (!(await this.pdp.check(call.actor, call.permission, scope === undefined ? {} : { scope })))
       throw ForbiddenError.create();
@@ -111,7 +125,10 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    */
   async authorize(call: CallDescriptor, record: object): Promise<void> {
     const { permission } = call;
-    if (permission === undefined) return;
+    if (permission === undefined) {
+      if (isPublicQuery(call)) return;
+      throw ForbiddenError.create();
+    }
     const row = rowOf(record);
     if (row !== undefined && (await decide(row, permission, call.actor, record)) === Decision.Deny)
       throw ForbiddenError.create();

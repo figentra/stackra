@@ -15,6 +15,7 @@
 import {
   Action,
   ActionPipeline,
+  Query,
   registerActions,
   type ActionContext,
   type Resolver,
@@ -23,6 +24,7 @@ import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
 import {
   type AnyClass,
   Driver,
+  kindOf,
   PERMISSION_REGISTRY,
   Permissions,
   registerPermissions,
@@ -102,6 +104,27 @@ class CancelOrderAction extends Action({
   }
 }
 
+/** A public query: its class declares `auth: false`, so it carries no permission. */
+class HealthQuery extends Query({
+  key: "health.get",
+  auth: false,
+}) {
+  async handle(): Promise<string> {
+    return "ok";
+  }
+}
+
+/** An action that claims `auth: false`: never public. */
+class OpenAction extends Action({
+  key: "order.open",
+  actors: [ActorKind.User],
+  auth: false,
+} as never) {
+  async handle(): Promise<string> {
+    return "opened";
+  }
+}
+
 const ROOT: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2r1", path: "platform" };
 const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 
@@ -154,11 +177,16 @@ function driverOver(state: MemoryPolicyState, bindings: Map<AnyClass, object> = 
 }
 
 /** The descriptor the pipeline builds for a call of `permission` by `actor`, acting in `scope` when given. */
-function callOf(actor: Actor, permission?: string, scope?: ScopeRef): CallDescriptor {
+function callOf(
+  actor: Actor,
+  permission?: string,
+  scope?: ScopeRef,
+  type: AnyClass = CancelOrderAction,
+): CallDescriptor {
   return {
     callId: "call_1",
-    type: CancelOrderAction,
-    kind: "action",
+    type,
+    kind: kindOf(type)?.kind === "query" ? "query" : "action",
     key: "orders.order.cancel@1",
     ...(permission === undefined ? {} : { permission }),
     actor,
@@ -187,15 +215,31 @@ describe("IamAccessControlDriver", () => {
   });
 
   describe("require", () => {
-    it("passes a call without a permission and a held one, and refuses one not held", async () => {
+    it("passes a held permission and refuses one not held", async () => {
       const { driver } = driverOver(BUYERS);
-      await expect(driver.require(callOf(customer))).resolves.toBeUndefined();
       await expect(
         driver.require(callOf(customer, "orders.order.cancel")),
       ).resolves.toBeUndefined();
       await expect(driver.require(callOf(customer, "orders.order.refund"))).rejects.toBeInstanceOf(
         ForbiddenError,
       );
+    });
+
+    it("refuses a call without a permission unless it is a public query (STA-2025)", async () => {
+      const { driver } = driverOver(BUYERS);
+      // An unregistered call carries no permission: never an allowed call.
+      await expect(driver.require(callOf(customer))).rejects.toBeInstanceOf(ForbiddenError);
+      await expect(
+        driver.authorize(callOf(customer), new Order(customer.id)),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+      // A query whose class declares `auth: false` is public by design.
+      await expect(
+        driver.require(callOf(customer, undefined, undefined, HealthQuery)),
+      ).resolves.toBeUndefined();
+      // An action is never public, whatever its options say.
+      await expect(
+        driver.require(callOf(customer, undefined, undefined, OpenAction)),
+      ).rejects.toBeInstanceOf(ForbiddenError);
     });
 
     it("checks at the call's scope, without reading the tree", async () => {
@@ -291,6 +335,15 @@ describe("IamAccessControlDriver", () => {
     ).resolves.toBe("cancelled");
     await expect(
       pipeline.execute(CancelOrderAction, { order: mine } as never, { actor: stranger }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("refuses an action the pipeline was never told about (STA-2025)", async () => {
+    // No registerActions row: the call has no permission, so it is refused, never run.
+    const bindings = new Map<AnyClass, object>([[OpenAction, new OpenAction()]]);
+    const { resolver } = driverOver(BUYERS, bindings);
+    await expect(
+      new ActionPipeline(resolver).execute(OpenAction, {} as never, { actor: customer }),
     ).rejects.toBeInstanceOf(ForbiddenError);
   });
 });
