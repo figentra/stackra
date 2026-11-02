@@ -1,13 +1,13 @@
 # Stackra file contract:
-# Purpose: Runway's `cloudflare-workers` provider (ADR 0289 decision 1), a public reusable workflow (ADR 0168
-#          decision 1): deploy one Worker member at one commit of main with `wrangler deploy`. Checks out the commit,
-#          refuses one that is not on main, prints the SHA, tests and builds the member, then deploys (with the
-#          `message` input as the deployment message, the rollback record of a promote) and smoke-tests it, printing
-#          readiness per attempt. A caller is a thin job: `deploy-static.yml` here; another repository pins
-#          `figentra/stackra/.github/workflows/runway-cloudflare-workers.yml@<sha> # runway-v<n>` (runbooks/runway).
-# Secrets: CLOUDFLARE_API_TOKEN only, from Infisical `/ci` through GitHub OIDC, exported for the deploy step and
-#          blanked for the smoke step. No repository secret. Without an identity id the job builds, tests, prints a
-#          notice and deploys nothing.
+# Purpose: the job that runs Runway's `cloudflare-workers` provider (@stackra/runway, ADR 0352 decision 1) for one
+#          Worker member of the root runway.yaml (`targets.cloudflare-workers.members.<member>`), a reusable workflow
+#          so each caller keeps its own GitHub environment. Checks out the commit, refuses one that is not on main,
+#          tests the member, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
+#          swaps the binding ids, applies D1 migrations, deploys with the commit as the message, sets the secrets on
+#          stdin and runs the smoke checks. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml.
+# Secrets: none in the repository. CLOUDFLARE_API_TOKEN from Infisical `/ci`, and the one `secret-name` from
+#          `secret-path`, through GitHub OIDC; the turbo values from `/ci/turbo` (TURBO_TOKEN among them). Without an
+#          identity id the job tests, prints a notice and deploys nothing.
 # Owner: release-operations
 name: Runway cloudflare-workers
 
@@ -15,11 +15,11 @@ on:
   workflow_call:
     inputs:
       member:
-        description: The Worker member folder, holding its `wrangler.jsonc` (e.g. `workers/static`).
+        description: The member key under `targets.cloudflare-workers.members` in runway.yaml (e.g. `static`).
         type: string
         required: true
       package:
-        description: The member's package name, the turbo filter for its test and build (e.g. `@figentra/worker-static`).
+        description: The member's package name, the turbo filter for its gen and test (e.g. `@figentra/worker-static`).
         type: string
         required: true
       environment:
@@ -32,18 +32,18 @@ on:
         description: The commit to deploy (a promote or a rollback). Empty deploys the triggering commit.
         type: string
         default: ""
-      message:
-        description: >-
-          The deployment message `wrangler deploy --message` records on Cloudflare (`rollback to <sha>` from a
-          promote, runbooks/deploys). Empty records none.
-        type: string
-        default: ""
       install-args:
         description: Arguments to `pnpm install`, space-separated words with no quoting.
         type: string
         default: --frozen-lockfile
+      vars:
+        description: >-
+          Space-separated names of GitHub variables (the environment's or the repository's) the member's runway
+          entry reads as ids or vars; each is exported under its own name. Values only, never a secret.
+        type: string
+        default: ""
       infisical-identity-id:
-        description: The Infisical machine identity id (a repository variable, not a secret). Empty skips the deploy.
+        description: The Infisical machine identity id (a variable, not a secret). Empty skips the deploy.
         type: string
         default: ""
       infisical-project-id:
@@ -58,8 +58,12 @@ on:
         description: The Infisical environment that holds `/ci`.
         type: string
         default: prod
-      smoke-url:
-        description: A URL that must answer 200 after the deploy. Empty skips the smoke test.
+      secret-path:
+        description: An Infisical path holding one more secret the member sets (e.g. `/ci/registry`). Empty reads none.
+        type: string
+        default: ""
+      secret-name:
+        description: The one secret read from `secret-path` (e.g. `REGISTRY_SIGNING_KEY`).
         type: string
         default: ""
     outputs:
@@ -67,7 +71,7 @@ on:
         description: The deployed commit.
         value: ${{ jobs.deploy.outputs.sha }}
       deployed:
-        description: "`true` when wrangler deployed, `false` when the deploy was skipped."
+        description: "`true` when Runway deployed, `false` when the deploy was skipped."
         value: ${{ jobs.deploy.outputs.deployed }}
 
 # ADR 0019 D2: nothing by default; the job asks for what it needs (the caller's job must grant the same).
@@ -77,13 +81,13 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.member }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     # Only a called workflow can take its environment from an input, which is why this is a reusable workflow and not
     # a step list: the environment binds the deploy to its protection, its OIDC subject and GitHub's deployment record.
     environment: ${{ inputs.environment }}
     permissions:
       contents: read # checkout
-      id-token: write # GitHub OIDC token, exchanged with Infisical for read access to /ci
+      id-token: write # GitHub OIDC token, exchanged with Infisical for read access
     outputs:
       sha: ${{ steps.commit.outputs.sha }}
       deployed: ${{ steps.deploy.outcome == 'success' }}
@@ -132,7 +136,8 @@ jobs:
           pnpm install $INSTALL_ARGS
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only).
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo; skipped when the variable is unset (local cache only). The
+      # turbo-cache member's TURBO_CACHE_TOKEN secret and smoke bearer read this TURBO_TOKEN.
       - name: Turborepo remote cache (Infisical OIDC)
         if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != ''
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
@@ -146,17 +151,21 @@ jobs:
           export-type: env
 
       # A caller's own Quality Gate runs in a separate workflow this one cannot wait on, so the member is tested here
-      # and a broken build never reaches Cloudflare.
-      - name: Test and build
+      # and a broken build never reaches Cloudflare. `--only` runs gen and test for this member alone: the root
+      # //#gen:workspace they depend on walks every member, and the ones left uninstalled fail it. The CLI built here
+      # runs the deploy.
+      - name: Test
         env:
           PACKAGE: ${{ inputs.package }}
-        run: pnpm turbo run test build --filter="$PACKAGE"
+        run: |
+          pnpm turbo run build --filter="$PACKAGE^..." --filter=@stackra/cli...
+          pnpm turbo run gen test --filter="$PACKAGE" --only
 
       - name: Deploy prerequisites missing
         if: env.INFISICAL_IDENTITY_ID == ''
         run: >-
           echo "::notice title=Deploy skipped::No Infisical identity id was passed (infisical-identity-id).
-          Built and tested, nothing deployed."
+          Tested, nothing deployed."
 
       # Exchanges this job's OIDC token for Infisical access and exports only CLOUDFLARE_API_TOKEN; the secret-name
       # filter keeps every other /ci value out of the job.
@@ -173,35 +182,41 @@ jobs:
           secret-name: CLOUDFLARE_API_TOKEN
           export-type: env
 
-      # wrangler reads CLOUDFLARE_API_TOKEN from the environment and everything else from the member's wrangler.jsonc.
-      # The message arrives through the environment, never spliced into the script (zizmor template-injection).
-      - name: wrangler deploy
+      - name: Member secret (Infisical OIDC)
+        if: env.INFISICAL_IDENTITY_ID != '' && inputs.secret-path != ''
+        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        with:
+          method: oidc
+          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
+          domain: ${{ inputs.infisical-domain }}
+          project-id: ${{ inputs.infisical-project-id }}
+          env-slug: ${{ inputs.infisical-env }}
+          secret-path: ${{ inputs.secret-path }}
+          secret-name: ${{ inputs.secret-name }}
+          export-type: env
+
+      # Each named variable goes into the environment under its own name; a name that is not SCREAMING_SNAKE or a
+      # value holding a newline is refused, so nothing can add another variable to the job.
+      - name: Variables
+        if: env.INFISICAL_IDENTITY_ID != '' && inputs.vars != ''
+        env:
+          NAMES: ${{ inputs.vars }}
+          VARIABLES: ${{ toJSON(vars) }}
+        run: |
+          for name in $NAMES; do
+            [[ "$name" =~ ^[A-Z][A-Z0-9_]*$ ]] || { echo "::error title=vars::$name is not a variable name"; exit 1; }
+            value="$(jq -r --arg name "$name" '.[$name] // ""' <<<"$VARIABLES")"
+            [[ "$value" != *$'\n'* ]] || { echo "::error title=$name::the variable holds a newline"; exit 1; }
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+
+      # Runway checks every id, secret and bearer before anything ships, then builds, migrates, deploys with the commit
+      # as the message, sets the secrets on stdin and retries the smoke checks while a new domain's certificate comes
+      # up. `--kind web` keeps the docs target (Mintlify) out of a Worker deploy.
+      - name: Deploy (Runway)
         id: deploy
         if: env.INFISICAL_IDENTITY_ID != ''
-        working-directory: ${{ inputs.member }}
         env:
-          DEPLOY_MESSAGE: ${{ inputs.message }}
-        run: |
-          args=()
-          [ -z "$DEPLOY_MESSAGE" ] || args=(--message "$DEPLOY_MESSAGE")
-          pnpm exec wrangler deploy "${args[@]}"
-
-      # Readiness, not just liveness (STA-268): a fresh deploy can answer 5xx or nothing for a while, so each attempt
-      # says "not serving yet" with the status, and only the end of the budget fails the job.
-      - name: Smoke test
-        if: steps.deploy.outcome == 'success' && inputs.smoke-url != ''
-        env:
-          CLOUDFLARE_API_TOKEN: "" # the token stays with the deploy step
-          SMOKE_URL: ${{ inputs.smoke-url }}
-        run: |
-          for attempt in $(seq 1 12); do
-            code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 10 "$SMOKE_URL" || true)"
-            if [ "$code" = 200 ]; then
-              echo "::notice title=Ready::$SMOKE_URL answered 200 on attempt $attempt"
-              exit 0
-            fi
-            echo "not serving yet: $SMOKE_URL answered ${code:-nothing} (attempt $attempt of 12)"
-            sleep 10
-          done
-          echo "::error title=Smoke test failed::$SMOKE_URL did not answer 200 within two minutes"
-          exit 1
+          MEMBER: ${{ inputs.member }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: node packages/developer/cli/dist/stackra.mjs deploy --env production --kind web --member "$MEMBER" --sha "$SHA"

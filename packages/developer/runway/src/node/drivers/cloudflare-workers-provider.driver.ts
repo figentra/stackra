@@ -5,7 +5,8 @@
  *          ships under the target's kind, swaps the placeholder binding ids in its `wrangler.jsonc` for the real ones
  *          (restored afterwards), applies its D1 migrations, runs `wrangler deploy --message <sha>` and sets its secrets
  *          with `wrangler secret bulk`. Current reads the commit back from `wrangler deployments list`, verify adds each
- *          member's smoke URL, and rollback returns every member to the version recorded for a commit.
+ *          member's smoke checks (retried while a new version or a new domain's certificate comes up), and rollback
+ *          returns every member to the version recorded for a commit.
  * Boundary: runs `pnpm` (turbo and each member's own wrangler) through the given `CommandRunner`; wrangler logs in
  *           with the job's `CLOUDFLARE_API_TOKEN` (OIDC from Infisical in CI) or the owner's session. Ids, vars and
  *           secrets are read by name from `env`; a secret value goes to wrangler on stdin only, never as an argument,
@@ -16,6 +17,7 @@
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 
 import { Driver } from "@stackra/container";
 import { HealthStatus } from "@stackra/contracts";
@@ -69,8 +71,17 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   env: Readonly<Record<string, string | undefined>> = process.env;
 
   /** The smoke request; a test replaces it. */
-  fetch: (url: string) => Promise<{ readonly ok: boolean; readonly status: number }> = (url) =>
-    globalThis.fetch(url, { redirect: "manual", signal: AbortSignal.timeout(30_000) });
+  fetch: (
+    url: string,
+    headers: Readonly<Record<string, string>>,
+  ) => Promise<{ readonly ok: boolean; readonly status: number }> = (url, headers) =>
+    globalThis.fetch(url, { headers, redirect: "manual", signal: AbortSignal.timeout(30_000) });
+
+  /** Smoke attempts per check, `smokeIntervalMs` apart: ten minutes covers a new domain's certificate. */
+  smokeAttempts = 60;
+
+  /** The wait between smoke attempts; a test sets 0. */
+  smokeIntervalMs = 10_000;
 
   /** The repository root the member paths are relative to. */
   root = ".";
@@ -94,7 +105,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           args: this.deployArgs(member, sha, (name) => `$${name}`),
           cwd,
         },
-        ...(member.secrets.length === 0
+        ...(Object.keys(member.secrets).length === 0
           ? []
           : [{ command: "pnpm", args: [...WRANGLER, "secret", "bulk"], cwd }]),
       ];
@@ -132,11 +143,12 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         const version = VERSION.exec(output)?.[1];
         if (version === undefined)
           throw new RunwayUnresolvedError(`wrangler deploy of ${key} printed no version id`);
-        if (member.secrets.length > 0)
+        const secrets = Object.entries(member.secrets);
+        if (secrets.length > 0)
           await this.run("pnpm", [...WRANGLER, "secret", "bulk"], {
             cwd,
             input: JSON.stringify(
-              Object.fromEntries(member.secrets.map((name) => [name, this.env[name]])),
+              Object.fromEntries(secrets.map(([name, from]) => [name, this.env[from]])),
             ),
           });
         versions.push(`${key}=${version}`);
@@ -147,7 +159,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     return { target: target.id, sha, reference: versions.join(",") };
   }
 
-  /** Up when every member serves `record.sha` and answers its smoke URL. */
+  /** Up when every member serves `record.sha` and each smoke check answers 2xx within its attempts. */
   override async verify(target: DeployTarget, record: DeployRecord): Promise<HealthReport> {
     const current = await this.current(target);
     if (current !== record.sha)
@@ -155,15 +167,27 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         status: HealthStatus.Down,
         detail: `${target.id} serves ${current ?? "no single commit"}, not ${record.sha}`,
       };
-    for (const [key, member] of this.membersOf(target)) {
-      if (member.smoke === undefined) continue;
-      const status = await this.fetch(member.smoke).then(
-        (response) => (response.ok ? undefined : `answered ${response.status}`),
-        (error: unknown) => `failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      if (status !== undefined)
-        return { status: HealthStatus.Down, detail: `${key} smoke ${member.smoke} ${status}` };
-    }
+    for (const [key, member] of this.membersOf(target))
+      for (const smoke of member.smoke) {
+        const headers: Record<string, string> =
+          smoke.bearer === undefined
+            ? {}
+            : { authorization: `Bearer ${this.env[smoke.bearer] ?? ""}` };
+        let status: string | undefined;
+        for (let attempt = 1; attempt <= this.smokeAttempts; attempt += 1) {
+          if (attempt > 1) await sleep(this.smokeIntervalMs);
+          status = await this.fetch(smoke.url, headers).then(
+            (response) => (response.ok ? undefined : `answered ${response.status}`),
+            (error: unknown) => `failed: ${error instanceof Error ? error.message : String(error)}`,
+          );
+          if (status === undefined) break;
+        }
+        if (status !== undefined)
+          return {
+            status: HealthStatus.Down,
+            detail: `${key} smoke ${smoke.url} ${status} after ${this.smokeAttempts} attempts`,
+          };
+      }
     return { status: HealthStatus.Up };
   }
 
@@ -241,8 +265,15 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     return members;
   }
 
-  /** Refuses an unset id or secret, or an id wrangler would not accept, before anything ships. */
+  /** Refuses an unset id, secret or smoke bearer, or an id wrangler would not accept, before anything ships. */
   private checkValues(key: string, member: Member): void {
+    const unset = (path: string, names: readonly string[]) =>
+      names
+        .filter((name) => (this.env[name] ?? "") === "")
+        .map((name) => ({
+          path: `${SETTINGS_PATH}.members.${key}.${path}`,
+          message: `Set ${name} in the deploy job's environment (Infisical over OIDC in CI)`,
+        }));
     const issues = [
       ...Object.keys(member.ids)
         .filter((name) => !ID.test(this.env[name] ?? ""))
@@ -250,12 +281,11 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           path: `${SETTINGS_PATH}.members.${key}.ids.${name}`,
           message: `Set ${name} to the real id in the deploy job's environment`,
         })),
-      ...member.secrets
-        .filter((name) => (this.env[name] ?? "") === "")
-        .map((name) => ({
-          path: `${SETTINGS_PATH}.members.${key}.secrets`,
-          message: `Set ${name} in the deploy job's environment (Infisical over OIDC in CI)`,
-        })),
+      ...unset("secrets", Object.values(member.secrets)),
+      ...unset(
+        "smoke",
+        member.smoke.flatMap((smoke) => smoke.bearer ?? []),
+      ),
     ];
     if (issues.length > 0) throw new RunwayInvalidError("deploy environment", issues);
   }

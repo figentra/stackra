@@ -51,7 +51,15 @@ targets:
         d1: [stackra-registry] # `wrangler d1 migrations apply <name> --remote` before the deploy
         vars: [REGISTRY_READ_ONLY] # `--var NAME:<value from the environment>` (plain values only)
         secrets: [REGISTRY_SIGNING_KEY] # `wrangler secret bulk` on stdin after the deploy
-        smoke: https://npm.stackra.figentra.com/-/ping
+        smoke: # each retried until it answers 2xx (ten minutes by default)
+          - url: https://npm.stackra.figentra.com/-/ping
+      turbo-cache:
+        path: workers/turbo-cache
+        secrets: # a map reads the Worker secret from another variable
+          TURBO_CACHE_TOKEN: TURBO_TOKEN
+        smoke:
+          - url: https://turbo.stackra.figentra.com/v8/artifacts/status
+            bearer: TURBO_TOKEN # `Authorization: Bearer <value of the variable>`
 ```
 
 ## Requirements
@@ -81,12 +89,17 @@ targets:
 [--member <key>,…] [--sha <sha>] [--dry-run]` (no `--product`) reads the root `runway.yaml` and runs `deploy()` with
   the `encore-cloud`, `eas`, `mintlify` and `cloudflare-workers` providers. `--sha` defaults to `HEAD`. A dry run
   prints every target's plan and changes nothing. `--product` keeps today's product path.
-- **FR-009** Unit tests cover FR-001 to FR-008 with a fake runner, a fake fetch and a temporary member folder. No
-  wrangler and no network.
+- **FR-009** Unit tests cover FR-001 to FR-008 and FR-010 with a fake runner, a fake fetch and a temporary member
+  folder. No wrangler and no network.
+- **FR-010** (second PR) `secrets` is a list of names or a map of Worker secret to variable. `smoke` is a list of
+  checks, each an HTTPS `url` with an optional `bearer` variable, retried `smokeAttempts` times (60) `smokeIntervalMs`
+  apart (10 s); `apply` also refuses an unset bearer variable. Core's runway.yaml lists `static`, `registry` and
+  `turbo-cache`, and `deploy-static.yml`, `deploy-registry.yml` and `deploy-turbo-cache.yml` call
+  `runway-cloudflare-workers.yml`, which tests the member and runs `stackra deploy --env production --kind web
+--member <key> --sha <sha>`. The one-off custom-domain detach of `deploy-registry.yml` (done) is dropped, and so is
+  the R2 bucket step of `deploy-turbo-cache.yml` (the bucket exists; creating it is the infra step below).
 
 ## Out of scope (next steps on STA-1921)
 
-- Moving `deploy-static.yml`, `deploy-registry.yml` and `deploy-turbo-cache.yml` onto `stackra deploy`. The one-off
-  custom-domain detach in `deploy-registry.yml` (the Figentra Registry move) is not carried over.
 - The os edge Worker and `publish-shells.mjs` (wrangler environments per runway environment).
 - Creating Cloudflare resources such as KV, R2, D1 and routes (`stackra runway infra`).
