@@ -11,6 +11,13 @@ icon: "server"
   says so. Until the migration below finishes, `ci-box` and the eight old boxes stay in service.
 </Note>
 
+<Warning>
+  AWS quotas are fixed inputs ([ADR 0516](/adr/0516-aws-quotas-are-fixed-inputs)): each region
+  allows 8 on-demand and 8 spot vCPUs, one `2xlarge` of each, and AWS Support refuses increases. The
+  group sizes below do not fit and are being resized (STA-1953). Never request or suggest a quota
+  increase without the owner's explicit confirmation; reading a quota is fine.
+</Warning>
+
 Builder sessions never run heavy checks on the Mac. Only oxfmt and oxlint run there. Install, build, gen, typecheck,
 tests, e2e and integration tests all run on the testbed: identical EC2 boxes, built from one image, in one region
 (eu-west-1).

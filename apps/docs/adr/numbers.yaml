@@ -1533,3 +1533,12 @@
   slug: stackra-create-and-the-published-starter
   status: reserved
   issue: STA-1952
+"0516":
+  slug: aws-quotas-are-fixed-inputs
+  status: accepted
+  issue: STA-1953
+"0517":
+  slug: where-services-and-their-resources-run
+  status: reserved
+  owner: claude
+  issue: STA-1965

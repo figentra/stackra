@@ -29,6 +29,7 @@ shfmt = "3.14.1"
 "github:mobile-dev-inc/maestro" = "cli-2.10.0"
 
 [env]
-# Bedrock profile for OpenCode (amazon-bedrock/*); `aws sso login --profile bedrock` refreshes it.
-AWS_PROFILE = "bedrock"
 NODE_ENV = "development"
+# Workstation-only values (AWS_PROFILE=bedrock for OpenCode); unset in CI, where a template could only make it empty,
+# which the aws CLI reads as a profile named "" (STA-1957).
+_.source = "./tools/scripts/mise-env.sh"
