@@ -91,7 +91,7 @@ beforeAll(async () => {
     tags: { owner: "platform" },
   });
   await new Promise((resolve) => {
-    stack.imagePipelineArn.apply(resolve);
+    stack.securityGroupId.apply(resolve);
   });
   await settle();
 });
@@ -100,6 +100,7 @@ describe("awsTestbed", () => {
   it("pins the provider to the plan's region", () => {
     expect(resource("providers:aws", "testbed").inputs.region).toBe("eu-west-1");
     expect(stack.region).toBe("eu-west-1");
+    expect(stack.home).toBe(true);
   });
 
   it("opens SSH only to the allowlist and allows all egress", () => {
@@ -199,7 +200,13 @@ describe("awsTestbed", () => {
     expect(own?.Condition).toEqual({
       StringEquals: { "autoscaling:ResourceTag/stackra:testbed": ["heavy", "light"] },
     });
-    expect(own?.Resource).toContain("autoScalingGroupName/stackra-testbed-");
+    // One role for every region's boxes (STA-2042): the four regions' testbed groups, and no other.
+    expect(own?.Resource).toEqual(
+      ["eu-west-1", "eu-west-2", "eu-central-1", "us-east-1"].map(
+        (region) =>
+          `arn:aws:autoscaling:${region}:111122223333:autoScalingGroup:*:autoScalingGroupName/stackra-testbed-*`,
+      ),
+    );
   });
 
   it("builds the image weekly into the SSM parameter, versioned by its inputs", () => {
@@ -219,9 +226,22 @@ describe("awsTestbed", () => {
       "imagebuilder/distributionConfiguration:DistributionConfiguration",
       "testbed",
     );
-    expect(JSON.stringify(distribution.inputs.distributions)).toContain(
-      "/imagebuilder/stackra-testbed/ami",
-    );
+    // One build, copied to every region, each writing its own AMI parameter (STA-2042).
+    const targets = distribution.inputs.distributions as {
+      region: string;
+      ssmParameterConfigurations: { parameterName: string }[];
+    }[];
+    expect(targets.map((target) => target.region)).toEqual([
+      "eu-west-1",
+      "eu-west-2",
+      "eu-central-1",
+      "us-east-1",
+    ]);
+    for (const target of targets) {
+      expect(target.ssmParameterConfigurations).toEqual([
+        expect.objectContaining({ parameterName: "/imagebuilder/stackra-testbed/ami" }),
+      ]);
+    }
     // No schedule: the image is built by hand while heavy is at 0 (ADR 0516).
     expect(
       resource("imagebuilder/imagePipeline:ImagePipeline", "testbed").inputs.schedule,
@@ -251,7 +271,7 @@ describe("awsTestbed with a given network and no groups", () => {
       groups: false,
     });
     await new Promise((resolve) => {
-      bare.imagePipelineArn.apply(resolve);
+      bare.securityGroupId.apply(resolve);
     });
     await settle();
   });
@@ -277,5 +297,45 @@ describe("awsTestbed with a given network and no groups", () => {
     const userData = testbedUserData(testbedPlan());
     expect(userData).toContain("printf '%s\\n' '' > /etc/testbed/identity");
     expect(userData).toContain("{}");
+  });
+});
+
+describe("awsTestbed for a member region (STA-2042)", () => {
+  let start = 0;
+  let member: AwsTestbed;
+
+  beforeAll(async () => {
+    start = registered.length;
+    member = awsTestbed(
+      testbedPlan({ region: "eu-west-2", identityId: "identity-1", ciGateProjectId: "project-1" }),
+      { lockfilePath: LOCKFILE },
+    );
+    await new Promise((resolve) => {
+      member.securityGroupId.apply(resolve);
+    });
+    await settle();
+  });
+
+  const later = (kind: string): Registered[] =>
+    registered.slice(start).filter((entry) => entry.type.endsWith(`:${kind}`));
+
+  it("declares only the region's pool: no role, bucket or image pipeline", () => {
+    expect(later("providers:aws")[0]?.inputs.region).toBe("eu-west-2");
+    expect(member).toMatchObject({ region: "eu-west-2", home: false });
+    expect(member.imagePipelineArn).toBeUndefined();
+    expect(member.instanceRoleArn).toBeUndefined();
+    const types = registered.slice(start).map((entry) => entry.type);
+    expect(types.filter((type) => /aws:(iam|s3|imagebuilder)\//.test(type))).toEqual([]);
+    expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.ingress).toEqual([]);
+    expect(later("autoscaling/group:Group").map((group) => group.inputs.name)).toEqual([
+      "stackra-testbed-heavy",
+      "stackra-testbed-light",
+    ]);
+  });
+
+  it("launches from its own region's AMI parameter with the global instance profile", () => {
+    const template = later("ec2/launchTemplate:LaunchTemplate")[0]?.inputs;
+    expect(template?.imageId).toBe("resolve:ssm:/imagebuilder/stackra-testbed/ami");
+    expect(template?.iamInstanceProfile).toEqual({ name: "stackra-testbed-instance" });
   });
 });

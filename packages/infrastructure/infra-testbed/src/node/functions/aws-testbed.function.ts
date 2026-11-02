@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: `awsTestbed(plan, options)`, the Pulumi program part that declares the testbed: an AWS provider pinned to
- *          the plan's region; the `stackra-testbed` security group (SSH only from an optional allowlist, all
- *          egress); the instance role and profile (SSM core, plus Auto Scaling calls limited to groups carrying the
- *          `stackra:testbed` tag);
+ * Purpose: `awsTestbed(plan, options)`, the Pulumi program part that declares one region of the testbed (one stack per
+ *          region, STA-2042): an AWS provider pinned to the plan's region; the `stackra-testbed` security group (SSH
+ *          only from an optional allowlist, all egress); in the home region only, the global instance role and
+ *          profile (SSM core, plus Auto Scaling calls limited to the four regions' groups carrying the
+ *          `stackra:testbed` tag) and the image pipeline, whose distribution copies each AMI to every region;
  *          one launch template (AMI from the SSM parameter, a 40 GB root and a 200 GB `/data` volume, IMDSv2
  *          required, user data that writes ids only); the `heavy` on-demand and `light` spot Auto Scaling groups with
  *          EC2 health checks and instance refresh that waits for protected instances; and the EC2 Image Builder
  *          pipeline (build bucket with the inputs as assets, three components, a recipe versioned by the hash of its
- *          inputs, an infrastructure configuration, a distribution that writes the AMI id to the SSM parameter, and
+ *          inputs, an infrastructure configuration, a distribution that writes the AMI id to each region's SSM parameter, and
  *          no schedule: the owner starts a build by hand, only while the heavy group is at 0, since the build
  *          instance and a heavy box do not both fit the region's on-demand vCPU quota (ADR 0516)).
  * Boundary: declares resources only, inside the Pulumi program that calls it; agents only preview, the owner applies.
@@ -99,10 +100,190 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     { ...opts, ignoreChanges: ["ingress"] },
   );
 
+  // ---- the home region only: the global roles and profiles, the build inputs and the image pipeline (STA-2042) ----
+  const home = plan.home
+    ? awsTestbedHome(plan, options, {
+        opts,
+        tags,
+        accountId: account.accountId,
+        securityGroupId: securityGroup.id,
+      })
+    : undefined;
+
+  // ---- the launch template and the two groups ---------------------------------------------------------------
+  const groupTags = (group: "heavy" | "light") =>
+    [
+      { key: "Name", value: plan.groups[group].name },
+      { key: plan.tags.groupKey, value: group },
+      { key: "environment", value: plan.tags.environment },
+      { key: "service", value: plan.tags.service },
+      ...Object.entries(options.tags ?? {}).map(([key, value]) => ({ key, value })),
+    ].map((tag) => ({ ...tag, propagateAtLaunch: true }));
+  // A new launch template version is a new instance refresh; protected instances finish their job first.
+  const refresh = {
+    strategy: "Rolling",
+    preferences: {
+      minHealthyPercentage: 100,
+      maxHealthyPercentage: 200,
+      scaleInProtectedInstances: "Wait",
+    },
+  };
+  const common = {
+    vpcZoneIdentifiers: subnetIds,
+    healthCheckType: "EC2",
+    healthCheckGracePeriod: 300,
+    newInstancesProtectedFromScaleIn: false,
+    instanceRefresh: refresh,
+  };
+  // The CLI and the idle pass move the desired count, so Pulumi owns the bounds and not the count.
+  const groupOpts = { ...opts, ignoreChanges: ["desiredCapacity"] };
+
+  let groups: AwsTestbed["groups"];
+  let launchTemplateId: pulumi.Output<string> | undefined;
+  // EC2 refuses a launch template whose `resolve:ssm:` parameter does not exist yet, so the template comes with the
+  // groups, after the first image build has written the parameter.
+  if (options.groups !== false) {
+    const { heavy, light } = plan.groups;
+    const launchTemplate = new aws.ec2.LaunchTemplate(
+      "testbed",
+      {
+        name: "stackra-testbed",
+        imageId: `resolve:ssm:${plan.image.amiParameter}`,
+        instanceType: plan.groups.heavy.instanceTypes[0] ?? "c7i.2xlarge",
+        // `stackra testbed` connects with this pair's key file (TESTBED_DEFAULTS.keyFile).
+        keyName: D.keyPair,
+        // The home stack owns the profile; a member region names it, since IAM is global (STA-2042).
+        iamInstanceProfile: { name: home?.instanceProfile.name ?? D.instanceProfile },
+        metadataOptions: {
+          httpEndpoint: "enabled",
+          httpTokens: "required",
+          // One hop: the host reads its role, a job container cannot.
+          httpPutResponseHopLimit: 1,
+        },
+        blockDeviceMappings: [
+          {
+            deviceName: plan.disks.root.deviceName,
+            ebs: {
+              volumeSize: plan.disks.root.sizeGb,
+              volumeType: "gp3",
+              deleteOnTermination: String(plan.disks.deleteOnTermination),
+              encrypted: "true",
+            },
+          },
+          {
+            deviceName: plan.disks.data.deviceName,
+            ebs: {
+              volumeSize: plan.disks.data.sizeGb,
+              volumeType: "gp3",
+              deleteOnTermination: String(plan.disks.deleteOnTermination),
+              encrypted: "true",
+            },
+          },
+        ],
+        networkInterfaces: [
+          {
+            associatePublicIpAddress: "true",
+            deleteOnTermination: "true",
+            securityGroups: [securityGroup.id],
+          },
+        ],
+        userData: Buffer.from(testbedUserData(plan)).toString("base64"),
+        tagSpecifications: ["instance", "volume"].map((resourceType) => ({ resourceType, tags })),
+        updateDefaultVersion: true,
+        tags,
+      },
+      opts,
+    );
+    const version = launchTemplate.latestVersion.apply(String);
+    launchTemplateId = launchTemplate.id;
+    // oxlint-disable-next-line no-new -- reason: Pulumi registers a resource when it is constructed
+    new aws.autoscaling.Group(
+      "heavy",
+      {
+        ...common,
+        name: heavy.name,
+        minSize: heavy.min,
+        maxSize: heavy.max,
+        desiredCapacity: heavy.min,
+        launchTemplate: { id: launchTemplate.id, version },
+        tags: groupTags("heavy"),
+      },
+      groupOpts,
+    );
+    // oxlint-disable-next-line no-new -- reason: Pulumi registers a resource when it is constructed
+    new aws.autoscaling.Group(
+      "light",
+      {
+        ...common,
+        name: light.name,
+        minSize: light.min,
+        maxSize: light.max,
+        desiredCapacity: light.min,
+        capacityRebalance: true,
+        mixedInstancesPolicy: {
+          launchTemplate: {
+            launchTemplateSpecification: { launchTemplateId: launchTemplate.id, version },
+            overrides: light.instanceTypes.map((instanceType) => ({ instanceType })),
+          },
+          instancesDistribution: {
+            onDemandBaseCapacity: 0,
+            onDemandPercentageAboveBaseCapacity: 0,
+            spotAllocationStrategy: "price-capacity-optimized",
+          },
+        },
+        tags: groupTags("light"),
+      },
+      groupOpts,
+    );
+    groups = { heavy: heavy.name, light: light.name };
+  }
+
+  return {
+    region: plan.region,
+    home: plan.home,
+    securityGroupId: securityGroup.id,
+    ...(home === undefined
+      ? {}
+      : {
+          instanceRoleArn: home.instanceRole.arn,
+          buildBucket: home.bucket.bucket,
+          imagePipelineArn: home.pipeline.arn,
+          imageVersion: home.version,
+        }),
+    amiParameter: plan.image.amiParameter,
+    ...(groups === undefined ? {} : { groups }),
+    ...(launchTemplateId === undefined ? {} : { launchTemplateId }),
+  };
+}
+
+/** What the home stack declares once for every region. */
+type HomeResources = {
+  readonly instanceRole: aws.iam.Role;
+  readonly instanceProfile: aws.iam.InstanceProfile;
+  readonly bucket: aws.s3.BucketV2;
+  readonly pipeline: aws.imagebuilder.ImagePipeline;
+  readonly version: string;
+};
+
+/**
+ * The home region's part: the global instance and image-builder roles, the build bucket and its inputs, and the image
+ * pipeline, whose distribution copies each new AMI to every region and writes that region's AMI parameter.
+ */
+function awsTestbedHome(
+  plan: TestbedPlan,
+  options: AwsTestbedOptions,
+  shared: {
+    readonly opts: pulumi.CustomResourceOptions;
+    readonly tags: Record<string, string>;
+    readonly accountId: pulumi.Output<string>;
+    readonly securityGroupId: pulumi.Output<string>;
+  },
+): HomeResources {
+  const { opts, tags } = shared;
   // ---- the box's role: SSM, Auto Scaling on its own groups, and the AWS identity Infisical checks ------------------
   const instanceRole = new aws.iam.Role(
     "testbed-instance",
-    { name: "stackra-testbed-instance", assumeRolePolicy: assumedBy("ec2.amazonaws.com"), tags },
+    { name: D.instanceProfile, assumeRolePolicy: assumedBy("ec2.amazonaws.com"), tags },
     opts,
   );
   // oxlint-disable-next-line no-new -- reason: Pulumi registers a resource when it is constructed
@@ -111,7 +292,11 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     { role: instanceRole.name, policyArn: "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" },
     opts,
   );
-  const groupArns = pulumi.interpolate`arn:aws:autoscaling:${plan.region}:${account.accountId}:autoScalingGroup:*:autoScalingGroupName/${D.groupPrefix}-*`;
+  // One role serves every region's boxes, so it may act on the testbed groups of the four regions (STA-2042).
+  const groupArns = D.regions.map(
+    (region) =>
+      pulumi.interpolate`arn:aws:autoscaling:${region}:${shared.accountId}:autoScalingGroup:*:autoScalingGroupName/${D.groupPrefix}-*`,
+  );
   // oxlint-disable-next-line no-new -- reason: Pulumi registers a resource when it is constructed
   new aws.iam.RolePolicy(
     "testbed-instance-agent",
@@ -155,7 +340,7 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
   );
   const instanceProfile = new aws.iam.InstanceProfile(
     "testbed-instance",
-    { name: "stackra-testbed-instance", role: instanceRole.name, tags },
+    { name: D.instanceProfile, role: instanceRole.name, tags },
     opts,
   );
 
@@ -293,7 +478,7 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
       terminateInstanceOnFailure: true,
       ...(options.subnetIds === undefined
         ? {}
-        : { subnetId: options.subnetIds[0], securityGroupIds: [securityGroup.id] }),
+        : { subnetId: options.subnetIds[0], securityGroupIds: [shared.securityGroupId] }),
       instanceMetadataOptions: { httpTokens: "required", httpPutResponseHopLimit: 2 },
       tags,
     },
@@ -303,19 +488,18 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     "testbed",
     {
       name: "stackra-testbed",
-      distributions: [
-        {
-          region: plan.region,
-          amiDistributionConfiguration: {
-            name: "stackra-testbed-{{ imagebuilder:buildDate }}",
-            amiTags: { ...tags, Name: "stackra-testbed" },
-          },
-          // The newest AMI id lands here; the launch template resolves it at launch.
-          ssmParameterConfigurations: [
-            { parameterName: plan.image.amiParameter, dataType: "aws:ec2:image" },
-          ],
+      // One build, copied to every region (STA-2042): each region's newest AMI id lands in its own parameter, which
+      // that region's launch template resolves at launch.
+      distributions: D.regions.map((region) => ({
+        region,
+        amiDistributionConfiguration: {
+          name: "stackra-testbed-{{ imagebuilder:buildDate }}",
+          amiTags: { ...tags, Name: "stackra-testbed" },
         },
-      ],
+        ssmParameterConfigurations: [
+          { parameterName: plan.image.amiParameter, dataType: "aws:ec2:image" },
+        ],
+      })),
       tags,
     },
     opts,
@@ -334,142 +518,5 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     opts,
   );
 
-  // ---- the launch template and the two groups ---------------------------------------------------------------
-  const groupTags = (group: "heavy" | "light") =>
-    [
-      { key: "Name", value: plan.groups[group].name },
-      { key: plan.tags.groupKey, value: group },
-      { key: "environment", value: plan.tags.environment },
-      { key: "service", value: plan.tags.service },
-      ...Object.entries(options.tags ?? {}).map(([key, value]) => ({ key, value })),
-    ].map((tag) => ({ ...tag, propagateAtLaunch: true }));
-  // A new launch template version is a new instance refresh; protected instances finish their job first.
-  const refresh = {
-    strategy: "Rolling",
-    preferences: {
-      minHealthyPercentage: 100,
-      maxHealthyPercentage: 200,
-      scaleInProtectedInstances: "Wait",
-    },
-  };
-  const common = {
-    vpcZoneIdentifiers: subnetIds,
-    healthCheckType: "EC2",
-    healthCheckGracePeriod: 300,
-    newInstancesProtectedFromScaleIn: false,
-    instanceRefresh: refresh,
-  };
-  // The CLI and the idle pass move the desired count, so Pulumi owns the bounds and not the count.
-  const groupOpts = { ...opts, ignoreChanges: ["desiredCapacity"] };
-
-  let groups: AwsTestbed["groups"];
-  let launchTemplateId: pulumi.Output<string> | undefined;
-  // EC2 refuses a launch template whose `resolve:ssm:` parameter does not exist yet, so the template comes with the
-  // groups, after the first image build has written the parameter.
-  if (options.groups !== false) {
-    const { heavy, light } = plan.groups;
-    const launchTemplate = new aws.ec2.LaunchTemplate(
-      "testbed",
-      {
-        name: "stackra-testbed",
-        imageId: `resolve:ssm:${plan.image.amiParameter}`,
-        instanceType: plan.groups.heavy.instanceTypes[0] ?? "c7i.2xlarge",
-        // `stackra testbed` connects with this pair's key file (TESTBED_DEFAULTS.keyFile).
-        keyName: D.keyPair,
-        iamInstanceProfile: { name: instanceProfile.name },
-        metadataOptions: {
-          httpEndpoint: "enabled",
-          httpTokens: "required",
-          // One hop: the host reads its role, a job container cannot.
-          httpPutResponseHopLimit: 1,
-        },
-        blockDeviceMappings: [
-          {
-            deviceName: plan.disks.root.deviceName,
-            ebs: {
-              volumeSize: plan.disks.root.sizeGb,
-              volumeType: "gp3",
-              deleteOnTermination: String(plan.disks.deleteOnTermination),
-              encrypted: "true",
-            },
-          },
-          {
-            deviceName: plan.disks.data.deviceName,
-            ebs: {
-              volumeSize: plan.disks.data.sizeGb,
-              volumeType: "gp3",
-              deleteOnTermination: String(plan.disks.deleteOnTermination),
-              encrypted: "true",
-            },
-          },
-        ],
-        networkInterfaces: [
-          {
-            associatePublicIpAddress: "true",
-            deleteOnTermination: "true",
-            securityGroups: [securityGroup.id],
-          },
-        ],
-        userData: Buffer.from(testbedUserData(plan)).toString("base64"),
-        tagSpecifications: ["instance", "volume"].map((resourceType) => ({ resourceType, tags })),
-        updateDefaultVersion: true,
-        tags,
-      },
-      opts,
-    );
-    const version = launchTemplate.latestVersion.apply(String);
-    launchTemplateId = launchTemplate.id;
-    // oxlint-disable-next-line no-new -- reason: Pulumi registers a resource when it is constructed
-    new aws.autoscaling.Group(
-      "heavy",
-      {
-        ...common,
-        name: heavy.name,
-        minSize: heavy.min,
-        maxSize: heavy.max,
-        desiredCapacity: heavy.min,
-        launchTemplate: { id: launchTemplate.id, version },
-        tags: groupTags("heavy"),
-      },
-      groupOpts,
-    );
-    // oxlint-disable-next-line no-new -- reason: Pulumi registers a resource when it is constructed
-    new aws.autoscaling.Group(
-      "light",
-      {
-        ...common,
-        name: light.name,
-        minSize: light.min,
-        maxSize: light.max,
-        desiredCapacity: light.min,
-        capacityRebalance: true,
-        mixedInstancesPolicy: {
-          launchTemplate: {
-            launchTemplateSpecification: { launchTemplateId: launchTemplate.id, version },
-            overrides: light.instanceTypes.map((instanceType) => ({ instanceType })),
-          },
-          instancesDistribution: {
-            onDemandBaseCapacity: 0,
-            onDemandPercentageAboveBaseCapacity: 0,
-            spotAllocationStrategy: "price-capacity-optimized",
-          },
-        },
-        tags: groupTags("light"),
-      },
-      groupOpts,
-    );
-    groups = { heavy: heavy.name, light: light.name };
-  }
-
-  return {
-    region: plan.region,
-    securityGroupId: securityGroup.id,
-    instanceRoleArn: instanceRole.arn,
-    buildBucket: bucket.bucket,
-    imagePipelineArn: pipeline.arn,
-    imageVersion: inputs.version,
-    amiParameter: plan.image.amiParameter,
-    ...(groups === undefined ? {} : { groups }),
-    ...(launchTemplateId === undefined ? {} : { launchTemplateId }),
-  };
+  return { instanceRole, instanceProfile, bucket, pipeline, version: inputs.version };
 }
