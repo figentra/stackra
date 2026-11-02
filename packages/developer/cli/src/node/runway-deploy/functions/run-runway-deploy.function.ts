@@ -9,11 +9,13 @@
  *          of an environment runs at a time on a host (`withDeployLock` over `fileDeployLock`). In a product
  *          repository (a root runway with `surfaces` or `mobile`), the web and mobile kinds ship through the
  *          product publish (`runDeployProduct`, the former `--product` path, which stays as an alias) inside the
- *          same lock, and the other kinds through `deploy()`.
+ *          same lock, and the other kinds through `deploy()`. A runway with `secrets.sync: on-deploy` syncs the
+ *          services' secrets from Infisical into Encore (`syncSecrets`) first, inside the lock, whenever the deploy
+ *          ships services; a dry run prints the sync's names and writers.
  * Boundary: the CLI picks the providers and prints; every change is a provider's. Logins are each provider CLI's own
  *           (OIDC in CI), and Worker ids, vars and secrets are read by the provider from this process's environment.
  * Runtime: node
- * Governing contract: ADR 0352 (decisions 1, 3 and 6); STA-1921.
+ * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0173; STA-1921; STA-606.
  */
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -34,7 +36,9 @@ import {
   fileDeployLock,
   MintlifyProviderDriver,
   readRunway,
+  readRunways,
   runCommand,
+  syncSecrets,
 } from "@stackra/runway/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
@@ -62,6 +66,7 @@ function list(value: string | boolean | undefined): string[] | undefined {
  * @throws CliUsageError when the environment or a kind is missing or unknown.
  * @throws CliUsageError when the environment declares an approval and `--approved` is not passed.
  * @throws RunwayLockedError when another deploy of the environment holds this host's lock.
+ * @throws RunwayUnresolvedError when the secret sync cannot read or write a value; nothing has shipped then.
  * @throws RunwayDeployFailedError at the first target that does not verify.
  * @example
  * await runRunwayDeploy({ ...context, values: { env: "production", kind: "web", member: "registry" } });
@@ -108,8 +113,20 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
     (kind) => !(productKinds as string[]).includes(kind),
   ) as DeployKind[];
   const product = productKinds.length === 0 ? undefined : productContext(context, productKinds);
+  // ADR 0173: the services' secrets reach Encore before the services that read them ship.
+  const sync = (dryRun: boolean) =>
+    root.secrets?.sync === "on-deploy" && only.includes(DeployKind.Services)
+      ? syncSecrets({
+          environment,
+          runways: readRunways(cwd),
+          repository: cwd,
+          dryRun,
+          log: (line) => io.out(`${line}\n`),
+        })
+      : Promise.resolve();
 
   if (values["dry-run"] === true) {
+    await sync(true);
     for (const target of deployTargets(root, environment as RunwayEnvironment)) {
       if (!only.includes(target.kind)) continue;
       const provider = providers.find((candidate) => candidate.destination === target.destination);
@@ -134,6 +151,7 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
     environment as RunwayEnvironment,
     fileDeployLock(LOCKS),
     async () => {
+      await sync(false);
       if (product !== undefined) {
         const code = await runDeployProduct(product);
         if (code !== 0) return { code, results: [] };
