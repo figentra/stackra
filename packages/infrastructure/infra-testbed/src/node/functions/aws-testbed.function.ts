@@ -1,21 +1,23 @@
 /**
  * Stackra file contract:
  * Purpose: `awsTestbed(plan, options)`, the Pulumi program part that declares the testbed: an AWS provider pinned to
- *          the plan's region; the `stackra-testbed` security group (SSH from the allowlist, all egress); the instance
- *          role and profile (SSM core, plus Auto Scaling calls limited to groups carrying the `stackra:testbed` tag);
+ *          the plan's region; the `stackra-testbed` security group (SSH only from an optional allowlist, all
+ *          egress); the instance role and profile (SSM core, plus Auto Scaling calls limited to groups carrying the
+ *          `stackra:testbed` tag);
  *          one launch template (AMI from the SSM parameter, a 40 GB root and a 200 GB `/data` volume, IMDSv2
  *          required, user data that writes ids only); the `heavy` on-demand and `light` spot Auto Scaling groups with
  *          EC2 health checks and instance refresh that waits for protected instances; and the EC2 Image Builder
  *          pipeline (build bucket with the inputs as assets, three components, a recipe versioned by the hash of its
  *          inputs, an infrastructure configuration, a distribution that writes the AMI id to the SSM parameter, and
- *          the weekly schedule).
+ *          no schedule: the owner starts a build by hand, only while the heavy group is at 0, since the build
+ *          instance and a heavy box do not both fit the region's on-demand vCPU quota (ADR 0516)).
  * Boundary: declares resources only, inside the Pulumi program that calls it; agents only preview, the owner applies.
  *           No secret value is created or read: the box reaches Infisical through its instance role (AWS IAM auth) and
  *           the plan holds ids and paths. The first apply uses `groups: false`, builds the first image, then applies
  *           again with the groups and their launch template: EC2 refuses a template whose AMI parameter is missing.
  * Runtime: node
- * Governing contract: ADR 0484 (decisions 2 to 10); ADR 0171 (decisions 2, 3 and 5); ADR 0172 (cost tags); ADR 0173
- *                     (no secret values); ADR 0167 (OIDC, no long-lived keys).
+ * Governing contract: ADR 0484 (decisions 2 to 10); ADR 0516 (quotas); ADR 0171 (decisions 2, 3 and 5); ADR 0172
+ *                     (cost tags); ADR 0173 (no secret values); ADR 0167 (OIDC, no long-lived keys).
  */
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
@@ -45,13 +47,13 @@ function assumedBy(service: string): string {
  * Declares the testbed and returns its ids.
  *
  * @param plan - from `testbedPlan`.
- * @param options - the SSH allowlist, the core lockfile and optional network and tags.
+ * @param options - the optional SSH allowlist, the core lockfile and optional network and tags.
  * @example
  * // figentra/infra, testbed/index.ts
  * const config = new pulumi.Config();
  * export const testbed = awsTestbed(
  *   testbedPlan({ identityId: config.require("identityId"), ciGateProjectId: config.require("ciGateProjectId") }),
- *   { allowedCidrs: config.requireObject<string[]>("sshCidrs"), lockfilePath: "../stackra/pnpm-lock.yaml" },
+ *   { allowedCidrs: config.getObject<string[]>("sshCidrs") ?? [], lockfilePath: "../stackra/pnpm-lock.yaml" },
  * );
  */
 export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTestbed {
@@ -75,14 +77,16 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
           .ids
       : [...options.subnetIds];
 
-  // The CLI authorises and revokes its own /32 at run time, so the live ingress is not Pulumi's after creation.
+  // No ingress by default: the CLI reaches a box through SSM Session Manager. With `--ssh-direct` it authorises and
+  // revokes its own /32 at run time, so the live ingress is not Pulumi's after creation. The description stays as it
+  // was: EC2 cannot change it in place, and a new one would replace the group.
   const securityGroup = new aws.ec2.SecurityGroup(
     "testbed",
     {
       name: D.securityGroup,
       description: "Testbed boxes: SSH from the allowlist, all egress",
       vpcId,
-      ingress: options.allowedCidrs.map((cidr) => ({
+      ingress: (options.allowedCidrs ?? []).map((cidr) => ({
         protocol: "tcp",
         fromPort: 22,
         toPort: 22,
@@ -229,6 +233,10 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
     PLAYWRIGHT: pins.playwright ?? "",
     POSTGRES: pins.postgresImage ?? "",
   };
+  // A component or recipe is a version: new inputs replace it, and because its `name` stays the same the provider
+  // replaces it delete-first. AWS refuses to delete a version an image was built from, so the old versions are kept
+  // in AWS and only leave the state (STA-1953). They cost nothing and old images keep their provenance.
+  const versioned: pulumi.CustomResourceOptions = { ...opts, retainOnDelete: true };
   const components = inputs.components.map(
     (source) =>
       new aws.imagebuilder.Component(
@@ -243,7 +251,7 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
           ),
           tags,
         },
-        { ...opts, dependsOn: uploaded },
+        { ...versioned, dependsOn: uploaded },
       ),
   );
   const recipe = new aws.imagebuilder.ImageRecipe(
@@ -274,7 +282,7 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
       ],
       tags,
     },
-    opts,
+    versioned,
   );
   const infrastructure = new aws.imagebuilder.InfrastructureConfiguration(
     "testbed",
@@ -319,11 +327,7 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
       imageRecipeArn: recipe.arn,
       infrastructureConfigurationArn: infrastructure.arn,
       distributionConfigurationArn: distribution.arn,
-      schedule: {
-        scheduleExpression: plan.image.schedule,
-        timezone: "UTC",
-        pipelineExecutionStartCondition: "EXPRESSION_MATCH_ONLY",
-      },
+      // No schedule (ADR 0516): `aws imagebuilder start-image-pipeline-execution`, by hand, while heavy is at 0.
       status: "ENABLED",
       tags,
     },

@@ -1,5 +1,37 @@
 # @stackra/analytics
 
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/iam@0.5.1
+  - @stackra/privacy@0.5.1
+  - @stackra/consent@0.5.1
+  - @stackra/actions@0.5.1
+  - @stackra/storage@0.5.1
+  - @stackra/platform@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/consent@0.5.0
+  - @stackra/iam@0.5.0
+  - @stackra/privacy@0.5.0
+  - @stackra/actions@0.5.0
+  - @stackra/storage@0.5.0
+  - @stackra/platform@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/validation@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

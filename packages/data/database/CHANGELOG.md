@@ -1,5 +1,41 @@
 # @stackra/database
 
+## 0.5.1
+
+### Patch Changes
+
+- 4fa949b: `@stackra/database/testing` loads its optional Testcontainers peers (`@testcontainers/postgresql`, `testcontainers`)
+  only when `usePostgres()` starts a container, so a member without them can import `./testing` and run its unit tests
+  (STA-1950). Before this, every unit test that loaded a factory failed with "Cannot find package
+  '@testcontainers/postgresql'".
+- @stackra/actions@0.5.1
+  - @stackra/model@0.5.1
+  - @stackra/console@0.5.1
+  - @stackra/testing@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/validation@0.5.1
+  - @stackra/cache@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/actions@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/console@0.5.0
+  - @stackra/testing@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/cache@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

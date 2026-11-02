@@ -2,12 +2,19 @@
 version: "0.2"
 language: en
 ignorePaths:
+  # Rendered by `fflow sync` from its preset, never hand-edited (.flow/lock.json pins them).
+  - ".agents/skills/flow-*/**"
+  - ".agents/agents/**"
+  - ".agents/rules/**"
+  - .github/workflows/fflow-approve.yml
+  - .github/workflows/fflow-baseline.yml
   - "**/node_modules/**"
   - "**/dist/**"
   - "**/.turbo/**"
   - pnpm-lock.yaml
   - "**/assets/lang/ar/**"
 words:
+  - fflow
   - stackra
   - figentra
   - oxfmt

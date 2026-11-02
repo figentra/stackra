@@ -1,5 +1,32 @@
 # @stackra/theming
 
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/assets@0.5.1
+  - @stackra/storage@0.5.1
+  - @stackra/tokens@0.5.1
+  - @stackra/ui@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [d7f72d3]
+  - @stackra/ui@0.5.0
+  - @stackra/assets@0.5.0
+  - @stackra/storage@0.5.0
+  - @stackra/tokens@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/validation@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes

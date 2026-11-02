@@ -1,5 +1,62 @@
 # @stackra/identity
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [4fa949b]
+  - @stackra/database@0.5.1
+  - @stackra/outbox@0.5.1
+  - @stackra/queue@0.5.1
+  - @stackra/scheduler@0.5.1
+  - @stackra/iam@0.5.1
+  - @stackra/privacy@0.5.1
+  - @stackra/scope@0.5.1
+  - @stackra/tenancy@0.5.1
+  - @stackra/clients@0.5.1
+  - @stackra/query@0.5.1
+  - @stackra/actions@0.5.1
+  - @stackra/storage@0.5.1
+  - @stackra/ui@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/market-packs@0.5.1
+  - @stackra/support@0.5.1
+  - @stackra/transport@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [104d9f4]
+- Updated dependencies [d7f72d3]
+  - @stackra/tenancy@0.5.0
+  - @stackra/ui@0.5.0
+  - @stackra/clients@0.5.0
+  - @stackra/iam@0.5.0
+  - @stackra/privacy@0.5.0
+  - @stackra/query@0.5.0
+  - @stackra/actions@0.5.0
+  - @stackra/database@0.5.0
+  - @stackra/storage@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/market-packs@0.5.0
+  - @stackra/support@0.5.0
+  - @stackra/transport@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/outbox@0.5.0
+  - @stackra/queue@0.5.0
+  - @stackra/scheduler@0.5.0
+  - @stackra/scope@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes

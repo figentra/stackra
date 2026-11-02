@@ -1,5 +1,38 @@
 # @stackra/settings
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [4fa949b]
+  - @stackra/database@0.5.1
+  - @stackra/model@0.5.1
+  - @stackra/icons@0.5.1
+  - @stackra/ui@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/i18n@0.5.1
+  - @stackra/market-packs@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [d7f72d3]
+- Updated dependencies [d7f72d3]
+  - @stackra/i18n@0.5.0
+  - @stackra/ui@0.5.0
+  - @stackra/database@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/icons@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/market-packs@0.5.0
+  - @stackra/validation@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

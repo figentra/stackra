@@ -1,5 +1,37 @@
 # @stackra/integrations
 
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/data-transfer@0.5.1
+  - @stackra/clients@0.5.1
+  - @stackra/actions@0.5.1
+  - @stackra/money@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/market-packs@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/clients@0.5.0
+  - @stackra/actions@0.5.0
+  - @stackra/money@0.5.0
+  - @stackra/data-transfer@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/market-packs@0.5.0
+  - @stackra/validation@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "71091ff0d8b405b7",
+    "hash": "18a5c3449bc02c91",
     "heroDoc": "vendor/heroui/react/button-group.json",
     "propsFiles": ["ui/src/react/split-button/split-button.props.ts"]
   },
@@ -89,7 +89,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "default": "md",

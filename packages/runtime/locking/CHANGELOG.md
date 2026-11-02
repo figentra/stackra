@@ -1,5 +1,30 @@
 # @stackra/locking
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [4fa949b]
+  - @stackra/database@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/validation@0.5.1
+  - @stackra/cache@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/database@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/cache@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes

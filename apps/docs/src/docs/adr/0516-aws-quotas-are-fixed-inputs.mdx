@@ -1,0 +1,66 @@
+---
+title: "0516 — AWS quotas are fixed inputs: every footprint fits them, and no quota increase without the owner"
+description: "Accepted · 2026-11-02"
+---
+
+{/* Stackra file contract. Purpose: ADR 0516, the owner's rule that AWS service quotas are fixed inputs: every AWS footprint (the testbed, the ci-boxes, deploys, image builds) is designed to fit the quotas as they stand, plans read the quotas read-only and size to them, and no agent requests or suggests a quota increase without the owner's explicit confirmation. Boundary: decision text only; the testbed resize and the checks are built by their own issues. Runtime: documentation. Governing contract: ADR template; ADR 0484, 0468, 0171. */}
+
+<Note>
+  Accepted 2026-11-02 (STA-1953), recording the owner's decision of that date. It amends
+  [0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical):
+  the testbed's group sizes there (heavy 2 to 6 on-demand and light 1 to 4 spot, in one region) do
+  not fit the quotas below, so the testbed is resized to fit them under decision 2.
+</Note>
+
+## Context
+
+AWS Support refuses the account's quota increase requests. The EC2 vCPU quotas, read with `aws service-quotas` in the
+`academorix` account (591473336656) on 2026-11-02, are the same in each of the four regions in use, eu-west-1,
+eu-central-1, us-east-1 and eu-west-2:
+
+| Quota                                                            | Code         | Value  | Fits                    |
+| ---------------------------------------------------------------- | ------------ | ------ | ----------------------- |
+| Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances | `L-1216C47A` | 8 vCPU | one `*.2xlarge` at once |
+| All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests  | `L-34B43A08` | 8 vCPU | one `*.2xlarge` at once |
+
+That is why the old ci-box fleet is spread over four regions, one on-demand and one spot box in each. The testbed
+plan of 0484 puts up to six on-demand and four spot `2xlarge` boxes in one region, and its image build launches one
+more on-demand `c7i.2xlarge`; in eu-west-1 that fits one on-demand box at most, and only while the old box 1 is
+stopped.
+
+## Decision
+
+1. **Quotas are fixed inputs.** The account's AWS service quotas, the EC2 vCPU quotas per region and purchase option
+   first, are taken as they stand. A design that would exceed one changes; the quota does not.
+2. **Every AWS footprint fits the current quotas.** The testbed, the ci-boxes, deploys and image builds are sized so
+   that everything that can run at the same time, per region and purchase option, stays within the quota: every
+   group's maximum, plus every build or temporary instance that can overlap with it, plus anything else already
+   running there.
+3. **No quota increase without the owner.** No agent files a Service Quotas increase, opens an AWS Support case for
+   one, or suggests running either, unless the owner has explicitly confirmed that request in chat. A refusal from
+   AWS Support stands.
+4. **Plans read the quota and size to it.** A plan that places AWS capacity reads the quotas it depends on read-only
+   (`aws service-quotas get-service-quota`, `list-service-quotas`), states the quota it was sized to, and its schema
+   refuses a plan whose concurrent vCPUs exceed that stated quota.
+
+## Consequences
+
+- The testbed is resized or spread across regions to fit, in its own pull request (STA-1953 follow-up), and its plan
+  carries the quota it fits.
+- A footprint that needs more capacity first asks the owner, who decides whether to request a quota increase.
+- Reading a quota is always allowed; it is read-only and needs no confirmation.
+
+## Enforcement
+
+planned — the testbed plan schema refuses concurrent vCPUs above the stated quota
+(`packages/infrastructure/infra-testbed`, `TESTBED_PLAN_SCHEMA`); a `guard-bash` rule in `.agents/hooks/_rules.mjs`
+that asks the owner before `aws service-quotas request-service-quota-increase` and `aws support create-case`. Until
+then nothing checks decision 3, and this page and the testbed runbook say so.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical)
+(the testbed's group sizes). Related: [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)
+(what agents may do without the owner), [0171](/adr/0171-infrastructure-as-code-pulumi-typescript-owned-by-stackra)
+(infrastructure as code). Sources: the owner's instruction of 2026-11-02 ("all aws support for increase refuses don't
+post any quota increasing without my confirmation add this to adrs"); the quota reads of that day; Linear STA-1953.

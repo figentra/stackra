@@ -1,5 +1,34 @@
 # @stackra/ui
 
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/icons@0.5.1
+  - @stackra/tokens@0.5.1
+  - @stackra/shortcuts@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/i18n@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- d7f72d3: The `@heroui/react` peer range is `^3.2.7`, the first release with `Sheet`, which `@stackra/ui/react` imports; a consumer on
+  3.2.6 failed to build with MISSING_EXPORT.
+- Updated dependencies [d7f72d3]
+  - @stackra/i18n@0.5.0
+  - @stackra/icons@0.5.0
+  - @stackra/tokens@0.5.0
+  - @stackra/shortcuts@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/validation@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

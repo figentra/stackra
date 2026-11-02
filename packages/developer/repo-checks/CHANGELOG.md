@@ -1,5 +1,16 @@
 # @stackra/repo-checks
 
+## 0.5.1
+
+No changes in this release.
+
+## 0.5.0
+
+### Patch Changes
+
+- 0263e54: `MUST_STAY_JSON` accepts the root `flow.config.json`, the name Figentra Flow reads its configuration by since 0.2.2
+  (`fflow`), as well as the old `figentra-flow.config.json` (STA-1942).
+
 ## 0.4.0
 
 ### Minor Changes

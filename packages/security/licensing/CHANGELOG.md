@@ -1,5 +1,29 @@
 # @stackra/licensing
 
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/support@0.5.1
+  - @stackra/transport@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/support@0.5.0
+  - @stackra/transport@0.5.0
+  - @stackra/validation@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes

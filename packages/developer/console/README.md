@@ -63,6 +63,11 @@ Pass `container: () => Container.create(wirings)` to build commands with their c
 a command, never for the list, help or version. A member that runs gen gets its registry from `#stackra/commands`
 (STA-1731); a standalone app lists its classes.
 
+`help <command>` (or `<command> --help`) prints a command's help and never runs it; an unknown name exits 2 with the
+closest names. Spaced words run a `:`-joined command, longest match first (`acme mcp sync` runs `mcp:sync`).
+`Command({ group, docs, examples })` sets the command's heading in the list and adds examples and a docs link to its
+help.
+
 Global options on every command: `-h/--help`, `-V/--version`, `-v/--verbose`, `-q/--quiet`, `-n/--no-interaction`,
 `--json`, `--ansi`/`--no-ansi`. Exit codes: 0, the handler's own 0 to 255, 1 (error), 2 (usage), 130 (SIGINT or a
 cancelled prompt), 143 (SIGTERM).

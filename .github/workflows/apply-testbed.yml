@@ -84,7 +84,7 @@ jobs:
 
       - name: Prerequisites
         run: |
-          for name in ROLE_ARN SSH_CIDRS IDENTITY_ID PROJECT_ID; do
+          for name in ROLE_ARN IDENTITY_ID PROJECT_ID; do
             [ -n "${!name}" ] || { echo "::error title=$name::missing (runbook: test-infrastructure, Step 2)"; exit 1; }
           done
           mise install "$PULUMI_TOOL"
@@ -92,8 +92,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
 
+      # Gen runs in the member only: a turbo `test` pulls in //#gen:workspace, which covers every member, and the
+      # playground left out of the install above cannot resolve its kind bases there (STA-1951). Builds need no gen.
       - name: Test and build
-        run: pnpm turbo run test build --filter=@stackra/infra-testbed
+        run: |
+          pnpm turbo run build --filter=@stackra/infra-testbed... --filter=@stackra/cli...
+          (cd packages/infrastructure/infra-testbed && node ../../developer/cli/dist/stackra.mjs gen)
+          pnpm --filter @stackra/infra-testbed test
 
       - name: AWS (GitHub OIDC)
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
@@ -122,7 +127,8 @@ jobs:
           pulumi stack select --create "$STACK"
           pulumi config set identityId "$IDENTITY_ID"
           pulumi config set ciGateProjectId "$PROJECT_ID"
-          # TESTBED_SSH_CIDRS is a comma-separated list (the Mac's IP/32 to start; `stackra testbed` swaps it later).
+          # TESTBED_SSH_CIDRS is optional: a comma-separated port-22 allowlist for `stackra testbed --ssh-direct` only.
+          # Unset, the boxes have no inbound rule and the CLI reaches them through SSM Session Manager (STA-1953).
           i=0
           for cidr in $(printf '%s' "$SSH_CIDRS" | tr ',' ' '); do
             pulumi config set --path "sshCidrs[$i]" "$cidr"
@@ -131,6 +137,20 @@ jobs:
           pulumi config set groups "$DECLARE_GROUPS"
           pulumi config set heavyMin "$HEAVY_MIN"
           pulumi config set lightMin "$LIGHT_MIN"
+          # Image Builder components and recipes are kept in AWS when replaced (retainOnDelete, STA-1953). The engine
+          # reads that flag from the state, so a version created before the flag existed gets it here once; without it,
+          # the replace asks AWS to delete a version an image uses, which AWS refuses. Idempotent: no change, no import.
+          if [ "$ACTION" = up ]; then
+            state="$RUNNER_TEMP/testbed-state.json"
+            versions='(.type == "aws:imagebuilder/component:Component" or .type == "aws:imagebuilder/imageRecipe:ImageRecipe")'
+            pulumi stack export --file "$state"
+            if jq -e "[.deployment.resources[] | select($versions and .retainOnDelete != true)] | length > 0" "$state" >/dev/null; then
+              jq "(.deployment.resources[] | select($versions)).retainOnDelete = true" "$state" > "$state.retained"
+              pulumi stack import --file "$state.retained"
+              echo "::notice title=State::kept the existing Image Builder versions in AWS on replace (retainOnDelete)"
+            fi
+            rm -f "$state" "$state.retained"
+          fi
           case "$ACTION" in
             up) pulumi up --yes --diff ;;
             preview) pulumi preview --diff ;;

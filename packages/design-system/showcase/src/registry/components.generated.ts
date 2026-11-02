@@ -659,6 +659,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["login", "sign in", "log in", "authentication", "password", "kit"],
     status: "new",
   },
+  // KIT_TENANT_MENU: @stackra/tenancy, from its showcase/tenant-menu.json
+  {
+    slug: "tenant-menu",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react", "native"],
+    packageName: "@stackra/tenancy",
+    exportName: "TenantMenu",
+    parts: ["TenantMenu"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 360 }],
+    related: ["free/dropdown", "free/avatar", "free/list"],
+    tokens: ["color.surface", "color.accent"],
+    keywords: ["tenant", "organization", "workspace", "account switcher", "switch", "kit"],
+    status: "new",
+  },
   FREE_AI_MARK,
   FREE_CHAT_MESSAGE,
   // KIT_CHAT_SURFACE: @stackra/ai, from its showcase/chat-surface.json

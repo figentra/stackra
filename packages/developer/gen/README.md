@@ -53,7 +53,7 @@ the committed manifest is the IR, and source is read behind one host seam, never
 | `.`                   | `actionKey`, `eventName`, `permissionKey`, `modelKey`, `tableName`, ...      | the identity formulas of ADR 0294 decision 20                                                                           |
 | `.`                   | `integrationKey`, `webhookPath`, `sequenceKey`, `blockKey`, `routeKey`       | integration, webhook, sequence, block and route identities                                                              |
 | `.`                   | `toolHints`, `EFFECT_TAGS`, `INTEGRATION_ROLES`                              | derived MCP hints, the effect tags and the Integration roles the manifest accepts                                       |
-| `./node`              | `generate`                                                                   | one run: write, or `{ check: true }` for `--check`                                                                      |
+| `./node`              | `generate`, `ModuleLoader`                                                   | one run: write, or `{ check: true }` for `--check`; `loader` imports resource classes                                   |
 | `./node`              | `generateDocsSite`, `watchDocsSite`                                          | a docs app's run (`generate` takes it), and its watch for `stackra dev`                                                 |
 | `./node`              | `discoverMember`, `openHost`                                                 | discovery on TypeScript 7, falling back to TypeScript 6                                                                 |
 | `./node`              | `readServiceManifests`                                                       | the committed manifests of the services a member injects a client of                                                    |
@@ -162,6 +162,34 @@ Gen lists `slots` and `fills` in the manifest for the OS registry and refuses, o
 manifest declares (`slot_undeclared`), on another surface (`slot_surface_mismatch`), built against other props than
 the shell's committed manifest (`slot_props_mismatch`), a second fill of a `one` slot (`slot_fill_duplicate`) and two
 own slots with one key (`slot_key_duplicate`); non-static options are `slot_options_not_constant`.
+
+Panel resources (ADR 0307 rule 5, STA-1947): gen records each `Resource<Model>({...})` class in the manifest's
+`ui.resources`, under `<module>.<model>`, as the tree `describeResource` returns (its options and the nodes of the
+`table`, `views`, `form`, `infolist`, `relations` and `actions` members) plus `module`, `class` and, in a package,
+`from`. Every action or query class in the tree is written as its locked key (`loyalty_kit.account.enroll@1`). A
+service or app also lists its hosted packages' resources. To get a tree, gen runs each class's members once through a
+module loader: `stackra gen` passes one built on Vite's module runner (resource files carry decorators, which Node's
+type stripping refuses), and a `generate` call without `loader` refuses a member with a resource
+(`resource_loader_missing`). A file that fails to import is `resource_unloadable`, a member that throws is
+`builder_impure`, an operation class that is no known action or query is `resource_operation_unknown`, and one key
+from two classes is `resource_duplicate`.
+
+An app that hosts `@stackra/panel` composes the resources its declared packages and consumed services record
+(`hostResourcesOf`, through the shared `contributionsOf` walk; one key from two classes is `resource_duplicate`). Its
+route tables register those trees on the browser and on native, and the browser also gets the panel's pages. It gets
+`#stackra/resources`: `Resources`, each resource's `resource(key, { base, list, view, create, update })` with the
+operation refs its consumed services' clients export (`true` reads the standard `list` or `get`), and `resourceList`
+for the shell's data routes (`...resourceList.flatMap(toResource)`). A page whose operation no client exports, the
+List page included, is left out, so no route reaches an empty page, and is recorded with its reason in
+`unboundOperations` (a `true` list or get waits on gen writing the standard reads, STA-1971).
+
+Package routes and menus (ADR 0111 decisions 1 and 4, STA-1947): a package records the `Route` and `Menu` classes its
+`react` and `native` entries declare in `ui.routes` (key `<module>_<stem>`, path and the page beside the route) and
+`ui.menus` (key and `MenuKind`); a `node` or core one is not a UI contribution. An app's route table for each runtime
+lists the routes its declared packages ship in the entry that serves it (`react` for the browser, `native` for
+native), imported from `<package>/<entry>`, and registers every menu, its own and theirs, in `menuTable` through
+`registerMenus` (`useMenus` of `@stackra/navigation` lists them). The walk is the shared `contributionsOf`; one key
+from two owners, or one the app has too, is `route_duplicate` or `menu_duplicate`.
 
 Surface targets (ADR 0436, stackra-04): a dependency whose committed manifest declares slots is the shell of the
 surfaces those slots sit on, and its major is the line the member targets there. Gen writes `surfaces` to the

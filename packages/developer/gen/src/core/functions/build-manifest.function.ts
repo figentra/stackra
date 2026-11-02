@@ -33,8 +33,12 @@
  *          query key) with its refusals (ADR 0470, stackra-389).
  *          It lists each console `Command` in `commands` (`commandsOf`, own then hosted, `from`) with `kind_path`,
  *          `command_collision` and `identity_missing` (ADR 0506, STA-1731).
+ *          It lists each panel resource in `ui.resources` (`resourcesOf`: its recorded tree by `<module>.<model>`, with
+ *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
+ *          `resource_duplicate`, and a package's UI-entry routes and menus in `ui.routes` and `ui.menus` (`uiRoutesOf`,
+ *          `uiMenusOf`) (STA-1947).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
- *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
+ *           (settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and 36); ADR 0140 (refusal
  *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19); ADR 0342
@@ -78,6 +82,7 @@ import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
+import { resourcesOf } from "#core/functions/resources-of.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
@@ -86,6 +91,8 @@ import { surfacesOf } from "#core/functions/surfaces-of.function";
 import { tableName } from "#core/functions/table-name.function";
 import { toolHints } from "#core/functions/tool-hints.function";
 import { toolName } from "#core/functions/tool-name.function";
+import { uiMenusOf } from "#core/functions/ui-menus-of.function";
+import { uiRoutesOf } from "#core/functions/ui-routes-of.function";
 import { webhookPath } from "#core/functions/webhook-path.function";
 import type { ClassValue } from "#core/types/class-value.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
@@ -1129,6 +1136,18 @@ export function buildManifest(ir: MemberIR): {
   const commands = commandsOf(ir);
   errors.push(...commands.errors);
 
+  // The panel resources with their recorded trees and owning modules, own then hosted (ADR 0307, STA-1947).
+  const ui = resourcesOf(ir, sections.actions);
+  errors.push(...ui.errors);
+  // A package's UI-entry routes and menus, for a host's route tables (STA-1947); each section only when non-empty.
+  const uiRoutes = uiRoutesOf(ir);
+  const uiMenus = uiMenusOf(ir);
+  const uiSection: Entry = {
+    ...(Object.keys(ui.resources).length > 0 ? { resources: ui.resources } : {}),
+    ...(uiRoutes.length > 0 ? { routes: uiRoutes as unknown as Json } : {}),
+    ...(uiMenus.length > 0 ? { menus: uiMenus as unknown as Json } : {}),
+  };
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1152,6 +1171,7 @@ export function buildManifest(ir: MemberIR): {
       : {}),
     ...(reports.reports.length > 0 ? { reports: [...reports.reports] } : {}),
     ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
+    ...(Object.keys(uiSection).length > 0 ? { ui: uiSection } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

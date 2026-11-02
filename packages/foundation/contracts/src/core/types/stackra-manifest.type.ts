@@ -19,7 +19,10 @@ export type StackraManifest = {
   readonly member: string;
   /** The package name (`@acme/loyalty-kit`). */
   readonly package: string;
-  /** The manifest format version. */
+  /**
+   * The member's package version. The manifest has no format version: its sections are additive, and a reader treats
+   * a missing section as empty.
+   */
   readonly version: string;
   /** `app` for an app member; absent for a service and a package. */
   readonly kind?: string;

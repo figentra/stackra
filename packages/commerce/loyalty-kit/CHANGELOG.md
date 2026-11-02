@@ -1,5 +1,71 @@
 # @stackra/loyalty-kit
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [4fa949b]
+  - @stackra/database@0.5.1
+  - @stackra/ledger@0.5.1
+  - @stackra/search@0.5.1
+  - @stackra/panel@0.5.1
+  - @stackra/outbox@0.5.1
+  - @stackra/queue@0.5.1
+  - @stackra/scheduler@0.5.1
+  - @stackra/workflow@0.5.1
+  - @stackra/iam@0.5.1
+  - @stackra/tenancy@0.5.1
+  - @stackra/settings@0.5.1
+  - @stackra/integrations@0.5.1
+  - @stackra/experience@0.5.1
+  - @stackra/actions@0.5.1
+  - @stackra/money@0.5.1
+  - @stackra/versioning@0.5.1
+  - @stackra/model@0.5.1
+  - @stackra/ui@0.5.1
+  - @stackra/testing@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/events@0.5.1
+  - @stackra/i18n@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [d7f72d3]
+- Updated dependencies [104d9f4]
+- Updated dependencies [d7f72d3]
+  - @stackra/i18n@0.5.0
+  - @stackra/tenancy@0.5.0
+  - @stackra/ui@0.5.0
+  - @stackra/search@0.5.0
+  - @stackra/experience@0.5.0
+  - @stackra/panel@0.5.0
+  - @stackra/workflow@0.5.0
+  - @stackra/settings@0.5.0
+  - @stackra/integrations@0.5.0
+  - @stackra/iam@0.5.0
+  - @stackra/actions@0.5.0
+  - @stackra/ledger@0.5.0
+  - @stackra/money@0.5.0
+  - @stackra/versioning@0.5.0
+  - @stackra/database@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/testing@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/outbox@0.5.0
+  - @stackra/queue@0.5.0
+  - @stackra/scheduler@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes

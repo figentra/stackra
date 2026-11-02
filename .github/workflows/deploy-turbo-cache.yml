@@ -39,8 +39,23 @@ concurrency:
 permissions: {}
 
 jobs:
+  # ADR 0468: production waits on the owner's one approval. The `production` environment (owner: required reviewer,
+  # main only) holds no secret and grants nothing; the deploy job keeps the `static` environment, whose name the
+  # Infisical identity trusts (STA-1968).
+  approve:
+    name: Owner approval (production)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    permissions: {}
+    steps:
+      - name: Approved
+        run: echo "production approved for ${GITHUB_SHA}"
+
   deploy:
     name: Deploy turbo.stackra.figentra.com
+    needs: approve
     # workflow_dispatch can name any branch; only main deploys (ADR 0170 decision 6).
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -132,11 +147,12 @@ jobs:
             pnpm exec wrangler r2 bucket lifecycle add "$BUCKET" "$LIFECYCLE_RULE" --expire-days "$EXPIRE_DAYS" --force
           fi
 
-      # Also attaches the Custom Domain of wrangler.jsonc (routes, custom_domain: true).
+      # Also attaches the Custom Domain of wrangler.jsonc (routes, custom_domain: true). The commit SHA is the
+      # deployment message, so Cloudflare's record names the commit it serves (STA-1986, STA-1987).
       - name: wrangler deploy
         if: env.INFISICAL_IDENTITY_ID != ''
         working-directory: workers/turbo-cache
-        run: pnpm exec wrangler deploy
+        run: pnpm exec wrangler deploy --message "$GITHUB_SHA"
 
       # Fetched only now, so the token is in no earlier step's environment.
       - name: Cache token (Infisical OIDC)

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "5237a2ce80746979",
+    "hash": "e2c8645c2db025ec",
     "heroDoc": "vendor/heroui/react/button.json",
     "propsFiles": ["ui/src/react/button/button.props.ts"]
   },
@@ -124,7 +124,15 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
+        },
+        {
+          "default": "default",
+          "description": "The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`.",
+          "name": "shape",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"pill\""
         },
         {
           "default": "md",

@@ -1,5 +1,28 @@
 # @stackra/i18n
 
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/money@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/support@0.5.1
+  - @stackra/validation@0.5.1
+
+## 0.5.0
+
+### Patch Changes
+
+- d7f72d3: `@stackra/i18n/react` exports the named return types of its hooks: `Translation`, `MoneyFormatter`, `LocaleState` and
+  `LocaleChoice`. A consumer's exported class that keeps a hook's result in a field (`readonly i18n = useTranslation()`)
+  now emits declarations; before, `tsc --declaration` refused it with TS4029, since the type could not be named.
+- @stackra/money@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/support@0.5.0
+  - @stackra/validation@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes
