@@ -39,8 +39,23 @@ concurrency:
 permissions: {}
 
 jobs:
+  # ADR 0468: production waits on the owner's one approval. The `production` environment (owner: required reviewer,
+  # main only) holds no secret and grants nothing; the deploy job keeps the `static` environment, whose name the
+  # Infisical identity trusts (STA-1968).
+  approve:
+    name: Owner approval (production)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    permissions: {}
+    steps:
+      - name: Approved
+        run: echo "production approved for ${GITHUB_SHA}"
+
   deploy:
     name: Deploy turbo.stackra.figentra.com
+    needs: approve
     # workflow_dispatch can name any branch; only main deploys (ADR 0170 decision 6).
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
