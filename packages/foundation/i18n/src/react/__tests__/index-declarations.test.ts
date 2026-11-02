@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: declaration-emit test of the `./react` entry: a consumer's exported class that keeps the hooks' results in
  *          fields (`readonly i18n = useTranslation()`, the house idiom) compiles with `tsc --declaration` (exit 0, no
- *          TS4029 or TS2742), and its `.d.ts` names `Translation`, `MoneyFormatter`, `LocaleState` and `LocaleChoice`
+ *          TS4029, TS2883 or TS2742), and its `.d.ts` names `Translation`, `MoneyFormatter`, `LocaleState` and `LocaleChoice`
  *          through `@stackra/i18n/react`.
  * Boundary: test only; links this package into a temp `node_modules` (with `preserveSymlinks`, so the types are seen
  *           as a dependency's, as in a consumer repository), writes the consumer and a tsconfig there, and runs the
@@ -71,7 +71,7 @@ afterAll(async () => {
 });
 
 describe("@stackra/i18n/react, declaration emit", () => {
-  it("names every hook's return type through the entry and raises no TS4029", async () => {
+  it("names every hook's return type through the entry and raises no TS4029 or TS2883", async () => {
     let output: string;
     let code: number;
     try {
@@ -88,8 +88,8 @@ describe("@stackra/i18n/react, declaration emit", () => {
       output = `${failure.stdout ?? ""}${failure.stderr ?? ""}`;
     }
 
-    expect(output).not.toContain("TS4029");
-    expect(output).not.toContain("TS2742");
+    // TS4029 under TypeScript 5 (a consumer's), TS2883 under the workspace's 7.x; TS2742 for a variable
+    for (const refused of ["TS4029", "TS2883", "TS2742"]) expect(output).not.toContain(refused);
     expect(code, output).toBe(0);
     const emitted = await readFile(join(directory, "out", "consumer.d.ts"), "utf8");
     for (const name of ["Translation", "MoneyFormatter", "LocaleState", "LocaleChoice"])
