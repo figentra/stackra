@@ -852,6 +852,121 @@
       ]
     }
   ],
+  "ui": {
+    "resources": {
+      "loyalty_kit.loyalty_account": {
+        "module": "loyalty_kit",
+        "class": "LoyaltyAccountResource",
+        "from": "@stackra/loyalty-kit/node",
+        "options": {
+          "area": "admin",
+          "operations": {
+            "list": true,
+            "get": true,
+            "create": "loyalty_kit.account.enroll@1"
+          },
+          "navigation": {
+            "group": "loyalty_kit::nav.loyalty",
+            "icon": "star",
+            "order": 30
+          }
+        },
+        "table": {
+          "columns": [
+            {
+              "kind": "value",
+              "key": "memberId",
+              "copyable": true
+            },
+            {
+              "kind": "value",
+              "key": "tier",
+              "sortable": true
+            },
+            {
+              "kind": "value",
+              "key": "isFrozen"
+            },
+            {
+              "kind": "value",
+              "key": "frozenAt",
+              "hidden": true
+            },
+            {
+              "kind": "value",
+              "key": "createdAt",
+              "sortable": true
+            }
+          ],
+          "filters": [
+            {
+              "kind": "value",
+              "key": "tier"
+            },
+            {
+              "kind": "value",
+              "key": "isFrozen"
+            },
+            {
+              "kind": "value",
+              "key": "createdAt"
+            },
+            {
+              "kind": "trashed"
+            }
+          ],
+          "defaultSort": {
+            "key": "createdAt",
+            "direction": "desc"
+          },
+          "count": "estimated"
+        },
+        "form": {
+          "fields": [
+            {
+              "kind": "value",
+              "key": "principalId"
+            },
+            {
+              "kind": "value",
+              "key": "tier"
+            }
+          ]
+        },
+        "infolist": {
+          "entries": [
+            {
+              "kind": "value",
+              "key": "memberId"
+            },
+            {
+              "kind": "value",
+              "key": "tier"
+            },
+            {
+              "kind": "value",
+              "key": "isFrozen"
+            },
+            {
+              "kind": "value",
+              "key": "frozenAt"
+            },
+            {
+              "kind": "value",
+              "key": "createdAt"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "kind": "run",
+            "action": "loyalty_kit.account.freeze@1",
+            "bulk": true
+          }
+        ]
+      }
+    }
+  },
   "schemas": {
     "loyalty_kit.DebitOutcome": {
       "type": "string",

@@ -10,7 +10,7 @@
  *                     (decision 3: clients from the producer's manifest); STA-1298 (package catalogues, key references);
  *                     ADR 0438 (shell slots and fills, stackra-03); ADR 0490 (anchors, STA-1631).
  */
-import type { StackraManifest } from "@stackra/contracts";
+import type { Json, StackraManifest } from "@stackra/contracts";
 
 import type { AnchorIR } from "#core/types/anchor-ir.type";
 import type { ClassRef } from "#core/types/class-ref.type";
@@ -69,6 +69,13 @@ export interface MemberIR {
 
   /** Every kind class, sorted by file then name. */
   readonly classes: readonly DeclaredClass[];
+
+  /**
+   * The tree each resource class records, by the class's source file: `describeResource` run once through the CLI's
+   * module loader, each class in it written as `{ $class }`. Absent for a member with no resource and in an IR built by
+   * hand, whose resources are recorded without a tree (STA-1947).
+   */
+  readonly resourceTrees?: Readonly<Record<string, Json>>;
 
   /** Every shape class. */
   readonly shapes: readonly ShapeIR[];
