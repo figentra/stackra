@@ -89,6 +89,7 @@
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/infra-tools": "workspace:*",
     "@stackra/runway": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"
