@@ -116,6 +116,11 @@
       "types": "./dist/react.d.mts",
       "default": "./dist/react.mjs"
     },
+    "./rich-text": {
+      "@stackra/source": "./src/react/rich-text-editor/index.ts",
+      "types": "./dist/rich-text.d.mts",
+      "default": "./dist/rich-text.mjs"
+    },
     "./native": {
       "@stackra/source": "./src/native/index.ts",
       "types": "./dist/native.d.mts",
