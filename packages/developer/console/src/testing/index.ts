@@ -8,8 +8,10 @@
  */
 export { MemoryOperatorBreakGlassDriver } from "#testing/drivers/memory-operator-break-glass.driver";
 export { MemoryCommandAuditDriver } from "#testing/drivers/memory-command-audit.driver";
+export { MemoryProcessRunnerDriver } from "#testing/drivers/memory-process-runner.driver";
 export { manualSignals } from "#testing/functions/manual-signals.function";
 export { memoryText } from "#testing/functions/memory-text.function";
+export { passthroughCommands } from "#testing/functions/passthrough-commands.function";
 export { runCommandForTest } from "#testing/functions/run-command-for-test.function";
 export { scriptedPrompter } from "#testing/functions/scripted-prompter.function";
 export type { ManualSignals } from "#testing/types/manual-signals.type";

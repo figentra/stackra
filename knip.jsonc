@@ -52,6 +52,12 @@
       "project": ["src/**/*.{ts,tsx}", "plugin/**/*.ts"],
     },
     // A member listed by name replaces the packages/*/* entry for it, so it repeats entry and project.
+    // console: src/node/stackra-console.ts is the source of the `stackra-console` bin, which tsdown builds by name
+    // (STA-1985).
+    "packages/developer/console": {
+      "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}", "src/node/stackra-console.ts"],
+      "project": ["src/**/*.{ts,tsx}"],
+    },
     // vite-plugin ships CSS that knip compiles (Tailwind), so its project includes it.
     "packages/developer/vite-plugin": {
       "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],

@@ -7,7 +7,7 @@
  * Governing contract: STA-1731 spec FR-016.
  */
 import { SECRET_FIELD_SUFFIXES } from "#core/constants/secret-field-suffixes.constant";
-import type { CommandField } from "#core/types/command-field.type";
+import type { CommandField } from "#contracts/types/command-field.type";
 
 /** Whether `field`'s value must not be kept. */
 export function isSecret(field: CommandField): boolean {
