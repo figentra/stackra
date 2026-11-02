@@ -68,6 +68,7 @@
   },
   "dependencies": {
     "@stackra/config": "workspace:*",
+    "@stackra/console": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/gen": "workspace:*",
     "@stackra/mcp": "workspace:*",
