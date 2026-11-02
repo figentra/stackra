@@ -8,11 +8,13 @@
  * Governing contract: STA-1730 spec FR-027 and FR-028; spec 030 Requirement 8.
  */
 import { CommandAudit } from "#contracts/ports/command-audit.port";
+import type { Completions } from "#contracts/ports/completions.port";
 import { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
 import type { ConsoleContainer } from "#core/types/console-container.type";
 import { createConsole } from "#core/functions/create-console.function";
 import type { CommandClass } from "#core/types/command-class.type";
 import type { ConsoleConfig } from "#core/types/console-config.type";
+import { MemoryProcessRunnerDriver } from "#testing/drivers/memory-process-runner.driver";
 import { manualSignals } from "#testing/functions/manual-signals.function";
 import { memoryText } from "#testing/functions/memory-text.function";
 import { scriptedPrompter } from "#testing/functions/scripted-prompter.function";
@@ -77,8 +79,14 @@ export async function runCommandForTest(
       ...options.env,
     },
     columns: options.columns ?? 80,
+    cwd: options.cwd ?? "/work",
+    process: () => options.process ?? new MemoryProcessRunnerDriver(),
     signals,
     prompter: () => prompter,
+    ...(options.renderer === undefined ? {} : { renderer: options.renderer }),
+    ...(options.completions === undefined
+      ? {}
+      : { completions: () => options.completions as Completions }),
   });
   if (options.signal !== undefined) {
     const signal = options.signal;

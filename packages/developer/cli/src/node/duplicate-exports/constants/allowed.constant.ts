@@ -32,6 +32,16 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
   ContextMenuProps: "the props of the two ContextMenu components above",
   Meter: "@stackra/model's usage-meter decorator vs @stackra/ui's native meter component",
   Platform: "@stackra/platform's device platform port vs the showcase's web/native platform enum",
+  STACKRA_THEME:
+    "@stackra/console's terminal theme (an ASCII logo, a gradient, an accent, a glyph) vs @stackra/tokens' design-system theme",
+  Spinner:
+    "@stackra/console's running-spinner handle (update, stop) vs @stackra/ui's native spinner component",
+  findCommand:
+    "@stackra/console's lookup in a registry of Command classes vs @stackra/cli's lookup in its CliCommand list, which goes when stackra moves onto the console (STA-1966)",
+  runCommand:
+    "@stackra/console's dispatch of one parsed command vs @stackra/runway's child-process helper",
+  shapeArabic:
+    "@stackra/console depends on no domain package (ADR 0506 decision 5), so it shapes terminal text itself; @stackra/documents shapes PDF text",
   // One shape, kept by the design system so it depends on no domain package.
   HourCycle:
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/i18n's enum has the same values",
