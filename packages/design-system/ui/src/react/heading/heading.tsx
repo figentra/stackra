@@ -9,7 +9,7 @@
 import { Typography } from "@heroui/react";
 import type { ReactElement } from "react";
 
-import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
+import { typographyToneClassName } from "#core/functions/typography-tone-class-name.function";
 import { directionOf } from "#core/functions/direction-of.function";
 import type { HeadingProps } from "#react/heading/heading.props";
 
@@ -34,7 +34,7 @@ export function Heading({
       color={tone === "muted" ? "muted" : "default"}
       align={align ?? "start"}
       truncate={isTruncated ?? false}
-      className={[TONE_CLASS_NAME[tone], className].filter(Boolean).join(" ")}
+      className={[typographyToneClassName(tone, type, "web"), className].filter(Boolean).join(" ")}
       // The level's element through the `elementType` HeroUI passes to React Aria's Text (its props type leaves it out):
       // a `render` returning another tag than the type's trips React Aria's element check (`h3` styled, `h4` drawn).
       {...({ elementType: `h${level}` } as object)}

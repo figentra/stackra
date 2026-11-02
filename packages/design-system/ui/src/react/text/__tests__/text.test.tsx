@@ -187,3 +187,12 @@ describe("Text (web)", () => {
     void (<Text truncate />);
   });
 });
+
+// @covers sta-2016:FR-003
+describe("Text (web): the core tone", () => {
+  it("draws core text as core-strong, so small text keeps 4.5:1", () => {
+    const text = element(render(<Text tone="core">Engine</Text>).container);
+    expect(text.classList.contains("text-core-strong")).toBe(true);
+    expect(text.classList.contains("text-core")).toBe(false);
+  });
+});

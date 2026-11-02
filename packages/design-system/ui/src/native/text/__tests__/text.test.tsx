@@ -154,3 +154,11 @@ describe("Text (native)", () => {
     void (<Text truncate />);
   });
 });
+
+// @covers sta-2016:FR-003
+describe("Text (native): the core tone", () => {
+  it("draws core text as core-strong", () => {
+    render(<Text tone="core">Engine</Text>);
+    expect(propsOf()["className"]).toBe("!text-core-strong");
+  });
+});

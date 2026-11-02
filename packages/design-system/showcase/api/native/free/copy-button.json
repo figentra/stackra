@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "29e243e73fc1054e",
+    "hash": "0319a3c065fc1c3e",
     "propsFiles": ["ui/src/native/copy-button/copy-button.props.ts"]
   },
   "importLine": "import { CopyButton } from \"@stackra/ui/native\";",
@@ -45,7 +45,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",
@@ -61,6 +61,14 @@
           "required": false,
           "source": "stackra",
           "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "default",
+          "description": "The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`.",
+          "name": "shape",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"pill\""
         },
         {
           "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/navigation (the `Route`, `Layout` and `Menu` kinds, route refs and
- *          the route table, the context, props and menu types, `ChromeConfig`, the enums, `data`, the generated
+ *          the route table and the menu registration, the context, props and menu types, `ChromeConfig`, the enums, `data`, the generated
  *          navigation and tabs builders, and the seams other packages contribute through) until `stackra gen` writes
  *          the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Isomorphic: no React, router or React Native import. The
@@ -26,6 +26,7 @@ export { contributeRouteContext } from "#core/functions/contribute-route-context
 export { data } from "#core/functions/data.function";
 export { navigation } from "#core/functions/navigation.function";
 export { registerDocumentResolver } from "#core/functions/register-document-resolver.function";
+export { registerMenus } from "#core/functions/register-menus.function";
 export { registerRoutes } from "#core/functions/register-routes.function";
 export { routeRef } from "#core/functions/route-ref.function";
 export { tabs } from "#core/functions/tabs.function";
