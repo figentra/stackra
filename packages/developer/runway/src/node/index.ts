@@ -73,6 +73,7 @@ export { definesFor } from "#node/functions/defines-for.function";
 export { dryRunCommand } from "#node/functions/dry-run-command.function";
 export { easJsonOf } from "#node/functions/eas-json-of.function";
 export { exportSourceOf } from "#node/functions/export-source-of.function";
+export { fileDeployLock } from "#node/functions/file-deploy-lock.function";
 export { onboardMobile } from "#node/functions/onboard-mobile.function";
 export { deployProduct } from "#node/functions/deploy-product.function";
 export { devServer } from "#node/functions/dev-server.function";
