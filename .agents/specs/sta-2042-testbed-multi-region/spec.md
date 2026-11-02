@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-03
 
-**Status**: Draft
+**Status**: Clarified
 
 **Tier**: big
 
@@ -16,7 +16,7 @@
 
 **Linear project**: none
 
-**Clarifications status**: pending
+**Clarifications status**: complete
 
 **Analyze**: —
 
@@ -47,6 +47,19 @@ Amends ADR 0484 decision 8 (one region)."
   note) and its index row
 - **Lane**: full
 - **Change risk**: R2 (cloud resources in three new regions; the old fleet is replaced)
+
+## Clarifications
+
+### Session 2026-11-03
+
+- Q: How many regions, and which? → A: The four the old boxes use, each with heavy 0–1 and light 0–1, scale-from-zero
+  (owner: "Multi-region testbed").
+- Q: How is the design split (stacks, image, state, CLI)? → A: The leader accepted the plan's proposals: a stack per
+  region, the image built once in eu-west-1 and distributed, the global roles and one state bucket, an ordered region
+  list in `stackra testbed run`, and a region joining only once its old pair is stopped (2026-11-03). How each is
+  built goes in the plan.
+- Q: What does `fflow gate` need from `stackra testbed run`? → A: Stable exit codes, a JSON result and a capacity read
+  (FR-010 to FR-012, "The gate interface"). The leader passes it to the FLOW session.
 
 ## Glossary _(full lane)_
 
@@ -140,6 +153,33 @@ the same image as every other region, with no build there.
 - **FR-008**: THE boxes in every region SHALL reach Infisical through the one instance role, and SHALL accept no
   inbound connection (SSM only), as in eu-west-1.
 - **FR-009**: THE `scale` and `unlock` commands SHALL take a region, defaulting to the region of the box they name.
+- **FR-010**: THE exit status of `stackra testbed run` SHALL be the job's own exit status, except for the reserved codes:
+  2 (usage), 73 (no free slot with `--no-wait`), 75 (no healthy box could be reached; retry), 124 (the job hit its
+  3-hour limit). These codes are a stable contract for callers such as `fflow gate`.
+- **FR-011**: WHEN `stackra testbed run` is given `--json` THE CLI SHALL stream the job's output unchanged to stderr and
+  print one JSON result on stdout at the end: region, box, slot kind, queue wait, run time and exit status.
+- **FR-012**: WHEN `stackra testbed status --json` runs THE CLI SHALL print, per enabled region, the boxes and the free
+  and total heavy and light slots, counting the boxes that may still be started, so a caller can size its fan-out.
+
+### The gate interface (for `fflow gate`, Flow A-1 FR-15)
+
+What the gate can rely on, from the requirements above:
+
+- **One job, one call.** The gate starts one `stackra testbed run "<session> <what>" <dir> "<cmd>" --json` per job. Each
+  call picks its own region and slot (FR-005), so jobs started in parallel spread across regions with no coordination
+  in the gate.
+- **How many at once.** Up to the sum of slots in the enabled regions: three per region (one heavy, two light), so 12
+  with all four regions enabled (4 heavy, 8 light). The gate reads `stackra testbed status --json` (FR-012) and caps
+  its parallel jobs at the free slots, plus the boxes that may still start. A job over the cap waits in `run`.
+- **Which slot.** A command is heavy when it runs `encore test`, Playwright, e2e, `act` or a build; otherwise light.
+  The gate does not choose.
+- **Exit codes** (FR-010): the job's own status passes through. 73 means no free slot (with `--no-wait`), so retry
+  later. 75 means no healthy box was reachable, so retry or report the infrastructure. 124 means the 3-hour limit was
+  hit. 2 means a usage error.
+- **Output** (FR-011): the job's output is streamed to stderr unchanged. One JSON line on stdout gives `region`, `box`,
+  `slot`, `waitSeconds`, `runSeconds` and `exitCode`, for the gate's report.
+- **Not given:** the gate never names a region or a box, and the testbed never queues jobs across calls. The gate owns
+  its own ordering.
 
 ### Key Entities _(include if feature involves data)_
 
@@ -154,6 +194,8 @@ the same image as every other region, with no build there.
 - **AC-003**: WHEN an image build finishes THE same image SHALL be bootable in all four regions.
 - **AC-004**: IF a region's plan would exceed its quotas THEN THE plan SHALL refuse it before any resource changes.
 - **AC-005**: WHILE a region is not enabled THE CLI SHALL never start or use a box there.
+- **AC-006**: WHEN `run --json` finishes THE CLI SHALL print exactly one JSON result on stdout, and its exit status SHALL
+  follow FR-010.
 
 ## Success Criteria _(mandatory)_
 
@@ -187,3 +229,4 @@ None.
 ## Status history
 
 - 2026-11-03 · — → Draft · claude (TESTBED session) · created from the owner's "Multi-region testbed" decision
+- 2026-11-03 · Draft → Clarified · claude (TESTBED session) · design accepted by the leader; the gate interface added (FR-010 to FR-012)
