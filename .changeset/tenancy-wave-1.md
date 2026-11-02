@@ -1,6 +1,5 @@
 ---
 "@stackra/tenancy": minor
-"@stackra/showcase": patch
 ---
 
 Four more tenancy kit blocks in `@stackra/tenancy/react`: `TenantPicker` (choose an organisation, by default from the
