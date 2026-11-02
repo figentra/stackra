@@ -50,8 +50,8 @@ STA-1731 (`.agents/specs/sta-1731-console-commands`), ADR 0506.
   the package), an amendment note on ADR 0282 d5 (local MCP tools derive from command definitions), and an
   amendment of ADR 0294's action options (`command`, with the actor rule of FR-026) and ADR 0098's v3 note. The STA-1730
   `flow-visual-spec.md` ("Flow never depends on `@stackra/console`") is superseded
-- **New dependencies**: `@clack/prompts` 1.8.1 and `@bomb.sh/tab` 0.0.22 (catalog `tooling`), `ink` 8.0.0 (catalog
-  `tooling`), with `react` 19.3.0 and `@types/react` 19.3.0 from catalog `frontend`. Owner approval 2026-11-02,
+- **New dependencies**: `@clack/prompts` 1.8.1 and `@bomb.sh/tab` 0.0.22 (default catalog), `ink` 8.0.0 (default
+  catalog), with `react` 19.3.0 and `@types/react` 19.3.0 from catalog `frontend`. Owner approval 2026-11-02,
   STA-1966. Not used: `@bomb.sh/args` (last release 2025-02; `node:util` `parseArgs` stays) and a Bombshell router
   package (the router is ours, FR-010)
 - **Deploy modes**: same in all three (a library and three bins; nothing deployed; no outbound call)
