@@ -1563,7 +1563,7 @@
   issue: STA-1986
 "0520":
   slug: stackra-champagne-core-for-the-engine
-  status: reserved
+  status: accepted
   issue: STA-2015
 "0521":
   slug: design-system-docs-on-fumadocs-ai-first
