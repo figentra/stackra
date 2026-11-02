@@ -1556,3 +1556,8 @@
   status: accepted
   owner: os-backend
   issue: STA-1964
+"0519":
+  slug: worker-settings-come-from-runway-presets
+  status: reserved
+  owner: claude
+  issue: STA-1986
