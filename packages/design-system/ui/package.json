@@ -214,7 +214,7 @@
   "peerDependencies": {
     "@10play/tentap-editor": "^1.0.1",
     "@expo/ui": "^57.0.25",
-    "@heroui/react": "^3.2.6",
+    "@heroui/react": "^3.2.7",
     "@internationalized/date": "^3.12.4",
     "@internationalized/number": "^3.6.9",
     "@shopify/react-native-skia": "^2.6.2",
