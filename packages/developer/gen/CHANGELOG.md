@@ -1,5 +1,14 @@
 # @stackra/gen
 
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/money@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/support@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

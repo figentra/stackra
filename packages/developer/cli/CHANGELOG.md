@@ -1,5 +1,27 @@
 # @stackra/cli
 
+## 0.5.0
+
+### Minor Changes
+
+- f7321ea: `stackra deploy --env <environment> [--kind <k,…>] [--member <key,…>] [--sha <sha>] [--dry-run]`, without
+  `--product`, ships a commit (`HEAD` by default) to every target of the environment in the root `runway.yaml`, through
+  runway's `deploy()` with the `encore-cloud`, `eas`, `mintlify` and `cloudflare-workers` providers (STA-1921). A dry run
+  prints each target's plan. `--product` keeps the product deploy.
+
+### Patch Changes
+
+- Updated dependencies [0263e54]
+- Updated dependencies [f7321ea]
+  - @stackra/repo-checks@0.5.0
+  - @stackra/runway@0.5.0
+  - @stackra/mcp@0.5.0
+  - @stackra/gen@0.5.0
+  - @stackra/skills@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/support@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

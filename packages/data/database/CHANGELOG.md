@@ -1,5 +1,21 @@
 # @stackra/database
 
+## 0.5.0
+
+### Patch Changes
+
+- @stackra/actions@0.5.0
+  - @stackra/model@0.5.0
+  - @stackra/console@0.5.0
+  - @stackra/testing@0.5.0
+  - @stackra/config@0.5.0
+  - @stackra/container@0.5.0
+  - @stackra/contracts@0.5.0
+  - @stackra/errors@0.5.0
+  - @stackra/events@0.5.0
+  - @stackra/validation@0.5.0
+  - @stackra/cache@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes
