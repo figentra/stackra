@@ -11,9 +11,11 @@
  *          product publish (`runDeployProduct`, the former `--product` path, which stays as an alias) inside the
  *          same lock, and the other kinds through `deploy()`. A runway with `secrets.sync: on-deploy` syncs the
  *          services' secrets from Infisical into Encore (`syncSecrets`) first, inside the lock, whenever the deploy
- *          ships services; a dry run prints the sync's names and writers.
+ *          ships services, and then the Workers provider reads a Worker's secrets from Infisical too; a dry run prints
+ *          the sync's names and writers.
  * Boundary: the CLI picks the providers and prints; every change is a provider's. Logins are each provider CLI's own
- *           (OIDC in CI), and Worker ids, vars and secrets are read by the provider from this process's environment.
+ *           (OIDC in CI), and Worker ids and vars are read by the provider from this process's environment (its
+ *           secrets too, unless the runway syncs on deploy).
  * Runtime: node
  * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0173; STA-1921; STA-606.
  */
@@ -91,6 +93,8 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
   const workers = Object.assign(new CloudflareWorkersProviderDriver(), {
     root: cwd,
     only: list(values["member"]) ?? [],
+    // ADR 0173: with the sync on, a Worker's secrets come from Infisical, not this process's environment.
+    ...(root.secrets?.sync === "on-deploy" ? { runways: readRunways(cwd) } : {}),
   });
   // A repository without an Encore app (core) has no `encore-cloud` provider; a target naming it fails in `deploy()`.
   const providers = [
