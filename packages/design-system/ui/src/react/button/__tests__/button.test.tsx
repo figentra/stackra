@@ -167,3 +167,28 @@ describe("Button (web)", () => {
     expect(container.querySelector('[data-testid="mine"]')).toBeTruthy();
   });
 });
+
+// @covers sta-2016:FR-001 sta-2016:FR-002
+describe("Button (web): the core variant and the pill shape", () => {
+  it("draws the core as HeroUI's primary with the theme's core class", () => {
+    render(<Button variant="core">Start</Button>);
+    const button = screen.getByRole("button", { name: "Start" });
+    expect(button.classList.contains("button--primary")).toBe(true);
+    expect(button.classList.contains("button--core")).toBe(true);
+  });
+
+  it("is a pill only when asked", () => {
+    render(<Button shape="pill">Pill</Button>);
+    expect(
+      screen
+        .getByRole("button", { name: "Pill" })
+        .classList.contains("rounded-[var(--radius-pill)]"),
+    ).toBe(true);
+    render(<Button>Square</Button>);
+    expect(
+      screen
+        .getByRole("button", { name: "Square" })
+        .classList.contains("rounded-[var(--radius-pill)]"),
+    ).toBe(false);
+  });
+});

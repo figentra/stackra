@@ -5,7 +5,8 @@
  *          (`member`, `deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`) at the top and in an
  *          environment; a dedicated resource needs a non-empty reason; the engines are ADR 0296's four; a grouped
  *          topology needs groups and lists a member once; the root's environments, `secrets` and `destinations` are
- *          closed while its provider and target blocks and the member size blocks stay open; the config layer selects
+ *          closed, as are the known targets, the edge, release, observability and GitHub blocks (STA-1975, STA-1976),
+ *          while the other provider blocks, other targets and the member size blocks stay open; the config layer selects
  *          the Postgres action stores by name; a var reference names
  *          exactly one origin; the npm provider's registry is an https URL ending in / and its scope an npm scope;
  *          a version other than 3, a misspelt environment, a duplicated secret and an inverted
@@ -246,6 +247,93 @@ describe("parseRunway", () => {
       stores,
     );
     expect(service.environments.staging?.config?.["actions.stores"]).toEqual(stores);
+  });
+
+  it("types the known targets, refusing a misspelt key, and leaves another destination open", () => {
+    const targets = {
+      "encore-cloud": { cloud: "aws" },
+      "cloudflare-workers": {
+        compatibilityDate: "2026-10-01",
+        observability: { headSamplingRate: 0.1 },
+        workflows: { static: "deploy-static.yml" },
+      },
+      eas: {
+        buildTrigger: "fingerprint",
+        monthlyBuildCap: 60,
+        ota: {
+          rollout: { startPercent: 10, endPercent: 100, stepHours: 24 },
+          rollback: "republish-previous",
+        },
+        minimumVersion: { gate: true, supportedStoreVersions: 2 },
+      },
+      mintlify: { deployOn: "merge-to-main", branch: "docs-site", adminKey: "MINTLIFY_ADMIN_KEY" },
+      npm: { access: "public", provenance: true, trustedPublisher: "release.yml" },
+      "vite-dev": { anything: true },
+    };
+    const root = parseRunway("root", { ...ROOT, targets });
+    expect(root.targets?.["eas"]).toMatchObject({ monthlyBuildCap: 60 });
+    expect(root.targets?.["vite-dev"]).toEqual({ anything: true });
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          targets: { ...targets, eas: { ...targets.eas, ota: { rolout: { startPercent: 10 } } } },
+        }),
+      ),
+    ).toEqual(["targets.eas.ota"]);
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          targets: { ...targets, mintlify: { adminKey: "a-secret-value" } },
+        }),
+      ),
+    ).toEqual(["targets.mintlify.adminKey"]);
+  });
+
+  it("closes the edge, release, observability and GitHub blocks, refusing a misspelt key", () => {
+    const sections = {
+      edge: {
+        proxy: "all",
+        waf: "managed",
+        rateLimit: { perIp: { requests: 100, periodSeconds: 10 } },
+      },
+      release: {
+        buildOrder: ["schemas", "services"],
+        gate: { health: "/health", errorWatchMinutes: 15 },
+        windows: {
+          avoid: [
+            { local: "08:00-10:00", days: "sun-thu" },
+            { termStart: { firstDays: 3, source: "calendar" } },
+          ],
+        },
+      },
+      observability: {
+        logs: { hotDays: 30 },
+        uptime: [{ name: "api", url: "https://api.acme.example/health" }],
+      },
+      providers: {
+        github: {
+          org: "acme",
+          repo: "platform",
+          environments: { production: { reviewers: ["acme/owners"] } },
+        },
+      },
+    };
+    const root = parseRunway("root", { ...ROOT, ...sections });
+    expect(root.edge).toEqual(sections.edge);
+    expect(root.providers?.github).toEqual(sections.providers.github);
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          edge: { tls: { minVerison: "1.2" } },
+          release: { gate: { helth: "/health" } },
+          observability: { log: {} },
+          providers: { github: { org: "acme", repo: "platform", enviroments: {} } },
+        }),
+      ).sort(),
+    ).toEqual(["edge.tls", "observability", "providers.github", "release.gate"]);
   });
 
   it("refuses root keys in a member runway", () => {

@@ -1,7 +1,15 @@
 ---
 title: "0098 — Actions are the unit of behaviour, in @stackra/actions, with one pipeline and a typed actor"
-description: "Accepted, amended by 0136, 0137, 0139, 0155, 0211, 0264, 0294, 0305 · 2026-10-19"
+description: "Accepted, amended by 0136, 0137, 0139, 0155, 0211, 0264, 0294, 0305 · 2026-10-19 · amended 2026-11-02 (STA-1966)"
 ---
+
+<Note>
+  Amended 2026-11-02 (owner decision, STA-1966) by the 2026-11-02 amendment of
+  [0506](/adr/0506-console-command-kind#amendment-2026-11-02-owner-decision-one-cli-engine): an
+  action or query reaches the CLI through a `command` option, not `@AsCommand`, which stays retired.
+  The actor is the signed-in CLI identity, never a privileged operator by default, and the call runs
+  the one pipeline of decision 3. Decisions 1, 3 to 7 stand.
+</Note>
 
 <Note>
   Amended 2026-10-23 (STA-406), by

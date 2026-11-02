@@ -7,6 +7,7 @@
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0060 (right-to-left); WCAG 2.2 SC 1.3.1 and 4.1.2; STA-1371.
  */
+import { heroButtonVariant } from "#react/button/hero-button-variant.function";
 import { ButtonGroup as HeroButtonGroup, cn } from "@heroui/react";
 import type { ReactElement } from "react";
 
@@ -27,7 +28,8 @@ export function ButtonGroup({
     <HeroButtonGroup
       aria-label={label}
       orientation={orientation}
-      variant={variant === "glass" ? "ghost" : variant}
+      // A core group draws as the primary: HeroUI hands the group variant to each button, without the core class.
+      variant={heroButtonVariant(variant)}
       {...omitUndefined({ size, isDisabled })}
       className={cn("[--radius:var(--radius-control)]", className) ?? ""}
     >

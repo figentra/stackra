@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "9bf7d1723cafbab0",
+    "hash": "a999c9249cc02204",
     "propsFiles": ["ui/src/native/fab/fab.props.ts"]
   },
   "importLine": "import { Fab } from \"@stackra/ui/native\";",
@@ -75,7 +75,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "default": "lg",
