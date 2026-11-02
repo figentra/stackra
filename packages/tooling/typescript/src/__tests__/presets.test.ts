@@ -96,6 +96,19 @@ describe("@stackra/typescript-config presets", () => {
     }
   });
 
+  it("service checks the generated types but never the generated Encore app", () => {
+    // The Encore app imports encore.dev, which no member declares (ADR 0091, 0124); gen reads it, tsc never does.
+    const { include } = JSON.parse(
+      readFileSync(join(root, "src", "service.json"), "utf8")
+        .split("\n")
+        .filter((line) => !line.trimStart().startsWith("//"))
+        .join("\n"),
+    ) as { include: string[] };
+    expect(include).toContain("${configDir}/.stackra/gen");
+    expect(include.filter((entry) => entry.includes("encore"))).toEqual([]);
+    expect(include).not.toContain("${configDir}/.stackra");
+  });
+
   it("base keeps the non-negotiable strictness flags", () => {
     const base = readJsonc(join(root, "src", "base.json")).compilerOptions ?? {};
     for (const flag of [

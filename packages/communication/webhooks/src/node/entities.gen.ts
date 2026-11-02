@@ -12,7 +12,7 @@ import { WebhookEndpoint } from "#node/models/webhook-endpoint.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `webhooks.webhook_delivery` (src/node/models/webhook-delivery.model.ts). */
-export const WebhookDeliverySchema = new EntitySchema<WebhookDelivery>({
+export const WebhookDeliverySchema: EntitySchema<WebhookDelivery> = new EntitySchema<WebhookDelivery>({
   class: WebhookDelivery,
   schema: "webhooks",
   tableName: "webhook_deliveries",
@@ -31,7 +31,7 @@ export const WebhookDeliverySchema = new EntitySchema<WebhookDelivery>({
 });
 
 /** `webhooks.webhook_endpoint` (src/node/models/webhook-endpoint.model.ts). */
-export const WebhookEndpointSchema = new EntitySchema<WebhookEndpoint>({
+export const WebhookEndpointSchema: EntitySchema<WebhookEndpoint> = new EntitySchema<WebhookEndpoint>({
   class: WebhookEndpoint,
   schema: "webhooks",
   tableName: "webhook_endpoints",

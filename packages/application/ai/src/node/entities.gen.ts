@@ -17,7 +17,7 @@ import { ToolCall } from "#node/models/tool-call.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `ai.a2a_task` (src/node/models/a2a-task.model.ts). */
-export const A2aTaskSchema = new EntitySchema<A2aTask>({
+export const A2aTaskSchema: EntitySchema<A2aTask> = new EntitySchema<A2aTask>({
   class: A2aTask,
   schema: "ai",
   tableName: "a2a_tasks",
@@ -31,11 +31,12 @@ export const A2aTaskSchema = new EntitySchema<A2aTask>({
     tenantId: { type: "string" },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
+    "~defaults": { type: "json", persist: false },
   },
 });
 
 /** `ai.conversation` (src/node/models/conversation.model.ts). */
-export const ConversationSchema = new EntitySchema<Conversation>({
+export const ConversationSchema: EntitySchema<Conversation> = new EntitySchema<Conversation>({
   class: Conversation,
   schema: "ai",
   tableName: "conversations",
@@ -49,11 +50,12 @@ export const ConversationSchema = new EntitySchema<Conversation>({
     tenantId: { type: "string" },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
+    "~defaults": { type: "json", persist: false },
   },
 });
 
 /** `ai.message` (src/node/models/message.model.ts). */
-export const MessageSchema = new EntitySchema<Message>({
+export const MessageSchema: EntitySchema<Message> = new EntitySchema<Message>({
   class: Message,
   schema: "ai",
   tableName: "messages",
@@ -70,7 +72,7 @@ export const MessageSchema = new EntitySchema<Message>({
 });
 
 /** `ai.run_approval` (src/node/models/run-approval.model.ts). */
-export const RunApprovalSchema = new EntitySchema<RunApproval>({
+export const RunApprovalSchema: EntitySchema<RunApproval> = new EntitySchema<RunApproval>({
   class: RunApproval,
   schema: "ai",
   tableName: "run_approvals",
@@ -88,7 +90,7 @@ export const RunApprovalSchema = new EntitySchema<RunApproval>({
 });
 
 /** `ai.run_step` (src/node/models/run-step.model.ts). */
-export const RunStepSchema = new EntitySchema<RunStep>({
+export const RunStepSchema: EntitySchema<RunStep> = new EntitySchema<RunStep>({
   class: RunStep,
   schema: "ai",
   tableName: "run_steps",
@@ -104,7 +106,7 @@ export const RunStepSchema = new EntitySchema<RunStep>({
 });
 
 /** `ai.run` (src/node/models/run.model.ts). */
-export const RunSchema = new EntitySchema<Run>({
+export const RunSchema: EntitySchema<Run> = new EntitySchema<Run>({
   class: Run,
   schema: "ai",
   tableName: "runs",
@@ -128,11 +130,12 @@ export const RunSchema = new EntitySchema<Run>({
     tenantId: { type: "string" },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
+    "~defaults": { type: "json", persist: false },
   },
 });
 
 /** `ai.tool_call` (src/node/models/tool-call.model.ts). */
-export const ToolCallSchema = new EntitySchema<ToolCall>({
+export const ToolCallSchema: EntitySchema<ToolCall> = new EntitySchema<ToolCall>({
   class: ToolCall,
   schema: "ai",
   tableName: "tool_calls",
@@ -147,6 +150,7 @@ export const ToolCallSchema = new EntitySchema<ToolCall>({
     at: { type: "datetime" },
     id: { type: "string", primary: true },
     tenantId: { type: "string" },
+    "~defaults": { type: "json", persist: false },
   },
 });
 

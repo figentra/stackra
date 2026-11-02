@@ -13,7 +13,7 @@ import { Award } from "#node/models/award.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `achievements.award_kind` (src/node/models/award-kind.model.ts). */
-export const AwardKindSchema = new EntitySchema<AwardKind>({
+export const AwardKindSchema: EntitySchema<AwardKind> = new EntitySchema<AwardKind>({
   class: AwardKind,
   schema: "achievements",
   tableName: "award_kinds",
@@ -36,7 +36,7 @@ export const AwardKindSchema = new EntitySchema<AwardKind>({
 });
 
 /** `achievements.award_verification` (src/node/models/award-verification.model.ts). */
-export const AwardVerificationSchema = new EntitySchema<AwardVerification>({
+export const AwardVerificationSchema: EntitySchema<AwardVerification> = new EntitySchema<AwardVerification>({
   class: AwardVerification,
   schema: "achievements",
   tableName: "award_verifications",
@@ -53,7 +53,7 @@ export const AwardVerificationSchema = new EntitySchema<AwardVerification>({
 });
 
 /** `achievements.award` (src/node/models/award.model.ts). */
-export const AwardSchema = new EntitySchema<Award>({
+export const AwardSchema: EntitySchema<Award> = new EntitySchema<Award>({
   class: Award,
   schema: "achievements",
   tableName: "awards",

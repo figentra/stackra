@@ -14,7 +14,7 @@ import { ServiceAckSet } from "#node/models/service-ack-set.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `workflow.automation` (src/node/models/automation.model.ts). */
-export const AutomationSchema = new EntitySchema<Automation>({
+export const AutomationSchema: EntitySchema<Automation> = new EntitySchema<Automation>({
   class: Automation,
   schema: "workflow",
   tableName: "automations",
@@ -33,11 +33,12 @@ export const AutomationSchema = new EntitySchema<Automation>({
     id: { type: "string", primary: true },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
+    "~defaults": { type: "json", persist: false },
   },
 });
 
 /** `workflow.checklist_progress` (src/node/models/checklist-progress.model.ts). */
-export const ChecklistProgressSchema = new EntitySchema<ChecklistProgress>({
+export const ChecklistProgressSchema: EntitySchema<ChecklistProgress> = new EntitySchema<ChecklistProgress>({
   class: ChecklistProgress,
   schema: "workflow",
   tableName: "checklist_progresses",
@@ -55,7 +56,7 @@ export const ChecklistProgressSchema = new EntitySchema<ChecklistProgress>({
 });
 
 /** `workflow.checklist` (src/node/models/checklist.model.ts). */
-export const ChecklistSchema = new EntitySchema<Checklist>({
+export const ChecklistSchema: EntitySchema<Checklist> = new EntitySchema<Checklist>({
   class: Checklist,
   schema: "workflow",
   tableName: "checklists",
@@ -71,11 +72,12 @@ export const ChecklistSchema = new EntitySchema<Checklist>({
     id: { type: "string", primary: true },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
+    "~defaults": { type: "json", persist: false },
   },
 });
 
 /** `workflow.service_ack_set` (src/node/models/service-ack-set.model.ts). */
-export const ServiceAckSetSchema = new EntitySchema<ServiceAckSet>({
+export const ServiceAckSetSchema: EntitySchema<ServiceAckSet> = new EntitySchema<ServiceAckSet>({
   class: ServiceAckSet,
   schema: "workflow",
   tableName: "service_ack_sets",
@@ -89,6 +91,7 @@ export const ServiceAckSetSchema = new EntitySchema<ServiceAckSet>({
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
     version: { type: "integer", version: true },
+    "~defaults": { type: "json", persist: false },
   },
 });
 

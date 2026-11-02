@@ -11,7 +11,7 @@ import { ScopeNode } from "#node/models/scope-node.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `scope.scope_node` (src/node/models/scope-node.model.ts). */
-export const ScopeNodeSchema = new EntitySchema<ScopeNode>({
+export const ScopeNodeSchema: EntitySchema<ScopeNode> = new EntitySchema<ScopeNode>({
   class: ScopeNode,
   schema: "scope",
   tableName: "scope_nodes",

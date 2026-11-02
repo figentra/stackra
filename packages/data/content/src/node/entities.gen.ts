@@ -14,7 +14,7 @@ import { EntitySchema, registerEntities } from "@stackra/database";
 import { TranslatedType } from "@stackra/model";
 
 /** `content.custom_field_value_set` (src/node/models/custom-field-value-set.model.ts). */
-export const CustomFieldValueSetSchema = new EntitySchema<CustomFieldValueSet>({
+export const CustomFieldValueSetSchema: EntitySchema<CustomFieldValueSet> = new EntitySchema<CustomFieldValueSet>({
   class: CustomFieldValueSet,
   schema: "content",
   tableName: "custom_field_value_sets",
@@ -31,7 +31,7 @@ export const CustomFieldValueSetSchema = new EntitySchema<CustomFieldValueSet>({
 });
 
 /** `content.custom_field` (src/node/models/custom-field.model.ts). */
-export const CustomFieldSchema = new EntitySchema<CustomField>({
+export const CustomFieldSchema: EntitySchema<CustomField> = new EntitySchema<CustomField>({
   class: CustomField,
   schema: "content",
   tableName: "custom_fields",
@@ -48,11 +48,12 @@ export const CustomFieldSchema = new EntitySchema<CustomField>({
     id: { type: "string", primary: true },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
+    "~defaults": { type: "json", persist: false },
   },
 });
 
 /** `content.revision` (src/node/models/revision.model.ts). */
-export const RevisionSchema = new EntitySchema<Revision>({
+export const RevisionSchema: EntitySchema<Revision> = new EntitySchema<Revision>({
   class: Revision,
   schema: "content",
   tableName: "revisions",
@@ -69,6 +70,7 @@ export const RevisionSchema = new EntitySchema<Revision>({
     id: { type: "string", primary: true },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
+    "~defaults": { type: "json", persist: false },
   },
 });
 

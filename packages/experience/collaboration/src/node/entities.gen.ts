@@ -14,7 +14,7 @@ import { Comment } from "#node/models/comment.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `collaboration.comment_mention` (src/node/models/comment-mention.model.ts). */
-export const CommentMentionSchema = new EntitySchema<CommentMention>({
+export const CommentMentionSchema: EntitySchema<CommentMention> = new EntitySchema<CommentMention>({
   class: CommentMention,
   schema: "collaboration",
   tableName: "comment_mentions",
@@ -32,7 +32,7 @@ export const CommentMentionSchema = new EntitySchema<CommentMention>({
 });
 
 /** `collaboration.comment_revision` (src/node/models/comment-revision.model.ts). */
-export const CommentRevisionSchema = new EntitySchema<CommentRevision>({
+export const CommentRevisionSchema: EntitySchema<CommentRevision> = new EntitySchema<CommentRevision>({
   class: CommentRevision,
   schema: "collaboration",
   tableName: "comment_revisions",
@@ -49,7 +49,7 @@ export const CommentRevisionSchema = new EntitySchema<CommentRevision>({
 });
 
 /** `collaboration.comment_thread` (src/node/models/comment-thread.model.ts). */
-export const CommentThreadSchema = new EntitySchema<CommentThread>({
+export const CommentThreadSchema: EntitySchema<CommentThread> = new EntitySchema<CommentThread>({
   class: CommentThread,
   schema: "collaboration",
   tableName: "comment_threads",
@@ -70,7 +70,7 @@ export const CommentThreadSchema = new EntitySchema<CommentThread>({
 });
 
 /** `collaboration.comment` (src/node/models/comment.model.ts). */
-export const CommentSchema = new EntitySchema<Comment>({
+export const CommentSchema: EntitySchema<Comment> = new EntitySchema<Comment>({
   class: Comment,
   schema: "collaboration",
   tableName: "comments",

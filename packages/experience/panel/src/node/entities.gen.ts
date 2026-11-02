@@ -11,7 +11,7 @@ import { StoredView } from "#node/models/stored-view.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `panel.stored_view` (src/node/models/stored-view.model.ts). */
-export const StoredViewSchema = new EntitySchema<StoredView>({
+export const StoredViewSchema: EntitySchema<StoredView> = new EntitySchema<StoredView>({
   class: StoredView,
   schema: "panel",
   tableName: "stored_views",

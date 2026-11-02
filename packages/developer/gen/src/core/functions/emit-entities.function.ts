@@ -214,10 +214,14 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
     }
     for (const name of shape.entity?.computed ?? [])
       properties.push(`    ${name}: { type: "json", persist: false },`);
+    // The schemas file types a defaulted model with a `"~defaults"` marker (STA-1694); `EntitySchema<T>` names every
+    // string key of `T`, so the marker is listed as not persisted, like a getter.
+    if (shape.fields.some((field) => field.default !== undefined))
+      properties.push('    "~defaults": { type: "json", persist: false },');
 
     schemas.push(
       `/** \`${modelKey(module, shape.name)}\` (${shape.file}). */`,
-      `export const ${shape.name}Schema = new EntitySchema<${className}>({`,
+      `export const ${shape.name}Schema: EntitySchema<${className}> = new EntitySchema<${className}>({`,
       `  class: ${className},`,
       `  schema: ${JSON.stringify(module)},`,
       `  tableName: ${JSON.stringify(plural(snakeCase(shape.name)))},`,
@@ -234,13 +238,16 @@ export function emitEntities(ir: MemberIR, module: string): string | undefined {
     const className = ref({ name: shape.name, from: shape.importPath });
     schemas.push(
       `/** The side table of \`${modelKey(module, shape.name)}\` (${shape.file}), keyed by the base record's id. */`,
-      `export const ${shape.name}Schema = new EntitySchema<${className} & { id: string }>({`,
+      `export const ${shape.name}Schema: EntitySchema<${className} & { id: string }> = new EntitySchema<${className} & { id: string }>({`,
       `  name: ${JSON.stringify(modelKey(module, shape.name))},`,
       `  schema: ${JSON.stringify(module)},`,
       `  tableName: ${JSON.stringify(plural(snakeCase(shape.name)))},`,
       "  properties: {",
       '    id: { type: "string", primary: true },',
       ...fieldProperties(shape.fields, new Set()),
+      ...(shape.fields.some((field) => field.default !== undefined)
+        ? ['    "~defaults": { type: "json", persist: false },']
+        : []),
       "  },",
       "});",
       "",

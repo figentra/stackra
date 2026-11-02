@@ -11,7 +11,7 @@ import { Synonym } from "#node/models/synonym.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `data_maintenance.synonym` (src/node/models/synonym.model.ts). */
-export const SynonymSchema = new EntitySchema<Synonym>({
+export const SynonymSchema: EntitySchema<Synonym> = new EntitySchema<Synonym>({
   class: Synonym,
   schema: "data_maintenance",
   tableName: "synonyms",

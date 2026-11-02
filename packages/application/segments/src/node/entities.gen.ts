@@ -12,7 +12,7 @@ import { Segment } from "#node/models/segment.model";
 import { EntitySchema, registerEntities } from "@stackra/database";
 
 /** `segments.segment_membership` (src/node/models/segment-membership.model.ts). */
-export const SegmentMembershipSchema = new EntitySchema<SegmentMembership>({
+export const SegmentMembershipSchema: EntitySchema<SegmentMembership> = new EntitySchema<SegmentMembership>({
   class: SegmentMembership,
   schema: "segments",
   tableName: "segment_memberships",
@@ -29,7 +29,7 @@ export const SegmentMembershipSchema = new EntitySchema<SegmentMembership>({
 });
 
 /** `segments.segment` (src/node/models/segment.model.ts). */
-export const SegmentSchema = new EntitySchema<Segment>({
+export const SegmentSchema: EntitySchema<Segment> = new EntitySchema<Segment>({
   class: Segment,
   schema: "segments",
   tableName: "segments",

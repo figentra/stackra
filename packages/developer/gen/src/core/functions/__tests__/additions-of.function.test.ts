@@ -163,7 +163,7 @@ describe("model additions in the manifest and the entities", () => {
   it("writes a side-table schema keyed by the base record's id", () => {
     const file = emitEntities(edition(), "fashion") ?? "";
     expect(file).toContain(
-      "export const ProductAdditionSchema = new EntitySchema<ProductAddition & { id: string }>({",
+      "export const ProductAdditionSchema: EntitySchema<ProductAddition & { id: string }> = new EntitySchema<ProductAddition & { id: string }>({",
     );
     expect(file).toContain('  name: "fashion.product_addition",');
     expect(file).toContain('  tableName: "product_additions",');
