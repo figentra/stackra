@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `COMMANDS`, every command the `stackra` binary has, in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
+ * Purpose: `COMMANDS`, every command the `stackra` binary has (native console classes and the `CliCommand`s not yet ported), in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
  *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy, mobile onboard and
  *          preview serve commands (ADR 0482, STA-1676), the db commands, the seed-pack
@@ -24,7 +24,6 @@ import { ARCHITECTURE_MAP_COMMAND } from "#node/architecture-map/constants/archi
 import { AUDIT_VERIFY_COMMAND } from "#node/constants/audit-verify-command.constant";
 import { CATALOGUE_COMPLETENESS_COMMAND } from "#node/constants/catalogue-completeness-command.constant";
 import { CONSOLE_COMMAND } from "#node/constants/console-command.constant";
-import { CREATE_COMMAND } from "#node/constants/create-command.constant";
 import { DB_DIFF_COMMAND } from "#node/constants/db-diff-command.constant";
 import { DB_MIGRATE_COMMAND } from "#node/constants/db-migrate-command.constant";
 import { DB_ROLLBACK_COMMAND } from "#node/constants/db-rollback-command.constant";
@@ -48,7 +47,6 @@ import { VALIDATE_COMMAND } from "#node/constants/validate-command.constant";
 import { CONSUMER_GATE_COMMAND } from "#node/consumer-gate/constants/consumer-gate-command.constant";
 import { CYCLES_COMMAND } from "#node/cycles/constants/cycles-command.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
-import { DOCTOR_COMMAND } from "#node/doctor/constants/doctor-command.constant";
 import { DUPLICATE_EXPORTS_COMMAND } from "#node/duplicate-exports/constants/duplicate-exports-command.constant";
 import { DUPLICATION_COMMAND } from "#node/duplication/constants/duplication-command.constant";
 import { EAS_PREFLIGHT_COMMAND } from "#node/eas-preflight/constants/eas-preflight-command.constant";
@@ -57,17 +55,19 @@ import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant"
 import { MOBILE_ONBOARD_COMMAND } from "#node/product/constants/mobile-onboard-command.constant";
 import { SMOKE_COMMAND } from "#node/product/constants/smoke-command.constant";
 import { PREVIEW_SERVE_COMMAND } from "#node/product/constants/preview-serve-command.constant";
+import { CreateCommand } from "#node/commands/create.command";
+import { DoctorCommand } from "#node/commands/doctor.command";
 import { addCommand } from "#node/functions/add-command.function";
 import { checkCommand } from "#node/functions/check-command.function";
 import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
 import { toolCommand } from "#node/functions/tool-command.function";
 import { SKILL_LICENCES_COMMAND } from "#node/skill-licences/constants/skill-licences-command.constant";
 import { STRUCTURE_COMMAND } from "#node/structure/constants/structure-command.constant";
-import type { CliCommand } from "#node/types/cli-command.type";
+import type { CliCommands } from "#node/types/cli-commands.type";
 
 /** The commands of `stackra`. */
-export const COMMANDS: readonly CliCommand[] = [
-  CREATE_COMMAND,
+export const COMMANDS: CliCommands = [
+  CreateCommand,
   NEW_COMMAND,
   GEN_COMMAND,
   CONSOLE_COMMAND,
@@ -121,7 +121,7 @@ export const COMMANDS: readonly CliCommand[] = [
   AGENTS_CHECK_COMMAND,
   addCommand(httpCatalogueClient),
   PUBLISH_COMMAND,
-  DOCTOR_COMMAND,
+  DoctorCommand,
   EAS_PREFLIGHT_COMMAND,
   STRUCTURE_COMMAND,
   ARCHITECTURE_MAP_COMMAND,

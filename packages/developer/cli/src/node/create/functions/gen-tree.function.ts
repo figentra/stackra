@@ -1,12 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: `genTree(paths, verbose?)`, what `stackra gen` wrote, as the lines `stackra create` prints: one branch per
- *          member, one line per generated kind (the manifest, OpenAPI, `.stackra/gen`, the Encore app, each entry,
- *          the tool configs) with a file count and what it is; `verbose` lists every file under its line.
+ * Purpose: `genTree(paths)`, what `stackra gen` wrote, as the nodes `io.output.tree` draws: one node per member,
+ *          one child per generated kind (the manifest, OpenAPI, `.stackra/gen`, the Encore app, each entry, the tool
+ *          configs) with a file count and what it is; a kind's files are its children, which the tree shows under
+ *          `--verbose`.
  * Boundary: pure.
  * Runtime: node
  * Governing contract: ADR 0515 (decision 9); STA-1952 spec FR-010; plan D5.
  */
+import type { TreeNode } from "@stackra/console/contracts";
+
 import { sorted } from "#node/functions/sorted.function";
 
 /** A generated kind: where its files sit under the member and how its line reads. */
@@ -53,11 +56,10 @@ function memberOf(path: string): string | undefined {
  * The tree of generated files.
  *
  * @param paths - the paths gen reported, relative to the workspace root.
- * @param verbose - list every file.
  * @example
- * genTree(["services/example/stackra.manifest.json", "services/example/.stackra/gen/wiring.ts"]);
+ * io.output.tree(genTree(["services/example/stackra.manifest.json", "services/example/.stackra/gen/wiring.ts"]));
  */
-export function genTree(paths: readonly string[], verbose = false): string[] {
+export function genTree(paths: readonly string[]): TreeNode[] {
   // Every member root a path names, longest first, so a member-root config finds its member.
   const roots = sorted(
     new Set(paths.map(memberOf).filter((root): root is string => root !== undefined)),
@@ -76,27 +78,19 @@ export function genTree(paths: readonly string[], verbose = false): string[] {
     lines.set(label, line);
     members.set(member, lines);
   }
-  const out: string[] = [];
-  const memberNames = sorted([...members.keys()]);
-  const width = Math.max(
-    ...[...members.values()].flatMap((lines) => [...lines.keys()].map((label) => label.length)),
-  );
-  for (const [m, member] of memberNames.entries()) {
-    const lastMember = m === memberNames.length - 1;
-    out.push(`${lastMember ? "└─" : "├─"} ${member}`);
-    const lines = [...(members.get(member) ?? new Map()).entries()];
-    for (const [l, [label, { note, files }]] of lines.entries()) {
-      const stem = lastMember ? "   " : "│  ";
-      const lastLine = l === lines.length - 1;
-      const name = NAMED[label];
-      const parts = name === undefined ? note : [...new Set(files.map(name))].join(", ");
-      const count = files.length > 1 ? ` (${files.length} files)` : "";
-      out.push(
-        `${stem}${lastLine ? "└─" : "├─"} ${label.padEnd(width)}  ${parts}${count}`.trimEnd(),
-      );
-      if (verbose && files.length > 1)
-        for (const file of sorted(files)) out.push(`${stem}${lastLine ? "   " : "│  "}   ${file}`);
-    }
-  }
-  return out;
+  return sorted([...members.keys()]).map((member) => ({
+    label: member,
+    children: [...(members.get(member) ?? new Map()).entries()].map(
+      ([label, { note, files }]): TreeNode => {
+        const name = NAMED[label];
+        return {
+          label,
+          note: name === undefined ? note : [...new Set(files.map(name))].join(", "),
+          ...(files.length > 1
+            ? { count: files.length, children: sorted(files).map((file) => ({ label: file })) }
+            : {}),
+        };
+      },
+    ),
+  }));
 }
