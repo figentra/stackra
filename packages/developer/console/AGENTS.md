@@ -23,3 +23,10 @@ Member at `packages/developer/console` (`tier:lib`).
 - No new dependency without the owner: colours, gradient and prompts are hand-written on `node:util` and
   `node:readline`.
 - `src/node/constants/app-versions.constant.ts` follows the core catalogs; bump it with them.
+
+## PII
+
+| Data                 | Where                                     | Handling                                                                                            |
+| -------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| The operator's login | `CommandIo.operator`, command audit entry | Read from `STACKRA_OPERATOR`, `USER`, `LOGNAME` or `USERNAME`; passed to the audit port only.       |
+| Secret option values | prompts, child output, errors             | A password is never echoed; secret values are redacted from child output, errors and audit entries. |
