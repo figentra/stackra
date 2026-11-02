@@ -61,12 +61,18 @@
     {
       "key": "catalogue.catalogue.read",
       "risk": "L0",
-      "class": "CataloguePermissions"
+      "class": "CataloguePermissions",
+      "module": "catalogue",
+      "member": "read",
+      "file": "src/node/access/catalogue.permissions.ts"
     },
     {
       "key": "catalogue.catalogue.publish",
       "risk": "L2",
-      "class": "CataloguePermissions"
+      "class": "CataloguePermissions",
+      "module": "catalogue",
+      "member": "publish",
+      "file": "src/node/access/catalogue.permissions.ts"
     }
   ],
   "errors": [],
@@ -78,6 +84,7 @@
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "roles": [],
   "schemas": {
     "catalogue.CatalogueStatus": {
       "type": "string",
