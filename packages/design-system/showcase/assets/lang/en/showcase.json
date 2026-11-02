@@ -466,8 +466,8 @@
       },
       "progress_circle": {
         "title": "Progress circle",
-        "description": "Shows how far a task has gone around a circle.",
-        "keywords": "progress, ring, loading"
+        "description": "Shows how far a task has gone as a cell of dots that fills.",
+        "keywords": "progress, dots, loading"
       },
       "save_bar": {
         "title": "Save bar",
@@ -706,7 +706,7 @@
       },
       "route_progress": {
         "title": "Route progress",
-        "description": "A thin bar across the top while the next page loads.",
+        "description": "A thin row of dots across the top while the next page loads.",
         "keywords": "loading, navigation, progress, top bar"
       },
       "status_indicator": {
@@ -6692,11 +6692,11 @@
         },
         "progress_bar": {
           "headline": "Show how far, and how much is left.",
-          "intro": "A line that fills as a task moves, with an optional label and value, or an indeterminate sweep.",
+          "intro": "A row of dots that fills as a task moves, with an optional label and value, or dots building along the row while the time is unknown.",
           "tags": "Determinate · Indeterminate · Label",
-          "what": "A line that shows a task's progress.",
+          "what": "A row of dots that shows a task's progress.",
           "when": "Use it for uploads, imports and multi-step tasks.",
-          "rtl": "The fill grows from the right in Arabic.",
+          "rtl": "The dots fill from the right in Arabic.",
           "when_not": "For short waits; use a spinner.",
           "do_1": "Show the value when it is known.",
           "do_2": "Say what is in progress.",
@@ -6717,11 +6717,11 @@
         },
         "progress_circle": {
           "headline": "Progress that fits anywhere.",
-          "intro": "A ring that fills around its value, compact enough for buttons, cards and tiles.",
+          "intro": "A 3×3 cell of dots that fills to its value, compact enough for buttons, cards and tiles.",
           "tags": "Compact · Determinate · Label",
-          "what": "A ring that shows a task's progress.",
+          "what": "A cell of dots that shows a task's progress.",
           "when": "Use it where a bar does not fit, such as a tile or a button.",
-          "rtl": "The ring fills in the reading direction."
+          "rtl": "The dots fill in the reading direction."
         },
         "property_list": {
           "headline": "Every detail of a record, easy to scan.",
@@ -6830,11 +6830,11 @@
         },
         "route_progress": {
           "headline": "Navigation that never feels stuck.",
-          "intro": "A thin bar across the top while the next page loads, so every click gets instant feedback.",
+          "intro": "A thin row of dots across the top while the next page loads, so every click gets instant feedback.",
           "tags": "Navigation · Feedback · Reduced motion",
-          "what": "A thin loading bar for route changes.",
+          "what": "A thin row of loading dots for route changes.",
           "when": "Use it once, in the app shell.",
-          "rtl": "The bar grows from the start edge."
+          "rtl": "The dots fill from the start edge."
         },
         "rule_builder": {
           "headline": "Rules in plain words, no code.",
@@ -7029,11 +7029,11 @@
         },
         "spinner": {
           "headline": "A short wait, clearly signalled.",
-          "intro": "A themed spinner with an accessible label for waits too short to measure.",
+          "intro": "Dots that build the stack floor by floor, with an accessible label, for waits too short to measure.",
           "tags": "Loading · Label · Sizes",
           "what": "An indicator that something is loading.",
           "when": "Use it for short, unmeasured waits.",
-          "rtl": "The spinner is symmetric; its label follows the reading direction.",
+          "rtl": "Each floor fills in the reading direction; its label follows it too.",
           "when_not": "For waits longer than a few seconds; show progress.",
           "do_1": "Label what is loading.",
           "do_2": "Show it only after a short delay.",

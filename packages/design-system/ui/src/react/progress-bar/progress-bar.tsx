@@ -1,32 +1,35 @@
 /**
  * Stackra file contract:
- * Purpose: the web `ProgressBar` on HeroUI v3's ProgressBar (React Aria): maps the shared contract onto it (`tone` to
- *          its colour, no `value` to `isIndeterminate`, `label` to the accessible name, drawn as a visible label when
- *          `isLabelVisible` is set, and the value text when `isValueVisible` is set) and passes every other HeroUI
- *          prop through unchanged.
- * Boundary: no styling of its own but one class: the track, fill, the indeterminate sweep and its reduced-motion rule
- *          are HeroUI's, themed by `@stackra/tokens`; the sweep is mirrored in right-to-left, since HeroUI's runs left to
- *          right whatever the direction. Separate from Spinner: this is the bar, with a value or a sweep.
+ * Purpose: the web `ProgressBar` on HeroUI v3's ProgressBar root (React Aria): maps the shared contract onto it (no
+ *          `value` to `isIndeterminate`, `label` to the accessible name, drawn as a visible label when `isLabelVisible`
+ *          is set, and the value text when `isValueVisible` is set) and draws the track as the brand's dot loader: a
+ *          row of dots filled from the inline start to the value, the leading dot in the emphasis colour, or, with no
+ *          value, the build running along the row.
+ * Boundary: HeroUI keeps the root, its role, name, values and text; the dots are drawn here under the loaders'
+ *          exception to ADR 0303 decision 6 (owner, 2026-11-02). Reduced motion (the system's or the provider's) shows
+ *          an indeterminate row lit and dimmed, at rest. Separate from Spinner: this is the bar.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); ADR 0303 (decision 7); ADR 0312; ADR 0165 (HeroUI v3 on web); owner
- *          decision 6 of STA-350 (thin wrappers); WCAG 2.2 SC 4.1.2.
+ * Governing contract: ADR 0303 (decision 6, the loaders' exception of 2026-11-02; decision 7); ADR 0302 (decision 3);
+ *          ADR 0312; .agents/specs/sta-2017-dot-loader/spec.md (FR-003, FR-006, FR-007); WCAG 2.2 SC 4.1.2.
  */
 import { ProgressBar as HeroProgressBar } from "@heroui/react";
 import type { ReactElement } from "react";
 
+import { DOT_LOADER } from "#core/constants/dot-loader.constant";
+import { dotLoaderFilled } from "#core/functions/dot-loader-filled.function";
 import { omitUndefined } from "#core/functions/omit-undefined.function";
+import { useMotion } from "#react/design-system-provider/use-motion";
+import { DotGrid } from "#react/dot-loader/dot-grid";
+import { dotColors } from "#react/dot-loader/dot-colors.function";
+import { useDotLoader } from "#react/hooks/use-dot-loader";
 import { Label } from "#react/label/label";
 import type { ProgressBarProps } from "#react/progress-bar/progress-bar.props";
 
-/**
- * A bar that fills as work completes: pass `value` for a determinate one, leave it out for an indeterminate sweep.
- * It is always a named `progressbar`; `label` is its name, drawn above the bar with `isLabelVisible`.
- */
 export function ProgressBar({
   value,
-  minValue,
-  maxValue,
-  size,
+  minValue = 0,
+  maxValue = 100,
+  size = "md",
   tone = "accent",
   label,
   valueLabel,
@@ -35,30 +38,48 @@ export function ProgressBar({
   style,
   ...rest
 }: ProgressBarProps): ReactElement {
+  const isIndeterminate = value === undefined;
+  const motion = useMotion();
+  const isRunning = isIndeterminate && motion === "full";
+  const count = DOT_LOADER.barDots[size] ?? DOT_LOADER.barDots.md;
+  const building = useDotLoader(count, isRunning);
+  const filled = isIndeterminate ? building : dotLoaderFilled(value, minValue, maxValue, count);
+  const { color, emphasis } = dotColors(tone);
   return (
     <HeroProgressBar
       {...rest}
-      // A bar has no content width of its own, so in a shrink-to-fit parent (a centred frame, a flex row) it collapsed
-      // to a sliver; like the native `<progress>` it keeps a 10rem floor and still fills any wider parent. Inline, not a
-      // utility class, so it holds wherever the app's Tailwind does not scan this package.
       style={
         typeof style === "function"
           ? (state) => ({ minInlineSize: "10rem", ...style(state) })
           : { minInlineSize: "10rem", ...style }
       }
-      {...omitUndefined({ value, minValue, maxValue, size, valueLabel })}
+      {...omitUndefined({ value, valueLabel })}
+      minValue={minValue}
+      maxValue={maxValue}
+      size={size}
       color={tone}
-      isIndeterminate={value === undefined}
-      // A visible label names the bar by React Aria's own link; a hidden one is the `aria-label`.
+      isIndeterminate={isIndeterminate}
       {...(isLabelVisible ? {} : { "aria-label": label })}
     >
       {isLabelVisible ? <Label>{label}</Label> : null}
-      {isValueVisible && value !== undefined ? <HeroProgressBar.Output /> : null}
-      <HeroProgressBar.Track>
-        {/* HeroUI's sweep is a physical `translateX` from the left; mirrored in right-to-left it runs from the inline
-            start in the reading direction (the fill itself is placed with `start-0`, so a value grows from the right). */}
-        <HeroProgressBar.Fill className="rtl:[scale:-1_1]" />
-      </HeroProgressBar.Track>
+      {isValueVisible && !isIndeterminate ? <HeroProgressBar.Output /> : null}
+      <span
+        data-slot="progress-bar-dots"
+        style={{
+          gridColumn: "1 / -1",
+          ...(isIndeterminate && !isRunning ? { opacity: DOT_LOADER.reducedOpacity } : {}),
+        }}
+      >
+        <DotGrid
+          cols={count}
+          rows={1}
+          dot={DOT_LOADER.barDot[size] ?? DOT_LOADER.barDot.md}
+          lit={filled}
+          emphasisAt={filled - 1}
+          color={color}
+          emphasis={emphasis}
+        />
+      </span>
     </HeroProgressBar>
   );
 }
