@@ -123,8 +123,7 @@ Every file that names Mintlify, from a grep of main:
 
 **Products still on Mintlify**: figentra/pay deploys its docs through `runway-mintlify.yml` and the `mintlify` target of
 `@stackra/runway` (pay#27), and the per-repo wave is frozen (owner, 2026-11-02). Removing the provider from
-`@stackra/runway` would break pay's runway file at its next bump. This is the one question for the approver (plan,
-"Open for the approver").
+`@stackra/runway` would break pay's runway file at its next bump. The owner chose removal now (2026-11-02; plan, "Approver's answers").
 
 ## R11. Fresh-checkout start (FR-008)
 

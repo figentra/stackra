@@ -34,4 +34,5 @@ An unbuilt `@stackra/cli` or missing site dependency fails with the one command 
   `environments.dev.destinations.docs: vite-dev`, `targets.cloudflare-workers.workflows.docs: deploy-docs.yml`; the
   `mintlify` target and `MINTLIFY_ADMIN_KEY` leave core's runway in the clean-up change.
 - `apps/docs/runway.yaml`: names the `public-site` preset; keeps `port` and `domain`.
-- `@stackra/runway`'s `mintlify` provider: see plan, "Open for the approver".
+- `@stackra/runway`'s `mintlify` provider, its target and `runway-mintlify.yml` are removed in the clean-up change
+  (owner, 2026-11-02); a product still on Mintlify fails at its next `@stackra/runway` bump until it moves.

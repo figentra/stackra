@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-02
 
-**Status**: Planned
+**Status**: Planned — Approved by owner 2026-11-02
 
 **Tier**: big
 
@@ -172,4 +172,5 @@ None.
   (given in the STA-1920 session through the question tool: "Approve", answering "Do you approve the
   STA-2026 spec (core docs move from Mintlify to Fumadocs, the prerequisite of STA-2024) so planning can start?")
 - 2026-11-02 · Clarified → Planned · claude (STA-1920 session) · plan, research, data model, contract and quickstart
-  written after merging main (ADR 0519); two questions for the approver in plan.md, "Open for the approver"
+  written after merging main (ADR 0519) — Approved by owner 2026-11-02 (the question tool: "Approve" for the design,
+  "Remove it now" for the Mintlify provider, "docs-next hostname" for the verification hostname)

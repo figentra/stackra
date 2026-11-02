@@ -100,7 +100,7 @@ clean-up change: Mintlify removed from core
 - **Link check (cli)**: a function over `build/client/` that lists every internal `href`, `src` and `#anchor` with no
   target, by page.
 - **Runway (runway)**: the `docs` destination accepts `cloudflare-workers`; the dev destination `vite-dev` covers a docs
-  member; `runDeploy` routes `apps/docs` to `deploy-docs.yml`. The `mintlify` provider follows the approver's answer.
+  member; `runDeploy` routes `apps/docs` to `deploy-docs.yml`. The `mintlify` provider and target are removed in the clean-up change.
 - **Repo check (repo-checks)**: `mint` joins `FORBIDDEN_DEPENDENCIES`; a check refuses a `mintlify` target or a
   `MINTLIFY_` name outside `apps/docs/src/docs/adr/`.
 
@@ -112,7 +112,7 @@ clean-up change: Mintlify removed from core
 - `packages/developer/cli/src/node/functions/{resolve-tool,tool-command}.function.ts`, a new
   `src/node/functions/check-docs-links.function.ts`, `src/node/types/member.type.ts`,
   `src/node/runway-deploy/functions/run-runway-deploy.function.ts`, their tests; a changeset.
-- `packages/developer/runway/src/**` (destination, options schema, workflow dispatches; the provider per the approver);
+- `packages/developer/runway/src/**` (destination, options schema, workflow dispatches; the provider removed);
   the manifest; a changeset.
 - `packages/developer/repo-checks/src/node/constants/{forbidden-dependencies,member-root,must-stay-json}.constant.ts` and
   a new check with its test; a changeset.
@@ -121,7 +121,7 @@ clean-up change: Mintlify removed from core
   `playwright.config.ts`, `e2e/__tests__/{a11y,sitemap}.e2e.test.ts`, `e2e/fixtures/mintlify-sitemap.txt`.
 - `tools/scaffold/templates/apps/docs/**` to the same shape.
 - `.github/workflows/deploy-docs.yml` rewritten as a `runway-cloudflare-workers.yml` caller; `runway-mintlify.yml`
-  removed per the approver; `linear-sync.yml`.
+  removed; `linear-sync.yml`.
 - Root: `runway.yaml`, `pnpm-workspace.yaml`, `knip.jsonc`, `cspell.config.yaml`, `osv-scanner.toml`,
   `.markdownlint.yaml`, `.vscode/settings.json`, `.claude/settings.json`, `.agents/hooks/_rules.mjs` and its test,
   `.agents/hooks/session-context.mjs`, `tools/scripts/{linear,bot-token,agents-sync}.mjs` and tests.
@@ -188,22 +188,21 @@ Release notes: the changesets for gen (breaking for docs members) and cli.
   the freeze and the before/after check), and products still on the Mintlify provider (below).
 - **Budget**: about 4 pull requests and 12 to 16 tasks.
 
-## Open for the approver
+## Approver's answers (owner, 2026-11-02)
 
-1. **The Mintlify provider in `@stackra/runway`.** figentra/pay deploys its docs through it today (pay#27), and the
-   per-repo docs wave is frozen. Recommended: core stops using Mintlify in this spec, while the provider and
-   `runway-mintlify.yml` stay, marked deprecated, until the last product moves. That narrows FR-007 for the provider
-   and its workflow, by an amendment. The other choice is to remove them now, which breaks pay's docs deploy at its
-   next bump.
-2. **The verification hostname.** Before the cutover the Worker needs a hostname to be checked on. Recommended:
-   `docs-next.stackra.figentra.com`, a Custom Domain on the Worker, which is a DNS change and so the owner's to make.
-   The other choice is no hostname, with the checks running only after the cutover.
+1. **The Mintlify provider in `@stackra/runway`: removed now.** The clean-up change deletes the provider, the
+   `mintlify` target from the runway schema and `runway-mintlify.yml`, so FR-007 stands as written. figentra/pay
+   deploys its docs through that provider (pay#27): its pinned `runway-mintlify.yml@<sha>` keeps working until pay
+   bumps `@stackra/runway`, and from that bump on, pay's runway file fails until pay moves its docs (ADR 0514 wave 1,
+   frozen today). The `@stackra/runway` changeset says so, and the leader is told before the clean-up change merges.
+2. **The verification hostname: `docs-next.stackra.figentra.com`**, a Custom Domain on the Worker. It is a DNS change,
+   so the owner makes it; the switch change deploys the Worker there, and the crawl and `llms.txt` checks run against
+   it before the cutover. It is removed after the cutover.
 
 ## ADRs
 
 Relies on: 0514 (accepted), 0284, 0289, 0295, 0002 (2026-10-27 amendment), 0165, 0468, and 0519 (accepted; its
-renderer may land after this, research R9). It opens no new ADR. If the approver keeps the Mintlify provider for the
-products, that is recorded in this spec's Amendments, not in an ADR.
+renderer may land after this, research R9). It opens no new ADR.
 
 ## Docs
 
