@@ -8,7 +8,7 @@
  * Runtime: node
  * Governing contract: STA-1966 spec FR-006 and AC-008; ADR 0506 (amendment of 2026-11-02, decision 1).
  */
-import { RootCommand } from "@bomb.sh/tab";
+import { type Command, RootCommand } from "@bomb.sh/tab";
 import { Driver } from "@stackra/container";
 
 import { Completions } from "#contracts/ports/completions.port";
@@ -44,15 +44,20 @@ const choose =
     for (const choice of field.choices ?? []) complete(choice, field.description ?? "");
   };
 
-/** A Tab tree of `definitions`. */
-function treeOf(definitions: readonly CommandStructure[]): RootCommand {
-  const root = new RootCommand();
+/** Gives `command` the global options, which every command takes. */
+function addGlobals(command: Command): void {
   for (const [flag, option] of Object.entries(GLOBAL_OPTIONS))
-    root.option(
+    command.option(
       flag === "interaction" ? "no-interaction" : flag,
       option.description,
       ...(option.short === undefined ? [] : [option.short]),
     );
+}
+
+/** A Tab tree of `definitions`. */
+function treeOf(definitions: readonly CommandStructure[]): RootCommand {
+  const root = new RootCommand();
+  addGlobals(root);
   root.command(HELP_COMMAND, "Show a command's help");
   root
     .command(COMPLETION_COMMAND, "Print the shell script that completes commands with Tab")
@@ -62,6 +67,7 @@ function treeOf(definitions: readonly CommandStructure[]): RootCommand {
   for (const definition of definitions) {
     if (definition.hidden) continue;
     const command = root.command(definition.name.replaceAll(":", " "), definition.description);
+    addGlobals(command);
     for (const field of definition.options)
       if (field.kind === "boolean")
         command.option(
