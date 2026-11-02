@@ -11,3 +11,6 @@ A job and the seed refresh now upload `.agents`: `pnpm validate` reads its specs
 
 The image's pnpm store is warmed from the lockfile and `pnpm-workspace.yaml` together (`pnpm fetch` refused the
 lockfile alone over its catalogs, so the first build shipped an empty store), and a failed warm-up now fails the build.
+
+`.git` is no longer uploaded; the agent makes a fresh one-commit snapshot of the synced tree before each job, as
+`ci-box` did, so `git ls-files`, oxfmt and knip work from a worktree whose `.git` points at the Mac.

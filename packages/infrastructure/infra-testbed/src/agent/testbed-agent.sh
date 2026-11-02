@@ -34,7 +34,7 @@ MIN_MEM_MB=${TESTBED_MIN_MEM_MB:-1024}
 MEMINFO=${TESTBED_MEMINFO:-/proc/meminfo}
 LABEL=stackra.testbed.job
 # What the Mac's rsync leaves out; the seed refresh leaves out the same.
-EXCLUDES='node_modules .claude/worktrees .env* *.secrets.local.cue .mcp.json .turbo dist .next'
+EXCLUDES='node_modules .git .claude/worktrees .env* *.secrets.local.cue .mcp.json .turbo dist .next'
 # The host's mise lives in /opt/mise (01-base.yml); its shims find the tools only through these two variables.
 MISE_DATA_DIR=${MISE_DATA_DIR:-/opt/mise}
 MISE_GLOBAL_CONFIG_FILE=${MISE_GLOBAL_CONFIG_FILE:-/opt/mise/config.toml}
@@ -395,6 +395,11 @@ cmd_job_run() {
 $grants
 EOF
   }
+
+  # A fresh one-commit snapshot of the synced tree, as ci-box made: `.git` is never uploaded (a worktree's is a file
+  # pointing at the Mac), and git-based steps (`git ls-files` in format:check, oxfmt, knip) need a real repository.
+  (cd "$JOB_WS" && rm -rf .git && git init -q && git add -A >/dev/null 2>&1 \
+    && git -c user.name=testbed -c user.email=testbed@localhost commit -qm snapshot >/dev/null 2>&1) || true
 
   [ ! -f "$JOB_WS/services/encore.app" ] \
     || sed -i -E 's/"id":[[:space:]]*"[^"]*"/"id": ""/' "$JOB_WS/services/encore.app" || true

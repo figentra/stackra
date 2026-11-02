@@ -324,6 +324,8 @@ describe("testbed-agent job run", () => {
 
     expect(existsSync(dir("data/jobs/j6"))).toBe(false);
     expect(readFileSync(dir("data/seed/core/new.txt"), "utf8")).toBe("n");
+    // The job's git snapshot stays in the job: the seed never takes a `.git`.
+    expect(existsSync(dir("data/seed/core/.git"))).toBe(false);
     expect(existsSync(dir("data/seed/core/stale.txt"))).toBe(false);
     expect(existsSync(dir("data/seed/core/.env.local"))).toBe(false);
     expect(existsSync(dir("data/seed/core/node_modules/big.js"))).toBe(false);
