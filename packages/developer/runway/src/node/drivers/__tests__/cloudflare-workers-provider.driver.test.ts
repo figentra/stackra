@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `CloudflareWorkersProviderDriver`: the plan builds, migrates, deploys and sets secrets per
+ * Purpose: unit tests of `CloudflareWorkersProviderDriver`: the plan builds, migrates, uploads a version with its secrets and deploys it per
  *          member of the target's kind; apply refuses another checkout and unset values before anything ships, swaps
  *          the placeholder ids for the deploy and restores them (also on failure), sends secrets on stdin only and
  *          records each version; current agrees only when every member serves one commit; verify adds the smoke
@@ -23,6 +23,7 @@ import type { CommandRunner } from "#node/types/command-runner.type";
 
 const SHA = "a".repeat(40);
 const OLD = "b".repeat(40);
+const BEFORE = "99999999-2222-3333-4444-555555555555";
 const VERSION = "11111111-2222-3333-4444-555555555555";
 const D1 = "00000000-0000-0000-0000-000000000000";
 const REAL_D1 = "abcdefab-1234-5678-9abc-def012345678";
@@ -93,12 +94,14 @@ function fakeRunner(
       `${where}$ ${[command, ...args].join(" ")}${options.input === undefined ? "" : ` <<< ${options.input}`}`,
     );
     if (command === "git") return `${answers.head ?? SHA}\n`;
-    const sub = args[2];
-    if (sub === "deploy") {
+    const sub = args[2] === "versions" ? `versions ${args[3]}` : args[2];
+    if (sub === "versions upload") {
       configs.push(readFileSync(join(options.cwd ?? "", "wrangler.jsonc"), "utf8"));
       if (answers.deploy === "throw") throw new Error("deploy failed");
-      return `Uploaded\nCurrent Version ID: ${VERSION}\n`;
+      return `Uploaded\nWorker Version ID: ${VERSION}\n`;
     }
+    if (sub === "deployments" && args[3] === "status")
+      return JSON.stringify({ versions: [{ version_id: BEFORE, percentage: 100 }] });
     if (sub === "deployments") return answers.list ?? deployments(SHA);
     return "";
   };
@@ -120,7 +123,7 @@ function workers(
 }
 
 describe("CloudflareWorkersProviderDriver", () => {
-  it("plans each member of the target's kind: build, migrations, deploy, secrets", () => {
+  it("plans each member of the target's kind: build, migrations, upload, deploy", () => {
     const driver = workers(".", fakeRunner(".").run);
     expect(
       driver
@@ -129,10 +132,11 @@ describe("CloudflareWorkersProviderDriver", () => {
     ).toEqual([
       ".$ pnpm turbo run build --filter=./workers/registry",
       "workers/registry$ pnpm exec wrangler d1 migrations apply stackra-registry --remote",
-      `workers/registry$ pnpm exec wrangler deploy --message ${SHA} --var REGISTRY_READ_ONLY:$REGISTRY_READ_ONLY`,
-      "workers/registry$ pnpm exec wrangler secret bulk",
+      `workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY:$REGISTRY_READ_ONLY --secrets-file /dev/stdin`,
+      `workers/registry$ pnpm exec wrangler versions deploy $VERSION@100 --message ${SHA} --yes`,
       ".$ pnpm turbo run build --filter=./workers/static",
-      `workers/static$ pnpm exec wrangler deploy --message ${SHA}`,
+      `workers/static$ pnpm exec wrangler versions upload --message ${SHA}`,
+      `workers/static$ pnpm exec wrangler versions deploy $VERSION@100 --message ${SHA} --yes`,
     ]);
   });
 
@@ -157,12 +161,58 @@ describe("CloudflareWorkersProviderDriver", () => {
     });
     expect(readFileSync(join(root, "workers/registry/wrangler.jsonc"), "utf8")).toBe(CONFIG);
     expect(calls).toContain(
-      `<root>/workers/registry$ pnpm exec wrangler secret bulk <<< {"REGISTRY_SIGNING_KEY":"signing-key-value"}`,
+      `<root>/workers/registry$ pnpm exec wrangler versions upload --message ${SHA} --var REGISTRY_READ_ONLY: --secrets-file /dev/stdin <<< {"REGISTRY_SIGNING_KEY":"signing-key-value"}`,
+    );
+    expect(calls).toContain(
+      `<root>/workers/registry$ pnpm exec wrangler versions deploy ${VERSION}@100 --message ${SHA} --yes`,
     );
     expect(calls.filter((call) => call.includes("signing-key-value"))).toHaveLength(1);
-    expect(calls).toContain(
-      `<root>/workers/registry$ pnpm exec wrangler deploy --message ${SHA} --var REGISTRY_READ_ONLY:`,
+  });
+
+  it("smoke-tests the version at 0% by override and moves no traffic when it fails", async () => {
+    const root = repository();
+    const { run, calls } = fakeRunner(root);
+    const urls: string[] = [];
+    const driver = workers(root, run);
+    driver.fetch = async (url, headers) => {
+      urls.push(`${url} ${headers?.["Cloudflare-Workers-Version-Overrides"]}`);
+      return { ok: false, status: 503 };
+    };
+    await expect(driver.apply(WEB, SHA)).rejects.toThrow(/0% smoke/);
+    expect(urls).toEqual([`https://npm.stackra.figentra.com/-/ping stackra-registry="${VERSION}"`]);
+    expect(calls.some((call) => call.includes("versions deploy"))).toBe(false);
+  });
+
+  it("rolls a production api Worker out in steps, and all at once with a migration or off production", async () => {
+    const root = repository();
+    const gradual = {
+      ...WEB,
+      settings: { members: { registry: { path: "workers/registry", preset: "api" } } },
+    };
+    const holds: number[] = [];
+    const first = fakeRunner(root);
+    const driver = workers(root, first.run);
+    driver.sleep = async (ms) => void holds.push(ms);
+    await driver.apply(gradual, SHA);
+    const deploys = first.calls.filter((call) => call.includes("versions deploy"));
+    expect(deploys.map((call) => call.split("deploy ")[1]?.split(" --")[0])).toEqual([
+      `${VERSION}@10 ${BEFORE}@90`,
+      `${VERSION}@50 ${BEFORE}@50`,
+      `${VERSION}@100`,
+    ]);
+    expect(holds).toHaveLength(2);
+
+    const staging = fakeRunner(root);
+    await workers(root, staging.run).apply({ ...gradual, environment: "staging" }, SHA);
+    expect(staging.calls.filter((call) => call.includes("versions deploy"))).toHaveLength(1);
+
+    writeFileSync(
+      join(root, "workers/registry/wrangler.jsonc"),
+      `{ "name": "x", "migrations": [{ "tag": "v1" }] }`,
     );
+    const migrating = fakeRunner(root);
+    await workers(root, migrating.run).apply(gradual, SHA);
+    expect(migrating.calls.filter((call) => call.includes("versions deploy"))).toHaveLength(1);
   });
 
   it("restores the config when the deploy fails", async () => {

@@ -3,8 +3,9 @@
  * Purpose: `CloudflareWorkersProviderDriver`, the `cloudflare-workers` driver of the `RunwayProvider` port: from a
  *          checkout of the release commit it builds each Worker member of `targets.cloudflare-workers.members` that
  *          ships under the target's kind, swaps the placeholder binding ids in its `wrangler.jsonc` for the real ones
- *          (restored afterwards), applies its D1 migrations, renders the operational settings of runway.yaml into it (ADR 0519), runs `wrangler deploy --message <sha>` and sets its secrets
- *          with `wrangler secret bulk`. Current reads the commit back from `wrangler deployments list`, verify adds each
+ *          (restored afterwards), applies its D1 migrations, renders the operational settings of runway.yaml into it (ADR 0519), uploads a version (`wrangler versions upload --message <sha>`) with its
+ *          secrets on stdin, smoke-tests it at 0% by version override, then moves traffic to it in the member's `rollout`
+ *          steps (production only; all at once with a Durable Object migration). Current reads the commit back from `wrangler deployments list`, verify adds each
  *          member's smoke URL, and rollback returns every member to the version recorded for a commit.
  * Boundary: runs `pnpm` (turbo and each member's own wrangler) through the given `CommandRunner`; wrangler logs in
  *           with the job's `CLOUDFLARE_API_TOKEN` (OIDC from Infisical in CI) or the owner's session. Ids, vars and
@@ -12,7 +13,7 @@
  *           a file or a log line. Agents and tests never apply against a real account (ADR 0352 decision 6).
  * Runtime: node
  * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0284 (Workers members); ADR 0173 (no secret is an
- *                     argument); ADR 0294 R3 and ADR 0305 rule 3 (the `Driver(Port)` base); STA-1921; ADR 0519; STA-1989.
+ *                     argument); ADR 0294 R3 and ADR 0305 rule 3 (the `Driver(Port)` base); STA-1921; ADR 0519; STA-1989, STA-1990.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -47,7 +48,10 @@ const SHA = /^[0-9a-f]{40}$/;
 const ID = /^[A-Za-z0-9-]+$/;
 
 /** The version line `wrangler deploy` prints. */
-const VERSION = /Current Version ID:\s*([0-9a-f-]{36})/;
+const VERSION = /Worker Version ID:\s*([0-9a-f-]{36})/;
+
+/** How long a gradual rollout holds each partial step. */
+const ROLLOUT_HOLD_MS = 5 * 60_000;
 
 /** A string, or a `//` or `/* *\/` comment; the strings are kept. */
 const JSONC_TOKEN = /("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
@@ -74,8 +78,17 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   env: Readonly<Record<string, string | undefined>> = process.env;
 
   /** The smoke request; a test replaces it. */
-  fetch: (url: string) => Promise<{ readonly ok: boolean; readonly status: number }> = (url) =>
-    globalThis.fetch(url, { redirect: "manual", signal: AbortSignal.timeout(30_000) });
+  fetch: (
+    url: string,
+    headers?: Record<string, string>,
+  ) => Promise<{ readonly ok: boolean; readonly status: number }> = (url, headers) =>
+    globalThis.fetch(url, { headers, redirect: "manual", signal: AbortSignal.timeout(30_000) });
+
+  /** Holds a partial rollout step, in milliseconds; a test replaces it. */
+  sleep: (ms: number) => Promise<void> = (ms) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
 
   /** The repository root the member paths are relative to. */
   root = ".";
@@ -83,7 +96,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   /** The member keys to ship; empty ships every member of the target's kind. */
   only: readonly string[] = [];
 
-  /** Per member: build, migrate, deploy, set secrets (the id swap and its restore are file edits, not commands). */
+  /** Per member: build, migrate, upload a version (with its secrets), deploy it (the id swap and its restore are file edits, not commands). */
   override plan(target: DeployTarget, sha: string): readonly DeployStep[] {
     return this.membersOf(target).flatMap(([, member]) => {
       const cwd = join(this.root, member.path);
@@ -94,14 +107,8 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           args: [...WRANGLER, "d1", "migrations", "apply", database, "--remote"],
           cwd,
         })),
-        {
-          command: "pnpm",
-          args: this.deployArgs(member, sha, (name) => `$${name}`),
-          cwd,
-        },
-        ...(member.secrets.length === 0
-          ? []
-          : [{ command: "pnpm", args: [...WRANGLER, "secret", "bulk"], cwd }]),
+        { command: "pnpm", args: this.uploadArgs(member, sha, (name) => `$${name}`), cwd },
+        { command: "pnpm", args: this.deployVersionArgs([["$VERSION", 100]], sha), cwd },
       ];
     });
   }
@@ -131,19 +138,42 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           });
         const output = await this.run(
           "pnpm",
-          this.deployArgs(member, sha, (name) => this.env[name] ?? ""),
-          { cwd },
+          this.uploadArgs(member, sha, (name) => this.env[name] ?? ""),
+          {
+            cwd,
+            // The secrets ride the version, on stdin: no file, no argument.
+            input:
+              member.secrets.length === 0
+                ? undefined
+                : JSON.stringify(
+                    Object.fromEntries(member.secrets.map((name) => [name, this.env[name]])),
+                  ),
+          },
         );
         const version = VERSION.exec(output)?.[1];
         if (version === undefined)
-          throw new RunwayUnresolvedError(`wrangler deploy of ${key} printed no version id`);
-        if (member.secrets.length > 0)
-          await this.run("pnpm", [...WRANGLER, "secret", "bulk"], {
-            cwd,
-            input: JSON.stringify(
-              Object.fromEntries(member.secrets.map((name) => [name, this.env[name]])),
-            ),
+          throw new RunwayUnresolvedError(
+            `wrangler versions upload of ${key} printed no version id`,
+          );
+        const deployed = JSON.parse(swapped) as { name?: string; migrations?: unknown };
+        // The version takes no traffic yet; the smoke request is routed to it by header.
+        if (member.smoke !== undefined) {
+          const failure = await this.smoke(member.smoke, {
+            "Cloudflare-Workers-Version-Overrides": `${deployed.name ?? ""}="${version}"`,
           });
+          if (failure !== undefined)
+            throw new RunwayUnresolvedError(
+              `${key} version ${version} failed its 0% smoke ${member.smoke} (${failure}); no traffic moved`,
+            );
+        }
+        // A Durable Object migration must go out at 100% (ADR 0519 decision 3).
+        const steps =
+          target.environment === "production" &&
+          deployed.migrations === undefined &&
+          member.rollout !== undefined
+            ? member.rollout
+            : [100];
+        await this.rollOut(cwd, version, steps, sha);
         versions.push(`${key}=${version}`);
       } finally {
         if (swapped !== original) await writeFile(config, original);
@@ -162,10 +192,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       };
     for (const [key, member] of this.membersOf(target)) {
       if (member.smoke === undefined) continue;
-      const status = await this.fetch(member.smoke).then(
-        (response) => (response.ok ? undefined : `answered ${response.status}`),
-        (error: unknown) => `failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      const status = await this.smoke(member.smoke);
       if (status !== undefined)
         return { status: HealthStatus.Down, detail: `${key} smoke ${member.smoke} ${status}` };
     }
@@ -213,15 +240,77 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     return ["turbo", "run", "build", `--filter=./${member.path}`];
   }
 
-  /** `wrangler deploy` with the commit as its message and each var from `valueOf`. */
-  private deployArgs(member: Member, sha: string, valueOf: (name: string) => string): string[] {
+  /** `wrangler versions upload` with the commit as its message, each var from `valueOf` and the secrets from stdin. */
+  private uploadArgs(member: Member, sha: string, valueOf: (name: string) => string): string[] {
     return [
       ...WRANGLER,
-      "deploy",
+      "versions",
+      "upload",
       "--message",
       sha,
       ...member.vars.flatMap((name) => ["--var", `${name}:${valueOf(name)}`]),
+      ...(member.secrets.length === 0 ? [] : ["--secrets-file", "/dev/stdin"]),
     ];
+  }
+
+  /** `wrangler versions deploy <id>@<percent>...`. */
+  private deployVersionArgs(split: readonly (readonly [string, number])[], sha: string): string[] {
+    return [
+      ...WRANGLER,
+      "versions",
+      "deploy",
+      ...split.map(([id, percent]) => `${id}@${percent}`),
+      "--message",
+      sha,
+      "--yes",
+    ];
+  }
+
+  /** Moves traffic to `version` in `steps`, the rest staying on the version that served before. */
+  private async rollOut(
+    cwd: string,
+    version: string,
+    steps: readonly number[],
+    sha: string,
+  ): Promise<void> {
+    let before: string | undefined;
+    if (steps.length > 1 || steps[0] !== 100) {
+      const status = await this.run("pnpm", [...WRANGLER, "deployments", "status", "--json"], {
+        cwd,
+      });
+      const served = (
+        JSON.parse(status.slice(status.indexOf("{"))) as {
+          versions?: { version_id: string; percentage: number }[];
+        }
+      ).versions;
+      before = served?.toSorted((a, b) => b.percentage - a.percentage)[0]?.version_id;
+      if (before === undefined)
+        throw new RunwayUnresolvedError("a gradual rollout needs a deployed version to split with");
+    }
+    for (const [index, percent] of steps.entries()) {
+      await this.run(
+        "pnpm",
+        this.deployVersionArgs(
+          percent === 100 || before === undefined
+            ? [[version, 100]]
+            : [
+                [version, percent],
+                [before, 100 - percent],
+              ],
+          sha,
+        ),
+        { cwd },
+      );
+      if (index < steps.length - 1) await this.sleep(ROLLOUT_HOLD_MS);
+    }
+  }
+
+  /** What is wrong with `url`'s answer, or `undefined` when it is a 2xx. */
+  private smoke(url: string, headers?: Record<string, string>): Promise<string | undefined> {
+    return this.fetch(url, headers).then(
+      (response) => (response.ok ? undefined : `answered ${response.status}`),
+      (error: unknown) => `failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 
   /** The members of `target`'s kind (and `only`), in runway.yaml order. */
