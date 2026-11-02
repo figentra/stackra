@@ -41,6 +41,7 @@ describe("@stackra/navigation/react", () => {
       "useLayoutData",
       "useLocaleHref",
       "useMenu",
+      "useMenus",
       "useNavigate",
       "useNavigation",
       "useRouteOverlay",
