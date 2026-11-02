@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "7cd10856a69fde62",
+    "hash": "2e37fd90ad29457f",
     "propsFiles": ["ui/src/native/overflow-toolbar/overflow-toolbar.props.ts"]
   },
   "importLine": "import { OverflowToolbar } from \"@stackra/ui/native\";",
@@ -46,7 +46,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "default": "md",

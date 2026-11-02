@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "3e9fa02bca2cbdda",
+    "hash": "f4070535e3aee34a",
     "propsFiles": [
       "ui/src/native/file-trigger/file-trigger.props.ts",
       "ui/src/native/file-trigger/upload-list.props.ts"
@@ -49,7 +49,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",
@@ -79,6 +79,14 @@
           "required": false,
           "source": "stackra",
           "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "default",
+          "description": "The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`.",
+          "name": "shape",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"pill\""
         },
         {
           "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",

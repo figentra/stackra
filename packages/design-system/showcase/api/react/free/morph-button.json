@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "3a0b8cad95614cf6",
+    "hash": "662134f42b1ea7fb",
     "propsFiles": ["ui/src/react/morph-button/morph-button.props.ts"]
   },
   "importLine": "import { MorphButton } from \"@stackra/ui/react\";",
@@ -144,7 +144,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "default": "md",
@@ -160,6 +160,14 @@
           "required": false,
           "source": "stackra",
           "type": "boolean"
+        },
+        {
+          "default": "default",
+          "description": "The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`.",
+          "name": "shape",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"pill\""
         },
         {
           "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",
