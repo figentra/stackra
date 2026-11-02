@@ -49,6 +49,7 @@ describe("@stackra/actions/contracts", () => {
       "CALL_HEADERS",
       "CallIsolation",
       "CallOriginKind",
+      "CommandActor",
       "ConsentCheck",
       "ConsentRefusal",
       "ContextStorage",

@@ -87,6 +87,7 @@ export type { BeforeSlot } from "#core/types/before-slot.type";
 export type { CallAnalytics } from "#core/types/call-analytics.type";
 export type { CallInput } from "#core/types/call-input.type";
 export type { CallOptions } from "#core/types/call-options.type";
+export type { CommandOption } from "#core/types/command-option.type";
 export type { EndpointOptions } from "#core/types/endpoint-options.type";
 export type { ExtensionClass } from "#core/types/extension-class.type";
 export type { ExtensionContext } from "#core/types/extension-context.type";

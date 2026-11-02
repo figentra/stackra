@@ -117,6 +117,7 @@
   "dependencies": {
     "@stackra/cache": "workspace:*",
     "@stackra/config": "workspace:*",
+    "@stackra/console": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/errors": "workspace:*",

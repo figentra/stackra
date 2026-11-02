@@ -18,6 +18,7 @@ export { ApprovalGranted } from "#contracts/events/approval-granted.event";
 export { ReviewReason } from "#contracts/enums/review-reason.enum";
 export { AccessControl } from "#contracts/ports/access-control.port";
 export { ActorStatusCheck } from "#contracts/ports/actor-status-check.port";
+export { CommandActor } from "#contracts/ports/command-actor.port";
 export { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 export { ApprovalGate } from "#contracts/ports/approval-gate.port";
 export { ApprovalGrantOrigin } from "#contracts/ports/approval-grant-origin.port";

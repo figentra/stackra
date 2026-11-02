@@ -111,6 +111,12 @@ export type StackraManifest = {
     readonly module?: string;
     /** The package that contributes it, on a host's row. */
     readonly from?: string;
+    /** The action or query class a generated command runs, on a row from an action's `command` option. */
+    readonly action?: string;
+    /** The input shape class of that action, whose fields are the command's options. */
+    readonly input?: string;
+    /** The group the command is listed under. */
+    readonly group?: string;
   }[];
   /** JSON Schemas of the member's shapes, by module-qualified name. */
   readonly schemas?: Json;

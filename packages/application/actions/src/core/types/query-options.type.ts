@@ -16,6 +16,7 @@ import type { ActorKind, ApiArea } from "@stackra/contracts";
 
 import type { Interceptor } from "#core/bases/interceptor.base";
 import type { CallAnalytics } from "#core/types/call-analytics.type";
+import type { CommandOption } from "#core/types/command-option.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { QueryCache } from "#core/types/query-cache.type";
 import type { QueryReplica } from "#core/types/query-replica.type";
@@ -74,4 +75,10 @@ export interface QueryOptions {
    * `action.called` (every outcome), or an `AnalyticsEvent` class (a successful call only).
    */
   readonly analytics?: CallAnalytics;
+
+  /**
+   * Also run it as a console command: the command name (`order:cancel`), or the name and its group. Off when absent;
+   * it never makes the action an AI tool (`tool` is its own option).
+   */
+  readonly command?: CommandOption;
 }

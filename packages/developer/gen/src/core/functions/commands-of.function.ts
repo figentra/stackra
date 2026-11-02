@@ -4,21 +4,27 @@
  *          member (`name`, `aliases`, `hidden`, `audit`, `bin`, `class`, `file`, `entry`, `module?`), then, for a
  *          service or app, the rows of every hosted package marked `from: <package>`, except a package's `bin` rows;
  *          and the refusals gen can see: `identity_missing` (no written `name`), `kind_path` (a command outside its
- *          kind's home group) and `command_collision` (two rows share a name or an alias).
+ *          kind's home group) and `command_collision` (two rows share a name or an alias). An own action or query that
+ *          declares `command` adds a row too (`class` the generated `<Action>Command`, plus `action` and `input`), or
+ *          `command_name_invalid` / `command_input_missing`.
  * Boundary: pure. Options are read as the constants gen found in `Command({...})`. A command's home is
  *           `src/modules/<key>/commands/` in a service or worker, `src/node/commands/` in a package and
  *           `src/commands/` (or a module's `commands/`) in an app. A package's rows are exactly its commands that sit in
  *           `src/node/`, so the `./node` entry exports them; a `bin: true` row is the package's own binary command and
  *           is never merged into a host.
  * Runtime: isomorphic
- * Governing contract: ADR 0506 (decisions 4 and 6); STA-1731 spec FR-001 to FR-005; ADR 0294 (decision 22: a refusal
+ * Governing contract: ADR 0506 (decisions 4 and 6); STA-1966 spec FR-022; STA-1731 spec FR-001 to FR-005; ADR 0294 (decision 22: a refusal
  *                     carries its fix).
  */
 import type { Json } from "@stackra/contracts";
 
+import { contributionsOf } from "#core/functions/contributions-of.function";
 import { entryOf } from "#core/functions/entry-of.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { MemberIR } from "#core/types/member-ir.type";
+
+/** The form of a command name: `[a-z0-9-]` segments joined by `:` (the console's `COMMAND_NAME`). */
+const COMMAND_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
 
 /** A manifest row. */
 type Entry = { [key: string]: Json };
@@ -104,12 +110,72 @@ export function commandsOf(ir: MemberIR): {
       ...(declared.file.startsWith("src/modules/") ? { module: declared.module } : {}),
     });
   }
-  if (ir.layout !== "package")
-    for (const dependency of ir.dependencies) {
-      if (dependency.manifest["kind"] === "app") continue;
-      for (const item of (dependency.manifest.commands ?? []) as unknown as readonly Entry[])
-        if (item["bin"] !== true) rows.push({ ...item, from: item["from"] ?? dependency.package });
+  // An action or query that declares `command` gets a generated `<Action>Command` (STA-1966 FR-022).
+  for (const declared of ir.classes.filter(
+    (candidate) => candidate.kind === "action" || candidate.kind === "query",
+  )) {
+    const given = declared.options["command"];
+    if (given === undefined || given === false) continue;
+    const name = typeof given === "string" ? given : (given as { name?: unknown }).name;
+    const group = typeof given === "string" ? undefined : (given as { group?: unknown }).group;
+    const fail = (code: string, message: string, fix: string): void => {
+      errors.push({
+        code,
+        file: declared.file,
+        line: 0,
+        column: 0,
+        subject: declared.name,
+        message,
+        fix,
+      });
+    };
+    if (typeof name !== "string" || !COMMAND_NAME.test(name)) {
+      fail(
+        "command_name_invalid",
+        `the command name ${JSON.stringify(name)} of ${declared.name} is not [a-z0-9-] segments joined by ":"`,
+        'write `command: "order:cancel"`',
+      );
+      continue;
     }
+    const input = declared.handle?.input;
+    if (input === undefined) {
+      fail(
+        "command_input_missing",
+        `${declared.name} declares \`command\` but its \`handle\` takes no input shape class`,
+        "type the first parameter of `handle` with a Schema class from `schemas/`, or drop `command`",
+      );
+      continue;
+    }
+    rows.push({
+      name,
+      aliases: [],
+      hidden: false,
+      audit: false,
+      bin: false,
+      class: `${declared.name}Command`,
+      file: declared.file,
+      entry: "index",
+      action: declared.name,
+      input,
+      ...(typeof group === "string" ? { group } : {}),
+      module: declared.module,
+    });
+  }
+  if (ir.layout !== "package") {
+    const hosted = contributionsOf<Entry>(
+      ir,
+      (manifest) =>
+        ((manifest.commands ?? []) as unknown as readonly Entry[])
+          .filter((item) => item["bin"] !== true)
+          .map((item) => [String(item["name"]), item] as const),
+      (left, right) => left["class"] === right["class"] && left["file"] === right["file"],
+    );
+    for (const { entry, from } of hosted.entries)
+      rows.push({ ...entry, from: entry["from"] ?? from });
+    // A name two owners declare stays in the list so the collision check below names both.
+    for (const { second } of hosted.duplicates)
+      rows.push({ ...second.entry, from: second.entry["from"] ?? second.from });
+  }
 
   const seen = new Map<string, Entry>();
   for (const row of rows)

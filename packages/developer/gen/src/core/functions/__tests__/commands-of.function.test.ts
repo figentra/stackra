@@ -68,6 +68,26 @@ function service(
   };
 }
 
+/** An action class of the orders module that declares `command`. */
+function action(options: Record<string, unknown>, input: string | null = "CancelOrderInput") {
+  return {
+    ...command("CancelOrderAction", options, "src/modules/orders/actions/cancel-order.action.ts"),
+    kind: "action",
+    importPath: "#modules/orders/actions/cancel-order.action",
+    handle: input === null ? {} : { input },
+  } satisfies DeclaredClass;
+}
+
+/** The input shape class of that action. */
+const CANCEL_INPUT = {
+  name: "CancelOrderInput",
+  kind: "schema",
+  module: "orders",
+  file: "src/modules/orders/schemas/cancel-order-input.schema.ts",
+  importPath: "#modules/orders/schemas/cancel-order-input.schema",
+  fields: [],
+} as unknown as MemberIR["shapes"][number];
+
 const PRUNE = command("OrdersPruneCommand", {
   name: "orders:prune",
   description: "Prune",
@@ -167,6 +187,81 @@ describe("commandsOf", () => {
     expect(errors[0]?.message).toContain("OtherCommand");
     expect(errors[0]?.message).toContain("DbStatusCommand");
     expect(errors[0]?.message).toContain("@stackra/database");
+  });
+});
+
+describe("commandsOf for an action's `command` option", () => {
+  // @covers sta-1966:FR-022
+  it("adds a row for an action with a command name, naming the action and its input", () => {
+    const row = commandsOf(service([action({ command: "order:cancel" })])).commands[0];
+    expect(row).toMatchObject({
+      name: "order:cancel",
+      class: "CancelOrderActionCommand",
+      action: "CancelOrderAction",
+      input: "CancelOrderInput",
+      module: "orders",
+      bin: false,
+    });
+    expect(row?.["group"]).toBeUndefined();
+  });
+
+  it("takes the name and group of the object form, and skips an action with no command", () => {
+    const rows = commandsOf(
+      service([action({ command: { name: "order:cancel", group: "Orders" } }), PRUNE]),
+    ).commands;
+    expect(rows.map((item) => [item["name"], item["group"]])).toEqual([
+      ["orders:prune", undefined],
+      ["order:cancel", "Orders"],
+    ]);
+    expect(commandsOf(service([action({})])).commands).toEqual([]);
+  });
+
+  // @covers sta-1966:FR-022
+  it("refuses an action with a command but no input shape class", () => {
+    const { errors, commands } = commandsOf(service([action({ command: "order:cancel" }, null)]));
+    expect(commands).toEqual([]);
+    expect(errors.map((error) => [error.code, error.subject])).toEqual([
+      ["command_input_missing", "CancelOrderAction"],
+    ]);
+    expect(errors[0]?.fix).toContain("Schema");
+  });
+
+  // @covers sta-1966:FR-022
+  it("refuses a name that breaks the command-name rule", () => {
+    const { errors } = commandsOf(service([action({ command: "Order Cancel" })]));
+    expect(errors.map((error) => error.code)).toEqual(["command_name_invalid"]);
+  });
+
+  it("still collides with a hosted package's command by name", () => {
+    const clash = { ...DB_STATUS, name: "order:cancel" };
+    const { errors } = commandsOf(
+      service(
+        [action({ command: "order:cancel" })],
+        [{ package: "@stackra/database", manifest: hosted([clash]) }],
+      ),
+    );
+    expect(errors.map((error) => error.code)).toEqual(["command_collision"]);
+    expect(errors[0]?.message).toContain("CancelOrderActionCommand");
+  });
+
+  // @covers sta-1966:FR-022
+  it("emits the generated class beside the imports of the action and its input", () => {
+    const ir = {
+      ...service([action({ command: { name: "order:cancel", group: "Orders" } })]),
+      shapes: [CANCEL_INPUT],
+    };
+    const text = emitCommands(ir, buildManifest(ir).manifest) ?? "";
+    expect(text).toContain('import { ActionCommand } from "@stackra/actions/node";');
+    expect(text).toContain(
+      'import { CancelOrderAction } from "#modules/orders/actions/cancel-order.action";',
+    );
+    expect(text).toContain(
+      'import { CancelOrderInput } from "#modules/orders/schemas/cancel-order-input.schema";',
+    );
+    expect(text).toContain(
+      'export class CancelOrderActionCommand extends ActionCommand(CancelOrderAction, CancelOrderInput, { name: "order:cancel", group: "Orders" }) {}',
+    );
+    expect(text).toContain("export const COMMANDS = [CancelOrderActionCommand] as const;");
   });
 });
 

@@ -29,7 +29,28 @@ export function emitCommands(ir: MemberIR, manifest: StackraManifest): string | 
   const used = new Set<string>();
   const imports: string[] = [];
   const names: string[] = [];
+  const own: string[] = [];
+  const action = (name: string) => ir.classes.find((declared) => declared.name === name);
   for (const row of rows) {
+    if (row.action !== undefined) {
+      // A generated class (STA-1966): the action and its input are imported, the command is declared below.
+      const target = action(row.action);
+      const input = ir.shapes.find(
+        (shape) => shape.name === row.input && shape.module === row.module,
+      );
+      if (row.from !== undefined || target === undefined || input === undefined) continue;
+      imports.push(
+        `import { ActionCommand } from "@stackra/actions/node";`,
+        `import { ${target.name} } from "${target.importPath}";`,
+        `import { ${input.name} } from "${input.importPath}";`,
+      );
+      own.push(
+        `export class ${row.class} extends ActionCommand(${target.name}, ${input.name}, { name: ${JSON.stringify(row.name)}${row.group === undefined ? "" : `, group: ${JSON.stringify(row.group)}`} }) {}`,
+      );
+      names.push(row.class);
+      used.add(row.class);
+      continue;
+    }
     const from =
       row.from === undefined
         ? ir.classes.find((declared) => declared.file === row.file && declared.name === row.class)
@@ -55,8 +76,9 @@ export function emitCommands(ir: MemberIR, manifest: StackraManifest): string | 
         "never share a name or alias (`command_collision`).",
       runtime: "node",
     }),
-    ...imports,
+    ...new Set(imports),
     "",
+    ...(own.length === 0 ? [] : [...own, ""]),
     "/** Every command of this member, in manifest order. */",
     `export const COMMANDS = [${names.join(", ")}] as const;`,
     "",

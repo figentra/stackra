@@ -10,8 +10,9 @@ import { describe, expect, it } from "@stackra/testing";
 import * as node from "#node/index";
 
 describe("@stackra/actions/node", () => {
-  it("exports exactly its drivers and its listener", () => {
+  it("exports exactly its command builder, drivers and its listener", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "ActionCommand",
       "ApprovalExecutorListener",
       "AsyncContextStorageDriver",
       "ValkeyIdempotencyStoreDriver",

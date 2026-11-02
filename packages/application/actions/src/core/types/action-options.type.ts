@@ -29,6 +29,7 @@ import type { ActionEffects } from "#core/types/action-effects.type";
 import type { ActionMeter } from "#core/types/action-meter.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { CallAnalytics } from "#core/types/call-analytics.type";
+import type { CommandOption } from "#core/types/command-option.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { JobOptions } from "#core/types/job-options.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
@@ -124,4 +125,10 @@ export interface ActionOptions {
    * `action.called` (every outcome), or an `AnalyticsEvent` class (a successful call only, in its unit of work).
    */
   readonly analytics?: CallAnalytics;
+
+  /**
+   * Also run it as a console command: the command name (`order:cancel`), or the name and its group. Off when absent;
+   * it never makes the action an AI tool (`tool` is its own option).
+   */
+  readonly command?: CommandOption;
 }
