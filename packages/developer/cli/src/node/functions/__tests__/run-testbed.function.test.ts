@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `runTestbed` with fake processes: the nested-call refusal, a light job on a free box,
  *          another box on exit 75, a light job retried once after a lost box, `--on-demand`, `--no-wait`, the fallback dispatch, and
- *          that the fallback input is the preset and the ref only.
+ *          that the fallback input is the preset and the ref only; SSM access by instance id by default, and the
+ *          public IP with the allowlist swap only under `--ssh-direct`.
  * Boundary: test only; nothing starts a process or reaches the network, the claim folder is a throwaway directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0484.
@@ -124,7 +125,10 @@ describe("runTestbed run", () => {
     const { io } = captureIo();
     expect(await runTestbed(request({}), deps, io)).toBe(0);
     expect(streams[0]).toContain("rsync -az --delete");
-    expect(streams[0]).toContain("ubuntu@ip-i-1:/data/jobs/x/app/");
+    expect(streams[0]).toContain("ubuntu@i-1:/data/jobs/x/app/");
+    expect(streams[0]).toContain(
+      "-o 'ProxyCommand=aws ssm start-session --target %h --document-name AWS-StartSSHSession",
+    );
     expect(streams[0]).toContain("--exclude node_modules");
     expect(streams[1]).toContain("testbed-agent job run");
     expect(streams[1]).toContain(" light 'me work' 'app' -- 'pnpm lint'");
@@ -136,15 +140,33 @@ describe("runTestbed run", () => {
     expect(streams[1]).toContain(" heavy 'me work' 'app' -- 'pnpm lint'");
   });
 
-  it("swaps the SSH allowlist to this machine's IP through the ec2 commands", async () => {
-    const { deps, calls } = fake({
+  it("reaches a box through SSM by its instance id and touches no security group by default", async () => {
+    const { deps, calls, streams } = fake({
       boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]),
       ip: "198.51.100.9",
     });
-    const { io } = captureIo();
-    expect(await runTestbed(request({}), deps, io)).toBe(0);
+    expect(await runTestbed(request({}), deps, captureIo().io)).toBe(0);
+    expect(calls.some((call) => call.includes("security-group"))).toBe(false);
+    const ssh = calls.find((call) => call.startsWith("ssh "));
+    expect(ssh).toContain(
+      "-o ProxyCommand=aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters portNumber=%p --profile p --region r",
+    );
+    expect(ssh).toContain("ubuntu@i-1");
+    expect(streams[1]).toContain("ubuntu@i-1");
+  });
+
+  it("with --ssh-direct, reaches the public IP and swaps the SSH allowlist to this machine's IP", async () => {
+    const { deps, calls, streams } = fake({
+      boxes: instances(["i-1", "light", "2026-10-30T00:00:00Z"]),
+      ip: "198.51.100.9",
+    });
+    const direct = request({});
+    const settings = { ...direct.settings, sshDirect: true };
+    expect(await runTestbed({ ...direct, settings }, deps, captureIo().io)).toBe(0);
     expect(calls).toContain(rule("authorize", "198.51.100.9/32"));
     expect(calls).toContain(rule("revoke", "203.0.113.7/32"));
+    expect(streams[0]).toContain("ubuntu@ip-i-1:/data/jobs/x/app/");
+    expect(streams.join("\n")).not.toContain("ProxyCommand");
   });
 
   it("picks another box when the first answers 75", async () => {
@@ -158,8 +180,8 @@ describe("runTestbed run", () => {
     const { io } = captureIo();
     expect(await runTestbed(request({}), deps, io)).toBe(0);
     const runs = streams.filter((line) => line.includes("job run"));
-    expect(runs[0]).toContain("ip-i-1");
-    expect(runs[1]).toContain("ip-i-2");
+    expect(runs[0]).toContain("ubuntu@i-1");
+    expect(runs[1]).toContain("ubuntu@i-2");
   });
 
   it("retries a light job once after the connection drops, and a heavy job never", async () => {

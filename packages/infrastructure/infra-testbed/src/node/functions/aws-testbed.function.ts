@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `awsTestbed(plan, options)`, the Pulumi program part that declares the testbed: an AWS provider pinned to
- *          the plan's region; the `stackra-testbed` security group (SSH from the allowlist, all egress); the instance
- *          role and profile (SSM core, plus Auto Scaling calls limited to groups carrying the `stackra:testbed` tag);
+ *          the plan's region; the `stackra-testbed` security group (SSH only from an optional allowlist, all
+ *          egress); the instance role and profile (SSM core, plus Auto Scaling calls limited to groups carrying the
+ *          `stackra:testbed` tag);
  *          one launch template (AMI from the SSM parameter, a 40 GB root and a 200 GB `/data` volume, IMDSv2
  *          required, user data that writes ids only); the `heavy` on-demand and `light` spot Auto Scaling groups with
  *          EC2 health checks and instance refresh that waits for protected instances; and the EC2 Image Builder
@@ -46,13 +47,13 @@ function assumedBy(service: string): string {
  * Declares the testbed and returns its ids.
  *
  * @param plan - from `testbedPlan`.
- * @param options - the SSH allowlist, the core lockfile and optional network and tags.
+ * @param options - the optional SSH allowlist, the core lockfile and optional network and tags.
  * @example
  * // figentra/infra, testbed/index.ts
  * const config = new pulumi.Config();
  * export const testbed = awsTestbed(
  *   testbedPlan({ identityId: config.require("identityId"), ciGateProjectId: config.require("ciGateProjectId") }),
- *   { allowedCidrs: config.requireObject<string[]>("sshCidrs"), lockfilePath: "../stackra/pnpm-lock.yaml" },
+ *   { allowedCidrs: config.getObject<string[]>("sshCidrs") ?? [], lockfilePath: "../stackra/pnpm-lock.yaml" },
  * );
  */
 export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTestbed {
@@ -76,14 +77,16 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
           .ids
       : [...options.subnetIds];
 
-  // The CLI authorises and revokes its own /32 at run time, so the live ingress is not Pulumi's after creation.
+  // No ingress by default: the CLI reaches a box through SSM Session Manager. With `--ssh-direct` it authorises and
+  // revokes its own /32 at run time, so the live ingress is not Pulumi's after creation. The description stays as it
+  // was: EC2 cannot change it in place, and a new one would replace the group.
   const securityGroup = new aws.ec2.SecurityGroup(
     "testbed",
     {
       name: D.securityGroup,
       description: "Testbed boxes: SSH from the allowlist, all egress",
       vpcId,
-      ingress: options.allowedCidrs.map((cidr) => ({
+      ingress: (options.allowedCidrs ?? []).map((cidr) => ({
         protocol: "tcp",
         fromPort: 22,
         toPort: 22,

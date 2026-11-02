@@ -245,7 +245,6 @@ describe("awsTestbed with a given network and no groups", () => {
   beforeAll(async () => {
     start = registered.length;
     bare = awsTestbed(PLAN, {
-      allowedCidrs: ["203.0.113.7/32"],
       lockfilePath: LOCKFILE,
       vpcId: "vpc-9",
       subnetIds: ["subnet-9", "subnet-10"],
@@ -262,6 +261,8 @@ describe("awsTestbed with a given network and no groups", () => {
 
   it("uses the given VPC and first subnet, and declares no Auto Scaling group", () => {
     expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.vpcId).toBe("vpc-9");
+    // No allowlist given: no inbound rule at all; the CLI reaches the boxes through SSM (STA-1953).
+    expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.ingress).toEqual([]);
     expect(
       later("imagebuilder/infrastructureConfiguration:InfrastructureConfiguration")[0]?.inputs,
     ).toMatchObject({ subnetId: "subnet-9" });

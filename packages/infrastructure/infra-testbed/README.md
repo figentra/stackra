@@ -37,7 +37,7 @@ const plan = testbedPlan({
   ciGateProjectId: config.require("ciGateProjectId"),
 });
 export const testbed = awsTestbed(plan, {
-  allowedCidrs: config.requireObject<string[]>("sshCidrs"),
+  allowedCidrs: config.getObject<string[]>("sshCidrs") ?? [],
   lockfilePath: "../stackra/pnpm-lock.yaml",
 });
 ```
