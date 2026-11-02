@@ -172,6 +172,20 @@ describe("commandsOf", () => {
     ]);
   });
 
+  // @covers sta-1966:FR-022
+  it("hosts a package's commands in a service only: an app keeps its own and gets none hosted", () => {
+    const hostedPackage = [{ package: "@stackra/database", manifest: hosted([DB_STATUS]) }];
+    const own = command("OpenCommand", { name: "open" }, "src/commands/open.command.ts", "web");
+    const app = { ...service([own], hostedPackage), layout: "app" as const };
+    expect(commandsOf(app).commands.map((row) => row["name"])).toEqual(["open"]);
+    expect(commandsOf({ ...service([], hostedPackage), layout: "app" as const }).commands).toEqual(
+      [],
+    );
+    expect(commandsOf(service([], hostedPackage)).commands.map((row) => row["name"])).toEqual([
+      "db:status",
+    ]);
+  });
+
   // @covers sta-1731:FR-005
   it("fails with command_collision naming both classes when a name or alias repeats", () => {
     const clash = command(

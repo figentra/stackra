@@ -161,7 +161,10 @@ export function commandsOf(ir: MemberIR): {
       module: declared.module,
     });
   }
-  if (ir.layout !== "package") {
+  // Hosted commands import a package's `./node` entry, so only a member that runs node hosts them: a service. An app
+  // keeps its own commands; a worker has none to host.
+  // shortcut: a node-running app target (an Electron main process) gets hosted commands later.
+  if (ir.layout === "service") {
     const hosted = contributionsOf<Entry>(
       ir,
       (manifest) =>
