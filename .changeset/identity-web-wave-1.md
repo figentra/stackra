@@ -1,6 +1,5 @@
 ---
 "@stackra/identity": minor
-"@stackra/showcase": patch
 ---
 
 The identity kit's web blocks (ADR 0504) in `@stackra/identity/react`: `SessionGate` (shows content to a signed-in

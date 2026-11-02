@@ -1,6 +1,5 @@
 ---
 "@stackra/identity": minor
-"@stackra/showcase": patch
 ---
 
 `SignIn` on React Native, in `@stackra/identity/native`: the identity kit's sign-in card (ADR 0504) with the same props

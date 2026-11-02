@@ -1,6 +1,5 @@
 ---
 "@stackra/iam": minor
-"@stackra/showcase": patch
 ---
 
 The IAM kit's first blocks (ADR 0504) in `@stackra/iam/react`. `Can` shows its children only while the signed-in
