@@ -1,7 +1,22 @@
 ---
 title: "0296 — Runway v3: member requires and root topology groups"
-description: "Accepted, amended by 0335 · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417)"
+description: "Accepted, amended by 0335, 0517 · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417)"
 ---
+
+<Note>
+  Amended 2026-11-02 (owner, STA-1965) by [0517](/adr/0517-where-services-and-their-resources-run).
+  - **Resources the services runtime does not provide.** A member runway's `requires` (decision 5) declares them by
+    kind and size, never by provider. Runway places each one in the environment's account, region and network, beside
+    the runtime's own resources, and writes its connection details into the secret store as references. The service
+    reads them only through a typed Stackra driver. The kinds [0227](/adr/0227-rejected-and-deferred-technologies-refreshed)
+    defers stay refused.
+  - **Hosting in Stackra's words.** When 0517's branded surface lands, the root runway names hosting as
+    `services: { hosting: managed | self-hosted, cloud: aws | gcp, region }`, and Runway maps it to Encore Cloud or
+    self-hosted Encore. No provider name appears in a user's file.
+
+The other decisions stand.
+
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-451) by

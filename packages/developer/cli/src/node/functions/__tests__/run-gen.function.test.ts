@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `runGen`: refusals print in gen's form and fail, a write run lists the written files, and a
  *          check run fails on stale files and passes when clean; the options (with the manifest pass) reach
- *          `generate`; a refused run that still wrote its clients or manifest lists them.
+ *          `generate` with the Vite module loader; a refused run that still wrote its clients or manifest lists them.
  * Boundary: test only; `@stackra/gen/node`'s `generate` is replaced by a fake, so no TypeScript host opens.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 22 and 26).
@@ -13,6 +13,7 @@ import { vi } from "vitest";
 import { generate } from "@stackra/gen/node";
 
 import { captureIo } from "#node/functions/capture-io.function";
+import { loadWithVite } from "#node/functions/load-with-vite.function";
 import { runGen } from "#node/functions/run-gen.function";
 
 vi.mock("@stackra/gen/node", () => ({ generate: vi.fn() }));
@@ -53,7 +54,7 @@ describe("runGen", () => {
     fake.mockResolvedValue({ errors: [], files: [], changed: ["stackra.manifest.json"] });
     const { io, output } = captureIo();
     expect(await runGen("/repo/packages/x", { base: "/repo", backend: "ts6" }, io)).toBe(true);
-    expect(fake).toHaveBeenCalledWith("/repo/packages/x", { backend: "ts6" });
+    expect(fake).toHaveBeenCalledWith("/repo/packages/x", { backend: "ts6", loader: loadWithVite });
     expect(output()).toBe("wrote packages/x/stackra.manifest.json\n");
   });
 
@@ -61,7 +62,7 @@ describe("runGen", () => {
     fake.mockResolvedValue({ errors: [], files: [], changed: [".stackra/gen/wiring.ts"] });
     const stale = captureIo();
     expect(await runGen("/repo/packages/x", { base: "/repo", check: true }, stale.io)).toBe(false);
-    expect(fake).toHaveBeenCalledWith("/repo/packages/x", { check: true });
+    expect(fake).toHaveBeenCalledWith("/repo/packages/x", { check: true, loader: loadWithVite });
     expect(stale.output()).toContain("stale: packages/x/.stackra/gen/wiring.ts");
 
     fake.mockResolvedValue({ errors: [], files: [], changed: [] });
@@ -88,7 +89,10 @@ describe("runGen", () => {
     });
     const { io, output } = captureIo();
     expect(await runGen("/repo/services/x", { base: "/repo", pass: "manifests" }, io)).toBe(false);
-    expect(fake).toHaveBeenCalledWith("/repo/services/x", { pass: "manifests" });
+    expect(fake).toHaveBeenCalledWith("/repo/services/x", {
+      pass: "manifests",
+      loader: loadWithVite,
+    });
     expect(output()).toContain("wrote services/x/.stackra/gen/clients/sales.ts");
     expect(output()).toContain("only the files listed were written");
   });

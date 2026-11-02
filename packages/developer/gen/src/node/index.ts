@@ -26,6 +26,7 @@ export { writeRepoGraph } from "#node/functions/write-repo-graph.function";
 export type { ClassComponentsPlugin } from "#node/types/class-components-plugin.type";
 export type { GenerateResult } from "#node/types/generate-result.type";
 export type { MigrationDrift } from "#node/types/migration-drift.type";
+export type { ModuleLoader } from "#node/types/module-loader.type";
 export type { TsHost } from "#node/types/ts-host.type";
 export type { TsSymbol } from "#node/types/ts-symbol.type";
 export type { TsType } from "#node/types/ts-type.type";

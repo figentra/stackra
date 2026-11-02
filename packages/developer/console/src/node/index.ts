@@ -11,4 +11,5 @@ export { NodeProcessRunnerDriver } from "#node/drivers/node-process-runner.drive
 export { TabCompletionsDriver } from "#node/drivers/tab-completions.driver";
 export { clackPrompter } from "#node/functions/clack-prompter.function";
 export { nodePorts } from "#node/functions/node-ports.function";
+export { tarballSpecs } from "#node/functions/tarball-specs.function";
 export { terminalPrompter } from "#node/functions/terminal-prompter.function";
