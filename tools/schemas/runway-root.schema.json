@@ -200,7 +200,76 @@
         },
         "github": {
           "type": "object",
-          "description": "GitHub org, repository and deployment environments with their reviewers (ADR 0170 d6)."
+          "additionalProperties": false,
+          "properties": {
+            "org": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$"
+            },
+            "repo": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]+$"
+            },
+            "visibility": {
+              "enum": ["private", "public", "internal"]
+            },
+            "variables": {
+              "type": "object",
+              "propertyNames": {
+                "pattern": "^(?!GITHUB_)[A-Z][A-Z0-9_]*$"
+              },
+              "additionalProperties": {
+                "type": ["string", "number", "boolean"]
+              }
+            },
+            "environments": {
+              "type": "object",
+              "propertyNames": {
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "reviewers": {
+                    "type": "array",
+                    "maxItems": 6,
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9-]+(?:/[A-Za-z0-9._-]+)?$"
+                    }
+                  },
+                  "branches": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "tags": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "variables": {
+                    "type": "object",
+                    "propertyNames": {
+                      "pattern": "^(?!GITHUB_)[A-Z][A-Z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": ["string", "number", "boolean"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": ["org", "repo"],
+          "description": "The GitHub repository and its environments (ADR 0468). Closed: a misspelt key fails. infra-github reads it."
         },
         "infisical": {
           "type": "object",
@@ -315,18 +384,503 @@
     },
     "targets": {
       "type": "object",
-      "description": "Provider shape per destination, selected by `environments.<env>.destinations.*`.",
+      "description": "Provider settings per destination, selected by `environments.<env>.destinations.*`. The destinations Runway knows are closed (a misspelt key fails); another destination name stays open. Each provider still checks its own settings.",
+      "properties": {
+        "encore-cloud": {
+          "type": "object",
+          "description": "Encore Cloud: the cloud of the linked account.",
+          "additionalProperties": false,
+          "properties": {
+            "cloud": {
+              "enum": ["aws", "gcp"]
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "cloudflare-workers": {
+          "type": "object",
+          "description": "Cloudflare Workers.",
+          "additionalProperties": false,
+          "properties": {
+            "compatibilityDate": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "observability": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["headSamplingRate"],
+              "properties": {
+                "headSamplingRate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "members": {
+              "type": "object",
+              "description": "Worker members; the provider checks each.",
+              "additionalProperties": {
+                "type": "object"
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "aws-ecs": {
+          "type": "object",
+          "description": "AWS ECS (self-hosted fallback).",
+          "additionalProperties": false,
+          "properties": {
+            "compute": {
+              "enum": ["fargate", "ec2"]
+            },
+            "cloudfront": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["enabled"],
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "images": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["arch"],
+              "properties": {
+                "arch": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "enum": ["amd64", "arm64"]
+                  }
+                }
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "compose": {
+          "type": "object",
+          "description": "Docker Compose.",
+          "additionalProperties": false,
+          "properties": {
+            "bundled": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "registry": {
+              "type": "string",
+              "minLength": 1
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "helm": {
+          "type": "object",
+          "description": "Helm.",
+          "additionalProperties": false,
+          "properties": {
+            "namespace": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ingressClass": {
+              "type": "string",
+              "minLength": 1
+            },
+            "storageClass": {
+              "type": "string",
+              "minLength": 1
+            },
+            "zarf": {
+              "type": "boolean"
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "eas": {
+          "type": "object",
+          "description": "Expo Application Services.",
+          "additionalProperties": false,
+          "properties": {
+            "buildTrigger": {
+              "type": "string",
+              "minLength": 1
+            },
+            "monthlyBuildCap": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "credentials": {
+              "type": "string",
+              "minLength": 1
+            },
+            "submit": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "ios": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "android": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "ota": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "rollout": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["startPercent"],
+                  "properties": {
+                    "startPercent": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "endPercent": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "stepHours": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  }
+                },
+                "gate": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["crashFreeSessions"],
+                  "properties": {
+                    "crashFreeSessions": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
+                  }
+                },
+                "rollback": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "storeRollout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["startPercent"],
+              "properties": {
+                "startPercent": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              }
+            },
+            "minimumVersion": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["gate"],
+              "properties": {
+                "gate": {
+                  "type": "boolean"
+                },
+                "supportedStoreVersions": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "electron-release": {
+          "type": "object",
+          "description": "Electron releases.",
+          "additionalProperties": false,
+          "properties": {
+            "feed": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["bucket", "publicOrigin"],
+              "properties": {
+                "bucket": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "publicOrigin": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            },
+            "rollout": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["startPercent"],
+              "properties": {
+                "startPercent": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "endPercent": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "stepHours": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              }
+            },
+            "signing": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mac": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "windows": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "linux": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "runners": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mac": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "windows": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "linux": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "mintlify": {
+          "type": "object",
+          "description": "The docs site.",
+          "additionalProperties": false,
+          "properties": {
+            "deployOn": {
+              "enum": ["pull-request", "merge-to-main", "promote"]
+            },
+            "checks": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "branch": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pushDeploy": {
+              "type": "boolean"
+            },
+            "adminKey": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "description": "The admin key's secret NAME."
+            },
+            "smoke": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["pages"],
+              "properties": {
+                "pages": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        },
+        "npm": {
+          "type": "object",
+          "description": "Package publishing to the Stackra registry.",
+          "additionalProperties": false,
+          "properties": {
+            "access": {
+              "enum": ["public", "restricted"]
+            },
+            "provenance": {
+              "type": "boolean"
+            },
+            "trustedPublisher": {
+              "type": "string",
+              "pattern": "\\.ya?ml$"
+            },
+            "workflows": {
+              "type": "object",
+              "description": "Caller workflows `pnpm runway deploy|promote` dispatches, by member or purpose.",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "\\.ya?ml$"
+              }
+            }
+          }
+        }
+      },
       "propertyNames": {
         "$ref": "#/$defs/destination"
       },
       "additionalProperties": {
         "type": "object",
-        "description": "Settings of that destination (cloud, compute, registry, signing, rollout)."
+        "description": "Settings of another destination."
       }
     },
     "edge": {
       "type": "object",
-      "description": "The edge in front of every public host: proxying, WAF, bot mode, per-IP rate limit, TLS, the API host and the analytics proxy path (ADR 0175, ADR 0237 layer 1)."
+      "additionalProperties": false,
+      "properties": {
+        "proxy": {
+          "enum": ["all", "none"]
+        },
+        "waf": {
+          "enum": ["managed", "off"]
+        },
+        "bots": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "enum": ["off", "likely-automated-challenge"]
+            }
+          }
+        },
+        "rateLimit": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "perIp": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "requests": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "periodSeconds": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": ["requests", "periodSeconds"]
+            }
+          }
+        },
+        "tls": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minVersion": {
+              "enum": ["1.0", "1.1", "1.2", "1.3"]
+            },
+            "hsts": {
+              "type": "boolean"
+            }
+          }
+        },
+        "apiHost": {
+          "type": "string",
+          "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        },
+        "analyticsProxy": {
+          "type": "string",
+          "pattern": "^/"
+        }
+      },
+      "description": "The edge (ADR 0175). Closed: a misspelt key fails. infra-cloudflare reads it with its own defaults."
     },
     "secrets": {
       "type": "object",
@@ -362,11 +916,286 @@
     },
     "release": {
       "type": "object",
-      "description": "Release policy: the promotion unit, gates, strategy, rollback, records, build order and on-prem upgrades (ADR 0170)."
+      "additionalProperties": false,
+      "properties": {
+        "buildOrder": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "promote": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "unit": {
+              "enum": ["sha", "digest"]
+            }
+          },
+          "required": ["unit"]
+        },
+        "gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "health": {
+              "type": "string",
+              "minLength": 1
+            },
+            "smoke": {
+              "type": "string",
+              "minLength": 1
+            },
+            "errorWatchMinutes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "rollback": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "withinMinutes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "strategy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "minLength": 1
+            },
+            "healthGate": {
+              "type": "boolean"
+            },
+            "autoRollback": {
+              "type": "boolean"
+            }
+          }
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "onPrem": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "backup": {
+              "type": "string",
+              "minLength": 1
+            },
+            "migrationsAsJob": {
+              "type": "boolean"
+            },
+            "preflight": {
+              "type": "boolean"
+            },
+            "upgrades": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "windows": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "avoid": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "local": {
+                        "type": "string",
+                        "pattern": "^\\d{2}:\\d{2}-\\d{2}:\\d{2}$"
+                      },
+                      "days": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["local", "days"]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "termStart": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "firstDays": {
+                            "oneOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 1
+                              },
+                              {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            ]
+                          },
+                          "source": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["firstDays", "source"]
+                      }
+                    },
+                    "required": ["termStart"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "description": "The release policy. Closed: a misspelt key fails. Only `buildOrder` is read today."
     },
     "observability": {
       "type": "object",
-      "description": "Observability defaults: log retention, heartbeats and when SLOs start (ADR 0184)."
+      "additionalProperties": false,
+      "properties": {
+        "logs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hotDays": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "coldMonths": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "coldStore": {
+              "enum": ["s3"]
+            }
+          }
+        },
+        "heartbeats": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "crons": {
+              "type": "boolean"
+            },
+            "relays": {
+              "type": "boolean"
+            },
+            "workers": {
+              "type": "boolean"
+            }
+          }
+        },
+        "slos": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "startAt": {
+              "enum": ["first-paying-tenant"]
+            }
+          }
+        },
+        "statusPage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "subdomain": {
+              "type": "string",
+              "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+            },
+            "companyName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "companyUrl": {
+              "type": "string",
+              "pattern": "^https://\\S+$"
+            },
+            "timezone": {
+              "type": "string",
+              "minLength": 1
+            },
+            "customDomain": {
+              "type": "string",
+              "minLength": 1
+            },
+            "published": {
+              "type": "boolean"
+            },
+            "environments": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "enum": ["dev", "preview", "staging", "production"]
+              }
+            }
+          },
+          "required": [
+            "subdomain",
+            "companyName",
+            "companyUrl",
+            "timezone",
+            "published",
+            "environments"
+          ]
+        },
+        "uptime": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+              },
+              "url": {
+                "type": "string",
+                "pattern": "^https://\\S+$"
+              },
+              "environment": {
+                "enum": ["dev", "preview", "staging", "production"]
+              },
+              "checkFrequencySeconds": {
+                "type": "integer",
+                "minimum": 30
+              },
+              "expectedStatusCodes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 599
+                }
+              }
+            },
+            "required": ["name", "url"]
+          }
+        }
+      },
+      "description": "Observability (ADR 0184). Closed: a misspelt key fails. infra-observability reads it with its own defaults."
     }
   },
   "$defs": {

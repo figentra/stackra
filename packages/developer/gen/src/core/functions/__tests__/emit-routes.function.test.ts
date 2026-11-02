@@ -4,7 +4,7 @@
  *          page beside it on that runtime (none where the runtime has no page), the `registerRoutes(routeTable)` call,
  *          and `registerPanelPages()` on the browser of an app that hosts the panel, with `registerResources` over the
  *          declared manifests' `ui.resources` trees (first wins, sorted) and their derived `resourceLabelKeys`
- *          (STA-1385); nothing for an app without routes or a member that is not an app.
+ *          (STA-1385), on the native table too (STA-1947); nothing for an app without routes or a member that is not an app.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 14, 20 and 22); ADR 0297; ADR 0307.
@@ -86,7 +86,10 @@ describe("emitRoutes", () => {
     expect(content).toContain(
       'export const resourceLabelKeys = [\n  "orders::resources.line.title",\n  "orders::resources.order.columns.placed_at",\n  "orders::resources.order.title",\n] as const;',
     );
-    expect(device?.content).not.toContain("registerResources");
+    // Native registers the same trees (ADR 0164 decision 2, STA-1947); only the browser gets the panel's pages.
+    expect(device?.content).toContain(`  "orders.order": ${JSON.stringify(tree)},`);
+    expect(device?.content).toContain("registerResources(resourceTrees);");
+    expect(device?.content).not.toContain("registerPanelPages");
     expect(emitRoutes(WEB_APP_IR)[0]?.content).not.toContain("registerResources");
   });
 

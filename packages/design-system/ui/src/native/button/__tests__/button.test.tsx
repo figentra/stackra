@@ -121,7 +121,7 @@ describe("Button (native)", () => {
         </Button>,
       );
       expect(propsOf("button")).toMatchObject({
-        variant: variant === "glass" ? "tertiary" : variant,
+        variant: variant === "glass" ? "tertiary" : variant === "core" ? "primary" : variant,
         size,
         isDisabled: true,
       });
@@ -298,5 +298,23 @@ describe("Button (native)", () => {
     void (<Button accessibilityLabel="x" />);
     // @ts-expect-error `feedbackVariant="none"` only takes `disable-all`, so the union survived the omit
     void (<Button feedbackVariant="none" animation={{ scale: false }} />);
+  });
+});
+
+// @covers sta-2016:FR-001 sta-2016:FR-002
+describe("Button (native): the core variant and the pill shape", () => {
+  it("fills the core with core-strong on HeroUI Native's primary, in the accent's label colour", () => {
+    render(<Button variant="core">Start</Button>);
+    expect(propsOf("button")).toMatchObject({ variant: "primary" });
+    expect(String(propsOf("button")["className"])).toContain("bg-core-strong");
+  });
+
+  it("is a pill only when asked", () => {
+    render(<Button shape="pill">Pill</Button>);
+    expect(String(propsOf("button")["className"])).toContain("rounded-[var(--radius-pill)]");
+    render(<Button>Square</Button>);
+    expect(String(propsOf("button")["className"] ?? "")).not.toContain(
+      "rounded-[var(--radius-pill)]",
+    );
   });
 });
