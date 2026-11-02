@@ -26,9 +26,9 @@ import type { Prompter } from "#contracts/types/prompter.type";
 import { PromptCancelledError } from "#core/errors/prompt-cancelled.error";
 
 /** Throws when the Operator cancelled, else returns the answer. */
-function answered<T>(message: string, value: T | symbol): T {
+function answered<T>(message: string, value: T): Exclude<T, symbol> {
   if (isCancel(value)) throw new PromptCancelledError(message);
-  return value as T;
+  return value as Exclude<T, symbol>;
 }
 
 /** A Clack prompter on `input` and `output`. */
