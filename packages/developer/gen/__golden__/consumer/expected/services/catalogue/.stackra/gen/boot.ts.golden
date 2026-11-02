@@ -12,7 +12,7 @@ import { InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/
 /** Connects the legal holds and the database, then the services that resolve classes from the container (the bus and inbox until shutdown), then the relay. */
 export async function boot(
   container: Container,
-  options: { readonly signal: AbortSignal },
+  options: { readonly signal: AbortSignal; readonly url?: string; readonly relay?: boolean },
 ): Promise<void> {
   if (options.signal.aborted) return;
   const bus = container.get(EventBus);
@@ -25,7 +25,9 @@ export async function boot(
   };
   if (options.signal.aborted) disconnect();
   else options.signal.addEventListener("abort", disconnect, { once: true });
-  const relay = container.get(OutboxRelayService);
-  relay.connect(container);
-  void relay.work({ signal: options.signal });
+  if (options.relay !== false) {
+    const relay = container.get(OutboxRelayService);
+    relay.connect(container);
+    void relay.work({ signal: options.signal });
+  }
 }

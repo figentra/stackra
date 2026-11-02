@@ -148,12 +148,12 @@ describe("awsTestbed", () => {
   it("keeps heavy on-demand and runs only light on spot", () => {
     const heavy = resource("autoscaling/group:Group", "heavy").inputs;
     expect(heavy.name).toBe("stackra-testbed-heavy");
-    expect(heavy).toMatchObject({ minSize: 2, maxSize: 6 });
+    expect(heavy).toMatchObject({ minSize: 0, maxSize: 1 });
     expect(heavy.mixedInstancesPolicy).toBeUndefined();
 
     const light = resource("autoscaling/group:Group", "light").inputs;
     expect(light.name).toBe("stackra-testbed-light");
-    expect(light).toMatchObject({ minSize: 1, maxSize: 4, capacityRebalance: true });
+    expect(light).toMatchObject({ minSize: 0, maxSize: 1, capacityRebalance: true });
     expect(light.mixedInstancesPolicy).toMatchObject({
       instancesDistribution: { onDemandBaseCapacity: 0, onDemandPercentageAboveBaseCapacity: 0 },
     });
@@ -222,11 +222,10 @@ describe("awsTestbed", () => {
     expect(JSON.stringify(distribution.inputs.distributions)).toContain(
       "/imagebuilder/stackra-testbed/ami",
     );
+    // No schedule: the image is built by hand while heavy is at 0 (ADR 0516).
     expect(
       resource("imagebuilder/imagePipeline:ImagePipeline", "testbed").inputs.schedule,
-    ).toMatchObject({
-      scheduleExpression: "cron(0 3 ? * SUN *)",
-    });
+    ).toBeUndefined();
   });
 
   it("keeps the job Dockerfile's argument defaults equal to the pins", () => {
@@ -246,7 +245,6 @@ describe("awsTestbed with a given network and no groups", () => {
   beforeAll(async () => {
     start = registered.length;
     bare = awsTestbed(PLAN, {
-      allowedCidrs: ["203.0.113.7/32"],
       lockfilePath: LOCKFILE,
       vpcId: "vpc-9",
       subnetIds: ["subnet-9", "subnet-10"],
@@ -263,6 +261,8 @@ describe("awsTestbed with a given network and no groups", () => {
 
   it("uses the given VPC and first subnet, and declares no Auto Scaling group", () => {
     expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.vpcId).toBe("vpc-9");
+    // No allowlist given: no inbound rule at all; the CLI reaches the boxes through SSM (STA-1953).
+    expect(later("ec2/securityGroup:SecurityGroup")[0]?.inputs.ingress).toEqual([]);
     expect(
       later("imagebuilder/infrastructureConfiguration:InfrastructureConfiguration")[0]?.inputs,
     ).toMatchObject({ subnetId: "subnet-9" });

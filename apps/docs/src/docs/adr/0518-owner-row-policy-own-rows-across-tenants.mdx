@@ -1,0 +1,104 @@
+---
+title: "0518 — An owner-row policy lets a user read their own rows across tenants under row-level security"
+description: "Accepted · 2026-11-02"
+---
+
+{/* Stackra file contract. Purpose: ADR 0518, a second row-level security policy that a tenant-owned table may opt into, letting a signed-in user read the rows about themselves in every tenant they belong to (their memberships first), through queries that declare an owner-row read, run read-only and with no tenant, while every write stays tenant-scoped. Boundary: decision text only; the build is STA-1964. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0239, 0495, 0210, 0211, 0212, 0098. */}
+
+<Note>
+  Accepted by the owner on 2026-11-02 (STA-1964). Amends
+  [0495](/adr/0495-every-call-and-background-unit-runs-in-a-transaction-local-isolation-context) (a
+  new transaction-local setting, `app.user_id`, and an owner-row call mode) and
+  [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) (a second,
+  read-only policy beside the equality policy, on tables that opt in). The build is STA-1964, in the
+  Stackra phase after Runway.
+</Note>
+
+## Context
+
+Under 0239 every tenant-owned table has one forced policy, `tenant_id = current_setting('app.tenant_id')`, and under
+0495 every call runs in one tenant's isolation context, while a platform run sets `app.tenant_id = ''` and matches no
+row. Some reads are about a person rather than a tenant: "my tenants" for the tenant switcher (Figentra OS STA-1946
+FR-3), and later "my notifications" and "my approvals" across the organisations a person works in. Neither ADR has a
+sanctioned path for them, and 0495 decision 2 rules out one cross-tenant transaction. Figentra OS answers "my
+tenants" for its first slice with a 0239-decision-2 read model: a `Model.global` table, `member_directory`, written in
+the same transaction as the memberships, read by one repository method that filters on the verified actor. That is
+safe only as long as that one query stays correct, because no row-level security guards a global table. This ADR
+moves the guarantee back into the database.
+
+## Decision
+
+1. **A second, read-only policy, opted into per table.** A tenant-owned model may add the `OwnedByUser` trait (its
+   migration: `t.ownedByUser("user_id")`). The table keeps the forced equality policy of 0239 for every command and
+   gains one permissive policy `FOR SELECT` only: `user_id = nullif(current_setting('app.user_id', true), '')`.
+   Postgres ORs permissive policies, so a row is readable when it is the current tenant's or the current user's.
+   Inserts, updates and deletes stay under the equality policy alone: writes are always tenant-scoped.
+2. **`app.user_id` is set only by an owner-row read, from the verified actor.** A query declares `ownerRows: true`.
+   gen refuses it on an action, on a query whose actors are not `User` only, and on a query that takes a user id as
+   input. The pipeline runs such a query through the `CallIsolation` port in owner-row mode: a read-only transaction
+   with `app.tenant_id = ''` and `app.user_id = <actor.id>`, both set transaction-locally (0495 decision 3). The
+   equality policy then matches nothing, so the query sees only the actor's own rows. No other call, background unit,
+   header, input or event payload sets `app.user_id`. An ordinary tenant call never sets it, so a tenant view (a
+   member list) never shows a person's rows in other tenants. An agent acting for a user does not get owner-row
+   reads.
+3. **Which tables may opt in.** A table opts in only when all of these hold:
+   - each row is about one person, named by `user_id` (the subject, not the creator);
+   - that person may see the row in every tenant they belong to;
+   - the row carries no other tenant data than the person needs to recognise it (a tenant's name, handle, kind and
+     status, never its business data).
+
+   Each opt-in cites its decision (an ADR or the owning service's SPEC line). `memberships` (Figentra OS tenancy) is
+   the first; a notification inbox and "my approvals" are candidates, each by its own decision.
+
+4. **Audit.** Every owner-row query writes an access-log entry under the sensitive-read class of
+   [0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention): actor, query key, row count and the tenants touched, never row content.
+5. **Tests every opting-in table ships.** The isolation test gen writes for a tenant-owned table gains five cases, run
+   on real Postgres under a role without `BYPASSRLS` (`usePostgres`, 0495 decision 5):
+   1. user B's owner-row read never returns user A's rows;
+   2. a tenant call in tenant T never returns the calling user's rows of other tenants;
+   3. an owner-row transaction refuses a write;
+   4. a user id in the input or in an event payload is ignored or refused;
+   5. agent, service and platform actors see no owner rows.
+6. **From the OS read model to the policy.** Figentra OS's `member_directory` (STA-1946, option A) moves without a
+   data copy:
+   1. its model changes from `Model.global` to `BelongsToTenant` plus `OwnedByUser`;
+   2. a migration adds `tenant_id`'s equality policy and the owner-row policy to the existing table;
+   3. `membership.list_mine` becomes an `ownerRows` query;
+   4. the repository method that is the table's only reader today is removed.
+
+   The table's guard tests (one reader, same-transaction writes, removal) stay until the five cases of decision 5 pass.
+
+7. **What changes in the packages.**
+   - `@stackra/database`: `Blueprint.ownedByUser(column)` emits the `FOR SELECT` policy; `app.user_id` joins the
+     session-settings allow list for the isolation driver only (`tools/scripts/session-settings.mjs`).
+   - `@stackra/tenancy`: the `OwnedByUser` trait; the `CallIsolation` driver's owner-row mode.
+   - `@stackra/actions`: the `ownerRows` query option, run read-only through that mode.
+   - `@stackra/gen`: the refusals of decision 2, the manifest flag, and the isolation test cases of decision 5.
+   - `@stackra/access-log`: the entry of decision 4.
+
+## Consequences
+
+- "My tenants", and later "my inbox" and "my approvals", are guarded by row-level security instead of by one
+  correct query, and they need no global copy of tenant data.
+- A table that opts in carries two policies, and its reviewer checks the opt-in rule of decision 3. That is
+  deliberate friction: a careless opt-in would expose the rows that are about one person to that person in every
+  tenant.
+- Owner-row reads cost a read-only transaction and an access-log entry each. The switcher reads once per session, so
+  this is cheap where it is used today.
+- The call model gains a third mode beside tenant and platform. Background units never use it.
+
+## Enforcement
+
+- planned — gen refuses `ownerRows` on actions, on queries with actors other than `User` and on queries with a user id
+  input (STA-1964).
+- planned — `tools/scripts/session-settings.mjs` allows `app.user_id` only in the isolation driver.
+- planned — gen's isolation test emitter (`packages/developer/gen/src/core/functions/emit-isolation-test.function.ts`)
+  writes the five cases of decision 5 for every `OwnedByUser` model.
+- Until the build (STA-1964), nothing checks this page.
+
+## Supersedes and sources
+
+`Supersedes: none`. Amends 0495 and 0239 as noted above.
+
+Sources: Figentra OS STA-1946 (the console slice spec, FR-3 "my tenants"); the OS backend's option A for
+`membership.list_mine`, approved for the slice by the leader on 2026-11-02 with the guards this ADR replaces; STA-1964.

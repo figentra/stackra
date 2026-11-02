@@ -117,10 +117,12 @@ environments:
     domains:
       zone: figentra.com
       pattern: "${member}.stackra"
-    # A merge to main deploys what it touched; `pnpm runway promote <sha>` redeploys a recorded SHA.
+    # A merge to main deploys what it touched once the owner approves the `production` GitHub environment (ADR 0468,
+    # STA-1968); `pnpm runway promote <sha>` redeploys a recorded SHA through the same approval.
     deploy:
       on: merge-to-main
       gate: smoke
+      approval: github-environment
 
 # ── Targets: the provider shape and the caller workflow per member ──────────────────────────────────
 targets:
