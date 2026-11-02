@@ -1,5 +1,15 @@
 # @stackra/native-spotlight
 
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/platform@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/validation@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes

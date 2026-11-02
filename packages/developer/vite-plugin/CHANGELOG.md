@@ -1,5 +1,14 @@
 # @stackra/vite-plugin
 
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/runway@0.7.0
+  - @stackra/gen@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/i18n@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes

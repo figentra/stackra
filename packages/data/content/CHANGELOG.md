@@ -1,5 +1,18 @@
 # @stackra/content
 
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/actions@0.7.0
+  - @stackra/database@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/entitlements@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes
