@@ -4,7 +4,8 @@
  *          order: the base checks (mise tools, pnpm install, disk, network, GitHub), then one group per need
  *          `doctorNeeds` finds (Docker, Encore and the Encore ports; the `@stackra` and `@figentra` registry reads;
  *          Infisical; Pulumi; Xcode and a simulator; the agent tooling), then the members' dev ports. `quick` keeps only
- *          what `stackra dev` needs before it starts: mise tools, Docker and the ports.
+ *          what `stackra dev` needs before it starts: mise tools, Docker and the ports. `fresh` is a workspace not
+ *          written yet (`stackra create` checks a starter): no install and no agents:check.
  * Boundary: runs read-only status commands (`mise ls`, `docker info`, `gh auth status`, `pnpm view`, `xcode-select
  *           -p`, `xcrun simctl list`, `infisical profile list`, `aws sts get-caller-identity`), probes hosts and
  *           tries to bind ports; installs and changes nothing. Secrets: forbidden: output is parsed, never printed;
@@ -30,6 +31,7 @@ import { simulatorAvailable } from "#node/doctor/functions/simulator-available.f
 import type { DoctorNeed } from "#node/doctor/types/doctor-need.type";
 import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 import type { DoctorWorkspace } from "#node/doctor/types/doctor-workspace.type";
+import { registryOrigin } from "#node/functions/registry-origin.function";
 
 /** Encore's local API and its development dashboard. */
 const ENCORE_PORTS = [4000, 9400];
@@ -58,14 +60,15 @@ function portFree(port: number): Promise<boolean> {
  *
  * @param root - the workspace root.
  * @param workspace - the workspace as `readDoctorWorkspace` describes it.
- * @param options - `quick` keeps the checks `stackra dev` runs before it starts.
+ * @param options - `quick` keeps the checks `stackra dev` runs before it starts; `fresh` skips what needs the
+ *                  workspace on disk (the install, agents:check).
  * @example
  * const results = await doctorChecks(root, readDoctorWorkspace(root));
  */
 export async function doctorChecks(
   root: string,
   workspace: DoctorWorkspace,
-  options: { readonly quick?: boolean } = {},
+  options: { readonly quick?: boolean; readonly fresh?: boolean } = {},
 ): Promise<DoctorResult[]> {
   const needs = doctorNeeds(workspace);
   const quick = options.quick === true;
@@ -130,12 +133,13 @@ export async function doctorChecks(
 
   if (quick) return out;
 
-  add({
-    name: "pnpm install done",
-    status: existsSync(join(root, "node_modules/.modules.yaml")) ? "ok" : "fail",
-    fix: "pnpm install",
-    run: ["pnpm", "install"],
-  });
+  if (options.fresh !== true)
+    add({
+      name: "pnpm install done",
+      status: existsSync(join(root, "node_modules/.modules.yaml")) ? "ok" : "fail",
+      fix: "pnpm install",
+      run: ["pnpm", "install"],
+    });
 
   const free = (() => {
     try {
@@ -173,15 +177,17 @@ export async function doctorChecks(
     fix: WARP_FIX,
   });
 
+  // The registry is named explicitly, so the check also works before the app (and its .npmrc) exists.
+  const origin = registryOrigin(root, undefined);
   const registry = (name: string) =>
-    sh("pnpm", ["view", name, "version", "--json"], root).status === 0;
+    sh("pnpm", ["view", name, "version", "--json", `--registry=${origin}`], root).status === 0;
   const stackraName = publishedDependency(workspace.manifests, "@stackra");
   if (stackraName !== undefined)
     add({
       name: "@stackra registry readable",
       status: registry(stackraName) ? "ok" : "fail",
-      detail: "npm.stackra.figentra.com",
-      fix: "add `@stackra:registry=https://npm.stackra.figentra.com/` to the repository's .npmrc; @stackra reads need no token",
+      detail: origin,
+      fix: "@stackra reads need no token: check the network row above, and that .npmrc maps `@stackra:registry` to the Stackra registry",
     });
 
   if (!has("gh"))
@@ -300,11 +306,12 @@ export async function doctorChecks(
       status: has("opencode") ? "ok" : "fail",
       fix: "https://opencode.ai/install (v2; not pinned by mise)",
     });
-    add({
-      name: "agents:check clean",
-      status: sh("pnpm", ["agents:check"], root).status === 0 ? "ok" : "fail",
-      fix: "pnpm agents:sync, then commit the projection",
-    });
+    if (options.fresh !== true)
+      add({
+        name: "agents:check clean",
+        status: sh("pnpm", ["agents:check"], root).status === 0 ? "ok" : "fail",
+        fix: "pnpm agents:sync, then commit the projection",
+      });
     add({
       name: ".mcp.json present",
       status: existsSync(join(root, ".mcp.json")) ? "ok" : "warn",

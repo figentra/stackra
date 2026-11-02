@@ -76,6 +76,7 @@
     "@stackra/runway": "workspace:*",
     "@stackra/skills": "workspace:*",
     "@stackra/support": "workspace:*",
+    "@stackra/validation": "workspace:*",
     "vite": "catalog:frontend",
     "yaml": "catalog:"
   },
