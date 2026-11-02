@@ -27,12 +27,12 @@ on:
         type: boolean
         default: true
       heavy_min:
-        description: "Heavy group minimum (stand-up: 1, after the switch: 2)"
+        description: "Heavy group minimum: 0, so the image build fits the on-demand quota (ADR 0516)"
         type: choice
-        options: ["0", "1", "2"]
-        default: "1"
+        options: ["0"]
+        default: "0"
       light_min:
-        description: "Light group minimum (stand-up: 0, after the switch: 1)"
+        description: "Light group minimum: 0, boxes start on demand (ADR 0516)"
         type: choice
         options: ["0", "1"]
         default: "0"
