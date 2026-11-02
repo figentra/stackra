@@ -61,12 +61,18 @@
     {
       "key": "channels.channels.read",
       "risk": "L0",
-      "class": "ChannelsPermissions"
+      "class": "ChannelsPermissions",
+      "module": "channels",
+      "member": "read",
+      "file": "src/node/access/channels.permissions.ts"
     },
     {
       "key": "channels.channels.publish",
       "risk": "L2",
-      "class": "ChannelsPermissions"
+      "class": "ChannelsPermissions",
+      "module": "channels",
+      "member": "publish",
+      "file": "src/node/access/channels.permissions.ts"
     }
   ],
   "errors": [],
@@ -78,6 +84,7 @@
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "roles": [],
   "schemas": {
     "channels.ChannelsStatus": {
       "type": "string",

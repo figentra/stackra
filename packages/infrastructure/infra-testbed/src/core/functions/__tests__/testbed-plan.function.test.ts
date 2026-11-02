@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `testbedPlan`: two disks with the 200 GB XFS volume at `/data`, both deleted with the
  *          instance; `heavy` on-demand and spot only on `light`; one region; the owner's counts and instance types;
- *          the guard, idle and image numbers; grants only when a project id is given and no secret value anywhere;
+ *          the region's vCPU quotas and the refusal of a plan above them (ADR 0516); the guard, idle and image numbers; grants only when a project id is given and no secret value anywhere;
  *          bad input refused; the toolchain pins equal `mise.toml` and the catalogue.
  * Boundary: test only; reads `mise.toml` and `pnpm-workspace.yaml` at the repository root, calls no cloud.
  * Runtime: node (vitest)
@@ -40,14 +40,14 @@ describe("testbedPlan", () => {
     expect(plan.groups.heavy).toMatchObject({
       purchase: "on-demand",
       instanceTypes: ["c7i.2xlarge"],
-      min: 2,
-      max: 6,
+      min: 0,
+      max: 1,
     });
     expect(plan.groups.light).toMatchObject({
       purchase: "spot",
       instanceTypes: ["c7i.2xlarge", "c6i.2xlarge", "m7i.2xlarge"],
-      min: 1,
-      max: 4,
+      min: 0,
+      max: 1,
     });
     expect(plan.groups.heavy.name).toBe("stackra-testbed-heavy");
     expect(plan.groups.light.name).toBe("stackra-testbed-light");
@@ -67,8 +67,30 @@ describe("testbedPlan", () => {
       seedMaxAgeDays: 7,
     });
     expect(plan.idleMinutes).toBe(60);
-    expect(plan.image.schedule).toBe("cron(0 3 ? * SUN *)");
+    expect(plan.image).not.toHaveProperty("schedule");
     expect(plan.image.amiParameter).toBe("/imagebuilder/stackra-testbed/ami");
+  });
+
+  it("fits the region's vCPU quotas, 8 on-demand and 8 spot by default (ADR 0516)", () => {
+    expect(plan.quota).toEqual({ onDemandVcpus: 8, spotVcpus: 8 });
+    expect(
+      testbedPlan({ quota: { onDemandVcpus: 32, spotVcpus: 16 }, heavy: { max: 3 } }).quota,
+    ).toEqual({ onDemandVcpus: 32, spotVcpus: 16 });
+  });
+
+  it("refuses a plan above the on-demand or the spot vCPU quota (ADR 0516)", () => {
+    expect(() => testbedPlan({ heavy: { max: 2 } })).toThrow(/on-demand vCPU quota/);
+    expect(() => testbedPlan({ light: { max: 2 } })).toThrow(/spot vCPU quota/);
+    expect(() => testbedPlan({ quota: { onDemandVcpus: 4, spotVcpus: 8 } })).toThrow(
+      /on-demand vCPU quota/,
+    );
+  });
+
+  it("keeps room for the manual image build beside the heavy minimum (ADR 0516)", () => {
+    expect(() => testbedPlan({ heavy: { min: 1, max: 1 } })).toThrow(/image build/);
+    expect(() =>
+      testbedPlan({ quota: { onDemandVcpus: 16, spotVcpus: 8 }, heavy: { min: 1, max: 1 } }),
+    ).not.toThrow();
   });
 
   it("grants figentra-ci paths to the core project, ids only", () => {
@@ -85,7 +107,7 @@ describe("testbedPlan", () => {
   });
 
   it("refuses spot for heavy, a minimum above the maximum and a bad region", () => {
-    expect(() => testbedPlan({ heavy: { min: 5, max: 2 } })).toThrow();
+    expect(() => testbedPlan({ heavy: { min: 2, max: 1 } })).toThrow();
     expect(() => testbedPlan({ region: "mars" })).toThrow();
     expect(() => testbedPlan({ spot: true } as never)).toThrow();
   });

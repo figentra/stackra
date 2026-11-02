@@ -19,4 +19,10 @@ export type TestbedSettings = {
 
   /** The SSH user on the box. */
   readonly user: string;
+
+  /**
+   * `--ssh-direct` or `STACKRA_TESTBED_SSH_DIRECT=1`: reach a box at its public IP, swapping this machine's address into
+   * the security group, instead of through SSM Session Manager (the default, no inbound port 22).
+   */
+  readonly sshDirect?: boolean;
 };

@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0484.
  */
+export { INSTANCE_VCPUS } from "#core/constants/instance-vcpus.constant";
 export { TESTBED_DEFAULTS } from "#core/constants/testbed-defaults.constant";
 export { TESTBED_PLAN_INPUT_SCHEMA } from "#core/constants/testbed-plan-input-schema.constant";
 export { TESTBED_PLAN_SCHEMA } from "#core/constants/testbed-plan-schema.constant";

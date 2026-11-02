@@ -1,9 +1,9 @@
 # Stackra file contract:
 # Purpose: Runway's `cloudflare-workers` provider (ADR 0289 decision 1), a public reusable workflow (ADR 0168
 #          decision 1): deploy one Worker member at one commit of main with `wrangler deploy`. Checks out the commit,
-#          refuses one that is not on main, prints the SHA, tests and builds the member, then deploys (with the
-#          `message` input as the deployment message, the rollback record of a promote) and smoke-tests it, printing
-#          readiness per attempt. A caller is a thin job: `deploy-static.yml` here; another repository pins
+#          refuses one that is not on main, prints the SHA, tests and builds the member alone, then deploys (with the
+#          `message` input as the deployment message, the rollback record of a promote, or else the commit SHA) and
+#          smoke-tests it, printing readiness per attempt. A caller is a thin job: `deploy-static.yml` here; another repository pins
 #          `figentra/stackra/.github/workflows/runway-cloudflare-workers.yml@<sha> # runway-v<n>` (runbooks/runway).
 # Secrets: CLOUDFLARE_API_TOKEN only, from Infisical `/ci` through GitHub OIDC, exported for the deploy step and
 #          blanked for the smoke step. No repository secret. Without an identity id the job builds, tests, prints a
@@ -35,7 +35,7 @@ on:
       message:
         description: >-
           The deployment message `wrangler deploy --message` records on Cloudflare (`rollback to <sha>` from a
-          promote, runbooks/deploys). Empty records none.
+          promote, runbooks/deploys). Empty records the full commit SHA.
         type: string
         default: ""
       install-args:
@@ -146,11 +146,17 @@ jobs:
           export-type: env
 
       # A caller's own Quality Gate runs in a separate workflow this one cannot wait on, so the member is tested here
-      # and a broken build never reaches Cloudflare.
+      # and a broken build never reaches Cloudflare. Only the member and what it depends on are built: its
+      # dependencies' builds first, then its own gen, test and build with `--only`. A plain `test` would wait on the
+      # root //#gen:workspace, which walks every member and fails on any of them, the member's or not (STA-1987;
+      # deploy-registry.yml builds the same way).
       - name: Test and build
         env:
           PACKAGE: ${{ inputs.package }}
-        run: pnpm turbo run test build --filter="$PACKAGE"
+        run: |
+          pnpm turbo run build --filter="$PACKAGE^..."
+          pnpm turbo run gen --filter="$PACKAGE" --only
+          pnpm turbo run test build --filter="$PACKAGE" --only
 
       - name: Deploy prerequisites missing
         if: env.INFISICAL_IDENTITY_ID == ''
@@ -174,17 +180,17 @@ jobs:
           export-type: env
 
       # wrangler reads CLOUDFLARE_API_TOKEN from the environment and everything else from the member's wrangler.jsonc.
-      # The message arrives through the environment, never spliced into the script (zizmor template-injection).
+      # Every deployment records a message: the caller's (a promote's `rollback to <sha>`) or the full commit SHA, which
+      # Runway reads back to tell which commit a Worker serves (STA-1986). Both arrive through the environment, never
+      # spliced into the script (zizmor template-injection).
       - name: wrangler deploy
         id: deploy
         if: env.INFISICAL_IDENTITY_ID != ''
         working-directory: ${{ inputs.member }}
         env:
           DEPLOY_MESSAGE: ${{ inputs.message }}
-        run: |
-          args=()
-          [ -z "$DEPLOY_MESSAGE" ] || args=(--message "$DEPLOY_MESSAGE")
-          pnpm exec wrangler deploy "${args[@]}"
+          RELEASE_SHA: ${{ steps.commit.outputs.sha }}
+        run: pnpm exec wrangler deploy --message "${DEPLOY_MESSAGE:-$RELEASE_SHA}"
 
       # Readiness, not just liveness (STA-268): a fresh deploy can answer 5xx or nothing for a while, so each attempt
       # says "not serving yet" with the status, and only the end of the budget fails the job.
