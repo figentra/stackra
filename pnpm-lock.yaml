@@ -4142,6 +4142,9 @@ importers:
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../console
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts

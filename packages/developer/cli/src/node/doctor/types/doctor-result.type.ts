@@ -19,4 +19,7 @@ export type DoctorResult = {
 
   /** The command or step that fixes it. */
   readonly fix?: string | undefined;
+
+  /** The command `stackra doctor --fix` may run for it, after asking; absent when the fix is a manual step. */
+  readonly run?: readonly string[] | undefined;
 };
