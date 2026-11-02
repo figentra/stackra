@@ -1,5 +1,46 @@
 # @stackra/integrations
 
+## 0.4.0
+
+### Patch Changes
+
+- 5f63e58: `Integration({ key })` takes an optional written key of two snake_case parts (`connectors.stripe`), for an Integration
+  whose key stored data already names (STA-1739). Gen's manifest uses it in place of the derived
+  `<module>.<snake(class)>`, refuses a malformed one (`integration_key_invalid`) and still refuses two Integrations with
+  one key (`identity_collision`). Without `key`, nothing changes.
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [90f55b1]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [79dc807]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [8d29426]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/events@0.4.0
+  - @stackra/data-transfer@0.4.0
+  - @stackra/market-packs@0.4.0
+  - @stackra/clients@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/money@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

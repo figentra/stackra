@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/runway until `stackra gen` writes the entry barrels
  *          (STA-339): the build-time helpers the generated Vite configs import (`definesFor`, `devServer`, folded in
  *          from the old `./vite` entry, owner Q4), the runway file reader, and the deploy providers that run a
- *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316) with the command runner they share (ADR 0352 decision 3),
+ *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316, `cloudflare-workers`, STA-1921) with the command runner they share (ADR 0352 decision 3),
  *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
  *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439) with its types, the brand step
  *          (`runBrandStep`, `committedBrandOutputs`) and the store-screenshot capture job (`screenshotCaptureJob`,
@@ -26,6 +26,7 @@
  *                     ADR 0441; ADR 0436 (decisions 4 and 10); ADR 0437; ADR 0481; app-shells 4.2, 5.3, 15 and 16.
  */
 export { AscAppleDeveloperDriver } from "#node/drivers/asc-apple-developer.driver";
+export { CloudflareWorkersProviderDriver } from "#node/drivers/cloudflare-workers-provider.driver";
 export { EasProviderDriver } from "#node/drivers/eas-provider.driver";
 export { ExpoGraphqlProjectsDriver } from "#node/drivers/expo-graphql-projects.driver";
 export { FirebaseManagementDriver } from "#node/drivers/firebase-management.driver";

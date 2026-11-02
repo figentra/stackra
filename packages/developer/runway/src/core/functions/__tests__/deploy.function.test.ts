@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `deploy`: every target is applied then verified in release order; a target without a provider
- *          fails before anything ships; a down target stops the release there; a short SHA is refused.
+ *          fails before anything ships; a down target stops the release there; a kind filter ships only those kinds;
+ *          a short SHA is refused.
  * Boundary: test only; the providers are fakes.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decision 3), OS-12.
@@ -47,6 +48,15 @@ describe("deploy", () => {
     await expect(failure).rejects.toThrow(RunwayDeployFailedError);
     expect(encore.calls).toEqual([`apply production/services/ksa ${SHA}`]);
     expect(eas.calls).toEqual([]);
+  });
+
+  it("ships only the kinds it is given, and needs no provider for the others", async () => {
+    const eas = new FakeProvider("eas");
+
+    const results = await deploy(DEPLOY_ROOT, "staging", SHA, [eas], ["mobile"]);
+
+    expect(eas.calls).toEqual([`apply staging/mobile/uae ${SHA}`]);
+    expect(results).toHaveLength(1);
   });
 
   it("refuses a short SHA", async () => {

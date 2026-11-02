@@ -1,5 +1,45 @@
 # @stackra/query
 
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [3ce01cf]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [83c3147]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [36dbd49]
+- Updated dependencies [9574c22]
+- Updated dependencies [f490040]
+- Updated dependencies [2f5ab1e]
+- Updated dependencies [dbb60dc]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/settings@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/devices@0.4.0
+  - @stackra/storage@0.4.0
+  - @stackra/platform@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/realtime@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

@@ -1,5 +1,23 @@
 # @stackra/oxlint-config
 
+## 0.4.0
+
+### Minor Changes
+
+- c9cf403: `react/rules-of-hooks` is off for `.tsx` files in the component homes (`components/`, `blocks/`, `routes/`, a package's
+  `react/` and `native/`, `*.mail.tsx`), so a class component's hook fields pass as ADR 0305 rules 37, 38 and 41 allow;
+  hook files (`use-*`), every `.ts` file and tests keep the rule.
+- 6a07e7a: `import/no-cycle` is off in a module's model files (`**/src/**/models/*.ts`), so a two-way relation
+  (`@ManyToOne(() => Order)` and `@OneToMany(() => OrderLine)`) no longer fails; a cycle through any other file still
+  fails at that file.
+
+### Patch Changes
+
+- Updated dependencies [c9cf778]
+- Updated dependencies [9c8d108]
+  - @stackra/coding-standard@0.4.0
+  - @stackra/feature-flags@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

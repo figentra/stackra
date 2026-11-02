@@ -1,5 +1,104 @@
 # @stackra/gen
 
+## 0.4.0
+
+### Minor Changes
+
+- 0b660e0: The schemas file now augments each shape that has initializers with `declare module "<its import path>"`, naming them in
+  the type-only `~defaults` brand (STA-1694), so `CallInput` can make the defaulted fields optional. Regenerate to pick it
+  up.
+- 3ce01cf: A package's entity list is a committed generated contract, `src/node/entities.gen.ts`, written by `stackra gen` and kept
+  fresh by `stackra gen --check` (ADR 0294 R10 and ADR 0295, amended 2026-11-01, STA-1874). Each package's `./node` now
+  ships its `<KEY>_ENTITIES` inlined in the build instead of importing the gitignored `.stackra/gen/entities/` at runtime,
+  which failed: the 0.3.0 builds of these packages carry that broken import until this release. `stackra validate`
+  expects the re-export from `#node/entities.gen`, and the doc standard skips `*.gen.ts` files.
+- 9c8d108: Packages contribute console commands, and gen collects them per member (STA-1731). `@stackra/console` audits a
+  command declared `audit: true` through the `CommandAudit` port (refused before it runs when no sink is ready; secret
+  values redacted). gen records commands in the manifest, merges hosted packages' commands, refuses
+  `command_collision`, and writes `#stackra/commands` and a console entry that `stackra console <member>` runs. First
+  commands: `db:migrate`, `db:rollback`, `db:status`, `db:seed`, `tenant:list`, `tenant:create` (with a
+  `TenantDirectory` port), `cache:clear` (the `Cache` port gains `flush`), `queue:work`, `queue:failed` and
+  `queue:retry`; `@stackra/access-log` stores command audit entries (`STACKRA_COMMAND_AUDIT_SCOPE`).
+- 1c22c33: `stackra db seed` runs a service's seeders: gen writes `.stackra/entry/seed.ts` (boot, direct database url, no relay loop), `runSeeders` runs `minimal` then the profile, each seeder built by the container in its own transaction with a seed ledger row, skipping a seeder whose source is unchanged (`--again` re-runs). Production refuses `demo`, `test` and `--again` without `--allow-production` and records who ran it. `stackra seed-pack` runs the same step after its records. A service's `boot` takes `url` and `relay` options.
+- c9cf778: Add the approval stage gen refusals (STA-1724, ADR 0509): `approval_not_constant`, `approval_on_query`,
+  `approval_window_too_long`, `approval_actor_not_allowed`, `approval_credential_input`,
+  `approval_condition_dependency` and `approval_condition_reads_unmarked`, and the `approval_condition` kind
+  (`access/<name>.approval-condition.ts`).
+- aa21e6b: Gen reads a consumed service from a sibling folder or from a dependency whose `package.json` has `stackra.kind`
+  `contract` (a producer's published `stackra.manifest.json`, OpenAPI and lang, no source) and whose manifest `member` is
+  the service, never by matching a dependency's member name, which could pick a package's manifest for a service of the
+  same name. A contract package is never hosted. Its client and lang are generated; a listener of its events is refused
+  with `client_event_remote_transport` until the event-transport ADR. `StackraKind` gains `contract` (a new kind, so
+  skills is minor); `stackra add` does not offer it; repo-checks asks a contract package only for its kind and manifest.
+
+### Patch Changes
+
+- b99d4af: Gen's output now typechecks in consumers. The generated member module aliases a dependency's module class that shares
+  the member's own name (`PaymentsModule as StackraPaymentsModule`); a model that writes its own `[OptionalProps]` gets no
+  generated one that would redeclare it (TS2717); and a client leaves out an enum's schema constant nothing reads
+  (TS6133 under `noUnusedLocals`).
+- b531c97: A generated schema's `X$Check` leaves out its driver-name fields on both sides: `DriverName<Port>` widens to every
+  registered driver name when the port has no `~key` brand, so a shape with one failed `Same<>` (TS2344). The `X$`
+  schema still validates the field with `z.enum` of the driver names gen found.
+- 0cf32d7: A service with a database gets `.stackra/gen/encore-sqldb.d.ts`, the `encore.dev/storage/sqldb` types its boot's
+  import of the generated Encore database file needs, so the service typechecks without `encore.dev` installed (TS2307,
+  STA-1795). The Encore app under `.stackra/encore` keeps the real types.
+- 457b107: A package with nothing to export yet gets an empty `.` entry (`export {};`), so its build makes an empty
+  `dist/index.mjs` instead of tsdown falling back to `src/index.ts` and failing (STA-1753).
+- 4561f10: A service now registers its hosted packages' permission sets and module roles at boot, not only its own. Manifest permission entries carry `module`, `member` and `file`, and a new `roles` section lists each module role with its key, so the host can import and register them. Regenerate committed manifests.
+- 823d985: A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the generated unit
+  config narrowed to the integration tier with `intTier`, which `stackra test --tier int` runs; no member authors a
+  `vitest.int.config.ts`.
+- d675b4d: `@stackra/gen/node` exports `checkMigrationDrift(root)`: it compiles a service's migrations, replays them through the
+  member's own `@stackra/database/node`, builds the schema its models declare and returns their differences. The `.`
+  entry exports the pure parts: `expectedSchema` (tables, columns, nullability, `@Index` indexes under their `idx_`
+  names, `fk_` foreign keys), the field-to-Postgres type map `postgresTypeOf` with `postgresTypeAgrees`, `diffSchemas`
+  and `formatSchemaDifference`. A class facet now records its constant arguments after the first as `rest`, so
+  `@Index(["a"], { unique: true })` keeps its `unique` and `where`.
+- ca7d004: The wiring file also writes `interface PortRegistry` (port key to `typeof <Port>`) beside `DriverRegistry`, so
+  `DriverName<Port>` narrows without a brand on the port. A hand-written `~key` brand that is not `<member>.<Port>` is
+  refused with `port_key_mismatch`.
+- 1856ee0: The generated entry imports `registerPermissions` from `@stackra/container`, so a member that declares permissions but no
+  roles no longer imports `@stackra/iam`; `registerRoles` still comes from iam (STA-1890, ADR 0513).
+- d0b1ef3: The generated registrations call `registerPermissions` for every `Permission` static (`.system()` and `.restricted()` ones included) and then `registerRoles` for every module role, so a real boot knows which permissions are system-only or restricted and what each module role holds. `Permission.Lx.restricted()` statics are now read into the manifest too.
+- 3400ff6: Gen's `registrations.ts` no longer imports an Integration that has no Connection: it was imported and never read, which
+  failed a consumer's `noUnusedLocals` (TS6133).
+- 13b7dff: A service's full run refuses `queue_unprovisioned` when an environment in its `runway.yaml` has no `queues.<name>`
+  entry for a queue its job actions run on, `default` aside (STA-1727). A member with no runway file or no environment
+  is not refused.
+  
+  **Upgrading:** a product whose services run job actions on a named queue must add that queue under every environment
+  its `runway.yaml` declares, `environments.dev` and `environments.preview` included, before `stackra gen` passes on
+  this release:
+  
+  ```yaml
+  environments:
+    dev:
+      queues:
+        invoices:
+          visibilityTimeoutSeconds: 300
+    preview:
+      queues:
+        invoices:
+          visibilityTimeoutSeconds: 300
+  ```
+- dbb60dc: A settings section (a schema-typed field with no initializer) is emitted `.prefault(() => ({}))` in `#stackra/schemas`,
+  so a group with no stored value for a section reads that section's field defaults instead of throwing a ZodError. A
+  wrong-typed stored value is still refused. Run `stackra gen` to regenerate.
+- bb08f25: `MemoryDimensionValuesDriver` is the `memory` candidate of `DimensionValues`: a consuming service projects the values the owning service's events make live (`project`, `retire`); nothing is live until projected. Gen binds the workflow node's `ServiceAckService`, `AutomationService` and `ChecklistService` where a member injects them and registers their model partners, as it does `RuleSetService`.
+- 5f63e58: `Integration({ key })` takes an optional written key of two snake_case parts (`connectors.stripe`), for an Integration
+  whose key stored data already names (STA-1739). Gen's manifest uses it in place of the derived
+  `<module>.<snake(class)>`, refuses a malformed one (`integration_key_invalid`) and still refuses two Integrations with
+  one key (`identity_collision`). Without `key`, nothing changes.
+- Updated dependencies [9c8d108]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [58c7da9]
+  - @stackra/contracts@0.4.0
+  - @stackra/support@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/money@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
