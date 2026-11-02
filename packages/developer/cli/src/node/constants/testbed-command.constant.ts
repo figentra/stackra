@@ -25,7 +25,7 @@ export const TESTBED_COMMAND: CliCommand = {
   summary:
     "Run heavy work on the shared test boxes (run, status, unlock, ip, ssh, sync, scale, image)",
   usage:
-    'stackra testbed run "<session> <what>" <dir> "<cmd>" [--preset verify|e2e|integration --ref <ref>] [--no-wait] [--on-demand] | status | unlock [--box N|id] [--slot heavy|light] | ip [--box] | ssh [--box] [cmd] | sync [--box] <dir> | scale [--slot heavy|light] | image',
+    'stackra testbed run "<session> <what>" <dir> "<cmd>" [--preset verify|e2e|integration --ref <ref>] [--no-wait] [--on-demand] [--ssh-direct] | status | unlock [--box N|id] [--slot heavy|light] | ip [--box] | ssh [--box] [cmd] | sync [--box] <dir> | scale [--slot heavy|light] | image',
   options: {
     box: { type: "string" },
     slot: { type: "string" },
@@ -33,6 +33,7 @@ export const TESTBED_COMMAND: CliCommand = {
     ref: { type: "string" },
     "no-wait": { type: "boolean" },
     "on-demand": { type: "boolean" },
+    "ssh-direct": { type: "boolean" },
     profile: { type: "string" },
     region: { type: "string" },
     key: { type: "string" },

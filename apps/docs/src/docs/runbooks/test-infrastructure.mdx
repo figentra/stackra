@@ -57,6 +57,52 @@ verbs:
 - A command that calls `ci-box` or `stackra testbed` is refused. Run it from the Mac instead.
 - A job runs for at most 3 hours.
 
+### How the Mac reaches a box
+
+By SSH through **SSM Session Manager**: `ssh`, `rsync` and every verb connect to `ubuntu@<instance-id>` with an
+`AWS-StartSSHSession` `ProxyCommand`. The security group has no inbound rule, so a changing public IP (Cloudflare WARP)
+does not matter. Needs on the Mac: the `aws` CLI with the `academorix` profile, the SSH key, and the Session Manager
+plugin, pinned in `mise.toml` (`mise install`). The box side is already there: the instance role has
+`AmazonSSMManagedInstanceCore`, the Ubuntu image runs the SSM agent, and egress is open.
+
+`stackra testbed --ssh-direct` (or `STACKRA_TESTBED_SSH_DIRECT=1`) is the fallback: it connects to the public IP and
+swaps this machine's address into the port-22 allowlist, which exists only when `TESTBED_SSH_CIDRS` was set at apply.
+
+The `academorix` profile runs as the account root today, so it needs no policy. A non-root caller needs this much:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "ssm:StartSession",
+      "Resource": "arn:aws:ec2:eu-west-1:591473336656:instance/*",
+      "Condition": { "StringLike": { "ssm:resourceTag/stackra:testbed": ["heavy", "light"] } }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ssm:StartSession",
+      "Resource": "arn:aws:ssm:eu-west-1::document/AWS-StartSSHSession"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ssm:TerminateSession", "ssm:ResumeSession"],
+      "Resource": "arn:aws:ssm:*:*:session/${aws:userid}-*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "autoscaling:DescribeAutoScalingGroups",
+        "autoscaling:SetDesiredCapacity"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
 ## The disk guard
 
 `testbed-agent guard` runs every five minutes and before every job.
@@ -234,8 +280,8 @@ Then in GitHub, figentra/stackra, Settings, Environments, New environment `testb
 only, required reviewer the owner, and two environment variables (neither is secret):
 
 - `TESTBED_DEPLOY_ROLE_ARN` = `arn:aws:iam::591473336656:role/stackra-testbed-deploy`
-- `TESTBED_SSH_CIDRS` = the Mac's public IP as `x.x.x.x/32` (comma-separate more). `stackra testbed` swaps its own
-  entry later.
+- `TESTBED_SSH_CIDRS` (optional) = a port-22 allowlist as `x.x.x.x/32`, comma-separated, for `--ssh-direct` only.
+  Leave it unset: the CLI reaches the boxes through SSM. A rule already applied stays until the owner revokes it.
 
 `INFISICAL_GATE_IDENTITY_ID` and `INFISICAL_GATE_PROJECT_ID` are already organization variables.
 
