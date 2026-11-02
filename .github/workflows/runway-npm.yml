@@ -77,7 +77,6 @@ jobs:
       id-token: write # the registry's OIDC exchange and the Sigstore provenance of each tarball
     outputs:
       published: ${{ steps.changesets.outputs.published }}
-      packages: ${{ steps.changesets.outputs.published-packages }}
     env:
       # A step's `if` cannot read `secrets`, so only whether the caller passed the App key is carried, never a value.
       HAS_APP_SECRETS: ${{ secrets.app-id != '' && secrets.app-private-key != '' }}
@@ -229,6 +228,22 @@ jobs:
           REGISTRY: ${{ inputs.registry }}
           NPM_CONFIG_PROVENANCE: "true"
 
+      # The published list goes to the SBOM job as an artifact, not a job output: GitHub drops a job output that holds a
+      # masked value, and a package name can (`@figentra-oss/flow`, run 41388316844: "Skip output 'packages'").
+      - name: Published packages
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          PACKAGES: ${{ steps.changesets.outputs.published-packages }}
+        run: printf '%s\n' "$PACKAGES" > published-packages.json
+
+      - name: Upload the published list
+        if: steps.changesets.outputs.published == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: published-packages
+          path: published-packages.json
+          retention-days: 1
+
   # Runs only after a publish: the SBOM of what was installed, signed keylessly with this job's OIDC identity, kept as
   # an artifact and attached, with the tarballs' SHA-256 sums, to every release the publish created. No App token and
   # no npm access here (the tarballs are public reads).
@@ -282,16 +297,20 @@ jobs:
             sbom.cdx.json.sigstore.json
           retention-days: 90
 
+      - name: Download the published list
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: published-packages
+
       # The tarballs exactly as the registry serves them, each checked against the integrity (sha512) the registry
       # computed at publish, then listed by SHA-256. A convenience: integrity rests on provenance and the SBOM.
       - name: Checksums (sha256sums.txt)
         env:
-          PACKAGES: ${{ needs.release.outputs.packages }}
           REGISTRY: ${{ inputs.registry }}
         run: |
           set -euo pipefail
           mkdir tarballs
-          jq -r '.[] | [.name, .version] | @tsv' <<< "$PACKAGES" | while IFS=$'\t' read -r name version; do
+          jq -r '.[] | [.name, .version] | @tsv' published-packages.json | while IFS=$'\t' read -r name version; do
             dist="$(curl -fsS "${REGISTRY}${name/\//%2f}/${version}" | jq -c '.dist')"
             file="${name#@}"
             file="tarballs/${file//\//-}-${version}.tgz"
@@ -306,8 +325,7 @@ jobs:
       - name: Attach SBOM and checksums to the releases
         env:
           GH_TOKEN: ${{ github.token }}
-          PACKAGES: ${{ needs.release.outputs.packages }}
         run: |
-          jq -r '.[] | "\(.name)@\(.version)"' <<< "$PACKAGES" | while read -r tag; do
+          jq -r '.[] | "\(.name)@\(.version)"' published-packages.json | while read -r tag; do
             gh release upload "$tag" sbom.cdx.json sbom.cdx.json.sigstore.json sha256sums.txt --clobber
           done

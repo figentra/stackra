@@ -16,8 +16,9 @@ rules:
   artipacked:
     ignore:
       # The checkout persists the App token on purpose: changesets pushes the version branch and tags with it. The only
-      # upload in this job is the SBOM, two named files (sbom.cdx.json and its sigstore bundle), never .git.
-      - runway-npm.yml:109
+      # uploads are named files, never .git: the published list (published-packages.json) in this job, and the SBOM and
+      # its sigstore bundle in the next.
+      - runway-npm.yml:108
   self-repository:
     ignore:
       # Local reusable-workflow calls stay `./.github/workflows/…` (ADR 0168, called by SHA from other repositories);
