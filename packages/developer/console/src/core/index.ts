@@ -37,6 +37,8 @@ export type { ConsoleConfig } from "#core/types/console-config.type";
 export type { ConsoleContainer } from "#core/types/console-container.type";
 export type { ConsoleOutput } from "#core/types/console-output.type";
 export type { ConsolePorts } from "#core/types/console-ports.type";
+export type { ConsoleProcess } from "#core/types/console-process.type";
 export type { ConsolePrompt } from "#core/types/console-prompt.type";
+export type { ConsoleRunOptions } from "#core/types/console-run-options.type";
 export type { PromptPaint } from "#core/types/prompt-paint.type";
 export type { RenderContext } from "#core/types/render-context.type";

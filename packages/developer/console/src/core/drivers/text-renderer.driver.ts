@@ -7,7 +7,8 @@
  *           Under `--json` it writes nothing; under `--quiet` only standard error. With colour off it writes no
  *           escape byte and no cursor movement.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-016 to FR-021 and FR-026; STA-1966 spec FR-002, FR-003 and FR-008 to FR-011.
+ * Governing contract: STA-1730 spec FR-016 to FR-021 and FR-026; STA-1966 spec FR-002, FR-003, FR-007 and FR-008 to
+ *                     FR-011.
  */
 import { Driver } from "@stackra/container";
 
@@ -40,6 +41,9 @@ import type { RenderContext } from "#core/types/render-context.type";
 
 /** Clears the current terminal line. */
 const CLEAR_LINE = "\r\u001B[2K";
+
+/** How many lines of a failed step's output its task line shows. */
+const TAIL_LINES = 20;
 
 /** A line with a symbol in the gutter. */
 const mark = (symbol: string, text: string) => `  ${symbol} ${text}`;
@@ -183,6 +187,11 @@ export class TextRendererDriver extends Driver(Renderer) {
       return result;
     } catch (error) {
       this.err(finish(painter.bold(painter.error("FAIL"))));
+      // The tail of a failed step's output (a CommandError's detail) sits under its line; all of it under --verbose.
+      const detail = (error as { readonly detail?: unknown } | null)?.detail;
+      if (typeof detail === "string" && detail.trim() !== "")
+        for (const line of detail.trimEnd().split("\n").slice(-TAIL_LINES))
+          this.err(painter.dim(`    │ ${line}`));
       throw error;
     }
   }

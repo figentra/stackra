@@ -8,6 +8,7 @@
  */
 import type { CommandAudit } from "#contracts/ports/command-audit.port";
 import type { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
+import type { ProcessRunner } from "#contracts/ports/process-runner.port";
 import type { ConsoleSignal } from "#contracts/types/console-signal.type";
 import type { PromptAnswer } from "#contracts/types/prompt-answer.type";
 import type { ConsoleConfig } from "#core/types/console-config.type";
@@ -38,6 +39,12 @@ export interface TestRunOptions {
 
   /** Sent on the next tick after the run starts, to test interruption. */
   readonly signal?: ConsoleSignal;
+
+  /** The child processes `io.process` runs; a `MemoryProcessRunnerDriver` with nothing scripted when absent. */
+  readonly process?: ProcessRunner;
+
+  /** The run's working directory (`io.cwd`); `/work` by default. */
+  readonly cwd?: string;
 
   /** Makes the run's renderer, to test a driver of your own; the text driver when absent. */
   readonly renderer?: ConsolePorts["renderer"];

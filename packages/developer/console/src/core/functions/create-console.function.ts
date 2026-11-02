@@ -18,11 +18,13 @@ import { UsageError } from "#core/errors/usage.error";
 import { buildRegistry } from "#core/functions/build-registry.function";
 import { createOutput } from "#core/functions/create-output.function";
 import { createPainter } from "#core/functions/create-painter.function";
+import { createProcess } from "#core/functions/create-process.function";
 import { createPrompt } from "#core/functions/create-prompt.function";
 import { decideGround } from "#core/functions/decide-ground.function";
 import { decideMode } from "#core/functions/decide-mode.function";
 import { defaultsPrompter } from "#core/functions/defaults-prompter.function";
 import { errorCode } from "#core/functions/error-code.function";
+import { isSecret } from "#core/functions/is-secret.function";
 import { problemOf } from "#core/functions/problem-of.function";
 import { route } from "#core/functions/route.function";
 import { runCommand } from "#core/functions/run-command.function";
@@ -152,6 +154,21 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
         })
       : defaultsPrompter();
     const operator = operatorOf(ports.env);
+    // A secret option's value never reaches captured child output, an error or a log.
+    const secrets = [...entry.structure.arguments, ...entry.structure.options]
+      .filter(isSecret)
+      .map((field) => intent.values[field.property])
+      .filter((value): value is string => typeof value === "string" && value !== "");
+    const children = createProcess({
+      ...(ports.process === undefined ? {} : { runner: ports.process() }),
+      mode,
+      cwd: ports.cwd,
+      echo: (chunk) => {
+        if (!mode.json) ports.stderr.write(painter.dim(chunk));
+      },
+      redact: (text) =>
+        secrets.reduce((kept, secret) => kept.replaceAll(secret, "[redacted]"), text),
+    });
     const outcome = await runCommand(
       entry,
       intent.values,
@@ -160,6 +177,8 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       (signal) => ({
         output,
         prompt: createPrompt(prompter),
+        process: children,
+        cwd: ports.cwd,
         signal,
         verbose: mode.verbose,
         json: mode.json,

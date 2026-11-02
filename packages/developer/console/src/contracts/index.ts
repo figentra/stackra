@@ -9,6 +9,7 @@
 export type { ArgumentOptions } from "#contracts/types/argument-options.type";
 export { CommandAudit } from "#contracts/ports/command-audit.port";
 export { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
+export { ProcessRunner } from "#contracts/ports/process-runner.port";
 export { Renderer } from "#contracts/ports/renderer.port";
 export type { CheckRow } from "#contracts/types/check-row.type";
 export type { CheckStatus } from "#contracts/types/check-status.type";
@@ -17,6 +18,8 @@ export type { ChecklistSummary } from "#contracts/types/checklist-summary.type";
 export type { MessageTone } from "#contracts/types/message-tone.type";
 export type { NoteTone } from "#contracts/types/note-tone.type";
 export type { Problem } from "#contracts/types/problem.type";
+export type { ProcessResult } from "#contracts/types/process-result.type";
+export type { ProcessRunOptions } from "#contracts/types/process-run-options.type";
 export type { Progress } from "#contracts/types/progress.type";
 export type { Spinner } from "#contracts/types/spinner.type";
 export type { TableColumn } from "#contracts/types/table-column.type";

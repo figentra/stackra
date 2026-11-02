@@ -75,7 +75,7 @@ export abstract class Renderer extends Port {
   /** The visible commands under their headings, run as `binary`. */
   abstract commandList(structures: readonly CommandStructure[], binary: string): void;
 
-  /** Runs `work` and writes its outcome line; rethrows its failure. */
+  /** Runs `work` and writes its outcome line; on failure, the last 20 lines of the error's `detail`, then rethrows. */
   abstract task<T>(label: string, work: () => Promise<T> | T): Promise<T>;
 
   /** Starts a spinner. */

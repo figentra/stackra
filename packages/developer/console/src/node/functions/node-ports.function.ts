@@ -9,6 +9,7 @@
  */
 import type { ConsoleSignal } from "#contracts/types/console-signal.type";
 import type { ConsolePorts } from "#core/types/console-ports.type";
+import { NodeProcessRunnerDriver } from "#node/drivers/node-process-runner.driver";
 import { terminalPrompter } from "#node/functions/terminal-prompter.function";
 
 /**
@@ -24,6 +25,7 @@ export function nodePorts(): ConsolePorts {
     stdoutIsTTY: process.stdout.isTTY === true,
     stdinIsTTY: process.stdin.isTTY === true,
     env: process.env,
+    cwd: process.cwd(),
     ...(process.stdout.columns === undefined ? {} : { columns: process.stdout.columns }),
     signals: {
       on: (handler) => {
@@ -38,5 +40,6 @@ export function nodePorts(): ConsolePorts {
       },
     },
     prompter: terminalPrompter(process.stdin, process.stdout),
+    process: () => new NodeProcessRunnerDriver(),
   };
 }
