@@ -54,8 +54,8 @@ What exists today and is reused, not rebuilt:
 - **Tenancy and data**: no real tenant data. Each run seeds two synthetic tenants with the `test` seed-pack profile and
   asserts a cross-tenant read is refused; all data lives on tmpfs and is removed with the job
 - **Secrets**: no value in git, a file, argv or a log. Phase 1: the testbed's existing shared gate identity
-  (`INFISICAL_GATE_IDENTITY_ID`, `figentra-ci` `/ci`) for the install licence tokens (`UNIWIND_AUTH_TOKEN`,
-  `HEROUI_AUTH_TOKEN`) and product read access (`STACKRA_BOT_APP_ID`, `STACKRA_BOT_PRIVATE_KEY`); service secrets the
+  (`INFISICAL_GATE_IDENTITY_ID`, `figentra-ci` `/ci`) for the install licence token (`UNIWIND_AUTH_TOKEN`)
+  and product read access (`STACKRA_BOT_APP_ID`, `STACKRA_BOT_PRIVATE_KEY`); service secrets the
   product runways name get generated throwaway values inside the job. Phase 2: `CLOUDFLARE_API_TOKEN` from Infisical
   `/ci` over GitHub OIDC, only in the deploy step, as the reusable workflow already does. Phase 3: `ENCORE_API_KEY`, same
   path, once STA-136 opens a deploy path
