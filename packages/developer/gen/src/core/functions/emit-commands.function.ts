@@ -30,6 +30,7 @@ export function emitCommands(ir: MemberIR, manifest: StackraManifest): string | 
   const imports: string[] = [];
   const names: string[] = [];
   const own: string[] = [];
+  const actionNames: string[] = [];
   const action = (name: string) => ir.classes.find((declared) => declared.name === name);
   for (const row of rows) {
     if (row.action !== undefined) {
@@ -48,6 +49,7 @@ export function emitCommands(ir: MemberIR, manifest: StackraManifest): string | 
         `export class ${row.class} extends ActionCommand(${target.name}, ${input.name}, { name: ${JSON.stringify(row.name)}${row.group === undefined ? "" : `, group: ${JSON.stringify(row.group)}`} }) {}`,
       );
       names.push(row.class);
+      actionNames.push(row.class);
       used.add(row.class);
       continue;
     }
@@ -81,6 +83,9 @@ export function emitCommands(ir: MemberIR, manifest: StackraManifest): string | 
     ...(own.length === 0 ? [] : [...own, ""]),
     "/** Every command of this member, in manifest order. */",
     `export const COMMANDS = [${names.join(", ")}] as const;`,
+    "",
+    "/** The generated action commands, which the console entry builds with the app's container. */",
+    `export const ACTION_COMMANDS: ReadonlySet<unknown> = new Set([${actionNames.join(", ")}]);`,
     "",
   ].join("\n");
 }

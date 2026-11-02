@@ -28,6 +28,15 @@ export function emitConsoleEntry(
 ): GeneratedFile | undefined {
   if (ir.layout === "package" || !generated.includes(".stackra/gen/commands.ts")) return undefined;
   const wired = generated.includes(".stackra/gen/wiring.ts");
+  // An own action or query that declares `command` becomes a generated class that needs the app's container.
+  const actions =
+    wired &&
+    ir.classes.some(
+      (declared) =>
+        (declared.kind === "action" || declared.kind === "query") &&
+        declared.options["command"] !== undefined &&
+        declared.options["command"] !== false,
+    );
   const registrations = generated.includes(".stackra/gen/registrations.ts");
   return {
     path: ".stackra/entry/console.ts",
@@ -45,16 +54,28 @@ export function emitConsoleEntry(
       ...(wired ? ['import { bootApp } from "@stackra/app";'] : []),
       'import { createConsole } from "@stackra/console";',
       'import { nodePorts } from "@stackra/console/node";',
-      'import { COMMANDS } from "#stackra/commands";',
+      `import { ${actions ? "ACTION_COMMANDS, COMMANDS" : "COMMANDS"} } from "#stackra/commands";`,
       ...(wired ? ['import { wiring } from "#stackra/wiring";'] : []),
       "",
       "const app = createConsole({",
       `  name: ${JSON.stringify(ir.member)},`,
       `  version: ${JSON.stringify(ir.version)},`,
       "  commands: COMMANDS,",
-      ...(wired
-        ? ["  container: async () => (await bootApp(wiring, { env: process.env })).container,"]
-        : []),
+      ...(actions
+        ? [
+            "  container: async () => {",
+            "    const container = (await bootApp(wiring, { env: process.env })).container;",
+            "    // an action command takes the app's container as its resolver; any other class is built by the container",
+            "    return {",
+            "      get: (type) => (ACTION_COMMANDS.has(type) ? Reflect.construct(type, [container]) : container.get(type)),",
+            "      has: (type) => ACTION_COMMANDS.has(type) || container.has?.(type) === true,",
+            "      close: () => container.close(),",
+            "    };",
+            "  },",
+          ]
+        : wired
+          ? ["  container: async () => (await bootApp(wiring, { env: process.env })).container,"]
+          : []),
       "});",
       "",
       "/** Runs the console with `argv`, the arguments after the member; resolves to the command's exit code. */",

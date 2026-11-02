@@ -17,10 +17,11 @@ import type { AnyClass } from "@stackra/container";
 import { Command, Option, UsageError } from "@stackra/console";
 import { Int, List, Num, Str, schemaOf } from "@stackra/validation";
 
-import type { CommandActor } from "#contracts/ports/command-actor.port";
+import { CommandActor } from "#contracts/ports/command-actor.port";
 import type { Action } from "#core/bases/action.base";
 import type { Query } from "#core/bases/query.base";
-import type { ActionPipeline } from "#core/services/action-pipeline.service";
+import { ActionPipeline } from "#core/services/action-pipeline.service";
+import type { Resolver } from "#core/types/resolver.type";
 import type { ActionCommandOptions } from "#node/types/action-command-options.type";
 
 /** A decorator factory taking the recorded options, as `Int`, `Num`, `Str` and `List` are used here. */
@@ -70,10 +71,7 @@ export function ActionCommand(
   action: AnyClass<Action | Query>,
   input: AnyClass,
   options: ActionCommandOptions,
-): new (
-  pipeline: ActionPipeline,
-  actor?: CommandActor,
-) => { readonly "~kind": "command"; handle: () => Promise<unknown> } {
+): new (resolver?: Resolver) => { readonly "~kind": "command"; handle: () => Promise<unknown> } {
   const schema = schemaFields(input);
   const fields = new Set<string>(schema.all);
   for (const [decorator] of VALUE_DECORATORS)
@@ -83,10 +81,8 @@ export function ActionCommand(
     name: options.name,
     description: options.description ?? `Runs ${options.name}`,
   }) {
-    constructor(
-      private readonly pipeline: ActionPipeline,
-      private readonly actor?: CommandActor,
-    ) {
+    // the console builds an unbound class with no arguments when it has no container; the generated entry passes the app's
+    constructor(private readonly resolver?: Resolver) {
       super();
     }
 
@@ -103,9 +99,19 @@ export function ActionCommand(
             `Missing --${kebab(property)}`,
             `${options.name} needs --${kebab(property)}`,
           );
-      const actor = await this.actor?.current();
+      const resolver = this.resolver;
+      if (resolver === undefined)
+        throw new Error(
+          `${options.name} needs the app's container: run it through the member's console entry`,
+        );
+      const actor = await (
+        resolver.has(CommandActor) ? resolver.get(CommandActor) : undefined
+      )?.current();
       if (actor === undefined) throw new Error(`Sign in to run ${options.name}`);
-      return this.pipeline.execute(action, values as never, { actor });
+      const pipeline = resolver.has(ActionPipeline)
+        ? resolver.get(ActionPipeline)
+        : new ActionPipeline(resolver);
+      return pipeline.execute(action, values as never, { actor });
     }
   }
 

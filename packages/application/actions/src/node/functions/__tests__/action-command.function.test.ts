@@ -17,8 +17,9 @@ import { Int, Schema, Str, registerSchemas } from "@stackra/validation";
 import { vi } from "vitest";
 import { z } from "zod";
 
-import type { CommandActor } from "#contracts/ports/command-actor.port";
-import type { ActionPipeline } from "#core/services/action-pipeline.service";
+import { CommandActor } from "#contracts/ports/command-actor.port";
+import { ActionPipeline } from "#core/services/action-pipeline.service";
+import type { Resolver } from "#core/types/resolver.type";
 import { ActionCommand } from "#node/functions/action-command.function";
 
 class FreezeAccountInput extends Schema {
@@ -54,10 +55,13 @@ function run(
   actor: { current: () => Promise<Actor | undefined> } | null = { current: async () => ACTOR },
 ) {
   const pipeline = { execute } as unknown as ActionPipeline;
+  const resolver = {
+    has: (token: unknown) => token === ActionPipeline || (token === CommandActor && actor !== null),
+    get: (token: unknown) => (token === ActionPipeline ? pipeline : actor),
+  } as unknown as Resolver;
   return runCommandForTest([FreezeAccountCommand], argv, {
     container: () => ({
-      get: (type: abstract new (...args: never[]) => object) =>
-        Reflect.construct(type, [pipeline, (actor as unknown as CommandActor) ?? undefined]),
+      get: (type: abstract new (...args: never[]) => object) => Reflect.construct(type, [resolver]),
       close: async () => {},
     }),
   });
@@ -96,6 +100,15 @@ describe("ActionCommand", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Sign in to run account:freeze");
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("refuses a run built with no container, naming the console entry", async () => {
+    const result = await runCommandForTest(
+      [FreezeAccountCommand],
+      ["account:freeze", "--reason", "x"],
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("needs the app's container");
   });
 
   it("refuses a run when nobody is signed in", async () => {

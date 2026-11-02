@@ -279,6 +279,32 @@ describe("commandsOf for an action's `command` option", () => {
   });
 });
 
+describe("the console entry for action commands", () => {
+  const paths = [".stackra/gen/commands.ts", ".stackra/gen/wiring.ts"];
+
+  // @covers sta-1966:FR-022
+  it("wraps the container only when the member has action commands", () => {
+    const withAction = emitConsoleEntry(service([action({ command: "order:cancel" })]), paths);
+    expect(withAction?.content).toContain(
+      'import { ACTION_COMMANDS, COMMANDS } from "#stackra/commands";',
+    );
+    expect(withAction?.content).toContain("Reflect.construct(type, [container])");
+    expect(withAction?.content).toContain("close: () => container.close()");
+    const without = emitConsoleEntry(service([PRUNE]), paths);
+    expect(without?.content).not.toContain("ACTION_COMMANDS");
+    expect(without?.content).toContain(
+      "container: async () => (await bootApp(wiring, { env: process.env })).container,",
+    );
+  });
+
+  it("exports ACTION_COMMANDS from the commands file", () => {
+    const ir = { ...service([action({ command: "order:cancel" })]), shapes: [CANCEL_INPUT] };
+    expect(emitCommands(ir, buildManifest(ir).manifest)).toContain(
+      "export const ACTION_COMMANDS: ReadonlySet<unknown> = new Set([CancelOrderActionCommand]);",
+    );
+  });
+});
+
 describe("buildManifest commands", () => {
   it("writes `commands` only when there is a row", () => {
     expect(buildManifest(service([])).manifest.commands).toBeUndefined();
