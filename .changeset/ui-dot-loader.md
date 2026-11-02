@@ -1,6 +1,5 @@
 ---
 "@stackra/ui": minor
-"@stackra/showcase": patch
 ---
 
 Spinner, ProgressBar, ProgressCircle and RouteProgress draw the brand's dot loader on web and native (STA-2017,
