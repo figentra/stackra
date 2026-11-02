@@ -10,7 +10,6 @@
 export const TESTBED_RSYNC_EXCLUDES: readonly string[] = [
   "node_modules",
   ".claude/worktrees",
-  ".agents",
   ".env*",
   "*.secrets.local.cue",
   ".mcp.json",

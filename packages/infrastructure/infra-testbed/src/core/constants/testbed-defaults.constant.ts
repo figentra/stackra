@@ -53,7 +53,6 @@ export const TESTBED_DEFAULTS = {
   rsyncExcludes: [
     "node_modules",
     ".claude/worktrees",
-    ".agents",
     ".env*",
     "*.secrets.local.cue",
     ".mcp.json",
