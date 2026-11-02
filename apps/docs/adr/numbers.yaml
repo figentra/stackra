@@ -1558,7 +1558,7 @@
   issue: STA-1964
 "0519":
   slug: worker-settings-come-from-runway-presets
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-1986
 "0520":
@@ -1567,5 +1567,5 @@
   issue: STA-2015
 "0521":
   slug: design-system-docs-on-fumadocs-ai-first
-  status: reserved
+  status: accepted
   issue: STA-2024
