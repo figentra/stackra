@@ -1529,3 +1529,7 @@
   slug: self-hosted-docs-replace-mintlify
   status: accepted
   issue: STA-1920
+"0515":
+  slug: stackra-create-and-the-published-starter
+  status: reserved
+  issue: STA-1952
