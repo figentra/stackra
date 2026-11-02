@@ -26,6 +26,7 @@ import { zoneOf } from "#core/functions/zone-of.function";
 import type { CloudflareStack } from "#core/types/cloudflare-stack.type";
 import type { StorefrontPolicy } from "#core/types/storefront-policy.type";
 import { accessGate } from "#node/functions/access-gate.function";
+import { workerAccess } from "#node/functions/worker-access.function";
 import { cloudflareZone } from "#node/functions/cloudflare-zone.function";
 import { devTunnel } from "#node/functions/dev-tunnel.function";
 import { edgeWorker } from "#node/functions/edge-worker.function";
@@ -65,6 +66,7 @@ export function cloudflareCoreStack(args: {
   >;
   tunnels: Record<string, ReturnType<typeof devTunnel>>;
   access: ReturnType<typeof accessGate> | undefined;
+  internalTools: ReturnType<typeof workerAccess> | undefined;
   buckets: Record<string, ReturnType<typeof r2Bucket>>;
   edgeWorker: ReturnType<typeof edgeWorker> | undefined;
   caches: Record<string, cloudflare.WorkersKvNamespace>;
@@ -176,6 +178,23 @@ export function cloudflareCoreStack(args: {
           ),
           access: stack.access,
         });
+  const identityProviderId =
+    stack.access === undefined
+      ? undefined
+      : resolveRef(stack.access.identityProviderId, "access.identityProviderId");
+  const internalTools =
+    stack.access === undefined ||
+    stack.internalTools === undefined ||
+    identityProviderId === undefined
+      ? undefined
+      : workerAccess({
+          accountId,
+          project: root.project,
+          identityProviderId,
+          access: stack.access,
+          workersDevSubdomain: stack.internalTools.workersDevSubdomain,
+          members: stack.internalTools.members,
+        });
   const buckets = Object.fromEntries(
     Object.entries(stack.buckets).map(
       ([name, bucket]) =>
@@ -202,5 +221,13 @@ export function cloudflareCoreStack(args: {
         ] as const,
     ),
   );
-  return { zones, tunnels, access, buckets, edgeWorker: edgeWorkerResources, caches };
+  return {
+    zones,
+    tunnels,
+    access,
+    internalTools,
+    buckets,
+    edgeWorker: edgeWorkerResources,
+    caches,
+  };
 }
