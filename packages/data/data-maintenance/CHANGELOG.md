@@ -1,5 +1,26 @@
 # @stackra/data-maintenance
 
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [fb29d41]
+- Updated dependencies [e250d4f]
+- Updated dependencies [c64a55d]
+  - @stackra/database@0.6.0
+  - @stackra/iam@0.6.0
+  - @stackra/tenancy@0.6.0
+  - @stackra/queue@0.6.0
+  - @stackra/search@0.6.0
+  - @stackra/outbox@0.6.0
+  - @stackra/scheduler@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

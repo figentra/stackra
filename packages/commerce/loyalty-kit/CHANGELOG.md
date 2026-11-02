@@ -1,5 +1,48 @@
 # @stackra/loyalty-kit
 
+## 0.6.0
+
+### Patch Changes
+
+- e15d9c3: Gen records every panel resource in the manifest's `ui.resources`, under `<module>.<model>`: the tree its builder
+  members return, with its owning `module`, its `class` and, in a package, the `from` a host imports it from. Action
+  and query classes in the tree are written as their locked keys, and a service or app also lists its hosted packages'
+  resources. `generate` takes a `loader` to run the resource classes; `stackra gen` passes one on Vite's module runner,
+  and a run without one refuses a member that declares a resource (`resource_loader_missing`). New refusals:
+  `resource_unloadable`, `builder_impure`, `resource_operation_unknown` and `resource_duplicate` (STA-1947). The loyalty
+  kit's manifest now records its `LoyaltyAccountResource`.
+- Updated dependencies [fb29d41]
+- Updated dependencies [e250d4f]
+- Updated dependencies [c64a55d]
+- Updated dependencies [d53d9d3]
+- Updated dependencies [712fb89]
+  - @stackra/database@0.6.0
+  - @stackra/iam@0.6.0
+  - @stackra/tenancy@0.6.0
+  - @stackra/ui@0.6.0
+  - @stackra/queue@0.6.0
+  - @stackra/ledger@0.6.0
+  - @stackra/search@0.6.0
+  - @stackra/panel@0.6.0
+  - @stackra/outbox@0.6.0
+  - @stackra/scheduler@0.6.0
+  - @stackra/workflow@0.6.0
+  - @stackra/settings@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/money@0.6.0
+  - @stackra/integrations@0.6.0
+  - @stackra/versioning@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/testing@0.6.0
+  - @stackra/experience@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/i18n@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @stackra/platform
 
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/filesystem@0.6.0
+  - @stackra/storage@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/state@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes
