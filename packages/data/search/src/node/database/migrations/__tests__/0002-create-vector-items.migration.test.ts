@@ -45,6 +45,7 @@ describe("CreateVectorItemsMigration", () => {
       'comment on column "search"."vector_items"."embedding" is null',
       'alter table "search"."vector_items" drop column if exists "embedding"',
     ]);
-    expect(inverse.at(-1)).toBe('drop extension if exists "vector"');
+    // The extension is the database's, so the down keeps it (STA-1689).
+    expect(inverse.at(-1)).toBe('drop table if exists "search"."vector_items"');
   });
 });

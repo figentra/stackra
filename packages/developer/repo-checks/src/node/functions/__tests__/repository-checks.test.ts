@@ -388,7 +388,6 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "apps/docs/src/docs.json",
       ".claude/settings.json",
       ".changeset/config.json",
-      ".specify/integration.json",
       "assets/landing/index.json",
       "services/billing/assets/seeds/plans/price-levels.json",
       "assets/seeds/credits.json",
@@ -605,7 +604,6 @@ test("isRepoOwnedYaml: skips generated and vendored YAML", () => {
   for (const p of [
     "pnpm-lock.yaml",
     "pnpm-workspace.yaml",
-    ".specify/a.yml",
     ".agents/skills/x/a.yml",
     ".agents/reference/a.yml",
     "a.json",

@@ -30,11 +30,11 @@ const ROOT = fileURLToPath(new URL("../../../../../../../../", import.meta.url))
 const NODE = join(ROOT, "packages/developer/cli/src/node");
 const tmp = () => mkdtempSync(join(tmpdir(), "structure-"));
 
-test("the category list is the 13 categories, and every category folder on disk is one of them", () => {
+test("the category list is the 14 categories, and every category folder on disk is one of them", () => {
   const onDisk = readdirSync(join(ROOT, "packages"), { withFileTypes: true })
     .filter((d) => d.isDirectory() && d.name !== "tooling")
     .map((d) => d.name);
-  assert.equal(CATEGORY_NAMES.length, 13);
+  assert.equal(CATEGORY_NAMES.length, 14);
   for (const name of onDisk) assert.ok(CATEGORY_NAMES.includes(name), name);
 });
 
