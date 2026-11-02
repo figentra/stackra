@@ -59,6 +59,29 @@ describe("checkPublish", () => {
     expect(checkPublish(candidate({ stackra: { kind: "theme" } })).ok).toBe(false);
   });
 
+  it("names a contract and a docs item with a -<kind> suffix, not a prefix", () => {
+    for (const kind of ["contract", "docs"]) {
+      const name = `@stackra/billing-${kind}`;
+      expect(checkPublish(candidate({ name, stackra: { kind } }, { name }))).toEqual({
+        ok: true,
+        kind,
+      });
+      const prefixed = `@stackra/${kind}-billing`;
+      expect(
+        checkPublish(candidate({ name: prefixed, stackra: { kind } }, { name: prefixed })),
+      ).toEqual({
+        ok: false,
+        reasons: [`a ${kind} item is named @stackra/<name>-${kind}`],
+      });
+    }
+    const suffixedSkill = "@stackra/archify-skill";
+    expect(
+      checkPublish(
+        candidate({ name: suffixedSkill, stackra: { kind: "skill" } }, { name: suffixedSkill }),
+      ),
+    ).toEqual({ ok: false, reasons: ["a skill item is named @stackra/skill-<name>"] });
+  });
+
   it("refuses name, version, semver and digest mismatches", () => {
     const verdict = checkPublish(
       candidate(
