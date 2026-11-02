@@ -7,7 +7,9 @@
  *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
  *          instance's share of the runway `poolBudget`, ADR 0473) and the subscribers: the legal-hold one, the
  *          `StampSubscriber`, the `AppendOnlySubscriber` (stackra-256), the trait subscribers of `traitSubscribers`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` and, when bound, the `KeyProvider` its blind indexes need (when a model, own or a declared package's, has
- *          `HasEncryptedFields`; stackra-262) and the outbox writer among its subscribers,
+ *          `HasEncryptedFields`; stackra-262) and the outbox writer among its subscribers, then the outbox writer as the
+ *          native-write watcher (`connectNativeWriteWatcher`, so a native `CrudService` write reaches the change log;
+ *          STA-2047),
  *          `segments.connect(container)`, `AutomationService#connect` (so a published automation's principal is checked
  *          against its scope, ADR 0495, when the service runs `@stackra/workflow`), `EventBus#connect` and
  *          `InboxService#connect` (the
@@ -133,7 +135,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     imports.push(
       'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',
       // The trait subscribers' names (Tree, ValidateOnFlush) sort after StampSubscriber, so appending keeps the order.
-      `import { ${["AppendOnlySubscriber", "connectHoldRegistry", "connectSequenceTimeZone", "DatabaseConfig", "HoldSubscriber", "StampSubscriber", ...traits].join(", ")} } from "@stackra/database";`,
+      `import { ${["AppendOnlySubscriber", "connectHoldRegistry", ...(outbox ? ["connectNativeWriteWatcher"] : []), "connectSequenceTimeZone", "DatabaseConfig", "HoldSubscriber", "StampSubscriber", ...traits].join(", ")} } from "@stackra/database";`,
       'import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";',
     );
     if (encrypted)
@@ -159,6 +161,9 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       `    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber()${traits.map((name) => `, new ${name}()`).join("")}${encrypted ? ", new EncryptedFieldsSubscriber(container.get(FieldCipher), undefined, container.has(KeyProvider) ? container.get(KeyProvider) : undefined)" : ""}${outbox ? ", container.get(OutboxWriterService)" : ""}],`,
       "  });",
     );
+    // A native CrudService write (increment, soft delete, restore, repath, purge) fires no ORM event, so the writer
+    // hears of it through the watcher, or search, segments and change consumers keep stale rows (STA-2047).
+    if (outbox) steps.push("  connectNativeWriteWatcher(container.get(OutboxWriterService));");
   }
   if (outbox)
     imports.push(

@@ -3,7 +3,7 @@
  * Purpose: unit tests of `emitBoot`: a service that runs the database, the outbox and segments connects them in order
  *          (the bound legal-hold registry and sequence time zone, the database at the url the Encore database provides with the
  *          replicas of `DATABASE_REPLICA_URLS`, the bound config's timeouts and pool with `DATABASE_POOL_MAX` over its max (ADR 0473), and the hold, stamp, append-only (stackra-256) and outbox writer
- *          subscribers (stackra-250), then segments, then the bus and inbox connected until the shutdown signal,
+ *          subscribers (stackra-250) and the writer as the native-write watcher (STA-2047), then segments, then the bus and inbox connected until the shutdown signal,
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
  *          aborted mid-boot disconnects at once; the `EncryptedFieldsSubscriber` only when a model encrypts a field
  *          (stackra-262); the live queries' refresh subscribed on the bus with realtime declared (STA-1445); each
@@ -29,7 +29,7 @@ describe("emitBoot", () => {
       'import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";',
     );
     expect(boot).toContain(
-      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
+      'import { AppendOnlySubscriber, connectHoldRegistry, connectNativeWriteWatcher, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
     );
     // The service program never reaches `.stackra/encore` (STA-1652).
     expect(boot).not.toContain("../encore/");
@@ -64,6 +64,8 @@ describe("emitBoot", () => {
         "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
         "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), container.get(OutboxWriterService)],",
         "  });",
+        // Native CrudService writes reach the change log through the writer (STA-2047).
+        "  connectNativeWriteWatcher(container.get(OutboxWriterService));",
         "  container.get(SegmentService).connect(container);",
         "  const bus = container.get(EventBus);",
         "  bus.connect(container);",
@@ -91,6 +93,7 @@ describe("emitBoot", () => {
       "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber()],",
     );
     expect(boot).not.toContain("Outbox");
+    expect(boot).not.toContain("connectNativeWriteWatcher");
     expect(boot).not.toContain("SegmentService");
     expect(boot).not.toContain("EventBus");
   });
