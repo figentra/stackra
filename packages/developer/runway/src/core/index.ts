@@ -53,6 +53,7 @@ export { productOf } from "#core/functions/product-of.function";
 export { promote } from "#core/functions/promote.function";
 export { regionsOf } from "#core/functions/regions-of.function";
 export { rollback } from "#core/functions/rollback.function";
+export { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
 export { workerSettingsOf } from "#core/functions/worker-settings-of.function";
 export { updateFeed } from "#core/functions/update-feed.function";

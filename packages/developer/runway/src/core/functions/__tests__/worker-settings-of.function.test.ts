@@ -53,4 +53,10 @@ describe("workerSettingsOf", () => {
     expect(() => target({ preset: "nope" })).toThrow();
     expect(() => target({ coloHint: "x" })).toThrow();
   });
+
+  it("applies the member's entry for the deploy's environment last", () => {
+    const t = target({ workersDev: false, environments: { dev: { workersDev: true } } });
+    expect(workerSettingsOf(t, "w", "dev").workersDev).toBe(true);
+    expect(workerSettingsOf(t, "w", "production").workersDev).toBe(false);
+  });
 });

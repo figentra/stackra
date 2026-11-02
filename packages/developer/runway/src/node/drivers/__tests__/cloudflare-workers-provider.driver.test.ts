@@ -27,7 +27,9 @@ const VERSION = "11111111-2222-3333-4444-555555555555";
 const D1 = "00000000-0000-0000-0000-000000000000";
 const REAL_D1 = "abcdefab-1234-5678-9abc-def012345678";
 
-const CONFIG = `{ "name": "stackra-registry", "d1_databases": [{ "database_id": "${D1}" }] }`;
+// A comment with a URL, https://x.test/a, and a trailing comma, as a hand-written wrangler.jsonc has.
+const CONFIG = `{ "name": "stackra-registry", // note
+  "d1_databases": [{ "database_id": "${D1}" },], /* gone */ }`;
 
 const WEB: DeployTarget = {
   id: "production/web",
@@ -145,6 +147,14 @@ describe("CloudflareWorkersProviderDriver", () => {
       reference: `registry=${VERSION},static=${VERSION}`,
     });
     expect(configs[0]).toContain(REAL_D1);
+    // The operational settings come from runway.yaml: the root's compatibility date and the base.
+    expect(JSON.parse(configs[0] ?? "")).toMatchObject({
+      name: "stackra-registry",
+      compatibility_date: "2026-10-01",
+      workers_dev: false,
+      upload_source_maps: true,
+      observability: { logs: { enabled: true, invocation_logs: true }, issues: { enabled: true } },
+    });
     expect(readFileSync(join(root, "workers/registry/wrangler.jsonc"), "utf8")).toBe(CONFIG);
     expect(calls).toContain(
       `<root>/workers/registry$ pnpm exec wrangler secret bulk <<< {"REGISTRY_SIGNING_KEY":"signing-key-value"}`,

@@ -3,7 +3,7 @@
  * Purpose: `CloudflareWorkersProviderDriver`, the `cloudflare-workers` driver of the `RunwayProvider` port: from a
  *          checkout of the release commit it builds each Worker member of `targets.cloudflare-workers.members` that
  *          ships under the target's kind, swaps the placeholder binding ids in its `wrangler.jsonc` for the real ones
- *          (restored afterwards), applies its D1 migrations, runs `wrangler deploy --message <sha>` and sets its secrets
+ *          (restored afterwards), applies its D1 migrations, renders the operational settings of runway.yaml into it (ADR 0519), runs `wrangler deploy --message <sha>` and sets its secrets
  *          with `wrangler secret bulk`. Current reads the commit back from `wrangler deployments list`, verify adds each
  *          member's smoke URL, and rollback returns every member to the version recorded for a commit.
  * Boundary: runs `pnpm` (turbo and each member's own wrangler) through the given `CommandRunner`; wrangler logs in
@@ -12,7 +12,7 @@
  *           a file or a log line. Agents and tests never apply against a real account (ADR 0352 decision 6).
  * Runtime: node
  * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0284 (Workers members); ADR 0173 (no secret is an
- *                     argument); ADR 0294 R3 and ADR 0305 rule 3 (the `Driver(Port)` base); STA-1921.
+ *                     argument); ADR 0294 R3 and ADR 0305 rule 3 (the `Driver(Port)` base); STA-1921; ADR 0519; STA-1989.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -25,6 +25,8 @@ import type { z } from "zod";
 import { CLOUDFLARE_WORKERS_SETTINGS_SCHEMA } from "#core/constants/cloudflare-workers-settings-schema.constant";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
+import { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
+import { workerSettingsOf } from "#core/functions/worker-settings-of.function";
 import { RunwayProvider } from "#core/ports/runway-provider.port";
 import type { DeployRecord } from "#core/types/deploy-record.type";
 import type { DeployStep } from "#core/types/deploy-step.type";
@@ -46,6 +48,9 @@ const ID = /^[A-Za-z0-9-]+$/;
 
 /** The version line `wrangler deploy` prints. */
 const VERSION = /Current Version ID:\s*([0-9a-f-]{36})/;
+
+/** A string, or a `//` or `/* *\/` comment; the strings are kept. */
+const JSONC_TOKEN = /("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
 
 /** Where the settings live in runway.yaml. */
 const SETTINGS_PATH = "targets.cloudflare-workers";
@@ -117,7 +122,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       await this.run("pnpm", this.buildArgs(member), { cwd: this.root });
       const config = join(cwd, "wrangler.jsonc");
       const original = await readFile(config, "utf8");
-      const swapped = this.withIds(key, member, original);
+      const swapped = this.render(target, key, this.withIds(key, member, original));
       try {
         if (swapped !== original) await writeFile(config, swapped);
         for (const database of member.d1)
@@ -274,6 +279,23 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       swapped = swapped.replaceAll(`"${placeholder}"`, `"${this.env[name] ?? ""}"`);
     }
     return swapped;
+  }
+
+  /** `config` with the member's operational settings for the target's environment added (comments are dropped). */
+  private render(target: DeployTarget, key: string, config: string): string {
+    // shortcut: a trailing comma inside a string next to a closer is read as a trailing comma; none exists in a member config.
+    const json = config
+      .replaceAll(JSONC_TOKEN, (_, text?: string) => text ?? "")
+      .replaceAll(/,(\s*[}\]])/g, "$1");
+    const settings = CLOUDFLARE_WORKERS_SETTINGS_SCHEMA.parse(target.settings);
+    return JSON.stringify(
+      renderWranglerConfig(
+        JSON.parse(json) as Record<string, unknown>,
+        workerSettingsOf(settings, key, target.environment),
+      ),
+      null,
+      2,
+    );
   }
 
   /** The commit of the newest deployment whose message is one, from `wrangler deployments list --json`. */

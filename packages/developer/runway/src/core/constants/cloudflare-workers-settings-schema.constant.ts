@@ -3,7 +3,8 @@
  * Purpose: `CLOUDFLARE_WORKERS_SETTINGS_SCHEMA`, the `targets.cloudflare-workers` block the `cloudflare-workers`
  *          provider reads: each Worker member by key, with its folder, the deploy kind it ships under, the placeholder
  *          binding ids it swaps for real ones, its D1 databases, its plain vars and secrets (names), and its smoke URL.
- *          A member also names a `preset` and may override any operational Worker setting (`WORKER_SETTINGS_SCHEMA`);
+ *          A member also names a `preset`, may override any operational Worker setting (`WORKER_SETTINGS_SCHEMA`) and
+ *          override it again per environment (`environments`);
  *          the target reads `compatibilityDate` and `defaults` (ADR 0519). Other keys (the old `workflows`) pass through.
  * Boundary: internal; names only. Values (ids, vars, secrets) come from the deploy job's environment, never runway.yaml.
  * Runtime: isomorphic
@@ -31,6 +32,7 @@ const MEMBER_PATH_SCHEMA = z
 
 /** One Worker member. */
 const MEMBER_SCHEMA = WORKER_SETTINGS_SCHEMA.extend({
+  environments: z.record(KEY_SCHEMA, WORKER_SETTINGS_SCHEMA).optional(),
   preset: z.enum(Enum.values(WorkerPreset) as [WorkerPreset, ...WorkerPreset[]]).optional(),
   path: MEMBER_PATH_SCHEMA,
   kind: z.enum(Enum.values(DeployKind) as [DeployKind, ...DeployKind[]]).default(DeployKind.Web),
