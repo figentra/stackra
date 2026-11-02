@@ -28,7 +28,11 @@ export function readRunways(root: string): DeployRunways {
     existsSync(join(root, dir))
       ? readdirSync(join(root, dir))
           .filter((name) => existsSync(join(root, dir, name, "runway.yaml")))
-          .map((name) => ({ member: name, runway: read(`${dir}/${name}/runway.yaml`) }))
+          .map((name) => ({
+            member: name,
+            folder: dir,
+            runway: read(`${dir}/${name}/runway.yaml`),
+          }))
       : [],
   );
   return { root: read("runway.yaml"), members };

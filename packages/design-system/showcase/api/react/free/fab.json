@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "4c5b3bebf1ba4b59",
+    "hash": "66bb26040d9315e0",
     "propsFiles": ["ui/src/react/fab/fab.props.ts"]
   },
   "importLine": "import { Fab } from \"@stackra/ui/react\";",
@@ -75,7 +75,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "default": "lg",

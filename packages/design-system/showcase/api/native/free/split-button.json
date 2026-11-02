@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "164c62b73d385120",
+    "hash": "8d139cae4cc57ade",
     "propsFiles": ["ui/src/native/split-button/split-button.props.ts"]
   },
   "importLine": "import { SplitButton } from \"@stackra/ui/native\";",
@@ -66,7 +66,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "default": "md",

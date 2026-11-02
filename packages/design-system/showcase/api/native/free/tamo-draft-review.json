@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "ca66fd2d3dc53066",
+    "hash": "e7b8665c354c111a",
     "propsFiles": ["ui/src/native/tamo-draft-review/tamo-draft-review.props.ts"]
   },
   "importLine": "import { TamoDraftReview } from \"@stackra/ui/native\";",
@@ -47,7 +47,7 @@
           "type": "string"
         },
         {
-          "description": "Tamo's draft.",
+          "description": "The text Tamo drafted, shown beside the text as it is now.",
           "name": "after",
           "required": true,
           "source": "stackra",
