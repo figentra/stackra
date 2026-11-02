@@ -60,7 +60,8 @@ describe("ApprovalGate", () => {
     await expect(
       gate.decide(call, {}, { approvals: 2, expiresAfter: "72h" }),
     ).resolves.toBeUndefined();
-    await gate.park({ approvalId: "apr_1" } as ApprovalDraft);
+    // reason: a draft reduced to its id, the only field this fake reads
+    await gate.park({ approvalId: "apr_1" } as unknown as ApprovalDraft);
     await expect(gate.find("apr_1")).resolves.toMatchObject({ approvalId: "apr_1" });
     await expect(gate.find("apr_2")).resolves.toBeUndefined();
     await expect(gate.begin("apr_1", "approval:apr_1")).resolves.toBe(true);

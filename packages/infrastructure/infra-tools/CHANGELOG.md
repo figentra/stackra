@@ -1,5 +1,22 @@
 # @stackra/infra-tools
 
+## 0.4.0
+
+### Patch Changes
+
+- eaf4c2b: Postgres 18 is the production major (STA-1691, ADR 0238 amendment of 2026-10-31): a `resources.postgres` without a
+  `version` plans 18, the GCP examples and messages name `POSTGRES_18`, and the tools stack's database task runs the pinned
+  `postgres:18.6-alpine` client.
+- Updated dependencies [9c8d108]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [1a09488]
+- Updated dependencies [d065062]
+- Updated dependencies [d63eb09]
+- Updated dependencies [2e94f1e]
+  - @stackra/contracts@0.4.0
+  - @stackra/runway@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

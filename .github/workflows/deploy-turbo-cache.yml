@@ -11,9 +11,9 @@
 # Runtime: GitHub Actions
 # Governing contract: ADR 0026 (decision 2); ADR 0352; ADR 0289 (decision 2, RW11); ADR 0284 (decision 8); ADR 0173; ADR 0019.
 # Owner: release-operations
-# Secrets: none in the repository. CLOUDFLARE_API_TOKEN (figentra-ci-deploy `/ci`) comes from Infisical `prod`
+# Secrets: none in the repository. CLOUDFLARE_API_TOKEN (ci-deploy `/ci`) comes from Infisical `prod`
 #          through GitHub OIDC with the deploy identity INFISICAL_CI_IDENTITY_ID (an org variable, not a secret), the
-#          one deploy-static.yml and deploy-docs.yml use; TURBO_TOKEN comes from figentra-ci `/ci/turbo` with the turbo
+#          one deploy-static.yml and deploy-docs.yml use; TURBO_TOKEN comes from ci-build `/ci/turbo` with the turbo
 #          variables, its one home (ADR 0512). Its trust names environment subjects, so this job runs in the `static`
 #          environment (main and schemas@* tags only), whose subject that identity already trusts: no new identity and
 #          no new trust. Without the identity id the job tests, prints a notice and deploys nothing.

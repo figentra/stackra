@@ -106,8 +106,8 @@ licence is 409. Every call writes an `audit_events` row (`licence.<action>`, the
 
 ### Issuer tokens
 
-The owner makes one per caller (OS billing), stores its value in Infisical `stackra` `prod` `/ci/registry` (the owner
-vault, ADR 0512; migration 0002's "`/registry`" means this path) as
+The owner makes one per caller (OS billing), stores its value in Infisical `os` `prod` `/runtime/licensing` (the OS licensing service reads it, ADR 0512;
+migration 0002's "`/registry`" means the issuer token's Infisical home) as
 `REGISTRY_ISSUER_TOKEN` (the name `@stackra/licensing`'s `IssuerConfig` reads) and inserts only its hash:
 `INSERT INTO issuer_tokens (hash, label, created_at) VALUES ('<sha256 hex>', 'os-billing', '<now>')`, through the
 migration CI job or the Cloudflare dashboard. Rotate by inserting the new hash, then setting `revoked_at` on the old row.
@@ -261,19 +261,19 @@ straight into the secrets inbox:
 
 ```sh
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out ~/Secrets-inbox/REGISTRY_SIGNING_KEY.pem
-printf 'project: figentra-registry\nenv: prod\npath: /ci/registry\n' > ~/Secrets-inbox/REGISTRY_SIGNING_KEY.target.yaml
+printf 'project: registry\nenv: prod\npath: /ci/registry\n' > ~/Secrets-inbox/REGISTRY_SIGNING_KEY.target.yaml
 pnpm secrets:import --dry-run   # then the import with the printed --confirm token
 ```
 
 ### 3. Issuer token
 
 One per licence API caller (OS billing). Make the value, keep only its SHA-256 hex for D1, and import the value to
-Infisical `stackra` `prod` `/ci/registry` as `REGISTRY_ISSUER_TOKEN` the same way (never `figentra-registry`: the deploy
+Infisical `os` `prod` `/runtime/licensing` as `REGISTRY_ISSUER_TOKEN` the same way (never `registry`: the deploy
 identity must not read it):
 
 ```sh
 openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN
-printf 'project: stackra\nenv: prod\npath: /ci/registry\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN.target.yaml
+printf 'project: os\nenv: prod\npath: /runtime/licensing\n' > ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN.target.yaml
 shasum -a 256 < ~/Secrets-inbox/REGISTRY_ISSUER_TOKEN | cut -d' ' -f1   # the hash, safe to show
 pnpm secrets:import --dry-run   # then the import with the printed --confirm token
 ```

@@ -211,8 +211,16 @@ describe(EventBus, () => {
     const container = {
       has: (type: AnyClass) =>
         type === IssueCredentialListener || type === FailingListener || type === ListenerAuditTrail,
-      get: <T extends object>(type: AnyClass<T>): T =>
-        (type === ListenerAuditTrail ? trail : type === FailingListener ? failing : issuer) as T,
+      get: <T extends object>(type: AnyClass<T>): T => {
+        const requested: AnyClass = type;
+        return (
+          requested === ListenerAuditTrail
+            ? trail
+            : requested === FailingListener
+              ? failing
+              : issuer
+        ) as T;
+      },
     };
     const bus = new EventBus(clock);
     bus.connect(container);

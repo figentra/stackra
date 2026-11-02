@@ -9,7 +9,7 @@
  * Governing contract: ADR 0257 (secret manager agent and the secrets inbox).
  * Input: files directly in $HOME/Secrets-inbox/ (file name = secret name, one extension stripped); optional
  *   `<NAME>.target.yaml` sidecar with `project` / `env` / `path`; flags --project --env --path --name --dry-run --list
- *   --confirm --actor. `/agents` is figentra-agents; a `/ci` target names its project (ADR 0512).
+ *   --confirm --actor. `/agents` is the agents project; any other target names its project (ADR 0512).
  * Output: one line per secret NAME with the target and a value-free result; exit 1 when any secret failed.
  * Secrets: reads values; never prints, logs or passes one on argv. The Infisical CLI's stdout/stderr are captured
  *   and only classified into fixed messages. Safe for any caller: hooks cannot tell agents apart, so the script is
@@ -52,16 +52,29 @@ export const TOKEN_TTL_MS = 30 * 60 * 1000;
 const NAME_RX = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
 export const ENVS = ["dev", "staging", "prod"];
 // The vault layout (rules/secrets.md): /agents and /ci, plus sub-folders.
-const PATH_RX = /^\/(?:agents|ci)(?:\/[a-z0-9-]+)*$/;
+const PATH_RX = /^\/(?:agents|ci|runtime|box)(?:\/[a-z0-9-]+)*$/;
 const SIDECAR = ".target.yaml";
 /** The projects a write may target (ADR 0512, one project per reader): slug → Infisical project id, not a secret. */
 export const PROJECTS = {
-  "figentra-agents": "c008ea1e-c997-4d15-90b2-9eb75dcb0896",
-  "figentra-ci": "0f940219-c073-4071-a1bf-1eacc725201a",
-  "figentra-ci-deploy": "f9f11e24-e2e1-45bb-aa89-d98d14887fdd",
-  "figentra-registry": "6c1f114a-1247-407a-8ad5-51057c602f1a",
-  "figentra-flow-gate": "86c297d4-ce42-4e94-b4b3-810a715812f2",
+  agents: "c008ea1e-c997-4d15-90b2-9eb75dcb0896",
+  "ci-build": "0f940219-c073-4071-a1bf-1eacc725201a",
+  "ci-deploy": "f9f11e24-e2e1-45bb-aa89-d98d14887fdd",
+  registry: "6c1f114a-1247-407a-8ad5-51057c602f1a",
+  flow: "86c297d4-ce42-4e94-b4b3-810a715812f2",
   stackra: "dd4724f4-7b9a-46ae-a899-b34af2d626b2",
+  // One runtime project per product (`/runtime/<member>`); the slug is the product key.
+  academorix: "b4a65c75-0127-4f73-baf6-3dd638a5e620",
+  billing: "7898394a-7f4d-4ef5-95de-03badaf0ea69",
+  commerce: "0aa24cb1-ba4f-4e8d-b0d3-9e4c5ddd3de0",
+  invoicing: "28649a4f-9b29-4924-a590-ab63c603d812",
+  juristra: "dbe78769-862b-4885-b4f2-d869538cab92",
+  jute: "a0dbbbcf-84de-485e-b591-eb4e8d8cf4eb",
+  mezzora: "c92ac0dd-01a6-489d-b323-75ed0bcc3d8d",
+  organza: "8ed3df61-f708-4cc6-8d1c-d6b91989307c",
+  os: "7871f337-a3f8-48df-a169-12ebc8c98d59",
+  pay: "8edd11a5-fcd8-456f-9589-261db1302386",
+  tamo: "90e28980-14fe-431f-85d8-75186bb1f43e",
+  velora: "3c19ec55-1611-4b6c-96e5-e65dd1b3fda9",
 };
 export const isProd = (env) => /^prod(uction)?$/i.test(env);
 /** Paths an agent never writes: the gate and registry (release) keys (the owner's keeper rule of 2026-10-31). */
@@ -127,11 +140,14 @@ export function readSidecar(inbox, name) {
 export function checkTarget({ name, env, path, project }) {
   if (!NAME_RX.test(name)) throw new Refusal("name is not SCREAMING_SNAKE");
   if (!ENVS.includes(env)) throw new Refusal(`env must be one of ${ENVS.join(", ")}`);
-  if (!PATH_RX.test(path)) throw new Refusal("path must be /agents or /ci (or a sub-folder)");
-  // `/agents` lives in figentra-agents; a `/ci` path exists in several projects, so it must say which.
-  project ??= /^\/agents(?:\/|$)/.test(path) ? "figentra-agents" : undefined;
+  if (!PATH_RX.test(path))
+    throw new Refusal("path must be /agents, /ci, /runtime or /box (or a sub-folder)");
+  // `/agents` lives in the agents project; any other path exists in several projects, so it must say which.
+  project ??= /^\/agents(?:\/|$)/.test(path) ? "agents" : undefined;
   if (!project)
-    throw new Refusal("a /ci target names its project (--project or the sidecar's project)");
+    throw new Refusal(
+      "a non-/agents target names its project (--project or the sidecar's project)",
+    );
   if (!Object.hasOwn(PROJECTS, project))
     throw new Refusal(`project must be one of ${Object.keys(PROJECTS).join(", ")}`);
   return { name, env, path, project };

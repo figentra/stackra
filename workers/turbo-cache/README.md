@@ -89,8 +89,8 @@ Never run `wrangler deploy` or `wrangler secret put` by hand.
 The owner's only steps; everything else is the workflow's.
 
 1. Make two random values on your own machine: `openssl rand -hex 32`, twice (one token, one signature key).
-2. In Infisical, project `figentra-ci`, environment `prod`, path `/ci/turbo` (STA-1393, ADR 0512; `CLOUDFLARE_API_TOKEN`
-   stays in `figentra-ci-deploy` `/ci`), add:
+2. In Infisical, project `ci-build`, environment `prod`, path `/ci/turbo` (STA-1393, ADR 0512; `CLOUDFLARE_API_TOKEN`
+   stays in `ci-deploy` `/ci`), add:
 
    | Secret                             | Value                                |
    | ---------------------------------- | ------------------------------------ |

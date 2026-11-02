@@ -1,5 +1,56 @@
 # @stackra/analytics
 
+## 0.4.0
+
+### Minor Changes
+
+- 36c9363: Analytics relay (STA-1624, ADR 0483). Apps send product analytics only to the analytics service: the new `relay`
+  driver (`.` and `./native`) posts the envelope deliveries unchanged to `<ingestOrigin>/analytics/batches` with the
+  `Stackra-Consent` header, and holds no vendor key, SDK or host. `./node` adds `IngestAnalyticsBatchAction`
+  (`analytics_batch.ingest`, public), which reads the verified consent snapshot, binds deliveries to its subject, strips
+  `denyProperties` and publishes one `AnalyticsBatchAccepted` per granted destination, and `FanOutAnalyticsListener`,
+  which sends each to its destination's driver. `AnalyticsContext` gains a coarse `device` record, which the PostHog
+  driver maps to `$os`, `$os_version`, `$app_build` and `$device_type` (with `$app_version`); a server send turns
+  PostHog's GeoIP off. `ANALYTICS_INGEST_PATH` joins `./contracts`.
+
+### Patch Changes
+
+- a8c358a: The delivery schema's optional fields are exact-optional, so its output fits `AnalyticsDelivery` under `exactOptionalPropertyTypes` and `@Field` accepts `deliveries`. A delivery that sends an optional field as an explicit `undefined` is now refused; omit it instead.
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [90f55b1]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [79dc807]
+- Updated dependencies [bb08f25]
+- Updated dependencies [1856ee0]
+- Updated dependencies [70e6c17]
+- Updated dependencies [5fc0db7]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/events@0.4.0
+  - @stackra/iam@0.4.0
+  - @stackra/consent@0.4.0
+  - @stackra/privacy@0.4.0
+  - @stackra/storage@0.4.0
+  - @stackra/platform@0.4.0
+  - @stackra/config@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

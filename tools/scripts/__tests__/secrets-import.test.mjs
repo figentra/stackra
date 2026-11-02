@@ -116,7 +116,7 @@ test("imports dev:/agents by default, verifies, deletes the inbox file, logs nam
   assert.equal(r.code, 0);
   assert.equal(fake.store.get("dev:/agents:STACKRA_TEST_KEY"), v, "one trailing newline stripped");
   assert.equal(existsSync(join(inbox, "STACKRA_TEST_KEY.pem")), false);
-  assert.match(r.out, /STACKRA_TEST_KEY {2}figentra-agents\/dev:\/agents {2}imported/);
+  assert.match(r.out, /STACKRA_TEST_KEY {2}agents\/dev:\/agents {2}imported/);
   const line = JSON.parse(auditLog(home).trim());
   assert.deepEqual(
     [line.actor, line.name, line.env, line.path, line.action, line.result],
@@ -131,7 +131,7 @@ test("sidecar sets env/path; flags override; sidecar removed on success", () => 
   writeFileSync(join(inbox, "STACKRA_CI_TOKEN"), v);
   writeFileSync(
     join(inbox, "STACKRA_CI_TOKEN.target.yaml"),
-    "project: figentra-ci-deploy\nenv: staging\npath: /ci\n",
+    "project: ci-deploy\nenv: staging\npath: /ci\n",
   );
   const fake = fakeInfisical();
   assert.equal(run(home, ["--path", "/ci/release"], fake.runner).code, 0);
@@ -234,7 +234,7 @@ test("production: refused without a token; dry-run token works once, binds the f
   const file = join(inbox, "PROD_KEY");
   const side = join(inbox, "PROD_KEY.target.yaml");
   writeFileSync(file, v);
-  writeFileSync(side, "project: figentra-ci-deploy\nenv: prod\npath: /ci\n");
+  writeFileSync(side, "project: ci-deploy\nenv: prod\npath: /ci\n");
   const fake = fakeInfisical();
   const t0 = 1_800_000_000_000;
 
@@ -255,7 +255,7 @@ test("production: refused without a token; dry-run token works once, binds the f
   assert.equal(fake.store.get("prod:/ci:PROD_KEY"), v);
 
   writeFileSync(file, v);
-  writeFileSync(side, "project: figentra-ci-deploy\nenv: prod\npath: /ci\n");
+  writeFileSync(side, "project: ci-deploy\nenv: prod\npath: /ci\n");
   assert.match(run(home, ["--confirm", token], fake.runner, () => t0).out, /already used/);
   assertNoLeak([v], { ...ok, home, calls: fake.calls });
 });
@@ -311,7 +311,7 @@ test("importSecret streams a value in and returns only { name, ok, reason }", as
   const prod = await importSecret({
     ...base,
     name: "PROD_STREAM",
-    project: "figentra-ci-deploy",
+    project: "ci-deploy",
     env: "prod",
     path: "/ci",
     valueStream: Readable.from([v]),
@@ -358,7 +358,7 @@ test("production: a crash after the token is spent still refuses its reuse", () 
   writeFileSync(join(inbox, "PROD_CRASH"), canary());
   writeFileSync(
     join(inbox, "PROD_CRASH.target.yaml"),
-    "project: figentra-ci-deploy\nenv: prod\npath: /ci\n",
+    "project: ci-deploy\nenv: prod\npath: /ci\n",
   );
   const t0 = 1_800_000_000_000;
   const token = run(home, ["--dry-run"], fakeInfisical().runner, () => t0).out.match(
@@ -430,12 +430,12 @@ test("keeper rule: an agent imports dev and staging only, never prod or a gate o
   writeFileSync(join(inbox, "STACKRA_GATE"), canary());
   writeFileSync(
     join(inbox, "STACKRA_GATE.target.yaml"),
-    "project: figentra-flow-gate\nenv: dev\npath: /ci/gate\n",
+    "project: flow\nenv: dev\npath: /ci/gate\n",
   );
   writeFileSync(join(inbox, "REGISTRY_KEY"), canary());
   writeFileSync(
     join(inbox, "REGISTRY_KEY.target.yaml"),
-    "project: figentra-registry\nenv: staging\npath: /ci/registry/sign\n",
+    "project: registry\nenv: staging\npath: /ci/registry/sign\n",
   );
   const fake = fakeInfisical();
   const r = run(home, [], fake.runner, undefined, agent);
@@ -472,14 +472,14 @@ test("keeper rule: an agent's dry run of a production target is refused, so no c
   assert.ok(existsSync(join(inbox, "STACKRA_PROD")));
 });
 
-test("project: /agents defaults to figentra-agents by id; a /ci target must name a known project", () => {
+test("project: /agents defaults to agents by id; a /ci target must name a known project", () => {
   const { home, inbox } = setup();
   const v = canary();
   writeFileSync(join(inbox, "AGENT_KEY"), v);
   writeFileSync(join(inbox, "CI_NO_PROJECT"), canary());
   writeFileSync(join(inbox, "CI_NO_PROJECT.target.yaml"), "path: /ci\n");
   writeFileSync(join(inbox, "CI_BAD_PROJECT"), canary());
-  writeFileSync(join(inbox, "CI_BAD_PROJECT.target.yaml"), "project: academorix\npath: /ci\n");
+  writeFileSync(join(inbox, "CI_BAD_PROJECT.target.yaml"), "project: no-such-project\npath: /ci\n");
   const fake = fakeInfisical();
   const r = run(home, [], fake.runner);
   assert.equal(r.code, 1);
@@ -491,9 +491,27 @@ test("project: /agents defaults to figentra-agents by id; a /ci target must name
         a.includes("--help") ||
         a.includes("--projectId=c008ea1e-c997-4d15-90b2-9eb75dcb0896"),
     ),
-    "every write names the figentra-agents project id",
+    "every write names the agents project id",
   );
   assert.match(r.out, /CI_NO_PROJECT .*names its project/);
+
+  // A product runtime folder: the os project by id (the registry issuer token's home, ADR 0512).
+  const rt = setup();
+  writeFileSync(join(rt.inbox, "RUNTIME_KEY"), canary());
+  writeFileSync(
+    join(rt.inbox, "RUNTIME_KEY.target.yaml"),
+    "project: os\npath: /runtime/licensing\n",
+  );
+  const rtFake = fakeInfisical();
+  assert.equal(run(rt.home, [], rtFake.runner).code, 0);
+  assert.ok(
+    rtFake.calls.some(
+      (a) =>
+        a[1] === "set" &&
+        !a.includes("--help") &&
+        a.includes("--projectId=7871f337-a3f8-48df-a169-12ebc8c98d59"),
+    ),
+  );
   assert.match(r.out, /CI_BAD_PROJECT .*project must be one of/);
   assert.ok(existsSync(join(inbox, "CI_NO_PROJECT")) && existsSync(join(inbox, "CI_BAD_PROJECT")));
   assertNoLeak([v], { ...r, home, calls: fake.calls });

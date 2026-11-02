@@ -4,6 +4,18 @@ description: "Accepted, amended by 0296, 0352 · 2026-10-22"
 ---
 
 <Note>
+  2026-11-01 (owner decision, STA-1908): decision 7 stands for per-pull-request previews, which keep
+  `pr-<n>.figentra.cloud`. A separate registrable domain keeps preview cookies and storage apart
+  from figentra.com production, and one label under one zone takes one wildcard certificate, which a
+  deep name such as `pr-<n>.console.pay.preview.figentra.com` would not. The shared `preview`
+  environment keeps [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks)'s naming
+  (`console.pay.preview.figentra.com`), as the 2026-11-01 note on
+  [0290](/adr/0290-dev-environment-and-cloudflare-services) records for every product surface. The
+  per-pull-request path (the pull-request number through the product publish, per-PR rows and
+  hosts, the router Worker and the 7-day cleanup) is not built yet: STA-1907.
+</Note>
+
+<Note>
   Amended by
   [0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
   decision 1: the `cloudflare-workers` provider is a Runway provider in `@stackra/runway`; its

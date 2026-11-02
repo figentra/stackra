@@ -3,7 +3,7 @@
 #          --preset <name> --ref <ref>` dispatches this workflow to run one named preset (verify, e2e, integration) on
 #          a GitHub-hosted runner for a pushed ref. Inputs are a preset name and a ref, never a command. Advisory only,
 #          never a required check (ADR 0166 CI2).
-# Secrets: HEROUI_AUTH_TOKEN, UNIWIND_AUTH_TOKEN and the /ci/turbo values from Infisical through GitHub OIDC, as the
+# Secrets: UNIWIND_AUTH_TOKEN and the /ci/turbo values from Infisical through GitHub OIDC, as the
 #          Quality Gate reads them (ADR 0310, STA-1393). No repository secret.
 # Owner: release-operations
 
@@ -46,18 +46,6 @@ jobs:
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
           install_args: node pnpm
-
-      - name: HeroUI Pro token (Infisical OIDC)
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
-        with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci
-          secret-name: HEROUI_AUTH_TOKEN
-          export-type: env
 
       - name: Uniwind Pro token (Infisical OIDC)
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
