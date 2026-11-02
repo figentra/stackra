@@ -1542,3 +1542,8 @@
   status: accepted
   owner: claude
   issue: STA-1965
+"0519":
+  slug: worker-settings-come-from-runway-presets
+  status: accepted
+  owner: claude
+  issue: STA-1986
