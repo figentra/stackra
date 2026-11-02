@@ -147,11 +147,12 @@ jobs:
             pnpm exec wrangler r2 bucket lifecycle add "$BUCKET" "$LIFECYCLE_RULE" --expire-days "$EXPIRE_DAYS" --force
           fi
 
-      # Also attaches the Custom Domain of wrangler.jsonc (routes, custom_domain: true).
+      # Also attaches the Custom Domain of wrangler.jsonc (routes, custom_domain: true). The commit SHA is the
+      # deployment message, so Cloudflare's record names the commit it serves (STA-1986, STA-1987).
       - name: wrangler deploy
         if: env.INFISICAL_IDENTITY_ID != ''
         working-directory: workers/turbo-cache
-        run: pnpm exec wrangler deploy
+        run: pnpm exec wrangler deploy --message "$GITHUB_SHA"
 
       # Fetched only now, so the token is in no earlier step's environment.
       - name: Cache token (Infisical OIDC)
