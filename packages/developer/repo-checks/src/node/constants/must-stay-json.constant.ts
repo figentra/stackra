@@ -117,8 +117,8 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     "seed data: a member's seeders load assets/seeds/<group>/<name>.json as JSON documents (STA-1825)",
   ],
   [
-    /^figentra-flow\.config\.json$/,
-    "Figentra Flow reads its configuration by this fixed name with JSON.parse (ADR 0503, STA-1729)",
+    /^(figentra-)?flow\.config\.json$/,
+    "Figentra Flow reads its configuration by this fixed name with JSON.parse (ADR 0503, STA-1729); flow.config.json since 0.2.2 (STA-1942)",
   ],
   [
     /^tools\/scripts\/__tests__\/__fixtures__\/store\//,
