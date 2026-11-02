@@ -1405,6 +1405,9 @@
 "0467":
   slug: content-analysis-for-search-and-answer-engines-in-stackra-seo
   status: accepted
+"0468":
+  slug: agents-deploy-dev-and-staging-production-waits-on-one-environment-approval
+  status: accepted
 "0469":
   slug: stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only
   status: accepted
@@ -1438,8 +1441,14 @@
 "0482":
   slug: mobile-onboarding-is-a-runway-step-and-eas-owns-signing
   status: proposed
+"0483":
+  slug: analytics-relay-apps-send-product-analytics-only-to-the-analytics-service
+  status: accepted
 "0484":
   slug: the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical
+  status: accepted
+"0485":
+  slug: analytics-routing-across-the-tenant-tree-parties-and-organisation-parents-get-detail-and-connectors-send-from-the-integrations-service
   status: accepted
 "0490":
   slug: ai-everywhere-client-tools-from-frontend-declarations-page-context-personalisation-as-actions-and-tours-as-data
@@ -1539,6 +1548,11 @@
   issue: STA-1953
 "0517":
   slug: where-services-and-their-resources-run
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-1965
+"0518":
+  slug: owner-row-policy-own-rows-across-tenants
+  status: accepted
+  owner: os-backend
+  issue: STA-1964

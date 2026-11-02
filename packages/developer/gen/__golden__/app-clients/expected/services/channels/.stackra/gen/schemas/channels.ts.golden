@@ -32,6 +32,12 @@ export const PublishChannelsOutput$ = z.object({
   status: ChannelsStatus$.default("live"),
 });
 export type PublishChannelsOutput$Check = Assert<Same<z.output<typeof PublishChannelsOutput$>, Fields<PublishChannelsOutput>>>;
+declare module "#node/schemas/publish-channels-output.schema" {
+  interface PublishChannelsOutput {
+    readonly "~defaults"?: "status";
+  }
+}
+
 
 /** action `PublishChannelsAction` (src/node/actions/publish-channels.action.ts): the schemas of its `handle`. */
 export const PublishChannelsAction$ = { input: PublishChannelsInput$, output: PublishChannelsOutput$ } as const;
