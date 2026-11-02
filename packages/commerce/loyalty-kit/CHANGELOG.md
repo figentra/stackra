@@ -1,5 +1,36 @@
 # @stackra/loyalty-kit
 
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/ledger@0.6.1
+  - @stackra/money@0.6.1
+  - @stackra/integrations@0.6.1
+  - @stackra/versioning@0.6.1
+  - @stackra/database@0.6.1
+  - @stackra/model@0.6.1
+  - @stackra/search@0.6.1
+  - @stackra/ui@0.6.1
+  - @stackra/testing@0.6.1
+  - @stackra/experience@0.6.1
+  - @stackra/panel@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/i18n@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/outbox@0.6.1
+  - @stackra/queue@0.6.1
+  - @stackra/scheduler@0.6.1
+  - @stackra/workflow@0.6.1
+  - @stackra/iam@0.6.1
+  - @stackra/tenancy@0.6.1
+  - @stackra/settings@0.6.1
+
 ## 0.6.0
 
 ### Patch Changes
