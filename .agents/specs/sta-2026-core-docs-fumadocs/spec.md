@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-02
 
-**Status**: Clarified
+**Status**: Clarified — Approved by owner 2026-11-02
 
 **Tier**: big
 
@@ -168,4 +168,6 @@ None.
 ## Status history
 
 - 2026-11-02 · — → Draft · claude (STA-1920 session) · created as the prerequisite of STA-2024 (leader, 2026-11-02)
-- 2026-11-02 · Draft → Clarified · claude (STA-1920 session) · no open question; scope set by the leader
+- 2026-11-02 · Draft → Clarified · claude (STA-1920 session) · no open question; scope set by the leader — Approved by owner
+  2026-11-02 (given in the STA-1920 session through the question tool: "Approve", answering "Do you approve the
+  STA-2026 spec (core docs move from Mintlify to Fumadocs, the prerequisite of STA-2024) so planning can start?")
