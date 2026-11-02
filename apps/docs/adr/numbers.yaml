@@ -1558,7 +1558,7 @@
   issue: STA-1964
 "0519":
   slug: worker-settings-come-from-runway-presets
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-1986
 "0520":
