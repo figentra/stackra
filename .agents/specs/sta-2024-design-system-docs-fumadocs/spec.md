@@ -291,3 +291,5 @@ None.
 - 2026-11-02 · — → Draft · claude (STA-1920 session) · created from the owner's decisions of 2026-11-02
 - 2026-11-02 · Draft → Clarified · claude (STA-1920 session) · Q1 answered by the leader; Q2 by the owner ("ship all +
   tamo") — Approved by owner 2026-11-02
+  (given in the STA-1920 session through the question tool: "Approve", answering "Do you approve the STA-2024 spec
+  (design-system docs on Fumadocs, AI-first) so planning can start?"; the leader is confirming with the owner)
