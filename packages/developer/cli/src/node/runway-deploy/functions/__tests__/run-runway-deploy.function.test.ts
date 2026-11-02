@@ -2,15 +2,17 @@
  * Stackra file contract:
  * Purpose: unit tests of `stackra deploy` without `--product`: it refuses a missing environment or an unknown kind,
  *          prints each target's plan on a dry run (with the Worker members `--member` names), and hands Runway's
- *          `deploy()` the commit, every provider and the kind filter, then reports each record.
- * Boundary: test only; Runway's `readRunway` and `deploy` are mocked, nothing is deployed.
+ *          `deploy()` the commit, every provider and the kind filter, then reports each record. With
+ *          `secrets.sync: on-deploy` it syncs the secrets first when services ship, and stops if the sync fails.
+ * Boundary: test only; Runway's `readRunway`, `readRunways`, `syncSecrets` and `deploy` are mocked, nothing is
+ *           deployed.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); STA-1921.
+ * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); STA-1921; STA-606.
  */
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { deploy } from "@stackra/runway";
 import type { RootRunway } from "@stackra/runway";
-import { readRunway } from "@stackra/runway/node";
+import { readRunway, readRunways, syncSecrets } from "@stackra/runway/node";
 import { vi } from "vitest";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
@@ -27,6 +29,8 @@ vi.mock("@stackra/runway", async (original) => ({
 vi.mock("@stackra/runway/node", async (original) => ({
   ...(await original<Record<string, unknown>>()),
   readRunway: vi.fn(),
+  readRunways: vi.fn(),
+  syncSecrets: vi.fn(),
 }));
 
 vi.mock("#node/product/functions/run-deploy-product.function", () => ({
@@ -63,6 +67,10 @@ const run = (values: CliContext["values"]) => {
 beforeEach(() => {
   vi.mocked(runDeployProduct).mockReset().mockResolvedValue(0);
   vi.mocked(readRunway).mockReset().mockReturnValue(ROOT);
+  vi.mocked(readRunways)
+    .mockReset()
+    .mockReturnValue({ root: ROOT, members: [] } as never);
+  vi.mocked(syncSecrets).mockReset().mockResolvedValue();
   vi.mocked(deploy)
     .mockReset()
     .mockResolvedValue([
@@ -205,5 +213,45 @@ describe("runRunwayDeploy", () => {
     vi.mocked(readRunway).mockReturnValue(gated);
     expect(await run({ env: "production", sha: SHA, "dry-run": true }).code).toBe(0);
     expect(deploy).not.toHaveBeenCalled();
+  });
+
+  describe("with secrets.sync: on-deploy", () => {
+    beforeEach(() => {
+      vi.mocked(readRunway).mockReturnValue({
+        ...ROOT,
+        secrets: { sync: "on-deploy" },
+      } as RootRunway);
+    });
+
+    it("syncs the secrets before deploy() when services ship", async () => {
+      expect(await run({ env: "production", sha: SHA }).code).toBe(0);
+      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).toMatchObject({
+        environment: "production",
+        repository: ".",
+        dryRun: false,
+      });
+      expect(vi.mocked(syncSecrets).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(deploy).mock.invocationCallOrder[0] ?? 0,
+      );
+    });
+
+    it("prints the sync's names on a dry run, and skips it when no services ship", async () => {
+      expect(await run({ env: "production", sha: SHA, "dry-run": true }).code).toBe(0);
+      expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).toMatchObject({ dryRun: true });
+      vi.mocked(syncSecrets).mockClear();
+      expect(await run({ env: "production", kind: "web", sha: SHA }).code).toBe(0);
+      expect(syncSecrets).not.toHaveBeenCalled();
+    });
+
+    it("ships nothing when the sync fails", async () => {
+      vi.mocked(syncSecrets).mockRejectedValue(new Error("STRIPE_SECRET_KEY is missing"));
+      await expect(run({ env: "production", sha: SHA }).code).rejects.toThrow("STRIPE_SECRET_KEY");
+      expect(deploy).not.toHaveBeenCalled();
+    });
+  });
+
+  it("syncs no secrets when the runway does not ask for it", async () => {
+    expect(await run({ env: "production", sha: SHA }).code).toBe(0);
+    expect(syncSecrets).not.toHaveBeenCalled();
   });
 });
