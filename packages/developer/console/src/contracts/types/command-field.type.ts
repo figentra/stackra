@@ -48,4 +48,10 @@ export interface CommandField {
 
   /** The value is never kept in an audit entry. */
   readonly secret?: boolean;
+
+  /** The question asked when the invocation leaves the field out and the run is interactive. */
+  readonly prompt?: string;
+
+  /** The only values it takes. */
+  readonly choices?: readonly string[];
 }

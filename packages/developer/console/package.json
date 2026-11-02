@@ -106,6 +106,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@clack/prompts": "catalog:",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/validation": "workspace:*"

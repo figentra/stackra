@@ -15,6 +15,7 @@ import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { SYMBOLS } from "#core/constants/symbols.constant";
 import { PromptCancelledError } from "#core/errors/prompt-cancelled.error";
 import { UsageError } from "#core/errors/usage.error";
+import { askMissing } from "#core/functions/ask-missing.function";
 import { buildRegistry } from "#core/functions/build-registry.function";
 import { createOutput } from "#core/functions/create-output.function";
 import { createPainter } from "#core/functions/create-painter.function";
@@ -154,10 +155,17 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
         })
       : defaultsPrompter();
     const operator = operatorOf(ports.env);
+    const prompt = createPrompt(prompter);
+    let values: Readonly<Record<string, unknown>>;
+    try {
+      values = await askMissing(entry.structure, intent.values, prompt);
+    } catch (error) {
+      return finish(codeOf(error), error, entry.structure.docs);
+    }
     // A secret option's value never reaches captured child output, an error or a log.
     const secrets = [...entry.structure.arguments, ...entry.structure.options]
       .filter(isSecret)
-      .map((field) => intent.values[field.property])
+      .map((field) => values[field.property])
       .filter((value): value is string => typeof value === "string" && value !== "");
     const children = createProcess({
       ...(ports.process === undefined ? {} : { runner: ports.process() }),
@@ -171,12 +179,12 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
     });
     const outcome = await runCommand(
       entry,
-      intent.values,
+      values,
       config,
       ports.signals,
       (signal) => ({
         output,
-        prompt: createPrompt(prompter),
+        prompt,
         process: children,
         cwd: ports.cwd,
         signal,

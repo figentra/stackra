@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `nodePorts()`, the ports of a real run: the process's streams, their TTY state, its environment, the
- *          terminal width, SIGINT and SIGTERM, and the terminal prompter.
+ *          terminal width, SIGINT and SIGTERM, the working directory, the Clack prompter and the process runner.
  * Boundary: reads `process`; installs signal listeners only while a command runs (the kernel subscribes and
  *           unsubscribes).
  * Runtime: node
@@ -10,7 +10,7 @@
 import type { ConsoleSignal } from "#contracts/types/console-signal.type";
 import type { ConsolePorts } from "#core/types/console-ports.type";
 import { NodeProcessRunnerDriver } from "#node/drivers/node-process-runner.driver";
-import { terminalPrompter } from "#node/functions/terminal-prompter.function";
+import { clackPrompter } from "#node/functions/clack-prompter.function";
 
 /**
  * The ports of this process.
@@ -39,7 +39,7 @@ export function nodePorts(): ConsolePorts {
         };
       },
     },
-    prompter: terminalPrompter(process.stdin, process.stdout),
+    prompter: () => clackPrompter(process.stdin, process.stdout),
     process: () => new NodeProcessRunnerDriver(),
   };
 }

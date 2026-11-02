@@ -103,7 +103,9 @@ export function readCommand(type: CommandClass): CommandStructure {
     const value = valueOf(type, property, "argument");
     const initial = defaults[property];
     const previous = argumentFields.at(-1);
-    const required = initial === undefined && given.optional !== true && !value.list;
+    // A prompted argument is asked for, so the invocation may leave it out.
+    const required =
+      initial === undefined && given.optional !== true && given.prompt === undefined && !value.list;
     if (previous?.list === true)
       throw new ConsoleDeclarationError(
         label,
@@ -126,6 +128,8 @@ export function readCommand(type: CommandClass): CommandStructure {
         ...(initial === undefined ? {} : { default: initial }),
         ...(given.description === undefined ? {} : { description: given.description }),
         ...(given.secret === true ? { secret: true } : {}),
+        ...(given.prompt === undefined ? {} : { prompt: given.prompt }),
+        ...(given.choices === undefined ? {} : { choices: Object.freeze([...given.choices]) }),
       }),
     );
   }
@@ -163,6 +167,8 @@ export function readCommand(type: CommandClass): CommandStructure {
         ...(given.short === undefined ? {} : { short: given.short }),
         ...(given.description === undefined ? {} : { description: given.description }),
         ...(given.secret === true ? { secret: true } : {}),
+        ...(given.prompt === undefined ? {} : { prompt: given.prompt }),
+        ...(given.choices === undefined ? {} : { choices: Object.freeze([...given.choices]) }),
       }),
     );
   }
