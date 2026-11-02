@@ -11,12 +11,14 @@ import { createRequire } from "node:module";
 import type { MigrationFile } from "#node/types/migration-file.type";
 import { PGLITE_EXTENSION_NAMES } from "#testing/constants/pglite-extension-names.constant";
 
-/** The PGlite build, as its resolved path (the pnpm store path carries the version). */
-const PGLITE_BUILD = createRequire(import.meta.url).resolve("@electric-sql/pglite");
+/** The PGlite build, as its resolved path (the pnpm store path carries the version); resolved on first use. */
+let pgliteBuild: string | undefined;
 
 /** The key of `files`. */
 export function snapshotKey(files: readonly MigrationFile[]): string {
-  const hash = createHash("sha256").update(PGLITE_BUILD).update(PGLITE_EXTENSION_NAMES.join(","));
+  // An optional peer: resolved here, not at import, so importing `./testing` never needs it (STA-1950).
+  pgliteBuild ??= createRequire(import.meta.url).resolve("@electric-sql/pglite");
+  const hash = createHash("sha256").update(pgliteBuild).update(PGLITE_EXTENSION_NAMES.join(","));
   for (const file of files) hash.update(`\0${file.name}\0${file.sql}`);
   return hash.digest("hex");
 }
