@@ -5,7 +5,8 @@
  *          and that the committed assets/public/themes/stackra/native.css equals its output byte for byte. The
  *          palette lands as Uniwind colours, so the accent steps native paints hold their label at 4.5:1 (STA-455).
  *          It also proves the type scale is written in absolute px on HeroUI Native's text classes, with the Arabic
- *          twins as `type-<token>-ar`, and the display faces in `@theme` as one family each (STA-1386).
+ *          twins as `type-<token>-ar`, and the display faces in `@theme` as one family each (STA-1386). The champagne
+ *          core lands as Uniwind colours and the pill radius in `@theme`, as on the web (STA-2015).
  * Boundary: renders in memory; `vitest run -u` rewrites the committed stylesheet.
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0165 (HeroUI Native and Uniwind on native); ADR 0022 (test placement).
@@ -28,6 +29,8 @@ const names = (block: string) => [...block.matchAll(/--([\w-]+):/g)].map((match)
 const valueIn = (block: string, name: string) =>
   block.match(new RegExp(`^ {6}--${name}: (.+);$`, "m"))?.[1] ?? "";
 const PALETTE = Object.keys(STACKRA_THEME.palette);
+/** The champagne core of ADR 0520 (brand rules §39). */
+const CORE = ["core", "core-strong", "core-hover", "core-pressed", "core-soft", "core-foreground"];
 
 // @covers sta-350:FR-004 sta-350:FR-020
 describe("renderNativeCss", () => {
@@ -92,7 +95,7 @@ describe("renderNativeCss", () => {
 
   it("sets the radii, the field border, the spacing unit and the display faces in @theme and leaves web-only tokens out", () => {
     expect(css).toContain(
-      '@theme {\n  --radius: 0.25rem;\n  --field-radius: var(--radius);\n  --field-border-width: 1px;\n  --spacing: 0.25rem;\n  --font-display: "Geist";\n  --font-display-arabic: "IBM Plex Sans Arabic";\n',
+      '@theme {\n  --radius: 0.25rem;\n  --field-radius: var(--radius);\n  --radius-pill: 9999px;\n  --field-border-width: 1px;\n  --spacing: 0.25rem;\n  --font-display: "Geist";\n  --font-display-arabic: "IBM Plex Sans Arabic";\n',
     );
     // ADR 0501: the type scale and the named sizes are Uniwind utilities, in px.
     expect(css).toContain("  --text-3xs: 10px;\n  --text-3xs--line-height: 14px;");
@@ -100,6 +103,28 @@ describe("renderNativeCss", () => {
     expect(css).not.toMatch(
       /--font-(sans|mono|arabic)\b|--space-|--duration-|--material-(?!highlight-share:)/,
     );
+  });
+
+  // @covers sta-2015:FR-004
+  it("writes the pill radius as the web's --radius-pill, and a theme's own pill step wins", () => {
+    expect(css.split("@theme {\n")[1]?.split("\n}")[0]).toContain("  --radius-pill: 9999px;");
+    const own = renderNativeCss({
+      ...STACKRA_THEME,
+      radius: { ...STACKRA_THEME.radius, steps: { ...STACKRA_THEME.radius.steps, pill: "12px" } },
+    });
+    expect(own).toContain("  --radius-pill: 12px;\n");
+  });
+
+  // @covers sta-2015:FR-002
+  it("registers the champagne core as Uniwind colours in both variants, so text-core and bg-core-strong resolve", () => {
+    const registered = css.split("@theme inline static {\n")[1]?.split("\n}")[0] ?? "";
+    for (const name of CORE) {
+      expect(registered, name).toContain(`  --color-${name}: var(--${name});`);
+      for (const mode of ["light", "dark"] as const)
+        expect(valueIn(variantOf(mode), name), `${name} ${mode}`).toBe(
+          STACKRA_THEME.palette[name]?.[mode],
+        );
+    }
   });
 
   // @covers sta-1386

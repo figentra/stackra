@@ -1,0 +1,21 @@
+{
+  "slug": "member-picker",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/tenancy",
+  "exportName": "MemberPicker",
+  "parts": ["MemberPicker"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 320
+    }
+  ],
+  "related": ["free/entity-picker", "free/combo-box", "free/avatar"],
+  "tokens": ["color.field", "color.accent"],
+  "keywords": ["member", "people", "assignee", "picker", "field", "kit"],
+  "status": "new"
+}

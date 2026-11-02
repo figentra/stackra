@@ -13,6 +13,7 @@ interface SymbolSet {
   readonly success: string;
   readonly warning: string;
   readonly error: string;
+  readonly skip: string;
   readonly bullet: string;
   readonly dot: string;
   readonly pointer: string;
@@ -31,8 +32,9 @@ export const SYMBOLS: Readonly<Record<"unicode" | "ascii", SymbolSet>> = Object.
   unicode: {
     info: "●",
     success: "✓",
-    warning: "▲",
-    error: "✕",
+    warning: "⚠",
+    error: "✗",
+    skip: "–",
     bullet: "•",
     dot: ".",
     pointer: "›",
@@ -51,6 +53,7 @@ export const SYMBOLS: Readonly<Record<"unicode" | "ascii", SymbolSet>> = Object.
     success: "+",
     warning: "!",
     error: "x",
+    skip: "-",
     bullet: "-",
     dot: ".",
     pointer: ">",

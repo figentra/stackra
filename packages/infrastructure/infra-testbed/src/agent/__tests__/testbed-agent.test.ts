@@ -29,6 +29,8 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { TESTBED_DEFAULTS } from "#core/constants/testbed-defaults.constant";
+
 const AGENT = fileURLToPath(new URL("../testbed-agent.sh", import.meta.url));
 const TOKEN = "s3cr3t-token-value";
 
@@ -130,6 +132,17 @@ esac`,
 
 afterEach(() => {
   rmSync(root, { recursive: true, force: true });
+});
+
+describe("testbed-agent excludes", () => {
+  it("leaves out the contract's rsync excludes, and keeps the repository's own folders", () => {
+    const excludes = /^EXCLUDES='([^']*)'/m.exec(readFileSync(AGENT, "utf8"))?.[1]?.split(" ");
+    expect(excludes).toEqual([...TESTBED_DEFAULTS.rsyncExcludes]);
+    // `pnpm validate` reads .agents (specs, hooks, rules, skills); a job without it fails.
+    for (const kept of [".agents", ".github", ".flow"]) {
+      expect(TESTBED_DEFAULTS.rsyncExcludes).not.toContain(kept);
+    }
+  });
 });
 
 describe("testbed-agent guard", () => {
@@ -311,6 +324,8 @@ describe("testbed-agent job run", () => {
 
     expect(existsSync(dir("data/jobs/j6"))).toBe(false);
     expect(readFileSync(dir("data/seed/core/new.txt"), "utf8")).toBe("n");
+    // The job's git snapshot stays in the job: the seed never takes a `.git`.
+    expect(existsSync(dir("data/seed/core/.git"))).toBe(false);
     expect(existsSync(dir("data/seed/core/stale.txt"))).toBe(false);
     expect(existsSync(dir("data/seed/core/.env.local"))).toBe(false);
     expect(existsSync(dir("data/seed/core/node_modules/big.js"))).toBe(false);

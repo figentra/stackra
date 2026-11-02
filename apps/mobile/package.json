@@ -73,6 +73,7 @@
     "@stackra/filesystem": "workspace:*",
     "@stackra/i18n": "workspace:*",
     "@stackra/icons": "workspace:*",
+    "@stackra/identity": "workspace:*",
     "@stackra/media": "workspace:*",
     "@stackra/native-customer-display": "workspace:*",
     "@stackra/native-share": "workspace:*",

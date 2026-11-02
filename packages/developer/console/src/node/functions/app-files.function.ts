@@ -13,6 +13,13 @@ import type { AppSpec } from "#node/types/app-spec.type";
 /** The Stackra registry (ADR 0453). */
 const REGISTRY = "https://npm.stackra.figentra.com/";
 
+/**
+ * The extension the generated app's own relative imports name: it compiles with NodeNext and
+ * `rewriteRelativeImportExtensions`, which needs it. Interpolated, because this member's ADR 0233 rule (no extension)
+ * reads the template text as imports of its own.
+ */
+const EXTENSION = ".ts";
+
 /** `value` as a JSON file. */
 const json = (value: unknown) => `${JSON.stringify(value, undefined, 2)}\n`;
 
@@ -97,8 +104,8 @@ it in \`src/main.ts\`.
 import { createConsole } from "@stackra/console";
 import { nodePorts } from "@stackra/console/node";
 
-import { GreetCommand } from "./commands/greet.command.ts";
-import { THEME } from "./theme.ts";
+import { GreetCommand } from "./commands/greet.command${EXTENSION}";
+import { THEME } from "./theme${EXTENSION}";
 
 const app = createConsole({ name: ${JSON.stringify(spec.bin)}, version: "0.1.0", theme: THEME, commands: [GreetCommand] });
 
@@ -148,7 +155,7 @@ export class GreetCommand extends Command({ name: "greet", description: "Greet s
     "src/commands/__tests__/greet.command.test.ts": `import { runCommandForTest } from "@stackra/console/testing";
 import { describe, expect, it } from "vitest";
 
-import { GreetCommand } from "../greet.command.ts";
+import { GreetCommand } from "../greet.command${EXTENSION}";
 
 describe("greet", () => {
   it("prints its help", async () => {

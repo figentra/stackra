@@ -226,7 +226,7 @@ export class BffService extends Service {
       const { sid } = claims;
       // The provider session id is what sign-out ends; a token without one cannot be signed out server-side.
       if (!isValid || typeof sid !== "string" || sid === "") return failed();
-      const session = { user: sessionUserOf(claims), sid };
+      const session = { user: sessionUserOf(claims, this.identity), sid };
       const minutes = this.config.sessionMinutes;
       return this.redirect(flow.returnTo, [
         clearFlow,
