@@ -1,4 +1,4 @@
-<!-- Rendered by figentra-flow from .flow/readme.yml (stackra preset, STA-1879). Edit the data file, then run `figentra-flow readme`. -->
+<!-- Rendered by fflow from .flow/readme.yml (stackra preset, STA-1879). Edit the data file, then run `fflow readme`. -->
 
 <p align="center">
   <picture>
@@ -106,18 +106,18 @@ pnpm verify
 
 `pnpm verify` is the full check: CI and the gate run the same command.
 
-Changes go through [Figentra Flow](https://github.com/figentra/flow), the `figentra-flow` CLI.
+Changes go through [Figentra Flow](https://github.com/figentra/flow), the `fflow` CLI.
 
 Every branch and pull request carries a Linear `STA-` key.
 
 | Step                          | Command                                                       |
 | ----------------------------- | ------------------------------------------------------------- |
 | Spec the change               | `/flow-specify`, `/flow-clarify`, `/flow-plan`, `/flow-tasks` |
-| Start a worktree for an issue | `figentra-flow start STA-<n>`                                 |
-| Run the gate on the branch    | `figentra-flow gate run`                                      |
-| Land the pull request         | `figentra-flow land`                                          |
-| See specs, worktrees and PRs  | `figentra-flow status`                                        |
-| Re-render this README         | `figentra-flow readme`                                        |
+| Start a worktree for an issue | `fflow start STA-<n>`                                 |
+| Run the gate on the branch    | `fflow gate run`                                      |
+| Land the pull request         | `fflow land`                                          |
+| See specs, worktrees and PRs  | `fflow status`                                        |
+| Re-render this README         | `fflow readme`                                        |
 
 ## Docs and playground
 
