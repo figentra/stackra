@@ -31,8 +31,13 @@ phases:
           commands:
             - |
               set -eu
-              mkdir -p /tmp/warm
-              cp /opt/testbed-build/pnpm-lock.yaml /opt/testbed-build/pnpm-workspace.yaml /tmp/warm/
+              # `pnpm fetch` checks the lockfile against the workspace's catalogs and the pnpmfile's checksum, so all
+              # three come along; a copy stays in /etc/testbed/warm for the validate phase's offline check.
+              mkdir -p /tmp/warm /etc/testbed/warm
+              for f in pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs; do
+                cp "/opt/testbed-build/$f" /tmp/warm/
+                cp "/opt/testbed-build/$f" /etc/testbed/warm/
+              done
               cd /tmp/warm
               export MISE_DATA_DIR=/opt/mise MISE_GLOBAL_CONFIG_FILE=/opt/mise/config.toml
               # A failed fetch fails the build: an image with an empty store downloads every package on each new box.
@@ -58,3 +63,8 @@ phases:
               set -eu
               /usr/local/bin/testbed-agent slot heavy | grep -qx free
               systemctl is-enabled testbed-guard.timer testbed-idle.timer
+              # The warm store holds every package the lockfile names: an offline fetch from it must succeed.
+              rm -rf /tmp/warmcheck && cp -r /etc/testbed/warm /tmp/warmcheck && cd /tmp/warmcheck
+              MISE_DATA_DIR=/opt/mise MISE_GLOBAL_CONFIG_FILE=/opt/mise/config.toml PATH=/opt/mise/shims:$PATH \
+                pnpm fetch --offline --store-dir /data/pnpm-store >/dev/null
+              cd / && rm -rf /tmp/warmcheck

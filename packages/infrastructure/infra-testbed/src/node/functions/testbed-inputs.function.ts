@@ -40,8 +40,10 @@ export function testbedInputs(
     { key: "build/testbed-agent.sh", path: join(root, "src/agent/testbed-agent.sh") },
     ...hostNames.map((name) => ({ key: `build/${name}`, path: join(hostFiles, name) })),
     { key: "build/pnpm-lock.yaml", path: lockfilePath },
-    // `pnpm fetch` checks the lockfile against the workspace's catalogs, so the store is warmed from both.
+    // `pnpm fetch` checks the lockfile against the workspace's catalogs and the pnpmfile's checksum, so the store is
+    // warmed from all three.
     { key: "build/pnpm-workspace.yaml", path: join(dirname(lockfilePath), "pnpm-workspace.yaml") },
+    { key: "build/.pnpmfile.mjs", path: join(dirname(lockfilePath), ".pnpmfile.mjs") },
   ];
   const components = COMPONENTS.map(({ name, file }) => ({
     name,

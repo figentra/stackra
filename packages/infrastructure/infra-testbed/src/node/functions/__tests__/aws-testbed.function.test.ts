@@ -211,6 +211,17 @@ describe("awsTestbed", () => {
       const data = String(resource("imagebuilder/component:Component", name).inputs.data);
       expect(data).not.toContain("@@");
     }
+    // `pnpm fetch` refuses a lockfile without the catalogs and the pnpmfile it was written with.
+    const uploaded = registered
+      .filter((entry) => entry.type.endsWith(":BucketObjectv2"))
+      .map((entry) => entry.inputs.key);
+    expect(uploaded).toEqual(
+      expect.arrayContaining([
+        "build/pnpm-lock.yaml",
+        "build/pnpm-workspace.yaml",
+        "build/.pnpmfile.mjs",
+      ]),
+    );
     // Only the base component downloads the build inputs; the others use the files it fetched.
     expect(
       String(resource("imagebuilder/component:Component", "testbed-base").inputs.data),
