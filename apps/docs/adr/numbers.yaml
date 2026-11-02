@@ -12,7 +12,7 @@
   status: accepted
 "0002":
   slug: docs-on-mintlify
-  status: accepted
+  status: superseded
 "0003":
   slug: tier-dependency-direction
   status: accepted
@@ -900,7 +900,7 @@
   status: accepted
 "0299":
   slug: docs-runway
-  status: accepted
+  status: superseded
 "0300":
   slug: published-tooling-presets-and-enforced-spell-checking
   status: accepted
@@ -1525,3 +1525,7 @@
   slug: permission-vocabulary-moves-to-contracts-and-container
   status: reserved
   issue: STA-1890
+"0514":
+  slug: self-hosted-docs-replace-mintlify
+  status: accepted
+  issue: STA-1920
