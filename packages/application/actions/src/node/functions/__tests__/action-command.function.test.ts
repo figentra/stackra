@@ -105,7 +105,7 @@ describe("ActionCommand", () => {
   it("refuses a run built with no container, naming the console entry", async () => {
     const result = await runCommandForTest(
       [FreezeAccountCommand],
-      ["account:freeze", "--reason", "x"],
+      ["account:freeze", "--reason", "fraud"],
     );
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("needs the app's container");
