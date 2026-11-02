@@ -35,6 +35,7 @@ import { RESOURCE_SCHEMA } from "#core/constants/resource-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
 import { SURFACES_SCHEMA } from "#core/constants/surfaces-schema.constant";
 import { TARGETS_SCHEMA } from "#core/constants/targets-schema.constant";
+import { ZONE_SCHEMA } from "#core/constants/zone-schema.constant";
 import { WORKLOAD_SCHEMA } from "#core/constants/workload-schema.constant";
 import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 
@@ -86,7 +87,7 @@ export const ROOT_RUNWAY_SCHEMA = z
         cloudflare: z
           .looseObject({
             accountId: VALUE.optional(),
-            zones: z.record(z.string(), VALUE).optional(),
+            zones: z.record(z.string(), ZONE_SCHEMA).optional(),
           })
           .optional(),
         github: GITHUB_SECTION_SCHEMA.optional(),
