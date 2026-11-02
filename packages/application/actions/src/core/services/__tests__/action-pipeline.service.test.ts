@@ -2980,7 +2980,7 @@ function stage(
   extra: readonly (readonly [AnyClass, object])[] = [],
 ) {
   const identity = new SilentIdentity();
-  const gate = new TamperedGate({ identity, clock: new FixedClock(), ...options });
+  const gate = TamperedGate.of({ identity, clock: new FixedClock(), ...options });
   const bindings = new CountingBindings();
   const actors = new MemoryActorStatusCheckDriver();
   const built = setup([

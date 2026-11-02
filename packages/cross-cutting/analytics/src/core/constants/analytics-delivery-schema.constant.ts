@@ -17,28 +17,28 @@ import { AnalyticsDeliveryKind } from "#contracts/enums/analytics-delivery-kind.
 /** A kept delivery. */
 export const ANALYTICS_DELIVERY_SCHEMA = z.object({
   eventId: z.string().min(1),
-  kind: z.enum(Enum.values(AnalyticsDeliveryKind)).optional(),
+  kind: z.enum(Enum.values(AnalyticsDeliveryKind)).exactOptional(),
   name: z.string().min(1),
   properties: z.record(z.string(), z.unknown()),
   occurredAt: z.string().min(1),
   anonymousId: z.string().min(1),
-  userId: z.string().min(1).optional(),
-  groups: z.record(z.string().min(1), z.string().min(1)).optional(),
+  userId: z.string().min(1).exactOptional(),
+  groups: z.record(z.string().min(1), z.string().min(1)).exactOptional(),
   sessionId: z.string().min(1),
   context: z.object({
-    library: z.object({ name: z.string(), version: z.string().optional() }),
-    page: z.object({ path: z.string() }).optional(),
-    screen: z.object({ name: z.string() }).optional(),
-    locale: z.string().optional(),
-    appVersion: z.string().optional(),
+    library: z.object({ name: z.string(), version: z.string().exactOptional() }),
+    page: z.object({ path: z.string() }).exactOptional(),
+    screen: z.object({ name: z.string() }).exactOptional(),
+    locale: z.string().exactOptional(),
+    appVersion: z.string().exactOptional(),
     device: z
       .object({
         os: z.string(),
-        osVersion: z.string().optional(),
-        build: z.string().optional(),
-        type: z.string().optional(),
+        osVersion: z.string().exactOptional(),
+        build: z.string().exactOptional(),
+        type: z.string().exactOptional(),
       })
-      .optional(),
-    region: z.string().optional(),
+      .exactOptional(),
+    region: z.string().exactOptional(),
   }),
 });

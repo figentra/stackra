@@ -54,6 +54,7 @@ const ctx = {
   eventId: "evt_1",
   occurredAt: new Date("2026-10-21T00:00:00Z"),
   now: () => new Date("2026-10-21T00:00:00Z"),
+  audit: () => {},
 };
 
 describe("RecalculateTierListener", () => {
