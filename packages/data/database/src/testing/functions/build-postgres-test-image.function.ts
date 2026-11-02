@@ -14,8 +14,6 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { GenericContainer } from "testcontainers";
-
 import { POSTGRES_TEST_IMAGE } from "#testing/constants/postgres-test-image.constant";
 
 /** The build of this process, shared by every `usePostgres()` call. */
@@ -32,6 +30,8 @@ export function buildPostgresTestImage(): Promise<string> {
   built ??= (async () => {
     const context = mkdtempSync(join(tmpdir(), "stackra-postgres-test-"));
     writeFileSync(join(context, "Dockerfile"), POSTGRES_TEST_IMAGE.dockerfile);
+    // An optional peer, loaded here so that importing `./testing` never needs it (STA-1950).
+    const { GenericContainer } = await import("testcontainers");
     await GenericContainer.fromDockerfile(context).build(POSTGRES_TEST_IMAGE.tag, {
       deleteOnExit: false,
     });
