@@ -1,5 +1,22 @@
 # @stackra/cli
 
+## 0.6.1
+
+### Patch Changes
+
+- dd1304c: `stackra testbed run` uploads `.agents` with the project, since `pnpm validate` reads its specs, hooks, rules and
+  skills; `.git` is left out (the box makes its own snapshot), as `ci-box` did.
+- @stackra/console@0.6.1
+  - @stackra/gen@0.6.1
+  - @stackra/mcp@0.6.1
+  - @stackra/repo-checks@0.6.1
+  - @stackra/runway@0.6.1
+  - @stackra/skills@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/support@0.6.1
+  - @stackra/validation@0.6.1
+
 ## 0.6.0
 
 ### Minor Changes

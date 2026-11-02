@@ -1,5 +1,16 @@
 # @stackra/cache
 
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/storage@0.6.1
+  - @stackra/console@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/validation@0.6.1
+
 ## 0.6.0
 
 ### Patch Changes
