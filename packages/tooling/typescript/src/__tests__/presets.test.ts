@@ -109,6 +109,18 @@ describe("@stackra/typescript-config presets", () => {
     expect(include).not.toContain("${configDir}/.stackra");
   });
 
+  it("only service turns declarations off", () => {
+    // A service publishes no .d.ts, and gen's entity schema types are not nameable from it (TS2883, STA-1880);
+    // packages and contract packages keep declarations from base.
+    expect(readJsonc(join(root, "src", "service.json")).compilerOptions).toMatchObject({
+      declaration: false,
+      declarationMap: false,
+    });
+    expect(readJsonc(join(root, "src", "base.json")).compilerOptions?.["declaration"]).toBe(true);
+    for (const preset of ["library.json", "decorators.json", "node.json"])
+      expect(readJsonc(join(root, "src", preset)).compilerOptions?.["declaration"]).not.toBe(false);
+  });
+
   it("base keeps the non-negotiable strictness flags", () => {
     const base = readJsonc(join(root, "src", "base.json")).compilerOptions ?? {};
     for (const flag of [

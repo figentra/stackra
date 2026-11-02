@@ -28,6 +28,8 @@ service) in the service's entity file.
 - **FR-001** A package's committed entity file never lists `"~defaults"` (its model type has no such key).
 - **FR-002** A service's model or addition with a defaulted field gets `"~defaults": { type: "json", persist: false }`.
 - **FR-003** The `service` preset never includes `.stackra/encore`.
+- **FR-004** The `service` preset turns `declaration` and `declarationMap` off; every other preset keeps base's declarations
+  (TS2883: an entity schema's inferred type names `EntityCtor` from @mikro-orm/core, which no service depends on).
 
 ## Status history
 
