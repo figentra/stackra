@@ -20,6 +20,13 @@ describe("runCommand", () => {
     expect(out).toBe("$HOME; true\n");
   });
 
+  it("writes the input to standard input", async () => {
+    const out = await runCommand(process.execPath, ["-e", "process.stdin.pipe(process.stdout)"], {
+      input: '{"A":"b"}',
+    });
+    expect(out).toBe('{"A":"b"}');
+  });
+
   it("throws with the standard error", async () => {
     await expect(
       runCommand(process.execPath, ["-e", "console.error('boom'); process.exit(2)"], {}),

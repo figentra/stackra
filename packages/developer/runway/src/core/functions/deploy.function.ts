@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `deploy(root, environment, sha, providers)`, ships one commit to every target of an environment in release
- *          order: each target is applied, then verified, and the release stops at the first target that is down, so a
+ * Purpose: `deploy(root, environment, sha, providers, kinds?)`, ships one commit to every target of an environment (of
+ *          `kinds`, when given) in release order: each target is applied, then verified, and the release stops at the first target that is down, so a
  *          later region or dedicated tenant keeps what it runs.
  * Boundary: orchestration only; every change is a provider's. Checks that a provider serves each target before it
  *           touches any. `degraded` (a build still running) does not stop the release. Writing the records is the
@@ -11,6 +11,7 @@
  */
 import { HealthStatus } from "@stackra/contracts";
 
+import type { DeployKind } from "#core/enums/deploy-kind.enum";
 import type { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 import { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 import { deployTargets } from "#core/functions/deploy-targets.function";
@@ -28,6 +29,7 @@ const SHA = /^[0-9a-f]{40}$/;
  * @throws TypeError when `sha` is not a full commit SHA.
  * @throws RunwayUnresolvedError when a target has no provider or a region is undeclared.
  * @throws RunwayDeployFailedError at the first target that does not verify.
+ * @param kinds - when given, only the targets of these kinds ship (a Workers-only release ships `web`).
  * @example
  * const results = await deploy(root, "staging", sha, [new EncoreCloudProvider({ app: "acme" })]);
  */
@@ -36,11 +38,12 @@ export async function deploy(
   environment: RunwayEnvironment,
   sha: string,
   providers: readonly RunwayProvider[],
+  kinds?: readonly DeployKind[],
 ): Promise<DeployResult[]> {
   if (!SHA.test(sha)) throw new TypeError(`${sha} is not a full commit SHA`);
-  const plan = deployTargets(root, environment).map(
-    (target) => [target, providerFor(target, providers)] as const,
-  );
+  const plan = deployTargets(root, environment)
+    .filter((target) => kinds === undefined || kinds.includes(target.kind))
+    .map((target) => [target, providerFor(target, providers)] as const);
   const results: DeployResult[] = [];
   for (const [target, provider] of plan) {
     const record = await provider.apply(target, sha);

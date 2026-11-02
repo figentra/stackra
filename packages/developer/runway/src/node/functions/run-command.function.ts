@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `runCommand(command, args, options)`, the real `CommandRunner`: runs a program without a shell and answers
- *          its standard output, or throws with its exit code and standard error.
+ * Purpose: `runCommand(command, args, options)`, the real `CommandRunner`: runs a program without a shell, writes
+ *          `options.input` to its standard input when given, and answers its standard output, or throws with its exit
+ *          code and standard error.
  * Boundary: no shell, so no argument is ever interpreted; the environment is the caller's (CI's OIDC login, the owner's
  *           session). Output is capped at 16 MB, more than any deploy CLI prints.
  * Runtime: node
@@ -24,10 +25,12 @@ const MAX_BUFFER = 16 * 1024 * 1024;
  */
 export const runCommand: CommandRunner = async (command, args, options) => {
   try {
-    const { stdout } = await promisify(execFile)(command, [...args], {
+    const pending = promisify(execFile)(command, [...args], {
       cwd: options.cwd,
       maxBuffer: MAX_BUFFER,
     });
+    if (options.input !== undefined) pending.child.stdin?.end(options.input);
+    const { stdout } = await pending;
     return stdout;
   } catch (error) {
     const stderr = (error as { stderr?: string }).stderr?.trim();
