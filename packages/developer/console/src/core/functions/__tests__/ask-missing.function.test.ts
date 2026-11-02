@@ -82,8 +82,10 @@ describe("askMissing", () => {
   });
 
   it("refuses an answer or a value outside the field's rules", async () => {
+    // Wide enough that the error box does not wrap the message.
     const refused = await runCommandForTest([InitCommand], ["init"], {
       answers: ["acme", "app", "0"],
+      columns: 200,
     });
     expect(refused.exitCode).toBe(1);
     expect(refused.stderr).toContain("--workers must be at least 1");
