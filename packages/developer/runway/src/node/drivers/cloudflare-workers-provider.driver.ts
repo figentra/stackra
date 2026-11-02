@@ -10,7 +10,8 @@
  *           with the job's `CLOUDFLARE_API_TOKEN` (OIDC from Infisical in CI) or the owner's session. Ids, vars and
  *           secrets are read by name from `env`; a secret value goes to wrangler on stdin only, never as an argument,
  *           a file or a log line. When `runways` is set, the secret values are read from Infisical
- *           (`readMemberSecrets`, in CI) before anything ships, instead of from `env` (ADR 0173). Agents and tests never apply against a real account (ADR 0352 decision 6).
+ *           (`readMemberSecrets`, in CI) before anything ships, instead of from `env` (ADR 0173). Agents and tests
+ *           never apply against a real account (ADR 0352 decision 6).
  * Runtime: node
  * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0284 (Workers members); ADR 0173 (no secret is an
  *                     argument); ADR 0294 R3 and ADR 0305 rule 3 (the `Driver(Port)` base); STA-1921.
