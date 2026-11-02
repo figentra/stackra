@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "3e214984f1dd9f93",
+    "hash": "f631b9993c0ce19a",
     "heroDoc": "vendor/heroui/react/form.json",
     "propsFiles": ["ui/src/react/form/form.props.ts", "ui/src/react/form/tamo-form-fill.props.ts"]
   },
@@ -248,14 +248,14 @@
       "name": "TamoFormFill",
       "props": [
         {
-          "description": "",
+          "description": "The slot `useTamo` returned for the form.",
           "name": "slot",
           "required": true,
           "source": "stackra",
           "type": "TamoSlot"
         },
         {
-          "description": "",
+          "description": "The form whose fields Tamo fills from the text.",
           "name": "form",
           "required": true,
           "source": "stackra",

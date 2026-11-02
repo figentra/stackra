@@ -20,6 +20,7 @@ export { Link } from "#react/link/link";
 export type { LinkProps } from "#react/link/link.props";
 export { useLocaleHref } from "#react/locale-href/use-locale-href";
 export { useMenu } from "#react/menu/use-menu";
+export { useMenus } from "#react/menu/use-menus";
 export { NavLink } from "#react/nav-link/nav-link";
 export type { NavLinkProps } from "#react/nav-link/nav-link.props";
 export type { NavigateOptions } from "#react/navigate/navigate-options.type";

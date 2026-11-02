@@ -1,7 +1,15 @@
 ---
 title: "0305 — Programming model v3.1: one name per concept, partners by type argument, one declaration per file, class components"
-description: "Accepted, amended by 0324, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428) · amended 2026-10-27 (STA-1306)"
+description: "Accepted, amended by 0324, 0350 · 2026-10-23 · amended 2026-10-24 (STA-428) · amended 2026-10-27 (STA-1306) · amended 2026-11-02 (STA-1966)"
 ---
+
+<Note>
+  Amended 2026-11-02 (owner decision, STA-1966) by the 2026-11-02 amendment of
+  [0506](/adr/0506-console-command-kind#amendment-2026-11-02-owner-decision-one-cli-engine): rule 28 gains a `command` option on `Action` and `Query`
+  (`command: string | { name, group }`, off by default). gen adds the action to `#stackra/commands`, and
+  `ActionCommand` runs it through the pipeline as the signed-in CLI identity. It never makes the
+  action an AI tool.
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-478) by
