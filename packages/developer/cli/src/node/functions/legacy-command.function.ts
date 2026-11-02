@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `legacyCommand(command, recurse)`, a `CliCommand` that still parses its own line, as a `@stackra/console`
+ * Purpose: `legacyCommand(command, recurse, inherit)`, a `CliCommand` that still parses its own line, as a `@stackra/console`
  *          passthrough command: the name has `:` for spaces (`mcp sync` is `mcp:sync`; the kernel joins spaced words, so
  *          `stackra mcp sync` still works), the summary is its description and the usage its one example. Its `handle`
  *          does what `runCli` did: split the raw tokens at `--`, `parseArgs` strictly, run it with the run's streams and
@@ -24,9 +24,13 @@ import type { CliContext } from "#node/types/cli-context.type";
  * @param command - the command to wrap.
  * @param recurse - runs another `stackra` command line, for `context.cli`.
  * @example
- * const commands = COMMANDS.map((command) => legacyCommand(command, recurse));
+ * const commands = COMMANDS.map((command) => legacyCommand(command, recurse, io.inherit));
  */
-export function legacyCommand(command: CliCommand, recurse: CliContext["cli"]): CommandClass {
+export function legacyCommand(
+  command: CliCommand,
+  recurse: CliContext["cli"],
+  inherit: boolean,
+): CommandClass {
   const usage = `Usage: ${command.usage}`;
   return class LegacyCommand extends Command({
     name: command.name.replaceAll(" ", ":"),
@@ -51,7 +55,8 @@ export function legacyCommand(command: CliCommand, recurse: CliContext["cli"]): 
           io: {
             out: (text) => io.stdout.write(text),
             err: (text) => io.stderr.write(text),
-            inherit: io.interactive,
+            // The caller's own answer (the binary: true, an MCP capture: false), so children stream as before, CI included.
+            inherit,
           },
           values: values as Record<string, string | boolean | undefined>,
           positionals,

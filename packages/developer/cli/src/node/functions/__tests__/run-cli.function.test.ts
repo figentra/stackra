@@ -152,7 +152,7 @@ describe("runCli", () => {
   });
 
   it("names a legacy command by its words joined with a colon", () => {
-    expect(readCommand(legacyCommand(spaced, async () => 0)).name).toBe("mcp:sync");
+    expect(readCommand(legacyCommand(spaced, async () => 0, false)).name).toBe("mcp:sync");
   });
 });
 
@@ -166,7 +166,7 @@ describe("COMMANDS on the console", () => {
 
   it("still has these commands on passthrough; the list only goes down (ADR 0500 decision 7)", () => {
     const classes = COMMANDS.map((command) =>
-      typeof command === "function" ? command : legacyCommand(command, async () => 0),
+      typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
     );
     // 50 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
     expect(passthroughCommands(classes)).toEqual(PASSTHROUGH);

@@ -43,7 +43,9 @@ export async function runCli(
     name: "stackra",
     version: cliVersion(),
     commands: commands.map((command) =>
-      typeof command === "function" ? command : legacyCommand(command as CliCommand, recurse),
+      typeof command === "function"
+        ? command
+        : legacyCommand(command as CliCommand, recurse, io.inherit),
     ),
   }).run(args, {
     ...ports,
