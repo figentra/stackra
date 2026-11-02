@@ -302,15 +302,18 @@ only, required reviewer the owner, and two environment variables (neither is sec
 Each run below is Actions, "Apply testbed", Run workflow on `main`, then the owner approves it in the `testbed`
 environment.
 
-1. **action** `preview`, **groups** unticked, heavy `1`, light `0`. Read the plan: a security group, two roles with
+1. **action** `preview`, **groups** unticked, heavy `0`, light `0`. Read the plan: a security group, two roles with
    their profiles and policies, a launch template, the build bucket and its object, the Image Builder components,
    recipe, infrastructure, distribution and pipeline, and no Auto Scaling group.
 2. **action** `up`, same inputs. Creates the state bucket on the first run, then the pipeline. No instance runs yet.
 3. **action** `build-image`. Starts the pipeline once: 30 to 60 minutes on one build instance that stops when done. Its
    log is in the Image Builder console under `stackra-testbed`. When it succeeds, the SSM parameter
-   `/imagebuilder/stackra-testbed/ami` holds the AMI id.
-4. **action** `preview`, **groups** ticked, heavy `1`, light `0`: the two Auto Scaling groups appear.
-5. **action** `up`, same inputs. One heavy box starts (about $280 a month from here). `stackra testbed status` should
-   list it healthy within about five minutes.
+   `/imagebuilder/stackra-testbed/ami` holds the AMI id. The build instance is a `c7i.2xlarge` that needs the region's
+   whole on-demand quota (8 vCPUs), so no heavy box, and no old on-demand box in eu-west-1, may be running.
+4. **action** `preview`, **groups** ticked, heavy `0`, light `0`: the two Auto Scaling groups appear.
+5. **action** `up`, same inputs. No box starts. The first `stackra testbed run` raises the heavy group from 0 to 1, and
+   `stackra testbed status` should list that box healthy within about five minutes.
 
-At the switch step of the migration, run `up` again with heavy `2` and light `1`.
+Both minimums stay at 0 ([0516](/adr/0516-aws-quotas-are-fixed-inputs)): with 8 on-demand and 8 spot vCPUs the pool is at
+most one heavy and one light box, each started on demand. The plan refuses a heavy minimum above 0, because the image
+build must always fit beside it.

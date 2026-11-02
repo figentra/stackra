@@ -10,21 +10,24 @@
  * Governing contract: STA-1730 spec FR-006 to FR-025; spec 030 Requirements 3 to 7; STA-1966 spec FR-012 to FR-016.
  */
 import { EXIT_CODE } from "#core/constants/exit-code.constant";
+import { TextRendererDriver } from "#core/drivers/text-renderer.driver";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { SYMBOLS } from "#core/constants/symbols.constant";
+import { CommandError } from "#core/errors/command-error.error";
 import { PromptCancelledError } from "#core/errors/prompt-cancelled.error";
 import { UsageError } from "#core/errors/usage.error";
+import { askMissing } from "#core/functions/ask-missing.function";
 import { buildRegistry } from "#core/functions/build-registry.function";
 import { createOutput } from "#core/functions/create-output.function";
 import { createPainter } from "#core/functions/create-painter.function";
+import { createProcess } from "#core/functions/create-process.function";
 import { createPrompt } from "#core/functions/create-prompt.function";
 import { decideGround } from "#core/functions/decide-ground.function";
 import { decideMode } from "#core/functions/decide-mode.function";
 import { defaultsPrompter } from "#core/functions/defaults-prompter.function";
 import { errorCode } from "#core/functions/error-code.function";
-import { renderError } from "#core/functions/render-error.function";
-import { renderHelp } from "#core/functions/render-help.function";
-import { renderList } from "#core/functions/render-list.function";
+import { isSecret } from "#core/functions/is-secret.function";
+import { problemOf } from "#core/functions/problem-of.function";
 import { route } from "#core/functions/route.function";
 import { runCommand } from "#core/functions/run-command.function";
 import { visualBidi } from "#core/functions/visual-bidi.function";
@@ -65,62 +68,106 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       baseTheme.dark !== undefined && decideGround(ports.env) === "dark"
         ? { ...baseTheme, ...baseTheme.dark }
         : baseTheme;
-    let data: unknown;
-    const output = createOutput({
+    const context = {
       mode,
       theme,
       version: config.version,
       stdout: ports.stdout,
       stderr: ports.stderr,
+    };
+    const renderer = ports.renderer?.(context) ?? new TextRendererDriver(context);
+    let data: unknown;
+    let rows: readonly unknown[] | undefined;
+    let failed = false;
+    let wrote = false;
+    const output = createOutput({
+      mode,
+      renderer,
       onJson: (value) => {
         data = value;
       },
+      onRows: (given) => {
+        rows = given;
+      },
+      onFailed: () => {
+        failed = true;
+      },
+      onWrite: () => {
+        wrote = true;
+      },
     });
     const painter = createPainter(mode.depth, theme.accent);
-    const write = (lines: readonly string[]) => {
-      if (!mode.quiet) for (const line of lines) ports.stdout.write(`${line}\n`);
-    };
-    const finish = (code: number, error?: unknown): number => {
+    const finish = (code: number, error?: unknown, docs?: string): number => {
       if (mode.json) {
+        const problem = error === undefined ? undefined : problemOf(error, docs);
+        // A non-zero code without an error still carries the data (a failed checklist, a returned code).
         const document =
-          error === undefined
-            ? { ok: true, data: data ?? null }
+          problem === undefined
+            ? { ok: code === EXIT_CODE.success, data: data ?? rows ?? null }
             : {
                 ok: false,
                 error: {
                   code: errorCode(error),
-                  message: error instanceof Error ? error.message : String(error),
+                  message: problem.title,
+                  ...(problem.why === undefined ? {} : { why: problem.why }),
+                  ...(problem.fix === undefined ? {} : { fix: problem.fix }),
+                  ...(problem.docs === undefined ? {} : { docs: problem.docs }),
                 },
               };
         ports.stdout.write(`${JSON.stringify(document)}\n`);
-      } else if (error !== undefined)
-        for (const line of renderError(error, mode.verbose, painter, mode.depth > 0))
-          ports.stderr.write(`${line}\n`);
+      } else if (error !== undefined) renderer.problem(problemOf(error, docs), mode.verbose);
       return code;
     };
 
     if (intent.kind === "usage") return finish(EXIT_CODE.usage, intent.error);
     if (intent.kind === "version") {
       data = { name: config.name, version: config.version };
-      if (!mode.json) write([`${painter.bold(theme.name)} ${painter.success(config.version)}`]);
+      if (!mode.json) renderer.about();
       return finish(EXIT_CODE.success);
     }
     if (intent.kind === "list") {
-      data = [...new Set(registry.values())]
-        .filter((row) => !row.structure.hidden)
-        .map((row) => row.structure);
+      const visible = [...new Set(registry.values())]
+        .map((row) => row.structure)
+        .filter((structure) => !structure.hidden);
+      data = visible;
       if (!mode.json) {
         // The banner carries the name and version on a terminal; a pipe gets them as a plain line.
-        if (mode.tty) output.banner();
-        else write([`${theme.name} ${config.version}`, ""]);
-        write(renderList([...registry.values()], config.name, painter));
+        if (mode.tty) renderer.banner();
+        else {
+          renderer.about();
+          renderer.line();
+        }
+        renderer.commandList(visible, config.name);
       }
       return finish(EXIT_CODE.success);
     }
     if (intent.kind === "help") {
       data = intent.entry.structure;
-      if (!mode.json) write(renderHelp(intent.entry.structure, config.name, painter));
+      if (!mode.json) renderer.help(intent.entry.structure, config.name);
       return finish(EXIT_CODE.success);
+    }
+    if (intent.kind === "completion" || intent.kind === "complete") {
+      const completions = ports.completions?.();
+      if (completions === undefined)
+        return finish(
+          EXIT_CODE.failure,
+          new CommandError("Tab completion is not available here", {
+            why: "no Completions driver is bound to this run",
+            fix: "pass nodePorts() from @stackra/console/node",
+          }),
+        );
+      const definitions = [...new Set(registry.values())].map((row) => row.structure);
+      if (intent.kind === "completion") {
+        const script = completions.script(intent.shell, config.name, definitions);
+        data = { shell: intent.shell, script };
+        if (!mode.json) ports.stdout.write(script);
+        return finish(EXIT_CODE.success);
+      }
+      // The shell reads one `value<TAB>description` line per candidate, then the directive (4: no file completion).
+      for (const { value, description } of completions.complete(intent.words, definitions))
+        ports.stdout.write(`${value}\t${description}\n`);
+      ports.stdout.write(":4\n");
+      return EXIT_CODE.success;
     }
     const { entry } = intent;
 
@@ -132,14 +179,41 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
         })
       : defaultsPrompter();
     const operator = operatorOf(ports.env);
+    const prompt = createPrompt(prompter);
+    let values: Readonly<Record<string, unknown>>;
+    try {
+      values = await askMissing(entry.structure, intent.values, prompt);
+    } catch (error) {
+      return finish(codeOf(error), error, entry.structure.docs);
+    }
+    // A secret option's value never reaches captured child output, an error or a log.
+    const secrets = [...entry.structure.arguments, ...entry.structure.options]
+      .filter(isSecret)
+      .map((field) => values[field.property])
+      .filter((value): value is string => typeof value === "string" && value !== "");
+    const children = createProcess({
+      ...(ports.process === undefined ? {} : { runner: ports.process() }),
+      mode,
+      cwd: ports.cwd,
+      echo: (chunk) => {
+        if (!mode.json) ports.stderr.write(painter.dim(chunk));
+      },
+      redact: (text) =>
+        secrets.reduce((kept, secret) => kept.replaceAll(secret, "[redacted]"), text),
+    });
     const outcome = await runCommand(
       entry,
-      intent.values,
+      values,
       config,
       ports.signals,
       (signal) => ({
         output,
-        prompt: createPrompt(prompter),
+        prompt,
+        process: children,
+        cwd: ports.cwd,
+        rest: intent.rest,
+        stdout: ports.stdout,
+        stderr: ports.stderr,
         signal,
         verbose: mode.verbose,
         json: mode.json,
@@ -152,7 +226,14 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       ports.env["STACKRA_ENVIRONMENT"] === "production",
     );
     if (outcome.data !== undefined && data === undefined) data = outcome.data;
-    return finish(outcome.code, outcome.error);
+    // Data the command returned without writing anything is presented by its shape.
+    if (!mode.json && !wrote && outcome.error === undefined && outcome.data !== undefined)
+      output.present(outcome.data);
+    const code =
+      outcome.error === undefined && failed && outcome.code === EXIT_CODE.success && !outcome.coded
+        ? EXIT_CODE.failure
+        : outcome.code;
+    return finish(code, outcome.error, entry.structure.docs);
   };
 
   return { run };

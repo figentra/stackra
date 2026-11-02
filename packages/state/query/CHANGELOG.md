@@ -1,5 +1,37 @@
 # @stackra/query
 
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/storage@0.6.1
+  - @stackra/platform@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/devices@0.6.1
+  - @stackra/realtime@0.6.1
+  - @stackra/settings@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/settings@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/storage@0.6.0
+  - @stackra/platform@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/devices@0.6.0
+  - @stackra/realtime@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

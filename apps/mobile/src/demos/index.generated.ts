@@ -1075,6 +1075,8 @@ import FreeShimmerThinking from "#src/demos/free/shimmer/thinking";
 import FreeShimmerThinkingCode from "#src/demos/free/shimmer/thinking.code";
 import FreeShimmerBlock from "#src/demos/free/shimmer/block";
 import FreeShimmerBlockCode from "#src/demos/free/shimmer/block.code";
+import FreeSignInBasics from "#src/demos/free/sign-in/basics";
+import FreeSignInBasicsCode from "#src/demos/free/sign-in/basics.code";
 import FreeSkeletonAnimations from "#src/demos/free/skeleton/animations";
 import FreeSkeletonAnimationsCode from "#src/demos/free/skeleton/animations.code";
 import FreeSkeletonShapes from "#src/demos/free/skeleton/shapes";
@@ -3133,6 +3135,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/shimmer.json") as ApiDoc,
+  },
+  "free/sign-in": {
+    examples: {
+      basics: { Demo: FreeSignInBasics, code: FreeSignInBasicsCode },
+    },
   },
   "free/skeleton": {
     examples: {

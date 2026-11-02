@@ -1,5 +1,57 @@
 # @stackra/tenancy
 
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/database@0.6.1
+  - @stackra/model@0.6.1
+  - @stackra/ui@0.6.1
+  - @stackra/console@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/scheduler@0.6.1
+  - @stackra/scope@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- c64a55d: `TenantMenu`, the tenancy kit's membership switcher (ADR 0504), in `@stackra/tenancy/react` (a menu behind a
+  button) and in the new `@stackra/tenancy/native` entry (a list for the app's own sheet). It reads the container's
+  `TenantSwitcher` through `useTenant` and `useTenantSwitcher`, takes every word from the host in `labels`, and reports
+  `onSwitched` (and `onError` on native).
+
+### Patch Changes
+
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [2256bf6]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [fb29d41]
+- Updated dependencies [4fcb66d]
+- Updated dependencies [d53d9d3]
+- Updated dependencies [712fb89]
+  - @stackra/console@0.6.0
+  - @stackra/database@0.6.0
+  - @stackra/ui@0.6.0
+  - @stackra/scheduler@0.6.0
+  - @stackra/scope@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

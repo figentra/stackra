@@ -1,5 +1,34 @@
 # @stackra/app
 
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/navigation@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/i18n@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/csp@0.6.1
+  - @stackra/identity@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [99750d4]
+  - @stackra/navigation@0.6.0
+  - @stackra/identity@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/i18n@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/csp@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

@@ -6,7 +6,7 @@
  * Governing contract: STA-1730 spec FR-006.
  */
 import type { CommandClass } from "#core/types/command-class.type";
-import type { CommandStructure } from "#core/types/command-structure.type";
+import type { CommandStructure } from "#contracts/types/command-structure.type";
 
 /** A registered command. */
 export interface CommandEntry {
