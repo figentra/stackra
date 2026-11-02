@@ -1529,3 +1529,7 @@
   slug: self-hosted-docs-replace-mintlify
   status: accepted
   issue: STA-1920
+"0515":
+  slug: aws-quotas-are-fixed-inputs
+  status: reserved
+  issue: STA-1953
