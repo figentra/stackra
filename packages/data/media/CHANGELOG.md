@@ -1,5 +1,18 @@
 # @stackra/media
 
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/iam@0.5.1
+  - @stackra/actions@0.5.1
+  - @stackra/filesystem@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/errors@0.5.1
+  - @stackra/validation@0.5.1
+
 ## 0.5.0
 
 ### Patch Changes

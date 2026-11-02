@@ -1,5 +1,16 @@
 # @stackra/errors
 
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/testing@0.5.1
+  - @stackra/config@0.5.1
+  - @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+  - @stackra/logger@0.5.1
+  - @stackra/validation@0.5.1
+
 ## 0.5.0
 
 ### Patch Changes

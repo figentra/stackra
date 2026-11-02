@@ -1,5 +1,12 @@
 # @stackra/money
 
+## 0.5.1
+
+### Patch Changes
+
+- @stackra/container@0.5.1
+  - @stackra/contracts@0.5.1
+
 ## 0.5.0
 
 ### Patch Changes
