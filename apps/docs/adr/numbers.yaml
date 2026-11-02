@@ -1533,3 +1533,7 @@
   slug: stackra-create-and-the-published-starter
   status: reserved
   issue: STA-1952
+"0516":
+  slug: aws-quotas-are-fixed-inputs
+  status: reserved
+  issue: STA-1953
