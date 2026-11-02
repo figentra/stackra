@@ -55,8 +55,9 @@ them, and would publish whatever sat on their main branch rather than what was r
 9. **Stackra and Flow keep their own sites.** Their readers are different. Stackra's stays at docs.stackra.figentra.com,
    and Flow's is open source. Both move to Fumadocs under decisions 1 to 3, and either can become a hub tab later.
 10. **A docs package has its own kind, `docs`.** The repository-root `docs/` is the member `@figentra/<product>-docs`,
-    and its `package.json` carries `"stackra": { "kind": "docs" }`. It holds MDX pages, a Fumadocs `meta.json` per
-    folder for the navigation, and the assets those pages use, and nothing else: no code, no tier, no TypeScript or
+    and its `package.json` carries `"stackra": { "kind": "docs" }`. Its `content/` holds the MDX pages, a Fumadocs
+    `meta.json` per folder for the navigation, and the assets those pages use; beside it sit only the member files
+    (`package.json`, README, AGENTS, CHANGELOG): no code, no tier, no TypeScript or
     Vitest preset. `stackra.kind` gets a seventh value, `docs`, as
     [0511](/adr/0511-cross-repo-service-contracts-and-cross-app-events) added `contract` (amending decision 11 of
     [0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)). A content-only
