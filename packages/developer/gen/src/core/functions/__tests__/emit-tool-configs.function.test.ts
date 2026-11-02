@@ -14,6 +14,7 @@
 import { describe, expect, it } from "@stackra/testing";
 
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
+import { schemaModules } from "#core/functions/schema-modules.function";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
@@ -101,11 +102,18 @@ describe("emitToolConfigs", () => {
     const setup = content(".stackra/vitest.setup.ts");
     expect(setup).toContain('import "#stackra/registrations";');
     expect(setup).toContain(
-      'import { loadMemberSchemas, registerWiring } from "@stackra/container/testing";',
+      'import { markMemberSchemasLoaded, registerWiring } from "@stackra/container/testing";',
     );
     expect(setup).toContain('import { registerModelPartners } from "@stackra/database";');
     expect(setup).toContain("registerWiring(wiring);");
-    expect(setup).toContain("await loadMemberSchemas();");
+    // compile() would otherwise import the schemas again from node_modules.
+    expect(setup).toContain("markMemberSchemasLoaded();");
+    // Each schemas file is imported by the setup, which Vite transforms; loadMemberSchemas, imported from
+    // node_modules, would load them through Node (STA-2032).
+    expect(schemaModules(BILLING_IR).length).toBeGreaterThan(0);
+    for (const module of schemaModules(BILLING_IR))
+      expect(setup).toContain(`import "./gen/schemas/${module}.ts";`);
+    expect(setup).not.toContain("loadMemberSchemas");
     expect(setup).not.toContain("import.meta.url");
     expect(setup).toContain("registerModelPartners([\n  [InvoiceFactory, Invoice],\n]);");
   });
@@ -114,7 +122,8 @@ describe("emitToolConfigs", () => {
     expect(content(".stackra/vitest.setup.ts")).toContain('import "@stackra/database/testing";');
     const bare = emitToolConfigs(COMMERCE_IR, { entries: [], registrations: false });
     expect(bare[1]?.content).not.toContain("@stackra/database/testing");
-    expect(bare[1]?.content).toContain("await loadMemberSchemas(");
+    for (const module of schemaModules(COMMERCE_IR))
+      expect(bare[1]?.content).toContain(`import "./gen/schemas/${module}.ts";`);
   });
 
   it("loads the clients testing entry only for a member on @stackra/clients (STA-1297)", () => {
