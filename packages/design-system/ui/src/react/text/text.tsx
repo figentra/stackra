@@ -11,7 +11,7 @@
 import type { ReactElement } from "react";
 import { Typography } from "@heroui/react";
 
-import { TONE_CLASS_NAME } from "#core/constants/tone-class-name.constant";
+import { typographyToneClassName } from "#core/functions/typography-tone-class-name.function";
 import { TYPOGRAPHY_TYPE } from "#core/constants/typography-type.constant";
 import { directionOf } from "#core/functions/direction-of.function";
 import type { TextProps } from "#react/text/text.props";
@@ -37,7 +37,7 @@ export function Text({
       color={tone === "muted" ? "muted" : "default"}
       align={align ?? "start"}
       truncate={isTruncated ?? false}
-      className={[TONE_CLASS_NAME[tone], className].filter(Boolean).join(" ")}
+      className={[typographyToneClassName(tone, type, "web"), className].filter(Boolean).join(" ")}
       // The element through the `elementType` HeroUI passes to React Aria's Text (its props type leaves it out): a
       // `render` drawing another tag than React Aria expects trips its element check (`p` expected, `span` drawn).
       {...(elementType ? ({ elementType } as object) : {})}

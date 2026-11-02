@@ -15,6 +15,7 @@ import { vi } from "vitest";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { captureIo } from "#node/functions/capture-io.function";
+import { runDeployProduct } from "#node/product/functions/run-deploy-product.function";
 import { runRunwayDeploy } from "#node/runway-deploy/functions/run-runway-deploy.function";
 import type { CliContext } from "#node/types/cli-context.type";
 
@@ -26,6 +27,10 @@ vi.mock("@stackra/runway", async (original) => ({
 vi.mock("@stackra/runway/node", async (original) => ({
   ...(await original<Record<string, unknown>>()),
   readRunway: vi.fn(),
+}));
+
+vi.mock("#node/product/functions/run-deploy-product.function", () => ({
+  runDeployProduct: vi.fn(),
 }));
 
 const SHA = "c".repeat(40);
@@ -56,6 +61,7 @@ const run = (values: CliContext["values"]) => {
 };
 
 beforeEach(() => {
+  vi.mocked(runDeployProduct).mockReset().mockResolvedValue(0);
   vi.mocked(readRunway).mockReset().mockReturnValue(ROOT);
   vi.mocked(deploy)
     .mockReset()
@@ -118,5 +124,86 @@ describe("runRunwayDeploy", () => {
       "mintlify",
       "cloudflare-workers",
     ]);
+  });
+
+  it("refuses an environment whose runway declares an approval unless --approved is passed", async () => {
+    const gated = {
+      ...ROOT,
+      environments: {
+        production: {
+          ...ROOT.environments.production,
+          deploy: { on: "merge-to-main", approval: "github-environment" },
+        },
+      },
+    } as RootRunway;
+    vi.mocked(readRunway).mockReturnValue(gated);
+    await expect(run({ env: "production", sha: SHA }).code).rejects.toThrow(
+      "production deploys only after its approval (github-environment)",
+    );
+    expect(deploy).not.toHaveBeenCalled();
+    expect(await run({ env: "production", sha: SHA, approved: true }).code).toBe(0);
+    expect(deploy).toHaveBeenCalledTimes(1);
+  });
+
+  it("ships a product's web and mobile through the product publish and the other kinds through deploy()", async () => {
+    const product = {
+      ...ROOT,
+      surfaces: { console: { shell: "os/console@3", host: "console.acme" } },
+      mobile: { app: {} },
+    } as unknown as RootRunway;
+    vi.mocked(readRunway).mockReturnValue(product);
+    expect(await run({ env: "production", sha: SHA }).code).toBe(0);
+    const [context] = vi.mocked(runDeployProduct).mock.calls[0] ?? [];
+    expect(context?.values).toMatchObject({ product: true, env: "production" });
+    expect(context?.values).not.toHaveProperty("surfaces-only");
+    expect(context?.values).not.toHaveProperty("mobile-only");
+    expect(vi.mocked(deploy).mock.calls[0]?.[4]).toEqual(["services", "desktop", "docs"]);
+  });
+
+  it("scopes the product publish to the kind asked for, and skips deploy() when nothing else is left", async () => {
+    const product = {
+      ...ROOT,
+      surfaces: { console: { shell: "os/console@3", host: "console.acme" } },
+      mobile: { app: {} },
+    } as unknown as RootRunway;
+    vi.mocked(readRunway).mockReturnValue(product);
+    expect(await run({ env: "production", kind: "web", sha: SHA }).code).toBe(0);
+    expect(vi.mocked(runDeployProduct).mock.calls[0]?.[0].values).toMatchObject({
+      "surfaces-only": true,
+    });
+    expect(deploy).not.toHaveBeenCalled();
+    vi.mocked(runDeployProduct).mockClear();
+    expect(await run({ env: "production", kind: "mobile", sha: SHA, "dry-run": true }).code).toBe(
+      0,
+    );
+    expect(vi.mocked(runDeployProduct).mock.calls[0]?.[0].values).toMatchObject({
+      "mobile-only": true,
+      "dry-run": true,
+    });
+  });
+
+  it("stops before deploy() when the product publish fails", async () => {
+    vi.mocked(readRunway).mockReturnValue({
+      ...ROOT,
+      surfaces: { console: { shell: "os/console@3", host: "console.acme" } },
+    } as unknown as RootRunway);
+    vi.mocked(runDeployProduct).mockResolvedValue(1);
+    expect(await run({ env: "production", sha: SHA }).code).toBe(1);
+    expect(deploy).not.toHaveBeenCalled();
+  });
+
+  it("still plans a gated environment on a dry run without --approved", async () => {
+    const gated = {
+      ...ROOT,
+      environments: {
+        production: {
+          ...ROOT.environments.production,
+          deploy: { on: "merge-to-main", approval: "github-environment" },
+        },
+      },
+    } as RootRunway;
+    vi.mocked(readRunway).mockReturnValue(gated);
+    expect(await run({ env: "production", sha: SHA, "dry-run": true }).code).toBe(0);
+    expect(deploy).not.toHaveBeenCalled();
   });
 });

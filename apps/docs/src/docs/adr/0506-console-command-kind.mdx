@@ -1,6 +1,6 @@
 ---
 title: "0506 — The Command kind, the console framework and the commands group"
-description: "Accepted · 2026-10-31"
+description: "Accepted · 2026-10-31 · amended 2026-11-02 (STA-1966)"
 ---
 
 <Note>
@@ -11,6 +11,14 @@ description: "Accepted · 2026-10-31"
   group tables, decisions 13 and 14, and the kind table, decision 16) and
   [0127](/adr/0127-package-categories-including-infrastructure) (its 2026-10-24 note, which folded
   `console` into `cli`).
+</Note>
+
+<Note>
+  Amended 2026-11-02 (owner decision, Linear STA-1966): `@stackra/console` is the one CLI engine of
+  `stackra`, `fflow` and `figentra`. Decision 5 gains its ports and drivers, decision 8 allows
+  Clack, Tab and Ink behind those ports, and Figentra Flow depends on the package. Read decisions 5,
+  7 and 8 with the [amendment of 2026-11-02](#amendment-2026-11-02-owner-decision-one-cli-engine)
+  below.
 </Note>
 
 ## Context
@@ -152,3 +160,53 @@ Sources: the owner's decision of 2026-10-31 on the `@stackra/console` spec (`.ag
 decisions taken at the spec stop) and its design (`plan.md`); the leader's approval of the class style and the optional
 gen; Linear STA-1730 (phase 1), STA-1731 (phase 2) and STA-1732 (the number reservation); the basalt port, Academorix
 spec 030.
+
+## Amendment 2026-11-02 (owner decision): one CLI engine
+
+The owner, 2026-11-02 (Linear STA-1966): "one package that all depend on, so we can guarantee the output and
+everything", and on `fflow` 0.2.3, "very bad error handling; show it in a table, highlight stuff". The spec is
+`.agents/specs/sta-1966-console-engine/` (approved by the leader 2026-11-02).
+
+1. **Ports and drivers (amends decision 5).** The engine reaches its side effects through four ports, abstract classes
+   in `src/contracts/ports/`, and a command or the kernel is unchanged when a driver is swapped:
+   - `Renderer`: banner, messages, title, key-value, list, table (with a status column), checklist (grouped rows of ok,
+     warn, fail, skip and info, with a summary line that sets the exit code), tree, box, problem (the error screen),
+     help, command list, task, spinner, progress and live view. Drivers: `text` (the default) and `ink`, for live parts
+     only, loaded by a dynamic import the first time a live part animates, with the `text` driver as its fallback.
+   - `Prompter`: drivers `clack` (the interactive default), `terminal`, `defaults` and `scripted`.
+   - `Completions`: bash, zsh and fish scripts and Tab answers from the registry. Driver: `tab`.
+   - `ProcessRunner`: child processes with their output captured; a failed step shows its last 20 lines, the whole
+     output only under `--verbose`; an interactive child inherits the terminal and is refused without one.
+2. **Dependencies (amends decision 8).** `@clack/prompts`, `@bomb.sh/tab` and `ink` (with `react` from the `frontend`
+   catalog) are allowed, pinned exactly in the catalog, and only behind the ports above (owner approval 2026-11-02,
+   STA-1966). The `terminal` prompter stays as a driver. No other third-party dependency is added without the owner.
+3. **Routing.** An argument vector routes to one intent (list, help, version, completion, run or unknown) before any
+   container exists. `--help`, `-h` and `help <cmd>` never run the command. An unknown command names up to three
+   closest commands and exits 2. Spaced names (`mcp sync`, `bot gh`) match the registered `:`-joined names, longest
+   first. `help` and `completion` are built in.
+4. **One error shape (amends decision 7).** Every failure renders as one boxed problem: what failed, why, the fix
+   command and a docs link; the cause chain and raw child output only under `--verbose`. The `--json` error gains
+   optional `why`, `fix` and `docs`. A run that ends with a non-zero code and no thrown error writes
+   `{ "ok": false, "data": ... }`, so a command can emit its data and set its exit code together.
+5. **Status is never colour alone.** A status cell always carries a symbol and a word (`✓ ok`, `⚠ warn`, `✗ fail`; in
+   ASCII `+ ok`, `! warn`, `x fail`).
+6. **One definition, three surfaces.** What `readCommand` reads (now with `group`, `docs`, `examples`, `tool` and a
+   field's `prompt` and `choices`) gives the parser, the help, the completions and, for a command with `tool: true`, a
+   local developer MCP tool: a JSON Schema of its fields and an invoke function that runs the same kernel with `--json`
+   and returns its data as structured content. `@stackra/mcp`'s local tools come from these definitions
+   ([0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) decision 5). A console command never
+   reaches the tenant MCP gateway of [0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free).
+7. **Actions as commands.** An action or query opts in with a `command` option
+   ([0305](/adr/0305-programming-model-v3-1-names-partners-files-and-class-components) rule 28); gen adds it to
+   `#stackra/commands`, and `ActionCommand(ActionClass)` in `@stackra/actions/node` prompts for missing input fields from
+   the input schema, runs the one pipeline and presents the typed output. The actor is the signed-in CLI identity, never
+   a privileged operator by default; the operator and break-glass ports apply only where the action allows them, and
+   every refusal of the pipeline renders as a problem. `@stackra/console` never depends on `@stackra/actions`.
+8. **Every Figentra CLI depends on it.** `stackra`, `fflow` (Figentra Flow) and `figentra` run on `createConsole`.
+   This reverses the STA-1730 rule that Figentra Flow never depends on `@stackra/console`
+   (`.agents/specs/sta-1730-console/flow-visual-spec.md`); Flow is published on the Stackra registry, so its install
+   path is unchanged. The CLI layers of Flow and `figentra` move to TypeScript, because Node runs no decorators.
+
+Enforcement: the unit tests of `@stackra/console` (a snapshot of every renderer component with colour on and off, the
+routing table, completion golden files, one command giving equal data through the CLI, the local MCP and the test
+harness, and a module-load test that a non-live run never imports `ink`); `FORBIDDEN_DEPENDENCIES` is unchanged.

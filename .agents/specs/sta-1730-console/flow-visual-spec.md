@@ -1,5 +1,9 @@
 # Visual spec for a CLI outside Stackra (for Figentra Flow)
 
+> **Superseded 2026-11-02** (owner decision, STA-1966; ADR 0506 amendment of 2026-11-02): Figentra Flow now depends on
+> `@stackra/console` and renders through it, so this page is no longer what Flow follows. It stays as the record of the
+> layout the engine implements. See `.agents/specs/sta-1966-console-engine/`.
+
 **Spec**: [spec.md](./spec.md) FR-033 · One page. Figentra Flow is independent and published on npmjs, so it does not
 depend on `@stackra/console`. If it follows this page, a Flow terminal looks like a Stackra one.
 

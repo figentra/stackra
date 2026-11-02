@@ -87,3 +87,21 @@ describe("Heading (web)", () => {
     void (<Heading level={1} render={(props) => <h2 {...props} />} />); // oxlint-disable-line jsx-a11y/heading-has-content -- reason: a type test; the spread props carry the content
   });
 });
+
+// @covers sta-2016:FR-003
+describe("Heading (web): the core tone", () => {
+  it.each([
+    ["h2", "text-core"],
+    ["h4", "text-core"],
+    ["h5", "text-core-strong"],
+  ] as const)("draws the core on an %s look as %s", (type, name) => {
+    render(
+      <Heading level={2} type={type} tone="core">
+        Engine
+      </Heading>,
+    );
+    const names = [...screen.getByRole("heading", { level: 2 }).classList];
+    expect(names).toContain(name);
+    expect(names).not.toContain(name === "text-core" ? "text-core-strong" : "text-core");
+  });
+});

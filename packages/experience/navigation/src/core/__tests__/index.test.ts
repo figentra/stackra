@@ -39,6 +39,7 @@ describe("@stackra/navigation", () => {
       "data",
       "navigation",
       "registerDocumentResolver",
+      "registerMenus",
       "registerRoutes",
       "routeRef",
       "tabs",
