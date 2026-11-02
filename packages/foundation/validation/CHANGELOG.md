@@ -1,5 +1,31 @@
 # @stackra/validation
 
+## 0.4.0
+
+### Minor Changes
+
+- 0b660e0: Add `InputFields<T>` and the type-only `~defaults` brand on `Schema` (STA-1694): `InputFields` is `Fields` with the fields
+  named in `~defaults` optional, recursively for nested shapes, which is what the schema's parse accepts. `Fields` ignores
+  the brand, so `X$Check` and `X.create` are unchanged.
+
+### Patch Changes
+
+- 3c30885: Add `@stackra/console`: the `Command` kind with `@Argument` and `@Option` fields, `createConsole`, themed output
+  (gradient banner, notes, tasks, spinners, progress, tables), prompts on `node:readline`, plain and `--json` modes,
+  right-to-left-safe widths, the `runCommandForTest` harness and the `stackra-console create` scaffolder.
+  `@stackra/validation` lets its field decorators mark commands.
+- Updated dependencies [9c8d108]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

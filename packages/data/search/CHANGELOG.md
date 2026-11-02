@@ -1,5 +1,71 @@
 # @stackra/search
 
+## 0.4.0
+
+### Minor Changes
+
+- 2bbc0e8: Add the AI-everywhere retrieval lane of `@stackra/search` (STA-1636, ADR 0492 decisions 4, 5 and 8).
+  
+  - `Reranker` port with `HttpRerankerDriver` (text-embeddings-inference `/rerank`, token from `SecretStore` at call time,
+    `search.reranker`) and `MemoryRerankerDriver`; `runRerankerConformance` in `./testing`. `SearchIndex` reranks the first
+    `topN` fused candidates when a read passes `rerank: true` or the model declares `@Searchable({ rerank: true })`
+    (new in `@stackra/model`); with no reranker, or when it fails, the fused order stands.
+  - Arabizi also applies to any Latin word when the read's locale is Arabic (`arabiziOf(word, anyLatin)`).
+  - Tenant synonyms as data: the `SynonymSource` port with `MemorySynonymSourceDriver`, and query expansion in
+    `SearchIndex` (the rows, actions and database driver are `@stackra/data-maintenance`'s, so search stays below iam).
+  - `Recommender` port (`similar`, `boughtTogether`) with `PostgresRecommenderDriver`, `HttpRecommenderDriver` (the
+    `tools-recommend` contract) and `MemoryRecommenderDriver`; `search.recommender` config.
+  - Evaluation set in `./testing` (catalogue, judged Arabic, English and mixed queries, `ndcgAt`, `recallAt`, thresholds) and
+    a `test:int` script that fails when NDCG@10 or recall@50 drops under them.
+
+### Patch Changes
+
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [3ce01cf]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [4f3f1ed]
+- Updated dependencies [e070131]
+- Updated dependencies [d675b4d]
+- Updated dependencies [3df2c07]
+- Updated dependencies [2d6bb63]
+- Updated dependencies [7dc74f6]
+- Updated dependencies [d9bf3c2]
+- Updated dependencies [90f55b1]
+- Updated dependencies [1c22c33]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [36dbd49]
+- Updated dependencies [2bbc0e8]
+- Updated dependencies [9574c22]
+- Updated dependencies [f490040]
+- Updated dependencies [2f5ab1e]
+- Updated dependencies [dbb60dc]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/settings@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/database@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/outbox@0.4.0
+  - @stackra/model@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/i18n@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

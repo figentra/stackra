@@ -1,5 +1,45 @@
 # @stackra/events
 
+## 0.4.0
+
+### Minor Changes
+
+- 5fc0db7: Listeners are audited like actions. With a bound `ListenerAuditTrail` (`@stackra/events/contracts`), every listener delivery that ended writes one entry: the system actor `sys_listener` that handled it, the event's id as correlation, the event's actor as `causedBy`, and what the listener added with the new `ctx.audit(fields)` (never a classified value), inside the delivery's transaction. `@stackra/actions` ships `OutboxListenerAuditTrailDriver`, which writes it as the same `audit_entry.recorded` event an action call's entry is (`key: listener:<Listener>`).
+
+### Patch Changes
+
+- 90f55b1: A model's recorded events reach the testing app after commit (STA-1740). `MemoryDatabaseDriver` and `usePostgres()`
+  connect `RecordedEventsSubscriber`, which takes each flushed model's recorded events and, once the outermost
+  transaction commits, hands them to the new `commitEvents` of `@stackra/events/testing`: an integration event to the
+  app's outbox, any other on its bus, so `run()` results and `app.events.published()` hold them. A rollback publishes
+  nothing, and a released savepoint's events wait for the transaction around it. `@stackra/database` takes
+  `@stackra/events` as an optional peer for its testing entry.
+- 688cf0c: `drainOutbox()` delivers each event as the production inbox receives it once `@stackra/database`'s testing entry is
+  loaded: on its own, in a new transaction, as the actor of the call that wrote it, in that call's scope (through the
+  app's `CallIsolation`, or `withScope` without one), so listener tests over tenant-owned rows need no wrapper.
+  `commitEvents(events, call)` records the call's actor, id and scope; `deliverEventsIn` registers the delivery scope
+  (STA-1789).
+- e219411: The events testing plugin connects only the listeners a testing app can build: one whose dependency nothing binds (a
+  listener of a module the test did not boot, such as one needing `QueueService`) is skipped, and any other error
+  building a listener still throws. The container throws a typed `UnboundTokenError` for a class nothing binds; its
+  message is unchanged.
+- 79dc807: The events testing plugin adds `app.listeners.skipped()`, the listeners it skipped because nothing binds a dependency, with the missing class.
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/testing@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

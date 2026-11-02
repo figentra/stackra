@@ -1,5 +1,28 @@
 # @stackra/contracts
 
+## 0.4.0
+
+### Minor Changes
+
+- 9c8d108: Packages contribute console commands, and gen collects them per member (STA-1731). `@stackra/console` audits a
+  command declared `audit: true` through the `CommandAudit` port (refused before it runs when no sink is ready; secret
+  values redacted). gen records commands in the manifest, merges hosted packages' commands, refuses
+  `command_collision`, and writes `#stackra/commands` and a console entry that `stackra console <member>` runs. First
+  commands: `db:migrate`, `db:rollback`, `db:status`, `db:seed`, `tenant:list`, `tenant:create` (with a
+  `TenantDirectory` port), `cache:clear` (the `Cache` port gains `flush`), `queue:work`, `queue:failed` and
+  `queue:retry`; `@stackra/access-log` stores command audit entries (`STACKRA_COMMAND_AUDIT_SCOPE`).
+- f8fe5a5: Add `actorChainOverlaps(a, b)`, the one `onBehalfOf` chain check, and `actorsSharePerson(identity, a, b)`, which also
+  treats two `usr_` ids of one human as one person (STA-1724, ADR 0509). `IdentityResolver` gains `personOf(usr)`, a
+  non-abstract method that answers `null` until identity ships a person link; `actorsSharePerson` then falls back to a
+  verified email or phone match, and lets an identity rejection propagate so callers refuse the vote.
+  
+  Add `AUDIT_HOT_RETENTION`, ADR 0212's thirteen months of hot audit retention as `Duration.days(397)` (the longest any thirteen
+  consecutive calendar months can run), which the approval binding prune reads.
+  
+  Add the `ApprovalSettingsSource` port, the one settings read behind an approval condition's limited reader; `@stackra/settings` ships its driver.
+- 1856ee0: Add `Risk` (the L0 to L4 scale) and `Permission` (`Permission.L0` to `L4`, `.system()`, `.restricted()`), moved from
+  `@stackra/iam` (STA-1890, ADR 0513). Both stay dependency-free, so `@stackra/contracts` is still a leaf.
+
 ## 0.3.0
 
 ### Minor Changes

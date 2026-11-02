@@ -1,5 +1,70 @@
 # @stackra/actions
 
+## 0.4.0
+
+### Minor Changes
+
+- 71b37fc: Add the approval executor (STA-1724, ADR 0509). `ApprovalGranted` (`actions.approval.granted.v1`, ids only) and the
+  `ApprovalGrantOrigin` port are in `@stackra/actions/contracts`; `ApprovalExecutorListener` is in `@stackra/actions/node`. On a
+  grant from the store's service it reads the owning service's binding in a read-only isolation run as the tenant's system
+  actor, checks `ScopeOwnership` and the snapshot hash, moves the request `granted → executing` by compare-and-set, and runs
+  the pipeline as the stored requester under the key `approval:<id>` in a fresh run. A refusal settles `failed`; an
+  in-flight answer, an identity outage or another error leaves the request `executing` for a retry; a request still
+  `executing` 24 hours after its grant settles `unknown`. `ApprovalOutcome` gains `{ status: "unknown" }`, and
+  `MemoryApprovalGateDriver` and the gate conformance suite follow; the driver is built with `MemoryApprovalGateDriver.of(options)` (STA-1884).
+- 7a94bc4: Add the declarative approval stage (STA-1724, ADR 0509). `Action({ approval })` takes `true` or an `ActionApproval`
+  (`approvals`, `permission`, `expiresAfter` up to 30 days, `when`: an `ApprovalCondition`, whose `needed(input, ctx, settings)` gets its limited settings reader as an argument). `ApprovalGate` is now `decide`,
+  `park`, `find`, `begin` and `settle`; the pipeline enforces `max(declared, decided)`, verifies a named approval id in core
+  (`verifyApproval`) against the owning service's `ApprovalBindingStore` binding, parks the request after the isolation
+  transaction rolled back, forces the key `approval:<id>`, and fails closed without a binding store, an `ActorStatusCheck` or
+  an `IdentityResolver`. New refusals: `approval_mismatch`, `approval_expired`, `approval_not_granted`, `approval_consumed`,
+  `approval_pending_limit`, `approval_identity_unavailable`; `approval_required` also carries `approvalsRequired` and
+  `expiresAt`. `StepUpCheck.require` takes an optional `at`, `ApproverRefusal` gains `already_approved` and
+  `approver_not_permitted`, and `approverRefusal` uses `actorChainOverlaps`. `./testing` ships `MemoryApprovalGateDriver`,
+  `MemoryApprovalBindingStoreDriver`, `MemoryActorStatusCheckDriver` and the two port conformance suites. A condition that declares `reads` with no `ApprovalSettingsSource` bound is refused `approval_settings_unavailable` before `needed()` runs.
+  
+  ### Breaking
+  
+  - `ApprovalGate.check` is removed. The gate is now `decide`, `park`, `find`, `begin` and `settle`.
+  - A park from tenant approval rules alone (no declared `approval` stage) now needs an `ApprovalBindingStore` bound.
+  - Who must act before upgrading: today only OS tasks-approvals implements the gate, on unmerged branches
+    (`ServiceApprovalGateDriver` and `RecordsApprovalGateDriver`), and OS content, webhooks and workflow-automations plan to
+    bind it in their specs. Commerce binds none. Each must port to the new port shape and bind the binding store (the
+    Postgres driver in `@stackra/tenancy/node`) before moving to the release that carries this.
+- 5fc0db7: Listeners are audited like actions. With a bound `ListenerAuditTrail` (`@stackra/events/contracts`), every listener delivery that ended writes one entry: the system actor `sys_listener` that handled it, the event's id as correlation, the event's actor as `causedBy`, and what the listener added with the new `ctx.audit(fields)` (never a classified value), inside the delivery's transaction. `@stackra/actions` ships `OutboxListenerAuditTrailDriver`, which writes it as the same `audit_entry.recorded` event an action call's entry is (`key: listener:<Listener>`).
+
+### Patch Changes
+
+- a7eaed4: A pipeline test proves `CallIsolation` receives the verified actor and the resolved scope as given, whatever tenant or
+  scope the call's input names (STA-1823).
+- a8c358a: `MemoryApprovalGateDriver.of` builds the class it is called on, so a test's subclass keeps its overrides.
+- 0b660e0: `CallInput<T>` is now `InputFields<InputOf<T>>` (STA-1694): a field with an initializer is optional in `run()`,
+  `ctx.dispatch`, the queue, the scheduler and the generated client call, as the parse accepts. `handle` still receives the
+  full class. Run `stackra gen` to see it; until then every field stays required.
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [90f55b1]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [79dc807]
+- Updated dependencies [5fc0db7]
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/cache@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/events@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/testing@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,5 +1,55 @@
 # @stackra/payments
 
+## 0.4.0
+
+### Patch Changes
+
+- 6659f80: Declares `@stackra/actions`, which its generated wiring imports, so `stackra gen` no longer refuses the package
+  (STA-1873).
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [4f3f1ed]
+- Updated dependencies [e070131]
+- Updated dependencies [d675b4d]
+- Updated dependencies [3df2c07]
+- Updated dependencies [2d6bb63]
+- Updated dependencies [7dc74f6]
+- Updated dependencies [d9bf3c2]
+- Updated dependencies [90f55b1]
+- Updated dependencies [1c22c33]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [5f63e58]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [8d29426]
+- Updated dependencies [149ca06]
+- Updated dependencies [1567384]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/database@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/integrations@0.4.0
+  - @stackra/market-packs@0.4.0
+  - @stackra/ui@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/money@0.4.0
+  - @stackra/testing@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

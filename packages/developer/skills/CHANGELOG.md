@@ -1,5 +1,27 @@
 # @stackra/skills
 
+## 0.4.0
+
+### Minor Changes
+
+- 1ba7227: `connectors` is a package category: one provider's Integration and Connection classes per package, `packages/connectors/<provider>`, tier lib. `CATEGORIES`, `StackraCategory`, the scaffold and the manifest schema accept it.
+- aa21e6b: Gen reads a consumed service from a sibling folder or from a dependency whose `package.json` has `stackra.kind`
+  `contract` (a producer's published `stackra.manifest.json`, OpenAPI and lang, no source) and whose manifest `member` is
+  the service, never by matching a dependency's member name, which could pick a package's manifest for a service of the
+  same name. A contract package is never hosted. Its client and lang are generated; a listener of its events is refused
+  with `client_event_remote_transport` until the event-transport ADR. `StackraKind` gains `contract` (a new kind, so
+  skills is minor); `stackra add` does not offer it; repo-checks asks a contract package only for its kind and manifest.
+
+### Patch Changes
+
+- ff56870: The container's missing-binding error now ends with a hint to run `stackra gen` first when a test hits it (gen's setup
+  registers the member's wiring). The bundled rule and skills no longer say the v3 packages "do not ship yet", and the
+  migrations skill says to write migrations by hand until `stackra db diff` exists (STA-1808).
+- Updated dependencies [9c8d108]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+  - @stackra/contracts@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

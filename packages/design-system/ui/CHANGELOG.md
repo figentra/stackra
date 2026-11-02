@@ -1,5 +1,45 @@
 # @stackra/ui
 
+## 0.4.0
+
+### Minor Changes
+
+- 149ca06: Add the `@stackra/ui/rich-text` subpath (STA-1895). The web `RichTextEditor` and its `RichTextEditorProps`,
+  `RichTextContribution` and `RichTextToolbarItem` types move there from `@stackra/ui/react`, so no other entry imports
+  `@tiptap/*`. Vite stubs a missing optional peer, so 0.3.0 failed a consumer build that had no TipTap installed with
+  `MISSING_EXPORT` for `CharacterCount`, `Placeholder` and `EditorContent`. The `@tiptap/*` peers stay optional.
+  
+  ### Breaking
+  
+  - `RichTextEditor` and its three types are no longer exported from `@stackra/ui/react`. Change
+    `import { RichTextEditor } from "@stackra/ui/react"` to `import { RichTextEditor } from "@stackra/ui/rich-text"`.
+    Only an app that renders the editor needs the `@tiptap/*` peers.
+
+### Patch Changes
+
+- 1567384: `@stackra/ui/native` loads in an app without `@shopify/react-native-skia`, which stays an optional peer (Expo SDK 57's
+  2.6.2). The Skia-backed charts, maps and the chart export reach Skia and `victory-native` through lazy `require`s the build
+  keeps for Metro, and draw nothing when the app has not installed them (STA-1791).
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/icons@0.4.0
+  - @stackra/tokens@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/i18n@0.4.0
+  - @stackra/shortcuts@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
