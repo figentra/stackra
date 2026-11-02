@@ -9,6 +9,9 @@
  * Boundary: data only. The accent is the brand's neutral steel (ADR 0463, superseding ADR 0319 decision 1; brand
  *          rules §31): the accent, its hover, pressed and soft steps and the focus ring sit at oklch hue 252 and chroma
  *          0.03 or less, with paper or ink on the accent at 4.5:1 or more; the link and the signal stay neutral.
+ *          The champagne core (`core`, `core-strong`, its hover, pressed and soft steps and `core-foreground`) sits in
+ *          this theme's palette only (ADR 0520, brand rules §39): `core` is for large display text and art (3:1 on the
+ *          page), `core-strong` for small text, fills and focus.
  *          Graphite carries the neutral states and, as an alias, the dark `segment` role. The environment banners and the chart set are ADR 0340 decision 9's
  *          tokens. The theme names no product or family (decision 8): the amber bar a mark draws is `amber-strong`.
  *          The display text and the headings (display, h1 to h6 and their Arabic twins) are set in the `display` and
@@ -16,7 +19,8 @@
  *          brand that sets its display faces changes its headings (STA-1386, brand rules §33).
  * Runtime: isomorphic
  * Governing contract: ADR 0302 (Stackra Design System); ADR 0024 (the brand assets stay all rights reserved); ADR 0340
- *          (decisions 8 and 9); ADR 0463 (the neutral steel accent; ADR 0319 decisions 2 and 3 stand).
+ *          (decisions 8 and 9); ADR 0463 (the neutral steel accent; ADR 0319 decisions 2 and 3 stand); ADR 0520 (the
+ *          champagne core).
  */
 import type { ColorToken } from "#contracts/types/color-token.type";
 import { FIELD_BORDER_WIDTH } from "#core/constants/field-border-width.constant";
@@ -102,6 +106,13 @@ export const STACKRA_THEME = defineTheme({
     "accent-pressed": color("oklch(0.45 0.03 252)", "oklch(0.67 0.03 252)"),
     "accent-soft": color("oklch(0.94 0.012 252)", "oklch(0.29 0.015 252)"),
     "accent-soft-foreground": color("oklch(0.4 0.03 252)", "oklch(0.88 0.02 252)"),
+    // ADR 0520 (brand rules §39): the champagne core beside the steel accent; `core` for large display text and art only.
+    core: color("oklch(0.63 0.085 85)", "oklch(0.88 0.055 96)"),
+    "core-strong": color("oklch(0.41 0.08 85)", "oklch(0.88 0.055 96)"),
+    "core-hover": color("oklch(0.37 0.074 85)", "oklch(0.83 0.055 96)"),
+    "core-pressed": color("oklch(0.33 0.066 85)", "oklch(0.78 0.052 96)"),
+    "core-soft": color("oklch(0.95 0.02 85)", "oklch(0.29 0.02 96)"),
+    "core-foreground": INVERSE,
     signal: FOREGROUND,
     "signal-foreground": INVERSE,
     // ADR 0340 decision 8: amber that stands 3:1 off the page in each scheme, under a neutral name (was `cursor`;
