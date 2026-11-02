@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `createConsole(config)`, a console: the registry is read and checked once (declarations, duplicate
- *          names), and `run(argv, ports)` parses, decides the mode, lists, helps, versions or dispatches, renders a
+ *          names), and `run(argv, ports)` routes the invocation to one intent, decides the mode, lists, helps, versions
+ *          or dispatches, renders a
  *          failure as an error screen or a `--json` error, and resolves with the exit code.
  * Boundary: no module's commands live here; they come in `config.commands`. Writes only to `ports`; the container
  *           factory is called only to dispatch a command.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-006 to FR-025; spec 030 Requirements 3 to 7.
+ * Governing contract: STA-1730 spec FR-006 to FR-025; spec 030 Requirements 3 to 7; STA-1966 spec FR-012 to FR-016.
  */
 import { EXIT_CODE } from "#core/constants/exit-code.constant";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
@@ -21,19 +22,15 @@ import { decideGround } from "#core/functions/decide-ground.function";
 import { decideMode } from "#core/functions/decide-mode.function";
 import { defaultsPrompter } from "#core/functions/defaults-prompter.function";
 import { errorCode } from "#core/functions/error-code.function";
-import { findCommand } from "#core/functions/find-command.function";
-import { parseInvocation } from "#core/functions/parse-invocation.function";
 import { renderError } from "#core/functions/render-error.function";
 import { renderHelp } from "#core/functions/render-help.function";
 import { renderList } from "#core/functions/render-list.function";
+import { route } from "#core/functions/route.function";
 import { runCommand } from "#core/functions/run-command.function";
-import { splitInvocation } from "#core/functions/split-invocation.function";
 import { visualBidi } from "#core/functions/visual-bidi.function";
-import type { CommandEntry } from "#core/types/command-entry.type";
 import type { ConsoleApp } from "#core/types/console-app.type";
 import type { ConsoleConfig } from "#core/types/console-config.type";
 import type { ConsolePorts } from "#core/types/console-ports.type";
-import type { ParsedInvocation } from "#core/types/parsed-invocation.type";
 
 /** Who runs the command, for an audit entry: `STACKRA_OPERATOR`, else the login the environment names. */
 const operatorOf = (env: ConsolePorts["env"]) =>
@@ -62,17 +59,8 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
   const baseTheme = config.theme ?? STACKRA_THEME;
 
   const run = async (argv: readonly string[], ports: ConsolePorts): Promise<number> => {
-    const { name: typed, rest } = splitInvocation(argv);
-    let entry: CommandEntry | undefined;
-    let parsed: ParsedInvocation;
-    try {
-      entry = typed === undefined ? undefined : findCommand(typed, registry);
-      parsed = parseInvocation(rest, entry?.structure);
-    } catch (error) {
-      if (!(error instanceof UsageError)) throw error;
-      parsed = { ...parseInvocation(rest), error };
-    }
-    const mode = decideMode(ports, parsed.globals);
+    const intent = route(argv, registry);
+    const mode = decideMode(ports, intent.globals);
     const theme =
       baseTheme.dark !== undefined && decideGround(ports.env) === "dark"
         ? { ...baseTheme, ...baseTheme.dark }
@@ -111,27 +99,30 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       return code;
     };
 
-    if (parsed.error !== undefined) return finish(EXIT_CODE.usage, parsed.error);
-    if (parsed.globals.version) {
+    if (intent.kind === "usage") return finish(EXIT_CODE.usage, intent.error);
+    if (intent.kind === "version") {
       data = { name: config.name, version: config.version };
       if (!mode.json) write([`${painter.bold(theme.name)} ${painter.success(config.version)}`]);
       return finish(EXIT_CODE.success);
     }
-    if (entry === undefined) {
+    if (intent.kind === "list") {
       data = [...new Set(registry.values())]
         .filter((row) => !row.structure.hidden)
         .map((row) => row.structure);
       if (!mode.json) {
-        output.banner();
+        // The banner carries the name and version on a terminal; a pipe gets them as a plain line.
+        if (mode.tty) output.banner();
+        else write([`${theme.name} ${config.version}`, ""]);
         write(renderList([...registry.values()], config.name, painter));
       }
       return finish(EXIT_CODE.success);
     }
-    if (parsed.globals.help) {
-      data = entry.structure;
-      if (!mode.json) write(renderHelp(entry.structure, config.name, painter));
+    if (intent.kind === "help") {
+      data = intent.entry.structure;
+      if (!mode.json) write(renderHelp(intent.entry.structure, config.name, painter));
       return finish(EXIT_CODE.success);
     }
+    const { entry } = intent;
 
     const prompter = mode.interactive
       ? ports.prompter({
@@ -143,7 +134,7 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
     const operator = operatorOf(ports.env);
     const outcome = await runCommand(
       entry,
-      parsed.values,
+      intent.values,
       config,
       ports.signals,
       (signal) => ({
