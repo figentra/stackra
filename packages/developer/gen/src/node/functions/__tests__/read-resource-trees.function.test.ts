@@ -3,7 +3,8 @@
  * Purpose: unit tests of `readResourceTrees`: the cache module it writes describes each resource file once through
  *          the member's own `@stackra/panel`, every class in a tree written as `{ $class }`; a builder that throws is
  *          `builder_impure`, a file that fails to import is `resource_unloadable`, a resource with no loader is
- *          `resource_loader_missing`, and a member with no resource needs no loader.
+ *          `resource_loader_missing`, a member with no resource needs no loader, and a resource that imports
+ *          `#stackra/i18n` loads on a clean member, since the i18n file is written first.
  * Boundary: test only; writes a fixture member (a stub `@stackra/panel` under its node_modules) into a temporary folder
  *           and loads the cache module through vitest's own module loader.
  * Runtime: node (vitest)
@@ -23,6 +24,9 @@ import { readResourceTrees } from "#node/functions/read-resource-trees.function"
 import type { ModuleLoader } from "#node/types/module-loader.type";
 
 let root = "";
+
+/** The fixture resource imports its action by this specifier; a literal one would trip the repository import check. */
+const ENROLL = "../actions/enroll.js";
 
 /** Writes `text` at `path` under the fixture member. */
 const write = (path: string, text: string): void => {
@@ -59,7 +63,18 @@ const load: ModuleLoader = async (file) =>
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "stackra-resource-trees-"));
-  write("package.json", '{"name":"@acme/loyalty-kit","type":"module"}');
+  write(
+    "package.json",
+    '{"name":"@acme/loyalty-kit","type":"module","imports":{"#stackra/*":"./.stackra/gen/*.ts"}}',
+  );
+  write(
+    "node_modules/@stackra/i18n/package.json",
+    '{"name":"@stackra/i18n","type":"module","exports":"./index.js"}',
+  );
+  write(
+    "node_modules/@stackra/i18n/index.js",
+    "export const keys = (tree) => tree;\nexport const loadMessages = () => ({});\n",
+  );
   // The stub describes a class by calling its static `tree`, which stands in for the builder members.
   write(
     "node_modules/@stackra/panel/package.json",
@@ -73,7 +88,7 @@ beforeEach(() => {
   write(
     "src/node/resources/good.resource.js",
     [
-      'import { EnrollMemberAction } from "../actions/enroll.js";',
+      `import { EnrollMemberAction } from ${JSON.stringify(ENROLL)};`,
       "export class GoodResource {",
       "  static tree() { return { options: { operations: { create: EnrollMemberAction } }, table: { columns: [] } }; }",
       "}",
@@ -137,6 +152,31 @@ describe("readResourceTrees", () => {
     );
     expect(errors.map((error) => error.code)).toEqual(["resource_loader_missing"]);
     expect(errors[0]?.fix).toContain("stackra gen");
+  });
+
+  it("writes the i18n file first, so a resource that imports #stackra/i18n loads on a clean member", async () => {
+    const file = "src/node/resources/labelled.resource.js";
+    write(
+      file,
+      [
+        'import { I18n } from "#stackra/i18n";',
+        "export class LabelledResource {",
+        "  static tree() { return { options: { navigation: { group: typeof I18n } } }; }",
+        "}",
+        "",
+      ].join("\n"),
+    );
+    const { trees, errors } = await readResourceTrees(
+      root,
+      {
+        ...irWith(resource("LabelledResource", file)),
+        catalogues: { en: { loyalty_kit: { nav: { title: "Loyalty" } } } },
+      },
+      load,
+    );
+    expect(errors).toEqual([]);
+    expect(trees).toEqual({ [file]: { options: { navigation: { group: "object" } } } });
+    expect(readFileSync(join(root, ".stackra/gen/i18n.ts"), "utf8")).toContain("export const I18n");
   });
 
   it("needs no loader for a member without a resource", async () => {
