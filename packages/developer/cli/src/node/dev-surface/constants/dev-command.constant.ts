@@ -6,15 +6,17 @@
  *          `stackra dev --mobile <app> --os <checkout> [--device <udid>]` (`runDevMobile`), and `stackra dev --product
  *          --os <checkout>`, every surface and mobile app of the root runway at once (`runDevProduct`). Any mode takes
  *          `--tunnel`: the developer machine's Cloudflare Tunnel runs beside it and stops with it (`startTunnel`).
+ *          The member mode runs the quick doctor first (`devReady`) and stops early when the machine is not ready.
  * Boundary: data plus dispatch; a surface flag without `--surface` is a usage error, never ignored.
  * Runtime: node
  * Governing contract: ADR 0436 (decision 6); app-shells section 15 point 2; ADR 0282 (decision 3); ADR 0290
- *                     (decisions 4 and 5).
+ *                     (decisions 4 and 5); STA-1952 spec FR-019.
  */
 import { runDevMobile } from "#node/dev-mobile/functions/run-dev-mobile.function";
 import { runDevProduct } from "#node/dev-product/functions/run-dev-product.function";
 import { runDevSurface } from "#node/dev-surface/functions/run-dev-surface.function";
 import { startTunnel } from "#node/dev-tunnel/functions/start-tunnel.function";
+import { devReady } from "#node/doctor/functions/dev-ready.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommand } from "#node/types/cli-command.type";
@@ -30,13 +32,14 @@ const MEMBER_DEV = toolCommand(
 const SURFACE_FLAGS = ["os", "shell", "shell-origin", "api", "device"] as const;
 
 /** Runs the mode the flags pick. */
-function runMode(context: CliContext): Promise<number> {
+async function runMode(context: CliContext): Promise<number> {
   if (context.values["product"] === true) return runDevProduct(context);
   if (context.values["mobile"] !== undefined) return runDevMobile(context);
   if (context.values["surface"] !== undefined) return runDevSurface(context);
   const stray = SURFACE_FLAGS.find((flag) => context.values[flag] !== undefined);
   if (stray !== undefined)
     throw new CliUsageError(`--${stray} needs --surface <surface>, --mobile <app> or --product`);
+  if (!(await devReady(context.cwd, context.io))) return 1;
   return MEMBER_DEV.run(context);
 }
 
