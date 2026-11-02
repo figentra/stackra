@@ -886,6 +886,9 @@ importers:
       '@stackra/icons':
         specifier: workspace:*
         version: link:../../packages/design-system/icons
+      '@stackra/identity':
+        specifier: workspace:*
+        version: link:../../packages/security/identity
       '@stackra/media':
         specifier: workspace:*
         version: link:../../packages/data/media
@@ -8386,6 +8389,9 @@ importers:
       '@stackra/scope':
         specifier: workspace:*
         version: link:../scope
+      '@stackra/ui':
+        specifier: workspace:*
+        version: link:../../design-system/ui
       '@stackra/validation':
         specifier: workspace:*
         version: link:../../foundation/validation
