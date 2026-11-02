@@ -82,7 +82,7 @@ describe("ActionCommand", () => {
       execute,
     );
     expect(result.exitCode).toBe(0);
-    expect(result.json).toEqual({ frozen: true });
+    expect(result.json).toEqual({ ok: true, data: { frozen: true } });
     expect(execute).toHaveBeenCalledWith(
       FreezeAccountAction,
       { reason: "fraud", days: 3 },
