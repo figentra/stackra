@@ -21,6 +21,9 @@ export interface CommandIo {
   /** How it runs child processes. */
   readonly process: ConsoleProcess;
 
+  /** Migration only: the raw tokens after a passthrough command's name; empty for every other command. */
+  readonly rest: readonly string[];
+
   /** The directory the command works in; never `process.cwd()`, which a local MCP or a test does not share. */
   readonly cwd: string;
 

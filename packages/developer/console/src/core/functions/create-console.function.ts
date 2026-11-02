@@ -211,6 +211,7 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
         prompt,
         process: children,
         cwd: ports.cwd,
+        rest: intent.rest,
         signal,
         verbose: mode.verbose,
         json: mode.json,

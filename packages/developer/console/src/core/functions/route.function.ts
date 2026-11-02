@@ -30,7 +30,7 @@ export function route(
   registry: ReadonlyMap<string, CommandEntry>,
 ): Intent {
   const known = (name: string) => registry.has(name);
-  let { name: typed, rest } = splitInvocation(argv, known);
+  let { name: typed, rest, raw } = splitInvocation(argv, known);
   if (typed === COMPLETE_COMMAND) {
     // What a completion script sends after `--` is the line being typed, kept as it is.
     const dash = rest.indexOf("--");
@@ -58,7 +58,7 @@ export function route(
   let asked = false;
   if (typed === HELP_COMMAND) {
     asked = true;
-    ({ name: typed, rest } = splitInvocation(rest, known));
+    ({ name: typed, rest, raw } = splitInvocation(rest, known));
   }
   let entry: CommandEntry | undefined;
   try {
@@ -66,6 +66,17 @@ export function route(
   } catch (error) {
     if (!(error instanceof UsageError)) throw error;
     return { kind: "usage", globals: parseInvocation(rest).globals, error };
+  }
+  if (entry?.structure.passthrough === true) {
+    // Migration only: the command parses its own flags; the kernel keeps only `--help` before `--`.
+    const head = raw.includes("--") ? raw.slice(0, raw.indexOf("--")) : raw;
+    const globals = {
+      ...parseInvocation([]).globals,
+      help: asked || head.includes("--help") || head.includes("-h"),
+    };
+    return globals.help
+      ? { kind: "help", globals, entry }
+      : { kind: "run", globals, entry, values: {}, rest: raw };
   }
   const parsed = parseInvocation(rest, entry?.structure);
   const { globals } = parsed;
@@ -76,5 +87,5 @@ export function route(
   if (globals.version) return { kind: "version", globals };
   if (entry === undefined) return { kind: "list", globals };
   if (help) return { kind: "help", globals, entry };
-  return { kind: "run", globals, entry, values: parsed.values };
+  return { kind: "run", globals, entry, values: parsed.values, rest: [] };
 }

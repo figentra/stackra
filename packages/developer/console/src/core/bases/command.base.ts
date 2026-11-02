@@ -54,6 +54,7 @@ function read(
     aliases: Object.freeze([...(options.aliases ?? [])]),
     audit: options.audit ?? false,
     bin: options.bin ?? false,
+    passthrough: options.passthrough ?? false,
     examples: Object.freeze([...(options.examples ?? [])]),
     ...(options.group === undefined ? {} : { group: options.group }),
     ...(options.docs === undefined ? {} : { docs: options.docs }),

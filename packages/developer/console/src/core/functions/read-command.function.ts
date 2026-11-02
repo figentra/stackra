@@ -180,6 +180,11 @@ export function readCommand(type: CommandClass): CommandStructure {
     );
   }
 
+  if (options.passthrough && argumentFields.length + optionFields.length > 0)
+    throw new ConsoleDeclarationError(
+      label,
+      "a passthrough command declares no @Argument or @Option; it reads io.rest",
+    );
   const structure: CommandStructure = Object.freeze({
     name: options.name,
     description: options.description,
@@ -187,6 +192,7 @@ export function readCommand(type: CommandClass): CommandStructure {
     aliases: options.aliases,
     audit: options.audit,
     bin: options.bin,
+    passthrough: options.passthrough,
     examples: options.examples,
     ...(options.group === undefined ? {} : { group: options.group }),
     ...(options.docs === undefined ? {} : { docs: options.docs }),

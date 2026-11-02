@@ -63,6 +63,11 @@ Pass `container: () => Container.create(wirings)` to build commands with their c
 a command, never for the list, help or version. A member that runs gen gets its registry from `#stackra/commands`
 (STA-1731); a standalone app lists its classes.
 
+**Migration only:** `Command({ name, description, passthrough: true })` ports a command that still parses its own
+flags. It declares no fields, `io.rest` holds every token after its name raw, and routing, `--help` and errors stay the
+kernel's. It is a state to leave: a CLI pins its remaining list with `passthroughCommands(COMMANDS)` from
+`@stackra/console/testing` until that list is empty (ADR 0500 decision 7, STA-1966).
+
 `help <command>` (or `<command> --help`) prints a command's help and never runs it; an unknown name exits 2 with the
 closest names. Spaced words run a `:`-joined command, longest match first (`acme mcp sync` runs `mcp:sync`).
 `Command({ group, docs, examples })` sets the command's heading in the list and adds examples and a docs link to its

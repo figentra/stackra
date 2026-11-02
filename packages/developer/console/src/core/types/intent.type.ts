@@ -22,6 +22,8 @@ export type Intent =
       readonly globals: GlobalFlags;
       readonly entry: CommandEntry;
       readonly values: Readonly<Record<string, unknown>>;
+      /** The raw tokens of a passthrough command; empty otherwise. */
+      readonly rest: readonly string[];
     }
   | { readonly kind: "usage"; readonly globals: GlobalFlags; readonly error: UsageError }
   | {

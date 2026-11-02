@@ -40,6 +40,9 @@ export interface CommandStructure {
   /** Complete invocations its help shows. */
   readonly examples: readonly string[];
 
+  /** Migration only: it takes its tokens raw in `io.rest` and declares no fields. */
+  readonly passthrough: boolean;
+
   /** Its positional fields, in order. */
   readonly arguments: readonly CommandField[];
 

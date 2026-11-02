@@ -41,4 +41,12 @@ export interface CommandOptions {
    * read-only hint when `{ readOnly: true }`. Never a tenant MCP tool.
    */
   readonly tool?: boolean | { readonly readOnly: boolean };
+
+  /**
+   * Migration only (ADR 0500 decision 7, STA-1966): the command declares no fields, and `io.rest` holds every token
+   * after its name, raw, for a ported `run(args)` that still parses its own flags. Routing, `--help` and errors stay the
+   * kernel's. A CLI is not done while any of its commands is passthrough; its tests pin the remaining list with
+   * `passthroughCommands`.
+   */
+  readonly passthrough?: boolean;
 }

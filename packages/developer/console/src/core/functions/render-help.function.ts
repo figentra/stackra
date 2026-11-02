@@ -43,6 +43,7 @@ export function renderHelp(
       const name = `<${field.flag}>${field.list ? "..." : ""}`;
       return field.required ? name : `[${name}]`;
     }),
+    ...(structure.passthrough ? ["[arguments...]"] : []),
   ].join(" ");
   const rows: [string, string][] = [
     ...structure.options.map((field): [string, string] => [optionLabel(field), describe(field)]),
