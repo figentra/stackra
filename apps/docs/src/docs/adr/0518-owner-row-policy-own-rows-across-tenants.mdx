@@ -1,17 +1,17 @@
 ---
 title: "0518 — An owner-row policy lets a user read their own rows across tenants under row-level security"
-description: "Proposed · 2026-11-02"
+description: "Accepted · 2026-11-02"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0518, a second row-level security policy that a tenant-owned table may opt into, letting a signed-in user read the rows about themselves in every tenant they belong to (their memberships first), through queries that declare an owner-row read, run read-only and with no tenant, while every write stays tenant-scoped. Boundary: decision text only; the build is STA-1964 and waits for the owner's acceptance. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0239, 0495, 0210, 0211, 0212, 0098. */}
+{/* Stackra file contract. Purpose: ADR 0518, a second row-level security policy that a tenant-owned table may opt into, letting a signed-in user read the rows about themselves in every tenant they belong to (their memberships first), through queries that declare an owner-row read, run read-only and with no tenant, while every write stays tenant-scoped. Boundary: decision text only; the build is STA-1964. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0239, 0495, 0210, 0211, 0212, 0098. */}
 
 <Note>
-  Proposed (STA-1964). Amends
+  Accepted by the owner on 2026-11-02 (STA-1964). Amends
   [0495](/adr/0495-every-call-and-background-unit-runs-in-a-transaction-local-isolation-context) (a
   new transaction-local setting, `app.user_id`, and an owner-row call mode) and
   [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) (a second,
-  read-only policy beside the equality policy, on tables that opt in). Nothing may rely on it until
-  it is accepted.
+  read-only policy beside the equality policy, on tables that opt in). The build is STA-1964, in the
+  Stackra phase after Runway.
 </Note>
 
 ## Context
@@ -94,7 +94,7 @@ moves the guarantee back into the database.
 - planned — `tools/scripts/session-settings.mjs` allows `app.user_id` only in the isolation driver.
 - planned — gen's isolation test emitter (`packages/developer/gen/src/core/functions/emit-isolation-test.function.ts`)
   writes the five cases of decision 5 for every `OwnedByUser` model.
-- Until the build, nothing checks this page: it is a proposal.
+- Until the build (STA-1964), nothing checks this page.
 
 ## Supersedes and sources
 

@@ -33,8 +33,11 @@
  *          query key) with its refusals (ADR 0470, stackra-389).
  *          It lists each console `Command` in `commands` (`commandsOf`, own then hosted, `from`) with `kind_path`,
  *          `command_collision` and `identity_missing` (ADR 0506, STA-1731).
+ *          It lists each panel resource in `ui.resources` (`resourcesOf`: its recorded tree by `<module>.<model>`, with
+ *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
+ *          `resource_duplicate` (STA-1947).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
- *           (ui, settings, migrations, infra, ...) are written by those targets when they land.
+ *           (settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and 36); ADR 0140 (refusal
  *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19); ADR 0342
@@ -78,6 +81,7 @@ import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
+import { resourcesOf } from "#core/functions/resources-of.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
@@ -1129,6 +1133,11 @@ export function buildManifest(ir: MemberIR): {
   const commands = commandsOf(ir);
   errors.push(...commands.errors);
 
+  // The panel resources with their recorded trees and owning modules, own then hosted (ADR 0307, STA-1947).
+  const ui = resourcesOf(ir, sections.actions);
+  errors.push(...ui.errors);
+  const resources = Object.keys(ui.resources).length > 0 ? ui.resources : undefined;
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1152,6 +1161,7 @@ export function buildManifest(ir: MemberIR): {
       : {}),
     ...(reports.reports.length > 0 ? { reports: [...reports.reports] } : {}),
     ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
+    ...(resources === undefined ? {} : { ui: { resources } }),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

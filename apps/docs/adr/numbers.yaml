@@ -1539,6 +1539,11 @@
   issue: STA-1953
 "0517":
   slug: where-services-and-their-resources-run
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-1965
+"0518":
+  slug: owner-row-policy-own-rows-across-tenants
+  status: accepted
+  owner: os-backend
+  issue: STA-1964

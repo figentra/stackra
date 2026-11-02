@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the Pulumi program of the testbed (STA-1626): the plan from this stack's config and every resource it holds,
  *          with the ids the owner copies (instance role ARN, pipeline ARN, group names) exported as stack outputs.
- * Boundary: config keys `identityId`, `ciGateProjectId`, `sshCidrs` (required), `groups` (false for the first apply,
+ * Boundary: config keys `identityId`, `ciGateProjectId`, `sshCidrs` (optional: the `--ssh-direct` fallback's port-22
+ *           allowlist; absent, no inbound rule and SSM only), `groups` (false for the first apply,
  *           before the first AMI exists), `heavyMin` and `lightMin` (the stand-up and switch phases of the migration).
  *           Imports the built package by its own name, so the package must be built first.
  * Runtime: node (Pulumi CLI)
@@ -26,7 +27,7 @@ const plan = testbedPlan({
 });
 
 export const testbed = awsTestbed(plan, {
-  allowedCidrs: config.requireObject("sshCidrs"),
+  allowedCidrs: config.getObject("sshCidrs") ?? [],
   lockfilePath: fileURLToPath(new URL("../../../../pnpm-lock.yaml", import.meta.url)),
   groups: config.getBoolean("groups") ?? true,
 });
