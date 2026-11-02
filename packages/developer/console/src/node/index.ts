@@ -8,6 +8,7 @@
  */
 export { InkRendererDriver } from "#node/drivers/ink-renderer.driver";
 export { NodeProcessRunnerDriver } from "#node/drivers/node-process-runner.driver";
+export { TabCompletionsDriver } from "#node/drivers/tab-completions.driver";
 export { clackPrompter } from "#node/functions/clack-prompter.function";
 export { nodePorts } from "#node/functions/node-ports.function";
 export { terminalPrompter } from "#node/functions/terminal-prompter.function";

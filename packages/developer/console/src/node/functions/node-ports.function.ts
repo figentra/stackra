@@ -12,6 +12,7 @@ import type { ConsoleSignal } from "#contracts/types/console-signal.type";
 import type { ConsolePorts } from "#core/types/console-ports.type";
 import { InkRendererDriver } from "#node/drivers/ink-renderer.driver";
 import { NodeProcessRunnerDriver } from "#node/drivers/node-process-runner.driver";
+import { TabCompletionsDriver } from "#node/drivers/tab-completions.driver";
 import { clackPrompter } from "#node/functions/clack-prompter.function";
 
 /**
@@ -44,5 +45,6 @@ export function nodePorts(): ConsolePorts {
     prompter: () => clackPrompter(process.stdin, process.stdout),
     process: () => new NodeProcessRunnerDriver(),
     renderer: (context) => new InkRendererDriver(context),
+    completions: () => new TabCompletionsDriver(),
   };
 }

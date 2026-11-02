@@ -7,6 +7,7 @@
  * Governing contract: STA-1730 spec FR-027.
  */
 import type { CommandAudit } from "#contracts/ports/command-audit.port";
+import type { Completions } from "#contracts/ports/completions.port";
 import type { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
 import type { ProcessRunner } from "#contracts/ports/process-runner.port";
 import type { ConsoleSignal } from "#contracts/types/console-signal.type";
@@ -45,6 +46,9 @@ export interface TestRunOptions {
 
   /** The run's working directory (`io.cwd`); `/work` by default. */
   readonly cwd?: string;
+
+  /** The Tab completions `completion` and `complete` use; none when absent. */
+  readonly completions?: Completions;
 
   /** Makes the run's renderer, to test a driver of your own; the text driver when absent. */
   readonly renderer?: ConsolePorts["renderer"];

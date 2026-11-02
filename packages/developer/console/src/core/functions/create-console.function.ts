@@ -13,6 +13,7 @@ import { EXIT_CODE } from "#core/constants/exit-code.constant";
 import { TextRendererDriver } from "#core/drivers/text-renderer.driver";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 import { SYMBOLS } from "#core/constants/symbols.constant";
+import { CommandError } from "#core/errors/command-error.error";
 import { PromptCancelledError } from "#core/errors/prompt-cancelled.error";
 import { UsageError } from "#core/errors/usage.error";
 import { askMissing } from "#core/functions/ask-missing.function";
@@ -144,6 +145,29 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       data = intent.entry.structure;
       if (!mode.json) renderer.help(intent.entry.structure, config.name);
       return finish(EXIT_CODE.success);
+    }
+    if (intent.kind === "completion" || intent.kind === "complete") {
+      const completions = ports.completions?.();
+      if (completions === undefined)
+        return finish(
+          EXIT_CODE.failure,
+          new CommandError("Tab completion is not available here", {
+            why: "no Completions driver is bound to this run",
+            fix: "pass nodePorts() from @stackra/console/node",
+          }),
+        );
+      const definitions = [...new Set(registry.values())].map((row) => row.structure);
+      if (intent.kind === "completion") {
+        const script = completions.script(intent.shell, config.name, definitions);
+        data = { shell: intent.shell, script };
+        if (!mode.json) ports.stdout.write(script);
+        return finish(EXIT_CODE.success);
+      }
+      // The shell reads one `value<TAB>description` line per candidate, then the directive (4: no file completion).
+      for (const { value, description } of completions.complete(intent.words, definitions))
+        ports.stdout.write(`${value}\t${description}\n`);
+      ports.stdout.write(":4\n");
+      return EXIT_CODE.success;
     }
     const { entry } = intent;
 

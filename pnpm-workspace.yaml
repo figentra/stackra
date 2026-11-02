@@ -92,6 +92,9 @@ catalog:
   # @stackra/console's live Renderer driver (progress, dashboards, running checks), imported only when a live part
   # animates (same approval). MIT. Ink 8 needs react >= 19.3, taken from catalog:frontend.
   ink: 8.0.0
+  # @stackra/console's Completions driver: bash, zsh and fish scripts and Tab answers (same approval). MIT; its cac,
+  # citty and commander peers are optional and unused.
+  "@bomb.sh/tab": 0.0.22
 
 catalogs:
   # Toolchain that builds TypeScript output — a different risk/cadence than lint/format/test tools.

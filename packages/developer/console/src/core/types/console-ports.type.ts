@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-012, FR-020 to FR-023; STA-1966 spec FR-001, FR-007 and FR-029.
  */
+import type { Completions } from "#contracts/ports/completions.port";
 import type { ProcessRunner } from "#contracts/ports/process-runner.port";
 import type { Renderer } from "#contracts/ports/renderer.port";
 import type { Prompter } from "#contracts/types/prompter.type";
@@ -50,4 +51,7 @@ export interface ConsolePorts {
 
   /** Makes the run's process runner; without one, `io.process.run` refuses. */
   readonly process?: () => ProcessRunner;
+
+  /** Makes the run's Tab completions; without one, `completion` and `complete` refuse. */
+  readonly completions?: () => Completions;
 }

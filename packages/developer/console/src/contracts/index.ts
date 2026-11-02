@@ -8,6 +8,7 @@
  */
 export type { ArgumentOptions } from "#contracts/types/argument-options.type";
 export { CommandAudit } from "#contracts/ports/command-audit.port";
+export { Completions } from "#contracts/ports/completions.port";
 export { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
 export { ProcessRunner } from "#contracts/ports/process-runner.port";
 export { Renderer } from "#contracts/ports/renderer.port";
@@ -32,6 +33,7 @@ export type { BreakGlassSession } from "#contracts/types/break-glass-session.typ
 export type { CommandAuditEntry } from "#contracts/types/command-audit-entry.type";
 export type { CommandField } from "#contracts/types/command-field.type";
 export type { CommandOptions } from "#contracts/types/command-options.type";
+export type { CompletionCandidate } from "#contracts/types/completion-candidate.type";
 export type { CommandStructure } from "#contracts/types/command-structure.type";
 export type { ConsoleSignal } from "#contracts/types/console-signal.type";
 export type { ConsoleTheme } from "#contracts/types/console-theme.type";
