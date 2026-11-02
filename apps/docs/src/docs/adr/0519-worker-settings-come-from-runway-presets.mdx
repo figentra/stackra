@@ -1,0 +1,150 @@
+---
+title: "0519 — Worker settings come from runway presets; one owner per Cloudflare zone"
+description: "Accepted · 2026-11-02"
+---
+
+{/* Stackra file contract. Purpose: ADR 0519, where every Cloudflare Worker setting is decided: code facts in the member's wrangler.jsonc, every operational setting in runway.yaml through a named preset and per-member overrides, rendered and applied by Runway's cloudflare-workers provider as versioned releases, checked nightly for drift, and the zone-wide edge policy owned by exactly one root runway per zone. Boundary: decision text only; the schema, presets and pull requests are in stackra-notes plans/runway-cloudflare-2026-11-02 and STA-1986 to STA-1997. Runtime: documentation. Governing contract: ADR template; ADR 0168, 0171, 0173, 0175, 0284, 0289, 0290, 0352, 0437, 0468. */}
+
+<Note>
+  Accepted by the owner on 2026-11-02 (STA-1986), with the ten answers of the Runway × Cloudflare
+  analysis. It narrows decision 8 of
+  [0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker) by a dated note on that
+  page, and builds on
+  [0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
+  (Runway is the one deploy tool, Pulumi its infrastructure engine),
+  [0175](/adr/0175-edge-domains-and-tls) (the edge),
+  [0290](/adr/0290-dev-environment-and-cloudflare-services) (Access and the Free plan),
+  [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) (secrets) and
+  [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)
+  (production waits on the owner's approval).
+</Note>
+
+## Context
+
+A read of every Worker on 2026-11-02 found the following:
+
+- **Runway controls none of the 75 Worker and zone settings fully, and only 20 partly.** The two Workers keys in
+  `runway.yaml`, `compatibilityDate` and `observability.headSamplingRate`, are set but nothing reads them.
+- **Settings live in two places.** Each Worker's settings are in a hand-written `wrangler.jsonc` (the carve-out of
+  0284 decision 8) or exist only in the dashboard.
+- **Four Workers deploy through three paths:** the reusable provider, two standalone jobs, and a script in the OS
+  repository.
+- **What that leaves broken:**
+  - one production Worker has error tracking off;
+  - the OS edge has no logs at all;
+  - no deployment records its commit;
+  - secrets are set after each deploy.
+- **The zone `figentra.com` is weak and has no single owner.** It has no HSTS, DNSSEC or CAA, and twelve root
+  runways each declare their own copy of its policy.
+
+Generating the whole `wrangler.jsonc` from `runway.yaml` was weighed and rejected: `wrangler dev` would then depend on
+gen, and the bindings change with the code anyway.
+
+## Decision
+
+1. **Two homes, no key in both.**
+   - The member's `wrangler.jsonc` holds the **code facts**: `name`, `main`, `assets`, every binding (with
+     placeholder ids), the `vars` the code reads, `triggers.crons`, `rules`, and Durable Object `exports` or
+     `migrations`.
+   - `runway.yaml` (`targets.cloudflare-workers`) holds every **operational setting**:
+     - `account_id`, `compatibility_date` and `compatibility_flags`;
+     - `workers_dev`, `preview_urls` and `previews`, and custom domains and routes;
+     - `observability` (logs, traces, sampling, Issues, `redact_query_string`);
+     - `limits`, `placement`, `cache`, `logpush`, `tail_consumers`, `upload_source_maps`, `keep_vars`;
+     - secret names, the deployment message, the rollout plan, and Access.
+2. **Presets.**
+   - A Worker member names one preset: `public-site`, `api`, `internal-tool`, `cache` or `edge`. It sets only what
+     differs.
+   - Runway merges, later layers winning key by key: its built-in base, the preset, the repository's
+     `targets.cloudflare-workers.defaults`, the member, and the environment.
+   - **The base for every Worker:**
+     - logs with invocation logs, and Issues on;
+     - source maps uploaded, query strings redacted, Workers Cache off;
+     - no `workers.dev` URL, no dashboard-kept vars;
+     - the full commit SHA as the deployment message.
+3. **One renderer, versioned releases.** The `cloudflare-workers` provider (0352 decision 3) renders one wrangler
+   config per member and environment. It then:
+   - builds only that member;
+   - uploads a version **with its secrets** from Infisical (0173);
+   - smoke-tests the version before traffic moves;
+   - rolls it out in steps where the preset says so: gradual for production `api` and `edge`, all at once for the
+     rest;
+   - records the version id, so a rollback is to an exact version.
+
+   A version carrying a Durable Object migration deploys at 100%, as Cloudflare requires. Production still waits on
+   the owner's approval (0468).
+
+4. **Settings wrangler doesn't carry are Pulumi resources** in `@stackra/infra-cloudflare`, applied by
+   `stackra runway infra` (0352 decision 4): Access applications for `internal-tool` members and for Version URLs,
+   and Logpush jobs and telemetry destinations once a backend is named. The provider refuses to deploy an
+   `internal-tool` member whose Access application is missing.
+5. **One owner per zone.**
+   - `providers.cloudflare.zones.<zone>` names the zone's `plan` and `policy`, a zone preset (`baseline`, then
+     `strict` from Pro).
+   - Exactly one root runway sets `owner: true`; every other repository only reads the zone id.
+   - Core owns `figentra.com`, and the stacks repository `figentra/infra` applies it.
+   - `plan` decides what the policy may ask for, and the schema refuses a setting the plan doesn't have.
+   - `edge` keeps only the host facts a product owns: `apiHost`, `analyticsProxy`, and per-host rate limits and WAF
+     skips.
+6. **The `baseline` zone policy for `figentra.com`:**
+   - SSL Full (strict), Always Use HTTPS, TLS 1.2 minimum, TLS 1.3;
+   - HSTS for one year, without includeSubDomains or preload;
+   - Automatic HTTPS Rewrites, DNSSEC, and CAA for Cloudflare's CAs;
+   - the plan's managed WAF ruleset and one coarse per-IP rate limit;
+   - bots off until the plan allows per-host handling.
+
+   The zone stays on Free until there are paying users, then moves to Pro (amends nothing in 0290 decision 13; it
+   names the trigger).
+
+7. **Drift is read-only.** `stackra runway drift` compares the live Worker and zone settings with the rendered
+   config, using a read-only token (`CLOUDFLARE_API_TOKEN_READ`). It runs nightly and opens one issue per drifted
+   Worker, and never changes anything. The fix is the next deploy or a `runway.yaml` change.
+8. **Least-privilege tokens.** Each repository deploys with its own account token, scoped to its Workers (Editor)
+   plus Workers Routes Write on its zones. The single broad `CLOUDFLARE_API_TOKEN` retires. The owner creates the
+   tokens; their names are in `secrets.ci`.
+9. **No log export yet.** Workers Logs, kept 7 days, and Issues cover today's needs; `logpush` stays off.
+   `member.observability.export` is reserved for when a backend is named.
+
+## Consequences
+
+- **Easier:**
+  - a Worker is five to nine lines of YAML;
+  - a new security default reaches every Worker in one reviewed change;
+  - every deployment traces to a commit and rolls back to an exact version;
+  - the dashboard stops being a source of truth.
+- **Harder:**
+  - a code change that needs a new operational setting touches two files;
+  - the provider grows a renderer, a rollout loop and a drift reader;
+  - production `api` and `edge` deploys take about ten minutes longer.
+- **Chores:**
+  - the owner creates the read-only and scoped tokens, and the DNSSEC DS record at the registrar;
+  - release operations bumps `compatibilityDate` on purpose, a few times a year.
+- **Migration:**
+  - `deploy-registry.yml`, `deploy-turbo-cache.yml` and the OS `edge.yml` become thin callers of the provider;
+  - the twelve copied zone blocks are removed from product root runways;
+  - each step is its own pull request (STA-1987 to STA-1997).
+
+## Enforcement
+
+- planned — `pnpm validate` (`checkRunwayFiles`) refuses:
+  - an operational key in a member's `wrangler.jsonc`;
+  - a `compatibility_date` that differs from the root's;
+  - a queue consumer without a dead-letter queue;
+  - an `internal-tool` member without `access` (STA-1989).
+- planned — the runway schema refuses an unknown preset, an unknown Worker key, and a zone setting its `plan` doesn't
+  have (STA-1988, STA-1993).
+- planned — `runway-drift.yml` fails nightly on any drift (STA-1992).
+- Until those land, nothing checks this; the hand-written `wrangler.jsonc` files are the carve-out of 0284
+  decision 8 as narrowed here.
+
+## Supersedes and sources
+
+Supersedes: none. Narrows: 0284 decision 8, by a dated note on that page.
+
+Sources:
+
+- the Runway × Cloudflare analysis in `stackra-notes/plans/runway-cloudflare-2026-11-02/` (settings matrix, presets,
+  current state, spec);
+- the owner's "Accept all" of 2026-11-02, relayed by the leader;
+- wrangler 4.148's `config-schema.json`, and Cloudflare's Workers, WAF, rate-limiting and Access documentation of
+  2026-11-02.

@@ -12,6 +12,7 @@
  * Governing contract: ADR 0302 (decision 3); ADR 0329 (motion layer); wave 3c mobile interactions (owner approval
  *          2026-10-28); WCAG 2.2 SC 2.3.3, 4.1.3.
  */
+import { heroButtonVariant } from "#react/button/hero-button-variant.function";
 import { Button as HeroButton, Spinner, cn } from "@heroui/react";
 import { type ReactElement, useEffect, useRef, useState } from "react";
 
@@ -54,7 +55,7 @@ export function MorphButton({
   const words = labels[shown] ?? labels.idle;
   const isRound = shown === "loading" || shown === "success";
   const takesPress = shown === "idle" || shown === "error";
-  const isSolid = variant === "primary" || variant === "danger";
+  const isSolid = variant === "primary" || variant === "danger" || variant === "core";
 
   useEffect(() => {
     if (state !== "success") return undefined;
@@ -81,7 +82,7 @@ export function MorphButton({
       <HeroButton
         {...rest}
         ref={ref}
-        variant={variant === "glass" ? "ghost" : variant}
+        variant={heroButtonVariant(variant)}
         size={size}
         isDisabled={isDisabled ?? false}
         fullWidth={isFullWidth ?? false}
@@ -91,6 +92,7 @@ export function MorphButton({
         className={
           cn(
             variant === "glass" && "button--glass",
+            variant === "core" && "button--core",
             "h-[var(--morph-h)] gap-0 data-[pending=true]:opacity-100 transition-[padding,border-radius,background-color,color,border-color] motion-reduce:transition-none",
             ROUND[size],
             motion === "full" ? grow : fade,

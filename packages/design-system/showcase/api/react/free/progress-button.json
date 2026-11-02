@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "6f25c3a9a8e7ad55",
+    "hash": "4dca558ecb56b538",
     "propsFiles": ["ui/src/react/progress-button/progress-button.props.ts"]
   },
   "importLine": "import { ProgressButton } from \"@stackra/ui/react\";",
@@ -129,7 +129,7 @@
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\""
+          "type": "\"secondary\" | \"tertiary\" | \"ghost\" | \"primary\" | \"outline\" | \"danger\" | \"danger-soft\" | \"glass\" | \"core\""
         },
         {
           "description": "True to refuse presses and show the disabled style; the button leaves the tab order on web.",
@@ -159,6 +159,14 @@
           "required": false,
           "source": "stackra",
           "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "default": "default",
+          "description": "The corner: the theme's own (`default`) or a full pill (`pill`). Defaults to `default`.",
+          "name": "shape",
+          "required": false,
+          "source": "stackra",
+          "type": "\"default\" | \"pill\""
         },
         {
           "description": "The whole action: its id, words, icon, binding, handler, `when` and permission, defined once.",

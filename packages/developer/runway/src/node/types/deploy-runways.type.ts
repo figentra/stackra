@@ -15,15 +15,27 @@ export interface DeployRunways {
   /** The root `runway.yaml`. */
   readonly root: {
     readonly environments?: Readonly<
-      Record<string, { readonly destinations?: Readonly<Record<string, string>> } | undefined>
+      Record<
+        string,
+        | {
+            readonly destinations?: Readonly<Record<string, string>>;
+            /** The Encore Cloud environment block; `environment` names it when it differs from the runway's. */
+            readonly encore?: { readonly environment?: string };
+          }
+        | undefined
+      >
     >;
     readonly providers: {
       readonly github: { readonly org: string; readonly repo: string };
       readonly infisical?: {
+        readonly domain?: string;
+        readonly workspace?: string;
         readonly environments?: Readonly<Record<string, string>>;
         readonly paths?: Readonly<Record<string, string>>;
       };
     };
+    /** The mobile apps, by app member folder name. */
+    readonly mobile?: Readonly<Record<string, unknown>>;
     readonly targets?: Readonly<Record<string, { readonly workflows?: Workflows } | undefined>>;
     readonly secrets?: { readonly defaultPath?: string; readonly ci?: readonly string[] };
     readonly release?: { readonly buildOrder?: readonly string[] };
@@ -31,6 +43,8 @@ export interface DeployRunways {
   /** Each member runway, by member folder name. */
   readonly members: readonly {
     readonly member: string;
+    /** The member root it sits under (`services`, `workers`, `apps`); its runtime follows from it. */
+    readonly folder?: string;
     readonly runway: {
       readonly secrets?: readonly string[];
       readonly environments?: Readonly<

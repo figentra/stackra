@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "79d991409ec7d91b",
+    "hash": "583be13e5a9611f1",
     "propsFiles": [
       "ui/src/react/filter-bar/filter-bar.props.ts",
       "ui/src/react/filter-bar/filter-editor.props.ts",
@@ -140,14 +140,14 @@
       "name": "TamoFilterAsk",
       "props": [
         {
-          "description": "",
+          "description": "The slot `useTamo` returned for the filter box.",
           "name": "slot",
           "required": true,
           "source": "stackra",
           "type": "TamoSlot"
         },
         {
-          "description": "",
+          "description": "The collection whose filters the proposal sets.",
           "name": "collection",
           "required": true,
           "source": "stackra",
