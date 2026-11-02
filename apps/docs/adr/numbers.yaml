@@ -1539,6 +1539,6 @@
   issue: STA-1953
 "0517":
   slug: where-services-and-their-resources-run
-  status: reserved
+  status: accepted
   owner: claude
   issue: STA-1965
