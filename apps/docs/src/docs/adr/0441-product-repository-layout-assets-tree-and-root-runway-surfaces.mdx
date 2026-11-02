@@ -1,6 +1,6 @@
 ---
 title: "0441 — Product repository layout: the assets tree, root runway surfaces and the brand kit in CI"
-description: "Proposed · 2026-10-26"
+description: "Proposed, amended by 0515 · 2026-10-26"
 ---
 
 <Note>
@@ -13,6 +13,13 @@ description: "Proposed · 2026-10-26"
   [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells),
   [0439](/adr/0439-mobile-apps-from-one-os-template-with-capability-flags) and
   [0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge).
+</Note>
+
+<Note>
+  Amended 2026-11-02 (STA-1952) by [0515](/adr/0515-stackra-create-and-the-published-starter)
+  decision 6, in scope only. Decision 2 (no `apps/` folder by default) does not apply to a
+  standalone Stackra app made by `stackra create`: its minimal profile ships an `apps/console`
+  member, because such an app has no OS shell. Figentra products are unchanged.
 </Note>
 
 ## Context

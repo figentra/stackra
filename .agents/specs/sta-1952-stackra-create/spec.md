@@ -192,7 +192,7 @@ new module's endpoints.
 
 ## Open questions _(for /flow-clarify)_
 
-1. **App member in the template** (with the owner): the template follows ADR 0441 (no app members; surfaces built by
+1. **App member in the template** (decided 2026-11-02 by the owner: an `apps/console` member in the minimal profile only, ADR 0515 decision 6): the template follows ADR 0441 (no app members; surfaces built by
    Runway around packages, `os/console@3`). The phase 1 console needs an `apps/console` member, in the minimal profile
    only. ADR 0441 governs Figentra products, which run in OS shells; a standalone Stackra app has no OS shell, and the
    shell needs an OS checkout, so it cannot run from an empty folder. Recommendation: an app member. `apps/` is not

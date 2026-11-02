@@ -1,0 +1,121 @@
+---
+title: "0515 — `stackra create` and the published starter"
+description: "Accepted · 2026-11-02"
+---
+
+{/* Stackra file contract. Purpose: ADR 0515 (Accepted 2026-11-02, STA-1952), the owner's decision that `stackra create <dir>` is a command of @stackra/cli that makes a working standalone Stackra app in an empty folder; the starter is the npm package @stackra/starter on the Stackra registry, built from figentra/stackra-template and version-locked to the CLI; one template holds profiles (minimal, full); the pnpm-only workspace; the five questions and their flags; gen output shown as a tree; and the minimal profile's apps/console member, which narrows ADR 0441 decision 2 in scope only. Boundary: decision text only; the command, the template profiles and the create-smoke job are built by the STA-1952 pull requests in the order of the plan. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0001, 0091, 0124, 0294, 0295, 0374, 0441, 0453, 0461, 0500, 0506. */}
+
+<Note>
+  Accepted 2026-11-02. The owner decided it through the leader (STA-1952). Number 0515 was reserved
+  on main through `pnpm adr:reserve` (stackra#249). It narrows the scope of
+  [0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces) decision 2 for
+  standalone Stackra apps, by a Note there. It supersedes nothing.
+</Note>
+
+## Context
+
+Phase 1 of the engine proof needs one command that turns an empty folder into a working Stackra app. Today
+`stackra-console create` writes only a standalone console (CLI) app ([0506](/adr/0506-console-command-kind)). No command
+writes a web app with a service. The starter must match the CLI that writes it. A developer must not need access to a
+private repository to get it.
+
+[0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces) says a product repository has no app
+member. That rule is written for Figentra products, which run inside OS shells. A standalone Stackra app has no OS
+shell. The shell needs an OS checkout, so it cannot run from an empty folder. Such an app needs its own console.
+
+## Decision
+
+1. **`stackra create` is a command of `@stackra/cli`.** `stackra create <directory>` and
+   `npx @stackra/cli create <directory>` run the same command. It is the "laravel new" for a standalone Stackra app.
+   Figentra OS products come later, through the OS console and the Control Plane, on the same engine.
+
+2. **It reuses the console flow and the one prompter.** It keeps the flow of `stackra-console create`: the banner, the
+   refusal of a non-empty folder, one question per option, and the task lines. It uses the `@stackra/console` prompter,
+   so there is one prompter. `stackra-console create` stays for console (CLI) apps.
+
+3. **The starter is the npm package `@stackra/starter`.** The template's own release packs `figentra/stackra-template`
+   as `@stackra/starter`, version-locked to the `@stackra/*` line it pins. `create` fetches the version equal to its own
+   CLI version from the Stackra registry. It checks the registry's SHA-512 integrity. Reads of `@stackra` are open
+   ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine) decision
+   10), so no token, git or GitHub access is needed. `--starter <dir|tgz>` reads a local starter for pre-release checks.
+
+   Rejected: a git clone. It follows `main`, not the CLI's release, and it needs repository access. Also rejected: a
+   GitHub release tarball. It has the same access problem, and it is a second publishing channel.
+
+4. **The one-liner names the registry.** `@stackra` is not on npmjs. The documented command is
+   `npx --@stackra:registry=https://npm.stackra.figentra.com/ @stackra/cli create acme`. `create` writes the same scope
+   line into the new app's `.npmrc`.
+
+5. **One template, profiles.** The template holds `stackra.starter.yaml`. It names profiles as path filters, never as
+   copies:
+   - `minimal`: the web console, one service with one module, and no docs;
+   - `full`: the whole template.
+
+   The template's CI creates an app from each profile on every pull request, so neither profile drifts.
+
+6. **The minimal profile has an app member.** The minimal profile includes `apps/console`. This narrows
+   [0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces) decision 2 in scope only. That
+   decision still governs Figentra products, which run inside OS shells whose surfaces Runway builds. A standalone
+   Stackra app made by `create` has no OS shell, and the shell needs an OS checkout that an empty folder does not have,
+   so the app ships its own console. The full profile keeps the template's OS-product shape: surfaces in `runway.yaml`
+   and no app member.
+
+7. **The workspace is pnpm only.** The workspace needs pnpm catalogs with `catalogMode: strict`
+   ([0001](/adr/0001-monorepo-layout)). The package-manager question shows its one choice, pnpm.
+
+8. **The questionnaire asks five questions, and each has a flag.**
+
+   | Question                | Flag                   | Default         |
+   | ----------------------- | ---------------------- | --------------- |
+   | What is the app called? | `--name`               | the folder name |
+   | Which npm scope?        | `--scope`              | `@<name>`       |
+   | Which edition?          | `--edition free\|pro`  | `free`          |
+   | Any optional packages?  | `--packages a,b\|none` | none            |
+   | Which package manager?  | `--pm`                 | `pnpm`          |
+
+   `pro` is offered only when `STACKRA_LICENCE_TOKEN` is set. The token is never printed. It goes only to the registry
+   origin, as `stackra add` already sends it ([0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)).
+   `--yes` takes every default. Without a terminal, nothing is asked.
+
+9. **Gen output is shown as a tree.** After gen runs, `create` prints the paths it wrote, grouped by member and by
+   generated kind. Each line has a count. `--verbose` lists every file. `@stackra/gen` does not change for this. The tree
+   is printed by `@stackra/cli`, and gen's behaviour is kept ([0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra)
+   decision 7).
+
+## Consequences
+
+- A developer starts from an empty folder with one command. Nothing needs repository access.
+- The starter and the CLI move together. A CLI release needs a starter of the same version. An older CLI does not write
+  a newer starter. When no matching starter exists, `create` refuses and prints the fix.
+- The template gains a profile file and a publish step. Its CI builds both profiles on every pull request.
+- The template has two app shapes. The minimal profile has a console. The full profile has none, as OS products do.
+  ADR 0441 now carries a scope note for that difference.
+- A change that breaks `create` fails in core's Quality Gate, not on the owner's machine.
+- `create` supports pnpm only. Another package manager needs a new ADR.
+- Phases 2 to 4 (dev, deploy, change) are planned in the spec and are not decided here. Phase 4 is the follow-up
+  STA-1954. `stackra new` cannot add a module in a product repository today.
+
+## Enforcement
+
+- planned — a `create-smoke` job in core's Quality Gate (STA-1952, PR 5). It creates an app in a temporary folder from
+  `--starter` and `--tarballs` and runs install, gen, typecheck and tests.
+- planned — the template's CI runs `stackra create --starter . --profile minimal|full --yes` on every template pull
+  request (STA-1952, PR 2).
+- planned — unit tests in `packages/developer/cli/src/node/create/**/__tests__/` for the gen tree, the rename, the
+  profile filter and the refusal of `pro` without `STACKRA_LICENCE_TOKEN` (STA-1952, PR 3).
+- planned — nothing checks that a starter version exists for each CLI release. `create` refuses at run time instead.
+- Nothing checks the one-prompter rule of decision 2. Review does.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: [0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces) decision 2,
+in scope only, for a standalone Stackra app made by `stackra create` (its minimal profile). Builds on
+[0001](/adr/0001-monorepo-layout), [0091](/adr/0091-generated-encore-app-in-stackra-folder),
+[0124](/adr/0124-encore-is-the-generated-runtime-target), [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming),
+[0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries),
+[0374](/adr/0374-seed-packs-the-stackra-seed-pack-command-and-the-stackra-new-template-set),
+[0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine),
+[0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers),
+[0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) and
+[0506](/adr/0506-console-command-kind). Sources: the owner's decision of 2026-11-02, given through the leader; the spec
+and plan in `.agents/specs/sta-1952-stackra-create/` (leader review of 2026-11-02, decisions D1 to D5); Linear STA-1952.
