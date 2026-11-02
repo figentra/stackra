@@ -225,7 +225,7 @@ the GitHub organization variable `INFISICAL_GATE_IDENTITY_ID`). It already has *
 `ci-build` (renamed from `figentra-ci-gate`, same id), which holds exactly what a job needs: `prod` `/ci`
 (`UNIWIND_AUTH_TOKEN`) and `prod` `/ci/turbo` (`TURBO_TOKEN`, `TURBO_REMOTE_CACHE_SIGNATURE_KEY`).
 The Figentra Flow gate key is not here: it lives in the project `flow`, read only by the `figentra-flow-box`
-identity through figentra-flow's poster, and no job grant names it. The project is the boundary; the free plan has no
+identity through fflow's poster, and no job grant names it. The project is the boundary; the free plan has no
 custom roles. Nothing is created: one login method is added, so no identity slot is spent. The owner does this in the
 Infisical web app (EU, `eu.infisical.com`); no value is typed anywhere.
 
