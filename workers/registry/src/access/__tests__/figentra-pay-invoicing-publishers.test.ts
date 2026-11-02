@@ -73,6 +73,7 @@ describe("migration 0008: figentra/pay and figentra/invoicing publish @figentra"
     const { db } = sqliteD1();
     const publishers = await new RegistryStore(db).publishers("@figentra");
     expect(publishers.map((row) => row.repository).sort()).toEqual([
+      "figentra/billing",
       "figentra/brand",
       "figentra/commerce",
       "figentra/invoicing",
