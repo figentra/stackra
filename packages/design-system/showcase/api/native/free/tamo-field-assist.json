@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "7da2a50d61f76cd8",
+    "hash": "6a23561518c27903",
     "propsFiles": ["ui/src/native/tamo-field-assist/tamo-field-assist.props.ts"]
   },
   "importLine": "import { TamoFieldAssist } from \"@stackra/ui/native\";",
@@ -54,7 +54,7 @@
           "type": "boolean"
         },
         {
-          "description": "The input.",
+          "description": "The field's input, which the Tamo button sits beside.",
           "name": "children",
           "required": true,
           "source": "stackra",

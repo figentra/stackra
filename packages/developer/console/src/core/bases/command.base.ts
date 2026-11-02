@@ -32,7 +32,11 @@ abstract class CommandBase {
 export type Command = CommandBase;
 
 /** Checks the options of a command and applies their defaults. */
-function read(options: CommandOptions): Readonly<Required<CommandOptions>> {
+function read(
+  options: CommandOptions,
+): Readonly<
+  Required<Omit<CommandOptions, "group" | "docs">> & Pick<CommandOptions, "group" | "docs">
+> {
   const label = `Command(${JSON.stringify(options.name)})`;
   for (const name of [options.name, ...(options.aliases ?? [])])
     if (typeof name !== "string" || !COMMAND_NAME.test(name))
@@ -49,6 +53,9 @@ function read(options: CommandOptions): Readonly<Required<CommandOptions>> {
     aliases: Object.freeze([...(options.aliases ?? [])]),
     audit: options.audit ?? false,
     bin: options.bin ?? false,
+    examples: Object.freeze([...(options.examples ?? [])]),
+    ...(options.group === undefined ? {} : { group: options.group }),
+    ...(options.docs === undefined ? {} : { docs: options.docs }),
   });
 }
 

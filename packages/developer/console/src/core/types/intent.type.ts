@@ -1,0 +1,24 @@
+/**
+ * Stackra file contract:
+ * Purpose: `Intent`, what one argument vector asks for, decided before any container exists: the command list, the
+ *          version, a command's help, a run, or a usage problem (an unknown command or bad arguments).
+ * Boundary: a type only; `route` decides it, `createConsole` acts on it.
+ * Runtime: isomorphic
+ * Governing contract: STA-1966 spec FR-012 to FR-015.
+ */
+import type { UsageError } from "#core/errors/usage.error";
+import type { CommandEntry } from "#core/types/command-entry.type";
+import type { GlobalFlags } from "#core/types/global-flags.type";
+
+/** What an invocation asks for. */
+export type Intent =
+  | { readonly kind: "list"; readonly globals: GlobalFlags }
+  | { readonly kind: "version"; readonly globals: GlobalFlags }
+  | { readonly kind: "help"; readonly globals: GlobalFlags; readonly entry: CommandEntry }
+  | {
+      readonly kind: "run";
+      readonly globals: GlobalFlags;
+      readonly entry: CommandEntry;
+      readonly values: Readonly<Record<string, unknown>>;
+    }
+  | { readonly kind: "usage"; readonly globals: GlobalFlags; readonly error: UsageError };
