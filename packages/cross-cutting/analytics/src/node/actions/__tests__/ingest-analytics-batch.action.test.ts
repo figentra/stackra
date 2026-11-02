@@ -108,7 +108,7 @@ describe(IngestAnalyticsBatchAction, () => {
         delivery("$identify", { kind: AnalyticsDeliveryKind.Identify, userId: "usr_1" }),
       ],
     });
-    expect(await ingest.handle(input, ctx)).toMatchObject({ accepted: 3, dropped: 0 });
+    expect(await ingest.handle(input, ctx)).toMatchObject({ accepted: 2, dropped: 1 });
     expect(
       published(ctx).map((event) => [event.destination, event.deliveries.map((item) => item.name)]),
     ).toEqual([

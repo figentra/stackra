@@ -16,8 +16,10 @@ import { ApprovalBindingStore } from "@stackra/actions/contracts";
 import type { ApprovalBinding } from "@stackra/actions/contracts";
 import { describeApprovalBindingStoreConformance } from "@stackra/actions/testing";
 import { Driver } from "@stackra/container";
+import type { PublicId } from "@stackra/contracts";
 import { compileMigration } from "@stackra/database";
 import { usePostgres } from "@stackra/database/testing";
+import { MemoryScopeTreeDriver } from "@stackra/scope";
 import { beforeAll, describe, expect, it } from "@stackra/testing";
 
 import { BelongsToTenantMacro } from "#node/database/macros/belongs-to-tenant.macro";
@@ -72,15 +74,19 @@ class ProbedStore extends PostgresApprovalBindingStoreDriver {
 
 /** The isolation of the test database. */
 const isolation = () =>
-  new CallIsolationDriver(postgres.database, new TenantIsolationService(postgres.database));
+  new CallIsolationDriver(
+    postgres.database,
+    new TenantIsolationService(postgres.database),
+    new MemoryScopeTreeDriver(),
+  );
 
 /** `store`, with every call in `tenant`'s isolation run. */
 class IsolatedStore extends Driver(ApprovalBindingStore) {
-  private readonly tenant: string;
+  private readonly tenant: PublicId<"scp">;
 
   private readonly store: ApprovalBindingStore;
 
-  constructor(tenant: string, store: ApprovalBindingStore) {
+  constructor(tenant: PublicId<"scp">, store: ApprovalBindingStore) {
     super();
     this.tenant = tenant;
     this.store = store;
@@ -104,10 +110,11 @@ class IsolatedStore extends Driver(ApprovalBindingStore) {
 }
 
 /** The store as `tenant`'s session. */
-const as = (tenant: string) => new IsolatedStore(tenant, new ProbedStore(postgres.database));
+const as = (tenant: PublicId<"scp">) =>
+  new IsolatedStore(tenant, new ProbedStore(postgres.database));
 
 /** A binding of `tenant`, requested at 09:00 and expiring at `expiresAt`. */
-const binding = (tenant: string, id: string, expiresAt: Date): ApprovalBinding => ({
+const binding = (tenant: PublicId<"scp">, id: string, expiresAt: Date): ApprovalBinding => ({
   approvalId: id as ApprovalBinding["approvalId"],
   scopeId: tenant as ApprovalBinding["scopeId"],
   requester: tenantActor(tenant),
