@@ -82,7 +82,11 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     url: string,
     headers?: Record<string, string>,
   ) => Promise<{ readonly ok: boolean; readonly status: number }> = (url, headers) =>
-    globalThis.fetch(url, { headers, redirect: "manual", signal: AbortSignal.timeout(30_000) });
+    globalThis.fetch(url, {
+      ...(headers ? { headers } : {}),
+      redirect: "manual",
+      signal: AbortSignal.timeout(30_000),
+    });
 
   /** Holds a partial rollout step, in milliseconds; a test replaces it. */
   sleep: (ms: number) => Promise<void> = (ms) =>

@@ -16,8 +16,8 @@ import type { WorkerSettings } from "#core/types/worker-settings.type";
 
 /** What this function reads of the target. */
 type Target = {
-  readonly compatibilityDate?: string;
-  readonly defaults?: WorkerSettings;
+  readonly compatibilityDate?: string | undefined;
+  readonly defaults?: WorkerSettings | undefined;
   readonly members: Readonly<
     Record<
       string,
@@ -39,7 +39,7 @@ function merge(under: WorkerSettings, over: WorkerSettings): WorkerSettings {
     const before = out[key];
     out[key] =
       isObject(value) && isObject(before)
-        ? merge(before, value)
+        ? merge(before as WorkerSettings, value as WorkerSettings)
         : value === undefined
           ? before
           : value;
