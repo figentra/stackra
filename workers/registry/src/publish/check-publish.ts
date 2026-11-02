@@ -6,6 +6,7 @@
  * Governing contract: ADR 0453 (decisions 7, 8 and 11); ADR 0316 (decision 2); ADR 0024 (decision 5); ADR 0013.
  */
 import { STACKRA_KINDS } from "#src/constants/stackra-kinds.constant";
+import { SUFFIX_KINDS } from "#src/constants/suffix-kinds.constant";
 import { splitName } from "#src/http/split-name";
 import type { PublishCandidate } from "#src/interfaces/publish-candidate.interface";
 import type { PublishVerdict } from "#src/interfaces/publish-verdict.type";
@@ -74,7 +75,10 @@ export function checkPublish(candidate: PublishCandidate): PublishVerdict {
   if (!SEMVER.test(version)) reasons.push(`${version} is not a semver version`);
   const kind = kindOf(pkg);
   if (kind === null) reasons.push(`stackra.kind must be one of ${STACKRA_KINDS.join(", ")}`);
-  else if (kind !== "package" && !splitName(name).bare.startsWith(`${kind}-`))
+  else if (SUFFIX_KINDS.includes(kind)) {
+    if (!splitName(name).bare.endsWith(`-${kind}`))
+      reasons.push(`a ${kind} item is named ${splitName(name).scope}/<name>-${kind}`);
+  } else if (kind !== "package" && !splitName(name).bare.startsWith(`${kind}-`))
     reasons.push(`a ${kind} item is named ${splitName(name).scope}/${kind}-<name>`);
   reasons.push(...licenceReasons(candidate));
   if (clientDist.integrity !== digests.integrity)
