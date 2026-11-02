@@ -34,7 +34,7 @@
 - [Delegation](/constitution/delegation): Claude decides, executors get self-contained briefs, git writes stay with the dispatcher, and review is by gates.
 - [Architecture decisions](/adr): Why the repository looks the way it does.
 - [0001 — Monorepo layout, catalogs and tooling](/adr/0001-monorepo-layout): Accepted · 2026-10-19
-- [0002 — Documentation on Mintlify](/adr/0002-docs-on-mintlify): Accepted, amended by 0199, 0299 · 2026-10-19 · amended 2026-10-27 (STA-1316)
+- [0002 — Documentation on Mintlify](/adr/0002-docs-on-mintlify): Superseded by 0514 · 2026-10-19 · amended 2026-10-27 (STA-1316)
 - [0003 — Tier dependency direction](/adr/0003-tier-dependency-direction): Accepted · 2026-10-19
 - [0004 — Package archetypes and layers](/adr/0004-package-archetypes-and-layers): Superseded by 0126 · 2026-10-19
 - [0005 — DI container and legacy decorators](/adr/0005-di-container-and-legacy-decorators): Accepted, amended by 0143, 0145, 0263, 0294 · 2026-10-19
@@ -71,7 +71,7 @@
 - [0036 — Idempotency keys in Encore cache for 24 hours; Postgres for money](/adr/0036-idempotency-cache-and-postgres): Superseded by 0136 · 2026-10-20
 - [0037 — API versioning by the Stackra-Version date header](/adr/0037-api-versioning-by-date-header): Superseded by 0118 · 2026-10-19
 - [0038 — Rate limits: app token buckets and Cloudflare WAF](/adr/0038-rate-limits-app-buckets-and-waf): Superseded by 0217 · 2026-10-20
-- [0039 — OpenAPI to Mintlify API reference, and an OAuth developer guide](/adr/0039-openapi-mintlify-and-oauth-guide): Proposed · 2026-10-19
+- [0039 — OpenAPI to Mintlify API reference, and an OAuth developer guide](/adr/0039-openapi-mintlify-and-oauth-guide): Proposed, amended by 0514 · 2026-10-19
 - [0040 — Services are organised as DDD feature modules](/adr/0040-ddd-feature-modules-in-services): Superseded by 0130 · 2026-10-20
 - [0041 — Decorated controllers, handlers and crons via a build-time generator](/adr/0041-decorated-controllers-and-build-time-generator): Superseded by 0091 · 2026-10-19
 - [0042 — DI-first with one container per service](/adr/0042-di-first-with-one-container-per-service): Accepted, amended by 0143, 0147, 0263 · 2026-10-19
@@ -330,7 +330,7 @@
 - [0296 — Runway v3: member requires and root topology groups](/adr/0296-runway-v3-member-requires-and-root-topology-groups): Accepted, amended by 0335 · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417)
 - [0297 — Web runtime on Workers: prerender with a fixed site, cache data not HTML, locale paths without redirects, and Worker forwarding](/adr/0297-web-runtime-on-workers-prerender-caching-locale-urls-and-forwarding): Accepted, amended by 0305, 0315, 0334 · 2026-10-22
 - [0298 — Consent and analytics: decline by default, Global Privacy Control refuses, and a bounded queue for events before a decision](/adr/0298-consent-and-analytics): Accepted · 2026-10-22 · amended 2026-10-29 (STA-1536)
-- [0299 — Docs runway: Mintlify deployed from CI behind the checks, with the runway shape of the other apps](/adr/0299-docs-runway): Accepted, amended 2026-10-24 (STA-406), 2026-10-27 (STA-1316) · 2026-10-22
+- [0299 — Docs runway: Mintlify deployed from CI behind the checks, with the runway shape of the other apps](/adr/0299-docs-runway): Superseded by 0514 · 2026-10-22 · amended 2026-10-24 (STA-406), 2026-10-27 (STA-1316)
 - [0300 — Five published tooling presets, and spell checking that the gate enforces](/adr/0300-published-tooling-presets-and-enforced-spell-checking): Accepted · 2026-10-22 · amended 2026-10-23 (STA-349), 2026-10-24 (STA-417)
 - [0301 — @stackra/seo: sitemaps, robots rules, structured data, canonical redirects and alternates](/adr/0301-stackra-seo-package): Accepted · 2026-10-22
 - [0302 — The Stackra Design System: a design-system category, @stackra/tokens, @stackra/ui and the playground](/adr/0302-stackra-design-system-tokens-ui-and-the-playground): Accepted, amended by 0303, 0340 · 2026-10-23 · amended 2026-10-24 (STA-469)
@@ -484,7 +484,7 @@
 - [0450 — AI: the page reader port, readable text and product hints, and an egress-bounded HTTP driver](/adr/0450-ai-page-reader-port-readable-text-product-hints-and-an-egress-bounded-http-driver): Proposed · 2026-10-27
 - [0451 — The login directory: an identity format and writer, and a Cloudflare Worker of its own](/adr/0451-the-login-directory-an-identity-format-and-writer-and-a-cloudflare-worker-of-its-own): Proposed · 2026-10-27
 - [0452 — The system graph: a member graph per gen run, a repo graph and one merge step](/adr/0452-the-system-graph-a-member-graph-per-gen-run-a-repo-graph-and-one-merge-step): Proposed · 2026-10-27
-- [0453 — The Stackra registry: one npm-compatible store on Cloudflare for packages, skills, agents, MCP servers and plugins, with our own licence engine](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine): Accepted, amended by 0461 · 2026-10-27
+- [0453 — The Stackra registry: one npm-compatible store on Cloudflare for packages, skills, agents, MCP servers and plugins, with our own licence engine](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine): Accepted, amended by 0461, 0514 · 2026-10-27
 - [0454 — Loyalty programme as scoped settings, a tier policy port, public balance events, and consent evidence](/adr/0454-loyalty-programme-as-scoped-settings-a-tier-policy-port-public-balance-events-and-consent-evidence): Proposed · 2026-10-27
 - [0455 — Rules pack defaults without a scope, registered fact sources, list floors, and sections without a base pack](/adr/0455-rules-pack-defaults-without-a-scope-registered-fact-sources-list-floors-and-sections-without-a-base-pack): Proposed · 2026-10-27
 - [0456 — Actions: the request origin, integration events without a model, and cascading replica changes](/adr/0456-actions-request-origin-integration-events-without-a-model-and-cascading-replica-changes): Proposed · 2026-10-27
@@ -535,6 +535,7 @@
 - [0511 — Cross-repo service contracts and cross-app events](/adr/0511-cross-repo-service-contracts-and-cross-app-events): Proposed · 2026-11-01
 - [0512 — One Infisical layout: projects by reader, one agents vault, product runtimes](/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes): Proposed · 2026-11-01
 - [0513 — The permission vocabulary moves to @stackra/contracts and @stackra/container; iam keeps evaluation](/adr/0513-permission-vocabulary-moves-to-contracts-and-container): Accepted · 2026-11-01
+- [0514 — Self-hosted open-source docs: Fumadocs on a Cloudflare Worker replaces Mintlify](/adr/0514-self-hosted-docs-replace-mintlify): Accepted · 2026-11-02
 - [ADR template](/adr/template): Copy this page, give it the next number, fill every section.
 - [Member standards](/standards/members): What every app, package and service must contain, and which check enforces each rule.
 - [Package standards](/standards/packages): The entries-first package shape, exports, barrels, and the provenance of copied code.

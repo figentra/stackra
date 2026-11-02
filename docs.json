@@ -649,6 +649,7 @@
               "adr/0511-cross-repo-service-contracts-and-cross-app-events",
               "adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes",
               "adr/0513-permission-vocabulary-moves-to-contracts-and-container",
+              "adr/0514-self-hosted-docs-replace-mintlify",
               "adr/template"
             ]
           }
