@@ -187,6 +187,9 @@ and a fresh checkout starts the docs site with the documented command.
 - **FR-006**: THE site SHALL have a Theme Studio page and a Glass stage page that do what the playground's did.
 - **FR-007**: THE brand-theme contrast and matrix tests SHALL run as `@stackra/ui`'s own tests.
 - **FR-008**: THE site SHALL publish `llms.txt` and `llms-full.txt` covering every page, generated ones included.
+- **FR-016**: WHILE the docs move from Mintlify to Fumadocs THE site SHALL keep serving `llms.txt` and `llms-full.txt` at
+  the same stable URL, with no gap (the landing's "Copy llms.txt" links to it): the change that replaces `stackra gen`'s
+  docs-site emitter with Fumadocs' own output retires the emitter in the same change, and the ADR names the URL.
 - **FR-009**: THE site SHALL offer, on every page, "Copy as Markdown", "Open in Claude" (and the other assistants the
   docs framework offers) and a raw `.md` route.
 - **FR-010**: WHERE Ask AI search is enabled THE search SHALL answer only from the docs and cite the pages it used.
@@ -216,6 +219,7 @@ and a fresh checkout starts the docs site with the documented command.
 - **AC-006**: IF Ask AI has no answer in the docs THEN THE search SHALL say so.
 - **AC-007**: WHEN the playground is deleted THE change SHALL carry a complete parity checklist.
 - **AC-008**: WHEN a fresh checkout starts the docs site THE start SHALL succeed or name the command to run first.
+- **AC-009**: WHEN the change that switches `llms.txt` to Fumadocs lands THE URL SHALL answer before and after it.
 
 ## Success Criteria _(mandatory)_
 
@@ -246,7 +250,9 @@ and a fresh checkout starts the docs site with the documented command.
 - Fumadocs provides `llms.txt` generation and the page actions; where it does not, the build adds them.
 - Ask AI search: [NEEDS CLARIFICATION: which provider answers, and where does it run: the Tamo/ai gateway, or the docs
   Worker? It is an owner decision if it costs money or adds a third party.]
-- The MCP tool shape is agreed with console-engine-d0, which owns `toolsOf`, through the leader.
+- The MCP tool shape is agreed with console-engine-d0, which owns `toolsOf`, through the leader. Today `stackra mcp`
+  serves manifest, new, gen, validate, verify and `encore_*` and no docs; the docs tools are new work.
+- Today `llms.txt` is written by `stackra gen`'s docs-site emitter for the Mintlify site, and the landing links to it.
 
 ## Amendments
 
