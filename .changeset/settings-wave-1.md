@@ -1,6 +1,5 @@
 ---
 "@stackra/settings": minor
-"@stackra/showcase": patch
 ---
 
 A new `@stackra/settings/react` entry. `SettingsForm` renders a generated settings page on the web, at parity with
