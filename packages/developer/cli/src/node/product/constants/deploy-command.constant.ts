@@ -21,7 +21,7 @@ export const DEPLOY_COMMAND: CliCommand = {
   summary:
     "Deploy a commit to an environment's runway targets, or (--product) a built product's surfaces and mobile builds",
   usage:
-    "stackra deploy --env <dev|preview|staging|production> [--kind <kind,…>] [--member <key,…>] [--sha <sha>] [--dry-run]\n" +
+    "stackra deploy --env <dev|preview|staging|production> [--kind <kind,…>] [--member <key,…>] [--sha <sha>] [--dry-run] [--approved]\n" +
     "       stackra deploy --product --env <dev|preview|staging|production> [--dry-run] [--surfaces-only|--mobile-only] [--approved] [--first-release] [--assets-bucket <bucket>] [--assets-origin <url>] [--kv-namespace <id>] [--served <surface@major,…>] [--canary-scopes <id,…>] [--region <region>]",
   options: {
     product: { type: "boolean" },
