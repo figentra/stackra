@@ -92,8 +92,7 @@ test("declared: runway CI names and, for prod with mobile apps, the root kit and
   const names = declared("prod", { root });
   assert.ok(
     names.some(
-      (d) =>
-        d.name === "CLOUDFLARE_API_TOKEN" && d.project === "figentra-ci-deploy" && d.path === "/ci",
+      (d) => d.name === "CLOUDFLARE_API_TOKEN" && d.project === "ci-deploy" && d.path === "/ci",
     ),
   );
   for (const n of STORE_KIT)
@@ -142,12 +141,12 @@ test("generate creates a random value blind; a second generate is refused; --rot
       "--path",
       "/ci",
       "--project",
-      "figentra-ci-deploy",
+      "ci-deploy",
     ],
     fake,
   );
   assert.equal(first.code, 0, first.out);
-  assert.match(first.out, /STACKRA_WEBHOOK_SECRET  figentra-ci-deploy\/dev:\/ci  created/);
+  assert.match(first.out, /STACKRA_WEBHOOK_SECRET  ci-deploy\/dev:\/ci  created/);
   const v1 = fake.store.get("dev:/ci:STACKRA_WEBHOOK_SECRET");
   assert.equal(Buffer.from(v1, "base64url").length, 32);
 
@@ -160,7 +159,7 @@ test("generate creates a random value blind; a second generate is refused; --rot
       "--path",
       "/ci",
       "--project",
-      "figentra-ci-deploy",
+      "ci-deploy",
     ],
     fake,
   );
@@ -176,7 +175,7 @@ test("generate creates a random value blind; a second generate is refused; --rot
       "--path",
       "/ci",
       "--project",
-      "figentra-ci-deploy",
+      "ci-deploy",
       "--rotate",
       "--encoding",
       "hex",
@@ -204,7 +203,7 @@ test("prod generate needs the dry run's one-time token, bound to the operation",
     "--path",
     "/ci",
     "--project",
-    "figentra-ci-deploy",
+    "ci-deploy",
   ];
   const refused = await run(args, fake, { home, now: fixedNow });
   assert.equal(refused.code, 1);
@@ -239,7 +238,7 @@ test("rotate refuses a secret that does not exist; bad flags are refused without
           "--path",
           "/ci",
           "--project",
-          "figentra-ci",
+          "ci-build",
           "--rotate",
         ],
         fake,
@@ -257,12 +256,12 @@ test("rotate refuses a secret that does not exist; bad flags are refused without
   );
 });
 
-test("ciHome: build tokens live in figentra-ci, every other CI name in figentra-ci-deploy /ci (ADR 0512)", () => {
-  assert.deepEqual(ciHome("TURBO_TOKEN"), { project: "figentra-ci", path: "/ci/turbo" });
-  assert.deepEqual(ciHome("UNIWIND_AUTH_TOKEN"), { project: "figentra-ci", path: "/ci" });
+test("ciHome: build tokens live in ci-build, every other CI name in ci-deploy /ci (ADR 0512)", () => {
+  assert.deepEqual(ciHome("TURBO_TOKEN"), { project: "ci-build", path: "/ci/turbo" });
+  assert.deepEqual(ciHome("UNIWIND_AUTH_TOKEN"), { project: "ci-build", path: "/ci" });
   assert.deepEqual(ciHome("STACKRA_REGISTRY_TOKEN"), {
-    project: "figentra-ci",
+    project: "ci-build",
     path: "/ci/registry",
   });
-  assert.deepEqual(ciHome("MINTLIFY_ADMIN_KEY"), { project: "figentra-ci-deploy", path: "/ci" });
+  assert.deepEqual(ciHome("MINTLIFY_ADMIN_KEY"), { project: "ci-deploy", path: "/ci" });
 });

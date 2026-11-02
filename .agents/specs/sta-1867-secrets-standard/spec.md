@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-01
 
-**Status**: Implementing <!-- owner decisions 2026-11-01: hybrid layout, figentra-agents, Academorix archived, agent does structure -->
+**Status**: Implementing <!-- owner decisions 2026-11-01: hybrid layout, agents, Academorix archived, agent does structure -->
 
 **Linear**: STA-1867
 
@@ -33,17 +33,17 @@ for every repository: projects by reader, one agents vault and product runtime p
 
 ## Requirements
 
-- **FR-001** `.infisical.yaml` binds `figentra-agents` `dev`.
+- **FR-001** `.infisical.yaml` binds `agents` `dev`.
 - **FR-002** `secrets:import` and `pnpm vault` take a project (the sidecar's `project`, or `--project`).
-  - `/agents` defaults to `figentra-agents`.
+  - `/agents` defaults to `agents`.
   - A `/ci` target without a project is refused.
   - The confirm token binds the project.
-- **FR-003** `vault preflight` resolves each CI name to its home project. The store kit lives in `figentra-ci-deploy`
+- **FR-003** `vault preflight` resolves each CI name to its home project. The store kit lives in `ci-deploy`
   `/ci/store`.
 - **FR-004** `deployPlan` gives each member `<runtime path>/<member>`.
 - **FR-005** No workflow names an Infisical project id literally.
   - `apply-observability` uses the deploy variables.
-  - `deploy-turbo-cache` reads `TURBO_TOKEN` from `figentra-ci`.
+  - `deploy-turbo-cache` reads `TURBO_TOKEN` from `ci-build`.
 
 ## Not built here
 

@@ -43,9 +43,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const USAGE =
   "usage: pnpm vault preflight --env e [--root dir] | generate NAME --env e --path p [--project P] [--rotate] [--bytes n] [--encoding base64url|hex] [--dry-run] [--confirm t]";
 /** The store root kit (ADR 0480): one-time owner keys, read by runway-store.yml from this project and path. */
-export const STORE_PROJECT = "figentra-ci-deploy";
+export const STORE_PROJECT = "ci-deploy";
 export const STORE_PATH = "/ci/store";
-/** The build tokens every CI job reads from figentra-ci (ADR 0512); any other CI name is a deploy credential. */
+/** The build tokens every CI job reads from ci-build (ADR 0512); any other CI name is a deploy credential. */
 const BUILD_TOKENS = {
   UNIWIND_AUTH_TOKEN: "/ci",
   STACKRA_REGISTRY_TOKEN: "/ci/registry",
@@ -54,11 +54,11 @@ const BUILD_TOKENS = {
   TURBO_TOKEN: "/ci/turbo",
   TURBO_REMOTE_CACHE_SIGNATURE_KEY: "/ci/turbo",
 };
-/** `{ project, path }` of a runway CI name: figentra-ci for the build tokens, figentra-ci-deploy `/ci` otherwise. */
+/** `{ project, path }` of a runway CI name: ci-build for the build tokens, ci-deploy `/ci` otherwise. */
 export const ciHome = (name) =>
   Object.hasOwn(BUILD_TOKENS, name)
-    ? { project: "figentra-ci", path: BUILD_TOKENS[name] }
-    : { project: "figentra-ci-deploy", path: "/ci" };
+    ? { project: "ci-build", path: BUILD_TOKENS[name] }
+    : { project: "ci-deploy", path: "/ci" };
 export const STORE_KIT = [
   "ASC_API_KEY_ID",
   "ASC_API_ISSUER_ID",

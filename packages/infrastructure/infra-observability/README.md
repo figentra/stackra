@@ -148,7 +148,7 @@ compose.
 
 The owner sets each provider's token in the stack config of the private stacks repository: `sentry:token` (org and
 project write), `logtail:apiToken` and `better-uptime:apiToken` (Better Stack), and the AWS credentials of the core
-stack's account. Core's own stack reads its tokens from Infisical `figentra-ci-deploy` `prod` `/ci/observability` instead (ADR 0512) (see above). The
+stack's account. Core's own stack reads its tokens from Infisical `ci-deploy` `prod` `/ci/observability` instead (ADR 0512) (see above). The
 release job's `SENTRY_AUTH_TOKEN` uploads source maps and is a different token.
 
 ## Not here
