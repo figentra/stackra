@@ -66,6 +66,7 @@ describe("Listener", () => {
       eventId: "evt_1",
       occurredAt: new Date(0),
       now: () => new Date(0),
+      audit: () => {},
     });
     expect(ledger.entries).toEqual([4]);
   });

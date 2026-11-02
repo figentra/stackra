@@ -89,8 +89,11 @@ export class MemoryApprovalGateDriver extends Driver(ApprovalGate) {
    * @example
    * const gate = MemoryApprovalGateDriver.of({ identity, clock, cap: 2 });
    */
-  static of(options: MemoryApprovalGateOptions): MemoryApprovalGateDriver {
-    const gate = new MemoryApprovalGateDriver(options.identity, options.clock);
+  static of<Gate extends MemoryApprovalGateDriver>(
+    this: new (identity: IdentityResolver, clock: Clock) => Gate,
+    options: MemoryApprovalGateOptions,
+  ): Gate {
+    const gate = new this(options.identity, options.clock);
     gate.options = options;
     return gate;
   }

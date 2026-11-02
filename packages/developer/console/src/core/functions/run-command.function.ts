@@ -29,7 +29,11 @@ const AUDIT_SETTLE_MS = 30_000;
 /** Resolves after `ms`, without keeping the process alive. */
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
-    setTimeout(resolve, ms).unref?.();
+    // Node's timer unrefs; a DOM timer is a number, so the lookup is by shape.
+    const timer: unknown = setTimeout(resolve, ms);
+    if (typeof timer === "object" && timer !== null && "unref" in timer) {
+      (timer as { unref: () => void }).unref();
+    }
   });
 }
 
