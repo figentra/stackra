@@ -34,6 +34,9 @@ export interface CommandStructure {
   /** Its docs link, when it has one. */
   readonly docs?: string;
 
+  /** Its local developer MCP tool, when it is one. */
+  readonly tool?: { readonly readOnly: boolean };
+
   /** Complete invocations its help shows. */
   readonly examples: readonly string[];
 

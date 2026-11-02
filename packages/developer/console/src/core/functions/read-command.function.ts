@@ -81,8 +81,10 @@ export function readCommand(type: CommandClass): CommandStructure {
   const record = kindOf(type);
   if (record?.kind !== "command")
     throw new ConsoleDeclarationError(type.name, "it does not extend Command({ ... })");
-  const options = record.options as unknown as Required<Omit<CommandOptions, "group" | "docs">> &
-    Pick<CommandOptions, "group" | "docs">;
+  const options = record.options as unknown as Required<
+    Omit<CommandOptions, "group" | "docs" | "tool">
+  > &
+    Pick<CommandOptions, "group" | "docs" | "tool">;
   const label = `${type.name} (${options.name})`;
   const defaults = defaultsOf(type);
   const argumentRecords = Argument.members(type);
@@ -188,6 +190,9 @@ export function readCommand(type: CommandClass): CommandStructure {
     examples: options.examples,
     ...(options.group === undefined ? {} : { group: options.group }),
     ...(options.docs === undefined ? {} : { docs: options.docs }),
+    ...(options.tool === undefined || options.tool === false
+      ? {}
+      : { tool: { readOnly: options.tool !== true && options.tool.readOnly } }),
     arguments: Object.freeze(argumentFields),
     options: Object.freeze(optionFields),
   });

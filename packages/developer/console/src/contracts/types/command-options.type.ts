@@ -35,4 +35,10 @@ export interface CommandOptions {
 
   /** Complete invocations shown in the command's help, as `acme greet Ada --times 2`. */
   readonly examples?: readonly string[];
+
+  /**
+   * A tool of the local developer MCP (ADR 0282 decision 5) with the same schema and handler as the command; the
+   * read-only hint when `{ readOnly: true }`. Never a tenant MCP tool.
+   */
+  readonly tool?: boolean | { readonly readOnly: boolean };
 }
