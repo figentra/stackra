@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-02
 
-**Status**: Draft
+**Status**: Clarified
 
 **Tier**: big
 
@@ -14,7 +14,7 @@
 
 **Linear project**: none
 
-**Clarifications status**: pending
+**Clarifications status**: complete
 
 **Analyze**: —
 
@@ -28,18 +28,21 @@ implement Fumadocs with MDX." Then, on the plan: "Yes, do it"). The docs are AI-
 
 - **Apps touched**: apps/docs (the Stackra docs site gains the design-system section and the AI features); apps/playground
   (retired after parity); apps/mobile unchanged (stays the native preview)
-- **Services touched**: none
+- **Services touched**: none in this repository. Ask AI depends on the OS `ai` service (Tamo's gateway, figentra/os),
+  which serves a public read-only docs endpoint; it runs in no cloud environment yet
 - **Packages touched**: packages/design-system/ui (the brand-theme contrast and matrix tests move in); the package that
   owns the catalogue records and showcase JSON (read as the source of the generated pages); the developer MCP
-  (`stackra mcp`, ADR 0282) for the docs tools; [NEEDS CLARIFICATION: is moving the Stackra site itself from Mintlify to
-  Fumadocs (0514 decisions 1 to 3 and 9) inside this spec, or a prerequisite spec this one waits for?]
+  (`stackra mcp`, ADR 0282) for the docs tools. The Stackra site's own move from Mintlify to Fumadocs is the
+  prerequisite STA-2026, which this spec builds on
 - **Public contract change**: additive (docs tools and resources on the developer MCP; the generated `.md` routes,
   `llms.txt` and `llms-full.txt`)
 - **Cross-service events**: none
 - **Tenancy and data**: none
-- **Security and privacy**: the docs are public. Ask AI sends a reader's question to an answering service; what it keeps
-  and where it runs is part of the provider decision below. The MCP docs tools are local and read-only.
-- **Secrets**: none, unless the Ask AI provider needs a key; its name follows the provider decision
+- **Security and privacy**: the docs are public. Ask AI is an unauthenticated, rate-limited, read-only path through Tamo's
+  gateway that answers only from the docs corpus, with citations, and never reaches tenant data or tools; a question is
+  not kept beyond what the gateway's own logs and cost controls need. The MCP docs tools are local and read-only.
+- **Secrets**: none on the docs site or its Worker (owner: no direct third-party provider and no new key there); the
+  gateway's own model credentials stay in the OS `ai` service
 - **ADR needed**: yes: Fumadocs is the only home of design-system docs (amends 0302 and 0320, extends 0514); the
   playground is retired after parity; Base UI under the Fumadocs chrome with `--color-fd-*` mapped to `@stackra/tokens`;
   the AI-first requirements
@@ -54,6 +57,19 @@ implement Fumadocs with MDX." Then, on the plan: "Yes, do it"). The docs are AI-
   the agents pages that name the playground
 - **Lane**: full
 - **Change risk**: R2 (a new dependency family, an app retired, an additive public contract)
+
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: Is moving the Stackra docs site itself from Mintlify to Fumadocs inside this spec, or a prerequisite? → A: A
+  separate prerequisite spec, STA-2026; this spec builds on it and is blocked by it (leader).
+- Q: Which provider answers Ask AI, and where does it run? → A: "ship all + tamo" (owner): all five AI-first items ship,
+  and Ask AI runs on Tamo's gateway in the OS `ai` service from the start, through a public, unauthenticated,
+  rate-limited, read-only path that answers only from the docs corpus with citations and never reaches tenant data or
+  tools; its index lives with the gateway and is refreshed on each docs deploy; a credit budget caps its cost; no direct
+  third-party provider and no key on the docs Worker; "coming soon" until the gateway endpoint is live (FR-017 to
+  FR-020, AC-010, AC-011).
 
 ## Glossary _(full lane)_
 
@@ -193,6 +209,14 @@ and a fresh checkout starts the docs site with the documented command.
 - **FR-009**: THE site SHALL offer, on every page, "Copy as Markdown", "Open in Claude" (and the other assistants the
   docs framework offers) and a raw `.md` route.
 - **FR-010**: WHERE Ask AI search is enabled THE search SHALL answer only from the docs and cite the pages it used.
+- **FR-017**: THE Ask AI search SHALL be answered by Tamo's gateway (the OS `ai` service) through a public, unauthenticated,
+  read-only path that is rate-limited per visitor, answers only from the docs corpus, and never reaches tenant data or
+  tools; the docs site holds no model key (owner, 2026-11-02: "ship all + tamo").
+- **FR-018**: WHEN the docs deploy THE docs corpus index that Ask AI answers from SHALL be rebuilt from the same pages,
+  so an answer never cites a page the site no longer has.
+- **FR-019**: THE Ask AI path SHALL stop answering when its credit budget for the period is spent, and say so.
+- **FR-020**: WHILE the gateway's docs endpoint is not live THE docs SHALL show Ask AI in a "coming soon" state that
+  sends nothing, and every other AI-first feature SHALL work without it.
 - **FR-011**: THE developer MCP SHALL expose the docs as search and read tools and resources beside the `stackra`
   commands, in the tool shape agreed with the owner of `toolsOf`.
 - **FR-012**: THE docs site SHALL share the landing's header, theme and token mapping.
@@ -220,6 +244,9 @@ and a fresh checkout starts the docs site with the documented command.
 - **AC-007**: WHEN the playground is deleted THE change SHALL carry a complete parity checklist.
 - **AC-008**: WHEN a fresh checkout starts the docs site THE start SHALL succeed or name the command to run first.
 - **AC-009**: WHEN the change that switches `llms.txt` to Fumadocs lands THE URL SHALL answer before and after it.
+- **AC-010**: IF a visitor exceeds the Ask AI rate limit or the budget is spent THEN THE search SHALL refuse with a clear
+  message and send nothing to the model.
+- **AC-011**: WHILE the gateway endpoint is not live THE Ask AI control SHALL show "coming soon" and make no request.
 
 ## Success Criteria _(mandatory)_
 
@@ -248,8 +275,9 @@ and a fresh checkout starts the docs site with the documented command.
 - The Stackra theme's `--core*` tokens arrive with the rebrand session's core PR (C1); until then the mapping is written
   against their names.
 - Fumadocs provides `llms.txt` generation and the page actions; where it does not, the build adds them.
-- Ask AI search: [NEEDS CLARIFICATION: which provider answers, and where does it run: the Tamo/ai gateway, or the docs
-  Worker? It is an owner decision if it costs money or adds a third party.]
+- Ask AI runs on Tamo's gateway in the OS `ai` service (owner, 2026-11-02). The gateway-side endpoint, its index store
+  and its budget are agreed with the OS backend through the leader; the index lives with the gateway and is refreshed
+  by each docs deploy.
 - The MCP tool shape is agreed with console-engine-d0, which owns `toolsOf`, through the leader. Today `stackra mcp`
   serves manifest, new, gen, validate, verify and `encore_*` and no docs; the docs tools are new work.
 - Today `llms.txt` is written by `stackra gen`'s docs-site emitter for the Mintlify site, and the landing links to it.
@@ -261,3 +289,5 @@ None.
 ## Status history
 
 - 2026-11-02 · — → Draft · claude (STA-1920 session) · created from the owner's decisions of 2026-11-02
+- 2026-11-02 · Draft → Clarified · claude (STA-1920 session) · Q1 answered by the leader; Q2 by the owner ("ship all +
+  tamo")
