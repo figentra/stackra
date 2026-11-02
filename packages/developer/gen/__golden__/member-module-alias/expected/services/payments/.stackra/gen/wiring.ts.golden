@@ -25,7 +25,7 @@ export const wiring = {
   root: PaymentsModule,
   modules: {
     payments: { exports: [], dependsOn: [], type: PaymentsModule },
-    payments: { exports: [], dependsOn: [], from: "@stackra/payments", type: ImportedPaymentsModule },
+    "@stackra/payments": { exports: [], dependsOn: [], from: "@stackra/payments", type: ImportedPaymentsModule },
   },
   platform: [],
   bindings: [

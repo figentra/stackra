@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `runCli(args, io, options?)`, the command core of `stackra`: help and version, finding the command, parsing
  *          its options with `node:util` `parseArgs` (strict; everything after `--` passed on untouched), running it, and
- *          turning the outcome into an exit code: 0 success, 1 failure, 2 usage error. The binary and the local MCP
+ *          turning the outcome into an exit code: 0 success, 1 failure, 2 usage error. A `passthrough` command skips
+ *          the parse and gets its arguments untouched (a `@stackra/console` command). The binary and the local MCP
  *          both call it, so a person and an assistant pass the same commands and gates.
  * Boundary: never exits the process and never throws; every error is printed to `io.err` and becomes an exit code.
  * Runtime: node
@@ -56,6 +57,15 @@ export async function runCli(
   const rest = split === -1 ? [] : found.rest.slice(split + 1);
 
   try {
+    if (command.passthrough === true)
+      return await command.run({
+        cwd,
+        io,
+        values: {},
+        positionals: found.rest,
+        rest: [],
+        cli: (next, nextIo) => runCli(next, nextIo, { cwd, commands }),
+      });
     const { values, positionals } = parseArgs({
       args: [...own],
       options: { ...command.options, help: { type: "boolean", short: "h" } },

@@ -29,6 +29,8 @@
  *           leftover one.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
+ *           A member that declares a resource has each tree read through `loader` before the manifest is built
+ *           (`readResourceTrees`); with no loader it is refused as `resource_loader_missing` (STA-1947).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
@@ -55,8 +57,10 @@ import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
 import { hasIntTests } from "#node/functions/has-int-tests.function";
+import { readResourceTrees } from "#node/functions/read-resource-trees.function";
 import { runwayQueues } from "#node/functions/runway-queues.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
+import type { ModuleLoader } from "#node/types/module-loader.type";
 
 /** The committed manifest at the member root. */
 const MANIFEST_FILE = "stackra.manifest.json";
@@ -164,7 +168,7 @@ function staleMigrations(root: string, files: readonly GeneratedFile[], check: b
  *
  * @param root - the member root.
  * @param options - `check` compares instead of writing; `backend` picks the TypeScript host; `pass: "manifests"`
- *                  writes the manifest alone.
+ *                  writes the manifest alone; `loader` imports the member's resource classes (`stackra gen` passes one).
  * @throws Error when package.json, tsconfig.json or a dependency manifest cannot be read.
  * @example
  * const { errors, changed } = await generate("packages/commerce/loyalty-kit", { check: true });
@@ -175,6 +179,7 @@ export async function generate(
     readonly check?: boolean;
     readonly backend?: "tsgo" | "ts6";
     readonly pass?: "manifests";
+    readonly loader?: ModuleLoader;
   } = {},
 ): Promise<GenerateResult> {
   // A docs app has no classes to discover: its run assembles the Mintlify site (ADR 0002, 2026-10-27 amendment).
@@ -182,14 +187,27 @@ export async function generate(
     return options.pass === "manifests"
       ? { errors: [], files: [], changed: [] }
       : generateDocsSite(root, options.check === undefined ? {} : { check: options.check });
-  const discover = () =>
-    discoverMember(root, options.backend === undefined ? {} : { backend: options.backend });
+  // The resource trees are read once, from the first discovery; a rediscovery after writing clients keeps them.
+  let trees: Awaited<ReturnType<typeof readResourceTrees>>["trees"];
+  const discover = async () => {
+    const found = await discoverMember(
+      root,
+      options.backend === undefined ? {} : { backend: options.backend },
+    );
+    return trees === undefined ? found : { ...found, resourceTrees: trees };
+  };
   const manifestPath = join(root, MANIFEST_FILE);
   const previous = existsSync(manifestPath)
     ? (JSON.parse(readFileSync(manifestPath, "utf8")) as StackraManifest)
     : undefined;
   const check = options.check === true;
   let ir = await discover();
+  const read = await readResourceTrees(root, ir, options.loader);
+  if (read.errors.length > 0) return { errors: read.errors, files: [], changed: [] };
+  if (read.trees !== undefined) {
+    trees = read.trees;
+    ir = { ...ir, resourceTrees: trees };
+  }
   let result = generateMember(
     ir,
     previous,
