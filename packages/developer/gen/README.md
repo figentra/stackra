@@ -183,6 +183,14 @@ for the shell's data routes (`...resourceList.flatMap(toResource)`). A page whos
 List page included, is left out, so no route reaches an empty page, and is recorded with its reason in
 `unboundOperations` (a `true` list or get waits on gen writing the standard reads, STA-1971).
 
+Package routes and menus (ADR 0111 decisions 1 and 4, STA-1947): a package records the `Route` and `Menu` classes its
+`react` and `native` entries declare in `ui.routes` (key `<module>_<stem>`, path and the page beside the route) and
+`ui.menus` (key and `MenuKind`); a `node` or core one is not a UI contribution. An app's route table for each runtime
+lists the routes its declared packages ship in the entry that serves it (`react` for the browser, `native` for
+native), imported from `<package>/<entry>`, and registers every menu, its own and theirs, in `menuTable` through
+`registerMenus` (`useMenus` of `@stackra/navigation` lists them). The walk is the shared `contributionsOf`; one key
+from two owners, or one the app has too, is `route_duplicate` or `menu_duplicate`.
+
 Surface targets (ADR 0436, stackra-04): a dependency whose committed manifest declares slots is the shell of the
 surfaces those slots sit on, and its major is the line the member targets there. Gen writes `surfaces` to the
 manifest (`[{ surface: "console", targets: "console@3", shell: "@os/console-shell" }]`; `surfacesOf`), which the
