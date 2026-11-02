@@ -5,8 +5,9 @@
  *          `ctx.authorize(record)` (the record's policy method named after the permission's verb, then the
  *          decision point again with the record, so a conditional deny is tested).
  * Boundary: refuses with `ForbiddenError` only, carrying no reason (the explanation is for the audit, never for the
- *           caller). A call with no permission passes only when it is a query whose class declares `auth: false`; any
- *           other call without one was never registered, and is refused (STA-2025). Fails closed: an unknown scope node, a
+ *           caller). A call with no permission was never registered (`registerActions`) and is refused; an anonymous
+ *           caller of a class whose `actors` list `ActorKind.Anonymous` skips the permission and record-policy checks,
+ *           and every other step of its call still runs (STA-2025). Fails closed: an unknown scope node, a
  *           record whose policy cannot be resolved (`connectPolicies` not called) or a policy that answers something
  *           other than a `Decision` is an error, never an allowed call. Any deny wins; `Allow` and `Abstain` leave the
  *           permission as the answer. The node is the call's `scope`; only a call without one reads the caller's node
@@ -17,7 +18,7 @@
  */
 import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
 import { type AnyClass, Driver, kindOf } from "@stackra/container";
-import { type Actor, Enum, type PublicId, type ScopeRef } from "@stackra/contracts";
+import { type Actor, ActorKind, Enum, type PublicId, type ScopeRef } from "@stackra/contracts";
 import { ForbiddenError } from "@stackra/errors";
 import type { RuleFacts } from "@stackra/rules";
 import type { ScopeTree } from "@stackra/scope/contracts";
@@ -28,13 +29,17 @@ import type { PolicyDecisionPointService } from "#core/services/policy-decision-
 import type { PolicyRegistration } from "#core/types/policy-registration.type";
 
 /**
- * Whether `call` is a public query: a query whose class declares `auth: false`, the one call that carries no permission
- * by design. Any other call without one was never registered (`registerActions`), so it is refused, never allowed
- * (STA-2025); an action is never public, whatever its options say.
+ * Whether `call` is an anonymous caller's call of a class that opts into anonymous callers (its `actors` list
+ * `ActorKind.Anonymous`): the one call the permission and record-policy steps let through. A signed-in caller of the
+ * same class is checked as usual, and a call with no permission (never registered) is refused (STA-2025).
  */
-function isPublicQuery(call: CallDescriptor): boolean {
-  const record = kindOf(call.type);
-  return record?.kind === "query" && record.options["auth"] === false;
+function isAnonymousCall(call: CallDescriptor): boolean {
+  const actors = kindOf(call.type)?.options["actors"];
+  return (
+    call.actor.kind === ActorKind.Anonymous &&
+    Array.isArray(actors) &&
+    actors.includes(ActorKind.Anonymous)
+  );
 }
 
 /** The three answers a policy method may give. */
@@ -108,10 +113,8 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    * @throws ForbiddenError when it does not, or when the call's scope node does not exist.
    */
   async require(call: CallDescriptor): Promise<void> {
-    if (call.permission === undefined) {
-      if (isPublicQuery(call)) return;
-      throw ForbiddenError.create();
-    }
+    if (call.permission === undefined) throw ForbiddenError.create();
+    if (isAnonymousCall(call)) return;
     const scope = await this.scopeOf(call);
     if (!(await this.pdp.check(call.actor, call.permission, scope === undefined ? {} : { scope })))
       throw ForbiddenError.create();
@@ -125,10 +128,8 @@ export class IamAccessControlDriver extends Driver(AccessControl) {
    */
   async authorize(call: CallDescriptor, record: object): Promise<void> {
     const { permission } = call;
-    if (permission === undefined) {
-      if (isPublicQuery(call)) return;
-      throw ForbiddenError.create();
-    }
+    if (permission === undefined) throw ForbiddenError.create();
+    if (isAnonymousCall(call)) return;
     const row = rowOf(record);
     if (row !== undefined && (await decide(row, permission, call.actor, record)) === Decision.Deny)
       throw ForbiddenError.create();

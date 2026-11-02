@@ -419,7 +419,8 @@ export function buildManifest(ir: MemberIR): {
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
     for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
-    if (declared.options["auth"] === false) entry["auth"] = false;
+    // An anonymous caller may call it, past the permission and record-policy steps only (STA-2025): listed, so review sees it.
+    if (actors?.includes("anonymous") === true) entry["anonymous"] = true;
     // OS ADR 0039 d2: only an entry marked public forms the published REST and MCP API and its SDKs.
     if (declared.options["public"] === true) {
       entry["public"] = true;

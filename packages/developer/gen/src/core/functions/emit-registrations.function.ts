@@ -377,7 +377,8 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   );
 
   // Every action and query with the identities the manifest locked, own and hosted, so the pipeline checks the
-  // permission and validates the input (ADR 0098, STA-2025). A public query (`auth: false`) registers no permission.
+  // permission and validates the input (ADR 0098, STA-2025). Every row carries its permission: an anonymous caller of a
+  // class that lists `ActorKind.Anonymous` skips the check in the access-control driver, never by a missing row.
   // shortcut: a hosted package's input class is not imported, since its manifest names the input schema but not the
   // file that declares it; its calls are permission-checked but not validated until the manifest carries that file.
   const inputOf = (entry: Entry): string | undefined => {
@@ -402,12 +403,8 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       if (type === undefined) return undefined;
       const input = inputOf(entry);
       const effects = entry["effects"];
-      const permission =
-        entry["kind"] === "query" && entry["auth"] === false
-          ? ""
-          : `, permission: ${JSON.stringify(entry["permission"])}`;
       return (
-        `{ type: ${type}, key: ${JSON.stringify(entry["key"])}${permission}, risk: ${JSON.stringify(entry["risk"])}` +
+        `{ type: ${type}, key: ${JSON.stringify(entry["key"])}, permission: ${JSON.stringify(entry["permission"])}, risk: ${JSON.stringify(entry["risk"])}` +
         `${Array.isArray(effects) && effects.length > 0 ? `, effects: ${JSON.stringify(effects)}` : ""}` +
         `${input === undefined ? "" : `, input: ${input}`} }`
       );
