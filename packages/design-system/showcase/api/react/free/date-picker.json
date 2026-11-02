@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "d253640c283d449e",
+    "hash": "0b4b30c378134692",
     "heroDoc": "vendor/heroui/react/date-picker.json",
     "propsFiles": [
       "ui/src/react/date-picker/date-picker.props.ts",
@@ -415,7 +415,7 @@
       "name": "TamoDateAsk",
       "props": [
         {
-          "description": "",
+          "description": "The slot `useTamo` returned for the date box.",
           "name": "slot",
           "required": true,
           "source": "stackra",
