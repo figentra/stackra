@@ -28,7 +28,9 @@ console plus one service with one module (a resource, an action and a migration)
 - **Packages touched**: `packages/developer/cli` (the new `stackra create` command, a gen-output tree printer, a
   starter reader); it gains a dependency on `@stackra/console` (same category, `./node` entry) for the banner and the
   prompter, so there is one prompter (STA-1730). `packages/developer/skills` gains a `starter` registry item kind only
-  if the leader prefers a kind over a plain package (plan, decision D1). `@stackra/gen` is used, never changed.
+  if the leader prefers a kind over a plain package (plan, decision D1). `@stackra/gen` is used, never changed. The
+  existing `stackra doctor` (`packages/developer/cli/src/node/doctor/`) is extended with the machine-readiness checks
+  (User Story 0); no second doctor is written.
 - **Other repositories**: `figentra/stackra-template` gains a `stackra.starter.yaml` profile file, the minimal
   profile's content (an `apps/console` member and one module in `services/example`) and a publish step for
   `@stackra/starter`. Edited only after the leader clears it with the Flow wave (merge-bot session).
@@ -48,6 +50,36 @@ console plus one service with one module (a resource, an action and a migration)
   no auth path)
 
 ## User Scenarios & Testing _(mandatory)_
+
+### User Story 0 - Know the machine is ready before anything runs (Priority: P1, owner decision 2026-11-02)
+
+`stackra doctor` checks the machine for what the app needs and explains each problem: mise and every pinned tool, a
+running Docker engine, the network to every host the work depends on (each resolved address on port 443), the
+registry, GitHub, the Infisical and AWS logins, the Encore CLI (and Pulumi when the app's runway config deploys
+infrastructure), disk space and free ports, and, only when the app has a mobile member, the Xcode command-line tools
+and a simulator. `stackra doctor --fix` offers each install and asks before each one. `stackra create` runs it first
+and offers the fixes; `stackra dev` runs a quick version and stops early with a clear message.
+
+**Why this priority**: the owner's own network drops some GitHub, Fastly and Cloudflare edges and blocks outside DNS.
+A create or dev run that fails half-way on the machine, not the code, is the first thing a new user meets.
+
+**Independent Test**: on a ci-box, the check functions run against recorded outputs (a stopped Docker, a missing mise
+tool, one GitHub address dropped while its siblings answer, a busy port) and each yields the expected line and fix; a
+web-only app yields no Xcode check.
+
+**Acceptance Scenarios**:
+
+1. **Given** a web-only app, **When** doctor runs, **Then** it never checks Xcode or a simulator.
+2. **Given** a host whose addresses partly time out while sibling addresses answer, **When** doctor runs, **Then** it
+   names the dropped addresses and suggests Cloudflare WARP in WARP mode (not DNS-only).
+3. **Given** the registry token is absent, **When** doctor runs, **Then** it says so without printing anything secret
+   and names the fix (the Infisical login and how the token is loaded); a present token is never printed.
+4. **Given** `--fix`, **When** a fix is available, **Then** doctor asks before each install and runs only the accepted
+   ones; without a terminal `--fix` installs nothing and prints the commands.
+5. **Given** `stackra dev` and a stopped Docker engine, **When** dev starts, **Then** it stops before starting anything
+   and says how to start Docker.
+
+---
 
 ### User Story 1 - Create a working app in an empty folder (Priority: P1)
 
@@ -146,6 +178,24 @@ new module's endpoints.
 - **FR-012**: it ends with the next steps: `cd <dir>`, `pnpm dev`, and where the docs are.
 - **FR-013**: phase 1 is verified only on a ci-box (never on the Mac by an agent); the run log, with the tree, goes on
   STA-1952.
+- **FR-014**: `stackra doctor` extends the existing doctor; each check is a pure function over the output of a
+  read-only probe, with a test, and yields a `DoctorResult` (name, status, detail, fix).
+- **FR-015**: the checks are chosen by what the target needs, read from the workspace (or, before `create` writes
+  anything, from the chosen profile): services → Docker, Encore, the Encore and Postgres ports; a root runway that
+  deploys infrastructure → Pulumi; a mobile member → Xcode command-line tools and a simulator; the core repository →
+  the existing agent checks. Nothing is asked of a target that does not need it.
+- **FR-016**: the network check resolves each host through the system resolver, connects to every resolved address
+  on port 443 with a TLS handshake and a timeout, and flags an address that fails while a sibling address of the same
+  host succeeds; the fix suggests Cloudflare WARP in WARP mode. The host list starts from the owner's net-probe list,
+  grouped by need (registry, GitHub, npm and Node, Encore, Cloudflare, AWS, Infisical, Expo).
+- **FR-017**: the registry check reads `@stackra` and, when the workspace depends on it, `@figentra` through the
+  package manager's own configured auth (a version lookup), so no token is read or printed; a missing token is
+  reported as absent with the Infisical login fix.
+- **FR-018**: `--fix` asks before each install and runs only through mise for pinned tools (`mise install`); Docker
+  (OrbStack or Docker Desktop) and WARP are offered as the vendor's install, with the link. Agents never run `--fix`
+  installs on the Mac.
+- **FR-019**: `stackra create` runs doctor first (the profile's checks) and offers the fixes before writing; `stackra
+dev` runs the quick checks (mise tools, Docker running, free ports; no network probe) and stops early on a failure.
 
 ### Key Entities
 
@@ -166,6 +216,8 @@ new module's endpoints.
   both on every template pull request, and phase 3's dry run runs for both. Each carries a `runway.yaml` that Runway
   reads the same way; nothing branches on the profile (owner, 2026-11-02).
 - **SC-004**: phases 2 to 4 each have a spec section and an issue before phase 1 is closed.
+- **SC-005**: on the owner's Mac, `stackra doctor` names every dropped edge address, stopped engine or missing tool
+  that would fail a create or dev run, before the run starts; on a ready machine it prints only passes.
 
 ## Glossary
 
