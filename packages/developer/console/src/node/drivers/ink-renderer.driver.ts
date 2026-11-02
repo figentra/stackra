@@ -165,11 +165,12 @@ export class InkRendererDriver extends TextRendererDriver {
       if (closed) return;
       const { ink, react } = modules;
       const tree = () =>
-        react.createElement(
-          ink.Box,
-          { flexDirection: "column" },
-          ...lines().map((line, index) => react.createElement(ink.Text, { key: index }, line)),
-        );
+        react.createElement(ink.Box, {
+          flexDirection: "column",
+          children: lines().map((line, index) =>
+            react.createElement(ink.Text, { key: index, children: line }),
+          ),
+        });
       const instance = ink.render(tree(), {
         stdout: this.context.stdout as unknown as NodeJS.WriteStream,
         patchConsole: false,

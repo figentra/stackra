@@ -25,10 +25,10 @@ export function liveRows(view: LiveView): {
     },
     rows: () => rows,
     settled: () =>
-      rows.map((row) =>
+      rows.map((row): CheckRow =>
         row.status === "pending" || row.status === "running"
           ? { ...row, status: "skip" }
-          : (row as CheckRow),
+          : { ...row, status: row.status },
       ),
   };
 }

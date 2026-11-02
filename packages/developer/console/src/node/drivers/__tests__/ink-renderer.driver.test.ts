@@ -52,10 +52,9 @@ vi.mock("ink", () => {
 });
 
 vi.mock("react", () => ({
-  createElement: (type: unknown, props: unknown, ...children: unknown[]) => ({
+  createElement: (type: unknown, props: { children?: unknown }) => ({
     type,
-    props,
-    children,
+    children: props.children,
   }),
 }));
 
