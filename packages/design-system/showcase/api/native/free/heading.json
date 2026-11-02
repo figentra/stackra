@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "eb6938f98bc85aa6",
+    "hash": "7f92ec4bb54260ab",
     "propsFiles": ["ui/src/native/heading/heading.props.ts"]
   },
   "importLine": "import { Heading } from \"@stackra/ui/native\";",
@@ -33,12 +33,12 @@
         },
         {
           "default": "default",
-          "description": "The colour of the text: `muted` for secondary copy, a status tone for meaning. Defaults to `default`.",
+          "description": "The colour of the text: `muted` for secondary copy, a status tone for meaning, `core` for the brand's engine colour\n(large headings take `core`, small text `core-strong`). Defaults to `default`.",
           "name": "tone",
           "replaces": "color",
           "required": false,
           "source": "stackra",
-          "type": "\"default\" | \"danger\" | \"accent\" | \"success\" | \"warning\" | \"muted\""
+          "type": "\"default\" | \"danger\" | \"core\" | \"accent\" | \"success\" | \"warning\" | \"muted\""
         },
         {
           "default": "start",

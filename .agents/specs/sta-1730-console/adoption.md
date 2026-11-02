@@ -1,5 +1,9 @@
 # Adoption: moving `stackra`, `runway` and `figentra` onto `@stackra/console`
 
+> **Superseded in part 2026-11-02** (owner decision, STA-1966): the order is now `stackra`, `fflow` and `figentra`
+> (`runway` follows later), and "Not affected" below no longer holds: Figentra Flow moves onto `@stackra/console`. See
+> `.agents/specs/sta-1966-console-engine/plan.md`, Rollout.
+
 **Spec**: [spec.md](./spec.md) FR-032 · **Linear**: STA-1730 (plan only; nothing migrates here) · ADR 0506, ADR 0500
 
 ## The rule that orders everything

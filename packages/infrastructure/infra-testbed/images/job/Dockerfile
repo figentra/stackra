@@ -27,7 +27,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      build-essential ca-certificates curl docker.io git jq openssh-client python3 rsync unzip xz-utils \
+      build-essential ca-certificates curl docker.io git jq openssh-client python3 rsync unzip xz-utils zip \
  && rm -rf /var/lib/apt/lists/*
 
 # mise with the repository's pins: the same Node, pnpm and Infisical CLI as mise.toml.

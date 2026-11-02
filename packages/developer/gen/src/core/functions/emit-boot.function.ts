@@ -18,8 +18,8 @@
  *          nothing; one that aborts while the database connects disconnects the bus and inbox at once.
  * Boundary: pure. Each step is written only when the service runs its package (`@stackra/database` or a model,
  *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`, `@stackra/workflow`); nothing to connect means no file. The connection
- *           strings are the runtime's (Encore's database and the replica variable runway sets for `readReplica`),
- *           never logged; `@stackra/app/server` calls `boot` once it hands the entry its container.
+ *           strings are the runtime's (Encore's database, and `DATABASE_REPLICA_URLS` when the runtime provides
+ *           one; runway does not set it for `readReplica` yet: Runway plan PR 10/11, STA-2001), never logged; `@stackra/app/server` calls `boot` once it hands the entry its container.
  * Runtime: isomorphic
  * Governing contract: ADR 0014 (decision 5: the runtime provides the connection); ADR 0078 (the outbox relay); ADR
  *                     0332 (segments); ADR 0295 (decision 8: boot order belongs to the runtime); ADR 0134 (2026-10-24
