@@ -3,7 +3,7 @@ title: "0512 — One Infisical layout: projects by reader, one agents vault, pro
 description: "Proposed · 2026-11-01"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0512, the one Infisical layout every Figentra repository follows: a project per reader for shared CI, deploy, registry and gate secrets, one `figentra-agents` vault for agents and developers, and a project per product holding only `/runtime/<member>`; names, environments, folders, bindings and the writers' project targeting. Boundary: decision text only; the values are the owner's, moved by hand. Runtime: documentation. Governing contract: ADR template; ADR 0009, 0173, 0257, 0371, 0484, 0493. */}
+{/* Stackra file contract. Purpose: ADR 0512, the one Infisical layout every Figentra repository follows: a project per reader for shared CI, deploy, registry and gate secrets, one `agents` vault for agents and developers, and a project per product holding only `/runtime/<member>`; names, environments, folders, bindings and the writers' project targeting. Boundary: decision text only; the values are the owner's, moved by hand. Runtime: documentation. Governing contract: ADR template; ADR 0009, 0173, 0257, 0371, 0484, 0493. */}
 
 <Note>
   Proposed 2026-11-01 (STA-1867), from the owner's audit of the Figentra Technologies org on
@@ -42,17 +42,24 @@ The owner chose a hybrid of the two.
 1. **One project per reader.** A value has one home. A second reader either reads that home, or gets a differently
    scoped token with its own name.
 
-   | Project              | Envs                                | Folders                                                | Reader                                                                            |
-   | -------------------- | ----------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
-   | `figentra-ci`        | `prod`                              | `/ci`, `/ci/turbo`, `/ci/registry`                     | `figentra-ci-gate`: every CI job and PR check (OIDC), testbed sandboxes (AWS)     |
-   | `figentra-ci-deploy` | `prod`                              | `/ci`, `/ci/release`, `/ci/store`, `/ci/observability` | `figentra-ci-deploy`: OIDC, branch-protected GitHub environments only             |
-   | `figentra-registry`  | `prod`                              | `/ci`, `/ci/registry`                                  | `figentra-registry`: the registry repository's `registry` environment             |
-   | `figentra-flow-gate` | `prod`                              | `/ci/gate`                                             | `figentra-flow-box`: universal auth from the box                                  |
-   | `figentra-agents`    | `dev`                               | `/agents`                                              | people and agents through `.infisical.yaml`; no CI identity                       |
-   | `stackra`            | `prod`                              | `/ci/registry`, `/ci/box-gate`                         | the owner only: values carried by hand (the issuer token, the Flow box bootstrap) |
-   | `<product>`          | `dev`, `preview`, `staging`, `prod` | `/runtime/<member>`, `/runtime/<resource>`             | runway sync, and a 0371 bootstrap identity per environment and member             |
+   Projects carry neutral names (owner, 2026-11-01): no company or framework prefix. The identities keep their names.
 
-2. **Only build tokens in `figentra-ci`.** A pull request can reach `figentra-ci`, so it holds no credential that can
+   | Project     | Envs                     | Folders                                                | Reader                                                                        |
+   | ----------- | ------------------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------- |
+   | `ci-build`  | `prod`                   | `/ci`, `/ci/turbo`, `/ci/registry`                     | `figentra-ci-gate`: every CI job and PR check (OIDC), testbed sandboxes (AWS) |
+   | `ci-deploy` | `prod`                   | `/ci`, `/ci/release`, `/ci/store`, `/ci/observability` | `figentra-ci-deploy`: OIDC, the deploy environments only                      |
+   | `registry`  | `prod`                   | `/ci`, `/ci/registry`                                  | `figentra-registry`: the registry repository's `registry` environment         |
+   | `flow`      | `prod`                   | `/ci/gate`, `/box`                                     | `figentra-flow-box`: universal auth from the box; `/box` is its own bootstrap |
+   | `agents`    | `dev`                    | `/agents`                                              | people and agents through `.infisical.yaml`; no CI identity                   |
+   | `<product>` | `dev`, `staging`, `prod` | `/runtime/<member>`, `/runtime/<resource>`, `/ci`      | runway sync, and a 0371 bootstrap identity per environment and member         |
+
+   There is one product project for each product: `academorix`, `billing`, `commerce`, `invoicing`, `juristra`, `jute`,
+   `mezzora`, `organza`, `pay`, `tamo`, `velora` and `os`. Slugs shorter than five characters get a `-product` suffix,
+   such as `os-product`. The plan allows three environments, so runway's `preview` maps to `dev`. The registry issuer
+   token lives in `os` `/runtime/licensing`, the service that reads it. The legacy Academorix project is
+   `academorix-legacy`, archived. `stackra` is retired once its last values have moved.
+
+2. **Only build tokens in `ci-build`.** A pull request can reach `ci-build`, so it holds no credential that can
    write or deploy.
 3. **Fixed folder names.**
    - `/ci` and `/ci/<purpose>` for CI.
@@ -73,18 +80,18 @@ The owner chose a hybrid of the two.
 6. **Bindings.**
    - A workflow takes project and identity ids only from the org variables (`INFISICAL_GATE_*`, `INFISICAL_TURBO_*`,
      `INFISICAL_CI_IDENTITY_ID`, `INFISICAL_DEPLOY_PROJECT_ID`, `INFISICAL_REGISTRY_*`), never as a literal.
-   - Every repository's `.infisical.yaml` binds `figentra-agents` `dev`.
+   - Every repository's `.infisical.yaml` binds `agents` `dev`.
    - A product's `runway.yaml` names only its own runtime workspace and the `runtime` path.
 7. **Writers name the project.**
    - `pnpm secrets:import` and `pnpm vault` take `project` from the sidecar or `--project`.
-   - `/agents` defaults to `figentra-agents`; a `/ci` target without a project is refused.
+   - `/agents` defaults to `agents`; a `/ci` target without a project is refused.
    - The confirm token binds the project.
 
 ## Consequences
 
 - **Each identity reads one project, and each value has one copy,** so a rotation is one edit.
-- **The owner moves the values once:** `/agents` to `figentra-agents`, and the store, release and observability
-  names to `figentra-ci-deploy`. Then they delete the stackra and Academorix copies. The Academorix project is
+- **The owner moves the values once:** `/agents` to `agents`, and the store, release and observability
+  names to `ci-deploy`. Then they delete the stackra and Academorix copies. The Academorix project is
   archived.
 - **Product runtime projects are created at a product's first runtime secret,** together with runway sync (STA-606).
 - **Enforcement:**
