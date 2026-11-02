@@ -61,6 +61,13 @@ function calls(fetch: ReturnType<typeof answer>, path: string) {
   );
 }
 
+/** The first call to `path`; a test that expects one fails here when there is none. */
+function firstCall(fetch: ReturnType<typeof answer>, path: string): [string, RequestInit] {
+  const [call] = calls(fetch, path);
+  expect(call).toBeDefined();
+  return call as [string, RequestInit];
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -76,7 +83,7 @@ describe("RelayAnalyticsDriver", () => {
     const fetch = answer();
     const deliveries = [delivery("screen.viewed"), delivery("lead.submitted")];
     await relay().send(deliveries);
-    const [[url, init]] = calls(fetch, "/analytics/batches");
+    const [url, init] = firstCall(fetch, "/analytics/batches");
     expect(url).toBe(`${ORIGIN}/analytics/batches`);
     expect(init.method).toBe("POST");
     expect(init.keepalive).toBe(true);
@@ -110,7 +117,7 @@ describe("RelayAnalyticsDriver", () => {
   it("still posts, without the header, when the consent endpoint fails", async () => {
     const fetch = answer(200, 503);
     await relay().send([delivery("a")]);
-    const [[, init]] = calls(fetch, "/analytics/batches");
+    const [, init] = firstCall(fetch, "/analytics/batches");
     expect(init.headers).not.toHaveProperty("Stackra-Consent");
   });
 

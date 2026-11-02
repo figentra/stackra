@@ -31,7 +31,7 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Security and privacy**: the Quality Gate job gains `id-token: write` for one Infisical step (change risk R3)
-- **Secrets**: `HEROUI_AUTH_TOKEN` and `UNIWIND_AUTH_TOKEN` (the HeroUI and Uniwind CI/CD tokens) are read from Infisical `/ci` in CI; the owner sets the value
+- **Secrets**: HeroUI's CI/CD token and `UNIWIND_AUTH_TOKEN` (the Uniwind CI/CD token) are read from Infisical `/ci` in CI; the owner sets the value
   and the `INFISICAL_GATE_IDENTITY_ID` repository variable. No value is read, printed or stored by this change
 - **ADR needed**: yes, ADR 0310 (written by `docs-adr-steward` in this pull request), amending ADR 0197 decision 4
 - **New dependencies**: owner-approved 2026-10-23: `@heroui-pro/react` 1.0.0-beta.10 and `recharts` 3.10.1 in
@@ -59,8 +59,8 @@ decisions: ADR 0165 decision 5 (free packages never depend on Pro), ADR 0197 (He
    NumberField on native.
 4. The native components get a review area in `apps/mobile` (owner, 2026-10-23, in this pull request).
 5. `apps/mobile` runs Uniwind Pro; free packages keep free `uniwind` (owner, 2026-10-23, ADR 0310 decision 11).
-6. CI installs HeroUI Pro with a token from Infisical `/ci` over OIDC (lead's recommendation, applied: the name is
-   `HEROUI_AUTH_TOKEN`, the only variable HeroUI's postinstall reads).
+6. CI installs HeroUI Pro with a token from Infisical `/ci` over OIDC (lead's recommendation, applied: the CI/CD
+   token, the only variable HeroUI's postinstall reads). Withdrawn by ADR 0469; the token is retired (STA-1903).
 
 ## User Scenarios & Testing
 
@@ -109,7 +109,7 @@ axe e2e in light, dark, LTR and RTL.
   with a Playwright and axe e2e file per component.
 - **FR-015**: `apps/mobile` SHALL have a design-system review area (`stackra://design-system`, entered from Settings)
   with a colour scheme and direction switcher and one screen per native Pro component.
-- **FR-014**: The Quality Gate SHALL install HeroUI Pro with `HEROUI_AUTH_TOKEN` read from Infisical `/ci` over GitHub
+- **FR-014**: The Quality Gate SHALL install HeroUI Pro with HeroUI's CI/CD token read from Infisical `/ci` over GitHub
   OIDC, and the release build SHALL build only the published packages.
 
 ## Success Criteria
