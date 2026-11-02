@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the `Renderer` port: everything one run draws, from typed data: messages, a title, key-value lines, lists,
  *          tables with status cells, checklists, trees, boxes, the problem screen, the banner, help, the command list,
- *          tasks, spinners, progress and pretty JSON.
+ *          tasks, spinners, progress, live views and pretty JSON.
  * Boundary: an abstract class that is its own token. A driver is built per run around the decided mode and theme and
  *           writes only to that run's streams; it never tests a terminal or the environment itself. The text driver
  *           is the default; a command and the kernel are unchanged when a driver is swapped.
@@ -14,6 +14,8 @@ import { Port } from "@stackra/contracts";
 import type { ChecklistSpec } from "#contracts/types/checklist-spec.type";
 import type { ChecklistSummary } from "#contracts/types/checklist-summary.type";
 import type { CommandStructure } from "#contracts/types/command-structure.type";
+import type { LiveHandle } from "#contracts/types/live-handle.type";
+import type { LiveView } from "#contracts/types/live-view.type";
 import type { MessageTone } from "#contracts/types/message-tone.type";
 import type { NoteTone } from "#contracts/types/note-tone.type";
 import type { Problem } from "#contracts/types/problem.type";
@@ -83,6 +85,9 @@ export abstract class Renderer extends Port {
 
   /** Starts a progress bar of `total` steps. */
   abstract progress(total: number, label?: string): Progress;
+
+  /** A screen that redraws while work runs; only its final checklist when output does not animate. */
+  abstract live(view: LiveView): LiveHandle;
 
   /** Data as pretty-printed JSON. */
   abstract json(data: unknown): void;

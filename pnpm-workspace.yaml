@@ -89,6 +89,9 @@ catalog:
   # @stackra/console's interactive Prompter driver, only behind the port (ADR 0506 amendment of 2026-11-02; owner
   # approval 2026-11-02, STA-1966). MIT.
   "@clack/prompts": 1.8.1
+  # @stackra/console's live Renderer driver (progress, dashboards, running checks), imported only when a live part
+  # animates (same approval). MIT. Ink 8 needs react >= 19.3, taken from catalog:frontend.
+  ink: 8.0.0
 
 catalogs:
   # Toolchain that builds TypeScript output — a different risk/cadence than lint/format/test tools.

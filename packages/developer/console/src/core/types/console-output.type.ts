@@ -12,6 +12,8 @@
  */
 import type { ChecklistSpec } from "#contracts/types/checklist-spec.type";
 import type { ChecklistSummary } from "#contracts/types/checklist-summary.type";
+import type { LiveHandle } from "#contracts/types/live-handle.type";
+import type { LiveView } from "#contracts/types/live-view.type";
 import type { NoteTone } from "#contracts/types/note-tone.type";
 import type { Problem } from "#contracts/types/problem.type";
 import type { Progress } from "#contracts/types/progress.type";
@@ -74,6 +76,9 @@ export interface ConsoleOutput {
 
   /** Starts a progress bar of `total` steps. */
   readonly progress: (total: number, label?: string) => Progress;
+
+  /** A screen that redraws while work runs (running checks, a dashboard); its final checklist when it stops. */
+  readonly live: (view: LiveView) => LiveHandle;
 
   /** Sets the `--json` data; without `--json`, writes it pretty-printed. */
   readonly json: (data: unknown) => void;

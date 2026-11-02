@@ -138,6 +138,19 @@ class CheckCommand extends Command({
   }
 }
 
+/** Runs its checks on a live view. */
+class WatchCommand extends Command({
+  name: "watch",
+  description: "Watch the checks",
+}) {
+  handle(io: CommandIo) {
+    const live = io.output.live({ rows: [{ name: "node", status: "running" }] });
+    live.update("node", { status: "ok" });
+    live.update("git", { status: "fail", fix: "brew install git" });
+    live.stop();
+  }
+}
+
 /** Fails with a reason, a fix and the command's docs link. */
 class CloneCommand extends Command({
   name: "clone",
@@ -160,6 +173,7 @@ class RowsCommand extends Command({
 }
 
 const COMMANDS = [
+  WatchCommand,
   CheckCommand,
   CloneCommand,
   RowsCommand,
@@ -261,6 +275,19 @@ describe("createConsole", () => {
       data: [
         { name: "node", status: "ok" },
         { name: "git", status: "fail", fix: "brew install git", run: ["brew", "install", "git"] },
+      ],
+    });
+  });
+
+  it("ends a live view in its checklist: exit 1 on a failed row, the settled rows as --json data", async () => {
+    const text = await run(["watch"]);
+    expect(text.exitCode).toBe(1);
+    expect(text.stdout).toContain("✗ fail  git");
+    expect((await run(["watch", "--json"])).json).toEqual({
+      ok: false,
+      data: [
+        { name: "node", status: "ok" },
+        { name: "git", status: "fail", fix: "brew install git" },
       ],
     });
   });

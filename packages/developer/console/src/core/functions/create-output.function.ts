@@ -10,6 +10,7 @@
  */
 import type { CheckRow } from "#contracts/types/check-row.type";
 import type { TableSpec } from "#contracts/types/table-spec.type";
+import { liveRows } from "#core/functions/live-rows.function";
 import type { ConsoleOutput } from "#core/types/console-output.type";
 import type { OutputSetup } from "#core/types/output-setup.type";
 
@@ -157,6 +158,24 @@ export function createOutput(setup: OutputSetup): ConsoleOutput {
     progress: (total, label) => {
       touch();
       return renderer.progress(total, label);
+    },
+    live: (view) => {
+      touch();
+      const handle = renderer.live(view);
+      // The facade keeps the rows too, so the final ones are the --json data, as a checklist's are.
+      const mirror = liveRows(view);
+      return {
+        update: (name, patch) => {
+          mirror.update(name, patch);
+          handle.update(name, patch);
+        },
+        stop: () => {
+          setup.onRows?.(mirror.settled());
+          const summary = handle.stop();
+          if (summary.failed > 0) setup.onFailed?.();
+          return summary;
+        },
+      };
     },
     json: (data) => {
       if (mode.json) setup.onJson(data);

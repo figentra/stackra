@@ -16,6 +16,8 @@ import { Renderer } from "#contracts/ports/renderer.port";
 import type { ChecklistSpec } from "#contracts/types/checklist-spec.type";
 import type { ChecklistSummary } from "#contracts/types/checklist-summary.type";
 import type { CommandStructure } from "#contracts/types/command-structure.type";
+import type { LiveHandle } from "#contracts/types/live-handle.type";
+import type { LiveView } from "#contracts/types/live-view.type";
 import type { MessageTone } from "#contracts/types/message-tone.type";
 import type { NoteTone } from "#contracts/types/note-tone.type";
 import type { Problem } from "#contracts/types/problem.type";
@@ -26,6 +28,7 @@ import type { TreeNode } from "#contracts/types/tree-node.type";
 import { SYMBOLS } from "#core/constants/symbols.constant";
 import { createPainter } from "#core/functions/create-painter.function";
 import { displayWidth } from "#core/functions/display-width.function";
+import { liveRows } from "#core/functions/live-rows.function";
 import { renderBanner } from "#core/functions/render-banner.function";
 import { renderBox } from "#core/functions/render-box.function";
 import { renderChecklist } from "#core/functions/render-checklist.function";
@@ -51,15 +54,15 @@ const mark = (symbol: string, text: string) => `  ${symbol} ${text}`;
 /** Draws a run's output as text. */
 export class TextRendererDriver extends Driver(Renderer) {
   /** The colours of the run. */
-  private readonly painter: Painter;
+  protected readonly painter: Painter;
 
   /** The symbol set of the run. */
-  private readonly symbols: (typeof SYMBOLS)["unicode"];
+  protected readonly symbols: (typeof SYMBOLS)["unicode"];
 
   /** Right-to-left text, reordered once here before anything measures it. */
-  private readonly bidi: (text: string) => string;
+  protected readonly bidi: (text: string) => string;
 
-  constructor(private readonly context: RenderContext) {
+  constructor(protected readonly context: RenderContext) {
     super();
     this.painter = createPainter(context.mode.depth, context.theme.accent);
     this.symbols = SYMBOLS[context.mode.unicode ? "unicode" : "ascii"];
@@ -263,6 +266,19 @@ export class TextRendererDriver extends Driver(Renderer) {
         draw();
         if (mode.animate && !this.silent) context.stdout.write("\n");
       },
+    };
+  }
+
+  live(view: LiveView): LiveHandle {
+    // Text never redraws: the view's final checklist is written when it stops.
+    const state = liveRows(view);
+    return {
+      update: state.update,
+      stop: () =>
+        this.checklist({
+          rows: state.settled(),
+          ...(view.title === undefined ? {} : { title: view.title }),
+        }),
     };
   }
 

@@ -6,6 +6,7 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { InkRendererDriver } from "#node/drivers/ink-renderer.driver";
 export { NodeProcessRunnerDriver } from "#node/drivers/node-process-runner.driver";
 export { clackPrompter } from "#node/functions/clack-prompter.function";
 export { nodePorts } from "#node/functions/node-ports.function";
