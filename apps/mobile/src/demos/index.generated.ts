@@ -1213,6 +1213,8 @@ import FreeTaskTrayLive from "#src/demos/free/task-tray/live";
 import FreeTaskTrayLiveCode from "#src/demos/free/task-tray/live.code";
 import FreeTaskTrayStates from "#src/demos/free/task-tray/states";
 import FreeTaskTrayStatesCode from "#src/demos/free/task-tray/states.code";
+import FreeTenantMenuBasics from "#src/demos/free/tenant-menu/basics";
+import FreeTenantMenuBasicsCode from "#src/demos/free/tenant-menu/basics.code";
 import FreeTextAreaVariants from "#src/demos/free/text-area/variants";
 import FreeTextAreaVariantsCode from "#src/demos/free/text-area/variants.code";
 import FreeTextAreaParts from "#src/demos/free/text-area/parts";
@@ -3356,6 +3358,11 @@ export const DEMOS: Readonly<Record<string, ComponentDemos>> = {
     },
     // oxlint-disable-next-line typescript/no-require-imports -- a lazy require, one JSON per opened screen
     api: () => require("@stackra/showcase/api/native/free/task-tray.json") as ApiDoc,
+  },
+  "free/tenant-menu": {
+    examples: {
+      basics: { Demo: FreeTenantMenuBasics, code: FreeTenantMenuBasicsCode },
+    },
   },
   "free/text-area": {
     examples: {
