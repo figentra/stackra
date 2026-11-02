@@ -229,6 +229,12 @@ export async function runTestbed(
         return { exit: await dispatch(preset) };
       }
       if (healthy === 0) {
+        // A group at 0 (its minimum since ADR 0516) has no box to answer: start one instead of waiting for none.
+        const group = await counts(slot);
+        if (group !== undefined && group.desired === 0 && group.max > 0) {
+          await setDesired(slot, 1);
+          say(`no ${slot} box running: raised the ${slot} group to 1`);
+        }
         if (request.noWait) {
           say("no healthy testbed box");
           return { exit: TESTBED_EXIT.unhealthy };

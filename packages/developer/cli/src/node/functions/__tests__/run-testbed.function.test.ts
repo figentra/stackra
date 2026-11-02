@@ -43,6 +43,8 @@ function fake(options: {
   readonly agent?: (box: string, command: string) => { code: number; stdout: string };
   readonly jobRun?: number[];
   readonly ip?: string;
+  /** The `DesiredCapacity MaxSize MinSize` row describe-auto-scaling-groups prints. */
+  readonly group?: string;
 }): Fake {
   const calls: string[] = [];
   const streams: string[] = [];
@@ -52,6 +54,9 @@ function fake(options: {
       calls.push(`${command} ${args.join(" ")}`);
       if (command === "aws" && args.includes("describe-instances")) {
         return { code: 0, stdout: options.boxes, stderr: "" };
+      }
+      if (command === "aws" && args.includes("describe-auto-scaling-groups") && options.group) {
+        return { code: 0, stdout: options.group, stderr: "" };
       }
       if (command === "aws" && args.includes("describe-security-groups")) {
         return { code: 0, stdout: "203.0.113.7/32\n", stderr: "" };
@@ -183,6 +188,22 @@ describe("runTestbed run", () => {
           : { code: 0, stdout: "busy x" },
     });
     expect(await runTestbed(request({ noWait: true }), deps, captureIo().io)).toBe(75);
+  });
+
+  it("raises a group at 0 to one box when none is running, then exits 75 with --no-wait", async () => {
+    const { deps, calls } = fake({ boxes: "[]", group: "0\t1\t0\n" });
+    const { io, output } = captureIo();
+    expect(await runTestbed(request({ noWait: true }), deps, io)).toBe(75);
+    expect(calls.filter((call) => call.includes("set-desired-capacity"))).toEqual([
+      "aws --profile p --region r autoscaling set-desired-capacity --auto-scaling-group-name stackra-testbed-light --desired-capacity 1",
+    ]);
+    expect(output()).toContain("raised the light group to 1");
+  });
+
+  it("leaves a group alone when it already has a box on the way", async () => {
+    const { deps, calls } = fake({ boxes: "[]", group: "1\t1\t0\n" });
+    expect(await runTestbed(request({ noWait: true }), deps, captureIo().io)).toBe(75);
+    expect(calls.some((call) => call.includes("set-desired-capacity"))).toBe(false);
   });
 
   it("dispatches the fallback workflow with the preset and the ref only", async () => {
