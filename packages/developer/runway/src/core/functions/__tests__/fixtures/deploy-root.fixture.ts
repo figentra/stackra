@@ -51,5 +51,5 @@ export const DEPLOY_ROOT: RootRunway = parseRunway("root", {
       },
     },
   },
-  targets: { "encore-cloud": {}, eas: { release: "build" } },
+  targets: { "encore-cloud": {}, eas: { buildTrigger: "build" } },
 });
