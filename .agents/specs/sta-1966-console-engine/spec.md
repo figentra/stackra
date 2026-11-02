@@ -282,6 +282,10 @@ values.
   them, extra fields included (doctor's `run` argv); WHEN the run's exit code is not 0 and no error was thrown, THE
   Console Kernel SHALL emit `{ "ok": false, "data": ... }`, so a command emits its data and sets its exit code together
   (a failed checklist row, or a returned code after `io.output.json`).
+- **FR-031**: WHERE a command declares `passthrough: true` THE Console Kernel SHALL hand it every token after its name
+  raw in `io.rest` and parse no fields for it, keeping routing, help and the error screen; THE Console Package SHALL
+  list such commands (`passthroughCommands`), and STA-1966 SHALL NOT be done while any `stackra`, `fflow` or
+  `figentra` command is passthrough (A-001; migration only, ADR 0500 decision 7).
 
 #### Adoption
 
@@ -352,7 +356,9 @@ values.
 
 ## Amendments
 
-None.
+- A-001 · 2026-11-02 · each CLI's port step keeps its flags and output (ADR 0500 decision 7), and porting dozens of
+  self-parsing commands at once is not one reviewable change; approved by the leader as a migration state, not an end
+  state · added: FR-031
 
 ## Status history
 
@@ -360,3 +366,5 @@ None.
 - 2026-11-02 · Draft → Clarified — Approved by leader 2026-11-02 · Q1 A (`command` option, CLI identity as actor, refusals as problems), Q2
   yes (CLI layers to TypeScript), Q3 shapes relayed to engine-proof; ADR amendments, not a new ADR
 - 2026-11-02 · Clarified → Planned — Approved by leader 2026-11-02 · spec and plan approved
+- 2026-11-02 · Planned → Draft · Claude (console-engine) · A-001 (passthrough, FR-031)
+- 2026-11-02 · Draft → Planned — Approved by leader 2026-11-02 · A-001, with its migration-only condition

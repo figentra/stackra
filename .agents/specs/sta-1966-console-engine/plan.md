@@ -54,6 +54,7 @@ stays the same and gains methods.
 - **P-014**: An interactive child starts only on a terminal; otherwise it is refused before it starts — Validates: FR-028
 - **P-015**: Every command and driver reads the working directory from the ports, never the process — Validates: FR-029
 - **P-016**: `--json` rows equal the rows the command gave; a non-zero exit with data emits `ok: false` and the data — Validates: FR-030
+- **P-017**: A passthrough command gets its raw tokens and no parsed fields; `passthroughCommands` lists exactly the commands still passthrough — Validates: FR-031
 - **P-012**: Only `tool: true` console commands appear on the local developer MCP; no action write does — Validates: FR-027
 - **P-013**: Each CLI's routing suite and each fixed fflow finding pass against its own registry — Validates: FR-023, FR-024, FR-025
 
@@ -301,21 +302,23 @@ then Flow and figentra against it, then the owner-approved release.
 
 | #   | Repo     | PR                                                                                                                                             |
 | --- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | core     | docs: this spec and plan; ADR 0506 amendment (deps, ports, Flow adoption); 0282 note; supersede flow-visual-spec                               |
+| 1   | core     | #272: docs: this spec and plan; ADR 0506 amendment (deps, ports, Flow adoption); 0282 note; supersede flow-visual-spec                         |
 | 2   | core     | folded into 6, 7 and 8: each adds its own catalog entry, lockfile and changeset where it first uses it (an unused entry would trip the checks) |
-| 3   | core     | feat(console): router intents, `help <cmd>`, spaced names, grouped list with summaries, `completion` reserved                                  |
-| 4   | core     | feat(console): Renderer port + `text` driver (existing functions behind it), status table, checklist, tree, problem box, `present`             |
-| 5   | core     | feat(console): ProcessRunner port, task failure tail, verbose-only child output, `CommandError`                                                |
-| 6   | core     | feat(console): Prompter port class, `clack` driver as the interactive default, field `prompt` and `choices`                                    |
-| 7   | core     | feat(console): `ink` live driver (task list, spinner, progress, `live`), lazy load and fallback                                                |
-| 8   | core     | feat(console): Completions port, `tab` driver, `completion <shell>`                                                                            |
-| 9   | core     | feat(console,mcp): `toolsOf`, JSON Schema from fields; `@stackra/mcp` serves tools from definitions                                            |
+| 3   | core     | #268: feat(console): router intents, `help <cmd>`, spaced names, grouped list with summaries, `completion` reserved                            |
+| 4   | core     | #283: feat(console): Renderer port + `text` driver (existing functions behind it), status table, checklist, tree, problem box, `present`       |
+| 5   | core     | #284: feat(console): ProcessRunner port, task failure tail, verbose-only child output, `CommandError`                                          |
+| 6   | core     | #285: feat(console): Prompter port class, `clack` driver as the interactive default, field `prompt` and `choices`                              |
+| 7   | core     | #286: feat(console): `ink` live driver (task list, spinner, progress, `live`), lazy load and fallback                                          |
+| 8   | core     | #287: feat(console): Completions port, `tab` driver, `completion <shell>`                                                                      |
+| 9   | core     | #288: feat(console,mcp): `toolsOf`, JSON Schema from fields; `@stackra/mcp` serves tools from definitions                                      |
 | 10  | core     | feat(actions,gen): `command` option, `ActionCommand`, after STA-1947 PR 3                                                                      |
 | 11  | core     | feat(cli): `stackra` on `createConsole` (with engine-proof's doctor), doctor checklist, status tables, `tool` flags                            |
 | 12  | flow     | feat(cli): TypeScript CLI layer on `@stackra/console`: routing, help, unknown, banner, theme                                                   |
 | 13  | flow     | fix(doctor): grouped checklist, credentials at warn on a fresh repo, `--json` rows                                                             |
 | 14  | flow     | fix(status): tables, named problems, `--verbose`, sessions from live agent sessions                                                            |
 | 15  | flow     | fix(spec,gate): `spec paths` slug fallback, non-circular `gate dir` hint, no git noise                                                         |
+| 9a  | core     | #289: console's own validate findings and STA-1985 (knip)                                                                                      |
+| 9b  | core     | #290: `passthrough: true`, migration only (A-001, FR-031)                                                                                      |
 | 16  | figentra | feat(cli): `figentra` on `@stackra/console`, Figentra theme, guards unchanged                                                                  |
 
 Engine-proof (STA-1952) builds doctor and create on PRs 3 to 6; it can start on the port shapes above once agreed, and
