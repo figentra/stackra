@@ -161,8 +161,10 @@ new module's endpoints.
 - **SC-001**: on a ci-box, an empty folder reaches green (install, gen, typecheck, tests) with one command and no
   question (`--yes`).
 - **SC-002**: the same command on the owner's Mac asks five questions at most.
-- **SC-003**: the minimal and full profiles are both created and checked by the template's own CI on every template
-  pull request, so they cannot drift.
+- **SC-003**: both profiles work end to end, standalone (minimal, with its own `apps/console`) and template (full, the
+  product shape): create, gen, dev and the dev environment through Runway. The template's own CI creates and checks
+  both on every template pull request, and phase 3's dry run runs for both. Each carries a `runway.yaml` that Runway
+  reads the same way; nothing branches on the profile (owner, 2026-11-02).
 - **SC-004**: phases 2 to 4 each have a spec section and an issue before phase 1 is closed.
 
 ## Glossary

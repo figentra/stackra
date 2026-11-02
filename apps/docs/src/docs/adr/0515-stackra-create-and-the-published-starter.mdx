@@ -51,14 +51,21 @@ shell. The shell needs an OS checkout, so it cannot run from an empty folder. Su
    - `minimal`: the web console, one service with one module, and no docs;
    - `full`: the whole template.
 
-   The template's CI creates an app from each profile on every pull request, so neither profile drifts.
+   Both profiles are first-class and work end to end: `stackra create`, gen, `stackra dev`, and the app's dev
+   environment through Runway. Each carries a `runway.yaml`, and Runway reads it the same way for both: Runway has
+   config, and it does not care which profile wrote it, as Docker needs an image and a config. Nothing in `create`,
+   gen or Runway branches on the profile name.
+
+   The template's CI creates an app from each profile on every pull request, so neither profile drifts. The phase 3
+   deploy dry run runs for both profiles.
 
 6. **The minimal profile has an app member.** The minimal profile includes `apps/console`. This narrows
    [0441](/adr/0441-product-repository-layout-assets-tree-and-root-runway-surfaces) decision 2 in scope only. That
    decision still governs Figentra products, which run inside OS shells whose surfaces Runway builds. A standalone
    Stackra app made by `create` has no OS shell, and the shell needs an OS checkout that an empty folder does not have,
    so the app ships its own console. The full profile keeps the template's OS-product shape: surfaces in `runway.yaml`
-   and no app member.
+   and no app member. The difference is only what the starter contains. It is never a different deploy path: an app
+   member and a surface are both rows Runway reads from `runway.yaml`.
 
 7. **The workspace is pnpm only.** The workspace needs pnpm catalogs with `catalogMode: strict`
    ([0001](/adr/0001-monorepo-layout)). The package-manager question shows its one choice, pnpm.

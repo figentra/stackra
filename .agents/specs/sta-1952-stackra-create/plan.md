@@ -131,10 +131,14 @@ the template PR is in review. Phase 1 is done when, after `@stackra/starter` is 
   command plus the surface, mobile and product modes; a root run that starts every member is new. The resource page
   waits on STA-1947 (gen-ui-2c), through the leader. Done: Playwright on a ci-box, zero console errors, the resource
   list shows, `note.create` adds a row.
-- **Phase 3, deploy.** The minimal profile's `runway.yaml` declares one `dev` environment (Encore Cloud for the service,
-  Cloudflare for the console). The agent runs `stackra deploy --env dev --dry-run` on a ci-box and writes the owner's
-  checklist: the accounts, the Encore app link, the Cloudflare zone, the secret names in Infisical. The owner runs the
-  deploy.
+- **Phase 3, deploy.** Both profiles carry a `runway.yaml` with one `dev` environment, and Runway reads both the same
+  way: an app member (minimal: `apps/console` on Workers) and a surface (full: the OS console shell) are both rows of
+  config, never a different deploy path, and nothing branches on the profile (owner, 2026-11-02). The service goes to
+  Encore Cloud in both. The agent runs `stackra deploy --env dev --dry-run` on a ci-box for each profile and writes the
+  owner's checklist: the accounts, the Encore app link, the Cloudflare zone, the secret names in Infisical. The owner
+  runs the deploy. Gap to confirm, not to design around: `stackra deploy --env` ships runway targets, while surfaces
+  ship today through `stackra deploy --product`; if the full profile's surfaces are not reached by `--env dev`, that
+  is a Runway gap, named to the leader with its issue.
 - **Phase 4, change.** `stackra new` cannot add a module in a product repository today (template kinds read
   `tools/scaffold/templates` from core only; `new service` writes no `src/`). A follow-up issue ships the templates in
   `@stackra/cli` and adds a `module` kind. Then: add a module, `stackra gen`, tests, dry run, owner redeploy.
