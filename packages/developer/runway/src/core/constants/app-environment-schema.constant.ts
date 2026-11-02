@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `APP_ENVIRONMENT_SCHEMA`, one `environments.<env>` block of an app runway: the dev server (port, host,
- *          https, open), the domain and its aliases, the destination override, the `vars` (public and server), the
- *          secret names, the `config` values, the e2e inputs, the Workers and PWA knobs and the desktop (Electron dev
- *          ports, channel, rollout) and mobile (Metro port, dev client, channel, profile) values of that environment.
+ *          https, open), the domain, the destination override, the `vars` (public and server), the secret names, the
+ *          `config` values, the Workers knobs and the desktop (Electron dev ports, devtools, channel) and mobile (Metro
+ *          port, channel, profile) values of that environment.
  * Boundary: internal. Strict at its top: a root key (`deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`)
- *           fails here, because placement is the root runway's alone. The e2e, Workers, PWA, desktop and mobile
- *           blocks stay open, as the canonical schema leaves them.
+ *           fails here, because placement is the root runway's alone. The Workers block stays open; the desktop and
+ *           mobile blocks are strict. Removed by STA-2028, as no repository set them and nothing read them: `aliases`
+ *           (root surface hosts redirect), `e2e` (gen writes the e2e configs, ADR 0295 decision 5), `pwa` (ADR 0326
+ *           decision 6), `desktop.rollout` (one staged rollout, ADR 0254 decision 5) and `mobile.devClient` (`easJsonOf`).
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (decision 1), ADR 0170 (dev ports written once), ADR 0175 (domains), ADR 0254
  *                     (desktop release), ADR 0180 (mobile release).
@@ -26,7 +28,6 @@ export const APP_ENVIRONMENT_SCHEMA = z.strictObject({
   https: z.boolean().optional(),
   open: z.boolean().optional(),
   domain: z.string().optional(),
-  aliases: z.array(z.string()).optional(),
   destination: z.string().optional(),
   vars: z
     .record(
@@ -36,22 +37,18 @@ export const APP_ENVIRONMENT_SCHEMA = z.strictObject({
     .optional(),
   secrets: SECRET_NAMES_SCHEMA.optional(),
   config: CONFIG_VALUES_SCHEMA.optional(),
-  e2e: OPEN_OBJECT_SCHEMA.optional(),
   workers: OPEN_OBJECT_SCHEMA.optional(),
-  pwa: OPEN_OBJECT_SCHEMA.optional(),
   desktop: z
-    .looseObject({
+    .strictObject({
       devtools: z.boolean().optional(),
       remoteDebugPort: PORT_SCHEMA.optional(),
       pkceLoopbackPort: PORT_SCHEMA.optional(),
       channel: z.string().optional(),
-      rollout: OPEN_OBJECT_SCHEMA.optional(),
     })
     .optional(),
   mobile: z
-    .looseObject({
+    .strictObject({
       metroPort: PORT_SCHEMA.optional(),
-      devClient: z.boolean().optional(),
       channel: z.string().optional(),
       profile: z.string().optional(),
     })

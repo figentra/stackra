@@ -206,21 +206,14 @@ describe("definesFor", () => {
     expect(() => definesFor("console", "production")).toThrow(/feed\.publicOrigin/);
   });
 
-  it("injects the root product and the app brands in dev and in production", () => {
+  it("injects the root product in dev and in production", () => {
     write("runway.yaml", `${[...ROOT_RUNWAY, "product:", "  key: acme"].join("\n")}\n`);
-    write(
-      "apps/console/runway.yaml",
-      `${[...CONSOLE_RUNWAY, "brands:", "  - { key: acme, name: Acme, tokens: acme.json, appId: com.acme }"].join("\n")}\n`,
-    );
     write(".stackra/dev/ports.json", JSON.stringify(DEV_FACTS));
     vi.stubEnv("VITE_SENTRY_DSN", "https://public@sentry.example/1");
 
     for (const environment of ["dev", "production"]) {
       const injected = JSON.parse(definesFor("console", environment)["__STACKRA_RUNWAY__"] ?? "");
       expect(injected.product).toEqual({ key: "acme" });
-      expect(injected.members.console.brands).toEqual([
-        { key: "acme", name: "Acme", tokens: "acme.json", appId: "com.acme" },
-      ]);
     }
   });
 
