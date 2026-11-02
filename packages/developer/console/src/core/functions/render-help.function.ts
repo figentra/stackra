@@ -1,15 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `renderHelp(structure, binary, painter)`, a command's help in the Symfony shape: description, usage,
- *          arguments (required or not, default), options (short, long, value, default) and the global options.
+ *          arguments (required or not, default), options (short, long, value, default), the global options, then the
+ *          command's examples and docs link when it has them.
  * Boundary: pure; returns the lines.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-014; spec 030 Requirement 5.4.
+ * Governing contract: STA-1730 spec FR-014; spec 030 Requirement 5.4; STA-1966 spec FR-013.
  */
 import { GLOBAL_OPTIONS } from "#core/constants/global-options.constant";
 import { padTo } from "#core/functions/pad-to.function";
-import type { CommandField } from "#core/types/command-field.type";
-import type { CommandStructure } from "#core/types/command-structure.type";
+import type { CommandField } from "#contracts/types/command-field.type";
+import type { CommandStructure } from "#contracts/types/command-structure.type";
 import type { Painter } from "#core/types/painter.type";
 
 /** The left column of an option: `-s, --shout` or `    --times=TIMES`. */
@@ -42,6 +43,7 @@ export function renderHelp(
       const name = `<${field.flag}>${field.list ? "..." : ""}`;
       return field.required ? name : `[${name}]`;
     }),
+    ...(structure.passthrough ? ["[arguments...]"] : []),
   ].join(" ");
   const rows: [string, string][] = [
     ...structure.options.map((field): [string, string] => [optionLabel(field), describe(field)]),
@@ -78,6 +80,11 @@ export function renderHelp(
   lines.push("", heading("Options"));
   for (const [left, right] of rows)
     lines.push(`  ${painter.success(padTo(left, width))}${right}`.trimEnd());
+  if (structure.examples.length > 0) {
+    lines.push("", heading("Examples"));
+    for (const example of structure.examples) lines.push(`  ${example}`);
+  }
+  if (structure.docs !== undefined) lines.push("", `  ${painter.dim(`Docs: ${structure.docs}`)}`);
   lines.push("");
   return lines;
 }

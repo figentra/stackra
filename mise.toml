@@ -31,7 +31,6 @@ shfmt = "3.14.1"
 "aqua:aws/session-manager-plugin" = "1.2.896.0"
 
 [env]
-NODE_ENV = "development"
-# Workstation-only values (AWS_PROFILE=bedrock for OpenCode); unset in CI, where a template could only make it empty,
-# which the aws CLI reads as a profile named "" (STA-1957).
+# Workstation-only values (NODE_ENV=development, AWS_PROFILE=bedrock for OpenCode); unset in CI, where a template could
+# only make them empty (STA-1957, STA-2021).
 _.source = "./tools/scripts/mise-env.sh"

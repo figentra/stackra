@@ -16,6 +16,18 @@ description: "Accepted · 2026-10-22"
   hand-written `wrangler.jsonc`.
 </Note>
 
+<Note>
+  Narrowed 2026-11-02 (owner, STA-1986) by
+  [0519](/adr/0519-worker-settings-come-from-runway-presets).
+
+- Decision 8's carve-out now covers only a Worker's code facts: `name`, `main`, `assets`, the bindings, the `vars`
+  the code reads, crons and Durable Object migrations. These stay hand-written in the member's `wrangler.jsonc`.
+- Every operational setting comes from `runway.yaml` through a preset and is rendered at deploy: compatibility,
+  URLs and domains, observability, limits, placement, cache, secret names, rollout and Access.
+- So the file is not deleted when gen lands, and gen does not emit it.
+
+</Note>
+
 ## Context
 
 Stackra needs public, stable URLs for files it publishes, starting with the JSON Schemas of its config files

@@ -7,8 +7,12 @@
  *          the edge, the secret defaults with the CI and gateway secret names, the release policy and observability.
  * Boundary: internal; `parseRunway("root", …)` and `runwayJsonSchema("root")` read it, and it accepts what the
  *           canonical `tools/schemas/runway-root.schema.json` accepts. Strict at the top and in `secrets`, so a
- *           misspelt section fails; providers, targets, the edge, release and observability stay open, as their
- *           owners check them (`definesFor` reads `targets.electron-release.feed.publicOrigin` itself).
+ *           misspelt section fails; the targets Runway knows (`TARGETS_SCHEMA`, STA-1975), the edge, release,
+ *           observability and `providers.github` (their `*-section-schema.constant.ts`, STA-1976) are closed objects
+ *           that mirror their owners' keys without defaults; the other providers stay open, as their owners check them
+ *           (`definesFor` reads `targets.electron-release.feed.publicOrigin` itself). Fields typed here but not read
+ *           yet say "Not read yet (<reader>)" in the JSON Schema, and repo-checks' `RUNWAY_UNREAD_FIELDS` holds them to
+ *           it (STA-2001); `environments.*.deploy.gate` is a deprecated alias of `release.gate`.
  * Runtime: isomorphic
  * Governing contract: ADR 0296; ADR 0493 (resources, workloads, limits, uses); (decision 2 and its 2026-10-24 note), ADR 0168 (decisions 1 to 3 and 6), ADR 0171
  *                     (`ref:` values), ADR 0173 (secret names only), ADR 0237 (gateway secret names), ADR 0335 (decision 2: product), ADR 0354
@@ -18,14 +22,19 @@
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
+import { EDGE_SECTION_SCHEMA } from "#core/constants/edge-section-schema.constant";
+import { GITHUB_SECTION_SCHEMA } from "#core/constants/github-section-schema.constant";
 import { MOBILE_APP_SCHEMA } from "#core/constants/mobile-app-schema.constant";
+import { OBSERVABILITY_SECTION_SCHEMA } from "#core/constants/observability-section-schema.constant";
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { ROOT_ENVIRONMENT_SCHEMA } from "#core/constants/root-environment-schema.constant";
 import { PRODUCT_SCHEMA } from "#core/constants/product-schema.constant";
 import { REGION_SCHEMA } from "#core/constants/region-schema.constant";
+import { RELEASE_SECTION_SCHEMA } from "#core/constants/release-section-schema.constant";
 import { RESOURCE_SCHEMA } from "#core/constants/resource-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
 import { SURFACES_SCHEMA } from "#core/constants/surfaces-schema.constant";
+import { TARGETS_SCHEMA } from "#core/constants/targets-schema.constant";
 import { WORKLOAD_SCHEMA } from "#core/constants/workload-schema.constant";
 import { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 
@@ -80,7 +89,7 @@ export const ROOT_RUNWAY_SCHEMA = z
             zones: z.record(z.string(), VALUE).optional(),
           })
           .optional(),
-        github: OPEN_OBJECT_SCHEMA.optional(),
+        github: GITHUB_SECTION_SCHEMA.optional(),
         infisical: z
           .looseObject({
             domain: z
@@ -119,8 +128,8 @@ export const ROOT_RUNWAY_SCHEMA = z
     environments: z.partialRecord(ENVIRONMENT, ROOT_ENVIRONMENT_SCHEMA),
     resources: z.record(NAME, RESOURCE_SCHEMA).optional(),
     workloads: z.record(NAME, WORKLOAD_SCHEMA).optional(),
-    targets: z.record(z.string(), OPEN_OBJECT_SCHEMA).optional(),
-    edge: OPEN_OBJECT_SCHEMA.optional(),
+    targets: TARGETS_SCHEMA.optional(),
+    edge: EDGE_SECTION_SCHEMA.optional(),
     secrets: z
       .strictObject({
         sync: z.enum(["on-deploy"]).optional(),
@@ -129,8 +138,8 @@ export const ROOT_RUNWAY_SCHEMA = z
         gateway: SECRET_NAMES_SCHEMA.optional(),
       })
       .optional(),
-    release: OPEN_OBJECT_SCHEMA.optional(),
-    observability: OPEN_OBJECT_SCHEMA.optional(),
+    release: RELEASE_SECTION_SCHEMA.optional(),
+    observability: OBSERVABILITY_SECTION_SCHEMA.optional(),
   })
   .superRefine((root, context) => {
     // A workload may use only a declared resource (ADR 0493 decision 1); members are checked where the plan joins them.

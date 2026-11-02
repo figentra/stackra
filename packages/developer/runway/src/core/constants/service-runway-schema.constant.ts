@@ -5,7 +5,9 @@
  *          of each environment. Only `version` and `environments` are required.
  * Boundary: internal; `parseRunway("service", …)` and `runwayJsonSchema("service")` read it, and it accepts what the
  *           canonical `tools/schemas/runway-service.schema.json` accepts. Strict at the top: `member`, `deployable`,
- *           `isolate`, `group`, `cpu`, `memory` and `instances` fail (root facts).
+ *           `isolate`, `group`, `cpu`, `memory` and `instances` fail (root facts). Fields typed here but not read
+ *           yet (`health.*`, `crons`, `database.plan`, `database.readReplica`, `cache.keyspaceMb`) say "Not read yet"
+ *           in the JSON Schema, and repo-checks' `RUNWAY_UNREAD_FIELDS` holds them to it (STA-2001).
  * Runtime: isomorphic
  * Governing contract: ADR 0296; ADR 0493 (resources, workloads, limits, uses); (decisions 1 and 5, and its 2026-10-23 note: `health`), ADR 0173, ADR 0190.
  */

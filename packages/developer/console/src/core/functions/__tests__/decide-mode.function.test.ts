@@ -27,6 +27,7 @@ const ports = (env: Record<string, string>, tty = true): ConsolePorts => ({
   stdoutIsTTY: tty,
   stdinIsTTY: tty,
   env,
+  cwd: "/work",
   columns: 200,
   signals: { on: () => () => undefined },
   prompter: () => ({ ask: async () => "" }),
