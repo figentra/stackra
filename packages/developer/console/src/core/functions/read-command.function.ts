@@ -154,7 +154,12 @@ export function readCommand(type: CommandClass): CommandStructure {
       claim(`-${given.short}`, property);
     }
     claim(flag, property);
-    const value = valueOf(type, property, "option");
+    // An option with choices takes one of them, so it is a string even without @Str.
+    const read = valueOf(type, property, "option");
+    const value =
+      given.choices !== undefined && read.kind === "boolean"
+        ? { ...read, kind: "string" as const }
+        : read;
     const initial = defaults[property];
     optionFields.push(
       Object.freeze({
