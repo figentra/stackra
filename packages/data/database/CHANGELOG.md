@@ -1,5 +1,83 @@
 # @stackra/database
 
+## 0.4.0
+
+### Minor Changes
+
+- 9c8d108: Packages contribute console commands, and gen collects them per member (STA-1731). `@stackra/console` audits a
+  command declared `audit: true` through the `CommandAudit` port (refused before it runs when no sink is ready; secret
+  values redacted). gen records commands in the manifest, merges hosted packages' commands, refuses
+  `command_collision`, and writes `#stackra/commands` and a console entry that `stackra console <member>` runs. First
+  commands: `db:migrate`, `db:rollback`, `db:status`, `db:seed`, `tenant:list`, `tenant:create` (with a
+  `TenantDirectory` port), `cache:clear` (the `Cache` port gains `flush`), `queue:work`, `queue:failed` and
+  `queue:retry`; `@stackra/access-log` stores command audit entries (`STACKRA_COMMAND_AUDIT_SCOPE`).
+- 3df2c07: The console command `db:seed` is now `seed-pack:status` (`SeedPackStatusCommand`): it reports a seed pack's stored
+  records, and `stackra db seed` is the one that runs seeders (STA-1852). The `./node` export test lists
+  `readMigratedSchema`.
+- 1c22c33: `stackra db seed` runs a service's seeders: gen writes `.stackra/entry/seed.ts` (boot, direct database url, no relay loop), `runSeeders` runs `minimal` then the profile, each seeder built by the container in its own transaction with a seed ledger row, skipping a seeder whose source is unchanged (`--again` re-runs). Production refuses `demo`, `test` and `--again` without `--allow-production` and records who ran it. `stackra seed-pack` runs the same step after its records. A service's `boot` takes `url` and `relay` options.
+
+### Patch Changes
+
+- 4f3f1ed: `checkMigrations` loads PGlite and its extensions on first use, like the memory driver, so importing
+  `@stackra/database/testing` no longer needs the optional PGlite peers (STA-1853).
+- e070131: `MemoryDatabaseDriver` starts each instance from a PGlite snapshot built once per migrations set and kept in a temp file, instead of running initdb, the extensions and the migrations every time (STA-1685). Every instance still gets its own fresh database.
+- d675b4d: `@stackra/database/node` exports `readMigratedSchema(files, schemas)`: it replays compiled migration steps on an
+  in-memory PGlite with the approved extensions and reads back the tables, columns (type and nullability), indexes and
+  foreign keys of the given schemas as plain data (`MigratedSchema`). It is what `stackra db diff` compares the models
+  with. It needs the optional peer `@electric-sql/pglite`, and `@electric-sql/pglite-pgvector` for `vector`, and says so
+  when they are missing.
+- 2d6bb63: The testing module's `.seed(...)` takes each seeder from the container when the wiring binds it, so a seeder that injects a service (a settings pack, a repository) gets it; an unwired seeder is still built without arguments.
+- 7dc74f6: The testing tier publishes an event a model records after its last flush, such as the first event recorded on the row
+  `insert` returned: at commit it takes what every model the transaction holds recorded, not only the changed ones.
+- d9bf3c2: The testing entry loads its optional peers (`@faker-js/faker`, `@electric-sql/pglite`,
+  `@electric-sql/pglite-pgvector`, `@mikro-orm/pglite`) on first use, not on import, so a service without them can load
+  `@stackra/database/testing`. A test that needs one that is missing gets an error naming all four.
+- 90f55b1: A model's recorded events reach the testing app after commit (STA-1740). `MemoryDatabaseDriver` and `usePostgres()`
+  connect `RecordedEventsSubscriber`, which takes each flushed model's recorded events and, once the outermost
+  transaction commits, hands them to the new `commitEvents` of `@stackra/events/testing`: an integration event to the
+  app's outbox, any other on its bus, so `run()` results and `app.events.published()` hold them. A rollback publishes
+  nothing, and a released savepoint's events wait for the transaction around it. `@stackra/database` takes
+  `@stackra/events` as an optional peer for its testing entry.
+- 688cf0c: `drainOutbox()` delivers each event as the production inbox receives it once `@stackra/database`'s testing entry is
+  loaded: on its own, in a new transaction, as the actor of the call that wrote it, in that call's scope (through the
+  app's `CallIsolation`, or `withScope` without one), so listener tests over tenant-owned rows need no wrapper.
+  `commitEvents(events, call)` records the call's actor, id and scope; `deliverEventsIn` registers the delivery scope
+  (STA-1789).
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [ef987d9]
+- Updated dependencies [a8c358a]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [90f55b1]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [79dc807]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [2bbc0e8]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/console@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/cache@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/events@0.4.0
+  - @stackra/model@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/errors@0.4.0
+  - @stackra/testing@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

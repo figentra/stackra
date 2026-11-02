@@ -1,5 +1,14 @@
 # @stackra/csp
 
+## 0.4.0
+
+### Patch Changes
+
+- Updated dependencies [0b660e0]
+- Updated dependencies [3c30885]
+  - @stackra/validation@0.4.0
+  - @stackra/config@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

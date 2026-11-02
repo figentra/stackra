@@ -1,5 +1,35 @@
 # @stackra/container
 
+## 0.4.0
+
+### Minor Changes
+
+- c9cf778: Register `approval_condition` as a binding kind (STA-1724, ADR 0509).
+- 1856ee0: Add the `Permissions` kind base, `registerPermissions`, `permissionKey`, `PERMISSION_REGISTRY` and the
+  `PermissionRegistration` type, moved from `@stackra/iam` (STA-1890, ADR 0513), so a module can declare permissions
+  without depending on iam.
+- ca7d004: `PortRegistry`, an empty interface gen augments with the class of each port it registers drivers for. `DriverName<P>`
+  keeps a hand-written `~key` brand first, then narrows an unbranded port to the names of the `PortRegistry` keys whose
+  class instance is the same type (structural identity; identical unbranded ports give a wider union), and otherwise
+  stays the union of every registered name.
+
+### Patch Changes
+
+- eccdaf0: The testing module binds a `MemoryLoggerFake` (exported from `./testing`) to `Logger` when the test overrides none
+  and no registered wiring lists a Logger driver, so a driver that logs boots in a member that does not depend on
+  `@stackra/logger`; its `lines` hold what was logged.
+- ff56870: The container's missing-binding error now ends with a hint to run `stackra gen` first when a test hits it (gen's setup
+  registers the member's wiring). The bundled rule and skills no longer say the v3 packages "do not ship yet", and the
+  migrations skill says to write migrations by hand until `stackra db diff` exists (STA-1808).
+- e219411: The events testing plugin connects only the listeners a testing app can build: one whose dependency nothing binds (a
+  listener of a module the test did not boot, such as one needing `QueueService`) is skipped, and any other error
+  building a listener still throws. The container throws a typed `UnboundTokenError` for a class nothing binds; its
+  message is unchanged.
+- Updated dependencies [9c8d108]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+  - @stackra/contracts@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

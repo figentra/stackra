@@ -1,5 +1,72 @@
 # @stackra/data-maintenance
 
+## 0.4.0
+
+### Minor Changes
+
+- 934bd70: Add the tenant's search synonyms (STA-1636, ADR 0492 decision 5), moved here from `@stackra/search` to keep search below
+  `@stackra/iam`: the `Synonym` model (`data_maintenance.synonyms`, migration 0001, `BelongsToTenant`, forced RLS),
+  `SynonymPermissions`, `SynonymService`, the `data_maintenance.synonym.create`, `.update` and `.delete` actions, the
+  `data_maintenance.synonym.list` query, and `DatabaseSynonymSourceDriver`, which implements search's `SynonymSource`. Texts
+  in `assets/lang` for ar, de, en, es, fr, it and nl. New workspace dependencies: `@stackra/errors`, `@stackra/model` and
+  `@stackra/tenancy`.
+
+### Patch Changes
+
+- 3ce01cf: A package's entity list is a committed generated contract, `src/node/entities.gen.ts`, written by `stackra gen` and kept
+  fresh by `stackra gen --check` (ADR 0294 R10 and ADR 0295, amended 2026-11-01, STA-1874). Each package's `./node` now
+  ships its `<KEY>_ENTITIES` inlined in the build instead of importing the gitignored `.stackra/gen/entities/` at runtime,
+  which failed: the 0.3.0 builds of these packages carry that broken import until this release. `stackra validate`
+  expects the re-export from `#node/entities.gen`, and the doc standard skips `*.gen.ts` files.
+- Updated dependencies [71b37fc]
+- Updated dependencies [7a94bc4]
+- Updated dependencies [a7eaed4]
+- Updated dependencies [a8c358a]
+- Updated dependencies [0b660e0]
+- Updated dependencies [0b660e0]
+- Updated dependencies [9c8d108]
+- Updated dependencies [3c30885]
+- Updated dependencies [c9cf778]
+- Updated dependencies [1856ee0]
+- Updated dependencies [ca7d004]
+- Updated dependencies [eccdaf0]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [4f3f1ed]
+- Updated dependencies [e070131]
+- Updated dependencies [d675b4d]
+- Updated dependencies [3df2c07]
+- Updated dependencies [2d6bb63]
+- Updated dependencies [7dc74f6]
+- Updated dependencies [d9bf3c2]
+- Updated dependencies [90f55b1]
+- Updated dependencies [1c22c33]
+- Updated dependencies [688cf0c]
+- Updated dependencies [ff56870]
+- Updated dependencies [e219411]
+- Updated dependencies [bb08f25]
+- Updated dependencies [1856ee0]
+- Updated dependencies [70e6c17]
+- Updated dependencies [5fc0db7]
+- Updated dependencies [b970c98]
+- Updated dependencies [2bbc0e8]
+- Updated dependencies [1856ee0]
+- Updated dependencies [dedaa81]
+- Updated dependencies [a7eaed4]
+  - @stackra/actions@0.4.0
+  - @stackra/validation@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/database@0.4.0
+  - @stackra/tenancy@0.4.0
+  - @stackra/queue@0.4.0
+  - @stackra/container@0.4.0
+  - @stackra/iam@0.4.0
+  - @stackra/outbox@0.4.0
+  - @stackra/search@0.4.0
+  - @stackra/model@0.4.0
+  - @stackra/scheduler@0.4.0
+  - @stackra/errors@0.4.0
+
 ## 0.3.0
 
 ### Patch Changes

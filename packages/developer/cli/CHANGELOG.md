@@ -1,5 +1,125 @@
 # @stackra/cli
 
+## 0.4.0
+
+### Minor Changes
+
+- 9ba62fd: `stackra check` has a `hooks` phase after `lint`: it compiles each `.tsx` file in a component home (class components
+  become the function components gen emits) and runs oxlint's `react/rules-of-hooks` on the result, reporting each
+  finding at the source file and line. The repository lint has that rule off in those homes, so this closes the gap.
+- 97ab70b: Add `stackra consumer-gate --core <dir> --checkout <dir> --product <name> --out <dir> [--mode link|pack]` (STA-1813,
+  ADR 0500), the product gate on every core train, moved from `tools/scripts/product-gate.mjs`: it points core at a
+  scratch copy of a pinned consumer product (`link:` rows, or `--mode pack` with `file:` tarballs of every publishable
+  package and a `leak` check that is never allow-listed), runs gen, typecheck, lint, build, test, `test:int` and the
+  repo-own format, spell and validate steps, and writes JSON and markdown summaries keyed by product and pin, with an
+  environment record and a `reproduce` command. The core tree must be built first and is never written. The matrix
+  (`tools/consumer-gate/matrix.yaml`, a `pins` commit per service allowed, a `kind: scaffold` entry not yet run) and the
+  allow-list (each entry has a `class`; `security`, `tenant-isolation`, `data-integrity` and `leak` are refused) are the
+  repository's data. Exit 0 green, 1 red, 2 setup error.
+- 2d76fe8: `stackra dev --tunnel` runs the developer machine's Cloudflare Tunnel beside any dev mode (STA-1909, ADR 0290 decisions 4
+  and 5). It starts `cloudflared tunnel run` and stops it when the dev run ends. The token is `CLOUDFLARE_TUNNEL_TOKEN`,
+  injected by `infisical run --env=dev --path=/agents`; it reaches `cloudflared` only as `TUNNEL_TOKEN` in that process's
+  environment, never on its command line, and the member's dev processes do not inherit it. Without the token the command
+  stops with a usage error. The tunnel (`figentra-<dev>`) and its hosts (`<member>-<dev>.figentra.cloud`) are made in
+  Cloudflare; the CLI passes no ingress config.
+- 7dc644e: `stackra new service` is the one service scaffolder (ADR 0500 decision 4). It writes the root module
+  `src/<name>.module.ts` and one passing `createTestingModule` test beside today's files, and no tool config, so
+  `pnpm install`, `stackra gen` and `stackra test` pass with no hand edit. `--data` adds the database test peers,
+  `@stackra/testing`, an example module (model, migration, a PGlite unit test and one `.int.test.ts`) and a `test:int`
+  script. `--repo <path>` names the workspace for every kind; a service written into a folder with no
+  `pnpm-workspace.yaml` also gets a minimal workspace root (catalogs, `stackra` pinned to the CLI's version, an
+  `.npmrc` for the Stackra registry). `--over` never writes or diffs under `src/`. `stackra test --tier int` runs the
+  integration tier of a package or service. The old `tools/scaffold` service template and its `service` kind are
+  removed.
+- 580b554: The `spec` phase of `stackra check` runs the spec checks of `@stackra/repo-checks` in any repository that has
+  `.agents/specs` (STA-1669), instead of calling `tools/scripts/spec-gate.mjs` and `spec-trace.mjs`, so product repositories
+  check their specs too. A repository without `.agents/specs` reports the phase as skipped (no specs). `--base`,
+  `STACKRA_BRANCH` and `SPEC_GATE_REQUIRE_READY=1` work as before.
+- 9c8d108: Packages contribute console commands, and gen collects them per member (STA-1731). `@stackra/console` audits a
+  command declared `audit: true` through the `CommandAudit` port (refused before it runs when no sink is ready; secret
+  values redacted). gen records commands in the manifest, merges hosted packages' commands, refuses
+  `command_collision`, and writes `#stackra/commands` and a console entry that `stackra console <member>` runs. First
+  commands: `db:migrate`, `db:rollback`, `db:status`, `db:seed`, `tenant:list`, `tenant:create` (with a
+  `TenantDirectory` port), `cache:clear` (the `Cache` port gains `flush`), `queue:work`, `queue:failed` and
+  `queue:retry`; `@stackra/access-log` stores command audit entries (`STACKRA_COMMAND_AUDIT_SCOPE`).
+- 1c22c33: `stackra db seed` runs a service's seeders: gen writes `.stackra/entry/seed.ts` (boot, direct database url, no relay loop), `runSeeders` runs `minimal` then the profile, each seeder built by the container in its own transaction with a seed ledger row, skipping a seeder whose source is unchanged (`--again` re-runs). Production refuses `demo`, `test` and `--again` without `--allow-production` and records who ran it. `stackra seed-pack` runs the same step after its records. A service's `boot` takes `url` and `relay` options.
+- d065062: Add a local edge for a built web surface (STA-1676). `@stackra/runway`: `LocalEdgeKvDriver`, a file-backed
+  `EdgeKvWriter`; `previewServe`, which writes the bundle's `release:` and the shell's `shell:` rows into it with every URL
+  on its own origin and serves on 127.0.0.1 as the edge Worker does (the shell page with its import map and startup
+  record, the bundle and shell files, and an API proxy for `/api` or given prefixes); `renderShellPage`; and `releaseOf`,
+  now shared with `publishProduct`. `@stackra/cli`: `stackra preview serve --surface <key> [--port] [--api]
+  [--api-prefix] [--region]`.
+
+### Patch Changes
+
+- d675b4d: `stackra db diff [--json]` compares the member's models with the schema its compiled migrations build, with no
+  database and no network. It prints `<module>  <table>  <kind>  <subject>  <expected>  <actual>` per difference (or a
+  JSON array) and exits 0 when they agree, 1 on a difference, and 2 when a migration does not compile or replay, or
+  `@stackra/database` or PGlite is not installed in the member.
+- 2687052: `stackra doctor` no longer checks a spec-kit `specify` pin: Figentra Flow replaced spec-kit (ADR 0510, STA-1850).
+- 3ce01cf: A package's entity list is a committed generated contract, `src/node/entities.gen.ts`, written by `stackra gen` and kept
+  fresh by `stackra gen --check` (ADR 0294 R10 and ADR 0295, amended 2026-11-01, STA-1874). Each package's `./node` now
+  ships its `<KEY>_ENTITIES` inlined in the build instead of importing the gitignored `.stackra/gen/entities/` at runtime,
+  which failed: the 0.3.0 builds of these packages carry that broken import until this release. `stackra validate`
+  expects the re-export from `#node/entities.gen`, and the doc standard skips `*.gen.ts` files.
+- aa21e6b: Gen reads a consumed service from a sibling folder or from a dependency whose `package.json` has `stackra.kind`
+  `contract` (a producer's published `stackra.manifest.json`, OpenAPI and lang, no source) and whose manifest `member` is
+  the service, never by matching a dependency's member name, which could pick a package's manifest for a service of the
+  same name. A contract package is never hosted. Its client and lang are generated; a listener of its events is refused
+  with `client_event_remote_transport` until the event-transport ADR. `StackraKind` gains `contract` (a new kind, so
+  skills is minor); `stackra add` does not offer it; repo-checks asks a contract package only for its kind and manifest.
+- bc2c53e: `@stackra/access-log` and `@stackra/achievements` export `./assets/*`, so a host's generated i18n can import their
+  `assets/lang` catalogues (TS2307 before). `stackra validate --repository` refuses a package with `assets/lang/` that
+  does not export `./assets/*` or leaves `assets` out of `files` (STA-1798).
+- 36dbd49: Each package with models of its own exports `<MEMBER>_ENTITIES` from `./node`, which a hosting service's generated
+  `registrations.ts` imports to register the package's entities; without it the service failed with TS2305 (STA-1793). `stackra validate --repository` refuses a package with own
+  models whose stand-in `./node` barrel misses it.
+- 0c16187: Fix the testbed's first apply. The launch template is now declared only with the groups, because EC2 refuses a template whose AMI parameter does not exist yet. The AMI parameter moves to `/imagebuilder/stackra-testbed/ami`, the only prefix Image Builder's service-linked role may write. Boxes get the `academorix-ci` key pair that `stackra testbed` connects with. The image steps and the box agent now find the host's mise tools in `/opt/mise`. `stackra testbed` now swaps its SSH allowlist entry with `aws ec2 …-security-group-ingress` (the `ec2` was missing, so a changed IP was never allowed).
+- Updated dependencies [0b660e0]
+- Updated dependencies [3ce01cf]
+- Updated dependencies [1ba7227]
+- Updated dependencies [9c8d108]
+- Updated dependencies [f8fe5a5]
+- Updated dependencies [1856ee0]
+- Updated dependencies [1c22c33]
+- Updated dependencies [ff56870]
+- Updated dependencies [c9cf778]
+- Updated dependencies [b99d4af]
+- Updated dependencies [b531c97]
+- Updated dependencies [0cf32d7]
+- Updated dependencies [457b107]
+- Updated dependencies [4561f10]
+- Updated dependencies [823d985]
+- Updated dependencies [d675b4d]
+- Updated dependencies [ca7d004]
+- Updated dependencies [1856ee0]
+- Updated dependencies [d0b1ef3]
+- Updated dependencies [3400ff6]
+- Updated dependencies [13b7dff]
+- Updated dependencies [aa21e6b]
+- Updated dependencies [dbb60dc]
+- Updated dependencies [bb08f25]
+- Updated dependencies [5f63e58]
+- Updated dependencies [c9cf778]
+- Updated dependencies [e4383ce]
+- Updated dependencies [e457ad6]
+- Updated dependencies [d4ae604]
+- Updated dependencies [3ace90d]
+- Updated dependencies [3bda222]
+- Updated dependencies [1a09488]
+- Updated dependencies [d065062]
+- Updated dependencies [d63eb09]
+- Updated dependencies [2e94f1e]
+- Updated dependencies [58c7da9]
+  - @stackra/gen@0.4.0
+  - @stackra/repo-checks@0.4.0
+  - @stackra/skills@0.4.0
+  - @stackra/contracts@0.4.0
+  - @stackra/runway@0.4.0
+  - @stackra/support@0.4.0
+  - @stackra/config@0.4.0
+  - @stackra/mcp@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

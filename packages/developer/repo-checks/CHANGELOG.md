@@ -1,5 +1,39 @@
 # @stackra/repo-checks
 
+## 0.4.0
+
+### Minor Changes
+
+- 1ba7227: `connectors` is a package category: one provider's Integration and Connection classes per package, `packages/connectors/<provider>`, tier lib. `CATEGORIES`, `StackraCategory`, the scaffold and the manifest schema accept it.
+- c9cf778: Place the `approval-condition` kind in the `access` group (STA-1724, ADR 0509).
+- 3ace90d: Add the read-only spec checks (STA-1669) as published code: `specFindings` runs the stage gate of every changed
+  `.agents/specs/<prefix>-<n>-<slug>/` folder, the foreign-status, bug-lane and lane gates and the trace rules over injected
+  git and file access, with the building blocks `specCheckStage`, `specCheckClarified`, `specCheckPlan`, `specCheckTasks`,
+  `specCheckLane`, `specCheckForeignStatus`, `specCheckBug`, `specTrace`, `specTraceProblems`, `specDrift` and the parsers.
+  The issue prefix is read from the repository's own spec folder names (`os-12-billing` is key `OS-12`), not fixed to one team.
+
+### Patch Changes
+
+- 3ce01cf: A package's entity list is a committed generated contract, `src/node/entities.gen.ts`, written by `stackra gen` and kept
+  fresh by `stackra gen --check` (ADR 0294 R10 and ADR 0295, amended 2026-11-01, STA-1874). Each package's `./node` now
+  ships its `<KEY>_ENTITIES` inlined in the build instead of importing the gitignored `.stackra/gen/entities/` at runtime,
+  which failed: the 0.3.0 builds of these packages carry that broken import until this release. `stackra validate`
+  expects the re-export from `#node/entities.gen`, and the doc standard skips `*.gen.ts` files.
+- aa21e6b: Gen reads a consumed service from a sibling folder or from a dependency whose `package.json` has `stackra.kind`
+  `contract` (a producer's published `stackra.manifest.json`, OpenAPI and lang, no source) and whose manifest `member` is
+  the service, never by matching a dependency's member name, which could pick a package's manifest for a service of the
+  same name. A contract package is never hosted. Its client and lang are generated; a listener of its events is refused
+  with `client_event_remote_transport` until the event-transport ADR. `StackraKind` gains `contract` (a new kind, so
+  skills is minor); `stackra add` does not offer it; repo-checks asks a contract package only for its kind and manifest.
+- e4383ce: The config phase refuses a file under a `__golden__` folder that git would ignore (`checkIgnoredGoldens`), so a golden can no longer go uncommitted.
+- e457ad6: `json-configs` allows the lines tool's `tools/lines/{expected,fixture}/*.json`, an app's `capabilities.json` (Runway's
+  `capabilityConfig`) and a worker's `edge.json`, each read as strict JSON (STA-1794).
+- d4ae604: `stackra validate` no longer asks to convert seed data under `assets/seeds/**/*.json` to YAML: the seeders read it as
+  JSON, so it joins `MUST_STAY_JSON`.
+- 3bda222: `checkToolPins` and the `tool-pins` finding of the `config` phase: every `"npm:<name>" = "<version>"` pin in `mise.toml`
+  must match a `pnpm-workspace.yaml` catalog pin, so the commit hooks' oxlint and oxfmt run the members' versions
+  (STA-1865).
+
 ## 0.3.0
 
 ### Minor Changes
