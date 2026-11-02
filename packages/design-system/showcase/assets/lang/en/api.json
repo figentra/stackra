@@ -1691,6 +1691,7 @@
       "TamoDateAsk": {
         "isRange": "True for a range (\"last month\").",
         "onPick": "Called with the day, or the range's ends, once applied.",
+        "slot": "The slot `useTamo` returned for the date box.",
         "today": "The day words count from."
       }
     },
@@ -2420,7 +2421,9 @@
         "value": "What the query holds for the filter, or `undefined` when it holds nothing."
       },
       "TamoFilterAsk": {
-        "onDone": "Called once the proposal is applied or discarded (a popover closes)."
+        "collection": "The collection whose filters the proposal sets.",
+        "onDone": "Called once the proposal is applied or discarded (a popover closes).",
+        "slot": "The slot `useTamo` returned for the filter box."
       }
     },
     "filter_panel": {
@@ -2508,8 +2511,10 @@
       },
       "TamoFormFill": {
         "fields": "The fields Tamo may fill; left out, the form's plain text inputs and areas, named by their labels.",
+        "form": "The form whose fields Tamo fills from the text.",
         "onReview": "Called with the names Tamo filled, or an empty list once the person kept or undid them.",
-        "pending": "The names awaiting the person's check."
+        "pending": "The names awaiting the person's check.",
+        "slot": "The slot `useTamo` returned for the form."
       }
     },
     "form_error_summary": {
@@ -5679,12 +5684,10 @@
     },
     "spinner": {
       "Spinner": {
-        "animation": "Animation configuration",
         "className": "Additional CSS classes",
         "id": "Used to reference react managed views from native code.",
         "label": "The spoken name, for example \"Loading orders\". Given, the spinner is announced as a status; left out, it is\nhidden from screen readers, so text beside it must say what is loading.",
         "ref": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
-        "render": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n* You must render the expected element type (e.g. if `<button>` is expected, you cannot render an `<a>`).\n* Only a single root DOM element can be rendered (no fragments).\n* You must pass through props and ref to the underlying DOM element, merging with your own prop as appropriate.",
         "size": "The diameter: `sm` 16, `md` 24 or `lg` 32 pixels on both runtimes. Defaults to `md`.",
         "testID": "Used to locate this view in end-to-end tests.",
         "tone": "The colour role it spins in; `default` is the foreground colour. Defaults to `accent`, as in HeroUI."
@@ -6166,7 +6169,7 @@
     },
     "tamo_draft_review": {
       "TamoDraftReview": {
-        "after": "Tamo's draft.",
+        "after": "The text Tamo drafted, shown beside the text as it is now.",
         "before": "The text as it is now; empty for a first draft.",
         "className": "Classes added to the root.",
         "onAccept": "Called with the draft, as edited, to put it in the field.",
@@ -6179,7 +6182,7 @@
     },
     "tamo_field_assist": {
       "TamoFieldAssist": {
-        "children": "The input.",
+        "children": "The field's input, which the Tamo button sits beside.",
         "field": "The field's key, sent with each task.",
         "hasContinue": "True to offer \"Continue writing\" (a text area).",
         "isShown": "True to show the Tamo button (the field has had focus: a touch screen has no hover).",

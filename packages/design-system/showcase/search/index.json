@@ -12415,7 +12415,7 @@
   },
   {
     "category": "feedback_and_status",
-    "description": "Shows how far a task has gone around a circle.",
+    "description": "Shows how far a task has gone as a cell of dots that fills.",
     "headings": [
       "Sizes",
       "Tones",
@@ -12428,7 +12428,7 @@
       "Try it"
     ],
     "key": "free/progress-circle",
-    "keywords": ["progress", "ring", "loading"],
+    "keywords": ["progress", "ring", "loading", "dots"],
     "lang": "en",
     "platforms": ["react", "native"],
     "propNames": [
@@ -12454,7 +12454,7 @@
   },
   {
     "category": "feedback_and_status",
-    "description": "يعرض مدى تقدم مهمة حول دائرة.",
+    "description": "يعرض مدى تقدّم مهمة في خلية من النقاط تمتلئ.",
     "headings": [
       "المقاسات",
       "الدرجات",
@@ -12467,7 +12467,7 @@
       "جرّبه"
     ],
     "key": "free/progress-circle",
-    "keywords": ["تقدم", "حلقة"],
+    "keywords": ["تقدم", "نقاط", "تحميل"],
     "lang": "ar",
     "platforms": ["react", "native"],
     "propNames": [
@@ -12550,7 +12550,7 @@
   },
   {
     "category": "feedback_and_status",
-    "description": "A thin bar across the top while the next page loads.",
+    "description": "A thin row of dots across the top while the next page loads.",
     "headings": ["Navigation", "Between pages", "Under a header"],
     "key": "free/route-progress",
     "keywords": ["loading", "navigation", "progress", "top bar"],
@@ -12562,7 +12562,7 @@
   },
   {
     "category": "feedback_and_status",
-    "description": "شريط رفيع أعلى الشاشة أثناء تحميل الصفحة التالية.",
+    "description": "صفّ رفيع من النقاط أعلى الشاشة أثناء تحميل الصفحة التالية.",
     "headings": ["التنقّل", "بين الصفحات", "أسفل الترويسة"],
     "key": "free/route-progress",
     "keywords": ["تحميل", "تنقّل", "تقدّم", "شريط علوي"],
@@ -12760,18 +12760,7 @@
     "keywords": ["loading", "busy", "activity"],
     "lang": "en",
     "platforms": ["react", "native"],
-    "propNames": [
-      "animation",
-      "className",
-      "id",
-      "label",
-      "ref",
-      "render",
-      "size",
-      "style",
-      "testID",
-      "tone"
-    ],
+    "propNames": ["className", "id", "label", "ref", "size", "style", "testID", "tone"],
     "tier": "free",
     "title": "Spinner"
   },
@@ -12783,18 +12772,7 @@
     "keywords": ["تحميل", "انشغال"],
     "lang": "ar",
     "platforms": ["react", "native"],
-    "propNames": [
-      "animation",
-      "className",
-      "id",
-      "label",
-      "ref",
-      "render",
-      "size",
-      "style",
-      "testID",
-      "tone"
-    ],
+    "propNames": ["className", "id", "label", "ref", "size", "style", "testID", "tone"],
     "tier": "free",
     "title": "مؤشر تحميل"
   },
@@ -17838,7 +17816,7 @@
   },
   {
     "category": "ai",
-    "description": "Tamo's suggestion drawn after the text: Tab accepts it, Escape dismisses it; on a phone, Accept and Dismiss.",
+    "description": "Tamo's suggestion drawn under the field: Tab accepts it, Escape dismisses it; on a phone, Accept and Dismiss.",
     "headings": ["Continue writing"],
     "key": "free/tamo-ghost-text",
     "keywords": ["ai", "tamo", "autocomplete", "suggestion", "ghost text", "continue writing"],
@@ -17850,7 +17828,7 @@
   },
   {
     "category": "ai",
-    "description": "اقتراح تامو يظهر بعد النص: Tab للقبول وEscape للتجاهل، وعلى الهاتف زرا القبول والتجاهل.",
+    "description": "اقتراح تامو يظهر تحت الحقل: Tab للقبول وEscape للتجاهل، وعلى الهاتف زرا القبول والتجاهل.",
     "headings": ["أكمل الكتابة"],
     "key": "free/tamo-ghost-text",
     "keywords": ["ai", "tamo", "autocomplete", "suggestion", "ghost text", "continue writing"],

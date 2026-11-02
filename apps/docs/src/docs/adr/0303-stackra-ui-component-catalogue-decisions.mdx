@@ -14,6 +14,17 @@ description: "Accepted · 2026-10-23"
 </Note>
 
 <Note>
+  Amended 2026-11-02 (STA-2017; owner's approval of that date): an exception to decision 6 for three
+  loaders only. `Spinner`, `ProgressBar` and `ProgressCircle` draw the brand's dot loader
+  (figentra/brand rules §41) instead of HeroUI's ring and bar: a 3×3 dot cell or a row of dots, lit
+  one step at a time, with the last or leading dot in the theme's emphasis colour (`--core`, falling
+  back to the accent). They keep HeroUI's root semantics where HeroUI has them (the React Aria
+  `progressbar`, its label and value) and the same props API on web and native. The exception does
+  not widen to any other primitive; every other component stays a thin wrapper with no second
+  styling layer.
+</Note>
+
+<Note>
   Amends [0302](/adr/0302-stackra-design-system-tokens-ui-and-the-playground) (decision 3; decision
   2 through decision 9 of this ADR) and changes the status of
   [0055](/adr/0055-forms-react-hook-form-zod-heroui-adapters) from Proposed to Accepted. Each
