@@ -1254,5 +1254,19 @@
     "you": "Jij",
     "disclaimer": "Tamo kan zich vergissen. Controleer wat het voorstelt.",
     "close": "Sluiten"
+  },
+  "terminal_demo": {
+    "label": "Probeer het",
+    "copy": "Opdracht kopiëren"
+  },
+  "props_playground": {
+    "controls": "Eigenschappen",
+    "preview": "Voorbeeld",
+    "theme": "Thema",
+    "theme_default": "Standaard",
+    "direction": "Richting",
+    "ltr": "Links naar rechts",
+    "rtl": "Rechts naar links",
+    "reset": "Herstellen"
   }
 }

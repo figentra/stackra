@@ -1753,6 +1753,36 @@
         "title": "Members page",
         "description": "The members settings page: roles, removals, invitations.",
         "keywords": "members, team, invite, invitation, role, settings"
+      },
+      "dither_art": {
+        "title": "Dither art",
+        "description": "A brand pattern drawn as steel dots on the ground, with a champagne core where the engine is.",
+        "keywords": "dither, brand pattern, generative art, strata, hero art"
+      },
+      "frame": {
+        "title": "Frame",
+        "description": "A window, phone or plain frame around a screenshot or a live widget.",
+        "keywords": "frame, window, phone, mockup, screenshot"
+      },
+      "bento_card": {
+        "title": "Bento card",
+        "description": "One card of a marketing bento grid: a title, a line or two, pill links and a live widget.",
+        "keywords": "bento, feature card, marketing card, product card"
+      },
+      "package_list": {
+        "title": "Package list",
+        "description": "A list of packages with their names in mono, fading out after a few rows.",
+        "keywords": "packages, npm, dependencies, libraries"
+      },
+      "terminal_demo": {
+        "title": "Terminal demo",
+        "description": "A terminal that plays a recorded CLI session one whole line at a time.",
+        "keywords": "terminal, cli, shell, command line, try it"
+      },
+      "props_playground": {
+        "title": "Props playground",
+        "description": "A live component over a panel of its props, with a theme and a direction switch.",
+        "keywords": "playground, props, controls, live preview, theme, rtl"
       }
     }
   },
@@ -5389,6 +5419,48 @@
       "members_page": {
         "basics": {
           "title": "Basics"
+        }
+      },
+      "dither_art": {
+        "strata": {
+          "title": "Strata"
+        },
+        "core": {
+          "title": "Core"
+        }
+      },
+      "frame": {
+        "window": {
+          "title": "Window"
+        },
+        "phone": {
+          "title": "Phone"
+        }
+      },
+      "bento_card": {
+        "feature": {
+          "title": "Feature"
+        },
+        "brand": {
+          "title": "In a product's colours"
+        }
+      },
+      "package_list": {
+        "packages": {
+          "title": "Packages"
+        }
+      },
+      "terminal_demo": {
+        "create": {
+          "title": "stackra create"
+        },
+        "verify": {
+          "title": "stackra verify"
+        }
+      },
+      "props_playground": {
+        "button": {
+          "title": "Button"
         }
       }
     }
@@ -9045,6 +9117,60 @@
           "what": "The tenancy module's members settings page, over the TenantMembers client port.",
           "when": "Under the settings of an organisation's admin area, for whoever manages access.",
           "rtl": "The tables mirror in Arabic; names keep their own direction and email addresses stay left to right."
+        },
+        "dither_art": {
+          "headline": "Quiet art that still moves.",
+          "intro": "Six brand patterns dithered on a canvas, drifting slowly, still when motion is reduced, with the kit's poster underneath.",
+          "tags": "Canvas · Bayer 8×8 · Reduced motion",
+          "what": "Decorative art drawn from the brand's pattern fields.",
+          "when": "Behind a hero, a band or a feature card on a marketing page.",
+          "rtl": "The art is not mirrored; it reads the same both ways.",
+          "when_not": "For anything people need to read; it is hidden from screen readers."
+        },
+        "frame": {
+          "headline": "Put the product in a frame.",
+          "intro": "A quiet window bar, a phone or a plain border, on the frame radius, that can run past the card edge and dock a switcher.",
+          "tags": "Window · Phone · Bleed",
+          "what": "Chrome around a screenshot or a live widget.",
+          "when": "To show a screen of the product on a marketing page.",
+          "rtl": "A bleed runs past the inline end, so it mirrors in Arabic.",
+          "when_not": "Around a form people use; frames are for showing, not doing."
+        },
+        "bento_card": {
+          "headline": "One idea per card.",
+          "intro": "A title, one or two lines, up to two pill links and a live widget at the bottom, in the kit or a product's own colours.",
+          "tags": "Span · Media · Brand",
+          "what": "A card of a marketing bento grid.",
+          "when": "To present features side by side on a marketing page.",
+          "rtl": "Text, links and media follow the reading direction.",
+          "when_not": "For product data; use Card."
+        },
+        "package_list": {
+          "headline": "Show the shape of the stack.",
+          "intro": "Package names in mono with one line each, cut after a few rows and fading out to say the list goes on.",
+          "tags": "Mono · Fade · Links",
+          "what": "A short list of packages.",
+          "when": "To show what a framework ships, in a feature card.",
+          "rtl": "Package names stay left to right inside Arabic text.",
+          "when_not": "For a full package index; use a table."
+        },
+        "terminal_demo": {
+          "headline": "Show the command, then what it does.",
+          "intro": "A recorded session from the real CLI, played line by line once it scrolls into view, with the command one click from the clipboard.",
+          "tags": "Recorded · Line by line · Copy",
+          "what": "A framed terminal that plays a recorded session.",
+          "when": "To show how a command feels on a marketing or docs page.",
+          "rtl": "Terminal text is code: it stays left to right and is never translated.",
+          "when_not": "For output people must read to act; use a code block."
+        },
+        "props_playground": {
+          "headline": "Change the props, keep the controls.",
+          "intro": "Edit a component's props live, try it in a product's colours and in Arabic, and reset in one press.",
+          "tags": "Live · Theme · Direction",
+          "what": "A live preview driven by a panel of props.",
+          "when": "In docs and on a landing page, to let people try a component.",
+          "rtl": "The direction switch turns only the preview right to left.",
+          "when_not": "Inside product screens."
         }
       }
     }
