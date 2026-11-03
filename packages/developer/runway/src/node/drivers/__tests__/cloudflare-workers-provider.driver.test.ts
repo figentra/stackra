@@ -3,8 +3,9 @@
  * Purpose: unit tests of `CloudflareWorkersProviderDriver`: the plan builds, migrates, uploads a version with its secrets and deploys it per
  *          member of the target's kind; apply refuses another checkout and unset values before anything ships, swaps
  *          the placeholder ids for the deploy and restores them (also on failure), sends secrets on stdin only and
- *          records each version; current agrees only when every member serves one commit; verify adds the smoke
- *          URLs; rollback uses the recorded versions; invalid settings name their runway.yaml path.
+ *          records each version; a secret can read another variable; current agrees only when every member serves one
+ *          commit; verify retries the smoke checks (with a bearer); rollback uses the recorded versions; invalid
+ *          settings name their runway.yaml path.
  * Boundary: test only; the command runner, environment and fetch are fakes, and the member is a temporary folder.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); ADR 0173; STA-1921.
@@ -46,7 +47,7 @@ const WEB: DeployTarget = {
         d1: ["stackra-registry"],
         vars: ["REGISTRY_READ_ONLY"],
         secrets: ["REGISTRY_SIGNING_KEY"],
-        smoke: "https://npm.stackra.figentra.com/-/ping",
+        smoke: [{ url: "https://npm.stackra.figentra.com/-/ping" }],
       },
       static: { path: "workers/static" },
       docs: { path: "apps/docs", kind: "docs" },
@@ -119,6 +120,8 @@ function workers(
     run,
     env: options.env ?? ENV,
     fetch: async () => ({ ok: (options.status ?? 200) < 300, status: options.status ?? 200 }),
+    smokeAttempts: 3,
+    smokeIntervalMs: 0,
   });
 }
 
@@ -256,6 +259,55 @@ describe("CloudflareWorkersProviderDriver", () => {
     const never = fakeRunner(root, { list: "[]" });
     expect(await workers(root, never.run).current(WEB)).toBeNull();
     expect((await workers(root, never.run).verify(WEB, record)).status).toBe("down");
+  });
+
+  it("maps a secret to another variable and retries a bearer smoke check until it answers", async () => {
+    const root = repository();
+    mkdirSync(join(root, "workers/turbo-cache"), { recursive: true });
+    writeFileSync(
+      join(root, "workers/turbo-cache/wrangler.jsonc"),
+      `{ "name": "stackra-turbo-cache" }`,
+    );
+    const cache = "https://turbo.stackra.figentra.com/v8/artifacts/status";
+    const target: DeployTarget = {
+      ...WEB,
+      settings: {
+        members: {
+          "turbo-cache": {
+            path: "workers/turbo-cache",
+            secrets: { TURBO_CACHE_TOKEN: "TURBO_TOKEN" },
+            smoke: [{ url: cache, bearer: "TURBO_TOKEN" }],
+          },
+        },
+      },
+    };
+    const { run, calls } = fakeRunner(root);
+    // The 0% smoke retries once, then each verify reads one 2xx; later answers are 503.
+    const statuses = [503, 200, 200];
+    const seen: string[] = [];
+    const driver = Object.assign(workers(root, run, { env: { TURBO_TOKEN: "cache-token" } }), {
+      fetch: async (url: string, headers: Readonly<Record<string, string>>) => {
+        seen.push(`${url} ${headers["authorization"] ?? ""}`);
+        const status = statuses.shift() ?? 503;
+        return { ok: status < 300, status };
+      },
+    });
+
+    const record = await driver.apply(target, SHA);
+    expect(calls).toContain(
+      `<root>/workers/turbo-cache$ pnpm exec wrangler versions upload --message ${SHA} --secrets-file /dev/stdin <<< {"TURBO_CACHE_TOKEN":"cache-token"}`,
+    );
+    expect(await driver.verify(target, record)).toEqual({ status: "up" });
+    expect(seen).toEqual(Array.from({ length: 3 }, () => `${cache} Bearer cache-token`));
+    expect((await driver.verify(target, record)).detail).toBe(
+      `turbo-cache smoke ${cache} answered 503 after 3 attempts`,
+    );
+    await expect(workers(root, run, { env: {} }).apply(target, SHA)).rejects.toMatchObject({
+      issues: [
+        { path: "targets.cloudflare-workers.members.turbo-cache.secrets" },
+        { path: "targets.cloudflare-workers.members.turbo-cache.smoke" },
+      ],
+    });
   });
 
   it("rolls each member back to its recorded version, and refuses a record without one", async () => {
