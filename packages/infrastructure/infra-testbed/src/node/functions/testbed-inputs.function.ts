@@ -40,8 +40,11 @@ export function testbedInputs(
     { key: "build/testbed-agent.sh", path: join(root, "src/agent/testbed-agent.sh") },
     ...hostNames.map((name) => ({ key: `build/${name}`, path: join(hostFiles, name) })),
     { key: "build/pnpm-lock.yaml", path: lockfilePath },
-    // `pnpm fetch` checks the lockfile against the workspace's catalogs, so the store is warmed from both.
+    // `pnpm fetch` checks the lockfile against the workspace's catalogs and the pnpmfile's checksum, and resolves the
+    // `@figentra-oss` scope from .npmrc (a registry name, no token), so the store is warmed from all four.
     { key: "build/pnpm-workspace.yaml", path: join(dirname(lockfilePath), "pnpm-workspace.yaml") },
+    { key: "build/.pnpmfile.mjs", path: join(dirname(lockfilePath), ".pnpmfile.mjs") },
+    { key: "build/.npmrc", path: join(dirname(lockfilePath), ".npmrc") },
   ];
   const components = COMPONENTS.map(({ name, file }) => ({
     name,

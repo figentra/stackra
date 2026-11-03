@@ -10,8 +10,6 @@
 import { describe, expect, it } from "@stackra/testing";
 
 import { rootRunway, TEMPLATE_EDGE } from "#core/__tests__/fixtures/root-runway.fixture";
-import { thrownIssues } from "#core/__tests__/fixtures/thrown-issues.fixture";
-import { CloudflareConfigInvalidError } from "#core/errors/cloudflare-config-invalid.error";
 import { parseEdge } from "#core/functions/parse-edge.function";
 
 describe("parseEdge", () => {
@@ -30,12 +28,9 @@ describe("parseEdge", () => {
   });
 
   it("names each invalid path under edge", () => {
-    const root = rootRunway({ edge: { bots: { mode: "block-everyone" }, apiHost: "api.v1" } });
-
-    expect(() => parseEdge(root, "acme/runway.yaml")).toThrow(CloudflareConfigInvalidError);
-    expect(thrownIssues(() => parseEdge(root)).map((issue) => issue.path)).toEqual([
-      "edge.bots.mode",
-      "edge.apiHost",
-    ]);
+    // Runway's own parse refuses a bad edge section before parseEdge runs.
+    expect(() =>
+      rootRunway({ edge: { bots: { mode: "block-everyone" }, apiHost: "api.v1" } }),
+    ).toThrow(/edge\.bots\.mode[\s\S]*edge\.apiHost/);
   });
 });

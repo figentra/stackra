@@ -1,5 +1,28 @@
 # @stackra/gen
 
+## 0.7.1
+
+### Patch Changes
+
+- 448c52f: Gen writes `.stackra/gen/i18n.ts` before it loads a member's resource classes, so a resource that takes its labels
+  from `#stackra/i18n` loads on a clean checkout instead of being refused as `resource_unloadable` (STA-1947).
+  
+  The shared walk over a host's dependency manifests is renamed `dependencyContributionsOf` (was `contributionsOf`), so
+  it no longer shares a name with `@stackra/navigation/testing`'s `contributionsOf`.
+- @stackra/money@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/support@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/money@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/support@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes
