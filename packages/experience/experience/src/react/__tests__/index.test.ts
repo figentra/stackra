@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./react` entry: the template's pages import `DocumentRenderer` and the
- *          generated web wiring imports `ReactRendererDriver`; nothing else is exported.
+ * Purpose: the consumer contract of the `./react` entry: the template's pages import `DocumentRenderer`, the
+ *          generated web wiring imports `ReactRendererDriver`, and the module UI kit's blocks (the marketing sections
+ *          and the thirteen landing blocks, without a `Block` suffix, which the `Block` classes own); nothing else.
  * Boundary: test only; `@stackra/ui/react` and `@stackra/clients/react` are empty stand-ins, so only the exports are
  *           checked.
  * Runtime: node (vitest)
@@ -19,10 +20,23 @@ vi.mock("@stackra/ui/react", () => ({ Skeleton: () => null }));
 describe("@stackra/experience/react", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(react).sort()).toEqual([
+      "AskAi",
+      "BentoGrid",
+      "ChapterTitle",
+      "CtaRow",
       "CtaSection",
       "DocumentRenderer",
       "FeatureSection",
+      "HeroMachine",
+      "MonoDisplay",
+      "ProductCards",
       "ReactRendererDriver",
+      "SiteFooter",
+      "SiteHeader",
+      "Statement",
+      "Station",
+      "StepSwitcher",
+      "TerminalStage",
     ]);
   });
 

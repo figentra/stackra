@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `CtaRowBlock`, the document side of the landing's call-to-action row (`./react`'s `CtaRowBlock`): the one
+ * Purpose: `CtaRowBlock`, the document side of the landing's call-to-action row (`./react`'s `CtaRow`): the one
  *          primary link, a copy link and a command chip.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The command is code, never translated. The key is derived by gen.

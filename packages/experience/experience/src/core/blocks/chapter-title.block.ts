@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `ChapterTitleBlock`, the document side of the landing's chapter title (`./react`'s `ChapterTitleBlock`):
+ * Purpose: `ChapterTitleBlock`, the document side of the landing's chapter title (`./react`'s `ChapterTitle`):
  *          the title, its subtitle and its place in the outline.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The key is derived by gen.

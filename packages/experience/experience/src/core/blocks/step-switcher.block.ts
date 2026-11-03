@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `StepSwitcherBlock`, the document side of the landing's step switcher (`./react`'s `StepSwitcherBlock`):
+ * Purpose: `StepSwitcherBlock`, the document side of the landing's step switcher (`./react`'s `StepSwitcher`):
  *          its spoken name and its steps, each with the code it shows.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The code is shown as text, never run and never translated. The key is derived by

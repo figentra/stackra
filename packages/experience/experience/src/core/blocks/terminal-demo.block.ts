@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `TerminalDemoBlock`, the document side of the landing's try-it terminal (`./react`'s `TerminalDemoBlock`):
- *          the command, the recorded session and the dither band it plays on.
+ * Purpose: `TerminalDemoBlock`, the document side of the landing's try-it terminal (`./react`'s `TerminalStage`):
+ *          the command, the recorded session, the dither band it plays on and the monitor it ends on.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The command and the recording are the CLI's own text, never translated. The result
  *           is the app's element, so no field. The key is derived by gen.
@@ -27,4 +27,7 @@ export class TerminalDemoBlock extends Block({
   label?: LocalizedText;
 
   art?: { poster: string; pattern?: DitherPattern };
+
+  /** The monitor drawing for `Illustration`, shown once the session has played; decorative without `alt`. */
+  monitor?: { src: string; width: number; height: number; alt?: LocalizedText };
 }

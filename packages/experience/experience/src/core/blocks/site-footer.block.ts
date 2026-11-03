@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `SiteFooterBlock`, the document side of the landing's footer (`./react`'s `SiteFooterBlock`): the link
+ * Purpose: `SiteFooterBlock`, the document side of the landing's footer (`./react`'s `SiteFooter`): the link
  *          groups and the legal line.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The locale switcher is the app's element, so no field. The key is derived by gen.

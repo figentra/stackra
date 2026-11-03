@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `AskAiBlock`, the document side of the landing's ask-the-docs field (`./react`'s `AskAiBlock`): its label,
+ * Purpose: `AskAiBlock`, the document side of the landing's ask-the-docs field (`./react`'s `AskAi`): its label,
  *          the docs URL, the placeholder and whether it is still coming.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The key is derived by gen.

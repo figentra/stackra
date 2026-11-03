@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `MonoDisplayBlock`, the document side of the landing's closing wordmark (`./react`'s `MonoDisplayBlock`):
+ * Purpose: `MonoDisplayBlock`, the document side of the landing's closing wordmark (`./react`'s `MonoDisplay`):
  *          the wordmark drawn in code glyphs, its tagline and its art.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The wordmark is a name, never translated. The key is derived by gen.
@@ -23,4 +23,7 @@ export class MonoDisplayBlock extends Block({
   tagline?: LocalizedText;
 
   art?: "floors" | "glyphs" | "none";
+
+  /** The glyph field's poster; the `glyphs` art draws only with one. */
+  poster?: string;
 }

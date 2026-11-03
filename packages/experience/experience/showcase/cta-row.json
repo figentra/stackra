@@ -1,0 +1,21 @@
+{
+  "slug": "cta-row",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "CtaRow",
+  "parts": ["CtaRow"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 160
+    }
+  ],
+  "related": ["free/button", "free/copy-button", "free/hero-machine"],
+  "tokens": ["color.core", "color.surface", "color.border"],
+  "keywords": ["call to action", "cta", "copy", "command", "marketing", "landing", "kit"],
+  "status": "new"
+}

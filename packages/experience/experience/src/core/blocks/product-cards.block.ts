@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ProductCardsBlock`, the document side of the landing's "Built on Stackra" cards (`./react`'s
- *          `ProductCardsBlock`): the products, each in its own theme, as a strip or a grid.
+ *          `ProductCards`): the products, each in its own theme, as a strip or a grid.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. A product's name is a name, never translated. The key is derived by gen.
  * Runtime: isomorphic

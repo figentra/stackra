@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `HeroMachineBlock`, the document side of the landing's hero (`./react`'s `HeroMachineBlock`): the
+ * Purpose: `HeroMachineBlock`, the document side of the landing's hero (`./react`'s `HeroMachine`): the
  *          headline, its lede and actions, the engine drawing and its dither horizon.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The machine (the schematic) is the app's element, so no field. The key is derived
@@ -30,8 +30,11 @@ export class HeroMachineBlock extends Block({
 
   command?: string;
 
-  /** The engine SVG the page ships; decorative unless `alt` is given. */
-  art!: { src: string; alt?: LocalizedText };
+  /**
+   * The engine drawing for `Illustration`: the base URL of its tone layers the page ships (`art/engine`), its viewBox
+   * size, and `alt`, without which it is decorative.
+   */
+  art!: { src: string; width: number; height: number; alt?: LocalizedText };
 
   /** The dither horizon: its poster, its pattern and the sun (the core glow) as fractions of its box, 0 to 1. */
   horizon!: { poster: string; pattern?: DitherPattern; sun?: { x: number; y: number } };

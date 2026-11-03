@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `StatementBlock`, the document side of the landing's statement (`./react`'s `StatementBlock`): one
+ * Purpose: `StatementBlock`, the document side of the landing's statement (`./react`'s `Statement`): one
  *          paragraph with its `*`-marked steel keywords, and its facts.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The key is derived by gen.

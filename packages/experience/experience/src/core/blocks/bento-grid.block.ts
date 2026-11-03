@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `BentoGridBlock`, the document side of the landing's bento grid (`./react`'s `BentoGridBlock`): its column
+ * Purpose: `BentoGridBlock`, the document side of the landing's bento grid (`./react`'s `BentoGrid`): its column
  *          count; its cards are the node's children.
  * Boundary: a block declaration only; its fields are the props a document may give it. The key is derived by gen.
  * Runtime: isomorphic
