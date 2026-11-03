@@ -3,6 +3,7 @@
  * Purpose: `TESTBED_COMMAND`, `stackra testbed <verb>`: the shared EC2 test boxes. `run "<session> <what>" <dir> "<cmd>"`
  *          runs a command on a free box under its lock; `status`, `unlock`, `ip`, `ssh`, `sync`, `scale` and `image`
  *          manage them. The boxes live in the enabled regions (`--regions a,b`, `--region r`, `STACKRA_TESTBED_REGIONS`);
+ *          `--serve <surface>` builds and serves that product surface with seeded services around the command, for e2e;
  *          `--json` makes `run` print one result line on stdout (the job's output goes to stderr) and `status` print
  *          JSON. It replaces the Mac script `ci-box`.
  * Boundary: starts `aws`, `ssh`, `rsync` and `gh` without a shell and never prints or passes a secret value; a job
@@ -27,7 +28,7 @@ export const TESTBED_COMMAND: CliCommand = {
   summary:
     "Run heavy work on the shared test boxes (run, status, unlock, ip, ssh, sync, scale, image)",
   usage:
-    'stackra testbed run "<session> <what>" <dir> "<cmd>" [--preset verify|e2e|integration --ref <ref>] [--json] [--regions a,b] [--region r] [--no-wait] [--on-demand] [--ssh-direct] | status [--json] | unlock [--box N|id] [--region r] [--slot heavy|light] | ip [--box] | ssh [--box] [cmd] | sync [--box] <dir> | scale [--box N|id] [--region r] [--slot heavy|light] | image',
+    'stackra testbed run "<session> <what>" <dir> "<cmd>" [--preset verify|e2e|integration --ref <ref>] [--serve <surface>] [--json] [--regions a,b] [--region r] [--no-wait] [--on-demand] [--ssh-direct] | status [--json] | unlock [--box N|id] [--region r] [--slot heavy|light] | ip [--box] | ssh [--box] [cmd] | sync [--box] <dir> | scale [--box N|id] [--region r] [--slot heavy|light] | image',
   options: {
     box: { type: "string" },
     slot: { type: "string" },
@@ -40,6 +41,7 @@ export const TESTBED_COMMAND: CliCommand = {
     region: { type: "string" },
     regions: { type: "string" },
     json: { type: "boolean" },
+    serve: { type: "string" },
     key: { type: "string" },
   },
   positionals: true,
@@ -62,6 +64,7 @@ export const TESTBED_COMMAND: CliCommand = {
         ref: flag(values["ref"]),
         noWait: values["no-wait"] === true,
         onDemand: values["on-demand"] === true,
+        serve: flag(values["serve"]),
         json,
         settings: resolveTestbedSettings(values, process.env, homedir()),
       },

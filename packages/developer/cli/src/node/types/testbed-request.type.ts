@@ -37,6 +37,9 @@ export type TestbedRequest = {
   /** `--on-demand`: run in the heavy (on-demand) slot whatever the command, so spot never interrupts it. */
   readonly onDemand: boolean;
 
+  /** `--serve`: a web surface to build and serve, with seeded services, around the command (an e2e run). */
+  readonly serve: string | undefined;
+
   /** `--json`: `run` streams the job to stderr and prints one result line on stdout; `status` prints JSON. */
   readonly json: boolean;
 

@@ -30,6 +30,7 @@ import { decideTestbedFallback } from "#node/functions/decide-testbed-fallback.f
 import { orderTestbedBoxes } from "#node/functions/order-testbed-boxes.function";
 import { parseTestbedBoxes } from "#node/functions/parse-testbed-boxes.function";
 import { pickTestbedSlot } from "#node/functions/pick-testbed-slot.function";
+import { serveTestbedCommand } from "#node/functions/serve-testbed-command.function";
 import { refusesTestbedCommand } from "#node/functions/refuses-testbed-command.function";
 import { releaseTestbedClaim } from "#node/functions/release-testbed-claim.function";
 import { summarizeTestbedRegion } from "#node/functions/summarize-testbed-region.function";
@@ -391,7 +392,10 @@ export async function runTestbed(
       say("the command must not call ci-box or stackra testbed; run it from the Mac instead");
       return { code: 2, waitSeconds: 0, runSeconds: 0 };
     }
-    const slot = request.onDemand ? "heavy" : classifyTestbedCommand(command);
+    // A served job builds, so it takes the heavy slot; the box runs the serve script around the command.
+    const slot = request.onDemand || request.serve ? "heavy" : classifyTestbedCommand(command);
+    const script =
+      request.serve === undefined ? command : serveTestbedCommand(request.serve, command);
     const directory = resolve(request.cwd, dir);
     const project = testbedProject(directory);
     const skip = new Set<string>();
@@ -428,7 +432,7 @@ export async function runTestbed(
         if (synced.code !== 0) return done(synced.code);
         const code = await remoteStream(
           box,
-          `testbed-agent job run ${quote(id)} ${slot} ${quote(who)} ${quote(project)} -- ${quote(command)}`,
+          `testbed-agent job run ${quote(id)} ${slot} ${quote(who)} ${quote(project)} -- ${quote(script)}`,
         );
         if (code === TESTBED_EXIT.unhealthy) {
           skip.add(box.id);

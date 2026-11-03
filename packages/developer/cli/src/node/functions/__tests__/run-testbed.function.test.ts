@@ -125,6 +125,7 @@ const request = (overrides: Partial<TestbedRequest>): TestbedRequest => ({
   ref: undefined,
   noWait: false,
   onDemand: false,
+  serve: undefined,
   json: false,
   settings: { profile: "p", region: "r", regions: ["r"], key: "/k", user: "ubuntu" },
   ...overrides,
@@ -162,6 +163,14 @@ describe("runTestbed run", () => {
     const { deps, streams } = fake({ boxes: instances(["i-1", "heavy", "2026-10-30T00:00:00Z"]) });
     expect(await runTestbed(request({ onDemand: true }), deps, captureIo().io)).toBe(0);
     expect(streams[1]).toContain(" heavy 'me work' 'app' -- 'pnpm lint'");
+  });
+
+  it("wraps the command in the serve script, in the heavy slot, with --serve", async () => {
+    const { deps, streams } = fake({ boxes: instances(["i-1", "heavy", "2026-10-30T00:00:00Z"]) });
+    expect(await runTestbed(request({ serve: "console" }), deps, captureIo().io)).toBe(0);
+    expect(streams[1]).toContain(" heavy 'me work' 'app' -- 'set -e");
+    expect(streams[1]).toContain("preview serve --surface console");
+    expect(streams[1]).toContain("\npnpm lint'");
   });
 
   it("reaches a box through SSM by its instance id and touches no security group by default", async () => {
