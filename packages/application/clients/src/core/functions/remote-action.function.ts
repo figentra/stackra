@@ -21,7 +21,7 @@ import type { SchemaOf } from "#core/types/schema-of.type";
  * export const VoidPaymentAction = remoteAction("payments.payment.void@1", {
  *   input: VoidPaymentInput$,
  *   output: VoidPaymentInput$,
- *   endpoint: { method: HttpMethod.Put, path: "/payments/:paymentId/void" },
+ *   endpoint: { method: HttpMethod.Put, path: "/app/payments/:paymentId/void" },
  * });
  */
 export function remoteAction<I extends RefSchema, O extends RefSchema>(

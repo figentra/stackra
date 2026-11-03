@@ -299,7 +299,7 @@ await runtime.prompt(agent, text, {
 
 A client tool call parks the run as `waiting_client_tool` (`RunRecord.clientPending`), emits a `ClientToolPart` and arms a
 30 second timer (`CLIENT_TOOL_TIMEOUT_MS`). The surface runs the generated handler and answers through the ai service's
-`ai.run.client_result` action (`CLIENT_RESULT_ACTION`, `PUT /runs/:runId/client-result`, input `ClientResultInput`), which
+`ai.run.client_result` action (`CLIENT_RESULT_ACTION`, `PUT /app/runs/:runId/client-result`, input `ClientResultInput`), which
 calls `runtime.resolveClientTool(runId, answer)`. A result is checked against `ClientToolResult` (`done`, an optional code)
 and a bad one reaches the model as `client_result_invalid`. No answer in time: `expireClientTool` resumes with
 `client_unavailable`. An unknown or already answered tool call id is refused with `ClientToolNotPendingError`.

@@ -45,9 +45,10 @@
       "permission": "identity.account_deletion.cancel",
       "risk": "L2",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/account-deletions/cancel",
+        "path": "/app/account-deletions/cancel",
         "derived": true
       },
       "toolOff": "the account owner's own decision, never an agent's",
@@ -91,9 +92,10 @@
       "permission": "identity.passkey.confirm",
       "risk": "L2",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "PUT",
-        "path": "/passkeys/:passkeyId/confirm",
+        "path": "/app/passkeys/:passkeyId/confirm",
         "derived": true
       },
       "toolOff": "a passkey is created on the person's own device, never by an agent",
@@ -114,9 +116,10 @@
       "permission": "identity.account_deletion.request",
       "risk": "L4",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/account-deletions/request",
+        "path": "/app/account-deletions/request",
         "derived": true
       },
       "toolOff": "deleting an account is the person's own decision, never an agent's",
@@ -137,9 +140,10 @@
       "permission": "identity.session.end_all",
       "risk": "L2",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/sessions/end-all",
+        "path": "/app/sessions/end-all",
         "derived": true
       },
       "toolOff": "the account owner's own security settings, never an agent's",
@@ -160,9 +164,10 @@
       "permission": "identity.session.end",
       "risk": "L2",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "PUT",
-        "path": "/sessions/:sessionId/end",
+        "path": "/app/sessions/:sessionId/end",
         "derived": true
       },
       "toolOff": "the account owner's own security settings, never an agent's",
@@ -183,9 +188,10 @@
       "permission": "identity.session.end_user",
       "risk": "L3",
       "actors": ["user", "service"],
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/sessions/end-user",
+        "path": "/app/sessions/end-user",
         "derived": true
       },
       "toolOff": "signing a person out is an administrator's decision, never an agent's",
@@ -206,6 +212,7 @@
       "permission": "identity.account_deletion.erase",
       "risk": "L4",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "10m",
@@ -230,9 +237,10 @@
       "permission": "identity.passkey.register",
       "risk": "L2",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/passkeys/register",
+        "path": "/app/passkeys/register",
         "derived": true
       },
       "toolOff": "a passkey is created on the person's own device, never by an agent",
@@ -276,9 +284,10 @@
       "permission": "identity.session.list",
       "risk": "L1",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/sessions",
+        "path": "/app/sessions",
         "derived": true
       },
       "toolOff": "the account owner's own security settings, never an agent's",
@@ -298,9 +307,10 @@
       "permission": "identity.account_deletion.read",
       "risk": "L1",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/account-deletions/read",
+        "path": "/app/account-deletions/read",
         "derived": true
       },
       "toolOff": "the account owner's own settings, never an agent's",

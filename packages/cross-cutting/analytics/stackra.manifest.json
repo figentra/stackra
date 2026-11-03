@@ -26,7 +26,7 @@
       "anonymous": true,
       "endpoint": {
         "method": "POST",
-        "path": "/analytics/batches",
+        "path": "/public/analytics/batches",
         "derived": false
       },
       "toolOff": "an agent has no visitor's analytics to relay",

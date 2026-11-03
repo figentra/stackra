@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `buildManifest`, the derivation of a member's `stackra.manifest.json` from what discovery read: every
  *          identity (action and query keys, event wire names, permission keys, refusal codes, model keys and tables,
- *          port keys), the endpoint, tool and refusal list of each action (and a query's `reads`, STA-1504), the module graph, the facets, and the JSON
+ *          port keys), the endpoint, area (written, else a service's own, else `app`, STA-340), tool and refusal list of each action (and a query's `reads`, STA-1504), the module graph, the facets, and the JSON
  *          Schema of every wire shape (and `<module>.ReplicaPage` for a replica query's output, ADR 0338, and the package
  *          input and output of a generated search or report query, STA-1459); a service or app also lists what its hosted packages contribute, marked
  *          `from`; each Integration's key, connection, webhook path and egress entry (a `{field}` host kept as data);
@@ -54,6 +54,7 @@ import type { Json, StackraManifest } from "@stackra/contracts";
 import { ErrorKind, refusalCode } from "@stackra/errors";
 import { camelCase, snakeCase } from "@stackra/support";
 
+import { DEFAULT_AREA } from "#core/constants/default-area.constant";
 import { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 import { GENERATED_QUERY_SCHEMAS } from "#core/constants/generated-query-schemas.constant";
 import { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
@@ -364,12 +365,17 @@ export function buildManifest(ir: MemberIR): {
       ? declared.options["actors"].map(String)
       : undefined;
     const input = shapeNamed(declared.handle?.input);
+    // The written area, else a service's own (`defineService({ area })`), else `app` (ADR 0082 decision 3).
+    const area =
+      typeof declared.options["area"] === "string"
+        ? declared.options["area"]
+        : ((ir.layout === "service" ? ir.area : undefined) ?? DEFAULT_AREA);
     const endpoint = deriveEndpoint({
       key: written,
       kind,
       inputFields: fieldsOf(input).map((field) => field.name),
       ...(actors !== undefined ? { actors } : {}),
-      ...(typeof declared.options["area"] === "string" ? { area: declared.options["area"] } : {}),
+      area,
       ...(declared.options["endpoint"] !== undefined
         ? { endpoint: declared.options["endpoint"] }
         : {}),
@@ -420,7 +426,11 @@ export function buildManifest(ir: MemberIR): {
     if (actors !== undefined) entry["actors"] = actors;
     if (effects.length > 0) entry["effects"] = effects;
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
-    for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
+    // Every entry records its area, written or the default, so the gateway and review read it (STA-340).
+    for (const option of ["idempotency", "rateLimit", "cache"])
+      if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
+    entry["area"] = area;
+    for (const option of ["job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
     // An anonymous caller may call it, past the permission and record-policy steps only (STA-2025): listed, so review sees it.
     if (actors?.includes("anonymous") === true) entry["anonymous"] = true;

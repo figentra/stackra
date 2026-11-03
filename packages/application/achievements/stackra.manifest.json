@@ -25,7 +25,7 @@
       "anonymous": true,
       "endpoint": {
         "method": "GET",
-        "path": "/awards/verify",
+        "path": "/public/awards/verify",
         "derived": false
       },
       "toolOff": "an agent reads awards through the scoped queries of the consumer, not the public check",

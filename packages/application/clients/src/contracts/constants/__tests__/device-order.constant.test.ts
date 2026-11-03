@@ -15,7 +15,7 @@ describe("DEVICE_ORDER", () => {
       deviceHeader: "Stackra-Device",
       sequenceHeader: "Stackra-Device-Sequence",
       acknowledgedQuery: "devices.device.acknowledged@1",
-      acknowledgedPath: "/devices/acknowledged",
+      acknowledgedPath: "/app/devices/acknowledged",
     });
     expect(Object.isFrozen(DEVICE_ORDER)).toBe(true);
   });

@@ -117,7 +117,7 @@ describe("generateMember", () => {
       file: ".stackra/gen/search.ts",
       permission: "billing.invoice.read",
       actors: ["user", "agent", "service"],
-      endpoint: { method: "GET", path: "/invoices/search", derived: true },
+      endpoint: { method: "GET", path: "/app/invoices/search", derived: true },
     });
     expect(entry?.["tool"]).toBeDefined();
     // Its input and output are the package shapes, described under the module, so the tool and clients see `q`.
