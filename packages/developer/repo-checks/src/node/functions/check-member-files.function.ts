@@ -32,7 +32,9 @@ export function checkMemberFiles(member: {
   const { dir, pkg, files, agents, licenseText, rootLicense, stackra = true } = member;
   const out: string[] = [];
   // ADR 0195 decision 7: @stackra/* is MIT with a LICENSE; @figentra/* apps and services are UNLICENSED with none.
-  const unlicensed = ["tier:app", "tier:service"].includes(tierFor(dir) ?? "");
+  // A docs package (ADR 0514 decision 10) is a product's own content, licensed like its apps.
+  const unlicensed =
+    ["tier:app", "tier:service"].includes(tierFor(dir) ?? "") || pkg.stackra?.kind === "docs";
   for (const f of ["README.md", "AGENTS.md", "CHANGELOG.md", ...(unlicensed ? [] : ["LICENSE"])])
     if (!files.includes(f)) out.push(`${f} missing`);
   if (files.includes("AGENTS.md") && !/^## PII/m.test(agents ?? ""))

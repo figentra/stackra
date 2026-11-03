@@ -283,6 +283,19 @@ test("a product repository keeps its own names, licence and publish settings (AD
   assert.deepEqual(packageNameFindings(checkMember({ ...member, stackra: false })), []);
 });
 
+test("a docs package sits at docs/ with no tier, turbo or tsconfig, and is UNLICENSED (ADR 0514)", () => {
+  const pkg = { name: "@figentra/pay-docs", description: "Pay docs.", stackra: { kind: "docs" } };
+  assert.deepEqual(checkMember({ dir: "docs", pkg, stackra: false }), []);
+  assert.deepEqual(checkMember({ dir: "apps/docs", pkg, stackra: false }), [
+    "a docs package lives at docs/, not apps/docs/ (ADR 0514)",
+  ]);
+  const files = ["README.md", "AGENTS.md", "CHANGELOG.md", "content"];
+  assert.deepEqual(
+    checkMemberFiles({ dir: "docs", pkg, files, agents: "# A\n\n## PII\n", stackra: false }),
+    [],
+  );
+});
+
 test("checkExports: ADR 0025 dist shape with @stackra/source first; strings are static assets", () => {
   const good = {
     "@stackra/source": "./src/a/index.ts",
