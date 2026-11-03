@@ -37,6 +37,9 @@ export class TableRecord<R> implements Table<R> {
   /** The count mode. */
   private counted: Count = Count.Estimated;
 
+  /** The look. */
+  private look: Omit<TableNode, "columns" | "filters" | "defaultSort" | "thenSort" | "count"> = {};
+
   /** Sets the columns. */
   columns(build: (column: ColumnFactory<R>) => readonly ColumnBuilder[]): this {
     this.columnSteps = build(new ColumnsRecord<R>());
@@ -73,9 +76,16 @@ export class TableRecord<R> implements Table<R> {
     return this;
   }
 
+  /** Merges the look. */
+  with(look: Omit<TableNode, "columns" | "filters" | "defaultSort" | "thenSort" | "count">): this {
+    this.look = { ...this.look, ...look };
+    return this;
+  }
+
   /** The recorded table. */
   toNode(): TableNode {
     return Object.freeze({
+      ...this.look,
       columns: Object.freeze(this.columnSteps.map((step) => step.toNode())),
       filters: Object.freeze(this.filterSteps.map((step) => step.toNode())),
       ...(this.sort === undefined ? {} : { defaultSort: this.sort }),

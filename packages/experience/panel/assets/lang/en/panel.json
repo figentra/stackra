@@ -146,12 +146,46 @@
       "jsonl": "JSON Lines",
       "pdf": "PDF"
     },
+    "field_control": {
+      "text": "Text",
+      "textarea": "Text area",
+      "email": "Email",
+      "password": "Password",
+      "url": "URL",
+      "number": "Number",
+      "money": "Money",
+      "select": "Select",
+      "multi-select": "Multi-select",
+      "radio": "Radio buttons",
+      "switch": "Switch",
+      "checkbox": "Checkbox",
+      "date": "Date",
+      "date-range": "Date range",
+      "time": "Time",
+      "slider": "Slider",
+      "combo-box": "Combo box",
+      "entity": "Record picker",
+      "upload": "Upload",
+      "repeater": "Repeater",
+      "setting": "Setting"
+    },
     "filter_comparison": {
       "gt": "Greater than",
       "gte": "Greater than or equal to",
       "lt": "Less than",
       "lte": "Less than or equal to",
       "ne": "Not equal to"
+    },
+    "filter_kind": {
+      "text": "Text",
+      "number": "Number",
+      "date": "Date",
+      "date-range": "Date range",
+      "boolean": "Yes or no",
+      "choice": "Choice",
+      "multi-choice": "Several choices",
+      "principal": "Person",
+      "time-range": "Time range"
     },
     "import_mode": {
       "create": "Create new",
