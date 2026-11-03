@@ -13,8 +13,8 @@
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
-import { KEY_SCHEMA } from "#core/constants/key-schema.constant";
 import { COMPATIBILITY_DATE_SCHEMA } from "#core/constants/compatibility-date-schema.constant";
+import { KEY_SCHEMA } from "#core/constants/key-schema.constant";
 import { WORKER_SETTINGS_SCHEMA } from "#core/constants/worker-settings-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
 import { DeployKind } from "#core/enums/deploy-kind.enum";
