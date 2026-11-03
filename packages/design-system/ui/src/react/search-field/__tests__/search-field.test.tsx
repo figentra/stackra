@@ -101,11 +101,13 @@ describe("SearchField (web)", () => {
     const { container, rerender } = render(<SearchField label="Orders" />);
     const input = screen.getByRole("searchbox", { name: "Orders" });
     expect(input.hasAttribute("aria-busy")).toBe(false);
-    expect(container.querySelector(".spinner")).toBeNull();
+    expect(container.querySelector('[data-slot="spinner"]')).toBeNull();
     rerender(<SearchField label="Orders" isLoading />);
     expect(input.getAttribute("aria-busy")).toBe("true");
-    expect(container.querySelectorAll(".spinner")).toHaveLength(1);
-    expect(container.querySelector(".spinner")?.getAttribute("aria-hidden")).toBe("true");
+    expect(container.querySelectorAll('[data-slot="spinner"]')).toHaveLength(1);
+    expect(container.querySelector('[data-slot="spinner"]')?.getAttribute("aria-hidden")).toBe(
+      "true",
+    );
   });
 
   it("draws the primary surface by default, the secondary one and full width as HeroUI's classes", () => {

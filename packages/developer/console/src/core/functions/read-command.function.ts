@@ -17,9 +17,9 @@ import { Argument } from "#core/decorators/argument.decorator";
 import { Option } from "#core/decorators/option.decorator";
 import { ConsoleDeclarationError } from "#core/errors/console-declaration.error";
 import type { CommandClass } from "#core/types/command-class.type";
-import type { CommandField } from "#core/types/command-field.type";
-import type { CommandStructure } from "#core/types/command-structure.type";
-import type { ValueKind } from "#core/types/value-kind.type";
+import type { CommandField } from "#contracts/types/command-field.type";
+import type { CommandStructure } from "#contracts/types/command-structure.type";
+import type { ValueKind } from "#contracts/types/value-kind.type";
 
 /** Structures already read, by class. */
 const READ = new WeakMap<CommandClass, CommandStructure>();
@@ -81,8 +81,10 @@ export function readCommand(type: CommandClass): CommandStructure {
   const record = kindOf(type);
   if (record?.kind !== "command")
     throw new ConsoleDeclarationError(type.name, "it does not extend Command({ ... })");
-  const options = record.options as unknown as Required<Omit<CommandOptions, "group" | "docs">> &
-    Pick<CommandOptions, "group" | "docs">;
+  const options = record.options as unknown as Required<
+    Omit<CommandOptions, "group" | "docs" | "tool">
+  > &
+    Pick<CommandOptions, "group" | "docs" | "tool">;
   const label = `${type.name} (${options.name})`;
   const defaults = defaultsOf(type);
   const argumentRecords = Argument.members(type);
@@ -103,7 +105,9 @@ export function readCommand(type: CommandClass): CommandStructure {
     const value = valueOf(type, property, "argument");
     const initial = defaults[property];
     const previous = argumentFields.at(-1);
-    const required = initial === undefined && given.optional !== true && !value.list;
+    // A prompted argument is asked for, so the invocation may leave it out.
+    const required =
+      initial === undefined && given.optional !== true && given.prompt === undefined && !value.list;
     if (previous?.list === true)
       throw new ConsoleDeclarationError(
         label,
@@ -126,6 +130,8 @@ export function readCommand(type: CommandClass): CommandStructure {
         ...(initial === undefined ? {} : { default: initial }),
         ...(given.description === undefined ? {} : { description: given.description }),
         ...(given.secret === true ? { secret: true } : {}),
+        ...(given.prompt === undefined ? {} : { prompt: given.prompt }),
+        ...(given.choices === undefined ? {} : { choices: Object.freeze([...given.choices]) }),
       }),
     );
   }
@@ -150,7 +156,12 @@ export function readCommand(type: CommandClass): CommandStructure {
       claim(`-${given.short}`, property);
     }
     claim(flag, property);
-    const value = valueOf(type, property, "option");
+    // An option with choices takes one of them, so it is a string even without @Str.
+    const read = valueOf(type, property, "option");
+    const value =
+      given.choices !== undefined && read.kind === "boolean"
+        ? { ...read, kind: "string" as const }
+        : read;
     const initial = defaults[property];
     optionFields.push(
       Object.freeze({
@@ -163,10 +174,17 @@ export function readCommand(type: CommandClass): CommandStructure {
         ...(given.short === undefined ? {} : { short: given.short }),
         ...(given.description === undefined ? {} : { description: given.description }),
         ...(given.secret === true ? { secret: true } : {}),
+        ...(given.prompt === undefined ? {} : { prompt: given.prompt }),
+        ...(given.choices === undefined ? {} : { choices: Object.freeze([...given.choices]) }),
       }),
     );
   }
 
+  if (options.passthrough && argumentFields.length + optionFields.length > 0)
+    throw new ConsoleDeclarationError(
+      label,
+      "a passthrough command declares no @Argument or @Option; it reads io.rest",
+    );
   const structure: CommandStructure = Object.freeze({
     name: options.name,
     description: options.description,
@@ -174,9 +192,13 @@ export function readCommand(type: CommandClass): CommandStructure {
     aliases: options.aliases,
     audit: options.audit,
     bin: options.bin,
+    passthrough: options.passthrough,
     examples: options.examples,
     ...(options.group === undefined ? {} : { group: options.group }),
     ...(options.docs === undefined ? {} : { docs: options.docs }),
+    ...(options.tool === undefined || options.tool === false
+      ? {}
+      : { tool: { readOnly: options.tool !== true && options.tool.readOnly } }),
     arguments: Object.freeze(argumentFields),
     options: Object.freeze(optionFields),
   });

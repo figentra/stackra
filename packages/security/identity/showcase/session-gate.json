@@ -1,0 +1,21 @@
+{
+  "slug": "session-gate",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/identity",
+  "exportName": "SessionGate",
+  "parts": ["SessionGate"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 280
+    }
+  ],
+  "related": ["free/sign-in", "free/empty-state", "free/alert"],
+  "tokens": ["color.surface"],
+  "keywords": ["session", "gate", "signed in", "guard", "assurance", "step-up", "kit"],
+  "status": "new"
+}

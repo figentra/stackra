@@ -1,0 +1,21 @@
+{
+  "slug": "sign-up",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/identity",
+  "exportName": "SignUp",
+  "parts": ["SignUp"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 620
+    }
+  ],
+  "related": ["free/stepper", "free/social-sign-in-buttons", "free/otp-input"],
+  "tokens": ["color.surface", "color.field"],
+  "keywords": ["sign up", "register", "create account", "onboarding", "kit"],
+  "status": "new"
+}

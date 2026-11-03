@@ -1,17 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web ProgressCircle draws HeroUI's ring at the three sizes and in every tone, is a named
+ * Purpose: proves the web ProgressCircle keeps HeroUI's root at the three sizes and in every tone, is a named
  *          progressbar with a value (clamped to its range, in the percentage or the caller's text) or without one
- *          (indeterminate, no value attributes), draws a track and a fill circle and no text, and passes every other
- *          prop and the ref through.
- * Boundary: jsdom with real HeroUI; the theme CSS is not loaded, so classes, attributes and SVG attributes are checked.
+ *          (indeterminate, no value attributes), draws a 3×3 cell of dots and no text, fills it in floor order to the
+ *          value with the leading dot in the emphasis colour or builds it without one, rests full and dimmed under
+ *          reduced motion, and passes every other prop and the ref through.
+ * Boundary: jsdom with real HeroUI and fake timers; the theme CSS is not loaded, so classes, attributes and inline
+ *           styles are checked. The motion level is a stand-in a test turns.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0312; WCAG 2.2 SC 4.1.2; ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-118
 import { Enum, Tone } from "@stackra/contracts";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 
 import { Size } from "#contracts/enums/size.enum";
@@ -19,13 +21,28 @@ import type { ProgressCircleContractProps } from "#contracts/types/progress-circ
 import { ProgressCircle } from "#react/progress-circle/progress-circle";
 import type { ProgressCircleProps } from "#react/progress-circle/progress-circle.props";
 
-/** The circumference of HeroUI's ring: radius 16 in a 36-unit box. */
-const CIRCUMFERENCE = 2 * Math.PI * 16;
+/** The motion level the stand-in answers. */
+const motion = vi.hoisted(() => ({ level: "full" }));
 
-const fillOf = (container: HTMLElement) =>
-  container.querySelector<SVGCircleElement>(".progress-circle__fill-circle");
+vi.mock("#react/design-system-provider/use-motion", () => ({ useMotion: () => motion.level }));
+
+const dotsOf = (container: HTMLElement) => [
+  ...container.querySelectorAll<HTMLElement>('[data-slot="dot"]'),
+];
+const litOf = (container: HTMLElement) =>
+  dotsOf(container).filter((dot) => dot.hasAttribute("data-lit")).length;
+/** The document-order index of the dot in the emphasis colour (the accent tone's core), or -1. */
+const emphasisOf = (container: HTMLElement) =>
+  dotsOf(container).findIndex((dot) => dot.style.background === "var(--core, var(--accent))");
 
 describe("ProgressCircle (web)", () => {
+  beforeEach(() => {
+    motion.level = "full";
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("is a medium accent ring with only a label, and indeterminate", () => {
     render(<ProgressCircle label="Syncing" />);
     const ring = screen.getByRole("progressbar", { name: "Syncing" });
@@ -35,36 +52,101 @@ describe("ProgressCircle (web)", () => {
       expect(ring.hasAttribute(name), name).toBe(false);
   });
 
-  it.each(Size)("draws size %s", (size) => {
-    render(<ProgressCircle label="Syncing" size={size} />);
+  // @covers sta-2017:FR-004
+  it.each(Size)("draws size %s at the contract's diameter", (size) => {
+    const { container } = render(<ProgressCircle label="Syncing" size={size} />);
     expect(screen.getByRole("progressbar").classList.contains(`progress-circle--${size}`)).toBe(
       true,
     );
+    const { dot, gap } = { sm: { dot: 4, gap: 4 }, md: { dot: 6, gap: 5 }, lg: { dot: 8, gap: 6 } }[
+      size
+    ];
+    // Three dots and two gaps span the contract's diameters.
+    expect(3 * dot + 2 * gap).toBe({ sm: 20, md: 28, lg: 36 }[size]);
+    expect(container.querySelector<HTMLElement>('[data-slot="dot-grid"]')?.style.gap).toBe(
+      `${gap}px`,
+    );
+    for (const node of dotsOf(container)) expect(node.style.inlineSize).toBe(`${dot}px`);
   });
 
+  // @covers sta-2017:FR-004
   it.each(Enum.values(Tone))("draws tone %s", (tone) => {
-    render(<ProgressCircle label="Syncing" tone={tone} />);
+    const { container } = render(<ProgressCircle label="Syncing" tone={tone} value={50} />);
     expect(screen.getByRole("progressbar").classList.contains(`progress-circle--${tone}`)).toBe(
       true,
     );
+    const color = `var(--${tone === "default" ? "foreground" : tone})`;
+    expect(container.querySelector<HTMLElement>('[data-slot="dot-grid"]')?.style.color).toBe(color);
+    // The fifth dot in floor order leads at 50: the middle row's centre, the fifth in document order.
+    expect(dotsOf(container)[4]?.style.background).toBe(
+      tone === "accent" ? "var(--core, var(--accent))" : color,
+    );
   });
 
-  it("draws a track circle and a fill circle and no text", () => {
+  // @covers sta-2017:FR-004
+  it("draws a hidden 3×3 cell of dots and no text", () => {
     const { container } = render(<ProgressCircle label="Syncing" value={25} />);
-    expect(container.querySelector(".progress-circle__track-circle")).not.toBeNull();
-    expect(fillOf(container)).not.toBeNull();
+    expect(dotsOf(container)).toHaveLength(9);
+    expect(container.querySelector('[data-slot="dot-grid"]')?.getAttribute("aria-hidden")).toBe(
+      "true",
+    );
     expect(container.textContent).toBe("");
   });
 
-  it("is determinate with a value: its number, its percentage text and an arc of that length", () => {
+  // @covers sta-2017:FR-004
+  it("is determinate with a value: its number, its percentage text and dots filled to it", () => {
     const { container } = render(<ProgressCircle label="Syncing" value={25} />);
     const ring = screen.getByRole("progressbar");
     expect(ring.getAttribute("aria-valuenow")).toBe("25");
     expect(ring.getAttribute("aria-valuetext")).toBe("25%");
-    expect(Number(fillOf(container)?.getAttribute("stroke-dashoffset"))).toBeCloseTo(
-      CIRCUMFERENCE * 0.75,
-      3,
-    );
+    // 25 of 100 rounds up to three of nine: the bottom row, the third dot leading.
+    expect(litOf(container)).toBe(3);
+    expect(emphasisOf(container)).toBe(8);
+  });
+
+  // @covers sta-2017:FR-004
+  it("fills five of nine dots in floor order at 50", () => {
+    const { container } = render(<ProgressCircle label="Syncing" value={50} />);
+    expect(dotsOf(container).map((dot) => dot.hasAttribute("data-lit"))).toEqual([
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+    ]);
+    expect(emphasisOf(container)).toBe(4);
+  });
+
+  // @covers sta-2017:FR-004
+  it("builds the cell a dot every 80 ms without a value, the ninth dot in the core", () => {
+    vi.useFakeTimers();
+    const { container } = render(<ProgressCircle label="Syncing" />);
+    expect(litOf(container)).toBe(1);
+    expect(emphasisOf(container)).toBe(2);
+    act(() => vi.advanceTimersByTime(80));
+    expect(litOf(container)).toBe(2);
+    act(() => vi.advanceTimersByTime(80 * 7));
+    expect(litOf(container)).toBe(9);
+    act(() => vi.advanceTimersByTime(480));
+    expect(litOf(container)).toBe(0);
+    act(() => vi.advanceTimersByTime(160));
+    expect(litOf(container)).toBe(1);
+  });
+
+  // @covers sta-2017:FR-007
+  it("rests full and dimmed with no timer under reduced motion", () => {
+    vi.useFakeTimers();
+    motion.level = "reduced";
+    const { container } = render(<ProgressCircle label="Syncing" />);
+    const cell = container.querySelector<HTMLElement>('[data-slot="progress-circle-dots"]');
+    expect(litOf(container)).toBe(9);
+    expect(cell?.style.opacity).toBe("0.6");
+    act(() => vi.advanceTimersByTime(1280));
+    expect(litOf(container)).toBe(9);
   });
 
   it("holds a value to the range and speaks the caller's text", () => {
@@ -74,7 +156,7 @@ describe("ProgressCircle (web)", () => {
     const ring = screen.getByRole("progressbar");
     expect(ring.getAttribute("aria-valuenow")).toBe("12");
     expect(ring.getAttribute("aria-valuetext")).toBe("12 of 12");
-    expect(Number(fillOf(container)?.getAttribute("stroke-dashoffset"))).toBeCloseTo(0, 3);
+    expect(litOf(container)).toBe(9);
   });
 
   it("is named by aria-label", () => {

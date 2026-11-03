@@ -8,7 +8,7 @@
  * Governing contract: STA-1731 spec FR-016.
  */
 import { isSecret } from "#core/functions/is-secret.function";
-import type { CommandStructure } from "#core/types/command-structure.type";
+import type { CommandStructure } from "#contracts/types/command-structure.type";
 
 /**
  * The audit values of a run.

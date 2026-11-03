@@ -8,6 +8,7 @@
  */
 import type { Readable, Writable } from "node:stream";
 
+import type { LocalTool } from "#node/types/local-tool.type";
 import type { McpPeer } from "#node/types/mcp-peer.type";
 import type { StackraRunner } from "#node/types/stackra-runner.type";
 
@@ -28,4 +29,10 @@ export type ServeLocalMcpOptions = {
    * `providers.encore.app`.
    */
   readonly encore?: McpPeer | null;
+
+  /**
+   * Tools from CLI command definitions (`toolsOf` of `@stackra/console`), served with the command's own schema and
+   * handler; one named like a built-in tool replaces it.
+   */
+  readonly tools?: readonly LocalTool[];
 };

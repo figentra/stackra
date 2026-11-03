@@ -8,14 +8,14 @@
  * Runtime: isomorphic (`node:util` is in every runtime Stackra targets for a CLI)
  * Governing contract: STA-1730 spec FR-009, FR-010 and FR-015; spec 030 Requirement 3.
  */
-import { isSecret } from "#core/functions/is-secret.function";
 import { parseArgs } from "node:util";
 import type { ParseArgsConfig } from "node:util";
 
 import { GLOBAL_OPTIONS } from "#core/constants/global-options.constant";
 import { UsageError } from "#core/errors/usage.error";
-import type { CommandField } from "#core/types/command-field.type";
-import type { CommandStructure } from "#core/types/command-structure.type";
+import { convertToken } from "#core/functions/convert-token.function";
+import type { CommandField } from "#contracts/types/command-field.type";
+import type { CommandStructure } from "#contracts/types/command-structure.type";
 import type { GlobalFlags } from "#core/types/global-flags.type";
 import type { ParsedInvocation } from "#core/types/parsed-invocation.type";
 
@@ -29,32 +29,6 @@ function optionsOf(fields: readonly CommandField[]): NonNullable<ParseArgsConfig
       ...(field.short === undefined ? {} : { short: field.short }),
     };
   return options;
-}
-
-/** One token converted to the field's kind and checked against its bounds. */
-function convert(field: CommandField, token: string): unknown {
-  const name = field.role === "option" ? `--${field.flag}` : `<${field.flag}>`;
-  // A secret value is never echoed: the message reaches stderr and `--json`.
-  const shown = isSecret(field) ? "[redacted]" : `"${token}"`;
-  if (field.kind === "string") {
-    if (field.min !== undefined && token.length < field.min)
-      throw new UsageError(`${name} must be at least ${field.min} characters, got ${shown}`);
-    if (field.max !== undefined && token.length > field.max)
-      throw new UsageError(`${name} must be at most ${field.max} characters, got ${shown}`);
-    if (field.pattern !== undefined && !new RegExp(field.pattern, "u").test(token))
-      throw new UsageError(`${name} does not match /${field.pattern}/, got ${shown}`);
-    return token;
-  }
-  const value = token.trim() === "" ? Number.NaN : Number(token);
-  if (!Number.isFinite(value) || (field.kind === "integer" && !Number.isInteger(value)))
-    throw new UsageError(
-      `${name} must be ${field.kind === "integer" ? "a whole number" : "a number"}, got ${shown}`,
-    );
-  if (field.min !== undefined && value < field.min)
-    throw new UsageError(`${name} must be at least ${field.min}, got ${value}`);
-  if (field.max !== undefined && value > field.max)
-    throw new UsageError(`${name} must be at most ${field.max}, got ${value}`);
-  return value;
 }
 
 /** The global options in `values`. */
@@ -111,8 +85,8 @@ export function parseInvocation(
         field.kind === "boolean"
           ? given
           : Array.isArray(given)
-            ? given.map((token) => convert(field, String(token)))
-            : convert(field, String(given));
+            ? given.map((token) => convertToken(field, String(token)))
+            : convertToken(field, String(given));
     }
     const positionals = [...parsed.positionals];
     for (const field of structure?.arguments ?? []) {
@@ -125,8 +99,8 @@ export function parseInvocation(
         continue;
       }
       values[field.property] = field.list
-        ? positionals.splice(0).map((token) => convert(field, token))
-        : convert(field, positionals.shift() ?? "");
+        ? positionals.splice(0).map((token) => convertToken(field, token))
+        : convertToken(field, positionals.shift() ?? "");
     }
     if (positionals.length > 0)
       throw new UsageError(

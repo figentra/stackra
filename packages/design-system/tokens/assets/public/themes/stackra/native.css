@@ -3,6 +3,7 @@
 @theme {
   --radius: 0.25rem;
   --field-radius: var(--radius);
+  --radius-pill: 9999px;
   --field-border-width: 1px;
   --spacing: 0.25rem;
   --font-display: "Geist";
@@ -72,6 +73,12 @@
   --color-accent-pressed: var(--accent-pressed);
   --color-accent-soft: var(--accent-soft);
   --color-accent-soft-foreground: var(--accent-soft-foreground);
+  --color-core: var(--core);
+  --color-core-strong: var(--core-strong);
+  --color-core-hover: var(--core-hover);
+  --color-core-pressed: var(--core-pressed);
+  --color-core-soft: var(--core-soft);
+  --color-core-foreground: var(--core-foreground);
   --color-signal: var(--signal);
   --color-signal-foreground: var(--signal-foreground);
   --color-amber-strong: var(--amber-strong);
@@ -169,6 +176,12 @@
       --accent-pressed: oklch(0.45 0.03 252);
       --accent-soft: oklch(0.94 0.012 252);
       --accent-soft-foreground: oklch(0.4 0.03 252);
+      --core: oklch(0.63 0.085 85);
+      --core-strong: oklch(0.41 0.08 85);
+      --core-hover: oklch(0.37 0.074 85);
+      --core-pressed: oklch(0.33 0.066 85);
+      --core-soft: oklch(0.95 0.02 85);
+      --core-foreground: oklch(0.972 0.004 122);
       --signal: oklch(0.158 0.005 248);
       --signal-foreground: oklch(0.972 0.004 122);
       --amber-strong: oklch(0.47 0.095 75);
@@ -264,6 +277,12 @@
       --accent-pressed: oklch(0.67 0.03 252);
       --accent-soft: oklch(0.29 0.015 252);
       --accent-soft-foreground: oklch(0.88 0.02 252);
+      --core: oklch(0.88 0.055 96);
+      --core-strong: oklch(0.88 0.055 96);
+      --core-hover: oklch(0.83 0.055 96);
+      --core-pressed: oklch(0.78 0.052 96);
+      --core-soft: oklch(0.29 0.02 96);
+      --core-foreground: oklch(0.158 0.005 248);
       --signal: oklch(0.972 0.004 122);
       --signal-foreground: oklch(0.158 0.005 248);
       --amber-strong: oklch(0.83 0.15 82);
