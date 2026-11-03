@@ -65,6 +65,7 @@ import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
 import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
+import { settingsKeyOf } from "#core/functions/settings-key-of.function";
 import { shippedSpecifier } from "#core/functions/shipped-specifier.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
@@ -1987,13 +1988,13 @@ export function createSourceReader(
     return undefined;
   };
 
-  /** The setting fields of `module`'s own settings classes by name, a section's fields under their own names. */
-  const settingFieldsOf = (module: string): Map<string, FieldIR> => {
+  /** The setting fields of the own settings classes of `group` (`settingsKeyOf`) by name, a section's under its own names. */
+  const settingFieldsOf = (group: string): Map<string, FieldIR> => {
     const found = new Map<string, FieldIR>();
     for (const file of sources)
       for (const node of classNodes(file)) {
         const shape = kindInfo(node)?.kind === "settings" ? readShape(node) : undefined;
-        if (shape === undefined || shape.module !== module) continue;
+        if (shape === undefined || settingsKeyOf(shape) !== group) continue;
         for (const field of shape.fields)
           if (field.type.kind !== "schema") found.set(field.name, field);
           else
@@ -2004,9 +2005,9 @@ export function createSourceReader(
   };
 
   /**
-   * The fields of a `Settings.pick([...])` class: each picked `Settings.<module>.<name>` key's field, read from the
-   * member's own settings class of that module (stackra-209); undefined, with `settings_key_unresolved`, when a key is
-   * not written as `Settings.<module>.<name>` or no own settings class declares it.
+   * The fields of a `Settings.pick([...])` class: each picked `Settings.<group>.<name>` key's field, read from the
+   * member's own settings classes of that group key (stackra-209, STA-2056); undefined, with `settings_key_unresolved`,
+   * when a key is not written as `Settings.<group>.<name>` or no own settings class declares it.
    */
   const pickedSettings = (node: TsNode, name: string): FieldIR[] | undefined => {
     const heritage = heritageOf(node);
@@ -2016,14 +2017,14 @@ export function createSourceReader(
       list !== undefined && kindOf(list) === "ArrayLiteralExpression"
         ? (list.elements ?? [])
         : [list ?? node];
-    const byModule = new Map<string, Map<string, FieldIR>>();
+    const byGroup = new Map<string, Map<string, FieldIR>>();
     const fields: FieldIR[] = [];
     for (const element of elements) {
-      const [head, module, key, ...rest] = host.text(element).replaceAll(/\s+/g, "").split(".");
+      const [head, group, key, ...rest] = host.text(element).replaceAll(/\s+/g, "").split(".");
       let field: FieldIR | undefined;
-      if (head === local && module !== undefined && key !== undefined && rest.length === 0) {
-        const keys = byModule.get(module) ?? settingFieldsOf(module);
-        byModule.set(module, keys);
+      if (head === local && group !== undefined && key !== undefined && rest.length === 0) {
+        const keys = byGroup.get(group) ?? settingFieldsOf(group);
+        byGroup.set(group, keys);
         field = keys.get(key);
       }
       if (field === undefined) {
@@ -2032,7 +2033,7 @@ export function createSourceReader(
           name,
           "settings_key_unresolved",
           `gen cannot read the setting key \`${host.text(element)}\` of ${name}: it names no setting field of this member's settings classes`,
-          `pick keys as \`${local || "Settings"}.<module>.<name>\` in an array literal, each declared by this member's \`<module>.settings.ts\``,
+          `pick keys as \`${local || "Settings"}.<group>.<name>\` in an array literal, each declared by this member's settings class of that group (\`<Group>Settings\`)`,
         );
         return undefined;
       }

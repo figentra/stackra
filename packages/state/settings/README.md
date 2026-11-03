@@ -83,6 +83,9 @@ export class OrdersSettings extends Settings({
   the defaults, the bounds and the sections into the group's schema.
 - A credential is never a setting: `@Secret` cannot mark a settings class, gen refuses `secret_in_settings`, and a key
   that names a credential holds a connection's id (`SettingType.Connection`).
+- `SettingType` is `boolean`, `integer`, `number`, `string`, `choice`, `list` and `connection`. A `choice` takes one of
+  the key's `options`; a `list` is an array of strings, each in `options` when the key gives them. The forms edit a
+  `choice` as text and a `list` as comma-separated text until `@stackra/settings-ui` ships the controls.
 
 ## Reading
 
