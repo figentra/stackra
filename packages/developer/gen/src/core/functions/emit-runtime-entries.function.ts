@@ -220,7 +220,7 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
   const rows = [...hosted.rows, ...own.map((row) => ({ ...row, from: row.importPath }))].map(
     (row) => {
       const local = use({ name: row.name, from: row.from });
-      return `    { key: ${JSON.stringify(row.key)}, module: ${JSON.stringify(row.module)}, profile: ${JSON.stringify(row.profile)}, type: ${local} },`;
+      return `  { key: ${JSON.stringify(row.key)}, module: ${JSON.stringify(row.module)}, profile: ${JSON.stringify(row.profile)}, type: ${local} },`;
     },
   );
   const header = generatedHeader({

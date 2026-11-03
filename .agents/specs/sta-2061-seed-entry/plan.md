@@ -114,8 +114,8 @@ importPath }`. The profile is the file stem before `.seeder.ts`, as today.
 - `README.md` (the manifest and runtime-entry rows)
 - `.changeset/<name>.md` for `@stackra/gen`
 
-Regenerated, never hand-edited: `packages/commerce/loyalty-kit/stackra.manifest.json`,
-`packages/security/access-log/stackra.manifest.json`.
+`packages/commerce/loyalty-kit/stackra.manifest.json` and `packages/security/access-log/stackra.manifest.json`: only
+the new sections, as a fresh gen writes them; their other drift is STA-2036's (spec amendment 1).
 
 ## Data models and migrations
 

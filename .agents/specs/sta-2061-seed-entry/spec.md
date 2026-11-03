@@ -135,8 +135,9 @@ from `<package>/testing`, lists the hosted seeder first, and lists own seeders i
 - **EC-02**: A dependency manifest written before this change has no `seeders` or `factories` section; it contributes
   nothing and is not an error.
 - **EC-03**: A dependency of kind `app` is never hosted; its sections are ignored, as `emitHostedEntities` does.
-- **EC-04**: A hosted class whose name clashes with another name the seed entry imports (an own model `Customer` and a
-  hosted model `Customer`) is imported under an `Imported<Name>` alias, so the entry compiles.
+- **EC-04**: When two classes the seed entry imports share a name (an own model `Customer` and a hosted model
+  `Customer`), the one imported later is aliased `Imported<Name>`, so the entry compiles. Hosted rows and pairs come
+  first, so the own class is the one aliased (FR-008).
 - **EC-05**: A module cycle keeps source order for the modules in the cycle (the existing `topological` behaviour);
   `module_cycle` is already refused by `checkConventions`, so a clean run never reaches it.
 - **EC-06**: A factory declared without a model type argument has no partner and is not paired, as in the Vitest setup
@@ -186,8 +187,9 @@ from `<package>/testing`, lists the hosted seeder first, and lists own seeders i
 - **AC-004**: WHEN own modules depend on each other against their path order THE seed entry SHALL list their seeders in
   module-dependency order.
 - **AC-005**: WHEN gen writes a package manifest with seeders and factories THE manifest SHALL hold the `seeders` and
-  `factories` sections, and the committed manifests of `@stackra/loyalty-kit` and `@stackra/access-log` SHALL match a
-  fresh `stackra gen --check`.
+  `factories` sections, and the committed manifests of `@stackra/loyalty-kit` and `@stackra/access-log` SHALL carry
+  them as a fresh gen writes them. Their other drift on main is STA-2036's, so their full `stackra gen --check` is
+  green once STA-2036 lands (amendment 1).
 
 ## Success Criteria _(mandatory)_
 
@@ -227,7 +229,10 @@ from `<package>/testing`, lists the hosted seeder first, and lists own seeders i
 
 ## Amendments
 
-None.
+1. 2026-11-03 (build): a full regeneration of `@stackra/access-log`'s and `@stackra/loyalty-kit`'s committed
+   manifests also rewrote drift already on main (version, permission rows, entity blocks), which STA-2036 owns. This
+   change commits only the `seeders` and `factories` sections, as gen writes them; AC-005 and T012 now say so. EC-04
+   now matches FR-008: the later import is aliased, which is the own class, since hosted rows come first.
 
 ## Status history
 

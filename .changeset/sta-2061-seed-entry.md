@@ -11,4 +11,4 @@ order instead of file order (STA-2061).
 
 `stackra.manifest.json` gains two optional sections, `seeders` (key, module, profile, class, file, in module order) and
 `factories` (class, file, model), which a host reads from its dependencies. The committed manifests of
-`@stackra/loyalty-kit` and `@stackra/access-log` are regenerated to carry them.
+`@stackra/loyalty-kit` and `@stackra/access-log` now carry them.

@@ -40,7 +40,7 @@ entry imports both from `<package>/testing`, registers the pair and lists the ho
 - [x] T009 [US2] Record the `seeders` and `factories` sections in `packages/developer/gen/src/core/functions/build-manifest.function.ts` — covers: FR-002, FR-003, P-002, AC-005 — route: gen — deps: T008
 - [x] T010 [US2] Test hosted seeders and factories from `<package>/testing`, hosted-first and dependency order, a hosted-only service, an app dependency ignored and a clashing name aliased, in `packages/developer/gen/src/core/functions/__tests__/emit-runtime-entries.function.test.ts` — covers: FR-004, FR-005, FR-006, FR-007, FR-008, P-003, P-004, P-005, P-006, EC-01, EC-02, EC-03, EC-04, EC-07, AC-003, AC-004 — route: tests — deps: T006, T009
 - [x] T011 [US2] Add hosted rows, hosted pairs, the dependency order, the hosted-only trigger and the alias to `packages/developer/gen/src/core/functions/emit-runtime-entries.function.ts` — covers: FR-004, FR-005, FR-006, FR-007, FR-008, P-003, P-005, P-006, AC-003 — route: gen — deps: T010
-- [x] T012 [US2] Regenerate `packages/commerce/loyalty-kit/stackra.manifest.json` and `packages/security/access-log/stackra.manifest.json` with `stackra gen --manifests` on ci-box, then run `stackra gen --check` over the repo — covers: FR-002, FR-003, SC-004, AC-005 — route: codegen-drift — deps: T009
+- [x] T012 [US2] Regenerate `packages/commerce/loyalty-kit/stackra.manifest.json` and `packages/security/access-log/stackra.manifest.json` with `stackra gen --manifests` on ci-box and commit only their `seeders` and `factories` sections (the rest of their drift is STA-2036's, spec amendment 1) — covers: FR-002, FR-003, SC-004, AC-005 — route: codegen-drift — deps: T009
 
 ## Phase 5: Polish
 
