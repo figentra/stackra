@@ -119,7 +119,7 @@ const memberRow = async (name: string) =>
 
 /** Opens the role choice of `name`'s row and picks `role`. */
 async function pickRole(name: string, role: string) {
-  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^Role: ${name}`) }));
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`Role: ${name}$`) }));
   const option = await screen.findByRole("option", { name: role });
   await act(async () => {
     fireEvent.click(option);
@@ -152,8 +152,8 @@ describe("MembersPage (web)", () => {
   it("lists the members and invitations in named tables with the host's words", async () => {
     const { wrap } = await setUp();
     render(wrap(<MembersPage roles={ROLES} labels={LABELS} />));
-    expect(screen.getByRole("grid", { name: "Members list" })).toBeTruthy();
-    expect(screen.getByRole("grid", { name: "Invitations" })).toBeTruthy();
+    expect(await screen.findByRole("grid", { name: "Members list" })).toBeTruthy();
+    expect(await screen.findByRole("grid", { name: "Invitations" })).toBeTruthy();
     expect(await memberRow("Unnamed member")).toBeTruthy();
     const invitation = (await screen.findByRole("rowheader", { name: "alan@example.com" })).closest(
       "[role='row']",
