@@ -18,9 +18,11 @@ export const LANDING_BLOCK_ICONS = Object.freeze({
   station: "milestone",
   stepSwitcher: "list-ordered",
   bentoGrid: "layout-grid",
-  terminalDemo: "terminal",
+  terminalStage: "terminal",
   monoDisplay: "type",
   askAi: "bot",
   productCards: "boxes",
   siteFooter: "panel-bottom",
+  surfaces: "monitor-smartphone",
+  pageDock: "panel-bottom-open",
 } as const satisfies Readonly<Record<string, IconName>>);

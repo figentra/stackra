@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `AskAiBlock`, the document side of the landing's ask-the-docs field (`./react`'s `AskAi`): its label,
- *          the docs URL, the placeholder and whether it is still coming.
+ *          the docs URL, the placeholder, whether it is still coming and the note that says so.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
- *           the renderer resolves. The key is derived by gen.
+ *           the renderer resolves. The key is gen's `<member>.<snake(folder)>`, `experience.ask_ai`.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 20); ADR 0305 (rule 2); ADR 0504 (module UI kits); STA-2041.
  */
@@ -26,4 +26,7 @@ export class AskAiBlock extends Block({
 
   /** True (the component's default) until the AI gateway is live. */
   isComingSoon?: boolean;
+
+  /** The words that say it is coming, shown and announced while `isComingSoon`. */
+  comingSoonNote?: LocalizedText;
 }

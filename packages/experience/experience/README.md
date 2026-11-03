@@ -38,7 +38,7 @@ only), `@stackra/support` (`escapeHtml`, which `./edge` and `./server` re-export
 | `./edge`      | `EdgeBlock`, `EdgeBlockContext`, `EdgeRenderOptions`, `EdgeRenderResult`                                           | types                                                                                                          |
 | `./server`    | `renderEmailTemplate`, `renderPrintDocument`, `renderServerHtml`, `escapeHtml`                                     | the node renderer: a studio email template to HTML and text, a print document to PDF through `PdfEngine`       |
 | `./server`    | `ServerBlock`, `ServerBlockContext`, `ServerRenderOptions`, `PrintRenderOptions`, `RenderedEmail`, `RenderedPrint` | types                                                                                                          |
-| `.`           | `SiteHeaderBlock` … `SiteFooterBlock`                                                                              | the thirteen landing blocks' `Block` classes (STA-2041); see [The landing blocks](#the-landing-blocks)         |
+| `.`           | `SiteHeaderBlock` … `PageDockBlock`                                                                                | the fifteen landing blocks' `Block` classes (STA-2041); see [The landing blocks](#the-landing-blocks)          |
 | `./react`     | `DocumentRenderer`, `ReactRendererDriver`                                                                          | `<DocumentRenderer document={page.root} />` on the web                                                         |
 | `./react`     | `FeatureSection`, `CtaSection`                                                                                     | the marketing blocks of the module UI kit (ADR 0504)                                                           |
 | `./react`     | `SiteHeader`, `HeroMachine`, `CtaRow`, `Statement`, `ChapterTitle`, `Station`, `StepSwitcher`, `BentoGrid`, …      | the landing blocks' components, each with its `<Name>Props`; see [The landing blocks](#the-landing-blocks)     |
@@ -165,29 +165,38 @@ block.
 
 ## The landing blocks
 
-The Stackra landing (STA-2041) is a document of thirteen blocks on `@stackra/ui`. Each `Block` class in `.` declares
-the props a document gives it (its key, `web.<snake>`, is derived from the class name); its component in `./react`
-drops the `Block` suffix, which the class owns. A slot a document fills with child nodes is the component's
-`children`; a `ReactNode` prop is a slot only a page fills in code.
+The Stackra landing (STA-2041) is a document of fifteen blocks on `@stackra/ui`. Each `Block` class in `.` declares
+the props a document gives it; its component in `./react` drops the `Block` suffix, which the class owns. A class sits
+in its own folder, `src/core/blocks/<name>/<name>.block.ts`, so gen's key rule, `<member>.<snake(folder)>`, gives it
+`experience.<name>` (`experience.hero_machine`). Gen registers blocks only for an app, so the page that draws these
+calls `registerBlocks` with those keys and the `./react` components. A slot a document fills with child nodes is the
+component's `children`; a `ReactNode` prop is a slot only a page fills in code.
 
-| Block class (`.`)   | Component (`./react`) | What it draws                                                                          |
-| ------------------- | --------------------- | -------------------------------------------------------------------------------------- |
-| `SiteHeaderBlock`   | `SiteHeader`          | the top bar on `AppHeader`'s transparent variant                                       |
-| `HeroMachineBlock`  | `HeroMachine`         | the headline, the CTA row, the machine and the engine `Illustration` on a dither band  |
-| `CtaRowBlock`       | `CtaRow`              | the champagne primary link, a copy link and a command chip                             |
-| `StatementBlock`    | `Statement`           | a paragraph with `*`-marked steel keywords and its facts                               |
-| `ChapterTitleBlock` | `ChapterTitle`        | a chapter's core heading and subtitle                                                  |
-| `StationBlock`      | `Station`             | a station on the pipe; its window is the node's children                               |
-| `StepSwitcherBlock` | `StepSwitcher`        | steps with their code in a schematic frame                                             |
-| `BentoGridBlock`    | `BentoGrid`           | one or two columns of cards; the cards are the node's children                         |
-| `TerminalDemoBlock` | `TerminalStage`       | the recorded `TerminalDemo` on a dither band, ending on the monitor `Illustration`     |
-| `MonoDisplayBlock`  | `MonoDisplay`         | the closing wordmark, with floors that rise in the theme's `floor` steps or a glyph field |
-| `AskAiBlock`        | `AskAi`               | a search-field-shaped link to the docs, quiet until the assistant is live              |
-| `ProductCardsBlock` | `ProductCards`        | one `BentoCard` per product in its theme, in a `Marquee` or a `Grid`                   |
-| `SiteFooterBlock`   | `SiteFooter`          | the link columns, the legal line and a locale slot on `Footer`                         |
+A field is a shape gen's schema reader accepts: words are `LocalizedText`, a nested shape is a `Schema` class in
+`src/core/schemas/` (`Drawing`, `DitherBand`, `Machine`, `Surface`, `LandingLink`, …), a closed choice an `Enum.of` in
+`src/core/enums/` (`SurfaceKind`, `ProductCardsLayout`, …) and a number carries `@Int` or `@Num`.
 
-The drawings are `{ src, width, height, alt? }`: the base URL of the four tone layers `Illustration` stacks in the
-theme's roles (`art/engine`), never fetched, decorative without `alt` and never mirrored.
+| Block class (`.`)    | Component (`./react`) | What it draws                                                                                 |
+| -------------------- | --------------------- | --------------------------------------------------------------------------------------------- |
+| `SiteHeaderBlock`    | `SiteHeader`          | the top bar on `AppHeader`'s transparent variant                                              |
+| `HeroMachineBlock`   | `HeroMachine`         | the headline, the CTA row, the machine (the action window piped into its surfaces) and the engine `Illustration` on a dither band |
+| `CtaRowBlock`        | `CtaRow`              | the champagne primary link, a copy link and a command chip                                    |
+| `StatementBlock`     | `Statement`           | a paragraph with `*`-marked steel keywords and its facts                                      |
+| `ChapterTitleBlock`  | `ChapterTitle`        | a chapter's heading and subtitle                                                              |
+| `StationBlock`       | `Station`             | a station on the pipe; its window is the node's children                                      |
+| `StepSwitcherBlock`  | `StepSwitcher`        | steps with their code in a schematic frame                                                    |
+| `SurfacesBlock`      | `Surfaces`            | the action's button in a web window, a desktop window and a phone, each in its own language   |
+| `BentoGridBlock`     | `BentoGrid`           | one or two columns of cards; the cards are the node's children                                |
+| `TerminalStageBlock` | `TerminalStage`       | the recorded `TerminalDemo` on a dither band, ending on the monitor `Illustration`            |
+| `MonoDisplayBlock`   | `MonoDisplay`         | the closing wordmark, with floors that rise in the theme's `floor` steps or a glyph field     |
+| `AskAiBlock`         | `AskAi`               | a search-field-shaped link to the docs, quiet with its note until the assistant is live       |
+| `ProductCardsBlock`  | `ProductCards`        | a named grid (or strip) of `BentoCard`s, each in the theme the page's `themes` gives its brand |
+| `SiteFooterBlock`    | `SiteFooter`          | the link columns, the legal line and a locale slot on `Footer`                                |
+| `PageDockBlock`      | `PageDock`            | the sticky `SectionDock`: a link per station and the current one's status line               |
+
+The drawings are `{ src, width, height, alt? }`: the root-relative base URL of the four tone layers `Illustration`
+stacks in the theme's roles (`/art/engine`), never fetched, decorative without `alt` and never mirrored. A dither
+band's poster is one per scheme, `{ light, dark }`.
 
 ## Rendering at the edge
 
