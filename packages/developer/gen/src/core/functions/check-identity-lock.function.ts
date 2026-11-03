@@ -5,7 +5,9 @@
  *          `@Renamed(old)` naming the locked identity (in full or as written: `orders.order.cancel@1` or
  *          `order.cancel`).
  * Boundary: pure. Locks actions, events, refusals, models, integrations, sequences, rule outcome kinds, agents, pass
- *           kinds, entitlements (STA-903) and an app's blocks and routes.
+ *           kinds, entitlements (STA-903), settings groups by their group key (STA-2056) and an app's blocks and routes.
+ *           A settings group also locks its key paths: a group that lost a path and gained another that does not name the
+ *           lost one in `renamed` fails on the gained field, because stored values are keyed by path; a plain removal passes.
  *           Only the member's own entries are locked here (an entry with `from` belongs to its package's lock).
  *           A class that disappeared is not a changed identity; the backward-compatibility test reports the removal.
  * Runtime: isomorphic
@@ -29,6 +31,7 @@ const LOCKED = {
   entitlements: "key",
   blocks: "key",
   routes: "key",
+  settings: "key",
 } as const;
 
 /** Each own entry's identity, by class name. */
@@ -50,6 +53,19 @@ function written(identity: string, module: unknown): string {
   return (identity.startsWith(prefix) ? identity.slice(prefix.length) : identity).replace(
     /(@\d+|\.v\d+)$/,
     "",
+  );
+}
+
+/** Each own settings group's keys, by group key. */
+function groupsOf(manifest: StackraManifest): Map<string, readonly Record<string, unknown>[]> {
+  const groups = (manifest["settings"] ?? []) as readonly Record<string, unknown>[];
+  return new Map(
+    groups
+      .filter((entry) => entry["from"] === undefined)
+      .map((entry) => [
+        String(entry["key"]),
+        (entry["keys"] ?? []) as readonly Record<string, unknown>[],
+      ]),
   );
 }
 
@@ -87,6 +103,31 @@ export function checkIdentityLock(
         fix: `add @Renamed(${JSON.stringify(before)}) to ${className}, or restore the identity`,
       });
     }
+  }
+  // Settings key paths: a lost path with a gained one and no `renamed` naming it is a silent rename.
+  const lockedGroups = groupsOf(previous);
+  for (const entry of (next["settings"] ?? []) as readonly Record<string, unknown>[]) {
+    const old = lockedGroups.get(String(entry["key"]));
+    if (old === undefined || entry["from"] !== undefined) continue;
+    const keys = (entry["keys"] ?? []) as readonly Record<string, unknown>[];
+    const paths = new Set(keys.map((key) => String(key["path"])));
+    const gained = keys.filter((key) => !old.some((was) => was["path"] === key["path"]));
+    for (const lost of old.filter((was) => !paths.has(String(was["path"]))))
+      if (
+        gained.length > 0 &&
+        !gained.some((key) => ((key["renamed"] ?? []) as readonly unknown[]).includes(lost["path"]))
+      ) {
+        const className = String(entry["class"]);
+        errors.push({
+          code: "identity_changed",
+          file: typeof entry["file"] === "string" ? entry["file"] : "stackra.manifest.json",
+          line: 0,
+          column: 0,
+          subject: `${className}.${String(gained[0]?.["path"])}`,
+          message: `the locked setting \`${String(entry["key"])}.${String(lost["path"])}\` is gone and \`${String(gained[0]?.["path"])}\` is new, so stored values would be orphaned`,
+          fix: `add @Renamed(${JSON.stringify(String(lost["path"]).split(".").at(-1))}) to the renamed field, or restore the name`,
+        });
+      }
   }
   return errors;
 }

@@ -98,7 +98,12 @@ const SETTINGS = shape("OrdersSettings", "settings", [
     { kind: "string" },
     { renamed: "memo", default: { value: "", code: '""', imports: [] } },
   ),
-  field("extras", { kind: "json" }),
+  field("mode", { kind: "enum", name: "OrderMode", values: ["open", "closed"] }),
+  field("tags", { kind: "array", element: { kind: "string" } }),
+  field("modes", {
+    kind: "array",
+    element: { kind: "enum", name: "OrderMode", values: ["open", "closed"] },
+  }),
   field("cancellation", { kind: "schema", name: "CancellationSection", module: "orders" }),
 ]);
 
@@ -196,8 +201,50 @@ describe("emitSettings", () => {
     expect(content).not.toContain('"cancellation": {');
   });
 
-  it("leaves out a field of a type no setting holds", () => {
-    expect(content).not.toContain('"extras"');
+  it("writes an enum as a choice and a string array as a list, with options where the enum gives them", () => {
+    expect(content).toContain(
+      '    "mode": {\n      "type": "choice",\n      "default": null,\n      "scopes": ["platform","product","node"],\n      "options": ["open","closed"],',
+    );
+    expect(content).toContain('    "tags": {\n      "type": "list",');
+    expect(content).toContain('    "modes": {\n      "type": "list",');
+    expect(content.match(/"options": \["open","closed"\]/g)).toHaveLength(2);
+  });
+
+  it("writes no key for a field no setting holds; settingsOf refuses it in the manifest pass", () => {
+    const json = {
+      ...IR,
+      shapes: IR.shapes.map((candidate) =>
+        candidate === SETTINGS
+          ? { ...candidate, fields: [...candidate.fields, field("extras", { kind: "json" })] }
+          : candidate,
+      ),
+    };
+    expect(emitSettings(json)).not.toContain('"extras"');
+    expect(generateMember(json).errors.map((error) => error.code)).toContain(
+      "settings_unsupported_type",
+    );
+  });
+
+  it("groups by the key the class name derives, and labels a group other than the module's with it", () => {
+    const account: MemberIR = {
+      ...COMMERCE_IR,
+      shapes: [
+        {
+          ...shape("AccountSettings", "settings", [field("locale", { kind: "string" })]),
+          module: "settings",
+        },
+      ],
+      classes: [
+        {
+          ...declared("AccountSettings", "settings", { scopes: ["user"] }, []),
+          module: "settings",
+        },
+      ],
+    };
+    const text = emitSettings(account) ?? "";
+    expect(text).toContain('  "account": {\n    "locale": {');
+    expect(text).not.toContain('"settings": {');
+    expect(text).toContain('"label": "settings::settings.account.locale.label" as Label,');
   });
 
   it("writes nothing without a settings class or without @stackra/settings", () => {

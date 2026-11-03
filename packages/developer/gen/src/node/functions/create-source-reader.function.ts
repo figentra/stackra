@@ -65,6 +65,7 @@ import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import { platformConstant } from "#core/functions/platform-constant.function";
 import { portKey } from "#core/functions/port-key.function";
 import { publicSpecifier } from "#core/functions/public-specifier.function";
+import { settingsKeyOf } from "#core/functions/settings-key-of.function";
 import { shippedSpecifier } from "#core/functions/shipped-specifier.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
@@ -1987,13 +1988,13 @@ export function createSourceReader(
     return undefined;
   };
 
-  /** The setting fields of `module`'s own settings classes by name, a section's fields under their own names. */
-  const settingFieldsOf = (module: string): Map<string, FieldIR> => {
+  /** The setting fields of the own settings classes of `group` (`settingsKeyOf`) by name, a section's under its own names. */
+  const settingFieldsOf = (group: string): Map<string, FieldIR> => {
     const found = new Map<string, FieldIR>();
     for (const file of sources)
       for (const node of classNodes(file)) {
         const shape = kindInfo(node)?.kind === "settings" ? readShape(node) : undefined;
-        if (shape === undefined || shape.module !== module) continue;
+        if (shape === undefined || settingsKeyOf(shape) !== group) continue;
         for (const field of shape.fields)
           if (field.type.kind !== "schema") found.set(field.name, field);
           else

@@ -101,3 +101,68 @@ describe("checkIdentityLock", () => {
     }
   });
 });
+
+/** A manifest with one settings group `key` of `OrdersSettings` holding `keys`. */
+function withSettings(
+  key: string,
+  keys: readonly { path: string; renamed?: readonly string[] }[],
+): StackraManifest {
+  return {
+    member: "web",
+    package: "@acme/web",
+    version: "1.0.0",
+    settings: [
+      {
+        key,
+        class: "OrdersSettings",
+        module: "orders",
+        file: "src/modules/orders/orders.settings.ts",
+        keys: keys.map((entry) => ({ type: "string", ...entry })),
+      },
+    ],
+  };
+}
+
+describe("checkIdentityLock settings (STA-2056)", () => {
+  it("locks a group key by its class, unless @Renamed names the old key", () => {
+    const previous = withSettings("orders", [{ path: "note" }]);
+    const next = withSettings("orders_policy", [{ path: "note" }]);
+    expect(checkIdentityLock(previous, next, new Map()).map((error) => error.subject)).toEqual([
+      "OrdersSettings",
+    ]);
+    expect(checkIdentityLock(previous, next, new Map([["OrdersSettings", "orders"]]))).toEqual([]);
+    expect(checkIdentityLock(previous, previous, new Map())).toEqual([]);
+  });
+
+  it("refuses a renamed key path without @Renamed, and accepts it with one", () => {
+    const previous = withSettings("orders", [{ path: "note" }]);
+    const [error] = checkIdentityLock(
+      previous,
+      withSettings("orders", [{ path: "memo" }]),
+      new Map(),
+    );
+    expect(error).toMatchObject({ code: "identity_changed", subject: "OrdersSettings.memo" });
+    expect(error?.fix).toContain('@Renamed("note")');
+    expect(
+      checkIdentityLock(
+        previous,
+        withSettings("orders", [{ path: "memo", renamed: ["note"] }]),
+        new Map(),
+      ),
+    ).toEqual([]);
+  });
+
+  it("passes a plain removal and a plain addition", () => {
+    const previous = withSettings("orders", [{ path: "note" }, { path: "memo" }]);
+    expect(
+      checkIdentityLock(previous, withSettings("orders", [{ path: "note" }]), new Map()),
+    ).toEqual([]);
+    expect(
+      checkIdentityLock(
+        withSettings("orders", [{ path: "note" }]),
+        withSettings("orders", [{ path: "note" }, { path: "extra" }]),
+        new Map(),
+      ),
+    ).toEqual([]);
+  });
+});

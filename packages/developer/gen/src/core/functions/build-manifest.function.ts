@@ -36,9 +36,12 @@
  *          It lists each panel resource in `ui.resources` (`resourcesOf`: its recorded tree by `<module>.<model>`, with
  *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
  *          `resource_duplicate`, and a package's UI-entry routes and menus in `ui.routes` and `ui.menus` (`uiRoutesOf`,
- *          `uiMenusOf`) (STA-1947).
+ *          `uiMenusOf`) (STA-1947). It lists each own settings class in `settings` (`settingsOf`: group key, class, module,
+ *          file and keys with path, type, options and earlier paths) with `settings_unsupported_type`,
+ *          `settings_too_deep`, `settings_scope_widened`, `settings_group_key_empty` and `settings_group_conflict`
+ *          (ADR 0496, STA-2056).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
- *           (settings, migrations, infra, ...) are written by those targets when they land.
+ *           (migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20, 21 and 22); ADR 0305 (rules 1, 28 and 36); ADR 0140 (refusal
  *                     categories); ADR 0141 (event names); ADR 0135 (rule 2: prefixes); ADR 0308 (rule 19); ADR 0342
@@ -86,6 +89,7 @@ import { resourcesOf } from "#core/functions/resources-of.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
+import { settingsOf } from "#core/functions/settings-of.function";
 import { slotOf } from "#core/functions/slot-of.function";
 import { surfacesOf } from "#core/functions/surfaces-of.function";
 import { tableName } from "#core/functions/table-name.function";
@@ -1149,6 +1153,10 @@ export function buildManifest(ir: MemberIR): {
     ...(uiMenus.length > 0 ? { menus: uiMenus as unknown as Json } : {}),
   };
 
+  // The settings groups with their keys, and their refusals (ADR 0496, STA-2056); none for a member with no class.
+  const settings = settingsOf(ir);
+  errors.push(...settings.errors);
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1173,6 +1181,7 @@ export function buildManifest(ir: MemberIR): {
     ...(reports.reports.length > 0 ? { reports: [...reports.reports] } : {}),
     ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
     ...(Object.keys(uiSection).length > 0 ? { ui: uiSection } : {}),
+    ...(settings.entries.length > 0 ? { settings: [...settings.entries] } : {}),
     schemas,
   };
   return { manifest: manifest as unknown as StackraManifest, errors };

@@ -44,6 +44,24 @@ describe("isSettingValue", () => {
     expect(isSettingValue(keyOf(SettingType.Number), "1")).toBe(false);
   });
 
+  it("takes a choice only from its options", () => {
+    const mode = keyOf(SettingType.Choice, { options: ["open", "closed"] });
+    expect(isSettingValue(mode, "open")).toBe(true);
+    expect(isSettingValue(mode, "ajar")).toBe(false);
+    expect(isSettingValue(mode, 1)).toBe(false);
+    expect(isSettingValue(keyOf(SettingType.Choice), "any")).toBe(true);
+  });
+
+  it("takes a list of strings, each in the options when given", () => {
+    expect(isSettingValue(keyOf(SettingType.List), ["a", "b"])).toBe(true);
+    expect(isSettingValue(keyOf(SettingType.List), [])).toBe(true);
+    expect(isSettingValue(keyOf(SettingType.List), ["a", 1])).toBe(false);
+    expect(isSettingValue(keyOf(SettingType.List), "a")).toBe(false);
+    const modes = keyOf(SettingType.List, { options: ["open", "closed"] });
+    expect(isSettingValue(modes, ["open"])).toBe(true);
+    expect(isSettingValue(modes, ["open", "ajar"])).toBe(false);
+  });
+
   it("takes null only on a nullable key", () => {
     expect(isSettingValue(keyOf(SettingType.Integer), null)).toBe(false);
     expect(isSettingValue(keyOf(SettingType.Integer, { nullable: true }), null)).toBe(true);

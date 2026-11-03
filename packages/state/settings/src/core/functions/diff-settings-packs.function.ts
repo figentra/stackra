@@ -35,7 +35,7 @@ export function diffSettingsPacks(base: SettingsPack, next: SettingsPack): Setti
       const lockedAfter = to.locked.includes(path);
       if (
         had === has &&
-        Object.is(from.values[path], to.values[path]) &&
+        JSON.stringify(from.values[path]) === JSON.stringify(to.values[path]) &&
         lockedBefore === lockedAfter
       )
         continue;
