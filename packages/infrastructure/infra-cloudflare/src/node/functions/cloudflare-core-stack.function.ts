@@ -19,6 +19,7 @@ import type { RootRunway, RunwayIssue } from "@stackra/runway";
 
 import { ZONE_OPTIONS_SCHEMA } from "#core/constants/zone-options-schema.constant";
 import { CloudflareConfigInvalidError } from "#core/errors/cloudflare-config-invalid.error";
+import { edgeRoutes } from "#core/functions/edge-routes.function";
 import { parseEdge } from "#core/functions/parse-edge.function";
 import { tunnelIngress } from "#core/functions/tunnel-ingress.function";
 import { workersCacheNamespaces } from "#core/functions/workers-cache-namespaces.function";
@@ -100,12 +101,13 @@ export function cloudflareCoreStack(args: {
           message: `${campaign.host} is not under ${zone}`,
         });
   }
-  for (const zone of Object.keys(stack.edgeWorker?.routes ?? {}))
-    if (!(zone in runwayZones))
-      issues.push({
-        path: `edgeWorker.routes.${zone}`,
-        message: `${zone} is not a zone the root runway names`,
-      });
+  for (const key of ["routes", "exclusions"] as const)
+    for (const zone of Object.keys(stack.edgeWorker?.[key] ?? {}))
+      if (!(zone in runwayZones))
+        issues.push({
+          path: `edgeWorker.${key}.${zone}`,
+          message: `${zone} is not a zone the root runway names`,
+        });
   for (const [region, origin] of Object.entries(stack.edgeWorker?.origins ?? {}))
     if (zoneOf(origin.hostname, Object.keys(runwayZones)) === undefined)
       issues.push({
@@ -191,7 +193,11 @@ export function cloudflareCoreStack(args: {
           zoneIds: Object.fromEntries(
             Object.entries(zones).map(([name, zone]) => [name, zone.zone.id]),
           ),
-          worker: stack.edgeWorker,
+          // The host map generates a route per surface host; the stack's own patterns stay (STA-267).
+          worker: {
+            ...stack.edgeWorker,
+            routes: edgeRoutes(root, stack.edgeWorker.routes, Object.keys(runwayZones)),
+          },
         });
   const caches = Object.fromEntries(
     Object.entries(workersCacheNamespaces(root)).map(

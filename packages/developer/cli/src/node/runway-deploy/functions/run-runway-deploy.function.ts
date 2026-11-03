@@ -25,6 +25,7 @@ import {
   DeployKind,
   RunwayConfig,
   RunwayEnvironment,
+  surfaceHosts,
   withDeployLock,
 } from "@stackra/runway";
 import {
@@ -37,6 +38,7 @@ import {
   runCommand,
 } from "@stackra/runway/node";
 
+import { probeHosts } from "#node/doctor/functions/probe-hosts.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { runDeployProduct } from "#node/product/functions/run-deploy-product.function";
 import type { CliContext } from "#node/types/cli-context.type";
@@ -149,7 +151,13 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
     io.out(
       `${record.target} ${record.sha.slice(0, 12)} ${report.status}${record.reference === "" ? "" : ` (${record.reference})`}\n`,
     );
-  return outcome.code;
+  if (outcome.code !== 0 || !productKinds.includes(DeployKind.Web)) return outcome.code;
+  // Per-host serving test (STA-267): every host of the host map must answer TLS after the product publish.
+  const hosts = surfaceHosts(root, environment as RunwayEnvironment);
+  const failed = (await probeHosts(hosts)).filter((probe) => !probe.ok);
+  for (const probe of failed)
+    io.out(`${probe.host} ${probe.address || "no address"} does not serve\n`);
+  return failed.length === 0 ? 0 : 1;
 }
 
 /** The context of the product publish for `kinds` (web, mobile): the same flags, scoped to those kinds. */

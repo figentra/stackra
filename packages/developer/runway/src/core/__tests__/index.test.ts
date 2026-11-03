@@ -77,6 +77,7 @@ describe("@stackra/runway", () => {
       "regionsOf",
       "rollback",
       "runwayJsonSchema",
+      "surfaceHosts",
       "updateFeed",
       "withDeployLock",
     ]);
