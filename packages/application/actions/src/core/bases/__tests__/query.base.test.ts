@@ -139,4 +139,19 @@ describe("Query", () => {
     expect(Bare).toBeTypeOf("function");
     expectTypeOf(Query(base)).toEqualTypeOf<QueryClass>();
   });
+
+  it("types the `entitlement` option on the entitlement brand (STA-2059)", () => {
+    class ExportsEntitlement {
+      readonly "~kind" = "entitlement" as const;
+    }
+    expectTypeOf<{ entitlement: typeof ExportsEntitlement }>().toExtend<
+      Pick<QueryOptions, "entitlement">
+    >();
+    expectTypeOf<{ entitlement: (typeof ExportsEntitlement)[] }>().toExtend<
+      Pick<QueryOptions, "entitlement">
+    >();
+    expectTypeOf<{ entitlement: typeof Catalogue }>().not.toExtend<
+      Pick<QueryOptions, "entitlement">
+    >();
+  });
 });
