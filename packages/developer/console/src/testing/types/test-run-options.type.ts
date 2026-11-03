@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `TestRunOptions`, how `runCommandForTest` runs: scripted answers (which make the run interactive), extra
- *          environment, colour, width, a container, and a signal to send once the command starts.
+ *          environment, colour, width, a container, a signal to send once the command starts, and the console's
+ *          `--json` shape and `requireCommand`.
  * Boundary: a type only.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-027.
+ * Governing contract: STA-1730 spec FR-027; ADR 0506 (amendment 2026-11-03).
  */
 import type { CommandAudit } from "#contracts/ports/command-audit.port";
 import type { Completions } from "#contracts/ports/completions.port";
@@ -49,6 +50,12 @@ export interface TestRunOptions {
 
   /** The Tab completions `completion` and `complete` use; none when absent. */
   readonly completions?: Completions;
+
+  /** The console's `--json` shape (`ConsoleConfig.json`); the envelope when absent. */
+  readonly json?: ConsoleConfig["json"];
+
+  /** Whether an invocation must name a command (`ConsoleConfig.requireCommand`). */
+  readonly requireCommand?: boolean;
 
   /** Makes the run's renderer, to test a driver of your own; the text driver when absent. */
   readonly renderer?: ConsolePorts["renderer"];
