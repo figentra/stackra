@@ -6,16 +6,19 @@ description: "Accepted · 2026-11-03"
 {/* Stackra file contract. Purpose: ADR 0523 (Accepted 2026-11-03), the owner's decision to take themselves out of each merge, deploy, release and secret sync: agents and pipelines act inside an owner-approved policy, and the owner approves the policy, the code that enforces it and a short list of real-world acts. Boundary: decision text only; the build is the autonomy plan (stackra-notes src/plans/autonomy-2026-11-03/PLAN.md), phases P0 to P7. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468, 0293, 0360, 0362, 0257, 0516, 0503. */}
 
 <Note>
-  Accepted 2026-11-03, recording the owner's decisions of that date (stackra-notes `src/owner-requests-ledger.md`,
-  "Autonomy decisions", and `src/handover/questionnaire-answers-2026-11-03.md`, round 6 and 7). It amends
-  [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval) (production no longer
-  waits on the owner's approval), [0293](/adr/0293-agent-permission-tiers-and-executor-pushes) (merge, deploy and
-  secret sync move behind the gate),
-  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) decision 3 and floor
-  item d8.6 (coding agents join the product approval service),
-  [0362](/adr/0362-no-code-without-an-answered-questionnaire-and-a-plan) (the hotfix marker's life) and
-  [0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox) (the vault keeper rotates). [0516](/adr/0516-aws-quotas-are-fixed-inputs)
-  stands unchanged: no agent ever requests a quota increase.
+  Accepted 2026-11-03, recording the owner's decisions of that date (stackra-notes
+  `src/owner-requests-ledger.md`, "Autonomy decisions", and
+  `src/handover/questionnaire-answers-2026-11-03.md`, round 6 and 7). It amends
+  [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)
+  (production no longer waits on the owner's approval),
+  [0293](/adr/0293-agent-permission-tiers-and-executor-pushes) (merge, deploy and secret sync move
+  behind the gate),
+  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor)
+  decision 3 and floor item d8.6 (coding agents join the product approval service),
+  [0362](/adr/0362-no-code-without-an-answered-questionnaire-and-a-plan) (the hotfix marker's life)
+  and [0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox) (the vault keeper rotates).
+  [0516](/adr/0516-aws-quotas-are-fixed-inputs) stands unchanged: no agent ever requests a quota
+  increase.
 </Note>
 
 ## Context
