@@ -18,6 +18,7 @@
     "@stackra/events",
     "@stackra/locking",
     "@stackra/money",
+    "@stackra/navigation",
     "@stackra/outbox",
     "@stackra/queue",
     "@stackra/scheduler",

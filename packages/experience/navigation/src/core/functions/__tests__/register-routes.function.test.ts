@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { Route } from "#core/bases/route.base";
 import { ROUTE_PAGE_TABLE } from "#core/constants/route-page-table.constant";
 import { ROUTE_TABLE } from "#core/constants/route-table.constant";
+import { ROUTE_TITLE_TABLE } from "#core/constants/route-title-table.constant";
 import { registerRoutes } from "#core/functions/register-routes.function";
 
 class HomeRoute extends Route({ path: "/" }) {}
@@ -21,6 +22,7 @@ const Home = () => null;
 afterEach(() => {
   ROUTE_TABLE.clear();
   ROUTE_PAGE_TABLE.clear();
+  ROUTE_TITLE_TABLE.clear();
 });
 
 describe("registerRoutes", () => {
@@ -36,6 +38,18 @@ describe("registerRoutes", () => {
     expect(ROUTE_PAGE_TABLE.has(InboxRoute)).toBe(false);
   });
 
+  it("keeps the title gen derives for a route, and records none for a plain class", () => {
+    registerRoutes({
+      home: { route: HomeRoute, title: "app::routes.home.title" },
+      inbox: InboxRoute,
+    });
+    expect(ROUTE_TITLE_TABLE.get("home")).toBe("app::routes.home.title");
+    expect(ROUTE_TITLE_TABLE.has("inbox")).toBe(false);
+    // Registered again without a title, the key keeps no stale one.
+    registerRoutes({ home: InboxRoute });
+    expect(ROUTE_TITLE_TABLE.has("home")).toBe(false);
+  });
+
   it("refuses the whole batch on a bad key or a class that is not a route", () => {
     expect(() => registerRoutes({ inbox: InboxRoute, "sign-in": HomeRoute })).toThrow(RangeError);
     class NotARoute {}
@@ -43,5 +57,9 @@ describe("registerRoutes", () => {
       TypeError,
     );
     expect(ROUTE_TABLE.size).toBe(0);
+    expect(() =>
+      registerRoutes({ home: { route: HomeRoute, title: "t" }, "sign-in": HomeRoute }),
+    ).toThrow(RangeError);
+    expect(ROUTE_TITLE_TABLE.size).toBe(0);
   });
 });

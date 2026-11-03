@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `emitResources`, an app's `#stackra/resources` (`.stackra/gen/resources.ts`): `Resources`, the route
- *          constants of each panel resource its dependencies record (`resource(key, { base, list, view, create,
- *          update })` of `@stackra/panel`, by the model's PascalCase name); `resourceList`, all of them for the shell's
+ *          constants of each panel resource its dependencies record (`resource(key, { base, permission, list, view,
+ *          create, update })`, `permission` being the bound list action's recorded one, so navigation hides the entry
+ *          from a viewer without it) of `@stackra/panel`, by the model's PascalCase name; `resourceList`, all of them for the shell's
  *          data routes (`...resourceList.flatMap(toResource)`); and `unboundOperations`, each declared page whose
  *          operation no consumed service's client exports, with the reason, so the gap is visible and testable.
  * Boundary: pure. Only for an app that hosts the panel and composes at least one recorded resource. The base is
@@ -49,11 +50,18 @@ export function emitResources(ir: MemberIR): GeneratedFile | undefined {
   const unbound: [string, Record<string, string>][] = [];
 
   // The descriptor each consumed service's client exports, by action or query key (a client holds only its own).
-  const refs = new Map<string, { readonly service: string; readonly name: string }>();
+  const refs = new Map<
+    string,
+    { readonly service: string; readonly name: string; readonly permission?: string }
+  >();
   for (const { member, manifest } of ir.services ?? [])
     for (const action of manifest.actions ?? [])
       if (action["from"] === undefined && !refs.has(action.key))
-        refs.set(action.key, { service: member, name: action.class });
+        refs.set(action.key, {
+          service: member,
+          name: action.class,
+          ...(typeof action.permission === "string" ? { permission: action.permission } : {}),
+        });
 
   const models = resources.map(({ key }) => key.slice(key.indexOf(".") + 1));
   const imports = new Map<string, Map<string, boolean>>([
@@ -76,6 +84,7 @@ export function emitResources(ir: MemberIR): GeneratedFile | undefined {
         ? (operations as Record<string, unknown>)
         : {};
     const gaps: Record<string, string> = {};
+    let permission: string | undefined;
     const bound = PAGES.flatMap(([page, operation]) => {
       const value = declared[operation];
       if (value === undefined || value === false) return [];
@@ -91,11 +100,13 @@ export function emitResources(ir: MemberIR): GeneratedFile | undefined {
       }
       const from = `${CLIENTS_SPECIFIER}${ref.service}`;
       imports.set(from, (imports.get(from) ?? new Map<string, boolean>()).set(ref.name, false));
+      // The list page's permission gates the navigation entry (ADR 0307 rule 4); the server still enforces it.
+      if (page === "list") permission = ref.permission;
       return [`${page}: ${ref.name}`];
     });
     if (Object.keys(gaps).length > 0) unbound.push([key, gaps]);
     const base = `/${kebabCase(module)}/${kebabCase(plural(model))}`;
-    const call = `resource(${JSON.stringify(key)}, { base: ${JSON.stringify(base)}${bound.map((pair) => `, ${pair}`).join("")} })`;
+    const call = `resource(${JSON.stringify(key)}, { base: ${JSON.stringify(base)}${permission === undefined ? "" : `, permission: ${JSON.stringify(permission)}`}${bound.map((pair) => `, ${pair}`).join("")} })`;
     // `resource()` always makes a List page; an unbound one is taken back, so no route reaches an empty list.
     return `  ${name}: ${gaps["list"] === undefined ? call : `{ ...${call}, list: undefined }`},`;
   });

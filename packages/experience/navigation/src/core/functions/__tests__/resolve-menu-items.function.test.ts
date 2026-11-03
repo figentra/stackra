@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { Route } from "#core/bases/route.base";
 import { ROUTE_TABLE } from "#core/constants/route-table.constant";
+import { ROUTE_TITLE_TABLE } from "#core/constants/route-title-table.constant";
 import { createMenuBuilder } from "#core/functions/create-menu-builder.function";
 import { registerRoutes } from "#core/functions/register-routes.function";
 import { resolveHref } from "#core/functions/resolve-href.function";
@@ -42,6 +43,7 @@ class ToggleSidebarShortcut {}
 
 afterEach(() => {
   ROUTE_TABLE.clear();
+  ROUTE_TITLE_TABLE.clear();
 });
 
 describe("resolveMenuItems", () => {
@@ -73,6 +75,22 @@ describe("resolveMenuItems", () => {
           { kind: "link", label: "web::nav.docs", href: "https://docs.acme.test", external: true },
         ],
       },
+    ]);
+  });
+
+  it("labels a route that sets no title with the one gen derived, before its raw key (STA-2058)", () => {
+    registerRoutes({
+      order_detail: { route: OrderDetailRoute, title: "web::routes.order_detail.title" },
+      quick_order: { route: QuickOrderRoute, title: "web::routes.quick_order.title" },
+    });
+    const m = createMenuBuilder();
+    const resolved = resolveMenuItems([m.route(Routes.order_detail), m.route(Routes.quick_order)], {
+      href: (to) => `/${to.name}`,
+      isOn: () => true,
+    });
+    expect(resolved.map((item) => item.label)).toEqual([
+      "web::routes.order_detail.title",
+      "orders::quick_order.title",
     ]);
   });
 

@@ -12,17 +12,18 @@ import { kindOf } from "@stackra/container";
 import type { FlagRef } from "@stackra/feature-flags";
 
 import { ROUTE_TABLE } from "#core/constants/route-table.constant";
+import { ROUTE_TITLE_TABLE } from "#core/constants/route-title-table.constant";
 import { MenuItemKind } from "#core/enums/menu-item-kind.enum";
 import type { HrefParams } from "#core/types/href-params.type";
 import type { MenuItem } from "#core/types/menu-item.type";
 import type { ResolvedMenuItem } from "#core/types/resolved-menu-item.type";
 import type { RouteRef } from "#core/types/route-ref.type";
 
-/** The title key of the route `ref` names, else its key. */
+/** The title key of the route `ref` names, else the title gen derived for it, else its key. */
 function titleOf(ref: RouteRef): string {
   const type = ROUTE_TABLE.get(ref.name);
   const title = type === undefined ? undefined : kindOf(type)?.options["title"];
-  return typeof title === "string" ? title : ref.name;
+  return typeof title === "string" ? title : (ROUTE_TITLE_TABLE.get(ref.name) ?? ref.name);
 }
 
 /**

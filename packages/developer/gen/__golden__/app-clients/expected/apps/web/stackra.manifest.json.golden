@@ -28,6 +28,12 @@
   "entitlements": [],
   "roles": [],
   "blocks": [],
-  "routes": [],
+  "routes": [
+    {
+      "key": "home",
+      "class": "HomeRoute",
+      "file": "src/routes/home/home.route.ts"
+    }
+  ],
   "schemas": {}
 }

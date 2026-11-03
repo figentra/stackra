@@ -1,0 +1,3 @@
+import { Route } from "@stackra/navigation";
+
+export class HomeRoute extends Route({ path: "/" }) {}
