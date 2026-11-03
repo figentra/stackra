@@ -351,7 +351,7 @@ describe("emitDocsSite with the fumadocs renderer", () => {
   it("turns a snippet import into an include, outside code only", () => {
     const quickstart = text(fumadocs(), "content/quickstart.mdx");
     expect(quickstart).toContain("<include>../snippets/steps.mdx</include>");
-    expect(quickstart).not.toMatch(/^import Steps/m);
+    expect(quickstart.slice(0, quickstart.indexOf("```"))).not.toContain("import Steps");
     expect(quickstart).toContain(
       '```mdx\nimport Steps from "/snippets/steps.mdx";\n<Widget />\n```',
     );
