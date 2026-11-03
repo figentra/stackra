@@ -168,7 +168,7 @@ describe("COMMANDS on the console", () => {
     const classes = COMMANDS.map((command) =>
       typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
     );
-    // 50 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
+    // 42 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
     expect(passthroughCommands(classes)).toEqual(PASSTHROUGH);
   });
 });
@@ -181,7 +181,6 @@ const PASSTHROUGH: string[] = [
   "any-ratchet",
   "app-native-deps",
   "architecture-map",
-  "audit:verify",
   "build",
   "catalogue-completeness",
   "check",
@@ -191,8 +190,6 @@ const PASSTHROUGH: string[] = [
   "consumer-gate",
   "cycles",
   "db:diff",
-  "db:migrate",
-  "db:rollback",
   "db:seed",
   "deploy",
   "dev",
@@ -208,14 +205,9 @@ const PASSTHROUGH: string[] = [
   "mcp:sync",
   "mobile:onboard",
   "new",
-  "ops:bootstrap-operator",
   "preview:serve",
   "publish",
-  "search:reindex",
-  "search:status",
   "seed-pack",
-  "settings:apply",
-  "settings:diff",
   "skill-licences",
   "smoke",
   "start",

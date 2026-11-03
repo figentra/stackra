@@ -21,12 +21,9 @@ import { AGENTS_SYNC_COMMAND } from "#node/constants/agents-sync-command.constan
 import { ANY_RATCHET_COMMAND } from "#node/any-ratchet/constants/any-ratchet-command.constant";
 import { APP_NATIVE_DEPS_COMMAND } from "#node/app-native-deps/constants/app-native-deps-command.constant";
 import { ARCHITECTURE_MAP_COMMAND } from "#node/architecture-map/constants/architecture-map-command.constant";
-import { AUDIT_VERIFY_COMMAND } from "#node/constants/audit-verify-command.constant";
 import { CATALOGUE_COMPLETENESS_COMMAND } from "#node/constants/catalogue-completeness-command.constant";
 import { CONSOLE_COMMAND } from "#node/constants/console-command.constant";
 import { DB_DIFF_COMMAND } from "#node/constants/db-diff-command.constant";
-import { DB_MIGRATE_COMMAND } from "#node/constants/db-migrate-command.constant";
-import { DB_ROLLBACK_COMMAND } from "#node/constants/db-rollback-command.constant";
 import { DB_SEED_COMMAND } from "#node/constants/db-seed-command.constant";
 import { DOC_STANDARD_COMMAND } from "#node/constants/doc-standard-command.constant";
 import { GEN_COMMAND } from "#node/constants/gen-command.constant";
@@ -35,13 +32,8 @@ import { MCP_COMMAND } from "#node/constants/mcp-command.constant";
 import { MCP_EXEC_COMMAND } from "#node/constants/mcp-exec-command.constant";
 import { MCP_SYNC_COMMAND } from "#node/constants/mcp-sync-command.constant";
 import { NEW_COMMAND } from "#node/constants/new-command.constant";
-import { OPS_BOOTSTRAP_OPERATOR_COMMAND } from "#node/constants/ops-bootstrap-operator-command.constant";
 import { PUBLISH_COMMAND } from "#node/constants/publish-command.constant";
-import { SEARCH_REINDEX_COMMAND } from "#node/constants/search-reindex-command.constant";
-import { SEARCH_STATUS_COMMAND } from "#node/constants/search-status-command.constant";
 import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
-import { SETTINGS_APPLY_COMMAND } from "#node/constants/settings-apply-command.constant";
-import { SETTINGS_DIFF_COMMAND } from "#node/constants/settings-diff-command.constant";
 import { TESTBED_COMMAND } from "#node/constants/testbed-command.constant";
 import { VALIDATE_COMMAND } from "#node/constants/validate-command.constant";
 import { CONSUMER_GATE_COMMAND } from "#node/consumer-gate/constants/consumer-gate-command.constant";
@@ -55,8 +47,16 @@ import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant"
 import { MOBILE_ONBOARD_COMMAND } from "#node/product/constants/mobile-onboard-command.constant";
 import { SMOKE_COMMAND } from "#node/product/constants/smoke-command.constant";
 import { PREVIEW_SERVE_COMMAND } from "#node/product/constants/preview-serve-command.constant";
+import { AuditVerifyCommand } from "#node/commands/audit-verify.command";
 import { CreateCommand } from "#node/commands/create.command";
+import { DbMigrateCommand } from "#node/commands/db-migrate.command";
+import { DbRollbackCommand } from "#node/commands/db-rollback.command";
 import { DoctorCommand } from "#node/commands/doctor.command";
+import { OpsBootstrapOperatorCommand } from "#node/commands/ops-bootstrap-operator.command";
+import { SearchReindexCommand } from "#node/commands/search-reindex.command";
+import { SearchStatusCommand } from "#node/commands/search-status.command";
+import { SettingsApplyCommand } from "#node/commands/settings-apply.command";
+import { SettingsDiffCommand } from "#node/commands/settings-diff.command";
 import { addCommand } from "#node/functions/add-command.function";
 import { checkCommand } from "#node/functions/check-command.function";
 import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
@@ -96,21 +96,21 @@ export const COMMANDS: CliCommands = [
       fix: true,
     },
   ),
-  DB_MIGRATE_COMMAND,
-  DB_ROLLBACK_COMMAND,
+  DbMigrateCommand,
+  DbRollbackCommand,
   DB_SEED_COMMAND,
   DB_DIFF_COMMAND,
   SEED_PACK_COMMAND,
-  SETTINGS_DIFF_COMMAND,
-  SETTINGS_APPLY_COMMAND,
-  SEARCH_REINDEX_COMMAND,
-  SEARCH_STATUS_COMMAND,
-  AUDIT_VERIFY_COMMAND,
+  SettingsDiffCommand,
+  SettingsApplyCommand,
+  SearchReindexCommand,
+  SearchStatusCommand,
+  AuditVerifyCommand,
   DEPLOY_COMMAND,
   MOBILE_ONBOARD_COMMAND,
   SMOKE_COMMAND,
   PREVIEW_SERVE_COMMAND,
-  OPS_BOOTSTRAP_OPERATOR_COMMAND,
+  OpsBootstrapOperatorCommand,
   LS_COMMAND,
   TESTBED_COMMAND,
   CONSUMER_GATE_COMMAND,
