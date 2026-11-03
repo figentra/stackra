@@ -1,5 +1,24 @@
 # @stackra/achievements
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [928dcc0]
+  - @stackra/database@0.8.0
+  - @stackra/rules@0.8.0
+  - @stackra/content@0.8.0
+  - @stackra/outbox@0.8.0
+  - @stackra/iam@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/integrations@0.8.0
+  - @stackra/documents@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/events@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes
