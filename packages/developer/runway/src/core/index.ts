@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
- *          old `./ports` entry, owner Q4; `productOf` and `brandsOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
+ *          old `./ports` entry, owner Q4; `productOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
  *          check, the duplicate dev port check (`checkPorts`, STA-863), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
@@ -36,7 +36,6 @@ export { RunwayLockedError } from "#core/errors/runway-locked.error";
 export { RunwaySmokeFailedError } from "#core/errors/runway-smoke-failed.error";
 export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
-export { brandsOf } from "#core/functions/brands-of.function";
 export { checkPlacement } from "#core/functions/check-placement.function";
 export { checkHosts } from "#core/functions/check-hosts.function";
 export { checkPorts } from "#core/functions/check-ports.function";
@@ -69,7 +68,6 @@ export { SmokeDriver } from "#core/ports/smoke-driver.port";
 export { VaultWriter } from "#core/ports/vault-writer.port";
 export type { AppRunway } from "#core/types/app-runway.type";
 export type { AppleBundle } from "#core/types/apple-bundle.type";
-export type { Brand } from "#core/types/brand.type";
 export type { DeployLock } from "#core/types/deploy-lock.type";
 export type { DeployRecord } from "#core/types/deploy-record.type";
 export type { DeployResult } from "#core/types/deploy-result.type";
