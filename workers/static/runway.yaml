@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://static.stackra.figentra.com/schemas/runway/app.json
+# Stackra file contract:
+# Purpose: the static Worker's dev port (ADR 0296 decision 1, ADR 0284 decision 8); `stackra gen` writes its
+#          `.claude/launch.json` and VS Code `dev: worker-static` entries from it, building `dist/site` first.
+# Boundary: no root fact and no secret. Its host and deploy stay in wrangler.jsonc and the root runway's
+#           `cloudflare-workers` target until gen writes the Workers config. `wrangler dev` listens on its default 8787.
+# Governing contract: ADR 0296, ADR 0284, ADR 0295 (amendment of 2026-11-03), STA-2081
+$schema: "@stackra/runway/schema/app.json"
+version: 3
+
+environments:
+  dev:
+    port: 8787

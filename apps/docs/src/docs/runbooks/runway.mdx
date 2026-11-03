@@ -25,7 +25,38 @@ Runway is the deploy layer of Stackra: the runway files say what each member nee
 
 `pnpm validate` reads every one of them, checks it against the version 3 schema of its kind with `@stackra/runway`, and checks that a grouped topology places each service member exactly once (`checkRunwayFiles`). A `runway.yaml` anywhere else is a finding. The check uses the built package: the Quality Gate builds before it validates, and a local `pnpm validate` before a build prints a notice instead.
 
-Core's root runway declares only `dev` and `production`: Stackra deploys only its own infrastructure, the static Worker, the docs and the npm packages ([0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 1). The docs member has its runway ([0299](/adr/0299-docs-runway) decision 6); `workers/static` gets one with gen, when its hand-written `wrangler.jsonc` goes ([0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker) decision 8).
+Core's root runway declares only `dev` and `production`: Stackra deploys only its own infrastructure, the static Worker, the docs and the npm packages ([0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 1). The docs member has its runway ([0299](/adr/0299-docs-runway) decision 6); `apps/playground`, `apps/mobile` and `workers/static` have one for their dev port only (STA-2081), and `workers/static` gets the rest with gen, when its hand-written `wrangler.jsonc` goes ([0284](/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker) decision 8).
+
+## Local servers for Claude and VS Code
+
+The runways are the one list of what runs locally. `stackra gen` at the workspace root (`pnpm gen:workspace`) writes it
+twice: Claude Code's `.claude/launch.json`, which the desktop app's preview tools read, and one `dev: <name>` task per
+server in `.vscode/tasks.json` (Tasks: Run Task). Both files are committed, because a Claude session opens in a fresh
+worktree before any gen has run ([0295](/adr/0295-build-and-entry-stackra-config-generated-tool-configs-and-entries),
+amendment of 2026-11-03). Never edit the generated entries: change the runway and run gen.
+
+| Source                                                                         | Server          | Command                                                                                 | Port                              |
+| ------------------------------------------------------------------------------ | --------------- | --------------------------------------------------------------------------------------- | --------------------------------- |
+| each `surfaces.<key>` of the root runway (`ops` aside)                         | `surface-<key>` | `stackra build --product --surfaces-only`, then `stackra preview serve --surface <key>` | 4173 plus its place in `surfaces` |
+| `apps/<name>/runway.yaml` with `environments.dev.port` (or `mobile.metroPort`) | `<name>`        | build what the member imports, then its `dev` script                                    | the runway's                      |
+| `workers/<name>/runway.yaml` with `environments.dev.port`                      | `worker-<name>` | build the Worker and what it imports (`wrangler dev` serves `dist/`), then `dev`        | the runway's                      |
+
+- Each command runs through `sh -c` and builds first, so it starts on a clean checkout after `pnpm install`. In core a
+  surface also builds `@stackra/cli`; a product runs its installed `stackra`.
+- The port is stable: it comes from the runway, and a surface keeps its port while new surfaces are added at the end of
+  `surfaces`. The member's `dev` script must listen on its runway port; gen passes no port to it. Worktree lanes
+  (`environments.dev.lanes`) are not applied: the file holds lane 0.
+- A member without a dev port in its runway is not listed: services (their Encore dev command waits for gen) and
+  `apps/console` today.
+- `stackra validate --repository` refuses a generated file that differs from what gen writes (parsed JSON, so oxfmt's
+  layout never counts) and two servers on one port; `stackra gen --check` fails on a stale file. In `.vscode/tasks.json`
+  gen owns only the `dev: …` tasks and keeps the others and the comment lines at the top.
+- OpenCode has no dev-server list to write; its agents start these servers with the same commands, through `pnpm`.
+- Vitest needs nothing here: the recommended `vitest.explorer` extension finds each member's `vitest.config.ts`, which
+  imports the `.stackra/vitest.config` gen already writes.
+- Later: a surface serves a production build through the local edge today. When `stackra dev --surface <key>` runs
+  without an OS checkout (gen writes the bundle-mode Vite config, [0436](/adr/0436-products-ship-packages-and-figentra-os-ships-the-shells)
+  decision 6), the `surface-<key>` entries switch to it with the same name and port, and nothing else changes for Claude.
 
 ## Provider workflows
 
