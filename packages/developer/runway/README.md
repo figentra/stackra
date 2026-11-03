@@ -77,7 +77,8 @@ vars, config values and sizes.
 It never holds `member`, `deployable`, `isolate`, `group`, `cpu`, `memory` or `instances`; those fail the schema. The
 root runway states where members run: providers, destinations, shared pools, defaults and each environment's
 `topology`. In a grouped environment every service member sits in exactly one group, or in the `default` group;
-`checkPlacement` reports what is not.
+`checkPlacement` reports what is not. `checkRequires(root, service)` reports each `valkey` requirement that no environment's
+cache driver serves (`config.cache.driver`, in the member or the root's `defaults.service.config`).
 
 `providers.npm` is typed: `registry` (an `https://` URL ending in `/`) is where the repository's packages publish,
 and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` and `@stackra` (ADR 0453);

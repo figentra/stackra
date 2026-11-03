@@ -64,6 +64,7 @@ describe("@stackra/runway", () => {
       "checkPlacement",
       "checkPorts",
       "checkRegions",
+      "checkRequires",
       "deploy",
       "deployTargets",
       "devPorts",
