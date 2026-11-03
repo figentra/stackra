@@ -47,7 +47,9 @@ const defaultsOf = (page: SettingsPage): SettingsSnapshot => ({
 
 /** Typed text as a value of `field`: `null` for an empty nullable field, a number for a number key. */
 function parse(field: SettingKey, text: string): unknown {
-  if (field.type === SettingType.String) return text;
+  if (field.type === SettingType.String || field.type === SettingType.Choice) return text;
+  if (field.type === SettingType.List)
+    return text.trim() === "" ? [] : text.split(",").map((item) => item.trim());
   const trimmed = text.trim();
   if (trimmed === "") return field.nullable === true ? null : undefined;
   return Number(trimmed);
@@ -128,12 +130,15 @@ export function SettingsForm({ page }: SettingsFormProps): ReactElement {
             />
           );
         const draft = drafts[field.name];
-        const isText = field.type === SettingType.String || field.type === SettingType.Connection;
+        const isText = field.type !== SettingType.Integer && field.type !== SettingType.Number;
         return (
           <TextField
             key={field.path}
             {...shared}
-            value={draft ?? (value === null ? "" : String(value))}
+            value={
+              draft ??
+              (value === null ? "" : Array.isArray(value) ? value.join(", ") : String(value))
+            }
             keyboardType={isText ? "default" : "numeric"}
             onChange={(text) => setDrafts((current) => ({ ...current, [field.name]: text }))}
             onEndEditing={() => {

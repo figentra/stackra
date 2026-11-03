@@ -73,6 +73,9 @@ export { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.functio
 export { emitSchemas } from "#core/functions/emit-schemas.function";
 export { emitSdks } from "#core/functions/emit-sdks.function";
 export { emitSettings } from "#core/functions/emit-settings.function";
+export { settingsKeyOf } from "#core/functions/settings-key-of.function";
+export { settingsOf } from "#core/functions/settings-of.function";
+export { settingTypeOf } from "#core/functions/setting-type-of.function";
 export { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
 export { emitWebhooks } from "#core/functions/emit-webhooks.function";
 export { emitWiring } from "#core/functions/emit-wiring.function";

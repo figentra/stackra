@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `SettingType`, the type of one generated setting key: a switch, a whole number, a number, a text, or the
- *          public id of a connection (the one way a setting refers to a credential).
+ * Purpose: `SettingType`, the type of one generated setting key: a switch, a whole number, a number, a text, one of a
+ *          closed list of texts (a choice), a list of texts, or the public id of a connection (the one way a setting
+ *          refers to a credential).
  * Boundary: an `Enum.of` value plus the type of the same name. Gen writes it from the field's TypeScript type; the
  *           form picks its field by it and the reader checks a written value against it. No secret type exists
  *           (ADR 0307 rule 23).
@@ -25,6 +26,10 @@ export const SettingType = Enum.of({
   Number: "number",
   /** A `string`. */
   String: "string",
+  /** One text of the key's closed `options` (an enum or a driver name). */
+  Choice: "choice",
+  /** A list of texts, each in `options` when the key gives them. */
+  List: "list",
   /** A connection's public id (`conn_…`): the setting names the credential, never holds it. */
   Connection: "connection",
 });
