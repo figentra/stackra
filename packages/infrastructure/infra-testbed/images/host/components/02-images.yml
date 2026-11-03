@@ -46,5 +46,22 @@ phases:
                 jq --version && python3 --version && docker --version && ssh -V
                 chrome=$(find /ms-playwright -type f \( -name chrome -o -name headless_shell \) | head -n 1)
                 [ -n "$chrome" ]
-                "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --dump-dom about:blank >/dev/null'
+                "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --dump-dom about:blank >/dev/null
+                ffmpeg -version >/dev/null'
+              # All three browsers open a page, and a headed Chromium starts on the virtual display: Electron needs the
+              # same display and GTK stack.
+              docker run --rm stackra-testbed-job:current sh -euc '
+                cd /tmp && npm init -y >/dev/null && npm install --no-audit --no-fund "playwright@@@PLAYWRIGHT@@" >/dev/null
+                cat > browsers.cjs <<EOF
+              const pw = require("playwright");
+              (async () => {
+                for (const name of ["chromium", "firefox", "webkit"]) {
+                  const browser = await pw[name].launch();
+                  await (await browser.newPage()).setContent("<p>ok</p>");
+                  await browser.close();
+                }
+                await (await pw.chromium.launch({ headless: false })).close();
+              })().catch((error) => { console.error(error); process.exit(1); });
+              EOF
+                xvfb-run -a node browsers.cjs'
               docker image inspect @@POSTGRES@@ >/dev/null
