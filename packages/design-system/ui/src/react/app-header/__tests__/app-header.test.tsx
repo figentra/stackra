@@ -12,7 +12,7 @@
  */
 // @vitest-environment jsdom
 // @covers sta-350:FR-164
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { AppHeader } from "#react/app-header/app-header";
 import type { AppHeaderProps } from "#react/app-header/app-header.props";
@@ -96,5 +96,20 @@ describe("AppHeader (web)", () => {
     // @ts-expect-error: `label` is the landmark's name, not `aria-label`
     const refused: AppHeaderProps = { "aria-label": "Top bar" };
     expect(refused).toBeTruthy();
+  });
+
+  it("is sticky and clear at the top in the transparent variant, then takes the bar's material on scroll", () => {
+    const { container } = render(full({ variant: "transparent" }));
+    const bar = container.querySelector("header");
+    expect(bar?.className).toContain("sticky");
+    expect(bar?.className).toContain("border-transparent");
+    expect(bar?.className).not.toContain("material-role-nav-bar");
+    act(() => {
+      Object.defineProperty(window, "scrollY", { value: 120, configurable: true });
+      window.dispatchEvent(new Event("scroll"));
+    });
+    expect(bar?.className).toContain("material-role-nav-bar");
+    expect(bar?.className).toContain("border-separator");
+    Object.defineProperty(window, "scrollY", { value: 0, configurable: true });
   });
 });
