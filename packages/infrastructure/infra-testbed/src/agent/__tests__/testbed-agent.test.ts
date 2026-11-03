@@ -300,6 +300,8 @@ describe("testbed-agent job run", () => {
     // Writable, so a package the store lacks can be added during the install, with integrity checks forced on.
     expect(logged()).toMatch(/-v \S+\/pnpm-store:\/pnpm-store /);
     expect(logged()).toContain("-e PNPM_CONFIG_VERIFY_STORE_INTEGRITY=true");
+    // Uniwind Pro's verified tarball stays in the box's pnpm cache, so its CI download quota is spent once per box.
+    expect(logged()).toContain("-e UNIWIND_CACHE_DIR=/pnpm-cache/uniwind");
     expect(logged()).not.toContain(TOKEN);
     expect(run.out + run.err).not.toContain(TOKEN);
     expect(readFileSync(`${log}.env`, "utf8")).toContain(`INFISICAL_TOKEN=${TOKEN}`);
