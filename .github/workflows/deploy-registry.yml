@@ -1,6 +1,6 @@
 # Stackra file contract:
 # Purpose: deploy workers/registry (the `stackra-registry` Cloudflare Worker, npm.stackra.figentra.com, ADR 0453) from
-#          CI only (ADR 0284): test and build the member, put the real D1 and KV ids into wrangler.jsonc on the runner,
+#          CI only (ADR 0284): build the member, put the real D1 and KV ids into wrangler.jsonc on the runner,
 #          apply the D1 migrations (remote), `wrangler deploy`, set the REGISTRY_SIGNING_KEY Worker secret, then check
 #          /-/ping and /-/npm/v1/keys. Runs on main pushes that touch the member or this file, and by hand. Just
 #          before the deploy it moves npm.stackra.figentra.com off any other Worker (owner decision D13, STA-1389);
@@ -15,7 +15,7 @@
 # Secrets: none in the repository. CLOUDFLARE_API_TOKEN from Infisical `prod` `/ci` and REGISTRY_SIGNING_KEY from
 #          Infisical `prod` `/ci/registry`, both through GitHub OIDC with the identity INFISICAL_REGISTRY_IDENTITY_ID (a
 #          `registry` environment variable, not a secret). Each secret is fetched right before the step that uses it
-#          and blanked in the smoke step. Without the identity id the job tests, builds, prints a notice and deploys
+#          and blanked in the smoke step. Without the identity id the job builds, prints a notice and deploys
 #          nothing, so main stays green until the owner has run the runbook.
 name: Deploy registry
 
@@ -110,20 +110,20 @@ jobs:
           secret-path: /ci/turbo
           export-type: env
 
-      # A broken build or a failing test never reaches Cloudflare. `--only` runs gen for this member alone: the root
-      # //#gen:workspace that gen and test depend on walks every member, and the two left uninstalled above fail it
-      # (kind_unregistered_base).
-      - name: Test and build
+      # A broken build never reaches Cloudflare; tests run on the box (STA-2064). `--only` runs gen for this member
+      # alone: the root //#gen:workspace that gen depends on walks every member, and the two left uninstalled above
+      # fail it (kind_unregistered_base).
+      - name: Build
         run: |
           pnpm turbo run build --filter=@figentra/worker-registry^... --filter=@stackra/cli...
           pnpm turbo run gen --filter=@figentra/worker-registry --only
-          pnpm turbo run test build --filter=@figentra/worker-registry --only
+          pnpm turbo run build --filter=@figentra/worker-registry --only
 
       - name: Deploy prerequisites missing
         if: env.INFISICAL_IDENTITY_ID == ''
         run: >-
           echo "::notice title=Deploy skipped::No INFISICAL_REGISTRY_IDENTITY_ID in the registry environment.
-          Built and tested, nothing deployed (runbook: workers/registry/README.md)."
+          Built, nothing deployed (runbook: workers/registry/README.md)."
 
       # The committed file holds zero placeholders; the runner's copy gets the real ids, which are checked for shape
       # first so a variable can never inject anything into the config.
