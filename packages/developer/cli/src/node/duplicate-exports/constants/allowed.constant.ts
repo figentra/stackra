@@ -30,12 +30,20 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
   ContextMenu:
     "@stackra/navigation's native long-press menu on a navigation item vs @stackra/ui's web context menu component",
   ContextMenuProps: "the props of the two ContextMenu components above",
+  CreateCommand:
+    "@stackra/console's `stackra-console create` command class vs @stackra/cli's `stackra create`, which goes when stackra moves onto the console (STA-1966)",
   Meter: "@stackra/model's usage-meter decorator vs @stackra/ui's native meter component",
   Platform: "@stackra/platform's device platform port vs the showcase's web/native platform enum",
+  RenderContext:
+    "@stackra/console's per-run terminal driver context (mode, theme, streams) vs @stackra/experience's document render context (locale, block handlers)",
+  Renderer:
+    "@stackra/console's terminal output port vs @stackra/experience's L2-document-to-elements port (web and native); neither package may import the other",
   STACKRA_THEME:
     "@stackra/console's terminal theme (an ASCII logo, a gradient, an accent, a glyph) vs @stackra/tokens' design-system theme",
   Spinner:
     "@stackra/console's running-spinner handle (update, stop) vs @stackra/ui's native spinner component",
+  TableColumn:
+    "@stackra/console's terminal table column contract (row key, kind, alignment) vs @stackra/ui's Table component column (sort, width, pin)",
   findCommand:
     "@stackra/console's lookup in a registry of Command classes vs @stackra/cli's lookup in its CliCommand list, which goes when stackra moves onto the console (STA-1966)",
   runCommand:
