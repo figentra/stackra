@@ -78,13 +78,15 @@
       },
       "command": "stackra create my-app",
       "art": {
-        "src": "art/engine.svg"
+        "src": "art/engine",
+        "width": 505,
+        "height": 588
       },
       "horizon": {
         "pattern": "strata",
         "front": "stk-tile-line",
         "mask": "top",
-        "poster": "posters/strata.dark.png",
+        "poster": "posters/strata-dark.png",
         "sun": {
           "x": 0.75,
           "y": 0.9
@@ -654,7 +656,12 @@
         "pattern": "strata",
         "front": "stk-tile-line",
         "mask": "top",
-        "poster": "posters/strata.dark.png"
+        "poster": "posters/strata-dark.png"
+      },
+      "monitorArt": {
+        "src": "art/monitor",
+        "width": 328,
+        "height": 426
       }
     }
   },
