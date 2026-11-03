@@ -47,12 +47,13 @@
     "keep": ["g-*", "*-gate", "land-*", "tpl-core", "c6-lock*", "template-wt-lean"]
   },
   "baseline": {
+    "tasks": ["lint", "typecheck", "build"],
     "mustPass": [
-      "@stackra/tenancy#test",
-      "@stackra/identity#test",
-      "@stackra/infra-identity#test",
-      "@stackra/licensing#test",
-      "@stackra/access-log#test"
+      "@stackra/tenancy#typecheck",
+      "@stackra/identity#typecheck",
+      "@stackra/infra-identity#typecheck",
+      "@stackra/licensing#typecheck",
+      "@stackra/access-log#typecheck"
     ],
     "setup": [
       {
