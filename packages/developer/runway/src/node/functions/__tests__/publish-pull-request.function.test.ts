@@ -81,8 +81,8 @@ describe("publishProduct for a pull request", () => {
     expect(result.host).toBe("pr-412.figentra.cloud");
     expect(result.canaries).toEqual({});
     expect(result.written).toEqual([
-      "host:pr-412.figentra.cloud",
       "release:mezzora:console:pr-412",
+      "host:pr-412.figentra.cloud",
     ]);
     expect(kv.json("host:pr-412.figentra.cloud")).toEqual({
       product: "mezzora",

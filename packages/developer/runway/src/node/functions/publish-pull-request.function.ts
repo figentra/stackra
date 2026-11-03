@@ -104,8 +104,9 @@ export async function publishPullRequest(
     await request.kv.put(key, JSON.stringify(value), ttlSeconds);
     written.push(key);
   };
-  await put(`${EdgeKvPrefix.Host}:${host}`, hostRow);
+  // release first: a failed second put must not leave a live host without a release
   await put(`${EdgeKvPrefix.Release}:${product}:${surface}:pr-${pullRequest}`, release);
+  await put(`${EdgeKvPrefix.Host}:${host}`, hostRow);
   const releases: Record<string, EdgeRelease> = { [surface]: release };
   return { product, uploaded, written, releases, canaries: {}, host };
 }

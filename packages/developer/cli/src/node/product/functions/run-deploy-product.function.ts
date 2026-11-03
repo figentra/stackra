@@ -84,7 +84,7 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
   const canaryScopes = list(deployFact(values, "canary-scopes", "STACKRA_CANARY_SCOPES"));
   const pr = deployFact(values, "pr", "STACKRA_PULL_REQUEST");
   const pullRequest = pr === undefined ? undefined : Number(pr);
-  if (pullRequest !== undefined && !Number.isInteger(pullRequest))
+  if (pullRequest !== undefined && (!Number.isInteger(pullRequest) || pullRequest < 1))
     throw new CliUsageError(`--pr is a pull request number, not "${pr}"`);
   const mobileOnly = values["mobile-only"] === true;
   if (mobileOnly && values["surfaces-only"] === true)
