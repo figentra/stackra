@@ -1,0 +1,21 @@
+{
+  "slug": "resource-list-page",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["native"],
+  "packageName": "@stackra/panel",
+  "exportName": "ResourceListPage",
+  "parts": ["ResourceListPage"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 640
+    }
+  ],
+  "related": ["free/data-table", "free/filter-bar", "free/page-header", "free/pull-to-refresh"],
+  "tokens": ["color.surface", "color.separator"],
+  "keywords": ["resource", "list", "table", "crud", "admin", "panel", "kit"],
+  "status": "new"
+}

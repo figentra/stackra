@@ -1,0 +1,21 @@
+{
+  "slug": "resource-view-page",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["native"],
+  "packageName": "@stackra/panel",
+  "exportName": "ResourceViewPage",
+  "parts": ["ResourceViewPage"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 560
+    }
+  ],
+  "related": ["free/property-list", "free/page-header", "free/section", "free/error-state"],
+  "tokens": ["color.surface", "color.separator"],
+  "keywords": ["resource", "record", "detail", "view", "crud", "admin", "panel", "kit"],
+  "status": "new"
+}

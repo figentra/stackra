@@ -17,10 +17,15 @@ import { z } from "zod";
 
 import { RelationManager } from "#react/resource-pages/relation-manager";
 
-const spies = vi.hoisted(() => ({ useQuery: vi.fn(), run: vi.fn() }));
+const spies = vi.hoisted(() => ({
+  can: vi.fn((permission?: string) => permission !== "orders.order.refund"),
+  useQuery: vi.fn(),
+  run: vi.fn(),
+}));
 
 vi.mock("@stackra/clients/react", () => ({ useQuery: spies.useQuery }));
 vi.mock("#react/action-runner/use-action-runner", () => ({ useActionRunner: () => spies.run }));
+vi.mock("#react/action-runner/use-can", () => ({ useCan: () => spies.can }));
 vi.mock("@stackra/navigation/react", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("#react/resource-pages/action-input-modal", async () => {
   const { createElement } = await import("react");

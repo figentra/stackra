@@ -146,12 +146,46 @@
       "jsonl": "JSON Lines",
       "pdf": "PDF"
     },
+    "field_control": {
+      "text": "Tekst",
+      "textarea": "Tekstvak",
+      "email": "E-mail",
+      "password": "Wachtwoord",
+      "url": "URL",
+      "number": "Getal",
+      "money": "Bedrag",
+      "select": "Selectie",
+      "multi-select": "Meervoudige selectie",
+      "radio": "Keuzerondjes",
+      "switch": "Schakelaar",
+      "checkbox": "Selectievakje",
+      "date": "Datum",
+      "date-range": "Datumbereik",
+      "time": "Tijd",
+      "slider": "Schuifregelaar",
+      "combo-box": "Keuzelijst met invoer",
+      "entity": "Recordkiezer",
+      "upload": "Upload",
+      "repeater": "Herhaler",
+      "setting": "Instelling"
+    },
     "filter_comparison": {
       "gt": "Groter dan",
       "gte": "Groter dan of gelijk aan",
       "lt": "Kleiner dan",
       "lte": "Kleiner dan of gelijk aan",
       "ne": "Niet gelijk aan"
+    },
+    "filter_kind": {
+      "text": "Tekst",
+      "number": "Getal",
+      "date": "Datum",
+      "date-range": "Datumbereik",
+      "boolean": "Ja of nee",
+      "choice": "Keuze",
+      "multi-choice": "Meerdere keuzes",
+      "principal": "Persoon",
+      "time-range": "Tijdsbereik"
     },
     "import_mode": {
       "create": "Nieuw aanmaken",

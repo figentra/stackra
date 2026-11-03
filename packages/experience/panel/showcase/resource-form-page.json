@@ -1,0 +1,21 @@
+{
+  "slug": "resource-form-page",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["native"],
+  "packageName": "@stackra/panel",
+  "exportName": "ResourceFormPage",
+  "parts": ["ResourceFormPage"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 620
+    }
+  ],
+  "related": ["free/form", "free/form-field", "free/page-header", "free/number-field"],
+  "tokens": ["color.surface", "color.field"],
+  "keywords": ["resource", "form", "create", "edit", "crud", "admin", "panel", "kit"],
+  "status": "new"
+}

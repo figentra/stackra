@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `Table<R>`, the builder a resource's `table(t)` member receives: columns, filters, the default sort and the count
- *          mode, every key a path of the list row `R`.
+ * Purpose: `Table<R>`, the builder a resource's `table(t)` member receives: columns, filters, the default sort, the count
+ *          mode and the look, every key a path of the list row `R`.
  * Boundary: a type only; chainable, each call returns the same builder. Gen runs the member once and compiles the result
  *           into the list query's closed `TableInput`.
  * Runtime: isomorphic
@@ -45,4 +45,12 @@ export interface Table<R> extends Built<TableNode> {
 
   /** Sets how rows are counted; estimated by default. */
   count: (count: Count) => this;
+
+  /**
+   * Sets the table's look: its flags, the search box's words, the empty state, the row menu and the bulk bar
+   * (`{ hasColumnTools: true, empty: { description: "…" }, bulkActions: { runMode: "once" } }`); a later call merges.
+   */
+  with: (
+    look: Omit<TableNode, "columns" | "filters" | "defaultSort" | "thenSort" | "count">,
+  ) => this;
 }

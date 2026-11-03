@@ -9,11 +9,11 @@ import { DraftRecord } from "#core/records/draft.record";
 import type { FieldBuilder } from "#core/types/field-builder.type";
 import type { FieldNode } from "#core/types/field-node.type";
 
-/** The flags a field records. */
-interface FieldFlags {
-  readonly span?: number;
-  readonly essential?: boolean;
-}
+/** The flags a field records, its look among them. */
+type FieldFlags = Omit<
+  Extract<FieldNode, { readonly kind: "value" }>,
+  "kind" | "key" | "enum" | "options" | "optionLabel"
+>;
 
 /** One form field. */
 export class FieldRecord extends DraftRecord<FieldFlags, FieldNode> implements FieldBuilder {
@@ -38,5 +38,10 @@ export class FieldRecord extends DraftRecord<FieldFlags, FieldNode> implements F
   /** Marks the field as one normal mode shows. */
   essential(): this {
     return this.set({ essential: true });
+  }
+
+  /** Sets the field's look. */
+  with(look: Omit<FieldFlags, "span" | "essential">): this {
+    return this.set(look);
   }
 }
