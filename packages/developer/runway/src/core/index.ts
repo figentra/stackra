@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
- *          check, the duplicate dev port check (`checkPorts`, STA-863), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the deploy targets, the `RunwayProvider` port and the
+ *          check, the duplicate dev port check (`checkPorts`, STA-863), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
@@ -40,6 +40,7 @@ export { checkPlacement } from "#core/functions/check-placement.function";
 export { checkHosts } from "#core/functions/check-hosts.function";
 export { checkPorts } from "#core/functions/check-ports.function";
 export { checkRegions } from "#core/functions/check-regions.function";
+export { checkZoneOwners } from "#core/functions/check-zone-owners.function";
 export { deploy } from "#core/functions/deploy.function";
 export { deployTargets } from "#core/functions/deploy-targets.function";
 export { devPorts } from "#core/functions/dev-ports.function";
@@ -84,6 +85,7 @@ export type { PortIssue } from "#core/types/port-issue.type";
 export type { PreviewDatabase } from "#core/types/preview-database.type";
 export type { Product } from "#core/types/product.type";
 export type { RegionIssue } from "#core/types/region-issue.type";
+export type { ZoneOwnerIssue } from "#core/types/zone-owner-issue.type";
 export type { RootRunway } from "#core/types/root-runway.type";
 export type { RunwayDocument } from "#core/types/runway-document.type";
 export type { RunwayFacts } from "#core/types/runway-facts.type";
