@@ -1,19 +1,23 @@
 /**
  * Stackra file contract:
  * Purpose: proves the HeroMachine is a blueprint region named by its `h1`, with the primary link, the copy link
- *          and the command reachable in order from the keyboard, the machine at the inline end, the engine drawing
+ *          and the command reachable in order from the keyboard, the machine at the inline end (the action's file in a
+ *          schematic window piped into a frame per surface, each with its button, an Arabic one right to left), the
+ *          pipe drawing in on floor steps at the `full` motion level and drawn at once below it, the engine drawing
  *          decorative unless it has `alt` and never mirrored in Arabic, and the dither horizon that drifts at the
  *          `full` motion level and stands still below it.
  * Boundary: unit tier, jsdom, the real @stackra/ui components. The locale and the motion level come from
  *           `DesignSystemProvider` (this package cannot reach react-aria-components or Motion directly); jsdom has no
- *           matchMedia, canvas or animation frames, so those are stand-ins.
+ *           matchMedia, canvas or animation frames, so those are stand-ins; it has no layout or IntersectionObserver,
+ *           so the machine starts at once and its pipes measure at the origin.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0504; WCAG 2.2 SC 2.2.2; STA-2041.
  */
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { DesignSystemProvider } from "@stackra/ui/react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { vi } from "vitest";
 
@@ -29,6 +33,9 @@ vi.stubGlobal("matchMedia", () => ({
 
 const frame = vi.fn(() => 1);
 
+/** One floor step of the theme: one pipe segment. */
+const STEP_MS = motionTiming(STACKRA_THEME, "floor").durationMs;
+
 const PROPS: HeroMachineProps = {
   title: "One backend, every surface.",
   lede: "Write an action once.",
@@ -37,7 +44,14 @@ const PROPS: HeroMachineProps = {
   command: "stackra create my-app",
   art: { src: "/landing/art/engine", width: 505, height: 588 },
   horizon: { poster: "/strata-dark.png", sun: { x: 0.8, y: 1 } },
-  machine: <p>cancel-order.action.ts</p>,
+  machine: {
+    action: { filename: "cancel-order.action.ts", code: "export class CancelOrderAction {}" },
+    surfaces: [
+      { id: "web", kind: "web", title: "orders.example", button: "Cancel order" },
+      { id: "desktop", kind: "desktop", title: "Orders", button: "Cancel order" },
+      { id: "phone", kind: "phone", title: "Phone", button: "إلغاء الطلب", lang: "ar" },
+    ],
+  },
 };
 
 /** Renders `node` under the provider at a locale and a motion level. */
@@ -75,7 +89,43 @@ describe("HeroMachine", () => {
     expect(screen.getByRole("link", { name: "Read the docs" }).getAttribute("href")).toBe("/docs");
     expect(screen.getByRole("button", { name: "Copy llms.txt" })).toBeTruthy();
     expect(screen.getByText("stackra create my-app")).toBeTruthy();
-    expect(screen.getByText("cancel-order.action.ts")).toBeTruthy();
+  });
+
+  it("draws the machine: the action's window piped into a frame per surface, each with its button", () => {
+    const { container } = draw(<HeroMachine {...PROPS} />, { motion: "reduced" });
+    const machine = screen.getByRole("group", { name: "cancel-order.action.ts" });
+    const frames = [...machine.querySelectorAll('[data-slot="frame"]')];
+    expect(frames.map((each) => each.getAttribute("data-variant"))).toEqual([
+      "schematic",
+      "window",
+      "window",
+      "phone",
+    ]);
+    expect(frames[0]?.textContent).toContain("export class CancelOrderAction {}");
+    expect(frames[1]?.textContent).toContain("orders.example");
+    expect(screen.getAllByRole("button", { name: "Cancel order" })).toHaveLength(2);
+    const arabic = screen.getByRole("button", { name: "إلغاء الطلب" }).closest("[lang]");
+    expect(arabic?.getAttribute("dir")).toBe("rtl");
+    // Below the full motion level the pipes are drawn at once, one from the action to each surface.
+    expect(machine.getAttribute("data-drawn")).toBe("");
+    expect(container.querySelectorAll('[data-slot="schematic-pipes"] path')).toHaveLength(3);
+    expect(
+      container.querySelector('[data-slot="schematic-pipes"]')?.getAttribute("aria-hidden"),
+    ).toBe("true");
+  });
+
+  it("draws the pipe in on floor steps at the full motion level, its one orchestrated moment", () => {
+    vi.useFakeTimers();
+    try {
+      draw(<HeroMachine {...PROPS} />);
+      const machine = screen.getByRole("group", { name: "cancel-order.action.ts" });
+      expect(machine.hasAttribute("data-drawn")).toBe(false);
+      // Three segments a pipe, all three pipes leave the action together; one act a step, so each schedules the next.
+      for (let step = 0; step < 3; step++) act(() => vi.advanceTimersByTime(STEP_MS));
+      expect(machine.getAttribute("data-drawn")).toBe("");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("reaches the primary link before the copy buttons from the keyboard", () => {

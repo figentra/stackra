@@ -41,22 +41,24 @@ describe("CtaRow", () => {
 
   afterEach(cleanup);
 
-  it("draws the primary as a link in the core pill", () => {
-    render(ROW);
+  it("draws the primary as a @stackra/ui link in the core pill, in one ruled band", () => {
+    const { container } = render(ROW);
     const link = screen.getByRole("link", { name: "Read the docs" });
     expect(link.getAttribute("href")).toBe("/docs");
-    expect(link.className).toContain("button--core");
+    expect(link.className).toContain("var(--core-strong,var(--accent))");
     expect(link.className).toContain("rounded-[var(--radius-pill)]");
+    expect(link.className).not.toContain("button--");
+    expect(container.querySelectorAll('[data-slot="blueprint-section"]')).toHaveLength(1);
   });
 
-  it("copies the link's value and the command", async () => {
+  it("copies the link's value and the command, from buttons that say what they copy", async () => {
     render(ROW);
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Copy llms.txt" }));
     });
     expect(writeText).toHaveBeenCalledWith("https://stackra.dev/llms.txt");
     await act(async () => {
-      fireEvent.click(screen.getAllByRole("button").at(-1) as HTMLElement);
+      fireEvent.click(screen.getByRole("button", { name: "Copy stackra create my-app" }));
     });
     expect(writeText).toHaveBeenLastCalledWith("stackra create my-app");
   });

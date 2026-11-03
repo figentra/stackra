@@ -16,6 +16,6 @@
   ],
   "related": ["free/bento-card", "free/marquee"],
   "tokens": ["radius.lg", "color.surface", "color.accent"],
-  "keywords": ["products", "built on", "brands", "strip", "marquee", "landing", "kit"],
+  "keywords": ["products", "built on", "brands", "themes", "grid", "strip", "landing", "kit"],
   "status": "new"
 }

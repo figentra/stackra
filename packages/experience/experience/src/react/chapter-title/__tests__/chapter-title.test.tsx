@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: proves the ChapterTitle is an `h2` by default (or the level given) drawn at the `h2` size in the core
- *          tone, with its subtitle, no landmark and nothing to focus; that it reads the same in Arabic; and that it
- *          draws everything at once at every motion level.
+ * Purpose: proves the ChapterTitle is an `h2` by default (or the level given) drawn at the `h2` size in the default
+ *          tone (never the champagne core), with its subtitle, in one ruled band that is no landmark, and nothing to
+ *          focus; that it reads the same in Arabic; and that it draws everything at once at every motion level.
  * Boundary: unit tier, jsdom, the real @stackra/ui components; matchMedia is a stand-in, and the locale and the
  *           motion level come from `DesignSystemProvider`.
  * Runtime: node (vitest)
@@ -26,15 +26,17 @@ vi.stubGlobal("matchMedia", () => ({
 describe("ChapterTitle", () => {
   afterEach(cleanup);
 
-  it("is an h2 with its subtitle, no landmark and nothing to focus", () => {
+  it("is an h2 with its subtitle in one ruled band, no landmark and nothing to focus", () => {
     const { container } = render(
       <ChapterTitle title="Write it once" subtitle="One action, every surface." />,
     );
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Write it once");
+    const heading = screen.getByRole("heading", { level: 2 });
+    expect(heading.textContent).toBe("Write it once");
+    expect(heading.className).not.toContain("core");
     expect(screen.getByText("One action, every surface.")).toBeTruthy();
-    expect(container.querySelectorAll("header, section, nav, a, button, [tabindex]")).toHaveLength(
-      0,
-    );
+    expect(container.querySelectorAll('[data-slot="blueprint-section"]')).toHaveLength(1);
+    expect(container.querySelector("section")?.hasAttribute("aria-label")).toBe(false);
+    expect(container.querySelectorAll("header, nav, a, button, [tabindex]")).toHaveLength(0);
   });
 
   it("takes another level and still looks like an h2", () => {

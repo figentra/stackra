@@ -21,7 +21,7 @@ import type { ReactNode } from "react";
 export interface TerminalStageProps {
   /** The command in the terminal's top bar, which its copy button copies. */
   readonly command: string;
-  /** The recorded session, played a whole line at a time. */
+  /** The recorded session, played a whole line at a time; empty until it is recorded, which draws no log. */
   readonly lines: readonly TerminalLine[];
   /** The dithered band under the terminal; it fades toward the top and draws in the tile line by default. */
   readonly art?: DitherArtProps | undefined;

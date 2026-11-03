@@ -1,7 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `TerminalStage`, the landing kit's try-it scene: the recorded `TerminalDemo` full width over a dithered
- *          horizon band, landing on the monitor drawing once the session has played.
+ *          horizon band, landing on the monitor drawing once the session has played, in its ruled band. With no
+ *          recording yet (`lines` empty), the log is not drawn: the command bar and the monitor show, and the page's
+ *          own copy says the session is recorded when the command ships.
  * Boundary: composition of @stackra/ui's `TerminalDemo`, `DitherArt` and `Illustration`; the playing, the copy button
  *           and the motion level are the terminal's own. The monitor is `Illustration`'s four tone layers in the
  *           theme's roles, never fetched and never mirrored, decorative unless it has `alt`; it waits on the
@@ -14,6 +16,7 @@
 import { DitherArt, Illustration, TerminalDemo } from "@stackra/ui/react";
 import type { ReactElement } from "react";
 
+import { RuledBand } from "#react/ruled-band/ruled-band";
 import type { TerminalStageProps } from "#react/terminal-stage/terminal-stage.props";
 
 /**
@@ -32,39 +35,42 @@ export function TerminalStage({
   className,
 }: TerminalStageProps): ReactElement {
   return (
-    <div
-      data-slot="terminal-stage"
-      className={`relative isolate flex flex-col items-center gap-8 overflow-hidden px-4 pt-12 ${className ?? ""}`}
-    >
-      {art ? (
-        <DitherArt
-          front="stk-tile-line"
-          mask="top"
-          {...art}
-          className={`absolute inset-x-0 bottom-0 -z-10 h-2/3 ${art.className ?? ""}`}
-        />
-      ) : null}
-      <TerminalDemo
-        command={command}
-        lines={lines}
-        label={label}
-        result={result}
-        className="peer w-full max-w-3xl"
-      />
-      {monitor ? (
-        <div
-          data-slot="terminal-stage-monitor"
-          className="invisible w-full max-w-sm peer-data-done:visible"
-        >
-          <Illustration
-            src={monitor.src}
-            width={monitor.width}
-            height={monitor.height}
-            {...(monitor.alt === undefined ? {} : { alt: monitor.alt })}
-            className="w-full"
+    <RuledBand>
+      <div
+        data-slot="terminal-stage"
+        className={`relative isolate flex flex-col items-center gap-8 overflow-hidden ${className ?? ""}`}
+      >
+        {art ? (
+          <DitherArt
+            front="stk-tile-line"
+            mask="top"
+            {...art}
+            className={`absolute inset-x-0 bottom-0 -z-10 h-2/3 ${art.className ?? ""}`}
           />
-        </div>
-      ) : null}
-    </div>
+        ) : null}
+        <TerminalDemo
+          command={command}
+          lines={lines}
+          label={label}
+          result={result}
+          // No recording yet: no empty log under the command bar.
+          className={`peer w-full max-w-3xl ${lines.length === 0 ? "[&_[role=log]]:hidden" : ""}`}
+        />
+        {monitor ? (
+          <div
+            data-slot="terminal-stage-monitor"
+            className="invisible w-full max-w-sm peer-data-done:visible"
+          >
+            <Illustration
+              src={monitor.src}
+              width={monitor.width}
+              height={monitor.height}
+              {...(monitor.alt === undefined ? {} : { alt: monitor.alt })}
+              className="w-full"
+            />
+          </div>
+        ) : null}
+      </div>
+    </RuledBand>
   );
 }

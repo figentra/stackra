@@ -1,26 +1,45 @@
 /**
  * Stackra file contract:
  * Purpose: `HeroMachine`, the landing's hero: a ruled blueprint band with the plain headline, its lede and the
- *          call-to-action row at the inline start, the machine (the schematic) at the inline end, and the engine
- *          drawing standing on a dither horizon whose champagne core is the sun.
- * Boundary: composition of @stackra/ui only; every word comes in props. The horizon's only motion is DitherArt's
- *           own drift, which stops below the `full` motion level. The drawing is `Illustration`'s four tone layers in
- *           the theme's roles, never fetched; it is placed by logical layout and never mirrored.
+ *          call-to-action row at the inline start, the machine at the inline end (a `Schematic` whose first node is
+ *          the action's file in a schematic window, piped into one frame per surface, each with the action's button),
+ *          and the engine drawing standing on a dither horizon whose champagne core is the sun.
+ * Boundary: composition of @stackra/ui only; every word comes in props. The machine's pipe drawing in on floor steps
+ *           (`Schematic`, the first time it is in view at the `full` motion level) is the page's one orchestrated
+ *           motion; the horizon's only motion is DitherArt's own drift, which stops below the `full` level. The
+ *           drawing is `Illustration`'s four tone layers in the theme's roles, never fetched; it is placed by logical
+ *           layout and never mirrored. The pipes are measured, so Arabic draws them where the mirrored layout put the
+ *           nodes.
  * Runtime: browser
  * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (RTL); STA-2041 (design
- *                     pass §2 and §4).
+ *                     pass §2, §4 and §6).
  */
-import { BlueprintSection, DitherArt, Heading, Illustration, Text } from "@stackra/ui/react";
-import type { ReactElement } from "react";
+import {
+  CodeBlock,
+  DitherArt,
+  Frame,
+  Heading,
+  Illustration,
+  Schematic,
+  SchematicNode,
+  Text,
+} from "@stackra/ui/react";
+import { type ReactElement, useMemo } from "react";
 
 import { CtaRow } from "#react/cta-row/cta-row";
 import type { HeroMachineProps } from "#react/hero-machine/hero-machine.props";
+import { RuledBand } from "#react/ruled-band/ruled-band";
+import { SurfaceFrame } from "#react/surfaces/surface-frame";
+
+/** The machine's first node, the action's window; no surface takes this id. */
+const ACTION = "action";
 
 /**
  * The headline, its actions and the machine on its horizon.
  *
  * @example
- * <HeroMachine title="One backend, every surface." lede={lede} primary={docs} art={engine} horizon={strata} />
+ * <HeroMachine title="One backend, every surface." lede={lede} primary={docs} art={engine} horizon={strata}
+ *   machine={{ action: { filename: "cancel-order.action.ts", code }, surfaces }} />
  */
 export function HeroMachine({
   title,
@@ -33,8 +52,14 @@ export function HeroMachine({
   machine,
   className,
 }: HeroMachineProps): ReactElement {
+  const surfaces = machine?.surfaces;
+  // Stable while the surfaces are, so the machine re-measures only when they change.
+  const links = useMemo(
+    () => (surfaces ?? []).map((surface) => ({ from: ACTION, to: surface.id })),
+    [surfaces],
+  );
   return (
-    <BlueprintSection label={title} className={`overflow-hidden ${className ?? ""}`}>
+    <RuledBand label={title} className={`overflow-hidden ${className ?? ""}`}>
       <div className="grid gap-12 px-4 pt-16 sm:px-8 lg:grid-cols-2 lg:px-12 lg:pt-24">
         <div className="flex flex-col items-start gap-6">
           <Heading level={1} type="h1" className="max-w-xl text-balance">
@@ -45,9 +70,35 @@ export function HeroMachine({
           </Text>
           <CtaRow primary={primary} copyLink={copyLink} command={command} />
         </div>
-        {machine == null ? null : (
+        {machine === undefined ? null : (
           <div data-slot="hero-machine" className="min-w-0">
-            {machine}
+            <Schematic
+              label={machine.action.filename}
+              links={links}
+              className="flex flex-col gap-12"
+            >
+              <SchematicNode id={ACTION}>
+                <Frame variant="schematic" title={machine.action.filename}>
+                  <CodeBlock
+                    code={machine.action.code}
+                    language={machine.action.filename.slice(
+                      machine.action.filename.lastIndexOf(".") + 1,
+                    )}
+                  />
+                </Frame>
+              </SchematicNode>
+              <div className="flex flex-wrap items-start justify-center gap-4">
+                {machine.surfaces.map((surface) => (
+                  <SchematicNode
+                    key={surface.id}
+                    id={surface.id}
+                    className="min-w-0 flex-1 basis-36"
+                  >
+                    <SurfaceFrame surface={surface} />
+                  </SchematicNode>
+                ))}
+              </div>
+            </Schematic>
           </div>
         )}
       </div>
@@ -68,6 +119,6 @@ export function HeroMachine({
           />
         </div>
       </div>
-    </BlueprintSection>
+    </RuledBand>
   );
 }

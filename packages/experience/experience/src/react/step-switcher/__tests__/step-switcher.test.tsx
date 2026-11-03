@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: proves the StepSwitcher is a tab list named by its label with one step per tab, shows the first step's
- *          title, line and code in a schematic window titled by its file, moves and selects with the arrow keys
- *          (mirrored in Arabic), and shows every step whole below the full motion level.
+ *          title (an `h4`, one level under a station's `h3`, or the level given), line and code in a schematic window
+ *          titled by its file, moves and selects with the arrow keys (mirrored in Arabic), draws a single step with
+ *          no tabs, and shows every step whole below the full motion level.
  * Boundary: unit tier, jsdom, the real @stackra/ui components; matchMedia, ResizeObserver and Web Animations are
  *           stand-ins, and the locale and the motion level come from `DesignSystemProvider`.
  * Runtime: node (vitest)
@@ -89,6 +90,20 @@ describe("StepSwitcher", () => {
     const frame = container.querySelector('[data-slot="frame"]');
     expect(frame?.getAttribute("data-variant")).toBe("schematic");
     expect(frame?.textContent).toContain("cancel-order.action.ts");
+    expect(screen.getByRole("heading", { level: 4 }).textContent).toBe("Write the action");
+  });
+
+  it("puts the step's title at the level given", () => {
+    render(<StepSwitcher label="Write it once" steps={STEPS} headingLevel={3} />);
+    expect(screen.getByRole("heading", { level: 3 }).textContent).toBe("Write the action");
+  });
+
+  it("draws a single step with no tabs, only its words and window", () => {
+    const { container } = render(<StepSwitcher label="Expose" steps={STEPS.slice(1)} />);
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByRole("tab")).toBeNull();
+    expect(screen.getByRole("heading", { level: 4 }).textContent).toBe("Gen writes the route");
+    expect(container.querySelector('[data-slot="frame"]')?.textContent).toContain("routes.ts");
   });
 
   it("moves and selects with the arrow keys", () => {

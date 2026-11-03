@@ -3,19 +3,30 @@
  * Purpose: `SiteHeader`, the marketing site's top bar: the brand, the section links, a docs search drawn as a
  *          field, the ask-AI link, the code host link and the locale and theme switchers, on `AppHeader`'s transparent
  *          variant (sticky, clear until the page scrolls).
- * Boundary: composition of @stackra/ui only; every word comes in props. The links are plain anchors, so the bar works
- *           without script; the section links scroll sideways on a narrow screen rather than hide.
+ * Boundary: composition of @stackra/ui only; every word comes in props. Every link is @stackra/ui's `Link` (a real
+ *           link, so the bar works without script, and a client navigation through the nearest router), with the
+ *           kit's focus ring; the section links scroll sideways on a narrow screen rather than hide. It draws outside
+ *           the ruled column.
  * Runtime: browser
- * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (RTL); STA-2041.
+ * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (RTL); WCAG 2.2 SC
+ *                     2.4.7; STA-2041.
  */
-import { AppHeader, Icon } from "@stackra/ui/react";
+import { AppHeader, Icon, Link } from "@stackra/ui/react";
 import type { ReactElement } from "react";
 
 import type { SiteHeaderProps } from "#react/site-header/site-header.props";
 
+/** The kit's focus ring, drawn whatever the base layer gives an anchor. */
+const FOCUS = "outline-none focus-visible:ring-2 focus-visible:ring-focus";
+
+/** The bar's quiet colour, important so it wins over the link colour the `Link` draws. */
+const QUIET = "text-muted! hover:text-foreground!";
+
 /** A quiet text link of the bar. */
-const LINK =
-  "inline-flex h-9 items-center rounded-field px-3 text-sm text-muted hover:text-foreground whitespace-nowrap";
+const LINK = `inline-flex h-9 items-center rounded-field px-3 text-sm no-underline whitespace-nowrap ${QUIET} ${FOCUS}`;
+
+/** The docs search, drawn as a field. */
+const SEARCH = `hidden h-9 min-w-48 items-center gap-2 rounded-field border border-border bg-surface px-3 text-sm no-underline md:inline-flex ${QUIET} ${FOCUS}`;
 
 /**
  * The top bar of a marketing site.
@@ -44,9 +55,9 @@ export function SiteHeader({
           <ul className="flex items-center gap-1">
             {links.map((link) => (
               <li key={link.href}>
-                <a href={link.href} className={LINK}>
+                <Link href={link.href} underline="hover" className={LINK}>
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -54,22 +65,23 @@ export function SiteHeader({
       }
       endContent={
         <>
-          <a
+          <Link
             href={docsSearch.href}
+            underline="hover"
             data-slot="site-header-docs-search"
-            className="hidden h-9 min-w-48 items-center gap-2 rounded-field border border-border bg-surface px-3 text-sm text-muted hover:text-foreground md:inline-flex"
+            className={SEARCH}
           >
             <Icon name="search" />
             {docsSearch.label}
-          </a>
+          </Link>
           {askAi ? (
-            <a href={askAi.href} className={LINK}>
+            <Link href={askAi.href} underline="hover" className={LINK}>
               {askAi.label}
-            </a>
+            </Link>
           ) : null}
-          <a href={githubHref} className={LINK}>
+          <Link href={githubHref} underline="hover" className={LINK}>
             {githubLabel}
-          </a>
+          </Link>
           {localeSwitcher}
           {themeToggle}
         </>

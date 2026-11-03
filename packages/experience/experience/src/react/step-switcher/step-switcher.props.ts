@@ -18,7 +18,7 @@
 export interface StepSwitcherProps {
   /** The spoken name of the step list. */
   readonly label: string;
-  /** The steps, in order; the first is shown at the start. */
+  /** The steps, in order; the first is shown at the start. A single step draws no tabs. */
   readonly steps: readonly {
     readonly id: string;
     /** The step's word in the switcher, and its tab's name. */
@@ -32,6 +32,11 @@ export interface StepSwitcherProps {
       readonly source: string;
     };
   }[];
+  /**
+   * The outline level of each step's title, one under the heading the switcher sits beneath: 4 (the default) under a
+   * station's `h3`. It always looks like an `h4`.
+   */
+  readonly headingLevel?: 2 | 3 | 4 | 5 | 6 | undefined;
   /** Styles the switcher. */
   readonly className?: string | undefined;
 }

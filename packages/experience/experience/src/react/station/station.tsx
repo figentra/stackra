@@ -3,15 +3,18 @@
  * Purpose: `Station`, one station on the landing's pipe: a ruled blueprint band with the station rail (the pipe
  *          on the inline start, a junction square at the title), the title and its line, and the schematic window
  *          that shows what comes out here.
- * Boundary: composition of @stackra/ui only; every word comes in props. The rail and the junction are hidden
- *           decoration on blueprint token roles and sit on the inline start, so Arabic mirrors them. Nothing moves.
+ * Boundary: composition of @stackra/ui only; every word comes in props. The words and the window stack under `lg`;
+ *           from `lg` the window takes the wider track (two thirds), so the code it holds is never squeezed. The rail
+ *           and the junction are hidden decoration on blueprint token roles and sit on the inline start, so Arabic
+ *           mirrors them. Nothing moves.
  * Runtime: browser
  * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (RTL); STA-2041 (design
  *                     pass §2 and §4).
  */
-import { BlueprintSection, Heading, Text } from "@stackra/ui/react";
+import { Heading, Text } from "@stackra/ui/react";
 import type { ReactElement } from "react";
 
+import { RuledBand } from "#react/ruled-band/ruled-band";
 import type { StationProps } from "#react/station/station.props";
 
 /**
@@ -31,11 +34,11 @@ export function Station({
   className,
 }: StationProps): ReactElement {
   return (
-    <BlueprintSection id={id} label={title} className={className ?? ""}>
+    <RuledBand id={id} label={title} className={className ?? ""}>
       <div
         data-slot="station"
         {...(status ? { "data-status": status } : {})}
-        className="relative grid gap-8 py-16 ps-10 pe-4 sm:pe-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:pe-12"
+        className="relative grid gap-8 py-16 ps-10 pe-4 sm:pe-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:pe-12"
       >
         <span
           aria-hidden="true"
@@ -55,6 +58,6 @@ export function Station({
         </div>
         <div className="min-w-0">{children}</div>
       </div>
-    </BlueprintSection>
+    </RuledBand>
   );
 }

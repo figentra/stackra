@@ -1,0 +1,21 @@
+{
+  "slug": "surfaces",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "Surfaces",
+  "parts": ["Surfaces"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 420
+    }
+  ],
+  "related": ["free/frame", "free/button", "free/hero-machine", "free/station"],
+  "tokens": ["color.surface", "color.border", "color.accent"],
+  "keywords": ["surfaces", "web", "desktop", "phone", "rtl", "frames", "landing", "kit"],
+  "status": "new"
+}

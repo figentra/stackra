@@ -1868,6 +1868,16 @@
         "title": "Illustration",
         "description": "A brand drawing in four tone layers, coloured by the theme in light and dark.",
         "keywords": "illustration, drawing, art, mask, tone layers, dither, landing"
+      },
+      "surfaces": {
+        "title": "Surfaces",
+        "description": "One action's button on every surface: web, desktop and phone frames in a row that wraps.",
+        "keywords": "surfaces, web, desktop, phone, frames, right to left, landing"
+      },
+      "page_dock": {
+        "title": "Page dock",
+        "description": "The landing's section dock: a sticky bar of section links with the page's status line.",
+        "keywords": "dock, sections, scroll spy, status, navigation, landing"
       }
     }
   },
@@ -5646,6 +5656,16 @@
         },
         "decorative": {
           "title": "Decoration only"
+        }
+      },
+      "surfaces": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "page_dock": {
+        "basics": {
+          "title": "Basics"
         }
       }
     }
@@ -9509,6 +9529,24 @@
           "when": "For the landing's engine, stack and monitor drawings, or any art drawn in the brand's tones.",
           "rtl": "The drawing is never mirrored; it reads the same both ways.",
           "when_not": "For a photo or a screenshot; use Image or Frame."
+        },
+        "surfaces": {
+          "headline": "The same button, everywhere.",
+          "intro": "A named group of frames, a window for web and desktop and a phone, each showing the real Button with the action's words; a surface with its own language takes that language's direction.",
+          "tags": "Landing kit · Frames · Bidirectional",
+          "what": "The Draw station block of the experience module.",
+          "when": "To show one action reaching every surface, in every language.",
+          "rtl": "An Arabic surface mirrors inside an English page; the frames never mirror their drawing.",
+          "when_not": "For a single screenshot; use Frame."
+        },
+        "page_dock": {
+          "headline": "The page tells you where you are.",
+          "intro": "SectionDock on a landing page: one link per section, the current one marked as the page scrolls, and a status line in the CLI's voice.",
+          "tags": "Landing kit · Navigation · Scroll spy",
+          "what": "The section dock block of the experience module.",
+          "when": "For a long page of named sections, such as the landing's stations.",
+          "rtl": "The links follow the reading order, so the dock mirrors in Arabic.",
+          "when_not": "For the site's own navigation; use SiteHeader."
         }
       }
     }

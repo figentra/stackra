@@ -58,14 +58,18 @@ describe("MonoDisplay", () => {
 
   it("is a section named by its wordmark whose floors rise a step at a time", () => {
     render(at("full", <MonoDisplay title="stackra" tagline="One backend, every surface." />));
-    expect(screen.getByRole("region", { name: "stackra" })).toBeTruthy();
+    const region = screen.getByRole("region", { name: "stackra" });
+    expect(region.getAttribute("data-slot")).toBe("blueprint-section");
     const heading = screen.getByRole("heading", { level: 2, name: "stackra" });
     expect(heading.querySelector("span")?.getAttribute("translate")).toBe("no");
+    expect(heading.className).not.toContain("clamp");
     expect(screen.getByText("One backend, every surface.")).toBeTruthy();
     expect(risen()).toBe(0);
     act(() => vi.advanceTimersByTime(STEP_MS));
     expect(risen()).toBe(1);
-    act(() => vi.advanceTimersByTime(2 * STEP_MS));
+    // One act a floor: each rise renders before its effect schedules the next.
+    act(() => vi.advanceTimersByTime(STEP_MS));
+    act(() => vi.advanceTimersByTime(STEP_MS));
     expect(risen()).toBe(3);
   });
 

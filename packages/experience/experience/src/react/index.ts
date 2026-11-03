@@ -2,9 +2,10 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./react` entry of @stackra/experience (the web `DocumentRenderer` and the `react`
  *          driver of the `Renderer` port, the marketing blocks of the module UI kit, `FeatureSection` and
- *          `CtaSection`, ADR 0504, and the thirteen blocks of the Stackra landing, STA-2041) until `stackra gen` writes
+ *          `CtaSection`, ADR 0504, and the fifteen blocks of the Stackra landing, STA-2041) until `stackra gen` writes
  *          the entry barrels (STA-339).
- * Boundary: names each re-export and declares nothing. The node drawing stays internal.
+ * Boundary: names each re-export and declares nothing. The node drawing, the ruled band and the surface frame stay
+ *           internal.
  * Runtime: browser
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
@@ -27,6 +28,8 @@ export { HeroMachine } from "#react/hero-machine/hero-machine";
 export type { HeroMachineProps } from "#react/hero-machine/hero-machine.props";
 export { MonoDisplay } from "#react/mono-display/mono-display";
 export type { MonoDisplayProps } from "#react/mono-display/mono-display.props";
+export { PageDock } from "#react/page-dock/page-dock";
+export type { PageDockProps } from "#react/page-dock/page-dock.props";
 export { ProductCards } from "#react/product-cards/product-cards";
 export type { ProductCardsProps } from "#react/product-cards/product-cards.props";
 export { SiteFooter } from "#react/site-footer/site-footer";
@@ -39,5 +42,7 @@ export { Station } from "#react/station/station";
 export type { StationProps } from "#react/station/station.props";
 export { StepSwitcher } from "#react/step-switcher/step-switcher";
 export type { StepSwitcherProps } from "#react/step-switcher/step-switcher.props";
+export { Surfaces } from "#react/surfaces/surfaces";
+export type { SurfacesProps } from "#react/surfaces/surfaces.props";
 export { TerminalStage } from "#react/terminal-stage/terminal-stage";
 export type { TerminalStageProps } from "#react/terminal-stage/terminal-stage.props";

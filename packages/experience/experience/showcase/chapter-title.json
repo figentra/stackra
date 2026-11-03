@@ -14,8 +14,8 @@
       "minHeight": 200
     }
   ],
-  "related": ["free/heading", "free/statement", "free/station"],
-  "tokens": ["color.core", "color.foreground"],
+  "related": ["free/heading", "free/statement", "free/station", "free/blueprint-section"],
+  "tokens": ["color.foreground", "color.muted"],
   "keywords": ["chapter", "title", "heading", "marketing", "landing", "kit"],
   "status": "new"
 }

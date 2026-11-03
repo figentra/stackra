@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./react` entry: the template's pages import `DocumentRenderer`, the
  *          generated web wiring imports `ReactRendererDriver`, and the module UI kit's blocks (the marketing sections
- *          and the thirteen landing blocks, without a `Block` suffix, which the `Block` classes own); nothing else.
+ *          and the fifteen landing blocks, without a `Block` suffix, which the `Block` classes own); nothing else.
  * Boundary: test only; `@stackra/ui/react` and `@stackra/clients/react` are empty stand-ins, so only the exports are
  *           checked.
  * Runtime: node (vitest)
@@ -29,6 +29,7 @@ describe("@stackra/experience/react", () => {
       "FeatureSection",
       "HeroMachine",
       "MonoDisplay",
+      "PageDock",
       "ProductCards",
       "ReactRendererDriver",
       "SiteFooter",
@@ -36,6 +37,7 @@ describe("@stackra/experience/react", () => {
       "Statement",
       "Station",
       "StepSwitcher",
+      "Surfaces",
       "TerminalStage",
     ]);
   });
