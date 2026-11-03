@@ -34,6 +34,7 @@ import { checkRunwayUnreadFields } from "#node/functions/check-runway-unread-fie
 import { checkService } from "#node/functions/check-service.function";
 import { checkTestPlacement } from "#node/functions/check-test-placement.function";
 import { checkWindowSizing } from "#node/functions/check-window-sizing.function";
+import { checkWorkflowTriggers } from "#node/functions/check-workflow-triggers.function";
 import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { isExpoAppConfig } from "#node/functions/is-expo-app-config.function";
 import { isMemberSource } from "#node/functions/is-member-source.function";
@@ -120,6 +121,15 @@ export async function structureFindings(
   const members = listMembers(root);
 
   report("test-placement", "", checkTestPlacement(files));
+  report(
+    "workflow-triggers",
+    "",
+    checkWorkflowTriggers(
+      files
+        .filter((p) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(p))
+        .map((p): [string, string] => [p, text(p)]),
+    ),
+  );
   if (existsSync(join(root, RUNWAY_DIR))) {
     report("runway-schemas", "", checkRunwaySchemas(maybe));
     report("runway-unread-fields", "", checkRunwayUnreadFields(maybe, files));
