@@ -175,7 +175,7 @@ A product adds `workloads.zitadel`. The plan holds a Fargate task and service, s
 | L6   | Workload construct: Fargate cluster, task, service, discovery, ALB, autoscaling, health, extracted from infra-tools into infra-aws-runtime   | L1, L2, L5 |
 | L7   | (held, see status) infra-tools onto the workload construct, with an unchanged plan                                                           | L6         |
 | L8   | Docs: runbook, READMEs, AGENTS.md, ADR 0227 rows, schema docs                                                                                | L1–L6      |
-| L9   | (held, see status) First user, after Q3: the ZITADEL workload in the product runway it serves                                                | L4, L6     |
+| L9   | First user, after Q3: what ZITADEL needs from the workload kind (`command`, `aliases`), planned in tests; its declaration waits (status)     | L6         |
 
 ## Linear
 
@@ -191,3 +191,7 @@ Epic STA-1640; lanes L1 to L9 are STA-1641 to STA-1649.
   renames its Pulumi resources (replaced on the next apply) for no gain now; it needs the owner's yes. L9 held: the
   ZITADEL workload needs its runway (the OS repository or the in-country environment) and a pinned image digest; the
   runbook shows the declaration.
+- 2026-11-03 L9 (STA-1649): workloads take `command` (ZITADEL starts with `start-from-init`) and `aliases` (the
+  database URL as `ZITADEL_DATABASE_POSTGRES_DSN`); the runbook's ZITADEL declaration plans in dev, staging and
+  production in tests. The declaration itself still waits for its runway (the OS runway names ZITADEL Cloud for
+  launch; the in-country environment does not exist yet) and a pinned digest. Kafka's consumer is dropped (Q1).
