@@ -51,6 +51,15 @@ function rootWith(extra: Record<string, unknown> = {}) {
 
 const IDENTITY = parseRunway("service", { version: 3, uses: ["main-db"], environments: {} });
 
+/** A member using main-db whose staging database names `extensions`. */
+function member(extensions: string[]) {
+  return parseRunway("service", {
+    version: 3,
+    uses: ["main-db"],
+    environments: { staging: { database: { extensions } } },
+  });
+}
+
 describe("runtimePlan resources and workloads", () => {
   // @covers sta-1640:FR-005
   // @covers sta-1640:FR-007
@@ -79,12 +88,6 @@ describe("runtimePlan resources and workloads", () => {
   });
 
   it("carries the extensions the member consumers name, once and sorted, and preloads what needs it", () => {
-    const member = (extensions: string[]) =>
-      parseRunway("service", {
-        version: 3,
-        uses: ["main-db"],
-        environments: { staging: { database: { extensions } } },
-      });
     const services = {
       identity: member(["pg_trgm", "pg_stat_statements"]),
       search: member(["vector", "pg_trgm"]),

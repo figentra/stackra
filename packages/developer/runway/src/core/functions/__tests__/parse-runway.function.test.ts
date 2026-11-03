@@ -159,6 +159,14 @@ function parseVars(vars: Record<string, unknown>): unknown {
   return parseRunway("app", { version: 3, environments: { dev: { vars } } });
 }
 
+/** Parses a service runway whose dev database names `extensions`. */
+function withExtensions(extensions: string[]) {
+  return parseRunway("service", {
+    version: 3,
+    environments: { dev: { database: { extensions } } },
+  });
+}
+
 describe("parseRunway", () => {
   it("parses the template's service runway, typed ServiceRunway", () => {
     const commerce = parseRunway("service", COMMERCE, "services/commerce/runway.yaml");
@@ -392,12 +400,6 @@ describe("parseRunway", () => {
   });
 
   it("allows the approved database extensions and refuses another, naming them", () => {
-    const withExtensions = (extensions: string[]) =>
-      parseRunway("service", {
-        version: 3,
-        environments: { dev: { database: { extensions } } },
-      });
-
     expect(
       withExtensions(["btree_gist", "pg_stat_statements", "postgis"]).environments.dev?.database
         ?.extensions,

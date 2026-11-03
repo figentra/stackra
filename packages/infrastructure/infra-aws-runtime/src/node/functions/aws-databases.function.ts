@@ -137,7 +137,9 @@ export function awsDatabases(
       | { dbClusterIdentifier: pulumi.Output<string> };
     if (database.engine === "aurora") {
       const parameters =
-        preload === undefined ? undefined : new aws.rds.ClusterParameterGroup(database.name, preload);
+        preload === undefined
+          ? undefined
+          : new aws.rds.ClusterParameterGroup(database.name, preload);
       const cluster = new aws.rds.Cluster(database.name, {
         clusterIdentifier: database.name,
         engine: "aurora-postgresql",

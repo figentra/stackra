@@ -181,10 +181,12 @@ describe("awsDatabases", () => {
     expect(resource("Instance", "academorix-dev-main-db").inputs).toMatchObject({
       parameterGroupName: "academorix-dev-main-db",
     });
-    expect(resource("ClusterParameterGroup", "academorix-production-main-db").inputs).toMatchObject({
-      family: "aurora-postgresql18",
-      ...preload,
-    });
+    expect(resource("ClusterParameterGroup", "academorix-production-main-db").inputs).toMatchObject(
+      {
+        family: "aurora-postgresql18",
+        ...preload,
+      },
+    );
     expect(resource("Cluster", "academorix-production-main-db").inputs).toMatchObject({
       dbClusterParameterGroupName: "academorix-production-main-db",
     });
