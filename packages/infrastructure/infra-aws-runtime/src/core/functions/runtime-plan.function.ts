@@ -151,12 +151,26 @@ export function runtimePlan(
     // The Valkey cache driver's name is its engine's; a dedicated cache exists only where that driver runs.
     const cacheDriver = fieldOf(values?.config?.["cache"], "driver") ?? defaultCacheDriver;
     for (const [requirement, { engine, dedicated }] of Object.entries(runway.requires ?? {})) {
-      if (
-        engine !== RequirementEngine.Valkey ||
-        dedicated !== true ||
-        cacheDriver !== RequirementEngine.Valkey
-      )
-        continue;
+      if (engine !== RequirementEngine.Valkey || dedicated !== true) continue;
+      // Memory in dev is by design; a requirement no environment's cache driver serves is a mistake (STA-2049).
+      const isServed = [
+        ...new Set([...Object.keys(root.environments), ...Object.keys(runway.environments)]),
+      ].some(
+        (name) =>
+          (fieldOf(runway.environments[name as RunwayEnvironment]?.config?.["cache"], "driver") ??
+            fieldOf(
+              root.environments[name as RunwayEnvironment]?.defaults?.service?.config?.["cache"],
+              "driver",
+            )) === RequirementEngine.Valkey,
+      );
+      if (!isServed)
+        throw new RunwayInvalidError(`${member} service runway`, [
+          {
+            path: `requires.${requirement}`,
+            message: `No driver serves this dedicated ${engine} cache: no environment sets \`config.cache.driver\` to ${engine}`,
+          },
+        ]);
+      if (cacheDriver !== RequirementEngine.Valkey) continue;
       const size = values?.cache;
       const nodeType = cacheNodeType(size?.memoryMb);
       const eviction = size?.eviction;
