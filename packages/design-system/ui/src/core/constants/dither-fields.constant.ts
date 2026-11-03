@@ -2,16 +2,24 @@
  * Stackra file contract:
  * Purpose: `DITHER_FIELDS`, the six brand pattern fields. A field maps a cell (x and y in 0..1, time t in seconds, the
  *          aspect w/h) to two channels, [steel, core], each 0..1; steel is capped below 1 so it always dithers and
- *          never fills flat.
+ *          never fills flat. An optional sun moves the core glow; without it each field keeps the kit's own centre.
  * Boundary: pure maths, no DOM. Ported as it is from the brand kit's generator (see ORIGIN.md), so the canvas draws
- *           the same art as the kit's posters.
+ *           the same art as the kit's posters; the sun argument is the landing's addition, and its defaults are the
+ *           kit's values.
  * Runtime: isomorphic
  * Governing contract: brand rules §40; ADR 0302 (decision 3); STA-2041.
  */
 import type { DitherPattern } from "#contracts/enums/dither-pattern.enum";
+import type { DitherSun } from "#contracts/types/dither-sun.type";
 
-/** A field: the [steel, core] channels of one cell. */
-type Field = (x: number, y: number, t: number, aspect: number) => readonly [number, number];
+/** A field: the [steel, core] channels of one cell; `sun` moves the core glow (`waves` and `field` have none). */
+type Field = (
+  x: number,
+  y: number,
+  t: number,
+  aspect: number,
+  sun?: DitherSun,
+) => readonly [number, number];
 
 const hash = (x: number, y: number): number => {
   const s = Math.sin(x * 127.1 + y * 311.7) * 43_758.5453;
@@ -49,18 +57,18 @@ const glow = (dx: number, dy: number, kx: number, ky: number): number =>
 /** The six patterns; each meaning is in the brand book, chapter 07. */
 export const DITHER_FIELDS: Readonly<Record<DitherPattern, Field>> = Object.freeze({
   // The primary: the framework's floors, bent by noise, over the engine core glowing at the base.
-  strata(x, y, t) {
+  strata(x, y, t, _aspect, sun) {
     const f = fbm(x * 3 + t * 0.02, y * 3 - t * 0.01);
     const floors = 0.5 + 0.5 * Math.sin((y * 6.5 + f * 0.9) * Math.PI);
     return [
       clamp(floors ** 2.5 * 0.8 * (0.3 + y * 0.7) + (f - 0.5) * 0.2, STEEL),
-      clamp(glow(x - 0.5, y - 1.04, 7, 8)),
+      clamp(glow(x - (sun?.x ?? 0.5), y - (sun?.y ?? 1.04), 7, 8)),
     ];
   },
   // Ignition: one action starting the engine, a core dithering out through steel rings.
-  core(x, y, t, aspect) {
-    const dx = (x - 0.5) * aspect;
-    const dy = y - 0.5;
+  core(x, y, t, aspect, sun) {
+    const dx = (x - (sun?.x ?? 0.5)) * aspect;
+    const dy = y - (sun?.y ?? 0.5);
     const r = Math.sqrt(dx * dx + dy * dy);
     const f = fbm(x * 4 + t * 0.02, y * 4);
     const core = Math.exp(-r * r * 14) * 1.05;
@@ -68,16 +76,20 @@ export const DITHER_FIELDS: Readonly<Record<DitherPattern, Field>> = Object.free
     return [clamp(rings * 0.4 * (1 - Math.min(1, core)) + (f - 0.5) * 0.15, STEEL), clamp(core)];
   },
   // gen: code written from models, blocky cells with the core at the side where the output appears.
-  grid(x, y, t) {
+  grid(x, y, t, _aspect, sun) {
     const f = fbm(x * 4 + t * 0.03, y * 4);
     const cell = (Math.floor(x * 16) + Math.floor(y * 6)) % 3 === 0 ? 0.55 : 0.12;
-    return [clamp(cell * (0.35 + f * 0.6), STEEL), clamp(glow(x - 0.9, y - 0.5, 14, 10) * 0.85)];
+    return [
+      clamp(cell * (0.35 + f * 0.6), STEEL),
+      clamp(glow(x - (sun?.x ?? 0.9), y - (sun?.y ?? 0.5), 14, 10) * 0.85),
+    ];
   },
   // Runway: three environments as lanes, one change moving along the middle lane as a core pulse.
-  lanes(x, y, t) {
+  lanes(x, y, t, _aspect, sun) {
     const f = fbm(x * 6 + t * 0.02, y * 2);
     const lane = Math.max(...[1 / 6, 0.5, 5 / 6].map((c) => Math.exp(-(y - c) * (y - c) * 300)));
-    const pulse = glow(x - (0.68 + 0.05 * Math.sin(t * 0.3)), y - 0.5, 40, 300) * 0.95;
+    const pulse =
+      glow(x - ((sun?.x ?? 0.68) + 0.05 * Math.sin(t * 0.3)), y - (sun?.y ?? 0.5), 40, 300) * 0.95;
     return [clamp(lane * 0.55 + (f - 0.5) * 0.08, STEEL), clamp(pulse)];
   },
   // Flow: long, slow bands, spec to merge. No core.
