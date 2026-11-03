@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `checkWorkflowTriggers(workflows)`, the `workflow-triggers` rule (STA-256, ADR 0166, 0167). A workflow on a
- *          `push` to a branch, `pull_request` or `pull_request_target` runs no paid job: a macOS, Windows or larger
- *          runner, an EAS build or a device farm run, in its own jobs or in a local workflow a job calls. Paid work sits
- *          behind `workflow_dispatch`, a tag, a schedule or a release. A test job (one with no `environment:`) never
- *          carries a deploy identity in its env, from the workflow, the job or a step.
+ *          `push` to a branch, `pull_request`, `pull_request_target` or `merge_group` runs no paid job: a macOS, Windows
+ *          or larger runner (named directly or through its `strategy.matrix`), an EAS build or a device farm run, in its
+ *          own jobs or in a local workflow a job calls. Paid work sits behind `workflow_dispatch`, a tag, a schedule or
+ *          a release. A test job (one with no `environment:`) never carries a deploy identity: no deploy key in its env
+ *          (from the workflow, the job or a step), no deploy variable or secret read in a step's env, `with:` or `run:`.
  * Boundary: pure over `[path, text]` pairs of `.github/workflows/*.yml`; a file that does not parse is skipped. A job
  *           named in `WORKFLOW_TRIGGER_ALLOWED` (with its reason) is not checked.
  * Runtime: node
@@ -27,8 +28,14 @@ const PAID_COMMAND =
 const DEPLOY_KEY =
   /^(?:CLOUDFLARE_API_TOKEN|EXPO_TOKEN|ENCORE_\w+|AWS_(?:ACCESS_KEY_ID|SECRET_ACCESS_KEY|SESSION_TOKEN)|VERCEL_TOKEN|FLY_API_TOKEN|NETLIFY_AUTH_TOKEN|PULUMI_ACCESS_TOKEN|MINTLIFY_ADMIN_KEY)$/;
 
-/** An env value read from a variable or secret named as a deploy one. */
-const DEPLOY_VALUE = /\b(?:vars|secrets)\.\w*DEPLOY\w*/i;
+/** A read of a variable or secret named as a deploy one or as a deploy key. */
+const DEPLOY_REF = new RegExp(
+  String.raw`\b(?:vars|secrets)\.(?:\w*DEPLOY\w*|${DEPLOY_KEY.source.slice(1, -1)})\b`,
+  "gi",
+);
+
+/** The events that run once per pull request or merge; `push` is read apart for its tag filter. */
+const PER_CHANGE = ["pull_request", "pull_request_target", "merge_group"];
 
 const LOCAL_CALL = /^\.\/(\.github\/workflows\/[^@]+)$/;
 
@@ -38,10 +45,10 @@ const nodes = (value: unknown): Node[] => (Array.isArray(value) ? value.filter(i
 
 /** Whether `on` holds a branch push or a pull request; a push filtered to tags alone is a release. */
 function onPushOrPull(on: unknown): boolean {
-  if (typeof on === "string") return ["push", "pull_request", "pull_request_target"].includes(on);
+  if (typeof on === "string") return PER_CHANGE.includes(on) || on === "push";
   if (Array.isArray(on)) return on.some((event) => onPushOrPull(event));
   if (!isNode(on)) return false;
-  if ("pull_request" in on || "pull_request_target" in on) return true;
+  if (PER_CHANGE.some((event) => event in on)) return true;
   if (!("push" in on)) return false;
   const push = on["push"];
   return (
@@ -55,7 +62,12 @@ function onPushOrPull(on: unknown): boolean {
 
 /** Why `job` costs money per run, or undefined when it does not. */
 function paidReason(job: Node): string | undefined {
-  const runner = JSON.stringify(job["runs-on"] ?? "");
+  const runsOn = JSON.stringify(job["runs-on"] ?? "");
+  const strategy = job["strategy"];
+  // a matrix runner is billed by the values it expands to
+  const runner = runsOn.includes("matrix.")
+    ? `${runsOn} ${JSON.stringify(isNode(strategy) ? strategy["matrix"] : "")}`
+    : runsOn;
   if (PAID_RUNNER.test(runner)) return `runs on a paid runner (${runner})`;
   const step = nodes(job["steps"]).find((s) => PAID_COMMAND.test(String(s["run"] ?? "")));
   return step ? `runs a paid command (${PAID_COMMAND.exec(String(step["run"]))?.[0]})` : undefined;
@@ -109,18 +121,21 @@ export function checkWorkflowTriggers(
             );
         }
       }
+      // shortcut: an `environment:` expression that can be empty still counts as a deploy job; read it when one is.
       if (job["environment"] !== undefined || job["uses"] !== undefined) continue;
-      const envs = [doc["env"], job["env"], ...nodes(job["steps"]).map((s) => s["env"])].filter(
-        isNode,
-      );
+      const steps = nodes(job["steps"]);
+      const envs = [doc["env"], job["env"], ...steps.map((s) => s["env"])].filter(isNode);
       for (const [key, value] of envs.flatMap((env) => Object.entries(env))) {
-        const text = String(value ?? "");
-        if ((DEPLOY_KEY.test(key) && text !== "") || DEPLOY_VALUE.test(text)) {
+        if (DEPLOY_KEY.test(key) && String(value ?? "") !== "")
           out.push(
             `${path}: job \`${name}\` has no environment but its env sets the deploy identity \`${key}\`; give it only to the deploy job (ADR 0167)`,
           );
-        }
       }
+      const read = JSON.stringify([doc["env"], job["env"], steps]).match(DEPLOY_REF) ?? [];
+      for (const ref of new Set(read))
+        out.push(
+          `${path}: job \`${name}\` has no environment but reads the deploy identity \`${ref}\`; give it only to the deploy job (ADR 0167)`,
+        );
     }
   }
   return out;

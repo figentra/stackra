@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: fixture tests of `checkWorkflowTriggers`: a paid runner, an EAS build or a called paid job on a push or pull
- *          request trigger fails, the same job behind a tag, dispatch or call passes; a deploy key or deploy variable
- *          in a job with no environment fails, in a deploy job it passes; an allow-listed job passes.
+ * Purpose: fixture tests of `checkWorkflowTriggers`: a paid runner (direct or from a matrix), an EAS build or a called
+ *          paid job on a push, pull request or merge queue trigger fails, the same job behind a tag, dispatch or call
+ *          passes; a deploy key or deploy variable in a job with no environment (in env, `with:` or `run:`) fails, in a
+ *          deploy job it passes; an allow-listed job passes.
  * Boundary: test only; pure function, no disk.
  * Runtime: node (vitest)
  * Governing contract: ADR 0166, ADR 0167; STA-256.
@@ -32,6 +33,24 @@ test("checkWorkflowTriggers: a larger runner on push fails, a Linux one passes",
   assert.equal(
     checkWorkflowTriggers([["x.yml", "on: [push]\njobs:\n  a:\n    runs-on: windows-2022\n"]])
       .length,
+    1,
+  );
+});
+
+const matrixJob = (os: string): string =>
+  `    runs-on: \${{ matrix.os }}\n    strategy:\n      matrix:\n        os: [ubuntu-latest, ${os}]`;
+
+test("checkWorkflowTriggers: a macOS runner from the matrix fails, a Linux matrix passes", () => {
+  assert.match(
+    checkWorkflowTriggers([wf("  pull_request:", matrixJob("macos-latest"))])[0] ?? "",
+    /paid runner/,
+  );
+  assert.equal(checkWorkflowTriggers([wf("  pull_request:", matrixJob("ubuntu-24.04"))]).length, 0);
+});
+
+test("checkWorkflowTriggers: a paid job on merge_group fails", () => {
+  assert.equal(
+    checkWorkflowTriggers([wf("  merge_group:", "    runs-on: macos-latest")]).length,
     1,
   );
 });
@@ -74,6 +93,24 @@ test("checkWorkflowTriggers: a deploy identity in a job with no environment fail
   const step =
     "    runs-on: ubuntu-latest\n    steps:\n      - run: x\n        env:\n          ID: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}";
   assert.equal(checkWorkflowTriggers([wf("  pull_request:", step)]).length, 1);
+});
+
+test("checkWorkflowTriggers: a deploy identity read in a step's with or run fails", () => {
+  const withed =
+    "    runs-on: ubuntu-latest\n    steps:\n      - uses: Infisical/secrets-action@v1\n        with:\n          project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}";
+  assert.match(
+    checkWorkflowTriggers([wf("  pull_request:", withed)])[0] ?? "",
+    /reads the deploy identity `vars\.INFISICAL_DEPLOY_PROJECT_ID`/,
+  );
+  const inline =
+    "    runs-on: ubuntu-latest\n    steps:\n      - run: wrangler deploy --token ${{ secrets.CLOUDFLARE_API_TOKEN }}";
+  assert.match(
+    checkWorkflowTriggers([wf("  push:", inline)])[0] ?? "",
+    /`secrets\.CLOUDFLARE_API_TOKEN`/,
+  );
+  const gate =
+    "    runs-on: ubuntu-latest\n    steps:\n      - run: x\n        with:\n          id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}";
+  assert.equal(checkWorkflowTriggers([wf("  pull_request:", gate)]).length, 0);
 });
 
 test("checkWorkflowTriggers: a deploy job keeps its identity, a cleared key passes", () => {
