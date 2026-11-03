@@ -187,7 +187,9 @@ workflow's `startOn` for an event, is the only way in.
 
 ## Amendments
 
-None.
+- 2026-11-03 · build · `GenerateResult.warnings` is optional, not required: the docs-site run returns a
+  `GenerateResult` too and belongs to STA-2026, so it is left unchanged; `runGen` defaults it to `[]`. The golden
+  runner records warnings beside refusals, which is how AC-007 is checked.
 
 ## Status history
 

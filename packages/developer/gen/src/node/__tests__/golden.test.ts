@@ -3,7 +3,8 @@
  * Purpose: the golden snapshot tests of gen's frozen interface (STA-1320): each fixture workspace under
  *          `packages/developer/gen/__golden__/<fixture>/input/` is copied to `.cache/golden/<fixture>/`, `generate`
  *          runs over its members in order, and every file the runs wrote or changed (outside `node_modules`) must
- *          equal the committed tree in `<fixture>/expected/`, and the refusals must equal `<fixture>/refusals.json`.
+ *          equal the committed tree in `<fixture>/expected/`, and the refusals and warnings must equal
+ *          `<fixture>/refusals.json`.
  *          A clean member is also checked again (`check: true`) and must report nothing stale. With
  *          `UPDATE_GOLDEN=1` the run rewrites `expected/` and `refusals.json` instead of comparing; that is the only
  *          way the expected output changes, and its diff is reviewed like code.
@@ -114,12 +115,13 @@ function snapshot(workspace: string): Map<string, string> {
   );
 }
 
-/** One refusal as the golden records it: the frozen code and where, never the wording. */
+/** One refusal or warning as the golden records it: the frozen code and where, never the wording. */
 interface GoldenRefusal {
   readonly member: string;
   readonly code: string;
   readonly file: string;
   readonly subject: string;
+  readonly severity?: "warning";
 }
 
 describe("gen golden snapshots (STA-1320)", () => {
@@ -139,12 +141,14 @@ describe("gen golden snapshots (STA-1320)", () => {
         for (const member of fixture.members) {
           const root = join(workspace, member);
           const result = await generate(root);
-          for (const error of result.errors) {
+          // A warning is recorded too, so a new one shows up here (STA-340); a refusal carries no severity.
+          for (const error of [...(result.warnings ?? []), ...result.errors]) {
             refusals.push({
               member,
               code: error.code,
               file: error.file.replaceAll(workspace, "<workspace>"),
               subject: error.subject,
+              ...(error.severity === undefined ? {} : { severity: error.severity }),
             });
           }
           // Determinism: a clean run leaves nothing stale for `stackra gen --check`.

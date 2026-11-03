@@ -7,7 +7,8 @@
  *          of a package (no openapi, entry barrels), no file at all when discovery, the manifest or the identity lock
  *          refuses, and `@Renamed` accepted by the lock. A generated search query gets its manifest entry (with the
  *          package input and output schemas), endpoint, tool and wiring binding like an authored query, and no
- *          empty `X$` in the schemas file (STA-1459). Every full run ends with the member graph (ADR 0452).
+ *          empty `X$` in the schemas file (STA-1459). Every full run ends with the member graph (ADR 0452). A warning
+ *          never stops writing and comes back in `warnings`, beside a refusal too (STA-340).
  * Boundary: test only; runs on the IR fixtures.
  * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
@@ -209,6 +210,20 @@ describe("generateMember", () => {
       files: [],
       errors: [{ code: "shape_number_kind" }],
     });
+  });
+
+  it("writes every file beside a warning, returns it in `warnings`, and keeps it beside a refusal (STA-340)", () => {
+    const finding = { file: "x.ts", line: 0, column: 0, subject: "X", message: "m", fix: "f" };
+    const warning = { ...finding, code: "action_without_workflow", severity: "warning" as const };
+    const refusal = { ...finding, code: "shape_number_kind" };
+    const warned = generateMember({ ...COMMERCE_IR, errors: [warning] });
+    expect(warned.errors).toEqual([]);
+    expect(warned.warnings).toEqual([warning]);
+    expect(warned.files.map((file) => file.path)).toEqual(
+      generateMember(COMMERCE_IR).files.map((file) => file.path),
+    );
+    const refused = generateMember({ ...COMMERCE_IR, errors: [warning, refusal] });
+    expect(refused).toMatchObject({ files: [], errors: [refusal], warnings: [warning] });
   });
 
   it("locks identities against the committed manifest unless renamed", () => {

@@ -74,8 +74,9 @@ generate ──► GenerateResult { errors, warnings, files, changed } ──►
   `CLIENTS_SPECIFIER`.
 - `generateMember`: adds `...checkActionFirst(ir)` to the full-pass list, then splits `all` into errors and warnings
   before its "nothing is written" return; both returns carry `warnings`.
-- `generate`: passes `result.warnings` through on every return after the full pass (`warnings: []` elsewhere).
-- `GenerateResult.warnings: readonly GenError[]`.
+- `generate`: passes `result.warnings` through on every return after the full pass; earlier returns leave it out.
+- `GenerateResult.warnings?: readonly GenError[]`, optional, so the docs-site run (`generateDocsSite`, owned by
+  STA-2026) and the early returns stay unchanged; `runGen` reads it as `warnings = []`.
 - `runGen` (cli): prints each warning to stderr in the two-line form before the errors; the outcome is unchanged.
 - Barrel: `checkActionFirst` added to `gen/src/core/index.ts` and its list in `core/__tests__/index.test.ts`.
 
@@ -127,7 +128,9 @@ none
 - `generate-member.function.test.ts`: an IR with only a warning writes files and returns it in `warnings`.
 - `run-gen.function.test.ts`: a warning-only result resolves true with and without `check`; an error resolves false
   (AC-002, AC-003), with `generate` mocked as the existing tests do.
-- The golden test stays green: the golden service reports neither code (AC-007).
+- The golden test stays green: the golden service reports neither code (AC-007). The golden runner records each
+  run's warnings beside its refusals (with `severity: "warning"`), so a warning in any fixture shows up as a diff.
+- `create-source-reader.function.test.ts`: the `workflows` fact (P-006, EC-03).
 - Runs on ci-box: gen and cli test, typecheck and lint.
 
 ## Rollout
