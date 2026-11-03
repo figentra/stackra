@@ -53,6 +53,7 @@ import { DbMigrateCommand } from "#node/commands/db-migrate.command";
 import { DbRollbackCommand } from "#node/commands/db-rollback.command";
 import { DoctorCommand } from "#node/commands/doctor.command";
 import { OpsBootstrapOperatorCommand } from "#node/commands/ops-bootstrap-operator.command";
+import { PromoteCommand } from "#node/commands/promote.command";
 import { SearchReindexCommand } from "#node/commands/search-reindex.command";
 import { SearchStatusCommand } from "#node/commands/search-status.command";
 import { SettingsApplyCommand } from "#node/commands/settings-apply.command";
@@ -107,6 +108,7 @@ export const COMMANDS: CliCommands = [
   SearchStatusCommand,
   AuditVerifyCommand,
   DEPLOY_COMMAND,
+  PromoteCommand,
   MOBILE_ONBOARD_COMMAND,
   SMOKE_COMMAND,
   PREVIEW_SERVE_COMMAND,

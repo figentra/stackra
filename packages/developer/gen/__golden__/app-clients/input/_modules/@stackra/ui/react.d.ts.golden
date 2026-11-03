@@ -1,0 +1,1 @@
+export declare abstract class Component<P extends object = object> { readonly props: Readonly<P>; abstract render(): unknown; }
