@@ -42,7 +42,8 @@ export function serveTestbedCommand(surface: string, command: string): string {
     "api=$!",
     "trap 'kill $api $web 2>/dev/null' EXIT",
     wait(api, "api"),
-    `stackra seed-pack "$(node -p "require('./dist/product/build.json').product")" --profile test --env test`,
+    // `node -p` sees the core modules as globals; a literal require here trips the bundle's no-require guard.
+    `stackra seed-pack "$(node -p "JSON.parse(fs.readFileSync('dist/product/build.json', 'utf8')).product")" --profile test --env test`,
     `stackra preview serve --surface ${surface} --port ${WEB_PORT} --api ${api} &`,
     "web=$!",
     wait(web, "web"),
