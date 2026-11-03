@@ -9,9 +9,12 @@ import type { ReactNode } from "react";
 
 /** Props of the web Frame. */
 export interface FrameProps {
-  /** The chrome around the content: a `window` with a title bar, a `phone`, or a `plain` border. Defaults to `window`. */
-  readonly variant?: "window" | "phone" | "plain" | undefined;
-  /** The window's title or address, shown in its title bar; only `window` draws it. */
+  /**
+   * The chrome around the content: a `window` with a title bar, a `schematic` window (a striped title bar on the
+   * blueprint frame radius), a `phone`, or a `plain` border. Defaults to `window`.
+   */
+  readonly variant?: "window" | "schematic" | "phone" | "plain" | undefined;
+  /** The window's title, address or file name, shown in its title bar; only `window` and `schematic` draw it. */
   readonly title?: string | undefined;
   /** A screenshot or a live widget. */
   readonly children: ReactNode;
