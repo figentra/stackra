@@ -126,9 +126,41 @@ environments:
 
 # ── Targets: the provider shape and the caller workflow per member ──────────────────────────────────
 targets:
-  # The reusable provider is .github/workflows/runway-cloudflare-workers.yml (ADR 0289 decision 1).
+  # Runway's cloudflare-workers provider (@stackra/runway, ADR 0352 decision 1) deploys each member: `stackra deploy
+  # --env production --member <key>`, run by the caller workflow below through runway-cloudflare-workers.yml.
+  # Names only: ids, vars and secrets are read from the deploy job's environment (ADR 0173).
   cloudflare-workers:
     compatibilityDate: "2026-10-01"
+    members:
+      static:
+        path: workers/static
+        preset: public-site
+        smoke:
+          - url: https://static.stackra.figentra.com/schemas/index.json
+      # ADR 0453. The ids are the `registry` environment's variables, swapped for the zero placeholders of
+      # wrangler.jsonc on the runner only. /-/npm/v1/keys answers only once the signing key is readable.
+      registry:
+        path: workers/registry
+        preset: api
+        ids:
+          REGISTRY_D1_DATABASE_ID: "00000000-0000-0000-0000-000000000000"
+          REGISTRY_KV_NAMESPACE_ID: "00000000000000000000000000000000"
+        d1: [stackra-registry]
+        # Empty is writable; `true` freezes publishes (STA-1733).
+        vars: [REGISTRY_READ_ONLY]
+        secrets: [REGISTRY_SIGNING_KEY]
+        smoke:
+          - url: https://npm.stackra.figentra.com/-/ping
+          - url: https://npm.stackra.figentra.com/-/npm/v1/keys
+      # ADR 0026. The Worker's TURBO_CACHE_TOKEN is CI's TURBO_TOKEN, so the status check with it proves both.
+      turbo-cache:
+        path: workers/turbo-cache
+        preset: cache
+        secrets:
+          TURBO_CACHE_TOKEN: TURBO_TOKEN
+        smoke:
+          - url: https://turbo.stackra.figentra.com/v8/artifacts/status
+            bearer: TURBO_TOKEN
     workflows:
       static: deploy-static.yml
       registry: deploy-registry.yml
@@ -160,6 +192,9 @@ targets:
 secrets:
   sync: on-deploy
   ci:
+    # Core's own deploy token (ADR 0519 decision 8): an account token scoped to Editor on the `stackra-static`,
+    # `stackra-registry` and `stackra-turbo-cache` Workers, plus Workers Routes Write on figentra.com. The name stays;
+    # the owner replaces the broad token's value in `/ci` with it (STA-1991). A first deploy of a new Worker is the owner's.
     - CLOUDFLARE_API_TOKEN
     - CLOUDFLARE_API_TOKEN_READ
     - MINTLIFY_ADMIN_KEY
