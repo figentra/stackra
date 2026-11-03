@@ -147,12 +147,17 @@ jobs:
           TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha }}
         run: pnpm exec turbo run typecheck ${AFFECTED:+--affected} --continue=dependencies-successful
 
-      # The affected members plus the CLI, whose dist `pnpm validate` runs.
+      # On a pull request: the affected members (`...[base]`, what `--affected` selects) plus the CLI, whose dist
+      # `pnpm validate` runs. Two `--filter`s are a union; `--affected` with a `--filter` would intersect them.
       - name: Build
         env:
-          AFFECTED: ${{ github.event_name == 'pull_request' && '1' || '' }}
-          TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha }}
-        run: pnpm exec turbo run build ${AFFECTED:+--affected --filter=@stackra/cli...}
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            pnpm exec turbo run build --filter="...[$BASE_SHA]" --filter='@stackra/cli...'
+          else
+            pnpm exec turbo run build
+          fi
 
       # STA-1403: .stackra is gitignored, so gen compiles each reference service's migrations into its
       # .stackra/migrations for the Squawk step below. Typecheck's gen tasks are cache hits here; services
