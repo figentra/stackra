@@ -45,6 +45,25 @@ function list(value: string | undefined): string[] | undefined {
   return items.length === 0 ? undefined : items;
 }
 
+/** `name=value` pairs of a comma list. */
+function pairs(value: string | undefined): [string, string][] {
+  return (list(value) ?? []).flatMap((item) => {
+    const at = item.indexOf("=");
+    return at < 1
+      ? []
+      : [[item.slice(0, at).trim(), item.slice(at + 1).trim()] as [string, string]];
+  });
+}
+
+/** The wrangler KV writer, run with the Cloudflare account the runway names. */
+function edgeKv(namespace: string, accountId: string | undefined): WranglerEdgeKvDriver {
+  const kv = new WranglerEdgeKvDriver(
+    buildConfig(EdgeKvConfig, { values: { namespaceId: namespace } }),
+  );
+  if (accountId !== undefined) kv.env = { CLOUDFLARE_ACCOUNT_ID: accountId };
+  return kv;
+}
+
 /**
  * Deploys the built product and resolves with the exit code.
  *
@@ -126,6 +145,22 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
       return [app, accounts];
     }),
   );
+  // Public values the app-link files publish: `STACKRA_APPLE_TEAMS=figentra=ABCDE12345,...` and
+  // `STACKRA_ANDROID_CERTIFICATES=staff=AA:BB|CC:DD,...` (fingerprints separated by `|`).
+  const appleTeams = pairs(process.env["STACKRA_APPLE_TEAMS"]);
+  const androidCertificates = pairs(process.env["STACKRA_ANDROID_CERTIFICATES"]);
+  const appLinks = {
+    ...(appleTeams.length === 0 ? {} : { appleTeams: Object.fromEntries(appleTeams) }),
+    ...(androidCertificates.length === 0
+      ? {}
+      : {
+          androidCertificates: Object.fromEntries(
+            androidCertificates.map(([app, prints]) => [app, prints.split("|")]),
+          ),
+        }),
+  };
+  const cloudflare = root.providers?.cloudflare?.accountId;
+  const accountId = cloudflare === undefined ? undefined : String(cloudflare);
   const region = deployFact(values, "region", "STACKRA_REGION");
   const deploy = await deployProduct({
     repository: cwd,
@@ -133,17 +168,14 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
     approved: values["approved"] === true,
     ...(namespace === undefined || dryRun || mobileOnly
       ? {}
-      : {
-          kv: new WranglerEdgeKvDriver(
-            buildConfig(EdgeKvConfig, { values: { namespaceId: namespace } }),
-          ),
-        }),
+      : { kv: edgeKv(namespace, accountId) }),
     assets: { bucket: bucket ?? "", origin: origin ?? "" },
     served: served ?? [],
     ...(canaryScopes === undefined ? {} : { canaryScopes }),
     ...(pullRequest === undefined ? {} : { pullRequest }),
     firstRelease: values["first-release"] === true || (dryRun && canaryScopes === undefined),
     ...(region === undefined ? {} : { region }),
+    ...(Object.keys(appLinks).length === 0 ? {} : { appLinks }),
     stores,
     surfacesOnly: values["surfaces-only"] === true,
     mobileOnly,

@@ -149,4 +149,35 @@ describe("runtimePlan resources and workloads", () => {
 
     expect(() => runtimePlan(capped, {}, "dev")).toThrow(/over its \$50 cap/);
   });
+
+  // @covers sta-1662
+  it("prices a GPU tool at its hourly rate over 730 hours and refuses a dev plan over its $150 cap", () => {
+    const tools = {
+      environments: ["dev"],
+      extracts: { gcc: "gcc" },
+      network: { gcc: { vpcId: "vpc-1", subnetIds: ["subnet-a"], securityGroupIds: ["sg-1"] } },
+    };
+    const root = parseRunway("root", {
+      version: 3,
+      project: "acme",
+      regions: { gcc: { cloud: "aws", location: "me-central-1" } },
+      providers: { tools },
+      environments: { dev: { regions: ["gcc"], limits: { monthly: 10_000 } } },
+    });
+
+    const plan = runtimePlan(root, {}, "dev");
+    const embed = plan.cost.items.find((item) => item.key === "tools.retrieval-embed");
+    expect(embed?.monthlyUsd).toBe(715.4); // 0.98 x 730 x 1 replica
+
+    const capped = parseRunway("root", {
+      version: 3,
+      project: "acme",
+      regions: { gcc: { cloud: "aws", location: "me-central-1" } },
+      providers: { tools },
+      environments: { dev: { regions: ["gcc"] } },
+    });
+    expect(() => runtimePlan(capped, {}, "dev")).toThrow(
+      /over its \$150 cap: .*tools\.retrieval-embed/,
+    );
+  });
 });

@@ -36,6 +36,8 @@ const VARIABLES = [
   "STACKRA_SERVED_SHELLS",
   "STACKRA_CANARY_SCOPES",
   "STACKRA_REGION",
+  "STACKRA_APPLE_TEAMS",
+  "STACKRA_ANDROID_CERTIFICATES",
 ];
 
 const ROOT = {
@@ -135,6 +137,29 @@ describe("runDeployProduct", () => {
     );
     expect(output()).toContain("landing landing: 2 seed document(s) listed");
     expect(output()).toContain(`wrote ${PRODUCT_BUILD_SETTINGS.deployManifest("staging")}`);
+  });
+
+  it("passes the app-link keys from the variables and the KV writer the Cloudflare account", async () => {
+    process.env["STACKRA_APPLE_TEAMS"] = "figentra=ABCDE12345, other=ZZZZZ99999";
+    process.env["STACKRA_ANDROID_CERTIFICATES"] = "staff=AA:BB|CC:DD";
+    vi.mocked(readRunway).mockReturnValue({
+      ...ROOT,
+      providers: { cloudflare: { accountId: "acct-1" } },
+    } as unknown as RootRunway);
+    await run({
+      product: true,
+      env: "staging",
+      "assets-bucket": "b",
+      "assets-origin": "https://a.test",
+      "kv-namespace": "0123456789abcdef0123456789abcdef",
+      served: "console",
+    }).code;
+    const options = vi.mocked(deployProduct).mock.calls[0]?.[0];
+    expect(options?.appLinks).toEqual({
+      appleTeams: { figentra: "ABCDE12345", other: "ZZZZZ99999" },
+      androidCertificates: { staff: ["AA:BB", "CC:DD"] },
+    });
+    expect(options).toHaveProperty("kv.env", { CLOUDFLARE_ACCOUNT_ID: "acct-1" });
   });
 
   // @covers sta-1623:FR-008
