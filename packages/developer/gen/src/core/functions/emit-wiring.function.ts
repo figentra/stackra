@@ -53,6 +53,7 @@ import { modelKey } from "#core/functions/model-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { portKey } from "#core/functions/port-key.function";
 import { replicaReadsPorts } from "#core/functions/replica-reads-ports.function";
+import { moduleDependsOn } from "#core/functions/module-depends-on.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { systemDriverDefaults } from "#core/functions/system-driver-defaults.function";
 import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
@@ -347,18 +348,9 @@ export function emitWiring(ir: MemberIR): string {
   const rootName = root === undefined ? undefined : ref(root);
 
   // Modules, own then each dependency's, in dependency order.
-  const moduleOf = new Map(ir.classes.map((declared) => [declared.name, declared.module]));
   const edges = new Map<string, string[]>();
   for (const key of ir.modules) {
-    const dependsOn = new Set<string>();
-    for (const declared of ir.classes.filter((candidate) => candidate.module === key))
-      for (const dep of declared.deps) {
-        const target = moduleOf.get(dep.class.name);
-        if (target !== undefined && target !== key && dep.class.from.startsWith("#"))
-          dependsOn.add(target);
-      }
-    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-    edges.set(key, [...dependsOn].sort());
+    edges.set(key, moduleDependsOn(ir, key));
   }
   const moduleLines: string[] = [];
   for (const key of topological(ir.modules, edges)) {
