@@ -19,6 +19,7 @@
  */
 import { EXPO_OWNED_KEYS } from "#core/constants/expo-owned-keys.constant";
 import { EXPO_OWNED_PLUGINS } from "#core/constants/expo-owned-plugins.constant";
+import { configuredDefault } from "#core/functions/configured-default.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -86,16 +87,7 @@ export function emitExpoConfig(ir: MemberIR): {
   const declared = (name: string): boolean => ir.packages?.includes(name) === true;
   // A host override's own default, or the base default when the override does not set it (ADR 0305 rule 1).
   const configured = (base: string, from: string, field: string): unknown =>
-    ir.shapes
-      .find(
-        (shape) =>
-          shape.kind === "config" &&
-          shape.base?.kind === "package" &&
-          shape.base.name === base &&
-          (shape.base.from === from || shape.base.from.startsWith(`${from}/`)),
-      )
-      ?.fields.find((candidate) => candidate.name === field)?.default?.value ??
-    DEFAULTS[`${base}.${field}`];
+    configuredDefault(ir, base, from, field) ?? DEFAULTS[`${base}.${field}`];
   const errors: GenError[] = [];
 
   const section = isObject(definition["expo"]) ? definition["expo"] : {};

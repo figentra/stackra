@@ -1,0 +1,5 @@
+import { I18nConfig as BaseI18nConfig, Locale } from "@stackra/i18n";
+
+export class I18nConfig extends BaseI18nConfig {
+  override locales: Locale[] = [Locale.En, Locale.ArSa];
+}
