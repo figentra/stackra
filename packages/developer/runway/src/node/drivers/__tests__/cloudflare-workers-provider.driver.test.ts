@@ -225,6 +225,7 @@ describe("CloudflareWorkersProviderDriver", () => {
   describe("with runways (secrets read from Infisical)", () => {
     const RUNWAYS: DeployRunways = {
       root: {
+        environments: { production: {} },
         providers: {
           github: { org: "acme", repo: "platform" },
           infisical: {
