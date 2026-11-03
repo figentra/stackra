@@ -15,7 +15,7 @@
  *          cap's amount field, and the registered effect tags on the descriptor; and the remainder (STA-765): the
  *          approval step runs only with a gate bound unless the action declares `approval` (STA-813), the limit
  *          reservation wraps the unit of work, a successful call's audit entry is written inside it, and written effect
- *          tags reach the descriptor; and the step-up check with `ctx.assurance` (STA-814); and the sandbox flag on the
+ *          tags reach the descriptor; and the step-up check with `ctx.assurance` (STA-814), asked of a user caller only (STA-340); and the sandbox flag on the
  *          descriptor and the context, and the network client on the context only (STA-1248); and the request origin
  *          on the descriptor, the audit entry and the context, and `ctx.publish` of an integration event without a
  *          model inside the unit of work (ADR 0456); and the query cache step (STA-1445): a hit inside the
@@ -1614,6 +1614,18 @@ class RotateKeyAction extends Action({
   }
 }
 
+/** A step-up action that users, services and agents all call (STA-340, Q-001). */
+class RevokeKeyAction extends Action({
+  key: "api_key.revoke",
+  actors: [ActorKind.User, ActorKind.Service, ActorKind.Agent],
+  stepUp: AssuranceLevel.Aal2,
+}) {
+  async handle(): Promise<string> {
+    log.push("handle");
+    return "revoked";
+  }
+}
+
 /** Passes when the call's level is at least the required one; records what it saw. */
 class LevelStepUp extends Driver(StepUpCheck) {
   readonly seen: [string, CallAssurance | undefined, AssuranceLevel][] = [];
@@ -1686,6 +1698,30 @@ describe("ActionPipeline step-up (STA-814)", () => {
       { actor: customer, assurance: strong },
     );
     expect(inspected).toBeDefined();
+  });
+
+  it("asks no step-up of a service or agent caller, even with no StepUpCheck bound (STA-340)", async () => {
+    const { pipeline } = setup([[RevokeKeyAction, new RevokeKeyAction()]]);
+    const service: Actor = { kind: ActorKind.Service, id: "svc_ops", scopeId: "ten_1" };
+    expect(await pipeline.execute(RevokeKeyAction, {}, { actor: service })).toBe("revoked");
+    expect(await pipeline.execute(RevokeKeyAction, {}, { actor: agent })).toBe("revoked");
+    expect(log).not.toContain("step_up");
+  });
+
+  it("still asks a user caller of the same action, and fails closed with none bound (STA-340)", async () => {
+    const unbound = setup([[RevokeKeyAction, new RevokeKeyAction()]]).pipeline;
+    await expect(
+      unbound.execute(RevokeKeyAction, {}, { actor: customer, assurance: strong }),
+    ).rejects.toThrow(/StepUpCheck is not bound/);
+    const stepUp = new LevelStepUp();
+    const { pipeline } = setup([
+      [StepUpCheck, stepUp],
+      [RevokeKeyAction, new RevokeKeyAction()],
+    ]);
+    expect(
+      await pipeline.execute(RevokeKeyAction, {}, { actor: customer, assurance: strong }),
+    ).toBe("revoked");
+    expect(stepUp.seen).toEqual([["api_key.revoke", strong, "aal2"]]);
   });
 
   it("rejects a stepUp that is not an AssuranceLevel", () => {

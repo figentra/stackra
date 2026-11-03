@@ -570,6 +570,7 @@ describe("buildManifest", () => {
           {
             key: "order.create",
             actors: ["user"],
+            idempotency: "optional",
           },
         ),
         kindClass(

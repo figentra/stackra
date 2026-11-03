@@ -62,6 +62,7 @@ import type { CancelOrderOutput } from "#modules/orders/schemas/cancel-order-out
 export class CancelOrderAction extends Action({
   key: "order.cancel",
   actors: [ActorKind.User, ActorKind.Agent],
+  idempotency: Idempotency.Optional, // gen refuses a client write that declares none
 }) {
   constructor(private readonly orders: OrderService) {
     super();
@@ -157,9 +158,11 @@ Never build HTTP responses by hand and never import `APIError` in a service.
 ## Enforcement
 
 - `stackra validate --repository` (`checkService`) refuses Encore files in a service (ADR 0124)
-- planned — STA-340: the gen checks for an endpoint collision, GET on an action or non-GET on a query, a query above
-  L1, `cache` on an action and a precondition on a query; until gen ships, review (`api-contract-reviewer`) checks this
-  rule
+- gen (`checkCallShape`, STA-340) refuses a query above L1 (`query_above_l1`), a precondition on a query
+  (`query_precondition`), `cache` on an action (`action_cache`), an L3 or L4 action a user can call without `stepUp`
+  (`step_up_missing`) and a client write with no `idempotency` (`idempotency_missing`)
+- planned — STA-340: the gen checks for an endpoint collision and GET on an action or non-GET on a query; until gen
+  ships, review (`api-contract-reviewer`) checks them
 
 ## See Also
 

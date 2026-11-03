@@ -11,7 +11,7 @@
  * Governing contract: ADR 0294 (decisions 2, 3, 16 and 21); ADR 0098; the PUT-133, COM-181 and COM-183 answers;
  *                     config-model section 4 (earn rules are a rule set).
  */
-import { Action } from "@stackra/actions";
+import { Action, Idempotency } from "@stackra/actions";
 import { ActorKind, HttpMethod } from "@stackra/contracts";
 import type { SettingsReader } from "@stackra/settings";
 
@@ -34,6 +34,7 @@ export class EarnVisitAction extends Action({
   key: "points.earn_visit",
   permission: LoyaltyAccountPermissions.stamp,
   actors: [ActorKind.User, ActorKind.Service],
+  idempotency: Idempotency.Optional,
   endpoint: { method: HttpMethod.Post, path: "/loyalty/visits" },
 }) {
   /** Credits the stamps. */

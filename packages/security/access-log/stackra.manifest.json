@@ -31,6 +31,7 @@
       "permission": "access_log.audit_log_entry.export",
       "risk": "L2",
       "actors": ["user", "service", "system"],
+      "idempotency": "optional",
       "job": {
         "timeout": "15m"
       },
@@ -45,7 +46,7 @@
         "hints": {
           "readOnlyHint": false,
           "destructiveHint": false,
-          "idempotentHint": false,
+          "idempotentHint": true,
           "openWorldHint": false
         }
       },

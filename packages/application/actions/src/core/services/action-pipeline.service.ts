@@ -8,7 +8,8 @@
  *          in sequence order, the `offline.cap` reconciliation, the review of offline-computed documents (`accepts`),
  *          the verified device (`ctx.deviceId`) and a replica query's answer (`ctx.replica`, by the input's `cursor`);
  *          and `propose`, an action's draft-only run (the steps up to validation, then a metered draft, no effects).
- *          The permission step includes an action's step-up (`stepUp`, through `StepUpCheck`), and the call context
+ *          The permission step includes an action's step-up (`stepUp`, through `StepUpCheck`, asked of a user caller
+ *          only), and the call context
  *          carries the caller's verified assurance (`ctx.assurance`), the sandbox flag (`ctx.sandbox`, also on the
  *          descriptor) and the network client (`ctx.client`, never on the descriptor or the audit entry; STA-1248),
  *          the request origin (`ctx.origin`, also on the descriptor, so the audit entry carries it) and an action's
@@ -713,7 +714,9 @@ export class ActionPipeline {
     const { descriptor, options, kind, ctx } = call;
     if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
     await this.required(AccessControl, IAM).require(descriptor);
-    const level = kind === "action" ? options.stepUp : undefined;
+    // step-up asks a user only: a service, job, system or agent call carries no assurance (ADR 0406 as amended)
+    const level =
+      kind === "action" && descriptor.actor.kind === ActorKind.User ? options.stepUp : undefined;
     if (level !== undefined) {
       // an approved call stands on the assurance its binding recorded, measured at the request (ADR 0509, FR-016)
       const bound = await this.bindingOf(call);

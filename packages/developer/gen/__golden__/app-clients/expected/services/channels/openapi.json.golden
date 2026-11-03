@@ -15,6 +15,7 @@
         "x-stackra-action": "channels.channels.publish@1",
         "x-stackra-permission": "channels.channels.publish",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "requestBody": {
           "required": true,
           "content": {

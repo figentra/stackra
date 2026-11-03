@@ -12,7 +12,7 @@
  * Governing contract: ADR 0294 (decisions 2, 3, 16 and 21); ADR 0305 (rules 28 and 30); ADR 0098; ADR 0136; ADR 0155;
  *                     ADR 0245 (intents).
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind, HttpMethod, Realm } from "@stackra/contracts";
 
 import { NotOwnPrincipalError } from "#core/errors/not-own-principal.error";
@@ -33,6 +33,7 @@ export class EnrollMemberAction extends Action({
   key: "account.enroll",
   permission: LoyaltyAccountPermissions.enroll,
   actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
+  idempotency: Idempotency.Optional,
   endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId" },
   tool: true,
   intent: true,

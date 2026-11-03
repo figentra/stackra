@@ -32,10 +32,24 @@ into an action call, and no action could say it needs a step-up, so each handler
   `CallOptions.assurance`.
 - A handler that needs the facts (an audit field, a risk score) reads `ctx.assurance`.
 
+## Amendment 2026-11-03 (STA-340): step-up asks a user caller only
+
+**Context.** Three actions that both users and services call (`identity.operator.bootstrap`,
+`identity.session.end_user`, `privacy.hold.release`) are L3 or L4 and declared no `stepUp`, because decision 3 applied
+it to every caller and a service or job call carries no assurance (decision 1), so it could only be refused.
+
+**Decision.** The owner chose option A. Decision 3 now reads: when an action declares `stepUp`, the pipeline asks
+`StepUpCheck` only when the caller's actor kind is `ActorKind.User`. A service, job, system or agent caller is not
+asked; an agent's approvals stay ADR 0360's, and an approved call still stands on the assurance its binding recorded
+(ADR 0509). Decision 4 is unchanged for a user caller: with no `StepUpCheck` bound the call fails closed. Gen refuses an
+L3 or L4 action whose actors include `User` and that declares no `stepUp` (`step_up_missing`), and the three actions
+declare `stepUp: AssuranceLevel.Aal2`.
+
 ## Enforcement
 
 `packages/application/actions/src/core/services/__tests__/action-pipeline.service.test.ts` (step-up order, refusal,
-fail closed); `packages/application/actions/src/contracts/__tests__/index.test.ts`.
+fail closed, a service or agent caller not asked); `packages/application/actions/src/contracts/__tests__/index.test.ts`;
+gen's `step_up_missing` (`packages/developer/gen/src/core/functions/check-call-shape.function.ts`).
 
 ## Supersedes and sources
 

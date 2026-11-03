@@ -102,7 +102,9 @@ export interface ActionOptions {
 
   /**
    * The assurance level the caller's last authentication must reach, recently enough (`StepUpCheck` decides); the
-   * call is refused `step_up_required` otherwise. No step-up when absent.
+   * call is refused `step_up_required` otherwise. Asked of a user caller only: a service, job, system or agent call
+   * carries no assurance (ADR 0406 as amended, STA-340). No step-up when absent. Gen refuses an L3 or L4 action a
+   * user can call without it (`step_up_missing`).
    */
   readonly stepUp?: AssuranceLevel;
 

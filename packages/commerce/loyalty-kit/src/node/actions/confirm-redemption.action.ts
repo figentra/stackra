@@ -12,7 +12,7 @@
  * Governing contract: ADR 0294 (decisions 2, 16, 18 and 21); ADR 0305 (rule 28); ADR 0098; ADR 0101; ADR 0152
  *                     (decision 1: `waitFor`).
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind, HttpMethod } from "@stackra/contracts";
 
 import { memberId } from "#core/functions/member-id.function";
@@ -32,6 +32,7 @@ export class ConfirmRedemptionAction extends Action({
   key: "points.confirm_redemption",
   permission: LoyaltyAccountPermissions.redeem,
   actors: [ActorKind.User, ActorKind.Service],
+  idempotency: Idempotency.Optional,
   endpoint: { method: HttpMethod.Put, path: "/loyalty/redemptions/:reference/confirm" },
   // reason: a confirmation is the host's, after its own step succeeded, not an agent's
   tool: false,
