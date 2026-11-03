@@ -137,7 +137,11 @@ const ROOT = {
       },
     },
   },
-  targets: { "electron-release": { feed: { publicOrigin: "https://downloads.acme.example" } } },
+  targets: {
+    "electron-release": {
+      feed: { bucket: "downloads", publicOrigin: "https://downloads.acme.example" },
+    },
+  },
   secrets: {
     sync: "on-deploy",
     defaultPath: "runtime",
@@ -203,6 +207,7 @@ describe("parseRunway", () => {
     });
     expect(root.environments.dev?.infra).toEqual({ gateway: { port: 4000 } });
     expect(root.targets?.["electron-release"]?.["feed"]).toEqual({
+      bucket: "downloads",
       publicOrigin: "https://downloads.acme.example",
     });
   });
