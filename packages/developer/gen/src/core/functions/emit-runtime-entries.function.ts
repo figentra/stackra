@@ -23,6 +23,7 @@
  *                     container); ADR 0260 (decision 4).
  */
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
+import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
@@ -32,6 +33,7 @@ import { topological } from "#core/functions/topological.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
+import type { SeederRow } from "#core/types/seeder-row.type";
 
 /** What each runtime's `createApp` returns (ADR 0295 decision 8). */
 const RETURNS: Readonly<Record<string, string>> = {
@@ -101,36 +103,27 @@ export function emitRuntimeEntries(
   ];
 }
 
-/** One seeder the seed entry lists, with where its class is imported from. */
-interface SeedRow {
-  readonly key: string;
-  readonly module: string;
-  readonly profile: string;
-  readonly name: string;
-  readonly from: string;
-}
-
 /** The hosted packages' seeders and factory pairs, dependency packages first (STA-2061). */
 function hostedSeeding(ir: MemberIR): {
-  readonly rows: SeedRow[];
+  readonly rows: Omit<SeederRow, "file">[];
   readonly pairs: { readonly factory: ClassRef; readonly model: ClassRef }[];
 } {
   const hosted = ir.dependencies.filter(({ manifest }) => manifest.kind !== "app");
   const owner = new Map(
     hosted.flatMap(({ package: name, manifest }) =>
-      (manifest.modules ?? []).map((module) => [String(module["key"]), name] as const),
+      (manifest.modules ?? []).map((module) => [module.key, name] as const),
     ),
   );
   const edges = new Map(
     hosted.map(({ package: name, manifest }) => [
       name,
       (manifest.modules ?? [])
-        .flatMap((module) => (module["dependsOn"] as string[] | undefined) ?? [])
+        .flatMap((module) => module.dependsOn)
         .map((key) => owner.get(key))
         .filter((target): target is string => target !== undefined && target !== name),
     ]),
   );
-  const rows: SeedRow[] = [];
+  const rows: Omit<SeederRow, "file">[] = [];
   const pairs: { factory: ClassRef; model: ClassRef }[] = [];
   for (const name of topological(
     hosted.map(({ package: pkg }) => pkg),
@@ -138,15 +131,16 @@ function hostedSeeding(ir: MemberIR): {
   )) {
     const manifest = hosted.find(({ package: pkg }) => pkg === name)?.manifest;
     if (manifest === undefined) continue;
-    for (const row of (manifest["seeders"] as Record<string, string>[] | undefined) ?? [])
+    for (const row of (manifest["seeders"] as Record<string, unknown>[] | undefined) ?? [])
       rows.push({
         key: String(row["key"]),
         module: String(row["module"]),
         profile: String(row["profile"]),
         name: String(row["class"]),
-        from: `${name}/testing`,
+        importPath: `${name}/testing`,
       });
-    for (const row of (manifest["factories"] as Record<string, string>[] | undefined) ?? []) {
+    for (const row of (manifest["factories"] as Record<string, unknown>[] | undefined) ?? []) {
+      // A model the manifest does not list falls back to the package's `./node` entry.
       const file = (manifest.models ?? []).find((model) => model["class"] === row["model"])?.[
         "file"
       ];
@@ -198,16 +192,10 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
   };
   const pairs = [
     ...hosted.pairs,
-    ...ir.classes.flatMap((declared) =>
-      declared.kind === "factory" && declared.partner !== undefined
-        ? [
-            {
-              factory: { name: declared.name, from: declared.importPath },
-              model: { name: declared.partner.name, from: declared.partner.from },
-            },
-          ]
-        : [],
-    ),
+    ...factoryPairsOf(ir).map((declared) => ({
+      factory: { name: declared.name, from: declared.importPath },
+      model: declared.partner,
+    })),
   ];
   // Two factories of one model share one import of it.
   const models = new Map<string, string>();
@@ -217,12 +205,10 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
     models.set(key, modelLocal);
     return `  [${use(factory)}, ${modelLocal}],`;
   });
-  const rows = [...hosted.rows, ...own.map((row) => ({ ...row, from: row.importPath }))].map(
-    (row) => {
-      const local = use({ name: row.name, from: row.from });
-      return `  { key: ${JSON.stringify(row.key)}, module: ${JSON.stringify(row.module)}, profile: ${JSON.stringify(row.profile)}, type: ${local} },`;
-    },
-  );
+  const rows = [...hosted.rows, ...own].map((row) => {
+    const local = use({ name: row.name, from: row.importPath });
+    return `  { key: ${JSON.stringify(row.key)}, module: ${JSON.stringify(row.module)}, profile: ${JSON.stringify(row.profile)}, type: ${local} },`;
+  });
   const header = generatedHeader({
     from: "stackra.config.ts, the root module, #stackra/wiring, the seeders and factories under src/ and the hosted packages' manifests",
     purpose: `the seed entry of ${ir.package}: boots the container, registers the factory pairs and runs the seeders \`stackra db seed\` asks for.`,

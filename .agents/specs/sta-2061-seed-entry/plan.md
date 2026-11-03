@@ -134,7 +134,8 @@ none
 
 No new refusals. A dependency manifest without the new sections contributes nothing (EC-02). A module cycle keeps
 source order and is refused elsewhere (`module_cycle`). A hosted model the manifest's `models` section does not list is
-imported from `<package>/node`, the fallback `emitHostedEntities` already uses (EC-07). A wrong import fails the
+imported from `<package>/node`, the package's model entry (EC-07); `emitHostedEntities` falls back to the bare
+package name, which the seed entry does not copy. A wrong import fails the
 member's typecheck and build, loudly.
 
 ## Security and tenancy

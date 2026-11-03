@@ -248,6 +248,16 @@ describe("emitRuntimeEntries", () => {
       );
     });
 
+    it("imports a hosted model the manifest does not list from the package's node entry (@covers sta-2061:EC-07)", () => {
+      const unlisted = hosted("@acme/ledger", "ledger", {
+        factories: [{ class: "EntryFactory", file: "y", model: "Entry" }],
+        seeders: kit.manifest["seeders"],
+      });
+      expect(seedOf({ ...ir, dependencies: [unlisted] })).toContain(
+        'import { Entry } from "@acme/ledger/node";',
+      );
+    });
+
     it("lists a hosted package after the hosted package its modules depend on (@covers sta-2061:FR-006)", () => {
       const upper = hosted("@acme/upper", "upper", {
         modules: [{ key: "upper", dependsOn: ["kit"] }],

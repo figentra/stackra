@@ -143,7 +143,8 @@ from `<package>/testing`, lists the hosted seeder first, and lists own seeders i
 - **EC-06**: A factory declared without a model type argument has no partner and is not paired, as in the Vitest setup
   today.
 - **EC-07**: A hosted factory whose model the package's `models` section does not list is imported from
-  `<package>/node`, the same fallback `emitHostedEntities` uses.
+  `<package>/node`, the package's model entry (`packageSpecifier` with no file). `emitHostedEntities` falls back to
+  the bare package name instead; the seed entry does not follow it.
 
 ## Requirements _(mandatory)_
 

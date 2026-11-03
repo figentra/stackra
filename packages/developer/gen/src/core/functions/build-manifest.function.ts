@@ -69,6 +69,7 @@ import { cronJobId } from "#core/functions/cron-job-id.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { egressOf } from "#core/functions/egress-of.function";
+import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { eventName } from "#core/functions/event-name.function";
 import { integrationKey } from "#core/functions/integration-key.function";
@@ -970,11 +971,11 @@ export function buildManifest(ir: MemberIR): {
     class: row.name,
     file: row.file,
   }));
-  const factories: Entry[] = ir.classes.flatMap((declared) =>
-    declared.kind === "factory" && declared.partner !== undefined
-      ? [{ class: declared.name, file: declared.file, model: declared.partner.name }]
-      : [],
-  );
+  const factories: Entry[] = factoryPairsOf(ir).map((factory) => ({
+    class: factory.name,
+    file: factory.file,
+    model: factory.partner.name,
+  }));
 
   // Replacements: `@Replaces(Base)` on a class of the member, so a host and a reviewer see what it swaps out.
   const replaces: Entry[] = [];
