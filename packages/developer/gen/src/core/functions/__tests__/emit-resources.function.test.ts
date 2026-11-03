@@ -86,12 +86,18 @@ describe("emitResources", () => {
     );
     // `get: true` reads loyalty_kit.loyalty_account.get@1, which no consumed service owns, so View is left out.
     expect(content).toContain(
-      '  LoyaltyAccount: resource("loyalty_kit.loyalty_account", { base: "/loyalty-kit/loyalty-accounts", list: ListLoyaltyAccountsQuery, create: EnrollMemberAction }),',
+      '  LoyaltyAccount: resource("loyalty_kit.loyalty_account", { base: "/loyalty-kit/loyalty-accounts", permission: "loyalty_kit.loyalty_account.read", list: ListLoyaltyAccountsQuery, create: EnrollMemberAction }),',
     );
     expect(content).toContain("export const resourceList = Object.values(Resources);");
     expect(content).toContain(
       'export const unboundOperations = {\n  "loyalty_kit.loyalty_account": {"view":"STA-1971: gen does not write the standard get read yet"},\n} as const;',
     );
+  });
+
+  it("carries the bound list action's recorded permission, and none for an unbound list (STA-2058)", () => {
+    expect(content).toContain('permission: "loyalty_kit.loyalty_account.read"');
+    const alone = emitResources({ ...APP, services: [] })?.content ?? "";
+    expect(alone).not.toContain("permission");
   });
 
   it("tells two models of one name apart by their module", () => {
@@ -117,7 +123,7 @@ describe("emitResources", () => {
     })?.content;
     expect(twin).toContain('  LoyaltyKitLoyaltyAccount: resource("loyalty_kit.loyalty_account"');
     expect(twin).toContain(
-      '  RewardsLoyaltyAccount: resource("rewards.loyalty_account", { base: "/rewards/loyalty-accounts", list: ListLoyaltyAccountsQuery }),',
+      '  RewardsLoyaltyAccount: resource("rewards.loyalty_account", { base: "/rewards/loyalty-accounts", permission: "loyalty_kit.loyalty_account.read", list: ListLoyaltyAccountsQuery }),',
     );
   });
 

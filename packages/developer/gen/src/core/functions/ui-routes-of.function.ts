@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `uiRoutesOf(ir)`, a package's `ui.routes`: each `Route({...})` class its `react` or `native` entry declares,
- *          with its key (`<module>_<stem>`, snake_case so `registerRoutes` takes it), module, class, entry, path and the
- *          page beside it, so a host app lists it on that entry's runtime without a hand-written `register()`.
+ *          with its key (`<module>_<stem>`, snake_case so `registerRoutes` takes it), module, class, entry, path, the
+ *          page beside it and, when it writes no `title`, the derived title key, so a host app lists it on that entry's runtime without a hand-written `register()`.
  * Boundary: pure. Only a package records them; a route elsewhere (an app's own, or a package's `node` or core entry) is
  *           not a UI contribution here. The page is the `.tsx` beside the route (`<stem>.native.tsx` first in the
  *           `native` entry), named by its export, which the entry barrel re-exports.
@@ -13,6 +13,7 @@ import { snakeCase } from "@stackra/support";
 
 import { componentBeside } from "#core/functions/component-beside.function";
 import { entryOf } from "#core/functions/entry-of.function";
+import { routeTitleKey } from "#core/functions/route-title-key.function";
 import type { MemberIR } from "#core/types/member-ir.type";
 
 /** One recorded package route. */
@@ -23,6 +24,7 @@ type RouteEntry = {
   entry: "react" | "native";
   path?: string;
   page?: string;
+  title?: string;
 };
 
 /**
@@ -53,6 +55,10 @@ export function uiRoutesOf(ir: MemberIR): RouteEntry[] {
             entry,
             ...(typeof path === "string" ? { path } : {}),
             ...(page === undefined ? {} : { page: page.name }),
+            // A route that writes no title gets the derived key, so a menu never shows the raw route key (STA-2058).
+            ...(declared.options["title"] === undefined
+              ? { title: routeTitleKey(declared.module, declared.file) }
+              : {}),
           },
         ];
       })

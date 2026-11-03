@@ -146,6 +146,7 @@ describe("generateMember", () => {
       ".stackra/gen/client-tools.ts",
       ".stackra/gen/routes/browser.ts",
       ".stackra/gen/routes/native.ts",
+      ".stackra/gen/routes.ts",
       ".stackra/gen/blocks/browser.ts",
       ".stackra/entry/browser.ts",
       ".stackra/entry/native.ts",

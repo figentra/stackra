@@ -77,6 +77,7 @@ describe("uiRoutesOf and uiMenusOf", () => {
         entry: "native",
         path: "/points",
         page: "PointsScreen",
+        title: "loyalty_kit::routes.points.title",
       },
       {
         key: "loyalty_kit_points",
@@ -85,6 +86,7 @@ describe("uiRoutesOf and uiMenusOf", () => {
         entry: "react",
         path: "/points",
         page: "Points",
+        title: "loyalty_kit::routes.points.title",
       },
     ]);
     expect(uiMenusOf(KIT)).toEqual([
@@ -115,11 +117,15 @@ describe("the route tables of an app with UI dependencies", () => {
     expect(browser).toContain(
       'import { MainMenu, Points, PointsRoute } from "@acme/loyalty-kit/react";',
     );
-    expect(browser).toContain("  loyalty_kit_points: { route: PointsRoute, page: Points },");
+    expect(browser).toContain(
+      '  loyalty_kit_points: { route: PointsRoute, page: Points, title: "loyalty_kit::routes.points.title" },',
+    );
     expect(native).toContain(
       'import { PointsRoute, PointsScreen } from "@acme/loyalty-kit/native";',
     );
-    expect(native).toContain("  loyalty_kit_points: { route: PointsRoute, page: PointsScreen },");
+    expect(native).toContain(
+      '  loyalty_kit_points: { route: PointsRoute, page: PointsScreen, title: "loyalty_kit::routes.points.title" },',
+    );
   });
 
   it("registers the menus each runtime's entry ships", () => {
@@ -140,7 +146,15 @@ describe("the route tables of an app with UI dependencies", () => {
     const content = emitRoutes({ ...APP, classes: [...APP.classes, own] })[0]?.content;
     expect(content).toContain("PointsRoute as LoyaltyKitPointsRoute");
     expect(content).toContain(
-      "  loyalty_kit_points: { route: LoyaltyKitPointsRoute, page: Points },",
+      '  loyalty_kit_points: { route: LoyaltyKitPointsRoute, page: Points, title: "loyalty_kit::routes.points.title" },',
+    );
+    // The bare module keeps the same alias, as a type import.
+    const bare = emitRoutes({ ...APP, classes: [...APP.classes, own] }).find(
+      (file) => file.path === ".stackra/gen/routes.ts",
+    )?.content;
+    expect(bare).toContain("PointsRoute as LoyaltyKitPointsRoute");
+    expect(bare).toContain(
+      'loyalty_kit_points: routeRef<typeof LoyaltyKitPointsRoute>("loyalty_kit_points")',
     );
   });
 

@@ -1,8 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `emitRoutes`, an app's route table per client runtime (`.stackra/gen/routes/<runtime>.ts`, reached as
+ * Purpose: `emitRoutes`, the bare `.stackra/gen/routes.ts` (`#stackra/routes`: `Routes`, one `routeRef` per route key
+ *          across the runtimes, and `RouteKey`; each class a type-only import) and an app's route table per client
+ *          runtime (`.stackra/gen/routes/<runtime>.ts`, reached as
  *          `#stackra/routes/<runtime>`): each `Route({...})` class under its key (the snake_case of its file stem)
- *          with the page that draws it on that runtime, and the `registerRoutes(routeTable)` call that makes every
+ *          with the page that draws it on that runtime and its `title` (the derived `<module>::routes.<name>.title` for a route that
+ *          writes none, or the one a package records), and the `registerRoutes(routeTable)` call that makes every
  *          `Routes.<key>` ref resolve to its path; on the browser of an app that hosts `@stackra/panel`, the
  *          `registerPanelPages()` call that gives navigation the panel's shell page; and on every runtime of such an
  *          app, `registerResources({...})` with the recorded resource trees of its declared packages' and consumed
@@ -31,6 +34,7 @@ import { hostRoutesOf } from "#core/functions/host-routes-of.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { resourceLabelKeys } from "#core/functions/resource-label-keys.function";
 import { routeKey } from "#core/functions/route-key.function";
+import { routeTitleKey } from "#core/functions/route-title-key.function";
 import { usesPanel } from "#core/functions/uses-panel.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -54,7 +58,12 @@ export function emitRoutes(ir: MemberIR): GeneratedFile[] {
   )
     return [];
   const hostsPanel = usesPanel(ir);
-  return clientRuntimes(ir).map((runtime) => {
+  // Every route key across the runtimes, with the class and where it comes from, for the bare `#stackra/routes`.
+  const refs = new Map<
+    string,
+    { readonly name: string; readonly from: string; readonly module?: string | undefined }
+  >();
+  const tables = clientRuntimes(ir).map((runtime) => {
     const imports = new Map<string, Map<string, boolean>>([
       ["@stackra/navigation", new Map([["registerRoutes", false]])],
     ]);
@@ -79,8 +88,13 @@ export function emitRoutes(ir: MemberIR): GeneratedFile[] {
         use(page.from, page.name);
         taken.add(page.name);
       }
+      const key = routeKey(route.file);
+      if (!refs.has(key)) refs.set(key, { name: route.name, from: route.importPath });
+      // A route that writes no title gets the derived key, so menus never show the raw route key (STA-2058).
+      const title =
+        route.options["title"] === undefined ? routeTitleKey(route.module, route.file) : undefined;
       rows.push(
-        `  ${routeKey(route.file)}: { route: ${route.name}${page !== undefined ? `, page: ${page.name}` : ""} },`,
+        `  ${key}: { route: ${route.name}${page !== undefined ? `, page: ${page.name}` : ""}${title === undefined ? "" : `, title: ${JSON.stringify(title)}`} },`,
       );
     }
     // The routes and menus the dependencies ship in the entry that serves this runtime (ADR 0111 decision 4).
@@ -91,8 +105,10 @@ export function emitRoutes(ir: MemberIR): GeneratedFile[] {
       const name = useAs(specifier, route.class, route.module);
       const page =
         route.page === undefined ? undefined : useAs(specifier, route.page, route.module);
+      if (!refs.has(route.key))
+        refs.set(route.key, { name: route.class, from: specifier, module: route.module });
       rows.push(
-        `  ${route.key}: { route: ${name}${page === undefined ? "" : `, page: ${page}`} },`,
+        `  ${route.key}: { route: ${name}${page === undefined ? "" : `, page: ${page}`}${route.title === undefined ? "" : `, title: ${JSON.stringify(route.title)}`} },`,
       );
     }
     const menuRows: string[] = [];
@@ -173,4 +189,43 @@ export function emitRoutes(ir: MemberIR): GeneratedFile[] {
       ].join("\n"),
     };
   });
+
+  // An app with menus but no route has no ref to write.
+  if (refs.size === 0) return tables;
+  // The bare module: runtime-free, so a ref never loads a route; each class is a type argument only, imported as a type.
+  const bareImports = new Map<string, Map<string, boolean>>([
+    ["@stackra/navigation", new Map([["routeRef", false]])],
+  ]);
+  const used = new Set<string>();
+  const bareRows = [...refs.entries()].map(([key, { name, from, module }]) => {
+    const local = used.has(name) ? `${pascalCase(module ?? from)}${name}` : name;
+    used.add(local);
+    const names = bareImports.get(from) ?? new Map<string, boolean>();
+    bareImports.set(from, names.set(local === name ? name : `${name} as ${local}`, true));
+    return `  ${key}: routeRef<typeof ${local}>(${JSON.stringify(key)}),`;
+  });
+  const bare: GeneratedFile = {
+    path: ".stackra/gen/routes.ts",
+    content: [
+      generatedHeader({
+        from: "the Route classes under src/routes and the routes its packages ship",
+        purpose: `the typed route refs of ${ir.package}: \`Routes\` by route key and \`RouteKey\`.`,
+        boundary:
+          "a ref is data; the route class is a type argument only, so importing this file loads no route module. " +
+          "The path resolves once the runtime table registers.",
+        runtime: "isomorphic",
+      }),
+      ...importLines(bareImports),
+      "",
+      "/** Each route key with its typed ref. */",
+      "export const Routes = {",
+      ...bareRows,
+      "} as const;",
+      "",
+      "/** A key of `Routes`. */",
+      "export type RouteKey = keyof typeof Routes;",
+      "",
+    ].join("\n"),
+  };
+  return [...tables, bare];
 }

@@ -1,0 +1,8 @@
+import type { RouteKey } from "#stackra/routes";
+
+/** The page's own route key, typed by the generated `RouteKey`. */
+const START: RouteKey = "home";
+
+export function Home() {
+  return START;
+}
