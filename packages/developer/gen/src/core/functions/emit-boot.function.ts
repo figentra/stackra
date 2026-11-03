@@ -1,7 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `emitBoot`, a service's `#stackra/boot` (`.stackra/gen/boot.ts`): one `boot(container, { signal })`
- *          that connects what needs the booted container, in order: the bound `HoldRegistry` and `SequenceTimeZone`
+ *          that connects what needs the booted container, in order: the record policies (`connectPolicies`, when the
+ *          manifest lists one, so `ctx.authorize(record)` builds each with its dependencies; STA-2045), the bound
+ *          `HoldRegistry` and `SequenceTimeZone`
  *          drivers (or none), `PostgresDatabaseDriver.connect` with `databaseUrl()`, the url the service's Encore
  *          `database` provides (`emitEncoreDatabase`; boot never imports `.stackra/encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
  *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
@@ -123,12 +125,18 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   const workflow = uses("@stackra/workflow");
   // The outbox depends on the bus, so a service with an outbox has one to connect.
   const events = outbox || uses("@stackra/events");
-  if (!database && !outbox && !segments && !workflow && !events) return undefined;
+  // A record policy is built from the booted container when `ctx.authorize(record)` runs it (ADR 0132, STA-2045).
+  const policies = ((built?.["policies"] ?? []) as readonly unknown[]).length > 0;
+  if (!database && !outbox && !segments && !workflow && !events && !policies) return undefined;
   // Live queries refresh their clients through realtime after each invalidating event commits (ADR 0315 decision 1).
   const live = events && uses("@stackra/realtime") ? liveQueryRows(built) : [];
 
   const imports = ['import type { Container } from "@stackra/container";'];
   const steps: string[] = [];
+  if (policies) {
+    imports.push('import { connectPolicies } from "@stackra/iam";');
+    steps.push("  connectPolicies(container);");
+  }
   if (database) {
     imports.push(
       'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',

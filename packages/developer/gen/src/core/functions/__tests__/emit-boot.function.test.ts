@@ -7,7 +7,8 @@
  *          then the relay and its work loop on the shutdown signal); a signal already aborted connects nothing, and one
  *          aborted mid-boot disconnects at once; the `EncryptedFieldsSubscriber` only when a model encrypts a field
  *          (stackra-262); the live queries' refresh subscribed on the bus with realtime declared (STA-1445); each
- *          step only when its package is used; no file for a package, an app or a service with nothing to connect.
+ *          step only when its package is used; the record policies first when the manifest lists one (STA-2045); no
+ *          file for a package, an app or a service with nothing to connect.
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0014 (decision 5); ADR 0078; ADR 0332; ADR 0295 (decision 8); ADR 0263; ADR 0260 (decision 4); ADR 0238; ADR 0473.
@@ -177,6 +178,20 @@ describe("emitBoot", () => {
     expect(emitBoot(LOYALTY_KIT_IR)).toBeUndefined();
     expect(emitBoot(WEB_APP_IR)).toBeUndefined();
     expect(emitBoot({ ...COMMERCE_IR, classes: [] })).toBeUndefined();
+  });
+
+  it("connects the record policies first when the manifest lists one, and only then (STA-2045)", () => {
+    const manifest = {
+      policies: [{ class: "OrderPolicy", model: "Order", module: "orders", file: "x.ts" }],
+    } as unknown as StackraManifest;
+    const boot = emitBoot(COMMERCE_IR, manifest) ?? "";
+    expect(boot).toContain('import { connectPolicies } from "@stackra/iam";');
+    expect(boot).toContain("  if (options.signal.aborted) return;\n  connectPolicies(container);");
+    expect(emitBoot(COMMERCE_IR)).not.toContain("connectPolicies");
+    // A service with nothing else to connect still connects its policies.
+    expect(emitBoot({ ...COMMERCE_IR, classes: [] }, manifest)).toContain(
+      "connectPolicies(container);",
+    );
   });
 
   it("subscribes each live query's refresh routes on the bus when the service runs realtime (STA-1445)", () => {
