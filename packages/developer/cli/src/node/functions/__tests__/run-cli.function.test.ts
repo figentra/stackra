@@ -168,7 +168,7 @@ describe("COMMANDS on the console", () => {
     const classes = COMMANDS.map((command) =>
       typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
     );
-    // 50 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
+    // 39 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
     expect(passthroughCommands(classes)).toEqual(PASSTHROUGH);
   });
 });
@@ -176,29 +176,20 @@ describe("COMMANDS on the console", () => {
 /** The legacy commands, sorted: each leaves this list when it becomes a console command class. */
 const PASSTHROUGH: string[] = [
   "add",
-  "agents:check",
   "agents:sync",
-  "any-ratchet",
-  "app-native-deps",
-  "architecture-map",
   "audit:verify",
   "build",
-  "catalogue-completeness",
   "check",
   "code:check",
   "code:fix",
   "console",
   "consumer-gate",
-  "cycles",
   "db:diff",
   "db:migrate",
   "db:rollback",
   "db:seed",
   "deploy",
   "dev",
-  "doc-standard",
-  "duplicate-exports",
-  "duplication",
   "eas-preflight",
   "gen",
   "lint",
@@ -216,10 +207,8 @@ const PASSTHROUGH: string[] = [
   "seed-pack",
   "settings:apply",
   "settings:diff",
-  "skill-licences",
   "smoke",
   "start",
-  "structure",
   "test",
   "testbed",
   "typecheck",
