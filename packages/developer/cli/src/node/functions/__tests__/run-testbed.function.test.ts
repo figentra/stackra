@@ -271,6 +271,13 @@ describe("runTestbed run", () => {
     expect(code).toBe(0);
     expect(streams).toEqual(["gh workflow run testbed-fallback.yml --ref feat/x -f preset=verify"]);
   });
+
+  it("refuses --serve with --preset, which the fallback would drop", async () => {
+    const { deps } = fake({ boxes: "[]" });
+    await expect(
+      runTestbed(request({ preset: "e2e", ref: "feat/x", serve: "console" }), deps, captureIo().io),
+    ).rejects.toThrow("--serve runs on a box only");
+  });
 });
 
 /** The settings of a run over `regions`. */

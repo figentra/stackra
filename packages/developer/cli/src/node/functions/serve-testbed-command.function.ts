@@ -1,10 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `serveTestbedCommand(surface, command)`, the job script of `stackra testbed run --serve <surface>`: builds the
- *          product's surfaces, starts the generated Encore app, seeds the `test` profile, serves the built surface with
+ *          product's surfaces, starts the generated Encore app, seeds the `test` profile into the app's own database
+ *          (`encore db conn-uri`, so the seed and the app read one database), serves the built surface with
  *          `stackra preview serve` (the API proxied to the app), waits until both answer, runs `command` with
  *          `STACKRA_E2E_BASE_URL` set, and stops both on exit.
  * Boundary: pure; builds one script string for the box's shell and runs nothing. The surface is checked to be a key.
+ *           The job image puts no `node_modules/.bin` on PATH, so every `stackra` call goes through `pnpm exec`. Encore
+ *           applies the compiled migrations (the seed ledger included) when the app starts, so no `db migrate` runs.
  * Runtime: node
  * Governing contract: ADR 0484 (the testbed); ADR 0437 (the local edge); ADR 0289 (decision 8, seeded previews); STA-1675.
  */
@@ -36,15 +39,21 @@ export function serveTestbedCommand(surface: string, command: string): string {
   const web = `http://127.0.0.1:${WEB_PORT}`;
   return [
     "set -e",
-    "stackra gen",
-    "stackra build --product --surfaces-only",
+    "pnpm exec stackra gen",
+    "pnpm exec stackra build --product --surfaces-only",
+    // `node -p` sees the core modules as globals; a literal require here trips the bundle's no-require guard.
+    `product=$(node -p "JSON.parse(fs.readFileSync('dist/product/build.json', 'utf8')).product")`,
     `(cd .stackra/encore && exec encore run --watch=false --port ${API_PORT}) &`,
     "api=$!",
     "trap 'kill $api $web 2>/dev/null' EXIT",
     wait(api, "api"),
-    // `node -p` sees the core modules as globals; a literal require here trips the bundle's no-require guard.
-    `stackra seed-pack "$(node -p "JSON.parse(fs.readFileSync('dist/product/build.json', 'utf8')).product")" --profile test --env test`,
-    `stackra preview serve --surface ${surface} --port ${WEB_PORT} --api ${api} &`,
+    // shortcut: seeds the database named after the product (the service that owns the seed runner, as in
+    // findSeedPack's example); name the database in the request once a product's runner lives in another service.
+    // The direct URL wins over DATABASE_URL in the seed runner, so a URL a grant injects never takes the seed elsewhere.
+    `DATABASE_DIRECT_URL=$(cd .stackra/encore && encore db conn-uri "$(echo "$product" | tr - _)")`,
+    "export DATABASE_DIRECT_URL",
+    `pnpm exec stackra seed-pack "$product" --profile test --env test`,
+    `pnpm exec stackra preview serve --surface ${surface} --port ${WEB_PORT} --api ${api} &`,
     "web=$!",
     wait(web, "web"),
     `export STACKRA_E2E_BASE_URL=${web}`,

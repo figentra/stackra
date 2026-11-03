@@ -386,6 +386,9 @@ export async function runTestbed(
         throw new CliUsageError(`unknown preset: ${request.preset} (${TESTBED_PRESETS.join("|")})`);
       }
       if (request.ref === undefined) throw new CliUsageError("--preset needs --ref <ref>");
+      // The GitHub fallback runs the preset alone; it would drop the serve without a word.
+      if (request.serve !== undefined)
+        throw new CliUsageError("--serve runs on a box only: drop --preset");
     }
     // ci-box and this command exist only on the Mac: a nested call waits forever on the box holding its lock.
     if (refusesTestbedCommand(command)) {

@@ -16,11 +16,16 @@ describe("serveTestbedCommand", () => {
     const lines = serveTestbedCommand("console", "pnpm exec playwright test").split("\n");
     const at = (text: string): number => lines.findIndex((line) => line.includes(text));
     expect(at("surfaces-only")).toBeLessThan(at("encore run"));
-    expect(at("encore run")).toBeLessThan(at("seed-pack"));
+    expect(at("encore run")).toBeLessThan(at("encore db conn-uri"));
+    expect(at("export DATABASE_DIRECT_URL")).toBeLessThan(at("seed-pack"));
     expect(at("seed-pack")).toBeLessThan(at("preview serve --surface console"));
     expect(at("preview serve")).toBeLessThan(at("STACKRA_E2E_BASE_URL=http://127.0.0.1:4173"));
     expect(lines.at(-1)).toBe("pnpm exec playwright test");
     expect(lines[0]).toBe("set -e");
+    // the job image has no node_modules/.bin on PATH
+    expect(
+      lines.filter((line) => line.includes("stackra ") && !line.includes("pnpm exec stackra")),
+    ).toEqual([]);
   });
 
   it("refuses a surface that is not a key", () => {
