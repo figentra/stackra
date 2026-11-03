@@ -14,7 +14,7 @@
       "minHeight": 720
     }
   ],
-  "related": ["free/page-header", "free/table", "free/modal", "free/status-badge"],
+  "related": ["free/page-header", "free/table", "free/modal"],
   "tokens": ["color.surface", "color.border", "color.danger"],
   "keywords": ["members", "team", "invite", "invitation", "role", "settings", "kit"],
   "status": "new"
