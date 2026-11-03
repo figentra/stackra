@@ -852,6 +852,27 @@
       ]
     }
   ],
+  "seeders": [
+    {
+      "key": "loyalty_kit.demo",
+      "module": "loyalty_kit",
+      "profile": "demo",
+      "class": "LoyaltyKitDemoSeeder",
+      "file": "src/node/database/seeders/demo.seeder.ts"
+    }
+  ],
+  "factories": [
+    {
+      "class": "LedgerEntryFactory",
+      "file": "src/node/database/factories/ledger-entry.factory.ts",
+      "model": "LedgerEntry"
+    },
+    {
+      "class": "LoyaltyAccountFactory",
+      "file": "src/node/database/factories/loyalty-account.factory.ts",
+      "model": "LoyaltyAccount"
+    }
+  ],
   "ui": {
     "resources": {
       "loyalty_kit.loyalty_account": {
