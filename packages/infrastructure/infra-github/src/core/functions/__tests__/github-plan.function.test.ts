@@ -137,35 +137,20 @@ describe("githubPlan", () => {
 
   it("refuses a missing or malformed providers.github block", () => {
     expect(pathsOf(() => githubPlan(root(undefined)))).toEqual(["root.providers.github"]);
-    expect(
-      pathsOf(() =>
-        githubPlan(
-          root({ org: "acme", repo: "acme platform", visibility: "secret", owner: "acme" }),
-        ),
-      ),
-    ).toEqual(
-      expect.arrayContaining([
-        "root.providers.github",
-        "root.providers.github.repo",
-        "root.providers.github.visibility",
-      ]),
-    );
-    expect(
-      pathsOf(() =>
-        githubPlan(root({ org: "acme", repo: "acme-platform", variables: { GITHUB_TOKEN: "x" } })),
-      ),
-    ).toEqual([expect.stringMatching(/^root\.providers\.github\.variables/)]);
+    // Runway's own parse refuses a malformed block before the plan runs.
+    expect(() =>
+      root({ org: "acme", repo: "acme platform", visibility: "secret", owner: "acme" }),
+    ).toThrow(/providers\.github\.repo/);
+    expect(() =>
+      root({ org: "acme", repo: "acme-platform", variables: { GITHUB_TOKEN: "x" } }),
+    ).toThrow(/providers\.github\.variables/);
   });
 
   it("refuses more than six reviewers on one environment", () => {
     const reviewers = ["a", "b", "c", "d", "e", "f", "g"];
-    expect(
-      pathsOf(() =>
-        githubPlan(
-          root({ org: "acme", repo: "acme-platform", environments: { production: { reviewers } } }),
-        ),
-      ),
-    ).toEqual(["root.providers.github.environments.production.reviewers"]);
+    expect(() =>
+      root({ org: "acme", repo: "acme-platform", environments: { production: { reviewers } } }),
+    ).toThrow(/providers\.github\.environments\.production\.reviewers/);
   });
 
   it("names every refusal at once", () => {
