@@ -14,7 +14,7 @@
       "minHeight": 640
     }
   ],
-  "related": ["free/data-table", "free/filter-bar", "free/page-header", "free/pull-to-refresh"],
+  "related": ["free/data-table", "free/filter-bar", "free/page-header"],
   "tokens": ["color.surface", "color.separator"],
   "keywords": ["resource", "list", "table", "crud", "admin", "panel", "kit"],
   "status": "new"

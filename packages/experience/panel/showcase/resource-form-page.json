@@ -14,7 +14,7 @@
       "minHeight": 620
     }
   ],
-  "related": ["free/form", "free/form-field", "free/page-header", "free/number-field"],
+  "related": ["free/form", "free/form-field", "free/page-header"],
   "tokens": ["color.surface", "color.field"],
   "keywords": ["resource", "form", "create", "edit", "crud", "admin", "panel", "kit"],
   "status": "new"

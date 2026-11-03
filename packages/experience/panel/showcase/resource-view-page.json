@@ -14,7 +14,7 @@
       "minHeight": 560
     }
   ],
-  "related": ["free/property-list", "free/page-header", "free/section", "free/error-state"],
+  "related": ["free/property-list", "free/page-header", "free/section"],
   "tokens": ["color.surface", "color.separator"],
   "keywords": ["resource", "record", "detail", "view", "crud", "admin", "panel", "kit"],
   "status": "new"
