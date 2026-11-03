@@ -1,12 +1,12 @@
 # Stackra file contract:
 # Purpose: Runway's `cloudflare-workers` provider (ADR 0289 decision 1), a public reusable workflow (ADR 0168
 #          decision 1): deploy one Worker member at one commit of main with `wrangler deploy`. Checks out the commit,
-#          refuses one that is not on main, prints the SHA, tests and builds the member alone, then deploys (with the
+#          refuses one that is not on main, prints the SHA, builds the member alone, then deploys (with the
 #          `message` input as the deployment message, the rollback record of a promote, or else the commit SHA) and
 #          smoke-tests it, printing readiness per attempt. A caller is a thin job: `deploy-static.yml` here; another repository pins
 #          `figentra/stackra/.github/workflows/runway-cloudflare-workers.yml@<sha> # runway-v<n>` (runbooks/runway).
 # Secrets: CLOUDFLARE_API_TOKEN only, from Infisical `/ci` through GitHub OIDC, exported for the deploy step and
-#          blanked for the smoke step. No repository secret. Without an identity id the job builds, tests, prints a
+#          blanked for the smoke step. No repository secret. Without an identity id the job builds, prints a
 #          notice and deploys nothing.
 # Owner: release-operations
 name: Runway cloudflare-workers
@@ -19,7 +19,7 @@ on:
         type: string
         required: true
       package:
-        description: The member's package name, the turbo filter for its test and build (e.g. `@figentra/worker-static`).
+        description: The member's package name, the turbo filter for its build (e.g. `@figentra/worker-static`).
         type: string
         required: true
       environment:
@@ -145,24 +145,23 @@ jobs:
           secret-path: /ci/turbo
           export-type: env
 
-      # A caller's own Quality Gate runs in a separate workflow this one cannot wait on, so the member is tested here
-      # and a broken build never reaches Cloudflare. Only the member and what it depends on are built: its
-      # dependencies' builds first, then its own gen, test and build with `--only`. A plain `test` would wait on the
-      # root //#gen:workspace, which walks every member and fails on any of them, the member's or not (STA-1987;
-      # deploy-registry.yml builds the same way).
-      - name: Test and build
+      # A broken build never reaches Cloudflare; tests run on the box, not here (STA-2064). Only the member and what it
+      # depends on are built: its dependencies' builds first, then its own gen and build with `--only`. A plain `gen`
+      # would wait on the root //#gen:workspace, which walks every member and fails on any of them, the member's or
+      # not (STA-1987; deploy-registry.yml builds the same way).
+      - name: Build
         env:
           PACKAGE: ${{ inputs.package }}
         run: |
           pnpm turbo run build --filter="$PACKAGE^..."
           pnpm turbo run gen --filter="$PACKAGE" --only
-          pnpm turbo run test build --filter="$PACKAGE" --only
+          pnpm turbo run build --filter="$PACKAGE" --only
 
       - name: Deploy prerequisites missing
         if: env.INFISICAL_IDENTITY_ID == ''
         run: >-
           echo "::notice title=Deploy skipped::No Infisical identity id was passed (infisical-identity-id).
-          Built and tested, nothing deployed."
+          Built, nothing deployed."
 
       # Exchanges this job's OIDC token for Infisical access and exports only CLOUDFLARE_API_TOKEN; the secret-name
       # filter keeps every other /ci value out of the job.
