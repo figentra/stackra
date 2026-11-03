@@ -220,7 +220,8 @@ values.
   candidates (commands, options, choice values) from the registry; its driver SHALL be `tab`.
 - **FR-007**: THE ProcessRunner port SHALL run a child process with its output captured; WHEN the child fails THE
   Console Package SHALL show the last 20 lines of its output under the failed task, and SHALL show the whole output only
-  under `--verbose`.
+  under `--verbose`. Amended 2026-11-03 (ADR 0506 amendment, STA-2093): a child run with `inherit` shares the standard
+  streams and is not captured, so it shows no output under the failed task; `onOutput` receives redacted chunks.
 
 #### Output components
 
@@ -240,13 +241,17 @@ values.
 
 - **FR-012**: THE Console Kernel SHALL route an argument vector to exactly one intent (list, help, version,
   completion, run, unknown) before any container is created; spaced names (`mcp sync`, `bot gh`) SHALL match registered
-  `:`-joined names, the longest match first (EC-09).
+  `:`-joined names, the longest match first (EC-09). Amended 2026-11-03 (STA-2093): WHERE `requireCommand` is set, an
+  invocation that names no command and asks no help SHALL be refused as a usage problem (exit 2), not routed to list; a
+  registry value option MAY come before the name when every command that declares its flag takes a value.
 - **FR-013**: WHEN the intent is help (`--help`, `-h` or `help <cmd>`), THE Console Kernel SHALL print the command's
   usage, arguments, options, examples and docs link and SHALL NOT run the command.
 - **FR-014**: WHEN the intent is unknown, THE Console Kernel SHALL write the unknown-command problem with up to three
   closest names and SHALL exit 2.
 - **FR-015**: WHEN the intent is list, THE Console Kernel SHALL write the banner (terminal only), the name and version,
-  and the visible commands grouped by `group` (else by namespace), one line each with its summary.
+  and the visible commands grouped by `group` (else by namespace), one line each with its summary. Amended 2026-11-03
+  (ADR 0506 amendment, STA-2093): WHERE `json` is `"bare"` and `--json` is given, the list SHALL be written as one line
+  of data on stdout and nothing else there.
 - **FR-016**: THE Console Kernel SHALL register the built-in commands `help` and `completion <shell>`, which a registry
   cannot shadow.
 
@@ -275,7 +280,10 @@ values.
 - **FR-028**: WHEN a command runs a child with `interactive: true` WHILE stdin and stdout are terminals, THE
   ProcessRunner SHALL inherit the standard streams (keystrokes and progress visible, as `doctor --fix` needs for
   `mise install`, `xcode-select --install`, `gh auth login`); IF the run is not interactive THEN THE ProcessRunner SHALL
-  refuse with a problem naming the command, without starting it (engine-proof, 2026-11-02).
+  refuse with a problem naming the command, without starting it (engine-proof, 2026-11-02). Amended 2026-11-03 (ADR 0506
+  amendment, STA-2093): WHEN a command runs a child with `inherit` THE ProcessRunner SHALL share the standard streams
+  without a terminal, SHALL under `--json` ignore standard input and send both outputs to standard error, and SHALL be
+  refused while a secret value is held; `interactive` keeps its refusal above.
 - **FR-029**: THE ConsolePorts SHALL carry the run's working directory and THE CommandIo SHALL expose it as `io.cwd`;
   no command or driver SHALL read `process.cwd()` (the local MCP and tests run commands for another directory).
 - **FR-030**: WHILE `--json` is given, THE Console Kernel SHALL emit checklist and table rows exactly as the command gave
