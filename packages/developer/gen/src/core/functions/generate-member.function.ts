@@ -7,7 +7,8 @@
  *          (CORS preflights and headers, STA-1385), broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, its client tool table (`#stackra/client-tools`, ADR 0490), the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
- *          (the setting keys of its settings classes, stackra-209), `#stackra/reports` (one query per report,
+ *          (the setting keys of its settings classes, stackra-209), `#stackra/ui` (the class components' `Component`
+ *          base, STA-2069), `#stackra/reports` (one query per report,
  *          ADR 0470), `#stackra/commands` and `.stackra/entry/console.ts` (the console commands, ADR 0506, STA-1731),
  *          `#stackra/search` (one query per `@Searchable` model, ADR 0221 d6; both
  *          kinds of generated query are declared beside the authored ones, so each gets its manifest entry, endpoint,
@@ -98,6 +99,7 @@ import { emitExpoConfig } from "#core/functions/emit-expo-config.function";
 import { emitSdks } from "#core/functions/emit-sdks.function";
 import { emitSettings } from "#core/functions/emit-settings.function";
 import { emitToolConfigs } from "#core/functions/emit-tool-configs.function";
+import { emitUiFacade } from "#core/functions/emit-ui-facade.function";
 import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import { emitWiring } from "#core/functions/emit-wiring.function";
 import { usesContainer } from "#core/functions/uses-container.function";
@@ -260,6 +262,8 @@ export function generateMember(
     [".stackra/gen/client-tools.ts", clientTools.content],
     [".stackra/gen/queues.ts", emitQueues(ir, manifest)],
     [".stackra/gen/settings.ts", emitSettings(ir)],
+    // The class components' `Component` base, for a member that declares `@stackra/ui` (STA-2069).
+    [".stackra/gen/ui.ts", emitUiFacade(ir)],
     [".stackra/gen/commands.ts", emitCommands(ir, manifest)],
     [".stackra/gen/reports.ts", emitReports(authored)],
     [".stackra/gen/search.ts", emitSearchQueries(authored)],
