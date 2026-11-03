@@ -30,6 +30,9 @@ export class WranglerEdgeKvDriver extends Driver(EdgeKvWriter) {
   /** The command runner, `runCommand`; a test or a dry run replaces it. */
   run: CommandRunner = runCommand;
 
+  /** Variables wrangler runs with, such as `CLOUDFLARE_ACCOUNT_ID`. */
+  env?: Readonly<Record<string, string>>;
+
   private readonly namespace: string;
 
   /**
@@ -48,7 +51,7 @@ export class WranglerEdgeKvDriver extends Driver(EdgeKvWriter) {
     await this.run(
       EDGE_PUBLISH_SETTINGS.wrangler,
       ["kv", "key", "put", key, value, this.namespace, "--remote"],
-      {},
+      this.env === undefined ? {} : { env: this.env },
     );
   }
 
@@ -57,7 +60,7 @@ export class WranglerEdgeKvDriver extends Driver(EdgeKvWriter) {
     await this.run(
       EDGE_PUBLISH_SETTINGS.wrangler,
       ["kv", "key", "delete", key, this.namespace, "--remote"],
-      {},
+      this.env === undefined ? {} : { env: this.env },
     );
   }
 }

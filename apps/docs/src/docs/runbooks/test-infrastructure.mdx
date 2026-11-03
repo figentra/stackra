@@ -26,7 +26,8 @@ tests, e2e and integration tests all run on the testbed: identical EC2 boxes, bu
 
 | Part      | What it is                                                                                                                                                                                                                |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Image     | One Dockerfile for the job toolchain (mise, Node, pnpm, Encore, Playwright, Infisical) and one EC2 Image Builder AMI                                                                                                      |
+| Regions   | One pool in each of eu-west-1 (the home), eu-west-2, eu-central-1 and us-east-1, one Pulumi stack each (`testbed-<region>`); the CLI uses only the regions in its enabled list, in that order (STA-2042)                  |
+| Image     | One Dockerfile for the job toolchain (mise, Node, pnpm, Encore, Playwright, Infisical) and one EC2 Image Builder AMI, built in the home region and copied to every region                                                 |
 | Groups    | `heavy`: on-demand `c7i.2xlarge`, 0 to 1 box. `light`: spot `c7i`/`c6i`/`m7i.2xlarge`, 0 to 1 box (the region's 8 + 8 vCPU quotas, ADR 0516)                                                                              |
 | Disks     | 40 GB root (OS and images); 200 GB XFS data volume at `/data` (jobs, seeds, pnpm store, turbo cache, Docker)                                                                                                              |
 | Slots     | One heavy and one light job per box. Heavy: `encore test`, `playwright`, `e2e`, `act `, `build`, or `--on-demand`. Everything else: light. A light box with a spot reclaim or rebalance notice refuses new jobs (exit 75) |
@@ -40,17 +41,31 @@ tests, e2e and integration tests all run on the testbed: identical EC2 boxes, bu
 stackra testbed run "<session> <what>" <project-dir> "<command>"
 ```
 
-The command picks a free slot of the right kind and syncs the directory. Only the diff is uploaded: the box clones its
-last copy of the project first. Then it runs the command in a fresh container and returns its exit code. The other
-verbs:
+The command looks at every enabled region and takes a free slot of the right kind, in region order. When there is none,
+it starts a box in the first region with room, and otherwise waits. It syncs the directory; only the diff is uploaded,
+because the box clones its last copy of the project first. Then it runs the command in a fresh container and returns
+its exit code.
 
-| Verb                             | Does                                                                       |
-| -------------------------------- | -------------------------------------------------------------------------- |
-| `stackra testbed status`         | each box: heavy and light slot, disk use, health, image age, load          |
-| `stackra testbed unlock --box N` | stops a stuck job on one box (its container and the containers it started) |
-| `stackra testbed ip\|ssh\|sync`  | one box, by number from `status` or by instance id                         |
-| `stackra testbed scale`          | shows each group's desired count and raises it by one                      |
-| `stackra testbed image`          | the current AMI and its age                                                |
+The enabled regions are `TESTBED_CLI_DEFAULTS.regions` in `@stackra/cli`, a list that grows by one line as each region
+joins. `--regions a,b` or `STACKRA_TESTBED_REGIONS` overrides it for one machine, and `--region r` narrows it to one
+region. The other verbs:
+
+| Verb                                 | Does                                                                                       |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `stackra testbed status`             | each enabled region and its boxes: heavy and light slot, disk use, health, image age, load |
+| `stackra testbed unlock --box N`     | stops a stuck job on one box (its container and the containers it started)                 |
+| `stackra testbed ip\|ssh\|sync`      | one box, by number from `status` or by instance id                                         |
+| `stackra testbed scale [--region r]` | shows each group's desired count and raises it by one                                      |
+| `stackra testbed image`              | the current AMI and its age                                                                |
+
+For callers such as `fflow gate`:
+
+- **`run … --json`** streams the job's output to stderr and prints one line on stdout:
+  `{"region","box","slot","waitSeconds","runSeconds","exitCode"}`.
+- **The exit code** is the job's own, or 2 (usage), 73 (no free slot, with `--no-wait`), 75 (no healthy box) or 124
+  (the 3-hour limit).
+- **`status --json`** gives each region's free, total and startable heavy and light slots, so the caller sizes its
+  parallel jobs.
 
 - **"every box busy, waiting"** means every slot of that kind is taken. After two minutes the command adds a box (up
   to the group's maximum) and keeps waiting. Do not start a second copy of the job.
@@ -133,9 +148,12 @@ configs or install tools: the next box would not have the change. Change the ima
 
 ## Rebuilding the image
 
-There is no schedule: the build instance is a second on-demand `c7i.2xlarge`, and the region's on-demand quota fits one
-([ADR 0516](/adr/0516-aws-quotas-are-fixed-inputs)). The owner starts a build by hand, only while the `heavy` group is
-at 0, after a recipe change (the Dockerfile, the host components or the toolchain pins give it a new version):
+There is no schedule, and only the home region (eu-west-1) builds. Its distribution copies each new AMI to all four
+regions and writes each region's `/imagebuilder/stackra-testbed/ami`, so no other region ever builds. The build
+instance is a second on-demand `c7i.2xlarge`, and the home region's on-demand quota fits one
+([ADR 0516](/adr/0516-aws-quotas-are-fixed-inputs)). So after a recipe change (the Dockerfile, the host components or
+the toolchain pins give it a new version), the owner starts a build by hand, only while eu-west-1's `heavy` group is
+at 0. The usual way is `apply-testbed.yml` with `action=build-image` and `region=eu-west-1`; by hand:
 
 ```bash
 aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names stackra-testbed-heavy --query 'AutoScalingGroups[0].DesiredCapacity' --profile academorix --region eu-west-1
@@ -151,7 +169,7 @@ protected boxes until they are free:
 aws autoscaling start-instance-refresh --auto-scaling-group-name stackra-testbed-heavy --profile academorix --region eu-west-1
 ```
 
-Repeat with `stackra-testbed-light`.
+Repeat with `stackra-testbed-light`, and in each region that runs boxes (`--region` of that region).
 
 ## Secrets
 
@@ -179,7 +197,9 @@ Prices read on 2026-10-30 for eu-west-1:
 - gp3: $0.088 per GB-month (about $21 a month for one box's two disks).
 
 Both minimums are 0, so an idle testbed costs only its stopped state: nothing runs. A busy day runs at most one heavy and
-one light box, about $0.60 an hour together; around the clock that is at most about $440 a month with disks. Every box
+one light box per region, about $0.60 an hour a region; with all four regions busy around the clock that is at most
+about $1,760 a month with disks, and a normal day is a small part of that. Each region also stores its copy of the
+image, about $12 a month. Every box
 ends itself after 60 idle minutes, and `stackra testbed run` starts one when its group is at 0. The old fleet ran about
 $1,900 a month.
 
@@ -317,3 +337,18 @@ environment.
 Both minimums stay at 0 ([0516](/adr/0516-aws-quotas-are-fixed-inputs)): with 8 on-demand and 8 spot vCPUs the pool is at
 most one heavy and one light box, each started on demand. The plan refuses a heavy minimum above 0, because the image
 build must always fit beside it.
+
+Every run takes a `region` (default eu-west-1) and applies that region's stack, `testbed-<region>`. The first `up` with
+eu-west-1 renames the old single-region stack `testbed` to `testbed-eu-west-1`. `build-image` runs in eu-west-1 only.
+
+### 2c. Adding a region
+
+1. **Stop the old boxes:** any old box in the region must be stopped first, because it uses the same quota.
+2. **Check the image is there:** the region must already hold the image, so that
+   `aws ssm get-parameter --name /imagebuilder/stackra-testbed/ami --region <region> --profile academorix` returns an
+   AMI. A build after the four-region distribution put it there.
+3. **Apply the region:** **action** `up`, **region** `<region>`, **groups** ticked, heavy `0`, light `0`. That declares
+   the security group, the launch template and the two groups. No box starts.
+4. **Enable it in the CLI:** a one-line pull request adds the region to `TESTBED_CLI_DEFAULTS.regions`, and the CLI is
+   released. The region is used once sessions run that version. Until then, one job can try it with
+   `--regions <region>`.
