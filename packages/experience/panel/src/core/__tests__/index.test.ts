@@ -12,6 +12,7 @@ import type { z } from "zod";
 
 import { COUNT_METRIC_SCHEMA } from "#core/constants/count-metric-schema.constant";
 import { MONEY_METRIC_SCHEMA } from "#core/constants/money-metric-schema.constant";
+import { RESOURCE_WIRE_SCHEMA } from "#core/constants/resource-wire-schema.constant";
 import { SAVED_VIEW_GROUP_SCHEMA } from "#core/constants/saved-view-group-schema.constant";
 import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
 import { SAVED_VIEW_SORT_SCHEMA } from "#core/constants/saved-view-sort-schema.constant";
@@ -64,6 +65,8 @@ describe("@stackra/panel", () => {
       "Relation",
       "Resource",
       "ResourcePage",
+      "ResourceWire$",
+      "ResourceWireInvalidError",
       "SavedView",
       "SavedView$",
       "SavedViewGroup",
@@ -85,15 +88,18 @@ describe("@stackra/panel", () => {
       "WidgetDisplay",
       "WidgetSize",
       "activeContributions",
+      "decodeResource",
       "defineSlot",
       "describeResource",
       "describeWidget",
       "document",
+      "encodeResource",
       "fieldsForMode",
       "fillSlot",
       "groupRows",
       "lineEditorOf",
       "pageContextOf",
+      "panelNavigationOf",
       "panels",
       "registerResources",
       "registerWidgets",
@@ -113,6 +119,7 @@ describe("@stackra/panel", () => {
     expect(panel.SavedViewSort$).toBe(SAVED_VIEW_SORT_SCHEMA);
     expect(panel.SavedViewTotal$).toBe(SAVED_VIEW_TOTAL_SCHEMA);
     expect(panel.TimeRangeInput$).toBe(TIME_RANGE_INPUT_SCHEMA);
+    expect(panel.ResourceWire$).toBe(RESOURCE_WIRE_SCHEMA);
   });
 
   it("resolves the builder types the template names", () => {

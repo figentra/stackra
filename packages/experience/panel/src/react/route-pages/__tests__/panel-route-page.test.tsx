@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `PanelRoutePage`: it frames the panel the class declares (its key from the class name, its
  *          recorded path and area) in the shell, and refuses a class that is not a panel.
- * Boundary: unit tier, jsdom; the shell is a recording stand-in.
+ * Boundary: unit tier, jsdom, in a memory router; the shell is a recording stand-in. What it frames is
+ *           `register-panel-pages.function.test.tsx`'s.
  * Runtime: node (vitest, jsdom)
  * Governing contract: ADR 0022 (test placement); ADR 0307; ADR 0164.
  */
@@ -10,6 +11,7 @@
 import { ApiArea } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { cleanup, render } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import { vi } from "vitest";
 
 import { Panel } from "#core/bases/panel.base";
@@ -36,7 +38,11 @@ afterEach(() => {
 
 describe("PanelRoutePage", () => {
   it("frames the panel the class declares", () => {
-    render(<PanelRoutePage panel={CustomerPortalPanel} />);
+    render(
+      <MemoryRouter initialEntries={["/portal"]}>
+        <PanelRoutePage panel={CustomerPortalPanel} />
+      </MemoryRouter>,
+    );
     expect(framed).toEqual([{ key: "customer_portal", path: "/portal", area: ApiArea.App }]);
   });
 
@@ -45,6 +51,12 @@ describe("PanelRoutePage", () => {
     class NotAPanel {
       readonly isPanel = false;
     }
-    expect(() => render(<PanelRoutePage panel={NotAPanel} />)).toThrow(TypeError);
+    expect(() =>
+      render(
+        <MemoryRouter>
+          <PanelRoutePage panel={NotAPanel} />
+        </MemoryRouter>,
+      ),
+    ).toThrow(TypeError);
   });
 });

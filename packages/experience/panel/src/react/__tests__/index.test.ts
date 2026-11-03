@@ -23,9 +23,11 @@ describe("@stackra/panel/react", () => {
       "CatalogueRowsEditor",
       "CatalogueVersions",
       "Dashboard",
+      "DocumentPage",
       "OnboardingChecklist",
       "PanelShell",
       "PlanCatalogueAdmin",
+      "QuickCreate",
       "RelationManager",
       "ResourceFormPage",
       "ResourceListPage",
@@ -37,6 +39,7 @@ describe("@stackra/panel/react", () => {
       "useActionRunner",
       "useBreadcrumbs",
       "usePanel",
+      "usePanelNavigation",
     ]);
   });
 

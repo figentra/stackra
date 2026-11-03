@@ -4,12 +4,13 @@
  *          metric shapes and the time range input with their shipped schemas, the enums, the data constructors gen
  *          writes into `#stackra/resources`, `#stackra/panels` and `#stackra/slots`, the recorders gen runs, the saved
  *          views with their store port, layouts, key validator and grouping, the display-mode field filter, the line-editor and inert
- *          contribution rules, `registerResources` for the generic resource pages, the SDUI spec types (`ActionButtonSpec`,
+ *          contribution rules, `registerResources` for the generic resource pages, the resource wire form (`encodeResource`, `decodeResource`,
+ *          `ResourceWire$` and its refusal `ResourceWireInvalidError`), the SDUI spec types (`ActionButtonSpec`,
  *          `EmptyStateSpec`, `RowActionsSpec`, `BulkActionsSpec`, `FormFieldSpec`, `FilterSpec`, `TableColumnSpec`) with their
  *          `FieldControl` and `FilterKind` enums, `pageContextOf` (the AI page context a panel page publishes), and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
  *           (`CountMetric$`, `MoneyMetric$`, `SavedView$` with its `SavedViewSort$`, `SavedViewGroup$` and
- *           `SavedViewTotal$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
+ *           `SavedViewTotal$`, `TimeRangeInput$`, `ResourceWire$`), folding the old `./schemas` entry into `.` so no
  *           symbol is exported from two entries. The builder records, the widget and resource registries, the panel's own i18n keys
  *           and the renderers' helpers are internal: the `./react` and `./native` entries import them by path. The
  *           kind instance bases are types only, so no class skips its options.
@@ -38,6 +39,7 @@ export { FormStep } from "#core/constants/form-step.constant";
 export { MONEY_METRIC_SCHEMA as MoneyMetric$ } from "#core/constants/money-metric-schema.constant";
 export { Placement } from "#core/constants/placement.constant";
 export { Relation } from "#core/constants/relation.constant";
+export { RESOURCE_WIRE_SCHEMA as ResourceWire$ } from "#core/constants/resource-wire-schema.constant";
 export { SAVED_VIEW_GROUP_SCHEMA as SavedViewGroup$ } from "#core/constants/saved-view-group-schema.constant";
 export { SAVED_VIEW_SCHEMA as SavedView$ } from "#core/constants/saved-view-schema.constant";
 export { SAVED_VIEW_SORT_SCHEMA as SavedViewSort$ } from "#core/constants/saved-view-sort-schema.constant";
@@ -63,16 +65,20 @@ export { TimeRange } from "#core/enums/time-range.enum";
 export { ViewLayout } from "#core/enums/view-layout.enum";
 export { ViewSharing } from "#core/enums/view-sharing.enum";
 export { ViewKeyUnknownError } from "#core/errors/view-key-unknown.error";
+export { ResourceWireInvalidError } from "#core/errors/resource-wire-invalid.error";
 export { WidgetSize } from "#core/enums/widget-size.enum";
 export { activeContributions } from "#core/functions/active-contributions.function";
+export { decodeResource } from "#core/functions/decode-resource.function";
 export { describeResource } from "#core/functions/describe-resource.function";
 export { defineSlot } from "#core/functions/define-slot.function";
 export { describeWidget } from "#core/functions/describe-widget.function";
+export { encodeResource } from "#core/functions/encode-resource.function";
 export { document } from "#core/functions/document.function";
 export { fillSlot } from "#core/functions/fill-slot.function";
 export { groupRows } from "#core/functions/group-rows.function";
 export { lineEditorOf } from "#core/functions/line-editor-of.function";
 export { pageContextOf } from "#core/functions/page-context-of.function";
+export { panelNavigationOf } from "#core/functions/panel-navigation-of.function";
 export { panels } from "#core/functions/panels.function";
 export { registerResources } from "#core/functions/register-resources.function";
 export { registerWidgets } from "#core/functions/register-widgets.function";
@@ -95,6 +101,9 @@ export type { ActionButtonSpec } from "#core/types/action-button-spec.type";
 export type { BulkActionsSpec } from "#core/types/bulk-actions-spec.type";
 export type { BindRef } from "#core/types/bind-ref.type";
 export type { PanelBlockNode } from "#core/types/panel-block-node.type";
+export type { PanelDocumentPage } from "#core/types/panel-document-page.type";
+export type { PanelNavigationEntry } from "#core/types/panel-navigation-entry.type";
+export type { PanelNavigationGroup } from "#core/types/panel-navigation-group.type";
 export type { Built } from "#core/types/built.type";
 export type { ColumnBuilder } from "#core/types/column-builder.type";
 export type { ColumnFactory } from "#core/types/column-factory.type";
@@ -144,6 +153,7 @@ export type { ResourceOptions } from "#core/types/resource-options.type";
 export type { ResourceRoutesOptions } from "#core/types/resource-routes-options.type";
 export type { ResourceRoutes } from "#core/types/resource-routes.type";
 export type { ResourceTree } from "#core/types/resource-tree.type";
+export type { ResourceWire } from "#core/types/resource-wire.type";
 export type { SectionBuilder } from "#core/types/section-builder.type";
 export type { SlotCardinality } from "#core/types/slot-cardinality.type";
 export type { SlotComponent } from "#core/types/slot-component.type";
@@ -170,3 +180,4 @@ export type { WidgetOptions } from "#core/types/widget-options.type";
 export type { WidgetPlaceOptions } from "#core/types/widget-place-options.type";
 export type { WidgetRenderer } from "#core/types/widget-renderer.type";
 export type { WidgetTree } from "#core/types/widget-tree.type";
+export type { Wire } from "#core/types/wire.type";

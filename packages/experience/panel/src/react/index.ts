@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `./react` entry of @stackra/panel (the panel shell, the dashboard and its tile, the
  *          action runner, the route pages it gives navigation, the generic resource pages and relation manager, the
  *          plan-catalogue admin, the onboarding checklist, the Cmd+K search palette, and the SDUI kit: `ActionButton`,
- *          `RowActions` and `BulkActions`)
+ *          `RowActions` and `BulkActions`), the panel navigation (`usePanelNavigation`), the quick-create menu (`QuickCreate`) and
+ *          the document page (`DocumentPage`)
  *          until `stackra gen` writes the entry barrels
  *          (STA-339).
  * Boundary: names each re-export and declares nothing. The widget body, the KPI view, the panel and resource route
@@ -23,9 +24,12 @@ export { BulkActions } from "#react/bulk-actions/bulk-actions";
 export type { BulkActionsProps } from "#react/bulk-actions/bulk-actions.props";
 export { Dashboard } from "#react/dashboard/dashboard";
 export type { DashboardProps } from "#react/dashboard/dashboard.props";
+export { DocumentPage } from "#react/document-page/document-page";
+export type { DocumentPageProps } from "#react/document-page/document-page.props";
 export { PanelShell } from "#react/panel-shell/panel-shell";
 export type { PanelShellProps } from "#react/panel-shell/panel-shell.props";
 export { usePanel } from "#react/panel-shell/use-panel";
+export { usePanelNavigation } from "#react/panel-navigation/use-panel-navigation";
 export { OnboardingChecklist } from "#react/onboarding-checklist/onboarding-checklist";
 export type { OnboardingChecklistProps } from "#react/onboarding-checklist/onboarding-checklist.props";
 export { CatalogueProposalForm } from "#react/plan-catalogue/catalogue-proposal-form";
@@ -36,6 +40,8 @@ export { CatalogueVersions } from "#react/plan-catalogue/catalogue-versions";
 export type { CatalogueVersionsProps } from "#react/plan-catalogue/catalogue-versions.props";
 export { PlanCatalogueAdmin } from "#react/plan-catalogue/plan-catalogue-admin";
 export type { PlanCatalogueAdminProps } from "#react/plan-catalogue/plan-catalogue-admin.props";
+export { QuickCreate } from "#react/quick-create/quick-create";
+export type { QuickCreateProps } from "#react/quick-create/quick-create.props";
 export { RelationManager } from "#react/resource-pages/relation-manager";
 export type { RelationManagerProps } from "#react/resource-pages/relation-manager.props";
 export { ResourceFormPage } from "#react/resource-pages/resource-form-page";
@@ -45,6 +51,7 @@ export type { ResourceListPageProps } from "#react/resource-pages/resource-list-
 export { ResourceViewPage } from "#react/resource-pages/resource-view-page";
 export type { ResourceViewPageProps } from "#react/resource-pages/resource-view-page.props";
 export { registerPanelPages } from "#react/route-pages/register-panel-pages.function";
+export type { PanelPagesOptions } from "#react/route-pages/panel-pages-options.type";
 export { RowActions } from "#react/row-actions/row-actions";
 export type { RowActionsProps } from "#react/row-actions/row-actions.props";
 export { SearchPalette } from "#react/search-palette/search-palette";
