@@ -69,12 +69,14 @@ export function ActionButton({
     setBusy(true);
     try {
       if (onPress !== undefined) await onPress();
-      else if (action !== undefined)
-        onRun?.(
+      else if (action !== undefined) {
+        // Run first: `onRun?.(await run(...))` would skip the run itself when the host passes no `onRun`.
+        const result =
           confirm === undefined
             ? await run(action, (input ?? {}) as never)
-            : await run(action, (input ?? {}) as never, { confirm }),
-        );
+            : await run(action, (input ?? {}) as never, { confirm });
+        onRun?.(result);
+      }
     } finally {
       setBusy(false);
     }

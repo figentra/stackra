@@ -146,8 +146,10 @@ describe("ModuleMenu (web)", () => {
     const { container } = render(wrap(<ModuleMenu label="Main navigation" />));
     const panel = container.querySelector("[data-slot='sidebar-panel']");
     expect(panel?.className).toMatch(/\bstart-0\b/);
-    expect(container.innerHTML).not.toMatch(
-      /\b(left-|right-|ml-|mr-|pl-|pr-|text-left|text-right)/,
-    );
+    // Class tokens only: an icon name such as `panel-left-open` is not a physical side.
+    const physical = [...container.querySelectorAll("[class]")]
+      .flatMap((element) => [...element.classList])
+      .filter((name) => /^(left-|right-|ml-|mr-|pl-|pr-|text-left$|text-right$)/.test(name));
+    expect(physical).toEqual([]);
   });
 });
