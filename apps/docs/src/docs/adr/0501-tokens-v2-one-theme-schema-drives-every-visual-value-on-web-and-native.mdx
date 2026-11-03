@@ -361,6 +361,10 @@ its own colours; `studio` keeps the roles quiet for product screens. The rule is
 connection people read, so it stays at the accent's full strength (WCAG 2.2 SC 1.4.11). Components read the roles and never write their
 own rule colour or frame radius. Web only for now: `nativeTokens` gains them when a native screen needs one.
 
+The blueprint draws in one motion step joined to `motion`: `floor`, 80 ms on `steps(1)`, the brand kit's floor step. A
+pipe segment, a terminal line or a floor appears whole on each step and is never eased; components read it with
+`motionTiming(theme, "floor")`, never a literal.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends 0302 (schema), 0329 (motion becomes a placeholder family), 0340 decision 7 (DTCG coverage).
