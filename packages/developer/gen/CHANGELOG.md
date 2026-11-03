@@ -1,5 +1,46 @@
 # @stackra/gen
 
+## 0.8.0
+
+### Patch Changes
+
+- 928dcc0: A service's generated `boot` now calls `connectVisibilityFilter(container)` beside the hold registry and sequence time
+  zone, so reads AND the bound `VisibilityFilter`'s conditions, `UserStamps` take the running call's actor, and
+  `callTimeZone()` reads the call's time zone; until now nothing outside tests connected it, so record visibility, user
+  stamps and the call time zone were all off (STA-2044). The database testing plugin connects the compiled app the same
+  way on every compile, and the memory database runs the `StampSubscriber`, so unit tests see what production does.
+- 7dd35b3: A member's generated Vitest setup imports each generated schemas file statically and calls the new
+  `markMemberSchemasLoaded()` from `@stackra/container/testing`, instead of awaiting `loadMemberSchemas()`. In a
+  consumer, `@stackra/container` sits in node_modules, which Vitest leaves to Node, so the schemas loaded through Node:
+  with no `#` imports-map fallback and no legacy decorators, every unit test failed at import (STA-2032).
+- @stackra/money@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/contracts@0.8.0
+  - @stackra/support@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- 448c52f: Gen writes `.stackra/gen/i18n.ts` before it loads a member's resource classes, so a resource that takes its labels
+  from `#stackra/i18n` loads on a clean checkout instead of being refused as `resource_unloadable` (STA-1947).
+  
+  The shared walk over a host's dependency manifests is renamed `dependencyContributionsOf` (was `contributionsOf`), so
+  it no longer shares a name with `@stackra/navigation/testing`'s `contributionsOf`.
+- @stackra/money@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/support@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/money@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/support@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes

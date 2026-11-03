@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `parseRunway` for the edition sections: the root `product` (a base product, an edition with
- *          its base and range) and an app member's `brands`; a misspelt key, a missing field or an unknown field fails
- *          with its path.
+ *          its base and range), whose misspelt key, missing field or unknown field fails, and an app member's `brands`,
+ *          which is refused (STA-2028).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0335 (decisions 2 and 8); ADR 0296.
@@ -50,22 +50,8 @@ describe("parseRunway product", () => {
   });
 });
 
-/** A parse of the app runway with one `brand`, deferred for `issuePaths`. */
-const parseAppWithBrand = (brand: unknown) => () => parseRunway("app", { ...APP, brands: [brand] });
-
 describe("parseRunway brands", () => {
-  it("accepts brands with and without bundle ids", () => {
-    const withIds = { ...BRAND, key: "noor", bundleIds: { ios: "com.noor", android: "com.noor" } };
-    const app = parseRunway("app", { ...APP, brands: [BRAND, withIds] });
-
-    expect(app.brands).toEqual([BRAND, withIds]);
-  });
-
-  it("refuses a bad brand key, a missing app id and an unknown field, with the index", () => {
-    expect(issuePaths(parseAppWithBrand({ ...BRAND, key: "Atelier" }))).toEqual(["brands.0.key"]);
-    expect(issuePaths(parseAppWithBrand({ key: "a", name: "A", tokens: "t.css" }))).toEqual([
-      "brands.0.appId",
-    ]);
-    expect(issuePaths(parseAppWithBrand({ ...BRAND, color: "red" }))).toEqual(["brands.0"]);
+  it("refuses an app runway's brands: brands live in stackra.config.ts (ADR 0335, STA-2028)", () => {
+    expect(() => parseRunway("app", { ...APP, brands: [BRAND] })).toThrow(RunwayInvalidError);
   });
 });

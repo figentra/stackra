@@ -71,7 +71,7 @@ coreutils, so they run on a Linux box.
 | --------------------- | ------------------------------------------------------------------------ |
 | Base image            | `ubuntu:24.04` (tag; pin a digest after the first build)                 |
 | Node, pnpm, Infisical | `mise.toml` values, through `TOOLCHAIN_PINS`                             |
-| Playwright            | `pnpm-workspace.yaml` catalogue value, `chromium` only                   |
+| Playwright            | `pnpm-workspace.yaml` catalogue value: Chromium, Firefox and WebKit      |
 | mise                  | `TOOLCHAIN_PINS.mise` (confirm against the mise releases on first build) |
 | Encore CLI            | the installer's current release (not pinned yet)                         |
 | Postgres              | `postgres:17.6-alpine`                                                   |

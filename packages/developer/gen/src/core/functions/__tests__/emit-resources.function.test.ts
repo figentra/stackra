@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `emitResources`, `hostResourcesOf` and `contributionsOf`: an app hosting the panel gets
+ * Purpose: unit tests of `emitResources`, `hostResourcesOf` and `dependencyContributionsOf`: an app hosting the panel gets
  *          `Resources` with each composed resource's base path and the operation refs its consumed services' clients
  *          export (`true` reads the standard `list` or `get`), an operation no client owns left out, two models of one
  *          name told apart by module, a page no client serves left out (a list too) and recorded in `unboundOperations`;

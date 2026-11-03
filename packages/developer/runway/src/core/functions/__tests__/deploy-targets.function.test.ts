@@ -34,7 +34,7 @@ describe("deployTargets", () => {
       cloud: { name: "gcp", account: "firm" },
       scope: { encore: { branch: "firm" } },
     });
-    expect(targets[2]?.settings).toEqual({ release: "build" });
+    expect(targets[2]?.settings).toEqual({ buildTrigger: "build" });
   });
 
   it("gives one target per kind for an environment without regions", () => {

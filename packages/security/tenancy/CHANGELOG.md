@@ -1,5 +1,66 @@
 # @stackra/tenancy
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [928dcc0]
+- Updated dependencies [7dd35b3]
+  - @stackra/database@0.8.0
+  - @stackra/container@0.8.0
+  - @stackra/scheduler@0.8.0
+  - @stackra/scope@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/ui@0.8.0
+  - @stackra/console@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/scheduler@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/database@0.7.1
+  - @stackra/model@0.7.1
+  - @stackra/ui@0.7.1
+  - @stackra/console@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/scope@0.7.1
+
+## 0.7.0
+
+### Minor Changes
+
+- 1f5bf76: Four more tenancy kit blocks in `@stackra/tenancy/react`: `TenantPicker` (choose an organisation, by default from the
+  signed-in person's memberships), `MemberPicker` (choose a member, from the host's search), `OrganizationPage` (read and
+  save the organisation's profile, list its legal entities and domains) and `MembersPage` (list members, change a role,
+  remove a member, invite, and list and revoke invitations, with the host's words for the last-owner and external-role
+  refusals). The pages talk to the server through two new client ports in the new `@stackra/tenancy/contracts` entry,
+  `TenantProfile` and `TenantMembers`, with memory drivers in `./testing`; the root entry adds the `LastOwnerRefusedError`
+  and `ExternalRoleNotAllowedError` refusals. Every word comes from the host in `labels`. The showcase lists the four
+  under Blocks.
+
+### Patch Changes
+
+- @stackra/actions@0.7.0
+  - @stackra/database@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/ui@0.7.0
+  - @stackra/console@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/scheduler@0.7.0
+  - @stackra/scope@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes
