@@ -921,6 +921,7 @@ export function buildManifest(ir: MemberIR): {
         }))
     : [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
+    if (declared.base !== undefined && !declared.base.own) continue; // an override's base package selects its drivers
     const schema = declared.options["schema"];
     const shape = isClassValue(schema) ? shapeNamed(schema.$class) : undefined;
     for (const field of shape?.fields ?? []) {
