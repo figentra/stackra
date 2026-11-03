@@ -6,17 +6,22 @@
  *          `@stackra/loyalty-kit`; built by `keys(...)` of `@stackra/i18n`), `locales`, the locale folders under
  *          the member's `assets/lang`, `catalogues`, one lazy `LoadCatalogue` per namespace and locale file (the
  *          member's own through `../../assets/lang/...`, a package's through its `./assets/*` export, a consumed service's through its folder
- *          relative to the member, STA-1363), and
+ *          relative to the member, STA-1363),
  *          `loadMessages(locale)`, those loaders merged along the locale's fallback chain by `@stackra/i18n`
- *          (STA-1309).
+ *          (STA-1309), and `prefixes`, the URL prefix of each locale the member's I18nConfig configures (`""` for the
+ *          default locale under `prefix_except_default`, else `/` and the lowercase tag: `/ar-sa`; STA-2065).
  * Boundary: pure. The tree is `i18nTree(ir)` (each catalogue set's base locale; `$` notes left out); a namespace clash
  *           is refused by `checkI18n` before this runs. Nothing is written for a member with no namespace at all, or
  *           one that does not declare `@stackra/i18n` (the import would not resolve). A loader exists only for a file
- *           that exists, so a regional overlay without a file has none.
+ *           that exists, so a regional overlay without a file has none. `locales`, `defaultLocale` and `urlStrategy`
+ *           come from the host's I18nConfig override through `configuredDefault`, each field the override does not
+ *           set, or sets to a value of another type, taking its base default from `CONFIG_DEFAULTS`.
  * Runtime: isomorphic
  * Governing contract: ADR 0268 (R15: typed keys); ADR 0231 (`<module>::<path>` lookups); registry v3.1 section 5
- *                     item 7 (`#stackra/i18n`); STA-1293; STA-1298 (package namespaces merged).
+ *                     item 7 (`#stackra/i18n`); STA-1293; STA-1298 (package namespaces merged); ADR 0297 (decision 4:
+ *                     lowercase locale prefixes); STA-2065.
  */
+import { configuredDefault } from "#core/functions/configured-default.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { i18nTree } from "#core/functions/i18n-tree.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -67,6 +72,20 @@ export function emitI18n(ir: MemberIR): GeneratedFile | undefined {
     [...namespaces].map(([namespace, { node }]) => [namespace, node]),
   );
   const shipped = [...new Set([...namespaces.values()].flatMap((entry) => entry.package ?? []))];
+  // The URL prefix of each configured locale (ADR 0297 decision 4), from the host's I18nConfig override.
+  // configuredDefault gives the base default for a field of another type, so `locales` is an array.
+  const served = (configuredDefault(ir, "I18nConfig", "@stackra/i18n", "locales") as unknown[]).map(
+    String,
+  );
+  const defaultLocale = configuredDefault(ir, "I18nConfig", "@stackra/i18n", "defaultLocale");
+  // Anything but `prefix` is the base `prefix_except_default`.
+  const bare = configuredDefault(ir, "I18nConfig", "@stackra/i18n", "urlStrategy") !== "prefix";
+  const prefixes = Object.fromEntries(
+    served.map((locale) => [
+      locale,
+      bare && locale === defaultLocale ? "" : `/${locale.toLowerCase()}`,
+    ]),
+  );
   const content = [
     generatedHeader({
       from:
@@ -74,8 +93,8 @@ export function emitI18n(ir: MemberIR): GeneratedFile | undefined {
         (shipped.length > 0 ? ` and the assets/lang of ${shipped.join(", ")}` : ""),
       purpose:
         `the typed translation keys of ${ir.package} and of the packages it declares (\`I18n.<namespace>.<path>\` ` +
-        'is `"<namespace>::<path>"`), its locales, and the lazy catalogue loaders `loadMessages` merges along a ' +
-        "locale's fallback chain.",
+        'is `"<namespace>::<path>"`), its locales and their URL prefixes, and the lazy catalogue loaders ' +
+        "`loadMessages` merges along a locale's fallback chain.",
       boundary:
         "reached as `#stackra/i18n`; a key is a branded string, never a raw one. Add a key to the base locale's JSON " +
         "and run `stackra gen`.",
@@ -88,6 +107,9 @@ export function emitI18n(ir: MemberIR): GeneratedFile | undefined {
     "",
     "/** The locales the member ships catalogues for. */",
     `export const locales = ${JSON.stringify(locales)} as const;`,
+    "",
+    '/** The URL prefix of each configured locale: `""` for an unprefixed default, else `/` and the lowercase tag. */',
+    `export const prefixes = ${JSON.stringify(prefixes)} as const;`,
     "",
     "/** One lazy loader per namespace and locale file: the member's lang and its declared packages'. */",
     "export const catalogues = {",

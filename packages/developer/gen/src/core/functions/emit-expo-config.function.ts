@@ -19,6 +19,7 @@
  */
 import { EXPO_OWNED_KEYS } from "#core/constants/expo-owned-keys.constant";
 import { EXPO_OWNED_PLUGINS } from "#core/constants/expo-owned-plugins.constant";
+import { configuredDefault } from "#core/functions/configured-default.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -26,16 +27,6 @@ import type { MemberIR } from "#core/types/member-ir.type";
 
 /** A JSON object. */
 type Json = Record<string, unknown>;
-
-/** The base defaults of the config fields read here, used when the host's override does not set one. */
-// shortcut: mirrors the defaults of I18nOptions, IdentityOptions and AppIconOptions; read them from each package's
-// manifest once it records config defaults.
-const DEFAULTS: Readonly<Record<string, unknown>> = {
-  "I18nConfig.locales": ["en"],
-  "I18nConfig.rtl": ["ar", "ar-SA", "ar-AE", "ar-EG"],
-  "IdentityConfig.issuer": "",
-  "AppIconConfig.icons": [],
-};
 
 /** The lang key (in the `permissions` namespace) each permission plugin option reads. */
 const PERMISSION_TEXT: Readonly<Record<string, Readonly<Record<string, string>>>> = {
@@ -84,18 +75,6 @@ export function emitExpoConfig(ir: MemberIR): {
   if (ir.app === undefined || (!ios && !android)) return { files: [], errors: [] };
   const { definition, icons } = ir.app;
   const declared = (name: string): boolean => ir.packages?.includes(name) === true;
-  // A host override's own default, or the base default when the override does not set it (ADR 0305 rule 1).
-  const configured = (base: string, from: string, field: string): unknown =>
-    ir.shapes
-      .find(
-        (shape) =>
-          shape.kind === "config" &&
-          shape.base?.kind === "package" &&
-          shape.base.name === base &&
-          (shape.base.from === from || shape.base.from.startsWith(`${from}/`)),
-      )
-      ?.fields.find((candidate) => candidate.name === field)?.default?.value ??
-    DEFAULTS[`${base}.${field}`];
   const errors: GenError[] = [];
 
   const section = isObject(definition["expo"]) ? definition["expo"] : {};
@@ -176,7 +155,7 @@ export function emitExpoConfig(ir: MemberIR): {
   };
 
   // The icons the build carries: the brand kit's sets, and the same names in the host's AppIconConfig.
-  const listed = configured("AppIconConfig", "@stackra/platform", "icons");
+  const listed = configuredDefault(ir, "AppIconConfig", "@stackra/platform", "icons");
   const listedIcons = Array.isArray(listed) ? listed.map(String) : [];
   // Order does not matter: the icon sets come sorted, an override may list them in any order.
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts a copy made here; toSorted is ES2023 and the base lib is ES2022
@@ -193,8 +172,8 @@ export function emitExpoConfig(ir: MemberIR): {
 
   const plugins: unknown[] = [...ownPlugins];
   if (declared("expo-localization")) {
-    const shipped = configured("I18nConfig", "@stackra/i18n", "locales");
-    const rtl = configured("I18nConfig", "@stackra/i18n", "rtl");
+    const shipped = configuredDefault(ir, "I18nConfig", "@stackra/i18n", "locales");
+    const rtl = configuredDefault(ir, "I18nConfig", "@stackra/i18n", "rtl");
     const supported = Array.isArray(shipped) ? shipped.map(String) : [];
     plugins.push([
       "expo-localization",
@@ -247,7 +226,7 @@ export function emitExpoConfig(ir: MemberIR): {
     if (declared(name)) plugins.push(name);
   if (errors.length > 0) return { files: [], errors };
 
-  const issuer = configured("IdentityConfig", "@stackra/identity", "issuer");
+  const issuer = configuredDefault(ir, "IdentityConfig", "@stackra/identity", "issuer");
   // The host of an https issuer; gen reads the default before the schema runs, so a malformed one gives no domain.
   const host = typeof issuer === "string" ? /^https:\/\/([^/?#:]+)/.exec(issuer)?.[1] : undefined;
   const ownIos = isObject(section["ios"]) ? section["ios"] : {};

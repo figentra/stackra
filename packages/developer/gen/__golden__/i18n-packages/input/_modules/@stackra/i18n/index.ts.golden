@@ -1,0 +1,17 @@
+import { Config } from "@stackra/config";
+import { Enum } from "@stackra/contracts";
+import { Schema } from "@stackra/validation";
+
+export const Locale = Enum.of({ En: "en", Ar: "ar", ArSa: "ar-SA" });
+export type Locale = Enum.Value<typeof Locale>;
+
+export const LocaleUrlStrategy = Enum.of({ PrefixExceptDefault: "prefix_except_default", Prefix: "prefix" });
+export type LocaleUrlStrategy = Enum.Value<typeof LocaleUrlStrategy>;
+
+export class I18nOptions extends Schema {
+  locales: Locale[] = [Locale.En];
+  defaultLocale: Locale = Locale.En;
+  urlStrategy: LocaleUrlStrategy = LocaleUrlStrategy.PrefixExceptDefault;
+}
+
+export class I18nConfig extends Config({ schema: I18nOptions }) {}
