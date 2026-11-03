@@ -1,5 +1,26 @@
 # @stackra/navigation
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/iam@0.8.0
+  - @stackra/settings@0.8.0
+  - @stackra/clients@0.8.0
+  - @stackra/seo@0.8.0
+  - @stackra/icons@0.8.0
+  - @stackra/ui@0.8.0
+  - @stackra/platform@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/i18n@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/feature-flags@0.8.0
+  - @stackra/testing@0.8.0
+  - @stackra/contracts@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes
