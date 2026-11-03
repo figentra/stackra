@@ -15,7 +15,7 @@
     ".agents/agents/linear-steward.md": "23e7fd872fc7659c1ed1edc01ca5b547609df92f03568cf84693b58c09c95a18",
     ".agents/rules/worktrees.md": "f99bce80073cc1790be0c322652ac9782292ae7074563e4cc730460be7d4b918",
     "README.md": "c9311893325d315955648fc80c4da6d431b2af7469f998a06e353ec33d620842",
-    ".github/workflows/fflow-baseline.yml": "86e79e526a40118c3437ed64599aaf7b22d2a8be7001bc78668a419611116cca",
+    ".github/workflows/fflow-baseline.yml": "880b79b12439e0066067dd1ee1ac4b177883f2f131536bdd879477c1b97ad760",
     ".github/workflows/fflow-approve.yml": "df9afc3bb392dfbe0d347b1d1d964c988df86cdda6b6bd5201cae0840e7720c8",
     ".github/CODEOWNERS": "463c3a6887b2b0ee7a42ce65d42897d51bd467c24c54d77f7d73c1f9e26a4674"
   }
