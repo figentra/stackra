@@ -50,6 +50,11 @@ function zitadelRunway(
   });
 }
 
+/** Plans dev with an alias of a variable `identity-db` does not publish. */
+function refused(): unknown {
+  return runtimePlan(zitadelRunway({ ZITADEL_DATABASE_POSTGRES_DSN: "MAIN_DB_URL" }), {}, "dev");
+}
+
 describe("runtimePlan for self-hosted ZITADEL", () => {
   // @covers sta-1640:FR-002
   // @covers sta-1640:FR-006
@@ -84,9 +89,6 @@ describe("runtimePlan for self-hosted ZITADEL", () => {
 
   // @covers sta-1640:FR-010
   it("refuses an alias of a variable no used Postgres resource publishes", () => {
-    const refused = (): unknown =>
-      runtimePlan(zitadelRunway({ ZITADEL_DATABASE_POSTGRES_DSN: "MAIN_DB_URL" }), {}, "dev");
-
     expect(refused).toThrow(RunwayInvalidError);
     expect(refused).toThrow(/MAIN_DB_URL is not a variable of a Postgres resource/);
   });
