@@ -1,5 +1,55 @@
 # @stackra/clients
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/iam@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/events@0.8.0
+  - @stackra/i18n@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/query@0.8.0
+  - @stackra/transport@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/iam@0.7.1
+  - @stackra/query@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/i18n@0.7.1
+  - @stackra/transport@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [1f5bf76]
+  - @stackra/iam@0.7.0
+  - @stackra/query@0.7.0
+  - @stackra/actions@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/i18n@0.7.0
+  - @stackra/transport@0.7.0
+  - @stackra/validation@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes

@@ -30,7 +30,7 @@ describe("emitBoot", () => {
       'import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";',
     );
     expect(boot).toContain(
-      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
+      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, connectVisibilityFilter, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
     );
     // The service program never reaches `.stackra/encore` (STA-1652).
     expect(boot).not.toContain("../encore/");
@@ -54,6 +54,8 @@ describe("emitBoot", () => {
         "  connectSequenceTimeZone(",
         "    container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,",
         "  );",
+        // Reads take the bound VisibilityFilter, writes stamp the call's actor, the call's time zone is read (STA-2044).
+        "  connectVisibilityFilter(container);",
         "  const config = container.has(DatabaseConfig) ? container.get(DatabaseConfig) : undefined;",
         '  const replicas = (process.env["DATABASE_REPLICA_URLS"] ?? "").split(",").filter((url) => url !== "");',
         "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
@@ -181,7 +183,7 @@ describe("emitBoot", () => {
         ),
       }) ?? "";
     expect(boot).toContain(
-      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber, TreeSubscriber } from "@stackra/database";',
+      'import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, connectVisibilityFilter, DatabaseConfig, HoldSubscriber, StampSubscriber, TreeSubscriber } from "@stackra/database";',
     );
     expect(boot).toContain(
       "    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), new TreeSubscriber()],",

@@ -1,5 +1,63 @@
 # @stackra/iam
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [928dcc0]
+- Updated dependencies [7dd35b3]
+  - @stackra/database@0.8.0
+  - @stackra/container@0.8.0
+  - @stackra/rules@0.8.0
+  - @stackra/scope@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/ui@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/testing@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/rules@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/database@0.7.1
+  - @stackra/model@0.7.1
+  - @stackra/ui@0.7.1
+  - @stackra/testing@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/scope@0.7.1
+
+## 0.7.0
+
+### Minor Changes
+
+- 1f5bf76: The IAM kit's first blocks (ADR 0504) in `@stackra/iam/react`. `Can` shows its children only while the signed-in
+  session holds a permission (all or any of several, read through `usePermission`), with a `fallback` otherwise.
+  `RolePicker` is a single-choice `EntityPicker` of roles whose `loadOptions` the host binds. `RolesPage` shows the
+  built-in roles read-only and the custom roles editable on `PermissionsMatrix`, and saves through `onSave`. Every word
+  comes from the host in `labels`. The showcase lists the three under Blocks.
+
+### Patch Changes
+
+- @stackra/rules@0.7.0
+  - @stackra/actions@0.7.0
+  - @stackra/database@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/ui@0.7.0
+  - @stackra/testing@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/scope@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes

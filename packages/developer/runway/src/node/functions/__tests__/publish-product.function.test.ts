@@ -125,6 +125,22 @@ describe("publishProduct", () => {
     ]);
   });
 
+  it("runs wrangler uploads with the Cloudflare account the runway names", async () => {
+    writeBundle(repository, "console", "1.3.0");
+    writeFileSync(
+      join(repository, "runway.yaml"),
+      JSON.stringify({
+        ...PRODUCT_ROOT,
+        providers: {
+          ...(PRODUCT_ROOT as { providers?: object }).providers,
+          cloudflare: { accountId: "acct-1" },
+        },
+      }),
+    );
+    await publishProduct(request());
+    expect(calls[0]?.[2]).toEqual({ env: { CLOUDFLARE_ACCOUNT_ID: "acct-1" } });
+  });
+
   it("writes the release pointer directly on a first release", async () => {
     writeBundle(repository, "console", "1.3.0");
     const result = await publishProduct(request({ firstRelease: true, canaryScopes: [] }));

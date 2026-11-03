@@ -24,56 +24,6 @@
       "$ref": "#/$defs/secretList",
       "description": "Every @Secret of the env and config classes, by NAME. Values live in Infisical and runway syncs them on deploy (ADR 0173). A native client holds none (ADR 0206 d8)."
     },
-    "brands": {
-      "type": "array",
-      "description": "Per-brand builds of this app (ADR 0335 d8): gen runs the app build once per brand from the same codebase, with that brand's tokens overlay and ids.",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["key", "name", "tokens", "appId"],
-        "properties": {
-          "key": {
-            "type": "string",
-            "pattern": "^[a-z][a-z0-9-]*$",
-            "description": "The brand key, unique in the member.",
-            "examples": ["atelier"]
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "description": "The brand's display name.",
-            "examples": ["Atelier"]
-          },
-          "tokens": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Path of the brand's design tokens overlay, relative to the member.",
-            "examples": ["brands/atelier/tokens.css"]
-          },
-          "appId": {
-            "type": "string",
-            "minLength": 1,
-            "description": "The brand's app id.",
-            "examples": ["com.atelier.shop"]
-          },
-          "bundleIds": {
-            "type": "object",
-            "description": "The brand's store bundle ids.",
-            "additionalProperties": false,
-            "properties": {
-              "ios": {
-                "type": "string",
-                "minLength": 1
-              },
-              "android": {
-                "type": "string",
-                "minLength": 1
-              }
-            }
-          }
-        }
-      }
-    },
     "health": {
       "type": "object",
       "description": "The health endpoint the deploy gate calls (web and pwa targets; not desktop).",
@@ -82,12 +32,12 @@
         "path": {
           "type": "string",
           "pattern": "^/",
-          "description": "Health path.",
+          "description": "Not read yet (Runway plan PR 13, STA-2001). Health path.",
           "examples": ["/healthz"]
         },
         "expects": {
           "enum": ["sha"],
-          "description": "What the endpoint must answer: the release SHA (ADR 0170 DP24)."
+          "description": "Not read yet (Runway plan PR 13, STA-2001). What the endpoint must answer: the release SHA (ADR 0170 DP24)."
         }
       }
     },
@@ -96,50 +46,16 @@
       "description": "Release channels per target.",
       "additionalProperties": false,
       "properties": {
-        "pwa": {
-          "type": "object",
-          "description": "PWA updates. The strategy is pwa.config.ts `updates`; this only adds the beta badge outside production."
-        },
         "desktop": {
           "type": "object",
           "description": "Electron release (ADR 0254). Tooling is root `targets.electron-release`.",
           "properties": {
-            "channels": {
-              "type": "array",
-              "description": "A subset of the root target's channels; `latest` is electron-updater's stable.",
-              "items": {
-                "type": "string"
-              },
-              "examples": [["beta", "latest"]]
-            },
-            "signing": {
-              "type": "object",
-              "description": "Per-platform signing switch. Unsigned until a deliverable is named (ADR 0254 d1).",
-              "additionalProperties": {
-                "type": "boolean",
-                "description": "Sign builds for this platform (mac, windows)."
-              }
-            },
             "feedPath": {
               "type": "string",
               "description": "Update feed sub-path: `<root feed.publicOrigin>/<feedPath>/<channel>/`."
-            },
-            "platforms": {
-              "type": "object",
-              "description": "Installer formats per platform. Narrows desktop.config.ts packaging, never widens.",
-              "propertyNames": {
-                "enum": ["mac", "windows", "linux"]
-              },
-              "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "examples": [["dmg", "zip"]],
-                "description": "Installer formats electron-builder produces for this platform."
-              }
             }
-          }
+          },
+          "additionalProperties": false
         },
         "mobile": {
           "type": "object",
@@ -152,31 +68,12 @@
                 "type": "object",
                 "description": "One EAS build profile.",
                 "properties": {
-                  "distribution": {
-                    "enum": ["internal", "store"],
-                    "description": "Internal distribution or the stores."
-                  },
-                  "developmentClient": {
-                    "type": "boolean",
-                    "description": "Build the Expo dev client."
-                  },
-                  "simulator": {
-                    "type": "boolean",
-                    "description": "Build for the iOS simulator."
-                  },
-                  "androidApk": {
-                    "type": "boolean",
-                    "description": "Build an APK instead of an AAB."
-                  },
-                  "autoIncrement": {
-                    "type": "boolean",
-                    "description": "Let EAS bump the build number."
-                  },
                   "environment": {
                     "type": "string",
                     "description": "The EAS environment runway syncs vars into."
                   }
-                }
+                },
+                "additionalProperties": false
               }
             },
             "submit": {
@@ -192,32 +89,9 @@
                   "description": "Submit to Google Play."
                 }
               }
-            },
-            "whiteLabel": {
-              "description": "Per-tenant store builds: `true`, or the entitlement and publishing modes of the tenant-started build (ADR 0439, D14).",
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "entitlement": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "modes": {
-                      "type": "array",
-                      "items": {
-                        "enum": ["managed", "bring-your-own"]
-                      }
-                    }
-                  }
-                }
-              ]
             }
-          }
+          },
+          "additionalProperties": false
         }
       }
     },
@@ -393,13 +267,6 @@
           "description": "Public host in this environment; `${pr}` is expanded in previews.",
           "examples": ["console.acme.dev"]
         },
-        "aliases": {
-          "type": "array",
-          "description": "Hosts that redirect to `domain`.",
-          "items": {
-            "type": "string"
-          }
-        },
         "destination": {
           "type": "string",
           "description": "Override of root `destinations.web` for this member.",
@@ -414,17 +281,9 @@
         "config": {
           "$ref": "#/$defs/config"
         },
-        "e2e": {
-          "type": "object",
-          "description": "End-to-end settings: the base URL (`from-port`) and the seeds Playwright or Maestro use."
-        },
         "workers": {
           "type": "object",
           "description": "Cloudflare Workers knobs: observability sampling and limits."
-        },
-        "pwa": {
-          "type": "object",
-          "description": "PWA update behaviour in this environment."
         },
         "desktop": {
           "type": "object",
@@ -432,7 +291,7 @@
           "properties": {
             "devtools": {
               "type": "boolean",
-              "description": "Open devtools in dev."
+              "description": "Not read yet (STA-2029). Open devtools in dev."
             },
             "remoteDebugPort": {
               "$ref": "#/$defs/port",
@@ -445,12 +304,9 @@
             "channel": {
               "type": "string",
               "description": "Update channel of this environment."
-            },
-            "rollout": {
-              "type": "object",
-              "description": "Override of the root staged rollout."
             }
-          }
+          },
+          "additionalProperties": false
         },
         "mobile": {
           "type": "object",
@@ -460,10 +316,6 @@
               "$ref": "#/$defs/port",
               "description": "Metro bundler port (the only place it is written)."
             },
-            "devClient": {
-              "type": "boolean",
-              "description": "Run with the Expo dev client."
-            },
             "channel": {
               "type": "string",
               "description": "EAS update channel."
@@ -472,7 +324,8 @@
               "type": "string",
               "description": "EAS build profile from `release.mobile.profiles`."
             }
-          }
+          },
+          "additionalProperties": false
         }
       }
     }

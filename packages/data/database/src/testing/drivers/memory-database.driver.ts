@@ -42,6 +42,7 @@ import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constan
 import { deleteFilters } from "#core/functions/delete-filters.function";
 import { scopeSettings } from "#core/functions/scope-settings.function";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
+import { StampSubscriber } from "#core/orm/stamp.subscriber";
 import { Database } from "#core/ports/database.port";
 import { runTransaction } from "#core/functions/run-transaction.function";
 import { observedLogger } from "#node/functions/observed-logger.function";
@@ -89,8 +90,9 @@ export class MemoryDatabaseDriver extends Driver(Database) {
       dbName: "memory://",
       entities: [...REGISTERED_ENTITIES],
       filters: deleteFilters(REGISTERED_ENTITIES),
-      // What a model records reaches the testing app after commit, as the outbox writer hands it on in production.
-      subscribers: [new RecordedEventsSubscriber()],
+      // What a model records reaches the testing app after commit, as the outbox writer hands it on in production;
+      // user stamps come from the running call, as a service's boot connects them (STA-2044).
+      subscribers: [new StampSubscriber(), new RecordedEventsSubscriber()],
       // Counted like production, so `strictLoading` and `DatabaseQueryBudgetDriver` see a test's statements.
       loggerFactory: (settings) => observedLogger(settings, []),
       namingStrategy: StackraNamingStrategy,
