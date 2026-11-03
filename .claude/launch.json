@@ -29,6 +29,35 @@
       "port": 8081
     },
     {
+      "name": "ds-review-playground",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "-C",
+        "/Users/akouta/Projects/stackra/.claude/worktrees/ds-review",
+        "--filter",
+        "@figentra/playground",
+        "dev"
+      ],
+      "port": 3710
+    },
+    {
+      "name": "ds-review-mobile",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "-C",
+        "/Users/akouta/Projects/stackra/.claude/worktrees/ds-review",
+        "--filter",
+        "@figentra/mobile",
+        "exec",
+        "expo",
+        "start",
+        "--dev-client",
+        "--port",
+        "8081"
+      ],
+      "port": 8081
+    },
+    {
       "name": "worker-static",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@figentra/worker-static", "dev"],
