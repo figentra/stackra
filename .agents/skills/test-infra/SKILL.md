@@ -24,6 +24,12 @@ stackra testbed run "<session> <what>" <project-dir> "<command>"
 - `--serve console` builds the product's surfaces, starts the generated Encore app, seeds the `test` profile, serves
   the surface and runs your command (the e2e run) with `STACKRA_E2E_BASE_URL` set; it always takes the heavy slot.
 - The exit code is the command's own: 0 is green, anything else is a real failure. Read the output.
+- The testbed spans several regions. The CLI tries its enabled regions in order and starts a box where there is room,
+  so you never pick a region or a box. `--regions a,b` or `STACKRA_TESTBED_REGIONS` overrides the list only for a
+  deliberate test of one region.
+- A tool that runs jobs (`fflow gate`) adds `--json`. The job's output then goes to stderr, and stdout gets one line:
+  `{"region","box","slot","waitSeconds","runSeconds","exitCode"}`. `stackra testbed status --json` gives each region's
+  free and startable slots.
 
 ## Exit codes and messages
 
@@ -32,6 +38,8 @@ stackra testbed run "<session> <what>" <project-dir> "<command>"
 | `every box busy, waiting`                 | every slot of that kind is taken          | wait. The command adds a box after 2 minutes. Never start a second copy |
 | exit 2, "must not call ci-box"            | your command calls the testbed itself     | run the inner command directly                             |
 | `unhealthy: disk` (the CLI moves on)      | that box is draining                      | nothing. The CLI picks another box                         |
+| exit 73 (with `--no-wait`)                | no free slot right now                    | retry later, or run without `--no-wait` to wait            |
+| exit 75                                   | no healthy box could be reached           | wait and retry; if it persists, tell the leader            |
 | exit 124                                  | the job hit its 3-hour timeout            | split the job, or find the hang                            |
 | "no healthy box"                          | the whole testbed is down                 | a pushed ref: use the fallback below. Otherwise wait and tell the leader |
 
