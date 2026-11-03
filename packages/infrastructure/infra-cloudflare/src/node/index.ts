@@ -18,4 +18,5 @@ export { registryWorker } from "#node/registry/registry-worker.function";
 export { resolveRef } from "#node/functions/resolve-ref.function";
 export { storefrontEdge } from "#node/functions/storefront-edge.function";
 export { turboCache } from "#node/turbo-cache/functions/turbo-cache.function";
+export { workerAccess } from "#node/functions/worker-access.function";
 export { zoneEdge } from "#node/functions/zone-edge.function";

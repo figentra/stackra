@@ -1,11 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `runCli`: help and version, an unknown command (2), option parsing with `--` passthrough,
- *          per-command help, usage errors (2), failures (1), and `cli` in the context running another command.
+ * Purpose: unit tests of `runCli` on `@stackra/console`: a legacy command runs byte-identical and exits as before
+ *          (usage error 2, failure 1), `--help` and `help <command>` never run a command, an unknown command exits 2
+ *          naming the closest, the version, spaced command names, `cli` in the context running another command, and the
+ *          list of commands still on passthrough pinned.
  * Boundary: test only; runs fake commands, never a tool.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 5).
+ * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 5); ADR 0500 (decision 7); STA-1966.
  */
+import { readCommand } from "@stackra/console";
+import { passthroughCommands } from "@stackra/console/testing";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -13,7 +17,7 @@ import { COMMANDS } from "#node/constants/commands.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { captureIo } from "#node/functions/capture-io.function";
 import { cliVersion } from "#node/functions/cli-version.function";
-import { helpText } from "#node/functions/help-text.function";
+import { legacyCommand } from "#node/functions/legacy-command.function";
 import { runCli } from "#node/functions/run-cli.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 import type { CliContext } from "#node/types/cli-context.type";
@@ -48,7 +52,17 @@ const misused: CliCommand = {
   },
 };
 
-const commands = [echo, failing, misused];
+const spaced: CliCommand = {
+  name: "mcp sync",
+  summary: "Sync",
+  usage: "stackra mcp sync",
+  run: async ({ io }) => {
+    io.out("synced\n");
+    return 5;
+  },
+};
+
+const commands = [echo, failing, misused, spaced];
 
 const run = async (args: readonly string[], cwd = "/repo") => {
   const { io, output } = captureIo();
@@ -57,68 +71,64 @@ const run = async (args: readonly string[], cwd = "/repo") => {
 };
 
 describe("runCli", () => {
-  it("prints help with no command, --help, -h and help", async () => {
-    for (const args of [[], ["--help"], ["-h"], ["help"]]) {
-      expect(await run(args)).toEqual({ code: 0, output: helpText(commands) });
-    }
-  });
-
-  it("prints the version", async () => {
-    expect(await run(["--version"])).toEqual({ code: 0, output: `${cliVersion()}\n` });
-  });
-
-  it("refuses an unknown command with 2", async () => {
-    const { code, output } = await run(["deploy"]);
-    expect(code).toBe(2);
-    expect(output).toContain("unknown command: deploy");
-  });
-
-  it("parses options and positionals and passes everything after -- untouched", async () => {
+  it("runs a legacy command byte-identical: options, positionals and everything after --", async () => {
     const { code, output } = await run(["echo", "--loud", "a", "--", "--x", "b"]);
     expect(code).toBe(0);
-    expect(JSON.parse(output)).toEqual({ loud: true, positionals: ["a"], rest: ["--x", "b"] });
+    expect(output).toBe('{"loud":true,"positionals":["a"],"rest":["--x","b"]}\n');
   });
 
-  it("prints a command's help", async () => {
-    expect(await run(["echo", "--help"])).toEqual({
-      code: 0,
-      output: "Echo the input\n\nUsage: stackra echo [--loud] [words…] [-- rest…]\n",
-    });
+  it("runs a spaced command by its words and keeps its own exit code", async () => {
+    expect(await run(["mcp", "sync"])).toEqual({ code: 5, output: "synced\n" });
   });
 
-  it("turns an unknown option or a CliUsageError into 2 with the usage", async () => {
+  it("exits 2 with the usage for an unknown option or a CliUsageError, and 1 for a failure", async () => {
     const unknown = await run(["echo", "--quiet"]);
     expect(unknown.code).toBe(2);
     expect(unknown.output).toContain("Usage: stackra echo");
     const misuse = await run(["misuse"]);
-    expect(misuse).toEqual({
-      code: 2,
-      output: "stackra misuse: bad line\nUsage: stackra misuse\n",
-    });
+    expect(misuse.code).toBe(2);
+    expect(misuse.output).toContain("bad line");
+    expect(misuse.output).toContain("Usage: stackra misuse");
+    const failure = await run(["fail"]);
+    expect(failure.code).toBe(1);
+    expect(failure.output).toContain("boom");
   });
 
-  it("hands a passthrough command its arguments untouched, --help and unknown options included", async () => {
-    const raw: CliCommand = {
-      name: "raw",
-      summary: "Raw",
-      usage: "stackra raw",
-      passthrough: true,
-      run: async ({ positionals, io }) => {
-        io.out(`${JSON.stringify(positionals)}\n`);
-        return 0;
-      },
-    };
-    const { io, output } = captureIo();
-    const code = await runCli(["raw", "--help", "--any", "x", "--", "y"], io, {
-      cwd: "/repo",
-      commands: [raw],
-    });
+  it("prints help for --help and help <command> and never runs the command", async () => {
+    const spy = vi.fn(async () => 0);
+    const guarded: CliCommand = { ...echo, run: spy };
+    for (const args of [
+      ["echo", "--help"],
+      ["help", "echo"],
+      ["echo", "-h"],
+    ]) {
+      const { io, output } = captureIo();
+      expect(await runCli(args, io, { cwd: "/repo", commands: [guarded] })).toBe(0);
+      expect(output()).toContain("Echo the input");
+    }
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("lists the commands for no command and for --help", async () => {
+    for (const args of [[], ["--help"]]) {
+      const { code, output } = await run(args);
+      expect(code).toBe(0);
+      expect(output).toContain("echo");
+      expect(output).toContain("mcp:sync");
+    }
+  });
+
+  it("prints the version", async () => {
+    const { code, output } = await run(["--version"]);
     expect(code).toBe(0);
-    expect(JSON.parse(output())).toEqual(["--help", "--any", "x", "--", "y"]);
+    expect(output).toContain(cliVersion());
   });
 
-  it("turns any other error into 1", async () => {
-    expect(await run(["fail"])).toEqual({ code: 1, output: "stackra fail: boom\n" });
+  it("refuses an unknown command with 2, naming the closest", async () => {
+    const { code, output } = await run(["ecko"]);
+    expect(code).toBe(2);
+    expect(output).toContain("ecko");
+    expect(output).toContain("echo");
   });
 
   it("gives commands the cwd and a cli that runs another command with the same commands", async () => {
@@ -141,9 +151,78 @@ describe("runCli", () => {
     expect(JSON.parse(output())).toEqual({ loud: false, positionals: ["x"], rest: [] });
   });
 
-  it("defaults to the CLI's own commands", async () => {
-    const { io, output } = captureIo();
-    expect(await runCli(["--help"], io)).toBe(0);
-    expect(output()).toBe(helpText(COMMANDS));
+  it("names a legacy command by its words joined with a colon", () => {
+    expect(readCommand(legacyCommand(spaced, async () => 0, false)).name).toBe("mcp:sync");
   });
 });
+
+describe("COMMANDS on the console", () => {
+  it("lists every command, native or legacy, in its help", async () => {
+    const { io, output } = captureIo();
+    expect(await runCli(["--help"], io)).toBe(0);
+    expect(output()).toContain("doctor");
+    expect(output()).toContain("create");
+  });
+
+  it("still has these commands on passthrough; the list only goes down (ADR 0500 decision 7)", () => {
+    const classes = COMMANDS.map((command) =>
+      typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
+    );
+    // 50 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
+    expect(passthroughCommands(classes)).toEqual(PASSTHROUGH);
+  });
+});
+
+/** The legacy commands, sorted: each leaves this list when it becomes a console command class. */
+const PASSTHROUGH: string[] = [
+  "add",
+  "agents:check",
+  "agents:sync",
+  "any-ratchet",
+  "app-native-deps",
+  "architecture-map",
+  "audit:verify",
+  "build",
+  "catalogue-completeness",
+  "check",
+  "code:check",
+  "code:fix",
+  "console",
+  "consumer-gate",
+  "cycles",
+  "db:diff",
+  "db:migrate",
+  "db:rollback",
+  "db:seed",
+  "deploy",
+  "dev",
+  "doc-standard",
+  "duplicate-exports",
+  "duplication",
+  "eas-preflight",
+  "gen",
+  "lint",
+  "ls",
+  "mcp",
+  "mcp:exec",
+  "mcp:sync",
+  "mobile:onboard",
+  "new",
+  "ops:bootstrap-operator",
+  "preview:serve",
+  "publish",
+  "search:reindex",
+  "search:status",
+  "seed-pack",
+  "settings:apply",
+  "settings:diff",
+  "skill-licences",
+  "smoke",
+  "start",
+  "structure",
+  "test",
+  "testbed",
+  "typecheck",
+  "validate",
+  "verify",
+];

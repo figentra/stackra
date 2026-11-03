@@ -186,7 +186,7 @@ test("starterTarball returns the template under template/, or the whole tarball 
   );
 });
 
-test("genTree prints one line per member and kind, with counts, and every file when verbose", () => {
+test("genTree has one node per member, a child per kind with its count and note, and the files under it", () => {
   const paths = [
     "services/example/stackra.manifest.json",
     "services/example/.stackra/gen/wiring.ts",
@@ -200,16 +200,43 @@ test("genTree prints one line per member and kind, with counts, and every file w
     "apps/console/tsconfig.build.json",
   ];
   assert.deepEqual(genTree(paths), [
-    "├─ apps/console",
-    "│  ├─ .stackra/gen/             routes",
-    "│  ├─ .stackra/ (tool configs)  configs, tests, graph",
-    "│  └─ member root               vitest.config.ts, tsconfig.build.json (2 files)",
-    "└─ services/example",
-    "   ├─ stackra.manifest.json     the contract",
-    "   ├─ .stackra/gen/             wiring, schemas (2 files)",
-    "   ├─ .stackra/encore/          the Encore app (2 files)",
-    "   └─ .stackra/entry/node.ts    an entry",
+    {
+      label: "apps/console",
+      children: [
+        { label: ".stackra/gen/", note: "routes" },
+        { label: ".stackra/ (tool configs)", note: "configs, tests, graph" },
+        {
+          label: "member root",
+          note: "vitest.config.ts, tsconfig.build.json",
+          count: 2,
+          children: [{ label: "tsconfig.build.json" }, { label: "vitest.config.ts" }],
+        },
+      ],
+    },
+    {
+      label: "services/example",
+      children: [
+        { label: "stackra.manifest.json", note: "the contract" },
+        {
+          label: ".stackra/gen/",
+          note: "wiring, schemas",
+          count: 2,
+          children: [
+            { label: ".stackra/gen/schemas/example.ts" },
+            { label: ".stackra/gen/wiring.ts" },
+          ],
+        },
+        {
+          label: ".stackra/encore/",
+          note: "the Encore app",
+          count: 2,
+          children: [
+            { label: ".stackra/encore/encore.app" },
+            { label: ".stackra/encore/example/encore.service.ts" },
+          ],
+        },
+        { label: ".stackra/entry/node.ts", note: "an entry" },
+      ],
+    },
   ]);
-  const verbose = genTree(paths, true);
-  assert.ok(verbose.includes("   │     .stackra/encore/example/encore.service.ts"));
 });

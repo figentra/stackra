@@ -37,8 +37,8 @@ STA-339, STA-340), so today's code and `stackra validate --repository` still sho
 Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue STA-n` lands it in
 `apps/docs/adr/numbers.yaml` on main first (STA-1732); never take "the highest on disk plus one" from a branch.
 
-Done = `pnpm verify` green on the box (format, lint, typecheck, test, build, validate, boundaries, knip; "Tests run on
-the box" below). Conventional commits.
+Done = `pnpm verify` green on the box after the merge (format, lint, typecheck, test, build, validate, boundaries, knip; "Tests run
+later" below). Conventional commits.
 
 Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
 
@@ -48,14 +48,15 @@ the owner's one GitHub Environment approval, which an agent may start. Secret va
 only through a merged pull request, and a workstation `encore deploy` stays denied. Until the owner applies the guard
 and settings edits listed on STA-1395, the guard still asks before staging deploys.
 
-## Tests run on the box
+## Tests run later: merge now, label `needs-testing`
 
-GitHub CI runs no tests: no unit `test`, no integration (`test:int`, Postgres), no Playwright e2e, no `encore test`.
-It checks (format, lint, typecheck, validate and the rest), builds and deploys (owner decision 2026-11-03, STA-2064).
-Before a pull request is marked ready, its tests run on the box:
-`ci-box run "<who> <what>" <dir> "<cmd>"`, for example `ci-box run "core STA-n" . "pnpm verify"` (box 1 today;
-`stackra testbed run` once the testbed is live). The pull request body carries the box evidence: the command, the
-commit it ran on and the result. Nothing installs or tests on a workstation.
+Owner decision 2026-11-03 (STA-2083, replaces "Tests run on the box"): nothing waits on tests before it lands. No box
+run before the merge and no waiting on CI: open the pull request and merge it right away
+(`gh pr merge --squash --admin`), then add the Linear label `needs-testing` to its STA issue and a
+`Needs testing: <what to run>` line to the pull request body. The tester lane later runs those tests on the box
+(`ci-box run "core STA-n" . "pnpm verify"`; `stackra testbed run` once the testbed is live) and removes the label.
+GitHub CI runs no tests; its checks still run after the merge and stay visible. Nothing installs or tests on a
+workstation.
 
 <!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->
 

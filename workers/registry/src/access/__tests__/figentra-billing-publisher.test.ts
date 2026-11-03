@@ -66,6 +66,7 @@ describe("migration 0009: figentra/billing publishes @figentra", () => {
       "figentra/invoicing",
       "figentra/os",
       "figentra/pay",
+      "figentra/testbed",
     ]);
   });
 });

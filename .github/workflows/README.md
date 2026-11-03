@@ -24,6 +24,11 @@
   (`INFISICAL_GATE_*`, `INFISICAL_TURBO_*`); deploy jobs read `ci-deploy` (`INFISICAL_CI_IDENTITY_ID`,
   `INFISICAL_DEPLOY_PROJECT_ID`) in a protected environment; no project id is written in a workflow
   ([ADR 0512](../../apps/docs/src/docs/adr/0512-one-infisical-layout-projects-by-reader-agents-and-product-runtimes.mdx)).
+- `stackra validate --repository` (rule `workflow-triggers`, STA-256) refuses a paid job (a macOS, Windows or larger
+  runner, directly or from `strategy.matrix`; `eas build`; a device farm run; also inside a called local workflow) on a
+  branch push, pull request or merge queue trigger, and, in a job with no `environment:`, a deploy credential in its
+  env or a `vars.*DEPLOY*` or deploy secret read in a step's env, `with:` or `run:`. Exceptions, with a reason, go
+  in `WORKFLOW_TRIGGER_ALLOWED` in `@stackra/repo-checks`; it is empty.
 - Third-party actions are pinned to a commit SHA, with the version in a comment.
 - The toolchain comes from `mise.toml`, so CI runs the same versions as a contributor.
 - Turborepo remote cache (STA-1393): every job that runs turbo first logs in to Infisical by OIDC with the org variable

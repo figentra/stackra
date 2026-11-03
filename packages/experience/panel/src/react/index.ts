@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./react` entry of @stackra/panel (the panel shell, the dashboard and its tile, the
  *          action runner, the route pages it gives navigation, the generic resource pages and relation manager, the
- *          plan-catalogue admin, the onboarding checklist and the Cmd+K search palette)
+ *          plan-catalogue admin, the onboarding checklist, the Cmd+K search palette, and the SDUI kit: `ActionButton`,
+ *          `RowActions` and `BulkActions`)
  *          until `stackra gen` writes the entry barrels
  *          (STA-339).
  * Boundary: names each re-export and declares nothing. The widget body, the KPI view, the panel and resource route
@@ -12,10 +13,14 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0303 (decision 1); the STA-347 stand-in barrel decision.
  */
 export { useBreadcrumbs } from "@stackra/navigation/react";
+export { ActionButton } from "#react/action-button/action-button";
+export type { ActionButtonProps } from "#react/action-button/action-button.props";
 export type { ActionRun } from "#react/action-runner/action-run.type";
 export { ActionRunStatus } from "#react/action-runner/action-run-status.enum";
 export type { ActionRunner } from "#react/action-runner/action-runner.type";
 export { useActionRunner } from "#react/action-runner/use-action-runner";
+export { BulkActions } from "#react/bulk-actions/bulk-actions";
+export type { BulkActionsProps } from "#react/bulk-actions/bulk-actions.props";
 export { Dashboard } from "#react/dashboard/dashboard";
 export type { DashboardProps } from "#react/dashboard/dashboard.props";
 export { PanelShell } from "#react/panel-shell/panel-shell";
@@ -40,6 +45,8 @@ export type { ResourceListPageProps } from "#react/resource-pages/resource-list-
 export { ResourceViewPage } from "#react/resource-pages/resource-view-page";
 export type { ResourceViewPageProps } from "#react/resource-pages/resource-view-page.props";
 export { registerPanelPages } from "#react/route-pages/register-panel-pages.function";
+export { RowActions } from "#react/row-actions/row-actions";
+export type { RowActionsProps } from "#react/row-actions/row-actions.props";
 export { SearchPalette } from "#react/search-palette/search-palette";
 export type { SearchPaletteHit } from "#react/search-palette/search-palette-hit.type";
 export type { SearchPaletteProps } from "#react/search-palette/search-palette.props";

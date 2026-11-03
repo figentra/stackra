@@ -223,6 +223,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `base-matches-suffix` lint table of `@stackra/coding-standard` in step when it learns the suffix.
 - `agent` and `pass` (STA-903) are binding kinds: a row in `BINDING_KINDS`, `KIND_FILES` and `KIND_BASES` each, and a
   written, locked `key`. An Agent with no constructor gets `AgentRuntime` (its deps are a `PLATFORM_BINDINGS` row).
+- `menu`, `shortcut`, `store`, `bridge` and `extension_point` (STA-2055) are binding kinds too: an owner injects its
+  point, a Store is a singleton and a Bridge is request-scoped (`KIND_LIFETIMES` in `emit-wiring`), unless `@Lifetime`
+  says otherwise. A config override keeps its base's key (`configKeyFor`), so a host never gets a second row.
 - Entitlement keys come from `entitlementKey(module, class)` only, and must equal `@stackra/entitlements`'s runtime
   `entitlementKey`; the `entitlements` section's `gates` feed the `registerEntitlements` call of the registrations.
 - The inbound webhook route (`emitWebhooks`) hands `WebhookReceiver.receive` the raw body untouched and the decoded

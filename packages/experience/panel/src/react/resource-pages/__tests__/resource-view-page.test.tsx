@@ -23,6 +23,7 @@ import { resource } from "#core/functions/resource.function";
 import { ResourceViewPage } from "#react/resource-pages/resource-view-page";
 
 const spies = vi.hoisted(() => ({
+  can: vi.fn((permission?: string) => permission !== "orders.order.refund"),
   useQuery: vi.fn(),
   run: vi.fn(),
   navigate: vi.fn(),
@@ -31,6 +32,7 @@ const spies = vi.hoisted(() => ({
 
 vi.mock("@stackra/clients/react", () => ({ useQuery: spies.useQuery }));
 vi.mock("#react/action-runner/use-action-runner", () => ({ useActionRunner: () => spies.run }));
+vi.mock("#react/action-runner/use-can", () => ({ useCan: () => spies.can }));
 vi.mock("@stackra/navigation/react", () => ({ useNavigate: () => spies.navigate }));
 vi.mock("@stackra/i18n/react", () => ({
   useTranslation: () => ({ t: (key: string) => key }),

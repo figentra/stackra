@@ -12,7 +12,8 @@
  *          locked key of every `Permission` static and module role, the hosted packages' included (`registerPermissions`,
  *          then `registerRoles`; without
  *          them the decision point cannot tell a system or restricted permission, and a module role holds nothing,
- *          STA-1702), and every action and query with its locked key, permission, risk, effects and input class
+ *          STA-1702), each record policy with its model (`registerPolicies`; without it `ctx.authorize(record)` runs no
+ *          policy, STA-2045), and every action and query with its locked key, permission, risk, effects and input class
  *          (`registerActions`; without it the pipeline checks no permission and validates no input, STA-2025).
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
@@ -373,6 +374,33 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
       return type === undefined
         ? undefined
         : `{ type: ${type}, key: ${JSON.stringify(entry["key"])} }`;
+    }),
+  );
+
+  // Each record policy with the model it judges, own and hosted, so `ctx.authorize(record)` runs it (ADR 0132 as
+  // amended, STA-2045); the base's type argument is gone at runtime, so this row is the only pairing.
+  // shortcut: a hosted policy whose model the package does not declare (no `modelFile`) is not registered; upgrade when
+  // the manifest names the model's package and file.
+  call(
+    "registerPolicies",
+    "@stackra/iam",
+    ((manifest["policies"] ?? []) as readonly Entry[]).map((entry) => {
+      // The model is resolved first, so a row that cannot be written imports nothing.
+      const partner =
+        typeof entry["from"] === "string"
+          ? undefined
+          : ir.classes.find(
+              (declared) => declared.name === entry["class"] && declared.module === entry["module"],
+            )?.partner;
+      const model =
+        typeof entry["from"] === "string"
+          ? classOf(entry, "model", "modelFile")
+          : partner === undefined
+            ? undefined
+            : ref({ name: partner.name, from: partner.from });
+      if (model === undefined) return undefined;
+      const policy = classOf(entry);
+      return policy === undefined ? undefined : `{ model: ${model}, policy: ${policy} }`;
     }),
   );
 

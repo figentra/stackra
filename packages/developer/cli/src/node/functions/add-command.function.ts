@@ -33,9 +33,10 @@ import type { CatalogueClient } from "#node/types/catalogue-client.type";
 import type { CliCommand } from "#node/types/cli-command.type";
 import type { RegistryAccess } from "#node/types/registry-access.type";
 
-// A contract package is a consumer's devDependency that gen reads, never an item `stackra add` installs.
+// A contract package is a consumer's devDependency that gen reads, and a docs package the docs hub's (ADR 0514);
+// neither is an item `stackra add` installs.
 const KINDS: readonly string[] = Enum.values(StackraKind).filter(
-  (kind) => kind !== StackraKind.Contract,
+  (kind) => kind !== StackraKind.Contract && kind !== StackraKind.Docs,
 );
 
 /**

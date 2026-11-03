@@ -115,6 +115,7 @@ describe("@stackra/runway/node", () => {
       "toolVersionOf",
       "uploadBundle",
       "workspacePackages",
+      "writeDevFacts",
     ]);
     for (const name of Object.keys(node)) expect(Object.keys(core)).not.toContain(name);
   });

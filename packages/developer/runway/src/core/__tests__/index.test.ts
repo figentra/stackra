@@ -64,6 +64,7 @@ describe("@stackra/runway", () => {
       "checkPlacement",
       "checkPorts",
       "checkRegions",
+      "checkRequires",
       "deploy",
       "deployTargets",
       "devPorts",
@@ -77,6 +78,7 @@ describe("@stackra/runway", () => {
       "regionsOf",
       "rollback",
       "runwayJsonSchema",
+      "surfaceHosts",
       "updateFeed",
       "withDeployLock",
     ]);

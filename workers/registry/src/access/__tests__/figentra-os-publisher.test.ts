@@ -66,6 +66,7 @@ describe("migration 0006: figentra/os publishes @figentra", () => {
       "figentra/invoicing",
       "figentra/os",
       "figentra/pay",
+      "figentra/testbed",
     ]);
   });
 });

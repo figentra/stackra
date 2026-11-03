@@ -11,9 +11,16 @@
  * Boundary: internal to the form page and the action modal; draws `@stackra/ui`'s `Field.*` parts, which read the
  *           binding by name, so validation errors (the schema's and the server's) show on each field. A list binds its
  *           path with `useSchemaField` and its rows by index (`parcels.0.weight`); a row's label drops the index. An
- *           upload field and the recorded repeater node are not drawn yet; the step set is not a wizard yet.
+ *           upload field and the recorded repeater node are not drawn yet; the step set is not a wizard yet. A value
+ *           field's `FormFieldSpec` look applies: its label, help text, placeholder and required, disabled and read-only
+ *           overrides on the drawn field; its `control` in place of the inferred one (text, email, password, URL, text
+ *           area, number, money, select, radio group, switch, date, combo box, multi-select and slider; any other code
+ *           keeps the inferred control); the number bounds, step and format; its span on a grid (`md:col-span-*`); its
+ *           `choices` in place of an enum's codes; and `visibleWhen`, which hides it while the form's value at that
+ *           path is not true.
  * Runtime: browser
- * Governing contract: ADR 0307 (form keys are paths of the create or update input); ADR 0055 (thin field adapters).
+ * Governing contract: ADR 0307 (form keys are paths of the create or update input); ADR 0055 (thin field adapters);
+ *                     the SDUI catalogue case `formFields` (STA-1981).
  */
 import { CalendarDate, parseDate } from "@internationalized/date";
 import type { QueryRef } from "@stackra/clients";
@@ -26,7 +33,9 @@ import {
   DatePicker,
   Field,
   FormSection,
+  MultiSelect,
   NumberField,
+  Slider,
   TextAreaField,
   TextField,
 } from "@stackra/ui/react";
@@ -38,6 +47,7 @@ import { inputKind } from "#core/functions/input-kind.function";
 import { listCellCurrency } from "#core/functions/list-cell-currency.function";
 import { minorUnitScale } from "#core/functions/minor-unit-scale.function";
 import { resourceLabel } from "#core/functions/resource-label.function";
+import { specText } from "#core/functions/spec-text.function";
 import { valueAt } from "#core/functions/value-at.function";
 import type { FieldNode } from "#core/types/field-node.type";
 import { useEnumLabel } from "#react/resource-pages/use-enum-label";
@@ -48,6 +58,72 @@ const GRID: Readonly<Record<number, string>> = Object.freeze({
   3: "md:grid-cols-3",
   4: "md:grid-cols-4",
 });
+
+/** The span class of each column count; written out so the style scanner keeps them. */
+const SPAN: Readonly<Record<number, string>> = Object.freeze({
+  2: "md:col-span-2",
+  3: "md:col-span-3",
+  4: "md:col-span-4",
+});
+
+/** What a spec sets on any drawn field: its help text and its required, disabled and read-only overrides. */
+interface FieldLook {
+  readonly description?: string;
+  readonly isRequired?: boolean;
+  readonly isDisabled?: boolean;
+  readonly isReadOnly?: boolean;
+}
+
+/** Shows `children` only while the form's value at `path` is true. */
+function Shown({
+  path,
+  children,
+}: {
+  readonly path: string;
+  readonly children: ReactElement;
+}): ReactElement | null {
+  return useSchemaField<unknown>(path).value === true ? children : null;
+}
+
+/** A text area bound by `name`. */
+function TextAreaInput({
+  name,
+  ...rest
+}: FieldLook & {
+  readonly name: string;
+  readonly label: string;
+  readonly placeholder?: string;
+}): ReactElement {
+  return <TextAreaField {...useSchemaField<string>(name)} {...rest} />;
+}
+
+/** A multi-select bound by `name`. */
+function MultiSelectInput({
+  name,
+  ...rest
+}: FieldLook & {
+  readonly name: string;
+  readonly label: string;
+  readonly placeholder?: string;
+  readonly items: readonly { readonly id: string; readonly label: string }[];
+}): ReactElement {
+  return <MultiSelect {...useSchemaField<readonly string[]>(name)} {...rest} />;
+}
+
+/** A slider bound by `name`. */
+function SliderInput({
+  name,
+  ...rest
+}: FieldLook & {
+  readonly name: string;
+  readonly label: string;
+  readonly minValue?: number;
+  readonly maxValue?: number;
+  readonly step?: number;
+  readonly formatOptions?: Intl.NumberFormatOptions;
+}): ReactElement {
+  return <Slider {...useSchemaField<number>(name)} {...rest} />;
+}
 
 /** Props of `ResourceFormField`. */
 interface ResourceFormFieldProps {
@@ -436,10 +512,19 @@ export function ResourceFormField({
   const enumLabel = useEnumLabel();
   const shared = { resourceKey, schema, enumOwner, record };
   const children = (fields: readonly FieldNode[]) =>
-    fields.map((child, index) => (
+    fields.map((child, index) => {
       // oxlint-disable-next-line react/no-array-index-key -- reason: the items have no identity but their place in the list
-      <ResourceFormField key={index} {...shared} node={child} />
-    ));
+      const field = <ResourceFormField key={index} {...shared} node={child} />;
+      const span = child.kind === "value" ? SPAN[child.span ?? 1] : undefined;
+      return span === undefined ? (
+        field
+      ) : (
+        // oxlint-disable-next-line react/no-array-index-key -- reason: the items have no identity but their place in the list
+        <div key={index} className={span}>
+          {field}
+        </div>
+      );
+    });
   if (node.kind === "grid")
     return <div className={`grid gap-4 ${GRID[node.columns] ?? ""}`}>{children(node.fields)}</div>;
   if (node.kind === "steps")
@@ -453,7 +538,32 @@ export function ResourceFormField({
       </>
     );
   if (node.kind !== "value") return null;
-  const label = t(resourceLabel(resourceKey, "fields", fieldLabelPath(node.key)));
+  if (node.visibleWhen !== undefined) {
+    const { visibleWhen, ...always } = node;
+    return (
+      <Shown path={visibleWhen}>
+        <ResourceFormField {...shared} node={always} />
+      </Shown>
+    );
+  }
+  const label =
+    node.label === undefined
+      ? t(resourceLabel(resourceKey, "fields", fieldLabelPath(node.key)))
+      : specText(node.label, t);
+  const look: FieldLook = {
+    ...(node.description === undefined ? {} : { description: specText(node.description, t) }),
+    ...(node.isRequired === undefined ? {} : { isRequired: node.isRequired }),
+    ...(node.isDisabled === undefined ? {} : { isDisabled: node.isDisabled }),
+    ...(node.isReadOnly === undefined ? {} : { isReadOnly: node.isReadOnly }),
+  };
+  const placeholder =
+    node.placeholder === undefined ? {} : { placeholder: specText(node.placeholder, t) };
+  const numbers = {
+    ...(node.minValue === undefined ? {} : { minValue: node.minValue }),
+    ...(node.maxValue === undefined ? {} : { maxValue: node.maxValue }),
+    ...(node.step === undefined ? {} : { step: node.step }),
+    ...(node.formatOptions === undefined ? {} : { formatOptions: node.formatOptions }),
+  };
   if (node.options !== undefined)
     return (
       <OptionsField
@@ -464,6 +574,96 @@ export function ResourceFormField({
       />
     );
   const kind = inputKind(schema, node.key);
+  const codes =
+    node.enum === undefined
+      ? kind.kind === "enum"
+        ? kind.options
+        : undefined
+      : Enum.values(node.enum).map(String);
+  // The spec's choices win over the enum's codes, which show by their labels.
+  const choices =
+    node.choices?.map((choice) => ({ value: choice.value, label: specText(choice.label, t) })) ??
+    codes?.map((code) => ({
+      value: code,
+      label:
+        enumLabel(resourceKey, fieldLabelPath(node.key), code) ??
+        (enumOwner === undefined
+          ? undefined
+          : enumLabel(enumOwner, fieldLabelPath(node.key), code)) ??
+        code,
+    }));
+  const items = choices?.map((choice) => ({ id: choice.value, label: choice.label })) ?? [];
+  switch (node.control) {
+    case "text":
+    case "email":
+    case "password":
+    case "url": {
+      return (
+        <Field.Text
+          name={node.key}
+          label={label}
+          {...look}
+          {...placeholder}
+          {...(node.control === "text" ? {} : { type: node.control })}
+        />
+      );
+    }
+    case "textarea": {
+      return <TextAreaInput name={node.key} label={label} {...look} {...placeholder} />;
+    }
+    case "number": {
+      return <Field.Number name={node.key} label={label} {...look} {...numbers} />;
+    }
+    case "select": {
+      if (choices !== undefined)
+        return (
+          <Field.Select
+            name={node.key}
+            label={label}
+            options={choices}
+            {...look}
+            {...placeholder}
+          />
+        );
+      break;
+    }
+    case "radio": {
+      if (choices !== undefined)
+        return <Field.RadioGroup name={node.key} label={label} options={choices} {...look} />;
+      break;
+    }
+    case "switch": {
+      return <Field.Switch name={node.key} label={label} {...look} />;
+    }
+    case "date": {
+      return <DateInput name={node.key} label={label} />;
+    }
+    case "combo-box": {
+      return (
+        <Field.ComboBox
+          name={node.key}
+          label={label}
+          items={items}
+          itemKey="id"
+          itemLabel={(item) => item.label}
+          {...look}
+          {...placeholder}
+        />
+      );
+    }
+    case "multi-select": {
+      return (
+        <MultiSelectInput name={node.key} label={label} items={items} {...look} {...placeholder} />
+      );
+    }
+    case "slider": {
+      return <SliderInput name={node.key} label={label} {...look} {...numbers} />;
+    }
+    default: {
+      // Money is the inferred minor-unit path below; any other code keeps the inferred control.
+      break;
+    }
+  }
   if (kind.kind === "object")
     return (
       <FormSection title={label}>
@@ -474,33 +674,15 @@ export function ResourceFormField({
     return <ListField shared={shared} name={node.key} label={label} item={kind.item} />;
   if (kind.kind === "record")
     return <RecordField name={node.key} label={label} value={kind.value} />;
-  const codes =
-    node.enum === undefined
-      ? kind.kind === "enum"
-        ? kind.options
-        : undefined
-      : Enum.values(node.enum).map(String);
-  if (codes !== undefined)
+  if (choices !== undefined)
     return (
-      <Field.Select
-        name={node.key}
-        label={label}
-        options={codes.map((code) => ({
-          value: code,
-          label:
-            enumLabel(resourceKey, fieldLabelPath(node.key), code) ??
-            (enumOwner === undefined
-              ? undefined
-              : enumLabel(enumOwner, fieldLabelPath(node.key), code)) ??
-            code,
-        }))}
-      />
+      <Field.Select name={node.key} label={label} options={choices} {...look} {...placeholder} />
     );
-  if (kind.kind === "boolean") return <Field.Switch name={node.key} label={label} />;
+  if (kind.kind === "boolean") return <Field.Switch name={node.key} label={label} {...look} />;
   if (kind.kind === "json") return <JsonField name={node.key} label={label} />;
   if (kind.kind === "date") return <DateInput name={node.key} label={label} />;
   if (kind.kind === "datetime") return <DateTimeInput name={node.key} label={label} />;
-  if (kind.kind === "number" && isMinorKey(node.key)) {
+  if ((kind.kind === "number" && isMinorKey(node.key)) || node.control === "money") {
     // A currency beside it in the input (a MoneyAmount, a list row's `priceMinor` and `currency`) is the form's own.
     const beside = currencyBeside(node.key);
     if (inputKind(schema, beside).kind !== "missing")
@@ -511,7 +693,8 @@ export function ResourceFormField({
     if (currency !== undefined && scale !== undefined)
       return <MoneyField name={node.key} label={label} currency={currency} scale={scale} />;
   }
-  if (kind.kind === "number") return <Field.Number name={node.key} label={label} />;
+  if (kind.kind === "number")
+    return <Field.Number name={node.key} label={label} {...look} {...numbers} />;
   if (fieldLabelPath(node.key).split(".").at(-1) === "currency")
     return (
       <Field.ComboBox
@@ -520,7 +703,8 @@ export function ResourceFormField({
         items={CURRENCIES}
         itemKey="id"
         itemLabel={(item) => item.id}
+        {...look}
       />
     );
-  return <Field.Text name={node.key} label={label} />;
+  return <Field.Text name={node.key} label={label} {...look} {...placeholder} />;
 }

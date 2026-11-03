@@ -674,6 +674,12 @@ decision it changes. Everything else stands.
    that prefix under its own module key. The manifest's model entry records the key it hosts (`hosts`), and a hosted
    package manifest with the same model is not `prefix_duplicate`.
 
+## Amendment 2026-11-03: the extension point is a binding (STA-2055)
+
+Decision 16's Extension point row reads `Binding: yes`. The owner injects its point (ADR 0305 rule 25), so gen writes a
+binding for it, as it does for a Menu, Shortcut, Store (a singleton) and Bridge (request-scoped, ADR 0251). A config
+override keeps its base's key (decision 20), so a host's wiring holds one row per config token.
+
 ## Amendment 2026-10-27: showcase routes read their words from the registry
 
 **Context.** The playground's route classes (`apps/playground/src/routes/<name>/<name>.route.ts`) carry static `title`
