@@ -9,7 +9,10 @@
  *          targets takes `nativeWiring`, whose follow-the-system ports default to the native drivers. A service with
  *          seeders and a boot also gets `seed`, which `stackra db seed` runs: it boots the container, connects the
  *          database over `directDatabaseUrl()` without the relay loop, hands `runSeedEntry` its seeders (key, module,
- *          profile and class, in module order) and the command's arguments, then disconnects (STA-1709).
+ *          profile and class) and the command's arguments, then disconnects (STA-1709). It first registers every factory pair
+ *          (`registerModelPartners`, own and the hosted packages') and lists the hosted packages' seeders, imported from
+ *          each package's `./testing` entry, before the service's own; hosted packages in dependency order and own
+ *          seeders in module order (STA-2061).
  * Boundary: pure; no logic in an entry (boot order, signals and readiness belong to `createApp`). A package gets no
  *           runtime entry; a host imports its module. A worker's and the desktop main process's entries need their
  *           tool facts (the React Router server build, the crash page, the renderer and preload paths), which come
@@ -21,7 +24,12 @@
  */
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { importLines } from "#core/functions/import-lines.function";
+import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
+import { seedersOf } from "#core/functions/seeders-of.function";
+import { topological } from "#core/functions/topological.function";
+import type { ClassRef } from "#core/types/class-ref.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -93,19 +101,131 @@ export function emitRuntimeEntries(
   ];
 }
 
+/** One seeder the seed entry lists, with where its class is imported from. */
+interface SeedRow {
+  readonly key: string;
+  readonly module: string;
+  readonly profile: string;
+  readonly name: string;
+  readonly from: string;
+}
+
+/** The hosted packages' seeders and factory pairs, dependency packages first (STA-2061). */
+function hostedSeeding(ir: MemberIR): {
+  readonly rows: SeedRow[];
+  readonly pairs: { readonly factory: ClassRef; readonly model: ClassRef }[];
+} {
+  const hosted = ir.dependencies.filter(({ manifest }) => manifest.kind !== "app");
+  const owner = new Map(
+    hosted.flatMap(({ package: name, manifest }) =>
+      (manifest.modules ?? []).map((module) => [String(module["key"]), name] as const),
+    ),
+  );
+  const edges = new Map(
+    hosted.map(({ package: name, manifest }) => [
+      name,
+      (manifest.modules ?? [])
+        .flatMap((module) => (module["dependsOn"] as string[] | undefined) ?? [])
+        .map((key) => owner.get(key))
+        .filter((target): target is string => target !== undefined && target !== name),
+    ]),
+  );
+  const rows: SeedRow[] = [];
+  const pairs: { factory: ClassRef; model: ClassRef }[] = [];
+  for (const name of topological(
+    hosted.map(({ package: pkg }) => pkg),
+    edges,
+  )) {
+    const manifest = hosted.find(({ package: pkg }) => pkg === name)?.manifest;
+    if (manifest === undefined) continue;
+    for (const row of (manifest["seeders"] as Record<string, string>[] | undefined) ?? [])
+      rows.push({
+        key: String(row["key"]),
+        module: String(row["module"]),
+        profile: String(row["profile"]),
+        name: String(row["class"]),
+        from: `${name}/testing`,
+      });
+    for (const row of (manifest["factories"] as Record<string, string>[] | undefined) ?? []) {
+      const file = (manifest.models ?? []).find((model) => model["class"] === row["model"])?.[
+        "file"
+      ];
+      pairs.push({
+        factory: { name: String(row["class"]), from: `${name}/testing` },
+        model: { name: String(row["model"]), from: packageSpecifier(name, file) },
+      });
+    }
+  }
+  return { rows, pairs };
+}
+
 /** The seed entry of a service with seeders and a boot, or undefined (STA-1709). */
 function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | undefined {
   const root = rootModuleOf(ir);
-  const seeders = ir.classes.filter((declared) => declared.kind === "seeder");
-  if (root === undefined || seeders.length === 0 || !generated.includes(".stackra/gen/boot.ts"))
+  const own = seedersOf(ir);
+  const hosted = hostedSeeding(ir);
+  if (
+    root === undefined ||
+    own.length + hosted.rows.length === 0 ||
+    !generated.includes(".stackra/gen/boot.ts")
+  )
     return undefined;
-  const rows = seeders.map((declared) => {
-    const profile = /([a-z]+)\.seeder\.ts$/.exec(declared.file)?.[1] ?? "minimal";
-    return `  { key: ${JSON.stringify(`${declared.module}.${profile}`)}, module: ${JSON.stringify(declared.module)}, profile: ${JSON.stringify(profile)}, type: ${declared.name} },`;
+  // Local names in use; a later clash is imported as `Imported<Name>` (STA-2061).
+  const taken = new Set([
+    "bootApp",
+    "Database",
+    "directDatabaseUrl",
+    "runSeedEntry",
+    "registerModelPartners",
+    "boot",
+    "wiring",
+    root.name,
+  ]);
+  const imports = new Map<string, Map<string, boolean>>();
+  const use = (target: ClassRef): string => {
+    let local = target.name;
+    for (let index = 1; taken.has(local); index += 1)
+      local = `Imported${target.name}${index === 1 ? "" : index}`;
+    taken.add(local);
+    imports.set(
+      target.from,
+      (imports.get(target.from) ?? new Map<string, boolean>()).set(
+        local === target.name ? local : `${target.name} as ${local}`,
+        false,
+      ),
+    );
+    return local;
+  };
+  const pairs = [
+    ...hosted.pairs,
+    ...ir.classes.flatMap((declared) =>
+      declared.kind === "factory" && declared.partner !== undefined
+        ? [
+            {
+              factory: { name: declared.name, from: declared.importPath },
+              model: { name: declared.partner.name, from: declared.partner.from },
+            },
+          ]
+        : [],
+    ),
+  ];
+  // Two factories of one model share one import of it.
+  const models = new Map<string, string>();
+  const pairLines = pairs.map(({ factory, model }) => {
+    const key = `${model.from}#${model.name}`;
+    const modelLocal = models.get(key) ?? use(model);
+    models.set(key, modelLocal);
+    return `  [${use(factory)}, ${modelLocal}],`;
   });
+  const rows = [...hosted.rows, ...own.map((row) => ({ ...row, from: row.importPath }))].map(
+    (row) => {
+      const local = use({ name: row.name, from: row.from });
+      return `    { key: ${JSON.stringify(row.key)}, module: ${JSON.stringify(row.module)}, profile: ${JSON.stringify(row.profile)}, type: ${local} },`;
+    },
+  );
   const header = generatedHeader({
-    from: "stackra.config.ts, the root module, #stackra/wiring and the seeders under src/",
-    purpose: `the seed entry of ${ir.package}: boots the container and runs the seeders \`stackra db seed\` asks for.`,
+    from: "stackra.config.ts, the root module, #stackra/wiring, the seeders and factories under src/ and the hosted packages' manifests",
+    purpose: `the seed entry of ${ir.package}: boots the container, registers the factory pairs and runs the seeders \`stackra db seed\` asks for.`,
     boundary:
       "run by `stackra db seed` from the member's build; connects over the direct database url, starts no relay loop, " +
       "and disconnects when the seeders end. The exit code is the run's.",
@@ -119,13 +239,14 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
         ? ['import "#stackra/registrations";']
         : []),
       'import { bootApp } from "@stackra/app";',
-      'import { Database } from "@stackra/database";',
+      `import { Database${pairLines.length > 0 ? ", registerModelPartners" : ""} } from "@stackra/database";`,
       'import { directDatabaseUrl, runSeedEntry } from "@stackra/database/node";',
       'import { boot } from "#stackra/boot";',
       'import { wiring } from "#stackra/wiring";',
       `import { ${root.name} } from "${root.from}";`,
-      ...seeders.map((declared) => `import { ${declared.name} } from "${declared.importPath}";`),
+      ...importLines(imports),
       "",
+      ...(pairLines.length > 0 ? ["registerModelPartners([", ...pairLines, "]);", ""] : []),
       `const { container } = await bootApp(wiring, { roots: [${root.name}], env: process.env });`,
       "const shutdown = new AbortController();",
       "await boot(container, { signal: shutdown.signal, url: directDatabaseUrl(), relay: false });",

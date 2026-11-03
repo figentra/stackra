@@ -83,6 +83,8 @@ import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
 import { resourcesOf } from "#core/functions/resources-of.function";
+import { moduleEdges } from "#core/functions/module-edges.function";
+import { seedersOf } from "#core/functions/seeders-of.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
@@ -937,7 +939,7 @@ export function buildManifest(ir: MemberIR): {
   }
 
   // Modules and their edges.
-  const moduleOf = new Map(ir.classes.map((declared) => [declared.name, declared.module]));
+  const edges = moduleEdges(ir);
   const root = rootModuleOf(ir);
   const modules: Entry[] = ir.modules.map((key) => {
     const authored = ir.classes.find(
@@ -950,23 +952,29 @@ export function buildManifest(ir: MemberIR): {
     const exports = Array.isArray(exported)
       ? exported.filter(isClassValue).map((value) => value.$class)
       : [];
-    const dependsOn = new Set<string>();
-    for (const declared of ir.classes.filter((candidate) => candidate.module === key))
-      for (const dep of declared.deps) {
-        const target = moduleOf.get(dep.class.name);
-        if (target !== undefined && target !== key && dep.class.from.startsWith("#"))
-          dependsOn.add(target);
-      }
     return {
       key,
       ...(moduleClass !== undefined ? { class: moduleClass.name } : {}),
       // Only an authored module class is importable by a host; a generated one lives in this member's `.stackra/gen`.
       ...(authored !== undefined ? { file: authored.file } : {}),
       exports,
-      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-      dependsOn: [...dependsOn].sort(),
+      dependsOn: edges.get(key) ?? [],
     };
   });
+
+  // The seeders in module order and the factory pairs, which a host's seed entry imports from `./testing` (STA-2061).
+  const seeders: Entry[] = seedersOf(ir).map((row) => ({
+    key: row.key,
+    module: row.module,
+    profile: row.profile,
+    class: row.name,
+    file: row.file,
+  }));
+  const factories: Entry[] = ir.classes.flatMap((declared) =>
+    declared.kind === "factory" && declared.partner !== undefined
+      ? [{ class: declared.name, file: declared.file, model: declared.partner.name }]
+      : [],
+  );
 
   // Replacements: `@Replaces(Base)` on a class of the member, so a host and a reviewer see what it swaps out.
   const replaces: Entry[] = [];
@@ -1164,6 +1172,8 @@ export function buildManifest(ir: MemberIR): {
     ...(configs.length > 0 ? { config: configs } : {}),
     ...(services.length > 0 ? { services } : {}),
     ...(ir.layout === "app" ? { blocks, routes } : {}),
+    ...(seeders.length > 0 ? { seeders } : {}),
+    ...(factories.length > 0 ? { factories } : {}),
     ...(slots.length > 0 ? { slots } : {}),
     ...(fills.length > 0 ? { fills } : {}),
     ...(surfaces.length > 0 ? { surfaces } : {}),
