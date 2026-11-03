@@ -42,8 +42,8 @@ is never written.
 - **Packages touched**: `packages/developer/gen` (the new emitter, its wiring in `generateMember`, the
   `COMPONENT_MODULE` contract comment, the golden `app-clients` fixture, the README row)
 - **Public contract change**: additive. A member that declares `@stackra/ui` gains the generated
-  `.stackra/gen/ui.ts` (`#stackra/ui`), exporting `Component`. No manifest, action, event or export of a package
-  changes.
+  `.stackra/gen/ui.ts` (`#stackra/ui`), exporting `Component`, and gen's `.` entry exports `emitUiFacade` beside the
+  other emitters. No manifest, action or event changes.
 - **Cross-service events**: none
 - **Tenancy and data**: none
 - **Security and privacy**: none. The file is one type-level re-export; the class-components compiler removes the
@@ -160,7 +160,8 @@ None.
 
 ## Amendments
 
-None.
+- 2026-11-03: gen's `.` entry exports `emitUiFacade`, as it does `emitSettings` and `emitQueues`, so the README's
+  `.` entry row names a real export (the plan already listed that row).
 
 ## Status history
 

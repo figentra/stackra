@@ -74,6 +74,7 @@ clientRuntimes(ir) ───────────────┘ (react | nat
 - `src/core/functions/emit-ui-facade.function.ts` (new)
 - `src/core/functions/__tests__/emit-ui-facade.function.test.ts` (new)
 - `src/core/functions/generate-member.function.ts` (one row and the contract comment)
+- `src/core/index.ts` and `src/core/__tests__/index.test.ts` (the `emitUiFacade` export)
 - `src/node/constants/component-module.constant.ts` (contract comment)
 - `__golden__/app-clients/input/apps/web/package.json.golden` (`@stackra/ui` dependency, `#stackra/*` import alias)
 - `__golden__/app-clients/input/apps/web/src/components/greeting/greeting.component.tsx.golden` and
@@ -91,7 +92,7 @@ none
 ## Contracts
 
 - `.stackra/gen/ui.ts` (`#stackra/ui`), additive: `export { Component } from "@stackra/ui/react";` (or
-  `/native`), under the standard generated header. No manifest or package export changes.
+  `/native`), under the standard generated header; gen's `.` entry exports `emitUiFacade`. No manifest changes.
 
 ## Error handling
 
