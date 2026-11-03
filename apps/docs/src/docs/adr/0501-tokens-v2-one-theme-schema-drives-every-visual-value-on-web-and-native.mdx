@@ -336,6 +336,30 @@ The oxlint `stackra` plugin (`@stackra/coding-standard`) fails the build on a li
 - Visual regression: planned — a Playwright screenshot per preset and mode in `apps/playground/e2e`.
 - Generated tokens docs page: planned — a playground route that lists `themeVariables(theme)` for the picked preset.
 
+## Amendment 2026-11-03: the blueprint roles
+
+Added to section 9 for the blueprint direction of the marketing pages (owner, 2026-11-03: the Stackra landing follows
+the new Fumadocs-style direction, a ruled column with schematic windows joined by pipes; STA-2041). A material family
+now also sets the **blueprint roles**: `BlueprintRole` is `rule`, `rule-width`, `mark-size`, `frame-radius`, `pipe`,
+`pipe-width`, `junction-size` and `dock-height`, and `FAMILY_BLUEPRINT` gives each family a value for each. Web: every
+family block (`:root` and `[data-family]`) writes `--blueprint-<role>`, so `<html data-family>` switches them with the
+role map.
+
+| Role            | front                                                 | studio                    |
+| --------------- | ----------------------------------------------------- | ------------------------- |
+| `rule`          | `color-mix(in oklab, var(--accent) 18%, transparent)` | `var(--separator)`        |
+| `rule-width`    | `1px`                                                 | `1px`                     |
+| `mark-size`     | `9px` (the `+` at a section's corners)                | `0px` (no marks)          |
+| `frame-radius`  | `calc(var(--radius-lg) + 4px)` (10 px for Stackra)    | `var(--radius-container)` |
+| `pipe`          | `color-mix(in oklab, var(--accent) 55%, transparent)` | `var(--border)`           |
+| `pipe-width`    | `1.5px`                                               | `1px`                     |
+| `junction-size` | `7px`                                                 | `5px`                     |
+| `dock-height`   | `40px`                                                | `36px`                    |
+
+Values are theme roles, radii and lengths only, never a colour value, so a product's landing draws the blueprint in
+its own colours; `studio` keeps the roles quiet for product screens. Components read the roles and never write their
+own rule colour or frame radius. Web only for now: `nativeTokens` gains them when a native screen needs one.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends 0302 (schema), 0329 (motion becomes a placeholder family), 0340 decision 7 (DTCG coverage).
