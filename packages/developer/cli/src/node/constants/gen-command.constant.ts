@@ -6,17 +6,20 @@
  *          consume each other's clients in a cycle all get one); pass 2 generates the clients and the rest against
  *          those manifests, in rounds (the refused members and the client consumers) until a round writes nothing. `--manifests`
  *          runs pass 1 alone (the bootstrap). `--check` writes nothing and fails on a refusal or a stale file, which
- *          is the CI gate.
+ *          is the CI gate. At a workspace root with a root runway it also writes Claude's `.claude/launch.json`
+ *          and VS Code's `dev: …` tasks from the runways (`writeLaunchFiles`); `--check` fails when one is stale.
  * Boundary: runs every member even after one fails, so one run reports everything; only the last round's refusals
  *           print; exits 1 when any member is not clean.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: `stackra gen --check`); ADR 0295 (decisions 1 and 5); ADR 0261;
- *                     ADR 0260 (a cycle between services is allowed at the manifest level).
+ *                     ADR 0260 (a cycle between services is allowed at the manifest level);
+ *                     STA-2081 (the launch file).
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
+import { writeLaunchFiles } from "#node/launch-config/functions/write-launch-files.function";
 import { runGen } from "#node/functions/run-gen.function";
 import { workspaceMembers } from "#node/functions/workspace-members.function";
 import type { CliCommand } from "#node/types/cli-command.type";
@@ -45,9 +48,22 @@ export const GEN_COMMAND: CliCommand = {
       base: cwd,
       ...(backend === "tsgo" || backend === "ts6" ? { backend } : {}),
     };
-    const roots = existsSync(join(cwd, "pnpm-workspace.yaml"))
+    const workspace = existsSync(join(cwd, "pnpm-workspace.yaml"));
+    const roots = workspace
       ? workspaceMembers(cwd).filter((root) => existsSync(join(root, "stackra.config.ts")))
       : [cwd];
+
+    // The dev-server lists (Claude, VS Code) read only the runways, so they are settled before the members (STA-2081).
+    const launch =
+      workspace && !manifests && existsSync(join(cwd, "runway.yaml"))
+        ? writeLaunchFiles(cwd, options.check === true)
+        : [];
+    for (const { file, status } of launch) {
+      if (status === "written") io.out(`gen: wrote ${file}\n`);
+      if (status === "stale")
+        io.err(`gen: ${file} is stale; run stackra gen at the workspace root\n`);
+    }
+    const launchStale = launch.some(({ status }) => status === "stale");
 
     // Pass 1: every manifest. Alone (--manifests) it reports its refusals; otherwise pass 2 reports them.
     if (options.check !== true) {
@@ -85,7 +101,7 @@ export const GEN_COMMAND: CliCommand = {
         for (const { lines } of failed) for (const line of lines) io.err(line);
         if (options.check === true && failed.length === 0)
           io.out(`gen --check: ${roots.length} member(s) up to date\n`);
-        return failed.length === 0 ? 0 : 1;
+        return failed.length === 0 && !launchStale ? 0 : 1;
       }
       pending = next;
     }

@@ -5,7 +5,7 @@
  *          `tools/scripts/validate-repository.mjs`): the config, catalogue and structure checks of @stackra/repo-checks,
  *          the package cycles, the Expo native dependencies, the duplicate exports, the `any` ratchet and the
  *          architecture map drift, the Python placement (ADR 0492 decision 7), the package entity lists (STA-1793), the lang
- *          catalogue exports (STA-1798) and the
+ *          catalogue exports (STA-1798), the launch files' drift from the runways (STA-2081) and the
  *          session settings (ADR 0495 decision 3, STA-1699). `--repository` prints the findings as `<dir>: <finding>` and a count and exits 1,
  *          or prints nothing.
  * Boundary: reads the checkout and runs `pnpm -r list`; notices (an unbuilt runway package) go to `io.err`.
@@ -26,6 +26,7 @@ import { packageCycleFindings } from "#node/cycles/functions/package-cycle-findi
 import { duplicateExportFindings } from "#node/duplicate-exports/functions/duplicate-export-findings.function";
 import { checkCommand } from "#node/functions/check-command.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
+import { launchConfigFindings } from "#node/launch-config/functions/launch-config-findings.function";
 import { langAssetsFindings } from "#node/lang-assets/functions/lang-assets-findings.function";
 import { packageEntitiesFindings } from "#node/package-entities/functions/package-entities-findings.function";
 import { pythonPlacementFindings } from "#node/python-placement/functions/python-placement-findings.function";
@@ -64,6 +65,7 @@ export const VALIDATE_COMMAND: CliCommand = {
       ...pythonPlacementFindings(root),
       ...packageEntitiesFindings(root),
       ...langAssetsFindings(root),
+      ...launchConfigFindings(root),
       ...sessionSettingFindings(root),
     ];
     for (const { dir, text } of findings) io.err(`${dir || "."}: ${text}\n`);

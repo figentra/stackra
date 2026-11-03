@@ -32,6 +32,38 @@
       "type": "shell",
       "command": "pnpm format",
       "problemMatcher": []
+    },
+    {
+      "label": "dev: docs",
+      "detail": "Start docs on http://localhost:3333 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/docs^... && exec pnpm --filter @figentra/docs run dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: mobile",
+      "detail": "Start mobile on http://localhost:8081 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/mobile^... && exec pnpm --filter @figentra/mobile run dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: playground",
+      "detail": "Start playground on http://localhost:3710 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/playground^... && exec pnpm --filter @figentra/playground run dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: worker-static",
+      "detail": "Start worker-static on http://localhost:8787 (written by stackra gen from the runways)",
+      "type": "shell",
+      "command": "pnpm turbo run build --output-logs=errors-only --filter=@figentra/worker-static... && exec pnpm --filter @figentra/worker-static run dev",
+      "isBackground": true,
+      "problemMatcher": []
     }
   ]
 }
