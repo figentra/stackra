@@ -345,19 +345,20 @@ now also sets the **blueprint roles**: `BlueprintRole` is `rule`, `rule-width`, 
 family block (`:root` and `[data-family]`) writes `--blueprint-<role>`, so `<html data-family>` switches them with the
 role map.
 
-| Role            | front                                                 | studio                    |
-| --------------- | ----------------------------------------------------- | ------------------------- |
-| `rule`          | `color-mix(in oklab, var(--accent) 18%, transparent)` | `var(--separator)`        |
-| `rule-width`    | `1px`                                                 | `1px`                     |
-| `mark-size`     | `9px` (the `+` at a section's corners)                | `0px` (no marks)          |
-| `frame-radius`  | `calc(var(--radius-lg) + 4px)` (10 px for Stackra)    | `var(--radius-container)` |
-| `pipe`          | `color-mix(in oklab, var(--accent) 55%, transparent)` | `var(--border)`           |
-| `pipe-width`    | `1.5px`                                               | `1px`                     |
-| `junction-size` | `7px`                                                 | `5px`                     |
-| `dock-height`   | `40px`                                                | `36px`                    |
+| Role            | front                                                        | studio                    |
+| --------------- | ------------------------------------------------------------ | ------------------------- |
+| `rule`          | `color-mix(in oklab, var(--accent) 18%, transparent)`        | `var(--separator)`        |
+| `rule-width`    | `1px`                                                        | `1px`                     |
+| `mark-size`     | `9px` (the `+` at a section's corners)                       | `0px` (no marks)          |
+| `frame-radius`  | `calc(var(--radius-lg) + 4px)` (10 px for Stackra)           | `var(--radius-container)` |
+| `pipe`          | `var(--accent)` (a connection people read: 3:1 as a graphic) | `var(--border)`           |
+| `pipe-width`    | `1.5px`                                                      | `1px`                     |
+| `junction-size` | `7px`                                                        | `5px`                     |
+| `dock-height`   | `40px`                                                       | `36px`                    |
 
 Values are theme roles, radii and lengths only, never a colour value, so a product's landing draws the blueprint in
-its own colours; `studio` keeps the roles quiet for product screens. Components read the roles and never write their
+its own colours; `studio` keeps the roles quiet for product screens. The rule is decoration; the pipe is a
+connection people read, so it stays at the accent's full strength (WCAG 2.2 SC 1.4.11). Components read the roles and never write their
 own rule colour or frame radius. Web only for now: `nativeTokens` gains them when a native screen needs one.
 
 ## Supersedes and sources
