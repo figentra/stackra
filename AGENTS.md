@@ -240,7 +240,8 @@ class (ADR 0308).
 | Any other query name                   | `GET /xs/<name-kebab>`      |
 
 `endpoint: { method, path }` overrides the route and `endpoint: false` removes it. An action whose actors include
-neither a user nor an agent gets no public endpoint.
+neither a user nor an agent gets no public endpoint. Each path parameter (`:xId`) is a field of the input, which Encore
+binds it from, or gen refuses the call (`endpoint_param_unbound`).
 
 ```typescript
 // src/modules/orders/schemas/cancel-order-input.schema.ts — the input, one declaration per file (ADR 0305)
@@ -282,18 +283,25 @@ HTTP methods **by idempotency**:
 
 #### Authentication
 
-Every endpoint is authenticated by default. A public endpoint opts out explicitly with `auth: false` in the action's
-or query's options; the flag applies to its API area (ADR 0082), and the gateway enforces it (ADR 0237):
+Every endpoint is authenticated by default. A call open to callers without a session lists `ActorKind.Anonymous` in
+its `actors` beside `ActorKind.User` or `ActorKind.Agent` (STA-2025); `Anonymous` alone gives no endpoint, and there is
+no separate `auth` option. Gen writes its endpoint with `auth: false`, and it runs as the signed-in actor when a session
+is presented, otherwise as an anonymous one; the gateway enforces it per API area (ADR 0082, ADR 0237):
 
 ```typescript
-export class GetHealthQuery extends Query({ key: "health.get", auth: false }) {
-  async handle(): Promise<HealthOutput> {
+// GET /products/search, open to callers without a session
+export class SearchProductsQuery extends Query({
+  key: "product.search",
+  actors: [ActorKind.Anonymous, ActorKind.User],
+}) {
+  async handle(input: SearchProductsInput): Promise<SearchProductsOutput> {
     // ...
   }
 }
 ```
 
-The caller is the typed `Actor` the action pipeline provides (ADR 0098); never read a user id from the request body.
+The caller is the typed `Actor` the action pipeline provides (ADR 0098): the generated endpoint takes it from the
+verified auth data, never from the request body, a path parameter or a header.
 The permission is derived from the key, and record rules run through `ctx.authorize(record)` (ADR 0132 as amended).
 
 #### Request/Response
