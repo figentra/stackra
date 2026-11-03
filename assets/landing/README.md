@@ -62,7 +62,7 @@ here only as a top-level `<page>.json`, and `stackra dev` seeds every such file 
   `tools/scripts/draw-landing-art.mjs` draws them; never edit them by hand. A document names a drawing by its base URL
   and its viewBox size, `{ "src": "art/engine", "width": 505, "height": 588 }`, and `@stackra/ui`'s `Illustration`
   stacks the four layers as CSS masks over the token roles (`--background`, `--stk-tile-line`, `--accent`, `--core`),
-  because an image cannot read the page's variables. The hero's `art` and the try-it node's `monitorArt` take this
+  because an image cannot read the page's variables. The hero's `art` and the try-it node's `monitor` take this
   shape.
 - `posters/strata-dark.png` and `posters/strata-light.png`: the strata pattern's posters (1600 x 900) under the hero
   horizon and the try-it band. Copied unchanged from the brand kit, `figentra/brand` at commit `28ad0e89`,

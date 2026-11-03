@@ -84,8 +84,6 @@
       },
       "horizon": {
         "pattern": "strata",
-        "front": "stk-tile-line",
-        "mask": "top",
         "poster": "posters/strata-dark.png",
         "sun": {
           "x": 0.75,
@@ -654,11 +652,9 @@
       },
       "art": {
         "pattern": "strata",
-        "front": "stk-tile-line",
-        "mask": "top",
         "poster": "posters/strata-dark.png"
       },
-      "monitorArt": {
+      "monitor": {
         "src": "art/monitor",
         "width": 328,
         "height": 426

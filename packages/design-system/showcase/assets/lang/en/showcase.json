@@ -5642,13 +5642,10 @@
       },
       "illustration": {
         "engine": {
-          "title": "Engine"
+          "title": "The engine, named"
         },
-        "stack": {
-          "title": "Stack"
-        },
-        "monitor": {
-          "title": "Monitor"
+        "decorative": {
+          "title": "Decoration only"
         }
       }
     }

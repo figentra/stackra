@@ -5642,13 +5642,10 @@
       },
       "illustration": {
         "engine": {
-          "title": "المحرّك"
+          "title": "المحرّك مع اسمه"
         },
-        "stack": {
-          "title": "المكدّس"
-        },
-        "monitor": {
-          "title": "الشاشة"
+        "decorative": {
+          "title": "زخرفة فقط"
         }
       }
     }
