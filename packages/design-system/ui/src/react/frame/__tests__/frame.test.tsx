@@ -21,7 +21,7 @@ describe("Frame (web)", () => {
       </Frame>,
     );
     const frame = container.querySelector('[data-slot="frame"]');
-    expect(frame?.className).toContain("rounded-[calc(var(--radius-lg)+4px)]");
+    expect(frame?.className).toContain("rounded-[calc(var(--radius-lg)+var(--spacing))]");
     expect(screen.getByText("localhost:4000")).toBeTruthy();
     expect(container.querySelector('[aria-hidden="true"]')?.children).toHaveLength(3);
     expect(screen.getByText("Body")).toBeTruthy();
@@ -55,7 +55,7 @@ describe("Frame (web)", () => {
     const frame = container.querySelector('[data-slot="frame"]');
     expect(frame?.getAttribute("data-variant")).toBe("schematic");
     expect(frame?.className).toContain("rounded-[var(--blueprint-frame-radius)]");
-    expect(frame?.className).not.toContain("rounded-[calc(var(--radius-lg)+4px)]");
+    expect(frame?.className).not.toContain("rounded-[calc(var(--radius-lg)+var(--spacing))]");
     const bar = container.querySelector('[data-slot="frame-bar"]');
     expect(bar?.className).toContain("h-7.5");
     const stripes = bar?.querySelectorAll('[aria-hidden="true"]') ?? [];

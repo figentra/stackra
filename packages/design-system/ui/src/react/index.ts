@@ -746,3 +746,5 @@ export { SchematicNode } from "#react/schematic/schematic-node";
 export type { SchematicNodeProps } from "#react/schematic/schematic-node.props";
 export { SectionDock } from "#react/section-dock/section-dock";
 export type { SectionDockProps } from "#react/section-dock/section-dock.props";
+export { Illustration } from "#react/illustration/illustration";
+export type { IllustrationProps } from "#react/illustration/illustration.props";
