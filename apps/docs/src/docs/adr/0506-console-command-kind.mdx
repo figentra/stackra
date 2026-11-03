@@ -1,7 +1,17 @@
 ---
 title: "0506 — The Command kind, the console framework and the commands group"
-description: "Accepted · 2026-10-31 · amended 2026-11-02 (STA-1966)"
+description: "Accepted · 2026-10-31 · amended 2026-11-02 (STA-1966) · amendment 2026-11-03 proposed (STA-2093)"
 ---
+
+<Note>
+  Amended 2026-11-03 (STA-2093), proposed; the owner's acceptance is pending. `--json` may write the
+  command's data alone for an ADR-frozen CLI, a child process may share the standard streams, an
+  explicit `secret: false` is honoured, and an invocation may name no command or put a value option
+  before the name. It amends decision 7 and items 1, 3 and 4 of the 2026-11-02 amendment, and it
+  reads with [0522](/adr/0522-testbed-own-repo) decision 5, which it does not change. Read it with
+  [the amendment of 2026-11-03](#amendment-2026-11-03-frozen-json-shared-streams-routing-sta-2093)
+  below.
+</Note>
 
 <Note>
   Accepted 2026-10-31: the owner approved the spec stop of `@stackra/console` ("handle all, all
@@ -210,3 +220,71 @@ everything", and on `fflow` 0.2.3, "very bad error handling; show it in a table,
 Enforcement: the unit tests of `@stackra/console` (a snapshot of every renderer component with colour on and off, the
 routing table, completion golden files, one command giving equal data through the CLI, the local MCP and the test
 harness, and a module-load test that a non-live run never imports `ink`); `FORBIDDEN_DEPENDENCIES` is unchanged.
+
+## Amendment 2026-11-03: frozen JSON, shared streams, routing (STA-2093)
+
+The testbed of [0522](/adr/0522-testbed-own-repo) must print its frozen `--json` documents (decision 5) and stream a job's
+output to the terminal. The engine of 2026-11-02 could do neither: `--json` wrote the envelope, and a child was either
+captured or interactive. This amendment adds what the port needs, in four parts. Each is opt-in, so an existing command,
+test and `--json` document keeps its output. The spec is `.agents/specs/sta-1966-console-engine/`, where FR-007, FR-012,
+FR-015 and FR-028 each carry a dated note. The text describes the code of `packages/developer/console` on branch
+`figentra/sta-2093-console-frozen-json-streams`.
+
+1. **Bare JSON (amends decision 7 and amendment 4).** `ConsoleConfig.json` is `"envelope"` (the default, decision 7) or
+   `"bare"`. Under `--json` with `"bare"`:
+   - a run that ends with an error writes nothing to stdout; the problem screen goes to stderr, and the exit code is the
+     error's, as before;
+   - a run that ends with no error writes its data alone, as one compact line, whatever the exit code. The data is the
+     value given to `io.output.json`, else the rows of a table or checklist, else the command list or a command's help, which the list
+     and help intents set. A run with no data writes nothing;
+   - human output (lines, tables, the problem screen) goes to stderr, drawn as without `--json`: no colour and no animation.
+
+   `bare` is for a CLI whose `--json` shape an ADR has frozen, and only testbed qualifies today (0522 decision 5). Every
+   other CLI keeps the envelope; [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decision 7 governs any
+   move of its output.
+
+2. **Shared standard streams (amends item 1 of the 2026-11-02 amendment).** `ProcessRunOptions.inherit` is
+   `boolean | "stderr"`.
+   - `inherit: true` shares the standard streams: the child's output is live, is not captured and is not redacted, and the
+     child is never refused for want of a terminal. Under `--json` the console turns it into `"stderr"`.
+   - `inherit: "stderr"` ignores standard input and sends both of the child's outputs to standard error.
+   - `io.process` refuses an inherited run with a `CommandError`, before the child starts, while a secret option or argument
+     of the run holds a non-empty value, because the child's output cannot be redacted.
+   - `interactive` is unchanged: the child inherits the terminal and is refused without one (STA-1966 FR-028).
+   - `onOutput` receives the redacted chunk. It received the raw chunk before.
+
+   Known limit: redaction runs per chunk, so a secret split across two chunks escapes into the `-v` echo and into
+   `onOutput`. The upgrade is to buffer whole lines before redaction.
+
+3. **`secret: false` (amends STA-1731 FR-016).** `isSecret` lets an explicit `secret` decide. `secret: false` keeps an option
+   or argument whose name ends in a `SECRET_FIELD_SUFFIXES` entry (`key`, `url`) out of the secret set. A field that declares
+   no `secret` is still judged by its name, and `secret: true` still holds. The secret set decides the password prompt, the
+   redacted tokens in an error and the redacted values in an audit entry, so `secret: false` changes all three for that
+   field.
+
+4. **Routing (amends item 3 of the 2026-11-02 amendment).**
+   - `ConsoleConfig.requireCommand` (default `false`). When `true`, an invocation that names no command and asks no help
+     (`help`, `--help`, `-h`) is a usage problem, "Name a command", and exits 2. `--version` is unchanged, and the default
+     still lists the commands.
+   - A registry value option may come before the command name in its separate-token form (`acme --box 2 ssh`). The console
+     decides this from the registry: a flag takes a value there only when every command that declares it gives it a value.
+     A flag that is boolean in any command takes none, so the next token is read as the name. `--box=2` is one token and was
+     always accepted. A value option at the very end of argv takes no value, and the parser reports it.
+
+5. **Consequences.**
+   - ADR 0522 decision 5 holds byte for byte. This amendment writes no testbed document: the `run` and `status` documents
+     come from testbed's own port, under its own frozen-interface tests.
+   - Only one routing case changes behaviour: a value option before the name, which previously failed. Every other
+     invocation routes as before.
+   - Whether other CLIs move their `--json` to the envelope is not decided here.
+
+6. **Enforcement.** The unit tests of this amendment are the bare, `requireCommand`, value-option and `secret` cases of
+   `packages/developer/console/src/core/functions/__tests__/` (`create-console`, `route`, `split-invocation`, `is-secret`
+   and `create-process`), and the `inherit: "stderr"` case of
+   `packages/developer/console/src/node/drivers/__tests__/node-process-runner.driver.test.ts`.
+   - planned — in testbed's port (its own change, in figentra/testbed): the frozen-interface tests that `run --json` and
+     `status --json` print the documents of [0522](/adr/0522-testbed-own-repo) decision 5.
+   - planned — buffered line redaction, the upgrade named in item 2.
+
+Sources: the engine design and build report of STA-2093 (Linear STA-2093, with the testbed move of STA-2073), checked
+against the code on the branch named above. Owner acceptance of this text is pending.

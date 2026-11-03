@@ -20,8 +20,12 @@ Member at `packages/developer/console` (`tier:lib`).
   `decideMode`, so plain output stays one code path.
 - Measure text with `displayWidth`, never `.length`; never emit bidi isolates from a component (terminals draw them); `isolateBidi` is for callers who want it.
 - A password answer never reaches the output, an error or a log.
-- No new dependency without the owner: colours, gradient and prompts are hand-written on `node:util` and
-  `node:readline`.
+- Third-party dependencies sit behind a port and need the owner's approval (ADR 0506, 2026-11-02 amendment):
+  `@clack/prompts` behind `Prompter`, `@bomb.sh/tab` behind `Completions`, and `ink` with `react` behind `Renderer`, for
+  live parts only. Colours come from `node:util` and the terminal prompter runs on `node:readline`.
+- `json: "bare"` is for a CLI whose `--json` shape an ADR has frozen (testbed, ADR 0522). Every other CLI keeps the envelope.
+- An `inherit` child shares the standard streams and is never captured or redacted, so `createProcess` refuses it while the
+  run holds a secret value. Under `--json` it writes to stderr only.
 - `src/node/constants/app-versions.constant.ts` follows the core catalogs; bump it with them.
 
 ## PII

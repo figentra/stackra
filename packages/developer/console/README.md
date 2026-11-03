@@ -69,7 +69,9 @@ kernel's. It is a state to leave: a CLI pins its remaining list with `passthroug
 `@stackra/console/testing` until that list is empty (ADR 0500 decision 7, STA-1966).
 
 `help <command>` (or `<command> --help`) prints a command's help and never runs it; an unknown name exits 2 with the
-closest names. Spaced words run a `:`-joined command, longest match first (`acme mcp sync` runs `mcp:sync`).
+closest names. Spaced words run a `:`-joined command, longest match first (`acme mcp sync` runs `mcp:sync`). A value option
+may come before the name in its separate-token form (`acme --box 2 ssh`) when every command that declares it takes a value;
+`requireCommand: true` makes an invocation that names no command a usage error (exit 2) instead of the list.
 `Command({ group, docs, examples })` sets the command's heading in the list and adds examples and a docs link to its
 help.
 
@@ -98,7 +100,19 @@ cancelled prompt), 143 (SIGTERM).
 - Plain text (no escape byte, no cursor movement) under `NO_COLOR`, `--no-ansi`, `TERM=dumb` or without a TTY. No
   prompts without a TTY, in CI, with `-n` or with `--json`: a prompt takes its default, or the run exits 2 naming the
   option that answers it. `--json` writes exactly one document, `{ ok, data }` or `{ ok: false, error: { code, message } }`.
+- `createConsole({ json: "bare" })` changes that for a CLI whose `--json` shape an ADR has frozen (testbed, ADR 0522): a run
+  with no error writes its data alone as one line, whatever the exit code; a failed run writes nothing to stdout; all human
+  output goes to stderr. Every other CLI keeps the envelope.
 - Right-to-left text is measured by grapheme so it lines up; no isolate marks are written. On a terminal without bidi or Arabic shaping (`TERM_PROGRAM` claude-desktop, vscode, iTerm.app, Hyper, Tabby), right-to-left runs are written shaped and in visual order; `STACKRA_BIDI=visual|logical` overrides the choice, and pipes and `--json` always get logical text.
+
+## Child processes
+
+`io.process.run(command, args, options)` runs a child in the run's working directory. Its output is captured and shown only
+under `--verbose`, and a non-zero exit throws a `CommandError`. `{ interactive: true }` hands the child the terminal and is
+refused without one. `{ inherit: true }` shares the standard streams without a terminal: the output is live, not captured
+and not redacted. Under `--json` it writes to standard error and ignores standard input. An inherited child is refused
+while a secret option or argument of the run holds a value, because its output cannot be redacted. `onOutput` receives
+redacted chunks.
 
 ## Themes
 
