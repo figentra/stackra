@@ -13,7 +13,7 @@ import type { LocalizedText } from "@stackra/contracts";
 import { Block } from "#core/bases/block.base";
 import { LANDING_BLOCK_ICONS } from "#core/constants/landing-block-icons.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
-import type { FooterGroup } from "#core/schemas/footer-group.schema";
+import type { FooterGroup } from "#core/types/footer-group.type";
 
 /** The site footer a document places. */
 export class SiteFooterBlock extends Block({

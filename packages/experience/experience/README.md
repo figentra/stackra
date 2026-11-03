@@ -168,18 +168,23 @@ block.
 The Stackra landing (STA-2041) is a document of fifteen blocks on `@stackra/ui`. Each `Block` class in `.` declares
 the props a document gives it; its component in `./react` drops the `Block` suffix, which the class owns. A class sits
 in its own folder, `src/core/blocks/<name>/<name>.block.ts`, so gen's key rule, `<member>.<snake(folder)>`, gives it
-`experience.<name>` (`experience.hero_machine`). Gen registers blocks only for an app, so the page that draws these
-calls `registerBlocks` with those keys and the `./react` components. A slot a document fills with child nodes is the
-component's `children`; a `ReactNode` prop is a slot only a page fills in code.
+`experience.<name>` (`experience.hero_machine`). A slot a document fills with child nodes is the component's
+`children`; a `ReactNode` prop is a slot only a page fills in code.
 
-A field is a shape gen's schema reader accepts: words are `LocalizedText`, a nested shape is a `Schema` class in
-`src/core/schemas/` (`Drawing`, `DitherBand`, `Machine`, `Surface`, `LandingLink`, …), a closed choice an `Enum.of` in
-`src/core/enums/` (`SurfaceKind`, `ProductCardsLayout`, …) and a number carries `@Int` or `@Num`.
+**Nothing registers these blocks yet.** Gen does not compile the block kind: it emits no schema for a block class and
+registers blocks only for an app, from a component beside the block file. So no document resolves these keys until the
+OS landing shell registers its set (`registerBlocks` with the keys above, the classes and the `./react` components).
+The seed `assets/landing/index.json` resolves only once that lands; it is a held item of STA-2041.
+
+A field's nested shape is a plain type in `src/core/types/` (`Drawing`, `DitherBand`, `Machine`, `Surface`,
+`LandingLink`, …), its words `LocalizedText`, and a closed choice an `Enum.of` in `src/core/enums/` (`SurfaceKind`,
+`ProductCardsLayout`, …). They are types, not `Schema` classes, because gen's shape reader has no rule for
+`LocalizedText`; gen will compile the block shapes once it reads the block kind.
 
 | Block class (`.`)    | Component (`./react`) | What it draws                                                                                 |
 | -------------------- | --------------------- | --------------------------------------------------------------------------------------------- |
 | `SiteHeaderBlock`    | `SiteHeader`          | the top bar on `AppHeader`'s transparent variant                                              |
-| `HeroMachineBlock`   | `HeroMachine`         | the headline, the CTA row, the machine (the action window piped into its surfaces) and the engine `Illustration` on a dither band |
+| `HeroMachineBlock`   | `HeroMachine`         | the headline, the CTA row, the machine (a group named by its `label`: the action window piped into its surfaces) and the engine `Illustration` on a dither band |
 | `CtaRowBlock`        | `CtaRow`              | the champagne primary link, a copy link and a command chip                                    |
 | `StatementBlock`     | `Statement`           | a paragraph with `*`-marked steel keywords and its facts                                      |
 | `ChapterTitleBlock`  | `ChapterTitle`        | a chapter's heading and subtitle                                                              |

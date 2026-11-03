@@ -2,13 +2,13 @@
  * Stackra file contract:
  * Purpose: proves each of the fifteen landing blocks registers the `block` kind in the marketing palette with its
  *          icon, accepts no query, fits a page and a screen, and declares exactly its document props, nested shapes as
- *          Schema classes and numbers as decorated fields.
+ *          plain types (words as `LocalizedText`) until gen reads the block kind.
  * Boundary: test only; reads the kind registry through `kindOf` and the props through `Fields`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 16 and 26); ADR 0305 (rule 2); STA-2041.
  */
 import { kindOf } from "@stackra/container";
-import { Enum } from "@stackra/contracts";
+import { Enum, type LocalizedText } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import type { Fields } from "@stackra/validation";
 
@@ -32,10 +32,10 @@ import { MonoDisplayArt } from "#core/enums/mono-display-art.enum";
 import { ProductCardsLayout } from "#core/enums/product-cards-layout.enum";
 import { SurfaceKind } from "#core/enums/surface-kind.enum";
 import { TerminalLineKind } from "#core/enums/terminal-line-kind.enum";
-import type { DitherBand } from "#core/schemas/dither-band.schema";
-import type { Drawing } from "#core/schemas/drawing.schema";
-import type { Machine } from "#core/schemas/machine.schema";
-import type { Surface } from "#core/schemas/surface.schema";
+import type { DitherBand } from "#core/types/dither-band.type";
+import type { Drawing } from "#core/types/drawing.type";
+import type { Machine } from "#core/types/machine.type";
+import type { Surface } from "#core/types/surface.type";
 
 /** Each landing block and the palette icon it declares. */
 const BLOCKS = [
@@ -104,6 +104,7 @@ describe("the landing blocks", () => {
     expectTypeOf<HeroMachineBlock["art"]>().toEqualTypeOf<Drawing>();
     expectTypeOf<HeroMachineBlock["horizon"]>().toEqualTypeOf<DitherBand>();
     expectTypeOf<HeroMachineBlock["machine"]>().toEqualTypeOf<Machine | undefined>();
+    expectTypeOf<Machine["label"]>().toEqualTypeOf<LocalizedText>();
     expectTypeOf<SurfacesBlock["surfaces"]>().toEqualTypeOf<Surface[]>();
     expectTypeOf<Surface["kind"]>().toEqualTypeOf<SurfaceKind>();
   });

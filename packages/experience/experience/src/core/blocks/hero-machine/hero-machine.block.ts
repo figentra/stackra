@@ -13,11 +13,11 @@ import type { LocalizedText } from "@stackra/contracts";
 import { Block } from "#core/bases/block.base";
 import { LANDING_BLOCK_ICONS } from "#core/constants/landing-block-icons.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
-import type { CopyLink } from "#core/schemas/copy-link.schema";
-import type { DitherBand } from "#core/schemas/dither-band.schema";
-import type { Drawing } from "#core/schemas/drawing.schema";
-import type { LandingLink } from "#core/schemas/landing-link.schema";
-import type { Machine } from "#core/schemas/machine.schema";
+import type { CopyLink } from "#core/types/copy-link.type";
+import type { DitherBand } from "#core/types/dither-band.type";
+import type { Drawing } from "#core/types/drawing.type";
+import type { LandingLink } from "#core/types/landing-link.type";
+import type { Machine } from "#core/types/machine.type";
 
 /** The hero a document places. */
 export class HeroMachineBlock extends Block({

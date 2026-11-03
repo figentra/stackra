@@ -13,7 +13,7 @@ import type { LocalizedText } from "@stackra/contracts";
 import { Block } from "#core/bases/block.base";
 import { LANDING_BLOCK_ICONS } from "#core/constants/landing-block-icons.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
-import type { Surface } from "#core/schemas/surface.schema";
+import type { Surface } from "#core/types/surface.type";
 
 /** The surfaces a document places. */
 export class SurfacesBlock extends Block({

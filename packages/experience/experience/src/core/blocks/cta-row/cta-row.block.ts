@@ -11,8 +11,8 @@
 import { Block } from "#core/bases/block.base";
 import { LANDING_BLOCK_ICONS } from "#core/constants/landing-block-icons.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
-import type { CopyLink } from "#core/schemas/copy-link.schema";
-import type { LandingLink } from "#core/schemas/landing-link.schema";
+import type { CopyLink } from "#core/types/copy-link.type";
+import type { LandingLink } from "#core/types/landing-link.type";
 
 /** The call-to-action row a document places. */
 export class CtaRowBlock extends Block({

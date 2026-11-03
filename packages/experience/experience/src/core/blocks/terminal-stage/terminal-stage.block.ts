@@ -14,9 +14,9 @@ import type { LocalizedText } from "@stackra/contracts";
 import { Block } from "#core/bases/block.base";
 import { LANDING_BLOCK_ICONS } from "#core/constants/landing-block-icons.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
-import type { DitherBand } from "#core/schemas/dither-band.schema";
-import type { Drawing } from "#core/schemas/drawing.schema";
-import type { RecordedLine } from "#core/schemas/recorded-line.schema";
+import type { DitherBand } from "#core/types/dither-band.type";
+import type { Drawing } from "#core/types/drawing.type";
+import type { RecordedLine } from "#core/types/recorded-line.type";
 
 /** The try-it terminal a document places. */
 export class TerminalStageBlock extends Block({

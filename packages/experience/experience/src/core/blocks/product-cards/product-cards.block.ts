@@ -15,7 +15,7 @@ import { Block } from "#core/bases/block.base";
 import { LANDING_BLOCK_ICONS } from "#core/constants/landing-block-icons.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
 import type { ProductCardsLayout } from "#core/enums/product-cards-layout.enum";
-import type { LandingProduct } from "#core/schemas/landing-product.schema";
+import type { LandingProduct } from "#core/types/landing-product.type";
 
 /** The product cards a document places. */
 export class ProductCardsBlock extends Block({

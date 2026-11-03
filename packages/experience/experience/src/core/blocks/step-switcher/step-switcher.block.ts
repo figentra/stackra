@@ -13,7 +13,7 @@ import type { LocalizedText } from "@stackra/contracts";
 import { Block } from "#core/bases/block.base";
 import { LANDING_BLOCK_ICONS } from "#core/constants/landing-block-icons.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
-import type { SwitcherStep } from "#core/schemas/switcher-step.schema";
+import type { SwitcherStep } from "#core/types/switcher-step.type";
 
 /** The step switcher a document places. */
 export class StepSwitcherBlock extends Block({

@@ -90,6 +90,10 @@
         }
       },
       "machine": {
+        "label": {
+          "en": "One action, every surface",
+          "ar": "إجراء واحد على كل شاشة"
+        },
         "action": {
           "filename": "cancel-order.action.ts",
           "code": "import type { CancelOrderInput } from \"#modules/orders/schemas/cancel-order-input.schema\";\nimport type { CancelOrderOutput } from \"#modules/orders/schemas/cancel-order-output.schema\";\n\nexport class CancelOrderAction extends Action({\n  key: \"order.cancel\",\n  actors: [ActorKind.User, ActorKind.Agent],\n}) {\n  constructor(private readonly orders: OrderService) {\n    super();\n  }\n\n  async handle(input: CancelOrderInput, ctx: ActionContext): Promise<CancelOrderOutput> {\n    const order = await this.orders.findOneOrFail(input.orderId);\n    await ctx.authorize(order); // the permission from the key, refined by OrderPolicy#cancel\n    // ...\n  }\n}\n"
@@ -126,7 +130,7 @@
     "props": {
       "text": {
         "en": "Stackra is a *TypeScript* framework where behaviour is written once, as *typed, authorised actions*, and every screen is drawn from *one design system* in *Arabic and English*. It is the stack under every Figentra product, by figentra_.",
-        "ar": "ستاكرا إطار عمل بلغة *TypeScript* يُكتب فيه السلوك مرة واحدة، *إجراءاتٍ محدّدة النوع ومفوَّضة*، وتُرسم فيه كل شاشة من *نظام تصميم واحد* *بالعربية والإنجليزية*. وهي الأساس تحت كل منتجات فيجنترا، من \u2066figentra_\u2069."
+        "ar": "ستاكرا إطار عمل بلغة *TypeScript* يُكتب فيه السلوك مرة واحدة، *إجراءاتٍ محدّدة النوع ومُصرَّحًا بها*، وتُرسم فيه كل شاشة من *نظام تصميم واحد* *بالعربية والإنجليزية*. وهي الأساس تحت كل منتجات فيجنترا. ستاكرا من فيجنترا."
       }
     }
   },
@@ -224,7 +228,7 @@
       "id": "expose",
       "title": {
         "en": "Expose",
-        "ar": "اعرض"
+        "ar": "أتِح"
       },
       "body": {
         "en": "stackra gen derives the route from the key: order.cancel becomes PUT /orders/:orderId/cancel. The Encore endpoint is generated, never hand-written.",
@@ -335,7 +339,7 @@
               "code": {
                 "filename": "refund.service.ts",
                 "language": "ts",
-                "source": "import type { CommerceClient } from \"#stackra/clients\";\n\nexport class RefundService {\n  constructor(private readonly commerce: CommerceClient) {}\n\n  async refund(orderId: PublicId<\"ord\">): Promise<void> {\n    await this.commerce.order.cancel({ orderId });\n  }\n}\n"
+                "source": "import type { CommerceClient } from \"#stackra/clients/commerce\";\n\nexport class RefundService {\n  constructor(private readonly commerce: CommerceClient) {}\n\n  async refund(orderId: PublicId<\"ord\">): Promise<void> {\n    await this.commerce.order.cancel.call({ orderId });\n  }\n}\n"
               }
             }
           ]
@@ -436,13 +440,13 @@
                 "ar": "الأداة كما يراها الوكيل"
               },
               "body": {
-                "en": "stackra gen collects the action as an MCP tool: its name is the action's key, its input schema the action's input. Nobody writes the tool.",
-                "ar": "يجمع stackra gen الإجراء أداةَ MCP: اسمها مفتاح الإجراء، ومخطّط مدخلاتها مدخلات الإجراء. لا أحد يكتب الأداة."
+                "en": "stackra gen collects the action as an MCP tool: its name is derived from the action's key, its input schema is the action's input, and its hints come from the permission's risk. Nobody writes the tool.",
+                "ar": "يجمع stackra gen الإجراء أداةَ MCP: اسمها مشتقّ من مفتاح الإجراء، ومخطّط مدخلاتها مدخلات الإجراء، وتلميحاتها من مستوى خطورة الصلاحية. لا أحد يكتب الأداة."
               },
               "code": {
                 "filename": "tools/list",
                 "language": "json",
-                "source": "{\n  \"name\": \"orders.order.cancel\",\n  \"description\": \"Cancel an order.\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"orderId\": {\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"orderId\"\n    ]\n  },\n  \"annotations\": {\n    \"destructiveHint\": true,\n    \"idempotentHint\": true\n  }\n}\n"
+                "source": "{\n  \"name\": \"orders_order_cancel\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"required\": [\n      \"orderId\"\n    ],\n    \"properties\": {\n      \"orderId\": {\n        \"type\": \"string\",\n        \"pattern\": \"^ord_[0-9A-Za-z]{26}$\"\n      }\n    }\n  },\n  \"annotations\": {\n    \"readOnlyHint\": false,\n    \"destructiveHint\": false,\n    \"idempotentHint\": false,\n    \"openWorldHint\": false\n  }\n}\n"
               }
             },
             {
@@ -515,7 +519,7 @@
               "code": {
                 "filename": "runway.yaml",
                 "language": "yaml",
-                "source": "environments:\n  production:\n    # A merge to main deploys once the production environment is approved.\n    deploy:\n      on: merge-to-main\n      gate: smoke\n      approval: github-environment\n"
+                "source": "environments:\n  production:\n    # A merge to main deploys once the production environment is approved.\n    deploy:\n      on: merge-to-main\n      approval: github-environment\n"
               }
             }
           ]
@@ -674,6 +678,20 @@
           }
         }
       ]
+    }
+  },
+  {
+    "id": "try-it-title",
+    "block": "experience.chapter_title",
+    "props": {
+      "title": {
+        "en": "Try it.",
+        "ar": "جرّبه."
+      },
+      "subtitle": {
+        "en": "stackra create has not shipped yet. Once it does, this terminal plays a session recorded from the real CLI.",
+        "ar": "لم يُطلَق الأمر stackra create بعد. وحين يُطلَق، تعرض هذه الطرفية جلسة مسجّلة من سطر الأوامر الحقيقي."
+      }
     }
   },
   {
@@ -889,7 +907,7 @@
           "id": "expose",
           "label": {
             "en": "Expose",
-            "ar": "اعرض"
+            "ar": "أتِح"
           },
           "status": {
             "en": "generated PUT /orders/:orderId/cancel",

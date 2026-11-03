@@ -13,7 +13,7 @@ import type { LocalizedText } from "@stackra/contracts";
 import { Block } from "#core/bases/block.base";
 import { LANDING_BLOCK_ICONS } from "#core/constants/landing-block-icons.constant";
 import { BlockCategory } from "#core/enums/block-category.enum";
-import type { LandingLink } from "#core/schemas/landing-link.schema";
+import type { LandingLink } from "#core/types/landing-link.type";
 
 /** The site header a document places. */
 export class SiteHeaderBlock extends Block({
