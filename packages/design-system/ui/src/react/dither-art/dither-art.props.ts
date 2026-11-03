@@ -27,7 +27,10 @@ export interface DitherArtProps {
   readonly mode?: "dots" | "glyphs" | undefined;
   /** The characters `glyphs` draws from. Defaults to `{}[]()<>/=+*#;`. */
   readonly glyphs?: string | undefined;
-  /** Where the core glow (the sun) sits, as fractions of the art's width and height. Defaults to the pattern's own. */
+  /**
+   * Where the core glow (the sun) sits, as fractions of the art's width from the inline start and of its height, so in
+   * right-to-left it follows the mirrored layout. Defaults to the pattern's own.
+   */
   readonly sun?: DitherSun | undefined;
   /** How fast the art drifts on real time; 0 is still. Defaults to 1, and is 0 whenever motion is reduced. */
   readonly speed?: number | undefined;

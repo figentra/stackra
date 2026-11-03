@@ -64,6 +64,8 @@ describe("Frame (web)", () => {
       expect(stripe.className).toContain("var(--blueprint-rule-width)_solid_var(--blueprint-rule)");
     expect(bar?.children[1]?.textContent).toBe("cancel-order.action.ts");
     expect(bar?.children[1]?.className).toContain("font-mono");
+    // A file name is isolated, so a right-to-left page neither reorders nor clips it from the start.
+    expect(bar?.children[1]?.getAttribute("dir")).toBe("auto");
     expect(container.querySelectorAll("[tabindex], [role]")).toHaveLength(0);
   });
 

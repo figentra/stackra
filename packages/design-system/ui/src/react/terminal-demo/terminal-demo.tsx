@@ -12,18 +12,14 @@
  *          and 2.3.3; STA-2041.
  */
 import { cn } from "@heroui/react";
-import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
-import { type ReactElement, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type ReactElement, useRef } from "react";
 
 import type { TerminalLine } from "#contracts/types/terminal-line.type";
 import { LONG_TAIL_KEYS } from "#core/constants/long-tail-keys.constant";
 import { CopyButton } from "#react/copy-button/copy-button";
-import { useMotion } from "#react/design-system-provider/use-motion";
+import { useFloorSteps } from "#react/hooks/use-floor-steps";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { TerminalDemoProps } from "#react/terminal-demo/terminal-demo.props";
-
-/** The theme's floor step: one whole line a step. */
-const FLOOR_MS = motionTiming(STACKRA_THEME, "floor").durationMs;
 
 /** The terminal's words. */
 const K = LONG_TAIL_KEYS.ui.terminal_demo;
@@ -45,52 +41,22 @@ export function TerminalDemo({
   lines,
   result,
   autoplay = "in-view",
-  stepMs = FLOOR_MS,
+  stepMs,
   isCopyable = true,
   copyLabel,
   className,
 }: TerminalDemoProps): ReactElement {
   const t = useUiText();
   const name = label ?? t(K.label);
-  const motion = useMotion();
-  const plays = autoplay !== "never" && motion === "full";
   const root = useRef<HTMLElement>(null);
-  // The last frame first, as the server and the edge draw it.
-  const [shown, setShown] = useState(lines.length);
-  const [isStarted, setIsStarted] = useState(autoplay === "always");
-
-  // Before paint, so a session about to play never flashes its last frame.
-  useLayoutEffect(() => {
-    // oxlint-disable-next-line react/set-state-in-effect -- reason: the server draws the last frame; only the browser rewinds it to play
-    if (plays) setShown(0);
-  }, [plays]);
-
-  useEffect(() => {
-    const element = root.current;
-    if (!plays || isStarted || !element) return undefined;
-    if (typeof IntersectionObserver !== "function") {
-      // oxlint-disable-next-line react/set-state-in-effect -- reason: with no IntersectionObserver there is no view to wait for
-      setIsStarted(true);
-      return undefined;
-    }
-    const sight = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) setIsStarted(true);
-      },
-      { threshold: 0.4 },
-    );
-    sight.observe(element);
-    return () => sight.disconnect();
-  }, [plays, isStarted]);
-
-  useEffect(() => {
-    if (!plays || !isStarted || shown >= lines.length) return undefined;
-    const step = setTimeout(() => setShown((count) => count + 1), stepMs);
-    return () => clearTimeout(step);
-  }, [plays, isStarted, shown, lines.length, stepMs]);
-
-  // Below the full motion level, or never playing, everything shows, whatever the timer reached.
-  const visible = plays ? shown : lines.length;
+  // One whole line a step; below the full motion level, or never playing, every line shows.
+  const visible = useFloorSteps(root, {
+    total: lines.length,
+    isEnabled: autoplay !== "never",
+    startsAtOnce: autoplay === "always",
+    threshold: 0.4,
+    stepMs,
+  });
   const isDone = visible >= lines.length;
   const repeats = new Map<string, number>();
   return (

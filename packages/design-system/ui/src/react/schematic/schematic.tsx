@@ -15,15 +15,11 @@
  *          motion principles (one orchestrated moment, the `floor` motion step); WCAG 2.2 SC 2.3.3; STA-2041.
  */
 import { cn } from "@heroui/react";
-import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
-import { type ReactElement, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type ReactElement, useLayoutEffect, useRef, useState } from "react";
 
 import type { SchematicLink } from "#contracts/types/schematic-link.type";
-import { useMotion } from "#react/design-system-provider/use-motion";
+import { useFloorSteps } from "#react/hooks/use-floor-steps";
 import type { SchematicProps } from "#react/schematic/schematic.props";
-
-/** The theme's floor step, as TerminalDemo plays it. */
-const STEP_MS = motionTiming(STACKRA_THEME, "floor").durationMs;
 
 /** The segments of a pipe: down, across, down. */
 const SEGMENTS = 3;
@@ -75,14 +71,10 @@ export function Schematic({
   className,
 }: SchematicProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
-  const motion = useMotion();
-  const plays = drawOnView && motion === "full";
   const [pipes, setPipes] = useState<ReturnType<typeof measure>>([]);
-  // Every pipe drawn, as the server and a still page show it.
-  const [step, setStep] = useState(Number.POSITIVE_INFINITY);
-  const [isStarted, setIsStarted] = useState(false);
   const starts = startsOf(links);
   const total = starts.length === 0 ? 0 : Math.max(...starts) + SEGMENTS;
+  const drawn = useFloorSteps(root, { total, isEnabled: drawOnView });
 
   useLayoutEffect(() => {
     const element = root.current;
@@ -97,37 +89,6 @@ export function Schematic({
     // A caller's inline `links` re-measures only when the caller renders again: the measure updates this component alone.
   }, [links]);
 
-  // Before paint, so a machine about to draw in never flashes its pipes.
-  useLayoutEffect(() => {
-    // oxlint-disable-next-line react/set-state-in-effect -- reason: a still page shows every pipe; only a playing one rewinds
-    if (plays) setStep(0);
-  }, [plays]);
-
-  useEffect(() => {
-    const element = root.current;
-    if (!plays || isStarted || !element) return undefined;
-    if (typeof IntersectionObserver !== "function") {
-      // oxlint-disable-next-line react/set-state-in-effect -- reason: with no IntersectionObserver there is no view to wait for
-      setIsStarted(true);
-      return undefined;
-    }
-    const sight = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) setIsStarted(true);
-      },
-      { threshold: 0.2 },
-    );
-    sight.observe(element);
-    return () => sight.disconnect();
-  }, [plays, isStarted]);
-
-  useEffect(() => {
-    if (!plays || !isStarted || step >= total) return undefined;
-    const next = setTimeout(() => setStep((count) => count + 1), STEP_MS);
-    return () => clearTimeout(next);
-  }, [plays, isStarted, step, total]);
-
-  const drawn = plays ? step : Number.POSITIVE_INFINITY;
   const junctions = new Map<string, readonly [number, number]>();
   const paths = pipes.flatMap(({ key: pipe, corners, start }) => {
     const shown = Math.min(SEGMENTS, Math.max(0, drawn - start));

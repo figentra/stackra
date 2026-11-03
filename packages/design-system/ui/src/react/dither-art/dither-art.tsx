@@ -9,14 +9,17 @@
  * Boundary: decoration only, hidden from assistive tech. No WebGL and no dependency: the field code is the brand kit's,
  *           ported as it is. Colours are resolved from token names through the canvas's own computed style, so a theme
  *           or scheme switch redraws in the new colours. The drift redraws on the theme's tick (20 times a second) and only while the
- *           art is on screen.
+ *           art is on screen; glyphs reshuffle every two `blink` steps. `sun.x` runs from the inline start: in
+ *           right-to-left an abstract dot field mirrors as a whole (poster and canvas), while a glyph field keeps its
+ *           characters unmirrored and moves a given sun to the other side.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); brand rules §39 and §40; motion principles (exact and quiet); WCAG 2.2 SC
- *          2.2.2 and 2.3.3; STA-2041.
+ * Governing contract: ADR 0302 (decision 3); brand rules §39 and §40; motion principles (exact and quiet); ADR 0060
+ *          (right-to-left); WCAG 2.2 SC 2.2.2 and 2.3.3; STA-2041.
  */
 import { cn } from "@heroui/react";
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { type ReactElement, use, useEffect, useRef, useState } from "react";
+import { useLocale } from "react-aria-components";
 
 import { ditherTone } from "#core/functions/dither-tone.function";
 import { DesignSystemContext } from "#react/design-system-provider/design-system-context";
@@ -41,6 +44,18 @@ const FRAME_MS = motionTiming(STACKRA_THEME, "tick").durationMs;
 // oxlint-disable-next-line stackra/no-literal-duration -- reason: WCAG 2.2.2's five-second limit, not a design step
 const DRIFT_MS = 4500;
 
+/** How long each glyph cell holds its character while drifting, in seconds: two of the theme's `blink` steps. */
+const RESHUFFLE_SECONDS = (2 * motionTiming(STACKRA_THEME, "blink").durationMs) / 1000;
+
+/**
+ * The bounds of one cell in CSS pixels. Below 2 the dither turns to grey noise; above 8 a dot reads as a block rather
+ * than a dither, while a glyph stays a legible code character up to 24. Brand rules §40 set these, not a theme length,
+ * since they bound the pattern's own grain.
+ */
+const MIN_CELL = 2;
+const MAX_DOT_CELL = 8;
+const MAX_GLYPH_CELL = 24;
+
 /** The characters `glyphs` draws from by default. */
 const GLYPHS = "{}[]()<>/=+*#;";
 
@@ -50,10 +65,11 @@ const fract = (n: number): number => {
   return s - Math.floor(s);
 };
 
-/** The glyph of cell (i, j) at time t: fixed per cell when still, each cell reshuffling every two seconds on its own beat. */
+/** The glyph of cell (i, j) at time t: fixed per cell when still, each cell reshuffling on its own beat. */
 const glyphAt = (set: readonly string[], i: number, j: number, t: number): string => {
   const seed = fract(i * 12.9898 + j * 78.233);
-  return set[Math.floor(fract(seed * 91.7 + Math.floor(t * 0.5 + seed) * 12.3) * set.length)] ?? "";
+  const beat = Math.floor(t / RESHUFFLE_SECONDS + seed);
+  return set[Math.floor(fract(seed * 91.7 + beat * 12.3) * set.length)] ?? "";
 };
 
 /** A brand pattern, dithered on a canvas over its poster. */
@@ -77,6 +93,7 @@ export function DitherArt({
   // Read so a scheme switch redraws in the new colours.
   const scheme = use(DesignSystemContext)?.resolvedColorScheme;
   const isGlyphs = mode === "glyphs";
+  const isRtl = useLocale().direction === "rtl";
   const sunX = sun?.x;
   const sunY = sun?.y;
 
@@ -84,7 +101,7 @@ export function DitherArt({
     const element = canvas.current;
     const context = element?.getContext("2d");
     if (!element || !context) return undefined;
-    const cell = Math.min(isGlyphs ? 24 : 8, Math.max(2, pixelSize));
+    const cell = Math.min(isGlyphs ? MAX_GLYPH_CELL : MAX_DOT_CELL, Math.max(MIN_CELL, pixelSize));
     // Dots draw one canvas pixel per cell, scaled up crisp; glyphs need the cell's real size in device pixels.
     const scale = isGlyphs ? cell * (window.devicePixelRatio || 1) : 1;
     // A token name's colour, as the browser computes it on the canvas.
@@ -95,7 +112,13 @@ export function DitherArt({
     const colours = [colourOf(back), colourOf(front), colourOf(core)];
     const set = [...(glyphs || GLYPHS)];
     const mono = getComputedStyle(element).getPropertyValue("--font-mono").trim() || "monospace";
-    const centre = sunX === undefined || sunY === undefined ? undefined : { x: sunX, y: sunY };
+    // `sun.x` runs from the inline start. Dots mirror as a whole in right-to-left (the wrapper flips); glyphs cannot
+    // mirror their characters, so they move the sun to the other side instead.
+    const isFlippedSun = isGlyphs && isRtl;
+    const centre =
+      sunX === undefined || sunY === undefined
+        ? undefined
+        : { x: isFlippedSun ? 1 - sunX : sunX, y: sunY };
     let cols = 0;
     let rows = 0;
     let isVisible = true;
@@ -157,8 +180,22 @@ export function DitherArt({
       sizes?.disconnect();
       sight?.disconnect();
     };
+  }, [
+    pattern,
+    front,
+    back,
+    core,
+    pixelSize,
+    isGlyphs,
+    glyphs,
+    sunX,
+    sunY,
+    speed,
+    isStill,
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- reason: the colours are read from the computed style, which a scheme switch changes
-  }, [pattern, front, back, core, pixelSize, isGlyphs, glyphs, sunX, sunY, speed, isStill, scheme]);
+    scheme,
+    isRtl,
+  ]);
 
   return (
     <div
@@ -166,7 +203,13 @@ export function DitherArt({
       data-slot="dither-art"
       data-pattern={pattern}
       data-mode={mode}
-      className={cn("pointer-events-none relative overflow-hidden", MASK[mask], className)}
+      className={cn(
+        "pointer-events-none relative overflow-hidden",
+        // An abstract dot field mirrors with the page, poster and canvas together; code glyphs never mirror.
+        !isGlyphs && "rtl:-scale-x-100",
+        MASK[mask],
+        className,
+      )}
     >
       <img
         src={typeof poster === "string" ? poster : poster[scheme === "light" ? "light" : "dark"]}

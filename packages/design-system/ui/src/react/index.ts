@@ -748,3 +748,5 @@ export { SectionDock } from "#react/section-dock/section-dock";
 export type { SectionDockProps } from "#react/section-dock/section-dock.props";
 export { Illustration } from "#react/illustration/illustration";
 export type { IllustrationProps } from "#react/illustration/illustration.props";
+export { useFloorSteps } from "#react/hooks/use-floor-steps";
+export type { FloorStepsOptions } from "#react/hooks/floor-steps-options.type";

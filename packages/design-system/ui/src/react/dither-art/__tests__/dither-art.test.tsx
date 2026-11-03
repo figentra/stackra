@@ -3,11 +3,13 @@
  * Purpose: proves the web DitherArt is hidden decoration that nothing can focus, keeps its poster under the canvas,
  *          draws the pattern at cell resolution in the three token colours, drifts at full motion and stands still
  *          under reduced motion or `speed={0}`, holds after under five seconds of drift, picks a poster per scheme,
- *          draws the same in right-to-left, and that the ported dither puts the strata's core at the base and none at
- *          the top. The `glyphs` mode draws lit cells as characters from its set at the cell size, and `sun` moves the
- *          core glow while the kit's own centre stays the default.
+ *          draws the same in right-to-left (a dot field mirrors as a whole, glyphs never), and that the ported dither
+ *          puts the strata's core at the base and none at the top. The `glyphs` mode draws lit cells as characters
+ *          from its set at the cell size, `sun` moves the core glow while the kit's own centre stays the default, and a
+ *          glyph field moves a given sun to the other side in right-to-left.
  * Boundary: jsdom has no canvas or layout, so `getContext`, the element's size and `requestAnimationFrame` are
- *           recording stand-ins; `useReducedMotion` is stubbed.
+ *           recording stand-ins, and the `rtl:` mirror is a class, not a transform jsdom runs; `useReducedMotion` is
+ *           stubbed.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0022 (test placement); brand rules §40; WCAG 2.2 SC 2.2.2; STA-2041.
  */
@@ -45,6 +47,18 @@ const tones = (row: number) =>
 /** The strata's tones along the top row of a 64 × 32 grid, the core glow at `sun` when given. */
 const top = (sun?: { x: number; y: number }) =>
   Array.from({ length: 64 }, (_, i) => ditherTone("strata", i, 0, 64, 32, 0, sun));
+
+/** The cells a still glyph field draws a character at, in any order, with its sun at `x` from the inline start. */
+const glyphCells = (x: number, locale: string) => {
+  context.fillText.mockClear();
+  render(
+    <I18nProvider locale={locale}>
+      <DitherArt poster="/p.png" mode="glyphs" pixelSize={2} speed={0} sun={{ x, y: 0.5 }} />
+    </I18nProvider>,
+  );
+  const calls = context.fillText.mock.calls as unknown as readonly [string, number, number][];
+  return calls.map(([, i, j]) => `${String(i)}:${String(j)}`).sort();
+};
 
 describe("DitherArt (web)", () => {
   beforeEach(() => {
@@ -96,8 +110,8 @@ describe("DitherArt (web)", () => {
     expect(frame).not.toHaveBeenCalled();
   });
 
-  it("draws the same in right-to-left", () => {
-    render(<DitherArt poster="/p.png" pattern="lanes" speed={0} />);
+  it("draws the same in right-to-left, where a dot field mirrors as a whole and glyphs never do", () => {
+    const { container } = render(<DitherArt poster="/p.png" pattern="lanes" speed={0} />);
     const ltr = [...fills];
     fills.length = 0;
     render(
@@ -106,6 +120,19 @@ describe("DitherArt (web)", () => {
       </I18nProvider>,
     );
     expect(fills).toEqual(ltr);
+    expect(container.querySelector('[data-slot="dither-art"]')?.className).toContain(
+      "rtl:-scale-x-100",
+    );
+    const glyphs = render(<DitherArt poster="/p.png" mode="glyphs" speed={0} />);
+    expect(glyphs.container.querySelector('[data-slot="dither-art"]')?.className).not.toContain(
+      "scale-x",
+    );
+  });
+
+  it("moves a glyph field's sun to the other side in right-to-left", () => {
+    const end = glyphCells(0.8, "en");
+    expect(end.length).toBeGreaterThan(0);
+    expect(glyphCells(0.2, "ar")).toEqual(end);
   });
 
   it("holds its last frame before five seconds of drift (WCAG 2.2.2)", () => {

@@ -82,7 +82,11 @@ export function Frame({
           <span aria-hidden="true" className={STRIPE} />
           {title ? (
             <>
-              <span className="min-w-0 max-w-[70%] shrink truncate font-mono text-xs text-muted">
+              {/* A file name, isolated like the window title. */}
+              <span
+                dir="auto"
+                className="min-w-0 max-w-[70%] shrink truncate font-mono text-xs text-muted"
+              >
                 {title}
               </span>
               <span aria-hidden="true" className={STRIPE} />
