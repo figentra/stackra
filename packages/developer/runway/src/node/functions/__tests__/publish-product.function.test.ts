@@ -68,8 +68,14 @@ beforeEach(() => {
   calls = [];
   kv = new MemoryEdgeKv();
   repository = mkdtempSync(join(tmpdir(), "stackra-publish-"));
-  writeFileSync(join(repository, "runway.yaml"), JSON.stringify(PRODUCT_ROOT));
+  const { ops: _ops, ...surfaces } = PRODUCT_ROOT.surfaces;
+  writeRunway({ ...PRODUCT_ROOT, surfaces });
 });
+
+/** Writes the product's root runway. */
+function writeRunway(root: unknown): void {
+  writeFileSync(join(repository, "runway.yaml"), JSON.stringify(root));
+}
 
 afterEach(() => {
   rmSync(repository, { recursive: true, force: true });
@@ -179,7 +185,17 @@ describe("publishProduct", () => {
     expect(kv.calls).toEqual([]);
   });
 
+  it("publishes the ops contributions bundle beside the others", async () => {
+    writeRunway(PRODUCT_ROOT);
+    writeBundle(repository, "console", "1.3.0");
+    writeBundle(repository, "ops", "1.3.0", { targets: "ops@1" });
+    const result = await publishProduct(request({ served: ["console@3", "ops@1"] }));
+    expect(Object.keys(result.canaries)).toEqual(["console", "ops"]);
+    expect(kv.json("canary:mezzora:ops")).toMatchObject({ targets: "ops@1" });
+  });
+
   it("refuses an ops contribution without a second reviewer", async () => {
+    writeRunway(PRODUCT_ROOT);
     writeBundle(repository, "console", "1.3.0");
     expect(
       await issuePaths(

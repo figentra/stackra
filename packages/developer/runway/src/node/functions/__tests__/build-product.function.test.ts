@@ -61,6 +61,10 @@ const bundler: SurfaceBundler = async (job) => {
   };
 };
 
+/** The template runway with an `ops` line that contributes `contributes`. */
+const withOps = (contributes: string) =>
+  TEMPLATE_RUNWAY.replace("mobile:\n", `  ops:\n    contributes: "${contributes}"\nmobile:\n`);
+
 describe("buildProduct", () => {
   it("dry-runs the template: plans the bundles, writes the app config and records the EAS build", async () => {
     writeProduct(product, TEMPLATE_RUNWAY, {
@@ -143,6 +147,38 @@ describe("buildProduct", () => {
     );
     expect(build.surfaces["landing"]?.bundle?.targets).toBe("landing@1");
     expect(build.mobile["app"]?.buildIds).toEqual(["build-ios", "build-android"]);
+  });
+
+  it("writes the ops contributions as a declarative bundle and refuses a package that is missing", async () => {
+    const packages = { "@figentra/acme-example": ["console", "landing", "native"] } as const;
+    writeProduct(product, withOps("@figentra/acme-example"), packages);
+    const build = await buildProduct({
+      repository: product,
+      scope: "@example",
+      os,
+      sha: SHA,
+      bundle: bundler,
+      surfacesOnly: true,
+    });
+    const folder = `dist/bundles/ops/${SHA.slice(0, 12)}`;
+    expect(build.ops).toMatchObject({ package: "@figentra/acme-example", targets: "ops@1" });
+    expect(read(`${folder}/bundle.manifest.json`).entry).toBe("ops.contributions.json");
+    expect(read(`${folder}/ops.contributions.json`)).toEqual({
+      product: "acme",
+      contributes: { package: "@figentra/acme-example" },
+    });
+
+    writeProduct(product, withOps("@figentra/missing"), packages);
+    await expect(
+      buildProduct({
+        repository: product,
+        scope: "@example",
+        os,
+        sha: SHA,
+        bundle: bundler,
+        surfacesOnly: true,
+      }),
+    ).rejects.toThrow(RunwayInvalidError);
   });
 
   it("builds the surfaces only for dev and preview, and lists the mobile apps as skipped", async () => {

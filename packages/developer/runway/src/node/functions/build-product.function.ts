@@ -12,7 +12,8 @@
  *          generated config and the manifest are still written, so the outputs can be checked.
  * Boundary: writes under the product root only (`.stackra/`, `dist/`); builds through the given bundler, so Runway
  *           carries no build tool. Store accounts are checked when the app is submitted (`deployProduct`), not here.
- *           `ops` has no shell of a product's and is skipped.
+ *           `ops` has no shell of a product's: its `contributes` is written as a declarative bundle (the
+ *           contributions file and its manifest), with no bundler.
  * Runtime: node
  * Governing contract: ADR 0436 (decisions 2 and 4); ADR 0439 (decisions 2 and 3); ADR 0441 (decision 3); ADR 0481.
  */
@@ -196,6 +197,42 @@ export async function buildProduct(request: ProductBuildRequest): Promise<Produc
       content,
     };
   }
+  const contributes = root.surfaces?.ops?.contributes;
+  let ops: BundleManifest | undefined;
+  if (contributes !== undefined) {
+    const normalized = typeof contributes === "string" ? { package: contributes } : contributes;
+    if (!workspace.has(normalized.package))
+      issues.push({
+        path: "surfaces.ops.contributes",
+        message: `${normalized.package} is not a package under packages/`,
+      });
+    else {
+      const outDir = join(repository, EDGE_PUBLISH_SETTINGS.bundleDir, "ops", version);
+      rmSync(join(repository, EDGE_PUBLISH_SETTINGS.bundleDir, "ops"), {
+        recursive: true,
+        force: true,
+      });
+      mkdirSync(outDir, { recursive: true });
+      writeFileSync(
+        join(outDir, EDGE_PUBLISH_SETTINGS.opsContributionsFile),
+        `${JSON.stringify({ product: root.product?.key ?? root.project, contributes: normalized }, null, 2)}\n`,
+      );
+      ops = {
+        package: normalized.package,
+        surface: "ops",
+        targets: EDGE_PUBLISH_SETTINGS.opsTargets,
+        version,
+        entry: EDGE_PUBLISH_SETTINGS.opsContributionsFile,
+        modulepreload: [],
+        css: [],
+        imports: [],
+      };
+      writeFileSync(
+        join(outDir, EDGE_PUBLISH_SETTINGS.manifestFile),
+        `${JSON.stringify(ops, null, 2)}\n`,
+      );
+    }
+  }
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
   const mobile: Mutable<ProductBuild["mobile"]> = {};
@@ -252,6 +289,7 @@ export async function buildProduct(request: ProductBuildRequest): Promise<Produc
     version,
     dryRun: request.dryRun === true,
     surfaces,
+    ...(ops === undefined ? {} : { ops }),
     mobile,
     skipped: { mobile: skipped },
     planned,
