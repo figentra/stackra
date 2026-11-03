@@ -1,9 +1,18 @@
 ---
 title: "0500 — Four CLIs: stackra, runway, figentra-flow, figentra"
-description: "Accepted, amended 2026-10-31 (decision 12), amended by 0510 · 2026-10-31"
+description: "Accepted, amended 2026-10-31 (decision 12), amended by 0510, 0522 · 2026-10-31"
 ---
 
 <Note>Vellum is now Figentra Flow (renamed 2026-11-01).</Note>
+
+<Note>
+  Amended 2026-11-03 (STA-2073) by [0522](/adr/0522-testbed-own-repo): decisions 1 and 3 gain a
+  fifth CLI, `testbed`, the bin of `@figentra/testbed`. Its source lives in the public repository
+  figentra/testbed, and its package is internal (`@figentra`, read with Figentra's own tokens), so
+  its publishing follows decision 2. It is not part of `figentra`: the testbed's CLI and its box
+  agent share constants that one package keeps in one place. `stackra testbed` in `@stackra/cli`
+  stays for one release with a deprecation note. The other decisions stand.
+</Note>
 
 <Note>
   Amended 2026-11-01 by [0510](/adr/0510-flow-replaces-spec-kit): decision 10's `.specify/` folder

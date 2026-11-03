@@ -20,7 +20,7 @@ import type { ReactNode } from "react";
 import { vi } from "vitest";
 
 import { AccountSecurity, Passkeys } from "#contracts/index";
-import type { DeviceSession, PasskeyCredential } from "#contracts/index";
+import type { AccountSession, PasskeyCredential } from "#contracts/index";
 import {
   MemoryIdpAdminDriver,
   MemoryPasskeysDriver,
@@ -86,7 +86,7 @@ const LABELS = {
 
 const NOW = new Date("2026-11-02T10:00:00Z");
 
-const DEVICES: readonly DeviceSession[] = [
+const DEVICES: readonly AccountSession[] = [
   {
     id: "ses_1",
     device: "Safari on macOS",

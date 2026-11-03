@@ -80,7 +80,15 @@ describe("checkRegistry", () => {
     }
     expect(result.errors).toEqual([]);
     // Free only (ADR 0461): every built entry has its page, and the shell adds its own.
-    expect(webRoutes.length).toBeGreaterThanOrEqual(built("react"));
+    // Module kit blocks (ADR 0504) have no playground page: the docs pages draw them from their showcase JSON (ADR 0521).
+    expect(webRoutes.length).toBeGreaterThanOrEqual(
+      COMPONENTS.filter(
+        (entry) =>
+          entry.status !== "planned" &&
+          entry.platforms.includes("react") &&
+          entry.packageName === "@stackra/ui",
+      ).length,
+    );
     // The mobile app draws every native entry in its one component screen, so no per-entry screen file remains.
     expect(mobileScreens).toEqual([]);
     expect(built("native")).toBeGreaterThan(0);
