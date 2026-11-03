@@ -91,9 +91,13 @@ class WelcomePage extends Document({
   kind: ExperienceKind.Page,
   path: "/welcome",
   blocks: [
-    Blocks.custom(WelcomeHeroBlock, { titleKey: "orders::documents.welcome.hero" }),
-    Blocks.custom(MissingBlock, {}),
-    Blocks.table(ListOrdersQuery, { columns: ["id", "status"] }),
+    // Stand-ins, not Block classes, so gen never records a test block; the page only matches them by identity.
+    Blocks.custom(
+      WelcomeHeroBlock as never,
+      { titleKey: "orders::documents.welcome.hero" } as never,
+    ),
+    Blocks.custom(MissingBlock as never, {} as never),
+    Blocks.table(ListOrdersQuery as never, { columns: ["id", "status"] } as never),
   ],
 }) {}
 
