@@ -4,7 +4,8 @@
  *          as validate-repository.mjs, minus the config and catalogue checks): test placement and forbidden files,
  *          the runway schemas and files, member imports, raw SQL reasons, the Expo form factor and window sizing, the
  *          native module packages (ADR 0478), the brand NOTICE, and
- *          per member its manifest, required files and service shape, and in the Stackra repository its npm and
+ *          per member its manifest, required files and service shape, a notice listing every anonymous-callable call
+ *          (STA-2025), and in the Stackra repository its npm and
  *          `stackra` metadata.
  * Boundary: reads the listed files and runs `pnpm -r list`; returns findings and never prints. The runway check loads
  *           the built `@stackra/runway` (local member first, then the installed package); unbuilt is a finding when
@@ -38,6 +39,7 @@ import { isExpoAppConfig } from "#node/functions/is-expo-app-config.function";
 import { isMemberSource } from "#node/functions/is-member-source.function";
 import { isRawSqlSource } from "#node/functions/is-raw-sql-source.function";
 import { isRunwayFile } from "#node/functions/is-runway-file.function";
+import { anonymousSurfacesOf } from "#node/functions/anonymous-surfaces-of.function";
 import { listMembers } from "#node/functions/list-members.function";
 import { readJsonc } from "#node/functions/read-jsonc.function";
 import { tierFor } from "#node/functions/tier-for.function";
@@ -188,6 +190,19 @@ export async function structureFindings(
         "validate: stackra fields not checked against STACKRA_MANIFEST_SCHEMA: @stackra/skills is not built (pnpm turbo run build --filter=@stackra/skills)",
       );
   }
+  // Every call an anonymous caller may make, listed so a new one shows in review (STA-2025).
+  const anonymous = members.flatMap(({ path }) => {
+    const file = join(path, "stackra.manifest.json");
+    return existsSync(file)
+      ? anonymousSurfacesOf(
+          JSON.parse(readFileSync(file, "utf8")) as Parameters<typeof anonymousSurfacesOf>[0],
+        )
+      : [];
+  });
+  if (anonymous.length > 0)
+    options.warn(
+      `validate: ${anonymous.length} anonymous-callable action(s) and query(ies), past the permission and record-policy steps for a caller with no session: ${anonymous.join(", ")}`,
+    );
   for (const { dir, path } of members) {
     const at = (f: string): unknown =>
       existsSync(join(path, f)) ? readJsonc(join(path, f)) : undefined;

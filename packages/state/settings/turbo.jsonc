@@ -9,6 +9,7 @@
     "category:state",
     "runtime:isomorphic",
     "runtime:node",
+    "runtime:browser",
     "runtime:react-native",
   ],
 }

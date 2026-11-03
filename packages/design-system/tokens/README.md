@@ -42,7 +42,10 @@ The web file switches modes the HeroUI way: light on `:root` and `[data-theme="l
 `[data-theme="dark"]`. The native file defines the same variables in Uniwind's `@variant light` and `@variant dark`;
 switch with `Uniwind.setTheme`. It also writes the palette as Uniwind colours (`--color-<name>`), so a theme's own
 accent steps (`accent-soft`, `accent-soft-foreground`, `accent-hover`) replace HeroUI Native's `color-mix` defaults
-as they do on the web, and the rest are classes such as `bg-accent-pressed`. Expo cannot load woff2, so native text uses the system face until TTF builds of the
+as they do on the web, and the rest are classes such as `bg-accent-pressed`. The web file registers the same names in
+Tailwind's `@theme inline`, so `text-core-strong` or `bg-chart-1` work on both. The stackra theme's champagne core
+(`core`, `core-strong`, `core-hover`, `core-pressed`, `core-soft`, `core-foreground`; ADR 0520) is drawn on the web by
+`.button--core`, HeroUI's primary on the core, which falls back to the accent in a theme without one. Expo cannot load woff2, so native text uses the system face until TTF builds of the
 fonts are added.
 
 ## Font stacks and the display faces

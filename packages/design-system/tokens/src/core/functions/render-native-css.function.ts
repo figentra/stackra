@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: renders a theme to the Uniwind theme HeroUI Native reads: the radii and the field edge in `@theme`, and the colour roles,
+ * Purpose: renders a theme to the Uniwind theme HeroUI Native reads: the radii (with the web's `--radius-pill`) and the field edge in `@theme`, and the colour roles,
  *          shadows and palette in `@layer theme { :root { @variant light { … } @variant dark { … } } }`, the shape
  *          HeroUI Native's theming docs and Uniwind's custom-theme docs prescribe. Both variants define the same
  *          variables. The palette (ADR 0340 decision 7) and the syntax colours (`--syntax-<role>`) are written as `--<name>` in both variants, as on the web, and
@@ -84,6 +84,8 @@ export function renderNativeCss(theme: Theme): string {
     `@theme {\n${[
       `  --radius: ${theme.radius.base};`,
       `  --field-radius: ${theme.radius.field};`,
+      // The pill role as the web's (`rounded-[var(--radius-pill)]`), with a theme's `radius.steps.pill` winning.
+      `  --radius-pill: ${px(native.radius["pill"] ?? 9999)};`,
       `  --field-border-width: ${theme.layout.fieldBorderWidth};`,
       // Uniwind's spacing unit, so the density of native utilities follows the theme as on the web.
       `  --spacing: ${theme.layout.spacing};`,

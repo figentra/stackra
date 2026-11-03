@@ -1,0 +1,21 @@
+{
+  "slug": "step-up-dialog",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/identity",
+  "exportName": "StepUpDialog",
+  "parts": ["StepUpDialog"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 420
+    }
+  ],
+  "related": ["free/modal", "free/otp-input", "free/password-field"],
+  "tokens": ["color.surface", "color.accent"],
+  "keywords": ["step-up", "verify", "re-authenticate", "mfa", "assurance", "kit"],
+  "status": "new"
+}

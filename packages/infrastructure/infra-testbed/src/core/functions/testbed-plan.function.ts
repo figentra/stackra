@@ -1,15 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: `testbedPlan(input?)`, the testbed as plain data: one region, a `heavy` on-demand group (c7i.2xlarge,
- *          0 to 1) and a `light` spot group (c7i, c6i and m7i 2xlarge, 0 to 1), sized to the region's vCPU quotas
- *          (8 on-demand, 8 spot), a 40 GB root and a 200 GB XFS `/data` disk deleted with the instance, the guard
+ * Purpose: `testbedPlan(input?)`, the testbed as plain data for one of the four regions, `home` when it is eu-west-1
+ *          (the home also builds the image, STA-2042): a `heavy` on-demand group (c7i.2xlarge, 0 to 1) and a
+ *          `light` spot group (c7i, c6i and m7i 2xlarge, 0 to 1), sized to the region's vCPU quotas (8 on-demand,
+ *          8 spot), a 40 GB root and a 200 GB XFS `/data` disk deleted with the instance, the guard
  *          thresholds, the 60 minute idle stop, the image parameters (built by hand, no schedule), the toolchain pins
  *          and the secret grants. The result is validated by zod, which refuses a plan above the quotas.
  * Boundary: pure; no Pulumi, no Node, no cloud. A grant exists only when the caller passes the Infisical project id,
  *           and holds ids and paths, never a value (ADR 0173).
  * Runtime: isomorphic
  * Governing contract: ADR 0484 (decisions 2 to 9); ADR 0516 (quotas); ADR 0173; the owner's answers of 2026-10-30
- *                     and 2026-11-02 (option A: one region, each group 0 to 1).
+ *                     and 2026-11-02 (option A: each group 0 to 1); 2026-11-03 (a pool in each of the four
+ *                     regions, STA-2042).
  */
 import { TESTBED_DEFAULTS as D } from "#core/constants/testbed-defaults.constant";
 import { TESTBED_PLAN_INPUT_SCHEMA } from "#core/constants/testbed-plan-input-schema.constant";
@@ -47,6 +49,7 @@ export function testbedPlan(input: TestbedPlanInput = {}): TestbedPlan {
 
   return TESTBED_PLAN_SCHEMA.parse({
     region: given.region ?? D.region,
+    home: (given.region ?? D.region) === D.homeRegion,
     groups: {
       heavy: {
         name: `${D.groupPrefix}-heavy`,

@@ -11,6 +11,15 @@
 /** The fixed names, paths and numbers of the testbed that the plan, the program and the box agent share. */
 export const TESTBED_DEFAULTS = {
   region: "eu-west-1",
+  /**
+   * The regions a pool may run in, in the order `stackra testbed run` tries them: the four of the old ci-boxes, each
+   * inside its own quotas (ADR 0484 decision 8 as amended 2026-11-03, ADR 0516; STA-2042).
+   */
+  regions: ["eu-west-1", "eu-west-2", "eu-central-1", "us-east-1"],
+  /** The home region's stack owns the global IAM roles, the build bucket and the image pipeline. */
+  homeRegion: "eu-west-1",
+  /** The instance role and profile every region's boxes use; the home stack declares both (IAM is global). */
+  instanceProfile: "stackra-testbed-instance",
   awsProfile: "academorix",
   sshUser: "ubuntu",
   securityGroup: "stackra-testbed",
@@ -52,8 +61,8 @@ export const TESTBED_DEFAULTS = {
   /** What the Mac's rsync leaves out of a project; the agent's seed refresh leaves out the same. */
   rsyncExcludes: [
     "node_modules",
+    ".git",
     ".claude/worktrees",
-    ".agents",
     ".env*",
     "*.secrets.local.cue",
     ".mcp.json",

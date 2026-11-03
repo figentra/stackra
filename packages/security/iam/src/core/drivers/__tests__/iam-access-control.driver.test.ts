@@ -15,6 +15,7 @@
 import {
   Action,
   ActionPipeline,
+  InputInvalidError,
   registerActions,
   type ActionContext,
   type Resolver,
@@ -23,6 +24,7 @@ import { AccessControl, type CallDescriptor } from "@stackra/actions/contracts";
 import {
   type AnyClass,
   Driver,
+  kindOf,
   PERMISSION_REGISTRY,
   Permissions,
   registerPermissions,
@@ -42,6 +44,8 @@ import { Rules } from "@stackra/rules";
 import { type FactField, FieldType, Operator } from "@stackra/rules/contracts";
 import { MemoryScopeTreeDriver } from "@stackra/scope";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
+import { registerSchemas } from "@stackra/validation";
+import { z } from "zod";
 
 import { Policy } from "#core/bases/policy.base";
 import { POLICY_REGISTRY } from "#core/constants/policy-registry.constant";
@@ -102,6 +106,38 @@ class CancelOrderAction extends Action({
   }
 }
 
+/** The input an anonymous sign-in action takes: an email, checked once the call is registered. */
+class ChallengeInput {
+  email!: string;
+}
+registerSchemas([[ChallengeInput, z.object({ email: z.email() })]]);
+
+/** A class that opts into anonymous callers, as passkey sign-in does. */
+class ChallengeAction extends Action({
+  key: "passkey.challenge",
+  actors: [ActorKind.Anonymous, ActorKind.User],
+}) {
+  async handle(input: ChallengeInput): Promise<string> {
+    return `challenge for ${input.email}`;
+  }
+}
+
+/** An action that never lists anonymous callers. */
+class OpenAction extends Action({
+  key: "order.open",
+  actors: [ActorKind.User],
+}) {
+  async handle(): Promise<string> {
+    return "opened";
+  }
+}
+
+/** A visitor with no session. */
+const visitor: Actor = {
+  kind: ActorKind.Anonymous,
+  id: "anon_01j9z3k4m5n6p7q8r9s0t1v2a1" as PublicId,
+};
+
 const ROOT: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2r1", path: "platform" };
 const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 
@@ -154,11 +190,16 @@ function driverOver(state: MemoryPolicyState, bindings: Map<AnyClass, object> = 
 }
 
 /** The descriptor the pipeline builds for a call of `permission` by `actor`, acting in `scope` when given. */
-function callOf(actor: Actor, permission?: string, scope?: ScopeRef): CallDescriptor {
+function callOf(
+  actor: Actor,
+  permission?: string,
+  scope?: ScopeRef,
+  type: AnyClass = CancelOrderAction,
+): CallDescriptor {
   return {
     callId: "call_1",
-    type: CancelOrderAction,
-    kind: "action",
+    type,
+    kind: kindOf(type)?.kind === "query" ? "query" : "action",
     key: "orders.order.cancel@1",
     ...(permission === undefined ? {} : { permission }),
     actor,
@@ -187,15 +228,48 @@ describe("IamAccessControlDriver", () => {
   });
 
   describe("require", () => {
-    it("passes a call without a permission and a held one, and refuses one not held", async () => {
+    it("passes a held permission and refuses one not held", async () => {
       const { driver } = driverOver(BUYERS);
-      await expect(driver.require(callOf(customer))).resolves.toBeUndefined();
       await expect(
         driver.require(callOf(customer, "orders.order.cancel")),
       ).resolves.toBeUndefined();
       await expect(driver.require(callOf(customer, "orders.order.refund"))).rejects.toBeInstanceOf(
         ForbiddenError,
       );
+    });
+
+    it("refuses a call without a permission, whoever calls and whatever the class (STA-2025)", async () => {
+      const { driver } = driverOver(BUYERS);
+      // An unregistered call carries no permission: never an allowed call.
+      await expect(driver.require(callOf(customer))).rejects.toBeInstanceOf(ForbiddenError);
+      await expect(
+        driver.authorize(callOf(customer), new Order(customer.id)),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+      await expect(
+        driver.require(callOf(visitor, undefined, undefined, ChallengeAction)),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+    });
+
+    it("lets only an anonymous caller of a class that lists anonymous callers past the check", async () => {
+      const { driver } = driverOver(BUYERS);
+      const permission = "identity.passkey.challenge";
+      await expect(
+        driver.require(callOf(visitor, permission, undefined, ChallengeAction)),
+      ).resolves.toBeUndefined();
+      await expect(
+        driver.authorize(
+          callOf(visitor, permission, undefined, ChallengeAction),
+          new Order(customer.id),
+        ),
+      ).resolves.toBeUndefined();
+      // A signed-in caller of the same class is checked: the customer holds no such permission.
+      await expect(
+        driver.require(callOf(customer, permission, undefined, ChallengeAction)),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+      // An anonymous caller of a class that does not list anonymous callers is checked, and holds nothing.
+      await expect(
+        driver.require(callOf(visitor, "orders.order.open", undefined, OpenAction)),
+      ).rejects.toBeInstanceOf(ForbiddenError);
     });
 
     it("checks at the call's scope, without reading the tree", async () => {
@@ -241,7 +315,7 @@ describe("IamAccessControlDriver", () => {
       await expect(
         driver.authorize(callOf(stranger, "orders.order.read"), mine),
       ).resolves.toBeUndefined();
-      await expect(driver.authorize(callOf(stranger), mine)).resolves.toBeUndefined();
+      await expect(driver.authorize(callOf(stranger), mine)).rejects.toBeInstanceOf(ForbiddenError);
     });
 
     it("refuses a matching conditional deny through the model's fact source, and fails closed without one", async () => {
@@ -292,5 +366,34 @@ describe("IamAccessControlDriver", () => {
     await expect(
       pipeline.execute(CancelOrderAction, { order: mine } as never, { actor: stranger }),
     ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("refuses an action the pipeline was never told about (STA-2025)", async () => {
+    // No registerActions row: the call has no permission, so it is refused, never run.
+    const bindings = new Map<AnyClass, object>([[OpenAction, new OpenAction()]]);
+    const { resolver } = driverOver(BUYERS, bindings);
+    await expect(
+      new ActionPipeline(resolver).execute(OpenAction, {} as never, { actor: customer }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("runs an anonymous call's other steps: its input is still validated (STA-2025)", async () => {
+    registerActions([
+      {
+        type: ChallengeAction,
+        key: "identity.passkey.challenge@1",
+        permission: "identity.passkey.challenge",
+        input: ChallengeInput,
+      },
+    ]);
+    const bindings = new Map<AnyClass, object>([[ChallengeAction, new ChallengeAction()]]);
+    const { resolver } = driverOver(BUYERS, bindings);
+    const pipeline = new ActionPipeline(resolver);
+    await expect(
+      pipeline.execute(ChallengeAction, { email: "ada@example.com" } as never, { actor: visitor }),
+    ).resolves.toBe("challenge for ada@example.com");
+    await expect(
+      pipeline.execute(ChallengeAction, { email: "not an email" } as never, { actor: visitor }),
+    ).rejects.toBeInstanceOf(InputInvalidError);
   });
 });

@@ -1,0 +1,21 @@
+{
+  "slug": "account-menu",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/identity",
+  "exportName": "AccountMenu",
+  "parts": ["AccountMenu"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 360
+    }
+  ],
+  "related": ["free/menu", "free/avatar", "free/dropdown"],
+  "tokens": ["color.surface", "color.accent"],
+  "keywords": ["account", "user menu", "profile", "sign out", "avatar", "kit"],
+  "status": "new"
+}

@@ -11,8 +11,11 @@ export type TestbedSettings = {
   /** The AWS CLI profile. */
   readonly profile: string;
 
-  /** The AWS region of the pool. */
+  /** The region of single-region verbs (`image`): the first enabled region. */
   readonly region: string;
+
+  /** The enabled regions in the order a run tries them; no call is ever made in a region outside this list. */
+  readonly regions: readonly string[];
 
   /** The SSH private key file; a path, never its content. */
   readonly key: string;

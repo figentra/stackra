@@ -1,25 +1,33 @@
 /**
  * Stackra file contract:
- * Purpose: proves the web RouteProgress draws nothing while idle, shows a named busy progressbar that starts at 8% and
- *          trickles forward without reaching the end while loading, fills to 100% and fades when loading stops, then
- *          disappears, and can sit absolute in its parent.
- * Boundary: jsdom with fake timers; no matchMedia, so motion is not reduced.
+ * Purpose: proves the web RouteProgress draws nothing while idle, shows a named busy progressbar whose row of 96 dots
+ *          starts 8% lit and trickles forward without reaching the end while loading, the leading dot in the theme's
+ *          core, fills every dot and fades when loading stops, then disappears, holds a still row with no fade under
+ *          reduced motion, and can sit absolute in its parent.
+ * Boundary: jsdom with fake timers; the motion level is a stand-in a test turns.
  * Runtime: browser
  * Governing contract: gap inventory row 29 (owner approval 2026-10-28); ADR 0022 (test placement).
  */
 // @vitest-environment jsdom
+// @covers sta-2017:FR-005
 import { act, render, screen } from "@testing-library/react";
 
 import { RouteProgress } from "#react/route-progress/route-progress";
 
-const fillWidth = () =>
-  Number.parseFloat(
-    screen.getByRole("progressbar").querySelector<HTMLElement>("div")?.style.width ?? "0",
-  );
+/** The motion level the stand-in answers. */
+const motion = vi.hoisted(() => ({ level: "full" }));
+
+vi.mock("#react/design-system-provider/use-motion", () => ({ useMotion: () => motion.level }));
+
+const dots = () => [
+  ...screen.getByRole("progressbar").querySelectorAll<HTMLElement>('[data-slot="dot"]'),
+];
+const litCount = () => dots().filter((dot) => dot.hasAttribute("data-lit")).length;
 
 describe("RouteProgress (web)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    motion.level = "full";
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -33,16 +41,44 @@ describe("RouteProgress (web)", () => {
     const bar = screen.getByRole("progressbar", { name: "Loading page" });
     expect(bar.getAttribute("aria-busy")).toBe("true");
     expect(bar.className).toContain("fixed");
-    expect(fillWidth()).toBeCloseTo(8);
+    // 8% of 96 dots, rounded up.
+    expect(dots()).toHaveLength(96);
+    expect(litCount()).toBe(8);
     act(() => vi.advanceTimersByTime(250 * 40));
-    expect(fillWidth()).toBeGreaterThan(80);
-    expect(fillWidth()).toBeLessThan(90);
+    expect(litCount()).toBeGreaterThan(0.8 * 96);
+    expect(litCount()).toBeLessThan(0.9 * 96);
 
     rerender(<RouteProgress isLoading={false} />);
-    expect(fillWidth()).toBe(100);
+    expect(litCount()).toBe(96);
     expect(screen.getByRole("progressbar").style.opacity).toBe("0");
     act(() => vi.advanceTimersByTime(300));
     expect(screen.queryByRole("progressbar")).toBeNull();
+  });
+
+  // @covers sta-2017:FR-005
+  it("draws 2 px dots in the accent, the leading one in the theme's core", () => {
+    render(<RouteProgress isLoading />);
+    const grid = screen
+      .getByRole("progressbar")
+      .querySelector<HTMLElement>('[data-slot="dot-grid"]');
+    expect(grid?.getAttribute("aria-hidden")).toBe("true");
+    expect(grid?.style.color).toBe("var(--accent)");
+    expect(dots()[0]?.style.inlineSize).toBe("2px");
+    expect(dots()[0]?.style.blockSize).toBe("2px");
+    expect(dots().findIndex((dot) => dot.style.background === "var(--core, var(--accent))")).toBe(
+      litCount() - 1,
+    );
+  });
+
+  // @covers sta-2017:FR-007
+  it.each(["reduced", "none"])("holds a still row with no fade when motion is %s", (level) => {
+    motion.level = level;
+    render(<RouteProgress isLoading />);
+    // The still fill is 90%: 87 of 96 dots, rounded up.
+    expect(litCount()).toBe(87);
+    act(() => vi.advanceTimersByTime(250 * 4));
+    expect(litCount()).toBe(87);
+    expect(screen.getByRole("progressbar").style.transition).toBe("none");
   });
 
   it("takes a label and sits absolute when not fixed", () => {
