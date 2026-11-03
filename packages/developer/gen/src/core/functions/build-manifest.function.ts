@@ -37,6 +37,8 @@
  *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
  *          `resource_duplicate`, and a package's UI-entry routes and menus in `ui.routes` and `ui.menus` (`uiRoutesOf`,
  *          `uiMenusOf`) (STA-1947).
+ *          It lists each record `Policy<Model>` in `policies` (class, model, module, file and the model's `modelFile`),
+ *          own then hosted (`from`), only when there is one, so `#stackra/registrations` pairs them (STA-2045).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -1073,6 +1075,34 @@ export function buildManifest(ir: MemberIR): {
         }
     }
 
+  // Each record policy with the model it judges, own then hosted (`from`), so a host registers its packages' policies
+  // too; the base's type argument is gone at runtime, so this is where the pair is kept (ADR 0132 as amended,
+  // STA-2045). Written only when there is one, so a member without policies keeps its manifest.
+  const policies: Entry[] = ir.classes
+    .filter((declared) => declared.kind === "policy" && declared.abstract !== true)
+    .flatMap((declared) => {
+      const partner = declared.partner;
+      if (partner === undefined) return [];
+      const model = ir.shapes.find(
+        (shape) => shape.name === partner.name && shape.kind === "model",
+      );
+      return [
+        {
+          class: declared.name,
+          model: partner.name,
+          module: declared.module,
+          file: declared.file,
+          ...(model === undefined ? {} : { modelFile: model.file }),
+        },
+      ];
+    });
+  if (ir.layout !== "package")
+    for (const dependency of ir.dependencies) {
+      if (dependency.manifest["kind"] === "app") continue;
+      for (const item of (dependency.manifest["policies"] ?? []) as readonly Entry[])
+        policies.push({ ...item, from: item["from"] ?? dependency.package });
+    }
+
   // A package's config classes, so a host's wiring writes a config row for exactly these (STA-1308).
   const configs: Entry[] = published
     ? ir.classes
@@ -1172,6 +1202,7 @@ export function buildManifest(ir: MemberIR): {
       : {}),
     ...(reports.reports.length > 0 ? { reports: [...reports.reports] } : {}),
     ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
+    ...(policies.length > 0 ? { policies } : {}),
     ...(Object.keys(uiSection).length > 0 ? { ui: uiSection } : {}),
     schemas,
   };
