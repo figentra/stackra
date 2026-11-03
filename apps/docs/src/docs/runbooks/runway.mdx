@@ -117,26 +117,44 @@ which.
 
 ```yaml
 resources:
-  main-db:
+  identity-db:
     kind: postgres
     size:
-      production: large
+      production: medium
 workloads:
   zitadel:
     image: ghcr.io/zitadel/zitadel@sha256:<digest>
+    command: [start-from-init, --masterkeyFromEnv, --tlsMode, external]
     port: 8080
     health: /debug/healthz
     expose: public
-    uses: [main-db]
+    uses: [identity-db]
+    env:
+      ZITADEL_EXTERNALDOMAIN: login.<region>.<product-domain>
+      ZITADEL_EXTERNALPORT: "443"
+      ZITADEL_EXTERNALSECURE: "true"
+    aliases:
+      ZITADEL_DATABASE_POSTGRES_DSN: IDENTITY_DB_URL
     secrets: [ZITADEL_MASTERKEY]
+    size:
+      staging: medium
+      production: medium
     scale:
-      production: { min: 2, max: 4 }
+      production:
+        min: 2
+        max: 4
     reason: "Residency: KSA in-country tenants cannot use ZITADEL Cloud"
 environments:
   production:
     limits:
       monthly: 900
 ```
+
+This is self-hosted ZITADEL (ADR 0206 decision 4 as amended by 0493), planned in dev for about $75 a month and in
+staging for about $105. `command` replaces the image's default arguments. `aliases` hands the image a resource
+variable under the name it reads: here the database URL as `ZITADEL_DATABASE_POSTGRES_DSN`. An alias may name only a
+variable of a Postgres resource the workload uses. The owner puts `ZITADEL_MASTERKEY` (32 characters, fixed after the
+first start) into Infisical at `<env>:/workloads/zitadel/` before the first apply.
 
 A service member names what it uses in its own runway (`uses: [main-db]`). The plan prints each item's monthly
 estimate; dev ($150) and staging ($500) refuse a plan over their cap, production only warns until it has a `limits`.

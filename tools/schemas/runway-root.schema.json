@@ -2111,6 +2111,16 @@
           "type": "string",
           "pattern": "^/"
         },
+        "command": {
+          "type": "array",
+          "description": "The container's arguments, replacing the image's default command.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"]]
+        },
         "expose": {
           "enum": ["internal", "public"],
           "description": "public puts an ALB behind Cloudflare in front; internal is service discovery only."
@@ -2139,6 +2149,18 @@
             "$ref": "#/$defs/secretName"
           },
           "uniqueItems": true
+        },
+        "aliases": {
+          "type": "object",
+          "description": "The name the image reads, mapped to a variable of a resource it uses (ADR 0493 d4).",
+          "propertyNames": {
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "examples": [{ "ZITADEL_DATABASE_POSTGRES_DSN": "MAIN_DB_URL" }]
         },
         "size": {
           "type": "object",
