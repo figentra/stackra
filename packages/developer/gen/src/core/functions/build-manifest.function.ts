@@ -17,6 +17,7 @@
  *          `identity_collision`,
  *          `override_duplicate`, `permission_unknown`, `identity_missing`, the public id prefix checks
  *          `prefix_invalid`, `prefix_taken` and `prefix_duplicate`, `tool_reason_missing`, `effect_unknown`,
+ *          `endpoint_param_unbound` (a route path parameter that is no input field, STA-2063),
  *          `integration_role_unknown`, `egress_invalid`, `sequence_misplaced`, `document_number_unsequenced`,
  *          `cron_job_collision` and `event_name_prefixed` (an event `name` that repeats the module or member key: the
  *          wire name is always `<module>.<name>.v<n>`, never member-level or service-key prefixed, STA-1255). It lists each declared rule outcome kind (`RuleOutcome({...})`) in `outcomes`; each agent (key, task, tools as
@@ -374,6 +375,22 @@ export function buildManifest(ir: MemberIR): {
         ? { endpoint: declared.options["endpoint"] }
         : {}),
     });
+    // Encore binds each path parameter from the input field of that name, so one with no such field cannot build
+    // (STA-2063). A shape built on a package's or another service's shape is not read whole here, so it is not checked.
+    let root = input;
+    for (let base = root?.base; base?.kind === "member"; base = root?.base)
+      root = shapeNamed(base.name);
+    if (declared.handle?.input === undefined || (root !== undefined && root.base === undefined)) {
+      const fields = new Set(fieldsOf(input).map((field) => field.name));
+      for (const [, name = ""] of endpoint?.path.matchAll(/:(\w+)/g) ?? [])
+        if (!fields.has(name))
+          fail(
+            declared,
+            "endpoint_param_unbound",
+            `${kind} route \`${endpoint?.method} ${endpoint?.path}\` binds \`${name}\`, which its input does not declare`,
+            `add \`${name}\` to the input, use a verb whose route takes no id, or write \`endpoint: { method, path }\``,
+          );
+    }
     // ADR 0360 d4: a query, or an action a user can perform, is a tool unless it says `tool: false` with a reason.
     const tool = declared.options["tool"];
     const userFacing = actors?.includes("user") ?? false;

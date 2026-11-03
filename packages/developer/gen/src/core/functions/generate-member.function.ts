@@ -3,7 +3,7 @@
  * Purpose: `generateMember`, gen-core's whole output for one member as a pure function of what discovery read: the
  *          committed `stackra.manifest.json` (and `openapi.json` for a service or app with endpoints), one schemas
  *          file and one entity file per module, the wiring, the member module when none is authored, the
- *          registrations, a service's boot and inbound webhook route, a service's Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
+ *          registrations, a service's boot and inbound webhook route, a service's Encore service declaration and its `api()` endpoints per action and query (STA-2063), its Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
  *          (CORS preflights and headers, STA-1385), broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, its client tool table (`#stackra/client-tools`, ADR 0490), the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
@@ -69,11 +69,13 @@ import { emitEncoreSqldbTypes } from "#core/functions/emit-encore-sqldb-types.fu
 import { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitClientTools } from "#core/functions/emit-client-tools.function";
+import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
+import { emitEncoreService } from "#core/functions/emit-encore-service.function";
 import { emitQueues } from "#core/functions/emit-queues.function";
 import { emitEntities } from "#core/functions/emit-entities.function";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
@@ -264,6 +266,8 @@ export function generateMember(
   ];
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
   for (const encore of [
+    emitEncoreService(ir),
+    emitEncoreApi(ir, manifest),
     emitEncoreCronJobs(ir, manifest),
     emitEncoreDatabase(ir),
     emitEncoreQueues(ir, manifest),

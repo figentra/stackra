@@ -512,12 +512,12 @@ describe("emitRegistrations for a hosted package's permissions and roles (STA-17
 describe("emitRegistrations of actions and queries (STA-2025)", () => {
   /** A query anonymous callers may call, beside the commerce fixture's calls. */
   const health: DeclaredClass = {
-    name: "GetHealthQuery",
+    name: "CheckHealthQuery",
     kind: "query",
     module: "orders",
-    file: "src/modules/orders/queries/get-health.query.ts",
-    importPath: "#modules/orders/queries/get-health.query",
-    options: { key: "health.get", actors: ["anonymous", "user"] },
+    file: "src/modules/orders/queries/check-health.query.ts",
+    importPath: "#modules/orders/queries/check-health.query",
+    options: { key: "health.check", actors: ["anonymous", "user"] },
     deps: [],
     facets: [],
     methods: ["handle"],
@@ -543,12 +543,12 @@ describe("emitRegistrations of actions and queries (STA-2025)", () => {
   });
 
   it("registers an anonymous-callable query with its permission, and flags it in the manifest", () => {
-    expect(rows.find((line) => line.includes("type: GetHealthQuery"))).toBe(
-      '  { type: GetHealthQuery, key: "orders.health.get@1", permission: "orders.health.read", risk: "L0" },',
+    expect(rows.find((line) => line.includes("type: CheckHealthQuery"))).toBe(
+      '  { type: CheckHealthQuery, key: "orders.health.check@1", permission: "orders.health.read", risk: "L0" },',
     );
     const entries = manifest.actions ?? [];
     expect(
       entries.filter((entry) => entry["anonymous"] === true).map((entry) => entry.key),
-    ).toEqual(["orders.health.get@1"]);
+    ).toEqual(["orders.health.check@1"]);
   });
 });

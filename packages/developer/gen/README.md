@@ -586,12 +586,31 @@ filters, entries, sections, fields, steps; not relations or actions), for the ca
 
 ## Call options from a request (design, ADR 0472)
 
-No generated endpoint calls the pipeline yet (the action endpoints come with the rest of the Encore app). When they
-do, each builds its `CallOptions` in two parts and nothing else: the verified facts from the credential (`actor`,
-`scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the header-borne values
-the pipeline checks itself, lifted by `requestCallOptions(request)` of `@stackra/actions`: `Idempotency-Key` onto
-`idempotencyKey` (the idempotency step, ADR 0138) and `Stackra-Consent` onto `consentSnapshot` (verified by
-`ctx.consent()`, ADR 0472). The header names are `CALL_HEADERS` of `@stackra/actions/contracts`.
+A service gets `.stackra/encore/<member>/encore.service.ts` (`export default new Service("<member>")`, so the folder
+is one Encore service) and, when it has an own action or query with an endpoint, `.stackra/encore/<member>/api.ts`:
+one `api()` per such manifest entry, named by its camel-cased key and version (`shop.order.cancel@1` is
+`shopOrderCancelV1`), with the entry's derived `method` and `path` and `expose: true`, its parameter typed by the input
+schema class and its result by the output one (none, or `Promise<void>`, when the entry names none). It runs the call
+as `new ActionPipeline(container).execute(<class>, input, { actor })` inside `app.handlers.run` (STA-2063).
+
+The actor comes only from Encore's verified auth data, `getAuthData()` of `~encore/auth`, whose shape is
+`{ userID: string; actor: Actor }`. An entry is `auth: true` unless its `actors` list `ActorKind.Anonymous` (manifest
+`anonymous: true`, STA-2025): that one is `auth: false` and runs as the session's actor when one is presented,
+otherwise as `{ kind: ActorKind.Anonymous, id: mintPublicId("anon") }`. No adapter is written for an entry with no
+endpoint, a hosted package's entry (its manifest does not name the files of its schemas, the limit `registerActions`
+has), or one whose input or output schema is not a shape of the member (a generated search or report query's package
+shapes, a replica page). Encore binds each path parameter from the input field of that name, so the manifest build
+refuses a route whose parameter is no field of the input (`endpoint_param_unbound`), such as `x.get` with no `xId`.
+Waiting for the auth handler and gateway (wp-114): the handler that returns that auth data
+(until it lands, `encore build` refuses an `auth: true` endpoint), and the rest of `CallOptions`. A refusal surfaces as
+Encore's default error until refusal kinds map to `APIError`.
+
+The full `CallOptions` of an endpoint come in two parts and nothing else: the verified facts from the credential
+(`actor`, then `scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the
+header-borne values the pipeline checks itself, lifted by `requestCallOptions(request)` of `@stackra/actions`:
+`Idempotency-Key` onto `idempotencyKey` (the idempotency step, ADR 0138) and `Stackra-Consent` onto `consentSnapshot`
+(verified by `ctx.consent()`, ADR 0472). The header names are `CALL_HEADERS` of `@stackra/actions/contracts`. A typed
+`api()` sees no `Request`, so the generated endpoints pass only `actor` today; the rest come with the gateway.
 
 ```ts
 await pipeline.execute(X, input, { actor, ...requestCallOptions(request) });
