@@ -47,6 +47,9 @@ uses a `#` alias from the member's own `imports` map.
 
 - automated — `pnpm validate` refuses a specifier that climbs two or more folders and a specifier that names a file extension
   (`DEEP_RELATIVE` in `packages/developer/repo-checks/src/node/functions/check-imports.function.ts`).
+- automated — `stackra validate --repository` refuses a member, other than a `tooling` preset, whose `imports` map is
+  not the one its folders imply (`importsMapFindings` and `importsMap` in `@stackra/cli`, STA-2072); `stackra new` writes
+  that map for the template kinds.
 - planned — a check bans tsconfig `paths`, and the validator checks that every `#` specifier is declared in the member's `imports` map.
 
 ## Alternatives

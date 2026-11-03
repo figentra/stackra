@@ -38,21 +38,25 @@
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
     "#e2e/*": [
       "./src/e2e/*",
       "./src/e2e/*.ts",
+      "./src/e2e/*.tsx",
       "./src/e2e/*/index.ts"
     ],
     "#native/*": [
       "./src/native/*",
       "./src/native/*.ts",
+      "./src/native/*.tsx",
       "./src/native/*/index.ts"
     ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
+      "./src/react/*.tsx",
       "./src/react/*/index.ts"
     ],
     "#stackra/*": [

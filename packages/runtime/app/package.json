@@ -36,46 +36,59 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
-    "#config/*": [
-      "./src/config/*",
-      "./src/config/*.ts"
-    ],
     "#browser/*": [
       "./src/browser/*",
       "./src/browser/*.ts",
-      "./src/browser/*.tsx"
+      "./src/browser/*.tsx",
+      "./src/browser/*/index.ts"
+    ],
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*.tsx",
+      "./src/config/*/index.ts"
     ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
       "./src/contracts/*/index.ts"
     ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
     "#desktop/*": [
       "./src/desktop/*",
-      "./src/desktop/*.ts"
+      "./src/desktop/*.ts",
+      "./src/desktop/*.tsx",
+      "./src/desktop/*/index.ts"
     ],
     "#native/*": [
       "./src/native/*",
       "./src/native/*.ts",
-      "./src/native/*.tsx"
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
     ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
-      "./src/react/*.tsx"
+      "./src/react/*.tsx",
+      "./src/react/*/index.ts"
     ],
     "#server/*": [
       "./src/server/*",
-      "./src/server/*.ts"
+      "./src/server/*.ts",
+      "./src/server/*.tsx",
+      "./src/server/*/index.ts"
     ],
     "#worker/*": [
       "./src/worker/*",
-      "./src/worker/*.ts"
+      "./src/worker/*.ts",
+      "./src/worker/*.tsx",
+      "./src/worker/*/index.ts"
     ],
     "#stackra/*": [
       "./.stackra/gen/*",

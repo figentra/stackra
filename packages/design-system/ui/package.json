@@ -35,17 +35,17 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
-    "#contracts/*": [
-      "./src/contracts/*",
-      "./src/contracts/*.ts",
-      "./src/contracts/*.tsx",
-      "./src/contracts/*/index.ts"
-    ],
     "#config/*": [
       "./src/config/*",
       "./src/config/*.ts",
       "./src/config/*.tsx",
       "./src/config/*/index.ts"
+    ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
+      "./src/contracts/*/index.ts"
     ],
     "#core/*": [
       "./src/core/*",
@@ -59,6 +59,12 @@
       "./src/form/*.tsx",
       "./src/form/*/index.ts"
     ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
+    ],
     "#node/*": [
       "./src/node/*",
       "./src/node/*.ts",
@@ -70,12 +76,6 @@
       "./src/react/*.ts",
       "./src/react/*.tsx",
       "./src/react/*/index.ts"
-    ],
-    "#native/*": [
-      "./src/native/*",
-      "./src/native/*.ts",
-      "./src/native/*.tsx",
-      "./src/native/*/index.ts"
     ],
     "#testing/*": [
       "./src/testing/*",

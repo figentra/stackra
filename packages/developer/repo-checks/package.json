@@ -36,6 +36,7 @@
     "#node/*": [
       "./src/node/*",
       "./src/node/*.ts",
+      "./src/node/*.tsx",
       "./src/node/*/index.ts"
     ],
     "#stackra/*": [

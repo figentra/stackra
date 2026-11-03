@@ -5,12 +5,12 @@
  *          `tools/scripts/validate-repository.mjs`): the config, catalogue and structure checks of @stackra/repo-checks,
  *          the package cycles, the Expo native dependencies, the duplicate exports, the `any` ratchet and the
  *          architecture map drift, the Python placement (ADR 0492 decision 7), the package entity lists (STA-1793), the lang
- *          catalogue exports (STA-1798) and the
- *          session settings (ADR 0495 decision 3, STA-1699). `--repository` prints the findings as `<dir>: <finding>` and a count and exits 1,
+ *          catalogue exports (STA-1798), the
+ *          session settings (ADR 0495 decision 3, STA-1699) and the imports-map drift (ADR 0233 decision 1, STA-2072). `--repository` prints the findings as `<dir>: <finding>` and a count and exits 1,
  *          or prints nothing.
  * Boundary: reads the checkout and runs `pnpm -r list`; notices (an unbuilt runway package) go to `io.err`.
  * Runtime: node
- * Governing contract: ADR 0129; ADR 0492 (decision 7); ADR 0495 (decision 3); ADR 0022; ADR 0282 (decision 3); STA-1373; STA-1544; stackra-224; stackra-229.
+ * Governing contract: ADR 0129; ADR 0233 (decision 1); ADR 0492 (decision 7); ADR 0495 (decision 3); ADR 0022; ADR 0282 (decision 3); STA-1373; STA-1544; stackra-224; stackra-229.
  */
 import {
   catalogueFindings,
@@ -25,6 +25,7 @@ import { architectureMapFindings } from "#node/architecture-map/functions/archit
 import { packageCycleFindings } from "#node/cycles/functions/package-cycle-findings.function";
 import { duplicateExportFindings } from "#node/duplicate-exports/functions/duplicate-export-findings.function";
 import { checkCommand } from "#node/functions/check-command.function";
+import { importsMapFindings } from "#node/functions/imports-map-findings.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
 import { langAssetsFindings } from "#node/lang-assets/functions/lang-assets-findings.function";
 import { packageEntitiesFindings } from "#node/package-entities/functions/package-entities-findings.function";
@@ -65,6 +66,7 @@ export const VALIDATE_COMMAND: CliCommand = {
       ...packageEntitiesFindings(root),
       ...langAssetsFindings(root),
       ...sessionSettingFindings(root),
+      ...importsMapFindings(root),
     ];
     for (const { dir, text } of findings) io.err(`${dir || "."}: ${text}\n`);
     if (findings.length > 0) {

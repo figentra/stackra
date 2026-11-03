@@ -42,7 +42,7 @@ and `yaml`.
 | `stackra lint`                                            | `oxlint .`                                                                                                                                |
 | `stackra check [flags]`                                   | the quality gate: every check phase in order at the workspace root (see below)                                                            |
 | `stackra validate`                                        | `check --only config,structure,docs,catalogues,spec`                                                                                      |
-| `stackra validate --repository`                           | the repository-shape gate of `pnpm validate`: repo checks, cycles, native deps, ratchets, map, Python, session settings                   |
+| `stackra validate --repository`                           | the repository-shape gate of `pnpm validate`: repo checks, cycles, native deps, ratchets, map, Python, session settings, imports maps     |
 | `stackra verify`                                          | `check --with-tests`                                                                                                                      |
 | `stackra code:check` / `code:fix`                         | `check --only format,lint` (`code:fix` adds `--fix`)                                                                                      |
 | `stackra seed-pack <product>`                             | check `seed-pack:<product>` (`--check`) or seed one `--profile` without touching tenants                                                  |
