@@ -56,10 +56,25 @@ here only as a top-level `<page>.json`, and `stackra dev` seeds every such file 
 
 ## Files this document names
 
-- `art/engine.svg`: the hero's engine drawing, written by `tools/scripts/draw-landing-art.mjs`.
-- `posters/strata.dark.png`: the strata pattern's poster under the horizon and the terminal band; owed by the brand
-  kit's patterns batch.
+- `art/<name>.<tone>.svg`: each drawing (`engine` for the hero, `monitor` for the try-it band, `stack`) as four
+  single-tone mask layers, one per tone: `ground`, `dots`, `line` and `core`. Each layer is the whole drawing in
+  painter's order, its tone white and every other element black, on a transparent background, so occlusion is exact.
+  `tools/scripts/draw-landing-art.mjs` draws them; never edit them by hand. A document names a drawing by its base URL
+  and its viewBox size, `{ "src": "art/engine", "width": 505, "height": 588 }`, and `@stackra/ui`'s `Illustration`
+  stacks the four layers as CSS masks over the token roles (`--background`, `--stk-tile-line`, `--accent`, `--core`),
+  because an image cannot read the page's variables. The hero's `art` and the try-it node's `monitorArt` take this
+  shape.
+- `posters/strata-dark.png` and `posters/strata-light.png`: the strata pattern's posters (1600 x 900) under the hero
+  horizon and the try-it band. Copied unchanged from the brand kit, `figentra/brand` at commit `28ad0e89`,
+  `brands/stackra/patterns/posters/strata-{dark,light}-1600x900.png`; to refresh them, copy the kit's files again
+  at a newer commit and note it here. The document names the dark poster.
 - Product themes are named by product id (`pay`, `billing`, …) and resolved by the renderer.
 
 The code samples follow the house examples (`.agents/rules/http-conventions.md`, ADR 0260, ADR 0294 and a committed
 `stackra.manifest.json`); check them against gen when it ships.
+
+## Runway
+
+The `surfaces.landing` entry in `runway.yaml` that serves this document is its own pull request
+(`figentra/sta-2041-landing-surface`), merged on the owner's word with the copy sign-off. Nothing in this folder
+touches `runway.yaml`.
