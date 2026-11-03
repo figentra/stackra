@@ -3,11 +3,13 @@
  * Purpose: `createConsole(config)`, a console: the registry is read and checked once (declarations, duplicate
  *          names), and `run(argv, ports)` routes the invocation to one intent, decides the mode, lists, helps, versions
  *          or dispatches, renders a
- *          failure as an error screen or a `--json` error, and resolves with the exit code.
+ *          failure as an error screen or a `--json` error (or, with `json: "bare"`, the data alone on stdout and
+ *          everything else on stderr), and resolves with the exit code.
  * Boundary: no module's commands live here; they come in `config.commands`. Writes only to `ports`; the container
  *           factory is called only to dispatch a command.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-006 to FR-025; spec 030 Requirements 3 to 7; STA-1966 spec FR-012 to FR-016.
+ * Governing contract: STA-1730 spec FR-006 to FR-025; spec 030 Requirements 3 to 7; STA-1966 spec FR-012 to FR-016;
+ *                     ADR 0506 (amendment 2026-11-03).
  */
 import { EXIT_CODE } from "#core/constants/exit-code.constant";
 import { TextRendererDriver } from "#core/drivers/text-renderer.driver";
@@ -62,7 +64,7 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
   const baseTheme = config.theme ?? STACKRA_THEME;
 
   const run = async (argv: readonly string[], ports: ConsolePorts): Promise<number> => {
-    const intent = route(argv, registry);
+    const intent = route(argv, registry, { requireCommand: config.requireCommand === true });
     const mode = decideMode(ports, intent.globals);
     const theme =
       baseTheme.dark !== undefined && decideGround(ports.env) === "dark"
@@ -75,7 +77,12 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       stdout: ports.stdout,
       stderr: ports.stderr,
     };
-    const renderer = ports.renderer?.(context) ?? new TextRendererDriver(context);
+    // Bare JSON: stdout holds the data alone, so the renderer draws as without --json, onto stderr.
+    const bare = mode.json && config.json === "bare";
+    const view = bare
+      ? { ...context, mode: { ...mode, json: false }, stdout: ports.stderr }
+      : context;
+    const renderer = ports.renderer?.(view) ?? new TextRendererDriver(view);
     let data: unknown;
     let rows: readonly unknown[] | undefined;
     let failed = false;
@@ -98,7 +105,11 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
     });
     const painter = createPainter(mode.depth, theme.accent);
     const finish = (code: number, error?: unknown, docs?: string): number => {
-      if (mode.json) {
+      if (bare) {
+        const value = data ?? rows;
+        if (error !== undefined) renderer.problem(problemOf(error, docs), mode.verbose);
+        else if (value !== undefined) ports.stdout.write(`${JSON.stringify(value)}\n`);
+      } else if (mode.json) {
         const problem = error === undefined ? undefined : problemOf(error, docs);
         // A non-zero code without an error still carries the data (a failed checklist, a returned code).
         const document =
@@ -195,6 +206,7 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       ...(ports.process === undefined ? {} : { runner: ports.process() }),
       mode,
       cwd: ports.cwd,
+      secret: secrets.length > 0,
       echo: (chunk) => {
         if (!mode.json) ports.stderr.write(painter.dim(chunk));
       },

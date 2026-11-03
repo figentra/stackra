@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: `route(argv, registry)`, the one intent of an invocation: the list (no name, `help` alone), the version, a
+ * Purpose: `route(argv, registry, options)`, the one intent of an invocation: the list (no name, `help` alone; a usage
+ *          problem instead with `requireCommand`), the version, a
  *          command's help (`--help`, `-h`, `help <cmd>`), a run with the parsed values, or a usage problem (an unknown
  *          or ambiguous name, with the closest names; a bad argument or option), a completion script
  *          (`completion <shell>`) or a completion script's question (`complete -- <words>`).
- * Boundary: pure; builds no command and no container, so help and version never run anything.
+ * Boundary: pure; builds no command and no container, so help and version never run anything. A value option may come
+ *           before the name only when every command that declares its flag gives it a value.
  * Runtime: isomorphic
- * Governing contract: STA-1966 spec FR-006 and FR-012 to FR-016.
+ * Governing contract: STA-1966 spec FR-006 and FR-012 to FR-016; ADR 0506 (amendment 2026-11-03).
  */
 import { COMPLETE_COMMAND } from "#core/constants/complete-command.constant";
 import { COMPLETION_COMMAND } from "#core/constants/completion-command.constant";
@@ -19,6 +21,19 @@ import { splitInvocation } from "#core/functions/split-invocation.function";
 import type { CommandEntry } from "#core/types/command-entry.type";
 import type { RouteDecision } from "#core/types/route-decision.type";
 
+/** Whether each `--flag` and `-f` of `registry` takes a value in every command that declares it. */
+function valueFlagsOf(registry: ReadonlyMap<string, CommandEntry>): ReadonlyMap<string, boolean> {
+  const takes = new Map<string, boolean>();
+  for (const { structure } of new Set(registry.values()))
+    for (const field of structure.options)
+      for (const token of [
+        `--${field.flag}`,
+        ...(field.short === undefined ? [] : [`-${field.short}`]),
+      ])
+        takes.set(token, (takes.get(token) ?? true) && field.kind !== "boolean");
+  return takes;
+}
+
 /**
  * Decides what `argv` (without the node and script paths) asks of `registry`.
  *
@@ -28,9 +43,12 @@ import type { RouteDecision } from "#core/types/route-decision.type";
 export function route(
   argv: readonly string[],
   registry: ReadonlyMap<string, CommandEntry>,
+  options: { readonly requireCommand?: boolean } = {},
 ): RouteDecision {
   const known = (name: string) => registry.has(name);
-  let { name: typed, rest, raw } = splitInvocation(argv, known);
+  const takes = valueFlagsOf(registry);
+  const valueFlag = (token: string) => takes.get(token) === true;
+  let { name: typed, rest, raw } = splitInvocation(argv, known, valueFlag);
   if (typed === COMPLETE_COMMAND) {
     // What a completion script sends after `--` is the line being typed, kept as it is.
     const dash = rest.indexOf("--");
@@ -58,7 +76,7 @@ export function route(
   let asked = false;
   if (typed === HELP_COMMAND) {
     asked = true;
-    ({ name: typed, rest, raw } = splitInvocation(rest, known));
+    ({ name: typed, rest, raw } = splitInvocation(rest, known, valueFlag));
   }
   let entry: CommandEntry | undefined;
   try {
@@ -85,7 +103,14 @@ export function route(
   if (parsed.error !== undefined && !(help && entry !== undefined))
     return { kind: "usage", globals, error: parsed.error };
   if (globals.version) return { kind: "version", globals };
-  if (entry === undefined) return { kind: "list", globals };
+  if (entry === undefined)
+    return help || options.requireCommand !== true
+      ? { kind: "list", globals }
+      : {
+          kind: "usage",
+          globals,
+          error: new UsageError("Name a command", "Run with --help to see the commands"),
+        };
   if (help) return { kind: "help", globals, entry };
   return { kind: "run", globals, entry, values: parsed.values, rest: [] };
 }

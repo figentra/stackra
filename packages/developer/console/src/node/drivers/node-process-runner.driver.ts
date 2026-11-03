@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: `NodeProcessRunnerDriver`, the `ProcessRunner` of a real process: spawns the child with no shell, captures
  *          its standard output and error interleaved (standard input closed, so it never waits on a prompt), or hands
- *          it the terminal when it is interactive; a command that cannot start resolves as exit 127 with the reason.
+ *          it the terminal when it is interactive or inherits it (`inherit: "stderr"`: standard input ignored, both
+ *          outputs on standard error); a command that cannot start resolves as exit 127 with the reason.
  * Boundary: prints nothing itself; the console decides what of the output is shown.
  * Runtime: node
- * Governing contract: STA-1966 spec FR-007 and FR-028.
+ * Governing contract: STA-1966 spec FR-007 and FR-028; ADR 0506 (amendment 2026-11-03).
  */
 import { spawn } from "node:child_process";
 
@@ -31,7 +32,12 @@ export class NodeProcessRunnerDriver extends Driver(ProcessRunner) {
       const child = spawn(command, [...args], {
         cwd: options.cwd,
         env: { ...process.env, ...options.env },
-        stdio: options.interactive === true ? "inherit" : ["ignore", "pipe", "pipe"],
+        stdio:
+          options.interactive === true || options.inherit === true
+            ? "inherit"
+            : options.inherit === "stderr"
+              ? ["ignore", 2, 2]
+              : ["ignore", "pipe", "pipe"],
       });
       child.stdout?.setEncoding("utf8").on("data", take);
       child.stderr?.setEncoding("utf8").on("data", take);

@@ -2,11 +2,12 @@
  * Stackra file contract:
  * Purpose: proves the kernel end to end through the test harness: list, help, version, dispatch with filled fields,
  *          exit codes, the container lifecycle, signals, prompts (interactive, defaulted, refused, cancelled), the
- *          error screen and `--json`.
+ *          error screen, `--json`, and the bare `--json` of a frozen interface.
  * Boundary: unit test in-process; no terminal.
  * Runtime: node
  * Governing contract: STA-1730 spec FR-008, FR-012 to FR-016, FR-019, FR-022, FR-023, FR-025 and SC-003; STA-1966
- *                     spec FR-001, FR-009, FR-011, FR-013 to FR-015, FR-019, FR-021 and FR-030; ADR 0022.
+ *                     spec FR-001, FR-009, FR-011, FR-013 to FR-015, FR-019, FR-021 and FR-030; ADR 0506 (amendment
+ *                     2026-11-03); ADR 0022.
  */
 // @covers sta-1730:FR-008 sta-1730:FR-012 sta-1730:FR-013 sta-1730:FR-014 sta-1730:FR-016 sta-1730:FR-019
 // @covers sta-1730:FR-022 sta-1730:FR-023 sta-1730:FR-025 sta-1730:SC-003
@@ -437,5 +438,97 @@ describe("createConsole", () => {
     expect(() =>
       createConsole({ name: "acme", version: "1", commands: [GreetCommand, Twin] }),
     ).toThrow(/greet/);
+  });
+});
+
+/** The frozen shape of a testbed run: one data line, a progress line, the child's exit code. */
+class FrozenRunCommand extends Command({
+  name: "run",
+  description: "Run on a box",
+}) {
+  handle(io: CommandIo) {
+    io.output.info("Waiting for a box");
+    io.output.json({
+      region: "eu-west-1",
+      box: "i-1",
+      slot: "heavy",
+      waitSeconds: 0,
+      runSeconds: 3,
+      exitCode: 75,
+    });
+    return 75;
+  }
+}
+
+/** Writes a plan as JSON without `--json`, as runway's plan does. */
+class PlanCommand extends Command({
+  name: "plan",
+  description: "Print a plan",
+}) {
+  handle(io: CommandIo) {
+    io.output.json({ steps: ["a", "b"] });
+  }
+}
+
+describe("createConsole with json: bare", () => {
+  const commands = [...COMMANDS, FrozenRunCommand, PlanCommand];
+  const bare = (argv: string[], options: Parameters<typeof runCommandForTest>[2] = {}) =>
+    runCommandForTest({ name: "testbed", version: "1.0.0", commands }, argv, {
+      json: "bare",
+      ...options,
+    });
+
+  it("writes the data alone as one line whatever the exit code, human lines on stderr", async () => {
+    const result = await bare(["run", "--json"]);
+    expect(result.exitCode).toBe(75);
+    expect(result.stdout).toBe(
+      '{"region":"eu-west-1","box":"i-1","slot":"heavy","waitSeconds":0,"runSeconds":3,"exitCode":75}\n',
+    );
+    expect(result.stderr).toContain("Waiting for a box");
+    // --json turns animation and colour off, so the stderr view writes no escape byte.
+    expect(result.stderr).not.toContain("\u001b");
+  });
+
+  it("leaves stdout empty on an error and draws the problem on stderr", async () => {
+    const result = await bare(["clone", "--json"]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("Not a git repository");
+  });
+
+  it.each([[["stauts", "--json"]], [["greet", "--nope", "--json"]]])(
+    "exits 2 with stdout empty on a usage error for %j",
+    async (argv) => {
+      const result = await bare(argv);
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).not.toBe("");
+    },
+  );
+
+  it("writes nothing when the command has no data", async () => {
+    const result = await bare(["exit", "3", "--json"]);
+    expect(result.exitCode).toBe(3);
+    expect(result.stdout).toBe("");
+  });
+
+  it.each([[[]], [["--json"]]])(
+    "exits 2 with stdout empty for %j under requireCommand",
+    async (argv) => {
+      const result = await bare(argv, { requireCommand: true });
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Name a command");
+    },
+  );
+
+  it("pretty-prints output.json to stdout without --json, in either shape", async () => {
+    const expected = `${JSON.stringify({ steps: ["a", "b"] }, undefined, 2)}\n`;
+    expect((await bare(["plan"])).stdout).toBe(expected);
+    const envelope = await runCommandForTest(
+      { name: "runway", version: "1.0.0", commands: [PlanCommand] },
+      ["plan"],
+    );
+    expect(envelope.stdout).toBe(expected);
   });
 });

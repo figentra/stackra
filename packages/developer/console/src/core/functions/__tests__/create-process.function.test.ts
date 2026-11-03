@@ -2,8 +2,10 @@
  * Stackra file contract:
  * Purpose: proves `createProcess` runs children in the run's working directory, throws a `CommandError` with the
  *          output as its detail on a non-zero exit (not with `check: false`), refuses an interactive child without a
- *          terminal before starting it, echoes output only under `--verbose`, redacts secret values, and refuses
- *          every run when no runner is bound; and that a failed task shows the tail of its step's output.
+ *          terminal before starting it, echoes output only under `--verbose`, redacts secret values (in the output
+ *          listener too), hands an `inherit` child the streams (stderr only under `--json`) unless the run holds a
+ *          secret, and refuses every run when no runner is bound; and that a failed task shows the tail of its step's
+ *          output.
  * Boundary: unit test with the memory runner.
  * Runtime: node
  * Governing contract: STA-1966 spec FR-007, FR-028, FR-029 and AC-007; ADR 0022 (test placement).
@@ -90,6 +92,38 @@ describe("createProcess", () => {
     const loud = make(runner, { verbose: true });
     await loud.children.run("deploy", []);
     expect(loud.echoed).toEqual(["token [redacted]\n"]);
+  });
+
+  it("hands an inherit child the streams without a terminal, and only stderr under --json", async () => {
+    const runner = new MemoryProcessRunnerDriver().on("ssh box");
+    await make(runner).children.run("ssh", ["box"], { inherit: true });
+    await make(runner, { json: true }).children.run("ssh", ["box"], { inherit: true });
+    expect(runner.calls.map((call) => call.inherit)).toEqual([true, "stderr"]);
+  });
+
+  it("refuses an inherit child while the run holds a secret value, before it starts", async () => {
+    const runner = new MemoryProcessRunnerDriver().on("ssh box");
+    const children = createProcess({
+      runner,
+      mode: MODE,
+      cwd: "/repo",
+      echo: () => undefined,
+      redact: (text) => text,
+      secret: true,
+    });
+    const failure = await children
+      .run("ssh", ["box"], { inherit: true })
+      .catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(CommandError);
+    expect(failure).toMatchObject({ message: '"ssh box" cannot share the terminal' });
+    expect(runner.calls).toHaveLength(0);
+  });
+
+  it("hands the output listener redacted chunks", async () => {
+    const runner = new MemoryProcessRunnerDriver().on("deploy", { output: "token s3cret\n" });
+    const chunks: string[] = [];
+    await make(runner).children.run("deploy", [], { onOutput: (chunk) => chunks.push(chunk) });
+    expect(chunks).toEqual(["token [redacted]\n"]);
   });
 
   it("refuses every run when no runner is bound", async () => {
