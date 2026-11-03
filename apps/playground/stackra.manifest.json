@@ -76,6 +76,7 @@
         "perMinute": 10
       },
       "area": "public",
+      "anonymous": true,
       "toolOff": "signing a person in is the device's, never an agent's",
       "input": {
         "$ref": "@stackra/identity#/schemas/identity.ChallengePasskeyInput"
@@ -268,6 +269,7 @@
         "perMinute": 10
       },
       "area": "public",
+      "anonymous": true,
       "toolOff": "signing a person in is the device's, never an agent's",
       "input": {
         "$ref": "@stackra/identity#/schemas/identity.VerifyPasskeyInput"
@@ -2206,6 +2208,18 @@
         "expo": {
           "class": "ExpoAppleSignInDriver",
           "from": "@stackra/identity/native"
+        }
+      },
+      "from": "@stackra/identity"
+    },
+    {
+      "port": "AccountSecurity",
+      "key": "identity.AccountSecurity",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryAccountSecurityDriver",
+          "from": "@stackra/identity/testing"
         }
       },
       "from": "@stackra/identity"
