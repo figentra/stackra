@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `renderList(entries, binary, painter)`, the command list in the Symfony shape: usage, then the visible
+ * Purpose: `renderList(structures, binary, painter)`, the command list in the Symfony shape: usage, then the visible
  *          commands under headings, each with its one-line description. A command's heading is its `group`, else
  *          its namespace (the part before the first `:`); commands with neither come first, then each heading in
  *          order, its names in order.
@@ -9,22 +9,20 @@
  * Governing contract: STA-1730 spec FR-014; spec 030 Requirement 5.2; STA-1966 spec FR-015.
  */
 import { padTo } from "#core/functions/pad-to.function";
-import type { CommandEntry } from "#core/types/command-entry.type";
-import type { CommandStructure } from "#core/types/command-structure.type";
+import type { CommandStructure } from "#contracts/types/command-structure.type";
 import type { Painter } from "#core/types/painter.type";
 
 /** The heading a command sits under, or "" for none. */
 const headingOf = (structure: CommandStructure) =>
   structure.group ?? (structure.name.includes(":") ? (structure.name.split(":")[0] ?? "") : "");
 
-/** The list lines of `entries`, run as `binary`. */
+/** The list lines of `structures`, run as `binary`. */
 export function renderList(
-  entries: readonly CommandEntry[],
+  structures: readonly CommandStructure[],
   binary: string,
   painter: Painter,
 ): string[] {
-  const visible = [...new Set(entries)]
-    .map((entry) => entry.structure)
+  const visible = [...new Set(structures)]
     .filter((structure) => !structure.hidden)
     .toSorted((a, b) => headingOf(a).localeCompare(headingOf(b)) || a.name.localeCompare(b.name));
   const width = Math.max(0, ...visible.map((structure) => structure.name.length)) + 2;

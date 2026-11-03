@@ -1,5 +1,76 @@
 # @stackra/payments
 
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/integrations@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/money@0.7.1
+  - @stackra/database@0.7.1
+  - @stackra/ui@0.7.1
+  - @stackra/testing@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/market-packs@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/integrations@0.7.0
+  - @stackra/actions@0.7.0
+  - @stackra/money@0.7.0
+  - @stackra/database@0.7.0
+  - @stackra/ui@0.7.0
+  - @stackra/testing@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/market-packs@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/money@0.6.1
+  - @stackra/integrations@0.6.1
+  - @stackra/database@0.6.1
+  - @stackra/ui@0.6.1
+  - @stackra/testing@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/market-packs@0.6.1
+  - @stackra/validation@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [fb29d41]
+- Updated dependencies [d53d9d3]
+- Updated dependencies [712fb89]
+  - @stackra/database@0.6.0
+  - @stackra/ui@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/money@0.6.0
+  - @stackra/integrations@0.6.0
+  - @stackra/testing@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/market-packs@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

@@ -2,7 +2,7 @@
   "slug": "sign-in",
   "tier": "free",
   "category": "blocks",
-  "platforms": ["react"],
+  "platforms": ["react", "native"],
   "packageName": "@stackra/identity",
   "exportName": "SignIn",
   "parts": ["SignIn"],

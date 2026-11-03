@@ -6,16 +6,19 @@
  * Boundary: unit test in-process; no terminal.
  * Runtime: node
  * Governing contract: STA-1730 spec FR-008, FR-012 to FR-016, FR-019, FR-022, FR-023, FR-025 and SC-003; STA-1966
- *                     spec FR-013 to FR-015; ADR 0022.
+ *                     spec FR-001, FR-009, FR-011, FR-013 to FR-015, FR-019, FR-021 and FR-030; ADR 0022.
  */
 // @covers sta-1730:FR-008 sta-1730:FR-012 sta-1730:FR-013 sta-1730:FR-014 sta-1730:FR-016 sta-1730:FR-019
 // @covers sta-1730:FR-022 sta-1730:FR-023 sta-1730:FR-025 sta-1730:SC-003
-// @covers sta-1966:FR-013 sta-1966:FR-014 sta-1966:FR-015
+// @covers sta-1966:FR-013 sta-1966:FR-014 sta-1966:FR-015 sta-1966:FR-001 sta-1966:FR-009 sta-1966:FR-011
+// @covers sta-1966:FR-019 sta-1966:FR-021 sta-1966:FR-030 sta-1966:AC-001 sta-1966:AC-004
 import { Int } from "@stackra/validation";
 
 import { Command } from "#core/bases/command.base";
 import { Argument } from "#core/decorators/argument.decorator";
 import { Option } from "#core/decorators/option.decorator";
+import { TextRendererDriver } from "#core/drivers/text-renderer.driver";
+import { CommandError } from "#core/errors/command-error.error";
 import { PromptCancelledError } from "#core/errors/prompt-cancelled.error";
 import { createConsole } from "#core/functions/create-console.function";
 import type { CommandIo } from "#core/types/command-io.type";
@@ -116,7 +119,64 @@ class DoctorCommand extends Command({
   }
 }
 
+/** A doctor: checklist rows with a field of its own, one failing. */
+class CheckCommand extends Command({
+  name: "check",
+  description: "Run the checks",
+}) {
+  @Option
+  pass = false;
+
+  handle(io: CommandIo) {
+    io.output.checklist({
+      rows: [
+        { name: "node", status: "ok" },
+        { name: "git", status: "fail", fix: "brew install git", run: ["brew", "install", "git"] },
+      ],
+    });
+    return this.pass ? 0 : undefined;
+  }
+}
+
+/** Runs its checks on a live view. */
+class WatchCommand extends Command({
+  name: "watch",
+  description: "Watch the checks",
+}) {
+  handle(io: CommandIo) {
+    const live = io.output.live({ rows: [{ name: "node", status: "running" }] });
+    live.update("node", { status: "ok" });
+    live.update("git", { status: "fail", fix: "brew install git" });
+    live.stop();
+  }
+}
+
+/** Fails with a reason, a fix and the command's docs link. */
+class CloneCommand extends Command({
+  name: "clone",
+  description: "Clone",
+  docs: "https://stackra.dev/cli/clone",
+}) {
+  handle(): never {
+    throw new CommandError("Not a git repository", { why: "/tmp has no .git", fix: "git init" });
+  }
+}
+
+/** Returns records and writes nothing. */
+class RowsCommand extends Command({
+  name: "rows",
+  description: "Return rows",
+}) {
+  handle() {
+    return [{ name: "a", size: 1 }];
+  }
+}
+
 const COMMANDS = [
+  WatchCommand,
+  CheckCommand,
+  CloneCommand,
+  RowsCommand,
   GreetCommand,
   AskCommand,
   ExitCommand,
@@ -203,6 +263,77 @@ describe("createConsole", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("ERROR");
     expect(result.stderr).toContain("Did you mean greet?");
+  });
+
+  it("ends with 1 on a failed checklist row, emitting the rows unchanged under --json", async () => {
+    expect((await run(["check"])).exitCode).toBe(1);
+    expect((await run(["check", "--pass"])).exitCode).toBe(0);
+    const json = await run(["check", "--json"]);
+    expect(json.exitCode).toBe(1);
+    expect(json.json).toEqual({
+      ok: false,
+      data: [
+        { name: "node", status: "ok" },
+        { name: "git", status: "fail", fix: "brew install git", run: ["brew", "install", "git"] },
+      ],
+    });
+  });
+
+  it("ends a live view in its checklist: exit 1 on a failed row, the settled rows as --json data", async () => {
+    const text = await run(["watch"]);
+    expect(text.exitCode).toBe(1);
+    expect(text.stdout).toContain("✗ fail  git");
+    expect((await run(["watch", "--json"])).json).toEqual({
+      ok: false,
+      data: [
+        { name: "node", status: "ok" },
+        { name: "git", status: "fail", fix: "brew install git" },
+      ],
+    });
+  });
+
+  it("draws a command error as one problem, and carries its fields in the --json error", async () => {
+    const text = await run(["clone"]);
+    expect(text.exitCode).toBe(1);
+    expect(text.stderr).toContain("Not a git repository");
+    expect(text.stderr).toMatch(/Why\s+\/tmp has no \.git/);
+    expect(text.stderr).toMatch(/Fix\s+git init/);
+    expect(text.stderr).toMatch(/Docs\s+https:\/\/stackra\.dev\/cli\/clone/);
+    expect((await run(["clone", "--json"])).json).toEqual({
+      ok: false,
+      error: {
+        code: "command",
+        message: "Not a git repository",
+        why: "/tmp has no .git",
+        fix: "git init",
+        docs: "https://stackra.dev/cli/clone",
+      },
+    });
+  });
+
+  it("presents returned data when the command wrote nothing", async () => {
+    const result = await run(["rows"]);
+    expect(result.stdout).toMatch(/name\s+size/);
+    expect((await run(["rows", "--json"])).json).toEqual({
+      ok: true,
+      data: [{ name: "a", size: 1 }],
+    });
+  });
+
+  it("runs every command unchanged on another renderer driver", async () => {
+    const seen: string[] = [];
+    /** Records each message before drawing it as text. */
+    class RecordingRenderer extends TextRendererDriver {
+      override message(...args: Parameters<TextRendererDriver["message"]>): void {
+        seen.push(args[1]);
+        super.message(...args);
+      }
+    }
+    const result = await run(["greet", "Ada"], {
+      renderer: (context) => new RecordingRenderer(context),
+    });
+    expect(result.exitCode).toBe(0);
+    expect(seen).toEqual(["Hello Ada"]);
   });
 
   it("returns 1 when the handler throws, with the causes under --verbose", async () => {

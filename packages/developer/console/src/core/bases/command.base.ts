@@ -35,7 +35,8 @@ export type Command = CommandBase;
 function read(
   options: CommandOptions,
 ): Readonly<
-  Required<Omit<CommandOptions, "group" | "docs">> & Pick<CommandOptions, "group" | "docs">
+  Required<Omit<CommandOptions, "group" | "docs" | "tool">> &
+    Pick<CommandOptions, "group" | "docs" | "tool">
 > {
   const label = `Command(${JSON.stringify(options.name)})`;
   for (const name of [options.name, ...(options.aliases ?? [])])
@@ -53,9 +54,11 @@ function read(
     aliases: Object.freeze([...(options.aliases ?? [])]),
     audit: options.audit ?? false,
     bin: options.bin ?? false,
+    passthrough: options.passthrough ?? false,
     examples: Object.freeze([...(options.examples ?? [])]),
     ...(options.group === undefined ? {} : { group: options.group }),
     ...(options.docs === undefined ? {} : { docs: options.docs }),
+    ...(options.tool === undefined || options.tool === false ? {} : { tool: options.tool }),
   });
 }
 

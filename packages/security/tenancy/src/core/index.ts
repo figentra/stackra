@@ -28,6 +28,8 @@ export { RevokedCopy } from "#core/enums/revoked-copy.enum";
 export { ShareStatus } from "#core/enums/share-status.enum";
 export { TenancyScopes } from "#core/enums/tenancy-scopes.enum";
 export { TenantEnvironment } from "#core/enums/tenant-environment.enum";
+export { ExternalRoleNotAllowedError } from "#core/errors/external-role-not-allowed.error";
+export { LastOwnerRefusedError } from "#core/errors/last-owner-refused.error";
 export { RegionMismatchError } from "#core/errors/region-mismatch.error";
 export { SandboxNotFoundError } from "#core/errors/sandbox-not-found.error";
 export { ShareTransitionInvalidError } from "#core/errors/share-transition-invalid.error";

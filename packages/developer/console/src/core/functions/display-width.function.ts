@@ -14,8 +14,11 @@ const GRAPHEMES = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 /** Graphemes made only of marks and format characters (combining marks, ZWJ, bidi isolates). */
 const ZERO = /^[\p{Mn}\p{Me}\p{Cf}]+$/u;
 
-/** Emoji presentation. */
-const EMOJI = /\p{Extended_Pictographic}/u;
+/**
+ * Emoji presentation: a pictograph drawn as an emoji by default, or one asked for with U+FE0F. A text-default
+ * pictograph (`⚠`, `©`, `↔`) takes one column, as terminals draw it.
+ */
+const EMOJI = /\p{Emoji_Presentation}|\uFE0F/u;
 
 /** Wide East Asian code points (UAX 11, W and F), the common blocks. */
 function isWide(code: number): boolean {
