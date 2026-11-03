@@ -18,8 +18,8 @@
     "@stackra/scheduler": "workspace:*",
     "@stackra/settings": "workspace:*",
     "@stackra/testing": "workspace:*",
-    "@stackra/ui": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
+    "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "@stackra/vitest-config": "workspace:*"
   },
