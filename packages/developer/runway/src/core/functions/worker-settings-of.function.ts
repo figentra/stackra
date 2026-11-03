@@ -24,7 +24,10 @@ const isObject = (x: unknown): x is Record<string, unknown> =>
   typeof x === "object" && x !== null && !Array.isArray(x);
 
 /** Merges plain objects key by key, `over` winning; arrays and scalars replace. */
-function merge(under: WorkerSettings, over: WorkerSettings): WorkerSettings {
+function merge(
+  under: Record<string, unknown>,
+  over: Record<string, unknown>,
+): Record<string, unknown> {
   const out: Record<string, unknown> = { ...under };
   for (const [key, value] of Object.entries(over)) {
     const before = out[key];
@@ -35,7 +38,7 @@ function merge(under: WorkerSettings, over: WorkerSettings): WorkerSettings {
           ? before
           : value;
   }
-  return out as WorkerSettings;
+  return out;
 }
 
 /**
@@ -58,5 +61,5 @@ export function workerSettingsOf(target: Target, memberKey: string): WorkerSetti
     own.preset ? WORKER_PRESETS[own.preset] : {},
     target.defaults ?? {},
     member,
-  ].reduce<WorkerSettings>((acc, layer) => merge(acc, layer), {});
+  ].reduce<WorkerSettings>((acc, layer) => merge(acc, layer) as WorkerSettings, {});
 }
