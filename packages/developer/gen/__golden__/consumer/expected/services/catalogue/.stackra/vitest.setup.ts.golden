@@ -7,8 +7,9 @@
  */
 import "@stackra/clients/testing";
 import "#stackra/registrations";
+import "./gen/schemas/catalogue.ts";
 import { wiring } from "#stackra/wiring";
-import { loadMemberSchemas, registerWiring } from "@stackra/container/testing";
+import { markMemberSchemasLoaded, registerWiring } from "@stackra/container/testing";
 
 registerWiring(wiring);
-await loadMemberSchemas();
+markMemberSchemasLoaded();

@@ -1,5 +1,36 @@
 # @stackra/infra-testbed
 
+## 0.8.0
+
+### Patch Changes
+
+- @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/contracts@0.7.1
+
+## 0.7.0
+
+### Minor Changes
+
+- 214bf6a: The testbed runs a pool in each of four regions, one stack per region (STA-2042). `testbedPlan` takes a `region`
+  (eu-west-1, eu-west-2, eu-central-1 or us-east-1) and derives `home`. Only the home stack (eu-west-1) declares the
+  global instance and image-builder roles, the build bucket and the image pipeline. Its distribution copies each AMI to
+  all four regions and writes each region's AMI parameter. Every stack declares its region's security group, launch
+  template and groups. The instance role may act on the testbed groups of all four regions. `AwsTestbed` gains `home`,
+  and its home-only outputs become optional.
+
+### Patch Changes
+
+- 829b5e2: The image's pnpm store is warmed with `.pnpmfile.mjs` and `.npmrc` beside the lockfile and `pnpm-workspace.yaml`
+  (`pnpm fetch` checks the pnpmfile's checksum and resolves the `@figentra-oss` scope from `.npmrc`; the build failed
+  without them). The validate phase now runs an offline `pnpm fetch`
+  against the store, so an incomplete store fails the build.
+- @stackra/contracts@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes

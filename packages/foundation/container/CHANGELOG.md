@@ -1,5 +1,27 @@
 # @stackra/container
 
+## 0.8.0
+
+### Patch Changes
+
+- 7dd35b3: A member's generated Vitest setup imports each generated schemas file statically and calls the new
+  `markMemberSchemasLoaded()` from `@stackra/container/testing`, instead of awaiting `loadMemberSchemas()`. In a
+  consumer, `@stackra/container` sits in node_modules, which Vitest leaves to Node, so the schemas loaded through Node:
+  with no `#` imports-map fallback and no legacy decorators, every unit test failed at import (STA-2032).
+- @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/contracts@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/contracts@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes

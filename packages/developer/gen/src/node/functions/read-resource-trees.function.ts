@@ -3,19 +3,22 @@
  * Purpose: `readResourceTrees(root, ir, loader)`, the tree each resource class of the member records: it writes one
  *          module under `.stackra/cache/` that imports `describeResource` from the member's own `@stackra/panel` and
  *          describes each resource file as it evaluates (top-level await), loads it once through `loader`, and returns the trees by source file, every class in
- *          them written as `{ $class }` (ADR 0307 rule 5).
+ *          them written as `{ $class }` (ADR 0307 rule 5). It first writes `.stackra/gen/i18n.ts`, which a resource
+ *          imports for its labels (`#stackra/i18n`) and which needs no resource tree, so a clean clone loads.
  * Boundary: runs the resource members once, never a constructor. A member with no resource needs no loader and gets
  *           nothing; one with a resource and no loader is refused (`resource_loader_missing`), so a manifest never
  *           depends on who ran gen. A file that fails to import is `resource_unloadable`; a builder member that throws
- *           is `builder_impure`. The cache module is rewritten each run and read by nothing else.
+ *           is `builder_impure`. The cache module is rewritten each run and read by nothing else; the i18n file is the
+ *           one the run writes anyway, so `--check` still compares it.
  * Runtime: node
  * Governing contract: ADR 0307 (rules 5 and 7); ADR 0164 (decision 2); ADR 0111 (decision 3); STA-1947.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 import type { Json } from "@stackra/contracts";
 
+import { emitI18n } from "#core/functions/emit-i18n.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { ModuleLoader } from "#node/types/module-loader.type";
@@ -105,6 +108,11 @@ export async function readResourceTrees(
         ),
       ),
     };
+  const i18n = emitI18n(ir);
+  if (i18n !== undefined) {
+    mkdirSync(join(root, dirname(i18n.path)), { recursive: true });
+    writeFileSync(join(root, i18n.path), i18n.content);
+  }
   const dir = join(root, ".stackra", "cache");
   mkdirSync(dir, { recursive: true });
   const file = join(dir, "resource-trees.ts");

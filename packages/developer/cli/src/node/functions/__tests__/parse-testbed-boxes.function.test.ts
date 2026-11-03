@@ -19,17 +19,24 @@ const rows = JSON.stringify([
 
 describe("parseTestbedBoxes", () => {
   it("sorts by launch time and drops a box without an address", () => {
-    expect(parseTestbedBoxes(rows).map((box) => box.id)).toEqual(["i-a", "i-b"]);
+    expect(parseTestbedBoxes(rows, "eu-west-1").map((box) => box.id)).toEqual(["i-a", "i-b"]);
+  });
+
+  it("tags every box with the region it was read in", () => {
+    expect(parseTestbedBoxes(rows, "eu-west-2").map((box) => box.region)).toEqual([
+      "eu-west-2",
+      "eu-west-2",
+    ]);
   });
 
   it("returns no box for unparsable output", () => {
-    expect(parseTestbedBoxes("not json")).toEqual([]);
-    expect(parseTestbedBoxes("{}")).toEqual([]);
+    expect(parseTestbedBoxes("not json", "eu-west-1")).toEqual([]);
+    expect(parseTestbedBoxes("{}", "eu-west-1")).toEqual([]);
   });
 });
 
 describe("orderTestbedBoxes", () => {
-  const boxes = parseTestbedBoxes(rows);
+  const boxes = parseTestbedBoxes(rows, "eu-west-1");
 
   it("gives a heavy job only heavy boxes", () => {
     expect(orderTestbedBoxes(boxes, "heavy", new Set()).map((box) => box.id)).toEqual(["i-a"]);

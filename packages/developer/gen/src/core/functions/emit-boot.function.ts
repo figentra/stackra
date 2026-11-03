@@ -3,8 +3,10 @@
  * Purpose: `emitBoot`, a service's `#stackra/boot` (`.stackra/gen/boot.ts`): one `boot(container, { signal })`
  *          that connects what needs the booted container, in order: the record policies (`connectPolicies`, when the
  *          manifest lists one, so `ctx.authorize(record)` builds each with its dependencies; STA-2045), the bound
- *          `HoldRegistry` and `SequenceTimeZone`
- *          drivers (or none), `PostgresDatabaseDriver.connect` with `databaseUrl()`, the url the service's Encore
+ *          `HoldRegistry` and `SequenceTimeZone` drivers (or none), the container itself as the reads' visibility
+ *          resolver (`connectVisibilityFilter`, so reads AND the bound `VisibilityFilter`'s conditions, writes stamp
+ *          the call's actor and the call's time zone is read; ADR 0333 decision 4, STA-2044),
+ *          `PostgresDatabaseDriver.connect` with `databaseUrl()`, the url the service's Encore
  *          `database` provides (`emitEncoreDatabase`; boot never imports `.stackra/encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
  *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
  *          instance's share of the runway `poolBudget`, ADR 0473) and the subscribers: the legal-hold one, the
@@ -141,7 +143,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     imports.push(
       'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',
       // The trait subscribers' names (Tree, ValidateOnFlush) sort after StampSubscriber, so appending keeps the order.
-      `import { ${["AppendOnlySubscriber", "connectHoldRegistry", "connectSequenceTimeZone", "DatabaseConfig", "HoldSubscriber", "StampSubscriber", ...traits].join(", ")} } from "@stackra/database";`,
+      `import { ${["AppendOnlySubscriber", "connectHoldRegistry", "connectSequenceTimeZone", "connectVisibilityFilter", "DatabaseConfig", "HoldSubscriber", "StampSubscriber", ...traits].join(", ")} } from "@stackra/database";`,
       'import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";',
     );
     if (encrypted)
@@ -154,6 +156,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "  connectSequenceTimeZone(",
       "    container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,",
       "  );",
+      "  connectVisibilityFilter(container);",
       "  const config = container.has(DatabaseConfig) ? container.get(DatabaseConfig) : undefined;",
       '  const replicas = (process.env["DATABASE_REPLICA_URLS"] ?? "").split(",").filter((url) => url !== "");',
       "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
