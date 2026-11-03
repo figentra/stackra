@@ -1,0 +1,14 @@
+[
+  {
+    "member": "services/shop",
+    "code": "identity_changed",
+    "file": "src/node/actions/cancel-order.action.ts",
+    "subject": "CancelOrderAction"
+  },
+  {
+    "member": "services/shop",
+    "code": "identity_changed",
+    "file": "src/node/access/order.permissions.ts",
+    "subject": "OrderPermissions.read"
+  }
+]
