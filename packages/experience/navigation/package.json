@@ -38,6 +38,7 @@
     "#config/*": [
       "./src/config/*",
       "./src/config/*.ts",
+      "./src/config/*.tsx",
       "./src/config/*/index.ts"
     ],
     "#contracts/*": [

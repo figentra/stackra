@@ -37,26 +37,31 @@
     "#browser/*": [
       "./src/browser/*",
       "./src/browser/*.ts",
+      "./src/browser/*.tsx",
       "./src/browser/*/index.ts"
     ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
       "./src/contracts/*/index.ts"
     ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
     "#desktop/*": [
       "./src/desktop/*",
       "./src/desktop/*.ts",
+      "./src/desktop/*.tsx",
       "./src/desktop/*/index.ts"
     ],
     "#native/*": [
       "./src/native/*",
       "./src/native/*.ts",
+      "./src/native/*.tsx",
       "./src/native/*/index.ts"
     ],
     "#react/*": [
@@ -68,6 +73,7 @@
     "#testing/*": [
       "./src/testing/*",
       "./src/testing/*.ts",
+      "./src/testing/*.tsx",
       "./src/testing/*/index.ts"
     ],
     "#stackra/*": [

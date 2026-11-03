@@ -41,16 +41,19 @@
     "#config/*": [
       "./src/config/*",
       "./src/config/*.ts",
+      "./src/config/*.tsx",
       "./src/config/*/index.ts"
     ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
     "#node/*": [
       "./src/node/*",
       "./src/node/*.ts",
+      "./src/node/*.tsx",
       "./src/node/*/index.ts"
     ],
     "#stackra/*": [

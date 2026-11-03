@@ -40,22 +40,33 @@
   "imports": {
     "#config/*": [
       "./src/config/*",
-      "./src/config/*.ts"
+      "./src/config/*.ts",
+      "./src/config/*.tsx",
+      "./src/config/*/index.ts"
     ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
       "./src/contracts/*/index.ts"
     ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
     "#native/*": [
       "./src/native/*",
       "./src/native/*.ts",
+      "./src/native/*.tsx",
       "./src/native/*/index.ts"
+    ],
+    "#plugin/*": [
+      "./plugin/*",
+      "./plugin/*.ts",
+      "./plugin/*.tsx",
+      "./plugin/*/index.ts"
     ],
     "#stackra/*": [
       "./.stackra/gen/*",

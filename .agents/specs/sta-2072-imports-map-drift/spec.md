@@ -141,8 +141,8 @@ app, so a new member passes the gate without an edit.
   `stackra.tier` `config` member, whose `imports` map differs from `importsMap(dir)`, naming the aliases to add, to
   remove and to retarget, and the command SHALL exit 1.
 - **FR-005**: THE check SHALL compare maps without regard to key order.
-- **FR-006**: WHEN `stackra new` renders a member other than a tooling preset THE scaffold SHALL write
-  `importsMap(dest)` as its `imports` map.
+- **FR-006**: WHEN `stackra new` renders a template kind other than a tooling preset through `scaffold` (an app, or a
+  package given `--entries` or `--data`) THE scaffold SHALL write `importsMap(dest)` as its `imports` map.
 - **FR-007**: THE repository SHALL hold, for every checked member, the generated map, so the check passes on main.
 
 ### Key Entities _(include if feature involves data)_
@@ -181,8 +181,13 @@ None.
   map for new members. The one-time regeneration of main uses the builder from an untracked script.
 - Checking that every `#` specifier a file imports is declared in its member's map (the other planned check in ADR
   0233): a separate gap.
-- `#modules/*` (ADR 0294's amendment of ADR 0233): no member has a `src/modules/` folder yet; once one does, the
-  per-folder rule gives it `#modules/*` (STA-344 converts members).
+- `#modules/*` and `#assets/*` (ADR 0294's amendment of ADR 0233): no member in this repository has a `src/modules/`
+  folder or maps `#assets/*` yet. A v3 service has its root module directly in `src/`, so the rule gives it the
+  `#src/*` layout and not `#modules/*`; teaching the rule both aliases is a follow-up (STA-344 converts members).
+- `stackra new package` without `--entries` or `--data`, and `stackra new service`: they write the product-template
+  shape (`packageTemplate`, `serviceTemplate`, pure text for any repository, with `#src/*`, `#assets/*` and, for a
+  service, `#config/*`, `#contracts/*` and `#modules/*`), which the folder rule does not derive yet. A member made that
+  way in this repository is reported by the check and takes the generated map by hand until the follow-up above.
 - Converting the `#src/*` layout members to per-folder aliases: a code change in every importing file, not a map change.
 
 ## Assumptions
@@ -197,7 +202,11 @@ None.
 
 ## Amendments
 
-None.
+- 2026-11-03 (implementation): FR-006 is limited to the kinds rendered through `scaffold`; `stackra new package`
+  (without `--entries` or `--data`) and `stackra new service` write the product-template map, which keeps `#assets/*`
+  and `#modules/*` the folder rule cannot derive yet, so they move to Out of scope. The old Out of scope line claimed
+  the per-folder rule gives a service `#modules/*`; a service's root module sits directly in `src/`, so it gets the
+  `#src/*` layout.
 
 ## Status history
 

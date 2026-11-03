@@ -202,7 +202,8 @@ A rejected promise or listener failure is reported through the package's logger 
 | No deep import of `@stackra/*/src/*`                                         | oxlint `boundaries.jsonc`                                           | Yes    |
 | Kebab-case names, one export per file, barrel shape                          | planned: validator check                                            | No     |
 | No extension or `/index` in relative specifiers                              | planned: import-style check in the validator                        | No     |
-| `#` subpath imports instead of `../` climbs; `imports` map drift             | planned: validator check                                            | No     |
+| `#` subpath imports instead of `../` climbs                                  | planned: validator check                                            | No     |
+| `imports` map drift from the member's folders (ADR 0233 decision 1)          | `importsMapFindings` in `stackra validate --repository`             | Yes    |
 | File contract header, TSDoc on exports, members and tokens, no types in tags | `stackra doc-standard` in `pnpm validate`                           | Yes    |
 | Typed errors with `code` and `hint`                                          | review (`code-standards-steward`, planned role) until a lint exists | No     |
 

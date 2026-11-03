@@ -24,7 +24,37 @@
   },
   "type": "module",
   "imports": {
-    "#scripts/*": "./scripts/*.ts"
+    "#assets/*": [
+      "./src/assets/*",
+      "./src/assets/*.ts",
+      "./src/assets/*.tsx",
+      "./src/assets/*/index.ts"
+    ],
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*.tsx",
+      "./src/config/*/index.ts"
+    ],
+    "#docs/*": [
+      "./src/docs/*",
+      "./src/docs/*.ts",
+      "./src/docs/*.tsx",
+      "./src/docs/*/index.ts"
+    ],
+    "#snippets/*": [
+      "./src/snippets/*",
+      "./src/snippets/*.ts",
+      "./src/snippets/*.tsx",
+      "./src/snippets/*/index.ts"
+    ],
+    "#scripts/*": "./scripts/*.ts",
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
   },
   "scripts": {
     "dev": "stackra dev",
