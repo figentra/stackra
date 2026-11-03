@@ -36,18 +36,8 @@ mobile:
 let folder = "";
 let actions: string | undefined;
 
-const run = (values: CliContext["values"]) => {
-  const { io, output } = captureIo();
-  const code = runMobileOnboard({
-    cwd: folder,
-    io,
-    values,
-    positionals: [],
-    rest: [],
-    cli: async () => 0,
-  });
-  return { code, output };
-};
+const run = (values: { app?: string; check?: boolean; live?: boolean }) =>
+  runMobileOnboard(folder, { check: false, live: false, ...values });
 
 beforeEach(() => {
   folder = mkdtempSync(join(tmpdir(), "mobile-onboard-"));
@@ -65,34 +55,37 @@ afterEach(() => {
 describe("stackra mobile onboard", () => {
   // @covers sta-1623:FR-010
   // @covers sta-1623:FR-001
-  it("prints the offline plan of the only app with the owner's steps, writes nothing and exits 3", async () => {
-    const { code, output } = run({});
+  it("plans the only app offline with the owner's steps and writes nothing", async () => {
+    const result = await run({});
 
-    expect(await code).toBe(3);
-    const text = output();
-    expect(text).toContain(
-      "mobile onboard academorix (offline plan: nothing is called or written)",
+    expect(result.app).toBe("academorix");
+    expect(result.ids).toMatchObject({
+      bundleId: "app.academorix.mobile",
+      packageName: "app.academorix.mobile",
+    });
+    const state = Object.fromEntries(result.steps.map((step) => [step.key, step.state]));
+    expect(state["identity"]).toBe("done");
+    expect(state["eas-project"]).toBe("planned");
+    expect(result.steps.find((step) => step.key === "eas-project")?.detail).toContain(
+      "would create academorix/academorix-academorix",
     );
-    expect(text).toContain("app.academorix.mobile / app.academorix.mobile");
-    expect(text).toMatch(/✓ identity\s+done/);
-    expect(text).toMatch(
-      /→ eas-project\s+planned\s+would create academorix\/academorix-academorix/,
+    expect(result.steps.some((step) => step.state === "manual")).toBe(true);
+    expect(result.steps.flatMap((step) => step.manual ?? []).join("\n")).toContain(
+      "App Store Connect › Apps › + › New App",
     );
-    expect(text).toContain("left for the owner:");
-    expect(text).toContain("App Store Connect › Apps › + › New App");
-    expect(text).not.toContain("wrote ");
+    expect(result.written).toEqual([]);
     expect(readFileSync(join(folder, "runway.yaml"), "utf8")).toBe(RUNWAY);
   });
 
   it("needs --app when the runway has several apps", async () => {
     writeFileSync(join(folder, "runway.yaml"), `${RUNWAY}  kiosk:\n    template: os/mobile@3\n`);
 
-    await expect(run({}).code).rejects.toBeInstanceOf(CliUsageError);
+    await expect(run({})).rejects.toBeInstanceOf(CliUsageError);
   });
 
   // @covers sta-1623:FR-005
   it("refuses --check and --live outside GitHub Actions", async () => {
-    await expect(run({ live: true }).code).rejects.toBeInstanceOf(CliUsageError);
-    await expect(run({ check: true }).code).rejects.toBeInstanceOf(CliUsageError);
+    await expect(run({ live: true })).rejects.toBeInstanceOf(CliUsageError);
+    await expect(run({ check: true })).rejects.toBeInstanceOf(CliUsageError);
   });
 });
