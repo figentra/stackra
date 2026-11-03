@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `jsonSchemaOf(structure)`, the JSON Schema of a command's arguments and options as one object, keyed by
+ * Purpose: `inputSchemaOf(structure)`, the JSON Schema of a command's arguments and options as one object, keyed by
  *          field (camelCase): `@Str` a string with its length and pattern, `@Int` an integer and `@Num` a number with
  *          their bounds, a flag a boolean, `@List` an array of them, `choices` an enum; required arguments are
  *          required, and nothing else is allowed.
@@ -29,7 +29,7 @@ function valueSchema(field: CommandField): Record<string, unknown> {
 }
 
 /** The JSON Schema of the input of `structure`. */
-export function jsonSchemaOf(structure: CommandStructure): Record<string, unknown> {
+export function inputSchemaOf(structure: CommandStructure): Record<string, unknown> {
   const fields = [...structure.arguments, ...structure.options];
   return {
     type: "object",
