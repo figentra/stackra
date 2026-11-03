@@ -1254,5 +1254,19 @@
     "you": "You",
     "disclaimer": "Tamo can be wrong. Check what it drafts.",
     "close": "Close"
+  },
+  "terminal_demo": {
+    "label": "Try it",
+    "copy": "Copy command"
+  },
+  "props_playground": {
+    "controls": "Props",
+    "preview": "Preview",
+    "theme": "Theme",
+    "theme_default": "Default",
+    "direction": "Direction",
+    "ltr": "Left to right",
+    "rtl": "Right to left",
+    "reset": "Reset"
   }
 }

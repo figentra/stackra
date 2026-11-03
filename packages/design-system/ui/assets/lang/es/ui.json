@@ -1254,5 +1254,19 @@
     "you": "Tú",
     "disclaimer": "Tamo puede equivocarse. Revisa lo que propone.",
     "close": "Cerrar"
+  },
+  "terminal_demo": {
+    "label": "Pruébalo",
+    "copy": "Copiar comando"
+  },
+  "props_playground": {
+    "controls": "Propiedades",
+    "preview": "Vista previa",
+    "theme": "Tema",
+    "theme_default": "Predeterminado",
+    "direction": "Dirección",
+    "ltr": "De izquierda a derecha",
+    "rtl": "De derecha a izquierda",
+    "reset": "Restablecer"
   }
 }

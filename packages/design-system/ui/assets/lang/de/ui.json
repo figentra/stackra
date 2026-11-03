@@ -1254,5 +1254,19 @@
     "you": "Sie",
     "disclaimer": "Tamo kann sich irren. Prüfen Sie seine Entwürfe.",
     "close": "Schließen"
+  },
+  "terminal_demo": {
+    "label": "Ausprobieren",
+    "copy": "Befehl kopieren"
+  },
+  "props_playground": {
+    "controls": "Eigenschaften",
+    "preview": "Vorschau",
+    "theme": "Design",
+    "theme_default": "Standard",
+    "direction": "Richtung",
+    "ltr": "Links nach rechts",
+    "rtl": "Rechts nach links",
+    "reset": "Zurücksetzen"
   }
 }
