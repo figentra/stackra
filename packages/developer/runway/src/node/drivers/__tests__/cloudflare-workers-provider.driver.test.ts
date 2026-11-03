@@ -142,6 +142,23 @@ describe("CloudflareWorkersProviderDriver", () => {
     ]);
   });
 
+  it("plans a member with Durable Object migrations through wrangler deploy", () => {
+    const root = repository();
+    writeFileSync(
+      join(root, "workers/registry/wrangler.jsonc"),
+      `{ "name": "x", // a Durable Object
+  "migrations": [{ "tag": "v1" },], }`,
+    );
+    const steps = workers(root, fakeRunner(root).run)
+      .plan(WEB, SHA)
+      .filter((step) => step.cwd?.endsWith("workers/registry"))
+      .map((step) => step.args.join(" "));
+    expect(steps.at(-1)).toBe(
+      `exec wrangler deploy --message ${SHA} --var REGISTRY_READ_ONLY:$REGISTRY_READ_ONLY --secrets-file /dev/stdin`,
+    );
+    expect(steps.some((step) => step.includes("versions"))).toBe(false);
+  });
+
   it("applies with the real ids, sends secrets on stdin, restores the config and records versions", async () => {
     const root = repository();
     const { run, calls, configs } = fakeRunner(root);
@@ -234,7 +251,11 @@ describe("CloudflareWorkersProviderDriver", () => {
     const driver = workers(root, run);
     driver.sleep = async () => {};
     driver.fetch = async () => ({ ok: ++seen < 3, status: seen < 3 ? 200 : 503 }); // 0%, step 1 pass; step 2 fails
-    await expect(driver.apply(gradual, SHA)).rejects.toThrow(RunwayDeployFailedError);
+    const failure = driver.apply(gradual, SHA);
+    await expect(failure).rejects.toThrow(RunwayDeployFailedError);
+    await expect(failure).rejects.toMatchObject({
+      results: [{ record: { reference: `registry=${BEFORE}` } }],
+    });
     expect(calls.at(-1)).toContain(`wrangler rollback ${BEFORE} --message ${SHA}`);
     expect(calls.filter((call) => call.includes("versions deploy"))).toHaveLength(2);
 

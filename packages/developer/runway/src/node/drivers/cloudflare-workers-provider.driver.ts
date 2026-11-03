@@ -16,6 +16,7 @@
  * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0284 (Workers members); ADR 0173 (no secret is an
  *                     argument); ADR 0294 R3 and ADR 0305 rule 3 (the `Driver(Port)` base); STA-1921; ADR 0519; STA-1989, STA-1990.
  */
+import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -57,6 +58,17 @@ const ROLLOUT_HOLD_MS = 5 * 60_000;
 
 /** A string, or a `//` or `/* *\/` comment; the strings are kept. */
 const JSONC_TOKEN = /("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
+
+/**
+ * Whether a rendered wrangler config ships Durable Object migrations. "Versions of Worker bundles that change Durable
+ * Object class lifecycle cannot be uploaded"; apply them with `wrangler deploy`
+ * (developers.cloudflare.com/workers/versions-and-deployments/gradual-deployments/with-durable-objects/). So such a
+ * member goes out at 100% that way (ADR 0519 decision 3).
+ */
+function migrates(config: { migrations?: unknown }): boolean {
+  // shortcut: any `migrations` array takes this path, applied or not; diff the tags against the live ones to split again.
+  return config.migrations !== undefined;
+}
 
 /** Where the settings live in runway.yaml. */
 const SETTINGS_PATH = "targets.cloudflare-workers";
@@ -104,8 +116,17 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
 
   /** Per member: build, migrate, upload a version (with its secrets), deploy it (the id swap and its restore are file edits, not commands). */
   override plan(target: DeployTarget, sha: string): readonly DeployStep[] {
-    return this.membersOf(target).flatMap(([, member]) => {
+    return this.membersOf(target).flatMap(([key, member]) => {
       const cwd = join(this.root, member.path);
+      const config = join(cwd, "wrangler.jsonc");
+      // Without the file (a plan away from the checkout) the member plans the versioned path.
+      const migrating =
+        existsSync(config) &&
+        migrates(
+          JSON.parse(this.render(target, key, readFileSync(config, "utf8"))) as {
+            migrations?: unknown;
+          },
+        );
       return [
         { command: "pnpm", args: this.buildArgs(member), cwd: this.root },
         ...member.d1.map((database) => ({
@@ -113,8 +134,14 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           args: [...WRANGLER, "d1", "migrations", "apply", database, "--remote"],
           cwd,
         })),
-        { command: "pnpm", args: this.uploadArgs(member, sha, (name) => `$${name}`), cwd },
-        { command: "pnpm", args: this.deployVersionArgs([["$VERSION", 100]], sha), cwd },
+        {
+          command: "pnpm",
+          args: this.uploadArgs(member, sha, (name) => `$${name}`, migrating),
+          cwd,
+        },
+        ...(migrating
+          ? []
+          : [{ command: "pnpm", args: this.deployVersionArgs([["$VERSION", 100]], sha), cwd }]),
       ];
     });
   }
@@ -144,11 +171,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           });
         // `render` already stripped the JSONC comments and trailing commas: `swapped` is strict JSON.
         const deployed = JSON.parse(swapped) as { name?: string; migrations?: unknown };
-        // "Versions of Worker bundles that change Durable Object class lifecycle cannot be uploaded"; apply them
-        // with `wrangler deploy` (developers.cloudflare.com/workers/versions-and-deployments/gradual-deployments/
-        // with-durable-objects/). So a member with migrations goes out at 100% that way (ADR 0519 decision 3).
-        // shortcut: any `migrations` array takes this path, applied or not; diff the tags against the live ones to split again.
-        const migrating = deployed.migrations !== undefined;
+        const migrating = migrates(deployed);
         const output = await this.run(
           "pnpm",
           this.uploadArgs(member, sha, (name) => this.env[name] ?? "", migrating),
@@ -192,7 +215,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           target.environment === "production" && member.rollout !== undefined
             ? member.rollout
             : [100];
-        await this.rollOut(target, cwd, version, steps, sha, check);
+        await this.rollOut(target, key, cwd, version, steps, sha, check);
         versions.push(`${key}=${version}`);
       } finally {
         if (swapped !== original) await writeFile(config, original);
@@ -292,6 +315,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   /** Moves traffic to `version` in `steps`, the rest staying on the version that served before. */
   private async rollOut(
     target: DeployTarget,
+    key: string,
     cwd: string,
     version: string,
     steps: readonly number[],
@@ -343,7 +367,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       await this.run("pnpm", [...WRANGLER, "rollback", before, "--message", sha], { cwd });
       throw new RunwayDeployFailedError(target.id, [
         {
-          record: { target: target.id, sha, reference: before },
+          record: { target: target.id, sha, reference: `${key}=${before}` },
           report: {
             status: HealthStatus.Down,
             detail: `${version} rolled back to ${before}: ${error instanceof Error ? error.message : String(error)}`,
