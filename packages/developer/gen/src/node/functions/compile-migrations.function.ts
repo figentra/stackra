@@ -7,7 +7,9 @@
  *          `compileMigration` (macros: the member's `database/macros/*.macro.ts` and every `Macro` a declared package
  *          exports from its `./node` entry, recognised by `isMacroClass` whichever peer copy of `@stackra/database` it
  *          extends, STA-2006; a compile error from a macro no one supplied names those collected, `macroHint`), orders them across members (`orderMigrations`, `Migration({ after })`
- *          resolved there) and returns the `.stackra/migrations` files (`emitMigrations`).
+ *          resolved there; `needs`: a module's dependencies and the owners of the macros a migration calls, recorded while
+ *          it compiles) and returns the `.stackra/migrations` files (`emitMigrations`), plus, for a service with own
+ *          macros, `.stackra/gen/blueprint.ts` (`emitBlueprintMacros`).
  * Boundary: imports the migration and macro files (Node 24 strips their types; `loadSourceModule` strips those of a
  *           package installed from the registry into `.stackra/cache`) and the member's `@stackra/database`, resolved
  *           from the member root so the migration classes and the compiler share one kind registry. Writes nothing
@@ -21,8 +23,10 @@
  */
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join, relative } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
+
+import { pascalCase } from "@stackra/support";
 
 import { isMacroClass } from "#core/functions/is-macro-class.function";
 import { macroHint } from "#core/functions/macro-hint.function";
@@ -30,12 +34,15 @@ import { checkAppendOnly } from "#core/functions/check-append-only.function";
 import { emitMigrations } from "#core/functions/emit-migrations.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
+import { emitBlueprintMacros } from "#core/functions/emit-blueprint-macros.function";
 import { migrationId } from "#core/functions/migration-id.function";
+import { moduleDependsOn } from "#core/functions/module-depends-on.function";
 import { orderMigrations } from "#core/functions/order-migrations.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { MigrationUnit } from "#core/types/migration-unit.type";
+import type { OwnMacro } from "#core/types/own-macro.type";
 import { dependencyPath } from "#node/functions/dependency-path.function";
 import { loadSourceModule } from "#node/functions/load-source-module.function";
 
@@ -49,6 +56,15 @@ interface DatabaseEntry {
       readonly macros?: readonly unknown[];
     },
   ) => { readonly after: readonly string[]; readonly steps: MigrationUnit["steps"] };
+}
+
+/** The specifiers a migration may import: the frozen-snapshot rule of ADR 0159 (0305 note). */
+const ALLOWED_IMPORTS: ReadonlySet<string> = new Set(["@stackra/database", "#stackra/migrations"]);
+
+/** A macro class and the module that owns it. */
+interface OwnedMacro {
+  readonly macro: unknown;
+  readonly owner: string;
 }
 
 /** A migration file found on disk. */
@@ -94,6 +110,20 @@ const modulesOf = (root: string): { readonly key: string; readonly dir: string }
       dir: join(root, "src/modules", folder),
     }));
 
+/** The import specifiers of a source file: imports, re-exports and `import()`, type-only ones included. */
+function importsOf(path: string): string[] {
+  const ts = createRequire(import.meta.url)("typescript6") as {
+    preProcessFile: (
+      text: string,
+      readImports: boolean,
+      detectJavaScript: boolean,
+    ) => { importedFiles: readonly { fileName: string }[] };
+  };
+  return ts
+    .preProcessFile(readFileSync(path, "utf8"), true, true)
+    .importedFiles.map((imported) => imported.fileName);
+}
+
 /** Imports a file by its real path, so a workspace package linked under node_modules loads from its folder. */
 const load = async (path: string): Promise<Record<string, unknown>> =>
   (await import(pathToFileURL(realpathSync(path)).href)) as Record<string, unknown>;
@@ -112,7 +142,10 @@ export async function compileMigrations(
   ir: MemberIR,
 ): Promise<{ readonly files: readonly GeneratedFile[]; readonly errors: readonly GenError[] }> {
   const found: FoundMigration[] = [];
-  const macroFiles: string[] = [];
+  const macroFiles: { readonly path: string; readonly owner: string }[] = [];
+  const ownMacros: OwnMacro[] = [];
+  // The modules each declared package's own `package.json` dependencies name, to order its migrations after theirs.
+  const packageNeeds = new Map<string, string[]>();
   // Each package whose `./node` macros the compiler needs, with the folder it resolves from.
   const macroPackages: { readonly name: string; readonly base: string }[] = [];
   for (const module of modulesOf(root)) {
@@ -130,7 +163,15 @@ export async function compileMigrations(
         });
     }
     const macros = join(module.dir, "database/macros");
-    macroFiles.push(...filesOf(macros, ".macro.ts").map((name) => join(macros, name)));
+    for (const name of filesOf(macros, ".macro.ts")) {
+      macroFiles.push({ path: join(macros, name), owner: module.key });
+      // A macro is `<name>.macro.ts` exporting `<Name>Macro` (ADR 0305).
+      const stem = name.slice(0, -".macro.ts".length);
+      ownMacros.push({
+        name: `${pascalCase(stem)}Macro`,
+        from: `#modules/${basename(module.dir)}/database/macros/${stem}.macro`,
+      });
+    }
   }
   // A package's own migrations, keyed as a host keys them (`@stackra/ai` is `ai`), for its migration check (STA-1689).
   if (ir.layout === "package") {
@@ -179,6 +220,12 @@ export async function compileMigrations(
     const declared = JSON.parse(readFileSync(json, "utf8")) as {
       readonly dependencies?: Readonly<Record<string, string>>;
     };
+    packageNeeds.set(
+      module,
+      Object.keys(declared.dependencies ?? {}).map((dependency) =>
+        folderKey(dependency.slice(dependency.lastIndexOf("/") + 1)),
+      ),
+    );
     for (const dependency of Object.keys(declared.dependencies ?? {}))
       if (
         !macroPackages.some((known) => known.name === dependency) &&
@@ -186,7 +233,8 @@ export async function compileMigrations(
       )
         macroPackages.push({ name: dependency, base });
   }
-  if (found.length === 0) return { files: [], errors: [] };
+  const blueprint = ir.layout === "service" ? emitBlueprintMacros(ownMacros) : [];
+  if (found.length === 0) return { files: blueprint, errors: [] };
 
   const require = createRequire(join(root, "package.json"));
   let database: DatabaseEntry;
@@ -207,10 +255,11 @@ export async function compileMigrations(
     };
   }
   const errors: GenError[] = [];
-  const macros: unknown[] = [];
-  for (const path of macroFiles) {
+  const owned: OwnedMacro[] = [];
+  for (const { path, owner } of macroFiles) {
     try {
-      macros.push(...Object.values(await load(path)).filter(isMacroClass));
+      for (const macro of Object.values(await load(path)).filter(isMacroClass))
+        owned.push({ macro, owner });
     } catch (error) {
       errors.push(
         refusal(
@@ -226,7 +275,8 @@ export async function compileMigrations(
   for (const { name, base } of macroPackages) {
     try {
       const resolve = createRequire(join(base, "package.json")).resolve;
-      macros.push(...Object.values(await load(resolve(`${name}/node`))).filter(isMacroClass));
+      for (const macro of Object.values(await load(resolve(`${name}/node`))).filter(isMacroClass))
+        owned.push({ macro, owner: folderKey(name.slice(name.lastIndexOf("/") + 1)) });
     } catch (error) {
       errors.push(
         refusal(
@@ -240,8 +290,39 @@ export async function compileMigrations(
     }
   }
 
+  // Each macro as a same-named subclass that records its owner when a migration calls it (the macro edge).
+  const called = new Set<string>();
+  const macros = owned.map(({ macro, owner }) => {
+    const Base = macro as new () => { apply: (...args: never[]) => unknown };
+    const Recording = class extends Base {
+      override apply(...args: never[]): unknown {
+        called.add(owner);
+        return super.apply(...args);
+      }
+    };
+    Object.defineProperty(Recording, "name", { value: (macro as { name: string }).name });
+    return Recording;
+  });
+  const packageModules = new Set(found.filter((f) => f.owner === "package").map((f) => f.module));
   const units: MigrationUnit[] = [];
   for (const migration of found) {
+    // A migration is a frozen snapshot: refused before it is loaded when it imports more than the two specifiers.
+    const forbidden = importsOf(migration.path).filter(
+      (specifier) => !ALLOWED_IMPORTS.has(specifier),
+    );
+    if (forbidden.length > 0) {
+      for (const specifier of forbidden)
+        errors.push(
+          refusal(
+            "migration_import_forbidden",
+            migration.file,
+            specifier,
+            `${migration.file} imports ${specifier}; a migration imports only @stackra/database and #stackra/migrations`,
+            "remove the import and write the table and column names as literals (ADR 0159: a migration is a frozen snapshot)",
+          ),
+        );
+      continue;
+    }
     let exported: Record<string, unknown>;
     try {
       // A package installed from the registry ships its migrations as source under node_modules, where Node refuses
@@ -272,6 +353,7 @@ export async function compileMigrations(
       );
       continue;
     }
+    called.clear();
     try {
       const compiled = database.compileMigration(classes[0], {
         schema: migration.module,
@@ -283,6 +365,14 @@ export async function compileMigrations(
         owner: migration.owner,
         file: migration.file,
         after: compiled.after,
+        needs: [
+          ...new Set([
+            ...called,
+            ...(migration.owner === "package"
+              ? (packageNeeds.get(migration.module) ?? [])
+              : [...packageModules, ...moduleDependsOn(ir, migration.module)]),
+          ]),
+        ].filter((need) => need !== migration.module),
         steps: compiled.steps,
       });
     } catch (error) {
@@ -303,5 +393,5 @@ export async function compileMigrations(
   const { ordered, errors: orderErrors } = orderMigrations(units);
   return orderErrors.length > 0
     ? { files: [], errors: orderErrors }
-    : { files: emitMigrations(ordered), errors: [] };
+    : { files: [...emitMigrations(ordered), ...blueprint], errors: [] };
 }
