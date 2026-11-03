@@ -29,6 +29,7 @@ import type { ActionEffects } from "#core/types/action-effects.type";
 import type { ActionMeter } from "#core/types/action-meter.type";
 import type { ActionRateLimit } from "#core/types/action-rate-limit.type";
 import type { CallAnalytics } from "#core/types/call-analytics.type";
+import type { EntitlementOption } from "#core/types/entitlement-option.type";
 import type { EndpointOptions } from "#core/types/endpoint-options.type";
 import type { JobOptions } from "#core/types/job-options.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
@@ -88,6 +89,9 @@ export interface ActionOptions {
 
   /** It changes structural configuration, which is read-only in live (`LiveConfigurationGuard`); `false` when absent. */
   readonly structural?: boolean;
+
+  /** The plan entitlement or entitlements a call needs; gen lists the call in each one's `gates` (ADR 0215). */
+  readonly entitlement?: EntitlementOption;
 
   /** The meter each applied call feeds through a `usage.recorded` event; unmetered when absent. */
   readonly meter?: ActionMeter;
