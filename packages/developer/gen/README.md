@@ -619,8 +619,10 @@ manifest as `public`; one with no endpoint is refused (`public_without_endpoint`
 app with a public entry, `.stackra/sdks/typescript/index.ts` (typed from the reachable schemas),
 `.stackra/sdks/python/<member>_client.py` (standard library) and `.stackra/sdks/php/<Member>Client.php` (no
 dependency): one method per public entry, with the bearer token, `Stackra-Version` and `Idempotency-Key` headers and
-the ADR 0140 envelope as `ApiError`. Only public entries are ever written; packaging and publishing are the release
-pipeline's.
+the ADR 0140 envelope as `ApiError`. Each client requests the base URL without its trailing slashes plus the endpoint
+path, so a path prefix (`https://example.com/api`) is kept. Every write sends `Idempotency-Key`: the caller's, else a
+UUID v4 the client generates once per call before the request (ADR 0136 decision 3); a `GET` sends none. Only public
+entries are ever written; packaging and publishing are the release pipeline's.
 
 ## Golden snapshots (STA-1320)
 
