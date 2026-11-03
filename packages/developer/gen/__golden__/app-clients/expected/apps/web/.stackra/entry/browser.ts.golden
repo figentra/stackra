@@ -5,6 +5,7 @@
  *           fails the process.
  * Runtime: isomorphic
  */
+import "#stackra/routes/browser";
 import { createApp } from "@stackra/app/browser";
 import { wiring } from "#stackra/wiring";
 

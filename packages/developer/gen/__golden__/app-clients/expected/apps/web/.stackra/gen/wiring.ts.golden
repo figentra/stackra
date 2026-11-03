@@ -10,6 +10,7 @@
  * Runtime: isomorphic
  */
 import { ChannelListService } from "#core/services/channel-list.service";
+import { HomeRoute } from "#routes/home/home.route";
 import { ChannelsClient } from "#stackra/clients/channels";
 import { WebModule } from "#stackra/module";
 import { ClientTransport } from "@stackra/clients/contracts";
@@ -26,6 +27,7 @@ export const wiring = {
   platform: [],
   bindings: [
     { module: "web", kind: "service", provide: ChannelListService, deps: [ChannelsClient] },
+    { module: "web", kind: "route", provide: HomeRoute, deps: [] },
     { module: "web", kind: "service", provide: ChannelsClient, deps: [ClientTransport] },
   ],
   config: [

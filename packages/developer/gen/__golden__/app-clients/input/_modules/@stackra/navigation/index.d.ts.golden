@@ -1,0 +1,5 @@
+export declare abstract class RouteBase { protected readonly "~kind": "route"; }
+export declare function Route(options: { readonly path?: string; readonly [option: string]: unknown }): abstract new () => RouteBase;
+export interface RouteRef<R = unknown> { readonly name: string; readonly "~route"?: R }
+export declare function routeRef<R = unknown>(name: string): RouteRef<R>;
+export declare function registerRoutes(table: Readonly<Record<string, unknown>>): void;

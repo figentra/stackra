@@ -25,6 +25,7 @@ type UiEntry = {
   readonly entry: string;
   readonly page?: string;
   readonly path?: string;
+  readonly title?: string;
   readonly kind?: string;
 };
 

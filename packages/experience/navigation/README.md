@@ -81,7 +81,7 @@ export class OrderRoute extends Route({
 Every link names a `Routes.<key>` ref, a settings page or a resource, never a path: `<Link to={Routes.product}
 params={{ slug }}>`. The href is built in the visitor's locale mount (`/ar-sa/store/tee`), lowercase prefixes, the
 default locale unprefixed (ADR 0297), with the same rule `@stackra/seo` uses. Gen registers the route table with
-`registerRoutes(routeTable)` so refs resolve to paths.
+`registerRoutes(routeTable)` so refs resolve to paths. A route that writes no `title` gets the key `<module>::routes.<name>.title` in its table entry (`{ route, page?, title? }`); `registerRoutes` keeps it, and a menu entry with no label shows the route's own `title`, else that key, never the raw route key.
 
 ## Context members other packages own
 

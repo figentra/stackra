@@ -13,6 +13,7 @@
     "@stackra/events": "workspace:*",
     "@stackra/locking": "workspace:*",
     "@stackra/money": "workspace:*",
+    "@stackra/navigation": "workspace:*",
     "@stackra/outbox": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/scheduler": "workspace:*",
