@@ -1,11 +1,11 @@
 # Stackra file contract:
-# Purpose: apply core's telemetry stack (STA-1573) with Pulumi from CI only: test and build @stackra/infra-observability,
+# Purpose: apply core's telemetry stack (STA-1573) with Pulumi from CI only: build @stackra/infra-observability,
 #          then `pulumi preview` or `pulumi up` of packages/infrastructure/infra-observability/pulumi, which reads the
 #          root runway.yaml and declares the Better Stack uptime monitors of the registry, static and turbo-cache
 #          Workers, the OTLP source and the status page. Runs on main pushes that touch the package, runway.yaml or this
 #          file (`up`), and by hand (a preview unless `apply` is ticked).
 # Boundary: switched off until the owner's accounts exist (STA-1574 Better Stack, STA-28 Sentry): while the repository
-#           variable OBSERVABILITY_ENABLED is not `true` the job tests, builds, prints a notice and applies nothing, so
+#           variable OBSERVABILITY_ENABLED is not `true` the job builds, prints a notice and applies nothing, so
 #           main stays green. Once it is `true`, a missing identity, backend or token fails the run with an error that
 #           names it. The job runs in the `observability` environment, whose required reviewer approves every run.
 # Runtime: GitHub Actions
@@ -87,14 +87,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
 
-      # The program imports the built package, and a failing test never reaches Better Stack.
-      - name: Test and build
-        run: pnpm turbo run test build --filter=@stackra/infra-observability
+      # The program imports the built package. Its tests run on the box, not here (STA-2064).
+      - name: Build
+        run: pnpm turbo run build --filter=@stackra/infra-observability
 
       - name: Switched off
         if: env.ENABLED != 'true'
         run: >-
-          echo "::notice title=Observability not applied::OBSERVABILITY_ENABLED is not true. Tested and built, nothing
+          echo "::notice title=Observability not applied::OBSERVABILITY_ENABLED is not true. Built, nothing
           applied (runbook: apps/docs/src/docs/runbooks/monitoring.mdx; owner issues STA-1574 and STA-28)."
 
       - name: Prerequisites
