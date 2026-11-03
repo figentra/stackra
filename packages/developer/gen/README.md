@@ -49,7 +49,7 @@ the committed manifest is the IR, and source is read behind one host seam, never
 | `.`                   | `emitSettings`                                                               | `#stackra/settings`: `Settings`, the typed setting keys of the member's settings classes                                |
 | `.`                   | `reportsOf`, `emitReports`                                                   | the manifest's `reports` section and `#stackra/reports`: one query per `Report` (ADR 0470)                              |
 | `.`                   | `DocsConfig`, `emitDocsSite`, `DOCS_CONFIG_FILE`, `DOCS_SITE_DIR`            | a docs app's typed site config and the Mintlify site gen assembles (see below)                                          |
-| `.`                   | `openApiOf`                                                                  | `openapi.json`, the projection of the manifest                                                                          |
+| `.`                   | `openApiOf`                                                                  | `openapi.json`, the projection of the manifest: bearer security scheme, `Idempotency-Key` on writes, per-status refusal responses                                                                          |
 | `.`                   | `actionKey`, `eventName`, `permissionKey`, `modelKey`, `tableName`, ...      | the identity formulas of ADR 0294 decision 20                                                                           |
 | `.`                   | `integrationKey`, `webhookPath`, `sequenceKey`, `blockKey`, `routeKey`       | integration, webhook, sequence, block and route identities                                                              |
 | `.`                   | `toolHints`, `EFFECT_TAGS`, `INTEGRATION_ROLES`                              | derived MCP hints, the effect tags and the Integration roles the manifest accepts                                       |
@@ -307,7 +307,7 @@ may use these platform types (each read only when declared in a `@stackra/*` pac
 | `TranslatedStrings` (`@stackra/validation`)    | locale map `.transform((values) => ({ values }))`          | the same locale map                                                             |
 | `Upload<Bucket>` (`@stackra/media`)            | `Upload.schema`                                            | `{ id: "upl_…" }`, `x-stackra-type: upload`, `x-stackra-bucket: <Bucket class>` |
 
-A bare `PublicId` is a polymorphic reference: any registered prefix (`^[a-z]{2,6}_…`), compiled to a format check
+Every public id pattern takes the Crockford base32 body, either case, without I, L, O and U (ADR 0135). A shape on a consumed (remote) shape keeps that shape's fields in the manifest. A bare `PublicId` is a polymorphic reference: any registered prefix (`^[a-z]{2,6}_…`), compiled to a format check
 typed `PublicId`. `PublicId<"crl" | "prl">` compiles to a union of `publicId(prefix)`. `Readonly<Record<string, X>>`
 reads as the record.
 

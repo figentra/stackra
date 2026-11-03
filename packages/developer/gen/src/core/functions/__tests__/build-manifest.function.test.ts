@@ -1002,4 +1002,44 @@ describe("buildManifest's package config section (STA-1308)", () => {
   it("writes no config section for a service", () => {
     expect(buildManifest(COMMERCE_IR).manifest).not.toHaveProperty("config");
   });
+
+  it("copies the producer schemas a remote base references, transitively (STA-2060)", () => {
+    const remote = {
+      kind: "schema",
+      module: "orders",
+      name: "LineForm",
+      file: "src/modules/orders/schemas/line-form.schema.ts",
+      importPath: "#modules/orders/schemas/line-form.schema",
+      base: { kind: "remote", name: "Line", from: "#stackra/clients/shop" },
+      fields: [],
+      relations: [],
+    } as const;
+    const { manifest: built } = buildManifest({
+      ...COMMERCE_IR,
+      shapes: [...COMMERCE_IR.shapes, remote],
+      services: [
+        {
+          member: "shop",
+          manifest: {
+            member: "shop",
+            package: "@acme/service-shop",
+            version: "1.0.0",
+            schemas: {
+              "cart.Line": {
+                type: "object",
+                properties: { sku: { $ref: "#/schemas/cart.Sku" } },
+              },
+              "cart.Sku": { type: "object", properties: { code: { $ref: "#/schemas/cart.Code" } } },
+              "cart.Code": { type: "string" },
+            },
+          },
+        },
+      ],
+    });
+    const schemas = built.schemas as Record<string, unknown>;
+    expect(schemas["orders.LineForm"]).toMatchObject({
+      properties: { sku: { $ref: "#/schemas/cart.Sku" } },
+    });
+    expect(Object.keys(schemas)).toEqual(expect.arrayContaining(["cart.Sku", "cart.Code"]));
+  });
 });

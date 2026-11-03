@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `OpenApiDocument`, the `openapi.json` gen projects from a member's manifest: OpenAPI 3.1 with the
+ * Purpose: `OpenApiDocument`, the `openapi.json` gen projects from a member's manifest: OpenAPI 3.1 (root `x-stackra-generated`, no `$comment`) with the
  *          `x-stackra-*` extensions that carry permission, risk, idempotency, cache and refusal codes.
  * Boundary: a type only. The document is a projection for external consumers and docs, never a source for clients
  *           (ADR 0294 decision 10, ADR 0158).
@@ -12,7 +12,7 @@ import type { Json } from "@stackra/contracts";
 /** A member's `openapi.json`. */
 export interface OpenApiDocument {
   /** The generated-file notice. */
-  readonly $comment: string;
+  readonly "x-stackra-generated": string;
 
   /** The OpenAPI version, always `3.1.0`. */
   readonly openapi: string;
@@ -27,8 +27,12 @@ export interface OpenApiDocument {
   /** Path (with `{param}` segments) to lower-case method to operation. */
   readonly paths: Readonly<Record<string, Readonly<Record<string, Json>>>>;
 
-  /** The shapes the operations reference, and the shared refusal response. */
+  /** The bearer requirement every operation has unless it overrides it with `[]` (ADR 0082). */
+  readonly security: readonly Json[];
+
+  /** The security scheme, the shapes the operations reference, and the shared refusal response. */
   readonly components: {
+    readonly securitySchemes: Readonly<Record<string, Json>>;
     readonly schemas: Readonly<Record<string, Json>>;
     readonly responses: Readonly<Record<string, Json>>;
   };

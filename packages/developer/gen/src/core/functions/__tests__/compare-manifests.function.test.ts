@@ -58,6 +58,12 @@ const OUT = {
   properties: { status: { type: "string", enum: ["cancelled"] }, at: { type: "string" } },
 };
 
+/** `IN` with an `orderId` pattern of the given public id body. */
+const id = (body: string): { [key: string]: Json } => ({
+  ...IN,
+  properties: { ...IN.properties, orderId: { type: "string", pattern: `^ord_${body}{26}$` } },
+});
+
 describe("compareManifests", () => {
   const previous = manifest(IN, OUT);
 
@@ -95,6 +101,14 @@ describe("compareManifests", () => {
       identity: "orders.order.cancel@1",
       message: "removed",
     });
+  });
+
+  it("treats the earlier public id body as the Crockford body, and any other pattern change as a break", () => {
+    const earlier = manifest(id("[0-9A-Za-z]"), OUT);
+    expect(
+      compareManifests(earlier, manifest(id("[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]"), OUT), "2026-11-03"),
+    ).toEqual([]);
+    expect(compareManifests(earlier, manifest(id("[0-9]"), OUT), "2026-11-03")).not.toEqual([]);
   });
 
   it("reports a narrowed input", () => {

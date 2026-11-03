@@ -92,4 +92,11 @@ describe("zodOfJsonSchema", () => {
     expect(print({})).toEqual({ source: "json()", imports: ["@stackra/validation#json"] });
     expect(print({ $ref: "@acme/kit#/schemas/kit.X" }).source).toBe("json()");
   });
+
+  it("reads both public id bodies as publicId (STA-2060)", () => {
+    for (const body of ["[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]", "[0-9A-Za-z]"])
+      expect(print({ type: "string", pattern: `^ord_${body}{26}$` }).source).toBe(
+        'publicId("ord")',
+      );
+  });
 });

@@ -26,6 +26,10 @@ const UPPER = ["maxLength", "maximum", "maxItems"] as const;
 /** Lower bounds: an input breaks when one appears or increases. */
 const LOWER = ["minLength", "minimum", "minItems", "exclusiveMinimum"] as const;
 
+/** The public id body of a manifest committed before STA-2060, and the Crockford body that replaced it. */
+const EARLIER_ID_BODY = "_[0-9A-Za-z]{26}$";
+const CROCKFORD_ID_BODY = "_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$";
+
 /** Whether `value` is a schema node. */
 function isNode(value: unknown): value is Node {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -147,7 +151,12 @@ function compareShape(
       if (typeof is === "number" && (typeof was !== "number" || is > was))
         report(`${keyword} tightened to ${is}`);
     }
-    if (now["pattern"] !== undefined && now["pattern"] !== old["pattern"])
+    // The earlier public id body (`[0-9A-Za-z]`) is the Crockford body the runtime always enforced (STA-2060).
+    const earlier =
+      typeof old["pattern"] === "string"
+        ? old["pattern"].replaceAll(EARLIER_ID_BODY, CROCKFORD_ID_BODY)
+        : old["pattern"];
+    if (now["pattern"] !== undefined && now["pattern"] !== earlier)
       report(`pattern changed to ${String(now["pattern"])}`);
   }
   const oldProperties = propertiesOf(old);

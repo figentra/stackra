@@ -14,8 +14,8 @@ import type { ZodPrintContext } from "#core/types/zod-print-context.type";
 /** A JSON Schema node as the manifest records it. */
 type Schema = Readonly<Record<string, unknown>>;
 
-/** A public id pattern as `jsonSchemaOf` writes it. */
-const PUBLIC_ID = /^\^([a-z]+)_\[0-9A-Za-z\]\{26\}\$$/;
+/** A public id pattern as `jsonSchemaOf` writes it: the Crockford body, or the looser body of an earlier manifest. */
+const PUBLIC_ID = /^\^([a-z]+)_\[(?:0-9A-HJKMNP-TV-Za-hjkmnp-tv-z|0-9A-Za-z)\]\{26\}\$$/;
 
 /** Whether `value` is a JSON object. */
 function isSchema(value: unknown): value is Schema {

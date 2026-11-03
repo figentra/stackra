@@ -2,16 +2,19 @@
  * Stackra file contract:
  * Purpose: `openApiOf`, the projection of a member's manifest to its `openapi.json`: OpenAPI 3.1 with one operation
  *          per action or query that has an endpoint (path parameters from `:name` segments, query parameters for a
- *          GET, the input as the JSON body otherwise, the output or 204, and the shared refusal response with the
- *          ADR 0140 envelope), the manifest's shapes as components, and `x-stackra-*` extensions for the key,
- *          permission, risk, idempotency, cache and refusal codes.
+ *          GET, the input as the JSON body otherwise, an `Idempotency-Key` header on a write, the output or 204, one
+ *          response per HTTP status of the action's refusal kinds and the shared ADR 0140 envelope as `default`),
+ *          the bearer security scheme, the manifest's shapes as components, and `x-stackra-*` extensions for the
+ *          key, permission, risk, idempotency, cache and refusal codes.
  * Boundary: pure and deterministic: paths and operations follow the manifest's order, so projecting the committed
  *           manifest reproduces the committed `openapi.json` byte for byte. Never a source for clients (ADR 0158).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 10: openapi.json beside the manifest); ADR 0158; ADR 0140 (the error
- *                     envelope and statuses); ADR 0082 (an anonymous-callable call is public; STA-2025).
+ *                     envelope and statuses); ADR 0082 (bearer auth; an anonymous-callable call is public, STA-2025);
+ *                     ADR 0136 (the Idempotency-Key header).
  */
-import type { Json, StackraManifest } from "@stackra/contracts";
+import { Enum, type Json, type StackraManifest } from "@stackra/contracts";
+import { ErrorKind } from "@stackra/errors";
 
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { toolName } from "#core/functions/tool-name.function";
@@ -39,27 +42,66 @@ function rehome(value: unknown): Json {
   );
 }
 
-/** The ADR 0140 refusal envelope every operation may answer with. */
-const REFUSAL: JsonObject = {
-  description: "The call was refused; `code` names the refusal and `category` its kind.",
-  content: {
-    "application/json": {
-      schema: {
-        type: "object",
-        required: ["code", "category", "retryable"],
-        properties: {
-          code: { type: "string" },
-          category: { type: "string" },
-          retryable: { type: "boolean" },
-          details: { type: "object" },
-          fieldErrors: { type: "object" },
-          correlationId: { type: "string" },
-          action: { type: "string" },
+/** The ten ADR 0140 categories. */
+const CATEGORIES: readonly string[] = Enum.values(ErrorKind).map(
+  (kind) => Enum.meta(ErrorKind, kind).category,
+);
+
+/** The ADR 0140 refusal envelope; `codes` narrows `code` when given. */
+function refusal(description: string, category: Json, codes?: readonly string[]): JsonObject {
+  return {
+    description,
+    content: {
+      "application/json": {
+        schema: {
+          type: "object",
+          required: ["code", "category", "retryable"],
+          properties: {
+            code: codes === undefined ? { type: "string" } : { type: "string", enum: [...codes] },
+            category,
+            retryable: { type: "boolean" },
+            details: { type: "object" },
+            fieldErrors: { type: "object" },
+            correlationId: { type: "string" },
+            action: { type: "string" },
+          },
         },
       },
     },
-  },
-};
+  };
+}
+
+/** The shared `default` refusal: any code, any of the ten categories. */
+const REFUSAL: JsonObject = refusal(
+  "The call was refused; `code` names the refusal and `category` its kind.",
+  { type: "string", enum: [...CATEGORIES] },
+);
+
+/** The refusal responses of `codes`, one per HTTP status of the kinds the manifest's `errors` give them. */
+function refusalResponses(
+  codes: readonly string[],
+  errors: NonNullable<StackraManifest["errors"]>,
+): Record<string, Json> {
+  const byStatus = new Map<number, { category: string; codes: string[] }>();
+  for (const code of codes) {
+    const entry = errors.find((candidate) => candidate["code"] === code);
+    const kind = entry?.["kind"];
+    if (typeof kind !== "string" || !(Enum.values(ErrorKind) as readonly string[]).includes(kind))
+      continue;
+    const meta = Enum.meta(ErrorKind, kind as ErrorKind);
+    const found = byStatus.get(meta.httpStatus) ?? { category: meta.category, codes: [] };
+    found.codes.push(code);
+    byStatus.set(meta.httpStatus, found);
+  }
+  // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here; toSorted is ES2023 and the base lib is ES2022
+  const ordered = [...byStatus.entries()].sort(([left], [right]) => left - right);
+  return Object.fromEntries(
+    ordered.map(([status, { category, codes: listed }]) => [
+      String(status),
+      refusal(`Refused: ${listed.join(", ")}.`, { type: "string", const: category }, listed),
+    ]),
+  );
+}
 
 /**
  * The `openapi.json` of `manifest`.
@@ -77,6 +119,7 @@ export function openApiOf(manifest: StackraManifest): OpenApiDocument {
     const found = schemas[target.slice("#/schemas/".length)];
     return isObject(found) ? found : undefined;
   };
+  const errors = manifest.errors ?? [];
   const paths: Record<string, Record<string, Json>> = {};
   for (const action of manifest.actions ?? []) {
     const endpoint = action["endpoint"];
@@ -120,6 +163,13 @@ export function openApiOf(manifest: StackraManifest): OpenApiDocument {
     if (Array.isArray(action["refusals"]))
       operation["x-stackra-refusals"] = action["refusals"].map(String);
     if (action["anonymous"] === true) operation["security"] = [];
+    if (method !== "get")
+      parameters.push({
+        name: "Idempotency-Key",
+        in: "header",
+        required: action["idempotency"] === "required",
+        schema: { type: "string" },
+      });
     if (parameters.length > 0) operation["parameters"] = parameters;
     if (method !== "get" && action["input"] !== undefined)
       operation["requestBody"] = {
@@ -135,20 +185,33 @@ export function openApiOf(manifest: StackraManifest): OpenApiDocument {
             },
           }
         : { "204": { description: "No Content" } }),
+      ...refusalResponses(
+        Array.isArray(action["refusals"]) ? action["refusals"].map(String) : [],
+        errors,
+      ),
       default: { $ref: "#/components/responses/Refusal" },
     };
     paths[path] = { ...paths[path], [method]: operation };
   }
   return {
-    $comment: `${GENERATED_NOTICE}; the projection of stackra.manifest.json (ADR 0158)`,
     openapi: "3.1.0",
+    "x-stackra-generated": `${GENERATED_NOTICE}; the projection of stackra.manifest.json (ADR 0158)`,
     info: {
       title: manifest.package,
       version: manifest.version,
       "x-stackra-member": manifest.member,
     },
     paths,
+    security: [{ bearer: [] }],
     components: {
+      securitySchemes: {
+        bearer: {
+          type: "http",
+          scheme: "bearer",
+          description:
+            "An API key or an OAuth access token, sent as `Authorization: Bearer <token>`.",
+        },
+      },
       schemas: Object.fromEntries(
         Object.entries(schemas).map(([name, schema]) => [name, rehome(schema)]),
       ),
