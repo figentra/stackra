@@ -21,7 +21,10 @@ export function checkRunwaySchemas(read: (path: string) => string | undefined): 
     const canonical = `tools/schemas/runway-${kind}.schema.json`;
     const copy = `packages/developer/runway/schema/${kind}.json`;
     if (read(copy) !== read(canonical))
-      out.push(`${copy} differs from ${canonical}: run \`cp ${canonical} ${copy}\``);
+      // Runway's json-schema test checks the copy against zod, so the fix is the zod text in the canonical, then the copy.
+      out.push(
+        `${copy} differs from ${canonical}: make both the zod-derived text, editing ${canonical} and running \`cp ${canonical} ${copy}\` (ADR 0400 decision 7)`,
+      );
   }
   return out;
 }

@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `DeviceSession`, one of the signed-in user's sessions as the SecurityPage lists it: the device, where it was
+ * Purpose: `AccountSession`, one of the signed-in user's sessions as the SecurityPage lists it: the device, where it was
  *          last seen, when it was last active and whether it is this one.
  * Boundary: a type only. `device` and `location` are display text the server writes; the page shows them as given.
  * Runtime: isomorphic
@@ -11,9 +11,9 @@
  * A device session.
  *
  * @example
- * const session: DeviceSession = { id: "ses_1", device: "Safari on macOS", location: "Riyadh", lastActiveAt, isCurrent: true };
+ * const session: AccountSession = { id: "ses_1", device: "Safari on macOS", location: "Riyadh", lastActiveAt, isCurrent: true };
  */
-export interface DeviceSession {
+export interface AccountSession {
   /** The session's id. */
   readonly id: string;
 
