@@ -7,7 +7,7 @@
  *          secrets on stdin, smoke-tests it at 0% by version override, then moves traffic to it in the member's `rollout`
  *          steps (production only), smoke-testing after each hold and putting the previous version back at 100% on a
  *          failure; a member with Durable Object migrations goes out through `wrangler deploy` at 100% instead. Current reads the commit back from `wrangler deployments list`, verify adds each
- *          member's smoke URL, and rollback returns every member to the version recorded for a commit.
+ *          member's smoke checks (retried while a new version or a new domain's certificate comes up), and rollback returns every member to the version recorded for a commit.
  * Boundary: runs `pnpm` (turbo and each member's own wrangler) through the given `CommandRunner`; wrangler logs in
  *           with the job's `CLOUDFLARE_API_TOKEN` (OIDC from Infisical in CI) or the owner's session. Ids, vars and
  *           secrets are read by name from `env`; a secret value goes to wrangler on stdin only, never as an argument,
@@ -102,6 +102,12 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       signal: AbortSignal.timeout(30_000),
     });
 
+  /** Smoke attempts per check, `smokeIntervalMs` apart: ten minutes covers a new domain's certificate. */
+  smokeAttempts = 60;
+
+  /** The wait between smoke attempts; a test sets 0. */
+  smokeIntervalMs = 10_000;
+
   /** Holds a partial rollout step, in milliseconds; a test replaces it. */
   sleep: (ms: number) => Promise<void> = (ms) =>
     new Promise((resolve) => {
@@ -179,10 +185,12 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
             cwd,
             // The secrets ride the version, on stdin: no file, no argument.
             input:
-              member.secrets.length === 0
+              Object.keys(member.secrets).length === 0
                 ? undefined
                 : JSON.stringify(
-                    Object.fromEntries(member.secrets.map((name) => [name, this.env[name]])),
+                    Object.fromEntries(
+                      Object.entries(member.secrets).map(([name, from]) => [name, this.env[from]]),
+                    ),
                   ),
           },
         );
@@ -196,25 +204,23 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           continue;
         }
         // The version takes no traffic yet; the smoke request is routed to it by header.
-        const url = member.smoke;
-        const check =
-          url === undefined
-            ? undefined
-            : () =>
-                this.smoke(url, {
-                  "Cloudflare-Workers-Version-Overrides": `${deployed.name ?? ""}="${version}"`,
-                });
-        if (check !== undefined) {
-          const failure = await check();
-          if (failure !== undefined)
-            throw new RunwayUnresolvedError(
-              `${key} version ${version} failed its 0% smoke ${member.smoke} (${failure}); no traffic moved`,
-            );
-        }
+        const check = () =>
+          this.smokeAll(member, {
+            "Cloudflare-Workers-Version-Overrides": `${deployed.name ?? ""}="${version}"`,
+          });
+        const failure = await check();
+        if (failure !== undefined)
+          throw new RunwayUnresolvedError(
+            `${key} version ${version} failed its 0% smoke ${failure}; no traffic moved`,
+          );
+        // The preset's rollout counts too.
+        const { rollout } = workerSettingsOf(
+          CLOUDFLARE_WORKERS_SETTINGS_SCHEMA.parse(target.settings),
+          key,
+          target.environment,
+        );
         const steps =
-          target.environment === "production" && member.rollout !== undefined
-            ? member.rollout
-            : [100];
+          target.environment === "production" && rollout !== undefined ? rollout : [100];
         await this.rollOut(target, key, cwd, version, steps, sha, check);
         versions.push(`${key}=${version}`);
       } finally {
@@ -233,10 +239,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         detail: `${target.id} serves ${current ?? "no single commit"}, not ${record.sha}`,
       };
     for (const [key, member] of this.membersOf(target)) {
-      if (member.smoke === undefined) continue;
-      const status = await this.smoke(member.smoke);
-      if (status !== undefined)
-        return { status: HealthStatus.Down, detail: `${key} smoke ${member.smoke} ${status}` };
+      const failure = await this.smokeAll(member);
+      if (failure !== undefined)
+        return { status: HealthStatus.Down, detail: `${key} smoke ${failure}` };
     }
     return { status: HealthStatus.Up };
   }
@@ -295,7 +300,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       "--message",
       sha,
       ...member.vars.flatMap((name) => ["--var", `${name}:${valueOf(name)}`]),
-      ...(member.secrets.length === 0 ? [] : ["--secrets-file", "/dev/stdin"]),
+      ...(Object.keys(member.secrets).length === 0 ? [] : ["--secrets-file", "/dev/stdin"]),
     ];
   }
 
@@ -377,12 +382,31 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     }
   }
 
-  /** What is wrong with `url`'s answer, or `undefined` when it is a 2xx. */
-  private smoke(url: string, headers?: Record<string, string>): Promise<string | undefined> {
-    return this.fetch(url, headers).then(
-      (response) => (response.ok ? undefined : `answered ${response.status}`),
-      (error: unknown) => `failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
+  /** What is wrong with the first failing smoke check of `member` (each retried), or `undefined` when all answer 2xx. */
+  private async smokeAll(
+    member: Member,
+    extra: Record<string, string> = {},
+  ): Promise<string | undefined> {
+    for (const smoke of member.smoke) {
+      const headers: Record<string, string> = {
+        ...extra,
+        ...(smoke.bearer === undefined
+          ? {}
+          : { authorization: `Bearer ${this.env[smoke.bearer] ?? ""}` }),
+      };
+      let status: string | undefined;
+      for (let attempt = 1; attempt <= this.smokeAttempts; attempt += 1) {
+        if (attempt > 1) await this.sleep(this.smokeIntervalMs);
+        status = await this.fetch(smoke.url, headers).then(
+          (response) => (response.ok ? undefined : `answered ${response.status}`),
+          (error: unknown) => `failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        if (status === undefined) break;
+      }
+      if (status !== undefined)
+        return `${smoke.url} ${status} after ${this.smokeAttempts} attempts`;
+    }
+    return undefined;
   }
 
   /** The members of `target`'s kind (and `only`), in runway.yaml order. */
@@ -416,11 +440,18 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           path: `${SETTINGS_PATH}.members.${key}.ids.${name}`,
           message: `Set ${name} to the real id in the deploy job's environment`,
         })),
-      ...member.secrets
+      ...Object.values(member.secrets)
         .filter((name) => (this.env[name] ?? "") === "")
         .map((name) => ({
           path: `${SETTINGS_PATH}.members.${key}.secrets`,
           message: `Set ${name} in the deploy job's environment (Infisical over OIDC in CI)`,
+        })),
+      ...member.smoke
+        .flatMap((smoke) => (smoke.bearer === undefined ? [] : [smoke.bearer]))
+        .filter((name) => (this.env[name] ?? "") === "")
+        .map((name) => ({
+          path: `${SETTINGS_PATH}.members.${key}.smoke`,
+          message: `Set ${name} in the deploy job's environment (the smoke bearer)`,
         })),
     ];
     if (issues.length > 0) throw new RunwayInvalidError("deploy environment", issues);
