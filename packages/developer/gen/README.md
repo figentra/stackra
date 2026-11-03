@@ -175,7 +175,7 @@ type stripping refuses), and a `generate` call without `loader` refuses a member
 from two classes is `resource_duplicate`.
 
 An app that hosts `@stackra/panel` composes the resources its declared packages and consumed services record
-(`hostResourcesOf`, through the shared `contributionsOf` walk; one key from two classes is `resource_duplicate`). Its
+(`hostResourcesOf`, through the shared `dependencyContributionsOf` walk; one key from two classes is `resource_duplicate`). Its
 route tables register those trees on the browser and on native, and the browser also gets the panel's pages. It gets
 `#stackra/resources`: `Resources`, each resource's `resource(key, { base, list, view, create, update })` with the
 operation refs its consumed services' clients export (`true` reads the standard `list` or `get`), and `resourceList`
@@ -188,7 +188,7 @@ Package routes and menus (ADR 0111 decisions 1 and 4, STA-1947): a package recor
 `ui.menus` (key and `MenuKind`); a `node` or core one is not a UI contribution. An app's route table for each runtime
 lists the routes its declared packages ship in the entry that serves it (`react` for the browser, `native` for
 native), imported from `<package>/<entry>`, and registers every menu, its own and theirs, in `menuTable` through
-`registerMenus` (`useMenus` of `@stackra/navigation` lists them). The walk is the shared `contributionsOf`; one key
+`registerMenus` (`useMenus` of `@stackra/navigation` lists them). The walk is the shared `dependencyContributionsOf`; one key
 from two owners, or one the app has too, is `route_duplicate` or `menu_duplicate`.
 
 Surface targets (ADR 0436, stackra-04): a dependency whose committed manifest declares slots is the shell of the

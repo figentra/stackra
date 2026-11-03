@@ -11,6 +11,9 @@ export type TestbedBox = {
   /** The EC2 instance id. */
   readonly id: string;
 
+  /** The AWS region it runs in; its SSM proxy and every `aws` call for it use this region. */
+  readonly region: string;
+
   /** Its public IPv4 address. */
   readonly ip: string;
 
