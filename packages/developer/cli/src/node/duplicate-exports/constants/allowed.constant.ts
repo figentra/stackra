@@ -68,4 +68,11 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so its Stat computes its own change; @stackra/panel's is the panel widget's",
   periodOf:
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so its period picker resolves its own period; @stackra/actions' is the action input's",
+  // A port's shape and the store that persists it, or a stand-in where the owner cannot be a dependency.
+  ApprovalBinding:
+    "@stackra/actions' contract type of a parked call vs @stackra/tenancy's model that stores it for the approval-binding store; the model's name derives its locked key and table (ADR 0509)",
+  StepUpRequiredError:
+    "@stackra/actions' testing stand-in for its memory ActorStatusCheck, since actions cannot depend on @stackra/identity, whose refusal of the same code is the real one",
+  DatabaseRunner:
+    "@stackra/cli declares the runner shape it needs and loads @stackra/database/node from the member at run time, so the CLI never depends on MikroORM; the database package's service is the real runner",
 });
