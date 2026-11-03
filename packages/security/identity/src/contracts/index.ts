@@ -51,7 +51,7 @@ export type { AppleCredential } from "#contracts/types/apple-credential.type";
 export type { AppleSignInResult } from "#contracts/types/apple-sign-in-result.type";
 export type { AutomationPrincipalInput } from "#contracts/types/automation-principal-input.type";
 export type { DeviceAuthorization } from "#contracts/types/device-authorization.type";
-export type { DeviceSession } from "#contracts/types/device-session.type";
+export type { AccountSession } from "#contracts/types/account-session.type";
 export type { DeviceTokenResult } from "#contracts/types/device-token-result.type";
 export type { GuardianLink } from "#contracts/types/guardian-link.type";
 export type { IdpMachineCredential } from "#contracts/types/idp-machine-credential.type";
