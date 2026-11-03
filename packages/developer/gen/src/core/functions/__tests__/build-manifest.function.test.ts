@@ -1003,3 +1003,116 @@ describe("buildManifest's package config section (STA-1308)", () => {
     expect(buildManifest(COMMERCE_IR).manifest).not.toHaveProperty("config");
   });
 });
+
+const local = (name: string) => ({ $class: name, from: "#x", kind: "entitlement" });
+const hosted = (name: string, kind: string) => ({
+  $class: name,
+  from: "@acme/kit",
+  kind,
+});
+const build = (classes: DeclaredClass[], dependencies: MemberIR["dependencies"] = []) =>
+  buildManifest({ ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, ...classes], dependencies });
+
+describe("buildManifest's entitlement gates (STA-2059)", () => {
+  const base = declared("CancelOrderAction");
+  const kindClass = (
+    name: string,
+    kind: string,
+    file: string,
+    options: Record<string, unknown>,
+  ): DeclaredClass => ({ ...base, name, kind, file, importPath: `#${file}`, options, deps: [] });
+  const kit = {
+    package: "@acme/kit",
+    manifest: {
+      member: "kit",
+      package: "@acme/kit",
+      version: "1.0.0",
+      models: [{ key: "content.custom_field", class: "CustomField" }],
+      entitlements: [
+        {
+          key: "collaboration.live_collaboration",
+          class: "LiveCollaborationEntitlement",
+          gates: [],
+        },
+      ],
+      actions: [
+        { key: "content.custom_field.create@1", kind: "action", class: "CreateCustomFieldAction" },
+      ],
+    },
+  };
+  const action = (name: string, key: string, options: Record<string, unknown>) =>
+    kindClass(name, "action", `src/modules/orders/actions/${key}.action.ts`, {
+      key,
+      actors: ["user"],
+      ...options,
+    });
+  const entitlement = (name: string, options: Record<string, unknown>) =>
+    kindClass(name, "entitlement", `src/modules/orders/access/${name}.entitlement.ts`, options);
+
+  it("gates the action and the query that name a local entitlement and records the keys", () => {
+    const built = build([
+      entitlement("ExportsEntitlement", { kind: "feature" }),
+      action("ExportOrdersAction", "order.export", { entitlement: local("ExportsEntitlement") }),
+    ]);
+    expect(built.errors).toEqual([]);
+    const gates = built.manifest.entitlements?.find((e) => e["key"] === "orders.exports")?.[
+      "gates"
+    ];
+    expect(gates).toEqual(["orders.order.export@1"]);
+    expect(
+      built.manifest.actions?.find((a) => a["class"] === "ExportOrdersAction")?.["entitlements"],
+    ).toEqual(["orders.exports"]);
+  });
+
+  it("gates exactly the actions that feed a quota's meter", () => {
+    const built = build([
+      entitlement("TokenQuotaEntitlement", { kind: "quota", meter: "ai.tokens", per: "month" }),
+      action("ChatAction", "order.chat", { meter: { name: "ai.tokens", kind: "sum" } }),
+      action("OtherAction", "order.other", { meter: { name: "ai.other", kind: "count" } }),
+    ]);
+    expect(built.errors).toEqual([]);
+    expect(
+      built.manifest.entitlements?.find((e) => e["key"] === "orders.token_quota"),
+    ).toMatchObject({
+      meter: "ai.tokens",
+      per: "month",
+      gates: ["orders.order.chat@1"],
+    });
+  });
+
+  it("gates a host action by a hosted entitlement and a host limit by a hosted model's create", () => {
+    const built = build(
+      [
+        action("LiveAction", "order.live", {
+          entitlement: hosted("LiveCollaborationEntitlement", "entitlement"),
+        }),
+        entitlement("FieldLimitEntitlement", {
+          kind: "limit",
+          counts: hosted("CustomField", "model"),
+        }),
+      ],
+      [kit],
+    );
+    expect(built.errors).toEqual([]);
+    const all = built.manifest.entitlements ?? [];
+    expect(all.find((e) => e["key"] === "collaboration.live_collaboration")).toMatchObject({
+      from: "@acme/kit",
+      gates: ["orders.order.live@1"],
+    });
+    expect(all.find((e) => e["key"] === "orders.field_limit")).toMatchObject({
+      counts: "content.custom_field",
+      gates: ["content.custom_field.create@1"],
+    });
+  });
+
+  it("refuses an unknown entitlement and an unknown counted model", () => {
+    const built = build([
+      action("BadAction", "order.bad", { entitlement: local("NoSuchEntitlement") }),
+      entitlement("GhostLimitEntitlement", { kind: "limit", counts: hosted("Ghost", "model") }),
+    ]);
+    expect(built.errors.map((error) => `${error.code} ${error.subject}`)).toEqual([
+      "entitlement_unknown BadAction",
+      "entitlement_counts_unknown GhostLimitEntitlement",
+    ]);
+  });
+});

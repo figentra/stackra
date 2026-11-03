@@ -314,4 +314,19 @@ describe("Action", () => {
     ])
       expect(() => Action({ ...base, approval: approval as never })).toThrow(/approval/);
   });
+
+  it("types the `entitlement` option on the entitlement brand (STA-2059)", () => {
+    class ExportsEntitlement {
+      readonly "~kind" = "entitlement" as const;
+    }
+    expectTypeOf<{ entitlement: typeof ExportsEntitlement }>().toExtend<
+      Pick<ActionOptions, "entitlement">
+    >();
+    expectTypeOf<{ entitlement: (typeof ExportsEntitlement)[] }>().toExtend<
+      Pick<ActionOptions, "entitlement">
+    >();
+    expectTypeOf<{ entitlement: typeof Orders }>().not.toExtend<
+      Pick<ActionOptions, "entitlement">
+    >();
+  });
 });
