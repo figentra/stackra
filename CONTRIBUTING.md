@@ -7,7 +7,8 @@ The working rules live in [`AGENTS.md`](AGENTS.md) and `.agents/rules/`; the ful
 2. Track the work in Linear (team `STA`). Branch names come from Linear: `figentra/sta-<n>-<slug>`.
 3. Versions come only from `pnpm-workspace.yaml` catalogs or `workspace:*`. Tests sit in `src/**/__tests__/`.
 4. Use conventional commits. A `feat`, `fix`, `refactor` or `perf` commit carries `Refs: STA-n`.
-5. `pnpm verify` must be green (format, lint, typecheck, test, build, validate, boundaries, knip).
+5. `pnpm verify` must be green on the box (format, lint, typecheck, test, build, validate, boundaries, knip); GitHub
+   CI runs no tests (`AGENTS.md`, "Tests run on the box").
 6. Open a pull request using the template. A separate reviewer approves; nobody merges their own change.
 
 ## Formatting
