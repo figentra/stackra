@@ -58,6 +58,7 @@ import { DocStandardCommand } from "#node/commands/doc-standard.command";
 import { DoctorCommand } from "#node/commands/doctor.command";
 import { DuplicateExportsCommand } from "#node/commands/duplicate-exports.command";
 import { DuplicationCommand } from "#node/commands/duplication.command";
+import { PromoteCommand } from "#node/commands/promote.command";
 import { SkillLicencesCommand } from "#node/commands/skill-licences.command";
 import { StructureCommand } from "#node/commands/structure.command";
 import { addCommand } from "#node/functions/add-command.function";
@@ -108,6 +109,7 @@ export const COMMANDS: CliCommands = [
   SEARCH_STATUS_COMMAND,
   AUDIT_VERIFY_COMMAND,
   DEPLOY_COMMAND,
+  PromoteCommand,
   MOBILE_ONBOARD_COMMAND,
   SMOKE_COMMAND,
   PREVIEW_SERVE_COMMAND,

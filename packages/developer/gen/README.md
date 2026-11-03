@@ -47,6 +47,7 @@ the committed manifest is the IR, and source is read behind one host seam, never
 | `.`                   | `emitI18n`                                                                   | `#stackra/i18n`: `I18n` (typed keys of `assets/lang`), `locales`, `catalogues` and `loadMessages`                       |
 | `.`                   | `emitQueues`                                                                 | `#stackra/queues`: `Queues`, a service's job queues and `default`                                                       |
 | `.`                   | `emitSettings`                                                               | `#stackra/settings`: `Settings`, the typed setting keys of the member's settings classes                                |
+| `.`                   | `emitUiFacade`                                                               | `#stackra/ui`: `Component`, the class-component base from `@stackra/ui/react` or `/native`                              |
 | `.`                   | `reportsOf`, `emitReports`                                                   | the manifest's `reports` section and `#stackra/reports`: one query per `Report` (ADR 0470)                              |
 | `.`                   | `DocsConfig`, `emitDocsSite`, `DOCS_CONFIG_FILE`, `DOCS_SITE_DIR`            | a docs app's typed site config and the Mintlify site gen assembles (see below)                                          |
 | `.`                   | `openApiOf`                                                                  | `openapi.json`, the projection of the manifest                                                                          |
@@ -356,6 +357,7 @@ OpenAPI document and the generated clients type it. Any other output is `action_
 | `.stackra/gen/webhooks.ts`                                                | service                                               | `InboundWebhooksController` on `/webhooks/<module>/<name>/:connectionId`, raw body and decoded query to `WebhookReceiver`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `.stackra/gen/clients/<service>.ts`                                       | a client consumer                                     | the producer's enums, shapes, refusals and integration events, one `remoteAction`/`remoteQuery` per call, `<Service>Client`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `.stackra/gen/settings.ts`                                                | members with a settings class and `@stackra/settings` | `Settings = settingKeys({...})`: one key per setting field of each settings class, by module (stackra-209); `Settings.pick([...])` forms compile in `#stackra/schemas`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `.stackra/gen/ui.ts`                                                      | members with `@stackra/ui`                            | `export { Component }` from `@stackra/ui/native` on an app that renders only on iOS and Android, `@stackra/ui/react` otherwise; the class-components compiler removes the import, so it only serves tsc (STA-2069)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `.stackra/gen/i18n.ts`                                                    | members with `assets/lang` and `@stackra/i18n`        | `I18n = keys({...})` from the base locale (`en`) plus the namespaces of declared Stackra packages (`@stackra/*`, or any that ships `stackra.manifest.json`) that ship `assets/lang` (`I18n.loyalty_kit.*`), `locales` from the member's locale folders, `catalogues` (one lazy JSON loader per namespace and locale file, a package's through its `./assets/*` export; runtime `dependencies` only) and `loadMessages(locale)` over them; `$comment` notes are not keys; a key no catalogue ships is refused (`i18n_key_missing`), and so is a namespace two owners ship (`i18n_namespace_clash`)                                                                                                                                                            |
 | `.stackra/gen/queues.ts`                                                  | services with a job action                            | `Queues = queues([...])` of `@stackra/queue` over the queues the job actions name (the hosted packages' included) plus `default`, so a job writes `queue: Queues.Billing`; the source reader reads `Queues.<Name>` as the snake_case name before the file exists, and a queue no job names any more drops out, so its references fail to compile; a queue with a part starting with a digit (`v_2`) keeps its string (STA-1723)                                                                                                                                                                                                                                                                                                                              |
 | `.stackra/gen/prefixes.ts`                                                | models with ids                                       | each public id prefix with the model that mints it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -587,12 +589,31 @@ filters, entries, sections, fields, steps; not relations or actions), for the ca
 
 ## Call options from a request (design, ADR 0472)
 
-No generated endpoint calls the pipeline yet (the action endpoints come with the rest of the Encore app). When they
-do, each builds its `CallOptions` in two parts and nothing else: the verified facts from the credential (`actor`,
-`scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the header-borne values
-the pipeline checks itself, lifted by `requestCallOptions(request)` of `@stackra/actions`: `Idempotency-Key` onto
-`idempotencyKey` (the idempotency step, ADR 0138) and `Stackra-Consent` onto `consentSnapshot` (verified by
-`ctx.consent()`, ADR 0472). The header names are `CALL_HEADERS` of `@stackra/actions/contracts`.
+A service gets `.stackra/encore/<member>/encore.service.ts` (`export default new Service("<member>")`, so the folder
+is one Encore service) and, when it has an own action or query with an endpoint, `.stackra/encore/<member>/api.ts`:
+one `api()` per such manifest entry, named by its camel-cased key and version (`shop.order.cancel@1` is
+`shopOrderCancelV1`), with the entry's derived `method` and `path` and `expose: true`, its parameter typed by the input
+schema class and its result by the output one (none, or `Promise<void>`, when the entry names none). It runs the call
+as `new ActionPipeline(container).execute(<class>, input, { actor })` inside `app.handlers.run` (STA-2063).
+
+The actor comes only from Encore's verified auth data, `getAuthData()` of `~encore/auth`, whose shape is
+`{ userID: string; actor: Actor }`. An entry is `auth: true` unless its `actors` list `ActorKind.Anonymous` (manifest
+`anonymous: true`, STA-2025): that one is `auth: false` and runs as the session's actor when one is presented,
+otherwise as `{ kind: ActorKind.Anonymous, id: mintPublicId("anon") }`. No adapter is written for an entry with no
+endpoint, a hosted package's entry (its manifest does not name the files of its schemas, the limit `registerActions`
+has), or one whose input or output schema is not a shape of the member (a generated search or report query's package
+shapes, a replica page). Encore binds each path parameter from the input field of that name, so the manifest build
+refuses a route whose parameter is no field of the input (`endpoint_param_unbound`), such as `x.get` with no `xId`.
+Waiting for the auth handler and gateway (wp-114): the handler that returns that auth data
+(until it lands, `encore build` refuses an `auth: true` endpoint), and the rest of `CallOptions`. A refusal surfaces as
+Encore's default error until refusal kinds map to `APIError`.
+
+The full `CallOptions` of an endpoint come in two parts and nothing else: the verified facts from the credential
+(`actor`, then `scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the
+header-borne values the pipeline checks itself, lifted by `requestCallOptions(request)` of `@stackra/actions`:
+`Idempotency-Key` onto `idempotencyKey` (the idempotency step, ADR 0138) and `Stackra-Consent` onto `consentSnapshot`
+(verified by `ctx.consent()`, ADR 0472). The header names are `CALL_HEADERS` of `@stackra/actions/contracts`. A typed
+`api()` sees no `Request`, so the generated endpoints pass only `actor` today; the rest come with the gateway.
 
 ```ts
 await pipeline.execute(X, input, { actor, ...requestCallOptions(request) });
@@ -619,8 +640,10 @@ manifest as `public`; one with no endpoint is refused (`public_without_endpoint`
 app with a public entry, `.stackra/sdks/typescript/index.ts` (typed from the reachable schemas),
 `.stackra/sdks/python/<member>_client.py` (standard library) and `.stackra/sdks/php/<Member>Client.php` (no
 dependency): one method per public entry, with the bearer token, `Stackra-Version` and `Idempotency-Key` headers and
-the ADR 0140 envelope as `ApiError`. Only public entries are ever written; packaging and publishing are the release
-pipeline's.
+the ADR 0140 envelope as `ApiError`. Each client requests the base URL without its trailing slashes plus the endpoint
+path, so a path prefix (`https://example.com/api`) is kept. Every write sends `Idempotency-Key`: the caller's, else a
+UUID v4 the client generates once per call before the request (ADR 0136 decision 3); a `GET` sends none. Only public
+entries are ever written; packaging and publishing are the release pipeline's.
 
 ## Golden snapshots (STA-1320)
 

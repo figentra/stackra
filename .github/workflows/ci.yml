@@ -112,6 +112,15 @@ jobs:
           secret-path: /ci/turbo
           export-type: env
 
+      # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
+      # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.
+      - name: Uniwind Pro download cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.uniwind/cache/pro
+          key: uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
+          restore-keys: uniwind-pro-${{ runner.os }}-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

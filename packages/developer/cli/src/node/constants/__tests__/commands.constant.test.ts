@@ -60,6 +60,7 @@ describe("COMMANDS", () => {
         "audit:verify",
         "ops:bootstrap-operator",
         "smoke",
+        "promote",
         "add",
         "publish",
         "testbed",
