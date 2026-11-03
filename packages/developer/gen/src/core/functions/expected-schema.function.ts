@@ -4,16 +4,20 @@
  *          model addition's side table) in its module's Postgres schema, snake_case plural; one column per data field
  *          (trait fields included, a `Money` as `<name>_minor` and `<name>_currency`, types from `postgresTypeOf`);
  *          one `varchar(33)` column per relation that owns a column (`m:1`, an owning `1:1`, a `Link`) named
- *          `<name>_id`, with an `fk_<table>_<column>` foreign key when its target is a model of the same module; and
- *          one index per `@Index` under its derived `idx_<table>_<columns>` name with `unique` and `where` as declared.
+ *          `<name>_id`, with an `fk_<table>_<column>` foreign key when its target is a model of the same module;
+ *          one pivot table per `m:n` relation, named by `pivotTable` or `<table>_<field>`, with the two `varchar(33)`
+ *          keys the ORM names (`<owner>_id` and `<target>_id`, or `<table>_1_id` and `<table>_2_id` for a
+ *          self-reference), the owner's `tenant_id` when it has one, and their same-module foreign keys; a
+ *          `@Searchable` model's `search_text` (text) and `search_filters` (jsonb); and one index per `@Index` under
+ *          its derived `idx_<table>_<columns>` name with `unique` and `where` as declared.
  * Boundary: pure; reads `ir.shapes` and `ir.classes`, through a model's own base models too. Abstract models have no
- *           table. `@Searchable` declares no index here (the migration chooses its GIN and trigram indexes) and the
- *           search columns are not expected; the comparison treats them as implied. A many-to-many pivot table is not
- *           expected either. shortcut: those limits keep `undeclared_*` honest only for what the IR can say; widen
- *           this when the IR records the pivot and search shapes.
+ *           table and no pivot. `@Searchable` declares no index here (the migration chooses its GIN and trigram
+ *           indexes) and no `search_vector`: the facet names no locale, so the comparison tolerates the vectors and
+ *           `__v<n>` shadows on a table that expects `search_text`. Two relations that name one pivot give one table.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 20 and 28: a table per model in its module's schema; links have no foreign
- *                     key); ADR 0231 (`idx_` and `fk_` names); ADR 0159; ADR 0336 (side tables); STA-1808.
+ *                     key); ADR 0231 (`idx_` and `fk_` names); ADR 0159; ADR 0221 (search columns); ADR 0336 (side
+ *                     tables); STA-1808; STA-2071.
  */
 import { snakeCase } from "@stackra/support";
 
@@ -73,6 +77,9 @@ export function expectedSchema(ir: MemberIR): SchemaSnapshot {
   const columns: SchemaSnapshot["columns"][number][] = [];
   const indexes: SchemaSnapshot["indexes"][number][] = [];
   const foreignKeys: SchemaSnapshot["foreignKeys"][number][] = [];
+  // Keyed so two relations that name one pivot give one table with no duplicate column or key.
+  const pivotColumns = new Map<string, SchemaSnapshot["columns"][number]>();
+  const pivotKeys = new Map<string, SchemaSnapshot["foreignKeys"][number]>();
 
   for (const shape of ir.shapes) {
     if (shape.kind !== "model" && shape.kind !== "model_addition") continue;
@@ -118,7 +125,49 @@ export function expectedSchema(ir: MemberIR): SchemaSnapshot {
           referencedTable: plural(snakeCase(relation.target.name)),
         });
     }
+    const classes = classChain(ir, declared);
+    if (
+      shape.kind === "model" &&
+      classes.some((each) =>
+        each.facets.some((facet) => facet.target === "class" && facet.name === "Searchable"),
+      )
+    ) {
+      put("search_text", "text", true);
+      put("search_filters", "jsonb", true);
+    }
     columns.push(...own.values());
+
+    const scopeColumn = own.get("tenant_id");
+    for (const relation of relations.values()) {
+      if (relation.kind !== "m:n" || shape.kind !== "model") continue;
+      const option = relation.options["pivotTable"];
+      const pivot = typeof option === "string" ? option : `${table}_${snakeCase(relation.name)}`;
+      // The ORM's names: a self-reference numbers its two keys, which would otherwise collide.
+      const self = relation.target.name === shape.name;
+      const keys: readonly [string, string | undefined][] = [
+        [self ? `${table}_1_id` : `${snakeCase(shape.name)}_id`, table],
+        [
+          self ? `${table}_2_id` : `${snakeCase(relation.target.name)}_id`,
+          relation.targetModule === schema ? plural(snakeCase(relation.target.name)) : undefined,
+        ],
+      ];
+      const pivotColumn = (column: SchemaSnapshot["columns"][number]): void => {
+        pivotColumns.set(`${schema}\u0000${pivot}\u0000${column.name}`, column);
+      };
+      for (const [column, referencedTable] of keys) {
+        pivotColumn({ schema, table: pivot, name: column, type: PUBLIC_ID, nullable: false });
+        if (referencedTable !== undefined)
+          pivotKeys.set(`${schema}\u0000fk_${pivot}_${column}`, {
+            schema,
+            table: pivot,
+            name: `fk_${pivot}_${column}`,
+            columns: [column],
+            referencedSchema: schema,
+            referencedTable,
+          });
+      }
+      if (scopeColumn !== undefined) pivotColumn({ ...scopeColumn, table: pivot });
+    }
 
     /** The column an `@Index` property names: a relation's `<name>_id`, an embedded path joined by underscores. */
     const columnOf = (path: string): string => {
@@ -128,7 +177,7 @@ export function expectedSchema(ir: MemberIR): SchemaSnapshot {
         : path.split(".").map(snakeCase).join("_");
     };
     const named = new Set<string>();
-    for (const each of classChain(ir, declared))
+    for (const each of classes)
       for (const facet of each.facets) {
         if (facet.target !== "class" || facet.name !== "Index" || !Array.isArray(facet.options))
           continue;
@@ -154,5 +203,7 @@ export function expectedSchema(ir: MemberIR): SchemaSnapshot {
         });
       }
   }
+  columns.push(...pivotColumns.values());
+  foreignKeys.push(...pivotKeys.values());
   return { columns, indexes, foreignKeys };
 }
