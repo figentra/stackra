@@ -12,7 +12,7 @@
  */
 import type { Json } from "@stackra/contracts";
 
-import { contributionsOf } from "#core/functions/contributions-of.function";
+import { dependencyContributionsOf } from "#core/functions/dependency-contributions-of.function";
 import type { Contribution } from "#core/types/contribution.type";
 import type { GenError } from "#core/types/gen-error.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -34,7 +34,7 @@ export function hostResourcesOf(ir: MemberIR): {
   readonly resources: readonly Contribution<JsonObject>[];
   readonly errors: readonly GenError[];
 } {
-  const { entries, duplicates } = contributionsOf<JsonObject>(
+  const { entries, duplicates } = dependencyContributionsOf<JsonObject>(
     ir,
     (manifest) => {
       const ui = manifest["ui"];
