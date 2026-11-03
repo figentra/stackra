@@ -14,6 +14,20 @@
       "port": 3710
     },
     {
+      "name": "playground-local",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@figentra/playground",
+        "exec",
+        "vite",
+        "--port",
+        "3710",
+        "--strictPort"
+      ],
+      "port": 3710
+    },
+    {
       "name": "mobile",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
