@@ -1,0 +1,3159 @@
+--- a/apps/console/package.json
++++ b/apps/console/package.json
+@@ -22,6 +22,7 @@
+   },
+   "type": "module",
+   "imports": {
++    "#src/*.function": "./src/*.function.ts",
+     "#src/*": [
+       "./src/*",
+       "./src/*.ts",
+--- a/apps/docs/package.json
++++ b/apps/docs/package.json
+@@ -24,7 +24,37 @@
+   },
+   "type": "module",
+   "imports": {
+-    "#scripts/*": "./scripts/*.ts"
++    "#assets/*": [
++      "./src/assets/*",
++      "./src/assets/*.ts",
++      "./src/assets/*.tsx",
++      "./src/assets/*/index.ts"
++    ],
++    "#config/*": [
++      "./src/config/*",
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
++    ],
++    "#docs/*": [
++      "./src/docs/*",
++      "./src/docs/*.ts",
++      "./src/docs/*.tsx",
++      "./src/docs/*/index.ts"
++    ],
++    "#snippets/*": [
++      "./src/snippets/*",
++      "./src/snippets/*.ts",
++      "./src/snippets/*.tsx",
++      "./src/snippets/*/index.ts"
++    ],
++    "#scripts/*": "./scripts/*.ts",
++    "#stackra/*": [
++      "./.stackra/gen/*",
++      "./.stackra/gen/*.ts",
++      "./.stackra/gen/*.tsx",
++      "./.stackra/gen/*/index.ts"
++    ]
+   },
+   "scripts": {
+     "dev": "stackra dev",
+--- a/apps/mobile/package.json
++++ b/apps/mobile/package.json
+@@ -25,6 +25,7 @@
+   },
+   "main": "src/main.ts",
+   "imports": {
++    "#src/*.function": "./src/*.function.ts",
+     "#src/*": [
+       "./src/*",
+       "./src/*.ts",
+--- a/apps/playground/package.json
++++ b/apps/playground/package.json
+@@ -33,6 +33,7 @@
+       "./src/*.tsx",
+       "./src/*/index.ts"
+     ],
++    "#scripts/*": "./scripts/*.ts",
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
+--- a/packages/application/achievements/package.json
++++ b/packages/application/achievements/package.json
+@@ -40,16 +40,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/application/actions/package.json
++++ b/packages/application/actions/package.json
+@@ -39,31 +39,38 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#devtools/*": [
+       "./src/devtools/*",
+       "./src/devtools/*.ts",
++      "./src/devtools/*.tsx",
+       "./src/devtools/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/application/ai/package.json
++++ b/packages/application/ai/package.json
+@@ -40,16 +40,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+--- a/packages/application/clients/package.json
++++ b/packages/application/clients/package.json
+@@ -37,16 +37,20 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#react/*": [
+@@ -58,16 +62,19 @@
+     "#server/*": [
+       "./src/server/*",
+       "./src/server/*.ts",
++      "./src/server/*.tsx",
+       "./src/server/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#worker/*": [
+       "./src/worker/*",
+       "./src/worker/*.ts",
++      "./src/worker/*.tsx",
+       "./src/worker/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/application/registry/package.json
++++ b/packages/application/registry/package.json
+@@ -39,6 +39,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/application/rules/package.json
++++ b/packages/application/rules/package.json
+@@ -39,16 +39,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+--- a/packages/application/segments/package.json
++++ b/packages/application/segments/package.json
+@@ -39,21 +39,25 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/commerce/fiscal/package.json
++++ b/packages/commerce/fiscal/package.json
+@@ -40,16 +40,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/commerce/ledger/package.json
++++ b/packages/commerce/ledger/package.json
+@@ -38,11 +38,13 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/commerce/loyalty-kit/package.json
++++ b/packages/commerce/loyalty-kit/package.json
+@@ -39,16 +39,19 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+@@ -60,6 +63,7 @@
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -71,6 +75,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/commerce/money/package.json
++++ b/packages/commerce/money/package.json
+@@ -39,11 +39,13 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/commerce/payments/package.json
++++ b/packages/commerce/payments/package.json
+@@ -39,21 +39,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -62,16 +67,17 @@
+       "./src/react/*.tsx",
+       "./src/react/*/index.ts"
+     ],
++    "#testing/*": [
++      "./src/testing/*",
++      "./src/testing/*.ts",
++      "./src/testing/*.tsx",
++      "./src/testing/*/index.ts"
++    ],
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
+       "./.stackra/gen/*.tsx",
+       "./.stackra/gen/*/index.ts"
+-    ],
+-    "#testing/*": [
+-      "./src/testing/*",
+-      "./src/testing/*.ts",
+-      "./src/testing/*/index.ts"
+     ]
+   },
+   "exports": {
+--- a/packages/commerce/pricing/package.json
++++ b/packages/commerce/pricing/package.json
+@@ -38,11 +38,13 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#react/*": [
+--- a/packages/commerce/shipping/package.json
++++ b/packages/commerce/shipping/package.json
+@@ -39,16 +39,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/communication/integrations/package.json
++++ b/packages/communication/integrations/package.json
+@@ -38,21 +38,25 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/communication/notifications/package.json
++++ b/packages/communication/notifications/package.json
+@@ -40,21 +40,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+--- a/packages/communication/versioning/package.json
++++ b/packages/communication/versioning/package.json
+@@ -38,6 +38,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/communication/webhooks/package.json
++++ b/packages/communication/webhooks/package.json
+@@ -38,21 +38,25 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/cross-cutting/analytics/package.json
++++ b/packages/cross-cutting/analytics/package.json
+@@ -37,26 +37,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -68,6 +74,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/cross-cutting/seo/package.json
++++ b/packages/cross-cutting/seo/package.json
+@@ -39,26 +39,31 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#server/*": [
+       "./src/server/*",
+       "./src/server/*.ts",
++      "./src/server/*.tsx",
+       "./src/server/*/index.ts"
+     ],
+     "#worker/*": [
+       "./src/worker/*",
+       "./src/worker/*.ts",
++      "./src/worker/*.tsx",
+       "./src/worker/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/assets/package.json
++++ b/packages/data/assets/package.json
+@@ -37,6 +37,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#react/*": [
+--- a/packages/data/content/package.json
++++ b/packages/data/content/package.json
+@@ -37,11 +37,13 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/data-maintenance/package.json
++++ b/packages/data/data-maintenance/package.json
+@@ -38,11 +38,13 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/data-transfer/package.json
++++ b/packages/data/data-transfer/package.json
+@@ -41,16 +41,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/database/package.json
++++ b/packages/data/database/package.json
+@@ -37,26 +37,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/documents/package.json
++++ b/packages/data/documents/package.json
+@@ -37,16 +37,20 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/filesystem/package.json
++++ b/packages/data/filesystem/package.json
+@@ -37,33 +37,40 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#desktop/*": [
+       "./src/desktop/*",
+       "./src/desktop/*.ts",
++      "./src/desktop/*.tsx",
+       "./src/desktop/*/index.ts"
+     ],
+-    "#node/*": [
+-      "./src/node/*",
+-      "./src/node/*.ts",
+-      "./src/node/*/index.ts"
+-    ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
++    "#node/*": [
++      "./src/node/*",
++      "./src/node/*.ts",
++      "./src/node/*.tsx",
++      "./src/node/*/index.ts"
++    ],
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
+--- a/packages/data/media/package.json
++++ b/packages/data/media/package.json
+@@ -36,21 +36,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -62,6 +67,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/model/package.json
++++ b/packages/data/model/package.json
+@@ -37,6 +37,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/reports/package.json
++++ b/packages/data/reports/package.json
+@@ -38,16 +38,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/search/package.json
++++ b/packages/data/search/package.json
+@@ -37,26 +37,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/state-machine/package.json
++++ b/packages/data/state-machine/package.json
+@@ -36,6 +36,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/data/storage/package.json
++++ b/packages/data/storage/package.json
+@@ -37,26 +37,31 @@
+     "#browser/*": [
+       "./src/browser/*",
+       "./src/browser/*.ts",
++      "./src/browser/*.tsx",
+       "./src/browser/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#desktop/*": [
+       "./src/desktop/*",
+       "./src/desktop/*.ts",
++      "./src/desktop/*.tsx",
+       "./src/desktop/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
+     "#react/*": [
+@@ -68,6 +73,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/design-system/icons/package.json
++++ b/packages/design-system/icons/package.json
+@@ -34,24 +34,30 @@
+   "type": "module",
+   "sideEffects": false,
+   "imports": {
+-    "#contracts/*": [
+-      "./src/contracts/*",
+-      "./src/contracts/*.ts",
+-      "./src/contracts/*.tsx",
+-      "./src/contracts/*/index.ts"
+-    ],
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
+       "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
++    "#contracts/*": [
++      "./src/contracts/*",
++      "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
++      "./src/contracts/*/index.ts"
++    ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
+       "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
++    "#native/*": [
++      "./src/native/*",
++      "./src/native/*.ts",
++      "./src/native/*.tsx",
++      "./src/native/*/index.ts"
++    ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
+@@ -64,18 +70,13 @@
+       "./src/react/*.tsx",
+       "./src/react/*/index.ts"
+     ],
+-    "#native/*": [
+-      "./src/native/*",
+-      "./src/native/*.ts",
+-      "./src/native/*.tsx",
+-      "./src/native/*/index.ts"
+-    ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
+       "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
++    "#scripts/*": "./scripts/*.ts",
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
+--- a/packages/design-system/showcase/package.json
++++ b/packages/design-system/showcase/package.json
+@@ -34,14 +34,18 @@
+   "type": "module",
+   "sideEffects": false,
+   "imports": {
++    "#src/*.function": "./src/*.function.ts",
+     "#src/*": [
+       "./src/*",
+       "./src/*.ts",
++      "./src/*.tsx",
+       "./src/*/index.ts"
+     ],
++    "#scripts/*": "./scripts/*.ts",
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
++      "./.stackra/gen/*.tsx",
+       "./.stackra/gen/*/index.ts"
+     ]
+   },
+--- a/packages/design-system/tokens/package.json
++++ b/packages/design-system/tokens/package.json
+@@ -35,18 +35,18 @@
+   "type": "module",
+   "sideEffects": false,
+   "imports": {
+-    "#contracts/*": [
+-      "./src/contracts/*",
+-      "./src/contracts/*.ts",
+-      "./src/contracts/*.tsx",
+-      "./src/contracts/*/index.ts"
+-    ],
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
+       "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
++    "#contracts/*": [
++      "./src/contracts/*",
++      "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
++      "./src/contracts/*/index.ts"
++    ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
+--- a/packages/design-system/ui/package.json
++++ b/packages/design-system/ui/package.json
+@@ -35,18 +35,18 @@
+   "type": "module",
+   "sideEffects": false,
+   "imports": {
+-    "#contracts/*": [
+-      "./src/contracts/*",
+-      "./src/contracts/*.ts",
+-      "./src/contracts/*.tsx",
+-      "./src/contracts/*/index.ts"
+-    ],
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
+       "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
++    "#contracts/*": [
++      "./src/contracts/*",
++      "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
++      "./src/contracts/*/index.ts"
++    ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
+@@ -59,6 +59,12 @@
+       "./src/form/*.tsx",
+       "./src/form/*/index.ts"
+     ],
++    "#native/*": [
++      "./src/native/*",
++      "./src/native/*.ts",
++      "./src/native/*.tsx",
++      "./src/native/*/index.ts"
++    ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
+@@ -71,12 +77,6 @@
+       "./src/react/*.tsx",
+       "./src/react/*/index.ts"
+     ],
+-    "#native/*": [
+-      "./src/native/*",
+-      "./src/native/*.ts",
+-      "./src/native/*.tsx",
+-      "./src/native/*/index.ts"
+-    ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
+--- a/packages/developer/brand-kit/package.json
++++ b/packages/developer/brand-kit/package.json
+@@ -40,16 +40,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/cli/package.json
++++ b/packages/developer/cli/package.json
+@@ -40,6 +40,7 @@
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/coding-standard/package.json
++++ b/packages/developer/coding-standard/package.json
+@@ -36,6 +36,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/devtools-kit/package.json
++++ b/packages/developer/devtools-kit/package.json
+@@ -36,6 +36,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/gen/package.json
++++ b/packages/developer/gen/package.json
+@@ -37,23 +37,27 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
++    "#metro-transformer/*": [
++      "./src/metro-transformer/*",
++      "./src/metro-transformer/*.ts",
++      "./src/metro-transformer/*.tsx",
++      "./src/metro-transformer/*/index.ts"
++    ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+-    "#metro-transformer/*": [
+-      "./src/metro-transformer/*",
+-      "./src/metro-transformer/*.ts",
+-      "./src/metro-transformer/*/index.ts"
+-    ],
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
+--- a/packages/developer/mcp/package.json
++++ b/packages/developer/mcp/package.json
+@@ -37,11 +37,13 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/renderers/package.json
++++ b/packages/developer/renderers/package.json
+@@ -37,6 +37,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/repo-checks/package.json
++++ b/packages/developer/repo-checks/package.json
+@@ -36,6 +36,7 @@
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/runway/package.json
++++ b/packages/developer/runway/package.json
+@@ -41,16 +41,19 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/skills/package.json
++++ b/packages/developer/skills/package.json
+@@ -39,16 +39,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/testing/package.json
++++ b/packages/developer/testing/package.json
+@@ -38,21 +38,25 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#e2e/*": [
+       "./src/e2e/*",
+       "./src/e2e/*.ts",
++      "./src/e2e/*.tsx",
+       "./src/e2e/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
+     "#react/*": [
+       "./src/react/*",
+       "./src/react/*.ts",
++      "./src/react/*.tsx",
+       "./src/react/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/developer/vite-plugin/package.json
++++ b/packages/developer/vite-plugin/package.json
+@@ -38,6 +38,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/experience/builder/package.json
++++ b/packages/experience/builder/package.json
+@@ -37,11 +37,13 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#react/*": [
+--- a/packages/experience/collaboration/package.json
++++ b/packages/experience/collaboration/package.json
+@@ -37,21 +37,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -63,6 +68,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/experience/experience/package.json
++++ b/packages/experience/experience/package.json
+@@ -37,22 +37,26 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#edge/*": [
+       "./src/edge/*",
+       "./src/edge/*.ts",
++      "./src/edge/*.tsx",
+       "./src/edge/*/index.ts"
+     ],
+-    "#server/*": [
+-      "./src/server/*",
+-      "./src/server/*.ts",
+-      "./src/server/*/index.ts"
++    "#native/*": [
++      "./src/native/*",
++      "./src/native/*.ts",
++      "./src/native/*.tsx",
++      "./src/native/*/index.ts"
+     ],
+     "#react/*": [
+       "./src/react/*",
+@@ -60,11 +64,11 @@
+       "./src/react/*.tsx",
+       "./src/react/*/index.ts"
+     ],
+-    "#native/*": [
+-      "./src/native/*",
+-      "./src/native/*.ts",
+-      "./src/native/*.tsx",
+-      "./src/native/*/index.ts"
++    "#server/*": [
++      "./src/server/*",
++      "./src/server/*.ts",
++      "./src/server/*.tsx",
++      "./src/server/*/index.ts"
+     ],
+     "#stackra/*": [
+       "./.stackra/gen/*",
+--- a/packages/experience/native-card-terminal/package.json
++++ b/packages/experience/native-card-terminal/package.json
+@@ -42,16 +42,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
+     "#plugin/*": [
+       "./plugin/*",
+       "./plugin/*.ts",
++      "./plugin/*.tsx",
+       "./plugin/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/experience/native-cash-drawer/package.json
++++ b/packages/experience/native-cash-drawer/package.json
+@@ -42,11 +42,13 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#plugin/*": [
+       "./plugin/*",
+       "./plugin/*.ts",
++      "./plugin/*.tsx",
+       "./plugin/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/experience/native-customer-display/package.json
++++ b/packages/experience/native-customer-display/package.json
+@@ -41,8 +41,15 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
++    "#plugin/*": [
++      "./plugin/*",
++      "./plugin/*.ts",
++      "./plugin/*.tsx",
++      "./plugin/*/index.ts"
++    ],
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
+--- a/packages/experience/native-receipt-printer/package.json
++++ b/packages/experience/native-receipt-printer/package.json
+@@ -44,11 +44,13 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#plugin/*": [
+       "./plugin/*",
+       "./plugin/*.ts",
++      "./plugin/*.tsx",
+       "./plugin/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/experience/native-scale/package.json
++++ b/packages/experience/native-scale/package.json
+@@ -41,13 +41,22 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
++    "#plugin/*": [
++      "./plugin/*",
++      "./plugin/*.ts",
++      "./plugin/*.tsx",
++      "./plugin/*/index.ts"
++    ],
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
+--- a/packages/experience/native-share/package.json
++++ b/packages/experience/native-share/package.json
+@@ -37,21 +37,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
+     "#react/*": [
+@@ -60,6 +65,12 @@
+       "./src/react/*.tsx",
+       "./src/react/*/index.ts"
+     ],
++    "#plugin/*": [
++      "./plugin/*",
++      "./plugin/*.ts",
++      "./plugin/*.tsx",
++      "./plugin/*/index.ts"
++    ],
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
+--- a/packages/experience/native-spotlight/package.json
++++ b/packages/experience/native-spotlight/package.json
+@@ -40,23 +40,34 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
++    "#plugin/*": [
++      "./plugin/*",
++      "./plugin/*.ts",
++      "./plugin/*.tsx",
++      "./plugin/*/index.ts"
++    ],
+     "#stackra/*": [
+       "./.stackra/gen/*",
+       "./.stackra/gen/*.ts",
+--- a/packages/experience/navigation/package.json
++++ b/packages/experience/navigation/package.json
+@@ -38,6 +38,7 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+--- a/packages/experience/panel/package.json
++++ b/packages/experience/panel/package.json
+@@ -38,6 +38,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+@@ -49,6 +50,7 @@
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+--- a/packages/experience/peripherals/package.json
++++ b/packages/experience/peripherals/package.json
+@@ -37,26 +37,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#desktop/*": [
+       "./src/desktop/*",
+       "./src/desktop/*.ts",
++      "./src/desktop/*.tsx",
+       "./src/desktop/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/experience/platform/package.json
++++ b/packages/experience/platform/package.json
+@@ -45,21 +45,26 @@
+     ],
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#desktop/*": [
+       "./src/desktop/*",
+       "./src/desktop/*.ts",
++      "./src/desktop/*.tsx",
+       "./src/desktop/*/index.ts"
+     ],
+     "#native/*": [
+@@ -71,6 +76,7 @@
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -82,16 +88,19 @@
+     "#sw/*": [
+       "./src/sw/*",
+       "./src/sw/*.ts",
++      "./src/sw/*.tsx",
+       "./src/sw/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#worker/*": [
+       "./src/worker/*",
+       "./src/worker/*.ts",
++      "./src/worker/*.tsx",
+       "./src/worker/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/experience/shortcuts/package.json
++++ b/packages/experience/shortcuts/package.json
+@@ -36,6 +36,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#react/*": [
+@@ -47,6 +48,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/calendar/package.json
++++ b/packages/foundation/calendar/package.json
+@@ -40,11 +40,13 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/config/package.json
++++ b/packages/foundation/config/package.json
+@@ -37,21 +37,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -63,6 +68,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/container/package.json
++++ b/packages/foundation/container/package.json
+@@ -38,11 +38,13 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#devtools/*": [
+       "./src/devtools/*",
+       "./src/devtools/*.ts",
++      "./src/devtools/*.tsx",
+       "./src/devtools/*/index.ts"
+     ],
+     "#react/*": [
+@@ -54,6 +56,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/contracts/package.json
++++ b/packages/foundation/contracts/package.json
+@@ -39,6 +39,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/errors/package.json
++++ b/packages/foundation/errors/package.json
+@@ -37,16 +37,20 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#react/*": [
+@@ -58,6 +62,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/events/package.json
++++ b/packages/foundation/events/package.json
+@@ -39,21 +39,25 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#devtools/*": [
+       "./src/devtools/*",
+       "./src/devtools/*.ts",
++      "./src/devtools/*.tsx",
+       "./src/devtools/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/i18n/package.json
++++ b/packages/foundation/i18n/package.json
+@@ -39,16 +39,19 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+--- a/packages/foundation/logger/package.json
++++ b/packages/foundation/logger/package.json
+@@ -37,16 +37,20 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/market-packs/package.json
++++ b/packages/foundation/market-packs/package.json
+@@ -38,16 +38,20 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/support/package.json
++++ b/packages/foundation/support/package.json
+@@ -39,6 +39,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/transport/package.json
++++ b/packages/foundation/transport/package.json
+@@ -40,11 +40,13 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/foundation/validation/package.json
++++ b/packages/foundation/validation/package.json
+@@ -39,6 +39,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-aws/package.json
++++ b/packages/infrastructure/infra-aws/package.json
+@@ -40,21 +40,25 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-aws-runtime/package.json
++++ b/packages/infrastructure/infra-aws-runtime/package.json
+@@ -39,16 +39,19 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-cloudflare/package.json
++++ b/packages/infrastructure/infra-cloudflare/package.json
+@@ -40,16 +40,19 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-gcp/package.json
++++ b/packages/infrastructure/infra-gcp/package.json
+@@ -40,21 +40,25 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-github/package.json
++++ b/packages/infrastructure/infra-github/package.json
+@@ -39,16 +39,19 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-identity/package.json
++++ b/packages/infrastructure/infra-identity/package.json
+@@ -38,16 +38,19 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-mobile/package.json
++++ b/packages/infrastructure/infra-mobile/package.json
+@@ -40,16 +40,19 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-observability/package.json
++++ b/packages/infrastructure/infra-observability/package.json
+@@ -39,16 +39,19 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-testbed/package.json
++++ b/packages/infrastructure/infra-testbed/package.json
+@@ -37,14 +37,22 @@
+   "type": "module",
+   "sideEffects": false,
+   "imports": {
++    "#agent/*": [
++      "./src/agent/*",
++      "./src/agent/*.ts",
++      "./src/agent/*.tsx",
++      "./src/agent/*/index.ts"
++    ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/infrastructure/infra-tools/package.json
++++ b/packages/infrastructure/infra-tools/package.json
+@@ -40,11 +40,13 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/runtime/app/package.json
++++ b/packages/runtime/app/package.json
+@@ -36,46 +36,59 @@
+   "type": "module",
+   "sideEffects": false,
+   "imports": {
+-    "#config/*": [
+-      "./src/config/*",
+-      "./src/config/*.ts"
+-    ],
+     "#browser/*": [
+       "./src/browser/*",
+       "./src/browser/*.ts",
+-      "./src/browser/*.tsx"
++      "./src/browser/*.tsx",
++      "./src/browser/*/index.ts"
++    ],
++    "#config/*": [
++      "./src/config/*",
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#desktop/*": [
+       "./src/desktop/*",
+-      "./src/desktop/*.ts"
++      "./src/desktop/*.ts",
++      "./src/desktop/*.tsx",
++      "./src/desktop/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
+-      "./src/native/*.tsx"
++      "./src/native/*.tsx",
++      "./src/native/*/index.ts"
+     ],
+     "#react/*": [
+       "./src/react/*",
+       "./src/react/*.ts",
+-      "./src/react/*.tsx"
++      "./src/react/*.tsx",
++      "./src/react/*/index.ts"
+     ],
+     "#server/*": [
+       "./src/server/*",
+-      "./src/server/*.ts"
++      "./src/server/*.ts",
++      "./src/server/*.tsx",
++      "./src/server/*/index.ts"
+     ],
+     "#worker/*": [
+       "./src/worker/*",
+-      "./src/worker/*.ts"
++      "./src/worker/*.ts",
++      "./src/worker/*.tsx",
++      "./src/worker/*/index.ts"
+     ],
+     "#stackra/*": [
+       "./.stackra/gen/*",
+--- a/packages/runtime/cache/package.json
++++ b/packages/runtime/cache/package.json
+@@ -39,26 +39,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#worker/*": [
+       "./src/worker/*",
+       "./src/worker/*.ts",
++      "./src/worker/*.tsx",
+       "./src/worker/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/runtime/devices/package.json
++++ b/packages/runtime/devices/package.json
+@@ -37,21 +37,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/runtime/locking/package.json
++++ b/packages/runtime/locking/package.json
+@@ -38,21 +38,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/runtime/outbox/package.json
++++ b/packages/runtime/outbox/package.json
+@@ -37,21 +37,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/runtime/queue/package.json
++++ b/packages/runtime/queue/package.json
+@@ -38,26 +38,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/runtime/realtime/package.json
++++ b/packages/runtime/realtime/package.json
+@@ -38,21 +38,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -64,6 +69,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/runtime/sandbox/package.json
++++ b/packages/runtime/sandbox/package.json
+@@ -39,16 +39,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/runtime/scheduler/package.json
++++ b/packages/runtime/scheduler/package.json
+@@ -37,26 +37,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/runtime/workflow/package.json
++++ b/packages/runtime/workflow/package.json
+@@ -38,21 +38,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/security/access-log/package.json
++++ b/packages/security/access-log/package.json
+@@ -38,26 +38,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/security/consent/package.json
++++ b/packages/security/consent/package.json
+@@ -38,21 +38,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -64,6 +69,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#ui/*": [
+--- a/packages/security/csp/package.json
++++ b/packages/security/csp/package.json
+@@ -37,11 +37,13 @@
+     "#config/*": [
+       "./src/config/*",
+       "./src/config/*.ts",
++      "./src/config/*.tsx",
+       "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#react/*": [
+--- a/packages/security/entitlements/package.json
++++ b/packages/security/entitlements/package.json
+@@ -38,16 +38,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/security/iam/package.json
++++ b/packages/security/iam/package.json
+@@ -39,16 +39,19 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -60,6 +63,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/security/identity/package.json
++++ b/packages/security/identity/package.json
+@@ -41,21 +41,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#desktop/*": [
+       "./src/desktop/*",
+       "./src/desktop/*.ts",
++      "./src/desktop/*.tsx",
+       "./src/desktop/*/index.ts"
+     ],
+     "#native/*": [
+@@ -67,6 +72,7 @@
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -78,6 +84,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/security/licensing/package.json
++++ b/packages/security/licensing/package.json
+@@ -38,16 +38,20 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/security/privacy/package.json
++++ b/packages/security/privacy/package.json
+@@ -37,26 +37,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/security/scope/package.json
++++ b/packages/security/scope/package.json
+@@ -38,26 +38,32 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -69,6 +75,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/security/tenancy/package.json
++++ b/packages/security/tenancy/package.json
+@@ -39,11 +39,13 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+@@ -55,6 +57,7 @@
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -66,6 +69,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/state/coordinator/package.json
++++ b/packages/state/coordinator/package.json
+@@ -37,6 +37,7 @@
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/state/feature-flags/package.json
++++ b/packages/state/feature-flags/package.json
+@@ -36,21 +36,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#lint/*": [
+       "./src/lint/*",
+       "./src/lint/*.ts",
++      "./src/lint/*.tsx",
+       "./src/lint/*/index.ts"
+     ],
+     "#react/*": [
+@@ -62,6 +67,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/state/query/package.json
++++ b/packages/state/query/package.json
+@@ -38,21 +38,26 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#devtools/*": [
+       "./src/devtools/*",
+       "./src/devtools/*.ts",
++      "./src/devtools/*.tsx",
+       "./src/devtools/*/index.ts"
+     ],
+     "#react/*": [
+@@ -64,6 +69,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/state/settings/package.json
++++ b/packages/state/settings/package.json
+@@ -39,11 +39,13 @@
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+@@ -55,6 +57,7 @@
+     "#node/*": [
+       "./src/node/*",
+       "./src/node/*.ts",
++      "./src/node/*.tsx",
+       "./src/node/*/index.ts"
+     ],
+     "#react/*": [
+@@ -66,6 +69,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/state/state/package.json
++++ b/packages/state/state/package.json
+@@ -36,11 +36,14 @@
+   "imports": {
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#react/*": [
+@@ -52,6 +55,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/packages/state/theming/package.json
++++ b/packages/state/theming/package.json
+@@ -39,25 +39,31 @@
+     "#browser/*": [
+       "./src/browser/*",
+       "./src/browser/*.ts",
++      "./src/browser/*.tsx",
+       "./src/browser/*/index.ts"
+     ],
+     "#config/*": [
+       "./src/config/*",
+-      "./src/config/*.ts"
++      "./src/config/*.ts",
++      "./src/config/*.tsx",
++      "./src/config/*/index.ts"
+     ],
+     "#contracts/*": [
+       "./src/contracts/*",
+       "./src/contracts/*.ts",
++      "./src/contracts/*.tsx",
+       "./src/contracts/*/index.ts"
+     ],
+     "#core/*": [
+       "./src/core/*",
+       "./src/core/*.ts",
++      "./src/core/*.tsx",
+       "./src/core/*/index.ts"
+     ],
+     "#native/*": [
+       "./src/native/*",
+       "./src/native/*.ts",
++      "./src/native/*.tsx",
+       "./src/native/*/index.ts"
+     ],
+     "#react/*": [
+@@ -69,6 +75,7 @@
+     "#testing/*": [
+       "./src/testing/*",
+       "./src/testing/*.ts",
++      "./src/testing/*.tsx",
+       "./src/testing/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/services/example/package.json
++++ b/services/example/package.json
+@@ -23,6 +23,7 @@
+   },
+   "type": "module",
+   "imports": {
++    "#src/*.function": "./src/*.function.ts",
+     "#src/*": [
+       "./src/*",
+       "./src/*.ts",
+--- a/services/health/package.json
++++ b/services/health/package.json
+@@ -23,6 +23,7 @@
+   },
+   "type": "module",
+   "imports": {
++    "#src/*.function": "./src/*.function.ts",
+     "#src/*": [
+       "./src/*",
+       "./src/*.ts",
+--- a/workers/edge/package.json
++++ b/workers/edge/package.json
+@@ -25,9 +25,11 @@
+   },
+   "type": "module",
+   "imports": {
++    "#src/*.function": "./src/*.function.ts",
+     "#src/*": [
+       "./src/*",
+       "./src/*.ts",
++      "./src/*.tsx",
+       "./src/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/workers/registry/package.json
++++ b/workers/registry/package.json
+@@ -26,9 +26,11 @@
+   },
+   "type": "module",
+   "imports": {
++    "#src/*.function": "./src/*.function.ts",
+     "#src/*": [
+       "./src/*",
+       "./src/*.ts",
++      "./src/*.tsx",
+       "./src/*/index.ts"
+     ],
+     "#stackra/*": [
+--- a/workers/static/package.json
++++ b/workers/static/package.json
+@@ -24,6 +24,7 @@
+   },
+   "type": "module",
+   "imports": {
++    "#src/*.function": "./src/*.function.ts",
+     "#src/*": [
+       "./src/*",
+       "./src/*.ts",
+--- a/workers/turbo-cache/package.json
++++ b/workers/turbo-cache/package.json
+@@ -25,6 +25,7 @@
+   },
+   "type": "module",
+   "imports": {
++    "#src/*.function": "./src/*.function.ts",
+     "#src/*": [
+       "./src/*",
+       "./src/*.ts",
