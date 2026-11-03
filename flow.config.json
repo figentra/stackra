@@ -76,6 +76,15 @@
           "secret-name": "UNIWIND_AUTH_TOKEN",
           "export-type": "env"
         }
+      },
+      {
+        "name": "Uniwind Pro download cache",
+        "uses": "actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "with": {
+          "path": "~/.uniwind/cache/pro",
+          "key": "uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}",
+          "restore-keys": "uniwind-pro-${{ runner.os }}-"
+        }
       }
     ]
   }
