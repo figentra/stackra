@@ -13,5 +13,10 @@
 export type CommandRunner = (
   command: string,
   args: readonly string[],
-  options: { readonly cwd?: string | undefined; readonly input?: string | undefined },
+  options: {
+    readonly cwd?: string | undefined;
+    readonly input?: string | undefined;
+    /** Variables added to the inherited environment. */
+    readonly env?: Readonly<Record<string, string>> | undefined;
+  },
 ) => Promise<string>;
