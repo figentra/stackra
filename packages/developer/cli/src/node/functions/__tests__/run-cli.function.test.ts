@@ -168,21 +168,18 @@ describe("COMMANDS on the console", () => {
     const classes = COMMANDS.map((command) =>
       typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
     );
-    // 31 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
+    // 23 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
     expect(passthroughCommands(classes)).toEqual(PASSTHROUGH);
   });
 });
 
 /** The legacy commands, sorted: each leaves this list when it becomes a console command class. */
 const PASSTHROUGH: string[] = [
-  "add",
-  "agents:sync",
   "build",
   "check",
   "code:check",
   "code:fix",
   "console",
-  "consumer-gate",
   "db:diff",
   "db:seed",
   "deploy",
@@ -190,16 +187,11 @@ const PASSTHROUGH: string[] = [
   "eas-preflight",
   "gen",
   "lint",
-  "ls",
   "mcp",
   "mcp:exec",
-  "mcp:sync",
-  "mobile:onboard",
   "new",
   "preview:serve",
-  "publish",
   "seed-pack",
-  "smoke",
   "start",
   "test",
   "testbed",

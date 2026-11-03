@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `addCommand` over a fake catalogue client: a skill, an agent, an MCP server and a plugin
- *          install into their ADR 0453 targets and are pinned in `stackra-items.lock.yaml`; `@stackra` is tried
- *          before `@stackra-pro`; dist-tags resolve; an unknown item, a wrong kind, an unknown version and a
- *          hand-written target of the same name are refused; usage errors throw `CliUsageError`.
- * Boundary: test only; writes a throwaway workspace in the OS temp directory and never reaches a network.
+ * Purpose: unit tests of `AddCommand` on the console over a fake catalogue client: a skill, an agent, an MCP server
+ *          and a plugin install into their ADR 0453 targets and are pinned in `stackra-items.lock.yaml`; a package
+ *          runs `pnpm add` through the process port; `@stackra` is tried before `@stackra-pro`; dist-tags resolve;
+ *          an unknown item and an unknown version exit 1; a hand-written target of the same name is refused; a bad
+ *          command line exits 2.
+ * Boundary: test only; `httpCatalogueClient` is mocked, so no network is reached; writes a throwaway workspace in the
+ *           OS temp directory.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0453 (decision 11).
+ * Governing contract: ADR 0022 (test placement); ADR 0453 (decision 11); STA-1966.
  */
 import type { CatalogueItem, StackraPackageField } from "@stackra/skills/contracts";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -14,14 +16,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
+import { MemoryProcessRunnerDriver, runCommandForTest } from "@stackra/console/testing";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 import { parse } from "yaml";
 
-import { CliUsageError } from "#node/errors/cli-usage.error";
-import { addCommand } from "#node/functions/add-command.function";
-import { captureIo } from "#node/functions/capture-io.function";
+import { AddCommand } from "#node/commands/add.command";
+import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
 import type { CatalogueClient } from "#node/types/catalogue-client.type";
 import type { RegistryAccess } from "#node/types/registry-access.type";
+
+vi.mock("#node/functions/http-catalogue-client.function", () => ({ httpCatalogueClient: vi.fn() }));
 
 const encoder = new TextEncoder();
 const tgz = (files: Record<string, string>) => {
@@ -100,21 +105,18 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-const add = async (fake: ReturnType<typeof fakeClient>, positionals: string[]) => {
-  const { io, output } = captureIo();
-  const code = await addCommand(fake.create).run({
-    cwd: root,
-    io,
-    values: {},
-    positionals,
-    rest: [],
-    cli: async () => 0,
-  });
-  return { code, output: output() };
+const add = async (
+  fake: ReturnType<typeof fakeClient>,
+  args: string[],
+  process = new MemoryProcessRunnerDriver(),
+) => {
+  vi.mocked(httpCatalogueClient).mockImplementation(fake.create);
+  const result = await runCommandForTest([AddCommand], ["add", ...args], { cwd: root, process });
+  return { code: result.exitCode, output: result.stdout + result.stderr };
 };
 const lock = () => parse(readFileSync(join(root, "stackra-items.lock.yaml"), "utf8"));
 
-describe("addCommand", () => {
+describe("AddCommand", () => {
   it("installs a skill folder and pins it in the lock", async () => {
     const fake = fakeClient({
       "@stackra/skill-archify": {
@@ -200,7 +202,9 @@ describe("addCommand", () => {
     const fake = fakeClient({
       "@stackra/skill-archify": { stackra: { kind: "skill" }, files: { "SKILL.md": "theirs" } },
     });
-    await expect(add(fake, ["skill", "archify"])).rejects.toThrow(/not in the items lock/);
+    const { code, output } = await add(fake, ["skill", "archify"]);
+    expect(code).toBe(1);
+    expect(output).toMatch(/not in the items lock/);
     expect(readFileSync(join(root, ".agents/skills/archify/SKILL.md"), "utf8")).toBe("mine");
   });
 
@@ -210,13 +214,26 @@ describe("addCommand", () => {
     });
     expect(await add(fake, ["skill", "missing"])).toMatchObject({ code: 1 });
     expect(await add(fake, ["skill", "empty@9.9.9"])).toMatchObject({ code: 1 });
-    await expect(add(fake, ["skill", "empty"])).rejects.toThrow(/no SKILL.md/);
+    const empty = await add(fake, ["skill", "empty"]);
+    expect(empty.code).toBe(1);
+    expect(empty.output).toMatch(/no SKILL.md/);
   });
 
-  it("refuses a bad command line", async () => {
+  it("installs a package with pnpm add in the workspace root", async () => {
+    const fake = fakeClient({ "@stackra/logger": { stackra: { kind: "package" }, files: {} } });
+    const process = new MemoryProcessRunnerDriver().on("pnpm add -w @stackra/logger@0.2.0");
+    const { code, output } = await add(fake, ["package", "logger"], process);
+    expect(code).toBe(0);
+    expect(output).toContain("added @stackra/logger@0.2.0");
+    expect(process.calls.map((call) => [call.line, call.cwd])).toEqual([
+      ["pnpm add -w @stackra/logger@0.2.0", root],
+    ]);
+  });
+
+  it("refuses a bad command line with exit 2", async () => {
     const fake = fakeClient({});
-    await expect(add(fake, ["theme", "x"])).rejects.toThrow(CliUsageError);
-    await expect(add(fake, ["skill", "Bad_Name"])).rejects.toThrow(CliUsageError);
-    await expect(add(fake, ["skill", "a", "b"])).rejects.toThrow(CliUsageError);
+    expect((await add(fake, ["theme", "x"])).code).toBe(2);
+    expect((await add(fake, ["skill", "Bad_Name"])).code).toBe(2);
+    expect((await add(fake, ["skill", "a", "b"])).code).toBe(2);
   });
 });

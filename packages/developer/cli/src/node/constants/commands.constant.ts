@@ -17,34 +17,30 @@
  * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows); ADR 0506;
  *                     STA-1966.
  */
-import { AGENTS_SYNC_COMMAND } from "#node/constants/agents-sync-command.constant";
 import { CONSOLE_COMMAND } from "#node/constants/console-command.constant";
 import { DB_DIFF_COMMAND } from "#node/constants/db-diff-command.constant";
 import { DB_SEED_COMMAND } from "#node/constants/db-seed-command.constant";
 import { GEN_COMMAND } from "#node/constants/gen-command.constant";
-import { LS_COMMAND } from "#node/constants/ls-command.constant";
 import { MCP_COMMAND } from "#node/constants/mcp-command.constant";
 import { MCP_EXEC_COMMAND } from "#node/constants/mcp-exec-command.constant";
-import { MCP_SYNC_COMMAND } from "#node/constants/mcp-sync-command.constant";
 import { NEW_COMMAND } from "#node/constants/new-command.constant";
-import { PUBLISH_COMMAND } from "#node/constants/publish-command.constant";
 import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
 import { TESTBED_COMMAND } from "#node/constants/testbed-command.constant";
 import { VALIDATE_COMMAND } from "#node/constants/validate-command.constant";
-import { CONSUMER_GATE_COMMAND } from "#node/consumer-gate/constants/consumer-gate-command.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
 import { EAS_PREFLIGHT_COMMAND } from "#node/eas-preflight/constants/eas-preflight-command.constant";
 import { BUILD_COMMAND } from "#node/product/constants/build-command.constant";
 import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant";
-import { MOBILE_ONBOARD_COMMAND } from "#node/product/constants/mobile-onboard-command.constant";
-import { SMOKE_COMMAND } from "#node/product/constants/smoke-command.constant";
 import { PREVIEW_SERVE_COMMAND } from "#node/product/constants/preview-serve-command.constant";
+import { AddCommand } from "#node/commands/add.command";
 import { AgentsCheckCommand } from "#node/commands/agents-check.command";
+import { AgentsSyncCommand } from "#node/commands/agents-sync.command";
 import { AnyRatchetCommand } from "#node/commands/any-ratchet.command";
 import { AppNativeDepsCommand } from "#node/commands/app-native-deps.command";
 import { ArchitectureMapCommand } from "#node/commands/architecture-map.command";
 import { AuditVerifyCommand } from "#node/commands/audit-verify.command";
 import { CatalogueCompletenessCommand } from "#node/commands/catalogue-completeness.command";
+import { ConsumerGateCommand } from "#node/commands/consumer-gate.command";
 import { CreateCommand } from "#node/commands/create.command";
 import { CyclesCommand } from "#node/commands/cycles.command";
 import { DbMigrateCommand } from "#node/commands/db-migrate.command";
@@ -53,17 +49,20 @@ import { DocStandardCommand } from "#node/commands/doc-standard.command";
 import { DoctorCommand } from "#node/commands/doctor.command";
 import { DuplicateExportsCommand } from "#node/commands/duplicate-exports.command";
 import { DuplicationCommand } from "#node/commands/duplication.command";
+import { LsCommand } from "#node/commands/ls.command";
+import { McpSyncCommand } from "#node/commands/mcp-sync.command";
+import { MobileOnboardCommand } from "#node/commands/mobile-onboard.command";
 import { OpsBootstrapOperatorCommand } from "#node/commands/ops-bootstrap-operator.command";
 import { PromoteCommand } from "#node/commands/promote.command";
+import { PublishCommand } from "#node/commands/publish.command";
 import { SearchReindexCommand } from "#node/commands/search-reindex.command";
 import { SearchStatusCommand } from "#node/commands/search-status.command";
 import { SettingsApplyCommand } from "#node/commands/settings-apply.command";
 import { SettingsDiffCommand } from "#node/commands/settings-diff.command";
 import { SkillLicencesCommand } from "#node/commands/skill-licences.command";
+import { SmokeCommand } from "#node/commands/smoke.command";
 import { StructureCommand } from "#node/commands/structure.command";
-import { addCommand } from "#node/functions/add-command.function";
 import { checkCommand } from "#node/functions/check-command.function";
-import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
 import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommands } from "#node/types/cli-commands.type";
 
@@ -110,20 +109,20 @@ export const COMMANDS: CliCommands = [
   AuditVerifyCommand,
   DEPLOY_COMMAND,
   PromoteCommand,
-  MOBILE_ONBOARD_COMMAND,
-  SMOKE_COMMAND,
+  MobileOnboardCommand,
+  SmokeCommand,
   PREVIEW_SERVE_COMMAND,
   OpsBootstrapOperatorCommand,
-  LS_COMMAND,
+  LsCommand,
   TESTBED_COMMAND,
-  CONSUMER_GATE_COMMAND,
+  ConsumerGateCommand,
   MCP_COMMAND,
-  MCP_SYNC_COMMAND,
+  McpSyncCommand,
   MCP_EXEC_COMMAND,
-  AGENTS_SYNC_COMMAND,
+  AgentsSyncCommand,
   AgentsCheckCommand,
-  addCommand(httpCatalogueClient),
-  PUBLISH_COMMAND,
+  AddCommand,
+  PublishCommand,
   DoctorCommand,
   EAS_PREFLIGHT_COMMAND,
   StructureCommand,
