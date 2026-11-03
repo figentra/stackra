@@ -30,6 +30,7 @@ import { camelCase, pascalCase } from "@stackra/support";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
+import { schemaNamesOf } from "#core/functions/schema-names-of.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
 import { zodOfJsonSchema } from "#core/functions/zod-of-json-schema.function";
 import type { GenError } from "#core/types/gen-error.type";
@@ -83,15 +84,7 @@ function clientFile(service: string, manifest: StackraManifest): string {
   const payloads = new Set(events.map((event) => refKey(event["fields"])));
 
   // One local name per schema key; a name two modules share gets the module as a prefix.
-  const counts = new Map<string, number>();
-  for (const key of Object.keys(schemas)) {
-    const name = key.split(".").pop() ?? key;
-    counts.set(name, (counts.get(name) ?? 0) + 1);
-  }
-  const nameOf = (key: string): string => {
-    const [module = "", name = key] = key.split(".");
-    return (counts.get(name) ?? 0) > 1 ? `${pascalCase(module)}${name}` : name;
-  };
+  const nameOf = schemaNamesOf(Object.keys(schemas));
 
   // Schema constants in dependency order; a cycle reads through `z.lazy`.
   const declarations: string[] = [];

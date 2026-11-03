@@ -42,7 +42,10 @@ describe("jsonSchemaOf", () => {
       properties: Record<string, unknown>;
     };
     expect(view.properties["placedAt"]).toEqual({ type: ["string", "null"], format: "date-time" });
-    expect(view.properties["id"]).toEqual({ type: "string", pattern: "^ord_[0-9A-Za-z]{26}$" });
+    expect(view.properties["id"]).toEqual({
+      type: "string",
+      pattern: "^ord_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$",
+    });
     expect(view.properties["note"]).toEqual({
       type: "string",
       maxLength: 500,
@@ -123,7 +126,7 @@ describe("jsonSchemaOf", () => {
     expect(schema.properties["photo"]).toEqual({
       type: "object",
       required: ["id"],
-      properties: { id: { type: "string", pattern: "^upl_[0-9A-Za-z]{26}$" } },
+      properties: { id: { type: "string", pattern: "^upl_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$" } },
       "x-stackra-type": "upload",
       "x-stackra-bucket": "PhotosBucket",
     });
@@ -159,11 +162,11 @@ describe("jsonSchemaOf", () => {
     };
     expect(schema.properties["principalId"]).toEqual({
       type: "string",
-      pattern: "^[a-z]{2,6}_[0-9A-Za-z]{26}$",
+      pattern: "^[a-z]{2,6}_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$",
     });
     expect(schema.properties["listId"]).toEqual({
       type: "string",
-      pattern: "^(crl|prl)_[0-9A-Za-z]{26}$",
+      pattern: "^(crl|prl)_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$",
     });
   });
 
@@ -224,6 +227,151 @@ describe("jsonSchemaOf", () => {
     });
     expect(schema.properties["audience"]).toEqual({
       anyOf: [{ "x-stackra-schema": "@stackra/iam/contracts#Audience$" }, { type: "null" }],
+    });
+  });
+
+  it("refuses I, L, O and U in a public id body and accepts both cases (EC-06)", () => {
+    const ids: ShapeIR = {
+      ...shape("OrderView"),
+      name: "Ids",
+      base: undefined,
+      fields: ["ord", "any", "union"].map((name) => ({
+        name,
+        optional: false,
+        nullable: false,
+        type:
+          name === "ord"
+            ? { kind: "public_id" as const, prefix: "ord" }
+            : name === "any"
+              ? { kind: "public_id" as const, prefix: "" }
+              : { kind: "public_id" as const, prefix: "", prefixes: ["ord", "inv"] },
+        rules: [],
+      })),
+    };
+    const { properties } = jsonSchemaOf(ids, []) as {
+      properties: Record<string, { pattern: string }>;
+    };
+    const body = "0123456789ABCDEFGHJKMNPQRS".slice(0, 26);
+    for (const [name, prefix] of [
+      ["ord", "ord"],
+      ["any", "xyz"],
+      ["union", "inv"],
+    ] as const) {
+      const pattern = new RegExp(properties[name]?.pattern ?? "");
+      expect(pattern.test(`${prefix}_${body}`)).toBe(true);
+      expect(pattern.test(`${prefix}_${body.toLowerCase()}`)).toBe(true);
+      for (const bad of ["I", "L", "O", "U", "i", "l", "o", "u"])
+        expect(pattern.test(`${prefix}_${bad}${body.slice(1)}`)).toBe(false);
+    }
+  });
+
+  describe("a remote base", () => {
+    const own: ShapeIR = {
+      ...shape("OrderView"),
+      name: "Form",
+      fields: [
+        { name: "note", optional: false, nullable: false, type: { kind: "string" }, rules: [] },
+      ],
+    };
+    const services = [
+      {
+        member: "commerce",
+        manifest: {
+          schemas: {
+            "orders.Line": {
+              type: "object",
+              required: ["sku", "qty"],
+              properties: {
+                sku: { type: "string" },
+                qty: { type: "integer" },
+                note: { type: "null" },
+              },
+            },
+          },
+        },
+      },
+    ] as unknown as NonNullable<Parameters<typeof jsonSchemaOf>[2]>;
+    const on = (derive?: { helper: string; keys: string[] }): ShapeIR => ({
+      ...own,
+      base: { kind: "remote", name: "Line", from: "#stackra/clients/commerce", derive },
+    });
+
+    it("keeps the base's fields and lets its own win", () => {
+      expect(jsonSchemaOf(on(), [], services)).toEqual({
+        type: "object",
+        required: ["sku", "qty", "note"],
+        properties: {
+          sku: { type: "string" },
+          qty: { type: "integer" },
+          note: { type: "string" },
+        },
+      });
+    });
+
+    it("applies pick, omit and partial", () => {
+      const keys = (derive: { helper: string; keys: string[] }): string[] =>
+        Object.keys((jsonSchemaOf(on(derive), [], services) as { properties: object }).properties);
+      expect(keys({ helper: "PickType", keys: ["sku"] })).toEqual(["sku", "note"]);
+      expect(keys({ helper: "OmitType", keys: ["sku"] })).toEqual(["qty", "note"]);
+      expect(jsonSchemaOf(on({ helper: "PartialType", keys: [] }), [], services)).toMatchObject({
+        required: ["note"],
+      });
+    });
+
+    it("finds a short name two producer modules share as <Module><Name>, and the service by folder", () => {
+      const shared = [
+        {
+          member: "commerce",
+          folder: "commerce-api",
+          manifest: {
+            schemas: {
+              "orders.Line": { type: "object", properties: { sku: { type: "string" } } },
+              "billing.Line": { type: "object", properties: { invoiceId: { type: "string" } } },
+            },
+          },
+        },
+      ] as unknown as NonNullable<Parameters<typeof jsonSchemaOf>[2]>;
+      const keysOf = (name: string, from: string): string[] =>
+        Object.keys(
+          (
+            jsonSchemaOf({ ...own, base: { kind: "remote", name, from } }, [], shared) as {
+              properties: object;
+            }
+          ).properties,
+        );
+      expect(keysOf("OrdersLine", "#stackra/clients/commerce")).toEqual(["sku", "note"]);
+      expect(keysOf("BillingLine", "#stackra/clients/commerce-api")).toEqual(["invoiceId", "note"]);
+      expect(keysOf("Line", "#stackra/clients/commerce")).toEqual(["note"]);
+    });
+
+    it("reaches a remote base through a member base chain", () => {
+      const parent: ShapeIR = { ...on(), name: "ParentForm" };
+      const child: ShapeIR = {
+        ...own,
+        name: "ChildForm",
+        base: { kind: "member", name: "ParentForm", module: parent.module },
+        fields: [
+          { name: "extra", optional: true, nullable: false, type: { kind: "string" }, rules: [] },
+        ],
+      };
+      expect(jsonSchemaOf(child, [parent, child], services)).toEqual({
+        type: "object",
+        required: ["sku", "qty", "note"],
+        properties: {
+          sku: { type: "string" },
+          qty: { type: "integer" },
+          note: { type: "string" },
+          extra: { type: "string" },
+        },
+      });
+    });
+
+    it("falls back to its own fields without the service manifest (EC-04)", () => {
+      expect(jsonSchemaOf(on(), [])).toEqual({
+        type: "object",
+        required: ["note"],
+        properties: { note: { type: "string" } },
+      });
     });
   });
 });

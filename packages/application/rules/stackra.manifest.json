@@ -123,7 +123,7 @@
         },
         "ruleSetId": {
           "type": "string",
-          "pattern": "^rset_[0-9A-Za-z]{26}$"
+          "pattern": "^rset_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "consumer": {
           "type": "string"
@@ -162,7 +162,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^rcf_[0-9A-Za-z]{26}$"
+          "pattern": "^rcf_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -180,7 +180,7 @@
       "properties": {
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -198,7 +198,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^rset_[0-9A-Za-z]{26}$"
+          "pattern": "^rset_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",

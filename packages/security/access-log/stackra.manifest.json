@@ -420,11 +420,11 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^acl_[0-9A-Za-z]{26}$"
+          "pattern": "^acl_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     },
@@ -523,11 +523,11 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^aud_[0-9A-Za-z]{26}$"
+          "pattern": "^aud_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     },

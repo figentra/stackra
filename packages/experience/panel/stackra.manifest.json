@@ -419,7 +419,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^view_[0-9A-Za-z]{26}$"
+          "pattern": "^view_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -434,7 +434,7 @@
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     },

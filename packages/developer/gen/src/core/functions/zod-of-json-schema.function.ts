@@ -9,13 +9,17 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0260 (decision 2: the manifest is the one contract source); ADR 0158; ADR 0294 (decision 26).
  */
+import { PUBLIC_ID_BODY } from "#core/constants/public-id-body.constant";
 import type { ZodPrintContext } from "#core/types/zod-print-context.type";
 
 /** A JSON Schema node as the manifest records it. */
 type Schema = Readonly<Record<string, unknown>>;
 
-/** A public id pattern as `jsonSchemaOf` writes it. */
-const PUBLIC_ID = /^\^([a-z]+)_\[0-9A-Za-z\]\{26\}\$$/;
+/** A public id pattern as `jsonSchemaOf` writes it: one prefix, then a body of `PUBLIC_ID_BODIES`. */
+const PUBLIC_ID = /^\^([a-z]+)_(.+)\$$/;
+
+/** The Crockford body, and the looser body of a manifest committed before STA-2060. */
+const PUBLIC_ID_BODIES: ReadonlySet<string> = new Set([PUBLIC_ID_BODY, "[0-9A-Za-z]{26}"]);
 
 /** Whether `value` is a JSON object. */
 function isSchema(value: unknown): value is Schema {
@@ -77,7 +81,8 @@ function typeOf(schema: Schema, type: unknown, context: ZodPrintContext): string
   switch (type) {
     case "string": {
       const pattern = typeof schema["pattern"] === "string" ? schema["pattern"] : undefined;
-      const prefix = pattern === undefined ? undefined : PUBLIC_ID.exec(pattern)?.[1];
+      const match = pattern === undefined ? null : PUBLIC_ID.exec(pattern);
+      const prefix = PUBLIC_ID_BODIES.has(match?.[2] ?? "") ? match?.[1] : undefined;
       if (prefix !== undefined) {
         context.use("@stackra/validation", "publicId");
         return `publicId(${JSON.stringify(prefix)})`;

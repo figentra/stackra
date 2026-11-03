@@ -540,11 +540,11 @@
       "properties": {
         "awardId": {
           "type": "string",
-          "pattern": "^awd_[0-9A-Za-z]{26}$"
+          "pattern": "^awd_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "kindId": {
           "type": "string",
-          "pattern": "^awk_[0-9A-Za-z]{26}$"
+          "pattern": "^awk_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "recipientModel": {
           "type": "string"
@@ -566,11 +566,11 @@
       "properties": {
         "awardId": {
           "type": "string",
-          "pattern": "^awd_[0-9A-Za-z]{26}$"
+          "pattern": "^awd_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "kindId": {
           "type": "string",
-          "pattern": "^awk_[0-9A-Za-z]{26}$"
+          "pattern": "^awk_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "recipientModel": {
           "type": "string"
@@ -601,7 +601,7 @@
       "properties": {
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -629,7 +629,7 @@
         },
         "ruleSetId": {
           "type": ["string", "null"],
-          "pattern": "^rset_[0-9A-Za-z]{26}$"
+          "pattern": "^rset_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "certificateTemplate": {
           "type": ["string", "null"]
@@ -639,7 +639,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^awk_[0-9A-Za-z]{26}$"
+          "pattern": "^awk_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -672,18 +672,18 @@
         },
         "awardId": {
           "type": "string",
-          "pattern": "^awd_[0-9A-Za-z]{26}$"
+          "pattern": "^awd_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
         },
         "id": {
           "type": "string",
-          "pattern": "^awv_[0-9A-Za-z]{26}$"
+          "pattern": "^awv_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -722,11 +722,11 @@
         },
         "kindId": {
           "type": "string",
-          "pattern": "^awk_[0-9A-Za-z]{26}$"
+          "pattern": "^awk_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -764,7 +764,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^awd_[0-9A-Za-z]{26}$"
+          "pattern": "^awd_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",

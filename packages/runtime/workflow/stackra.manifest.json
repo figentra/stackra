@@ -291,7 +291,7 @@
       "properties": {
         "automationId": {
           "type": "string",
-          "pattern": "^wfa_[0-9A-Za-z]{26}$"
+          "pattern": "^wfa_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "key": {
           "type": "string"
@@ -313,7 +313,7 @@
       "properties": {
         "checklistId": {
           "type": "string",
-          "pattern": "^wfc_[0-9A-Za-z]{26}$"
+          "pattern": "^wfc_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "key": {
           "type": "string"
@@ -329,7 +329,7 @@
       "properties": {
         "checklistId": {
           "type": "string",
-          "pattern": "^wfc_[0-9A-Za-z]{26}$"
+          "pattern": "^wfc_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "key": {
           "type": "string"
@@ -370,14 +370,14 @@
         },
         "runId": {
           "type": "string",
-          "pattern": "^wfr_[0-9A-Za-z]{26}$"
+          "pattern": "^wfr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "workflow": {
           "type": "string"
         },
         "automationId": {
           "type": "string",
-          "pattern": "^wfa_[0-9A-Za-z]{26}$"
+          "pattern": "^wfa_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "status": {
           "$ref": "#/schemas/workflow.WorkflowRunStatus"
@@ -394,14 +394,14 @@
         },
         "runId": {
           "type": "string",
-          "pattern": "^wfr_[0-9A-Za-z]{26}$"
+          "pattern": "^wfr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "workflow": {
           "type": "string"
         },
         "automationId": {
           "type": "string",
-          "pattern": "^wfa_[0-9A-Za-z]{26}$"
+          "pattern": "^wfa_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     },
@@ -439,7 +439,7 @@
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -488,7 +488,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^wfa_[0-9A-Za-z]{26}$"
+          "pattern": "^wfa_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -516,14 +516,14 @@
       "properties": {
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
         },
         "checklistId": {
           "type": "string",
-          "pattern": "^wfc_[0-9A-Za-z]{26}$"
+          "pattern": "^wfc_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "step": {
           "type": "string"
@@ -536,7 +536,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^wfp_[0-9A-Za-z]{26}$"
+          "pattern": "^wfp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -557,7 +557,7 @@
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -589,7 +589,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^wfc_[0-9A-Za-z]{26}$"
+          "pattern": "^wfc_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -632,7 +632,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^wfk_[0-9A-Za-z]{26}$"
+          "pattern": "^wfk_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",

@@ -1198,7 +1198,7 @@
       "properties": {
         "subject": {
           "type": "string",
-          "pattern": "^usr_[0-9A-Za-z]{26}$"
+          "pattern": "^usr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "at": {
           "type": "string"
@@ -1211,7 +1211,7 @@
       "properties": {
         "subject": {
           "type": "string",
-          "pattern": "^usr_[0-9A-Za-z]{26}$"
+          "pattern": "^usr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "dueAt": {
           "type": "string"
@@ -1224,7 +1224,7 @@
       "properties": {
         "subject": {
           "type": "string",
-          "pattern": "^usr_[0-9A-Za-z]{26}$"
+          "pattern": "^usr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "erasureId": {
           "type": "string"
@@ -1240,7 +1240,7 @@
         },
         "principal": {
           "type": "string",
-          "pattern": "^usr_[0-9A-Za-z]{26}$"
+          "pattern": "^usr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "purpose": {
           "$ref": "#/schemas/identity.AppApprovalPurpose"
@@ -1265,7 +1265,7 @@
         },
         "principal": {
           "type": "string",
-          "pattern": "^usr_[0-9A-Za-z]{26}$"
+          "pattern": "^usr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "purpose": {
           "$ref": "#/schemas/identity.AppApprovalPurpose"
@@ -1287,7 +1287,7 @@
         },
         "principal": {
           "type": "string",
-          "pattern": "^usr_[0-9A-Za-z]{26}$"
+          "pattern": "^usr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "purpose": {
           "$ref": "#/schemas/identity.AppApprovalPurpose"
