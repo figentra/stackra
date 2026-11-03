@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `reportFindings(io, findings, clean?)`, how every repository check command (`cycles`, `any-ratchet`,
+ * Purpose: `reportFindings(io, findings, clean)`, how every repository check command (`cycles`, `any-ratchet`,
  *          `doc-standard`, `agents check`, …) reports: each finding a failed checklist row named by its folder (or by
  *          its text when it has none), the clean line when there is none, and the findings array itself as the `--json`
  *          data. Returns the exit code: 1 on any finding, else 0.
@@ -24,7 +24,7 @@ import type { DirFinding } from "#node/types/dir-finding.type";
 export function reportFindings(
   io: CommandIo,
   findings: readonly DirFinding[],
-  clean?: string,
+  clean: string,
 ): number {
   if (io.json) io.output.json(findings);
   else if (findings.length > 0)
@@ -35,6 +35,6 @@ export function reportFindings(
           : { name: dir, status: "fail" as const, detail: text },
       ),
     });
-  else if (clean !== undefined) io.output.success(clean);
+  else io.output.success(clean);
   return findings.length > 0 ? 1 : 0;
 }
