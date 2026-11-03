@@ -1,0 +1,21 @@
+{
+  "slug": "bento-grid-block",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "BentoGridBlock",
+  "parts": ["BentoGridBlock"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 420
+    }
+  ],
+  "related": ["free/bento-card", "free/feature-section", "free/dither-art"],
+  "tokens": ["radius.lg", "color.surface", "color.border"],
+  "keywords": ["bento", "grid", "cards", "marketing", "landing", "kit"],
+  "status": "new"
+}
