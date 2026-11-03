@@ -9,5 +9,9 @@
 /* The native components of @stackra/ui: their class names are generated only when Tailwind scans their source. */
 @source "../../../packages/design-system/ui/src/native";
 /* The module UI kits' native blocks (ADR 0504) carry their own class names the same way. */
+@source "../../../packages/communication/notifications/src/native";
+@source "../../../packages/experience/navigation/src/native";
+@source "../../../packages/state/theming/src/native";
+@source "../../../packages/experience/panel/src/native";
 @source "../../../packages/security/identity/src/native";
 @source "../../../packages/security/tenancy/src/native";

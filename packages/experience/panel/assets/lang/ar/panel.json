@@ -146,12 +146,46 @@
       "jsonl": "JSON Lines",
       "pdf": "PDF"
     },
+    "field_control": {
+      "text": "نص",
+      "textarea": "منطقة نص",
+      "email": "بريد إلكتروني",
+      "password": "كلمة مرور",
+      "url": "رابط",
+      "number": "رقم",
+      "money": "مبلغ",
+      "select": "قائمة اختيار",
+      "multi-select": "اختيار متعدد",
+      "radio": "أزرار اختيار",
+      "switch": "مفتاح تبديل",
+      "checkbox": "خانة اختيار",
+      "date": "تاريخ",
+      "date-range": "نطاق تاريخ",
+      "time": "وقت",
+      "slider": "شريط تمرير",
+      "combo-box": "مربع تحرير وسرد",
+      "entity": "منتقي سجل",
+      "upload": "رفع ملف",
+      "repeater": "حقول متكررة",
+      "setting": "إعداد"
+    },
     "filter_comparison": {
       "gt": "أكبر من",
       "gte": "أكبر من أو يساوي",
       "lt": "أصغر من",
       "lte": "أصغر من أو يساوي",
       "ne": "لا يساوي"
+    },
+    "filter_kind": {
+      "text": "نص",
+      "number": "رقم",
+      "date": "تاريخ",
+      "date-range": "نطاق تاريخ",
+      "boolean": "نعم أو لا",
+      "choice": "اختيار",
+      "multi-choice": "عدة اختيارات",
+      "principal": "شخص",
+      "time-range": "نطاق زمني"
     },
     "import_mode": {
       "create": "إنشاء سجلات جديدة",

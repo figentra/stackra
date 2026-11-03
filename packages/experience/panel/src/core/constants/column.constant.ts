@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `Column`, the data constructors of a table column, as a generated resource table writes them
  *          (`Column.money("totals.totalMinor", { currency: "totals.currency", sortable: true })`).
- * Boundary: pure: each returns a frozen `ColumnNode`. The table builder records through the same constructors, so an
+ * Boundary: pure: each returns a frozen `ColumnNode`; the look fields (`align`, `cell`, `tones`, ...) pass through. The table builder records through the same constructors, so an
  *           authored table and a generated one hold the same nodes.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rules 1, 2 and 13).
@@ -12,11 +12,8 @@ import type { I18nKey } from "@stackra/i18n";
 
 import type { ColumnNode } from "#core/types/column-node.type";
 
-/** The flags a column takes. */
-interface ColumnOptions {
-  readonly copyable?: boolean;
-  readonly sortable?: boolean;
-  readonly hidden?: boolean;
+/** The flags a column takes, its `TableColumnSpec` look among them. */
+interface ColumnOptions extends Omit<ColumnNode, "kind" | "key" | "currency" | "enum" | "labels"> {
   readonly enum?: Enum.Any;
   readonly labels?: Readonly<Record<string, I18nKey>>;
 }
