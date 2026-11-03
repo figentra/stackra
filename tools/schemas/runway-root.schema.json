@@ -1894,7 +1894,7 @@
           "type": "string",
           "minLength": 1,
           "examples": ["entitlement:academorix:white-label"],
-          "description": "Not read yet (STA-2002). The entitlement that turns white-labelling on for a tenant."
+          "description": "The entitlement a scope must hold for a white-label build; the mobile job refuses the build without it."
         },
         "modes": {
           "type": "array",
