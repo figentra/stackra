@@ -26,7 +26,7 @@
       "anonymous": true,
       "endpoint": {
         "method": "POST",
-        "path": "/consent/snapshots",
+        "path": "/public/consent/snapshots",
         "derived": false
       },
       "toolOff": "an agent acts under its principal's consent, never a visitor's browser decision",

@@ -21,9 +21,10 @@
       "permission": "media.upload.create",
       "risk": "L1",
       "actors": ["user", "agent"],
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/uploads",
+        "path": "/app/uploads",
         "derived": true
       },
       "tool": {

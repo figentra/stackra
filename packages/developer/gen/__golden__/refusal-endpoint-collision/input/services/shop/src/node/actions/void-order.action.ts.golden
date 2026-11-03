@@ -1,0 +1,15 @@
+import { Action } from "@stackra/actions";
+
+import { CancelOrderInput } from "#node/schemas/cancel-order-input.schema";
+import { CancelOrderOutput } from "#node/schemas/cancel-order-output.schema";
+
+// The route shape of `order.cancel`'s derived `PUT /app/orders/:orderId/cancel`: endpoint_collision for both.
+export class VoidOrderAction extends Action({
+  key: "order.void",
+  actors: ["user"],
+  endpoint: { method: "PUT", path: "/app/orders/:id/cancel" },
+}) {
+  async handle(_input: CancelOrderInput): Promise<CancelOrderOutput> {
+    return CancelOrderOutput.create({ status: "cancelled", cancelledAt: null });
+  }
+}

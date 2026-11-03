@@ -33,19 +33,21 @@ A raw endpoint that is not an action (`/api/auth/*`, streaming) is a class that 
 the module's `raw/` group; the `@Controller` decorator is retired (ADR 0294). An inbound webhook is a `WebhookEvent<Integration>({ type })`
 class (ADR 0308).
 
-| Key                                    | Route                       |
-| -------------------------------------- | --------------------------- |
-| `x.list`                               | `GET /xs`                   |
-| `x.get`                                | `GET /xs/:xId`              |
-| `x.create`                             | `POST /xs`                  |
-| `x.update`                             | `PATCH /xs/:xId`            |
-| `x.delete`                             | `DELETE /xs/:xId`           |
-| Any other action verb, input has `xId` | `PUT /xs/:xId/<verb-kebab>` |
-| Any other action verb, otherwise       | `POST /xs/<verb-kebab>`     |
-| Any other query name                   | `GET /xs/<name-kebab>`      |
+| Key                                    | Route                              |
+| -------------------------------------- | ---------------------------------- |
+| `x.list`                               | `GET /<area>/xs`                   |
+| `x.get`                                | `GET /<area>/xs/:xId`              |
+| `x.create`                             | `POST /<area>/xs`                  |
+| `x.update`                             | `PATCH /<area>/xs/:xId`            |
+| `x.delete`                             | `DELETE /<area>/xs/:xId`           |
+| Any other action verb, input has `xId` | `PUT /<area>/xs/:xId/<verb-kebab>` |
+| Any other action verb, otherwise       | `POST /<area>/xs/<verb-kebab>`     |
+| Any other query name                   | `GET /<area>/xs/<name-kebab>`      |
 
-`endpoint: { method, path }` overrides the route and `endpoint: false` removes it. An action whose actors include
-neither a user nor an agent gets no public endpoint.
+`<area>` is the call's API area (`public`, `app`, `admin` or `platform`, ADR 0082), `app` when it writes no `area`;
+the edge routes by it (ADR 0237). `endpoint: { method, path }` overrides the route and must stay under `/<area>`,
+without a version segment; `endpoint: false` removes it. An action whose actors include neither a user nor an agent
+gets no public endpoint. The manifest records every call's area.
 
 ```typescript
 // src/modules/orders/schemas/cancel-order-input.schema.ts — the input, one declaration per file (ADR 0305)
@@ -55,7 +57,7 @@ export class CancelOrderInput extends Schema {
 ```
 
 ```typescript
-// src/modules/orders/actions/cancel-order.action.ts — orders.order.cancel@1, PUT /orders/:orderId/cancel
+// src/modules/orders/actions/cancel-order.action.ts — orders.order.cancel@1, PUT /app/orders/:orderId/cancel
 import type { CancelOrderInput } from "#modules/orders/schemas/cancel-order-input.schema";
 import type { CancelOrderOutput } from "#modules/orders/schemas/cancel-order-output.schema";
 
@@ -157,9 +159,13 @@ Never build HTTP responses by hand and never import `APIError` in a service.
 ## Enforcement
 
 - `stackra validate --repository` (`checkService`) refuses Encore files in a service (ADR 0124)
-- planned — STA-340: the gen checks for an endpoint collision, GET on an action or non-GET on a query, a query above
-  L1, `cache` on an action and a precondition on a query; until gen ships, review (`api-contract-reviewer`) checks this
-  rule
+- `stackra gen` (`checkEndpoints`, STA-340) refuses an endpoint collision (`endpoint_collision`), a versioned path
+  (`endpoint_versioned`), a route outside its area (`endpoint_area_mismatch`), GET on an action, non-GET on a query or
+  a transition off `PUT` (`endpoint_method_mismatch`), a `job` without the system or job actor
+  (`job_without_system_actor`), a cron input its input schema rejects (`cron_input_invalid`) and `intent: true`
+  without phrases (`intent_phrases_missing`)
+- planned — STA-340: the gen checks for a query above L1, `cache` on an action and a precondition on a query; until
+  gen ships them, review (`api-contract-reviewer`) checks them
 
 ## See Also
 

@@ -43,7 +43,7 @@
         }
       }
     },
-    "/account-deletions/cancel": {
+    "/app/account-deletions/cancel": {
       "post": {
         "operationId": "identity_account_deletion_cancel",
         "summary": "CancelAccountDeletionAction",
@@ -79,7 +79,7 @@
         }
       }
     },
-    "/passkeys/{passkeyId}/confirm": {
+    "/app/passkeys/{passkeyId}/confirm": {
       "put": {
         "operationId": "identity_passkey_confirm",
         "summary": "ConfirmPasskeyAction",
@@ -125,7 +125,7 @@
         }
       }
     },
-    "/account-deletions/request": {
+    "/app/account-deletions/request": {
       "post": {
         "operationId": "identity_account_deletion_request",
         "summary": "DeleteMyAccountAction",
@@ -161,7 +161,7 @@
         }
       }
     },
-    "/sessions/end-all": {
+    "/app/sessions/end-all": {
       "post": {
         "operationId": "identity_session_end_all",
         "summary": "EndAllMySessionsAction",
@@ -197,7 +197,7 @@
         }
       }
     },
-    "/sessions/{sessionId}/end": {
+    "/app/sessions/{sessionId}/end": {
       "put": {
         "operationId": "identity_session_end",
         "summary": "EndMySessionAction",
@@ -243,7 +243,7 @@
         }
       }
     },
-    "/sessions/end-user": {
+    "/app/sessions/end-user": {
       "post": {
         "operationId": "identity_session_end_user",
         "summary": "EndUserSessionsAction",
@@ -279,7 +279,7 @@
         }
       }
     },
-    "/passkeys/register": {
+    "/app/passkeys/register": {
       "post": {
         "operationId": "identity_passkey_register",
         "summary": "RegisterPasskeyAction",
@@ -315,7 +315,7 @@
         }
       }
     },
-    "/sessions": {
+    "/app/sessions": {
       "get": {
         "operationId": "identity_session_list",
         "summary": "ListMySessionsQuery",
@@ -340,7 +340,7 @@
         }
       }
     },
-    "/account-deletions/read": {
+    "/app/account-deletions/read": {
       "get": {
         "operationId": "identity_account_deletion_read",
         "summary": "ShowAccountDeletionQuery",

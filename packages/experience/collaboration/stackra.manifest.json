@@ -21,9 +21,10 @@
       "permission": "collaboration.room.publish",
       "risk": "L1",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/rooms/publish",
+        "path": "/app/rooms/publish",
         "derived": true
       },
       "toolOff": "a room message is a live editor's, not something an agent sends as a tool call",

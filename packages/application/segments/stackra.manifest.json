@@ -21,6 +21,7 @@
       "permission": "segments.segment.recompute",
       "risk": "L1",
       "actors": ["job"],
+      "area": "app",
       "job": {
         "timeout": "15m",
         "cron": {

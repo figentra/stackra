@@ -36,6 +36,7 @@ export { diffSchemas } from "#core/functions/diff-schemas.function";
 export { blockKey } from "#core/functions/block-key.function";
 export { buildManifest } from "#core/functions/build-manifest.function";
 export { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
+export { checkEndpoints } from "#core/functions/check-endpoints.function";
 export { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 export { checkModelScope } from "#core/functions/check-model-scope.function";
 export { checkApproval } from "#core/functions/check-approval.function";

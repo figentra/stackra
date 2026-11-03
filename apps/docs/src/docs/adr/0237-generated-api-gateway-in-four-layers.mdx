@@ -67,7 +67,7 @@ A gateway in front of the services was rejected in ADR 0011. The owner's answer 
 
 ## Enforcement
 
-planned — gen fails on a route with no area, and the middleware order is checked by the Explorer's conformance test (ADR 0144).
+`stackra gen` gives every route its area: a derived path starts with `/<area>` (`app` when none is written), and an override outside its area is refused (`endpoint_area_mismatch`, STA-340). Planned: the middleware order is checked by the Explorer's conformance test (ADR 0144).
 
 ## Supersedes and sources
 

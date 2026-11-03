@@ -69,6 +69,8 @@ const FIXTURES: readonly GoldenFixture[] = [
   { name: "refusal-tool-reason", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-encore-stray", base: "service", members: ["services/shop"] },
   { name: "refusal-encore-missing", base: "service", members: ["services/shop"] },
+  // A second action on the derived route's shape: `endpoint_collision` for both, nothing written (STA-340).
+  { name: "refusal-endpoint-collision", base: "service", members: ["services/shop"] },
   { name: "refusal-docs-misplaced", base: "docs", members: ["apps/handbook"] },
   { name: "refusal-docs-config", base: "docs", members: ["apps/handbook"] },
   // The producer is not generated, so it has no manifest: `client_service_unknown`, manifest still written.

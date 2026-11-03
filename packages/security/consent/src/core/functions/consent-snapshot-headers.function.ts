@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `consentSnapshotHeaders(options)`, the client half of the consent endpoint (ADR 0472 decisions 1 and 3): a
  *          function a `ClientSession.headers()` spreads, which answers `{ "Stackra-Consent": token }` with a snapshot
- *          the consent endpoint signed (`POST /consent/snapshots`), fetched again when the decision changed or the
+ *          the consent endpoint signed (`POST /public/consent/snapshots`), fetched again when the decision changed or the
  *          snapshot is a minute from expiry.
  * Boundary: holds one snapshot per function in memory and never stores it. Concurrent calls share one fetch. A failed
  *           or malformed answer sends no header (a missing snapshot reads as refused on the server, and never fails

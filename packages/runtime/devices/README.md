@@ -122,7 +122,7 @@ A till queues its calls while offline and replays them in order (ADR 0338 decisi
 `@stackra/query`'s queue stamps on each call, with a per-device sequence; `@stackra/clients` sends both in the
 `DEVICE_ORDER` headers, and `@stackra/actions` applies one device's calls in order and records the last one settled.
 
-`DeviceAcknowledgedQuery` (`GET /devices/acknowledged`, the `DEVICE_ORDER.acknowledgedQuery` key) answers that last
+`DeviceAcknowledgedQuery` (`GET /app/devices/acknowledged`, the `DEVICE_ORDER.acknowledgedQuery` key) answers that last
 acknowledged sequence. With no input it answers for the calling device, which the transport verified from the
 `DEVICE_ORDER.deviceHeader`; the client reads it as proof of a sync. With `{ deviceId }` it answers another device's,
 only when that device's last settled call acted within the caller's scope, so a shop can see what a lost or revoked

@@ -31,12 +31,13 @@
       "permission": "access_log.audit_log_entry.export",
       "risk": "L2",
       "actors": ["user", "service", "system"],
+      "area": "app",
       "job": {
         "timeout": "15m"
       },
       "endpoint": {
         "method": "POST",
-        "path": "/audit-log-entries/export",
+        "path": "/app/audit-log-entries/export",
         "derived": true
       },
       "tool": {
@@ -65,6 +66,7 @@
       "permission": "access_log.access_log_entry.purge",
       "risk": "L2",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "5m",
@@ -89,9 +91,10 @@
       "permission": "access_log.audit_log_entry.read",
       "risk": "L1",
       "actors": ["user", "service"],
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/audit-log-entries/search",
+        "path": "/app/audit-log-entries/search",
         "derived": true
       },
       "tool": {
