@@ -29,6 +29,7 @@ import type {
 describe("@stackra/runway", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(runway).sort()).toEqual([
+      "APPROVED_POSTGRES_EXTENSIONS",
       "AppleCapability",
       "AppleDeveloper",
       "CacheEviction",
@@ -39,6 +40,7 @@ describe("@stackra/runway", () => {
       "GoogleProjectState",
       "OnboardStepState",
       "PlayConsole",
+      "PostgresExtension",
       "PreviewDatabaseBrancher",
       "PreviewDatabaseSource",
       "RequirementEngine",

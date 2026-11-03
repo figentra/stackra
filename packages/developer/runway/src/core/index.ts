@@ -7,7 +7,8 @@
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
- *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), the `SmokeDriver` port of the smoke
+ *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), the approved Postgres extensions (`PostgresExtension`,
+ *          `APPROVED_POSTGRES_EXTENSIONS`, ADR 0160), the `SmokeDriver` port of the smoke
  *          step (STA-265), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
@@ -15,12 +16,14 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
 export { RunwayConfig } from "#config/runway.config";
+export { APPROVED_POSTGRES_EXTENSIONS } from "#core/constants/approved-postgres-extensions.constant";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
 export { AppleCapability } from "#core/enums/apple-capability.enum";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
 export { DeployKind } from "#core/enums/deploy-kind.enum";
 export { GoogleProjectState } from "#core/enums/google-project-state.enum";
 export { OnboardStepState } from "#core/enums/onboard-step-state.enum";
+export { PostgresExtension } from "#core/enums/postgres-extension.enum";
 export { PreviewDatabaseSource } from "#core/enums/preview-database-source.enum";
 export { ResourceKind } from "#core/enums/resource-kind.enum";
 export { ResourceSize } from "#core/enums/resource-size.enum";

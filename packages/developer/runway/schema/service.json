@@ -168,8 +168,20 @@
             },
             "extensions": {
               "type": "array",
-              "description": "Postgres extensions the service needs, from the approved list (ADR 0160).",
-              "items": { "type": "string" },
+              "description": "Postgres extensions the service needs, from the approved list (ADR 0160). Infra pre-creates them on the service's server and preloads those that need it.",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "vector",
+                  "pg_trgm",
+                  "ltree",
+                  "citext",
+                  "pgcrypto",
+                  "postgis",
+                  "pg_stat_statements",
+                  "btree_gist"
+                ]
+              },
               "examples": [["ltree", "pg_trgm"]]
             },
             "readReplica": {

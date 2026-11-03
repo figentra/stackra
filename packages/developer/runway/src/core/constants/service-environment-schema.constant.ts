@@ -6,14 +6,17 @@
  * Boundary: internal. Strict at its top: a root key (`deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`)
  *           fails here. The size blocks stay open, as the canonical schema leaves them.
  * Runtime: isomorphic
- * Governing contract: ADR 0296 (decision 1), ADR 0238 (logical databases and pool budgets), ADR 0160 (extensions).
+ * Governing contract: ADR 0296 (decision 1), ADR 0238 (logical databases and pool budgets), ADR 0160 (extensions: the
+ *                     approved names, `PostgresExtension`).
  */
+import { Enum } from "@stackra/contracts";
 import { z } from "zod";
 
 import { CONFIG_VALUES_SCHEMA } from "#core/constants/config-values-schema.constant";
 import { OPEN_OBJECT_SCHEMA } from "#core/constants/open-object-schema.constant";
 import { PORT_SCHEMA } from "#core/constants/port-schema.constant";
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
+import { PostgresExtension } from "#core/enums/postgres-extension.enum";
 
 /** One service environment. */
 export const SERVICE_ENVIRONMENT_SCHEMA = z.strictObject({
@@ -25,7 +28,13 @@ export const SERVICE_ENVIRONMENT_SCHEMA = z.strictObject({
       poolBudget: z.int().min(1).optional(),
       plan: z.string().optional(),
       storageGb: z.number().positive().optional(),
-      extensions: z.array(z.string()).optional(),
+      extensions: z
+        .array(
+          z.enum(Enum.values(PostgresExtension) as [PostgresExtension, ...PostgresExtension[]], {
+            error: `Expected an approved extension (ADR 0160): ${Enum.values(PostgresExtension).join(", ")}`,
+          }),
+        )
+        .optional(),
       readReplica: z.boolean().optional(),
     })
     .optional(),

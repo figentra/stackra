@@ -3,7 +3,8 @@
  * Purpose: `awsDatabases(plan, options)`, the Pulumi program part that declares a runtime plan's Postgres resources:
  *          one subnet group, then per database a security group that admits port 5432 only from the runtime's security
  *          groups and the workloads' group, the RDS instance (or the Aurora cluster and its instances) encrypted with automated backups, and RDS
- *          Proxy in front with TLS required. RDS Proxy logs in with a Secrets Manager secret, so the admin password is
+ *          Proxy in front with TLS required. A database whose plan preloads extensions gets its own parameter group
+ *          (a cluster parameter group on Aurora) setting `shared_preload_libraries`, applied at the next reboot. RDS Proxy logs in with a Secrets Manager secret, so the admin password is
  *          also stored there for the proxy alone, read by a role only RDS Proxy may assume.
  * Boundary: declares resources only, inside the Pulumi program that calls it; only the owner applies them. The
  *           password arrives as a Pulumi secret input per database (generated in the deploy job and written blind to
@@ -11,7 +12,8 @@
  *           protection and no final snapshot; staging and production keep both.
  * Runtime: node
  * Governing contract: ADR 0493 (decisions 2 and 4), ADR 0238 (RDS by default), ADR 0473 (RDS Proxy), ADR 0186
- *                     (decision 1: point-in-time recovery), ADR 0172 (decision 5: tags), ADR 0173.
+ *                     (decision 1: point-in-time recovery), ADR 0172 (decision 5: tags), ADR 0173, ADR 0160 (note of
+ *                     2026-11-03: the preload).
  */
 /* oxlint-disable no-new -- reason: Pulumi registers a resource when it is constructed; that is the point */
 import * as aws from "@pulumi/aws";
@@ -112,14 +114,35 @@ export function awsDatabases(
       copyTagsToSnapshot: true,
     };
 
+    // shared_preload_libraries is static: it takes effect at the next reboot, never mid-deploy.
+    const preload =
+      database.preloadLibraries.length === 0
+        ? undefined
+        : {
+            name: database.name,
+            family: `${database.engine === "aurora" ? "aurora-postgresql" : "postgres"}${database.version.split(".")[0]}`,
+            description: `${database.key}: shared_preload_libraries ${database.preloadLibraries.join(",")}`,
+            parameters: [
+              {
+                name: "shared_preload_libraries",
+                value: database.preloadLibraries.join(","),
+                applyMethod: "pending-reboot",
+              },
+            ],
+            tags,
+          };
+
     let target:
       | { dbInstanceIdentifier: pulumi.Output<string> }
       | { dbClusterIdentifier: pulumi.Output<string> };
     if (database.engine === "aurora") {
+      const parameters =
+        preload === undefined ? undefined : new aws.rds.ClusterParameterGroup(database.name, preload);
       const cluster = new aws.rds.Cluster(database.name, {
         clusterIdentifier: database.name,
         engine: "aurora-postgresql",
         engineVersion: database.version,
+        dbClusterParameterGroupName: parameters?.name,
         masterUsername: ADMIN_USER,
         masterPassword: password,
         ...network,
@@ -138,10 +161,13 @@ export function awsDatabases(
         });
       target = { dbClusterIdentifier: cluster.id };
     } else {
+      const parameters =
+        preload === undefined ? undefined : new aws.rds.ParameterGroup(database.name, preload);
       const instance = new aws.rds.Instance(database.name, {
         identifier: database.name,
         engine: "postgres",
         engineVersion: database.version,
+        parameterGroupName: parameters?.name,
         instanceClass: database.instanceClass,
         allocatedStorage: database.storageGb,
         multiAz: database.multiAz,
