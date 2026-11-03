@@ -14,10 +14,10 @@ description: "Tasks for STA-2066: the sort and filter index checks judge this ru
 
 **Independent Test**: `generateMember` with a recorded tree and no committed manifest.
 
-- [ ] T001 [US1] Tests first: a tree read this run refuses with no committed manifest; a tree only the committed manifest holds does not in `packages/developer/gen/src/core/functions/__tests__/check-table-indexes.function.test.ts` — covers: FR-001, FR-002, P-001, P-002, AC-001, AC-002 — route: tests
-- [ ] T002 [US1] Pass this run's manifest and rename the parameter in `packages/developer/gen/src/core/functions/generate-member.function.ts` and `packages/developer/gen/src/core/functions/check-table-indexes.function.ts` — covers: FR-001, FR-002, AC-001, AC-002 — route: spec-task — deps: T001
+- [x] T001 [US1] Tests first: a tree read this run refuses with no committed manifest; a tree only the committed manifest holds does not in `packages/developer/gen/src/core/functions/__tests__/check-table-indexes.function.test.ts` — covers: FR-001, FR-002, P-001, P-002, AC-001, AC-002 — route: tests
+- [x] T002 [US1] Pass this run's manifest and rename the parameter in `packages/developer/gen/src/core/functions/generate-member.function.ts` and `packages/developer/gen/src/core/functions/check-table-indexes.function.ts` — covers: FR-001, FR-002, AC-001, AC-002 — route: spec-task — deps: T001
 
 ## Phase 2: Polish
 
-- [ ] T003 [P] Patch changeset for gen in `.changeset/table-index-checks-current.md` — covers: SC-001, AC-001 — route: steward-changesets — deps: T002
+- [x] T003 [P] Patch changeset for gen in `.changeset/table-index-checks-current.md` — covers: SC-001, AC-001 — route: steward-changesets — deps: T002
 - [ ] T004 Gate on ci-box: gen test, typecheck, lint in `packages/developer/gen/src/core/functions/__tests__/check-table-indexes.function.test.ts` — covers: SC-001, AC-001, AC-002 — route: verify-fix — deps: T002, T003

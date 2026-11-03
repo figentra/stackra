@@ -29,7 +29,7 @@
  *           `model_tenancy_missing`, stackra-258) or a site-cached query that reads its caller
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
- *           `surface_targets_conflict`, ADR 0436) or a recorded resource table that sorts or filters on an unindexed path
+ *           `surface_targets_conflict`, ADR 0436) or a resource table recorded this run that sorts or filters on an unindexed path
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
  *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) on the full pass only. An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
@@ -185,7 +185,8 @@ export function generateMember(
     ...checkQueryCache(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
-    ...checkTableIndexes(ir, previous),
+    // This run's recorded trees, so an unindexed path is refused in the run that adds it (ADR 0307 rule 2).
+    ...checkTableIndexes(ir, manifest),
     // One panel resource key recorded by two classes across the host's dependencies (STA-1947).
     ...(ir.layout === "app" ? hostResourcesOf(ir).errors : []),
     // One route or menu key two owners ship, or the app's own too (STA-1947).
