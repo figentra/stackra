@@ -2,12 +2,12 @@
 # Purpose: the job that runs Runway's `cloudflare-workers` provider (@stackra/runway, ADR 0352 decision 1) for one
 #          Worker member of the root runway.yaml (`targets.cloudflare-workers.members.<member>`), a reusable workflow
 #          so each caller keeps its own GitHub environment. Checks out the commit, refuses one that is not on main,
-#          tests the member, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
+#          builds what the member needs, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
 #          swaps the binding ids, applies D1 migrations, uploads a version with the commit as the message and its secrets on
 #          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml.
 # Secrets: none in the repository. CLOUDFLARE_API_TOKEN (core's own token, scoped to its Workers, ADR 0519) from Infisical `/ci`, and the one `secret-name` from
 #          `secret-path`, through GitHub OIDC; the turbo values from `/ci/turbo` (TURBO_TOKEN among them). Without an
-#          identity id the job tests, prints a notice and deploys nothing.
+#          identity id the job builds, prints a notice and deploys nothing.
 # Owner: release-operations
 name: Runway cloudflare-workers
 
@@ -150,22 +150,21 @@ jobs:
           secret-path: /ci/turbo
           export-type: env
 
-      # A caller's own Quality Gate runs in a separate workflow this one cannot wait on, so the member is tested here
-      # and a broken build never reaches Cloudflare. `--only` runs gen and test for this member alone: the root
-      # //#gen:workspace they depend on walks every member, and the ones left uninstalled fail it. The CLI built here
-      # runs the deploy.
-      - name: Test
+      # Tests run on the box, not here (STA-2064). This builds the member's dependencies and the CLI that runs the
+      # deploy, then the member's own gen with `--only`: a plain `gen` would wait on the root //#gen:workspace, which
+      # walks every member and fails on the ones left uninstalled (STA-1987). `stackra deploy` builds the member.
+      - name: Build
         env:
           PACKAGE: ${{ inputs.package }}
         run: |
           pnpm turbo run build --filter="$PACKAGE^..." --filter=@stackra/cli...
-          pnpm turbo run gen test --filter="$PACKAGE" --only
+          pnpm turbo run gen --filter="$PACKAGE" --only
 
       - name: Deploy prerequisites missing
         if: env.INFISICAL_IDENTITY_ID == ''
         run: >-
           echo "::notice title=Deploy skipped::No Infisical identity id was passed (infisical-identity-id).
-          Tested, nothing deployed."
+          Built, nothing deployed."
 
       # Exchanges this job's OIDC token for Infisical access and exports only CLOUDFLARE_API_TOKEN; the secret-name
       # filter keeps every other /ci value out of the job.

@@ -1,7 +1,7 @@
 # Stackra file contract:
 # Purpose: deploy workers/registry (the `stackra-registry` Cloudflare Worker, npm.stackra.figentra.com, ADR 0453), the
 #          `registry` member of runway.yaml, through Runway's `cloudflare-workers` provider (runway-cloudflare-workers.yml,
-#          ADR 0352 decision 1): test, put the real D1 and KV ids into wrangler.jsonc on the runner, apply the D1
+#          ADR 0352 decision 1): build, put the real D1 and KV ids into wrangler.jsonc on the runner, apply the D1
 #          migrations (remote), deploy with REGISTRY_READ_ONLY, set the REGISTRY_SIGNING_KEY Worker secret, then check
 #          /-/ping and /-/npm/v1/keys. Runs on main pushes that touch the member or this file, and by hand (or
 #          `pnpm runway promote <sha>`) for a given commit of main.
@@ -14,7 +14,7 @@
 # Owner: release-operations
 # Secrets: none in the repository. CLOUDFLARE_API_TOKEN from Infisical `prod` `/ci` and REGISTRY_SIGNING_KEY from
 #          Infisical `prod` `/ci/registry`, both through GitHub OIDC with the identity INFISICAL_REGISTRY_IDENTITY_ID (a
-#          `registry` environment variable, not a secret). Without the identity id the job tests, prints a notice and
+#          `registry` environment variable, not a secret). Without the identity id the job builds, prints a notice and
 #          deploys nothing, so main stays green until the owner has run the runbook.
 name: Deploy registry
 

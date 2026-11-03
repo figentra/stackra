@@ -30,12 +30,20 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
   ContextMenu:
     "@stackra/navigation's native long-press menu on a navigation item vs @stackra/ui's web context menu component",
   ContextMenuProps: "the props of the two ContextMenu components above",
+  CreateCommand:
+    "@stackra/console's `stackra-console create` command class vs @stackra/cli's `stackra create`, which goes when stackra moves onto the console (STA-1966)",
   Meter: "@stackra/model's usage-meter decorator vs @stackra/ui's native meter component",
   Platform: "@stackra/platform's device platform port vs the showcase's web/native platform enum",
+  RenderContext:
+    "@stackra/console's per-run terminal driver context (mode, theme, streams) vs @stackra/experience's document render context (locale, block handlers)",
+  Renderer:
+    "@stackra/console's terminal output port vs @stackra/experience's L2-document-to-elements port (web and native); neither package may import the other",
   STACKRA_THEME:
     "@stackra/console's terminal theme (an ASCII logo, a gradient, an accent, a glyph) vs @stackra/tokens' design-system theme",
   Spinner:
     "@stackra/console's running-spinner handle (update, stop) vs @stackra/ui's native spinner component",
+  TableColumn:
+    "@stackra/console's terminal table column contract (row key, kind, alignment) vs @stackra/ui's Table component column (sort, width, pin)",
   findCommand:
     "@stackra/console's lookup in a registry of Command classes vs @stackra/cli's lookup in its CliCommand list, which goes when stackra moves onto the console (STA-1966)",
   runCommand:
@@ -68,4 +76,11 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so its Stat computes its own change; @stackra/panel's is the panel widget's",
   periodOf:
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so its period picker resolves its own period; @stackra/actions' is the action input's",
+  // A port's shape and the store that persists it, or a stand-in where the owner cannot be a dependency.
+  ApprovalBinding:
+    "@stackra/actions' contract type of a parked call vs @stackra/tenancy's model that stores it for the approval-binding store; the model's name derives its locked key and table (ADR 0509)",
+  StepUpRequiredError:
+    "@stackra/actions' testing stand-in for its memory ActorStatusCheck, since actions cannot depend on @stackra/identity, whose refusal of the same code is the real one",
+  DatabaseRunner:
+    "@stackra/cli declares the runner shape it needs and loads @stackra/database/node from the member at run time, so the CLI never depends on MikroORM; the database package's service is the real runner",
 });

@@ -1,7 +1,7 @@
 # Stackra file contract:
 # Purpose: deploy workers/turbo-cache (the `stackra-turbo-cache` Cloudflare Worker, turbo.stackra.figentra.com, the
 #          Turborepo remote cache of ADR 0026), the `turbo-cache` member of runway.yaml, through Runway's
-#          `cloudflare-workers` provider (runway-cloudflare-workers.yml, ADR 0352 decision 1): test, deploy, set the
+#          `cloudflare-workers` provider (runway-cloudflare-workers.yml, ADR 0352 decision 1): build, deploy, set the
 #          TURBO_CACHE_TOKEN Worker secret from CI's TURBO_TOKEN, then check `GET /v8/artifacts/status` with that token
 #          as the bearer. Runs on main pushes that touch the member or this file, and by hand (or
 #          `pnpm runway promote <sha>`) for a given commit of main; never on a pull request.
@@ -16,7 +16,7 @@
 #          one deploy-static.yml and deploy-docs.yml use; TURBO_TOKEN comes from ci-build `/ci/turbo` with the turbo
 #          variables, its one home (ADR 0512). Its trust names environment subjects, so this job runs in the `static`
 #          environment (main and schemas@* tags only), whose subject that identity already trusts: no new identity and
-#          no new trust. Without the identity id the job tests, prints a notice and deploys nothing.
+#          no new trust. Without the identity id the job builds, prints a notice and deploys nothing.
 name: Deploy turbo cache
 
 on:

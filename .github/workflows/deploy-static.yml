@@ -4,7 +4,7 @@
 #          decision 1, ADR 0284). Runs on main and on schema release tags only, never on a pull request; by hand (or
 #          `pnpm runway promote <sha>`) it redeploys a given commit of main. The deployment message is the commit.
 # Secrets: CLOUDFLARE_API_TOKEN comes from Infisical /ci (env prod) through GitHub OIDC inside the provider job. No
-#          repository secret holds it (ADR 0173, ADR 0019 D2). Without INFISICAL_CI_IDENTITY_ID the job tests, prints
+#          repository secret holds it (ADR 0173, ADR 0019 D2). Without INFISICAL_CI_IDENTITY_ID the job builds, prints
 #          a notice and deploys nothing, so main stays green.
 # Owner: release-operations
 
