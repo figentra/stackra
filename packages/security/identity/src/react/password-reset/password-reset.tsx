@@ -12,7 +12,7 @@
  *                     OWASP ASVS 2.5 (credential recovery).
  */
 import { Alert, Button, Card, PasswordField, TextField } from "@stackra/ui/react";
-import { type FormEvent, type ReactElement, useState } from "react";
+import { type FormEvent, type ReactElement, useId, useState } from "react";
 
 import { PasswordPolicyChecklist } from "#react/password-policy-checklist/password-policy-checklist";
 import type { PasswordResetProps } from "#react/password-reset/password-reset.props";
@@ -35,6 +35,7 @@ export function PasswordReset({
   className,
 }: PasswordResetProps): ReactElement {
   const [password, setPassword] = useState("");
+  const checklistId = useId();
   const [phase, setPhase] = useState<"idle" | "pending" | "sent" | "failed">("idle");
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -71,24 +72,27 @@ export function PasswordReset({
                 isFullWidth
               />
             ) : (
-              <PasswordField
-                name="password"
-                label={labels.password}
-                autoComplete="new-password"
-                value={password}
-                onChange={setPassword}
-                isRequired
-                isFullWidth
-                description={
-                  policy && labels.rules ? (
-                    <PasswordPolicyChecklist
-                      policy={policy}
-                      password={password}
-                      labels={labels.rules}
-                    />
-                  ) : undefined
-                }
-              />
+              // The checklist sits beside the field, not in its description slot: React Aria's Text inside it needs a slot.
+              <>
+                <PasswordField
+                  name="password"
+                  label={labels.password}
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={setPassword}
+                  isRequired
+                  isFullWidth
+                  {...(policy && labels.rules ? { "aria-describedby": checklistId } : {})}
+                />
+                {policy && labels.rules && (
+                  <PasswordPolicyChecklist
+                    id={checklistId}
+                    policy={policy}
+                    password={password}
+                    labels={labels.rules}
+                  />
+                )}
+              </>
             )}
             <Button type="submit" isFullWidth isLoading={phase === "pending"}>
               {labels.submit}

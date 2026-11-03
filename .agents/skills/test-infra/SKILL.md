@@ -6,9 +6,10 @@ description: Run heavy work on the shared testbed instead of the Mac - stackra t
 # The testbed
 
 The Mac runs only oxfmt and oxlint. Everything else runs on the testbed: install, build, gen, typecheck, unit tests,
-the playground e2e and the integration tests. The design is ADR 0484 and the runbook is
-`apps/docs/src/docs/runbooks/test-infrastructure.mdx`. While the migration runs, `ci-box` is a shim with the same
-verbs.
+the playground e2e and the integration tests. The job image has Playwright's Chromium, Firefox and WebKit, `xvfb-run`
+for a desktop (Electron) test that needs a display, and ffmpeg. iOS simulators and Android emulators stay on the Mac.
+The design is ADR 0484 and the runbook is `apps/docs/src/docs/runbooks/test-infrastructure.mdx`. While the migration
+runs, `ci-box` is a shim with the same verbs.
 
 ## Run a job
 

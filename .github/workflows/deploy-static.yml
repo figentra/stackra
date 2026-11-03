@@ -5,7 +5,7 @@
 #          redeploys a given commit of main, recording `message` with the deployment (the rollback record).
 # Secrets: CLOUDFLARE_API_TOKEN comes from Infisical /ci (env prod) through GitHub OIDC inside the provider. No
 #          repository secret holds it (ADR 0173, ADR 0019 D2). Without INFISICAL_CI_IDENTITY_ID the provider builds,
-#          tests, prints a notice and deploys nothing, so main stays green.
+#          prints a notice and deploys nothing, so main stays green.
 # Owner: release-operations
 
 name: Deploy static
