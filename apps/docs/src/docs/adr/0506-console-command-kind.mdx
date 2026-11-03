@@ -225,19 +225,25 @@ harness, and a module-load test that a non-live run never imports `ink`); `FORBI
 
 The testbed of [0522](/adr/0522-testbed-own-repo) must print its frozen `--json` documents (decision 5) and stream a job's
 output to the terminal. The engine of 2026-11-02 could do neither: `--json` wrote the envelope, and a child was either
-captured or interactive. This amendment adds what the port needs, in four parts. Each is opt-in, so an existing command,
-test and `--json` document keeps its output. The spec is `.agents/specs/sta-1966-console-engine/`, where FR-007, FR-012,
-FR-015 and FR-028 each carry a dated note. The text describes the code of `packages/developer/console` on branch
-`figentra/sta-2093-console-frozen-json-streams`.
+captured or interactive. This amendment adds what the port needs, in four parts. Bare JSON, `inherit` and
+`requireCommand` are opt-in, so an existing command, test and `--json` document keeps its output. Three changes reach
+every console: `onOutput` receives redacted chunks (item 2), a child that shares the terminal is refused while the run
+holds a secret (item 2), and a value option may come before the command name (item 4). The spec is
+`.agents/specs/sta-1966-console-engine/`, where FR-007, FR-012, FR-015 and FR-028 each carry a dated note. The text
+describes the code of `packages/developer/console` as of the STA-2093 pull request.
 
-1. **Bare JSON (amends decision 7 and amendment 4).** `ConsoleConfig.json` is `"envelope"` (the default, decision 7) or
-   `"bare"`. Under `--json` with `"bare"`:
+1. **Bare JSON (amends decision 7 and item 4 of the 2026-11-02 amendment).** `ConsoleConfig.json` is `"envelope"`
+   (the default, decision 7) or `"bare"`. Under `--json` with `"bare"`:
    - a run that ends with an error writes nothing to stdout; the problem screen goes to stderr, and the exit code is the
      error's, as before;
    - a run that ends with no error writes its data alone, as one compact line, whatever the exit code. The data is the
-     value given to `io.output.json`, else the rows of a table or checklist, else the command list or a command's help, which the list
-     and help intents set. A run with no data writes nothing;
-   - human output (lines, tables, the problem screen) goes to stderr, drawn as without `--json`: no colour and no animation.
+     first that is set, in this order: the value given to `io.output.json`; else the value the handler returned (an
+     object, an array or `null`, never an exit code); else the rows of a table or checklist. The intents that run no
+     command set it themselves: `--version` the object `{ name, version }`, the list the visible command structures,
+     help the command's structure, and `completion <shell>` the object `{ shell, script }`. An explicit `null` is
+     written as `null`; a run with no data writes nothing;
+   - human output (lines, tables, the problem screen, and the child output that `-v` echoes) goes to stderr, drawn as
+     without `--json`: no colour and no animation.
 
    `bare` is for a CLI whose `--json` shape an ADR has frozen, and only testbed qualifies today (0522 decision 5). Every
    other CLI keeps the envelope; [0500](/adr/0500-four-clis-stackra-runway-vellum-and-figentra) decision 7 governs any
@@ -248,9 +254,11 @@ FR-015 and FR-028 each carry a dated note. The text describes the code of `packa
    - `inherit: true` shares the standard streams: the child's output is live, is not captured and is not redacted, and the
      child is never refused for want of a terminal. Under `--json` the console turns it into `"stderr"`.
    - `inherit: "stderr"` ignores standard input and sends both of the child's outputs to standard error.
-   - `io.process` refuses an inherited run with a `CommandError`, before the child starts, while a secret option or argument
-     of the run holds a non-empty value, because the child's output cannot be redacted.
-   - `interactive` is unchanged: the child inherits the terminal and is refused without one (STA-1966 FR-028).
+   - `io.process` refuses an inherited or interactive run with a `CommandError`, before the child starts, while a secret
+     option or argument of the run holds a non-empty value (each value of a list, and a number by its digits), because
+     the child's output cannot be redacted. The same values are redacted from captured output.
+   - `interactive` otherwise is unchanged: the child inherits the terminal and is refused without one (STA-1966
+     FR-028). With both set, `inherit: "stderr"` wins, so stdout stays clean.
    - `onOutput` receives the redacted chunk. It received the raw chunk before.
 
    Known limit: redaction runs per chunk, so a secret split across two chunks escapes into the `-v` echo and into
@@ -274,8 +282,9 @@ FR-015 and FR-028 each carry a dated note. The text describes the code of `packa
 5. **Consequences.**
    - ADR 0522 decision 5 holds byte for byte. This amendment writes no testbed document: the `run` and `status` documents
      come from testbed's own port, under its own frozen-interface tests.
-   - Only one routing case changes behaviour: a value option before the name, which previously failed. Every other
-     invocation routes as before.
+   - Routing changes in two ways. A value option before the name, which previously failed, now runs. And the token after
+     such a flag is now its value: `cli --out deploy ./dist` used to run `deploy` with `--out=./dist`, and now reads
+     `deploy` as the value and `./dist` as the name. Every other invocation routes as before.
    - Whether other CLIs move their `--json` to the envelope is not decided here.
 
 6. **Enforcement.** The unit tests of this amendment are the bare, `requireCommand`, value-option and `secret` cases of
@@ -287,4 +296,4 @@ FR-015 and FR-028 each carry a dated note. The text describes the code of `packa
    - planned — buffered line redaction, the upgrade named in item 2.
 
 Sources: the engine design and build report of STA-2093 (Linear STA-2093, with the testbed move of STA-2073), checked
-against the code on the branch named above. Owner acceptance of this text is pending.
+against the code of the STA-2093 pull request. Owner acceptance of this text is pending.

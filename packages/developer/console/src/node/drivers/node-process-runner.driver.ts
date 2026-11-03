@@ -32,11 +32,12 @@ export class NodeProcessRunnerDriver extends Driver(ProcessRunner) {
       const child = spawn(command, [...args], {
         cwd: options.cwd,
         env: { ...process.env, ...options.env },
+        // "stderr" wins over interactive, so stdout stays clean for a --json document.
         stdio:
-          options.interactive === true || options.inherit === true
-            ? "inherit"
-            : options.inherit === "stderr"
-              ? ["ignore", 2, 2]
+          options.inherit === "stderr"
+            ? ["ignore", 2, 2]
+            : options.interactive === true || options.inherit === true
+              ? "inherit"
               : ["ignore", "pipe", "pipe"],
       });
       child.stdout?.setEncoding("utf8").on("data", take);

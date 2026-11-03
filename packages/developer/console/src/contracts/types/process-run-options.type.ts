@@ -16,7 +16,10 @@ export interface ProcessRunOptions {
   /** Variables added to the run's environment. */
   readonly env?: Readonly<Record<string, string>>;
 
-  /** The child inherits the terminal; its output is not captured. Refused when the run is not interactive. */
+  /**
+   * The child inherits the terminal; its output is not captured. Refused when the run is not interactive, and by
+   * `io.process` while the run holds a secret value. `inherit: "stderr"` wins over it.
+   */
   readonly interactive?: boolean;
 
   /**

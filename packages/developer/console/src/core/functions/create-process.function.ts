@@ -4,7 +4,8 @@
  *          through the `ProcessRunner`, echoes its output dimmed to standard error only under `--verbose`, redacts
  *          the run's secret values from what it keeps, throws a `CommandError` (the output as its detail) on a
  *          non-zero exit, and refuses an interactive child, naming it, when the run is not interactive. An `inherit`
- *          child shares the streams (stderr only under `--json`) and is refused while the run holds a secret value.
+ *          child shares the streams (stderr only under `--json`); an `inherit` or interactive child is refused while
+ *          the run holds a secret value, since its output is not redacted.
  * Boundary: no terminal or environment test of its own: interactivity comes from the decided mode.
  * Runtime: isomorphic
  * Governing contract: STA-1966 spec FR-007, FR-028 and FR-029; ADR 0506 (amendment 2026-11-03).
@@ -43,9 +44,10 @@ export function createProcess(setup: {
         });
       // Under --json stdout carries the document alone, so a shared child writes to stderr.
       const inherit = options.inherit === true && setup.mode.json ? "stderr" : options.inherit;
-      if (inherit !== undefined && inherit !== false && setup.secret === true)
+      const shares = options.interactive === true || (inherit !== undefined && inherit !== false);
+      if (shares && setup.secret === true)
         throw new CommandError(`"${line}" cannot share the terminal`, {
-          why: "the run holds a secret value, and an inherited child's output is not redacted",
+          why: "the run holds a secret value, and the output of a child that shares the terminal is not redacted",
         });
       if (setup.runner === undefined)
         throw new CommandError(`"${line}" cannot run: no process runner is bound`, {

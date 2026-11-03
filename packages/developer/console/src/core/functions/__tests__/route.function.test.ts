@@ -4,7 +4,8 @@
  *          `-h` and `help <cmd>` (never a run), a run with its values, spaced names joined longest first, and a usage
  *          problem for an unknown name or a bad argument; that the registry refuses a command named `help`; that
  *          `requireCommand` turns a nameless invocation into a usage problem; and that a value option may come before
- *          the name only when every command gives it a value.
+ *          the name only when every command gives it a value, on either side of `help`, taking the next token as its
+ *          value.
  * Boundary: unit test; pure functions, no console run.
  * Runtime: node
  * Governing contract: STA-1966 spec FR-012 to FR-016, AC-002 and AC-003; ADR 0506 (amendment 2026-11-03); ADR 0022
@@ -157,6 +158,22 @@ describe("route with a value option before the name", () => {
       expect(route(argv, boxes)).toMatchObject({ kind: "run", values: { box: "2" } });
     },
   );
+
+  it.each([[["help", "--box", "2", "ssh"]], [["--box", "2", "help", "ssh"]]])(
+    "helps for ssh, the value option on either side of help, for %j",
+    (argv) => {
+      const intent = route(argv, boxes);
+      expect(intent.kind).toBe("help");
+      expect(intent.kind === "help" && intent.entry.structure.name).toBe("ssh");
+    },
+  );
+
+  it("reads the token after a value option as its value, not the name", () => {
+    // `--box deploy ./dist` used to run deploy with --box=./dist; the value now comes first.
+    const intent = route(["--box", "status", "ssh"], boxes);
+    expect(intent).toMatchObject({ kind: "run", values: { box: "status" } });
+    expect(intent.kind === "run" && intent.entry.structure.name).toBe("ssh");
+  });
 
   it("takes no value for a flag that is boolean in another command", () => {
     const intent = route(["--mode", "fast", "ssh"], boxes);

@@ -106,7 +106,8 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
     const painter = createPainter(mode.depth, theme.accent);
     const finish = (code: number, error?: unknown, docs?: string): number => {
       if (bare) {
-        const value = data ?? rows;
+        // An explicit `null` is data; only a run that gave none falls back to the rows.
+        const value = data === undefined ? rows : data;
         if (error !== undefined) renderer.problem(problemOf(error, docs), mode.verbose);
         else if (value !== undefined) ports.stdout.write(`${JSON.stringify(value)}\n`);
       } else if (mode.json) {
@@ -200,7 +201,9 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
     // A secret option's value never reaches captured child output, an error or a log.
     const secrets = [...entry.structure.arguments, ...entry.structure.options]
       .filter(isSecret)
-      .map((field) => values[field.property])
+      // A list option holds several values, and a number is redacted by its digits.
+      .flatMap((field) => [values[field.property]].flat())
+      .map((value) => (typeof value === "number" ? String(value) : value))
       .filter((value): value is string => typeof value === "string" && value !== "");
     const children = createProcess({
       ...(ports.process === undefined ? {} : { runner: ports.process() }),
@@ -208,7 +211,8 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       cwd: ports.cwd,
       secret: secrets.length > 0,
       echo: (chunk) => {
-        if (!mode.json) ports.stderr.write(painter.dim(chunk));
+        // Bare JSON keeps stderr for people, so --verbose still shows the child there.
+        if (!mode.json || bare) ports.stderr.write(painter.dim(chunk));
       },
       redact: (text) =>
         secrets.reduce((kept, secret) => kept.replaceAll(secret, "[redacted]"), text),

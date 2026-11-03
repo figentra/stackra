@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the kernel end to end through the test harness: list, help, version, dispatch with filled fields,
  *          exit codes, the container lifecycle, signals, prompts (interactive, defaulted, refused, cancelled), the
- *          error screen, `--json`, and the bare `--json` of a frozen interface.
+ *          error screen, `--json`, the bare `--json` of a frozen interface (version, help, null and the `-v` echo
+ *          included), and the refusal of a child that shares the terminal while a secret option holds a value.
  * Boundary: unit test in-process; no terminal.
  * Runtime: node
  * Governing contract: STA-1730 spec FR-008, FR-012 to FR-016, FR-019, FR-022, FR-023, FR-025 and SC-003; STA-1966
@@ -13,7 +14,7 @@
 // @covers sta-1730:FR-022 sta-1730:FR-023 sta-1730:FR-025 sta-1730:SC-003
 // @covers sta-1966:FR-013 sta-1966:FR-014 sta-1966:FR-015 sta-1966:FR-001 sta-1966:FR-009 sta-1966:FR-011
 // @covers sta-1966:FR-019 sta-1966:FR-021 sta-1966:FR-030 sta-1966:AC-001 sta-1966:AC-004
-import { Int } from "@stackra/validation";
+import { Int, List, Str } from "@stackra/validation";
 
 import { Command } from "#core/bases/command.base";
 import { Argument } from "#core/decorators/argument.decorator";
@@ -24,6 +25,7 @@ import { PromptCancelledError } from "#core/errors/prompt-cancelled.error";
 import { createConsole } from "#core/functions/create-console.function";
 import type { CommandIo } from "#core/types/command-io.type";
 import type { ConsoleContainer } from "#core/types/console-container.type";
+import { MemoryProcessRunnerDriver } from "#testing/drivers/memory-process-runner.driver";
 import { runCommandForTest } from "#testing/functions/run-command-for-test.function";
 
 /** Greets, returning its data. */
@@ -470,10 +472,75 @@ class PlanCommand extends Command({
   }
 }
 
+/** Returns an explicit null. */
+class NothingCommand extends Command({
+  name: "nothing",
+  description: "Return null",
+}) {
+  handle() {
+    return null;
+  }
+}
+
+/** Runs a child that writes, captured. */
+class EchoCommand extends Command({
+  name: "echo",
+  description: "Echo a child",
+}) {
+  async handle(io: CommandIo) {
+    await io.process.run("deploy", []);
+  }
+}
+
+/** Shares the terminal with a child while holding secret values, one string or several. */
+class StreamCommand extends Command({
+  name: "stream",
+  description: "Stream a child",
+}) {
+  @Option({ secret: true })
+  @Str
+  token?: string;
+
+  @Option({ secret: true })
+  @List
+  keys?: string[];
+
+  async handle(io: CommandIo) {
+    await io.process.run("ssh", ["box"], { inherit: true });
+  }
+}
+
+/** A runner that answers `ssh box`. */
+const sshRunner = () => new MemoryProcessRunnerDriver().on("ssh box");
+
+describe("createConsole and a child process", () => {
+  it.each([[["--token", "s3cret"]], [["--keys", "a1", "--keys", "b2"]]])(
+    "refuses a child that shares the terminal while %j holds a secret",
+    async (given) => {
+      const spawned = sshRunner();
+      const result = await runCommandForTest([StreamCommand], ["stream", ...given], {
+        process: spawned,
+      });
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('"ssh box" cannot share the terminal');
+      expect(spawned.calls).toHaveLength(0);
+    },
+  );
+
+  it("lets the child share the terminal when no secret is given", async () => {
+    const spawned = sshRunner();
+    expect(
+      (await runCommandForTest([StreamCommand], ["stream"], { process: spawned })).exitCode,
+    ).toBe(0);
+    expect(spawned.calls[0]?.inherit).toBe(true);
+  });
+});
+
 describe("createConsole with json: bare", () => {
-  const commands = [...COMMANDS, FrozenRunCommand, PlanCommand];
+  const commands = [...COMMANDS, FrozenRunCommand, PlanCommand, NothingCommand, EchoCommand];
+  const config = { name: "testbed", version: "1.0.0", commands };
   const bare = (argv: string[], options: Parameters<typeof runCommandForTest>[2] = {}) =>
-    runCommandForTest({ name: "testbed", version: "1.0.0", commands }, argv, {
+    runCommandForTest(config, argv, {
       json: "bare",
       ...options,
     });
@@ -510,6 +577,34 @@ describe("createConsole with json: bare", () => {
     const result = await bare(["exit", "3", "--json"]);
     expect(result.exitCode).toBe(3);
     expect(result.stdout).toBe("");
+  });
+
+  it("writes the version object as its one line", async () => {
+    const result = await bare(["--version", "--json"]);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe('{"name":"testbed","version":"1.0.0"}\n');
+  });
+
+  it.each([[["--help", "--json"]], [["help", "greet", "--json"]]])(
+    "writes the envelope's data alone, byte for byte, for %j",
+    async (argv) => {
+      const envelope = await runCommandForTest(config, argv);
+      const result = await bare(argv);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toBe(`${JSON.stringify((envelope.json as { data: unknown }).data)}\n`);
+    },
+  );
+
+  it("writes an explicit null as null", async () => {
+    expect((await bare(["nothing", "--json"])).stdout).toBe("null\n");
+  });
+
+  it("echoes a child's output on stderr under --verbose", async () => {
+    const spawned = new MemoryProcessRunnerDriver().on("deploy", { output: "deployed\n" });
+    const result = await bare(["echo", "--json", "-v"], { process: spawned });
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("deployed");
   });
 
   it.each([[[]], [["--json"]]])(

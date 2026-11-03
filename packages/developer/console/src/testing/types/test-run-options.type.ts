@@ -5,7 +5,7 @@
  *          `--json` shape and `requireCommand`.
  * Boundary: a type only.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-027.
+ * Governing contract: STA-1730 spec FR-027; ADR 0506 (amendment 2026-11-03).
  */
 import type { CommandAudit } from "#contracts/ports/command-audit.port";
 import type { Completions } from "#contracts/ports/completions.port";

@@ -6,7 +6,7 @@
  * Boundary: reads decorator records and builds one instance with no arguments for the field initialisers; never runs
  *           `handle`. Refuses a wrong declaration with `ConsoleDeclarationError` (FR-005).
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-001 to FR-005; ADR 0294 (decisions 6 and 25).
+ * Governing contract: STA-1730 spec FR-001 to FR-005; ADR 0294 (decisions 6 and 25); ADR 0506 (amendment 2026-11-03).
  */
 import { kindOf } from "@stackra/container";
 import { Int, List, Num, Str } from "@stackra/validation";
