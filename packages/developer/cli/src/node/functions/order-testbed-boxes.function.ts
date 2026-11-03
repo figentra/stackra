@@ -18,11 +18,11 @@ import type { TestbedBox } from "#node/types/testbed-box.type";
  * @example
  * orderTestbedBoxes(boxes, "heavy", new Set(["i-1"]));
  */
-export function orderTestbedBoxes(
-  boxes: readonly TestbedBox[],
+export function orderTestbedBoxes<Box extends TestbedBox>(
+  boxes: readonly Box[],
   slot: string,
   skip: ReadonlySet<string>,
-): readonly TestbedBox[] {
+): readonly Box[] {
   const open = boxes.filter((box) => !skip.has(box.id));
   const heavy = open.filter((box) => box.group === "heavy");
   if (slot === "heavy") return heavy;

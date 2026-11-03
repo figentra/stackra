@@ -156,18 +156,14 @@ describe("observabilityPlan", () => {
       ).map((issue) => issue.path),
     ).toEqual(["root.observability.uptime.1.name", "root.observability.uptime.1.environment"]);
 
-    expect(
-      issuesOf(() =>
-        observabilityPlan(
-          rootRunway({
-            providers: { betterstack: {} },
-            environments: { production: {} },
-            observability: { uptime: [{ name: "registry", url: "http://npm.acme.example/" }] },
-          }),
-          { apps: {}, services: [] },
-        ),
-      ).map((issue) => issue.path),
-    ).toEqual(["root.observability.uptime.0.url"]);
+    // Runway's own parse refuses a non-https URL before the plan runs.
+    expect(() =>
+      rootRunway({
+        providers: { betterstack: {} },
+        environments: { production: {} },
+        observability: { uptime: [{ name: "registry", url: "http://npm.acme.example/" }] },
+      }),
+    ).toThrow(/observability\.uptime\.0\.url/);
   });
 
   it("plans the status page the runway declares, for monitored environments only", () => {
@@ -272,26 +268,20 @@ describe("observabilityPlan", () => {
   it("reports every failure at once", () => {
     expect(
       issuesOf(() =>
-        observabilityPlan(
-          rootRunway({
-            providers: { betterstack: {} },
-            observability: { logs: { hotDays: 0, hotDay: 3 }, slos: { startAt: "now" } },
-          }),
-          {
-            apps: {
-              web: appRunway("acme-web"),
-              admin: appRunway("acme-web"),
-              shop: appRunway("Bad Slug"),
-            },
-            services: ["commerce"],
-            heartbeats: [
-              { service: "ledger", kind: HeartbeatKind.Cron, name: "nightly", periodSeconds: 60 },
-              { service: "commerce", kind: HeartbeatKind.Cron, name: "Nightly", periodSeconds: 60 },
-              { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 10 },
-              { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 60 },
-            ],
+        observabilityPlan(rootRunway({ providers: { betterstack: {} } }), {
+          apps: {
+            web: appRunway("acme-web"),
+            admin: appRunway("acme-web"),
+            shop: appRunway("Bad Slug"),
           },
-        ),
+          services: ["commerce"],
+          heartbeats: [
+            { service: "ledger", kind: HeartbeatKind.Cron, name: "nightly", periodSeconds: 60 },
+            { service: "commerce", kind: HeartbeatKind.Cron, name: "Nightly", periodSeconds: 60 },
+            { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 10 },
+            { service: "commerce", kind: HeartbeatKind.Cron, name: "sweep", periodSeconds: 60 },
+          ],
+        }),
       )
         .map((issue) => issue.path)
         .sort(),
@@ -302,9 +292,6 @@ describe("observabilityPlan", () => {
       "heartbeats.1.name",
       "heartbeats.2.periodSeconds",
       "heartbeats.3.name",
-      "root.observability.logs",
-      "root.observability.logs.hotDays",
-      "root.observability.slos.startAt",
       "root.providers.sentry.org",
     ]);
   });

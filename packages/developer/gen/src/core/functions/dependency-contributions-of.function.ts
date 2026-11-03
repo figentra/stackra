@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `contributionsOf(ir, read, same)`, one section of what a host's dependencies contribute, read from their
+ * Purpose: `dependencyContributionsOf(ir, read, same)`, one section of what a host's dependencies contribute, read from their
  *          committed manifests: each declared package (an app's manifest aside) and each consumed service, in that
  *          order, every entry keyed and tagged with the member it came from. The same entry reached twice (a package
  *          declared directly and hosted by a consumed service) is kept once; one key from two different owners is a
@@ -23,9 +23,9 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * @param read - the section's entries in one manifest, each with its key.
  * @param same - whether two entries under one key are the same contribution reached twice.
  * @example
- * const { entries, duplicates } = contributionsOf(ir, (manifest) => Object.entries(resourcesIn(manifest)), sameClass);
+ * const { entries, duplicates } = dependencyContributionsOf(ir, (manifest) => Object.entries(resourcesIn(manifest)), sameClass);
  */
-export function contributionsOf<T>(
+export function dependencyContributionsOf<T>(
   ir: MemberIR,
   read: (manifest: StackraManifest) => readonly (readonly [string, T])[],
   same: (left: T, right: T) => boolean,
