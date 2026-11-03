@@ -14,7 +14,7 @@
       "minHeight": 160
     }
   ],
-  "related": ["free/button", "free/copy-button", "free/hero-machine"],
+  "related": ["free/button-link", "free/copy-button", "free/hero-machine"],
   "tokens": ["color.core", "color.surface", "color.border"],
   "keywords": ["call to action", "cta", "copy", "command", "marketing", "landing", "kit"],
   "status": "new"

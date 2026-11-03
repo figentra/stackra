@@ -4,7 +4,8 @@
  *          on (one act a line, so each line's effect schedules the next), draws no log and shows the monitor at
  *          once before there is a recording, shows the last frame at once below the full motion level, keeps its art
  *          and monitor hidden from
- *          assistive tech, and keeps the terminal left-to-right in Arabic.
+ *          assistive tech, keeps the terminal left-to-right in Arabic, and gives the chapter its own `h2` from
+ *          `title`.
  * Boundary: unit tier, jsdom, the real @stackra/ui components and fake timers; matchMedia is stubbed and the motion
  *           level comes from the DesignSystemProvider; jsdom has no IntersectionObserver, so the session starts at once,
  *           and no canvas, so the art keeps its poster.
@@ -119,6 +120,20 @@ describe("TerminalStage", () => {
     render(at("reduced", <TerminalStage command="stackra verify" lines={LINES} label="Try it" />));
     expect(screen.getByRole("region", { name: "Try it" }).hasAttribute("data-done")).toBe(true);
     expect(screen.getByText("Created my-app")).toBeTruthy();
+  });
+
+  it("gives the chapter its own h2 from its title, and none without one", () => {
+    const { rerender } = render(
+      at(
+        "reduced",
+        <TerminalStage title="Try it." command="stackra verify" lines={LINES} label="Try it" />,
+      ),
+    );
+    expect(screen.getByRole("heading", { level: 2, name: "Try it." })).toBeTruthy();
+    rerender(
+      at("reduced", <TerminalStage command="stackra verify" lines={LINES} label="Try it" />),
+    );
+    expect(screen.queryByRole("heading", { level: 2 })).toBeNull();
   });
 
   it("keeps the terminal left-to-right in Arabic", () => {

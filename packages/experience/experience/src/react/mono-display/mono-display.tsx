@@ -4,7 +4,8 @@
  *          champagne core (the closing wordmark highlight), a tagline, and either three floors that rise bottom to
  *          top in the theme's floor steps once in view, or a code-glyph dither field behind it, its glyphs the size of
  *          the kit's `mono` type step so they read as code.
- * Boundary: a ruled band named by the wordmark, an `h2`. The wordmark is `dir="ltr"` and `translate="no"`. The floors
+ * Boundary: a ruled band named by the wordmark, an `h2`. The wordmark is `dir="ltr"`, `lang="en"` (an Arabic page reads it in an English
+ *           voice) and `translate="no"`. The floors
  *           and the field are decoration, hidden from assistive tech. The server draws every floor; only the browser at
  *           the `full` motion level rewinds them to rise, and a hidden floor keeps its place, so the layout never
  *           moves.
@@ -67,7 +68,7 @@ export function MonoDisplay({
           />
         ) : null}
         <Heading level={2} type="h1" tone="core" style={DISPLAY}>
-          <span dir="ltr" translate="no">
+          <span dir="ltr" lang="en" translate="no">
             {title}
           </span>
         </Heading>

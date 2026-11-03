@@ -1799,6 +1799,11 @@
         "description": "A sticky bar of section links that follows the page and says what each section is doing.",
         "keywords": "dock, scroll spy, section links, status line, in-page navigation"
       },
+      "button_link": {
+        "title": "Button link",
+        "description": "A link drawn as a button: the Button's variants, the core pill included, on a real anchor that navigates.",
+        "keywords": "button link, link, call to action, cta, href, pill, core"
+      },
       "site_header": {
         "title": "Site header",
         "description": "A marketing site's top bar: the brand, section links, a docs search and the code host link.",
@@ -5583,6 +5588,14 @@
       "section_dock": {
         "dock": {
           "title": "Dock"
+        }
+      },
+      "button_link": {
+        "variants": {
+          "title": "Variants"
+        },
+        "core_pill": {
+          "title": "Core pill"
         }
       },
       "site_header": {
@@ -9403,6 +9416,15 @@
           "when": "At the bottom of a long blueprint page.",
           "rtl": "Links and the status line follow the reading direction.",
           "when_not": "For a docs page's contents; use TocRail."
+        },
+        "button_link": {
+          "headline": "A call to action that goes somewhere.",
+          "intro": "A real link that opens without script and through the nearest router, drawn in the Button's variants, sizes and pill shape, so a link and a button share one look.",
+          "tags": "Real link · Button looks · Router",
+          "what": "A link with the Button's look.",
+          "when": "For a call to action that navigates: read the docs, get started.",
+          "rtl": "The words follow the reading direction; the shape never mirrors.",
+          "when_not": "For an action on this page; use Button."
         },
         "site_header": {
           "headline": "A top bar that stays out of the way.",

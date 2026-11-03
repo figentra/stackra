@@ -41,13 +41,15 @@ describe("CtaRow", () => {
 
   afterEach(cleanup);
 
-  it("draws the primary as a @stackra/ui link in the core pill, in one ruled band", () => {
+  it("draws the primary as a @stackra/ui ButtonLink in the core pill, in one ruled band", () => {
     const { container } = render(ROW);
     const link = screen.getByRole("link", { name: "Read the docs" });
     expect(link.getAttribute("href")).toBe("/docs");
-    expect(link.className).toContain("var(--core-strong,var(--accent))");
-    expect(link.className).toContain("rounded-[var(--radius-pill)]");
-    expect(link.className).not.toContain("button--");
+    // The kit's one core button, not a copy of it: the theme's `.button--core` on HeroUI's primary, as a pill.
+    expect(link.tagName).toBe("A");
+    expect(link.classList.contains("button--core")).toBe(true);
+    expect(link.classList.contains("rounded-[var(--radius-pill)]")).toBe(true);
+    expect(link.className).not.toContain("var(--core-strong");
     expect(container.querySelectorAll('[data-slot="blueprint-section"]')).toHaveLength(1);
   });
 

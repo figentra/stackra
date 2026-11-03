@@ -19,6 +19,8 @@ import type { ReactNode } from "react";
  *   monitor={{ src: "art/monitor", width: 328, height: 426 }} />
  */
 export interface TerminalStageProps {
+  /** The chapter's heading, an `h2` above the terminal, such as "Try it."; without it the stage has no heading. */
+  readonly title?: string | undefined;
   /** The command in the terminal's top bar, which its copy button copies. */
   readonly command: string;
   /** The recorded session, played a whole line at a time; empty until it is recorded, which draws no log. */

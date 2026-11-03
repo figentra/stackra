@@ -14,9 +14,10 @@ import { type ReactNode, useContext } from "react";
 
 import { RuledBandContext } from "#react/ruled-band/ruled-band.context";
 import type { RuledBandProps } from "#react/ruled-band/ruled-band.props";
+import { RULED_BAND_INLINE } from "#react/ruled-band/ruled-band-inline.constant";
 
 /** The landing's band padding: the hero's rhythm. */
-const BAND = "px-4 py-16 sm:px-8 lg:px-12";
+const BAND = `${RULED_BAND_INLINE} py-16`;
 
 /**
  * A block's ruled band, drawn once however deep the block sits.

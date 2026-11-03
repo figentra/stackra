@@ -44,7 +44,7 @@ export function AskAi({
           href={docsUrl}
           underline="hover"
           {...(hasNote ? { "aria-describedby": noteId } : {})}
-          className={`flex h-11 items-center gap-3 rounded-field border border-field-border bg-field px-3 no-underline outline-none hover:border-field-border-hover focus-visible:ring-2 focus-visible:ring-focus ${isComingSoon ? "border-dashed text-muted" : "text-foreground"}`}
+          className={`flex h-11 items-center gap-3 rounded-field border border-field-border bg-field px-3 no-underline outline-hidden hover:border-field-border-hover focus-visible:ring-2 focus-visible:ring-focus ${isComingSoon ? "border-dashed text-muted" : "text-foreground"}`}
         >
           <span className="shrink-0 font-medium">{label}</span>
           {placeholder ? (

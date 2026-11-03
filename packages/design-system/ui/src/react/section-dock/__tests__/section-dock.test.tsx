@@ -5,7 +5,8 @@
  *          fill), keeps only the current link visible under `md` while the others stay reachable, says the current
  *          section's status in a line that is not a live region and changes only when the current section does,
  *          sets that line's Arabic in the Arabic body face, sits on the blueprint rule and toolbar material on
- *          logical sides in right-to-left, and behaves the same under reduced motion.
+ *          logical sides in right-to-left, behaves the same under reduced motion, and gives the document its height
+ *          as bottom scroll padding while mounted, so a focused element is never under it.
  * Boundary: jsdom; `IntersectionObserver` is replaced by a stand-in the test fires by hand; the `max-md:` hiding and
  *           the `:lang(ar)` face are classes, so the media query and the font are not run; `useReducedMotion` is
  *           stubbed.
@@ -143,5 +144,13 @@ describe("SectionDock (web)", () => {
     expect(statusLine().textContent).toBe("نكتب الإجراء");
     act(() => fire([{ target: { id: "expose" }, isIntersecting: true }]));
     expect(link("اكشف").getAttribute("aria-current")).toBe("location");
+  });
+
+  it("keeps a focused element clear of it: the document scrolls with the dock's height as bottom padding", () => {
+    const clearance = "scroll-pb-(--blueprint-dock-height)";
+    const { unmount } = render(<SectionDock label="Sections" items={ITEMS} />);
+    expect(document.documentElement.classList.contains(clearance)).toBe(true);
+    unmount();
+    expect(document.documentElement.classList.contains(clearance)).toBe(false);
   });
 });

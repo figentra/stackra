@@ -9,9 +9,13 @@
  * Governing contract: ADR 0022 (test placement); motion principles (the `floor` motion step); STA-2041.
  */
 // @vitest-environment jsdom
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { act, renderHook } from "@testing-library/react";
 
 import { useFloorSteps } from "#react/hooks/use-floor-steps";
+
+/** The theme's floor step, the hook's default: one step a count. */
+const STEP_MS = motionTiming(STACKRA_THEME, "floor").durationMs;
 
 const state = vi.hoisted(() => ({ isReduced: false }));
 vi.mock("motion/react", async (load) => ({
@@ -64,11 +68,11 @@ describe("useFloorSteps", () => {
     const { result } = play();
     expect(result.current).toBe(0);
     expect(threshold).toBe(0.4);
-    act(() => vi.advanceTimersByTime(400));
+    act(() => vi.advanceTimersByTime(5 * STEP_MS));
     expect(result.current).toBe(0);
     act(() => fire([{ isIntersecting: true }]));
     for (const count of [1, 2, 3, 3]) {
-      act(() => vi.advanceTimersByTime(80));
+      act(() => vi.advanceTimersByTime(STEP_MS));
       expect(result.current).toBe(count);
     }
   });
@@ -76,7 +80,7 @@ describe("useFloorSteps", () => {
   it("draws everything again when motion drops mid-play", () => {
     const { result, rerender } = play();
     act(() => fire([{ isIntersecting: true }]));
-    act(() => vi.advanceTimersByTime(80));
+    act(() => vi.advanceTimersByTime(STEP_MS));
     expect(result.current).toBe(1);
     state.isReduced = true;
     rerender({ total: 3 });

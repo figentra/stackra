@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: proves the Surfaces is a group named by its label drawing each surface's real button in its frame (a
- *          titled window for web and desktop, a phone for phone), in reading order from the keyboard, with an Arabic
- *          surface in its own language and direction inside an English page, inside one ruled band.
+ *          titled window for web and desktop, a phone for phone) as an illustration: one image per surface named by
+ *          its own words in its own language, and no focusable button; an Arabic surface keeps its language and
+ *          direction inside an English page, inside one ruled band.
  * Boundary: unit tier, jsdom, the real @stackra/ui components; matchMedia is a stand-in, and the locale comes from
  *           `DesignSystemProvider`.
  * Runtime: node (vitest)
@@ -33,11 +34,16 @@ const SURFACES: SurfacesProps["surfaces"] = [
 describe("Surfaces", () => {
   afterEach(cleanup);
 
-  it("is a named group of framed surfaces, each with its button, in one ruled band", () => {
+  it("is a named group of framed surfaces, each an image named by its words, in one ruled band", () => {
     const { container } = render(<Surfaces label="On every surface" surfaces={SURFACES} />);
     const group = screen.getByRole("group", { name: "On every surface" });
-    const buttons = within(group).getAllByRole("button");
-    expect(buttons.map((button) => button.textContent)).toEqual([
+    expect(
+      within(group)
+        .getAllByRole("img")
+        .map((image) => image.getAttribute("aria-label")),
+    ).toEqual(["orders.example, Cancel order", "Orders, Cancel order", "Phone, إلغاء الطلب"]);
+    // The drawn buttons are the real ones, in their frames.
+    expect([...container.querySelectorAll("button")].map((button) => button.textContent)).toEqual([
       "Cancel order",
       "Cancel order",
       "إلغاء الطلب",
@@ -52,26 +58,22 @@ describe("Surfaces", () => {
     expect(container.querySelectorAll('[data-slot="blueprint-section"]')).toHaveLength(1);
   });
 
-  it("reaches the buttons in reading order from the keyboard", () => {
-    render(<Surfaces label="On every surface" surfaces={SURFACES} />);
-    const buttons = screen.getAllByRole("button");
-    for (const [index, button] of buttons.entries()) {
-      button.focus();
-      expect(document.activeElement).toBe(button);
-      const next = buttons[index + 1];
-      if (next)
-        expect(
-          button.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING,
-        ).toBeTruthy();
-    }
+  it("is an illustration: no focusable or announced button", () => {
+    const { container } = render(<Surfaces label="On every surface" surfaces={SURFACES} />);
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    // jsdom does not apply `inert`, so check that every drawn button sits inside an inert screen.
+    for (const button of container.querySelectorAll("button"))
+      expect(button.closest("[inert]")).not.toBeNull();
   });
 
   it("draws an Arabic surface right to left inside an English page", () => {
-    render(<Surfaces label="On every surface" surfaces={SURFACES} />);
-    const arabic = screen.getByRole("button", { name: "إلغاء الطلب" }).closest("[lang]");
-    expect(arabic?.getAttribute("lang")).toBe("ar");
-    expect(arabic?.getAttribute("dir")).toBe("rtl");
-    expect(screen.getAllByRole("button", { name: "Cancel order" })[0]?.closest("[dir]")).toBeNull();
+    const { container } = render(<Surfaces label="On every surface" surfaces={SURFACES} />);
+    const arabic = screen.getByRole("img", { name: "Phone, إلغاء الطلب" });
+    expect(arabic.getAttribute("lang")).toBe("ar");
+    const [english, , arabicButton] = container.querySelectorAll("button");
+    expect(arabicButton?.closest("[lang]")?.getAttribute("dir")).toBe("rtl");
+    expect(english?.closest("[dir]")).toBeNull();
+    expect(english?.closest("[lang]")).toBeNull();
   });
 
   it("reads the same in an Arabic page", () => {
@@ -82,6 +84,6 @@ describe("Surfaces", () => {
     );
     expect(document.documentElement.dir).toBe("rtl");
     expect(screen.getByRole("group", { name: "على كل واجهة" })).toBeTruthy();
-    expect(screen.getAllByRole("button")).toHaveLength(3);
+    expect(screen.getAllByRole("img")).toHaveLength(3);
   });
 });

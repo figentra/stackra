@@ -29,6 +29,7 @@ import { type ReactElement, useMemo } from "react";
 import { CtaRow } from "#react/cta-row/cta-row";
 import type { HeroMachineProps } from "#react/hero-machine/hero-machine.props";
 import { RuledBand } from "#react/ruled-band/ruled-band";
+import { RULED_BAND_INLINE } from "#react/ruled-band/ruled-band-inline.constant";
 import { SurfaceFrame } from "#react/surfaces/surface-frame";
 
 /** The machine's first node, the action's window; no surface takes this id. */
@@ -39,7 +40,7 @@ const ACTION = "action";
  *
  * @example
  * <HeroMachine title="One backend, every surface." lede={lede} primary={docs} art={engine} horizon={strata}
- *   machine={{ action: { filename: "cancel-order.action.ts", code }, surfaces }} />
+ *   machine={{ label: "One action, every surface", action: { filename: "cancel-order.action.ts", code }, surfaces }} />
  */
 export function HeroMachine({
   title,
@@ -59,8 +60,9 @@ export function HeroMachine({
     [surfaces],
   );
   return (
-    <RuledBand label={title} className={`overflow-hidden ${className ?? ""}`}>
-      <div className="grid gap-12 px-4 pt-16 sm:px-8 lg:grid-cols-2 lg:px-12 lg:pt-24">
+    // No band padding on the section, so the horizon runs full bleed; no clipping, so the band's `+` marks show whole.
+    <RuledBand label={title} className={className ?? ""}>
+      <div className={`grid gap-12 pt-16 lg:grid-cols-2 lg:pt-24 ${RULED_BAND_INLINE}`}>
         <div className="flex flex-col items-start gap-6">
           <Heading level={1} type="h1" className="max-w-xl text-balance">
             {title}
@@ -72,11 +74,7 @@ export function HeroMachine({
         </div>
         {machine === undefined ? null : (
           <div data-slot="hero-machine" className="min-w-0">
-            <Schematic
-              label={machine.action.filename}
-              links={links}
-              className="flex flex-col gap-12"
-            >
+            <Schematic label={machine.label} links={links} className="flex flex-col gap-12">
               <SchematicNode id={ACTION}>
                 <Frame variant="schematic" title={machine.action.filename}>
                   <CodeBlock

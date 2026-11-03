@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: proves the HeroMachine is a blueprint region named by its `h1`, with the primary link, the copy link
- *          and the command reachable in order from the keyboard, the machine at the inline end (the action's file in a
- *          schematic window piped into a frame per surface, each with its button, an Arabic one right to left), the
+ *          and the command reachable in order from the keyboard, the machine at the inline end (a group named by its
+ *          label: the action's file in a schematic window piped into a frame per surface, each an image of its button
+ *          with no focusable control, an Arabic one right to left), the band unclipped so its marks show whole, the
  *          pipe drawing in on floor steps at the `full` motion level and drawn at once below it, the engine drawing
  *          decorative unless it has `alt` and never mirrored in Arabic, and the dither horizon that drifts at the
  *          `full` motion level and stands still below it.
@@ -17,7 +18,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { DesignSystemProvider } from "@stackra/ui/react";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { vi } from "vitest";
 
@@ -45,6 +46,7 @@ const PROPS: HeroMachineProps = {
   art: { src: "/landing/art/engine", width: 505, height: 588 },
   horizon: { poster: "/strata-dark.png", sun: { x: 0.8, y: 1 } },
   machine: {
+    label: "One action, every surface",
     action: { filename: "cancel-order.action.ts", code: "export class CancelOrderAction {}" },
     surfaces: [
       { id: "web", kind: "web", title: "orders.example", button: "Cancel order" },
@@ -93,7 +95,7 @@ describe("HeroMachine", () => {
 
   it("draws the machine: the action's window piped into a frame per surface, each with its button", () => {
     const { container } = draw(<HeroMachine {...PROPS} />, { motion: "reduced" });
-    const machine = screen.getByRole("group", { name: "cancel-order.action.ts" });
+    const machine = screen.getByRole("group", { name: "One action, every surface" });
     const frames = [...machine.querySelectorAll('[data-slot="frame"]')];
     expect(frames.map((each) => each.getAttribute("data-variant"))).toEqual([
       "schematic",
@@ -103,8 +105,20 @@ describe("HeroMachine", () => {
     ]);
     expect(frames[0]?.textContent).toContain("export class CancelOrderAction {}");
     expect(frames[1]?.textContent).toContain("orders.example");
-    expect(screen.getAllByRole("button", { name: "Cancel order" })).toHaveLength(2);
-    const arabic = screen.getByRole("button", { name: "إلغاء الطلب" }).closest("[lang]");
+    // Each surface is an illustration named by its own words; its drawn button is never a control.
+    expect(
+      within(machine)
+        .getAllByRole("img")
+        .map((image) => image.getAttribute("aria-label")),
+    ).toEqual(["orders.example, Cancel order", "Orders, Cancel order", "Phone, إلغاء الطلب"]);
+    // The only control in the machine is the code's own copy button; no surface button is reachable.
+    expect(
+      within(machine).queryAllByRole("button", { name: /Cancel order|إلغاء الطلب/ }),
+    ).toHaveLength(0);
+    const drawn = [...machine.querySelectorAll('[data-slot="surface"] button')];
+    expect(drawn).toHaveLength(3);
+    for (const button of drawn) expect(button.closest("[inert]")).not.toBeNull();
+    const arabic = drawn[2]?.closest("[lang]");
     expect(arabic?.getAttribute("dir")).toBe("rtl");
     // Below the full motion level the pipes are drawn at once, one from the action to each surface.
     expect(machine.getAttribute("data-drawn")).toBe("");
@@ -118,7 +132,7 @@ describe("HeroMachine", () => {
     vi.useFakeTimers();
     try {
       draw(<HeroMachine {...PROPS} />);
-      const machine = screen.getByRole("group", { name: "cancel-order.action.ts" });
+      const machine = screen.getByRole("group", { name: "One action, every surface" });
       expect(machine.hasAttribute("data-drawn")).toBe(false);
       // Three segments a pipe, all three pipes leave the action together; one act a step, so each schedules the next.
       for (let step = 0; step < 3; step++) act(() => vi.advanceTimersByTime(STEP_MS));
@@ -138,14 +152,24 @@ describe("HeroMachine", () => {
   });
 
   it("keeps the engine drawing decorative unless it has alt", () => {
-    const { rerender } = draw(<HeroMachine {...PROPS} />);
-    expect(screen.queryAllByRole("img")).toHaveLength(0);
+    const { container, rerender } = draw(<HeroMachine {...PROPS} />);
+    const drawing = () => container.querySelector<HTMLElement>('[data-slot="hero-art"]');
+    expect(within(drawing() ?? container).queryAllByRole("img")).toHaveLength(0);
     rerender(
       <DesignSystemProvider hasShortcutCheatSheet={false}>
         <HeroMachine {...PROPS} art={{ ...PROPS.art, alt: "An engine on the S" }} />
       </DesignSystemProvider>,
     );
     expect(screen.getByRole("img", { name: "An engine on the S" })).toBeTruthy();
+  });
+
+  it("keeps the band unclipped, so its two marks show whole, with the bands' inline padding on its text", () => {
+    const { container } = draw(<HeroMachine {...PROPS} />);
+    const band = container.querySelector('[data-slot="blueprint-section"]');
+    expect(band?.className).not.toContain("overflow-hidden");
+    expect(band?.querySelectorAll('[data-slot="blueprint-mark"]')).toHaveLength(2);
+    const grid = container.querySelector('[data-slot="hero-machine"]')?.parentElement;
+    expect(grid?.className).toContain("px-4 sm:px-8 lg:px-12");
   });
 
   it("lays the hero out with logical sides in Arabic and never mirrors the drawing", () => {

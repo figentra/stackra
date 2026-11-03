@@ -19,7 +19,7 @@ import type { SurfaceFrameProps } from "#react/surfaces/surface-frame.props";
  * @example
  * <HeroMachine title="One backend, every surface." lede="…" primary={docs} art={{ src: "/art/engine", width: 505, height: 588 }}
  *   horizon={{ poster: strata, sun: { x: 0.8, y: 1 } }}
- *   machine={{ action: { filename: "cancel-order.action.ts", code }, surfaces }} />
+ *   machine={{ label: "One action, every surface", action: { filename: "cancel-order.action.ts", code }, surfaces }} />
  */
 export interface HeroMachineProps {
   /** The page's one `h1`, and the section's spoken name. */
@@ -51,6 +51,8 @@ export interface HeroMachineProps {
    */
   readonly machine?:
     | {
+        /** The machine's spoken name, such as "One action, every surface"; the file name only titles its window. */
+        readonly label: string;
         readonly action: { readonly filename: string; readonly code: string };
         readonly surfaces: readonly SurfaceFrameProps["surface"][];
       }

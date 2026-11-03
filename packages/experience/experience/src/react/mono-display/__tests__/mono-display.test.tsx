@@ -62,6 +62,7 @@ describe("MonoDisplay", () => {
     expect(region.getAttribute("data-slot")).toBe("blueprint-section");
     const heading = screen.getByRole("heading", { level: 2, name: "stackra" });
     expect(heading.querySelector("span")?.getAttribute("translate")).toBe("no");
+    expect(heading.querySelector("span")?.getAttribute("lang")).toBe("en");
     expect(heading.className).not.toContain("clamp");
     expect(screen.getByText("One backend, every surface.")).toBeTruthy();
     expect(risen()).toBe(0);

@@ -7,7 +7,8 @@
  * Boundary: a navigation landmark of real `#id` links; the current one carries `aria-current="location"`, which is
  *           the signal for assistive tech. The status line changes only when the current section does and is not a
  *           live region, so scrolling announces nothing. Logical sides only, so right-to-left mirrors it. Nothing
- *           moves on its own; the browser scrolls to a link.
+ *           moves on its own; the browser scrolls to a link. While mounted it gives the document a
+ *           `scroll-padding-bottom` of the dock's height, so a focused element is never scrolled under it.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0501 (section 9, the blueprint roles); ADR 0060 (right-to-left);
  *          WCAG 2.2 SC 2.4.5, 2.4.7 and 2.4.8; STA-2041.
@@ -16,6 +17,9 @@ import { cn } from "@heroui/react";
 import { type ReactElement, useEffect, useState } from "react";
 
 import type { SectionDockProps } from "#react/section-dock/section-dock.props";
+
+/** The document's bottom scroll padding while a dock is up: the dock's height (written whole, so Tailwind sees it). */
+const DOCK_CLEARANCE = "scroll-pb-(--blueprint-dock-height)";
 
 /** A dock of the page's sections. */
 export function SectionDock({ label, items, className }: SectionDockProps): ReactElement {
@@ -46,6 +50,13 @@ export function SectionDock({ label, items, className }: SectionDockProps): Reac
     return () => sight.disconnect();
   }, [key]);
 
+  // While the dock is up, the page scrolls a focused element clear of it, never underneath (WCAG 2.2 SC 2.4.11).
+  useEffect(() => {
+    const root = document.documentElement.classList;
+    root.add(DOCK_CLEARANCE);
+    return () => root.remove(DOCK_CLEARANCE);
+  }, []);
+
   const current = items.find((item) => item.id === currentId) ?? items[0];
   return (
     <nav
@@ -70,7 +81,7 @@ export function SectionDock({ label, items, className }: SectionDockProps): Reac
                 href={`#${item.id}`}
                 aria-current={isCurrent ? "location" : undefined}
                 className={cn(
-                  "block whitespace-nowrap rounded-[var(--radius-pill)] px-2.5 py-1 text-xs no-underline outline-none focus-visible:ring-2 focus-visible:ring-focus",
+                  "block whitespace-nowrap rounded-[var(--radius-pill)] px-2.5 py-1 text-xs no-underline outline-hidden focus-visible:ring-2 focus-visible:ring-focus",
                   isCurrent
                     ? "bg-accent text-accent-foreground"
                     : "text-muted hover:text-foreground",

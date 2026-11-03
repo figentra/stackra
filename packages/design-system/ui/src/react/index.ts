@@ -38,6 +38,8 @@ export { BulkActionBar } from "#react/bulk-action-bar/bulk-action-bar";
 export type { BulkActionBarProps } from "#react/bulk-action-bar/bulk-action-bar.props";
 export { Button } from "#react/button/button";
 export type { ButtonProps } from "#react/button/button.props";
+export { ButtonLink } from "#react/button-link/button-link";
+export type { ButtonLinkProps } from "#react/button-link/button-link.props";
 export { Card } from "#react/card/card";
 export type { CardProps } from "#react/card/card.props";
 export type { CardTitleProps } from "#react/card/card-title.props";

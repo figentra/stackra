@@ -16,8 +16,8 @@ import type { ReactElement } from "react";
 
 import type { SiteHeaderProps } from "#react/site-header/site-header.props";
 
-/** The kit's focus ring, drawn whatever the base layer gives an anchor. */
-const FOCUS = "outline-none focus-visible:ring-2 focus-visible:ring-focus";
+/** The kit's focus ring, drawn whatever the base layer gives an anchor; `outline-hidden` keeps an outline in forced colours. */
+const FOCUS = "outline-hidden focus-visible:ring-2 focus-visible:ring-focus";
 
 /** The bar's quiet colour, important so it wins over the link colour the `Link` draws. */
 const QUIET = "text-muted! hover:text-foreground!";
@@ -51,7 +51,10 @@ export function SiteHeader({
       variant="transparent"
       title={brand}
       search={
-        <nav {...(navLabel ? { "aria-label": navLabel } : {})} className="min-w-0 overflow-x-auto">
+        <nav
+          {...(navLabel ? { "aria-label": navLabel } : {})}
+          className="-m-1 min-w-0 overflow-x-auto p-1"
+        >
           <ul className="flex items-center gap-1">
             {links.map((link) => (
               <li key={link.href}>
