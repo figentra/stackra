@@ -13,3 +13,6 @@ whole-step reveal behind `Schematic`, `TerminalDemo` and other floor-step motion
 (code characters in the mono font), `glyphs` and `sun` (moves the core glow, measured from the inline start); in
 right-to-left a dot field now mirrors as a whole, while glyphs never mirror. In left-to-right its defaults draw exactly
 as before.
+
+`ButtonLink`: a link drawn as a Stackra button (the `core` variant and `pill` shape included), for a call to action
+that navigates without script.
