@@ -144,17 +144,18 @@ jobs:
       - name: Typecheck
         env:
           AFFECTED: ${{ github.event_name == 'pull_request' && '1' || '' }}
-          TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha }}
+          TURBO_SCM_BASE: HEAD~1 # a PR checks out its merge into main, so HEAD~1 is main and the diff is the PR's own
         run: pnpm exec turbo run typecheck ${AFFECTED:+--affected} --continue=dependencies-successful
 
       # On a pull request: the affected members (`...[base]`, what `--affected` selects) plus the CLI, whose dist
       # `pnpm validate` runs. Two `--filter`s are a union; `--affected` with a `--filter` would intersect them.
       - name: Build
         env:
-          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
+          AFFECTED: ${{ github.event_name == 'pull_request' && '1' || '' }}
         run: |
-          if [ -n "$BASE_SHA" ]; then
-            pnpm exec turbo run build --filter="...[$BASE_SHA]" --filter='@stackra/cli...'
+          # A PR checks out its merge into main, so HEAD~1 is main and the diff is the PR's own.
+          if [ -n "$AFFECTED" ]; then
+            pnpm exec turbo run build --filter='...[HEAD~1]' --filter='@stackra/cli...'
           else
             pnpm exec turbo run build
           fi
