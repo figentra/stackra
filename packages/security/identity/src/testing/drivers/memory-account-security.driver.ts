@@ -12,7 +12,7 @@ import { Driver } from "@stackra/container";
 import { AssuranceLevel } from "@stackra/contracts";
 
 import { AccountSecurity } from "#contracts/index";
-import type { AccountSecurityOverview, DeviceSession } from "#contracts/index";
+import type { AccountSecurityOverview, AccountSession } from "#contracts/index";
 import { StepUpRequiredError } from "#core/index";
 
 /**
@@ -31,7 +31,7 @@ export class MemoryAccountSecurityDriver extends Driver(AccountSecurity) {
   private state: AccountSecurityOverview = { hasPassword: true, secondFactors: [], passkeys: [] };
 
   /** The device sessions, this one first. */
-  private devices: readonly DeviceSession[] = [];
+  private devices: readonly AccountSession[] = [];
 
   /** Whether the next sensitive call refuses with `step_up_required`. */
   private isStepUpDue = false;
@@ -43,7 +43,7 @@ export class MemoryAccountSecurityDriver extends Driver(AccountSecurity) {
    */
   seed(
     overview: Partial<AccountSecurityOverview> = {},
-    sessions: readonly DeviceSession[] = [],
+    sessions: readonly AccountSession[] = [],
   ): this {
     this.state = { ...this.state, ...overview };
     this.devices = sessions;
@@ -95,7 +95,7 @@ export class MemoryAccountSecurityDriver extends Driver(AccountSecurity) {
   }
 
   /** The held device sessions. */
-  sessions(): Promise<readonly DeviceSession[]> {
+  sessions(): Promise<readonly AccountSession[]> {
     return Promise.resolve(this.devices);
   }
 
