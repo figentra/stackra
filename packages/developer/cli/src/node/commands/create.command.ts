@@ -5,7 +5,7 @@
  *          and package manager (each also a flag; `--yes` takes every default; without a terminal nothing is asked),
  *          fetches the starter (`@stackra/starter` from the Stackra registry at the CLI's version, or `--starter
  *          <dir|tgz>`), runs the doctor for what the profile needs, writes the profile's files under the chosen
- *          names, installs, runs `stackra gen` and shows what it wrote as a tree, type-checks and tests, makes the
+ *          names, installs, runs `stackra gen` and shows what it wrote as a tree, each step a task, type-checks and tests, makes the
  *          first commit and prints the next steps.
  * Boundary: writes only inside `<directory>` and runs pnpm, gen and git there. The starter tarball is checked
  *           against the registry's SHA-512 integrity; `STACKRA_LICENCE_TOKEN` is checked for presence only and sent
@@ -22,7 +22,6 @@ import { Str } from "@stackra/validation";
 
 import { genTree } from "#node/create/functions/gen-tree.function";
 import { readStarter } from "#node/create/functions/read-starter.function";
-import { runStep } from "#node/create/functions/run-step.function";
 import { starterFiles } from "#node/create/functions/starter-files.function";
 import { starterTarball } from "#node/create/functions/starter-tarball.function";
 import { starterWorkspace } from "#node/create/functions/starter-workspace.function";
@@ -113,13 +112,11 @@ export class CreateCommand extends Command({
   @Option({ description: "git init and the first commit (--no-git to skip)" })
   git = true;
 
-  /** The folder the CLI runs in (`consoleCommand` sets it). */
-  cwd = process.cwd();
-
   /** Creates the app and returns what it made. */
   async handle(io: CommandIo): Promise<Readonly<Record<string, unknown>>> {
     io.output.banner();
-    const directory = resolve(this.cwd, this.directory);
+    const cwd = io.cwd;
+    const directory = resolve(cwd, this.directory);
     if (existsSync(directory) && readdirSync(directory).length > 0)
       throw new Error(`${directory} exists and is not empty; choose a new folder`);
 
@@ -175,7 +172,9 @@ export class CreateCommand extends Command({
     );
 
     const version = cliVersion();
-    const starter = await io.output.task("Fetching the starter", () => this.readStarter(version));
+    const starter = await io.output.task("Fetching the starter", () =>
+      this.readStarter(cwd, version),
+    );
     const files = starterFiles(starter, {
       profile: this.profile,
       name,
@@ -183,7 +182,7 @@ export class CreateCommand extends Command({
       stackraVersion: version,
       ...(this.tarballs === undefined
         ? {}
-        : { tarballs: tarballSpecs(resolve(this.cwd, this.tarballs)) }),
+        : { tarballs: tarballSpecs(resolve(cwd, this.tarballs)) }),
     });
 
     if (this.doctor) {
@@ -210,31 +209,30 @@ export class CreateCommand extends Command({
       }
     });
 
+    // A failed step ends the run and its task shows the tail of the step's output (the process port's detail).
+    const step = (command: string, args: readonly string[]) =>
+      io.process.run(command, args, { cwd: directory });
     let generated: string[] = [];
     if (this.install) {
-      await io.output.task(`Installing with ${pm}`, () => runStep(pm, ["install"], directory));
+      await io.output.task(`Installing with ${pm}`, () => step(pm, ["install"]));
       const wrote = await io.output.task("Running stackra gen", () =>
-        runStep(pm, ["exec", "stackra", "gen"], directory),
+        step(pm, ["exec", "stackra", "gen"]),
       );
-      generated = [...wrote.matchAll(/^wrote (\S+)$/gm)].map((match) => match[1] ?? "");
+      generated = [...wrote.output.matchAll(/^wrote (\S+)$/gm)].map((match) => match[1] ?? "");
       io.output.title(`stackra gen wrote ${generated.length} files`);
-      for (const line of genTree(generated, io.verbose)) io.output.line(line);
+      io.output.tree(genTree(generated));
       if (this.check) {
-        await io.output.task("Type-checking", () => runStep(pm, ["run", "typecheck"], directory));
-        await io.output.task("Testing", () => runStep(pm, ["run", "test"], directory));
+        await io.output.task("Type-checking", () => step(pm, ["run", "typecheck"]));
+        await io.output.task("Testing", () => step(pm, ["run", "test"]));
       }
     }
 
     if (this.git) {
       try {
         await io.output.task("Making the first commit", async () => {
-          await runStep("git", ["init", "-q"], directory);
-          await runStep("git", ["add", "-A"], directory);
-          await runStep(
-            "git",
-            ["commit", "-q", "-m", "chore: create the app with stackra create"],
-            directory,
-          );
+          await step("git", ["init", "-q"]);
+          await step("git", ["add", "-A"]);
+          await step("git", ["commit", "-q", "-m", "chore: create the app with stackra create"]);
         });
       } catch (error) {
         io.output.warn(
@@ -258,10 +256,10 @@ export class CreateCommand extends Command({
   }
 
   /** The starter: `--starter`, else the registry's at the CLI's version, else its latest. */
-  private async readStarter(version: string): Promise<Map<string, Uint8Array>> {
-    if (this.starter !== undefined) return readStarter(resolve(this.cwd, this.starter));
+  private async readStarter(cwd: string, version: string): Promise<Map<string, Uint8Array>> {
+    if (this.starter !== undefined) return readStarter(resolve(cwd, this.starter));
     const client = httpCatalogueClient({
-      origin: registryOrigin(this.cwd, undefined),
+      origin: registryOrigin(cwd, undefined),
       token: process.env["STACKRA_LICENCE_TOKEN"] || undefined,
     });
     // shortcut: falls back to `latest` when the CLI's own version has no starter; pick the newest of the CLI's minor
