@@ -32,6 +32,7 @@ const ROOT_RUNWAY = [
   "targets:",
   "  electron-release:",
   "    feed:",
+  "      bucket: downloads",
   "      publicOrigin: https://downloads.acme.example",
 ];
 
@@ -39,7 +40,6 @@ const CONSOLE_RUNWAY = [
   "version: 3",
   "release:",
   "  desktop:",
-  "    channels: [beta, latest]",
   "    feedPath: console",
   "environments:",
   "  dev:",
@@ -201,7 +201,7 @@ describe("definesFor", () => {
 
     write(
       "runway.yaml",
-      `${[...ROOT_RUNWAY.slice(0, 9), "      publicOrigin: downloads"].join("\n")}\n`,
+      `${[...ROOT_RUNWAY.slice(0, 10), "      publicOrigin: downloads"].join("\n")}\n`,
     );
     expect(() => definesFor("console", "production")).toThrow(/feed\.publicOrigin/);
   });
