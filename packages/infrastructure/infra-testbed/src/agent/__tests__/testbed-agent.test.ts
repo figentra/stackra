@@ -117,7 +117,7 @@ case "$1" in
   run) while [ "$1" != -- ]; do shift; done; shift; exec "$@" ;;
 esac`,
   );
-  stub("pnpm", `echo "pnpm $*" >> "$FAKE_LOG"`);
+  stub("pnpm", `echo "pnpm $* (in $PWD)" >> "$FAKE_LOG"`);
   // IMDS: a token always; the spot notices only when the test sets them (404, so curl -f fails, otherwise).
   stub(
     "curl",
@@ -286,7 +286,13 @@ describe("testbed-agent job run", () => {
     const run = agent(["job", "run", "j4", "light", "me", "core", "--", "echo hi"]);
 
     expect(run.code).toBe(0);
-    expect(logged()).toContain("pnpm fetch --store-dir");
+    // The fetch only fills the store, without scripts, from a copy outside the workspace: run there it would leave a
+    // node_modules that makes the container skip its install.
+    expect(logged()).toMatch(
+      /pnpm fetch --ignore-scripts --store-dir \S+ \(in \S+\/data\/jobs\/j4\/\.fetch\)/,
+    );
+    expect(existsSync(dir("data/jobs/j4/.fetch"))).toBe(false);
+    expect(logged()).toMatch(/-e CI=true /);
     expect(logged()).not.toContain(TOKEN);
     expect(run.out + run.err).not.toContain(TOKEN);
     expect(readFileSync(`${log}.env`, "utf8")).toContain(`INFISICAL_TOKEN=${TOKEN}`);

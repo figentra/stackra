@@ -404,14 +404,22 @@ EOF
   [ ! -f "$JOB_WS/services/encore.app" ] \
     || sed -i -E 's/"id":[[:space:]]*"[^"]*"/"id": ""/' "$JOB_WS/services/encore.app" || true
 
-  # One writer to the shared store; the job then installs offline against it read-only.
+  # One writer to the shared store; the job then installs offline against it read-only. The fetch only fills the
+  # store, from a copy of the files it reads: run in the workspace it would leave a node_modules that makes the
+  # container skip its install, and load the job's mise.toml on the host. No scripts: the container's install runs them.
   mkdir -p "$STORE" "$DATA/turbo-cache"
   if [ -f "$JOB_WS/pnpm-lock.yaml" ]; then
-    wrap "pnpm fetch --store-dir $(sq "$STORE")" || {
+    wrap "pnpm fetch --ignore-scripts --store-dir $(sq "$STORE")" || {
       say "unhealthy: grants"
       exit 75
     }
-    (cd "$JOB_WS" && flock "$STATE/store.lock" sh -c "$wrapped") || say "testbed-agent: pnpm fetch failed, the job installs what it can" >&2
+    fetch_dir=$DATA/jobs/$JOB_ID/.fetch
+    mkdir -p "$fetch_dir"
+    for f in pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs .pnpmfile.cjs .npmrc; do
+      [ ! -f "$JOB_WS/$f" ] || cp "$JOB_WS/$f" "$fetch_dir/"
+    done
+    (cd "$fetch_dir" && flock "$STATE/store.lock" sh -c "$wrapped") || say "testbed-agent: pnpm fetch failed, the job installs what it can" >&2
+    rm -rf "$fetch_dir"
   fi
 
   docker network create --label "$LABEL=$JOB_ID" "tb-$JOB_ID" >/dev/null || exit 75
@@ -437,7 +445,7 @@ EOF
   set -- --rm --init --name "tb-$JOB_ID" --label "$LABEL=$JOB_ID" --network "tb-$JOB_ID" \
     -v "$JOB_WS:/work" -v "$STORE:/pnpm-store:ro" -v "$DATA/turbo-cache:/turbo-cache" \
     -v /var/run/docker.sock:/var/run/docker.sock --group-add "$(stat -c %g /var/run/docker.sock 2>/dev/null || echo 0)" \
-    -e TURBO_CACHE_DIR=/turbo-cache -e "TESTBED_JOB=$JOB_ID"
+    -e TURBO_CACHE_DIR=/turbo-cache -e CI=true -e "TESTBED_JOB=$JOB_ID"
   [ "$postgres" = 0 ] || set -- "$@" -e "TESTBED_POSTGRES_HOST=tb-$JOB_ID-pg"
   [ -z "${INFISICAL_TOKEN:-}" ] || set -- "$@" -e INFISICAL_TOKEN -e INFISICAL_DOMAIN
   JOB_RAN=1
