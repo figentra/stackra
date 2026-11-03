@@ -59,7 +59,7 @@ describe("toolCommand", () => {
     expect(test.name).toBe("test");
     expect(test.summary).toBe("Run the tests");
     expect(test.usage).toBe("stackra test [--tier <tier>] [--target <target>]");
-    expect(toolCommand("lint", "Lint").usage).toBe("stackra lint");
+    expect(toolCommand("lint", "Lint").usage).toBe("stackra lint [--target <target>]");
   });
 
   it("generates, then starts the member's tool", async () => {

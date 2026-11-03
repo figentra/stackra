@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: the site configuration of @figentra/docs, the Stackra docs: name, theme, colours, logo and favicon, the tabs
- *          and their navigation groups, and the Mintlify keys gen does not own (`raw`). Gen renders
- *          `.stackra/site/docs.json` from it; it replaces the hand-written `src/docs.json`.
+ *          and their navigation groups, the moved paths (`redirects`, for the Fumadocs site), and the Mintlify keys gen
+ *          does not own (`raw`). Gen renders `.stackra/site/docs.json` from it, and the Fumadocs site in
+ *          `.stackra/fumadocs/` until the cutover (STA-2026); it replaces the hand-written `src/docs.json`.
  * Boundary: data only (field initializers); gen imports the file and reads the fields of the one exported class.
  *           Logo and favicon are paths under `src/assets`; a page is its path under `src/docs` without the extension,
  *           and `{ folder }` lists every page of one folder (`adr` keeps every ADR at `/adr/<file>`).
@@ -192,6 +193,12 @@ export class StackraDocsConfig extends DocsConfig {
       ],
     },
   ];
+
+  /**
+   * Paths that moved. The Fumadocs site writes them to `_redirects`; the Mintlify site keeps its own copy in `raw`
+   * until the cutover (STA-2026). The registry points `npm login` at /licensing.
+   */
+  override readonly redirects = [{ from: "/licensing", to: "/customers/install" }];
 
   /** The Mintlify keys gen does not model (background, fonts, appearance, search, SEO and the like), copied into docs.json as they are. */
   override readonly raw = {

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of the docs-site run: `generate` on a docs app (one with `src/config/docs.config.ts`) writes the
  *          Mintlify root into `.stackra/site/` (docs.json, the pages at the root, the copied assets), a second run
- *          changes nothing, a deleted page is removed from the site, the manifest pass writes nothing, a check run
+ *          changes nothing, a deleted page is removed from the site, an app on fumadocs-ui also gets the Fumadocs site
+ *          in `.stackra/fumadocs/` (its build kept, its refusals stopping the run), the manifest pass writes nothing, a check run
  *          writes nothing, a refusal writes nothing, and a config exporting two classes is `docs_config_invalid`.
  * Boundary: test only; writes a docs member under `<gen>/.cache/fixtures/` and runs gen on it.
  * Runtime: node (vitest)
@@ -78,6 +79,39 @@ describe("generate on a docs app", () => {
     expect(third.changed).toContain(".stackra/site/guides/setup.mdx");
     expect(existsSync(join(root, ".stackra/site/guides/setup.mdx"))).toBe(false);
     expect(existsSync(join(root, ".stackra/site/assets/shot.png"))).toBe(false);
+  });
+
+  it("writes the Fumadocs site beside the Mintlify root when the app depends on fumadocs-ui", async () => {
+    const root = writeDocsMember({
+      "package.json": JSON.stringify({
+        name: "@acme/handbook",
+        version: "0.0.1",
+        type: "module",
+        dependencies: { "fumadocs-ui": "catalog:docs" },
+      }),
+    });
+    const first = await generate(root);
+    expect(first.errors).toEqual([]);
+    expect(first.changed).toEqual(
+      expect.arrayContaining([
+        ".stackra/fumadocs/app/site.json",
+        ".stackra/fumadocs/content/guides/setup.mdx",
+        ".stackra/fumadocs/public/assets/shot.png",
+        ".stackra/fumadocs/public/llms.txt",
+        ".stackra/site/docs.json",
+      ]),
+    );
+    expect(readFileSync(join(root, ".stackra/fumadocs/public/llms.txt"), "utf8")).toBe(
+      readFileSync(join(root, ".stackra/site/llms.txt"), "utf8"),
+    );
+    mkdirSync(join(root, ".stackra/fumadocs/build/client"), { recursive: true });
+    writeFileSync(join(root, ".stackra/fumadocs/build/client/index.html"), "<html></html>");
+    expect((await generate(root)).changed).toEqual([]);
+    expect(existsSync(join(root, ".stackra/fumadocs/build/client/index.html"))).toBe(true);
+
+    writeFileSync(join(root, "src/docs/index.mdx"), '---\ntitle: "Home"\n---\n\n<Widget />\n');
+    const refused = await generate(root);
+    expect(refused.errors.map((error) => error.code)).toEqual(["docs_component_unknown"]);
   });
 
   it("writes nothing in the manifest pass or a check run", async () => {

@@ -28,11 +28,20 @@ assembles the site Mintlify reads into `.stackra/site/` (gitignored, never edite
 | `pnpm build`                              | gen, then `mint validate`, a strict build that fails on warnings  |
 | `pnpm lint`                               | gen, then `mint broken-links` and `mint a11y`                     |
 | `pnpm format`                             | `oxfmt --write .` (`pnpm format:check` verifies)                  |
+| `pnpm test:e2e`                           | the Fumadocs site: build, link check, then Playwright and axe     |
 
 Add a page: create the `.mdx` under `src/docs/`, then list it in a group of `src/config/docs.config.ts`. A new ADR needs
 no entry: the `{ folder: "adr" }` group lists every page in `src/docs/adr/`. Gen refuses a page no group lists, a listed
 page that does not exist, a media file in `src/assets` no page references, and a `docs.json` or `README.md` under
 `src/`.
+
+Fumadocs (STA-2026, ADR 0514): gen also writes the Fumadocs site into `.stackra/fumadocs/`, from the same pages, because
+the app depends on `fumadocs-ui`. `stackra dev|build|lint --target fumadocs` serves, prerenders and link-checks it, and
+`pnpm test:e2e` checks every path of the Mintlify sitemap (`e2e/fixtures/mintlify-sitemap.txt`), `llms.txt`,
+`llms-full.txt`, the redirects and axe on every page against it under `wrangler dev` (`wrangler.jsonc`, the
+`stackra-docs` Worker). Pages keep their Mintlify component names; the site maps them onto Fumadocs components, and gen
+refuses a capitalised tag that is neither mapped nor imported (`docs_component_unknown`). The cutover moves it into
+`.stackra/site/` and deploys the Worker instead of Mintlify.
 
 Deploy: runway's `mintlify` provider pushes `.stackra/site` to the `docs-site` branch (root `runway.yaml`), which the
 Mintlify GitHub app builds; `.github/workflows/deploy-docs.yml` runs the checks and the Mintlify update.

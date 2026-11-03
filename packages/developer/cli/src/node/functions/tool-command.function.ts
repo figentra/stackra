@@ -48,7 +48,7 @@ const OPTIONS: Readonly<Record<ToolTask, CliCommand["options"]>> = {
   start: {},
   typecheck: {},
   test: { tier: { type: "string" }, target: { type: "string" } },
-  lint: {},
+  lint: { target: { type: "string" } },
 };
 
 /** Whether gen wrote a tsdown config for the member's entries, or the member keeps one of its own. */

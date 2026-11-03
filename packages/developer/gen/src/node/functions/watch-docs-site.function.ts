@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `watchDocsSite`, gen in watch mode for a docs app: it watches the member's `src/` and, after a quiet spell,
- *          runs `generateDocsSite` again and hands each result to `onRun`, so `mint dev` in `.stackra/site/` picks the
- *          change up. `stackra dev` starts it before `mint dev` and closes it when `mint dev` exits.
+ *          runs `generateDocsSite` again and hands each result to `onRun`, so the site's dev server (`mint dev` in
+ *          `.stackra/site/`, or `react-router dev` in `.stackra/fumadocs/` for `--target fumadocs`, STA-2026) picks the
+ *          change up. `stackra dev` starts it before the dev server and closes it when the server exits.
  * Boundary: one recursive `fs.watch` on `src/`; runs never overlap (a change during a run schedules one more). It
  *           writes only what `generateDocsSite` writes. A run that throws is reported through `onError`, and the watch
  *           keeps going.

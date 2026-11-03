@@ -55,9 +55,13 @@ Mintlify documentation site. Tier tag `tier:app`.
   and accessibility errors.
 - Versions only from catalogs; `turbo.jsonc` extends `//` with one tier tag.
 
+- `pnpm test:e2e` (the Fumadocs site, STA-2026): gen's `docs_component_unknown` and its redirect refusals, a broken
+  internal link, image or anchor (`stackra lint --target fumadocs`), a Mintlify sitemap path that stops answering, and an
+  axe WCAG 2.2 AA violation on any page. Mintlify stays the deployed site until the cutover; edit pages as before.
+
 ## Tasks
 
-`pnpm dev`, `build`, `lint`, `format`, `test` (the `scripts/` tests), `clean`.
+`pnpm dev`, `build`, `lint`, `format`, `test` (the `scripts/` tests), `test:e2e` (the Fumadocs site), `clean`.
 
 ## PII
 

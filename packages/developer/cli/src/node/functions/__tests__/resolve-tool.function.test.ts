@@ -205,6 +205,32 @@ describe("resolveTool", () => {
     expect(() => resolveTool("typecheck", member("docs"), {})).toThrow(/React Router/);
   });
 
+  it("picks the Fumadocs site beside the Mintlify root with --target fumadocs, and runs Playwright for e2e", () => {
+    mkdirSync(join(root, "src", "config"), { recursive: true });
+    writeFileSync(join(root, "src", "config", "docs.config.ts"), "");
+    const fumadocs = join(root, ".stackra", "fumadocs");
+    mkdirSync(fumadocs, { recursive: true });
+    writeFileSync(join(fumadocs, "react-router.config.ts"), "");
+    mkdirSync(join(root, "node_modules", "@react-router", "dev"), { recursive: true });
+    expect(resolveTool("build", member("docs"), {})).toEqual({
+      command: "mint",
+      args: ["validate"],
+      cwd: join(root, ".stackra", "site"),
+    });
+    expect(resolveTool("build", member("docs"), { target: "fumadocs" })).toEqual({
+      command: "react-router",
+      args: ["build"],
+      cwd: fumadocs,
+    });
+    expect(resolveTool("test", member("docs"), { tier: "e2e" })).toEqual({
+      command: "playwright",
+      args: ["test"],
+      cwd: root,
+    });
+    expect(() => resolveTool("test", member("docs"), {})).toThrow("only the e2e tier");
+    expect(() => resolveTool("build", member("docs"), { target: "web" })).toThrow(CliUsageError);
+  });
+
   it("runs the generated int config for a package or service, and refuses without it or in an app", () => {
     expect(() => resolveTool("test", member("service"), { tier: "int" })).toThrow(
       "no .stackra/vitest.int.config.ts",

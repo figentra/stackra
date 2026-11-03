@@ -5,8 +5,9 @@
  *          Wrangler for a worker, the generated Encore app for a service, for the docs app React Router when gen
  *          assembled a Fumadocs site (`react-router dev`, and `react-router build` for `build` and for `lint`, whose
  *          link check reads the build, STA-2026) and Mintlify otherwise (`dev`, `validate` and `broken-links`, in the
- *          `.stackra/site/` gen assembles, or in `src/` for a docs app not yet moved to that layout, STA-1316),
- *          and vitest, tsc
+ *          `.stackra/site/` gen assembles, or in `src/` for a docs app not yet moved to that layout, STA-1316;
+ *          `--target fumadocs` picks the Fumadocs site gen writes to `.stackra/fumadocs/` until the cutover, and
+ *          `test --tier e2e` runs Playwright from the member root), and vitest, tsc
  *          and oxlint everywhere (`--tier int` runs the `.stackra/vitest.int.config.ts` gen writes for a member with an
  *          `.int.test.ts`). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
  *          member-root config it finds itself.
@@ -35,6 +36,9 @@ const WEB_TARGETS = new Set(["web", "pwa"]);
 
 /** The targets Expo and Maestro serve. */
 const NATIVE_TARGETS = new Set(["ios", "android"]);
+
+/** The docs app's target for the Fumadocs site gen writes to `.stackra/fumadocs/`, until the cutover (STA-2026). */
+const FUMADOCS_TARGET = "fumadocs";
 
 /** The test tiers a member command runs; the other tiers of ADR 0182 run under their own tasks. */
 const TIERS = new Set(["unit", "int", "e2e"]);
@@ -68,27 +72,24 @@ export function resolveTool(
     throw new Error(`stackra ${task} has no tool for ${root}: ${why}`);
   };
 
-  const target = options.target;
-  if (target !== undefined && !targets.includes(target)) {
-    throw new CliUsageError(
-      targets.length === 0
-        ? `--target needs an app with targets; ${root} has none`
-        : `unknown target: ${target} (this app has ${targets.join(", ")})`,
-    );
-  }
-  const web =
-    target === undefined ? targets.some((t) => WEB_TARGETS.has(t)) : WEB_TARGETS.has(target);
-  const native =
-    target === undefined
-      ? !web && targets.some((t) => NATIVE_TARGETS.has(t))
-      : NATIVE_TARGETS.has(target);
-  const platform = target === undefined ? [] : [`--${target}`];
-
   if (layout === "docs") {
+    // Until the cutover, `--target fumadocs` picks the Fumadocs site gen writes beside the Mintlify root (STA-2026).
+    if (options.target !== undefined && options.target !== FUMADOCS_TARGET)
+      throw new CliUsageError(
+        `unknown target: ${options.target} (a docs app has ${FUMADOCS_TARGET} until the cutover)`,
+      );
+    // The e2e tier checks the built Fumadocs site from the member root (playwright.config.ts).
+    if (task === "test") {
+      if ((options.tier ?? "unit") !== "e2e") return refuse("a docs app has only the e2e tier");
+      return at("playwright", ["test"]);
+    }
     // The site gen assembles; a docs app not yet swept to the clean layout keeps Mintlify's root in src/.
-    const site = existsSync(join(root, DOCS_CONFIG_FILE))
-      ? join(root, DOCS_SITE_DIR)
-      : join(root, "src");
+    const site =
+      options.target === FUMADOCS_TARGET
+        ? join(root, ".stackra", "fumadocs")
+        : existsSync(join(root, DOCS_CONFIG_FILE))
+          ? join(root, DOCS_SITE_DIR)
+          : join(root, "src");
     const port = (): readonly string[] => {
       const runway = join(root, "runway.yaml");
       const { environments } = existsSync(runway)
@@ -106,14 +107,32 @@ export function resolveTool(
       if (task === "dev") return at("react-router", ["dev", ...port()], site);
       if (task === "build" || task === "lint") return at("react-router", ["build"], site);
       return refuse(
-        "the docs app runs React Router, which serves `dev`, `build` and `lint` (the link check reads the build)",
+        "the docs app runs React Router, which serves `dev`, `build`, `lint` (the link check reads the build) and the e2e tier",
       );
     }
     if (task === "dev") return at("mint", ["dev", ...port()], site);
     if (task === "build") return at("mint", ["validate"], site);
     if (task === "lint") return at("mint", ["broken-links"], site);
-    return refuse("the docs app runs Mintlify, which serves `dev`, `build` and `lint`");
+    return refuse(
+      "the docs app runs Mintlify, which serves `dev`, `build`, `lint` and the e2e tier",
+    );
   }
+
+  const target = options.target;
+  if (target !== undefined && !targets.includes(target)) {
+    throw new CliUsageError(
+      targets.length === 0
+        ? `--target needs an app with targets; ${root} has none`
+        : `unknown target: ${target} (this app has ${targets.join(", ")})`,
+    );
+  }
+  const web =
+    target === undefined ? targets.some((t) => WEB_TARGETS.has(t)) : WEB_TARGETS.has(target);
+  const native =
+    target === undefined
+      ? !web && targets.some((t) => NATIVE_TARGETS.has(t))
+      : NATIVE_TARGETS.has(target);
+  const platform = target === undefined ? [] : [`--${target}`];
 
   switch (task) {
     case "lint": {
