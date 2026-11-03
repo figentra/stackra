@@ -1849,25 +1849,29 @@
           "required": ["package"],
           "properties": {
             "package": {
-              "$ref": "#/$defs/packageName"
+              "$ref": "#/$defs/packageName",
+              "description": "Not read yet (STA-2003). The package that carries the contribution."
             },
             "panels": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
-              }
+              },
+              "description": "Not read yet (STA-2003). The panels it contributes."
             },
             "resources": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
-              }
+              },
+              "description": "Not read yet (STA-2003). The resources it contributes."
             },
             "widgets": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
-              }
+              },
+              "description": "Not read yet (STA-2003). The widgets it contributes."
             }
           }
         }
@@ -1881,20 +1885,22 @@
       "properties": {
         "key": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_-]*$"
+          "pattern": "^[a-z][a-z0-9_-]*$",
+          "description": "Not read yet (STA-2003). The entry's key."
         },
         "block": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9.-]*$",
-          "description": "A registered block id, never a module path or an export.",
+          "description": "Not read yet (STA-2003). A registered block id, never a module path or an export.",
           "examples": ["os/table"]
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "description": "Not read yet (STA-2003). The entry's title."
         },
         "props": {
           "type": "object",
-          "description": "Data the block reads."
+          "description": "Not read yet (STA-2003). Data the block reads."
         }
       }
     },
@@ -2109,10 +2115,6 @@
           "additionalProperties": {
             "enum": ["small", "medium", "large"]
           }
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 1
         }
       }
     },

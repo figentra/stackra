@@ -27,6 +27,7 @@ export const runCommand: CommandRunner = async (command, args, options) => {
   try {
     const pending = promisify(execFile)(command, [...args], {
       cwd: options.cwd,
+      ...(options.env === undefined ? {} : { env: { ...process.env, ...options.env } }),
       maxBuffer: MAX_BUFFER,
     });
     if (options.input !== undefined) pending.child.stdin?.end(options.input);
