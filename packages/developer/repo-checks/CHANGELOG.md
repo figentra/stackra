@@ -1,5 +1,56 @@
 # @stackra/repo-checks
 
+## 0.8.0
+
+### Patch Changes
+
+- 67e7e8f: The runway schemas drop the fields that no repository set and nothing read (STA-2028), so each of these keys now
+  fails `parseRunway` and `pnpm validate`:
+  
+  - root runway: `resources.<name>.reason` (ADR 0493's reason rule is the workloads');
+  - app runway: `brands` (ADR 0335 puts brands in `stackra.config.ts`), `release.pwa` (ADR 0326 decision 6),
+    `release.desktop.channels`, `release.desktop.signing` and `release.desktop.platforms` (ADR 0344 decision 7; they
+    return with the desktop release job), `release.mobile.whiteLabel` (the root `mobile.<app>.whiteLabel` is the one
+    read), and `release.mobile.profiles.<profile>.distribution`, `.developmentClient`, `.simulator`, `.androidApk` and
+    `.autoIncrement` (`easJsonOf` sets them);
+  - app runway environments: `aliases`, `e2e`, `pwa`, `desktop.rollout` and `mobile.devClient`.
+  
+  The app runway's `release.desktop`, `release.mobile`, each mobile profile and each environment's `desktop` and `mobile`
+  blocks are now strict. `brandsOf`, the `Brand` type and the `brands` entry of the runway facts are removed with
+  `brands`; nothing called them.
+  
+  Kept, marked "Not read yet" in their description and in repo-checks' `RUNWAY_UNREAD_FIELDS`: the
+  `surfaces.ops.contributes` children (STA-2003), the app `health.path` and `health.expects` (Runway plan PR 13) and the
+  app environments' `desktop.devtools` (STA-2029).
+
+## 0.7.1
+
+No changes in this release.
+
+## 0.7.0
+
+No changes in this release.
+
+## 0.6.1
+
+No changes in this release.
+
+## 0.6.0
+
+### Minor Changes
+
+- e250d4f: Gen writes one `registerActions([...])` in each member's `#stackra/registrations`, a row per action and query with its
+  locked key, permission, risk, effects and input schema, so the pipeline validates input and checks the permission of
+  every call. `IamAccessControlDriver` now refuses a call with no registered permission instead of letting it through,
+  and lets an anonymous caller past `require` and `authorize` only for a class whose `actors` list `anonymous`; the
+  manifest marks such a call `anonymous: true` and its OpenAPI operation takes no security. `stackra validate` lists
+  every anonymous-callable call, and a test pins today's five (STA-2025).
+- 2ed03e2: The 32 runway fields that the repositories set but nothing reads yet now say so in their JSON Schema description, with
+  the work that will read them ("Not read yet (Runway plan PR 12, STA-2001)"); `environments.*.deploy.gate` is marked a
+  deprecated alias of `release.gate`. No field is removed and parsing is unchanged. `@stackra/repo-checks` adds the
+  `runway-unread-fields` structure check (`checkRunwayUnreadFields`, `RUNWAY_UNREAD_FIELDS`): it fails when the list and
+  the schema notes disagree, or when the runway, CLI, gen or infra sources read a field still listed as not read.
+
 ## 0.5.1
 
 No changes in this release.

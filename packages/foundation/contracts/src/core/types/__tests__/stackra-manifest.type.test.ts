@@ -68,4 +68,24 @@ describe("StackraManifest", () => {
     };
     expect(minimal.modules?.[0]?.key).toBe("theme");
   });
+
+  // @covers sta-1910:FR-016
+  it("types a producer's relay keys and subscribers by environment", () => {
+    const producer: StackraManifest = {
+      member: "payments",
+      package: "@figentra/pay-service-payments",
+      version: "0.1.0",
+      relay: {
+        keys: { dev: [{ id: "pay-dev-1", publicKey: "MCowBQYDK2VwAyEA" }] },
+        subscribers: {
+          dev: [{ member: "billing", events: ["payments.payment.captured.v1"] }],
+        },
+      },
+    };
+    expect(producer.relay?.keys["dev"]?.[0]?.id).toBe("pay-dev-1");
+    expect(producer.relay?.subscribers["dev"]?.[0]?.events).toContain(
+      "payments.payment.captured.v1",
+    );
+    expect(manifest.relay).toBeUndefined();
+  });
 });

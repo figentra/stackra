@@ -189,6 +189,9 @@ edgeWorker:
 - **KV keys** are built by `edgeKvKey` (`host:<hostname>`, `boot:<product>:<surface>:<scope>`, `shell:<surface>:<line>`,
   `release:<product>:<surface>`, `canary:<product>:<surface>`, `wellknown:<hostname>:<file>`); Runway writes platform
   rows, the OS edge projector the rest.
+- **Routes**: generated from the runway host map, one `<host>/*` per surface host under a runway zone, beside any
+  `routes` written here. A bare `*/*` is refused unless the zone lists `exclusions` (routes with no Worker) for every
+  other host, so it cannot swallow the apex, `www` or `api`.
 - **Rollout**: the deploy job's health gate moves the shares (steps and threshold are OS settings) and this stack
   applies them; a version missing from `rollout` gets no traffic.
 - **Origin lock**: every origin sits behind an Access application that admits only the Worker's service token; a

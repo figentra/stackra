@@ -1,13 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `emitBoot`, a service's `#stackra/boot` (`.stackra/gen/boot.ts`): one `boot(container, { signal })`
- *          that connects what needs the booted container, in order: the bound `HoldRegistry` and `SequenceTimeZone`
- *          drivers (or none), `PostgresDatabaseDriver.connect` with `databaseUrl()`, the url the service's Encore
+ *          that connects what needs the booted container, in order: the record policies (`connectPolicies`, when the
+ *          manifest lists one, so `ctx.authorize(record)` builds each with its dependencies; STA-2045), the bound
+ *          `HoldRegistry` and `SequenceTimeZone` drivers (or none), the container itself as the reads' visibility
+ *          resolver (`connectVisibilityFilter`, so reads AND the bound `VisibilityFilter`'s conditions, writes stamp
+ *          the call's actor and the call's time zone is read; ADR 0333 decision 4, STA-2044),
+ *          `PostgresDatabaseDriver.connect` with `databaseUrl()`, the url the service's Encore
  *          `database` provides (`emitEncoreDatabase`; boot never imports `.stackra/encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
  *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
  *          instance's share of the runway `poolBudget`, ADR 0473) and the subscribers: the legal-hold one, the
  *          `StampSubscriber`, the `AppendOnlySubscriber` (stackra-256), the trait subscribers of `traitSubscribers`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` and, when bound, the `KeyProvider` its blind indexes need (when a model, own or a declared package's, has
- *          `HasEncryptedFields`; stackra-262) and the outbox writer among its subscribers,
+ *          `HasEncryptedFields`; stackra-262) and the outbox writer among its subscribers, then the outbox writer as the
+ *          native-write watcher (`connectNativeWriteWatcher`, so a native `CrudService` write reaches the change log;
+ *          STA-2047),
  *          `segments.connect(container)`, `AutomationService#connect` (so a published automation's principal is checked
  *          against its scope, ADR 0495, when the service runs `@stackra/workflow`), `EventBus#connect` and
  *          `InboxService#connect` (the
@@ -123,17 +129,23 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   const workflow = uses("@stackra/workflow");
   // The outbox depends on the bus, so a service with an outbox has one to connect.
   const events = outbox || uses("@stackra/events");
-  if (!database && !outbox && !segments && !workflow && !events) return undefined;
+  // A record policy is built from the booted container when `ctx.authorize(record)` runs it (ADR 0132, STA-2045).
+  const policies = ((built?.["policies"] ?? []) as readonly unknown[]).length > 0;
+  if (!database && !outbox && !segments && !workflow && !events && !policies) return undefined;
   // Live queries refresh their clients through realtime after each invalidating event commits (ADR 0315 decision 1).
   const live = events && uses("@stackra/realtime") ? liveQueryRows(built) : [];
 
   const imports = ['import type { Container } from "@stackra/container";'];
   const steps: string[] = [];
+  if (policies) {
+    imports.push('import { connectPolicies } from "@stackra/iam";');
+    steps.push("  connectPolicies(container);");
+  }
   if (database) {
     imports.push(
       'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',
       // The trait subscribers' names (Tree, ValidateOnFlush) sort after StampSubscriber, so appending keeps the order.
-      `import { ${["AppendOnlySubscriber", "connectHoldRegistry", "connectSequenceTimeZone", "DatabaseConfig", "HoldSubscriber", "StampSubscriber", ...traits].join(", ")} } from "@stackra/database";`,
+      `import { ${["AppendOnlySubscriber", "connectHoldRegistry", ...(outbox ? ["connectNativeWriteWatcher"] : []), "connectSequenceTimeZone", "connectVisibilityFilter", "DatabaseConfig", "HoldSubscriber", "StampSubscriber", ...traits].join(", ")} } from "@stackra/database";`,
       'import { databaseUrl, PostgresDatabaseDriver } from "@stackra/database/node";',
     );
     if (encrypted)
@@ -146,6 +158,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "  connectSequenceTimeZone(",
       "    container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,",
       "  );",
+      "  connectVisibilityFilter(container);",
       "  const config = container.has(DatabaseConfig) ? container.get(DatabaseConfig) : undefined;",
       '  const replicas = (process.env["DATABASE_REPLICA_URLS"] ?? "").split(",").filter((url) => url !== "");',
       "  // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.",
@@ -159,6 +172,9 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       `    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber()${traits.map((name) => `, new ${name}()`).join("")}${encrypted ? ", new EncryptedFieldsSubscriber(container.get(FieldCipher), undefined, container.has(KeyProvider) ? container.get(KeyProvider) : undefined)" : ""}${outbox ? ", container.get(OutboxWriterService)" : ""}],`,
       "  });",
     );
+    // A native CrudService write (increment, soft delete, restore, repath, purge) fires no ORM event, so the writer
+    // hears of it through the watcher, or search, segments and change consumers keep stale rows (STA-2047).
+    if (outbox) steps.push("  connectNativeWriteWatcher(container.get(OutboxWriterService));");
   }
   if (outbox)
     imports.push(

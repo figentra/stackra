@@ -1,5 +1,86 @@
 # @stackra/ui
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/icons@0.8.0
+  - @stackra/tokens@0.8.0
+  - @stackra/shortcuts@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/i18n@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/icons@0.7.1
+  - @stackra/tokens@0.7.1
+  - @stackra/shortcuts@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/i18n@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/icons@0.7.0
+  - @stackra/tokens@0.7.0
+  - @stackra/shortcuts@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/i18n@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/icons@0.6.1
+  - @stackra/tokens@0.6.1
+  - @stackra/shortcuts@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/i18n@0.6.1
+  - @stackra/validation@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- d53d9d3: Button gains `variant="core"` and `shape="pill"`, and Heading and Text gain `tone="core"`, for the Stackra champagne
+  core (STA-2016). `core` draws HeroUI's primary filled by the theme's `core-strong` (web `button--core`, native
+  `bg-core-strong`). A pill takes the theme's `--radius-pill`. Heading draws `core` at the looks h1 to h4 and
+  `core-strong` below; Text always draws `core-strong`. Until `@stackra/tokens` ships the core roles (STA-2015), a core
+  button draws as the primary and core text keeps its default colour.
+- 712fb89: Spinner, ProgressBar, ProgressCircle and RouteProgress draw the brand's dot loader on web and native (STA-2017,
+  figentra/brand rules §41), under the loaders' exception to ADR 0303 decision 6 (owner, 2026-11-02). Dots build the st
+  tile's floors 80 ms a step with the last or leading dot in the emphasis colour (`--core`, falling back to the accent
+  on the web; the tone's colour on native until STA-2015). Every prop, role, name and value stays. Reduced motion,
+  from the system or the provider, shows the dots at rest. The web Spinner's props are now the span's own (HeroUI's
+  `animation` and `render` are gone) and the native Spinner's the view's.
+
+### Patch Changes
+
+- Updated dependencies [ef62362]
+  - @stackra/tokens@0.6.0
+  - @stackra/icons@0.6.0
+  - @stackra/shortcuts@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/i18n@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

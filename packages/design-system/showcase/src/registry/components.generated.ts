@@ -20,6 +20,7 @@ import { FREE_APP_SHELL } from "#src/registry/components/free/app-shell";
 import { FREE_AREA_CHART } from "#src/registry/components/free/area-chart";
 import { FREE_ASPECT_RATIO } from "#src/registry/components/free/aspect-ratio";
 import { FREE_ATTACHMENT_CARD } from "#src/registry/components/free/attachment-card";
+import { FREE_AUTOCOMPLETE } from "#src/registry/components/free/autocomplete";
 import { FREE_AVATAR } from "#src/registry/components/free/avatar";
 import { FREE_AVATAR_GROUP } from "#src/registry/components/free/avatar-group";
 import { FREE_BACK_TO_TOP } from "#src/registry/components/free/back-to-top";
@@ -56,7 +57,9 @@ import { FREE_COACH_MARK } from "#src/registry/components/free/coach-mark";
 import { FREE_CODE } from "#src/registry/components/free/code";
 import { FREE_CODE_BLOCK } from "#src/registry/components/free/code-block";
 import { FREE_COLLECTION_ENGINE } from "#src/registry/components/free/collection-engine";
+import { FREE_COLOR_FIELD } from "#src/registry/components/free/color-field";
 import { FREE_COLOR_PICKER } from "#src/registry/components/free/color-picker";
+import { FREE_COLOR_SWATCH } from "#src/registry/components/free/color-swatch";
 import { FREE_COMBO_BOX } from "#src/registry/components/free/combo-box";
 import { FREE_COMMAND_PALETTE } from "#src/registry/components/free/command-palette";
 import { FREE_COMMENT_THREAD } from "#src/registry/components/free/comment-thread";
@@ -94,6 +97,7 @@ import { FREE_FAB } from "#src/registry/components/free/fab";
 import { FREE_FILE_TRIGGER } from "#src/registry/components/free/file-trigger";
 import { FREE_FILTER_BAR } from "#src/registry/components/free/filter-bar";
 import { FREE_FILTER_PANEL } from "#src/registry/components/free/filter-panel";
+import { FREE_FLAG } from "#src/registry/components/free/flag";
 import { FREE_FLIP_CARD } from "#src/registry/components/free/flip-card";
 import { FREE_FLOATING_PANEL } from "#src/registry/components/free/floating-panel";
 import { FREE_FOOTER } from "#src/registry/components/free/footer";
@@ -135,6 +139,7 @@ import { FREE_LIST } from "#src/registry/components/free/list";
 import { FREE_LISTBOX } from "#src/registry/components/free/listbox";
 import { FREE_LOADING_OVERLAY } from "#src/registry/components/free/loading-overlay";
 import { FREE_LOCALE_SWITCHER } from "#src/registry/components/free/locale-switcher";
+import { FREE_MARKER_MAP } from "#src/registry/components/free/marker-map";
 import { FREE_MARQUEE } from "#src/registry/components/free/marquee";
 import { FREE_MASKED_FIELD } from "#src/registry/components/free/masked-field";
 import { FREE_MEDIA_PLAYER } from "#src/registry/components/free/media-player";
@@ -301,6 +306,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_BIDI,
   FREE_CODE,
   FREE_COLLECTION_ENGINE,
+  FREE_FLAG,
   FREE_FOUNDATIONS,
   FREE_HEADING,
   FREE_ICON,
@@ -327,6 +333,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_ADDRESS_FIELD,
   FREE_ANGLE_SLIDER,
   FREE_CHECKBOX_FIELD,
+  FREE_COLOR_FIELD,
   FREE_COLOR_PICKER,
   FREE_DROP_ZONE,
   FREE_FILE_TRIGGER,
@@ -360,6 +367,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_TEXT_AREA_FIELD,
   FREE_TEXT_FIELD,
   FREE_TURNSTILE,
+  FREE_AUTOCOMPLETE,
   FREE_CASCADER,
   FREE_CHECKBOX,
   FREE_CHECKBOX_BUTTON_GROUP,
@@ -445,6 +453,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_CAROUSEL,
   FREE_CHIP,
   FREE_CODE_BLOCK,
+  FREE_COLOR_SWATCH,
   FREE_COMMENT_THREAD,
   FREE_DATA_GRID,
   FREE_DATA_TABLE,
@@ -464,6 +473,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_ITEM_CARD,
   FREE_KPI,
   FREE_LIST,
+  FREE_MARKER_MAP,
   FREE_MARQUEE,
   FREE_MEDIA_PLAYER,
   FREE_NUMBER_TICKER,
@@ -563,6 +573,86 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_SURFACE,
   FREE_TWO_COLUMN_LAYOUT,
   FREE_USE_BREAKPOINT,
+  // KIT_ACCOUNT_MENU: @stackra/identity, from its showcase/account-menu.json
+  {
+    slug: "account-menu",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/identity",
+    exportName: "AccountMenu",
+    parts: ["AccountMenu"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 360 }],
+    related: ["free/menu", "free/avatar", "free/dropdown"],
+    tokens: ["color.surface", "color.accent"],
+    keywords: ["account", "user menu", "profile", "sign out", "avatar", "kit"],
+    status: "new",
+  },
+  // KIT_ACTION_BUTTON: @stackra/panel, from its showcase/action-button.json
+  {
+    slug: "action-button",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/panel",
+    exportName: "ActionButton",
+    parts: ["ActionButton"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 240 }],
+    related: ["free/button", "free/page-header", "free/confirmation"],
+    tokens: ["color.accent", "color.danger"],
+    keywords: ["action", "button", "sdui", "run", "confirm", "shortcut", "kit"],
+    status: "new",
+  },
+  // KIT_ACTION_INPUT_MODAL: @stackra/panel, from its showcase/action-input-modal.json
+  {
+    slug: "action-input-modal",
+    tier: "free",
+    category: "blocks",
+    platforms: ["native"],
+    packageName: "@stackra/panel",
+    exportName: "ActionInputModal",
+    parts: ["ActionInputModal"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 520 }],
+    related: ["free/modal", "free/form", "free/text-area"],
+    tokens: ["color.surface", "color.field"],
+    keywords: ["action", "modal", "dialog", "input", "confirm", "panel", "kit"],
+    status: "new",
+  },
+  // KIT_BULK_ACTIONS: @stackra/panel, from its showcase/bulk-actions.json
+  {
+    slug: "bulk-actions",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/panel",
+    exportName: "BulkActions",
+    parts: ["BulkActions"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 240 }],
+    related: ["free/bulk-action-bar", "free/data-table"],
+    tokens: ["color.accent", "color.surface"],
+    keywords: ["bulk", "selection", "actions", "sdui", "toolbar", "kit"],
+    status: "new",
+  },
+  // KIT_CAN: @stackra/iam, from its showcase/can.json
+  {
+    slug: "can",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/iam",
+    exportName: "Can",
+    parts: ["Can"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 160 }],
+    related: ["free/empty-state", "free/button"],
+    tokens: ["color.surface"],
+    keywords: ["permission", "access", "show or hide", "authorization", "visibility", "kit"],
+    status: "new",
+  },
   // KIT_CART: @stackra/payments, from its showcase/cart.json
   {
     slug: "cart",
@@ -627,6 +717,102 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["features", "marketing", "landing", "section", "benefits", "kit"],
     status: "new",
   },
+  // KIT_MEMBER_PICKER: @stackra/tenancy, from its showcase/member-picker.json
+  {
+    slug: "member-picker",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/tenancy",
+    exportName: "MemberPicker",
+    parts: ["MemberPicker"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 320 }],
+    related: ["free/entity-picker", "free/combo-box", "free/avatar"],
+    tokens: ["color.field", "color.accent"],
+    keywords: ["member", "people", "assignee", "picker", "field", "kit"],
+    status: "new",
+  },
+  // KIT_MEMBERS_PAGE: @stackra/tenancy, from its showcase/members-page.json
+  {
+    slug: "members-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/tenancy",
+    exportName: "MembersPage",
+    parts: ["MembersPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 720 }],
+    related: ["free/page-header", "free/table", "free/modal", "free/status-badge"],
+    tokens: ["color.surface", "color.border", "color.danger"],
+    keywords: ["members", "team", "invite", "invitation", "role", "settings", "kit"],
+    status: "new",
+  },
+  // KIT_MODULE_MENU: @stackra/navigation, from its showcase/module-menu.json
+  {
+    slug: "module-menu",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react", "native"],
+    packageName: "@stackra/navigation",
+    exportName: "ModuleMenu",
+    parts: ["ModuleMenu"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 420 }],
+    related: ["free/sidebar", "free/navigation-list", "free/tab-bar"],
+    tokens: ["color.surface", "color.accent"],
+    keywords: ["menu", "navigation", "sidebar", "module", "modules", "kit"],
+    status: "new",
+  },
+  // KIT_ORGANIZATION_PAGE: @stackra/tenancy, from its showcase/organization-page.json
+  {
+    slug: "organization-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/tenancy",
+    exportName: "OrganizationPage",
+    parts: ["OrganizationPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 640 }],
+    related: ["free/page-header", "free/form-section", "free/property-list"],
+    tokens: ["color.surface", "color.border"],
+    keywords: ["organization", "tenant", "profile", "settings", "legal entity", "domain", "kit"],
+    status: "new",
+  },
+  // KIT_PASSWORD_POLICY_CHECKLIST: @stackra/identity, from its showcase/password-policy-checklist.json
+  {
+    slug: "password-policy-checklist",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/identity",
+    exportName: "PasswordPolicyChecklist",
+    parts: ["PasswordPolicyChecklist"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 240 }],
+    related: ["free/meter", "free/icon", "free/password-field"],
+    tokens: ["color.success", "color.muted"],
+    keywords: ["password", "policy", "rules", "strength", "checklist", "kit"],
+    status: "new",
+  },
+  // KIT_PASSWORD_RESET: @stackra/identity, from its showcase/password-reset.json
+  {
+    slug: "password-reset",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/identity",
+    exportName: "PasswordReset",
+    parts: ["PasswordReset"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 440 }],
+    related: ["free/text-field", "free/password-field", "free/alert"],
+    tokens: ["color.surface", "color.field"],
+    keywords: ["password", "reset", "forgot password", "recovery", "kit"],
+    status: "new",
+  },
   // KIT_PRICING_TABLE: @stackra/pricing, from its showcase/pricing-table.json
   {
     slug: "pricing-table",
@@ -643,12 +829,156 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["pricing", "plans", "subscription", "billing", "monthly", "yearly", "kit"],
     status: "new",
   },
+  // KIT_RESOURCE_FORM_PAGE: @stackra/panel, from its showcase/resource-form-page.json
+  {
+    slug: "resource-form-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["native"],
+    packageName: "@stackra/panel",
+    exportName: "ResourceFormPage",
+    parts: ["ResourceFormPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 620 }],
+    related: ["free/form", "free/form-field", "free/page-header", "free/number-field"],
+    tokens: ["color.surface", "color.field"],
+    keywords: ["resource", "form", "create", "edit", "crud", "admin", "panel", "kit"],
+    status: "new",
+  },
+  // KIT_RESOURCE_LIST_PAGE: @stackra/panel, from its showcase/resource-list-page.json
+  {
+    slug: "resource-list-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["native"],
+    packageName: "@stackra/panel",
+    exportName: "ResourceListPage",
+    parts: ["ResourceListPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 640 }],
+    related: ["free/data-table", "free/filter-bar", "free/page-header", "free/pull-to-refresh"],
+    tokens: ["color.surface", "color.separator"],
+    keywords: ["resource", "list", "table", "crud", "admin", "panel", "kit"],
+    status: "new",
+  },
+  // KIT_RESOURCE_VIEW_PAGE: @stackra/panel, from its showcase/resource-view-page.json
+  {
+    slug: "resource-view-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["native"],
+    packageName: "@stackra/panel",
+    exportName: "ResourceViewPage",
+    parts: ["ResourceViewPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 560 }],
+    related: ["free/property-list", "free/page-header", "free/section", "free/error-state"],
+    tokens: ["color.surface", "color.separator"],
+    keywords: ["resource", "record", "detail", "view", "crud", "admin", "panel", "kit"],
+    status: "new",
+  },
+  // KIT_ROLE_PICKER: @stackra/iam, from its showcase/role-picker.json
+  {
+    slug: "role-picker",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/iam",
+    exportName: "RolePicker",
+    parts: ["RolePicker"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 360 }],
+    related: ["free/entity-picker", "free/combo-box"],
+    tokens: ["color.surface", "color.field"],
+    keywords: ["role", "picker", "access", "permission", "field", "kit"],
+    status: "new",
+  },
+  // KIT_ROLES_PAGE: @stackra/iam, from its showcase/roles-page.json
+  {
+    slug: "roles-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/iam",
+    exportName: "RolesPage",
+    parts: ["RolesPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 560 }],
+    related: ["free/permissions-matrix", "free/page-header"],
+    tokens: ["color.surface", "color.separator"],
+    keywords: ["roles", "permissions", "access", "matrix", "rbac", "kit"],
+    status: "new",
+  },
+  // KIT_ROW_ACTIONS: @stackra/panel, from its showcase/row-actions.json
+  {
+    slug: "row-actions",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/panel",
+    exportName: "RowActions",
+    parts: ["RowActions"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 320 }],
+    related: ["free/action-menu", "free/data-table", "free/icon-button"],
+    tokens: ["color.surface", "color.danger"],
+    keywords: ["row", "actions", "menu", "sdui", "overflow", "kit"],
+    status: "new",
+  },
+  // KIT_SECURITY_PAGE: @stackra/identity, from its showcase/security-page.json
+  {
+    slug: "security-page",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/identity",
+    exportName: "SecurityPage",
+    parts: ["SecurityPage"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 720 }],
+    related: ["free/page-header", "free/section", "free/chip"],
+    tokens: ["color.surface", "color.danger"],
+    keywords: ["security", "passkeys", "two-factor", "sessions", "password", "settings", "kit"],
+    status: "new",
+  },
+  // KIT_SESSION_GATE: @stackra/identity, from its showcase/session-gate.json
+  {
+    slug: "session-gate",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/identity",
+    exportName: "SessionGate",
+    parts: ["SessionGate"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 280 }],
+    related: ["free/sign-in", "free/empty-state", "free/alert"],
+    tokens: ["color.surface"],
+    keywords: ["session", "gate", "signed in", "guard", "assurance", "step-up", "kit"],
+    status: "new",
+  },
+  // KIT_SETTINGS_FORM: @stackra/settings, from its showcase/settings-form.json
+  {
+    slug: "settings-form",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/settings",
+    exportName: "SettingsForm",
+    parts: ["SettingsForm"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 360 }],
+    related: ["free/switch", "free/text-field", "free/setting-row"],
+    tokens: ["color.surface", "color.field"],
+    keywords: ["settings", "preferences", "form", "switch", "locked", "kit"],
+    status: "new",
+  },
   // KIT_SIGN_IN: @stackra/identity, from its showcase/sign-in.json
   {
     slug: "sign-in",
     tier: "free",
     category: "blocks",
-    platforms: ["react"],
+    platforms: ["react", "native"],
     packageName: "@stackra/identity",
     exportName: "SignIn",
     parts: ["SignIn"],
@@ -657,6 +987,38 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/social-sign-in-buttons", "free/password-field", "free/text-field"],
     tokens: ["color.surface", "color.field"],
     keywords: ["login", "sign in", "log in", "authentication", "password", "kit"],
+    status: "new",
+  },
+  // KIT_SIGN_UP: @stackra/identity, from its showcase/sign-up.json
+  {
+    slug: "sign-up",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/identity",
+    exportName: "SignUp",
+    parts: ["SignUp"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 620 }],
+    related: ["free/stepper", "free/social-sign-in-buttons", "free/otp-input"],
+    tokens: ["color.surface", "color.field"],
+    keywords: ["sign up", "register", "create account", "onboarding", "kit"],
+    status: "new",
+  },
+  // KIT_STEP_UP_DIALOG: @stackra/identity, from its showcase/step-up-dialog.json
+  {
+    slug: "step-up-dialog",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/identity",
+    exportName: "StepUpDialog",
+    parts: ["StepUpDialog"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 420 }],
+    related: ["free/modal", "free/otp-input", "free/password-field"],
+    tokens: ["color.surface", "color.accent"],
+    keywords: ["step-up", "verify", "re-authenticate", "mfa", "assurance", "kit"],
     status: "new",
   },
   // KIT_TENANT_MENU: @stackra/tenancy, from its showcase/tenant-menu.json
@@ -673,6 +1035,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/dropdown", "free/avatar", "free/list"],
     tokens: ["color.surface", "color.accent"],
     keywords: ["tenant", "organization", "workspace", "account switcher", "switch", "kit"],
+    status: "new",
+  },
+  // KIT_TENANT_PICKER: @stackra/tenancy, from its showcase/tenant-picker.json
+  {
+    slug: "tenant-picker",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/tenancy",
+    exportName: "TenantPicker",
+    parts: ["TenantPicker"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 320 }],
+    related: ["free/entity-picker", "free/combo-box", "free/select"],
+    tokens: ["color.field", "color.accent"],
+    keywords: ["tenant", "organization", "workspace", "picker", "field", "kit"],
     status: "new",
   },
   FREE_AI_MARK,

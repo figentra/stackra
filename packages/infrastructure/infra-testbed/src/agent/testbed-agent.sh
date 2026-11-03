@@ -23,6 +23,8 @@ INFISICAL_DOMAIN=${INFISICAL_DOMAIN:-https://eu.infisical.com}
 export INFISICAL_DOMAIN
 PG_IMAGE=${TESTBED_POSTGRES_IMAGE:-postgres:17.6-alpine}
 STORE=${TESTBED_STORE:-$DATA/pnpm-store}
+# pnpm's metadata cache: the release-age check reads it even for a lockfile install (the image warms it beside the store).
+PNPM_CACHE=${TESTBED_PNPM_CACHE:-$DATA/pnpm-cache}
 CLEAN_PCT=${TESTBED_CLEAN_PCT:-70}
 DRAIN_PCT=${TESTBED_DRAIN_PCT:-85}
 ROOT_MIN_GB=${TESTBED_ROOT_MIN_FREE_GB:-10}
@@ -34,7 +36,7 @@ MIN_MEM_MB=${TESTBED_MIN_MEM_MB:-1024}
 MEMINFO=${TESTBED_MEMINFO:-/proc/meminfo}
 LABEL=stackra.testbed.job
 # What the Mac's rsync leaves out; the seed refresh leaves out the same.
-EXCLUDES='node_modules .claude/worktrees .agents .env* *.secrets.local.cue .mcp.json .turbo dist .next'
+EXCLUDES='node_modules .git .claude/worktrees .env* *.secrets.local.cue .mcp.json .turbo dist .next'
 # The host's mise lives in /opt/mise (01-base.yml); its shims find the tools only through these two variables.
 MISE_DATA_DIR=${MISE_DATA_DIR:-/opt/mise}
 MISE_GLOBAL_CONFIG_FILE=${MISE_GLOBAL_CONFIG_FILE:-/opt/mise/config.toml}
@@ -396,17 +398,31 @@ $grants
 EOF
   }
 
+  # A fresh one-commit snapshot of the synced tree, as ci-box made: `.git` is never uploaded (a worktree's is a file
+  # pointing at the Mac), and git-based steps (`git ls-files` in format:check, oxfmt, knip) need a real repository.
+  (cd "$JOB_WS" && rm -rf .git && git init -q && git add -A >/dev/null 2>&1 \
+    && git -c user.name=testbed -c user.email=testbed@localhost commit -qm snapshot >/dev/null 2>&1) || true
+
   [ ! -f "$JOB_WS/services/encore.app" ] \
     || sed -i -E 's/"id":[[:space:]]*"[^"]*"/"id": ""/' "$JOB_WS/services/encore.app" || true
 
-  # One writer to the shared store; the job then installs offline against it read-only.
-  mkdir -p "$STORE" "$DATA/turbo-cache"
+  # The fetch fills the shared store before the job, from a copy of the files it reads: run in the workspace it would
+  # leave a node_modules that makes the container skip its install, and load the job's mise.toml on the host. No
+  # scripts: the container's install runs them.
+  mkdir -p "$STORE" "$PNPM_CACHE" "$DATA/turbo-cache"
+  export PNPM_CONFIG_CACHE_DIR="$PNPM_CACHE"
   if [ -f "$JOB_WS/pnpm-lock.yaml" ]; then
-    wrap "pnpm fetch --store-dir $(sq "$STORE")" || {
+    wrap "pnpm fetch --ignore-scripts --store-dir $(sq "$STORE")" || {
       say "unhealthy: grants"
       exit 75
     }
-    (cd "$JOB_WS" && flock "$STATE/store.lock" sh -c "$wrapped") || say "testbed-agent: pnpm fetch failed, the job installs what it can" >&2
+    fetch_dir=$DATA/jobs/$JOB_ID/.fetch
+    mkdir -p "$fetch_dir"
+    for f in pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs .pnpmfile.cjs .npmrc; do
+      [ ! -f "$JOB_WS/$f" ] || cp "$JOB_WS/$f" "$fetch_dir/"
+    done
+    (cd "$fetch_dir" && flock "$STATE/store.lock" sh -c "$wrapped") || say "testbed-agent: pnpm fetch failed, the job installs what it can" >&2
+    rm -rf "$fetch_dir"
   fi
 
   docker network create --label "$LABEL=$JOB_ID" "tb-$JOB_ID" >/dev/null || exit 75
@@ -424,15 +440,20 @@ EOF
     done
   fi
 
-  inner="cd /work && { [ -d node_modules ] || pnpm install --offline --frozen-lockfile --store-dir /pnpm-store --package-import-method clone-or-copy; } && {$NL$command_text$NL}"
+  # Prefer offline, not offline only: a package or metadata entry the store lacks is fetched instead of failing the job.
+  # The store is mounted writable for that (pnpm's store is made for concurrent installs); testbed-image.yml reports
+  # whether a read-only mount could serve an install at all. Integrity checks stay on, so a file one job left changed
+  # in the shared store fails the next job's install against the lockfile's hashes.
+  inner="cd /work && { [ -d node_modules ] || pnpm install --prefer-offline --frozen-lockfile --store-dir /pnpm-store --package-import-method clone-or-copy; } && {$NL$command_text$NL}"
   wrap "sh -c $(sq "$inner")" || {
     say "unhealthy: grants"
     exit 75
   }
   set -- --rm --init --name "tb-$JOB_ID" --label "$LABEL=$JOB_ID" --network "tb-$JOB_ID" \
-    -v "$JOB_WS:/work" -v "$STORE:/pnpm-store:ro" -v "$DATA/turbo-cache:/turbo-cache" \
+    -v "$JOB_WS:/work" -v "$STORE:/pnpm-store" -v "$PNPM_CACHE:/pnpm-cache" -v "$DATA/turbo-cache:/turbo-cache" \
     -v /var/run/docker.sock:/var/run/docker.sock --group-add "$(stat -c %g /var/run/docker.sock 2>/dev/null || echo 0)" \
-    -e TURBO_CACHE_DIR=/turbo-cache -e "TESTBED_JOB=$JOB_ID"
+    -e TURBO_CACHE_DIR=/turbo-cache -e PNPM_CONFIG_CACHE_DIR=/pnpm-cache -e PNPM_CONFIG_VERIFY_STORE_INTEGRITY=true \
+    -e CI=true -e "TESTBED_JOB=$JOB_ID"
   [ "$postgres" = 0 ] || set -- "$@" -e "TESTBED_POSTGRES_HOST=tb-$JOB_ID-pg"
   [ -z "${INFISICAL_TOKEN:-}" ] || set -- "$@" -e INFISICAL_TOKEN -e INFISICAL_DOMAIN
   JOB_RAN=1

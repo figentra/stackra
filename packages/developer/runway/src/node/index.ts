@@ -77,6 +77,7 @@ export { fileDeployLock } from "#node/functions/file-deploy-lock.function";
 export { onboardMobile } from "#node/functions/onboard-mobile.function";
 export { deployProduct } from "#node/functions/deploy-product.function";
 export { devServer } from "#node/functions/dev-server.function";
+export { writeDevFacts } from "#node/functions/write-dev-facts.function";
 export { platformRows } from "#node/functions/platform-rows.function";
 export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
 export { previewServe } from "#node/functions/preview-serve.function";

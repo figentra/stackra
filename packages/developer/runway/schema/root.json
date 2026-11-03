@@ -69,7 +69,7 @@
           "properties": {
             "contributes": {
               "$ref": "#/$defs/contribution",
-              "description": "Not read yet (STA-2003). A declarative ops contribution: the package that carries it, or the package with its panels, resources and widgets over registered blocks. No component, entry or script (app-shells 16.7)."
+              "description": "A declarative ops contribution: the package that carries it, or the package with its panels, resources and widgets over registered blocks. No component, entry or script (app-shells 16.7)."
             }
           }
         }
@@ -1018,7 +1018,7 @@
             "avoid": {
               "type": "array",
               "items": {
-                "oneOf": [
+                "anyOf": [
                   {
                     "type": "object",
                     "additionalProperties": false,
@@ -1043,7 +1043,7 @@
                         "additionalProperties": false,
                         "properties": {
                           "firstDays": {
-                            "oneOf": [
+                            "anyOf": [
                               {
                                 "type": "integer",
                                 "minimum": 1
@@ -1822,25 +1822,29 @@
           "required": ["package"],
           "properties": {
             "package": {
-              "$ref": "#/$defs/packageName"
+              "$ref": "#/$defs/packageName",
+              "description": "The package that carries the contribution."
             },
             "panels": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
-              }
+              },
+              "description": "The panels it contributes."
             },
             "resources": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
-              }
+              },
+              "description": "The resources it contributes."
             },
             "widgets": {
               "type": "array",
               "items": {
                 "$ref": "#/$defs/contributionEntry"
-              }
+              },
+              "description": "The widgets it contributes."
             }
           }
         }
@@ -1854,7 +1858,8 @@
       "properties": {
         "key": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_-]*$"
+          "pattern": "^[a-z][a-z0-9_-]*$",
+          "description": "The entry's key."
         },
         "block": {
           "type": "string",
@@ -1863,7 +1868,8 @@
           "examples": ["os/table"]
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "description": "The entry's title."
         },
         "props": {
           "type": "object",
@@ -2082,10 +2088,6 @@
           "additionalProperties": {
             "enum": ["small", "medium", "large"]
           }
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 1
         }
       }
     },
@@ -2108,6 +2110,16 @@
         "health": {
           "type": "string",
           "pattern": "^/"
+        },
+        "command": {
+          "type": "array",
+          "description": "The container's arguments, replacing the image's default command.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"]]
         },
         "expose": {
           "enum": ["internal", "public"],
@@ -2137,6 +2149,18 @@
             "$ref": "#/$defs/secretName"
           },
           "uniqueItems": true
+        },
+        "aliases": {
+          "type": "object",
+          "description": "The name the image reads, mapped to a variable of a resource it uses (ADR 0493 d4).",
+          "propertyNames": {
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "examples": [{ "ZITADEL_DATABASE_POSTGRES_DSN": "MAIN_DB_URL" }]
         },
         "size": {
           "type": "object",

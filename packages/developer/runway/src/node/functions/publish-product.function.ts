@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `publishProduct(request)`, Runway's publish step for one product checkout and one environment: checks the
- *          ops second-reviewer gate, reads every web surface's built bundle and refuses one whose `targets` the edge
- *          does not serve, builds the platform `host:` and `wellknown:` rows, then uploads each bundle to the asset
- *          store and writes the rows, and for each surface either the `release:` pointer (a first release) or the
- *          `canary:` row with the canary scopes (D6), and answers what it wrote.
+ *          ops second-reviewer gate, reads every web surface's built bundle and the `ops` contributions bundle
+ *          `buildProduct` writes, refuses one whose `targets` the edge does not serve, builds the platform `host:` and
+ *          `wellknown:` rows, then uploads each bundle to the asset store and writes the rows, and for each surface
+ *          either the `release:` pointer (a first release) or the `canary:` row with the canary scopes (D6), and
+ *          answers what it wrote.
  * Boundary: every check runs before the first upload or write, so a refused publish changes nothing. Writes through
  *           the `EdgeKvWriter` port and uploads with wrangler only. Bundles upload before any pointer moves. Runway
  *           writes these rows by hand until the OS edge projector exists (app-shells 16.10); the registry manifest
- *           publish (ADR 0109) and the ops release are not here.
+ *           publish (ADR 0109) is not here.
  * Runtime: node
  * Governing contract: ADR 0436 (decisions 4 and 10); ADR 0437 (the KV copy); app-shells 4.2, 5.3, 8.3, 15 (points 7
  *                     and 8) and 16 (points 4, 7 and 10); owner decisions D2, D6 and D9; ADR 0289; ADR 0323 and R-59.
@@ -55,7 +56,8 @@ export async function publishProduct(
     appLinks: request.appLinks,
   });
   const product = root.product?.key as string;
-  const bundles = readBundles(request.repository, bundleSurfaces(root));
+  const ops = root.surfaces?.ops?.contributes === undefined ? [] : ["ops"];
+  const bundles = readBundles(request.repository, [...bundleSurfaces(root), ...ops]);
   const issues: RunwayIssue[] = [];
   for (const bundle of bundles)
     if (!request.served.includes(bundle.manifest.targets))
@@ -73,9 +75,11 @@ export async function publishProduct(
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
   const run = request.run ?? runCommand;
+  const accountId = root.providers?.cloudflare?.accountId;
+  const env = accountId === undefined ? undefined : { CLOUDFLARE_ACCOUNT_ID: String(accountId) };
   const uploaded: string[] = [];
   for (const bundle of bundles)
-    uploaded.push(...(await uploadBundle(bundle, product, request.assets.bucket, run)));
+    uploaded.push(...(await uploadBundle(bundle, product, request.assets.bucket, run, env)));
 
   const written: string[] = [];
   const put = async (key: string, value: unknown): Promise<void> => {

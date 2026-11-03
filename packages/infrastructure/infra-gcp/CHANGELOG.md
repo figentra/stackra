@@ -1,5 +1,63 @@
 # @stackra/infra-gcp
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+- Updated dependencies [02c47c3]
+- Updated dependencies [67e7e8f]
+  - @stackra/container@0.8.0
+  - @stackra/runway@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/runway@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/runway@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/runway@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/validation@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [67dac91]
+- Updated dependencies [0183006]
+- Updated dependencies [a736fb5]
+- Updated dependencies [b74c373]
+- Updated dependencies [2ed03e2]
+  - @stackra/runway@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

@@ -1,5 +1,102 @@
 # @stackra/gen
 
+## 0.8.0
+
+### Patch Changes
+
+- 928dcc0: A service's generated `boot` now calls `connectVisibilityFilter(container)` beside the hold registry and sequence time
+  zone, so reads AND the bound `VisibilityFilter`'s conditions, `UserStamps` take the running call's actor, and
+  `callTimeZone()` reads the call's time zone; until now nothing outside tests connected it, so record visibility, user
+  stamps and the call time zone were all off (STA-2044). The database testing plugin connects the compiled app the same
+  way on every compile, and the memory database runs the `StampSubscriber`, so unit tests see what production does.
+- 7dd35b3: A member's generated Vitest setup imports each generated schemas file statically and calls the new
+  `markMemberSchemasLoaded()` from `@stackra/container/testing`, instead of awaiting `loadMemberSchemas()`. In a
+  consumer, `@stackra/container` sits in node_modules, which Vitest leaves to Node, so the schemas loaded through Node:
+  with no `#` imports-map fallback and no legacy decorators, every unit test failed at import (STA-2032).
+- @stackra/money@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/contracts@0.8.0
+  - @stackra/support@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- 448c52f: Gen writes `.stackra/gen/i18n.ts` before it loads a member's resource classes, so a resource that takes its labels
+  from `#stackra/i18n` loads on a clean checkout instead of being refused as `resource_unloadable` (STA-1947).
+  
+  The shared walk over a host's dependency manifests is renamed `dependencyContributionsOf` (was `contributionsOf`), so
+  it no longer shares a name with `@stackra/navigation/testing`'s `contributionsOf`.
+- @stackra/money@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/support@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/money@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/support@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/money@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/support@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- 71bbf08: An app that hosts `@stackra/panel` now composes the panel resources its dependencies record: its route tables register
+  the trees on native as well as the browser, and gen writes `#stackra/resources` (`Resources` and `resourceList`), each
+  resource's route constants with the operation refs its consumed services' clients export. One resource key from two
+  classes is refused (`resource_duplicate`). A page whose operation no consumed service's client exports gets no route
+  and is listed with its reason in `unboundOperations`; a `true` list or get waits on STA-1971. The walk over the dependencies' manifests is the shared `contributionsOf` step (STA-1947).
+- 99750d4: A package records the `Route` and `Menu` classes of its `react` and `native` entries in its manifest (`ui.routes`, with
+  the page beside each route, and `ui.menus`), and an app's route tables list them on the runtime their entry serves,
+  imported from `<package>/<entry>`, so no app hand-writes a `register()`. Every menu, the app's own and its packages',
+  is registered under its key through the new `registerMenus` of `@stackra/navigation`, and `useMenus(kind?)` lists them
+  for a shell. One route or menu key from two owners is refused (`route_duplicate`, `menu_duplicate`) (STA-1947).
+- e15d9c3: Gen records every panel resource in the manifest's `ui.resources`, under `<module>.<model>`: the tree its builder
+  members return, with its owning `module`, its `class` and, in a package, the `from` a host imports it from. Action
+  and query classes in the tree are written as their locked keys, and a service or app also lists its hosted packages'
+  resources. `generate` takes a `loader` to run the resource classes; `stackra gen` passes one on Vite's module runner,
+  and a run without one refuses a member that declares a resource (`resource_loader_missing`). New refusals:
+  `resource_unloadable`, `builder_impure`, `resource_operation_unknown` and `resource_duplicate` (STA-1947). The loyalty
+  kit's manifest now records its `LoyaltyAccountResource`.
+- e250d4f: Gen writes one `registerActions([...])` in each member's `#stackra/registrations`, a row per action and query with its
+  locked key, permission, risk, effects and input schema, so the pipeline validates input and checks the permission of
+  every call. `IamAccessControlDriver` now refuses a call with no registered permission instead of letting it through,
+  and lets an anonymous caller past `require` and `authorize` only for a class whose `actors` list `anonymous`; the
+  manifest marks such a call `anonymous: true` and its OpenAPI operation takes no security. `stackra validate` lists
+  every anonymous-callable call, and a test pins today's five (STA-2025).
+
+### Patch Changes
+
+- f0478cd: A service's generated entity schema lists the `"~defaults"` marker the schemas file adds as a non-persisted property,
+  which `EntitySchema<T>` requires (TS2741 in `.stackra/gen/entities`); a package's committed entity list does not, since
+  its model type has no such key. The `service` preset turns `declaration` off (a service publishes no `.d.ts`, and the
+  entity schema types name `EntityCtor` from @mikro-orm/core, which a service cannot name: TS2883), and is tested to keep
+  `.stackra/encore` out of the typecheck (STA-1894, STA-1880).
+- 0090b9c: A `?:` field whose `@Field(zod)` hatch already ends in `.optional()` compiles to `.exactOptional()` instead of
+  `.optional().exactOptional()`. The latter's output admits `undefined`, which `?:` under `exactOptionalPropertyTypes`
+  does not, so the schema's `$Check` failed with TS2344 in every consumer that wrote such a hatch (STA-2022).
+- b98f7ea: Gen recognises a package's migration macros whichever peer-variant copy of `@stackra/database` they extend: a macro is a
+  class whose chain reaches the `Macro` kind base and that implements `apply`, no longer `instanceof` the member's own
+  copy, which silently dropped them (`t.belongsToTenant is not a function`). A migration that calls a blueprint method no
+  macro supplied now names the macros gen collected in its `migration_compile_failed` message (STA-2006).
+- @stackra/money@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/support@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

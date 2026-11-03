@@ -37,6 +37,8 @@
  *          `module`, `class` and a package's `from`), own then hosted, with `resource_operation_unknown` and
  *          `resource_duplicate`, and a package's UI-entry routes and menus in `ui.routes` and `ui.menus` (`uiRoutesOf`,
  *          `uiMenusOf`) (STA-1947).
+ *          It lists each record `Policy<Model>` in `policies` (class, model, module, file and the model's `modelFile`),
+ *          own then hosted (`from`), only when there is one, so `#stackra/registrations` pairs them (STA-2045).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (settings, migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -83,6 +85,7 @@ import { publicSpecifier } from "#core/functions/public-specifier.function";
 import { commandsOf } from "#core/functions/commands-of.function";
 import { reportsOf } from "#core/functions/reports-of.function";
 import { resourcesOf } from "#core/functions/resources-of.function";
+import { moduleDependsOn } from "#core/functions/module-depends-on.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import { sequenceKey } from "#core/functions/sequence-key.function";
@@ -422,7 +425,8 @@ export function buildManifest(ir: MemberIR): {
     if (preconditions.length > 0) entry["preconditions"] = preconditions.map((item) => item.$class);
     for (const option of ["idempotency", "rateLimit", "cache", "area", "job", "reads"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
-    if (declared.options["auth"] === false) entry["auth"] = false;
+    // An anonymous caller may call it, past the permission and record-policy steps only (STA-2025): listed, so review sees it.
+    if (actors?.includes("anonymous") === true) entry["anonymous"] = true;
     // OS ADR 0039 d2: only an entry marked public forms the published REST and MCP API and its SDKs.
     if (declared.options["public"] === true) {
       entry["public"] = true;
@@ -918,6 +922,7 @@ export function buildManifest(ir: MemberIR): {
         }))
     : [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
+    if (declared.base !== undefined && !declared.base.own) continue; // an override's base package selects its drivers
     const schema = declared.options["schema"];
     const shape = isClassValue(schema) ? shapeNamed(schema.$class) : undefined;
     for (const field of shape?.fields ?? []) {
@@ -936,7 +941,6 @@ export function buildManifest(ir: MemberIR): {
   }
 
   // Modules and their edges.
-  const moduleOf = new Map(ir.classes.map((declared) => [declared.name, declared.module]));
   const root = rootModuleOf(ir);
   const modules: Entry[] = ir.modules.map((key) => {
     const authored = ir.classes.find(
@@ -949,21 +953,13 @@ export function buildManifest(ir: MemberIR): {
     const exports = Array.isArray(exported)
       ? exported.filter(isClassValue).map((value) => value.$class)
       : [];
-    const dependsOn = new Set<string>();
-    for (const declared of ir.classes.filter((candidate) => candidate.module === key))
-      for (const dep of declared.deps) {
-        const target = moduleOf.get(dep.class.name);
-        if (target !== undefined && target !== key && dep.class.from.startsWith("#"))
-          dependsOn.add(target);
-      }
     return {
       key,
       ...(moduleClass !== undefined ? { class: moduleClass.name } : {}),
       // Only an authored module class is importable by a host; a generated one lives in this member's `.stackra/gen`.
       ...(authored !== undefined ? { file: authored.file } : {}),
       exports,
-      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-      dependsOn: [...dependsOn].sort(),
+      dependsOn: moduleDependsOn(ir, key),
     };
   });
 
@@ -1072,6 +1068,34 @@ export function buildManifest(ir: MemberIR): {
         }
     }
 
+  // Each record policy with the model it judges, own then hosted (`from`), so a host registers its packages' policies
+  // too; the base's type argument is gone at runtime, so this is where the pair is kept (ADR 0132 as amended,
+  // STA-2045). Written only when there is one, so a member without policies keeps its manifest.
+  const policies: Entry[] = ir.classes
+    .filter((declared) => declared.kind === "policy" && declared.abstract !== true)
+    .flatMap((declared) => {
+      const partner = declared.partner;
+      if (partner === undefined) return [];
+      const model = ir.shapes.find(
+        (shape) => shape.name === partner.name && shape.kind === "model",
+      );
+      return [
+        {
+          class: declared.name,
+          model: partner.name,
+          module: declared.module,
+          file: declared.file,
+          ...(model === undefined ? {} : { modelFile: model.file }),
+        },
+      ];
+    });
+  if (ir.layout !== "package")
+    for (const dependency of ir.dependencies) {
+      if (dependency.manifest["kind"] === "app") continue;
+      for (const item of (dependency.manifest["policies"] ?? []) as readonly Entry[])
+        policies.push({ ...item, from: item["from"] ?? dependency.package });
+    }
+
   // A package's config classes, so a host's wiring writes a config row for exactly these (STA-1308).
   const configs: Entry[] = published
     ? ir.classes
@@ -1171,6 +1195,7 @@ export function buildManifest(ir: MemberIR): {
       : {}),
     ...(reports.reports.length > 0 ? { reports: [...reports.reports] } : {}),
     ...(commands.commands.length > 0 ? { commands: [...commands.commands] } : {}),
+    ...(policies.length > 0 ? { policies } : {}),
     ...(Object.keys(uiSection).length > 0 ? { ui: uiSection } : {}),
     schemas,
   };

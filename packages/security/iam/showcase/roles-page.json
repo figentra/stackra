@@ -1,0 +1,21 @@
+{
+  "slug": "roles-page",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/iam",
+  "exportName": "RolesPage",
+  "parts": ["RolesPage"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 560
+    }
+  ],
+  "related": ["free/permissions-matrix", "free/page-header"],
+  "tokens": ["color.surface", "color.separator"],
+  "keywords": ["roles", "permissions", "access", "matrix", "rbac", "kit"],
+  "status": "new"
+}

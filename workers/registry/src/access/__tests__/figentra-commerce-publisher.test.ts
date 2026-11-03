@@ -66,6 +66,7 @@ describe("migration 0004: figentra/commerce publishes @figentra", () => {
       "figentra/invoicing",
       "figentra/os",
       "figentra/pay",
+      "figentra/testbed",
     ]);
   });
 });

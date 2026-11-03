@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `awsWorkloads` under Pulumi's mocks: a workload's Fargate task reads its own secrets and the
- *          variables of the resources it uses from the environment's SSM parameters, by name only; every workload is
+ *          variables of the resources it uses from the environment's SSM parameters, by name only, also under each
+ *          alias, and starts with its own arguments (none for an image's default); every workload is
  *          registered in the private namespace; a public workload gets an ALB admitting HTTPS from Cloudflare only,
  *          a TLS 1.3 listener on the given certificate, a target group checking its health path, and CPU autoscaling
  *          between its bounds; an internal one gets none of them; a public workload without a certificate is refused.
@@ -40,10 +41,12 @@ function workload(
     image: DIGEST,
     port: 8080,
     health: "/debug/healthz",
+    command: isPublic ? ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"] : [],
     public: isPublic,
     env: { ZITADEL_EXTERNALSECURE: "true" },
     secrets: isPublic ? ["ZITADEL_MASTERKEY"] : [],
     uses: isPublic ? ["main-db"] : [],
+    aliases: isPublic ? { ZITADEL_DATABASE_POSTGRES_DSN: "MAIN_DB_URL" } : {},
     cpu: 1024,
     memoryMb: 2048,
     scale,
@@ -145,6 +148,7 @@ describe("awsWorkloads", () => {
     const [container] = JSON.parse(String(task["containerDefinitions"])) as {
       secrets: { name: string; valueFrom: string }[];
       image: string;
+      command?: string[];
     }[];
 
     expect(task).toMatchObject({
@@ -160,8 +164,26 @@ describe("awsWorkloads", () => {
           valueFrom: "/academorix/production/workloads/zitadel/ZITADEL_MASTERKEY",
         },
         { name: "MAIN_DB_URL", valueFrom: "/academorix/production/runtime/main-db/MAIN_DB_URL" },
+        {
+          name: "ZITADEL_DATABASE_POSTGRES_DSN",
+          valueFrom: "/academorix/production/runtime/main-db/MAIN_DB_URL",
+        },
       ]),
     );
+    expect(container?.command).toEqual([
+      "start-from-init",
+      "--masterkeyFromEnv",
+      "--tlsMode",
+      "external",
+    ]);
+  });
+
+  // @covers sta-1640:FR-009
+  it("leaves an image's default command when the workload names no arguments", () => {
+    const task = resource("TaskDefinition", "academorix-production-ocr").inputs;
+    const [container] = JSON.parse(String(task["containerDefinitions"])) as { command?: unknown }[];
+
+    expect(container).not.toHaveProperty("command");
   });
 
   // @covers sta-1640:FR-009

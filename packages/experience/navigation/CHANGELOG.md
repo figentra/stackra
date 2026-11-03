@@ -1,5 +1,119 @@
 # @stackra/navigation
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/iam@0.8.0
+  - @stackra/settings@0.8.0
+  - @stackra/clients@0.8.0
+  - @stackra/seo@0.8.0
+  - @stackra/icons@0.8.0
+  - @stackra/ui@0.8.0
+  - @stackra/platform@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/i18n@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/feature-flags@0.8.0
+  - @stackra/testing@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/iam@0.7.1
+  - @stackra/clients@0.7.1
+  - @stackra/seo@0.7.1
+  - @stackra/icons@0.7.1
+  - @stackra/ui@0.7.1
+  - @stackra/testing@0.7.1
+  - @stackra/platform@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/i18n@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/feature-flags@0.7.1
+  - @stackra/settings@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [1f5bf76]
+- Updated dependencies [1f5bf76]
+  - @stackra/iam@0.7.0
+  - @stackra/settings@0.7.0
+  - @stackra/clients@0.7.0
+  - @stackra/seo@0.7.0
+  - @stackra/icons@0.7.0
+  - @stackra/ui@0.7.0
+  - @stackra/testing@0.7.0
+  - @stackra/platform@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/i18n@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/feature-flags@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/clients@0.6.1
+  - @stackra/seo@0.6.1
+  - @stackra/icons@0.6.1
+  - @stackra/ui@0.6.1
+  - @stackra/testing@0.6.1
+  - @stackra/platform@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/i18n@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/iam@0.6.1
+  - @stackra/feature-flags@0.6.1
+  - @stackra/settings@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- 99750d4: A package records the `Route` and `Menu` classes of its `react` and `native` entries in its manifest (`ui.routes`, with
+  the page beside each route, and `ui.menus`), and an app's route tables list them on the runtime their entry serves,
+  imported from `<package>/<entry>`, so no app hand-writes a `register()`. Every menu, the app's own and its packages',
+  is registered under its key through the new `registerMenus` of `@stackra/navigation`, and `useMenus(kind?)` lists them
+  for a shell. One route or menu key from two owners is refused (`route_duplicate`, `menu_duplicate`) (STA-1947).
+
+### Patch Changes
+
+- Updated dependencies [e250d4f]
+- Updated dependencies [d53d9d3]
+- Updated dependencies [712fb89]
+  - @stackra/iam@0.6.0
+  - @stackra/ui@0.6.0
+  - @stackra/settings@0.6.0
+  - @stackra/clients@0.6.0
+  - @stackra/seo@0.6.0
+  - @stackra/icons@0.6.0
+  - @stackra/testing@0.6.0
+  - @stackra/platform@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/i18n@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/feature-flags@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

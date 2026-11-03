@@ -9,7 +9,7 @@
  *           manifest reproduces the committed `openapi.json` byte for byte. Never a source for clients (ADR 0158).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 10: openapi.json beside the manifest); ADR 0158; ADR 0140 (the error
- *                     envelope and statuses); ADR 0082 (`auth: false`).
+ *                     envelope and statuses); ADR 0082 (an anonymous-callable call is public; STA-2025).
  */
 import type { Json, StackraManifest } from "@stackra/contracts";
 
@@ -119,7 +119,7 @@ export function openApiOf(manifest: StackraManifest): OpenApiDocument {
       if (action[option] !== undefined) operation[`x-stackra-${option}`] = rehome(action[option]);
     if (Array.isArray(action["refusals"]))
       operation["x-stackra-refusals"] = action["refusals"].map(String);
-    if (action["auth"] === false) operation["security"] = [];
+    if (action["anonymous"] === true) operation["security"] = [];
     if (parameters.length > 0) operation["parameters"] = parameters;
     if (method !== "get" && action["input"] !== undefined)
       operation["requestBody"] = {

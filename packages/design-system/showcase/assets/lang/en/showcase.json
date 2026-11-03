@@ -466,8 +466,8 @@
       },
       "progress_circle": {
         "title": "Progress circle",
-        "description": "Shows how far a task has gone around a circle.",
-        "keywords": "progress, ring, loading"
+        "description": "Shows how far a task has gone as a cell of dots that fills.",
+        "keywords": "progress, dots, loading"
       },
       "save_bar": {
         "title": "Save bar",
@@ -706,7 +706,7 @@
       },
       "route_progress": {
         "title": "Route progress",
-        "description": "A thin bar across the top while the next page loads.",
+        "description": "A thin row of dots across the top while the next page loads.",
         "keywords": "loading, navigation, progress, top bar"
       },
       "status_indicator": {
@@ -1531,8 +1531,8 @@
       },
       "sign_in": {
         "title": "Sign in",
-        "description": "A sign-in card with external providers, email and password.",
-        "keywords": "login, sign in, log in, authentication, password"
+        "description": "A sign-in card with external providers, email and password, on the web and in the app.",
+        "keywords": "login, sign in, log in, authentication, password, mobile"
       },
       "tenant_menu": {
         "title": "Tenant menu",
@@ -1678,6 +1678,146 @@
         "title": "Tamo provider",
         "description": "The AI kit's Tamo provider: it fills every Tamo part on a screen through a client, with per-workspace settings and an offline mock.",
         "keywords": "ai, tamo, provider, settings, kit, mock"
+      },
+      "can": {
+        "title": "Can",
+        "description": "Shows part of the screen only to people who hold a permission.",
+        "keywords": "permission, access, authorization, show, hide"
+      },
+      "role_picker": {
+        "title": "Role picker",
+        "description": "A field that searches and picks one role.",
+        "keywords": "role, picker, access, permission, field"
+      },
+      "roles_page": {
+        "title": "Roles page",
+        "description": "Every role and what it may do, on a permissions matrix.",
+        "keywords": "roles, permissions, access, matrix, rbac"
+      },
+      "session_gate": {
+        "title": "Session gate",
+        "description": "Shows its content to a signed-in person, at the assurance level asked for.",
+        "keywords": "session, signed in, gate, guard, assurance, step-up"
+      },
+      "account_menu": {
+        "title": "Account menu",
+        "description": "A menu behind the signed-in person's picture, with sign out at the end.",
+        "keywords": "account, user menu, profile, sign out, avatar"
+      },
+      "step_up_dialog": {
+        "title": "Step-up dialog",
+        "description": "A dialog that asks a person to prove it's them again before a sensitive change.",
+        "keywords": "step-up, verify, re-authenticate, two-factor, assurance"
+      },
+      "password_policy_checklist": {
+        "title": "Password checklist",
+        "description": "The password rules, ticked off as the person types.",
+        "keywords": "password, policy, rules, strength, checklist"
+      },
+      "password_reset": {
+        "title": "Password reset",
+        "description": "Ask for the email, or set a new password from the emailed link.",
+        "keywords": "password, reset, forgot password, recovery"
+      },
+      "sign_up": {
+        "title": "Sign-up",
+        "description": "A step-by-step card to create an account, with providers and the password rules.",
+        "keywords": "sign up, register, create account, onboarding"
+      },
+      "security_page": {
+        "title": "Security page",
+        "description": "Password, passkeys, two-factor and device sessions in one settings page.",
+        "keywords": "security, passkeys, two-factor, sessions, password, settings"
+      },
+      "settings_form": {
+        "title": "Settings form",
+        "description": "A generated settings page: a switch or a field per setting, each saved as it changes.",
+        "keywords": "settings, preferences, form, switch, locked setting"
+      },
+      "tenant_picker": {
+        "title": "Tenant picker",
+        "description": "A field for choosing one organisation, from the person's own by default.",
+        "keywords": "tenant, organisation, workspace, picker, choose"
+      },
+      "member_picker": {
+        "title": "Member picker",
+        "description": "A field for choosing one member of the current organisation.",
+        "keywords": "member, people, assignee, picker, choose"
+      },
+      "organization_page": {
+        "title": "Organization page",
+        "description": "The organisation's settings page: its profile, legal entities and domains.",
+        "keywords": "organisation, tenant, profile, settings, legal entity, domain"
+      },
+      "members_page": {
+        "title": "Members page",
+        "description": "The members settings page: roles, removals, invitations.",
+        "keywords": "members, team, invite, invitation, role, settings"
+      },
+      "module_menu": {
+        "title": "Module menu",
+        "description": "Every module's declared navigation menu, as the sidebar on the web and a list in the app.",
+        "keywords": "menu, navigation, sidebar, modules, places, nav"
+      },
+      "resource_list_page": {
+        "title": "Resource list page",
+        "description": "Any resource's records as a searchable, sortable list with paging, row actions and pull to refresh.",
+        "keywords": "resource, list, table, records, crud, admin, panel"
+      },
+      "resource_view_page": {
+        "title": "Resource view page",
+        "description": "One record of any resource: its fields, its sections and its actions.",
+        "keywords": "resource, record, detail, view, crud, admin, panel"
+      },
+      "resource_form_page": {
+        "title": "Resource form page",
+        "description": "The Create and Edit form of any resource, drawn from its action's input.",
+        "keywords": "resource, form, create, edit, crud, admin, panel"
+      },
+      "action_input_modal": {
+        "title": "Action input modal",
+        "description": "The form an action opens when it needs more than the record it runs on.",
+        "keywords": "action, modal, dialog, input, confirm, panel"
+      },
+      "action_button": {
+        "title": "Action button",
+        "description": "A button that runs a server action, drawn from its spec.",
+        "keywords": "action, button, run, confirm, shortcut, server-driven"
+      },
+      "row_actions": {
+        "title": "Row actions",
+        "description": "A row's actions in one menu, grouped and with hover buttons.",
+        "keywords": "row, actions, menu, overflow, table, server-driven"
+      },
+      "bulk_actions": {
+        "title": "Bulk actions",
+        "description": "The bar of actions over a selection of records.",
+        "keywords": "bulk, selection, actions, toolbar, export, server-driven"
+      },
+      "autocomplete": {
+        "title": "Autocomplete",
+        "description": "A select whose list opens with a search box that narrows it.",
+        "keywords": "autocomplete, select, search, filter, picker"
+      },
+      "color_field": {
+        "title": "Colour field",
+        "description": "A field that takes a colour as a typed hex code, with a swatch of it.",
+        "keywords": "colour, color, hex, field, input"
+      },
+      "color_swatch": {
+        "title": "Colour swatch",
+        "description": "A small preview of one colour, named for screen readers.",
+        "keywords": "colour, color, swatch, preview, chip"
+      },
+      "flag": {
+        "title": "Flag",
+        "description": "A country's flag, from its ISO code.",
+        "keywords": "flag, country, region, locale, emoji"
+      },
+      "marker_map": {
+        "title": "Marker map",
+        "description": "Places pinned on a map, with their list beside it.",
+        "keywords": "map, marker, pin, location, places"
       }
     }
   },
@@ -5240,6 +5380,146 @@
         "settings": {
           "title": "Settings"
         }
+      },
+      "can": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "role_picker": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "roles_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "session_gate": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "account_menu": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "step_up_dialog": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "password_policy_checklist": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "password_reset": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "sign_up": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "security_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "settings_form": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "tenant_picker": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "member_picker": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "organization_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "members_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "module_menu": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "resource_list_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "resource_view_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "resource_form_page": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "action_input_modal": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "action_button": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "row_actions": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "bulk_actions": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "autocomplete": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "color_field": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "color_swatch": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "flag": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "marker_map": {
+        "basics": {
+          "title": "Basics"
+        }
       }
     }
   },
@@ -6692,11 +6972,11 @@
         },
         "progress_bar": {
           "headline": "Show how far, and how much is left.",
-          "intro": "A line that fills as a task moves, with an optional label and value, or an indeterminate sweep.",
+          "intro": "A row of dots that fills as a task moves, with an optional label and value, or dots building along the row while the time is unknown.",
           "tags": "Determinate · Indeterminate · Label",
-          "what": "A line that shows a task's progress.",
+          "what": "A row of dots that shows a task's progress.",
           "when": "Use it for uploads, imports and multi-step tasks.",
-          "rtl": "The fill grows from the right in Arabic.",
+          "rtl": "The dots fill from the right in Arabic.",
           "when_not": "For short waits; use a spinner.",
           "do_1": "Show the value when it is known.",
           "do_2": "Say what is in progress.",
@@ -6717,11 +6997,11 @@
         },
         "progress_circle": {
           "headline": "Progress that fits anywhere.",
-          "intro": "A ring that fills around its value, compact enough for buttons, cards and tiles.",
+          "intro": "A 3×3 cell of dots that fills to its value, compact enough for buttons, cards and tiles.",
           "tags": "Compact · Determinate · Label",
-          "what": "A ring that shows a task's progress.",
+          "what": "A cell of dots that shows a task's progress.",
           "when": "Use it where a bar does not fit, such as a tile or a button.",
-          "rtl": "The ring fills in the reading direction."
+          "rtl": "The dots fill in the reading direction."
         },
         "property_list": {
           "headline": "Every detail of a record, easy to scan.",
@@ -6830,11 +7110,11 @@
         },
         "route_progress": {
           "headline": "Navigation that never feels stuck.",
-          "intro": "A thin bar across the top while the next page loads, so every click gets instant feedback.",
+          "intro": "A thin row of dots across the top while the next page loads, so every click gets instant feedback.",
           "tags": "Navigation · Feedback · Reduced motion",
-          "what": "A thin loading bar for route changes.",
+          "what": "A thin row of loading dots for route changes.",
           "when": "Use it once, in the app shell.",
-          "rtl": "The bar grows from the start edge."
+          "rtl": "The dots fill from the start edge."
         },
         "rule_builder": {
           "headline": "Rules in plain words, no code.",
@@ -7029,11 +7309,11 @@
         },
         "spinner": {
           "headline": "A short wait, clearly signalled.",
-          "intro": "A themed spinner with an accessible label for waits too short to measure.",
+          "intro": "Dots that build the stack floor by floor, with an accessible label, for waits too short to measure.",
           "tags": "Loading · Label · Sizes",
           "what": "An indicator that something is loading.",
           "when": "Use it for short, unmeasured waits.",
-          "rtl": "The spinner is symmetric; its label follows the reading direction.",
+          "rtl": "Each floor fills in the reading direction; its label follows it too.",
           "when_not": "For waits longer than a few seconds; show progress.",
           "do_1": "Label what is loading.",
           "do_2": "Show it only after a short delay.",
@@ -8466,10 +8746,10 @@
         },
         "sign_in": {
           "headline": "A familiar door, configured per tenant.",
-          "intro": "The tenant chooses its providers and whether a password form shows; the block handles the layout, the waiting state and errors.",
+          "intro": "The tenant chooses its providers and whether a password form shows; the block handles the layout, the waiting state and errors, with the same settings on the web and in the app.",
           "tags": "Identity kit · Providers · Password",
-          "what": "The sign-in block of the identity module.",
-          "when": "On a sign-in page or in a sign-in dialog.",
+          "what": "The sign-in block of the identity module, as a card on the web and on mobile.",
+          "when": "On a sign-in page or in a sign-in dialog; in the app, on its sign-in screen.",
           "rtl": "The card mirrors in Arabic; email and password fields keep left-to-right input."
         },
         "tenant_menu": {
@@ -8775,6 +9055,230 @@
           "what": "Part of the Ask Tamo layer: the design system draws it, and the AI module fills it.",
           "when": "Wherever Tamo saves real work: text, tables, forms, dates, never on passwords, money or numbers.",
           "rtl": "Mirrors in Arabic; Tamo's mark keeps its shape, and Arabic drafts keep their direction."
+        },
+        "can": {
+          "headline": "Show it only to those who may use it.",
+          "intro": "Wraps a control and shows it while the signed-in person holds the permission, or a fallback when they do not; the server still checks every call.",
+          "tags": "IAM kit · Permissions · Visibility",
+          "what": "The IAM module's permission check for the screen, over the session's permission snapshot.",
+          "when": "Around a button, a menu item or a panel that only some people may use.",
+          "rtl": "It draws nothing of its own, so what it shows mirrors in Arabic as it would anywhere."
+        },
+        "role_picker": {
+          "headline": "Pick a role by name.",
+          "intro": "A search field over the roles your app lists, for inviting a member or changing what they may do.",
+          "tags": "IAM kit · Roles · Field",
+          "what": "The IAM module's role field, a single-choice entity picker whose roles the app loads.",
+          "when": "In an invite form, a member's details, or anywhere one role is chosen.",
+          "rtl": "The field and its list mirror in Arabic, and each role's name keeps its own direction."
+        },
+        "roles_page": {
+          "headline": "Every role, every permission, one page.",
+          "intro": "Shows what each role may do, module by module, and lets an organisation edit its own roles; built-in roles stay fixed.",
+          "tags": "IAM kit · Roles · Permissions matrix",
+          "what": "The IAM module's roles and permissions page, on the permissions matrix.",
+          "when": "In an organisation's settings, for the people who manage access.",
+          "rtl": "The matrix mirrors in Arabic: roles read from the right, and each name keeps its own direction."
+        },
+        "session_gate": {
+          "headline": "Content for the right person, at the right strength.",
+          "intro": "Shows its children to a signed-in person whose last sign-in is strong enough, asks the others to step up, and sends a signed-out visitor to sign in; the server still checks every call.",
+          "tags": "Identity kit · Sessions · Assurance",
+          "what": "The identity module's gate around a page or a panel.",
+          "when": "Around a page or a panel that needs a signed-in person, or a fresh second factor.",
+          "rtl": "The gate draws nothing of its own, so its content mirrors in Arabic as it always does."
+        },
+        "account_menu": {
+          "headline": "Everything about me, one press away.",
+          "intro": "Opens the host's items (profile, security, appearance, language) and a last group, headed by the person's address, that signs out.",
+          "tags": "Identity kit · Account · Sign out",
+          "what": "The identity module's account menu, built on Menu.",
+          "when": "At the end of an app bar or a sidebar footer.",
+          "rtl": "The menu mirrors in Arabic and opens from the logical end; the person's name keeps its own direction."
+        },
+        "step_up_dialog": {
+          "headline": "Prove it's you, then carry on.",
+          "intro": "Says why a fresh sign-in is needed and which factors are accepted, runs the session's step-up sign-in, and hands back to the change that asked for it.",
+          "tags": "Identity kit · Step-up · Assurance",
+          "what": "The identity module's step-up, a modal over the session's re-authentication.",
+          "when": "When a change answers step_up_required: a password, a passkey, a payout account.",
+          "rtl": "The dialog mirrors in Arabic; the list of factors indents from the logical start."
+        },
+        "password_policy_checklist": {
+          "headline": "Every rule, checked as you type.",
+          "intro": "A meter and a list of the rules the password policy sets, each marked met or not yet in words as well as colour.",
+          "tags": "Identity kit · Passwords · Feedback",
+          "what": "The identity module's live password checklist.",
+          "when": "Under a new-password field, tied to it as its description.",
+          "rtl": "The list mirrors in Arabic, and characters are counted as typed, so Arabic and emoji passwords count right."
+        },
+        "password_reset": {
+          "headline": "Back in, without a support ticket.",
+          "intro": "Step one sends the reset link without saying whether an account exists; step two sets the new password from the link, with the policy's checklist.",
+          "tags": "Identity kit · Passwords · Recovery",
+          "what": "The identity module's forgotten-password card.",
+          "when": "On the forgot-password page and the page the reset link opens.",
+          "rtl": "The card mirrors in Arabic; the email and password fields keep left-to-right input."
+        },
+        "sign_up": {
+          "headline": "From visitor to member, step by step.",
+          "intro": "Walks the account, the emailed code and the first organisation behind a stepper, then hands over the new session.",
+          "tags": "Identity kit · Sign-up · Onboarding",
+          "what": "The identity module's sign-up block.",
+          "when": "On the sign-up page, or as the first screen of onboarding.",
+          "rtl": "The card and the stepper mirror in Arabic; the email and password fields keep left-to-right input."
+        },
+        "security_page": {
+          "headline": "Your sign-in, in your hands.",
+          "intro": "Changes the password, adds and removes passkeys, shows the second factors and ends device sessions; a sensitive change asks for a step-up first.",
+          "tags": "Identity kit · Security · Settings",
+          "what": "The identity module's security settings page.",
+          "when": "As the security page of a person's account settings.",
+          "rtl": "The page mirrors in Arabic; device and passkey names keep their own direction."
+        },
+        "settings_form": {
+          "headline": "Every setting, saved as it changes.",
+          "intro": "Renders one module's settings page from its declared keys and saves each change at the page's level; a setting locked higher up stays read-only, and a refused change goes back with the reason.",
+          "tags": "Settings kit · Preferences · Scope cascade",
+          "what": "The settings module's form: a switch for an on-or-off setting and a field for a number or a text, labelled from the module's own words.",
+          "when": "On a settings or preferences page, wherever a module's generated settings page is listed.",
+          "rtl": "The form mirrors in Arabic; numbers keep their digits and each label follows the reading direction."
+        },
+        "tenant_picker": {
+          "headline": "Pick an organisation, not an id.",
+          "intro": "A search field over the organisations the signed-in person belongs to; hand it your own search and it lists every organisation an operator may see.",
+          "tags": "Tenancy kit · Memberships · Field",
+          "what": "The tenancy module's organisation field, an entity picker keyed by the organisation's id.",
+          "when": "In a form that names one organisation: a transfer, a report, a support request.",
+          "rtl": "The field mirrors in Arabic, and each organisation's name keeps its own direction."
+        },
+        "member_picker": {
+          "headline": "Pick a person from the team.",
+          "intro": "A search field over the current organisation's members, answered by the app's own call to the server.",
+          "tags": "Tenancy kit · Members · Field",
+          "what": "The tenancy module's member field, an entity picker keyed by the membership.",
+          "when": "In a form that assigns work or ownership to one member.",
+          "rtl": "The field mirrors in Arabic, and each name keeps its own direction."
+        },
+        "organization_page": {
+          "headline": "Who the organisation is, in one place.",
+          "intro": "Reads and saves the organisation's name, legal name, language and time zone, and lists the legal entities and domains the app hands it.",
+          "tags": "Tenancy kit · Profile · Settings",
+          "what": "The tenancy module's organisation settings page, over the TenantProfile client port.",
+          "when": "Under the settings of an organisation's admin area.",
+          "rtl": "The page mirrors in Arabic; names keep their own direction and domains stay left to right."
+        },
+        "members_page": {
+          "headline": "Everyone on the team, and who is invited.",
+          "intro": "Lists the members with their roles, changes a role, removes a member after asking, and sends and revokes invitations; the server still refuses removing the last owner.",
+          "tags": "Tenancy kit · Members · Invitations",
+          "what": "The tenancy module's members settings page, over the TenantMembers client port.",
+          "when": "Under the settings of an organisation's admin area, for whoever manages access.",
+          "rtl": "The tables mirror in Arabic; names keep their own direction and email addresses stay left to right."
+        },
+        "module_menu": {
+          "headline": "Each module brings its own places.",
+          "intro": "Modules declare their navigation menus once; the module menu lists them all, in order, with the current place marked on the web and entries behind a switched-off flag left out.",
+          "tags": "Navigation kit · Declared menus · Sidebar",
+          "what": "The navigation module's menu of every installed module: the sidebar on the web, a list of places in the app.",
+          "when": "As the console's side navigation, or in the app's More screen or drawer; pass items for a menu of your own.",
+          "rtl": "The sidebar sits on the start edge and mirrors in Arabic; each place keeps its own text direction."
+        },
+        "resource_list_page": {
+          "headline": "Every resource gets its list.",
+          "intro": "Reads a resource's list query and draws its records with search, filters, sort, cursor paging, the views as tabs, row and bulk actions and pull to refresh; every button runs through the action runner.",
+          "tags": "Panel kit · Resources · Lists",
+          "what": "The panel's generic List page on mobile, with the same props as the web page.",
+          "when": "For a back-office screen that lists one resource's records on a phone.",
+          "rtl": "The page mirrors in Arabic; the columns, the menus and the paging follow the reading direction."
+        },
+        "resource_view_page": {
+          "headline": "One record, laid out.",
+          "intro": "Reads a record with its resource's get query and shows its entries and sections, money in its currency and codes by their labels, with the edit, delete and placed actions in the header.",
+          "tags": "Panel kit · Resources · Records",
+          "what": "The panel's generic View page on mobile, with the same props as the web page.",
+          "when": "When a person opens one record from a list on a phone.",
+          "rtl": "Labels and values swap sides in Arabic; numbers and codes keep their own direction."
+        },
+        "resource_form_page": {
+          "headline": "Forms from the action itself.",
+          "intro": "Builds the Create or Edit form from the action's input: each field drawn by its type, checked by the same schema the server uses, saved through the action runner, and the server's errors shown on their fields.",
+          "tags": "Panel kit · Resources · Forms",
+          "what": "The panel's generic Create and Edit page on mobile, with the same props as the web page.",
+          "when": "When a person adds or changes a record on a phone.",
+          "rtl": "Fields and their labels mirror in Arabic; typed values keep their own direction."
+        },
+        "action_input_modal": {
+          "headline": "Ask only what the action needs.",
+          "intro": "Opens a form with the action's own input fields, the record filled in, and runs it once per chosen record; a refused record stays in the form with its errors.",
+          "tags": "Panel kit · Actions · Dialogs",
+          "what": "The panel's action form on mobile: the dialog itself is the confirmation.",
+          "when": "For a row, bulk or header action whose input has fields besides the record id.",
+          "rtl": "The dialog mirrors in Arabic, its buttons in reading order."
+        },
+        "action_button": {
+          "headline": "One button for one action, as the server describes it.",
+          "intro": "Runs an action through the panel's action runner with its declared or its own confirmation, or follows a link; it hides without its permission and while its record predicate is false.",
+          "tags": "Panel kit · Actions · Server-driven",
+          "what": "The panel's action button: the icons, variant, size, shortcut, disabled reason and tone of an action spec on the design system's Button.",
+          "when": "In a page header, an empty state or a card, wherever one action of a resource is offered as a button.",
+          "rtl": "Icons sit on the inline start and end sides, so they swap in Arabic; the label keeps its own direction."
+        },
+        "row_actions": {
+          "headline": "Every action of a row, one press away.",
+          "intro": "Lists a record's actions in a menu, in the sections the spec names, and can show the actions that have an icon as buttons while the row is hovered or focused.",
+          "tags": "Panel kit · Actions · Tables",
+          "what": "The panel's row menu over a row's action specs, each with its icon, description, shortcut, tone and disabled reason.",
+          "when": "At the end of a table row, a list item or a card that offers several actions on one record.",
+          "rtl": "The menu opens from the inline end and the hover buttons sit before the trigger in reading order, so both mirror in Arabic."
+        },
+        "bulk_actions": {
+          "headline": "Act on many records at once.",
+          "intro": "Shows how many records are selected and the actions that apply to all of them, run once per record or once over the whole selection, with the export when asked for.",
+          "tags": "Panel kit · Actions · Selection",
+          "what": "The panel's bulk bar over a selection's action specs, on the design system's BulkActionBar.",
+          "when": "Above a table or a list whose rows can be selected, while at least one is selected.",
+          "rtl": "The count, the actions and the clear button follow the reading order, so they run right to left in Arabic."
+        },
+        "autocomplete": {
+          "headline": "A long list, found in a few letters.",
+          "intro": "The field stays a tidy select until it opens; then a search box narrows the choices as people type.",
+          "tags": "Search · Keyboard · Clear",
+          "what": "A single-choice select with a search box in its list.",
+          "when": "Use it when the list is long enough to search but the choice should still read as a select; for typing straight into the field, use the combo box.",
+          "rtl": "The label, the value and the clear button flow from the start; the search box follows the reading direction."
+        },
+        "color_field": {
+          "headline": "A colour, typed the way designers say it.",
+          "intro": "Type or paste a hex code; the swatch beside it shows what you will save, and the arrow keys nudge it.",
+          "tags": "Hex · Swatch · Form field",
+          "what": "A text field for one colour.",
+          "when": "Use it when people know the exact colour; when they need to look for one, use the colour picker.",
+          "rtl": "The hex code stays left to right; the swatch sits at the start of the field."
+        },
+        "color_swatch": {
+          "headline": "One colour, at a glance.",
+          "intro": "A round or square chip of a colour, on a checkered ground so transparency shows, with a name people can hear.",
+          "tags": "Sizes · Shapes · Accessible name",
+          "what": "A preview of one colour.",
+          "when": "Use it beside a colour value, in a legend or in a list of themes.",
+          "rtl": "A swatch has no direction; it sits where the layout puts it."
+        },
+        "flag": {
+          "headline": "Where in the world, in one glyph.",
+          "intro": "Give a country code or a language tag with a region, and the flag shows beside a name, a phone number or a price.",
+          "tags": "ISO 3166 · Sizes · Decorative or named",
+          "what": "A country's flag drawn as its emoji.",
+          "when": "Use it next to a country or a region's language; give it a label when it stands alone.",
+          "rtl": "A flag is never mirrored."
+        },
+        "marker_map": {
+          "headline": "Every place, on the map and in the list.",
+          "intro": "Pins sit where the places are and grow with their count; choosing one on the map or in the list selects it in both.",
+          "tags": "Pins · List · Keyboard",
+          "what": "A map of pins with a selectable list of them.",
+          "when": "Use it to show where things are, such as job sites, stores or visits, and to pick one.",
+          "rtl": "The map is never mirrored; the list panel moves to the left."
         }
       }
     }

@@ -1323,7 +1323,7 @@
   status: proposed
 "0440":
   slug: landing-sites-are-experience-documents-rendered-at-the-edge
-  status: proposed
+  status: accepted
 "0441":
   slug: product-repository-layout-assets-tree-and-root-runway-surfaces
   status: proposed
@@ -1563,9 +1563,13 @@
   issue: STA-1986
 "0520":
   slug: stackra-champagne-core-for-the-engine
-  status: reserved
+  status: accepted
   issue: STA-2015
 "0521":
   slug: design-system-docs-on-fumadocs-ai-first
   status: accepted
   issue: STA-2024
+"0522":
+  slug: testbed-own-repo
+  status: reserved
+  issue: STA-2073

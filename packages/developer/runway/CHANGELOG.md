@@ -1,5 +1,110 @@
 # @stackra/runway
 
+## 0.8.0
+
+### Minor Changes
+
+- 67e7e8f: The runway schemas drop the fields that no repository set and nothing read (STA-2028), so each of these keys now
+  fails `parseRunway` and `pnpm validate`:
+  
+  - root runway: `resources.<name>.reason` (ADR 0493's reason rule is the workloads');
+  - app runway: `brands` (ADR 0335 puts brands in `stackra.config.ts`), `release.pwa` (ADR 0326 decision 6),
+    `release.desktop.channels`, `release.desktop.signing` and `release.desktop.platforms` (ADR 0344 decision 7; they
+    return with the desktop release job), `release.mobile.whiteLabel` (the root `mobile.<app>.whiteLabel` is the one
+    read), and `release.mobile.profiles.<profile>.distribution`, `.developmentClient`, `.simulator`, `.androidApk` and
+    `.autoIncrement` (`easJsonOf` sets them);
+  - app runway environments: `aliases`, `e2e`, `pwa`, `desktop.rollout` and `mobile.devClient`.
+  
+  The app runway's `release.desktop`, `release.mobile`, each mobile profile and each environment's `desktop` and `mobile`
+  blocks are now strict. `brandsOf`, the `Brand` type and the `brands` entry of the runway facts are removed with
+  `brands`; nothing called them.
+  
+  Kept, marked "Not read yet" in their description and in repo-checks' `RUNWAY_UNREAD_FIELDS`: the
+  `surfaces.ops.contributes` children (STA-2003), the app `health.path` and `health.expects` (Runway plan PR 13) and the
+  app environments' `desktop.devtools` (STA-2029).
+
+### Patch Changes
+
+- 02c47c3: The product publish runs wrangler with `CLOUDFLARE_ACCOUNT_ID` from `providers.cloudflare.accountId` (uploads and KV
+  rows), and `stackra deploy --product` passes `appLinks` from `STACKRA_APPLE_TEAMS` (`team=ID,...`) and
+  `STACKRA_ANDROID_CERTIFICATES` (`app=AA:BB|CC:DD,...`). `CommandRunner` options take an `env`.
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/app@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/app@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/app@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/app@0.6.1
+
+## 0.6.0
+
+### Minor Changes
+
+- 67dac91: `stackra deploy --env <environment>` now refuses an environment whose root `runway.yaml` declares
+  `deploy.approval` unless `--approved` is passed (as `stackra deploy --product` already does), so it ships only from
+  the CI job behind the owner's approval (ADR 0468). A dry run still plans without it. It also runs Runway's `deploy()`
+  inside `withDeployLock`, so two deploys of one environment never overlap on one host; the new `fileDeployLock(directory)`
+  in `@stackra/runway/node` is that lock (a lease file renewed while the work runs; an ended lease is taken over). Across
+  CI runners the caller workflow's `concurrency` group stays the lock (STA-1969).
+- 0183006: `runway secrets sync <env> [--dry-run]` syncs each service's declared secrets from Infisical into its Encore Cloud
+  environment with `encore secret set`, the value on stdin (STA-606). The sync prints names only, reads every value
+  before it writes anything, refuses one Encore name with two values, and reads values only in a CI job; `--dry-run`
+  reads nothing. `readMemberSecrets` (exported from `./node`, with `readRunways`, `secretSyncPlan`, `syncSecrets` and
+  the `DeployRunways` and `SecretSyncEntry` types) returns one member's values in memory only, for the Workers provider's
+  versions upload (STA-1990). A Worker's secrets stay with the Workers provider; EAS waits for STA-2009.
+- a736fb5: The root runway's `edge`, `release`, `observability` and `providers.github` blocks are closed objects: a misspelt key
+  or an out-of-range value now fails `parseRunway("root", …)` with its path instead of passing silently. Each mirrors
+  its owner's keys and value rules (infra-cloudflare, infra-observability, infra-github) without defaults, and the
+  owners still parse their own block. Both copies of the root JSON Schema carry the same shape.
+- b74c373: The root runway's `targets` are typed: the nine destinations Runway knows (`encore-cloud`, `cloudflare-workers`,
+  `aws-ecs`, `compose`, `helm`, `eas`, `electron-release`, `mintlify`, `npm`) are closed objects with the keys the
+  repositories use, so a misspelt key such as `eas.ota.rolout` now fails `parseRunway` and the JSON Schema instead of
+  passing silently; a secret value in `mintlify.adminKey` (a NAME) fails too. Any other destination name stays open, and
+  each provider still parses its own settings. `schema/root.json` and the canonical `tools/schemas/runway-root.schema.json`
+  carry the same shape (STA-1975).
+
+### Patch Changes
+
+- 2ed03e2: The 32 runway fields that the repositories set but nothing reads yet now say so in their JSON Schema description, with
+  the work that will read them ("Not read yet (Runway plan PR 12, STA-2001)"); `environments.*.deploy.gate` is marked a
+  deprecated alias of `release.gate`. No field is removed and parsing is unchanged. `@stackra/repo-checks` adds the
+  `runway-unread-fields` structure check (`checkRunwayUnreadFields`, `RUNWAY_UNREAD_FIELDS`): it fails when the list and
+  the schema notes disagree, or when the runway, CLI, gen or infra sources read a field still listed as not read.
+- @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/app@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

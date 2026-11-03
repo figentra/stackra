@@ -29,6 +29,8 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { TESTBED_DEFAULTS } from "#core/constants/testbed-defaults.constant";
+
 const AGENT = fileURLToPath(new URL("../testbed-agent.sh", import.meta.url));
 const TOKEN = "s3cr3t-token-value";
 
@@ -115,7 +117,7 @@ case "$1" in
   run) while [ "$1" != -- ]; do shift; done; shift; exec "$@" ;;
 esac`,
   );
-  stub("pnpm", `echo "pnpm $*" >> "$FAKE_LOG"`);
+  stub("pnpm", `echo "pnpm $* (in $PWD)" >> "$FAKE_LOG"`);
   // IMDS: a token always; the spot notices only when the test sets them (404, so curl -f fails, otherwise).
   stub(
     "curl",
@@ -130,6 +132,17 @@ esac`,
 
 afterEach(() => {
   rmSync(root, { recursive: true, force: true });
+});
+
+describe("testbed-agent excludes", () => {
+  it("leaves out the contract's rsync excludes, and keeps the repository's own folders", () => {
+    const excludes = /^EXCLUDES='([^']*)'/m.exec(readFileSync(AGENT, "utf8"))?.[1]?.split(" ");
+    expect(excludes).toEqual([...TESTBED_DEFAULTS.rsyncExcludes]);
+    // `pnpm validate` reads .agents (specs, hooks, rules, skills); a job without it fails.
+    for (const kept of [".agents", ".github", ".flow"]) {
+      expect(TESTBED_DEFAULTS.rsyncExcludes).not.toContain(kept);
+    }
+  });
 });
 
 describe("testbed-agent guard", () => {
@@ -273,7 +286,20 @@ describe("testbed-agent job run", () => {
     const run = agent(["job", "run", "j4", "light", "me", "core", "--", "echo hi"]);
 
     expect(run.code).toBe(0);
-    expect(logged()).toContain("pnpm fetch --store-dir");
+    // The fetch only fills the store, without scripts, from a copy outside the workspace: run there it would leave a
+    // node_modules that makes the container skip its install.
+    expect(logged()).toMatch(
+      /pnpm fetch --ignore-scripts --store-dir \S+ \(in \S+\/data\/jobs\/j4\/\.fetch\)/,
+    );
+    expect(existsSync(dir("data/jobs/j4/.fetch"))).toBe(false);
+    expect(logged()).toMatch(/-e CI=true /);
+    // The container reads the metadata cache the fetch filled; a lockfile install needs it for the release-age check.
+    expect(logged()).toMatch(/-v \S+\/data\/pnpm-cache:\/pnpm-cache /);
+    expect(logged()).toContain("-e PNPM_CONFIG_CACHE_DIR=/pnpm-cache");
+    expect(logged()).toContain("pnpm install --prefer-offline --frozen-lockfile");
+    // Writable, so a package the store lacks can be added during the install, with integrity checks forced on.
+    expect(logged()).toMatch(/-v \S+\/pnpm-store:\/pnpm-store /);
+    expect(logged()).toContain("-e PNPM_CONFIG_VERIFY_STORE_INTEGRITY=true");
     expect(logged()).not.toContain(TOKEN);
     expect(run.out + run.err).not.toContain(TOKEN);
     expect(readFileSync(`${log}.env`, "utf8")).toContain(`INFISICAL_TOKEN=${TOKEN}`);
@@ -311,6 +337,8 @@ describe("testbed-agent job run", () => {
 
     expect(existsSync(dir("data/jobs/j6"))).toBe(false);
     expect(readFileSync(dir("data/seed/core/new.txt"), "utf8")).toBe("n");
+    // The job's git snapshot stays in the job: the seed never takes a `.git`.
+    expect(existsSync(dir("data/seed/core/.git"))).toBe(false);
     expect(existsSync(dir("data/seed/core/stale.txt"))).toBe(false);
     expect(existsSync(dir("data/seed/core/.env.local"))).toBe(false);
     expect(existsSync(dir("data/seed/core/node_modules/big.js"))).toBe(false);

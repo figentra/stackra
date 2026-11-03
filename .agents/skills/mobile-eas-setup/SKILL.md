@@ -45,7 +45,7 @@ and the mobile job writes `eas.json` at each build. Do not hand-write a product'
 {
   "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
   "build": {
-    "base": { "node": "24", "pnpm": "12.6.0" },
+    "base": { "node": "24", "pnpm": "12.16.1" },
     "development": { "extends": "base", "developmentClient": true, "distribution": "internal",
                      "ios": { "simulator": true }, "channel": "development", "environment": "development" },
     "development-device": { "extends": "base", "developmentClient": true, "distribution": "internal",

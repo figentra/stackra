@@ -1,7 +1,8 @@
 # yaml-language-server: $schema=./node_modules/lefthook/schema.json
 # Stackra file contract:
 # Purpose: git hooks — pre-commit format/lint on staged files and a secret scan, commit-msg conventional
-#          commits, pre-push affected typecheck + unit tests. Installed by `pnpm install` (prepare → lefthook install).
+#          commits, pre-push branch-name check (typecheck and tests run on the box and in
+#          CI, never on a Mac). Installed by `pnpm install` (prepare → lefthook install).
 #          Hooks are advisory; the GitHub Actions Quality Gate workflow (.github/workflows/ci.yml) is the gate.
 # Owner: release-operations
 # Secrets: forbidden
@@ -18,9 +19,11 @@ pre-commit:
       # --check, not --write: stage_fixed made lefthook stash unstaged work, which conflicts while the loop
       # edits other members mid-commit (see apps/docs/src/docs/agents/concurrent-sessions.mdx); the gate formats a member before it passes.
       # oxfmt exits 2 when every staged file is on its ignore list (pnpm-lock.yaml alone): that is not a finding.
-      # The mise-pinned oxfmt runs without a workspace install; pnpm's is the fallback where mise is missing (STA-1865).
+      # The mise-pinned oxfmt runs without a workspace install; where mise is missing the job is skipped and CI checks.
+      # No pnpm fallback: pnpm 12's exec installs the workspace (2026-11-03).
       run: >-
-        sh -c 'if command -v mise >/dev/null 2>&1; then mise exec -- oxfmt --check "$@"; else pnpm exec oxfmt --check "$@"; fi;
+        sh -c 'command -v mise >/dev/null 2>&1 || { echo "oxfmt skipped: mise not installed; CI checks"; exit 0; };
+        mise exec npm:oxfmt -- oxfmt --check "$@";
         s=$?; [ $s -eq 2 ] && exit 0; exit $s' -- {staged_files}
     - name: shfmt
       glob: "*.sh"
@@ -38,8 +41,10 @@ pre-commit:
       exclude:
         - ".agents/skills/**"
         - ".agents/reference/**"
-      # The mise-pinned oxlint runs without a workspace install; pnpm's is the fallback where mise is missing (STA-1865).
-      run: sh -c 'if command -v mise >/dev/null 2>&1; then exec mise exec -- oxlint "$@"; fi; exec pnpm exec oxlint "$@"' -- {staged_files}
+      # The mise-pinned oxlint runs without a workspace install; where mise is missing the job is skipped (no pnpm fallback).
+      run: >-
+        sh -c 'command -v mise >/dev/null 2>&1 || { echo "oxlint skipped: mise not installed; CI lints"; exit 0; };
+        exec mise exec npm:oxlint -- oxlint "$@"' -- {staged_files}
     - name: gitleaks
       run: |
         if command -v gitleaks >/dev/null 2>&1; then
@@ -63,10 +68,12 @@ commit-msg:
 
 pre-push:
   jobs:
-    # Affected members only (build plan §4); `test` is the unit suite, `.int`/`.contract`/`.e2e`/`.load` have their own tasks.
-    # turbo diffs against `main`; set TURBO_SCM_BASE to change the base.
-    - name: typecheck-unit
-      run: pnpm exec turbo run typecheck test --affected
-    # Warns on a non-Linear branch (ADR 0065 D5); never blocks, since a chore-lane PR may use any branch.
+    # Warns on a non-Linear branch (ADR 0065 D5); never blocks, since a chore-lane PR may use any branch. The gate is
+    # @figentra-oss/flow's, so it runs only where node_modules has it; CI runs the same check.
     - name: spec-branch
-      run: node tools/scripts/spec-gate.mjs branch
+      run: |
+        if [ -d node_modules/@figentra-oss/flow ]; then
+          node tools/scripts/spec-gate.mjs branch
+        else
+          echo "spec-branch skipped: no workspace install here; CI checks the branch name"
+        fi

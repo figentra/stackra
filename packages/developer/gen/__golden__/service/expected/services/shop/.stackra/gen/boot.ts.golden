@@ -6,7 +6,7 @@
  * Runtime: node
  */
 import type { Container } from "@stackra/container";
-import { AppendOnlySubscriber, connectHoldRegistry, connectSequenceTimeZone, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";
+import { AppendOnlySubscriber, connectHoldRegistry, connectNativeWriteWatcher, connectSequenceTimeZone, connectVisibilityFilter, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";
 import { EventBus } from "@stackra/events";
 import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";
 import { InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";
@@ -22,6 +22,7 @@ export async function boot(
   connectSequenceTimeZone(
     container.has(SequenceTimeZone) ? container.get(SequenceTimeZone) : undefined,
   );
+  connectVisibilityFilter(container);
   const config = container.has(DatabaseConfig) ? container.get(DatabaseConfig) : undefined;
   const replicas = (process.env["DATABASE_REPLICA_URLS"] ?? "").split(",").filter((url) => url !== "");
   // The instance's share of the runway poolBudget (ADR 0473), set by the deploy; DatabaseConfig.pool.max otherwise.
@@ -34,6 +35,7 @@ export async function boot(
     pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },
     subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber(), container.get(OutboxWriterService)],
   });
+  connectNativeWriteWatcher(container.get(OutboxWriterService));
   const bus = container.get(EventBus);
   bus.connect(container);
   const inbox = container.get(InboxService);

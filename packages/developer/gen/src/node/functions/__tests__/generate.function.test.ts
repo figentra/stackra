@@ -12,7 +12,8 @@
  *          `encore_app_stray` (STA-1322); an authored `app.json` or root `app.config.ts` beside an iOS app's Expo
  *          config is `shim_authored`, and the shim gen wrote is not (STA-768); a v2 service (authored `src/main.ts`)
  *          gets no entry, tool config or encore.app and passes, while the same service in the v3 shape is still
- *          `generated_dependency_missing` (STA-344).
+ *          `generated_dependency_missing` (STA-344); a `.stackra/gen/blueprint.ts` left after the last own macro is gone
+ *          is reported by a check run and deleted by a write run (STA-2062).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -50,6 +51,24 @@ describe("generate", () => {
     const check = await generate(root, { check: true });
     expect(check.changed).toEqual([".stackra/gen/wiring.ts"]);
     expect(readFileSync(join(root, ".stackra/gen/wiring.ts"), "utf8")).toBe("// edited by hand\n");
+  });
+
+  it("imports each schemas file in the test setup, and a check flags a setup whose modules changed (STA-2032)", async () => {
+    const root = writeFixtureMember("shop", SHOP_SOURCES);
+    expect((await generate(root)).errors).toEqual([]);
+    const setupPath = join(root, ".stackra/vitest.setup.ts");
+    const setup = readFileSync(setupPath, "utf8");
+    expect(setup).toContain('import "./gen/schemas/shop.ts";');
+    expect(setup).not.toContain("loadMemberSchemas");
+
+    // A setup written before the module existed, or after one was removed, no longer matches: `--check` reports it.
+    writeFileSync(setupPath, setup.replace('import "./gen/schemas/shop.ts";\n', ""));
+    expect((await generate(root, { check: true })).changed).toEqual([".stackra/vitest.setup.ts"]);
+    writeFileSync(
+      setupPath,
+      setup.replace('import "./gen/schemas/shop.ts";', 'import "./gen/schemas/gone.ts";'),
+    );
+    expect((await generate(root, { check: true })).changed).toEqual([".stackra/vitest.setup.ts"]);
   });
 
   it("writes the integration-tier config only for a member with an .int.test.ts (STA-1819)", async () => {
@@ -241,6 +260,20 @@ describe("generate's v2 services (authored src/main.ts, until STA-344)", () => {
       "vitest.config.ts",
     ])
       expect(existsSync(join(root, path))).toBe(false);
+  });
+
+  it("reports, then deletes, a blueprint.ts left over after the last own macro is gone", async () => {
+    const root = exampleService(true);
+    const stale = join(root, ".stackra/gen/blueprint.ts");
+    mkdirSync(dirname(stale), { recursive: true });
+    writeFileSync(
+      stale,
+      'import type { GoneMacro } from "#modules/example/database/macros/gone.macro";\n',
+    );
+    expect((await generate(root, { check: true })).changed).toContain(".stackra/gen/blueprint.ts");
+    expect(existsSync(stale)).toBe(true);
+    expect((await generate(root)).changed).toContain(".stackra/gen/blueprint.ts");
+    expect(existsSync(stale)).toBe(false);
   });
 
   it("still refuses a v3 service that does not declare what its generated files import", async () => {

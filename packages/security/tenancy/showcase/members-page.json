@@ -1,0 +1,21 @@
+{
+  "slug": "members-page",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/tenancy",
+  "exportName": "MembersPage",
+  "parts": ["MembersPage"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 720
+    }
+  ],
+  "related": ["free/page-header", "free/table", "free/modal"],
+  "tokens": ["color.surface", "color.border", "color.danger"],
+  "keywords": ["members", "team", "invite", "invitation", "role", "settings", "kit"],
+  "status": "new"
+}

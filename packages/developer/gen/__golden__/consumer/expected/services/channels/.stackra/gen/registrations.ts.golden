@@ -3,7 +3,8 @@
  * Purpose: the registrations of @golden/service-channels: loads the generated entity and schemas files, then names
  *          each class the platform packages look up by its locked identity (entities, model partners, event wire
  *          names, listeners, relays, change consumers, jobs, cached queries, connections, webhook events, outbound
- *          webhooks, sequences, entitlements, searchable models, report sources, permissions and module roles).
+ *          webhooks, sequences, entitlements, searchable models, report sources, permissions, module roles, and
+ *          actions and queries).
  * Boundary: imported by the server entry and the generated test setup before the container boots; every row comes
  *           from the committed identities, so a hand edit is overwritten.
  * Runtime: node

@@ -1,5 +1,105 @@
 # @stackra/collaboration
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [928dcc0]
+- Updated dependencies [7dd35b3]
+  - @stackra/database@0.8.0
+  - @stackra/container@0.8.0
+  - @stackra/outbox@0.8.0
+  - @stackra/entitlements@0.8.0
+  - @stackra/iam@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/events@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/realtime@0.8.0
+  - @stackra/transport@0.8.0
+  - @stackra/contracts@0.8.0
+
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/iam@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/database@0.7.1
+  - @stackra/model@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/transport@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/outbox@0.7.1
+  - @stackra/realtime@0.7.1
+  - @stackra/entitlements@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [1f5bf76]
+  - @stackra/iam@0.7.0
+  - @stackra/actions@0.7.0
+  - @stackra/database@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/transport@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/outbox@0.7.0
+  - @stackra/realtime@0.7.0
+  - @stackra/entitlements@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/database@0.6.1
+  - @stackra/model@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/transport@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/outbox@0.6.1
+  - @stackra/realtime@0.6.1
+  - @stackra/entitlements@0.6.1
+  - @stackra/iam@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [fb29d41]
+- Updated dependencies [e250d4f]
+  - @stackra/database@0.6.0
+  - @stackra/iam@0.6.0
+  - @stackra/outbox@0.6.0
+  - @stackra/entitlements@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/transport@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/realtime@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

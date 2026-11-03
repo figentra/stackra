@@ -7,7 +7,8 @@ The working rules live in [`AGENTS.md`](AGENTS.md) and `.agents/rules/`; the ful
 2. Track the work in Linear (team `STA`). Branch names come from Linear: `figentra/sta-<n>-<slug>`.
 3. Versions come only from `pnpm-workspace.yaml` catalogs or `workspace:*`. Tests sit in `src/**/__tests__/`.
 4. Use conventional commits. A `feat`, `fix`, `refactor` or `perf` commit carries `Refs: STA-n`.
-5. `pnpm verify` must be green (format, lint, typecheck, test, build, validate, boundaries, knip).
+5. `pnpm verify` (format, lint, typecheck, test, build, validate, boundaries, knip) runs on the box after the merge; merge without waiting and label the
+   issue `needs-testing` (`AGENTS.md`, "Tests run later").
 6. Open a pull request using the template. A separate reviewer approves; nobody merges their own change.
 
 ## Formatting
@@ -35,7 +36,8 @@ One formatter per file type, the same in the editor, the pre-commit hook and CI:
   A verdict survives a clean rebase or update-branch while the diff's `git patch-id --verbatim` is unchanged
   ([ADR 0285](apps/docs/src/docs/adr/0285-review-verdict-binds-to-the-patch-id.mdx)); any diff change needs a new review
   ([ADR 0230](apps/docs/src/docs/adr/0230-reviewer-identity-separate-from-builder.mdx),
-  [ADR 0119](apps/docs/src/docs/adr/0119-merge-policy-and-release-authority.mdx)). Never `--admin`, never a push to `main`.
+  [ADR 0119](apps/docs/src/docs/adr/0119-merge-policy-and-release-authority.mdx)). Never a push to `main`; `--admin` only to merge without waiting
+  (`AGENTS.md`, "Tests run later").
 - Order (owner decision OP7): the `merge_queue` rule in `.github/rulesets/main.json` is applied only after STA-302
   (a 30-second connect timeout and retries for the bot's GitHub calls) lands. Until then `main` has no queue and
   `pnpm pr:merge` squash-merges directly; it refuses to enqueue while `figentra bot token` lacks that support.
