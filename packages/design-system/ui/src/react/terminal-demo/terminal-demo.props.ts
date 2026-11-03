@@ -21,7 +21,7 @@ export interface TerminalDemoProps {
   readonly result?: ReactNode;
   /** When the session plays: once it scrolls into view (the default), at once, or `never` (the last frame only). */
   readonly autoplay?: "in-view" | "always" | "never" | undefined;
-  /** The time between lines in milliseconds, the motion kit's floor step. Defaults to 80. */
+  /** The time between lines in milliseconds, by default the theme's `floor` motion step. */
   readonly stepMs?: number | undefined;
   /** Shows the copy button. Defaults to true. */
   readonly isCopyable?: boolean | undefined;

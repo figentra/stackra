@@ -16,8 +16,8 @@ import type { ReactElement } from "react";
 
 import type { FrameProps } from "#react/frame/frame.props";
 
-/** The frame radius: the kit's `lg` plus 4 px; a schematic window takes the blueprint's. */
-const RADIUS = "rounded-[calc(var(--radius-lg)+4px)]";
+/** The frame radius: the kit's `lg` plus one spacing step (4 px); a schematic window takes the blueprint's. */
+const RADIUS = "rounded-[calc(var(--radius-lg)+var(--spacing))]";
 const SCHEMATIC_RADIUS = "rounded-[var(--blueprint-frame-radius)]";
 
 /** One hairline stripe pair of a schematic title bar: a top and a bottom rule in the blueprint's rule colour. */

@@ -1,17 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: the web `TerminalDemo`: a framed terminal that plays a recorded CLI session a whole line at a time, on the
- *          motion kit's 80 ms floor step ("nothing is typed on"), under a top bar with a mono label, the command and a
+ *          theme's `floor` motion step ("nothing is typed on"), under a top bar with a mono label, the command and a
  *          copy button; it ends on an optional result. It plays once it scrolls into view, at once, or never.
  * Boundary: a region named by `label`. The server and the edge render the last frame, so the whole session is in the
  *           HTML; a playing session hides the lines still to come (hidden from assistive tech too) without moving the
  *           layout. The log does not announce each line (`aria-live="off"`). Below the `full` motion level it never
  *           plays. Terminal text is code: left-to-right and never translated.
  * Runtime: browser
- * Governing contract: ADR 0302 (decision 3); motion principles (whole lines, 80 ms floor steps); WCAG 2.2 SC 2.2.2
+ * Governing contract: ADR 0302 (decision 3); motion principles (whole lines, the `floor` motion step); WCAG 2.2 SC 2.2.2
  *          and 2.3.3; STA-2041.
  */
 import { cn } from "@heroui/react";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { type ReactElement, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { TerminalLine } from "#contracts/types/terminal-line.type";
@@ -20,6 +21,9 @@ import { CopyButton } from "#react/copy-button/copy-button";
 import { useMotion } from "#react/design-system-provider/use-motion";
 import { useUiText } from "#react/hooks/use-ui-text";
 import type { TerminalDemoProps } from "#react/terminal-demo/terminal-demo.props";
+
+/** The theme's floor step: one whole line a step. */
+const FLOOR_MS = motionTiming(STACKRA_THEME, "floor").durationMs;
 
 /** The terminal's words. */
 const K = LONG_TAIL_KEYS.ui.terminal_demo;
@@ -41,7 +45,7 @@ export function TerminalDemo({
   lines,
   result,
   autoplay = "in-view",
-  stepMs = 80,
+  stepMs = FLOOR_MS,
   isCopyable = true,
   copyLabel,
   className,
@@ -96,7 +100,7 @@ export function TerminalDemo({
       data-slot="terminal-demo"
       data-done={isDone ? "" : undefined}
       className={cn(
-        "overflow-hidden rounded-[calc(var(--radius-lg)+4px)] border border-border bg-surface-secondary",
+        "overflow-hidden rounded-[calc(var(--radius-lg)+var(--spacing))] border border-border bg-surface-secondary",
         className,
       )}
     >

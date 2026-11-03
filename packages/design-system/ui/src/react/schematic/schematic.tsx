@@ -3,8 +3,8 @@
  * Purpose: the web `Schematic`: a blueprint machine of named `SchematicNode`s, laid out by the caller, joined by
  *          orthogonal pipes. After layout it measures each node and draws every link from the bottom centre of its
  *          `from` node to the top centre of its `to` node (down, across, down) in the blueprint pipe, with a junction
- *          square where the pipe turns across. At the `full` motion level it draws the pipes in on the motion kit's
- *          80 ms floor steps (one segment a step, no easing) the first time it comes into view; otherwise they are
+ *          square where the pipe turns across. At the `full` motion level it draws the pipes in on the theme's
+ *          floor steps (one segment a step, no easing) the first time it comes into view; otherwise they are
  *          drawn at once.
  * Boundary: a group named by `label`; the nodes read in DOM order and keep their own focus stops; the pipes are
  *           decoration hidden from assistive tech. Pipes are measured, never flipped, so right-to-left draws them
@@ -12,18 +12,18 @@
  *           renders the nodes only; the pipes need a layout to measure.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0501 (section 9, the blueprint roles); ADR 0060 (right-to-left);
- *          motion principles (one orchestrated moment, 80 ms floor steps); WCAG 2.2 SC 2.3.3; STA-2041.
+ *          motion principles (one orchestrated moment, the `floor` motion step); WCAG 2.2 SC 2.3.3; STA-2041.
  */
 import { cn } from "@heroui/react";
+import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
 import { type ReactElement, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { SchematicLink } from "#contracts/types/schematic-link.type";
 import { useMotion } from "#react/design-system-provider/use-motion";
 import type { SchematicProps } from "#react/schematic/schematic.props";
 
-/** The motion kit's floor step, as TerminalDemo plays it. */
-// oxlint-disable-next-line stackra/no-literal-duration -- reason: the 80 ms floor step has no theme motion step yet (design pass §5 proposes one)
-const STEP_MS = 80;
+/** The theme's floor step, as TerminalDemo plays it. */
+const STEP_MS = motionTiming(STACKRA_THEME, "floor").durationMs;
 
 /** The segments of a pipe: down, across, down. */
 const SEGMENTS = 3;
