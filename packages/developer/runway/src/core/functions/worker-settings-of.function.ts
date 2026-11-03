@@ -22,8 +22,8 @@ type Target = {
     Record<
       string,
       {
-        readonly preset?: WorkerPreset;
-        readonly environments?: Readonly<Record<string, WorkerSettings>>;
+        readonly preset?: WorkerPreset | undefined;
+        readonly environments?: Readonly<Record<string, WorkerSettings>> | undefined;
       } & WorkerSettings
     >
   >;
