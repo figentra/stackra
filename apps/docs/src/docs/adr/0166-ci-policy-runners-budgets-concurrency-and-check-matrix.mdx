@@ -37,7 +37,9 @@ answered these on 2026-10-20 (mem L406–414). Those answers fix the CI cost cei
 planned — the workflow files `.github/workflows/ci.yml` and the release workflow are checked by `zizmor` (0167); the concurrency group and the 20-minute
 timeout are asserted in `pnpm validate` once the workflow changes land. CI3: `.github/workflows/ci.yml` runs the gate on
 `merge_group`, `tools/scripts/pr-merge.mjs` enqueues through GraphQL `enqueuePullRequest` when the base branch has a
-queue, and `.github/rulesets/main.json` holds the `main` ruleset with its `merge_queue` rule (STA-233).
+queue, and `.github/rulesets/main.json` holds the `main` ruleset with its `merge_queue` rule (STA-233). CI6, CI9: `stackra validate --repository`
+(rule `workflow-triggers`, `checkWorkflowTriggers` in `@stackra/repo-checks`, STA-256) refuses a macOS, Windows or larger
+runner, an EAS build or a device farm run on a branch push or pull request trigger.
 
 ## Alternatives
 
