@@ -36,6 +36,8 @@ export type ProductDeployRequest = {
   readonly canaryScopes?: readonly string[];
   /** No release exists yet for these surfaces. */
   readonly firstRelease?: boolean;
+  /** The pull request a preview deploy serves (`environment` `preview`): its own host, no canary. */
+  readonly pullRequest?: number;
   /** The home region platform hosts send API calls to. */
   readonly region?: string;
   /** Apple team ids and Android certificates for the app-link files. */

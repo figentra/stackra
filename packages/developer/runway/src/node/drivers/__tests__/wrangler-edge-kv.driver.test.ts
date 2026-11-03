@@ -49,6 +49,12 @@ describe("WranglerEdgeKvDriver", () => {
     ]);
   });
 
+  it("expires a row after the given seconds", async () => {
+    const { kv, calls } = driver();
+    await kv.put("host:pr-1.figentra.cloud", "{}", 604_800);
+    expect(calls[0]?.[1]).toContain("--ttl=604800");
+  });
+
   it("deletes a row with wrangler in the namespace", async () => {
     const { kv, calls } = driver();
     await kv.delete("canary:mezzora:console");

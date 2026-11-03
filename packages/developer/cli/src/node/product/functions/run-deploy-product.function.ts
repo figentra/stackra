@@ -2,13 +2,14 @@
  * Stackra file contract:
  * Purpose: `runDeployProduct(context)`, the run of `stackra deploy --product --env <environment> [--dry-run]
  *          [--surfaces-only|--mobile-only]
- *          [--approved] [--first-release]` at a product root: publishes the built web surfaces to the edge, lists the
+ *          [--approved] [--first-release] [--pr <n>]` at a product root: publishes the built web surfaces to the edge, lists the
  *          landing seeds and submits the mobile builds (Runway's `deployProduct`); `--mobile-only` submits the mobile
  *          builds alone and needs none of the edge facts, and an Android build waits while Play has no release. The OS facts come from flags or the
  *          deploy job's environment: `--assets-bucket`/`STACKRA_ASSETS_BUCKET`, `--assets-origin`/`STACKRA_ASSETS_ORIGIN`,
  *          `--kv-namespace`/`STACKRA_EDGE_KV_NAMESPACE`, `--served`/`STACKRA_SERVED_SHELLS` and
  *          `--canary-scopes`/`STACKRA_CANARY_SCOPES` (comma lists), `--region`. A dry run fills what is missing with
- *          stand-ins (the served lines from the build) and records everything.
+ *          stand-ins (the served lines from the build) and records everything. `--pr`/`STACKRA_PULL_REQUEST` deploys
+ *          that pull request's preview (`--env preview`): its own host, the 7-day rows, no canary (ADR 0289 decision 7).
  * Boundary: the CLI gathers the facts and the platform store accounts (`mobile.<app>.stores`) and delegates; an
  *           environment whose runway names an approval deploys only with `--approved`, which the CI job behind the
  *           GitHub environment passes.
@@ -100,6 +101,10 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
       ? Object.values(build.surfaces).map((surface) => surface.shell.line.split("/")[1] ?? "")
       : undefined);
   const canaryScopes = list(deployFact(values, "canary-scopes", "STACKRA_CANARY_SCOPES"));
+  const pr = deployFact(values, "pr", "STACKRA_PULL_REQUEST");
+  const pullRequest = pr === undefined ? undefined : Number(pr);
+  if (pullRequest !== undefined && (!Number.isInteger(pullRequest) || pullRequest < 1))
+    throw new CliUsageError(`--pr is a pull request number, not "${pr}"`);
   const mobileOnly = values["mobile-only"] === true;
   if (mobileOnly && values["surfaces-only"] === true)
     throw new CliUsageError("pass --surfaces-only or --mobile-only, not both");
@@ -167,6 +172,7 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
     assets: { bucket: bucket ?? "", origin: origin ?? "" },
     served: served ?? [],
     ...(canaryScopes === undefined ? {} : { canaryScopes }),
+    ...(pullRequest === undefined ? {} : { pullRequest }),
     firstRelease: values["first-release"] === true || (dryRun && canaryScopes === undefined),
     ...(region === undefined ? {} : { region }),
     ...(Object.keys(appLinks).length === 0 ? {} : { appLinks }),
@@ -184,6 +190,7 @@ export async function runDeployProduct(context: CliContext): Promise<number> {
     io.out(
       `landing ${surface}: ${documents.length} seed document(s) listed; the import into experience is not wired yet\n`,
     );
+  if (deploy.surfaces.host !== undefined) io.out(`preview: https://${deploy.surfaces.host}\n`);
   io.out(`wrote ${PRODUCT_BUILD_SETTINGS.deployManifest(environment)}\n`);
   return 0;
 }

@@ -46,11 +46,20 @@ export class WranglerEdgeKvDriver extends Driver(EdgeKvWriter) {
     this.namespace = `--namespace-id=${config.namespaceId}`;
   }
 
-  /** Stores `value` under `key`. */
-  override async put(key: string, value: string): Promise<void> {
+  /** Stores `value` under `key`; with `ttlSeconds` Workers KV expires it (wrangler's `--ttl`). */
+  override async put(key: string, value: string, ttlSeconds?: number): Promise<void> {
     await this.run(
       EDGE_PUBLISH_SETTINGS.wrangler,
-      ["kv", "key", "put", key, value, this.namespace, "--remote"],
+      [
+        "kv",
+        "key",
+        "put",
+        key,
+        value,
+        this.namespace,
+        ...(ttlSeconds === undefined ? [] : [`--ttl=${ttlSeconds}`]),
+        "--remote",
+      ],
       this.env === undefined ? {} : { env: this.env },
     );
   }

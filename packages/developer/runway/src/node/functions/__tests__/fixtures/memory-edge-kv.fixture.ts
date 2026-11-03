@@ -10,7 +10,7 @@ import { EdgeKvWriter } from "@stackra/app/contracts";
 import { Driver } from "@stackra/container";
 
 /** One recorded call. */
-export type EdgeKvCall = readonly ["put", string, string] | readonly ["delete", string];
+export type EdgeKvCall = readonly ["put", string, string, number?] | readonly ["delete", string];
 
 /** The edge KV copy in memory. */
 export class MemoryEdgeKv extends Driver(EdgeKvWriter) {
@@ -21,8 +21,10 @@ export class MemoryEdgeKv extends Driver(EdgeKvWriter) {
   readonly calls: EdgeKvCall[] = [];
 
   /** Stores the row and records the call. */
-  override async put(key: string, value: string): Promise<void> {
-    this.calls.push(["put", key, value]);
+  override async put(key: string, value: string, ttlSeconds?: number): Promise<void> {
+    this.calls.push(
+      ttlSeconds === undefined ? ["put", key, value] : ["put", key, value, ttlSeconds],
+    );
     this.rows.set(key, value);
   }
 
