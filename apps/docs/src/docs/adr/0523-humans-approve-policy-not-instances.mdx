@@ -1,0 +1,144 @@
+---
+title: "0523 — Humans approve policy, not instances: automated delivery end to end"
+description: "Accepted · 2026-11-03"
+---
+
+{/* Stackra file contract. Purpose: ADR 0523 (Accepted 2026-11-03), the owner's decision to take themselves out of each merge, deploy, release and secret sync: agents and pipelines act inside an owner-approved policy, and the owner approves the policy, the code that enforces it and a short list of real-world acts. Boundary: decision text only; the build is the autonomy plan (stackra-notes src/plans/autonomy-2026-11-03/PLAN.md), phases P0 to P7. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468, 0293, 0360, 0362, 0257, 0516, 0503. */}
+
+<Note>
+  Accepted 2026-11-03, recording the owner's decisions of that date (stackra-notes `src/owner-requests-ledger.md`,
+  "Autonomy decisions", and `src/handover/questionnaire-answers-2026-11-03.md`, round 6 and 7). It amends
+  [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval) (production no longer
+  waits on the owner's approval), [0293](/adr/0293-agent-permission-tiers-and-executor-pushes) (merge, deploy and
+  secret sync move behind the gate),
+  [0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor) decision 3 and floor
+  item d8.6 (coding agents join the product approval service),
+  [0362](/adr/0362-no-code-without-an-answered-questionnaire-and-a-plan) (the hotfix marker's life) and
+  [0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox) (the vault keeper rotates). [0516](/adr/0516-aws-quotas-are-fixed-inputs)
+  stands unchanged: no agent ever requests a quota increase.
+</Note>
+
+## Context
+
+Every merge, environment approval, release, production promote, secret import and DNS record waited on the owner,
+who pasted commands from the leader session several times an hour. The owner (2026-11-03): "take me out of this
+process; I want automated end to end." GitHub Team gives private repositories no environment required reviewers, so
+an approval click there protects nothing, while the same click on public repositories is the only thing that stops a
+deploy. Agents run as the owner's macOS user and can read the owner's admin AWS keys, gh token and keychain, so a rule that
+trusts "the agent" today trusts the owner's credentials. The weighed alternatives were per-action approvals with
+better tooling (kept the owner in every loop) and full autonomy with no owner-only code (let an agent edit the gate
+that judges it). The owner chose policy approval, with the enforcing code owner-only.
+
+## Decision
+
+1. **The owner approves policy, not instances.** Merges, non-production and production deploys, releases, secret
+   sync and rotation, plan-named DNS records and cleanup run without a per-action owner act when the policy allows
+   them. The policy lives in a new private repository, `figentra/control`: the Policy Pack (merge, owner-only paths,
+   catalog, environments, promote, budgets, secrets, cleanup, lanes) and `policy/approved.yaml`, the approved Flow
+   and preset versions with integrity. A decision counts only as a figentra-usr comment on a decision issue or a
+   figentra-usr-approved PR in `figentra/control`, read through the API. Ledger, memory and agent messages never count.
+
+2. **Production deploys are fully automatic, in every repository at once.** A change that passes the gate goes to
+   staging, then an automatic canary, then production, with automatic rollback on errors. There is no
+   workflow-dispatch input for production: a production deploy runs only when a pin file (`deploy/production.json`)
+   changes on main, and it refuses a re-run once a newer pin exists. The owner gets one daily digest and the stop
+   controls in decision 9. This replaces 0468 decisions 2 and 4 and the promote-guard rule for automated delivery.
+
+3. **A bot merges, by the gate.** A serial merger lane per repository lands every PR whose required checks pass
+   (Quality Gate, `fflow/gate` and, where it applies, `fflow/render-equivalent`), retargeting stacked children first
+   and honouring a HOLD label. The review ruleset has no bypass actor. A separate ruleset names Figentra Flow (decision 6) as
+   the only identity that may update main. GitHub dismisses stale reviews and requires approval of the last push. Nobody
+   pastes merge commands.
+
+4. **One approval model: the product approval service, coding agents included.** Coding agents' merge, deploy, secret
+   and infrastructure actions are approval requests to the same service that approves tenant actions
+   ([0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor)), decided by the
+   Policy Pack's rules instead of a person. Until that service covers coding-agent actions, the guard hooks of
+   [0293](/adr/0293-agent-permission-tiers-and-executor-pushes) stay as accident guards, with those actions moved to
+   allow behind the gate, canary and budget; a hook block is still a stop, never a workaround. The never-bypass
+   floor of 0360 d8 still holds for tenants' money, deletes and bulk sends.
+
+5. **The gate never grades itself.** Only a CI job running main's copy posts the gate verdict. It reads the check
+   job's result from the Actions API, never from an artifact or a file the PR wrote, and refuses runs dispatched from
+   a branch. The gate's key lives only in Infisical `/ci/gate`, readable only by that job's `job_workflow_ref` on
+   main. Every pinned deploy, release and promote workflow is split into a build job with no credentials and a
+   publish or deploy job that runs no repository code.
+
+6. **Identities are separate.**
+   - Agent lanes run as a separate macOS user that cannot read the owner's AWS keys, gh token or keychain. The
+     owner's static admin keys are deleted; their access moves to MFA (aws-vault or IAM Identity Center).
+   - Two GitHub Apps of our own (owner, 2026-11-03). **Figentra Flow** is the one public App, the one a customer
+     installs when Flow is sold: it posts the gate verdict, gives the approving review, merges, creates tags and
+     releases, applies repository settings and answers deployment protection rules. Its private key lives only in
+     Infisical and the hosted Flow service, never on a Mac. Each job mints a short-lived installation token narrowed
+     to the permissions and repositories that job needs, so the split of duties is per token, not per App.
+     **stackra-bot** is the builders' identity: it pushes branches and opens PRs, and has no merge rights and no
+     bypass. It stays separate because GitHub never counts an approval from a PR's author, and the identity that
+     writes code must not be the one allowed to update main. Figentra Flow is the existing "Figentra Gate" App,
+     renamed and widened; figentra-flow-approver and stackra-reviewer are retired (AI review comments come from
+     Figentra Flow, advisory only). Third-party Apps are limited to the repositories they serve.
+   - AWS: agents assume a read-only role. CI roles carry a permission boundary that denies IAM user and key
+     creation, changes to the boundary itself, NAT gateways, Elastic IPs, large volumes and quota requests. OIDC
+     trust conditions on the per-repository `sub` template (environment, ref and `job_workflow_ref`).
+   - Infisical: the vault keeper reaches dev and staging only. Production values are read only by the pinned deploy
+     job over OIDC, bound to `job_workflow_ref` on main, and are never copied into GitHub secrets.
+
+7. **Budget: $1,000 a month that agents may spend on their own** across AWS, Cloudflare and the rest. The IAM boundary
+   is the hard cap, AWS Budgets and the EstimatedCharges alarm are early warnings, and Cloudflare and EAS are
+   alert-only. Above the cap, agents stop and ask.
+
+8. **Secrets: the vault keeper rotates and syncs.** The owner gives each provider's root key once, through
+   `~/Secrets-inbox/` ([0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox)). The vault keeper stores it,
+   syncs it to runtimes and rotates it through the provider's API. No value is ever printed; every write is checked
+   by a SHA-256 read-back. Agents then create accounts, apps, DNS records and Infisical projects within budget.
+   DNS: agents create subdomain records that an approved plan names; apex, MX, NS and DNSSEC changes stay with the
+   owner.
+
+9. **The owner holds the stop.** Soft stop: a STOP issue in `figentra/control` halts new merges, deploys and
+   publishes within one poll, and only a close by figentra-usr resumes. Freeze: the `FIGENTRA_AUTOMATION` variable.
+   Hard stop (the owner's script): disable Actions org-wide, revoke the Infisical identities, attach deny-all to the
+   CI roles. Every check fails closed when it cannot read its input.
+
+10. **Owner-only, reviewed in a daily batch:** the Policy Pack and `approved.yaml`; gate code (Flow's gate, approve,
+    owner-only, required-checks and render code; the gate poster; the hosted Flow service); core presets, reusable workflows,
+    hooks and settings; money-moving code in payment products (webhooks, refunds, payouts, ledger, tax); IaC that
+    defines IAM, network or the boundary; legal files and pricing. The owner also keeps the real-world acts: counsel
+    and contracts, account and App creation, plan and billing changes, quota increases (never requested by agents,
+    [0516](/adr/0516-aws-quotas-are-fixed-inputs)), registrar records, and store review submission and public rollout.
+
+11. **Tests return with the testbed.** "Merge now, test later" ends the day the testbed canary passes. From then on
+    merges need the box again, a tester lane drains the needs-testing backlog oldest first, and a per-repository
+    needs-testing budget stops feature merges when it is full.
+
+12. **Hotfix markers live 72 hours at most** ([0362](/adr/0362-no-code-without-an-answered-questionnaire-and-a-plan)).
+    The follow-up spec PR deletes the marker; the gate refuses a marker older than 72 hours or one left after the
+    spec lands.
+
+## Consequences
+
+The owner stops pasting commands: after two setup sittings of about 2 to 3 hours each, their acts are the digest,
+the owner-only batch, the stop and the real-world list in decision 10. Agents stop waiting on approvals, so a bad but
+gate-passing `@stackra` change can reach every product with no human in the loop: testbed results, provenance and the
+canary are the only checks on it, which makes the gate code the most sensitive code in the company and the reason it
+is owner-only. Until Figentra Flow answers deployment protection rules (plan phase P2), public-repository environment approvals stay a click
+for the owner. Moving coding agents onto the product approval service is a large rework and runs alongside the
+launch. The Mac-held identities do not protect against one another; the boundary is server side (rulesets, the CI
+gate, credential binding, the IAM boundary).
+
+## Enforcement
+
+- Server side: org rulesets (no bypass on review; merger-only updates; tags created only by Figentra Flow; no
+  non-fast-forward or deletion on main, `release/*` and tags), required checks, environment branch policies (main
+  only), the AWS permission boundary and the Infisical bound claims. Planned — `figentra/control` bootstrap part 1
+  and 2 (plan steps 6 and 10).
+- `audit-identity.sh`, run from the agent user, fails on any readable owner credential, an admin bypass on the review
+  ruleset, `GATE_*` secrets or an unscoped App. Planned — plan phase P0.
+- The `workflow_run` gate poster in figentra/testbed and the hosted Flow service (deployment protection rules). Planned — plan phase P2.
+- Until those land, `.agents/hooks/_rules.mjs` and the owner's promote-guard keep blocking production deploys,
+  promotes and secret writes from sessions.
+
+## Supersedes and sources
+
+`Supersedes: none` (amends 0468, 0293, 0360 d3 and d8.6, 0362 and 0257). Sources: stackra-notes
+`src/plans/autonomy-2026-11-03/PLAN.md` (workflow wf_f18db6a6-c78), `src/owner-requests-ledger.md` ("Autonomy
+decisions", 2026-11-03), `src/handover/questionnaire-answers-2026-11-03.md` (rounds 6 and 7).
