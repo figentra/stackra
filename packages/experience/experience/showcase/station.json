@@ -1,0 +1,21 @@
+{
+  "slug": "station",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "Station",
+  "parts": ["Station"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 420
+    }
+  ],
+  "related": ["free/blueprint-section", "free/frame", "free/chapter-title"],
+  "tokens": ["color.accent", "color.background"],
+  "keywords": ["station", "pipeline", "blueprint", "rail", "marketing", "landing", "kit"],
+  "status": "new"
+}

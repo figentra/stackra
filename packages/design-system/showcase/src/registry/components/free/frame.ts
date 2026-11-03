@@ -18,9 +18,24 @@ export const FREE_FRAME: ComponentEntry = {
   parts: ["Frame"],
   // HeroUI has no device or window frame; this is the adapted form on theme tokens.
   hero: {},
-  examples: [{ id: "window", card: true }, { id: "phone" }],
-  related: ["free/dither-art", "free/bento-card", "free/segmented-control"],
-  tokens: ["radius.lg", "color.surface", "color.border"],
-  keywords: ["frame", "window", "phone", "mockup", "screenshot", "browser chrome", "device frame"],
+  examples: [{ id: "window", card: true }, { id: "schematic" }, { id: "phone" }],
+  related: ["free/dither-art", "free/schematic", "free/segmented-control"],
+  tokens: [
+    "radius.lg",
+    "color.surface",
+    "color.border",
+    "blueprint.frame-radius",
+    "blueprint.rule",
+  ],
+  keywords: [
+    "frame",
+    "window",
+    "schematic",
+    "phone",
+    "mockup",
+    "screenshot",
+    "browser chrome",
+    "device frame",
+  ],
   status: "new",
 };
