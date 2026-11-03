@@ -3,14 +3,18 @@
  * Purpose: the registrations of @golden/service-catalogue: loads the generated entity and schemas files, then names
  *          each class the platform packages look up by its locked identity (entities, model partners, event wire
  *          names, listeners, relays, change consumers, jobs, cached queries, connections, webhook events, outbound
- *          webhooks, sequences, entitlements, searchable models, report sources, permissions and module roles).
+ *          webhooks, sequences, entitlements, searchable models, report sources, permissions, module roles, and
+ *          actions and queries).
  * Boundary: imported by the server entry and the generated test setup before the container boots; every row comes
  *           from the committed identities, so a hand edit is overwritten.
  * Runtime: node
  */
 import "#stackra/schemas/catalogue";
 import { CataloguePermissions } from "#node/access/catalogue.permissions";
+import { PublishCatalogueAction } from "#node/actions/publish-catalogue.action";
 import { CataloguePublished } from "#node/events/catalogue-published.event";
+import { PublishCatalogueInput } from "#node/schemas/publish-catalogue-input.schema";
+import { registerActions } from "@stackra/actions";
 import { registerPermissions } from "@stackra/container";
 import { registerEventNames } from "@stackra/events";
 
@@ -20,4 +24,8 @@ registerEventNames([
 
 registerPermissions([
   { type: CataloguePermissions, keys: { read: "catalogue.catalogue.read", publish: "catalogue.catalogue.publish" } },
+]);
+
+registerActions([
+  { type: PublishCatalogueAction, key: "catalogue.catalogue.publish@1", permission: "catalogue.catalogue.publish", risk: "L2", input: PublishCatalogueInput },
 ]);

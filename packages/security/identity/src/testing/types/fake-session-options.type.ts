@@ -1,11 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `FakeSessionOptions`, what `fakeSession` takes: the status to start in, how many memberships the fake user
- *          has, and what `signIn` and `signOut` do instead of the real flow.
+ *          has, the assurance its last authentication reached, and what `signIn` and `signOut` do instead of the real
+ *          flow.
  * Boundary: a type only; test code.
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3: domain helpers in the owning package's ./testing).
  */
+import type { AssuranceLevel } from "@stackra/contracts";
+
 import type { SessionStatus } from "#core/index";
 
 /** How a fake session starts. */
@@ -15,6 +18,9 @@ export interface FakeSessionOptions {
 
   /** How many memberships the fake user has; one when left out. */
   readonly memberships?: number;
+
+  /** The level the fake user's last authentication reached; none when left out. */
+  readonly assurance?: AssuranceLevel;
 
   /** What `signIn` does; signs the fake user in when left out. */
   readonly signIn?: () => Promise<void>;

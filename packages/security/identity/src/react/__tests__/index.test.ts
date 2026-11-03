@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./react` entry: `useSession` is the only value; `SignedInSession` is the
+ * Purpose: the consumer contract of the `./react` entry: the hooks and the kit's blocks are its values; `SignedInSession` is the
  *          signed-in member of `SessionValue`, so the template's `SignedInSession["user"]` is the `SessionUser`.
  * Boundary: test only; imports the stand-in barrel through its `#react` alias.
  * Runtime: node (vitest)
@@ -15,7 +15,14 @@ import type { SessionValue, SignedInSession } from "#react/index";
 describe("@stackra/identity/react", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(react).sort()).toEqual([
+      "AccountMenu",
+      "PasswordPolicyChecklist",
+      "PasswordReset",
+      "SecurityPage",
+      "SessionGate",
       "SignIn",
+      "SignUp",
+      "StepUpDialog",
       "useAccountDeletion",
       "useAppApprovalWait",
       "useSession",

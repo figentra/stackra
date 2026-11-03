@@ -32,6 +32,7 @@ const ROOT_RUNWAY = [
   "targets:",
   "  electron-release:",
   "    feed:",
+  "      bucket: downloads",
   "      publicOrigin: https://downloads.acme.example",
 ];
 

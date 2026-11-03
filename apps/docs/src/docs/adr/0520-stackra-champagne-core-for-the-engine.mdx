@@ -1,0 +1,69 @@
+---
+title: "0520 — Stackra brand: a champagne core for the engine"
+description: "Accepted · 2026-11-02"
+---
+
+{/* Stackra file contract. Purpose: ADR 0520 (Accepted 2026-11-02), the owner's champagne core for the stackra theme (figentra/brand rules §39, merged as brand ed7be242), amending ADR 0463: steel stays the accent for controls, focus and links, and six core roles mark the engine on marketing surfaces, with the large-text rule. Boundary: decision text; the code is STA-2015 (@stackra/tokens), STA-2016 (@stackra/ui Button core and pill, Heading and Text tone core) and STA-2017 (the dot loader's emphasis dot). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0302, 0303, 0340, 0463, 0501; figentra/brand .workflow/rules.md §31, §39, §40, §41. */}
+
+<Note>
+  Amends [0463](/adr/0463-stackra-brand-neutral-steel-accent) decision 1: the neutral steel accent
+  stands for controls, focus and links, and "Stackra owns no hue" now reads "Stackra's marks own no
+  hue". Reserved number: 0520 (STA-2015, stackra#299).
+</Note>
+
+## Context
+
+ADR 0463 made the stackra theme's accent a neutral steel and recorded that Stackra owns no hue. For the Stackra
+landing (a Fumadocs-style page, STA-2010 to STA-2020), the owner chose "steel plus a champagne core" on 2026-11-02:
+steel stays the interface, and a pale, low-chroma champagne marks the engine, as headings, the core of the dithered
+art and the one primary call to action. The brand recorded it as binding rule §39 in figentra/brand (merged as
+ed7be242), with the values below, and the patterns (§40), the dot loader (§41) and the 3D (§42) build on it. Core now
+has to carry the roles so `@stackra/ui` can draw them.
+
+## Decision
+
+1. **Six core roles in the stackra theme**, copied from the brand, never retuned here:
+
+   | Role              | Light                            | Dark                             |
+   | ----------------- | -------------------------------- | -------------------------------- |
+   | `core`            | `#A1854A` `oklch(0.63 0.085 85)` | `#E2D8AF` `oklch(0.88 0.055 96)` |
+   | `core-strong`     | `#5E4608` `oklch(0.41 0.08 85)`  | `#E2D8AF` `oklch(0.88 0.055 96)` |
+   | `core-hover`      | `#523C03` `oklch(0.37 0.074 85)` | `#D2C89F` `oklch(0.83 0.055 96)` |
+   | `core-pressed`    | `#453202` `oklch(0.33 0.066 85)` | `#C1B892` `oklch(0.78 0.052 96)` |
+   | `core-soft`       | `#F5EEE0` `oklch(0.95 0.02 85)`  | `#2E2B20` `oklch(0.29 0.02 96)`  |
+   | `core-foreground` | paper `oklch(0.972 0.004 122)`   | ink `oklch(0.158 0.005 248)`     |
+
+2. **The large-text rule.** `core` is for large display text (24 px, or 18.66 px bold, and up), the art's core and
+   decorative marks: on light it is 3.24:1 on paper and 3.52:1 on white, AA for large text only. Small text, fills and
+   the focus ring on core controls use `core-strong`: paper on it is 8.22:1, and it reads 8.22:1 on paper and 8.92:1 on
+   white. On dark both roles are `#E2D8AF`: 13.60:1 on ink and 11.67:1 on the dark surface. Every pair passes WCAG 2.2
+   AA for its use.
+3. **Steel stays the accent.** `accent`, `focus`, `link` and `signal` are unchanged (ADR 0463). The core is for the
+   brand's engine on marketing surfaces (the landing, docs heroes, the kit's art) and for the components that name it:
+   Button `variant="core"`, Heading and Text `tone="core"`, and the dot loader's emphasis dot. Product UI controls keep
+   the accent. Stackra's marks own no hue; amber stays Figentra's (the core is ΔE_OK 0.114 from Figentra's light amber
+   and 0.109 from its dark amber, past ADR 0340's crowd line).
+4. **Only the stackra theme defines them.** Another theme may leave the core out; every consumer falls back to the
+   accent (`var(--core, var(--accent))`, `var(--core-strong, var(--accent))`), so a product theme draws its accent in
+   the same places.
+
+## Consequences
+
+- `@stackra/tokens` emits `--core*` and the colour utilities for them on web and native, the web `.button--core`
+  class on HeroUI's primary, and native `--radius-pill` (STA-2015). `@stackra/ui` reads them (STA-2016, STA-2017).
+- The stackra theme gains a warm role on the family wheel for the first time; ADR 0340's separation tests see it as a
+  new chromatic role and must keep it apart from the status colours.
+- The brand mirror in `assets/data/stackra/` records the roles when the kit's token reports are next regenerated.
+
+## Enforcement
+
+- `@stackra/tokens` tests assert the six roles, their contrast pairs and the fallbacks (STA-2015).
+- `@stackra/ui` tests assert the large-text rule (Heading `core` at h1 to h4 only, Text always `core-strong`) and the
+  loader's emphasis dot (STA-2016, STA-2017).
+- planned — a brand-to-core drift check that compares figentra/brand's `tokens/color.json` with the stackra theme.
+
+## Supersedes and sources
+
+Amends: [0463](/adr/0463-stackra-brand-neutral-steel-accent) decision 1 (wording of "owns no hue"). Sources: the
+owner's decisions of 2026-11-02 (option (a) for the light values, no amber exception), figentra/brand rules §39
+(ed7be242), Linear STA-2015.
