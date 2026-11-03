@@ -5,8 +5,10 @@
  *          in its own transaction once the module compiles (taken from the container, so its injected services are
  *          there), `app.transaction(work)` runs work in a transaction of the connected database,
  *          `app.repository(Model)` hands out the model's repository, and a test that picks the `memory` drivers gets
- *          `DatabaseUnitOfWorkDriver` as its `UnitOfWork`, so each action runs in a transaction. All are declared on the
- *          testing module here and registered when this module loads.
+ *          `DatabaseUnitOfWorkDriver` as its `UnitOfWork`, so each action runs in a transaction. Every compile also
+ *          connects the app as the reads' visibility resolver, as a service's boot does (`connectVisibilityFilter`,
+ *          STA-2044): a bound `VisibilityFilter` narrows reads, writes stamp the call's actor and the call's time zone
+ *          is read. All are declared on the testing module here and registered when this module loads.
  * Boundary: the memory database is the unit tier's default, so `useDrivers("memory")` tests reach a database whether
  *           or not their wiring lists the port's candidates. A database connected another way wins: `usePostgres()`
  *           (connected before the module compiles) or a driver the container built for this module. A memory database
@@ -25,6 +27,7 @@ import type { AnyClass } from "@stackra/container";
 
 import type { Seeder } from "#core/bases/seeder.base";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
+import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { repositoryOf } from "#core/functions/repository-of.function";
 import { Database } from "#core/ports/database.port";
 import type { Repository } from "#core/types/repository.type";
@@ -100,6 +103,7 @@ export const DATABASE_TESTING_PLUGIN: TestingPlugin = {
   },
   app: (app) => {
     connectDatabase();
+    connectVisibilityFilter(app);
     CURRENT_TESTING_APP.value = app;
     return {
       transaction: <T>(work: () => Promise<T>): Promise<T> => Database.current().transaction(work),

@@ -20,6 +20,7 @@ describe("@stackra/container/testing", () => {
       "TestingModuleBuilder",
       "createTestingModule",
       "loadMemberSchemas",
+      "markMemberSchemasLoaded",
       "registerTestingPlugin",
       "registerWiring",
     ]);

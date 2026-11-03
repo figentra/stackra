@@ -3,8 +3,10 @@
  * Purpose: `emitToolConfigs`, the tool configs gen writes into `.stackra/` for a package or a service: tsdown with one
  *          entry per generated entry file, Vitest on the decorators preset with the shared coverage gate and the unit
  *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database` or
- *          `@stackra/clients`) that package's testing entry, registers the member's wiring for `createTestingModule`, awaits `loadMemberSchemas` (from
- *          the working directory, the member root vitest runs in) so a test file's top-level `X.create(...)` finds its schema, and pairs each `Factory<M>` with its model; and the root
+ *          `@stackra/clients`) that package's testing entry, registers the member's wiring for `createTestingModule`,
+ *          imports each generated schemas file statically (through Vite, so its `#` imports and decorators resolve as in
+ *          source; STA-2032) so a test file's top-level `X.create(...)` finds its schema, and pairs each `Factory<M>`
+ *          with its model; and the root
  *          `vitest.config.ts` shim that re-exports the generated config, since `vitest run` reads only the member root
  *          (STA-1296).
  * Boundary: pure. Paths are relative to the member root, which is where the tools run; Vitest's root is set to it
@@ -23,6 +25,7 @@ import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { ROOT_TSDOWN_SHIM } from "#core/constants/root-tsdown-shim.constant";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
 import { importLines } from "#core/functions/import-lines.function";
+import { schemaModules } from "#core/functions/schema-modules.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { usesContainer } from "#core/functions/uses-container.function";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -131,7 +134,7 @@ export function emitToolConfigs(
           [
             "@stackra/container/testing",
             new Map([
-              ["loadMemberSchemas", false],
+              ["markMemberSchemasLoaded", false],
               ["registerWiring", false],
             ]),
           ],
@@ -168,16 +171,14 @@ export function emitToolConfigs(
       ? ['import "@stackra/clients/testing";']
       : []),
     ...(generated.registrations ? ['import "#stackra/registrations";'] : []),
+    // Each schemas file registers its shapes. Imported here, the setup Vite transforms loads them through Vite too; a
+    // package's `loadMemberSchemas` would import them from node_modules, which Vitest leaves to Node: no fallback in
+    // the `#modules/*` targets and no legacy decorators (STA-2032). A relative path from `.stackra/`, so no imports map.
+    ...(container ? schemaModules(ir).map((module) => `import "./gen/schemas/${module}.ts";`) : []),
     ...importLines(imports),
     "",
-    ...(container
-      ? [
-          "registerWiring(wiring);",
-          // The working directory: vitest runs in the member root, and its transform gives `import.meta.url` no
-          // file: scheme here.
-          "await loadMemberSchemas();",
-        ]
-      : []),
+    // So the testing module's `compile()` does not import them again through Node.
+    ...(container ? ["registerWiring(wiring);", "markMemberSchemasLoaded();"] : []),
     ...(pairs.length > 0 ? ["registerModelPartners([", ...pairs, "]);"] : []),
     "",
   ].join("\n");
