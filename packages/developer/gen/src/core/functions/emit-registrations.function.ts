@@ -38,9 +38,11 @@ import { entitiesFile } from "#core/functions/entities-file.function";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
+import { ownClass } from "#core/functions/own-class.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
+import { shapeOfRef } from "#core/functions/shape-of-ref.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -79,9 +81,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   };
   /** A class of this member, by name and, when given, module. */
   const own = (name: string, module?: unknown): ClassRef | undefined => {
-    const declared =
-      ir.classes.find((candidate) => candidate.name === name && candidate.module === module) ??
-      ir.classes.find((candidate) => candidate.name === name);
+    const declared = ownClass(ir, name, module);
     return declared === undefined ? undefined : { name, from: declared.importPath };
   };
   /** The class of a manifest entry: this member's, or a hosted package's from the entry exporting its file. */
@@ -411,16 +411,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   // file that declares it; its calls are permission-checked but not validated until the manifest carries that file.
   const inputOf = (entry: Entry): string | undefined => {
     if (typeof entry["from"] === "string") return undefined;
-    const input = entry["input"];
-    const target = /^#\/schemas\/([^.]+)\.(.+)$/.exec(
-      typeof input === "object" && input !== null ? String((input as Entry)["$ref"] ?? "") : "",
-    );
-    const shape =
-      target === null
-        ? undefined
-        : ir.shapes.find(
-            (candidate) => candidate.module === target[1] && candidate.name === target[2],
-          );
+    const shape = shapeOfRef(ir, entry["input"]);
     return shape === undefined ? undefined : ref({ name: shape.name, from: shape.importPath });
   };
   call(

@@ -57,6 +57,7 @@ import { SMOKE_COMMAND } from "#node/product/constants/smoke-command.constant";
 import { PREVIEW_SERVE_COMMAND } from "#node/product/constants/preview-serve-command.constant";
 import { CreateCommand } from "#node/commands/create.command";
 import { DoctorCommand } from "#node/commands/doctor.command";
+import { PromoteCommand } from "#node/commands/promote.command";
 import { addCommand } from "#node/functions/add-command.function";
 import { checkCommand } from "#node/functions/check-command.function";
 import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
@@ -107,6 +108,7 @@ export const COMMANDS: CliCommands = [
   SEARCH_STATUS_COMMAND,
   AUDIT_VERIFY_COMMAND,
   DEPLOY_COMMAND,
+  PromoteCommand,
   MOBILE_ONBOARD_COMMAND,
   SMOKE_COMMAND,
   PREVIEW_SERVE_COMMAND,

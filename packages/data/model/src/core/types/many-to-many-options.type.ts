@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `ManyToManyOptions`, the options of `@ManyToMany(() => Target, options)`: the pivot table's name.
  * Boundary: a type only. The declaring side owns the pivot table, which lives in the module's Postgres schema; without
- *           a name gen derives `<table>_<target table>`.
+ *           a name the ORM uses `<table>_<field>` (`products_collections` for `Product.collections`), which
+ *           `stackra db diff` expects too.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 11 and 27); ADR 0231 (snake_case plural tables).
  */
