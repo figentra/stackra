@@ -23,17 +23,7 @@ const SCALING = /\.scaling\b|\["scaling"\]/;
 const WORKERS = /\.workers\??\.(?:split|cpu|memory|instances)\b|\bworkers\??\.split\b/;
 const HEALTH = /\bhealth\??\.(?:readiness|liveness)\b|\brequireMigrations\b|\beventLoopLagMs\b/;
 const CRONS = /\bcrons\??\.enabled\b|\b(?:environment|env)\??\.crons\b/;
-const CONTRIBUTES = /\bcontributes\??\.(?:package|panels|resources|widgets)\b/;
 const APP_HEALTH = /\bhealth\??\.(?:path|expects)\b/;
-
-/** The paths under `surfaces.ops.contributes`: the package, and each list's entries (STA-2003, STA-2028). */
-const CONTRIBUTION_PATHS = [
-  "package",
-  ...["panels", "resources", "widgets"].flatMap((list) => [
-    list,
-    ...["key", "block", "title", "props"].map((field) => `${list}.[].${field}`),
-  ]),
-];
 
 /** The runway fields set but not read yet, with the work that reads each (STA-2001). */
 export const RUNWAY_UNREAD_FIELDS: readonly RunwayUnreadField[] = [
@@ -135,18 +125,6 @@ export const RUNWAY_UNREAD_FIELDS: readonly RunwayUnreadField[] = [
     reader: "STA-2002",
     access: /\bwhiteLabel\??\.entitlement\b/,
   },
-  {
-    kind: "root",
-    path: "surfaces.ops.contributes",
-    reader: "STA-2003",
-    access: /\bops\??\.contributes\b/,
-  },
-  ...CONTRIBUTION_PATHS.map((path) => ({
-    kind: "root" as const,
-    path: `surfaces.ops.contributes.${path}`,
-    reader: "STA-2003",
-    access: CONTRIBUTES,
-  })),
   { kind: "app", path: "health.path", reader: RECORDS, access: APP_HEALTH },
   { kind: "app", path: "health.expects", reader: RECORDS, access: APP_HEALTH },
   {

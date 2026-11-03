@@ -11,7 +11,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0436; ADR 0439; ADR 0441 (decision 3); ADR 0481.
  */
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -60,6 +60,10 @@ const bundler: SurfaceBundler = async (job) => {
     imports: Object.keys(job.importMap.imports),
   };
 };
+
+/** The template runway with an `ops` line that contributes `contributes`. */
+const withOps = (contributes: string) =>
+  TEMPLATE_RUNWAY.replace("mobile:\n", `  ops:\n    contributes: "${contributes}"\nmobile:\n`);
 
 describe("buildProduct", () => {
   it("dry-runs the template: plans the bundles, writes the app config and records the EAS build", async () => {
@@ -143,6 +147,53 @@ describe("buildProduct", () => {
     );
     expect(build.surfaces["landing"]?.bundle?.targets).toBe("landing@1");
     expect(build.mobile["app"]?.buildIds).toEqual(["build-ios", "build-android"]);
+  });
+
+  it("writes the ops contributions as a declarative bundle and refuses a package that is missing", async () => {
+    const packages = { "@figentra/acme-example": ["console", "landing", "native"] } as const;
+    writeProduct(product, withOps("@figentra/acme-example"), packages);
+    const build = await buildProduct({
+      repository: product,
+      scope: "@example",
+      os,
+      sha: SHA,
+      bundle: bundler,
+      surfacesOnly: true,
+    });
+    const folder = `dist/bundles/ops/${SHA.slice(0, 12)}`;
+    expect(build.ops).toMatchObject({ package: "acme", targets: "ops@1" });
+    expect(read(`${folder}/bundle.manifest.json`).entry).toBe("ops.contributions.json");
+    expect(read(`${folder}/ops.contributions.json`)).toEqual({
+      product: "acme",
+      contributes: { package: "@figentra/acme-example" },
+    });
+
+    writeProduct(product, withOps("@figentra/missing"), packages);
+    await expect(
+      buildProduct({
+        repository: product,
+        scope: "@example",
+        os,
+        sha: SHA,
+        bundle: bundler,
+        surfacesOnly: true,
+      }),
+    ).rejects.toThrow(RunwayInvalidError);
+  });
+
+  it("keeps the last ops bundle on a dry run and on a refused build", async () => {
+    writeProduct(product, withOps("@figentra/acme-example"), {
+      "@figentra/acme-example": ["console", "landing", "native"],
+    });
+    const request = { repository: product, scope: "@example", os, surfacesOnly: true };
+    await buildProduct({ ...request, sha: SHA, bundle: bundler });
+    const dry = await buildProduct({ ...request, sha: "b".repeat(40), dryRun: true });
+    expect(dry.ops).toBeUndefined();
+    // No bundler: the surfaces are refused, so nothing is bundled.
+    await expect(buildProduct({ ...request, sha: "c".repeat(40) })).rejects.toThrow(
+      RunwayInvalidError,
+    );
+    expect(readdirSync(join(product, "dist/bundles/ops"))).toEqual([SHA.slice(0, 12)]);
   });
 
   it("builds the surfaces only for dev and preview, and lists the mobile apps as skipped", async () => {

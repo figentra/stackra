@@ -19,6 +19,10 @@ export const EDGE_PUBLISH_SETTINGS = Object.freeze({
   bundleDir: "dist/bundles",
   /** The manifest the bundle build writes beside each bundle. */
   manifestFile: "bundle.manifest.json",
+  /** The ops console line every product's ops contributions target; the edge must serve it. */
+  opsTargets: "ops@1",
+  /** The declarative ops contributions a product's build writes into its `ops` bundle folder. */
+  opsContributionsFile: "ops.contributions.json",
   /** The CLI that uploads to the asset store (R2) and writes Workers KV; its own login holds the credentials. */
   wrangler: "wrangler",
   /** Bundle file names are content-hashed and the folder is versioned, so every object is immutable. */

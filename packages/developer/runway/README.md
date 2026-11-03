@@ -328,7 +328,9 @@ capture job's runner it runs before `runScreenshotCapture`, from the same build.
    `mezzora.com.`); every host of a surface names the canonical one (D2). The home region is the request's, else the
    environment's first. Apple team ids and Android certificate fingerprints are request data (`appLinks`).
 3. Reads each bundle surface's one built bundle (`<bundleDir>/<surface>/<version>/bundle.manifest.json`, written by
-   `stackra.bundleConfig`) and refuses one whose `targets` is not a shell line the edge serves (`served`).
+   `stackra.bundleConfig`), and the `ops` bundle when the product sets `surfaces.ops.contributes` (`buildProduct`
+   writes its declarative `ops.contributions.json` and a manifest that targets `ops@1`), and refuses one whose
+   `targets` is not a shell line the edge serves (`served`).
 4. With every check passed, uploads each bundle to the asset store (`wrangler r2 object put`, under
    `<product>/<surface>/<version>/`, immutable), writes the platform rows, then per surface the `canary:` row (the
    release, the internal and demo `canaryScopes` and its start, D6), or the `release:` row on a `firstRelease`.
@@ -344,9 +346,9 @@ checkout it runs the `compatibility` build with the next shell's import map, the
 edge will not serve or whose imports the next map does not resolve, listing every break at once. Every threshold,
 window, folder, command and header is in `EDGE_PUBLISH_SETTINGS`.
 
-Not built here: the registry manifest publish (ADR 0109) and the registry's own release refusal, the ops release that
-takes `contributes`, the landing seed import, removing rows of hosts a runway no longer lists, the metrics query that
-fills a `CanarySample`, and the CI workflows that call these functions.
+Not built here: the registry manifest publish (ADR 0109) and the registry's own release refusal, the landing seed
+import, removing rows of hosts a runway no longer lists, the metrics query that fills a `CanarySample`, and the CI
+workflows that call these functions.
 
 ## Dev lanes and the repository index
 
