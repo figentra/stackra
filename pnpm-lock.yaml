@@ -6815,6 +6815,9 @@ importers:
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/infra-tools':
+        specifier: workspace:*
+        version: link:../infra-tools
       '@stackra/runway':
         specifier: workspace:*
         version: link:../../developer/runway

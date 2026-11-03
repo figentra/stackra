@@ -17,6 +17,7 @@
  *                     object storage), ADR 0172 (decision 5: cost tags), ADR 0171 (decisions 2 and 3).
  */
 import { Enum } from "@stackra/contracts";
+import { toolsStackPlan } from "@stackra/infra-tools";
 import {
   CacheEviction,
   RequirementEngine,
@@ -29,6 +30,7 @@ import type { RootRunway, RunwayEnvironment, ServiceRunway } from "@stackra/runw
 import { CACHE_NODE_TYPES } from "#core/constants/cache-node-types.constant";
 import { CACHE_SIZES } from "#core/constants/cache-sizes.constant";
 import { DEFAULT_MONTHLY_LIMITS } from "#core/constants/default-monthly-limits.constant";
+import { HOURS_PER_MONTH } from "#core/constants/hours-per-month.constant";
 import { LOAD_BALANCER_MONTHLY_USD } from "#core/constants/load-balancer-monthly-usd.constant";
 import { POSTGRES_SIZES } from "#core/constants/postgres-sizes.constant";
 import { WORKLOAD_SIZES } from "#core/constants/workload-sizes.constant";
@@ -284,6 +286,17 @@ export function runtimePlan(
     };
   });
 
+  // GPU tools are priced at their max replicas, all month: the tools stack's own plan owns the hourly price.
+  const toolMonthly = new Map<string, number>();
+  for (const region of toolsStackPlan(root, environment).regions)
+    for (const tool of region.tools)
+      if (tool.gpu)
+        toolMonthly.set(
+          tool.key,
+          (toolMonthly.get(tool.key) ?? 0) +
+            tool.gpu.hourlyUsd * tool.gpu.maxReplicas * HOURS_PER_MONTH,
+        );
+
   const items = [
     ...caches.map((cache) => ({
       key: cache.key,
@@ -301,6 +314,10 @@ export function runtimePlan(
         WORKLOAD_SIZES[sizeOf(root.workloads?.[workload.workload]?.size)].monthlyUsd *
           Math.max(workload.scale.min, 1) +
         (workload.public ? LOAD_BALANCER_MONTHLY_USD : 0),
+    })),
+    ...[...toolMonthly].map(([tool, monthlyUsd]) => ({
+      key: `tools.${tool}`,
+      monthlyUsd: Math.round(monthlyUsd * 100) / 100,
     })),
   ];
   const monthlyUsd = items.reduce((sum, item) => sum + item.monthlyUsd, 0);
