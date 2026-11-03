@@ -1575,8 +1575,11 @@ const SECRETS_IMPORT_FORBIDDEN = new RegExp(
   String.raw`${SECRETS_IMPORT}[^|;&\n]*\s(?:--confirm\b|--env(?:=|\s+)prod(?:uction)?\b|--path(?:=|\s+)/ci/(?:gate|registry)(?:/|(?![\w-])))`,
   "i",
 );
-/** `stackra deploy …` (a product deploy, `--env <environment>`) without `--dry-run`. */
-const STACKRA_DEPLOY = /\bstackra\s+(?:--\s+)?deploy\b(?![^|;&\n]*--dry-run)/;
+/**
+ * `stackra deploy …` (a product deploy, `--env <environment>`) or `stackra promote …` (wraps runway's promote),
+ * without `--dry-run`.
+ */
+const STACKRA_DEPLOY = /\bstackra\s+(?:--\s+)?(?:deploy|promote)\b(?![^|;&\n]*--dry-run)/;
 /**
  * `gh` or `pnpm bot:gh` dispatching a workflow: `workflow run <file>` or `api … /dispatches` (raw text: the fields are
  * quoted values).
@@ -1607,11 +1610,8 @@ export function deployTarget(segment) {
   const nonproduction = NONPRODUCTION_ENVIRONMENTS.has(environment.toLowerCase());
   if (RUNWAY_DEPLOY.test(segment) || STACKRA_DEPLOY.test(segment)) {
     const promote = /\bpromote\b/.test(segment);
-    const what = promote
-      ? "runway promote"
-      : /\bstackra\s/.test(segment)
-        ? "stackra deploy"
-        : "runway deploy";
+    const tool = /\bstackra\s/.test(segment) ? "stackra" : "runway";
+    const what = `${tool} ${promote ? "promote" : "deploy"}`;
     return { what, ref, environment, production: promote || !nonproduction };
   }
   if (!WORKFLOW_DISPATCH.test(segment)) return null;

@@ -3477,6 +3477,7 @@ test("deploys: only the QA/release session starts one; every other session and s
     "pnpm runway deploy cloudflare-workers --env staging",
     "pnpm runway promote 0123abc",
     "stackra deploy --product --env preview",
+    "stackra promote --to production --approved",
     "pnpm bot:gh -- workflow run deploy-static.yml -f environment=staging",
     "pnpm bot:gh -- workflow run promote.yml -f sha=0123abc",
     "pnpm bot:gh -- api -X POST repos/figentra/stackra/actions/workflows/deploy-registry.yml/dispatches -f ref=main",
