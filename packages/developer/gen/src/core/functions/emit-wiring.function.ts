@@ -69,6 +69,9 @@ const LIFETIMES: Readonly<Record<string, string>> = {
   transient: "Lifetime.Transient",
 };
 
+/** The lifetime a kind takes when the class carries no `@Lifetime`: a bridge serves one request (ADR 0251). */
+const KIND_LIFETIMES: Readonly<Record<string, string>> = { bridge: "request" };
+
 /** The one dependency gen gives an Integration that declares no constructor (ADR 0308). */
 const INTEGRATION_RUNTIME: TokenRef = {
   class: { name: "IntegrationRuntime", from: "@stackra/integrations" },
@@ -414,7 +417,7 @@ export function emitWiring(ir: MemberIR): string {
         !platform.includes(ref(dep.class))
       )
         platform.push(ref(dep.class));
-    const lifetime = declared.lifetime === undefined ? undefined : LIFETIMES[declared.lifetime];
+    const lifetime = LIFETIMES[declared.lifetime ?? KIND_LIFETIMES[declared.kind] ?? ""];
     if (lifetime !== undefined) use("@stackra/container", "Lifetime");
     bindingLines.push(
       `    { module: ${JSON.stringify(declared.module)}, kind: ${JSON.stringify(declared.kind)}, provide: ${ref(own(declared))}` +
@@ -422,14 +425,26 @@ export function emitWiring(ir: MemberIR): string {
     );
   }
 
+  // A config class's key: an override keeps its base's key (ADR 0294 decision 20), read from the base package's
+  // manifest, else derived from the base's own member.
+  const packageConfigs = dependencyConfigs(ir);
+  const memberOf = (from: string): string =>
+    ir.dependencies.find(
+      (candidate) => from === candidate.package || from.startsWith(`${candidate.package}/`),
+    )?.manifest.member ?? snakeCase(from.replace(/^@[^/]+\//, "").split("/")[0] ?? from);
+  const configKeyFor = (declared: (typeof ir.classes)[number]): string => {
+    if (declared.base === undefined || declared.base.own)
+      return configKeyOf(declared.name, ir.member);
+    const { name, from } = declared.base;
+    const member = memberOf(from);
+    return packageConfigs.get(`${member}#${name}`) ?? configKeyOf(name, member);
+  };
+
   // Config classes and their host overrides.
   const configLines: string[] = [];
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
     const override = declared.base !== undefined && !declared.base.own;
-    const key = configKeyOf(
-      override && declared.base !== undefined ? declared.base.name : declared.name,
-      ir.member,
-    );
+    const key = configKeyFor(declared);
     const provide =
       override && declared.base !== undefined ? ref(declared.base, "Base") : ref(own(declared));
     const schema = declared.options["schema"];
@@ -479,7 +494,7 @@ export function emitWiring(ir: MemberIR): string {
     const shape = isClassValue(schema)
       ? ir.shapes.find((candidate) => candidate.name === schema.$class)
       : undefined;
-    const key = configKeyOf(declared.name, ir.member);
+    const key = configKeyFor(declared);
     for (const field of shape?.fields ?? []) {
       const selector =
         field.type.kind === "driver_name"
@@ -507,11 +522,6 @@ export function emitWiring(ir: MemberIR): string {
 
   // The declared packages' driver tables by port key, and the member of each package (STA-1297).
   const packageTables = dependencyDriverTables(ir);
-  const packageConfigs = dependencyConfigs(ir);
-  const memberOf = (from: string): string =>
-    ir.dependencies.find(
-      (candidate) => from === candidate.package || from.startsWith(`${candidate.package}/`),
-    )?.manifest.member ?? snakeCase(from.replace(/^@[^/]+\//, "").split("/")[0] ?? from);
   const configKeys = new Set(configLines.map((line) => /key: "([^"]+)"/.exec(line)?.[1]));
   const linked = new Set<string>();
   /** The tokens `dep` brings: its package's driver table and a package config row (STA-1297). */
