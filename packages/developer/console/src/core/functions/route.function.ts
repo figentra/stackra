@@ -17,7 +17,7 @@ import { findCommand } from "#core/functions/find-command.function";
 import { parseInvocation } from "#core/functions/parse-invocation.function";
 import { splitInvocation } from "#core/functions/split-invocation.function";
 import type { CommandEntry } from "#core/types/command-entry.type";
-import type { Intent } from "#core/types/intent.type";
+import type { RouteDecision } from "#core/types/route-decision.type";
 
 /**
  * Decides what `argv` (without the node and script paths) asks of `registry`.
@@ -28,7 +28,7 @@ import type { Intent } from "#core/types/intent.type";
 export function route(
   argv: readonly string[],
   registry: ReadonlyMap<string, CommandEntry>,
-): Intent {
+): RouteDecision {
   const known = (name: string) => registry.has(name);
   let { name: typed, rest, raw } = splitInvocation(argv, known);
   if (typed === COMPLETE_COMMAND) {
