@@ -168,7 +168,7 @@ describe("COMMANDS on the console", () => {
     const classes = COMMANDS.map((command) =>
       typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
     );
-    // 39 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
+    // 31 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
     expect(passthroughCommands(classes)).toEqual(PASSTHROUGH);
   });
 });
@@ -177,7 +177,6 @@ describe("COMMANDS on the console", () => {
 const PASSTHROUGH: string[] = [
   "add",
   "agents:sync",
-  "audit:verify",
   "build",
   "check",
   "code:check",
@@ -185,8 +184,6 @@ const PASSTHROUGH: string[] = [
   "console",
   "consumer-gate",
   "db:diff",
-  "db:migrate",
-  "db:rollback",
   "db:seed",
   "deploy",
   "dev",
@@ -199,14 +196,9 @@ const PASSTHROUGH: string[] = [
   "mcp:sync",
   "mobile:onboard",
   "new",
-  "ops:bootstrap-operator",
   "preview:serve",
   "publish",
-  "search:reindex",
-  "search:status",
   "seed-pack",
-  "settings:apply",
-  "settings:diff",
   "smoke",
   "start",
   "test",
