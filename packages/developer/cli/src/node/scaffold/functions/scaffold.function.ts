@@ -3,13 +3,14 @@
  * Purpose: `scaffold(options)`, renders a member from `tools/scaffold/templates` into a monorepo (the one holding the
  *          templates, or another with `root`): replaces the tokens ({{NAME}} {{PASCAL}} {{TITLE}} {{DESCRIPTION}}
  *          {{PORT}} {{CATEGORY}} {{ENTRIES}}) in contents and path names, adds the chosen optional package entries and,
- *          with `data`, the module's database folders, writes a package's `exports` and `imports`, copies the target
- *          repo's LICENSE, writes the npm metadata, keywords, `stackra` field and turbo tags `pnpm validate` requires
- *          (ADR 0453 decision 11, amendment of 2026-10-27), then formats the result with oxfmt. Members come out in the
+ *          with `data`, the module's database folders, writes a package's `exports` and, but for a tooling preset, the
+ *          generated `imports` map of the folders it rendered (`importsMap`, STA-2072), copies the target repo's
+ *          LICENSE, writes the npm metadata, keywords, `stackra` field and turbo tags `pnpm validate` requires (ADR 0453
+ *          decision 11, amendment of 2026-10-27), then formats the result with oxfmt. Members come out in the
  *          programming model v3 shape (ADR 0294 rule R12, ADR 0295) (moved from `tools/scripts/scaffold.mjs`).
  * Boundary: writes only the one new destination directory, then formats it; with `dryRun` writes nothing.
  * Runtime: node
- * Governing contract: ADR 0126 (member shapes and scaffold templates); ADR 0294; ADR 0453 (decision 11).
+ * Governing contract: ADR 0126 (member shapes and scaffold templates); ADR 0233 (decision 1); ADR 0294; ADR 0453 (decision 11).
  */
 import { execFileSync } from "node:child_process";
 import {
@@ -25,8 +26,6 @@ import { dirname, join, relative } from "node:path";
 
 import {
   CATEGORY_NAMES,
-  OPTIONAL_ENTRY_NAMES,
-  PACKAGE_FOLDERS,
   categoryOf,
   npmMetadataFor,
   rootModuleOf,
@@ -34,6 +33,7 @@ import {
   turboTagsFor,
 } from "@stackra/repo-checks/node";
 
+import { importsMap } from "#node/functions/imports-map.function";
 import { sorted } from "#node/functions/sorted.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
 import { BINARY_RE } from "#node/scaffold/constants/binary-re.constant";
@@ -130,24 +130,6 @@ const packageExports = (dir: string): [string, string, string][] => [
   [".", "index", `src/config/${dir.split("/").at(-1)}.config.ts`],
   ["./node", "node", rootModuleOf(dir) ?? ""],
 ];
-
-/** A `#` alias target with the extension fallbacks `bundler` resolution needs (ADR 0233). */
-const aliasOf = (dir: string): string[] => [
-  `./${dir}/*`,
-  `./${dir}/*.ts`,
-  `./${dir}/*.tsx`,
-  `./${dir}/*/index.ts`,
-];
-
-/** A package's `imports` map: one alias per `src/` folder it has (ADR 0294 decision 15), and gen's `#stackra/*`. */
-const packageImports = (picked: readonly string[]): Record<string, string[]> => ({
-  ...Object.fromEntries(
-    PACKAGE_FOLDERS.map((f) => f.folder.split("/")[0] ?? "")
-      .filter((f) => !OPTIONAL_ENTRY_NAMES.includes(f) || picked.includes(f))
-      .map((f) => [`#${f}/*`, aliasOf(`src/${f}`)]),
-  ),
-  "#stackra/*": aliasOf(".stackra/gen"),
-});
 
 /**
  * Renders a template and returns the destination dir and the relative file list. With `dryRun` nothing is written and
@@ -252,8 +234,9 @@ export function scaffold({
         // Static files at the package root (ADR 0177 and ADR 0234, amendments of 2026-10-21).
         "./assets/*": "./assets/*",
       };
-      pkg["imports"] = packageImports(picked);
     }
+    // From the folders just rendered, the map `stackra validate --repository` expects (STA-2072).
+    if (kind !== "tooling") pkg["imports"] = importsMap(dest);
     const { fields, tags } = memberMetadata({
       rel,
       runtimes: [

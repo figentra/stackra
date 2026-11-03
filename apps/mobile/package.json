@@ -25,6 +25,7 @@
   },
   "main": "src/main.ts",
   "imports": {
+    "#src/*.function": "./src/*.function.ts",
     "#src/*": [
       "./src/*",
       "./src/*.ts",

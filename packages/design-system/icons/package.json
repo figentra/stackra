@@ -34,23 +34,29 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
-    "#contracts/*": [
-      "./src/contracts/*",
-      "./src/contracts/*.ts",
-      "./src/contracts/*.tsx",
-      "./src/contracts/*/index.ts"
-    ],
     "#config/*": [
       "./src/config/*",
       "./src/config/*.ts",
       "./src/config/*.tsx",
       "./src/config/*/index.ts"
     ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
+      "./src/contracts/*/index.ts"
+    ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
       "./src/core/*.tsx",
       "./src/core/*/index.ts"
+    ],
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
     ],
     "#node/*": [
       "./src/node/*",
@@ -64,18 +70,13 @@
       "./src/react/*.tsx",
       "./src/react/*/index.ts"
     ],
-    "#native/*": [
-      "./src/native/*",
-      "./src/native/*.ts",
-      "./src/native/*.tsx",
-      "./src/native/*/index.ts"
-    ],
     "#testing/*": [
       "./src/testing/*",
       "./src/testing/*.ts",
       "./src/testing/*.tsx",
       "./src/testing/*/index.ts"
     ],
+    "#scripts/*": "./scripts/*.ts",
     "#stackra/*": [
       "./.stackra/gen/*",
       "./.stackra/gen/*.ts",

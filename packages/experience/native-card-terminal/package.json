@@ -42,16 +42,19 @@
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
       "./src/contracts/*/index.ts"
     ],
     "#native/*": [
       "./src/native/*",
       "./src/native/*.ts",
+      "./src/native/*.tsx",
       "./src/native/*/index.ts"
     ],
     "#plugin/*": [
       "./plugin/*",
       "./plugin/*.ts",
+      "./plugin/*.tsx",
       "./plugin/*/index.ts"
     ],
     "#stackra/*": [

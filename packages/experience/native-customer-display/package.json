@@ -41,7 +41,14 @@
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
+    ],
+    "#plugin/*": [
+      "./plugin/*",
+      "./plugin/*.ts",
+      "./plugin/*.tsx",
+      "./plugin/*/index.ts"
     ],
     "#stackra/*": [
       "./.stackra/gen/*",

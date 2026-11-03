@@ -37,14 +37,22 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#agent/*": [
+      "./src/agent/*",
+      "./src/agent/*.ts",
+      "./src/agent/*.tsx",
+      "./src/agent/*/index.ts"
+    ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
     "#node/*": [
       "./src/node/*",
       "./src/node/*.ts",
+      "./src/node/*.tsx",
       "./src/node/*/index.ts"
     ],
     "#stackra/*": [

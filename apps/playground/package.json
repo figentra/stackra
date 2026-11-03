@@ -33,6 +33,7 @@
       "./src/*.tsx",
       "./src/*/index.ts"
     ],
+    "#scripts/*": "./scripts/*.ts",
     "#stackra/*": [
       "./.stackra/gen/*",
       "./.stackra/gen/*.ts",

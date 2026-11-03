@@ -45,21 +45,26 @@
     ],
     "#config/*": [
       "./src/config/*",
-      "./src/config/*.ts"
+      "./src/config/*.ts",
+      "./src/config/*.tsx",
+      "./src/config/*/index.ts"
     ],
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
       "./src/contracts/*/index.ts"
     ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
     "#desktop/*": [
       "./src/desktop/*",
       "./src/desktop/*.ts",
+      "./src/desktop/*.tsx",
       "./src/desktop/*/index.ts"
     ],
     "#native/*": [
@@ -71,6 +76,7 @@
     "#node/*": [
       "./src/node/*",
       "./src/node/*.ts",
+      "./src/node/*.tsx",
       "./src/node/*/index.ts"
     ],
     "#react/*": [
@@ -82,16 +88,19 @@
     "#sw/*": [
       "./src/sw/*",
       "./src/sw/*.ts",
+      "./src/sw/*.tsx",
       "./src/sw/*/index.ts"
     ],
     "#testing/*": [
       "./src/testing/*",
       "./src/testing/*.ts",
+      "./src/testing/*.tsx",
       "./src/testing/*/index.ts"
     ],
     "#worker/*": [
       "./src/worker/*",
       "./src/worker/*.ts",
+      "./src/worker/*.tsx",
       "./src/worker/*/index.ts"
     ],
     "#stackra/*": [

@@ -37,22 +37,26 @@
     "#contracts/*": [
       "./src/contracts/*",
       "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
       "./src/contracts/*/index.ts"
     ],
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
     "#edge/*": [
       "./src/edge/*",
       "./src/edge/*.ts",
+      "./src/edge/*.tsx",
       "./src/edge/*/index.ts"
     ],
-    "#server/*": [
-      "./src/server/*",
-      "./src/server/*.ts",
-      "./src/server/*/index.ts"
+    "#native/*": [
+      "./src/native/*",
+      "./src/native/*.ts",
+      "./src/native/*.tsx",
+      "./src/native/*/index.ts"
     ],
     "#react/*": [
       "./src/react/*",
@@ -60,11 +64,11 @@
       "./src/react/*.tsx",
       "./src/react/*/index.ts"
     ],
-    "#native/*": [
-      "./src/native/*",
-      "./src/native/*.ts",
-      "./src/native/*.tsx",
-      "./src/native/*/index.ts"
+    "#server/*": [
+      "./src/server/*",
+      "./src/server/*.ts",
+      "./src/server/*.tsx",
+      "./src/server/*/index.ts"
     ],
     "#stackra/*": [
       "./.stackra/gen/*",

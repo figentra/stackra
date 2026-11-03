@@ -40,11 +40,13 @@
     "#core/*": [
       "./src/core/*",
       "./src/core/*.ts",
+      "./src/core/*.tsx",
       "./src/core/*/index.ts"
     ],
     "#native/*": [
       "./src/native/*",
       "./src/native/*.ts",
+      "./src/native/*.tsx",
       "./src/native/*/index.ts"
     ],
     "#stackra/*": [

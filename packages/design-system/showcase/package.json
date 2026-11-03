@@ -34,14 +34,18 @@
   "type": "module",
   "sideEffects": false,
   "imports": {
+    "#src/*.function": "./src/*.function.ts",
     "#src/*": [
       "./src/*",
       "./src/*.ts",
+      "./src/*.tsx",
       "./src/*/index.ts"
     ],
+    "#scripts/*": "./scripts/*.ts",
     "#stackra/*": [
       "./.stackra/gen/*",
       "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
       "./.stackra/gen/*/index.ts"
     ]
   },

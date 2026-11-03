@@ -26,6 +26,7 @@ import {
   type PackageManifest,
 } from "@stackra/repo-checks/node";
 
+import { importsMap } from "#node/functions/imports-map.function";
 import { BINARY_RE } from "#node/scaffold/constants/binary-re.constant";
 import { parseEntries } from "#node/scaffold/functions/parse-entries.function";
 import { scaffold } from "#node/scaffold/functions/scaffold.function";
@@ -219,9 +220,11 @@ test("a package is the v3 shape: entries by folder, exports naming files, no bar
       files.includes((target["@stackra/source"] ?? "").slice(2)),
       "an export names a missing file",
     );
+  // @covers sta-2072:FR-006 sta-2072:AC-007
+  assert.deepEqual(pkg.imports, importsMap(dest), "the map the drift check expects");
   assert.deepEqual(Object.keys(pkg.imports ?? {}), [
-    "#contracts/*",
     "#config/*",
+    "#contracts/*",
     "#core/*",
     "#node/*",
     "#testing/*",
@@ -258,6 +261,19 @@ test("--entries adds react and native folders and aliases; --data adds the modul
   const pkg = json(dest, "package.json");
   assert.deepEqual(Object.keys(pkg.exports as object), [".", "./node", "./assets/*"]);
   assert.ok("#react/*" in (pkg.imports ?? {}) && "#native/*" in (pkg.imports ?? {}));
+  assert.deepEqual(pkg.imports, importsMap(dest));
+});
+
+// @covers sta-2072:FR-006 sta-2072:AC-007
+test("an app gets the generated #src/* map; a tooling preset gets none", () => {
+  const { dest } = render("app:console", "admin");
+  assert.deepEqual(json(dest, "package.json").imports, importsMap(dest));
+  assert.deepEqual(Object.keys(json(dest, "package.json").imports ?? {}), [
+    "#src/*.function",
+    "#src/*",
+    "#stackra/*",
+  ]);
+  assert.equal(json(render("tooling", "sample").dest, "package.json").imports, undefined);
 });
 
 // @covers sta-347:FR-004 sta-347:P-003
