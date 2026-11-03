@@ -46,7 +46,7 @@ export interface CommandField {
   /** The source of the pattern a string must match (`@Str({ pattern })`). */
   readonly pattern?: string;
 
-  /** The value is never kept in an audit entry. */
+  /** `true`: the value is never kept in an audit entry; `false`: not secret, whatever the name (`isSecret`). */
   readonly secret?: boolean;
 
   /** The question asked when the invocation leaves the field out and the run is interactive. */
