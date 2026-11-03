@@ -35,6 +35,7 @@ const CONFIG: DocsSiteInput["config"] = {
     },
   ],
   apiReference: [],
+  redirects: [],
   raw: { fonts: { family: "Geist" } },
 };
 
@@ -206,5 +207,260 @@ describe("emitDocsSite", () => {
     expect(
       codes({ config: { ...CONFIG, raw: { navigation: {} }, apiReference: ["billing"] } }),
     ).toEqual(["docs_owned_key", "docs_service_unknown"]);
+  });
+});
+
+describe("emitDocsSite with the fumadocs renderer", () => {
+  const FUMADOCS_FILES: DocsSiteInput["files"] = [
+    { path: "config/docs.config.ts" },
+    {
+      path: "docs/index.mdx",
+      content: page("Introduction", "![hero](/assets/hero.png)\n\n<Note>Read this first.</Note>"),
+    },
+    {
+      path: "docs/quickstart.mdx",
+      content: page(
+        "Quickstart",
+        [
+          'import Steps from "/snippets/steps.mdx";',
+          "",
+          "<Steps />",
+          "",
+          "```mdx",
+          'import Steps from "/snippets/steps.mdx";',
+          "<Widget />",
+          "```",
+          "",
+          "Write `Array<Order>` as code.",
+        ].join("\n"),
+      ),
+    },
+    { path: "docs/adr/0002-docs.mdx", content: page("0002") },
+    { path: "docs/adr/0001-layout.mdx", content: page("0001") },
+    { path: "docs/adr/index.mdx", content: page("Decisions") },
+    { path: "assets/hero.png" },
+    { path: "assets/logo/light.svg" },
+    { path: "assets/logo/dark.svg" },
+    { path: "assets/favicon.svg" },
+    { path: "snippets/steps.mdx", content: "<Tip>Install first.</Tip>\n" },
+  ];
+
+  const fumadocs = (patch: Partial<DocsSiteInput> = {}) =>
+    emitDocsSite({ config: CONFIG, files: FUMADOCS_FILES, services: [], ...patch }, "fumadocs");
+
+  const fumadocsCodes = (patch: Partial<DocsSiteInput>) =>
+    fumadocs(patch).errors.map((error) => error.code);
+
+  const text = (site: ReturnType<typeof fumadocs>, path: string): string =>
+    site.files.find((file) => file.path === path)?.content ?? "";
+
+  it("assembles the Fumadocs site, and no docs.json", () => {
+    const site = fumadocs();
+    expect(site.errors).toEqual([]);
+    expect(site.files.map((file) => file.path)).toEqual([
+      "app/app.css",
+      "app/components/footer.tsx",
+      "app/components/search.tsx",
+      "app/entry.server.tsx",
+      "app/lib/layout.tsx",
+      "app/lib/source.ts",
+      "app/mdx-components.tsx",
+      "app/root.tsx",
+      "app/routes.ts",
+      "app/routes/not-found.tsx",
+      "app/routes/page.tsx",
+      "app/routes/search.ts",
+      "app/site.json",
+      "app/theme.css",
+      "content/adr/0001-layout.mdx",
+      "content/adr/0002-docs.mdx",
+      "content/adr/index.mdx",
+      "content/index.mdx",
+      "content/quickstart.mdx",
+      "public/_redirects",
+      "public/llms-full.txt",
+      "public/llms.txt",
+      "react-router.config.ts",
+      "snippets/steps.mdx",
+      "tsconfig.json",
+      "vite.config.ts",
+    ]);
+    expect(site.copies.map((copy) => copy.to)).toEqual([
+      "public/assets/favicon.svg",
+      "public/assets/hero.png",
+      "public/assets/logo/dark.svg",
+      "public/assets/logo/light.svg",
+    ]);
+    expect(fumadocs()).toEqual(site);
+  });
+
+  it("writes the navigation as a page tree, and every page path to prerender", () => {
+    const site = JSON.parse(text(fumadocs(), "app/site.json"));
+    expect(Object.keys(site)).toEqual([
+      "name",
+      "description",
+      "logo",
+      "favicon",
+      "links",
+      "footer",
+      "layout",
+      "paths",
+      "tree",
+    ]);
+    expect(site.paths).toEqual(["/", "/adr", "/adr/0001-layout", "/adr/0002-docs", "/quickstart"]);
+    expect(site.logo).toEqual({
+      light: "/assets/logo/light.svg",
+      dark: "/assets/logo/dark.svg",
+      href: "/",
+    });
+    expect(site.tree).toEqual({
+      name: "Handbook",
+      children: [
+        {
+          $id: "tab.0",
+          type: "folder",
+          name: "Guides",
+          root: true,
+          children: [
+            { $id: "tab.0.0", type: "separator", name: "Start" },
+            { type: "page", name: "Introduction", url: "/" },
+            { type: "page", name: "Quickstart", url: "/quickstart" },
+            { $id: "tab.0.1", type: "separator", name: "Decisions" },
+            { type: "page", name: "Decisions", url: "/adr" },
+            { type: "page", name: "0001", url: "/adr/0001-layout" },
+            { type: "page", name: "0002", url: "/adr/0002-docs" },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("keeps llms.txt as the Mintlify site had it, and adds llms-full.txt and the redirects", () => {
+    const site = fumadocs({
+      config: { ...CONFIG, redirects: [{ from: "/licensing", to: "/quickstart" }] },
+    });
+    expect(text(site, "public/llms.txt")).toBe(
+      run().files.find((file) => file.path === "llms.txt")?.content,
+    );
+    const full = text(site, "public/llms-full.txt");
+    expect(full.startsWith("# Handbook\n\n# Introduction\n\nSource: /\n\n![hero]")).toBe(true);
+    expect(full).toContain("# 0002\n\nSource: /adr/0002-docs\n");
+    expect(text(site, "public/_redirects")).toBe("/licensing /quickstart 301\n");
+  });
+
+  it("turns a snippet import into an include, outside code only", () => {
+    const quickstart = text(fumadocs(), "content/quickstart.mdx");
+    expect(quickstart).toContain("<include>../snippets/steps.mdx</include>");
+    expect(quickstart).not.toMatch(/^import Steps/m);
+    expect(quickstart).toContain(
+      '```mdx\nimport Steps from "/snippets/steps.mdx";\n<Widget />\n```',
+    );
+  });
+
+  it("writes the colours and the Mintlify component map", () => {
+    const site = fumadocs();
+    expect(text(site, "app/theme.css")).toContain("--color-fd-primary: #0B0D0F;");
+    const map = text(site, "app/mdx-components.tsx");
+    for (const name of [
+      "Note",
+      "Info",
+      "Tip",
+      "Warning",
+      "Card",
+      "CardGroup",
+      "Steps",
+      "Step",
+      "Tabs",
+      "Tab",
+      "Accordion",
+      "AccordionGroup",
+      "Frame",
+      "CodeGroup",
+    ])
+      expect(map).toMatch(new RegExp(`^  ${name}[:,]`, "m"));
+    expect(text(site, "vite.config.ts").startsWith("// generated by stackra gen")).toBe(true);
+  });
+
+  it("adds a page for the API reference of a consumed service", () => {
+    const manifest = {
+      member: "orders",
+      package: "@acme/service-orders",
+      actions: [],
+      schemas: {},
+    };
+    const site = fumadocs({
+      config: { ...CONFIG, apiReference: ["orders"] },
+      services: [{ member: "orders", manifest: manifest as unknown as StackraManifest }],
+    });
+    expect(site.errors).toEqual([]);
+    expect(site.files.map((file) => file.path)).toEqual(
+      expect.arrayContaining([
+        "content/api-reference/orders.mdx",
+        "public/api-reference/orders/openapi.json",
+      ]),
+    );
+    expect(JSON.parse(text(site, "app/site.json")).paths).toContain("/api-reference/orders");
+  });
+
+  it("refuses an unknown component, but not an imported one or one in code", () => {
+    const refused = fumadocs({
+      files: [
+        ...FUMADOCS_FILES,
+        { path: "docs/extra.mdx", content: page("Extra", "<Widget />\n\n<Panel.Body />") },
+      ],
+      config: {
+        ...CONFIG,
+        navigation: [
+          {
+            tab: "Guides",
+            groups: [
+              { group: "Start", pages: ["index", "quickstart", "extra", { folder: "adr" }] },
+            ],
+          },
+        ],
+      },
+    });
+    expect(refused.errors.map((error) => [error.code, error.subject])).toEqual([
+      ["docs_component_unknown", "Widget"],
+      ["docs_component_unknown", "Panel"],
+    ]);
+    expect(refused.files).toEqual([]);
+    const imported = fumadocs({
+      files: [
+        ...FUMADOCS_FILES,
+        {
+          path: "docs/extra.mdx",
+          content: page("Extra", 'import { Chart, type Row } from "@acme/charts";\n\n<Chart />'),
+        },
+      ],
+      config: {
+        ...CONFIG,
+        navigation: [
+          {
+            tab: "Guides",
+            groups: [
+              { group: "Start", pages: ["index", "quickstart", "extra", { folder: "adr" }] },
+            ],
+          },
+        ],
+      },
+    });
+    expect(imported.errors).toEqual([]);
+  });
+
+  it("refuses a redirect from a page and one to nowhere, and an owned layout key", () => {
+    expect(
+      fumadocsCodes({
+        config: {
+          ...CONFIG,
+          raw: { nav: {} },
+          redirects: [
+            { from: "/quickstart", to: "/" },
+            { from: "/old", to: "/gone" },
+            { from: "/site", to: "https://example.com" },
+          ],
+        },
+      }),
+    ).toEqual(["docs_owned_key", "docs_redirect_shadows_page", "docs_redirect_target_missing"]);
   });
 });
