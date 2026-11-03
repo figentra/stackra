@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `FAMILY_BLUEPRINT`, each material family's value for every blueprint role. `front` draws the marketing
- *          blueprint: hairline rules and pipes mixed from the theme's accent, `+` marks, frames on the kit's `lg`
- *          radius plus 4 px (10 px for Stackra, owner Q2). `studio` keeps the same roles quiet for product screens:
+ *          blueprint: decorative hairline rules mixed from the theme's accent, pipes in the accent itself, `+` marks,
+ *          frames on the kit's `lg` radius plus 4 px (10 px for Stackra, owner Q2). `studio` keeps the same roles quiet for product screens:
  *          rules on the separator, no marks, frames on the container radius.
  * Boundary: values are theme roles, radii and lengths only, never a colour value, so every theme draws them in its own
  *           colours.
@@ -21,7 +21,8 @@ export const FAMILY_BLUEPRINT: Readonly<
     "rule-width": "1px",
     "mark-size": "9px",
     "frame-radius": "calc(var(--radius-lg) + 4px)",
-    pipe: "color-mix(in oklab, var(--accent) 55%, transparent)",
+    // The pipe carries meaning (one thing turning into many), so it keeps the accent's 3:1 as a graphic (WCAG 1.4.11).
+    pipe: "var(--accent)",
     "pipe-width": "1.5px",
     "junction-size": "7px",
     "dock-height": "40px",
