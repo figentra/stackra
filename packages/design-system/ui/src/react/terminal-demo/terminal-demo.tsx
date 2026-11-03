@@ -29,7 +29,8 @@ const KIND: Readonly<Record<TerminalLine["kind"], readonly [string, string]>> = 
   command: ["$ ", "text-foreground"],
   output: ["", "text-muted"],
   prompt: ["? ", "text-foreground"],
-  choice: ["❯ ", "text-accent"],
+  // Foreground, not steel: steel on surface-secondary is under 4.5:1 in light.
+  choice: ["❯ ", "text-foreground"],
   success: ["✓ ", "text-success"],
 };
 
@@ -84,7 +85,9 @@ export function TerminalDemo({
     return () => clearTimeout(step);
   }, [plays, isStarted, shown, lines.length, stepMs]);
 
-  const isDone = shown >= lines.length;
+  // Below the full motion level, or never playing, everything shows, whatever the timer reached.
+  const visible = plays ? shown : lines.length;
+  const isDone = visible >= lines.length;
   const repeats = new Map<string, number>();
   return (
     <section
@@ -97,11 +100,12 @@ export function TerminalDemo({
         className,
       )}
     >
-      <div className="flex items-center gap-3 border-b border-border px-3 py-2 font-mono text-sm">
-        <span className="shrink-0 rounded-[var(--radius-sm)] border border-accent px-2 py-0.5 text-xs uppercase tracking-wide text-accent">
+      <div className="flex items-center gap-3 border-b border-border px-3 py-2 text-sm">
+        {/* A section label in the body face, sentence case and never tracked (Arabic joins); steel only as its border. */}
+        <span className="shrink-0 rounded-[var(--radius-sm)] border border-accent px-2 py-0.5 text-xs text-foreground">
           {name}
         </span>
-        <code dir="ltr" className="min-w-0 flex-1 truncate text-foreground">
+        <code dir="ltr" className="min-w-0 flex-1 truncate font-mono text-foreground">
           <span aria-hidden="true" className="text-muted">
             {"$ "}
           </span>
@@ -119,7 +123,7 @@ export function TerminalDemo({
       >
         {lines.map((line, index) => {
           const [sign, tone] = KIND[line.kind];
-          const isHidden = index >= shown;
+          const isHidden = index >= visible;
           // The text and how often it was printed before: a stable key for a recorded session.
           const seen = (repeats.get(line.text) ?? 0) + 1;
           repeats.set(line.text, seen);

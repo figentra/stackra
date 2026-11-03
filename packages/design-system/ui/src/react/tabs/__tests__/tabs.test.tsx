@@ -262,6 +262,9 @@ describe("Tabs (web)", () => {
     );
     expect(container.querySelector('[data-slot="tabs-indicator"], .tabs__indicator')).toBeNull();
     expect(tab("Endpoint").className).toContain("before:content-['→'_/_'']");
+    // The selected step is marked by more than colour: weight and an underline.
+    expect(tab("Action").className).toContain("data-[selected=true]:font-semibold");
+    expect(tab("Action").className).toContain("data-[selected=true]:underline");
     // The arrow is hidden decoration: the step's name is its words alone.
     expect(screen.getByRole("tab", { name: "Endpoint" })).toBeTruthy();
     key(tab("Action"), "ArrowRight");

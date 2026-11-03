@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: proves the web DitherArt is hidden decoration that nothing can focus, keeps its poster under the canvas,
  *          draws the pattern at cell resolution in the three token colours, drifts at full motion and stands still
- *          under reduced motion or `speed={0}`, draws the same in right-to-left, and that the ported dither puts the
+ *          under reduced motion or `speed={0}`, holds after under five seconds of drift, picks a poster per scheme,
+ *          draws the same in right-to-left, and that the ported dither puts the
  *          strata's core at the base and none at the top.
  * Boundary: jsdom has no canvas or layout, so `getContext`, the element's size and `requestAnimationFrame` are
  *           recording stand-ins; `useReducedMotion` is stubbed.
@@ -26,7 +27,7 @@ const context = {
     fills.push(this.fillStyle);
   }),
 };
-const frame = vi.fn(() => 1);
+const frame = vi.fn((_callback: FrameRequestCallback) => 1);
 
 /** The strata's tones along one row of a 64 × 32 grid. */
 const tones = (row: number) =>
@@ -91,6 +92,25 @@ describe("DitherArt (web)", () => {
       </I18nProvider>,
     );
     expect(fills).toEqual(ltr);
+  });
+
+  it("holds its last frame before five seconds of drift (WCAG 2.2.2)", () => {
+    render(<DitherArt poster="/p.png" />);
+    const tick = frame.mock.calls.at(-1)?.[0];
+    if (!tick) throw new Error("no frame requested");
+    frame.mockClear();
+    tick(performance.now() + 1000);
+    expect(frame).toHaveBeenCalledTimes(1);
+    frame.mockClear();
+    tick(performance.now() + 5000);
+    expect(frame).not.toHaveBeenCalled();
+  });
+
+  it("shows the dark poster of a pair by default", () => {
+    const { container } = render(
+      <DitherArt poster={{ light: "/l.png", dark: "/d.png" }} speed={0} />,
+    );
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("/d.png");
   });
 
   it("puts the strata's core at the base and none at the top", () => {

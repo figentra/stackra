@@ -64,10 +64,11 @@ const live =
 
 /**
  * The `steps` look: plain words, an arrow before every step but the first (pointing the reading way), no indicator,
- * and the selected step in the accent.
+ * and the selected step told apart by more than colour (WCAG 1.4.1): foreground, semibold and a steel underline. The
+ * arrow is an inline block, so the underline never runs under it.
  */
 const STEP_CLASS_NAME =
-  "bg-transparent px-1 text-muted data-[selected=true]:text-accent [&:not(:first-child)]:before:me-3 [&:not(:first-child)]:before:text-muted [&:not(:first-child)]:before:content-['→'_/_''] rtl:[&:not(:first-child)]:before:content-['←'_/_'']";
+  "bg-transparent px-1 text-muted data-[selected=true]:font-semibold data-[selected=true]:text-foreground data-[selected=true]:underline data-[selected=true]:decoration-accent data-[selected=true]:decoration-2 data-[selected=true]:underline-offset-8 [&:not(:first-child)]:before:inline-block [&:not(:first-child)]:before:me-3 [&:not(:first-child)]:before:text-muted [&:not(:first-child)]:before:content-['→'_/_''] rtl:[&:not(:first-child)]:before:content-['←'_/_'']";
 
 /** Keeps a press on the close mark from reaching the tab, which would select it. */
 const stop = (event: SyntheticEvent) => event.stopPropagation();

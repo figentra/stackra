@@ -56,7 +56,11 @@ export function Frame({
             ))}
           </span>
           {title ? (
-            <span className="min-w-0 flex-1 truncate text-center font-mono text-xs text-muted">
+            // A file name or address in a right-to-left page: isolated, so it truncates and keeps its punctuation.
+            <span
+              dir="auto"
+              className="min-w-0 flex-1 truncate text-center font-mono text-xs text-muted"
+            >
               {title}
             </span>
           ) : null}

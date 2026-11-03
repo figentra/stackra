@@ -59,7 +59,9 @@ describe("TerminalDemo (web)", () => {
     expect(screen.queryByText("localhost:4000")).toBeNull();
     act(() => vi.advanceTimersByTime(80));
     expect(readable()).toHaveLength(1);
-    act(() => vi.advanceTimersByTime(160));
+    // One step per act: each step's effect schedules the next only after it renders.
+    act(() => vi.advanceTimersByTime(80));
+    act(() => vi.advanceTimersByTime(80));
     expect(readable()).toHaveLength(3);
     expect(screen.getByText("localhost:4000")).toBeTruthy();
   });

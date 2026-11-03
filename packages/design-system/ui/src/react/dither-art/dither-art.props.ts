@@ -22,10 +22,11 @@ export interface DitherArtProps {
   /** How fast the art drifts on real time; 0 is still. Defaults to 1, and is 0 whenever motion is reduced. */
   readonly speed?: number | undefined;
   /**
-   * The kit's poster image for this pattern and scheme: what the edge render, a page without script and print show,
+   * The kit's poster image for this pattern, one for both schemes or one per scheme (`{ light, dark }`; dark first):
+   * what the edge render, a page without script and print show,
    * under the canvas until it draws.
    */
-  readonly poster: string;
+  readonly poster: string | { readonly light: string; readonly dark: string };
   /** A fade over the art: `radial` toward the edges, `bottom` or `top` toward that side. Defaults to `none`. */
   readonly mask?: "none" | "radial" | "bottom" | "top" | undefined;
   /** Styles the wrapper; give it a size, since the art fills it. */

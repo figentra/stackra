@@ -13,7 +13,7 @@
  */
 import { cn } from "@heroui/react";
 import { type ReactElement, useState } from "react";
-import { I18nProvider } from "react-aria-components";
+import { I18nProvider, useLocale } from "react-aria-components";
 
 import type { PlaygroundControl } from "#contracts/types/playground-control.type";
 import { LONG_TAIL_KEYS } from "#core/constants/long-tail-keys.constant";
@@ -62,7 +62,9 @@ export function PropsPlayground({
   });
   const [own, setOwn] = useState(start);
   const [brand, setBrand] = useState(DEFAULT);
-  const [direction, setDirection] = useState<"ltr" | "rtl">("ltr");
+  // The page's own locale and direction: the preview starts there, and only a flipped preview changes the locale.
+  const page = useLocale();
+  const [direction, setDirection] = useState<"ltr" | "rtl">(page.direction);
   const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   const current = values ?? own;
   const chosen = brands?.find((item) => item.id === brand);
@@ -78,7 +80,7 @@ export function PropsPlayground({
     setOwn(next);
     onChange?.(next);
     setBrand(DEFAULT);
-    setDirection("ltr");
+    setDirection(page.direction);
   };
 
   return (
@@ -95,15 +97,21 @@ export function PropsPlayground({
         role="region"
         aria-label={t(K.preview)}
         dir={direction}
-        lang={direction === "rtl" ? "ar" : "en"}
         style={style}
         {...(chosen ? { "data-brand": chosen.theme.name } : {})}
         data-slot="props-playground-preview"
         className="relative flex min-h-64 items-center justify-center bg-background p-8 text-foreground"
       >
+        {/* Physical on purpose: React Aria places overlays in viewport coordinates, so the layer anchors there. */}
         <div ref={setLayer} className="fixed top-0 left-0 z-(--z-overlay)" />
         <PortalContainer container={layer}>
-          <I18nProvider locale={direction === "rtl" ? "ar" : "en"}>{render(current)}</I18nProvider>
+          <I18nProvider
+            locale={
+              direction === page.direction ? page.locale : direction === "rtl" ? "ar" : "en-US"
+            }
+          >
+            {render(current)}
+          </I18nProvider>
         </PortalContainer>
       </div>
       <div className="flex flex-col gap-4 border-t border-border p-4 md:border-t-0 md:border-s">

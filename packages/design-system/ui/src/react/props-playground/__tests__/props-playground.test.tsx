@@ -11,6 +11,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from "@testing-library/react";
 import { STACKRA_THEME } from "@stackra/tokens";
+import { I18nProvider } from "react-aria-components";
 
 import type { PlaygroundControl } from "#contracts/types/playground-control.type";
 import { PropsPlayground } from "#react/props-playground/props-playground";
@@ -70,5 +71,14 @@ describe("PropsPlayground (web)", () => {
     expect(preview.getAttribute("dir")).toBe("rtl");
     expect(document.documentElement.getAttribute("dir")).not.toBe("rtl");
     expect(document.documentElement.hasAttribute("data-brand")).toBe(false);
+  });
+
+  it("starts the preview in the page's direction", () => {
+    render(
+      <I18nProvider locale="ar">
+        <PropsPlayground label="Button" controls={CONTROLS} render={() => <span>زر</span>} />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("region").getAttribute("dir")).toBe("rtl");
   });
 });

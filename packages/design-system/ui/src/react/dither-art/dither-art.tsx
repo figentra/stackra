@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the web `DitherArt`: a brand pattern (brand rules §40) drawn as an ordered Bayer 8×8 dither on a canvas at
  *          cell resolution, scaled up with crisp pixels, in three theme colours: the ground, the steel dots and the
- *          champagne core. It drifts slowly at the `full` motion level and stands still below it; the kit's poster
+ *          champagne core. At the `full` motion level it drifts slowly for under five seconds and then holds (WCAG 2.2.2),
+ *          and stands still below it; the kit's poster
  *          image sits under the canvas for the edge render, a page without script and print.
  * Boundary: decoration only, hidden from assistive tech. No WebGL and no dependency: the field code is the brand kit's,
  *           ported as it is. Colours are resolved from token names through the canvas's own computed style, so a theme
@@ -31,6 +32,13 @@ const MASK = {
 
 /** The time between drift frames, the theme's tick: the drift is slow, so 20 frames a second reads as smooth. */
 const FRAME_MS = motionTiming(STACKRA_THEME, "tick").durationMs;
+
+/**
+ * How long the drift runs before it holds its last frame: under WCAG 2.2.2's five seconds, so auto-starting motion
+ * beside other content needs no pause control. A legal threshold, not a design value.
+ */
+// oxlint-disable-next-line stackra/no-literal-duration -- reason: WCAG 2.2.2's five-second limit, not a design step
+const DRIFT_MS = 4500;
 
 /** A brand pattern, dithered on a canvas over its poster. */
 export function DitherArt({
@@ -99,6 +107,8 @@ export function DitherArt({
     let frame = 0;
     let last = 0;
     const tick = (time: number) => {
+      // The drift settles on its last frame before WCAG 2.2.2's five seconds.
+      if (time - start > DRIFT_MS) return;
       if (isVisible && time - last >= FRAME_MS) {
         last = time;
         draw(now());
@@ -121,7 +131,11 @@ export function DitherArt({
       data-pattern={pattern}
       className={cn("pointer-events-none relative overflow-hidden", MASK[mask], className)}
     >
-      <img src={poster} alt="" className="absolute inset-0 size-full object-cover" />
+      <img
+        src={typeof poster === "string" ? poster : poster[scheme === "light" ? "light" : "dark"]}
+        alt=""
+        className="absolute inset-0 size-full object-cover"
+      />
       <canvas
         ref={canvas}
         className={cn(
