@@ -31,7 +31,7 @@ describe("EarnVisitAction", () => {
       key: "points.earn_visit",
       permission: LoyaltyAccountPermissions.stamp,
       actors: [ActorKind.User, ActorKind.Service],
-      endpoint: { method: HttpMethod.Post, path: "/loyalty/visits" },
+      endpoint: { method: HttpMethod.Post, path: "/app/loyalty/visits" },
     });
   });
 

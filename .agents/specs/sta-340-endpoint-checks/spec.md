@@ -30,14 +30,15 @@ action's area in the manifest; and add the ADR 0305 rule 30 surface checks, with
 - **Packages touched**: packages/developer/gen (the derivation and the new check); the packages whose endpoint
   overrides or route constants move under their area prefix: packages/commerce/loyalty-kit,
   packages/application/achievements, packages/security/consent, packages/cross-cutting/analytics,
-  packages/application/clients; packages/foundation/contracts (its loyalty-kit manifest test fixture); and every
+  packages/application/clients, packages/application/ai (`CLIENT_RESULT_ACTION`); packages/foundation/contracts (its loyalty-kit manifest test fixture); and every
   package whose committed `stackra.manifest.json` lists an endpoint, regenerated only: packages/application/achievements,
   packages/cross-cutting/analytics, packages/data/data-maintenance, packages/data/media,
   packages/experience/collaboration, packages/runtime/devices, packages/security/access-log,
   packages/security/consent, packages/security/identity, packages/security/privacy, packages/commerce/loyalty-kit
 - **Public contract change**: breaking: every derived route gains its area prefix (`/app`, `/admin`, `/platform`;
   `/public` already had one), so the committed manifests, `openapi.json` and the SDKs move; the route constants
-  `ANALYTICS_INGEST_PATH`, `CONSENT_SNAPSHOT_PATH` and `DEVICE_ORDER.acknowledgedPath` move to the prefixed paths; every
+  `ANALYTICS_INGEST_PATH`, `CONSENT_SNAPSHOT_PATH`, `DEVICE_ORDER.acknowledgedPath` and `CLIENT_RESULT_ACTION.path`
+  move to the prefixed paths; every
   manifest action entry gains `area`; additive: seven new gen refusal codes (`endpoint_collision`,
   `endpoint_versioned`, `endpoint_area_mismatch`, `endpoint_method_mismatch`, `job_without_system_actor`,
   `cron_input_invalid`, `intent_phrases_missing`)
@@ -65,7 +66,9 @@ action's area in the manifest; and add the ADR 0305 rule 30 surface checks, with
 ## Glossary _(full lane)_
 
 - **Area**: one of the four API areas of ADR 0082 decision 3 (`public`, `app`, `admin`, `platform`); an action's or
-  query's `area` option, `app` when absent (`ActionOptions.area`, `QueryOptions.area`).
+  query's `area` option, else a service's own `defineService({ area })` (`ServiceDefinition.area`: "the API area of
+  the service's endpoints, unless an action says otherwise"), else `app` (`ActionOptions.area`,
+  `QueryOptions.area`).
 - **Area prefix**: `/<area>`, the first path segment the edge routes by (ADR 0237 decision 1:
   `api.figentra.com/{public,app,admin,platform}`).
 - **Override**: an `endpoint: { method, path }` option, which replaces the derived route (manifest `derived: false`).
@@ -162,7 +165,7 @@ input the action's input schema does not accept, and an intent with no phrases.
 ### Functional Requirements
 
 - **FR-001**: THE derived route of every action or query SHALL start with `/<area>`, where the area is its `area`
-  option or `app` when absent.
+  option, else its service's `defineService({ area })`, else `app`.
 - **FR-002**: THE manifest entry of every action or query SHALL record `area`, written or defaulted.
 - **FR-003**: IF two calls in one manifest have the same route shape THEN gen SHALL refuse `endpoint_collision` for
   each of them, naming the other.
@@ -223,16 +226,23 @@ input the action's input schema does not accept, and an intent with no phrases.
 - The `app` area gets the `/app` prefix like the other three: ADR 0237 decision 1 routes
   `api.figentra.com/{public,app,admin,platform}`, the work package asks for "area prefix for every area", and the
   existing `/public` and `/platform/operators/bootstrap` routes already carry their area in the path.
-- No released consumer calls a derived route yet: the Encore adapters are not generated (G-2), and the only hand-written
-  callers are the three route constants this change moves and the CLI's `/platform/operators/bootstrap`, which is
-  already under its area.
+- No released consumer calls a derived route yet: the Encore adapters are not generated (G-2). The hand-written
+  callers are the three route constants this change moves, `CLIENT_RESULT_ACTION` of `@stackra/ai` (a convention
+  route of the OS ai service, moved to `/app/runs/:runId/client-result`), the CLI's `/platform/operators/bootstrap`
+  (already under its area), and two left as they are: `DEVICE_HUB_PATHS` of `@stackra/devices`, which is relative to
+  the configurable `DevicesConfig.hubUrl` (a hub served under `/app` sets it there), and the notifications'
+  `SEND_MESSAGE_ACTION` and `SEND_DELIVERY_MESSAGE_ACTION`, which mirror another service's override (`POST /messages`),
+  not a derived route; that producer moves them when it adopts the check.
 - No committed manifest has a collision or a versioned route today (surveyed 2026-11-03 over the committed manifests);
   the overrides outside their area are loyalty-kit's six (app area), achievements' `/awards/verify` and consent's
   `/consent/snapshots` (public area), and analytics' ingest route (public area).
 
 ## Amendments
 
-None.
+- 2026-11-03 · agent (wp-18 build): the default area is a service's own `defineService({ area })` before `app`, as
+  `ServiceDefinition.area` already documents (Glossary, FR-001); `CLIENT_RESULT_ACTION` of `@stackra/ai` was a fourth
+  route constant on the convention and moves too, and the Assumptions list the hand-written callers left as they are
+  (the survey had missed them).
 
 ## Status history
 

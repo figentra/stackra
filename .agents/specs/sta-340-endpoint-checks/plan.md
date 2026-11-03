@@ -92,6 +92,8 @@ unchanged, as for `checkConventions`.
 ## Files and folders
 
 - `packages/developer/gen/src/core/functions/derive-endpoint.function.ts` (change)
+- `packages/developer/gen/src/core/constants/default-area.constant.ts` (new: `DEFAULT_AREA`, shared by the derivation
+  and the manifest)
 - `packages/developer/gen/src/core/functions/build-manifest.function.ts` (change: `area` on every entry)
 - `packages/developer/gen/src/core/functions/check-endpoints.function.ts` (new)
 - `packages/developer/gen/src/core/functions/generate-member.function.ts` (change: one call)
@@ -108,6 +110,8 @@ unchanged, as for `checkConventions`.
   (`/public/analytics/batches`)
 - `packages/application/clients/src/contracts/constants/device-order.constant.ts` and its tests
   (`/app/devices/acknowledged`)
+- `packages/application/ai/src/core/constants/client-result-action.constant.ts` and its test
+  (`/app/runs/:runId/client-result`)
 - `packages/foundation/contracts/src/core/types/__tests__/fixtures/loyalty-kit.stackra.manifest.json`
 - every committed `stackra.manifest.json` and `openapi.json` listed in the spec's Impact (regenerated)
 - `.changeset/sta-340-endpoint-checks.md`

@@ -42,7 +42,7 @@ describe("emitSdks", () => {
     expect(ts).toContain("export type CancelOrderInput = {");
     expect(ts).toContain("export class CommerceClient {");
     expect(ts).toContain("ordersOrderCancel(input: CancelOrderInput, options: CallOptions = {})");
-    expect(ts).toContain('"PUT", "/orders/:orderId/cancel", ["orderId"]');
+    expect(ts).toContain('"PUT", "/app/orders/:orderId/cancel", ["orderId"]');
     expect(ts).toContain('headers["stackra-version"]');
     expect(ts).toContain('headers["idempotency-key"]');
     expect(ts).not.toContain("ordersOrderList");
@@ -57,7 +57,7 @@ describe("emitSdks", () => {
     expect(php).toContain(
       "public function ordersOrderCancel(array $input, ?string $idempotencyKey = null): mixed",
     );
-    expect(php).toContain("'PUT', '/orders/:orderId/cancel', ['orderId']");
+    expect(php).toContain("'PUT', '/app/orders/:orderId/cancel', ['orderId']");
   });
 
   it("is deterministic", () => {

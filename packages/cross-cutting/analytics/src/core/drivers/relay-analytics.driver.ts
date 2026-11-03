@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the `relay` driver of the `AnalyticsDriver` port (ADR 0483 decision 1): posts the deliveries it is handed,
- *          unchanged, as one batch to the analytics service (`POST <ingestOrigin>/analytics/batches`), with the
+ *          unchanged, as one batch to the analytics service (`POST <ingestOrigin>/public/analytics/batches`), with the
  *          `Stackra-Consent` header of a snapshot the consent endpoint under the same origin signed.
  * Boundary: plain `fetch`, no vendor key, no vendor SDK, no cookie and no storage. `AnalyticsClient` keeps the consent
  *           gate, the queue and the retries and calls `send` only once the category is granted; the server applies the

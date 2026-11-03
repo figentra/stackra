@@ -160,7 +160,7 @@ describe("buildManifest", () => {
       risk: "L2",
       actors: ["user", "agent"],
       idempotency: { ttl: "PT24H" },
-      endpoint: { method: "PUT", path: "/orders/:orderId/cancel", derived: true },
+      endpoint: { method: "PUT", path: "/app/orders/:orderId/cancel", derived: true },
       input: { $ref: "#/schemas/orders.CancelOrderInput" },
       output: { $ref: "#/schemas/orders.CancelOrderOutput" },
       refusals: ["order_not_cancellable"],
@@ -180,7 +180,7 @@ describe("buildManifest", () => {
       key: "orders.order.list@1",
       permission: "orders.order.read",
       risk: "L0",
-      endpoint: { method: "GET", path: "/orders" },
+      endpoint: { method: "GET", path: "/app/orders" },
       tool: { name: "orders_order_list", default: true },
     });
   });

@@ -1,0 +1,14 @@
+[
+  {
+    "member": "services/shop",
+    "code": "endpoint_collision",
+    "file": "src/node/actions/cancel-order.action.ts",
+    "subject": "CancelOrderAction"
+  },
+  {
+    "member": "services/shop",
+    "code": "endpoint_collision",
+    "file": "src/node/actions/void-order.action.ts",
+    "subject": "VoidOrderAction"
+  }
+]

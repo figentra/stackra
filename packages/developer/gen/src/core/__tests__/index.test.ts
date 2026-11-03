@@ -45,6 +45,7 @@ describe("@stackra/gen", () => {
       "buildManifest",
       "checkApproval",
       "checkEncryptedFields",
+      "checkEndpoints",
       "checkIdentityLock",
       "checkModelScope",
       "checkQueryCache",
