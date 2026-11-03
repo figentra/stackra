@@ -133,10 +133,12 @@ describe("publishProduct", () => {
 
   it("runs wrangler uploads with the Cloudflare account the runway names", async () => {
     writeBundle(repository, "console", "1.3.0");
+    const { ops: _ops, ...surfaces } = PRODUCT_ROOT.surfaces;
     writeFileSync(
       join(repository, "runway.yaml"),
       JSON.stringify({
         ...PRODUCT_ROOT,
+        surfaces,
         providers: {
           ...(PRODUCT_ROOT as { providers?: object }).providers,
           cloudflare: { accountId: "acct-1" },
