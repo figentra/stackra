@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `stackra smoke`: it prints one line per result and exits 0 when every subject passed, exits
- *          1 with the problems when one failed, keeps the `--only` targets, passes the mobile build of `--app`, and
- *          refuses an unknown environment or target and a build without `--app` or `--template-dir`.
+ * Purpose: unit tests of `runSmoke`: it resolves with every result and no failure when every subject passed, with
+ *          the problems and the failure when one failed, keeps the `--only` targets, passes the mobile build of
+ *          `--app`, and refuses an unknown environment or target and a build without `--app` or `--template-dir`.
  * Boundary: test only; a temporary product root and fake drivers, so no browser, simulator or emulator runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); STA-265 spec (FR-013).
+ * Governing contract: ADR 0022 (test placement); STA-265 spec (FR-013); STA-1966.
  */
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -16,9 +16,7 @@ import type { SmokeResult, SmokeSubject } from "@stackra/runway";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
-import { captureIo } from "#node/functions/capture-io.function";
 import { runSmoke } from "#node/product/functions/run-smoke.function";
-import type { CliContext } from "#node/types/cli-context.type";
 
 const RUNWAY = `version: 3
 project: mezzora
@@ -66,13 +64,8 @@ class FakeSmokeDriver extends SmokeDriver {
 let folder = "";
 
 /** Runs `stackra smoke` with `values` over `drivers`. */
-async function smoke(values: CliContext["values"], drivers: readonly SmokeDriver[]) {
-  const { io, output } = captureIo();
-  const code = await runSmoke(
-    { cwd: folder, io, values, positionals: [], rest: [], cli: async () => 0 },
-    drivers,
-  );
-  return { code, output: output() };
+function smoke(values: Readonly<Record<string, string>>, drivers: readonly SmokeDriver[]) {
+  return runSmoke(folder, values, drivers);
 }
 
 beforeEach(() => {
@@ -86,30 +79,37 @@ afterEach(() => {
 
 describe("stackra smoke", () => {
   // @covers sta-265:FR-013
-  it("prints each result and exits 0 when every subject passed", async () => {
+  it("resolves with each result and no failure when every subject passed", async () => {
     const web = new FakeSmokeDriver("web");
-    const { code, output } = await smoke({ env: "preview", only: "web" }, [web]);
-    expect(code).toBe(0);
+    const { results, failure } = await smoke({ env: "preview", only: "web" }, [web]);
+    expect(failure).toBeUndefined();
     expect(web.checked).toEqual([
       { target: "web", name: "console", url: "https://console.mezzora.preview.figentra.com/" },
     ]);
-    expect(output).toBe("pass web console (.stackra/smoke/console.png)\nsmoke passed: 1 checked\n");
+    expect(results).toEqual([
+      {
+        target: "web",
+        name: "console",
+        passed: true,
+        problems: [],
+        evidence: ".stackra/smoke/console.png",
+      },
+    ]);
   });
 
   // @covers sta-265:FR-013
-  it("exits 1 with the problems when a subject failed", async () => {
-    const { code, output } = await smoke({ env: "preview", only: "web" }, [
+  it("resolves with the problems and the failure when a subject failed", async () => {
+    const { results, failure } = await smoke({ env: "preview", only: "web" }, [
       new FakeSmokeDriver("web", ["console"]),
     ]);
-    expect(code).toBe(1);
-    expect(output).toContain("FAIL web console (.stackra/smoke/console.png)\n  page error: boom\n");
-    expect(output).toContain("Smoke failed: web console\n");
+    expect(results[0]?.problems).toEqual(["page error: boom"]);
+    expect(failure).toContain("Smoke failed: web console");
   });
 
   // @covers sta-265:FR-013
   it("passes the mobile build of --app and checks only that target", async () => {
     const mobile = new FakeSmokeDriver("mobile");
-    const { code } = await smoke(
+    const { failure } = await smoke(
       {
         env: "preview",
         only: "mobile",
@@ -119,7 +119,7 @@ describe("stackra smoke", () => {
       },
       [new FakeSmokeDriver("web"), mobile],
     );
-    expect(code).toBe(0);
+    expect(failure).toBeUndefined();
     expect(mobile.checked).toEqual([
       {
         target: "mobile",

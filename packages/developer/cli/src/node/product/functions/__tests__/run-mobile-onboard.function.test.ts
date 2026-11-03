@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `stackra mobile onboard`: the offline plan of the only app prints every step and the owner's
- *          steps and exits 3 while one is manual; `--app` is needed when the runway has several apps; `--check` and
- *          `--live` refuse to run outside GitHub Actions.
+ * Purpose: unit tests of `runMobileOnboard`: the offline plan of the only app resolves with every step and the
+ *          owner's steps, a manual one among them, and writes nothing; `--app` is needed when the runway has several
+ *          apps; `--check` and `--live` refuse to run outside GitHub Actions.
  * Boundary: test only; a temporary product repository, Runway's real `onboardMobile` over the memory drivers, so
  *           nothing leaves the process and nothing is written.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0482; spec sta-1623.
+ * Governing contract: ADR 0022 (test placement); ADR 0482; spec sta-1623; STA-1966.
  */
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -15,9 +15,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
-import { captureIo } from "#node/functions/capture-io.function";
 import { runMobileOnboard } from "#node/product/functions/run-mobile-onboard.function";
-import type { CliContext } from "#node/types/cli-context.type";
 
 const RUNWAY = `version: 3
 project: academorix
