@@ -90,12 +90,18 @@ jobs:
           env -i PATH="$tools" HOME="$RUNNER_TEMP/home" PNPM_CONFIG_CACHE_DIR="$RUNNER_TEMP/cache" \
             pnpm fetch --offline --ignore-scripts --store-dir "$RUNNER_TEMP/store" >/dev/null
 
-      # A job's install as the box agent runs it: in the job image, the store mounted read-only and the metadata cache
-      # beside it. Offline here, so a package the store lacks fails the check; scripts are skipped (no licence token).
-      - name: Job install from the read-only store
+      # A job's install as the box agent runs it: in the job image, with the warm store and the metadata cache beside
+      # it. Offline here, so a package the store lacks fails the check; scripts are skipped (no licence token). The
+      # read-only attempt only reports: it shows whether pnpm can serve an install from a read-only store mount.
+      - name: Job install from the warm store
         working-directory: ${{ github.workspace }}
         run: |
-          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e CI=true -e PNPM_CONFIG_CACHE_DIR=/pnpm-cache \
-            -v "$PWD:/work" -v "$RUNNER_TEMP/store:/pnpm-store:ro" -v "$RUNNER_TEMP/cache:/pnpm-cache" \
-            stackra-testbed-job:current sh -euc 'cd /work && pnpm install --offline --frozen-lockfile --ignore-scripts \
-              --store-dir /pnpm-store --package-import-method clone-or-copy'
+          install() {
+            docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e CI=true -e PNPM_CONFIG_CACHE_DIR=/pnpm-cache \
+              -v "$PWD:/work" -v "$RUNNER_TEMP/store:/pnpm-store$1" -v "$RUNNER_TEMP/cache:/pnpm-cache" \
+              stackra-testbed-job:current sh -euc 'cd /work && rm -rf node_modules && pnpm install --offline \
+                --frozen-lockfile --ignore-scripts --store-dir /pnpm-store --package-import-method clone-or-copy'
+          }
+          if install :ro; then echo "::notice title=Store::a read-only store serves an install"
+          else echo "::notice title=Store::a read-only store cannot serve an install; jobs mount it writable"; fi
+          install ""

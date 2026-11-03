@@ -406,10 +406,9 @@ EOF
   [ ! -f "$JOB_WS/services/encore.app" ] \
     || sed -i -E 's/"id":[[:space:]]*"[^"]*"/"id": ""/' "$JOB_WS/services/encore.app" || true
 
-  # One writer to the shared store; the job then installs from it read-only, with the metadata cache. The fetch only
-  # fills the store, from a copy of the files it reads: run in the workspace it would leave a node_modules that makes
-  # the container skip its install, and load the job's mise.toml on the host. No scripts: the container's install runs
-  # them.
+  # The fetch fills the shared store before the job, from a copy of the files it reads: run in the workspace it would
+  # leave a node_modules that makes the container skip its install, and load the job's mise.toml on the host. No
+  # scripts: the container's install runs them.
   mkdir -p "$STORE" "$PNPM_CACHE" "$DATA/turbo-cache"
   export PNPM_CONFIG_CACHE_DIR="$PNPM_CACHE"
   if [ -f "$JOB_WS/pnpm-lock.yaml" ]; then
@@ -442,13 +441,15 @@ EOF
   fi
 
   # Prefer offline, not offline only: a package or metadata entry the store lacks is fetched instead of failing the job.
+  # The store is mounted writable for that (pnpm's store is made for concurrent installs); testbed-image.yml reports
+  # whether a read-only mount could serve an install at all.
   inner="cd /work && { [ -d node_modules ] || pnpm install --prefer-offline --frozen-lockfile --store-dir /pnpm-store --package-import-method clone-or-copy; } && {$NL$command_text$NL}"
   wrap "sh -c $(sq "$inner")" || {
     say "unhealthy: grants"
     exit 75
   }
   set -- --rm --init --name "tb-$JOB_ID" --label "$LABEL=$JOB_ID" --network "tb-$JOB_ID" \
-    -v "$JOB_WS:/work" -v "$STORE:/pnpm-store:ro" -v "$PNPM_CACHE:/pnpm-cache" -v "$DATA/turbo-cache:/turbo-cache" \
+    -v "$JOB_WS:/work" -v "$STORE:/pnpm-store" -v "$PNPM_CACHE:/pnpm-cache" -v "$DATA/turbo-cache:/turbo-cache" \
     -v /var/run/docker.sock:/var/run/docker.sock --group-add "$(stat -c %g /var/run/docker.sock 2>/dev/null || echo 0)" \
     -e TURBO_CACHE_DIR=/turbo-cache -e PNPM_CONFIG_CACHE_DIR=/pnpm-cache -e CI=true -e "TESTBED_JOB=$JOB_ID"
   [ "$postgres" = 0 ] || set -- "$@" -e "TESTBED_POSTGRES_HOST=tb-$JOB_ID-pg"

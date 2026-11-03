@@ -297,6 +297,8 @@ describe("testbed-agent job run", () => {
     expect(logged()).toMatch(/-v \S+\/data\/pnpm-cache:\/pnpm-cache /);
     expect(logged()).toContain("-e PNPM_CONFIG_CACHE_DIR=/pnpm-cache");
     expect(logged()).toContain("pnpm install --prefer-offline --frozen-lockfile");
+    // Writable, so a package the store lacks can be added during the install.
+    expect(logged()).toMatch(/-v \S+\/pnpm-store:\/pnpm-store /);
     expect(logged()).not.toContain(TOKEN);
     expect(run.out + run.err).not.toContain(TOKEN);
     expect(readFileSync(`${log}.env`, "utf8")).toContain(`INFISICAL_TOKEN=${TOKEN}`);
