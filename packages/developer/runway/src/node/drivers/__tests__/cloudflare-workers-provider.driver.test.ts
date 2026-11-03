@@ -231,3 +231,58 @@ describe("CloudflareWorkersProviderDriver", () => {
     expect(() => driver.plan({ ...WEB, kind: "mobile" }, SHA)).toThrow(RunwayUnresolvedError);
   });
 });
+
+const target = (settings: Record<string, unknown>): DeployTarget => ({
+  ...WEB,
+  settings: {
+    ...WEB.settings,
+    members: { static: { path: "workers/static", ...settings } },
+  },
+});
+
+describe("CloudflareWorkersProviderDriver drift", () => {
+  const ACCOUNT = "d861f9ac9df28b7f0b1298cc0c89bc9d";
+  const drifting = (root: string, live: Record<string, Record<string, unknown>>) => {
+    const reads: string[] = [];
+    const provider = workers(root, fakeRunner(root).run, {
+      env: { CLOUDFLARE_API_TOKEN_READ: "read", CLOUDFLARE_ACCOUNT_ID: ACCOUNT },
+    });
+    provider.read = async (path, token) => {
+      reads.push(`${path} ${token}`);
+      return live[path.endsWith("/subdomain") ? "subdomain" : "settings"] ?? {};
+    };
+    return { provider, reads };
+  };
+  it("is empty when Cloudflare reports what runway.yaml renders", async () => {
+    const { provider, reads } = drifting(repository(), {
+      settings: { compatibility_date: "2026-10-01" },
+      subdomain: { enabled: false, previews_enabled: false },
+    });
+    const [result] = await provider.drift(
+      target({ compatibilityDate: "2026-10-01", workersDev: false }),
+    );
+    expect(result?.rows).toEqual([]);
+    expect(reads.every((read) => read.endsWith(" read"))).toBe(true);
+  });
+
+  it("lists each differing setting, and an unset one", async () => {
+    const { provider } = drifting(repository(), {
+      settings: { compatibility_date: "2026-01-01" },
+      subdomain: { enabled: true },
+    });
+    const [result] = await provider.drift(
+      target({ compatibilityDate: "2026-10-01", workersDev: false }),
+    );
+    expect(result?.worker).toBe("stackra-static");
+    expect(result?.rows).toEqual([
+      { key: "compatibility_date", rendered: '"2026-10-01"', live: '"2026-01-01"' },
+      { key: "workers_dev", rendered: "false", live: "true" },
+    ]);
+  });
+
+  it("refuses without the read token, and never calls anything but a read", async () => {
+    const root = repository();
+    const provider = workers(root, fakeRunner(root).run, { env: {} });
+    await expect(provider.drift(target({}))).rejects.toBeInstanceOf(RunwayUnresolvedError);
+  });
+});

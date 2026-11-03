@@ -161,6 +161,7 @@ secrets:
   sync: on-deploy
   ci:
     - CLOUDFLARE_API_TOKEN
+    - CLOUDFLARE_API_TOKEN_READ
     - MINTLIFY_ADMIN_KEY
     - UNIWIND_AUTH_TOKEN
     # From ci-build `/ci/turbo` (STA-1393, ADR 0512): ci.yml and release.yml export them for turbo;
