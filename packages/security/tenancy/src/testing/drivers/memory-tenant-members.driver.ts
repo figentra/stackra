@@ -79,7 +79,11 @@ export class MemoryTenantMembersDriver extends Driver(TenantMembers) {
 
   invite(input: Parameters<TenantMembers["invite"]>[0]): ReturnType<TenantMembers["invite"]> {
     this.calls.push("invite");
-    this.refuseRole(input.kind, input.role);
+    try {
+      this.refuseRole(input.kind, input.role);
+    } catch (error) {
+      return Promise.reject(error as Error);
+    }
     const now = new Date();
     const invitation: TenantInvitation = {
       id: mintPublicId("inv"),
@@ -111,23 +115,32 @@ export class MemoryTenantMembersDriver extends Driver(TenantMembers) {
     return Promise.resolve();
   }
 
+  // A refusal thrown inside the executor rejects the promise, as a real client call does.
   changeRole(input: Parameters<TenantMembers["changeRole"]>[0]): Promise<void> {
-    this.calls.push("changeRole");
-    const member = this.members.find((row) => row.membershipId === input.membershipId);
-    if (member === undefined) return Promise.resolve();
-    if (input.role !== this.ownerRole) this.refuseLastOwner(member);
-    this.refuseRole(member.kind, input.role);
-    this.members = this.members.map((row) => (row === member ? { ...row, role: input.role } : row));
-    return Promise.resolve();
+    return new Promise((resolve) => {
+      this.calls.push("changeRole");
+      const member = this.members.find((row) => row.membershipId === input.membershipId);
+      if (member !== undefined) {
+        if (input.role !== this.ownerRole) this.refuseLastOwner(member);
+        this.refuseRole(member.kind, input.role);
+        this.members = this.members.map((row) =>
+          row === member ? { ...row, role: input.role } : row,
+        );
+      }
+      resolve();
+    });
   }
 
   remove(membershipId: PublicId<"mbr">): Promise<void> {
-    this.calls.push("remove");
-    const member = this.members.find((row) => row.membershipId === membershipId);
-    if (member === undefined) return Promise.resolve();
-    this.refuseLastOwner(member);
-    this.members = this.members.filter((row) => row !== member);
-    return Promise.resolve();
+    return new Promise((resolve) => {
+      this.calls.push("remove");
+      const member = this.members.find((row) => row.membershipId === membershipId);
+      if (member !== undefined) {
+        this.refuseLastOwner(member);
+        this.members = this.members.filter((row) => row !== member);
+      }
+      resolve();
+    });
   }
 
   /** Throws when `member` is the only holder of the owner role. */

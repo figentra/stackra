@@ -37,7 +37,8 @@ STA-339, STA-340), so today's code and `stackra validate --repository` still sho
 Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue STA-n` lands it in
 `apps/docs/adr/numbers.yaml` on main first (STA-1732); never take "the highest on disk plus one" from a branch.
 
-Done = `pnpm verify` green (format, lint, typecheck, test, build, validate, boundaries, knip). Conventional commits.
+Done = `pnpm verify` green on the box (format, lint, typecheck, test, build, validate, boundaries, knip; "Tests run on
+the box" below). Conventional commits.
 
 Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
 
@@ -46,6 +47,15 @@ prereleases run without the owner; production (a deploy, promote, rollback or pa
 the owner's one GitHub Environment approval, which an agent may start. Secret values stay with the owner, main changes
 only through a merged pull request, and a workstation `encore deploy` stays denied. Until the owner applies the guard
 and settings edits listed on STA-1395, the guard still asks before staging deploys.
+
+## Tests run on the box
+
+GitHub CI runs no tests: no unit `test`, no integration (`test:int`, Postgres), no Playwright e2e, no `encore test`.
+It checks (format, lint, typecheck, validate and the rest), builds and deploys (owner decision 2026-11-03, STA-2064).
+Before a pull request is marked ready, its tests run on the box:
+`ci-box run "<who> <what>" <dir> "<cmd>"`, for example `ci-box run "core STA-n" . "pnpm verify"` (box 1 today;
+`stackra testbed run` once the testbed is live). The pull request body carries the box evidence: the command, the
+commit it ran on and the result. Nothing installs or tests on a workstation.
 
 <!-- BEGIN generated from .agents/rules by tools/scripts/agents-sync.mjs — edit the sources, not this block -->
 
