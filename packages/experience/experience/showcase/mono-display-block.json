@@ -1,0 +1,21 @@
+{
+  "slug": "mono-display-block",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "MonoDisplayBlock",
+  "parts": ["MonoDisplayBlock"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 360
+    }
+  ],
+  "related": ["free/dither-art", "free/heading", "free/footer"],
+  "tokens": ["font.mono", "color.core", "color.background"],
+  "keywords": ["wordmark", "display", "mono", "closing", "glyphs", "landing", "kit"],
+  "status": "new"
+}
