@@ -1,5 +1,27 @@
 # @stackra/cli
 
+## 0.8.0
+
+### Patch Changes
+
+- 02c47c3: The product publish runs wrangler with `CLOUDFLARE_ACCOUNT_ID` from `providers.cloudflare.accountId` (uploads and KV
+  rows), and `stackra deploy --product` passes `appLinks` from `STACKRA_APPLE_TEAMS` (`team=ID,...`) and
+  `STACKRA_ANDROID_CERTIFICATES` (`app=AA:BB|CC:DD,...`). `CommandRunner` options take an `env`.
+- Updated dependencies [928dcc0]
+- Updated dependencies [7dd35b3]
+- Updated dependencies [02c47c3]
+- Updated dependencies [67e7e8f]
+  - @stackra/gen@0.8.0
+  - @stackra/runway@0.8.0
+  - @stackra/repo-checks@0.8.0
+  - @stackra/console@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/mcp@0.8.0
+  - @stackra/skills@0.8.0
+  - @stackra/contracts@0.8.0
+  - @stackra/support@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes
