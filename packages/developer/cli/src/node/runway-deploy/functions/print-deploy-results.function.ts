@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `printDeployResults(io, results)`, the one line per target `stackra deploy` and `stackra promote` print
+ * Purpose: `printDeployResults(io, results)`, the one line per target `stackra deploy` prints
  *          after shipping: target, short commit, health status and the provider's reference when it has one.
  * Boundary: prints only.
  * Runtime: node
