@@ -6,7 +6,8 @@
  *          test the product's services against that core and write `summary-<product>.json` and `.md` (was
  *          `tools/scripts/product-gate.mjs`, STA-1813). The matrix and the allow-list are the repository's own data, by
  *          default `tools/consumer-gate/matrix.yaml` and `allow.yaml` under the working directory. Prints the Markdown
- *          summary (the summary is the `--json` data). Exit 0 green, 1 red, 2 setup or usage error.
+ *          summary (the summary is the `--json` data; a setup error is `{ error }` there). Exit 0 green, 1 red, 2 setup
+ *          or usage error.
  * Boundary: the work is `runConsumerGate`; it writes only under `--out`, never fetches (the caller clones), never
  *           writes the core tree (the caller builds it first; exit 2 if it is not built) and never reads or prints a
  *           secret. Each step's child output goes to its log under `--out`, never to the terminal. `--mode link`
@@ -153,10 +154,15 @@ export class ConsumerGateCommand extends Command({
       },
       createConsumerGateDeps(),
     );
-    if (result.error !== undefined) io.output.error(result.error);
-    else if (result.summary !== undefined) {
+    // Standard error is dropped under --json, so a setup error is the json data there.
+    if (result.error !== undefined) {
+      if (io.json) io.output.json({ error: result.error });
+      else io.output.error(result.error);
+    } else if (result.summary !== undefined) {
       if (io.json) io.output.json(result.summary);
-      else io.output.line(renderConsumerGateSummary(result.summary).trimEnd());
+      else
+        for (const line of renderConsumerGateSummary(result.summary).trimEnd().split("\n"))
+          io.output.line(line);
     }
     return result.code;
   }

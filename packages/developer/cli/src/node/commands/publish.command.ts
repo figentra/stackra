@@ -3,8 +3,9 @@
  * Purpose: `PublishCommand`, `stackra publish [--dry-run] [--registry <origin>]`: checks the member's `stackra.kind`
  *          and its `@<scope>/<kind>-<name>` name (`checkItemPackage`), drawing every problem as a failed checklist row
  *          (exit 1), then runs `pnpm publish` against the registry setting as a task and prints its output when it
- *          ends (the packed file list of a dry run; live under `--verbose`). Every kind (package, skill, agent, mcp,
- *          plugin) publishes the same way, as an npm tarball.
+ *          ends (the packed file list of a dry run; live under `--verbose`). A failed `pnpm publish` exits 1 with the
+ *          last lines of its output under the task. Every kind (package, skill, agent, mcp, plugin) publishes the same
+ *          way, as an npm tarball.
  * Boundary: refuses before packing; the publish token comes from the release workflow's OIDC exchange
  *           (`NODE_AUTH_TOKEN`, stackra-185), never from this command, and pnpm's standard input is closed, so it never
  *           waits on a prompt. The licence, provenance and integrity checks are the registry Worker's.

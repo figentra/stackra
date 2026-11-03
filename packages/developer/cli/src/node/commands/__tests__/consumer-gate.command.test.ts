@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ConsumerGateCommand` on the console: the flags reach `runConsumerGate` resolved against the
  *          working directory with the default matrix and allow-list and the reproduce line, its exit code is the
- *          command's, the Markdown summary is printed (the summary is the `--json` data), and a missing flag, a bad
- *          `--today`, `--mode` or step, or an unreadable matrix exits 2 before anything runs.
+ *          command's, the Markdown summary is printed (the summary is the `--json` data, a setup error `{ error }`),
+ *          and a missing flag, a bad `--today`, `--mode` or step, or an unreadable matrix exits 2 before anything runs.
  * Boundary: test only; `runConsumerGate` is mocked, so no product is built; the matrix and allow-list are throwaway
  *           files in the OS temp directory.
  * Runtime: node (vitest)
@@ -103,7 +103,7 @@ describe("ConsumerGateCommand", () => {
     );
   });
 
-  it("returns the summary as the --json data and prints a setup error", async () => {
+  it("returns the summary as the --json data and reports a setup error in text and json", async () => {
     vi.mocked(runConsumerGate).mockReturnValue({ code: 0, summary: SUMMARY });
     const json = await gate([...REQUIRED, "--dry-run", "--json"]);
     expect(json.exitCode).toBe(0);
@@ -114,6 +114,10 @@ describe("ConsumerGateCommand", () => {
     const failed = await gate(REQUIRED);
     expect(failed.exitCode).toBe(2);
     expect(failed.stderr).toContain("core is not built");
+
+    const failedJson = await gate([...REQUIRED, "--json"]);
+    expect(failedJson.exitCode).toBe(2);
+    expect((failedJson.json as { data: unknown }).data).toEqual({ error: "core is not built" });
   });
 
   it("refuses a bad command line with 2 before the gate runs", async () => {

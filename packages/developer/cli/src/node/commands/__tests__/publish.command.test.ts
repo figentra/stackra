@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `PublishCommand` on the console: a member `checkItemPackage` refuses exits 1 with every
  *          problem as a failed row and never starts `pnpm publish`; a sound member runs `pnpm publish` with the
- *          registry and `--dry-run` through the process port and prints its output.
+ *          registry and `--dry-run` through the process port and prints its output; a failed `pnpm publish` exits 1
+ *          and shows pnpm's reason.
  * Boundary: test only; writes a throwaway member in the OS temp directory, and pnpm is a memory process runner. The
  *           publish itself runs in the release workflow, not here.
  * Runtime: node (vitest)
@@ -64,5 +65,25 @@ describe("PublishCommand", () => {
     expect(result.exitCode).toBe(0);
     expect(process.calls.map((call) => [call.line, call.cwd])).toEqual([[line, dir]]);
     expect(result.stdout).toContain("npm notice SKILL.md");
+  });
+
+  it("exits 1 and shows pnpm's reason when the publish fails", async () => {
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({ name: "@stackra/skill-archify", stackra: { kind: "skill" } }),
+    );
+    writeFileSync(join(dir, "SKILL.md"), "# Archify");
+    const line = "pnpm publish --registry https://npm.stackra.example/ --no-git-checks";
+    const process = new MemoryProcessRunnerDriver().on(line, {
+      code: 1,
+      output: "npm error 403 Forbidden - version 1.0.0 exists\n",
+    });
+    const result = await runCommandForTest(
+      [PublishCommand],
+      ["publish", "--registry", "https://npm.stackra.example/"],
+      { cwd: dir, process },
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("npm error 403 Forbidden - version 1.0.0 exists");
   });
 });
