@@ -80,8 +80,9 @@ amended). This applies in Stackra, OS, Commerce and every product.
 #### Enforcement
 
 - `ToolSource` is a closed enum (`packages/application/ai/src/core/enums/tool-source.enum.ts`).
-- planned — STA-1631: gen refuses client tool collisions, a `.prefill` of an action that is `tool: false`, and an
-  undeclared anchor.
+- automated — `client-tools-of.function.ts` in `packages/developer/gen`: gen refuses client tool collisions
+  (`client_tool_collision`), a `.prefill` of an action that is `tool: false` (`prefill_tool_off`), and an undeclared
+  anchor (`anchor_undeclared`).
 - planned — STA-1637: `stackra validate --repository` refuses a `.py` file outside the tools-stack images.
 
 #### See Also
@@ -500,7 +501,9 @@ code may still show the older forms; write new code in the v3 form.
 - **One meaning per word** (ADR 0294 decision 23): Precondition, never Guard or Gate; extension point and extension, never a backend hook; an extension point's slots are `before` and `after`, and an `Interceptor` wraps one action call (ADR 0305); Hook means a React `use*` function only; Provider means a React context component only (DI registrations are bindings); Command means a CLI command only; Lifetime, never scope, for DI. Banned identifiers: `*Guard`, `*Gate`, `*HookPoint`.
 - **The decorator test**: if the folder, the suffix, the base class, a field type, a method name or a derived name already says it, write no decorator. Only field, method (`@Step`, `@Transition`) and class-facet decorators exist; there are no kind decorators.
 
-Enforcement: planned — STA-338 (`base-matches-suffix` and the validator's `kind-path` check), STA-340 (the decorator-registry checks, the `names` validator row for abbreviations and banned identifiers, the gen checks `kind_class_name` and `identity_changed`), and oxlint `unicorn/filename-case` and the house rules of ADR 0129. Nothing here is checked yet.
+Enforcement: automated — the gen checks `kind_class_name` and `identity_changed` (`check-conventions.function.ts` and `check-identity-lock.function.ts` in `packages/developer/gen`).
+
+Planned — STA-338 (`base-matches-suffix` and the validator's `kind-path` check), STA-340 (the decorator-registry checks and the `names` validator row for abbreviations and banned identifiers), and oxlint `unicorn/filename-case` and the house rules of ADR 0129. Nothing else here is checked yet.
 
 <!-- source: .agents/rules/not-built-yet.md -->
 

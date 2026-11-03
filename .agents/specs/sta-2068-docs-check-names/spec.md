@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-03
 
-**Status**: Draft <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
+**Status**: Implementing <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
 
 **Tier**: feature
 
@@ -19,7 +19,7 @@
 **Analyze**: —
 
 **Input**: User description: "Work package wp-22 of the gen coverage path: ADR 0294 names the gen check
-`two_kinds_in_file` where gen emits `two_declarations_in_file` (G-210), and the rules and ADR Enforcement sections
+the retired name (two kinds in file) where gen emits `two_declarations_in_file` (G-210), and the rules and ADR Enforcement sections
 still mark as planned gen checks that gen already refuses with (G-211). Fix the docs, and add a test that fails when a
 doc names a code as built that gen does not have."
 
@@ -64,7 +64,7 @@ names a code gen never prints.
 
 **Why this priority**: G-210 sends a reader to a name that does not exist in gen.
 
-**Independent Test**: `git grep two_kinds_in_file` finds nothing.
+**Independent Test**: `git grep` for the retired name finds nothing.
 
 **Acceptance Scenarios**:
 
@@ -140,7 +140,7 @@ code and the file in the message.
 ### Functional Requirements
 
 - **FR-001**: THE docs SHALL name the one-declaration-per-file gen check `two_declarations_in_file`, and no file in
-  the repository SHALL contain `two_kinds_in_file`.
+  the repository SHALL contain the retired name (the test builds it from parts so that it holds no copy).
 - **FR-002**: WHEN gen's source emits a check code that an Enforcement row of ADR 0263, 0294, 0305 or 0307, or of the
   rules `ai-tools` or `naming-and-casing`, lists as planned THE row SHALL move the code to an `automated —` row that
   names it.
@@ -151,14 +151,14 @@ code and the file in the message.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
-- **AC-001**: WHEN `git grep two_kinds_in_file` runs THE repository SHALL return nothing.
+- **AC-001**: WHEN `git grep` for the retired name runs THE repository SHALL return nothing.
 - **AC-002**: WHEN the gen tests run THE test SHALL find every code named on a built row in gen's source.
 - **AC-003**: WHEN a reader reads the touched Enforcement rows THE rows SHALL mark as planned only checks that gen
   does not have.
 
 ## Success Criteria _(mandatory)_
 
-- **SC-001**: `git grep two_kinds_in_file` is empty — verified by: manual (and the test asserts it for the checked
+- **SC-001**: `git grep` for the retired name is empty — verified by: manual (and the test asserts it for the checked
   documents)
 - **SC-002**: `gen-codes-documented.test.ts` passes on ci-box and fails on a planted fake code — verified by: unit
 - **SC-003**: `pnpm verify` (format, lint, the gen tests, validate with the agents-sync check) is green on ci-box —
@@ -190,8 +190,13 @@ code and the file in the message.
 
 ## Amendments
 
-None.
+- 2026-11-03 (implementation): the spec, plan and tasks no longer spell the retired code name, since
+  FR-001 and AC-001 ask that no file in the repository holds it; the test builds the name from parts. The rule
+  `naming-and-casing` keeps one Enforcement paragraph per state (`automated —`, then `Planned —`). ADR 0294's lead
+  sentence "Nothing enforces this grammar yet" now says only gen's checks enforce it. The gen `turbo.jsonc` override
+  also covers `test:coverage`, so a docs edit reruns the coverage run too.
 
 ## Status history
 
 - 2026-11-03 · — → Draft · Claude (STA-2068 session) · created
+- 2026-11-03 · Draft → Implementing · Claude (STA-2068 session) · docs, test and turbo inputs written; ci-box run pending

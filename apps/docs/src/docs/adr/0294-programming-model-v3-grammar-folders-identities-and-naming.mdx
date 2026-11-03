@@ -570,7 +570,7 @@ and MikroORM `EntitySchema` emission from model classes. All three worked once t
 
 ## Enforcement
 
-Nothing enforces this grammar yet. The folder tables in `tools/scripts/structure.mjs` (`KIND_FOLDERS` and
+Only gen's checks below enforce this grammar yet. The folder tables in `tools/scripts/structure.mjs` (`KIND_FOLDERS` and
 `BANNED_FOLDERS`) still hold the pre-v3 list, and `pnpm validate` has no kind-path check.
 
 - planned — STA-338: the day-one lint rules `lines-between-class-members`, `multiline-decorator-options`,
@@ -583,17 +583,21 @@ Nothing enforces this grammar yet. The folder tables in `tools/scripts/structure
   ([0301](/adr/0301-stackra-seo-package) decision 6); `override-only` (an override declares no new field and uses no
   `as const`); `no-new-shape` extended to models; a required `declare` when a model narrows a trait field; the
   sibling-module boundary rules; and `structure.mjs` rebuilt as the single source of the tables in this record.
-- planned — STA-340: the gen checks `kind_suffix_mismatch`, `kind_class_name`, `two_kinds_in_file`, `kind_unregistered_base`,
-  `shape_number_kind`, `shape_unknown_type`, `shape_default_not_constant`, `shape_rule_not_constant`,
-  `shape_hatch_reason_missing`, `shape_decorator_type_mismatch`, `action_handle_signature`, `identity_changed` (with no
-  `@Renamed`), `identity_collision` and `i18n_key_missing`; the generated `X$Check` assertions; the link check of
-  decision 28; and the zod 4.6.7 entry in the `pnpm-workspace.yaml` catalog, which does not hold zod yet.
+- automated — `stackra gen` (`check-conventions.function.ts`, `create-source-reader.function.ts`,
+  `check-identity-lock.function.ts`, `build-manifest.function.ts` and `check-i18n.function.ts` in
+  `packages/developer/gen`): `kind_suffix_mismatch`, `kind_class_name`, `two_declarations_in_file`,
+  `kind_unregistered_base`, `shape_number_kind`, `shape_unknown_type`, `shape_default_not_constant`,
+  `shape_rule_not_constant`, `shape_hatch_reason_missing`, `shape_decorator_type_mismatch`, `action_handle_signature`,
+  `identity_changed` (with no `@Renamed`), `identity_collision` and `i18n_key_missing`; and, for the amendment of
+  2026-10-23, `secret_name_missing` (a `@Secret` with no name).
+- planned — STA-340: the generated `X$Check` assertions; the link check of decision 28; and the zod 4.6.7 entry in the
+  `pnpm-workspace.yaml` catalog, which does not hold zod yet.
 - planned — STA-343: `useDefineForClassFields: true` set explicitly in the TypeScript presets
   ([0300](/adr/0300-published-tooling-presets-and-enforced-spell-checking) decision 6).
 - The spikes of STA-335 ran outside this repository; their results are decisions 25 to 28. The conversion of the
   template is STA-337, and the conversion of this repository's members is STA-344.
-- planned — STA-340, for the amendment of 2026-10-23: the gen checks `secret_name_missing` (a `@Secret` with no name)
-  and `refresh_on_domain_event` (a `refreshOn` entry that is a domain event), the sibling-module rule that allows
+- planned — STA-340, for the amendment of 2026-10-23: the gen check `refresh_on_domain_event` (a `refreshOn` entry
+  that is a domain event), the sibling-module rule that allows
   `extensions/*.extension-point.ts`, and the amended groups in `structure.mjs`. Today `MODULE_GROUPS`, `APP_GROUPS`
   and `PACKAGE_FOLDERS` in `tools/scripts/structure.mjs`, and the structure page they render, hold the tables of
   2026-10-22 without the amendment's rows. Nothing checks that a model avoids a kind base name.

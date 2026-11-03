@@ -7,11 +7,11 @@
 ## Summary
 
 Edit the Enforcement sections of ADR 0263, 0294, 0305 and 0307 and the Enforcement rows of the rules `ai-tools` and
-`naming-and-casing`: rename `two_kinds_in_file` to `two_declarations_in_file`, and split each stale `planned —` row
+`naming-and-casing`: rename the retired name (two kinds in file) to `two_declarations_in_file`, and split each stale `planned —` row
 into an `automated —` row naming the codes gen has (with the gen file that raises them) and a `planned —` row keeping
 the rest. Regenerate the `AGENTS.md` projection with `tools/scripts/agents-sync.mjs`. Add one vitest file in
 `@stackra/gen` that reads those sections, collects the backticked snake_case codes on `automated —` rows, and asserts
-each is a quoted literal of gen's non-test source; it also asserts `two_kinds_in_file` appears in none of them.
+each is a quoted literal of gen's non-test source; it also asserts the retired name appears in none of them.
 
 ## Technical Context
 
@@ -49,7 +49,7 @@ each is a quoted literal of gen's non-test source; it also asserts `two_kinds_in
 
 ## Correctness properties
 
-- **P-001**: no checked document contains `two_kinds_in_file` — Validates: FR-001
+- **P-001**: no checked document contains the retired name — Validates: FR-001
 - **P-002**: every backticked snake_case token on an `automated —` row of a checked document is a quoted literal in
   gen's non-test source — Validates: FR-002, FR-004
 - **P-003**: each code moved to an `automated —` row is absent from the `planned —` rows of the same section, and each
@@ -77,7 +77,8 @@ section into rows, keeps the rows that start with `automated —`, and compares 
 ## Files and folders
 
 - `packages/developer/gen/src/core/constants/__tests__/gen-codes-documented.test.ts` (new)
-- `packages/developer/gen/turbo.jsonc` (a `tasks.test.inputs` override: `$TURBO_DEFAULT$` plus the six documents)
+- `packages/developer/gen/turbo.jsonc` (`tasks.test.inputs` and `tasks.test:coverage.inputs` overrides: `$TURBO_DEFAULT$`
+  plus the six documents)
 - `apps/docs/src/docs/adr/0263-di-stays-and-gen-writes-the-wiring.mdx`
 - `apps/docs/src/docs/adr/0294-programming-model-v3-grammar-folders-identities-and-naming.mdx`
 - `apps/docs/src/docs/adr/0305-programming-model-v3-1-names-partners-files-and-class-components.mdx`
@@ -105,7 +106,7 @@ none
 
 ## Testing strategy
 
-- AC-001: the test asserts no checked document contains `two_kinds_in_file`; `git grep two_kinds_in_file` is run by
+- AC-001: the test asserts no checked document contains the retired name; `git grep` for it is run by
   hand before the commit.
 - AC-002: the test itself, run on ci-box; once with a planted `` `no_such_code` `` on a built row to see it fail
   (not committed).
