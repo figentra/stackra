@@ -79,7 +79,7 @@ describe("OrganizationPage (web)", () => {
   it("reads the profile into labelled fields beside the handle and the market", async () => {
     const { wrap } = await setUp();
     render(wrap(<OrganizationPage labels={LABELS} />));
-    expect(screen.getByRole("heading", { name: "Organisation" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Organisation" })).toBeTruthy();
     expect(((await field("^Name")) as HTMLInputElement).value).toBe("Acme");
     expect(((await field("Time zone")) as HTMLInputElement).value).toBe("Asia/Riyadh");
     expect(screen.getByText("acme")).toBeTruthy();
@@ -133,8 +133,12 @@ describe("OrganizationPage (web)", () => {
     expect(screen.getByText("acme.example")).toBeTruthy();
     expect(screen.getByText("Verified")).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Legal entities" })).toBeNull();
-    const headings = screen.getAllByRole("heading").map((heading) => heading.textContent);
-    expect(headings.indexOf("Domains")).toBeLessThan(headings.indexOf("Profile"));
+    // The profile is a fieldset whose legend is its title, so it is found as a group, not a heading.
+    const profile = screen.getByRole("group", { name: "Profile" });
+    const domains = screen.getByRole("heading", { name: "Domains" });
+    expect(
+      domains.compareDocumentPosition(profile) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("shows the host's words for a legal entity without a tax number", async () => {
