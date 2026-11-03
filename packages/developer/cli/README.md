@@ -284,7 +284,11 @@ origin exits 1.
 `stackra db diff [--json]` compares the member's models with the schema its migrations build, with no database and no
 network: it compiles the member's migrations (its own and its declared packages', in gen's order), replays them on an
 in-memory PGlite through the member's own `@stackra/database/node`, and compares tables, columns (type and
-nullability), indexes and foreign keys with what the models declare. One line per difference,
+nullability), indexes and foreign keys with what the models declare: each many-to-many relation's pivot table (its
+two keys, the owner's `tenant_id` and their foreign keys) and a `@Searchable` model's `search_text` and
+`search_filters` included, its vectors and rebuild shadows tolerated (search columns on another table are undeclared),
+and a partial index's predicate compared as Postgres rewrites it (`in` as `= ANY`, `like` as `~~`, casts dropped). One
+line per difference,
 `<module>  <table>  <kind>  <subject>  <expected>  <actual>`; `--json` prints the same as an array. Exit 0 when they
 agree, 1 on a difference, 2 when a migration does not compile or replay, or `@stackra/database` or PGlite
 (`@electric-sql/pglite`, `@electric-sql/pglite-pgvector`) is not installed in the member. Only the member's own modules
