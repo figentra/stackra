@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `Contribution`, one entry a host's dependency records in a section of its manifest (a resource, a route, a
  *          menu, a command), with its key and the member it came from.
- * Boundary: a type only; built by `contributionsOf`.
+ * Boundary: a type only; built by `dependencyContributionsOf`.
  * Runtime: isomorphic
  * Governing contract: ADR 0111 (decision 3); STA-1947.
  */

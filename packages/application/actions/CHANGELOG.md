@@ -1,5 +1,31 @@
 # @stackra/actions
 
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/testing@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/cache@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/testing@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/cache@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes
