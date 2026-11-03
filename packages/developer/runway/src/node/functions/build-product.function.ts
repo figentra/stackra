@@ -13,7 +13,7 @@
  * Boundary: writes under the product root only (`.stackra/`, `dist/`); builds through the given bundler, so Runway
  *           carries no build tool. Store accounts are checked when the app is submitted (`deployProduct`), not here.
  *           `ops` has no shell of a product's: its `contributes` is written as a declarative bundle (the
- *           contributions file and its manifest), with no bundler.
+ *           contributions file and its manifest), with no bundler, and only when the surface bundles would be.
  * Runtime: node
  * Governing contract: ADR 0436 (decisions 2 and 4); ADR 0439 (decisions 2 and 3); ADR 0441 (decision 3); ADR 0481.
  */
@@ -206,7 +206,8 @@ export async function buildProduct(request: ProductBuildRequest): Promise<Produc
         path: "surfaces.ops.contributes",
         message: `${normalized.package} is not a package under packages/`,
       });
-    else {
+    // The surface bundles' guard: a dry or refused build keeps the last ops bundle.
+    else if (request.dryRun !== true && issues.length === 0) {
       const outDir = join(repository, EDGE_PUBLISH_SETTINGS.bundleDir, "ops", version);
       rmSync(join(repository, EDGE_PUBLISH_SETTINGS.bundleDir, "ops"), {
         recursive: true,
@@ -218,7 +219,7 @@ export async function buildProduct(request: ProductBuildRequest): Promise<Produc
         `${JSON.stringify({ product: root.product?.key ?? root.project, contributes: normalized }, null, 2)}\n`,
       );
       ops = {
-        package: normalized.package,
+        package: root.product?.key ?? root.project,
         surface: "ops",
         targets: EDGE_PUBLISH_SETTINGS.opsTargets,
         version,

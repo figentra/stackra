@@ -2,9 +2,10 @@
  * Stackra file contract:
  * Purpose: `publishProduct(request)`, Runway's publish step for one product checkout and one environment: checks the
  *          ops second-reviewer gate, reads every web surface's built bundle and the `ops` contributions bundle
- *          `buildProduct` writes, refuses one whose `targets` the edge does not serve, builds the platform `host:` and `wellknown:` rows, then uploads each bundle to the asset
- *          store and writes the rows, and for each surface either the `release:` pointer (a first release) or the
- *          `canary:` row with the canary scopes (D6), and answers what it wrote.
+ *          `buildProduct` writes, refuses one whose `targets` the edge does not serve, builds the platform `host:` and
+ *          `wellknown:` rows, then uploads each bundle to the asset store and writes the rows, and for each surface
+ *          either the `release:` pointer (a first release) or the `canary:` row with the canary scopes (D6), and
+ *          answers what it wrote.
  * Boundary: every check runs before the first upload or write, so a refused publish changes nothing. Writes through
  *           the `EdgeKvWriter` port and uploads with wrangler only. Bundles upload before any pointer moves. Runway
  *           writes these rows by hand until the OS edge projector exists (app-shells 16.10); the registry manifest

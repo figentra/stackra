@@ -346,8 +346,9 @@ checkout it runs the `compatibility` build with the next shell's import map, the
 edge will not serve or whose imports the next map does not resolve, listing every break at once. Every threshold,
 window, folder, command and header is in `EDGE_PUBLISH_SETTINGS`.
 
-Not built here: the registry manifest publish (ADR 0109) and the registry's own release refusal, the landing seed import, removing rows of hosts a runway no longer lists, the metrics query that
-fills a `CanarySample`, and the CI workflows that call these functions.
+Not built here: the registry manifest publish (ADR 0109) and the registry's own release refusal, the landing seed
+import, removing rows of hosts a runway no longer lists, the metrics query that fills a `CanarySample`, and the CI
+workflows that call these functions.
 
 ## Dev lanes and the repository index
 
