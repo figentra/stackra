@@ -15,6 +15,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "@stackra/testing";
 
+import { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import type { DeployTarget } from "#core/types/deploy-target.type";
@@ -100,6 +101,7 @@ function fakeRunner(
       if (answers.deploy === "throw") throw new Error("deploy failed");
       return `Uploaded\nWorker Version ID: ${VERSION}\n`;
     }
+    if (sub === "deploy") return `Deployed\nCurrent Version ID: ${VERSION}\n`;
     if (sub === "deployments" && args[3] === "status")
       return JSON.stringify({ versions: [{ version_id: BEFORE, percentage: 100 }] });
     if (sub === "deployments") return answers.list ?? deployments(SHA);
@@ -208,11 +210,42 @@ describe("CloudflareWorkersProviderDriver", () => {
 
     writeFileSync(
       join(root, "workers/registry/wrangler.jsonc"),
-      `{ "name": "x", "migrations": [{ "tag": "v1" }] }`,
+      `{ "name": "x", // a Durable Object
+  "migrations": [{ "tag": "v1" },], }`,
     );
     const migrating = fakeRunner(root);
     await workers(root, migrating.run).apply(gradual, SHA);
-    expect(migrating.calls.filter((call) => call.includes("versions deploy"))).toHaveLength(1);
+    expect(migrating.calls.some((call) => call.includes("versions"))).toBe(false);
+    expect(migrating.calls.some((call) => call.includes("wrangler deploy"))).toBe(true);
+  });
+
+  it("puts the previous version back when a rollout step fails its smoke", async () => {
+    const root = repository();
+    const gradual = {
+      ...WEB,
+      settings: {
+        members: {
+          registry: { path: "workers/registry", preset: "api", smoke: "https://x.test/ping" },
+        },
+      },
+    };
+    const { run, calls } = fakeRunner(root);
+    let seen = 0;
+    const driver = workers(root, run);
+    driver.sleep = async () => {};
+    driver.fetch = async () => ({ ok: ++seen < 3, status: seen < 3 ? 200 : 503 }); // 0%, step 1 pass; step 2 fails
+    await expect(driver.apply(gradual, SHA)).rejects.toThrow(RunwayDeployFailedError);
+    expect(calls.at(-1)).toContain(`wrangler rollback ${BEFORE} --message ${SHA}`);
+    expect(calls.filter((call) => call.includes("versions deploy"))).toHaveLength(2);
+
+    // A failing first move changes nothing, so nothing is reverted.
+    const first = fakeRunner(root);
+    const stuck = workers(root, async (command, args, options) => {
+      if (args.includes("deploy") && args.includes("versions")) throw new Error("move failed");
+      return first.run(command, args, options);
+    });
+    await expect(stuck.apply(gradual, SHA)).rejects.toThrow("move failed");
+    expect(first.calls.some((call) => call.includes("rollback"))).toBe(false);
   });
 
   it("restores the config when the deploy fails", async () => {

@@ -5,7 +5,8 @@
  *          ships under the target's kind, swaps the placeholder binding ids in its `wrangler.jsonc` for the real ones
  *          (restored afterwards), applies its D1 migrations, renders the operational settings of runway.yaml into it (ADR 0519), uploads a version (`wrangler versions upload --message <sha>`) with its
  *          secrets on stdin, smoke-tests it at 0% by version override, then moves traffic to it in the member's `rollout`
- *          steps (production only; all at once with a Durable Object migration). Current reads the commit back from `wrangler deployments list`, verify adds each
+ *          steps (production only), smoke-testing after each hold and putting the previous version back at 100% on a
+ *          failure; a member with Durable Object migrations goes out through `wrangler deploy` at 100% instead. Current reads the commit back from `wrangler deployments list`, verify adds each
  *          member's smoke URL, and rollback returns every member to the version recorded for a commit.
  * Boundary: runs `pnpm` (turbo and each member's own wrangler) through the given `CommandRunner`; wrangler logs in
  *           with the job's `CLOUDFLARE_API_TOKEN` (OIDC from Infisical in CI) or the owner's session. Ids, vars and
@@ -24,6 +25,7 @@ import type { HealthReport } from "@stackra/contracts";
 import type { z } from "zod";
 
 import { CLOUDFLARE_WORKERS_SETTINGS_SCHEMA } from "#core/constants/cloudflare-workers-settings-schema.constant";
+import { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
@@ -47,8 +49,8 @@ const SHA = /^[0-9a-f]{40}$/;
 /** A binding id wrangler accepts (a D1 uuid, a 32-hex KV namespace); nothing that could break out of a JSON string. */
 const ID = /^[A-Za-z0-9-]+$/;
 
-/** The version line `wrangler deploy` prints. */
-const VERSION = /Worker Version ID:\s*([0-9a-f-]{36})/;
+/** The version line `wrangler versions upload` ("Worker Version ID") and `wrangler deploy` ("Current Version ID") print. */
+const VERSION = /(?:Worker|Current) Version ID:\s*([0-9a-f-]{36})/;
 
 /** How long a gradual rollout holds each partial step. */
 const ROLLOUT_HOLD_MS = 5 * 60_000;
@@ -140,9 +142,16 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           await this.run("pnpm", [...WRANGLER, "d1", "migrations", "apply", database, "--remote"], {
             cwd,
           });
+        // `render` already stripped the JSONC comments and trailing commas: `swapped` is strict JSON.
+        const deployed = JSON.parse(swapped) as { name?: string; migrations?: unknown };
+        // "Versions of Worker bundles that change Durable Object class lifecycle cannot be uploaded"; apply them
+        // with `wrangler deploy` (developers.cloudflare.com/workers/versions-and-deployments/gradual-deployments/
+        // with-durable-objects/). So a member with migrations goes out at 100% that way (ADR 0519 decision 3).
+        // shortcut: any `migrations` array takes this path, applied or not; diff the tags against the live ones to split again.
+        const migrating = deployed.migrations !== undefined;
         const output = await this.run(
           "pnpm",
-          this.uploadArgs(member, sha, (name) => this.env[name] ?? ""),
+          this.uploadArgs(member, sha, (name) => this.env[name] ?? "", migrating),
           {
             cwd,
             // The secrets ride the version, on stdin: no file, no argument.
@@ -159,25 +168,31 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           throw new RunwayUnresolvedError(
             `wrangler versions upload of ${key} printed no version id`,
           );
-        const deployed = JSON.parse(swapped) as { name?: string; migrations?: unknown };
+        if (migrating) {
+          versions.push(`${key}=${version}`);
+          continue;
+        }
         // The version takes no traffic yet; the smoke request is routed to it by header.
-        if (member.smoke !== undefined) {
-          const failure = await this.smoke(member.smoke, {
-            "Cloudflare-Workers-Version-Overrides": `${deployed.name ?? ""}="${version}"`,
-          });
+        const url = member.smoke;
+        const check =
+          url === undefined
+            ? undefined
+            : () =>
+                this.smoke(url, {
+                  "Cloudflare-Workers-Version-Overrides": `${deployed.name ?? ""}="${version}"`,
+                });
+        if (check !== undefined) {
+          const failure = await check();
           if (failure !== undefined)
             throw new RunwayUnresolvedError(
               `${key} version ${version} failed its 0% smoke ${member.smoke} (${failure}); no traffic moved`,
             );
         }
-        // A Durable Object migration must go out at 100% (ADR 0519 decision 3).
         const steps =
-          target.environment === "production" &&
-          deployed.migrations === undefined &&
-          member.rollout !== undefined
+          target.environment === "production" && member.rollout !== undefined
             ? member.rollout
             : [100];
-        await this.rollOut(cwd, version, steps, sha);
+        await this.rollOut(target, cwd, version, steps, sha, check);
         versions.push(`${key}=${version}`);
       } finally {
         if (swapped !== original) await writeFile(config, original);
@@ -245,11 +260,15 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   }
 
   /** `wrangler versions upload` with the commit as its message, each var from `valueOf` and the secrets from stdin. */
-  private uploadArgs(member: Member, sha: string, valueOf: (name: string) => string): string[] {
+  private uploadArgs(
+    member: Member,
+    sha: string,
+    valueOf: (name: string) => string,
+    migrating = false,
+  ): string[] {
     return [
       ...WRANGLER,
-      "versions",
-      "upload",
+      ...(migrating ? ["deploy"] : ["versions", "upload"]),
       "--message",
       sha,
       ...member.vars.flatMap((name) => ["--var", `${name}:${valueOf(name)}`]),
@@ -272,10 +291,12 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
 
   /** Moves traffic to `version` in `steps`, the rest staying on the version that served before. */
   private async rollOut(
+    target: DeployTarget,
     cwd: string,
     version: string,
     steps: readonly number[],
     sha: string,
+    check: (() => Promise<string | undefined>) | undefined,
   ): Promise<void> {
     let before: string | undefined;
     if (steps.length > 1 || steps[0] !== 100) {
@@ -291,21 +312,44 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       if (before === undefined)
         throw new RunwayUnresolvedError("a gradual rollout needs a deployed version to split with");
     }
-    for (const [index, percent] of steps.entries()) {
-      await this.run(
-        "pnpm",
-        this.deployVersionArgs(
-          percent === 100 || before === undefined
-            ? [[version, 100]]
-            : [
-                [version, percent],
-                [before, 100 - percent],
-              ],
-          sha,
-        ),
-        { cwd },
-      );
-      if (index < steps.length - 1) await this.sleep(ROLLOUT_HOLD_MS);
+    let moved = false;
+    try {
+      for (const [index, percent] of steps.entries()) {
+        await this.run(
+          "pnpm",
+          this.deployVersionArgs(
+            percent === 100 || before === undefined
+              ? [[version, 100]]
+              : [
+                  [version, percent],
+                  [before, 100 - percent],
+                ],
+            sha,
+          ),
+          { cwd },
+        );
+        moved = true;
+        if (index < steps.length - 1) await this.sleep(ROLLOUT_HOLD_MS);
+        // Each hold ends in a smoke of the new version; a single 100% move is left to verify.
+        const failure = before === undefined ? undefined : await check?.();
+        if (failure !== undefined)
+          throw new RunwayUnresolvedError(
+            `${version} failed its smoke at ${percent}% (${failure})`,
+          );
+      }
+    } catch (error) {
+      if (!moved || before === undefined) throw error;
+      // Production is split or moved: put the previous version back at 100% before failing.
+      await this.run("pnpm", [...WRANGLER, "rollback", before, "--message", sha], { cwd });
+      throw new RunwayDeployFailedError(target.id, [
+        {
+          record: { target: target.id, sha, reference: before },
+          report: {
+            status: HealthStatus.Down,
+            detail: `${version} rolled back to ${before}: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        },
+      ]);
     }
   }
 
