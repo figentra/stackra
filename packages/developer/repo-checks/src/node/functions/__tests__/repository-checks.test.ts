@@ -474,6 +474,7 @@ type Issue = { readonly path: string; readonly message: string };
 /** A stand-in for the built @stackra/runway entry: records its calls and refuses documents with `bad: true`. */
 function stubRunway(
   placement: readonly { readonly code: string; readonly message: string }[] = [],
+  requires: readonly Issue[] = [],
 ) {
   class RunwayInvalidError extends Error {
     readonly issues: readonly Issue[];
@@ -501,11 +502,15 @@ function stubRunway(
       calls.push(["checkPlacement", (root as { readonly project?: string }).project, services]);
       return placement;
     },
+    checkRequires(root: unknown, service: unknown) {
+      calls.push(["checkRequires", (root as { readonly project?: string }).project, service]);
+      return requires;
+    },
   };
   return { calls, runway };
 }
 
-test("checkRunwayFiles: each file is parsed for its kind; only the root reaches checkPlacement", () => {
+test("checkRunwayFiles: each file is parsed for its kind; the root reaches checkPlacement, each service checkRequires", () => {
   const files: Record<string, string> = {
     "runway.yaml": "version: 3\nproject: acme\nenvironments: {}\n",
     "apps/docs/runway.yaml": "version: 3\nenvironments: {}\n",
@@ -524,7 +529,28 @@ test("checkRunwayFiles: each file is parsed for its kind; only the root reaches 
     ["checkPlacement", "acme", ["commerce"]],
     ["parseRunway", "app", "apps/docs/runway.yaml"],
     ["parseRunway", "service", "services/commerce/runway.yaml"],
+    ["checkRequires", "acme", { version: 3, environments: {} }],
   ]);
+});
+
+test("checkRunwayFiles: an unserved requirement names the service file and its requires path", () => {
+  const files: Record<string, string> = {
+    "services/commerce/runway.yaml": "version: 3\nenvironments: {}\n",
+    "runway.yaml": "version: 3\nproject: acme\n",
+  };
+  const { runway } = stubRunway(
+    [],
+    [{ path: "requires.cache", message: "No driver serves this valkey requirement" }],
+  );
+  assert.deepEqual(
+    checkRunwayFiles({
+      files: Object.keys(files),
+      read: (p) => files[p] ?? "",
+      runway,
+      services: ["commerce"],
+    }),
+    ["services/commerce/runway.yaml: requires.cache: No driver serves this valkey requirement"],
+  );
 });
 
 test("checkRunwayFiles: schema issues name file and path; placement issues name the code", () => {

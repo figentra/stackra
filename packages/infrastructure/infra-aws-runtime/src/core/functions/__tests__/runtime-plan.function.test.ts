@@ -225,17 +225,4 @@ describe("runtimePlan", () => {
       runtimePlan(ROOT, { commerce: commerceWith({ eviction: "random" }) }, "staging"),
     ).toThrow(/environments\.staging\.cache\.eviction/);
   });
-
-  it("refuses a dedicated cache that no environment's cache driver serves", () => {
-    const root = parseRunway("root", {
-      version: 3,
-      project: "acme-platform",
-      environments: {
-        staging: { defaults: { service: { config: { cache: { driver: "memory" } } } } },
-      },
-    });
-    expect(() =>
-      runtimePlan(root, { commerce: commerceWith({ memoryMb: 1024 }) }, "staging"),
-    ).toThrow(/requires\.cache: No driver serves this dedicated valkey cache/);
-  });
 });

@@ -1,5 +1,6 @@
 ---
-"@stackra/infra-aws-runtime": patch
+"@stackra/runway": minor
+"@stackra/repo-checks": minor
 ---
 
-`runtimePlan` refuses a dedicated Valkey `requires` entry that no environment's cache driver serves, with a `RunwayInvalidError` at `requires.<name>` (STA-2049).
+`checkRequires(root, service)` reports each `valkey` entry of a service runway's `requires` that no environment's cache driver serves, at `requires.<name>`; `stackra validate` (`checkRunwayFiles`) now runs it for every service runway against the root (STA-2049).
