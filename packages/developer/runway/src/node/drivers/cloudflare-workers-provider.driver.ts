@@ -25,12 +25,14 @@ import type { z } from "zod";
 import { CLOUDFLARE_WORKERS_SETTINGS_SCHEMA } from "#core/constants/cloudflare-workers-settings-schema.constant";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
+import { diffWorkerSettings } from "#core/functions/diff-worker-settings.function";
 import { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
 import { workerSettingsOf } from "#core/functions/worker-settings-of.function";
 import { RunwayProvider } from "#core/ports/runway-provider.port";
 import type { DeployRecord } from "#core/types/deploy-record.type";
 import type { DeployStep } from "#core/types/deploy-step.type";
 import type { DeployTarget } from "#core/types/deploy-target.type";
+import type { WorkerDrift } from "#core/types/worker-drift.type";
 import { runCommand } from "#node/functions/run-command.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
 
@@ -76,6 +78,17 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   /** The smoke request; a test replaces it. */
   fetch: (url: string) => Promise<{ readonly ok: boolean; readonly status: number }> = (url) =>
     globalThis.fetch(url, { redirect: "manual", signal: AbortSignal.timeout(30_000) });
+
+  /** A read-only Cloudflare API GET, the `result` of the answer; a test replaces it. */
+  read: (path: string, token: string) => Promise<Record<string, unknown>> = async (path, token) => {
+    const response = await globalThis.fetch(`https://api.cloudflare.com/client/v4${path}`, {
+      headers: { authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!response.ok)
+      throw new RunwayUnresolvedError(`Cloudflare answered ${response.status} to GET ${path}`);
+    return ((await response.json()) as { result: Record<string, unknown> }).result;
+  };
 
   /** The repository root the member paths are relative to. */
   root = ".";
@@ -193,6 +206,43 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         { cwd: join(this.root, member.path) },
       );
     return { target: target.id, sha: to.sha, reference: to.reference };
+  }
+
+  /**
+   * Per member (of any kind), what runway.yaml renders against what Cloudflare reports (ADR 0519 decision 7). Reads
+   * only, with `CLOUDFLARE_API_TOKEN_READ`; changes nothing.
+   */
+  async drift(target: DeployTarget): Promise<WorkerDrift[]> {
+    const token = this.env["CLOUDFLARE_API_TOKEN_READ"];
+    if (!token)
+      throw new RunwayUnresolvedError(
+        "Set CLOUDFLARE_API_TOKEN_READ (a read-only token) to read drift",
+      );
+    const settings = CLOUDFLARE_WORKERS_SETTINGS_SCHEMA.parse(target.settings);
+    const drifts: WorkerDrift[] = [];
+    for (const [key, member] of Object.entries(settings.members)) {
+      if (this.only.length > 0 && !this.only.includes(key)) continue;
+      const config = await readFile(join(this.root, member.path, "wrangler.jsonc"), "utf8");
+      const rendered = JSON.parse(this.render(target, key, config)) as Record<string, unknown>;
+      const worker = String(rendered["name"]);
+      const account = String(rendered["account_id"] ?? this.env["CLOUDFLARE_ACCOUNT_ID"] ?? "");
+      if (!/^[0-9a-f]{32}$/.test(account))
+        throw new RunwayUnresolvedError(
+          `${key} has no account_id in wrangler.jsonc or CLOUDFLARE_ACCOUNT_ID`,
+        );
+      const base = `/accounts/${account}/workers/scripts/${encodeURIComponent(worker)}`;
+      const [script, subdomain] = await Promise.all([
+        this.read(`${base}/settings`, token),
+        this.read(`${base}/subdomain`, token),
+      ]);
+      const live = {
+        ...script,
+        workers_dev: subdomain["enabled"],
+        preview_urls: subdomain["previews_enabled"],
+      };
+      drifts.push({ member: key, worker, rows: diffWorkerSettings(rendered, live) });
+    }
+    return drifts;
   }
 
   /** The commit every member serves, or `null` when they differ or one was never deployed by runway. */
