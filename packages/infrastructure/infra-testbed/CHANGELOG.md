@@ -1,5 +1,11 @@
 # @stackra/infra-testbed
 
+## 0.8.0
+
+### Patch Changes
+
+- @stackra/contracts@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes

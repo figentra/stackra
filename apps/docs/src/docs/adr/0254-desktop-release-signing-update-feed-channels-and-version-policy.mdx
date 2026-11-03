@@ -39,6 +39,8 @@ The desktop pipeline needs signing, an update feed and a version policy. The own
 
 planned — the release job builds the AppImage on each release tag; the update feed is checked by the channel test; the Electron version is pinned in the lock file and checked by `pnpm validate`.
 
+Note of 2026-11-02 (STA-2028): no repository set an app runway's `release.desktop.channels`, `.platforms` or `.signing`, and nothing read them, so they left the runway schema. Signing has no switch since 0344 decision 7. The channels and the per-platform formats come back with the desktop release job that reads them. `release.desktop.feedPath` and each environment's `desktop.channel` stay.
+
 ## Open questions
 
 1. The day a desktop deliverable is named, which triggers signing. The owner names it.

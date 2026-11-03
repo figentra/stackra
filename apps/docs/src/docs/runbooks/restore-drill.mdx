@@ -1,0 +1,83 @@
+---
+title: "Backups and the quarterly restore drill"
+description: "Where an environment's backup and point-in-time recovery settings live in runway.yaml, what the infra packages provision from them, and the quarterly restore drill that proves the 15 minute and 4 hour objectives, with its record."
+icon: "database-backup"
+---
+
+A backup that has never been restored is a hope. The restore drill is the only evidence that the objectives of
+[ADR 0186](/adr/0186-backups-and-disaster-recovery) hold (recovery point 15 minutes, recovery time 4 hours), so it runs
+every quarter and is recorded. It replaces the drill of
+[ADR 0048](/adr/0048-point-in-time-recovery-and-quarterly-restore-drill).
+
+## The settings
+
+Backups are declared per environment in the root `runway.yaml`, under `environments.<env>.shared.database.backups`.
+One database server per environment ([ADR 0238](/adr/0238-database-and-connection-model)), so the settings
+apply to the whole server; a service's own `runway.yaml` never carries them.
+
+| Key              | Meaning                                                                           | Default   |
+| ---------------- | --------------------------------------------------------------------------------- | --------- |
+| `pitr`           | Point-in-time recovery on or off                                                  | off       |
+| `pitrDays`       | Days of recovery window (Google Cloud SQL only, 1 to 35)                          | 14 on AWS |
+| `retentionDays`  | Days a snapshot is kept (AWS: the copy in the backup account)                     | 35 on AWS |
+| `cryptoShredded` | States that erasure destroys the scope's data key, so older copies are unreadable | not set   |
+
+Keep `retentionDays` at 35 or less. A longer value is refused unless `cryptoShredded: true` is stated, so a backup
+never outlives an erasure ([ADR 0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy) decision 3).
+
+```yaml
+environments:
+  production:
+    shared:
+      database:
+        backups:
+          pitr: true
+          retentionDays: 35
+```
+
+`@stackra/infra-aws` reads these keys (`awsBaselineConfig`) and builds the AWS Backup vault, the continuous backup rule
+and the daily snapshot copied to the backup account. `@stackra/infra-gcp` reads them (`gcpRuntimeConfig`) for Cloud SQL
+backups and point-in-time recovery. Both refuse a value past the ceiling and check the schema before any Pulumi program
+runs. Run `pulumi preview` against a non-production stack to see the effect; the owner applies it.
+
+## The drill
+
+Run it in the first week of each quarter, against production-shaped data, never against the production server.
+
+<Steps>
+  <Step title="Open the record">
+    Open a Linear issue titled `Restore drill <year> Q<n>` and note the start time. Pick the restore point: a moment
+    at least one hour in the past, and inside the recovery window.
+  </Step>
+  <Step title="Restore into a separate environment">
+    Restore the production database to that point into a new server in a separate stack or account. Use AWS Backup
+    (restore the point-in-time recovery point) or the Cloud SQL point-in-time clone. Never restore over the source.
+  </Step>
+  <Step title="Smoke check">
+    Connect with a read-only role and check that the migrations table is current, that a known tenant's rows are
+    present and that the newest row is no later than the restore point.
+  </Step>
+  <Step title="Restore a snapshot from the backup account">
+    Repeat once from the 35-day snapshot in the backup account, to prove a snapshot outlives the account it was taken
+    in.
+  </Step>
+  <Step title="Tear down and record">
+    Delete the restored server, then fill in the record below. A failed drill opens an issue before the next one.
+  </Step>
+</Steps>
+
+## The record
+
+Copy this into the Linear issue and keep the issue as the evidence for SOC 2.
+
+| Field                   | Value                                  |
+| ----------------------- | -------------------------------------- |
+| Date and who ran it     |                                        |
+| Environment and engine  |                                        |
+| Restore point           |                                        |
+| Time to restore         | Target: 4 hours                        |
+| Data lost at the point  | Target: 15 minutes                     |
+| Snapshot restore tested | Yes or no                              |
+| Result                  | Pass, or the issue opened for the fail |
+
+Restoring one tenant out of the pooled database is not covered here; it is an open gap of ADR 0186 (decision 7).

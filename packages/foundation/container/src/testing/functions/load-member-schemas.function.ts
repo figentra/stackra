@@ -6,7 +6,9 @@
  * Boundary: imports by file path from the member root (the working directory vitest runs in), because a `#stackra/*`
  *           import resolves against the importing package, never the member's. A member that has not run
  *           `stackra gen` has no schema folder and loads nothing. Each root loads once per test process.
- *           `compile()` calls it; a setup file may await it so a test file's top-level `X.create(...)` finds its schema.
+ *           `compile()` calls it. A member's generated Vitest setup imports its schemas files statically instead
+ *           (STA-2032): imported from this package in a consumer's node_modules, which Vitest leaves to Node, the files
+ *           would load through Node's loader, with no `#` target fallback and no legacy decorators.
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0294 (decision 26: the shape compiler); registry v3.1 gap G1.
  */
