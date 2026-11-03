@@ -1,5 +1,49 @@
 # @stackra/data-transfer
 
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/filesystem@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/support@0.7.1
+  - @stackra/outbox@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/filesystem@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/support@0.7.0
+  - @stackra/outbox@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/filesystem@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/support@0.6.1
+  - @stackra/outbox@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- @stackra/outbox@0.6.0
+  - @stackra/filesystem@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/support@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

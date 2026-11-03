@@ -5,7 +5,8 @@
  *          Typography classes in the theme's type scale (with Arabic twins and the weight modifiers) and the glass
  *          material's classes, that the material's levels, modes and fallbacks are written (ADR 0320), and that the committed
  *          assets/public/themes/stackra/web.css equals its output byte for byte. The headings draw the display stacks
- *          (STA-1386).
+ *          (STA-1386). The palette and syntax colours are Tailwind colours, and `.button--core` draws HeroUI's primary
+ *          on the champagne core with the accent as its fallback (STA-2015).
  * Boundary: renders in memory; `vitest run -u` rewrites the committed stylesheet.
  * Runtime: node
  * Governing contract: ADR 0302; ADR 0165 (HeroUI v3 on the web); ADR 0022 (test placement).
@@ -13,6 +14,7 @@
 import { ColorRole } from "#contracts/enums/color-role.enum";
 import { MaterialLevel } from "#contracts/enums/material-level.enum";
 import { MaterialMode } from "#contracts/enums/material-mode.enum";
+import { SyntaxRole } from "#contracts/enums/syntax-role.enum";
 import type { Theme } from "#contracts/types/theme.type";
 import { MATERIAL_MODES } from "#core/constants/material-modes.constant";
 import { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
@@ -23,6 +25,9 @@ const css = renderWebCss(STACKRA_THEME);
 const blockOf = (selector: string) => css.split(`${selector} {\n`)[1]?.split("\n}")[0] ?? "";
 
 const layer = css.split("@layer components {\n")[1]?.split("\n}\n")[0] ?? "";
+
+/** The champagne core of ADR 0520 (brand rules §39), which only the stackra theme defines. */
+const CORE = ["core", "core-strong", "core-hover", "core-pressed", "core-soft", "core-foreground"];
 
 // @covers sta-350:FR-003 sta-350:FR-020
 describe("renderWebCss", () => {
@@ -357,5 +362,35 @@ describe("renderWebCss", () => {
       expect(rule).not.toMatch(
         /(?:^|[\s;{])(?:left|right|margin-left|margin-right|translate|transform)\s*:/,
       );
+  });
+
+  // @covers sta-2015:FR-002
+  it("registers the palette and the syntax colours as Tailwind colours, so text-core and bg-core-strong resolve", () => {
+    const registered = css.split("@theme inline {\n")[1]?.split("\n}")[0] ?? "";
+    for (const name of CORE)
+      expect(registered, name).toContain(`  --color-${name}: var(--${name});`);
+    expect(registered.split("\n")).toHaveLength(
+      Object.keys(STACKRA_THEME.palette).length + SyntaxRole.length,
+    );
+    expect(css.indexOf("@theme inline {")).toBeLessThan(css.indexOf(":root {"));
+    // A scoped stylesheet only repaints a section, so it registers no utilities.
+    expect(renderWebCss(STACKRA_THEME, { scope: '[data-preset="x"]' })).not.toContain("@theme");
+  });
+
+  // @covers sta-2015:FR-003
+  it("draws the core button as HeroUI's primary on the champagne core, and as the primary where a theme has none", () => {
+    const rule =
+      "  .button--core {\n    --button-bg: var(--core-strong, var(--accent));\n    --button-bg-hover: var(--core-hover, var(--accent-hover));\n    --button-bg-pressed: var(--core-pressed, var(--accent-hover));\n    --button-fg: var(--core-foreground, var(--accent-foreground));\n  }";
+    expect(layer).toContain(rule);
+    for (const name of CORE) {
+      expect(blockOf(':root,\n[data-theme="light"]')).toContain(`  --${name}: `);
+      expect(blockOf('.dark,\n[data-theme="dark"]')).toContain(`  --${name}: `);
+    }
+    const palette = Object.fromEntries(
+      Object.entries(STACKRA_THEME.palette).filter(([name]) => !CORE.includes(name)),
+    );
+    const plain = renderWebCss({ ...STACKRA_THEME, palette });
+    expect(plain).toContain(rule);
+    expect(plain).not.toMatch(/--core[\w-]*:/);
   });
 });

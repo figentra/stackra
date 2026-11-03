@@ -86,7 +86,7 @@ describe("openApiOf", () => {
     expect(document.paths["/orders"]?.["get"]).not.toHaveProperty("requestBody");
     const open = openApiOf({
       ...manifest,
-      actions: (manifest.actions ?? []).map((action) => ({ ...action, auth: false })),
+      actions: (manifest.actions ?? []).map((action) => ({ ...action, anonymous: true })),
     });
     expect(open.paths["/orders"]?.["get"]).toMatchObject({ security: [] });
   });

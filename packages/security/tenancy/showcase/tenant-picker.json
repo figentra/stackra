@@ -1,0 +1,21 @@
+{
+  "slug": "tenant-picker",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/tenancy",
+  "exportName": "TenantPicker",
+  "parts": ["TenantPicker"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 320
+    }
+  ],
+  "related": ["free/entity-picker", "free/combo-box", "free/select"],
+  "tokens": ["color.field", "color.accent"],
+  "keywords": ["tenant", "organization", "workspace", "picker", "field", "kit"],
+  "status": "new"
+}

@@ -5,7 +5,8 @@
  * Boundary: a pure function over claims the caller has already verified (signature, or TLS from the token endpoint,
  *           plus issuer, audience, expiry and nonce). It reads only `IDENTITY_CLAIMS` and the standard `email`, `name`
  *           and `picture`; a token without the user id or the address is refused, since such a token was not minted
- *           for a Stackra user. The name falls back to the address.
+ *           for a Stackra user. The name falls back to the address. Given the config, it adds the level the
+ *           authentication methods reached (`assuranceOf`), left out when they reach none.
  * Runtime: isomorphic
  * Governing contract: ADR 0206 (decision 2: provider-neutral ids and claims mapping); ADR 0208; ADR 0327.
  */
@@ -15,8 +16,10 @@ import { publicId, url } from "@stackra/validation";
 import { z } from "zod";
 import type { ZodType } from "zod";
 
+import type { IdentityConfig } from "#config/identity.config";
 import type { SessionUser } from "#contracts/types/session-user.type";
 import { IDENTITY_CLAIMS } from "#core/constants/identity-claims.constant";
+import { assuranceOf } from "#core/functions/assurance-of.function";
 
 /** A role code. */
 const ROLE = z.string().min(1);
@@ -45,13 +48,17 @@ const CLAIMS = z.object({
  *
  * @throws UnauthenticatedError when the claims lack the user id or the address, or a membership is malformed.
  * @example
- * const user = sessionUserOf(decodedIdToken);
+ * const user = sessionUserOf(decodedIdToken, identity);
  * switcher.setMemberships(user.memberships);
  */
-export function sessionUserOf(claims: Readonly<Record<string, unknown>>): SessionUser {
+export function sessionUserOf(
+  claims: Readonly<Record<string, unknown>>,
+  config?: Pick<IdentityConfig, "assuranceByMethod">,
+): SessionUser {
   const parsed = CLAIMS.safeParse(claims);
   if (!parsed.success) throw UnauthenticatedError.create({}, { cause: parsed.error });
   const read = parsed.data;
+  const level = config === undefined ? undefined : assuranceOf(claims, config).level;
   return {
     userId: read[IDENTITY_CLAIMS.userId],
     email: read.email,
@@ -65,5 +72,6 @@ export function sessionUserOf(claims: Readonly<Record<string, unknown>>): Sessio
       role: membership.roles[0],
       roles: membership.roles,
     })),
+    ...(level === undefined ? {} : { assurance: level }),
   };
 }

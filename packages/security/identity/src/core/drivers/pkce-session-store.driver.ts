@@ -262,7 +262,7 @@ export class PkceSessionStoreDriver extends Driver(SessionStore) {
         claims.exp * 1000 > Date.now() &&
         (nonce === undefined || claims.nonce === nonce);
       if (!isValid) throw UnauthenticatedError.create();
-      user = sessionUserOf(claims);
+      user = sessionUserOf(claims, this.config);
     }
     const idToken = tokens.id_token ?? previous?.idToken;
     if (user === undefined || idToken === undefined) throw UnauthenticatedError.create();

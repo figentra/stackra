@@ -1,5 +1,135 @@
 # @stackra/identity
 
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/scheduler@0.7.1
+  - @stackra/privacy@0.7.1
+  - @stackra/tenancy@0.7.1
+  - @stackra/iam@0.7.1
+  - @stackra/clients@0.7.1
+  - @stackra/query@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/database@0.7.1
+  - @stackra/storage@0.7.1
+  - @stackra/ui@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/market-packs@0.7.1
+  - @stackra/support@0.7.1
+  - @stackra/transport@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/outbox@0.7.1
+  - @stackra/queue@0.7.1
+  - @stackra/scope@0.7.1
+
+## 0.7.0
+
+### Minor Changes
+
+- 1f5bf76: `SignIn` on React Native, in `@stackra/identity/native`: the identity kit's sign-in card (ADR 0504) with the same props
+  as the web block, so one login configuration drives both. It shows the tenant's providers, an email and password form
+  whose return key submits, "remember me", the forgotten-password and sign-up links, and an announced error; every word
+  comes from the host in `labels`. It signs nobody in itself: the host starts a provider through the Expo drivers. The
+  showcase lists it for native as well as web.
+- 1f5bf76: The identity kit's web blocks (ADR 0504) in `@stackra/identity/react`: `SessionGate` (shows content to a signed-in
+  user at the assurance level asked for), `AccountMenu`, `StepUpDialog` (runs the existing `stepUpSignIn`),
+  `PasswordPolicyChecklist`, `PasswordReset`, `SignUp` and `SecurityPage`. The new `AccountSecurity` client port in
+  `./contracts` feeds the security page (passkeys, second factors, device sessions, password), with
+  `MemoryAccountSecurityDriver` in `./testing`; a refused change opens the step-up dialog and retries. The session user
+  now carries the `assurance` level its sign-in reached. Every word comes from the host in `labels`; the showcase lists
+  the seven blocks under Blocks.
+
+### Patch Changes
+
+- Updated dependencies [1f5bf76]
+- Updated dependencies [1f5bf76]
+  - @stackra/iam@0.7.0
+  - @stackra/tenancy@0.7.0
+  - @stackra/clients@0.7.0
+  - @stackra/privacy@0.7.0
+  - @stackra/query@0.7.0
+  - @stackra/actions@0.7.0
+  - @stackra/database@0.7.0
+  - @stackra/storage@0.7.0
+  - @stackra/ui@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/market-packs@0.7.0
+  - @stackra/support@0.7.0
+  - @stackra/transport@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/outbox@0.7.0
+  - @stackra/queue@0.7.0
+  - @stackra/scheduler@0.7.0
+  - @stackra/scope@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/clients@0.6.1
+  - @stackra/database@0.6.1
+  - @stackra/storage@0.6.1
+  - @stackra/ui@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/market-packs@0.6.1
+  - @stackra/support@0.6.1
+  - @stackra/transport@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/outbox@0.6.1
+  - @stackra/queue@0.6.1
+  - @stackra/scheduler@0.6.1
+  - @stackra/iam@0.6.1
+  - @stackra/privacy@0.6.1
+  - @stackra/scope@0.6.1
+  - @stackra/tenancy@0.6.1
+  - @stackra/query@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [fb29d41]
+- Updated dependencies [e250d4f]
+- Updated dependencies [c64a55d]
+- Updated dependencies [d53d9d3]
+- Updated dependencies [712fb89]
+  - @stackra/database@0.6.0
+  - @stackra/iam@0.6.0
+  - @stackra/tenancy@0.6.0
+  - @stackra/ui@0.6.0
+  - @stackra/queue@0.6.0
+  - @stackra/outbox@0.6.0
+  - @stackra/scheduler@0.6.0
+  - @stackra/privacy@0.6.0
+  - @stackra/scope@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/clients@0.6.0
+  - @stackra/storage@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/market-packs@0.6.0
+  - @stackra/support@0.6.0
+  - @stackra/transport@0.6.0
+  - @stackra/validation@0.6.0
+  - @stackra/query@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

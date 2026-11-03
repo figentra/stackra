@@ -1,0 +1,21 @@
+{
+  "slug": "role-picker",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/iam",
+  "exportName": "RolePicker",
+  "parts": ["RolePicker"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 360
+    }
+  ],
+  "related": ["free/entity-picker", "free/combo-box"],
+  "tokens": ["color.surface", "color.field"],
+  "keywords": ["role", "picker", "access", "permission", "field", "kit"],
+  "status": "new"
+}
