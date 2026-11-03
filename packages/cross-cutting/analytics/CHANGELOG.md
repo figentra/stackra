@@ -1,5 +1,32 @@
 # @stackra/analytics
 
+## 0.9.0
+
+### Minor Changes
+
+- cc375d5: `./contracts` adds the `AnalyticsStore` port, Stackra's own store of analytics deliveries (ADR 0190 decision 3 as
+  amended), with its `AnalyticsStoreQuery`: `append` keeps a delivery once per event id, `scan` reads a capture-time
+  window oldest first, and `erasePerson` deletes a subject's identified and anonymous deliveries. `./node` adds its
+  `memory` driver, `MemoryAnalyticsStoreDriver`, for tests and previews. The ClickHouse and DuckDB drivers are Pro and
+  wait on ADR 0227, which still defers an OLAP engine.
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/actions@0.9.0
+  - @stackra/storage@0.9.0
+  - @stackra/platform@0.9.0
+  - @stackra/config@0.9.0
+  - @stackra/events@0.9.0
+  - @stackra/consent@0.9.0
+  - @stackra/iam@0.9.0
+  - @stackra/privacy@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

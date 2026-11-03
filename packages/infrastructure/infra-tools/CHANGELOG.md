@@ -1,5 +1,20 @@
 # @stackra/infra-tools
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [2aeaec8]
+- Updated dependencies [5030040]
+- Updated dependencies [93bb1e7]
+- Updated dependencies [b0d6fcc]
+- Updated dependencies [2e43c48]
+- Updated dependencies [2e43c48]
+- Updated dependencies [ca1614e]
+- Updated dependencies [bd3f314]
+  - @stackra/runway@0.9.0
+  - @stackra/contracts@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

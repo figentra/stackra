@@ -1,5 +1,15 @@
 # @stackra/icons
 
+## 0.9.0
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/config@0.9.0
+
 ## 0.8.0
 
 ### Patch Changes

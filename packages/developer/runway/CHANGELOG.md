@@ -1,5 +1,39 @@
 # @stackra/runway
 
+## 0.9.0
+
+### Minor Changes
+
+- 2aeaec8: `writeDevFacts(root, lane)` in `@stackra/runway/node` writes `.stackra/dev/ports.json`, the file `readDevFacts` reads: each member runway's dev url, port, host, https, TLS files and Electron dev ports with the lane offset applied. `stackra dev` calls it before the member tool starts (lane from `STACKRA_LANE`, default 0). The app runway's `environments.<env>.desktop.devtools` is now read, so it leaves `RUNWAY_UNREAD_FIELDS` and its "Not read yet" schema note.
+- 5030040: The runway host map now generates the edge Worker's routes (`surfaceHosts`, `edgeRoutes`): one `<host>/*` per surface host under a runway zone, beside the stack's own patterns. A bare `*/*` route is refused unless the zone lists `exclusions`, which become script-less routes. The CLI's runway ship probes every host of the map after a product publish and fails when one does not serve TLS.
+- 93bb1e7: `buildProduct` writes a product's `surfaces.ops.contributes` as a declarative `ops` bundle (the contributions file and its manifest, targeting `ops@1`), and `publishProduct` uploads it and writes its canary or release row like any surface. The root runway schema no longer marks `surfaces.ops.contributes` and its fields "Not read yet", and the list of runway fields not yet read drops them.
+- b0d6fcc: The Cloudflare Workers provider reads each Worker's secrets from Infisical (`readMemberSecrets`) when it is given the
+  runways, and sends them to `wrangler secret bulk` on stdin, after every value is read and before anything ships (STA-606).
+  `stackra deploy` gives it the runways when the root runway says `secrets.sync: on-deploy`; without them the provider
+  still reads the deploy job's environment.
+- 2e43c48: A service runway environment takes an `events` block for the cross-app event relay (ADR 0511, amendment of
+  2026-11-02, STA-1910): `signingKey`, the secret name of the producer's signing key (default
+  `STACKRA_EVENTS_SIGNING_KEY`, never a value); `keys`, its public keys, current first; and `subscribers`, each consumer's
+  member key, inbox origin (`https`, or `http` to a loopback host) and the event wire names it takes. `schema/service.json`
+  describes it.
+- ca1614e: `checkRequires(root, service)` reports each `valkey` entry of a service runway's `requires` that no environment's cache driver serves, at `requires.<name>`; `stackra validate` (`checkRunwayFiles`) now runs it for every service runway against the root (STA-2049).
+- bd3f314: A runway workload takes `command`, the container's arguments in place of the image's default, and `aliases`, which
+  hand the image a variable of a Postgres resource it uses under the name it reads
+  (`ZITADEL_DATABASE_POSTGRES_DSN: MAIN_DB_URL`). `runtimePlan` refuses an alias of a variable no used Postgres resource
+  publishes, and `awsWorkloads` puts the arguments and each alias's SSM parameter in the task definition. Self-hosted
+  ZITADEL, the first workload user, now plans in dev, staging and production (STA-1649).
+
+### Patch Changes
+
+- Updated dependencies [e80a99b]
+- Updated dependencies [2e43c48]
+- Updated dependencies [f9c825d]
+  - @stackra/validation@0.9.0
+  - @stackra/contracts@0.9.0
+  - @stackra/container@0.9.0
+  - @stackra/app@0.9.0
+  - @stackra/config@0.9.0
+
 ## 0.8.0
 
 ### Minor Changes
