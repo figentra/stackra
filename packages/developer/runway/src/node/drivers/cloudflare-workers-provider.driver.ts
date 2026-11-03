@@ -176,12 +176,17 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           throw new RunwayUnresolvedError(
             `${key} version ${version} failed its 0% smoke ${failure}; no traffic moved`,
           );
-        // A Durable Object migration must go out at 100% (ADR 0519 decision 3).
+        // A Durable Object migration must go out at 100% (ADR 0519 decision 3). The preset's rollout counts too.
+        const { rollout } = workerSettingsOf(
+          CLOUDFLARE_WORKERS_SETTINGS_SCHEMA.parse(target.settings),
+          key,
+          target.environment,
+        );
         const steps =
           target.environment === "production" &&
           deployed.migrations === undefined &&
-          member.rollout !== undefined
-            ? member.rollout
+          rollout !== undefined
+            ? rollout
             : [100];
         await this.rollOut(cwd, version, steps, sha);
         versions.push(`${key}=${version}`);

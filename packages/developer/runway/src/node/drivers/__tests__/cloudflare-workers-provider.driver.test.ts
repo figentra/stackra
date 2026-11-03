@@ -182,7 +182,13 @@ describe("CloudflareWorkersProviderDriver", () => {
       return { ok: false, status: 503 };
     };
     await expect(driver.apply(WEB, SHA)).rejects.toThrow(/0% smoke/);
-    expect(urls).toEqual([`https://npm.stackra.figentra.com/-/ping stackra-registry="${VERSION}"`]);
+    // The check is retried, three attempts in the test.
+    expect(urls).toEqual(
+      Array.from(
+        { length: 3 },
+        () => `https://npm.stackra.figentra.com/-/ping stackra-registry="${VERSION}"`,
+      ),
+    );
     expect(calls.some((call) => call.includes("versions deploy"))).toBe(false);
   });
 
@@ -326,7 +332,7 @@ describe("CloudflareWorkersProviderDriver", () => {
 
   it("ships only the named members, and names the runway.yaml path of a bad setting", () => {
     const driver = Object.assign(workers(".", fakeRunner(".").run), { only: ["static"] });
-    expect(driver.plan(WEB, SHA)).toHaveLength(2);
+    expect(driver.plan(WEB, SHA)).toHaveLength(3);
     expect(() =>
       driver.plan({ ...WEB, settings: { members: { static: { path: "../outside" } } } }, SHA),
     ).toThrow(/targets\.cloudflare-workers\.members\.static\.path/);
