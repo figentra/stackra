@@ -8,7 +8,7 @@
  *           change. `access` is name matching: it catches the plain read (`group.scaling`, `database?.plan`), not one
  *           through a renamed variable.
  * Runtime: node
- * Governing contract: ADR 0296; STA-2001 (Runway plan PR 6c); STA-2028 (6d); STA-2002; STA-2003; STA-2029; STA-339.
+ * Governing contract: ADR 0296; STA-2001 (Runway plan PR 6c); STA-2028 (6d); STA-2002; STA-2003; STA-339.
  */
 import type { RunwayUnreadField } from "#node/types/runway-unread-field.type";
 
@@ -127,10 +127,4 @@ export const RUNWAY_UNREAD_FIELDS: readonly RunwayUnreadField[] = [
   },
   { kind: "app", path: "health.path", reader: RECORDS, access: APP_HEALTH },
   { kind: "app", path: "health.expects", reader: RECORDS, access: APP_HEALTH },
-  {
-    kind: "app",
-    path: "environments.*.desktop.devtools",
-    reader: "STA-2029",
-    access: /\bdesktop\??\.devtools\b/,
-  },
 ];
