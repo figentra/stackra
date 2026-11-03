@@ -1,5 +1,16 @@
 # @stackra/seo
 
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/i18n@0.7.1
+  - @stackra/support@0.7.1
+  - @stackra/validation@0.7.1
+
 ## 0.7.0
 
 ### Patch Changes

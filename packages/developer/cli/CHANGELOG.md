@@ -1,5 +1,21 @@
 # @stackra/cli
 
+## 0.7.1
+
+### Patch Changes
+
+- Updated dependencies [448c52f]
+  - @stackra/gen@0.7.1
+  - @stackra/runway@0.7.1
+  - @stackra/mcp@0.7.1
+  - @stackra/console@0.7.1
+  - @stackra/repo-checks@0.7.1
+  - @stackra/skills@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/support@0.7.1
+  - @stackra/validation@0.7.1
+
 ## 0.7.0
 
 ### Minor Changes
