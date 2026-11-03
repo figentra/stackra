@@ -1,5 +1,82 @@
 # @stackra/database
 
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/actions@0.7.1
+  - @stackra/model@0.7.1
+  - @stackra/console@0.7.1
+  - @stackra/testing@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/events@0.7.1
+  - @stackra/validation@0.7.1
+  - @stackra/cache@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- @stackra/actions@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/console@0.7.0
+  - @stackra/testing@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/events@0.7.0
+  - @stackra/validation@0.7.0
+  - @stackra/cache@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/actions@0.6.1
+  - @stackra/model@0.6.1
+  - @stackra/console@0.6.1
+  - @stackra/testing@0.6.1
+  - @stackra/config@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/events@0.6.1
+  - @stackra/validation@0.6.1
+  - @stackra/cache@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- fb29d41: `@stackra/database/testing`'s `snapshotKey` resolves `@electric-sql/pglite` when it is first called, not when the module
+  is imported, so a member without the optional PGlite peer can import `./testing` (STA-1950). A test now refuses any
+  peer resolved or required at module level, which the import mocks cannot see.
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [2256bf6]
+- Updated dependencies [1677615]
+- Updated dependencies [1677615]
+- Updated dependencies [4fcb66d]
+  - @stackra/console@0.6.0
+  - @stackra/cache@0.6.0
+  - @stackra/actions@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/testing@0.6.0
+  - @stackra/config@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/events@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

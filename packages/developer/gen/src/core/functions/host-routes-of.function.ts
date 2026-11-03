@@ -3,7 +3,7 @@
  * Purpose: `hostRoutesOf(ir)`, the routes and menus an app composes from its dependencies' `ui.routes` and `ui.menus`
  *          (each with the entry, `react` or `native`, that serves its runtime), and `route_duplicate` or
  *          `menu_duplicate` for a key two owners record, or one that is also the app's own.
- * Boundary: pure; walks the manifests through `contributionsOf`, so the same entry reached twice is one. A manifest with
+ * Boundary: pure; walks the manifests through `dependencyContributionsOf`, so the same entry reached twice is one. A manifest with
  *           no `ui` contributes nothing. The app's own route keys are `routeKey` and its own menu keys the snake_case
  *           stem, as its route table writes them.
  * Runtime: isomorphic
@@ -11,7 +11,7 @@
  */
 import { snakeCase } from "@stackra/support";
 
-import { contributionsOf } from "#core/functions/contributions-of.function";
+import { dependencyContributionsOf } from "#core/functions/dependency-contributions-of.function";
 import { routeKey } from "#core/functions/route-key.function";
 import type { Contribution } from "#core/types/contribution.type";
 import type { GenError } from "#core/types/gen-error.type";
@@ -64,8 +64,8 @@ export function hostRoutesOf(ir: MemberIR): {
       `${entry.entry}:${entry.key}`,
       entry,
     ]);
-  const routes = contributionsOf<UiEntry>(ir, read("routes"), same);
-  const menus = contributionsOf<UiEntry>(ir, read("menus"), same);
+  const routes = dependencyContributionsOf<UiEntry>(ir, read("routes"), same);
+  const menus = dependencyContributionsOf<UiEntry>(ir, read("menus"), same);
 
   const own = (kind: string, key: (file: string) => string): Set<string> =>
     new Set(

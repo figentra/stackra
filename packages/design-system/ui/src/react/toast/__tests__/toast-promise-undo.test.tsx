@@ -70,7 +70,7 @@ describe("toast.promise and toast.undo (web)", () => {
       });
     });
     expect(screen.getByText("Saving the order…")).toBeTruthy();
-    const spinner = '[data-slot="toast-indicator"] [data-slot="spinner-icon"]';
+    const spinner = '[data-slot="toast-indicator"] [data-slot="spinner"]';
     expect(document.querySelector(spinner)).toBeTruthy();
     resolve(3);
     await flush();

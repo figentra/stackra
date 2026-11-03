@@ -1,5 +1,76 @@
 # @stackra/settings
 
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/database@0.7.1
+  - @stackra/model@0.7.1
+  - @stackra/icons@0.7.1
+  - @stackra/ui@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/i18n@0.7.1
+  - @stackra/market-packs@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Minor Changes
+
+- 1f5bf76: A new `@stackra/settings/react` entry. `SettingsForm` renders a generated settings page on the web, at parity with
+  the native form: a switch for each on-or-off key, a text field for each number or text key, a locked key read-only,
+  and each change written through the container's `SettingsReader` at the page's level, with a refused change restored
+  and its reason shown and announced. `useSetting(page, name)` reads and writes one key the same way, for a host that
+  lays out its own screen. The showcase lists the form under Blocks.
+
+### Patch Changes
+
+- @stackra/database@0.7.0
+  - @stackra/model@0.7.0
+  - @stackra/icons@0.7.0
+  - @stackra/ui@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/i18n@0.7.0
+  - @stackra/market-packs@0.7.0
+  - @stackra/validation@0.7.0
+
+## 0.6.1
+
+### Patch Changes
+
+- @stackra/database@0.6.1
+  - @stackra/model@0.6.1
+  - @stackra/icons@0.6.1
+  - @stackra/ui@0.6.1
+  - @stackra/container@0.6.1
+  - @stackra/contracts@0.6.1
+  - @stackra/errors@0.6.1
+  - @stackra/i18n@0.6.1
+  - @stackra/market-packs@0.6.1
+  - @stackra/validation@0.6.1
+
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [fb29d41]
+- Updated dependencies [d53d9d3]
+- Updated dependencies [712fb89]
+  - @stackra/database@0.6.0
+  - @stackra/ui@0.6.0
+  - @stackra/model@0.6.0
+  - @stackra/icons@0.6.0
+  - @stackra/container@0.6.0
+  - @stackra/contracts@0.6.0
+  - @stackra/errors@0.6.0
+  - @stackra/i18n@0.6.0
+  - @stackra/market-packs@0.6.0
+  - @stackra/validation@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

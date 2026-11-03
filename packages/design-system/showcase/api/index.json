@@ -1420,7 +1420,7 @@
   "free/spinner": {
     "native": true,
     "partsCount": 1,
-    "propsCount": 19,
+    "propsCount": 16,
     "react": true
   },
   "free/split-button": {

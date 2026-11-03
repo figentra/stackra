@@ -104,15 +104,18 @@ for (const scheme of SCHEMES)
     expect(failures, `tones under 3:1 in ${scheme}: tone, ratio`).toEqual([]);
   });
 
-test("a spinner stands still under reduced motion and runs otherwise", async ({ page }) => {
-  const animationNames = () =>
-    page
-      .locator(".spinner")
-      .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).animationName));
+test("a spinner rests full under reduced motion and builds its dots otherwise", async ({
+  page,
+}) => {
+  // The dot loader (STA-2017) steps by timer: at rest every dot is lit; running, the lit count changes.
+  const lit = () =>
+    page.locator('[data-slot="spinner"]').first().locator('[data-slot="dot"][data-lit]').count();
   await open(page, "light", "en", "reduce");
-  expect((await animationNames()).every((name) => name === "none")).toBe(true);
+  expect(await lit()).toBe(9);
   await open(page, "light", "en", "no-preference");
-  expect((await animationNames()).every((name) => name !== "none")).toBe(true);
+  const first = await lit();
+  // Polled across a whole 1280 ms loop, since the 400 ms hold can repeat a count.
+  await expect.poll(lit, { timeout: 1500 }).not.toBe(first);
 });
 
 test("the start-and-stop example shows its status and then announces the result", async ({

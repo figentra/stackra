@@ -1,0 +1,21 @@
+{
+  "slug": "can",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/iam",
+  "exportName": "Can",
+  "parts": ["Can"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 160
+    }
+  ],
+  "related": ["free/empty-state", "free/button"],
+  "tokens": ["color.surface"],
+  "keywords": ["permission", "access", "show or hide", "authorization", "visibility", "kit"],
+  "status": "new"
+}
