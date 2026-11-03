@@ -14,7 +14,8 @@ and `./native`.
 Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/errors`, `@stackra/validation` (block schemas and
 `@Renamed`), `@stackra/clients` (the queries blocks accept), `@stackra/i18n` (the locale), `@stackra/icons` (the
 `IconName` type), `@stackra/ui` (the loading placeholder), `@stackra/documents` (the `PdfEngine` port, `./contracts`
-only), `@stackra/support` (`escapeHtml`, which `./edge` and `./server` re-export, and `htmlToText`) and `zod`; React is an optional peer of `./react` and
+only), `@stackra/support` (`escapeHtml`, which `./edge` and `./server` re-export, and `htmlToText`), `@stackra/tokens`
+(the theme's `floor` motion step the landing blocks play) and `zod`; React is an optional peer of `./react` and
 `./native`.
 
 ## What is here
@@ -37,7 +38,10 @@ only), `@stackra/support` (`escapeHtml`, which `./edge` and `./server` re-export
 | `./edge`      | `EdgeBlock`, `EdgeBlockContext`, `EdgeRenderOptions`, `EdgeRenderResult`                                           | types                                                                                                          |
 | `./server`    | `renderEmailTemplate`, `renderPrintDocument`, `renderServerHtml`, `escapeHtml`                                     | the node renderer: a studio email template to HTML and text, a print document to PDF through `PdfEngine`       |
 | `./server`    | `ServerBlock`, `ServerBlockContext`, `ServerRenderOptions`, `PrintRenderOptions`, `RenderedEmail`, `RenderedPrint` | types                                                                                                          |
+| `.`           | `SiteHeaderBlock` … `SiteFooterBlock`                                                                              | the thirteen landing blocks' `Block` classes (STA-2041); see [The landing blocks](#the-landing-blocks)         |
 | `./react`     | `DocumentRenderer`, `ReactRendererDriver`                                                                          | `<DocumentRenderer document={page.root} />` on the web                                                         |
+| `./react`     | `FeatureSection`, `CtaSection`                                                                                     | the marketing blocks of the module UI kit (ADR 0504)                                                           |
+| `./react`     | `SiteHeader`, `HeroMachine`, `CtaRow`, `Statement`, `ChapterTitle`, `Station`, `StepSwitcher`, `BentoGrid`, …      | the landing blocks' components, each with its `<Name>Props`; see [The landing blocks](#the-landing-blocks)     |
 | `./native`    | `DocumentRenderer`, `NativeRendererDriver`, `BlockProps`                                                           | the same on a phone; native `BlockProps` adds `onEvent`                                                        |
 
 ## Declaring a block
@@ -158,6 +162,32 @@ from `@stackra/i18n`. A block raises a closed verb through `onEvent` (`{ verb: "
 `{ verb: "action", key, input? }`), which reaches the page's `onNavigate` or `onAction`; a verb with no handler is
 dropped. While a block's query loads a `@stackra/ui` Skeleton holds its place; a failed query draws nothing for that
 block.
+
+## The landing blocks
+
+The Stackra landing (STA-2041) is a document of thirteen blocks on `@stackra/ui`. Each `Block` class in `.` declares
+the props a document gives it (its key, `web.<snake>`, is derived from the class name); its component in `./react`
+drops the `Block` suffix, which the class owns. A slot a document fills with child nodes is the component's
+`children`; a `ReactNode` prop is a slot only a page fills in code.
+
+| Block class (`.`)   | Component (`./react`) | What it draws                                                                          |
+| ------------------- | --------------------- | -------------------------------------------------------------------------------------- |
+| `SiteHeaderBlock`   | `SiteHeader`          | the top bar on `AppHeader`'s transparent variant                                       |
+| `HeroMachineBlock`  | `HeroMachine`         | the headline, the CTA row, the machine and the engine `Illustration` on a dither band  |
+| `CtaRowBlock`       | `CtaRow`              | the champagne primary link, a copy link and a command chip                             |
+| `StatementBlock`    | `Statement`           | a paragraph with `*`-marked steel keywords and its facts                               |
+| `ChapterTitleBlock` | `ChapterTitle`        | a chapter's core heading and subtitle                                                  |
+| `StationBlock`      | `Station`             | a station on the pipe; its window is the node's children                               |
+| `StepSwitcherBlock` | `StepSwitcher`        | steps with their code in a schematic frame                                             |
+| `BentoGridBlock`    | `BentoGrid`           | one or two columns of cards; the cards are the node's children                         |
+| `TerminalDemoBlock` | `TerminalStage`       | the recorded `TerminalDemo` on a dither band, ending on the monitor `Illustration`     |
+| `MonoDisplayBlock`  | `MonoDisplay`         | the closing wordmark, with floors that rise in the theme's `floor` steps or a glyph field |
+| `AskAiBlock`        | `AskAi`               | a search-field-shaped link to the docs, quiet until the assistant is live              |
+| `ProductCardsBlock` | `ProductCards`        | one `BentoCard` per product in its theme, in a `Marquee` or a `Grid`                   |
+| `SiteFooterBlock`   | `SiteFooter`          | the link columns, the legal line and a locale slot on `Footer`                         |
+
+The drawings are `{ src, width, height, alt? }`: the base URL of the four tone layers `Illustration` stacks in the
+theme's roles (`art/engine`), never fetched, decorative without `alt` and never mirrored.
 
 ## Rendering at the edge
 

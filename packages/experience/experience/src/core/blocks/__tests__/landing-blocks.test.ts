@@ -7,6 +7,7 @@
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 16); ADR 0305 (rule 2); STA-2041.
  */
 import { kindOf } from "@stackra/container";
+import type { LocalizedText } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import type { Fields } from "@stackra/validation";
 
@@ -63,5 +64,14 @@ describe("the landing blocks", () => {
     expectTypeOf<keyof Fields<StationBlock>>().toEqualTypeOf<"id" | "title" | "body" | "status">();
     expectTypeOf<keyof Fields<StepSwitcherBlock>>().toEqualTypeOf<"label" | "steps">();
     expectTypeOf<keyof Fields<SiteFooterBlock>>().toEqualTypeOf<"groups" | "legal">();
+    expectTypeOf<keyof Fields<TerminalDemoBlock>>().toEqualTypeOf<
+      "command" | "lines" | "label" | "art" | "monitor"
+    >();
+    expectTypeOf<HeroMachineBlock["art"]>().toEqualTypeOf<{
+      src: string;
+      width: number;
+      height: number;
+      alt?: LocalizedText;
+    }>();
   });
 });

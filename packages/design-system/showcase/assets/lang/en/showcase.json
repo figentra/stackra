@@ -1798,6 +1798,76 @@
         "title": "Section dock",
         "description": "A sticky bar of section links that follows the page and says what each section is doing.",
         "keywords": "dock, scroll spy, section links, status line, in-page navigation"
+      },
+      "site_header": {
+        "title": "Site header",
+        "description": "A marketing site's top bar: the brand, section links, a docs search and the code host link.",
+        "keywords": "site header, top bar, navigation, docs search, marketing, landing"
+      },
+      "hero_machine": {
+        "title": "Hero machine",
+        "description": "The landing's hero: the headline and its actions, the machine, and the engine on a dither horizon.",
+        "keywords": "hero, headline, call to action, engine, horizon, blueprint, landing"
+      },
+      "cta_row": {
+        "title": "Call-to-action row",
+        "description": "The one primary link as a champagne pill, a copy link and a command chip.",
+        "keywords": "call to action, cta, copy, command, primary button, landing"
+      },
+      "statement": {
+        "title": "Statement",
+        "description": "One large paragraph with its keywords in steel, and short facts under it.",
+        "keywords": "statement, paragraph, keywords, facts, manifesto, landing"
+      },
+      "chapter_title": {
+        "title": "Chapter title",
+        "description": "A chapter's large heading in the core tone, with a muted subtitle.",
+        "keywords": "chapter, heading, title, subtitle, section title, landing"
+      },
+      "station": {
+        "title": "Station",
+        "description": "One station on the landing's pipe: a rail, a title and its line, and the window it shows.",
+        "keywords": "station, pipeline, rail, blueprint, section, landing"
+      },
+      "step_switcher": {
+        "title": "Step switcher",
+        "description": "Steps joined by arrows, each showing its title, a line and its code in a schematic frame.",
+        "keywords": "steps, tabs, code, switcher, walkthrough, landing"
+      },
+      "bento_grid": {
+        "title": "Bento grid",
+        "description": "One or two columns of cards that stack on a narrow screen.",
+        "keywords": "bento, grid, cards, columns, features, landing"
+      },
+      "terminal_stage": {
+        "title": "Terminal stage",
+        "description": "A recorded terminal session on a dithered horizon, ending on the monitor drawing.",
+        "keywords": "terminal, cli, try it, recording, horizon, landing"
+      },
+      "mono_display": {
+        "title": "Mono display",
+        "description": "A closing wordmark in large mono and champagne, with rising floors or a glyph field.",
+        "keywords": "wordmark, mono, display, closing, floors, glyphs, landing"
+      },
+      "ask_ai": {
+        "title": "Ask AI",
+        "description": "A link drawn as a search field that opens the docs, quiet until the assistant is live.",
+        "keywords": "ask ai, docs search, assistant, search field, coming soon, landing"
+      },
+      "product_cards": {
+        "title": "Product cards",
+        "description": "The products built on Stackra, each a card in its own theme, in a strip or a grid.",
+        "keywords": "products, cards, showcase, marquee, themes, built on, landing"
+      },
+      "site_footer": {
+        "title": "Site footer",
+        "description": "A marketing site's footer: link columns, the legal line and a locale switcher.",
+        "keywords": "footer, site footer, links, legal, locale, landing"
+      },
+      "illustration": {
+        "title": "Illustration",
+        "description": "A brand drawing in four tone layers, coloured by the theme in light and dark.",
+        "keywords": "illustration, drawing, art, mask, tone layers, dither, landing"
       }
     }
   },
@@ -5503,6 +5573,82 @@
       "section_dock": {
         "dock": {
           "title": "Dock"
+        }
+      },
+      "site_header": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "hero_machine": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "cta_row": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "statement": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "chapter_title": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "station": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "step_switcher": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "bento_grid": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "terminal_stage": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "mono_display": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "ask_ai": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "product_cards": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "site_footer": {
+        "basics": {
+          "title": "Basics"
+        }
+      },
+      "illustration": {
+        "engine": {
+          "title": "Engine"
+        },
+        "stack": {
+          "title": "Stack"
+        },
+        "monitor": {
+          "title": "Monitor"
         }
       }
     }
@@ -9240,6 +9386,132 @@
           "when": "At the bottom of a long blueprint page.",
           "rtl": "Links and the status line follow the reading direction.",
           "when_not": "For a docs page's contents; use TocRail."
+        },
+        "site_header": {
+          "headline": "A top bar that stays out of the way.",
+          "intro": "The brand, the site's sections, a link drawn as a docs search, the ask-AI and GitHub links, and the locale and theme switchers, on a header that stays clear until the page scrolls.",
+          "tags": "Landing kit · Sticky · Links",
+          "what": "The site header block of the experience module.",
+          "when": "At the top of a marketing or landing page.",
+          "rtl": "The bar mirrors in Arabic; the section links scroll sideways on a narrow screen.",
+          "when_not": "Inside the product; use AppHeader."
+        },
+        "hero_machine": {
+          "headline": "Say it plainly, then show the machine.",
+          "intro": "A ruled blueprint band with the page's one h1, its lede and the call-to-action row, the schematic at the inline end, and the engine drawing standing on a dithered horizon.",
+          "tags": "Landing kit · Blueprint · Illustration",
+          "what": "The hero block of the experience module.",
+          "when": "Once, at the top of a landing page.",
+          "rtl": "The layout mirrors in Arabic; the engine drawing never does.",
+          "when_not": "On an inner page; use ChapterTitle."
+        },
+        "cta_row": {
+          "headline": "One action, and the next two.",
+          "intro": "The page's one champagne action as a real link, then a button that copies a URL and a shell command with its own copy button.",
+          "tags": "Landing kit · Link · Copy",
+          "what": "The call-to-action row of the experience module.",
+          "when": "Under a hero's headline or at the close of a landing page.",
+          "rtl": "The row mirrors in Arabic; the command stays left to right and is never translated.",
+          "when_not": "For a form's submit; use Button."
+        },
+        "statement": {
+          "headline": "Make the point in one paragraph.",
+          "intro": "A large paragraph whose words between asterisks are drawn in steel, with a short list of facts under it.",
+          "tags": "Landing kit · Text · Emphasis",
+          "what": "The statement block of the experience module.",
+          "when": "Right under the hero, or as a page's closing line.",
+          "rtl": "The paragraph and its facts follow the reading direction.",
+          "when_not": "For body copy; use Text."
+        },
+        "chapter_title": {
+          "headline": "Name the chapter.",
+          "intro": "A large heading in champagne, kept to large sizes by the tone rule, with a quiet line under it.",
+          "tags": "Landing kit · Heading · Core tone",
+          "what": "The chapter title block of the experience module.",
+          "when": "To open each chapter of a landing page.",
+          "rtl": "The heading and subtitle follow the reading direction.",
+          "when_not": "For a heading inside a card; use Heading."
+        },
+        "station": {
+          "headline": "One stop on the pipe.",
+          "intro": "A ruled blueprint band with the pipe on its inline start and a junction at the title, the station's words, and its window, which a document gives as children.",
+          "tags": "Landing kit · Blueprint · Dock-aware",
+          "what": "The station block of the experience module.",
+          "when": "For each step of the story a landing page tells.",
+          "rtl": "The rail and the junction sit on the inline start, so they mirror in Arabic.",
+          "when_not": "For a numbered procedure; use Stepper."
+        },
+        "step_switcher": {
+          "headline": "From one file to the next.",
+          "intro": "Plain words joined by arrows switch between steps; each shows its title and line beside its code in a schematic window.",
+          "tags": "Landing kit · Tabs · Code",
+          "what": "The step switcher block of the experience module.",
+          "when": "To walk through what one change produces, file by file.",
+          "rtl": "The arrow keys follow the mirrored steps; the code stays left to right.",
+          "when_not": "For unrelated views; use Tabs."
+        },
+        "bento_grid": {
+          "headline": "Cards, in a calm grid.",
+          "intro": "One or two equal columns of cards from medium screens up, one column below; a card can span both.",
+          "tags": "Landing kit · Grid · Cards",
+          "what": "The bento grid block of the experience module.",
+          "when": "To group a few feature cards on a landing page.",
+          "rtl": "Cards fill in reading order, so the grid mirrors in Arabic.",
+          "when_not": "For a dashboard's widgets; use DashboardGrid."
+        },
+        "terminal_stage": {
+          "headline": "Run it, then show where it lands.",
+          "intro": "The recorded TerminalDemo full width over a dithered band, with the monitor drawing appearing once the session has played.",
+          "tags": "Landing kit · Recorded · Illustration",
+          "what": "The try-it scene of the experience module.",
+          "when": "For the try-it moment of a landing page.",
+          "rtl": "The terminal stays left to right and the drawing is never mirrored.",
+          "when_not": "For a terminal alone; use TerminalDemo."
+        },
+        "mono_display": {
+          "headline": "End on the name.",
+          "intro": "The wordmark in large mono in the core tone, a tagline, and three floors that rise one floor step at a time once in view, or a code-glyph field behind it.",
+          "tags": "Landing kit · Wordmark · Floor steps",
+          "what": "The closing wordmark block of the experience module.",
+          "when": "Once, near the end of a landing page.",
+          "rtl": "The wordmark is a name: it stays left to right and is never translated.",
+          "when_not": "For a page title; use Heading."
+        },
+        "ask_ai": {
+          "headline": "Ask the docs.",
+          "intro": "A link shaped like a search field, with a greyed sample question and an Enter hint; until the assistant answers on the page it is drawn quiet, with a coming-soon note.",
+          "tags": "Landing kit · Link · Coming soon",
+          "what": "The ask-the-docs block of the experience module.",
+          "when": "Where a landing page invites questions about the docs.",
+          "rtl": "The field and its note mirror in Arabic.",
+          "when_not": "For a real search; use SearchField."
+        },
+        "product_cards": {
+          "headline": "Show what is built on it.",
+          "intro": "One BentoCard per product, each drawn in its own brand's tokens, in a marquee that pauses on hover and focus or in a grid.",
+          "tags": "Landing kit · Marquee · Themes",
+          "what": "The product cards block of the experience module.",
+          "when": "For a \"built on\" chapter of a landing page.",
+          "rtl": "The strip and the grid follow the reading direction.",
+          "when_not": "For a catalogue people shop from; use a product list."
+        },
+        "site_footer": {
+          "headline": "Close the page properly.",
+          "intro": "The link columns, the legal line and a locale switcher on Footer, as the page's content info.",
+          "tags": "Landing kit · Footer · Links",
+          "what": "The site footer block of the experience module.",
+          "when": "At the bottom of a marketing or landing page.",
+          "rtl": "The columns' order mirrors in Arabic.",
+          "when_not": "Inside the product; use Footer directly."
+        },
+        "illustration": {
+          "headline": "Art that wears the theme.",
+          "intro": "A drawing shipped as four single-tone layers (ground, dots, line and core), stacked as masks over the theme's colour roles, so one file serves light and dark and never needs a fetch.",
+          "tags": "Masks · Tone layers · Theme roles",
+          "what": "A brand drawing coloured by the theme.",
+          "when": "For the landing's engine, stack and monitor drawings, or any art drawn in the brand's tones.",
+          "rtl": "The drawing is never mirrored; it reads the same both ways.",
+          "when_not": "For a photo or a screenshot; use Image or Frame."
         }
       }
     }

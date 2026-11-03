@@ -1,0 +1,21 @@
+{
+  "slug": "product-cards",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "ProductCards",
+  "parts": ["ProductCards"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 360
+    }
+  ],
+  "related": ["free/bento-card", "free/marquee"],
+  "tokens": ["radius.lg", "color.surface", "color.accent"],
+  "keywords": ["products", "built on", "brands", "strip", "marquee", "landing", "kit"],
+  "status": "new"
+}

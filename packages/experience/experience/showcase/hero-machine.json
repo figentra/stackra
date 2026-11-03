@@ -1,0 +1,21 @@
+{
+  "slug": "hero-machine",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "HeroMachine",
+  "parts": ["HeroMachine"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 640
+    }
+  ],
+  "related": ["free/blueprint-section", "free/dither-art", "free/cta-row", "free/illustration"],
+  "tokens": ["color.core", "color.accent", "color.background"],
+  "keywords": ["hero", "landing", "blueprint", "schematic", "marketing", "headline", "kit"],
+  "status": "new"
+}

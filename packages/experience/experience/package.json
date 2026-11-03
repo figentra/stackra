@@ -2,7 +2,7 @@
   "name": "@stackra/experience",
   "version": "0.8.0",
   "private": false,
-  "description": "Stackra experience: the Block({ category, icon }) kind and BlockProps, the L2 document format and its validator, the Renderer port, the web and native DocumentRenderer that resolve each document node to a registered block, and the edge render of a published document to HTML in a Worker, and the node renderer of email templates and print documents (PDF through @stackra/documents); and in ./react the marketing blocks of the module UI kit (ADR 0504): FeatureSection and CtaSection on @stackra/ui",
+  "description": "Stackra experience: the Block({ category, icon }) kind and BlockProps, the L2 document format and its validator, the Renderer port, the web and native DocumentRenderer that resolve each document node to a registered block, and the edge render of a published document to HTML in a Worker, and the node renderer of email templates and print documents (PDF through @stackra/documents); and in ./react the marketing blocks of the module UI kit (ADR 0504): FeatureSection and CtaSection, and the Stackra landing blocks SiteHeader, HeroMachine, CtaRow, Statement, ChapterTitle, Station, StepSwitcher, BentoGrid, TerminalStage, MonoDisplay, AskAi, ProductCards and SiteFooter, on @stackra/ui",
   "keywords": [
     "blocks",
     "document-renderer",
@@ -128,6 +128,7 @@
     "@stackra/i18n": "workspace:*",
     "@stackra/icons": "workspace:*",
     "@stackra/support": "workspace:*",
+    "@stackra/tokens": "workspace:*",
     "@stackra/ui": "workspace:*",
     "@stackra/validation": "workspace:*",
     "zod": "catalog:"

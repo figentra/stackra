@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: `StationBlock`, the document side of a station on the landing's pipe (`./react`'s `StationBlock`): its
+ * Purpose: `StationBlock`, the document side of a station on the landing's pipe (`./react`'s `Station`): its
  *          anchor, title and line, and the dock's status line for it.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
- *           the renderer resolves. The schematic window is the app's element, so no field. The key is derived by gen.
+ *           the renderer resolves. The schematic window is the node's children, so no field. The key is derived by gen.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 20); ADR 0305 (rule 2); ADR 0504 (module UI kits); STA-2041.
  */

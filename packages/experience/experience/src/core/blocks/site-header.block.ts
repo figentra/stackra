@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `SiteHeaderBlock`, the document side of the landing's top bar (`./react`'s `SiteHeaderBlock`): the site's
+ * Purpose: `SiteHeaderBlock`, the document side of the landing's top bar (`./react`'s `SiteHeader`): the site's
  *          section links, the docs search, the ask-AI link and the code host link.
  * Boundary: a block declaration only; its fields are the props a document may give it, each word a `LocalizedText`
  *           the renderer resolves. The brand and the switchers are the app's elements, so no field. The key is derived
