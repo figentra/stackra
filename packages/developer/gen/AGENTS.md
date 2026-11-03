@@ -41,7 +41,9 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
 
 - The committed `stackra.manifest.json` is the IR; a dependency is described by its manifest, never its `.d.ts`.
 - Output is deterministic: files sorted by path, stable key order. Every refusal has a snake_case code, a position and
-  a fix; when there is one, nothing is written.
+  a fix; when there is one, nothing is written. A warning (`GenError.severity: "warning"`) has the same shape but never
+  blocks writing: `generateMember` and `generate` return it in `warnings`, and `stackra gen` (and `--check`) prints it
+  and exits 0 (STA-340). Only the full pass reports warnings.
 - Identity formulas live in one place each (ADR 0294 decision 20); other packages call them, never copy them.
 - The case helpers (`snakeCase`, `kebabCase`, `camelCase`, `pascalCase`) are `@stackra/support`'s (stackra-224); gen
   imports them and never keeps a copy, so its word breaks are the ones every package uses.
@@ -264,6 +266,11 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `cache.invalidateOn`; the evictor binding is a `SERVER_CONTRIBUTIONS` row; the live queries' refresh is written into
   `emitBoot` (which now takes the manifest) and resolves each wire name through `EVENT_NAMES`, so a name the
   registrations never registered fails at boot, never silently.
+- Action first (STA-340, ADR 0101): `checkActionFirst` (core, full pass only) warns `action_without_workflow` (an
+  action with a `#stackra/clients/*` client, a sibling module's service or `ConnectionStore`, and no workflow in
+  `DeclaredClass.workflows`) and refuses `workflow_without_action` (a controller, command or listener with
+  `WorkflowRunner`, a `*Workflow` token or a started workflow). `workflows` is a text scan of the class body for a
+  `*Workflow` class passed first to `.run(`.
 - `checkApproval` (core, full pass only, STA-1724, ADR 0509), one code each:
   - `approval_not_constant`: an `approval` option gen cannot read as a constant.
   - `approval_on_query`: `approval` on a query.

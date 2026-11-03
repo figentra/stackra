@@ -31,7 +31,10 @@
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
  *           `surface_targets_conflict`, ADR 0436) or a recorded resource table that sorts or filters on an unindexed path
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
- *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) on the full pass only. An app that hosts the panel
+ *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) or an adapter that reaches a workflow directly
+ *           (`checkActionFirst`, `workflow_without_action`, ADR 0101) on the full pass only. A warning
+ *           (`severity: "warning"`, such as `action_without_workflow`) never blocks: the full pass returns it in
+ *           `warnings` beside the files (STA-340). An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
  *           (`formatJson`, stackra-247), so the committed manifest and openapi.json pass `oxfmt --check`.
@@ -57,6 +60,7 @@ import { checkSearchableDrift } from "#core/functions/check-searchable-drift.fun
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
+import { checkActionFirst } from "#core/functions/check-action-first.function";
 import { checkSlotFills } from "#core/functions/check-slot-fills.function";
 import { checkTableIndexes } from "#core/functions/check-table-indexes.function";
 import { checkSurfaces } from "#core/functions/check-surfaces.function";
@@ -131,6 +135,7 @@ export function generateMember(
 ): {
   readonly files: readonly GeneratedFile[];
   readonly errors: readonly GenError[];
+  readonly warnings?: readonly GenError[];
   readonly manifest: StackraManifest;
 } {
   // The generated report and search queries are queries like any authored one (STA-1459).
@@ -186,6 +191,8 @@ export function generateMember(
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
     ...checkTableIndexes(ir, previous),
+    // ADR 0101: an action crossing a boundary without a workflow warns; an adapter reaching a workflow refuses.
+    ...checkActionFirst(ir),
     // One panel resource key recorded by two classes across the host's dependencies (STA-1947).
     ...(ir.layout === "app" ? hostResourcesOf(ir).errors : []),
     // One route or menu key two owners ship, or the app's own too (STA-1947).
@@ -197,7 +204,10 @@ export function generateMember(
   // An app's client tools, from its routes, resources, placements, theming, tours and anchors (ADR 0490).
   const clientTools = emitClientTools(ir);
   all.push(...clientTools.errors);
-  if (all.length > 0) return { files: [], errors: all, manifest };
+  // A warning prints and never stops writing (STA-340); only the refusals below block.
+  const warnings = all.filter((error) => error.severity === "warning");
+  const refusals = all.filter((error) => error.severity !== "warning");
+  if (refusals.length > 0) return { files: [], errors: refusals, warnings, manifest };
 
   const files: GeneratedFile[] = [{ path: "stackra.manifest.json", content: json(manifest) }];
   if (
@@ -212,7 +222,7 @@ export function generateMember(
   }));
   // A schemas file also imports zod, which a member with schemas to compile declares (most enum-only ones have none).
   const missing = undeclaredPackages(ir, schemas, "schema_dependency_missing", ["zod"]);
-  if (missing.length > 0) return { files: [], errors: missing, manifest };
+  if (missing.length > 0) return { files: [], errors: missing, warnings, manifest };
   files.push(...schemas);
   const entityFiles: GeneratedFile[] = [];
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
@@ -236,6 +246,7 @@ export function generateMember(
           fix: "keep a package's models in its one module (the package folder's key)",
         },
       ],
+      warnings,
       manifest,
     };
   files.push(...entityFiles);
@@ -309,8 +320,8 @@ export function generateMember(
     ),
     "generated_dependency_missing",
   );
-  if (elsewhere.length > 0) return { files: [], errors: elsewhere, manifest };
+  if (elsewhere.length > 0) return { files: [], errors: elsewhere, warnings, manifest };
   // The member's part of the system graph, read by the repo step (ADR 0452).
   files.push({ path: ".stackra/graph.json", content: json(memberGraphOf(ir, manifest)) });
-  return { files, errors: [], manifest };
+  return { files, errors: [], warnings, manifest };
 }

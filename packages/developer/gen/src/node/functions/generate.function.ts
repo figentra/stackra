@@ -226,7 +226,10 @@ export async function generate(
       result.errors.length > 0 ? generateMember(ir, previous, { pass: "manifests" }) : undefined;
     if (manifest?.errors.length === 0) partial.push(...write(root, manifest.files, false));
   }
-  if (result.errors.length > 0) return { errors: result.errors, files: [], changed: partial };
+  // A warning of the full pass prints beside the outcome and never blocks it (STA-340).
+  const warnings = result.warnings ?? [];
+  if (result.errors.length > 0)
+    return { errors: result.errors, warnings, files: [], changed: partial };
   // A package ships its manifest: a host's gen reads it under node_modules (ADR 0158, STA-1308).
   if (check && ir.layout === "package") {
     const { files } = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
@@ -245,6 +248,7 @@ export async function generate(
             fix: `add "${MANIFEST_FILE}" to \`files\` in package.json`,
           },
         ],
+        warnings,
         files: [],
         changed: partial,
       };
@@ -352,10 +356,11 @@ export async function generate(
         ),
       );
   }
-  if (errors.length > 0) return { errors, files: [], changed: partial };
+  if (errors.length > 0) return { errors, warnings, files: [], changed: partial };
   result = { ...result, files };
   return {
     errors: [],
+    warnings,
     files: result.files,
     changed: [
       ...new Set([
