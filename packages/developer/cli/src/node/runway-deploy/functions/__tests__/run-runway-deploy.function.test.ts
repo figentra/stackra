@@ -15,6 +15,7 @@ import { vi } from "vitest";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { captureIo } from "#node/functions/capture-io.function";
+import { probeHosts } from "#node/doctor/functions/probe-hosts.function";
 import { runDeployProduct } from "#node/product/functions/run-deploy-product.function";
 import { runRunwayDeploy } from "#node/runway-deploy/functions/run-runway-deploy.function";
 import type { CliContext } from "#node/types/cli-context.type";
@@ -28,6 +29,8 @@ vi.mock("@stackra/runway/node", async (original) => ({
   ...(await original<Record<string, unknown>>()),
   readRunway: vi.fn(),
 }));
+
+vi.mock("#node/doctor/functions/probe-hosts.function", () => ({ probeHosts: vi.fn() }));
 
 vi.mock("#node/product/functions/run-deploy-product.function", () => ({
   runDeployProduct: vi.fn(),
@@ -61,6 +64,7 @@ const run = (values: CliContext["values"]) => {
 };
 
 beforeEach(() => {
+  vi.mocked(probeHosts).mockReset().mockResolvedValue([]);
   vi.mocked(runDeployProduct).mockReset().mockResolvedValue(0);
   vi.mocked(readRunway).mockReset().mockReturnValue(ROOT);
   vi.mocked(deploy)
@@ -190,6 +194,21 @@ describe("runRunwayDeploy", () => {
     vi.mocked(runDeployProduct).mockResolvedValue(1);
     expect(await run({ env: "production", sha: SHA }).code).toBe(1);
     expect(deploy).not.toHaveBeenCalled();
+  });
+
+  it("probes the host map after a product publish and fails when a host does not serve", async () => {
+    vi.mocked(readRunway).mockReturnValue({
+      ...ROOT,
+      environments: {
+        production: { ...ROOT.environments.production, domains: { zone: "acme.dev" } },
+      },
+      surfaces: { console: { shell: "os/console@3", host: "console" } },
+    } as unknown as RootRunway);
+    vi.mocked(probeHosts).mockResolvedValue([{ host: "console.acme.dev", address: "", ok: false }]);
+    const { code, output } = run({ env: "production", sha: SHA });
+    expect(await code).toBe(1);
+    expect(probeHosts).toHaveBeenCalledWith(["console.acme.dev"]);
+    expect(output()).toContain("console.acme.dev no address does not serve");
   });
 
   it("still plans a gated environment on a dry run without --approved", async () => {

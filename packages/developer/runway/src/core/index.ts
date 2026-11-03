@@ -37,6 +37,7 @@ export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
 export { checkPlacement } from "#core/functions/check-placement.function";
 export { checkHosts } from "#core/functions/check-hosts.function";
+export { surfaceHosts } from "#core/functions/surface-hosts.function";
 export { checkPorts } from "#core/functions/check-ports.function";
 export { checkRegions } from "#core/functions/check-regions.function";
 export { deploy } from "#core/functions/deploy.function";
