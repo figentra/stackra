@@ -261,11 +261,11 @@
       "properties": {
         "commentId": {
           "type": "string",
-          "pattern": "^cmt_[0-9A-Za-z]{26}$"
+          "pattern": "^cmt_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "threadId": {
           "type": "string",
-          "pattern": "^cth_[0-9A-Za-z]{26}$"
+          "pattern": "^cth_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "recordModel": {
           "type": "string"
@@ -296,11 +296,11 @@
       "properties": {
         "commentId": {
           "type": "string",
-          "pattern": "^cmt_[0-9A-Za-z]{26}$"
+          "pattern": "^cmt_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "threadId": {
           "type": "string",
-          "pattern": "^cth_[0-9A-Za-z]{26}$"
+          "pattern": "^cth_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "recordModel": {
           "type": "string"
@@ -338,15 +338,15 @@
       "properties": {
         "commentId": {
           "type": "string",
-          "pattern": "^cmt_[0-9A-Za-z]{26}$"
+          "pattern": "^cmt_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "threadId": {
           "type": "string",
-          "pattern": "^cth_[0-9A-Za-z]{26}$"
+          "pattern": "^cth_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -359,7 +359,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^cmn_[0-9A-Za-z]{26}$"
+          "pattern": "^cmn_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -386,11 +386,11 @@
       "properties": {
         "commentId": {
           "type": "string",
-          "pattern": "^cmt_[0-9A-Za-z]{26}$"
+          "pattern": "^cmt_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -403,7 +403,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^cmr_[0-9A-Za-z]{26}$"
+          "pattern": "^cmr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -434,7 +434,7 @@
       "properties": {
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -463,7 +463,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^cth_[0-9A-Za-z]{26}$"
+          "pattern": "^cth_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -498,11 +498,11 @@
         },
         "threadId": {
           "type": "string",
-          "pattern": "^cth_[0-9A-Za-z]{26}$"
+          "pattern": "^cth_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -529,7 +529,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^cmt_[0-9A-Za-z]{26}$"
+          "pattern": "^cmt_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",

@@ -509,7 +509,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^syn_[0-9A-Za-z]{26}$"
+          "pattern": "^syn_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "indexName": {
           "type": "string"
@@ -531,7 +531,7 @@
       "properties": {
         "synonymId": {
           "type": "string",
-          "pattern": "^syn_[0-9A-Za-z]{26}$"
+          "pattern": "^syn_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     },
@@ -541,7 +541,7 @@
       "properties": {
         "synonymId": {
           "type": "string",
-          "pattern": "^syn_[0-9A-Za-z]{26}$"
+          "pattern": "^syn_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     },
@@ -727,7 +727,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^syn_[0-9A-Za-z]{26}$"
+          "pattern": "^syn_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "indexName": {
           "type": "string"
@@ -749,7 +749,7 @@
       "properties": {
         "synonymId": {
           "type": "string",
-          "pattern": "^syn_[0-9A-Za-z]{26}$"
+          "pattern": "^syn_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "terms": {
           "type": "array",
@@ -765,7 +765,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^syn_[0-9A-Za-z]{26}$"
+          "pattern": "^syn_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "indexName": {
           "type": "string"

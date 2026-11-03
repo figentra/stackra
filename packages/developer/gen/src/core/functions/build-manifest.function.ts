@@ -1013,7 +1013,26 @@ export function buildManifest(ir: MemberIR): {
   for (const shape of ir.shapes.filter(
     (candidate) => candidate.kind !== "config" && !bound.has(candidate.name),
   ))
-    schemas[`${shape.module}.${shape.name}`] = jsonSchemaOf(shape, ir.shapes);
+    schemas[`${shape.module}.${shape.name}`] = jsonSchemaOf(shape, ir.shapes, ir.services);
+  // The producer schemas a remote base's copied properties reference, transitively (STA-2060).
+  const producers: Entry = {};
+  for (const service of ir.services ?? [])
+    if (typeof service.manifest.schemas === "object" && service.manifest.schemas !== null)
+      for (const [key, schema] of Object.entries(service.manifest.schemas))
+        producers[key] ??= schema;
+  const pending: unknown[] = Object.values(schemas);
+  for (let node = pending.pop(); node !== undefined; node = pending.pop()) {
+    if (Array.isArray(node)) pending.push(...node);
+    else if (typeof node === "object" && node !== null)
+      for (const [key, value] of Object.entries(node)) {
+        const target =
+          typeof value === "string" ? /^#\/schemas\/(.+)$/.exec(value)?.[1] : undefined;
+        if (key === "$ref" && target !== undefined && !(target in schemas) && target in producers) {
+          schemas[target] = producers[target] as Json;
+          pending.push(producers[target]);
+        } else pending.push(value);
+      }
+  }
   // A replica query answers `ReplicaPage` (ADR 0338), described once per module that has one.
   for (const declared of ir.classes) {
     if (declared.handle?.replica === true)

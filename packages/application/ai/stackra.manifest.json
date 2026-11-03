@@ -389,7 +389,7 @@
       "properties": {
         "runId": {
           "type": "string",
-          "pattern": "^airun_[0-9A-Za-z]{26}$"
+          "pattern": "^airun_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "agent": {
           "type": "string"
@@ -411,7 +411,7 @@
         },
         "runId": {
           "type": "string",
-          "pattern": "^airun_[0-9A-Za-z]{26}$"
+          "pattern": "^airun_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "approvalId": {
           "type": "string"
@@ -433,7 +433,7 @@
         },
         "runId": {
           "type": "string",
-          "pattern": "^airun_[0-9A-Za-z]{26}$"
+          "pattern": "^airun_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "agent": {
           "type": "string"
@@ -449,7 +449,7 @@
       "properties": {
         "runId": {
           "type": "string",
-          "pattern": "^airun_[0-9A-Za-z]{26}$"
+          "pattern": "^airun_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "toolCallId": {
           "type": "string"
@@ -497,7 +497,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^[a-z]{2,6}_[0-9A-Za-z]{26}$"
+            "pattern": "^[a-z]{2,6}_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
           },
           "maxItems": 200
         },
@@ -528,7 +528,7 @@
         },
         "record": {
           "type": "string",
-          "pattern": "^[a-z]{2,6}_[0-9A-Za-z]{26}$"
+          "pattern": "^[a-z]{2,6}_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "selection": {
           "$ref": "#/schemas/ai.PageContextSelection"
@@ -568,11 +568,11 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^aitask_[0-9A-Za-z]{26}$"
+          "pattern": "^aitask_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -608,11 +608,11 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^aiconv_[0-9A-Za-z]{26}$"
+          "pattern": "^aiconv_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -658,11 +658,11 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^aimsg_[0-9A-Za-z]{26}$"
+          "pattern": "^aimsg_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     },
@@ -697,11 +697,11 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^aiappr_[0-9A-Za-z]{26}$"
+          "pattern": "^aiappr_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -742,11 +742,11 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^aistep_[0-9A-Za-z]{26}$"
+          "pattern": "^aistep_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     },
@@ -830,11 +830,11 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^airun_[0-9A-Za-z]{26}$"
+          "pattern": "^airun_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -879,11 +879,11 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^aitool_[0-9A-Za-z]{26}$"
+          "pattern": "^aitool_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "tenantId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     }

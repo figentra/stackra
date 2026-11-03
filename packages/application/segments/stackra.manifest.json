@@ -131,7 +131,7 @@
       "properties": {
         "segmentId": {
           "type": "string",
-          "pattern": "^seg_[0-9A-Za-z]{26}$"
+          "pattern": "^seg_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "subjectModel": {
           "type": "string"
@@ -147,7 +147,7 @@
       "properties": {
         "segmentId": {
           "type": "string",
-          "pattern": "^seg_[0-9A-Za-z]{26}$"
+          "pattern": "^seg_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "subjectModel": {
           "type": "string"
@@ -172,11 +172,11 @@
       "properties": {
         "segmentId": {
           "type": "string",
-          "pattern": "^seg_[0-9A-Za-z]{26}$"
+          "pattern": "^seg_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -189,7 +189,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^sgm_[0-9A-Za-z]{26}$"
+          "pattern": "^sgm_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -222,7 +222,7 @@
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -238,7 +238,7 @@
         },
         "ruleSetId": {
           "type": ["string", "null"],
-          "pattern": "^rset_[0-9A-Za-z]{26}$"
+          "pattern": "^rset_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "computedAt": {
           "type": ["string", "null"],
@@ -246,7 +246,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^seg_[0-9A-Za-z]{26}$"
+          "pattern": "^seg_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -263,7 +263,7 @@
       "properties": {
         "segmentId": {
           "type": "string",
-          "pattern": "^seg_[0-9A-Za-z]{26}$"
+          "pattern": "^seg_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         }
       }
     }

@@ -139,7 +139,7 @@
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -152,7 +152,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^cfv_[0-9A-Za-z]{26}$"
+          "pattern": "^cfv_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -184,7 +184,7 @@
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -215,7 +215,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^cfd_[0-9A-Za-z]{26}$"
+          "pattern": "^cfd_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",
@@ -250,7 +250,7 @@
         },
         "scopeId": {
           "type": "string",
-          "pattern": "^scp_[0-9A-Za-z]{26}$"
+          "pattern": "^scp_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "scopePath": {
           "type": "string"
@@ -277,7 +277,7 @@
         },
         "id": {
           "type": "string",
-          "pattern": "^rev_[0-9A-Za-z]{26}$"
+          "pattern": "^rev_[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$"
         },
         "createdAt": {
           "type": "string",

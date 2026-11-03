@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `jsonSchemaOf`, the JSON Schema of one shape as the manifest's `schemas` section records it: one object
  *          with its required fields and properties, enums and shapes by `$ref` to `#/schemas/<module>.<Name>`, rules as
- *          JSON Schema keywords and defaults as their wire values. A shape that extends a member shape is flattened.
+ *          JSON Schema keywords and defaults as their wire values. A shape that extends a member shape is flattened, and
+ *          one that extends or derives from a consumed (remote) shape starts from that shape's schema in the
+ *          consumed service's committed manifest (STA-2060).
  *          A `Translated` field is a locale-to-text map (`@Str` rules on each text) and an `Upload<Bucket>` field the
  *          token object `{ id: "upl_…" }`, each marked with `x-stackra-type` (and the bucket with `x-stackra-bucket`). A field typed with a package's shipped
  *          `X$` is `{ "x-stackra-schema": "<specifier>#X$" }` (STA-1290).
@@ -11,12 +13,15 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10 and 26; amendment 2026-10-26: a bare `PublicId` is any prefix, a union
  *                     its prefixes); ADR 0158 (openapi.json is a projection of the manifest); ADR 0162 (decision 2);
- *                     ADR 0222 (decision 2); STA-1365 (an `I18nKey` is a plain string).
+ *                     ADR 0222 (decision 2); ADR 0135 (public ids are Crockford base32); ADR 0260 (decision 2); STA-1365 (an `I18nKey` is a plain string).
  */
-import type { Json } from "@stackra/contracts";
+import type { Json, StackraManifest } from "@stackra/contracts";
 
+import { PUBLIC_ID_BODY } from "#core/constants/public-id-body.constant";
+import { schemaNamesOf } from "#core/functions/schema-names-of.function";
 import type { FieldIR } from "#core/types/field-ir.type";
 import type { FieldRule } from "#core/types/field-rule.type";
+import type { MemberIR } from "#core/types/member-ir.type";
 import type { RegexValue } from "#core/types/regex-value.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
@@ -123,7 +128,7 @@ function typeSchema(
     case "public_id": {
       return {
         type: "string",
-        pattern: `^${type.prefixes !== undefined ? `(${type.prefixes.join("|")})` : type.prefix === "" ? "[a-z]{2,6}" : type.prefix}_[0-9A-Za-z]{26}$`,
+        pattern: `^${type.prefixes !== undefined ? `(${type.prefixes.join("|")})` : type.prefix === "" ? "[a-z]{2,6}" : type.prefix}_${PUBLIC_ID_BODY}$`,
       };
     }
     case "enum": {
@@ -187,16 +192,39 @@ function fieldSchema(field: FieldIR): JsonObject {
   return schema;
 }
 
+/** The schema of the consumed shape `name` in `services`, found by the local name its generated client gives it (`schemaNamesOf`). */
+function remoteSchemaOf(
+  services: MemberIR["services"],
+  from: string,
+  name: string,
+): Record<string, Json> | undefined {
+  const service = from.split("/").pop();
+  const manifest: StackraManifest | undefined = services?.find(
+    (candidate) => candidate.member === service || candidate.folder === service,
+  )?.manifest;
+  const schemas = manifest?.schemas;
+  if (typeof schemas !== "object" || schemas === null) return undefined;
+  const nameOf = schemaNamesOf(Object.keys(schemas));
+  const key = Object.keys(schemas).find((candidate) => nameOf(candidate) === name);
+  const found = key === undefined ? undefined : (schemas as Record<string, Json>)[key];
+  return typeof found === "object" && found !== null && !Array.isArray(found) ? found : undefined;
+}
+
 /**
  * The JSON Schema of `shape`.
  *
  * @param shape - the shape to describe.
  * @param shapes - every shape of the member, to flatten the fields of a member base.
+ * @param services - the consumed services' manifests, to start a shape on a remote base from that base's fields.
  * @example
  * jsonSchemaOf(cancelOrderInput, ir.shapes);
  * // { type: "object", required: ["orderId"], properties: { orderId: { type: "string", pattern: "^ord_..." } } }
  */
-export function jsonSchemaOf(shape: ShapeIR, shapes: readonly ShapeIR[]): Json {
+export function jsonSchemaOf(
+  shape: ShapeIR,
+  shapes: readonly ShapeIR[],
+  services?: MemberIR["services"],
+): Json {
   const fields = new Map<string, FieldIR>();
   const chain: ShapeIR[] = [];
   for (let current: ShapeIR | undefined = shape; current !== undefined;) {
@@ -208,20 +236,40 @@ export function jsonSchemaOf(shape: ShapeIR, shapes: readonly ShapeIR[]): Json {
         ? shapes.find((other) => other.name === base.name && other.module === base.module)
         : undefined;
   }
+  const properties: JsonObject = {};
+  const required = new Set<string>();
+  // A consumed base: its fields after its pick, omit or partial derivation, under the shape's own.
+  const remote = chain[0]?.base;
+  if (remote?.kind === "remote") {
+    const found = remoteSchemaOf(services, remote.from, remote.name);
+    const given = found?.["properties"];
+    if (typeof given === "object" && given !== null && !Array.isArray(given)) {
+      const keys = remote.derive?.keys ?? [];
+      for (const [name, schema] of Object.entries(given)) {
+        if (remote.derive?.helper === "PickType" && !keys.includes(name)) continue;
+        if (remote.derive?.helper === "OmitType" && keys.includes(name)) continue;
+        properties[name] = schema;
+        if (Array.isArray(found?.["required"]) && found["required"].includes(name))
+          if (remote.derive?.helper !== "PartialType") required.add(name);
+      }
+    }
+  }
   for (const link of chain)
     for (const field of link.fields)
       // A `@Hidden` field is not on the wire (stackra-260).
-      if (field.hidden === true) fields.delete(field.name);
-      else fields.set(field.name, field);
-  const properties: JsonObject = {};
-  const required: string[] = [];
+      if (field.hidden === true) {
+        fields.delete(field.name);
+        Reflect.deleteProperty(properties, field.name);
+        required.delete(field.name);
+      } else fields.set(field.name, field);
+  for (const name of Object.keys(properties)) if (fields.has(name)) required.delete(name);
   for (const field of fields.values()) {
     properties[field.name] = fieldSchema(field);
-    if (!field.optional && field.default === undefined) required.push(field.name);
+    if (!field.optional && field.default === undefined) required.add(field.name);
   }
   return {
     type: "object",
-    ...(required.length > 0 ? { required } : {}),
+    ...(required.size > 0 ? { required: [...required] } : {}),
     properties,
   };
 }
