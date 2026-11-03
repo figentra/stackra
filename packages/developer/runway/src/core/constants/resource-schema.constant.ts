@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `RESOURCE_SCHEMA`, one managed resource of the root runway's `resources`: its kind, the Postgres engine and
- *          version, a size per environment and an optional reason.
+ *          version and a size per environment. `reason` was removed (STA-2028): ADR 0493's reason rule is the workloads'.
  * Boundary: internal; the root runway schema composes it. Strict. The engine is Postgres's alone. A kind outside
  *           `ResourceKind` (Kafka, OpenSearch, SES are reserved) is refused naming ADR 0493.
  * Runtime: isomorphic
@@ -25,7 +25,6 @@ export const RESOURCE_SCHEMA = z
       .regex(/^[0-9]+(\.[0-9]+)?$/, "Expected a major version such as 17")
       .optional(),
     size: SIZE_BY_ENVIRONMENT_SCHEMA.optional(),
-    reason: z.string().min(1).optional(),
   })
   .refine(
     (resource) =>

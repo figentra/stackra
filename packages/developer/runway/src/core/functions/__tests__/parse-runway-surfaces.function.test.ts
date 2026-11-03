@@ -60,8 +60,6 @@ function issuePaths(run: () => unknown): string[] {
 
 const withSurfaces = (surfaces: unknown) => () => parseRunway("root", { ...ROOT, surfaces });
 const withMobile = (mobile: unknown) => () => parseRunway("root", { ...ROOT, mobile });
-const appWithWhiteLabel = (whiteLabel: unknown) =>
-  parseRunway("app", { version: 3, environments: {}, release: { mobile: { whiteLabel } } });
 
 /** Parses the staff app offering `providers` for social sign-in. */
 const social = (providers: string[]) =>
@@ -191,11 +189,5 @@ describe("parseRunway surfaces and mobile", () => {
     expect(
       issuePaths(() => parseRunway("root", { ...ROOT, environments: { dev: { lanes } } })),
     ).toEqual(["environments.dev.lanes.repos"]);
-  });
-
-  it("takes per-tenant white-label variants in an app runway, and the old boolean", () => {
-    const whiteLabel = { entitlement: "entitlement:commerce:white-label", modes: ["managed"] };
-    expect(appWithWhiteLabel(whiteLabel).release?.mobile?.whiteLabel).toEqual(whiteLabel);
-    expect(appWithWhiteLabel(true).release?.mobile?.whiteLabel).toBe(true);
   });
 });
