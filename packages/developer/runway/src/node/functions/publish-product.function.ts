@@ -73,9 +73,11 @@ export async function publishProduct(
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
   const run = request.run ?? runCommand;
+  const accountId = root.providers?.cloudflare?.accountId;
+  const env = accountId === undefined ? undefined : { CLOUDFLARE_ACCOUNT_ID: String(accountId) };
   const uploaded: string[] = [];
   for (const bundle of bundles)
-    uploaded.push(...(await uploadBundle(bundle, product, request.assets.bucket, run)));
+    uploaded.push(...(await uploadBundle(bundle, product, request.assets.bucket, run, env)));
 
   const written: string[] = [];
   const put = async (key: string, value: unknown): Promise<void> => {
