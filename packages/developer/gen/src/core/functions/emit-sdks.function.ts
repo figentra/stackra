@@ -5,15 +5,18 @@
  *          (`.stackra/sdks/typescript/index.ts`, with the input and output shapes as types), a Python client
  *          (`.stackra/sdks/python/<member>_client.py`, standard library only) and a PHP client
  *          (`.stackra/sdks/php/<Member>Client.php`, no dependency). Each client takes the base URL, a bearer token and
- *          the pinned dated version (`Stackra-Version`, ADR 0118), sends the input as path, query or JSON body as the
- *          endpoint says, and raises the ADR 0140 refusal envelope as its own error.
+ *          the pinned dated version (`Stackra-Version`, ADR 0118), requests the base URL (any path prefix kept) plus
+ *          the endpoint path, sends the input as path, query or JSON body as the endpoint says, sends on every write
+ *          the caller's `Idempotency-Key` or one it generates once per call, before the request (ADR 0136 decision 3),
+ *          and raises the ADR 0140 refusal envelope as its own error.
  * Boundary: pure and deterministic: methods follow the manifest's order, types are sorted by name. Only `public`
  *           entries are published: an action not marked public is never in an SDK, whatever its area. Which languages
  *           a release ships, and the package names and registries, are the release pipeline's settings, never gen's;
  *           gen writes all three and the pipeline picks. Never from `openapi.json` (ADR 0158).
  * Runtime: isomorphic
- * Governing contract: OS ADR 0039 (decisions 2 and 3); ADR 0217 (decision 1); ADR 0118 (dated versions); ADR 0140 (the
- *                     refusal envelope); ADR 0158 (the manifest is the source); ADR 0294 (decision 10).
+ * Governing contract: OS ADR 0039 (decisions 2 and 3); ADR 0217 (decision 1); ADR 0118 (dated versions); ADR 0136
+ *                     (decision 3: the SDKs generate the idempotency key); ADR 0140 (the refusal envelope); ADR 0158
+ *                     (the manifest is the source); ADR 0294 (decision 10).
  */
 import type { Json, StackraManifest } from "@stackra/contracts";
 import { camelCase, pascalCase, snakeCase } from "@stackra/support";
@@ -214,7 +217,7 @@ function typescriptSdk(
     "",
     "/** How the client reaches the API. */",
     "export interface ClientOptions {",
-    "  /** The region endpoint, such as `https://api.example.com`. */",
+    "  /** The region endpoint, such as `https://api.example.com`; a path prefix (`https://example.com/api`) is kept. */",
     "  readonly baseUrl: string;",
     "  /** The bearer token (an API key or an OAuth access token). */",
     "  readonly token?: string;",
@@ -226,7 +229,7 @@ function typescriptSdk(
     "",
     "/** Per-call options. */",
     "export interface CallOptions {",
-    "  /** Sent as `Idempotency-Key`, so a retried write runs once. */",
+    "  /** Sent as `Idempotency-Key` on a write, so a retried write runs once; a write without one gets a fresh UUID. */",
     "  readonly idempotencyKey?: string;",
     "}",
     "",
@@ -262,17 +265,19 @@ function typescriptSdk(
     "    input: object,",
     "    options: CallOptions,",
     "  ): Promise<unknown> {",
+    "    const idempotencyKey =",
+    '      options.idempotencyKey ?? (method === "GET" ? undefined : globalThis.crypto.randomUUID());',
     "    const values = input as Record<string, unknown>;",
     "    const path = template.replace(/:(\\w+)/g, (_match, name: string) => encodeURIComponent(String(values[name])));",
     "    const rest = Object.fromEntries(Object.entries(values).filter(([name]) => !pathParameters.includes(name)));",
-    "    const url = new URL(path, this.options.baseUrl);",
+    '    const url = new URL(this.options.baseUrl.replace(/\\/+$/, "") + path);',
     '    if (method === "GET")',
     "      for (const [name, value] of Object.entries(rest))",
     '        if (value !== undefined) url.searchParams.set(name, typeof value === "string" ? value : JSON.stringify(value));',
     '    const headers: Record<string, string> = { accept: "application/json" };',
     '    if (this.options.token !== undefined) headers["authorization"] = `Bearer ${this.options.token}`;',
     '    if (this.options.version !== undefined) headers["stackra-version"] = this.options.version;',
-    '    if (options.idempotencyKey !== undefined) headers["idempotency-key"] = options.idempotencyKey;',
+    '    if (idempotencyKey !== undefined) headers["idempotency-key"] = idempotencyKey;',
     '    if (method !== "GET") headers["content-type"] = "application/json";',
     "    const response = await (this.options.fetch ?? fetch)(url, {",
     "      method,",
@@ -309,6 +314,7 @@ function pythonSdk(manifest: StackraManifest, operations: readonly Operation[]):
     "import urllib.error",
     "import urllib.parse",
     "import urllib.request",
+    "import uuid",
     "",
     "",
     "class ApiError(Exception):",
@@ -332,6 +338,8 @@ function pythonSdk(manifest: StackraManifest, operations: readonly Operation[]):
     "",
     ...methods,
     "    def _call(self, method: str, template: str, path_parameters: list, values: dict, idempotency_key):",
+    '        if idempotency_key is None and method != "GET":',
+    "            idempotency_key = str(uuid.uuid4())",
     '        path = re.sub(r":(\\w+)", lambda m: urllib.parse.quote(str(values[m.group(1)]), safe=""), template)',
     "        rest = {k: v for k, v in values.items() if k not in path_parameters}",
     "        url = self.base_url + path",
@@ -405,6 +413,12 @@ function phpSdk(manifest: StackraManifest, operations: readonly Operation[]): st
     ...methods,
     "    private function call(string $method, string $template, array $pathParameters, array $values, ?string $idempotencyKey): mixed",
     "    {",
+    "        if ($idempotencyKey === null && $method !== 'GET') {",
+    "            $bytes = random_bytes(16);",
+    "            $bytes[6] = chr(ord($bytes[6]) & 0x0f | 0x40);",
+    "            $bytes[8] = chr(ord($bytes[8]) & 0x3f | 0x80);",
+    "            $idempotencyKey = vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));",
+    "        }",
     "        $path = preg_replace_callback('/:(\\w+)/', fn ($m) => rawurlencode((string) $values[$m[1]]), $template);",
     "        $rest = array_diff_key($values, array_flip($pathParameters));",
     "        $url = rtrim($this->baseUrl, '/') . $path;",
