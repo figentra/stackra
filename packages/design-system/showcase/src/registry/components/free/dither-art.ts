@@ -18,9 +18,9 @@ export const FREE_DITHER_ART: ComponentEntry = {
   parts: ["DitherArt"],
   // HeroUI has no generative art; this is the brand kit's field code on a 2D canvas.
   hero: {},
-  examples: [{ id: "strata", card: true }, { id: "core" }],
+  examples: [{ id: "strata", card: true }, { id: "core" }, { id: "glyphs" }],
   related: ["free/frame", "free/bento-card"],
-  tokens: ["color.accent", "color.core", "color.background"],
+  tokens: ["color.accent", "color.core", "color.background", "font.mono"],
   keywords: [
     "brand pattern",
     "dither",
@@ -29,6 +29,8 @@ export const FREE_DITHER_ART: ComponentEntry = {
     "strata",
     "hero art",
     "background art",
+    "code glyphs",
+    "sun",
   ],
   status: "new",
 };

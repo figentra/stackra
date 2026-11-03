@@ -3,7 +3,8 @@
  * Purpose: proves the web DitherArt is hidden decoration that nothing can focus, keeps its poster under the canvas,
  *          draws the pattern at cell resolution in the three token colours, drifts at full motion and stands still
  *          under reduced motion or `speed={0}`, draws the same in right-to-left, and that the ported dither puts the
- *          strata's core at the base and none at the top.
+ *          strata's core at the base and none at the top. The `glyphs` mode draws lit cells as characters from its
+ *          set at the cell size, and `sun` moves the core glow while the kit's own centre stays the default.
  * Boundary: jsdom has no canvas or layout, so `getContext`, the element's size and `requestAnimationFrame` are
  *           recording stand-ins; `useReducedMotion` is stubbed.
  * Runtime: browser
@@ -13,6 +14,7 @@
 import { render } from "@testing-library/react";
 import { I18nProvider } from "react-aria-components";
 
+import { DITHER_FIELDS } from "#core/constants/dither-fields.constant";
 import { ditherTone } from "#core/functions/dither-tone.function";
 import { DitherArt } from "#react/dither-art/dither-art";
 
@@ -20,10 +22,17 @@ const state = vi.hoisted(() => ({ isReduced: false }));
 vi.mock("motion/react", () => ({ useReducedMotion: () => state.isReduced }));
 
 const fills: string[] = [];
+const texts: string[] = [];
 const context = {
   fillStyle: "",
+  font: "",
+  textAlign: "",
+  textBaseline: "",
   fillRect: vi.fn(function (this: { fillStyle: string }) {
     fills.push(this.fillStyle);
+  }),
+  fillText: vi.fn((text: string) => {
+    texts.push(text);
   }),
 };
 const frame = vi.fn(() => 1);
@@ -32,10 +41,15 @@ const frame = vi.fn(() => 1);
 const tones = (row: number) =>
   Array.from({ length: 64 }, (_, i) => ditherTone("strata", i, row, 64, 32));
 
+/** The strata's tones along the top row of a 64 × 32 grid, the core glow at `sun` when given. */
+const top = (sun?: { x: number; y: number }) =>
+  Array.from({ length: 64 }, (_, i) => ditherTone("strata", i, 0, 64, 32, 0, sun));
+
 describe("DitherArt (web)", () => {
   beforeEach(() => {
     state.isReduced = false;
     fills.length = 0;
+    texts.length = 0;
     vi.clearAllMocks();
     vi.stubGlobal("requestAnimationFrame", frame);
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
@@ -96,5 +110,47 @@ describe("DitherArt (web)", () => {
   it("puts the strata's core at the base and none at the top", () => {
     expect(tones(31)).toContain(2);
     expect(tones(0)).not.toContain(2);
+  });
+
+  it("draws lit cells as glyphs from its set at the cell size, still under reduced motion", () => {
+    state.isReduced = true;
+    const { container } = render(
+      <DitherArt poster="/p.png" pattern="core" mode="glyphs" glyphs="{}" pixelSize={8} />,
+    );
+    const canvas = container.querySelector("canvas");
+    // Device pixels, not cells: 64 × 32 CSS pixels at a device pixel ratio of 1.
+    expect(canvas?.width).toBe(64);
+    expect(canvas?.height).toBe(32);
+    expect(canvas?.className).not.toContain("pixelated");
+    expect(context.font).toBe("8px monospace");
+    expect(texts.length).toBeGreaterThan(0);
+    expect(texts.every((text) => text === "{" || text === "}")).toBe(true);
+    // Only the ground is a rectangle.
+    expect(context.fillRect).toHaveBeenCalledTimes(1);
+    expect(frame).not.toHaveBeenCalled();
+  });
+
+  it("moves the core glow to the sun and keeps the kit's centre by default", () => {
+    expect(top({ x: 0.5, y: 0 })).toContain(2);
+    expect(top()).not.toContain(2);
+    for (const pattern of ["strata", "core", "grid", "lanes"] as const)
+      expect(DITHER_FIELDS[pattern](0.4, 0.7, 3, 2)).toEqual(
+        DITHER_FIELDS[pattern](0.4, 0.7, 3, 2, undefined),
+      );
+    expect(DITHER_FIELDS.strata(0.3, 0.9, 0, 2)).toEqual(
+      DITHER_FIELDS.strata(0.3, 0.9, 0, 2, { x: 0.5, y: 1.04 }),
+    );
+    expect(DITHER_FIELDS.grid(0.8, 0.4, 0, 2)).toEqual(
+      DITHER_FIELDS.grid(0.8, 0.4, 0, 2, { x: 0.9, y: 0.5 }),
+    );
+  });
+
+  it("passes the sun to the canvas draw", () => {
+    render(<DitherArt poster="/p.png" pixelSize={4} speed={0} />);
+    const kit = [...context.fillRect.mock.calls];
+    context.fillRect.mockClear();
+    render(<DitherArt poster="/p.png" pixelSize={4} speed={0} sun={{ x: 0.5, y: 0 }} />);
+    // The lit cells sit elsewhere: the glow left the base for the top.
+    expect(context.fillRect.mock.calls).not.toEqual(kit);
   });
 });

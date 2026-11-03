@@ -7,6 +7,7 @@
  * Governing contract: brand rules §40; ADR 0302 (decision 3); STA-2041.
  */
 import type { DitherPattern } from "#contracts/enums/dither-pattern.enum";
+import type { DitherSun } from "#contracts/types/dither-sun.type";
 import { DITHER_FIELDS } from "#core/constants/dither-fields.constant";
 
 /** Bayer 8×8 thresholds, 0..63. */
@@ -16,7 +17,8 @@ const BAYER8 = [
   39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21,
 ] as const;
 
-/** The tone (0 tile, 1 steel line, 2 core) of cell (i, j) on a cols × rows grid at time t in seconds. */
+/** The tone (0 tile, 1 steel line, 2 core) of cell (i, j) on a cols × rows grid at time t in seconds, the core glow
+ * at `sun` when given. */
 export function ditherTone(
   pattern: DitherPattern,
   i: number,
@@ -24,8 +26,9 @@ export function ditherTone(
   cols: number,
   rows: number,
   t = 0,
+  sun?: DitherSun,
 ): 0 | 1 | 2 {
-  const [steel, core] = DITHER_FIELDS[pattern](i / cols, j / rows, t, cols / rows);
+  const [steel, core] = DITHER_FIELDS[pattern](i / cols, j / rows, t, cols / rows, sun);
   const threshold = ((BAYER8[(j & 7) * 8 + (i & 7)] ?? 0) + 0.5) / 64;
   if (core > threshold) return 2;
   return steel > threshold ? 1 : 0;

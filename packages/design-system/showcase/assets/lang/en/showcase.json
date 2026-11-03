@@ -1761,7 +1761,7 @@
       },
       "frame": {
         "title": "Frame",
-        "description": "A window, phone or plain frame around a screenshot or a live widget.",
+        "description": "A window, schematic, phone or plain frame around a screenshot or a live widget.",
         "keywords": "frame, window, phone, mockup, screenshot"
       },
       "bento_card": {
@@ -1783,6 +1783,21 @@
         "title": "Props playground",
         "description": "A live component over a panel of its props, with a theme and a direction switch.",
         "keywords": "playground, props, controls, live preview, theme, rtl"
+      },
+      "blueprint_section": {
+        "title": "Blueprint section",
+        "description": "One ruled band of a blueprint page, with + marks at its top corners.",
+        "keywords": "blueprint, section, band, rule, crosshair, landing"
+      },
+      "schematic": {
+        "title": "Schematic",
+        "description": "Named parts joined by measured pipes, so one thing visibly turns into many.",
+        "keywords": "schematic, pipeline, pipes, connectors, diagram, flow"
+      },
+      "section_dock": {
+        "title": "Section dock",
+        "description": "A sticky bar of section links that follows the page and says what each section is doing.",
+        "keywords": "dock, scroll spy, section links, status line, in-page navigation"
       }
     }
   },
@@ -5427,6 +5442,9 @@
         },
         "core": {
           "title": "Core"
+        },
+        "glyphs": {
+          "title": "Glyphs"
         }
       },
       "frame": {
@@ -5435,6 +5453,9 @@
         },
         "phone": {
           "title": "Phone"
+        },
+        "schematic": {
+          "title": "Schematic"
         }
       },
       "bento_card": {
@@ -5461,6 +5482,27 @@
       "props_playground": {
         "button": {
           "title": "Button"
+        }
+      },
+      "blueprint_section": {
+        "band": {
+          "title": "Ruled band"
+        },
+        "plain": {
+          "title": "Without marks"
+        }
+      },
+      "schematic": {
+        "split": {
+          "title": "One into three"
+        },
+        "chain": {
+          "title": "A chain"
+        }
+      },
+      "section_dock": {
+        "dock": {
+          "title": "Dock"
         }
       }
     }
@@ -9130,7 +9172,7 @@
         "frame": {
           "headline": "Put the product in a frame.",
           "intro": "A quiet window bar, a phone or a plain border, on the frame radius, that can run past the card edge and dock a switcher.",
-          "tags": "Window · Phone · Bleed",
+          "tags": "Window · Schematic · Phone · Bleed",
           "what": "Chrome around a screenshot or a live widget.",
           "when": "To show a screen of the product on a marketing page.",
           "rtl": "A bleed runs past the inline end, so it mirrors in Arabic.",
@@ -9171,6 +9213,33 @@
           "when": "In docs and on a landing page, to let people try a component.",
           "rtl": "The direction switch turns only the preview right to left.",
           "when_not": "Inside product screens."
+        },
+        "blueprint_section": {
+          "headline": "Rule the page like a drawing.",
+          "intro": "Each section is a band bounded by hairline rules, with + marks at its top corners, in the theme's own blueprint colours.",
+          "tags": "Rules · Marks · Dock-aware",
+          "what": "A ruled band of a blueprint page.",
+          "when": "For each section of a landing page in the blueprint direction.",
+          "rtl": "Rules and marks sit on logical sides, so the band mirrors in Arabic.",
+          "when_not": "Inside product screens; use Card or Surface."
+        },
+        "schematic": {
+          "headline": "Draw the pipeline, not a picture of it.",
+          "intro": "Lay out the parts yourself; the schematic measures them and joins them with pipes that draw in once, step by step.",
+          "tags": "Measured · Orthogonal · Floor steps",
+          "what": "A machine of named parts joined by pipes.",
+          "when": "To show one input becoming many outputs on a marketing or docs page.",
+          "rtl": "The pipes are measured, never flipped, so they follow the mirrored layout.",
+          "when_not": "For data people must read from the lines; use a chart or a tree diagram."
+        },
+        "section_dock": {
+          "headline": "Let the page narrate itself.",
+          "intro": "A dock of section links that marks the one in view and shows its status line, changing only when the section does.",
+          "tags": "Scroll spy · Status · Sticky",
+          "what": "A sticky bar of in-page links with a status line.",
+          "when": "At the bottom of a long blueprint page.",
+          "rtl": "Links and the status line follow the reading direction.",
+          "when_not": "For a docs page's contents; use TocRail."
         }
       }
     }
