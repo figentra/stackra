@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `Intent`, what one argument vector asks for, decided before any container exists: the command list, the
+ * Purpose: `RouteDecision`, what one argument vector asks for, decided before any container exists: the command list, the
  *          version, a command's help, a run, a usage problem (an unknown command or bad arguments), a completion
  *          script, or the candidates a completion script asks for.
  * Boundary: a type only; `route` decides it, `createConsole` acts on it.
@@ -13,7 +13,7 @@ import type { CommandEntry } from "#core/types/command-entry.type";
 import type { GlobalFlags } from "#core/types/global-flags.type";
 
 /** What an invocation asks for. */
-export type Intent =
+export type RouteDecision =
   | { readonly kind: "list"; readonly globals: GlobalFlags }
   | { readonly kind: "version"; readonly globals: GlobalFlags }
   | { readonly kind: "help"; readonly globals: GlobalFlags; readonly entry: CommandEntry }

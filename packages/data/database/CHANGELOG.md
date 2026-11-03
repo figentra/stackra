@@ -1,5 +1,30 @@
 # @stackra/database
 
+## 0.8.0
+
+### Minor Changes
+
+- 928dcc0: A service's generated `boot` now calls `connectVisibilityFilter(container)` beside the hold registry and sequence time
+  zone, so reads AND the bound `VisibilityFilter`'s conditions, `UserStamps` take the running call's actor, and
+  `callTimeZone()` reads the call's time zone; until now nothing outside tests connected it, so record visibility, user
+  stamps and the call time zone were all off (STA-2044). The database testing plugin connects the compiled app the same
+  way on every compile, and the memory database runs the `StampSubscriber`, so unit tests see what production does.
+
+### Patch Changes
+
+- Updated dependencies [7dd35b3]
+  - @stackra/container@0.8.0
+  - @stackra/actions@0.8.0
+  - @stackra/model@0.8.0
+  - @stackra/console@0.8.0
+  - @stackra/config@0.8.0
+  - @stackra/errors@0.8.0
+  - @stackra/events@0.8.0
+  - @stackra/validation@0.8.0
+  - @stackra/cache@0.8.0
+  - @stackra/testing@0.8.0
+  - @stackra/contracts@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes

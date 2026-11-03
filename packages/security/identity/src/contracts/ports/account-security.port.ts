@@ -15,7 +15,7 @@
 import { Port } from "@stackra/contracts";
 
 import type { AccountSecurityOverview } from "#contracts/types/account-security-overview.type";
-import type { DeviceSession } from "#contracts/types/device-session.type";
+import type { AccountSession } from "#contracts/types/account-session.type";
 
 /**
  * The signed-in user's security settings.
@@ -52,7 +52,7 @@ export abstract class AccountSecurity extends Port {
   abstract renamePasskey(input: { readonly id: string; readonly name: string }): Promise<void>;
 
   /** The user's device sessions, this one marked `isCurrent`. */
-  abstract sessions(): Promise<readonly DeviceSession[]>;
+  abstract sessions(): Promise<readonly AccountSession[]>;
 
   /** Ends the device session `id`. */
   abstract revokeSession(id: string): Promise<void>;
