@@ -12,18 +12,15 @@
  * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL);
  *          motion principles (floor steps, no easing); WCAG 2.2 SC 2.2.2 and 2.3.3; STA-2041.
  */
-import { motionTiming, STACKRA_THEME } from "@stackra/tokens";
-import { DitherArt, Heading, Text, useMotion } from "@stackra/ui/react";
-import { type ReactElement, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { STACKRA_THEME } from "@stackra/tokens";
+import { DitherArt, Heading, Text, useFloorSteps } from "@stackra/ui/react";
+import { type ReactElement, useRef } from "react";
 
 import type { MonoDisplayProps } from "#react/mono-display/mono-display.props";
 import { RuledBand } from "#react/ruled-band/ruled-band";
 
 /** The floors under the wordmark. */
 const FLOORS = 3;
-
-/** The time between floors: the theme's `floor` motion step. */
-const STEP_MS = motionTiming(STACKRA_THEME, "floor").durationMs;
 
 /** A glyph cell as tall as the theme's `mono` type step, so the field reads as code; unset, DitherArt's own. */
 const GLYPH_PX = Number.parseFloat(STACKRA_THEME.typography.mono?.size ?? "") || undefined;
@@ -49,41 +46,9 @@ export function MonoDisplay({
   className,
 }: MonoDisplayProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
-  const motion = useMotion();
-  const plays = art === "floors" && motion === "full";
-  // Every floor first, as the server and the edge draw them.
-  const [risen, setRisen] = useState(FLOORS);
-  const [isStarted, setIsStarted] = useState(false);
-
-  // Before paint, so floors about to rise never flash; dropping below `full` mid-rise draws them all.
-  useLayoutEffect(() => {
-    // oxlint-disable-next-line react/set-state-in-effect -- reason: the server draws every floor; only the browser rewinds them to rise
-    setRisen(plays ? 0 : FLOORS);
-  }, [plays]);
-
-  useEffect(() => {
-    const element = root.current;
-    if (!plays || isStarted || !element) return undefined;
-    if (typeof IntersectionObserver !== "function") {
-      // oxlint-disable-next-line react/set-state-in-effect -- reason: with no IntersectionObserver there is no view to wait for
-      setIsStarted(true);
-      return undefined;
-    }
-    const sight = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) setIsStarted(true);
-      },
-      { threshold: 0.4 },
-    );
-    sight.observe(element);
-    return () => sight.disconnect();
-  }, [plays, isStarted]);
-
-  useEffect(() => {
-    if (!plays || !isStarted || risen >= FLOORS) return undefined;
-    const step = setTimeout(() => setRisen((count) => count + 1), STEP_MS);
-    return () => clearTimeout(step);
-  }, [plays, isStarted, risen]);
+  // The floors rise bottom to top on the theme's floor step once in view (@stackra/ui's one floor-step hook); a still
+  // page, the server and the edge draw every floor.
+  const risen = useFloorSteps(root, { total: FLOORS, isEnabled: art === "floors", threshold: 0.4 });
 
   return (
     <RuledBand label={title}>

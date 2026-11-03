@@ -37,7 +37,10 @@ describe("PageDock", () => {
     const links = within(dock).getAllByRole("link");
     expect(links.map((link) => link.getAttribute("href"))).toEqual(["#write", "#expose"]);
     expect(links[0]?.getAttribute("aria-current")).toBe("location");
-    expect(within(dock).getByRole("status").textContent).toBe("gen: 1 action");
+    // The status line is plain text (no live region: scrolling announces nothing; aria-current is the signal).
+    expect(dock.querySelector('[data-slot="section-dock-status"]')?.textContent).toBe(
+      "gen: 1 action",
+    );
   });
 
   it("reaches the links in order from the keyboard", () => {
