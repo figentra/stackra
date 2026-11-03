@@ -444,7 +444,7 @@ test("checkRunwaySchemas: each shipped runway schema is a byte copy of its tools
   );
   assert.match(
     checkRunwaySchemas((p) => files[p])[0] ?? "",
-    /: run `cp tools\/schemas\/runway-root\.schema\.json packages\/developer\/runway\/schema\/root\.json`$/,
+    /: make both the zod-derived text, editing tools\/schemas\/runway-root\.schema\.json and running `cp tools\/schemas\/runway-root\.schema\.json packages\/developer\/runway\/schema\/root\.json` \(ADR 0400 decision 7\)$/,
   );
 });
 
