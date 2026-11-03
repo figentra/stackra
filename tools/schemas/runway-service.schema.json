@@ -252,6 +252,7 @@
       "properties": {
         "signingKey": {
           "$ref": "#/$defs/secretName",
+          "default": "STACKRA_EVENTS_SIGNING_KEY",
           "description": "The secret name of the private signing key; never a value. Default `STACKRA_EVENTS_SIGNING_KEY`."
         },
         "keys": {

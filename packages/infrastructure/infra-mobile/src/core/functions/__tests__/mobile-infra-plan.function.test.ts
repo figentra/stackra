@@ -39,14 +39,14 @@ const ROOT_ENVIRONMENTS = {
 };
 
 const PROFILES = {
-  development: { distribution: "internal", developmentClient: true, environment: "development" },
-  preview: { distribution: "internal", androidApk: true, environment: "preview" },
-  staging: { distribution: "store", autoIncrement: true, environment: "staging" },
-  production: { distribution: "store", autoIncrement: true, environment: "production" },
+  development: { environment: "development" },
+  preview: { environment: "preview" },
+  staging: { environment: "staging" },
+  production: { environment: "production" },
 };
 
 const APP_ENVIRONMENTS = {
-  dev: { port: 8081, mobile: { devClient: true } },
+  dev: { port: 8081 },
   preview: { mobile: { channel: "preview", profile: "preview" } },
   staging: { mobile: { profile: "staging" } },
   production: { mobile: { channel: "production", profile: "production" } },
@@ -246,9 +246,9 @@ describe("mobileInfraPlan", () => {
         root(),
         app({
           profiles: {
-            preview: { distribution: "internal" },
-            staging: { distribution: "store", environment: "production" },
-            production: { distribution: "store", environment: "production" },
+            preview: {},
+            staging: { environment: "production" },
+            production: { environment: "production" },
           },
         }),
         IDENTITY,

@@ -69,15 +69,7 @@ const CONSOLE = {
   version: 3,
   secrets: [],
   health: { path: "/healthz", expects: "sha" },
-  release: {
-    pwa: { updates: "from-config", betaBadgeOutsideProduction: true },
-    desktop: {
-      channels: ["beta", "latest"],
-      signing: { mac: false, windows: false },
-      feedPath: "console",
-      platforms: { mac: ["dmg", "zip"], windows: ["nsis"], linux: ["AppImage"] },
-    },
-  },
+  release: { desktop: { feedPath: "console" } },
   telemetry: { sentryProject: "acme-console" },
   environments: {
     dev: {
@@ -88,7 +80,6 @@ const CONSOLE = {
       desktop: { devtools: true, remoteDebugPort: 9222, pkceLoopbackPort: 5179 },
       vars: { VITE_SENTRY_DSN: "", EXPO_PUBLIC_API_ORIGIN: { "from-port": "gateway" } },
       config: { "logger.telemetry": { traces: { sampleRate: 1 } } },
-      e2e: { baseUrl: "from-port", seeds: "from-stackra-config" },
     },
     preview: {
       domain: "console-pr-${pr}.preview.acme.example",
@@ -99,7 +90,6 @@ const CONSOLE = {
     },
     production: {
       domain: "console.acme.example",
-      aliases: ["app.acme.example"],
       workers: { observability: { headSamplingRate: 0.1 } },
       desktop: { channel: "latest" },
     },
@@ -480,7 +470,7 @@ describe("parseRunway", () => {
     const mobile = parseRunway("app", {
       version: 3,
       health: { path: "/healthz" },
-      environments: { dev: { mobile: { metroPort: 8081 }, e2e: { device: "pixel" } } },
+      environments: { dev: { mobile: { metroPort: 8081 } } },
     });
     expect(mobile.environments.dev?.mobile?.metroPort).toBe(8081);
     expect(
@@ -527,6 +517,44 @@ describe("parseRunway", () => {
     expect(refused({ ...events, keys: [...events.keys, ...events.keys] })).toEqual([
       "environments.staging.events.keys",
     ]);
+  });
+
+  it("refuses each key STA-2028 removed, naming the block it was in", () => {
+    const app = (document: Record<string, unknown>) =>
+      issuePaths(() => parseRunway("app", { version: 3, environments: {}, ...document }));
+    const dev = (values: Record<string, unknown>) => app({ environments: { dev: values } });
+    expect(app({ release: { pwa: {} } })).toEqual(["release"]);
+    for (const key of ["channels", "signing", "platforms"])
+      expect(app({ release: { desktop: { feedPath: "console", [key]: {} } } })).toEqual([
+        "release.desktop",
+      ]);
+    expect(app({ release: { mobile: { whiteLabel: true } } })).toEqual(["release.mobile"]);
+    for (const key of [
+      "distribution",
+      "developmentClient",
+      "simulator",
+      "androidApk",
+      "autoIncrement",
+    ])
+      expect(
+        app({
+          release: { mobile: { profiles: { store: { environment: "production", [key]: true } } } },
+        }),
+      ).toEqual(["release.mobile.profiles.store"]);
+    for (const key of ["aliases", "e2e", "pwa"])
+      expect(dev({ [key]: {} })).toEqual(["environments.dev"]);
+    expect(dev({ desktop: { devtools: true, rollout: {} } })).toEqual(["environments.dev.desktop"]);
+    expect(dev({ mobile: { metroPort: 8081, devClient: true } })).toEqual([
+      "environments.dev.mobile",
+    ]);
+    expect(
+      issuePaths(() =>
+        parseRunway("root", {
+          ...ROOT,
+          resources: { db: { kind: "postgres", reason: "residency" } },
+        }),
+      ),
+    ).toEqual(["resources.db"]);
   });
 
   it("needs a var reference to name exactly one origin, and a var to be SCREAMING_SNAKE", () => {
