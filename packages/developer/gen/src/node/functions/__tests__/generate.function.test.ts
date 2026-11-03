@@ -52,6 +52,24 @@ describe("generate", () => {
     expect(readFileSync(join(root, ".stackra/gen/wiring.ts"), "utf8")).toBe("// edited by hand\n");
   });
 
+  it("imports each schemas file in the test setup, and a check flags a setup whose modules changed (STA-2032)", async () => {
+    const root = writeFixtureMember("shop", SHOP_SOURCES);
+    expect((await generate(root)).errors).toEqual([]);
+    const setupPath = join(root, ".stackra/vitest.setup.ts");
+    const setup = readFileSync(setupPath, "utf8");
+    expect(setup).toContain('import "./gen/schemas/shop.ts";');
+    expect(setup).not.toContain("loadMemberSchemas");
+
+    // A setup written before the module existed, or after one was removed, no longer matches: `--check` reports it.
+    writeFileSync(setupPath, setup.replace('import "./gen/schemas/shop.ts";\n', ""));
+    expect((await generate(root, { check: true })).changed).toEqual([".stackra/vitest.setup.ts"]);
+    writeFileSync(
+      setupPath,
+      setup.replace('import "./gen/schemas/shop.ts";', 'import "./gen/schemas/gone.ts";'),
+    );
+    expect((await generate(root, { check: true })).changed).toEqual([".stackra/vitest.setup.ts"]);
+  });
+
   it("writes the integration-tier config only for a member with an .int.test.ts (STA-1819)", async () => {
     const root = writeFixtureMember("shop", SHOP_SOURCES);
     await generate(root);

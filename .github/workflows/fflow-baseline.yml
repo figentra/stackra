@@ -47,7 +47,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       # Failures are judged against main's baseline, so the run itself never fails the job.
       - name: Tasks
-        run: pnpm exec turbo run lint typecheck test build --continue --summarize || true
+        run: pnpm exec turbo run lint typecheck build --continue --summarize || true
       - name: Results
         run: pnpm exec fflow gate baseline save
       - if: github.event_name == 'push'

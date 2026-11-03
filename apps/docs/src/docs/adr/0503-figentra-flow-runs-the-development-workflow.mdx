@@ -1,6 +1,6 @@
 ---
 title: "0503 — Figentra Flow runs the development workflow"
-description: "Accepted · 2026-11-01"
+description: "Accepted, amended by 0522 · 2026-11-01"
 ---
 
 {/* Stackra file contract: Purpose: the decision record that Figentra Flow moves every change from spec to release (spec, approval, worktree, gate, land, release, ship, status, clean), that stackra testbed runs the checks on the CI boxes, that runway deploys and only the owner promotes, that GitHub keeps the Release workflow and one required check posted by the gate bot, that land squashes, and that worktrees live only inside their repository. Boundary: decision text only; the code is figentra/flow (STA-1729). Runtime: docs. Governing contract: ADR template; ADR 0282, 0502, 0453, 0293. */}
@@ -14,6 +14,12 @@ description: "Accepted · 2026-11-01"
   Flow, is the SDLC) and [0502](/adr/0502-spec-tiers-and-approval-stops) (where the approval stops
   run). The product was renamed from Vellum to Figentra Flow (owner, 2026-10-31): the CLI
   `figentra-flow`, the repository figentra/flow and the status `figentra-flow/gate`.
+</Note>
+
+<Note>
+  Amended 2026-11-03 (STA-2073) by [0522](/adr/0522-testbed-own-repo): decision 2's gate calls
+  `testbed run`, the testbed's own CLI, instead of `stackra testbed`. The gate still runs the full
+  verify on a CI box, and the rest of this decision stands.
 </Note>
 
 ## Context

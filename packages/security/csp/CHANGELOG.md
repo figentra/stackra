@@ -1,5 +1,12 @@
 # @stackra/csp
 
+## 0.8.0
+
+### Patch Changes
+
+- @stackra/config@0.8.0
+  - @stackra/validation@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes

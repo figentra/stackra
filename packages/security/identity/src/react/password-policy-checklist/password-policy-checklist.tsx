@@ -50,7 +50,7 @@ export function PasswordPolicyChecklist({
         {rules.map((rule) => (
           <li key={rule.key} className="flex items-center gap-2">
             <Icon
-              name={rule.isMet ? "circle-check" : "circle"}
+              name={rule.isMet ? "circle-check" : "minus"}
               size="sm"
               tone={rule.isMet ? "success" : "muted"}
               label={rule.isMet ? labels.met : labels.unmet}
