@@ -1,5 +1,38 @@
 # @stackra/consent
 
+## 0.7.1
+
+### Patch Changes
+
+- @stackra/iam@0.7.1
+  - @stackra/actions@0.7.1
+  - @stackra/storage@0.7.1
+  - @stackra/ui@0.7.1
+  - @stackra/config@0.7.1
+  - @stackra/container@0.7.1
+  - @stackra/contracts@0.7.1
+  - @stackra/errors@0.7.1
+  - @stackra/i18n@0.7.1
+  - @stackra/support@0.7.1
+  - @stackra/validation@0.7.1
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [1f5bf76]
+  - @stackra/iam@0.7.0
+  - @stackra/actions@0.7.0
+  - @stackra/storage@0.7.0
+  - @stackra/ui@0.7.0
+  - @stackra/config@0.7.0
+  - @stackra/container@0.7.0
+  - @stackra/contracts@0.7.0
+  - @stackra/errors@0.7.0
+  - @stackra/i18n@0.7.0
+  - @stackra/support@0.7.0
+  - @stackra/validation@0.7.0
+
 ## 0.6.1
 
 ### Patch Changes

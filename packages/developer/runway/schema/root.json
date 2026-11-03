@@ -1045,7 +1045,7 @@
             "avoid": {
               "type": "array",
               "items": {
-                "oneOf": [
+                "anyOf": [
                   {
                     "type": "object",
                     "additionalProperties": false,
@@ -1070,7 +1070,7 @@
                         "additionalProperties": false,
                         "properties": {
                           "firstDays": {
-                            "oneOf": [
+                            "anyOf": [
                               {
                                 "type": "integer",
                                 "minimum": 1
