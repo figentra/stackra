@@ -36,6 +36,7 @@ and `yaml`.
 | `stackra mobile onboard [--app <key>]`                    | take a product's mobile app from nothing to store-ready (ADR 0482); `--check`, `--live` in CI                                             |
 | `stackra preview serve --surface <s>`                     | serve a built surface on 127.0.0.1 as the edge would, with an `--api` proxy (STA-1676)                                                    |
 | `stackra smoke --env <e> [--only <targets>]`              | after a preview deploy: Playwright on each web surface, Maestro on the given mobile builds; exit 1 blocks promotion (STA-265)             |
+| `stackra promote --to <e> [--from <e>] [--sha <sha>]`     | ship what `--from` (default staging) runs to `--to` through runway's providers; `--approved` behind an approval                           |
 | `stackra start`                                           | gen, then `vite preview` of an app's web build                                                                                            |
 | `stackra typecheck`                                       | gen, then `tsc --noEmit`                                                                                                                  |
 | `stackra test [--tier unit\|int\|e2e]`                    | gen, then vitest (unit, or integration through `.stackra/vitest.int.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e) |
