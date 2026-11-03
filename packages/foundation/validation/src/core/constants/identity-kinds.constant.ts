@@ -24,6 +24,7 @@ export const IDENTITY_KINDS: readonly string[] = Object.freeze([
   "permissions",
   "query",
   "refusal",
+  "report",
   "role",
   "route",
   "schema",

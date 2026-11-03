@@ -2,10 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `checkIdentityLock`: a changed identity fails with `identity_changed` and its fix, unless the
  *          class's `@Renamed` names the locked identity in full or as written; integrations, sequences, blocks and
- *          routes are locked too; a removed class and a package's merged entries are not this check's concern.
+ *          routes are locked too, and so are permissions (the set prefix renames), roles, reports, config keys, own
+ *          schema names and endpoints (the bare path renames), each class judged once; an event version bump passes
+ *          (STA-2057); a removed class and a package's merged entries are not this check's concern.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 5 and 22).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 5, 20 and 22); ADR 0305 (rule 5).
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -42,6 +44,26 @@ function keyed(section: string, key: string): StackraManifest {
     [section]: [{ key, class: "Subject", module: "web", file: "src/subject.ts" }],
   };
 }
+
+/** A manifest with one entry in `section`, merged with `extra` entry fields. */
+const one = (section: string, entry: Record<string, unknown>): StackraManifest =>
+  ({
+    member: "shop",
+    package: "@acme/shop",
+    version: "1.0.0",
+    [section]: [{ class: "Subject", module: "shop", file: "src/subject.ts", ...entry }],
+  }) as StackraManifest;
+
+/** A manifest whose `schemas` map is `value`. */
+const schemas = (value: Record<string, unknown>): StackraManifest =>
+  ({
+    member: "shop",
+    package: "@acme/shop",
+    version: "1.0.0",
+    schemas: value,
+  }) as StackraManifest;
+/** A manifest with one integration event of wire name `name`. */
+const event = (name: string): StackraManifest => one("events", { name });
 
 describe("checkIdentityLock", () => {
   it("fails a changed identity with its fix", () => {
@@ -99,5 +121,88 @@ describe("checkIdentityLock", () => {
         ),
       ).toEqual([]);
     }
+  });
+
+  it("locks permissions, with the set prefix as a rename", () => {
+    const before = one("permissions", { key: "shop.order.read", member: "read" });
+    const after = one("permissions", { key: "sales.order.read", member: "read" });
+    const [error] = checkIdentityLock(before, after, new Map());
+    expect(error).toMatchObject({ code: "identity_changed", subject: "Subject.read" });
+    for (const old of ["shop.order", "shop.order.read"])
+      expect(checkIdentityLock(before, after, new Map([["Subject", old]]))).toEqual([]);
+    expect(checkIdentityLock(before, after, new Map([["Subject", "shop.other"]]))).toHaveLength(1);
+  });
+
+  it("locks roles, reports and config keys", () => {
+    for (const section of ["roles", "reports", "config"]) {
+      const extra = section === "config" ? { from: "@acme/shop" } : {};
+      const before = one(section, { key: "shop.old", ...extra });
+      const after = one(section, { key: "shop.new", ...extra });
+      expect(checkIdentityLock(before, after, new Map()).map((error) => error.code)).toEqual([
+        "identity_changed",
+      ]);
+      expect(checkIdentityLock(before, after, new Map([["Subject", "old"]]))).toEqual([]);
+      expect(checkIdentityLock(before, before, new Map())).toEqual([]);
+    }
+  });
+
+  it("locks own schema names, not enums, duplicates or generated entries", () => {
+    expect(
+      checkIdentityLock(schemas({ "shop.Page": {} }), schemas({ "sales.Page": {} }), new Map()),
+    ).toHaveLength(1);
+    expect(
+      checkIdentityLock(
+        schemas({ "shop.Page": {} }),
+        schemas({ "sales.Page": {} }),
+        new Map([["Page", "shop.Page"]]),
+      ),
+    ).toEqual([]);
+    expect(
+      checkIdentityLock(
+        schemas({ "shop.Kind": { enum: ["a"] } }),
+        schemas({ "sales.Kind": { enum: ["a"] } }),
+        new Map(),
+      ),
+    ).toEqual([]);
+    expect(
+      checkIdentityLock(
+        schemas({ "shop.Page": {}, "web.Page": {} }),
+        schemas({ "sales.Page": {}, "web.Page": {} }),
+        new Map(),
+      ),
+    ).toEqual([]);
+    expect(
+      checkIdentityLock(
+        schemas({ "shop.ReplicaPage": {}, "shop.SearchQueryInput": {} }),
+        schemas({ "sales.ReplicaPage": {}, "sales.SearchQueryInput": {} }),
+        new Map(),
+      ),
+    ).toEqual([]);
+  });
+
+  it("locks an endpoint, by bare path, and judges a class once", () => {
+    const endpointed = (key: string, method: string, path: string): StackraManifest =>
+      withAction(key, { endpoint: { method, path } });
+    const before = endpointed("orders.order.cancel@1", "POST", "/orders/cancel");
+    const moved = endpointed("orders.order.cancel@1", "PUT", "/orders/:orderId/cancel");
+    expect(checkIdentityLock(before, moved, new Map()).map((error) => error.message)).toEqual([
+      "the locked identity `POST /orders/cancel` became `PUT /orders/:orderId/cancel`",
+    ]);
+    for (const old of ["POST /orders/cancel", "/orders/cancel"])
+      expect(checkIdentityLock(before, moved, new Map([["CancelOrderAction", old]]))).toEqual([]);
+    // The key changed with the endpoint: one refusal, for the key.
+    const both = endpointed("orders.order.void@1", "PUT", "/orders/:orderId/void");
+    expect(checkIdentityLock(before, both, new Map())).toHaveLength(1);
+    // Gaining an endpoint is not a move.
+    expect(checkIdentityLock(withAction("orders.order.cancel@1"), moved, new Map())).toEqual([]);
+  });
+
+  it("accepts an event version bump and refuses a lower version", () => {
+    expect(
+      checkIdentityLock(event("orders.order.paid.v1"), event("orders.order.paid.v2"), new Map()),
+    ).toEqual([]);
+    expect(
+      checkIdentityLock(event("orders.order.paid.v2"), event("orders.order.paid.v1"), new Map()),
+    ).toHaveLength(1);
   });
 });

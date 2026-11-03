@@ -4,11 +4,13 @@
  *          one: every removed action, event, permission, extension point or refusal code, every moved endpoint,
  *          every narrowed input (a newly required field, a removed enum code, a tighter rule, a dropped `null`),
  *          every widened output or event payload (a removed or newly optional field, a new enum code, a new `null`),
- *          and every event version change dropped before its sunset.
+ *          and every event version change dropped before its sunset. An integration event whose written name stays at a
+ *          higher version is the sanctioned bump (ADR 0305 rule 5): not a removal, its payload not compared, its change
+ *          sunset rule still applied (STA-2057).
  * Boundary: pure; `today` is a parameter so the sunset rule is testable. Shapes are compared through the manifests'
  *           own `schemas`; a `$ref` into another package compares by reference only.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 22); ADR 0158; ADR 0131 (deprecation and sunset); ADR 0260.
+ * Governing contract: ADR 0294 (decision 22); ADR 0158; ADR 0131 (deprecation and sunset); ADR 0260; ADR 0305 (rule 5).
  */
 import type { StackraManifest } from "@stackra/contracts";
 
@@ -224,13 +226,23 @@ export function compareManifests(
 
   const nextEvents = new Map((next.events ?? []).map((event) => [event.name, event]));
   for (const event of previous.events ?? []) {
-    const now = nextEvents.get(event.name);
+    const direct = nextEvents.get(event.name);
+    // ADR 0305 rule 5: the same stem at a higher version is a sanctioned bump, not a removal.
+    const stem = /^(.+)\.v(\d+)$/.exec(event.name);
+    const bumped =
+      direct !== undefined || stem === null
+        ? undefined
+        : (next.events ?? []).find((candidate) => {
+            const other = /^(.+)\.v(\d+)$/.exec(candidate.name);
+            return other?.[1] === stem[1] && Number(other[2]) > Number(stem[2]);
+          });
+    const now = direct ?? bumped;
     if (now === undefined) {
       removed("events", event.name);
       continue;
     }
     const context = { previous, next, section: "events", identity: event.name, breaks, seen };
-    if (event["fields"] !== undefined)
+    if (bumped === undefined && event["fields"] !== undefined)
       compareShape(context, "fields", event["fields"], now["fields"], "output");
     const kept = Array.isArray(now["changes"]) ? now["changes"].filter(isNode) : [];
     for (const change of Array.isArray(event["changes"]) ? event["changes"].filter(isNode) : []) {
