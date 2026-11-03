@@ -33,11 +33,13 @@ import { checkRunwaySchemas } from "#node/functions/check-runway-schemas.functio
 import { checkRunwayUnreadFields } from "#node/functions/check-runway-unread-fields.function";
 import { checkService } from "#node/functions/check-service.function";
 import { checkTestPlacement } from "#node/functions/check-test-placement.function";
+import { checkWranglerOperationalKeys } from "#node/functions/check-wrangler-operational-keys.function";
 import { checkWindowSizing } from "#node/functions/check-window-sizing.function";
 import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { isExpoAppConfig } from "#node/functions/is-expo-app-config.function";
 import { isMemberSource } from "#node/functions/is-member-source.function";
 import { isRawSqlSource } from "#node/functions/is-raw-sql-source.function";
+import { isWranglerConfig } from "#node/functions/is-wrangler-config.function";
 import { isRunwayFile } from "#node/functions/is-runway-file.function";
 import { anonymousSurfacesOf } from "#node/functions/anonymous-surfaces-of.function";
 import { listMembers } from "#node/functions/list-members.function";
@@ -124,6 +126,8 @@ export async function structureFindings(
     report("runway-schemas", "", checkRunwaySchemas(maybe));
     report("runway-unread-fields", "", checkRunwayUnreadFields(maybe, files));
   }
+  for (const p of files.filter(isWranglerConfig))
+    report("wrangler-operational-keys", "", checkWranglerOperationalKeys(p, text(p)));
   const runwayFiles = files.filter(isRunwayFile);
   if (runwayFiles.length) {
     const runway = await loadRunway(root);

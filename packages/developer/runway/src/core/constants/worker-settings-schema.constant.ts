@@ -5,7 +5,7 @@
  *          dashboard-kept vars. Every key is optional, so the same shape types a preset, the repository's defaults and
  *          a member's own overrides; `WORKER_BASE` and `WORKER_PRESETS` fill the rest.
  * Boundary: internal; validation only, no defaults (the layers merge in `workerSettingsOf`). Code facts (name, main,
- *           bindings, crons) stay in the member's `wrangler.jsonc`. Domains, Access, logpush and rollout arrive with
+ *           bindings, crons) stay in the member's `wrangler.jsonc`. Domains, Access and logpush arrive with
  *           the renderer (ADR 0519 decisions 3 and 4).
  * Runtime: isomorphic
  * Governing contract: ADR 0519 (decision 1), ADR 0352; STA-1988.
@@ -35,4 +35,14 @@ export const WORKER_SETTINGS_SCHEMA = z.strictObject({
   cache: z.boolean().optional(),
   uploadSourceMaps: z.boolean().optional(),
   keepVars: z.boolean().optional(),
+  /** Traffic steps of a production deploy, ascending and ending at 100; unset ships all at once. */
+  rollout: z
+    .array(z.int().min(1).max(100))
+    .min(1)
+    .refine(
+      (steps) =>
+        steps.at(-1) === 100 && steps.every((step, i) => i === 0 || step > (steps[i - 1] ?? 0)),
+      "Expected ascending percentages ending at 100",
+    )
+    .optional(),
 });
