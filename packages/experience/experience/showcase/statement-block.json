@@ -1,0 +1,21 @@
+{
+  "slug": "statement-block",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "StatementBlock",
+  "parts": ["StatementBlock"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 280
+    }
+  ],
+  "related": ["free/text", "free/chapter-title-block"],
+  "tokens": ["color.accent", "color.foreground"],
+  "keywords": ["statement", "paragraph", "facts", "marketing", "landing", "kit"],
+  "status": "new"
+}

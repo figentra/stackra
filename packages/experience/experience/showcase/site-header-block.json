@@ -1,0 +1,21 @@
+{
+  "slug": "site-header-block",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "SiteHeaderBlock",
+  "parts": ["SiteHeaderBlock"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 160
+    }
+  ],
+  "related": ["free/app-header", "free/link", "free/hero-machine-block"],
+  "tokens": ["color.surface", "color.border"],
+  "keywords": ["header", "navigation", "top bar", "marketing", "landing", "site", "kit"],
+  "status": "new"
+}

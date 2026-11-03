@@ -1,0 +1,21 @@
+{
+  "slug": "chapter-title-block",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "ChapterTitleBlock",
+  "parts": ["ChapterTitleBlock"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 200
+    }
+  ],
+  "related": ["free/heading", "free/statement-block", "free/station-block"],
+  "tokens": ["color.core", "color.foreground"],
+  "keywords": ["chapter", "title", "heading", "marketing", "landing", "kit"],
+  "status": "new"
+}

@@ -1,0 +1,21 @@
+{
+  "slug": "cta-row-block",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "CtaRowBlock",
+  "parts": ["CtaRowBlock"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 160
+    }
+  ],
+  "related": ["free/button", "free/copy-button", "free/hero-machine-block"],
+  "tokens": ["color.core", "color.surface", "color.border"],
+  "keywords": ["call to action", "cta", "copy", "command", "marketing", "landing", "kit"],
+  "status": "new"
+}

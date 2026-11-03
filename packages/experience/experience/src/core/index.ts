@@ -4,7 +4,8 @@
  *          and `LocalizedText` types, the wiring's `registerBlocks`, the builder's read-only `registeredBlocks`, the
  *          document validator `resolveDocument` and its two refusals, the server-side `validateDocument` with
  *          `blockKinds`, and the section-based theme revisions `commitSiteTheme`, `rollbackSiteTheme`, `diffSiteTheme` and
- *          `validateSiteTheme`) until `stackra gen` writes the entry barrels (STA-339).
+ *          `validateSiteTheme`, and the thirteen landing blocks of STA-2041, `HeroMachineBlock` to `SiteFooterBlock`)
+ *          until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The registry state, the locale fallback, the props walk and the
  *           event dispatch stay internal; the renderers are `./react`'s and `./native`'s. `BlockProps` with `onEvent`
  *           is `./native`'s own type, a different declaration (registry A3).
@@ -12,6 +13,19 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
 export { Block } from "#core/bases/block.base";
+export { AskAiBlock } from "#core/blocks/ask-ai.block";
+export { BentoGridBlock } from "#core/blocks/bento-grid.block";
+export { ChapterTitleBlock } from "#core/blocks/chapter-title.block";
+export { CtaRowBlock } from "#core/blocks/cta-row.block";
+export { HeroMachineBlock } from "#core/blocks/hero-machine.block";
+export { MonoDisplayBlock } from "#core/blocks/mono-display.block";
+export { ProductCardsBlock } from "#core/blocks/product-cards.block";
+export { SiteFooterBlock } from "#core/blocks/site-footer.block";
+export { SiteHeaderBlock } from "#core/blocks/site-header.block";
+export { StatementBlock } from "#core/blocks/statement.block";
+export { StationBlock } from "#core/blocks/station.block";
+export { StepSwitcherBlock } from "#core/blocks/step-switcher.block";
+export { TerminalDemoBlock } from "#core/blocks/terminal-demo.block";
 export { BlockCategory } from "#core/enums/block-category.enum";
 export { InvalidDocumentError } from "#core/errors/invalid-document.error";
 export { UnknownBlockError } from "#core/errors/unknown-block.error";
