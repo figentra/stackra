@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `stackra promote`: it refuses a missing environment, lists the targets on a dry run, refuses
+ * Purpose: unit tests of `stackra promote`: it refuses a missing environment, refuses a `--to` that does not deploy on
+ *          promotion even on a dry run, lists the targets on a dry run (marking one without a provider), refuses
  *          an approval-gated environment without `--approved`, and hands Runway's `promote()` both environments, the
  *          providers and the commit, then reports each record.
  * Boundary: test only; Runway's `readRunway` and `promote` are mocked, nothing is deployed.
@@ -8,7 +9,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0352; STA-607.
  */
 import { beforeEach, describe, expect, it } from "@stackra/testing";
-import { promote } from "@stackra/runway";
+import { promote, RunwayInvalidError } from "@stackra/runway";
 import type { RootRunway } from "@stackra/runway";
 import { readRunway } from "@stackra/runway/node";
 import { vi } from "vitest";
@@ -36,7 +37,7 @@ const ROOT = {
   environments: {
     staging: { destinations: { docs: "mintlify" } },
     production: {
-      destinations: { docs: "mintlify" },
+      destinations: { services: "encore-cloud", docs: "mintlify" },
       deploy: { on: "promote", approval: "github-environment" },
     },
   },
@@ -74,10 +75,20 @@ describe("runRunwayPromote", () => {
     await expect(run({ to: "production", from: "qa" }).code).rejects.toThrow(/--from/);
   });
 
-  it("lists the targets on a dry run and ships nothing", async () => {
+  it("refuses a --to that does not deploy on promotion, on a dry run too", async () => {
+    await expect(run({ to: "staging", "dry-run": true }).code).rejects.toThrow(RunwayInvalidError);
+    await expect(run({ to: "staging", approved: true }).code).rejects.toThrow(
+      "staging is not deployed by promotion",
+    );
+    expect(promote).not.toHaveBeenCalled();
+  });
+
+  it("lists the targets on a dry run, marks one without a provider, and ships nothing", async () => {
     const { code, output } = run({ to: "production", "dry-run": true });
     expect(await code).toBe(0);
-    expect(output()).toBe("production/docs → mintlify\n");
+    expect(output()).toBe(
+      "production/services → encore-cloud (no provider)\nproduction/docs → mintlify\n",
+    );
     expect(promote).not.toHaveBeenCalled();
   });
 

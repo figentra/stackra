@@ -18,27 +18,19 @@
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { buildConfig } from "@stackra/config";
 import {
   deploy,
   deployTargets,
   DeployKind,
-  RunwayConfig,
   RunwayEnvironment,
   withDeployLock,
 } from "@stackra/runway";
-import {
-  CloudflareWorkersProviderDriver,
-  EasProviderDriver,
-  EncoreCloudProviderDriver,
-  fileDeployLock,
-  MintlifyProviderDriver,
-  readRunway,
-  runCommand,
-} from "@stackra/runway/node";
+import { fileDeployLock, readRunway, runCommand } from "@stackra/runway/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { runDeployProduct } from "#node/product/functions/run-deploy-product.function";
+import { printDeployResults } from "#node/runway-deploy/functions/print-deploy-results.function";
+import { runwayProviders } from "#node/runway-deploy/functions/runway-providers.function";
 import type { CliContext } from "#node/types/cli-context.type";
 
 /** Where the deploy locks of this host live. */
@@ -79,21 +71,7 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
     throw new CliUsageError(`unknown --kind ${unknown.join(", ")}: one of ${known.join(", ")}`);
 
   const root = readRunway(join(cwd, "runway.yaml"), "root");
-  const encoreApp = root.providers?.encore?.app;
-  const config = buildConfig(RunwayConfig, {
-    values: encoreApp === undefined ? {} : { encoreApp },
-  });
-  const workers = Object.assign(new CloudflareWorkersProviderDriver(), {
-    root: cwd,
-    only: list(values["member"]) ?? [],
-  });
-  // A repository without an Encore app (core) has no `encore-cloud` provider; a target naming it fails in `deploy()`.
-  const providers = [
-    ...(encoreApp === undefined ? [] : [new EncoreCloudProviderDriver(config)]),
-    new EasProviderDriver(config),
-    new MintlifyProviderDriver(config),
-    workers,
-  ];
+  const providers = runwayProviders(root, cwd, list(values["member"]));
   const sha =
     typeof values["sha"] === "string"
       ? values["sha"]
@@ -145,10 +123,7 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
       return { code: 0, results };
     },
   );
-  for (const { record, report } of outcome.results)
-    io.out(
-      `${record.target} ${record.sha.slice(0, 12)} ${report.status}${record.reference === "" ? "" : ` (${record.reference})`}\n`,
-    );
+  printDeployResults(io, outcome.results);
   return outcome.code;
 }
 
