@@ -245,6 +245,11 @@ function fits(rule: FieldRule, type: TypeDesc): boolean {
   return type.kind === "array";
 }
 
+/** Whether `candidate` is an array of strings (a `@Secret` option list, STA-2104). */
+function isStringList(candidate: unknown): candidate is string[] {
+  return Array.isArray(candidate) && candidate.every((item) => typeof item === "string");
+}
+
 /** Whether a value, or anything inside it, is not a constant. */
 function hasNonConstant(value: unknown): boolean {
   if (value === NOT_CONSTANT) return true;
@@ -1754,6 +1759,26 @@ export function createSourceReader(
         "@Secret does not name its secret with a SCREAMING_SNAKE literal",
         'write `@Secret("<PROVIDER>_<PURPOSE>")`, such as `@Secret("RESEND_API_KEY")`; the value comes from the secret store',
       );
+    // `@Secret("NAME", { refuse, environments })`: the options as constants, only their well-formed parts (STA-2104).
+    const secretOptionsOf = (
+      node: TsNode | undefined,
+    ): Omit<NonNullable<FieldIR["secret"]>, "name"> => {
+      const options = node === undefined ? undefined : constant(node);
+      if (typeof options !== "object" || options === null || hasNonConstant(options)) return {};
+      const { refuse, environments } = options as { refuse?: unknown; environments?: unknown };
+      return {
+        ...(typeof refuse === "object" && refuse !== null
+          ? {
+              refuse: Object.fromEntries(
+                Object.entries(refuse).filter((entry): entry is [string, string[]] =>
+                  isStringList(entry[1]),
+                ),
+              ),
+            }
+          : {}),
+        ...(isStringList(environments) ? { environments } : {}),
+      };
+    };
     // `@Classified(DataClassification.Personal)`: the code, from a literal or the enum member's name (stackra-262).
     const classifiedArg = decorators.find((use) => use.name === "Classified")?.args[0];
     const classifiedValue = classifiedArg === undefined ? undefined : constant(classifiedArg);
@@ -1776,6 +1801,9 @@ export function createSourceReader(
       ...(initial !== undefined ? { default: initial } : {}),
       ...(typeof renamedTo === "string" ? { renamed: renamedTo } : {}),
       ...(classified === undefined ? {} : { classified }),
+      ...(typeof secretName === "string" && SECRET_NAME.test(secretName)
+        ? { secret: { name: secretName, ...secretOptionsOf(secret?.args[1]) } }
+        : {}),
       ...(decorators.some((use) => use.name === "Hidden") ? { hidden: true as const } : {}),
     };
     if (!quiet && type.kind !== "hatch")
