@@ -3,8 +3,10 @@
 #          --preset <name> --ref <ref>` dispatches this workflow to run one named preset (verify, e2e, integration) on
 #          a GitHub-hosted runner for a pushed ref. Inputs are a preset name and a ref, never a command. Advisory only,
 #          never a required check (ADR 0166 CI2).
-# Secrets: UNIWIND_AUTH_TOKEN and the /ci/turbo values from Infisical through GitHub OIDC, as the
-#          Quality Gate reads them (ADR 0310, STA-1393). No repository secret.
+# Secrets: the /ci/turbo values from Infisical through GitHub OIDC, as the Quality Gate reads them (STA-1393), and
+#          UNIWIND_AUTH_TOKEN for the e2e preset only (ADR 0310). No repository secret.
+#          verify and integration install without the two Uniwind Pro apps, as the gate and a box do (#425): the
+#          licensed download has a monthly quota. e2e needs the playground, so it installs everything.
 # Owner: release-operations
 
 name: Testbed fallback
@@ -48,6 +50,7 @@ jobs:
           install_args: node pnpm
 
       - name: Uniwind Pro token (Infisical OIDC)
+        if: inputs.preset == 'e2e'
         uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
         with:
           method: oidc
@@ -74,6 +77,7 @@ jobs:
       # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
       # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.
       - name: Uniwind Pro download cache
+        if: inputs.preset == 'e2e'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.uniwind/cache/pro
@@ -81,7 +85,12 @@ jobs:
           restore-keys: uniwind-pro-${{ runner.os }}-
 
       - name: Install dependencies
+        if: inputs.preset == 'e2e'
         run: pnpm install --frozen-lockfile
+
+      - name: Install dependencies (without the Uniwind Pro apps)
+        if: inputs.preset != 'e2e'
+        run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
 
       - name: Verify
         if: inputs.preset == 'verify'
