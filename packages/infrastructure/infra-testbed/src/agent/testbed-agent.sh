@@ -446,7 +446,9 @@ EOF
   # The store is mounted writable for that (pnpm's store is made for concurrent installs); testbed-image.yml reports
   # whether a read-only mount could serve an install at all. Integrity checks stay on, so a file one job left changed
   # in the shared store fails the next job's install against the lockfile's hashes.
-  inner="cd /work && { [ -d node_modules ] || pnpm install --prefer-offline --frozen-lockfile --store-dir /pnpm-store --package-import-method clone-or-copy; } && {$NL$command_text$NL}"
+  # A repository can narrow the install with pnpm flags in .testbed/install-args (core leaves out the two Uniwind Pro
+  # members, whose licensed download has a monthly quota); the words are the repository's own, like its command.
+  inner="cd /work && { [ -d node_modules ] || pnpm install --prefer-offline --frozen-lockfile --store-dir /pnpm-store --package-import-method clone-or-copy \$(cat .testbed/install-args 2>/dev/null); } && {$NL$command_text$NL}"
   wrap "sh -c $(sq "$inner")" || {
     say "unhealthy: grants"
     exit 75
