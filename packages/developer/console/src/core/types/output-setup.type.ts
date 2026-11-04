@@ -15,7 +15,7 @@ export interface OutputSetup {
   /** The decided mode. */
   readonly mode: ConsoleMode;
 
-  /** What draws. */
+  /** The renderer that draws the output. */
   readonly renderer: Renderer;
 
   /** Receives the data of `json(data)` under `--json`. */

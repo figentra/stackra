@@ -12,7 +12,7 @@ import type { Seeder } from "#core/bases/seeder.base";
 
 /** One seeder of a service. */
 export interface SeederEntry {
-  /** `<module>.<profile>` (`orders.demo`). */
+  /** The seeder's key, `<module>.<profile>` (`orders.demo`). */
   readonly key: string;
 
   /** The module key. */

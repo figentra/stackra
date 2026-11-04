@@ -11,7 +11,7 @@ import type { ConsoleTheme } from "#contracts/types/console-theme.type";
 import type { CommandClass } from "#core/types/command-class.type";
 import type { ConsoleContainer } from "#core/types/console-container.type";
 
-/** One console. */
+/** The settings of one console: its name, version, look and commands. */
 export interface ConsoleConfig {
   /** The binary name, used in usage lines (`stackra`). */
   readonly name: string;
@@ -22,7 +22,7 @@ export interface ConsoleConfig {
   /** The look; `STACKRA_THEME` when absent. */
   readonly theme?: ConsoleTheme;
 
-  /** The commands. */
+  /** The command classes the console runs. */
   readonly commands: readonly CommandClass[];
 
   /** Creates the container a command is resolved from; without it a command is built with no arguments. */

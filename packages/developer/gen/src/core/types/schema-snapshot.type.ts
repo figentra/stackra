@@ -11,7 +11,7 @@
  */
 /** A schema as flat rows. */
 export interface SchemaSnapshot {
-  /** Every column. */
+  /** Every column of every table. */
   readonly columns: readonly {
     readonly schema: string;
     readonly table: string;

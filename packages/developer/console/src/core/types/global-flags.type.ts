@@ -8,22 +8,22 @@
 
 /** The global options as given. */
 export interface GlobalFlags {
-  /** `-h`, `--help`. */
+  /** True with `-h` or `--help`. */
   readonly help: boolean;
 
-  /** `-V`, `--version`. */
+  /** True with `-V` or `--version`. */
   readonly version: boolean;
 
-  /** `-v`, `--verbose`. */
+  /** True with `-v` or `--verbose`. */
   readonly verbose: boolean;
 
-  /** `-q`, `--quiet`. */
+  /** True with `-q` or `--quiet`. */
   readonly quiet: boolean;
 
   /** False with `-n` or `--no-interaction`. */
   readonly interaction: boolean;
 
-  /** `--json`. */
+  /** True with `--json`. */
   readonly json: boolean;
 
   /** True with `--ansi`, false with `--no-ansi`. */

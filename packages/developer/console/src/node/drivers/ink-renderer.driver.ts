@@ -53,6 +53,7 @@ export class InkRendererDriver extends TextRendererDriver {
   /** The spinner frame every screen shows. */
   private frame = 0;
 
+  /** Redraws the view's rows through Ink while it runs, then writes its final checklist. */
   override live(view: LiveView): LiveHandle {
     if (!this.context.mode.animate) return super.live(view);
     const state = liveRows(view);
@@ -77,6 +78,7 @@ export class InkRendererDriver extends TextRendererDriver {
     };
   }
 
+  /** Starts a spinner drawn through Ink; the text spinner when the mode does not animate. */
   override spinner(message: string): Spinner {
     if (!this.context.mode.animate) return super.spinner(message);
     let text = this.bidi(message);
@@ -93,6 +95,7 @@ export class InkRendererDriver extends TextRendererDriver {
     };
   }
 
+  /** Starts a progress bar drawn through Ink; the text bar when the mode does not animate. */
   override progress(total: number, label = ""): Progress {
     if (!this.context.mode.animate) return super.progress(total, label);
     const { painter, symbols } = this;
@@ -118,6 +121,7 @@ export class InkRendererDriver extends TextRendererDriver {
     };
   }
 
+  /** Runs `work` under an Ink spinner, then writes its outcome line as text. */
   override task<T>(label: string, work: () => Promise<T> | T): Promise<T> {
     if (!this.context.mode.animate) return super.task(label, work);
     const text = this.bidi(label);
