@@ -18,17 +18,23 @@ import { runCommandForTest } from "@stackra/console/testing";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
-import { RunwayStatusCommand } from "#node/commands/runway-status.command";
-import { RUNWAY_COMMANDS } from "#node/constants/runway-commands.constant";
-import { repositoryRoot } from "#node/functions/repository-root.function";
-import { runRunway } from "#node/functions/run-runway.function";
-import { runRunwayDrift } from "#node/functions/run-runway-drift.function";
-import { syncSecrets } from "#node/functions/sync-secrets.function";
+// Hoisted, and the commands imported after the mocks, so every command module sees the fakes.
+const fakes = vi.hoisted(() => ({
+  repositoryRoot: vi.fn(),
+  dispatch: vi.fn(),
+  drift: vi.fn(),
+  syncSecrets: vi.fn(),
+}));
 
-vi.mock("#node/functions/repository-root.function", () => ({ repositoryRoot: vi.fn() }));
-vi.mock("#node/functions/run-runway.function", () => ({ runRunway: vi.fn() }));
-vi.mock("#node/functions/run-runway-drift.function", () => ({ runRunwayDrift: vi.fn() }));
-vi.mock("#node/functions/sync-secrets.function", () => ({ syncSecrets: vi.fn() }));
+vi.mock("#node/functions/repository-root.function", () => ({
+  repositoryRoot: fakes.repositoryRoot,
+}));
+vi.mock("#node/functions/run-runway.function", () => ({ runRunway: fakes.dispatch }));
+vi.mock("#node/functions/run-runway-drift.function", () => ({ runRunwayDrift: fakes.drift }));
+vi.mock("#node/functions/sync-secrets.function", () => ({ syncSecrets: fakes.syncSecrets }));
+
+const { RUNWAY_COMMANDS } = await import("#node/constants/runway-commands.constant");
+const { RunwayStatusCommand } = await import("#node/commands/runway-status.command");
 
 const SHA = "a".repeat(40);
 
@@ -55,13 +61,14 @@ const ROOT = [
   "",
 ].join("\n");
 
-const run = (...argv: string[]) => runCommandForTest(RUNWAY_COMMANDS, argv);
+const run = (...argv: string[]) =>
+  runCommandForTest(RUNWAY_COMMANDS, argv, { requireCommand: true });
 
 beforeEach(() => {
-  vi.mocked(repositoryRoot).mockReset().mockReturnValue(repository(ROOT));
-  vi.mocked(runRunway).mockReset();
-  vi.mocked(runRunwayDrift).mockReset().mockResolvedValue(0);
-  vi.mocked(syncSecrets).mockReset().mockResolvedValue();
+  fakes.repositoryRoot.mockReset().mockReturnValue(repository(ROOT));
+  fakes.dispatch.mockReset();
+  fakes.drift.mockReset().mockResolvedValue(0);
+  fakes.syncSecrets.mockReset().mockResolvedValue(undefined);
 });
 
 describe("RUNWAY_COMMANDS", () => {
@@ -76,7 +83,7 @@ describe("RUNWAY_COMMANDS", () => {
   it("hands deploy and promote their words, with --dry-run", async () => {
     expect((await run("deploy", "cloudflare-workers", "--dry-run")).exitCode).toBe(0);
     expect((await run("promote", SHA)).exitCode).toBe(0);
-    expect(vi.mocked(runRunway).mock.calls.map(([argv]) => argv)).toEqual([
+    expect(fakes.dispatch.mock.calls.map(([argv]) => argv)).toEqual([
       ["deploy", "cloudflare-workers", "--dry-run"],
       ["promote", SHA],
     ]);
@@ -85,19 +92,19 @@ describe("RUNWAY_COMMANDS", () => {
   it("refuses a missing command or argument with exit 2", async () => {
     expect((await run()).exitCode).toBe(2);
     expect((await run("deploy")).exitCode).toBe(2);
-    expect(runRunway).not.toHaveBeenCalled();
+    expect(fakes.dispatch).not.toHaveBeenCalled();
   });
 
   it("exits 1 when a Worker drifted, 0 otherwise", async () => {
     expect((await run("drift")).exitCode).toBe(0);
-    vi.mocked(runRunwayDrift).mockResolvedValue(2);
+    fakes.drift.mockResolvedValue(2);
     expect((await run("drift", "staging")).exitCode).toBe(1);
-    expect(vi.mocked(runRunwayDrift).mock.calls.at(-1)?.[0]).toEqual(["staging"]);
+    expect(fakes.drift.mock.calls.at(-1)?.[0]).toEqual(["staging"]);
   });
 
   it("syncs an environment's secrets, as a dry run when asked", async () => {
     expect((await run("secrets", "sync", "staging", "--dry-run")).exitCode).toBe(0);
-    expect(vi.mocked(syncSecrets).mock.calls[0]?.[0]).toMatchObject({
+    expect(fakes.syncSecrets.mock.calls[0]?.[0]).toMatchObject({
       environment: "staging",
       dryRun: true,
     });
@@ -105,7 +112,7 @@ describe("RUNWAY_COMMANDS", () => {
 
   it("validates: 0 on clean files, 1 with each finding", async () => {
     expect((await run("validate")).exitCode).toBe(0);
-    vi.mocked(repositoryRoot).mockReturnValue(
+    fakes.repositoryRoot.mockReturnValue(
       repository(`${ROOT}  dev:\n    destinations:\n      services: compose\n`),
     );
     const failed = await run("validate");
