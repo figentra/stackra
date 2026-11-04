@@ -14,6 +14,14 @@ description: "Proposed · 2026-11-01"
   [0009](/adr/0009-secrets-two-mechanisms) per project.
 </Note>
 
+<Note>
+  Amended 2026-11-04 by [0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)
+  (amendment 2026-11-04, decision 3, STA-2104) and the Infisical plan of 2026-11-04: runtime values
+  live in `<product>-runtime` (dev, staging) and `<product>-runtime-prod` (prod) at
+  `/runtime/<member>`, CI values in `ci-build`, `ci-deploy` and `ci-production`. Decision 4 changes
+  for runtimes: config and public values have a home in Infisical too, so every value has one home.
+</Note>
+
 ## Context
 
 The audit found the following:
