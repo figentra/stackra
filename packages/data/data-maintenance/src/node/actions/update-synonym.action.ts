@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `UpdateSynonymAction`, `data_maintenance.synonym.update@1`: replace the terms of one of the caller's synonym sets; also a
- *          tool by default.
- * Boundary: single aggregate, inline `handle`. Its permission is `SynonymPermissions.update` (L1); the route is the
+ * Purpose: `UpdateSynonymAction`, `data_maintenance.synonym.update@1`: replace the terms of one of the caller's synonym
+ *          sets; also a tool by default.
+ * Boundary: single aggregate, inline `handle`. Its permission is `SynonymPermissions.update` (L2); the route is the
  *           convention's `PATCH /synonyms/:synonymId`. Only the terms change: the index and language are the set's
  *           identity, so a move is a delete and a create. A set of another tenant is not found (row-level security).
  * Runtime: node

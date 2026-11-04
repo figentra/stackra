@@ -3,10 +3,11 @@
  * Purpose: unit tests of `buildManifest`: every derived identity (permissions with risks, event wire names with their
  *          broadcast, refusal codes with categories, action and query keys with endpoints, tools and refusals, model
  *          keys and tables, driver port keys and selectors, integration keys with their connection and webhook path,
- *          sequence keys, an app's block and route keys), the module graph, the facets, the schemas without a
- *          config's schema, merged package sections marked `from`, and the checks `identity_collision`,
- *          `override_duplicate`, `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and
- *          `prefix_duplicate`; `event_name_prefixed` (STA-1255); the v3 tool default with `tool_reason_missing`, the public flag with `public_without_endpoint`, effect tags with `effect_unknown`, `endpoint_param_unbound` (STA-2063),
+ *          sequence keys, an app's block and route keys), the module graph, the facets, the schemas without a config's
+ *          schema, merged package sections marked `from`, and the checks `identity_collision`, `override_duplicate`,
+ *          `permission_unknown`, `identity_missing`, `prefix_invalid`, `prefix_taken` and `prefix_duplicate`;
+ *          `event_name_prefixed` (STA-1255); the v3 tool default with `tool_reason_missing`, the public flag with
+ *          `public_without_endpoint`, effect tags with `effect_unknown`, `endpoint_param_unbound` (STA-2063),
  *          Integration roles and listing with `integration_role_unknown`, the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
  *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308); the `agents`,
@@ -112,7 +113,7 @@ describe("buildManifest", () => {
       },
       {
         key: "orders.order.create",
-        risk: "L1",
+        risk: "L2",
         class: "OrderPermissions",
         module: "orders",
         member: "create",
@@ -257,7 +258,7 @@ describe("buildManifest", () => {
             member: "loyalty_kit",
             package: "@acme/loyalty-kit",
             version: "0.4.0",
-            permissions: [{ key: "loyalty_kit.loyalty_account.redeem", risk: "L1" }],
+            permissions: [{ key: "loyalty_kit.loyalty_account.redeem", risk: "L3" }],
             actions: [
               {
                 key: "loyalty_kit.loyalty_account.redeem@1",
@@ -265,7 +266,7 @@ describe("buildManifest", () => {
                 module: "loyalty_kit",
                 class: "RedeemPointsAction",
                 permission: "loyalty_kit.loyalty_account.redeem",
-                risk: "L1",
+                risk: "L3",
                 input: { $ref: "#/schemas/loyalty_kit.RedeemPointsInput" },
               },
             ],
@@ -734,6 +735,25 @@ describe("buildManifest", () => {
     };
     const codes = buildManifest(ir).errors.map((error) => error.code);
     expect(codes).not.toContain("override_duplicate");
+  });
+
+  it("refuses an action whose permission is L0 or L1, and lets a query read at L1", () => {
+    const permissions = declared("OrderPermissions");
+    const ir = (cancel: string): MemberIR => ({
+      ...COMMERCE_IR,
+      classes: [
+        ...COMMERCE_IR.classes.filter((item) => item.name !== permissions.name),
+        { ...permissions, statics: { ...permissions.statics, read: "Permission.L1", cancel } },
+      ],
+    });
+    expect(codesOf(ir("Permission.L1"))).toContain("action_risk_below_write CancelOrderAction");
+    expect(codesOf(ir("Permission.L0"))).toContain("action_risk_below_write CancelOrderAction");
+    expect(codesOf(ir("Permission.L2.system()"))).not.toContain(
+      "action_risk_below_write CancelOrderAction",
+    );
+    expect(codesOf(ir("Permission.L2")).filter((code) => code.startsWith("action_risk"))).toEqual(
+      [],
+    );
   });
 
   it("gives a query its own verb only when its Permissions class declares it", () => {
